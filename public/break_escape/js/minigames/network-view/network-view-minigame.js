@@ -82,6 +82,8 @@ export function hostnameClass(name) {
     return String(name ?? '').length > NOWRAP_WORD_MAX ? 'network-row-hostname-long' : 'network-row-hostname';
 }
 
+/** Plan 9.3b 5.2: an open view refetches this often (ms). */
+export const REFETCH_MS = 5000;
 export const REMOTE_OFF_TEXT = 'Remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'Powered down';
 export const NO_ROUTE_TEXT = 'No route';
@@ -265,6 +267,10 @@ export class NetworkViewMinigame extends MinigameScene {
         this.notice = null;
         this.stale = false;
         this._staleRefetched = false;
+        // Plan 9.3b 5.2: an open view refetches every five seconds (params.refetchMs for tests)
+        this.refetchMs = Number.isFinite(params?.refetchMs) ? params.refetchMs : REFETCH_MS;
+        this._refetchTimer = null;
+        this._refetching = false;
     }
 
     links() { return window.networkLinks || null; }
@@ -365,6 +371,7 @@ export class NetworkViewMinigame extends MinigameScene {
             });
         }
         this.render();
+        this.startRefetchTimer();
         const hostIds = this.rows().filter(r => r.kind === 'pc').map(r => r.id);
         const networkId = this.view?.network?.id ?? null;
         this._emit('network_viewed', { footholdId: this.footholdId, networkId, hostIds, hostList: hostIds.join(',') }, networkId);
@@ -378,6 +385,56 @@ export class NetworkViewMinigame extends MinigameScene {
                 block.id);
         });
         return answer;
+    }
+
+    /** Start the five-second refetch once the first view is up (one timer per view). */
+    startRefetchTimer() {
+        if (this._refetchTimer || this._reported || !(this.refetchMs > 0)) return;
+        this._refetchTimer = setInterval(() => { this.refetch(); }, this.refetchMs);
+    }
+
+    stopRefetchTimer() {
+        if (this._refetchTimer) clearInterval(this._refetchTimer);
+        this._refetchTimer = null;
+    }
+
+    /**
+     * One timed refetch: the same GET /network as the first load (after a sync, which sends
+     * only the globals that changed, so synced player_state does not grow). It never overlaps
+     * a refetch still on its way, never emits network_viewed again, keeps the list's scroll
+     * position, and draws again only when the answer differs. A refused or lost answer leaves
+     * the view as it was; a dropped foothold ends the view as the first load does.
+     */
+    async refetch() {
+        if (this._refetching || this._reported || this._ending || this.status !== 'ready') return null;
+        if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
+        this._refetching = true;
+        try {
+            const answer = await this.links()?.view?.(this.footholdId);
+            if (this._reported || this._ending) return answer ?? null;
+            if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return answer ?? null;
+            if (!answer) return null;
+            if (!answer.ok && answer.reason === 'gone') {
+                this.status = 'gone';
+                this.exitReason = 'foothold_gone';
+                this.stopRefetchTimer();
+                this.complete(false);
+                return answer;
+            }
+            if (!answer.ok) return answer;
+            const stale = !!answer.stale;
+            if (JSON.stringify(answer.view) !== JSON.stringify(this.view) || stale !== this.stale) {
+                const top = this.gameContainer?.scrollTop ?? 0;
+                this.view = answer.view;
+                this.stale = stale;
+                this.render();
+                if (this.gameContainer) this.gameContainer.scrollTop = top;
+                this.updateScrollCue?.();
+            }
+            return answer;
+        } finally {
+            this._refetching = false;
+        }
     }
 
     ownNetworkId() { return this.view?.network?.id ?? null; }
@@ -718,6 +775,7 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     cleanup() {
+        this.stopRefetchTimer();
         super.cleanup();
         if (this._reported) return;
         this._reported = true;

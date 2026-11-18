@@ -88,6 +88,8 @@
  *
  * Exposed as window.pcSessions; window.__test.access.sessions() reads list().
  */
+import { syncBeforeFetch } from '../utils/sync-before-fetch.js';
+
 
 export const SIGNED_OUT_MESSAGE = 'Signed out';
 export const SCREEN_LOCKED_MESSAGE = 'The screen locked';
@@ -512,6 +514,9 @@ export class PcSessions {
         try {
             // One route at a time: a foothold, else a source desktop (K4), else the keyboard
             const route = foothold ? { foothold } : (typeof from === 'string' && from ? { from } : {});
+            // A remote sign-in is judged on the server's copy of the globals (outages, a host
+            // switched off): send the latest first (9.3b plan 5.2). Keyboard sign-ins skip it.
+            if (route.foothold || route.from) await syncBeforeFetch();
             body = await api.login(pcId, { username, password, ...route });
         } catch (err) {
             const b = err?.body || {};

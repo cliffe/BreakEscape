@@ -35,6 +35,7 @@ copy('utils/npc-headshot.js');
 copy('utils/pc-taskbar.js');
 copy('utils/author-html.js');
 copy('utils/remote-host-text.js');
+copy('utils/sync-before-fetch.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
     'export const adds = [];\n' +
@@ -1075,4 +1076,53 @@ test('icon focus return: a text file closed over a network screen reopens it car
     assert.equal(calls.length, 1, 'the network screen is reopened once');
     assert.equal(calls[0][0], desktop);
     assert.deepEqual(calls[0][5], { focusReturn: mark }, 'the 6th argument carries the mark');
+});
+
+// Plan 9.3b 5.2: the latest globals reach the server before a remote sign-in, a remote desktop
+// fetch and a share fetch (the wait the network view uses)
+test('a remote sign-in, a remote desktop fetch and a share fetch each sync first; a keyboard desktop does not', async () => {
+    setup();
+    const order = [];
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    const api = window.ApiClient.login;
+    window.ApiClient.login = async (...a) => { order.push('login'); return api(...a); };
+    const realFetch = window.fetch;
+    window.fetch = globalThis.fetch = async (url) => { order.push('fetch'); return realFetch(url); };
+    await openRemote();
+    assert.deepEqual(order.slice(0, 4), ['sync', 'login', 'sync', 'fetch'], 'sign-in, then the desktop');
+    order.length = 0;
+    icon('Ledger-Archive').click();
+    await settle();
+    assert.deepEqual(order, ['sync', 'fetch'], 'the share fetch');
+    order.length = 0;
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame({ scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true } }, null, false, true);
+    await settle();
+    assert.deepEqual(order, ['login', 'fetch'], 'a keyboard sign-in and desktop send no sync');
+    delete window.stateSync;
+});
+
+test('a sync that fails, throws or never lands does not stop the fetch', async () => {
+    for (const sync of [async () => false, () => { throw new Error('x'); }, () => Promise.reject(new Error('y'))]) {
+        setup();
+        window.stateSync = { sync };
+        await openRemote();
+        assert.equal(fetches[0], '/break_escape/games/9/container/lena_pc?foothold=jack_comms_port');
+    }
+    setup();
+    window.stateSync = { sync: () => new Promise(() => {}) };
+    const { syncBeforeFetch } = await imp('utils/sync-before-fetch.js');
+    const r = await syncBeforeFetch({ waitMs: 15 });
+    assert.deepEqual(r, { synced: false, timedOut: true });
+    delete window.stateSync;
+});
+
+test('syncBeforeFetch reports a landed sync, and tolerates no stateSync', async () => {
+    const { syncBeforeFetch, SYNC_BEFORE_FETCH_WAIT_MS } = await imp('utils/sync-before-fetch.js');
+    assert.equal(SYNC_BEFORE_FETCH_WAIT_MS, 3000);
+    delete window.stateSync;
+    assert.deepEqual(await syncBeforeFetch(), { synced: false, timedOut: false });
+    window.stateSync = { sync: async () => true };
+    assert.deepEqual(await syncBeforeFetch(), { synced: true, timedOut: false });
+    delete window.stateSync;
 });

@@ -1105,3 +1105,131 @@ test('Open on a row whose session came from another desktop opens it with from',
     assert.deepEqual(desktops, [], 'not the foothold desktop');
     delete window.openFromDesktop;
 });
+
+// Plan 9.3b 5.2: an open view refetches every five seconds
+const openFast = async (ms = 20) => {
+    window.startNetworkViewMinigame = (footholdId, { message = null } = {}) =>
+        window.MinigameFramework.startMinigame('network-view', null, { title: 'Link', footholdId, message, refetchMs: ms });
+    links.open('jack_comms_port');
+    await settle();
+};
+const fetches = () => requests.filter(r => r[0] === 'network').length;
+
+test('REFETCH_MS is five seconds, and the view defaults to it', async () => {
+    const { REFETCH_MS } = await imp('minigames/network-view/network-view-minigame.js');
+    assert.equal(REFETCH_MS, 5000);
+    setup();
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(view().refetchMs, 5000);
+    document.querySelector('#minigame-close').click();
+});
+
+test('an open view refetches on the timer and shows a change from the server', async () => {
+    setup();
+    await openFast();
+    assert.equal(fetches(), 1);
+    assert.ok(row('data-host-id', 'lena_pc'));
+    // The server side changes: a new host appears
+    answer = { footholds: [{ ...foothold, hosts: [...HOSTS.map(h => ({ ...h })),
+        { id: 'new_pc', kind: 'pc', name: 'New arrival', host: 'HB-NEW-01', sprite: 'pc_desktop', headless: false, remoteSignIn: true }] }] };
+    await new Promise(r => setTimeout(r, 60));
+    assert.ok(fetches() >= 2, 'refetched');
+    assert.ok(row('data-host-id', 'new_pc'), 'the change shows without reopening');
+    document.querySelector('#minigame-close').click();
+});
+
+test('a refetch emits no second network_viewed and keeps the list scroll', async () => {
+    setup();
+    await openFast();
+    const before = named('network_viewed').length;
+    view().gameContainer.scrollTop = 37;
+    answer = { footholds: [{ ...foothold, hosts: HOSTS.slice(0, 3).map(h => ({ ...h })) }] };
+    await new Promise(r => setTimeout(r, 60));
+    assert.equal(named('network_viewed').length, before, 'no repeated event');
+    assert.equal(view().gameContainer.scrollTop, 37);
+    document.querySelector('#minigame-close').click();
+});
+
+test('an unchanged answer draws nothing again', async () => {
+    setup();
+    await openFast();
+    let renders = 0;
+    const m = view();
+    const render = m.render.bind(m);
+    m.render = () => { renders++; render(); };
+    await new Promise(r => setTimeout(r, 70));
+    assert.ok(fetches() >= 2);
+    assert.equal(renders, 0);
+    document.querySelector('#minigame-close').click();
+});
+
+test('refetches never overlap: a slow answer holds the next tick', async () => {
+    setup();
+    await openFast(10);
+    let inFlight = 0, peak = 0, release;
+    window.ApiClient.network = async (id) => {
+        requests.push(['network', id]);
+        inFlight++; peak = Math.max(peak, inFlight);
+        await new Promise(r => { release = r; });
+        inFlight--;
+        return answer;
+    };
+    await new Promise(r => setTimeout(r, 80));
+    assert.equal(peak, 1, 'one request at a time');
+    assert.equal(fetches(), 2, 'one extra fetch is waiting on its answer');
+    release();
+    await settle();
+    await new Promise(r => setTimeout(r, 30));
+    assert.ok(fetches() >= 3, 'the next tick goes once the answer is in');
+    release?.();
+    document.querySelector('#minigame-close').click();
+});
+
+test('each refetch syncs first, and sync failure still fetches', async () => {
+    setup();
+    let syncs = 0;
+    window.stateSync = { sync: () => { syncs++; return Promise.resolve(syncs === 2 ? false : true); } };
+    await openFast();
+    await new Promise(r => setTimeout(r, 70));
+    assert.ok(syncs >= 3);
+    assert.equal(fetches(), syncs, 'a sync that reports false does not stop the fetch');
+    document.querySelector('#minigame-close').click();
+    delete window.stateSync;
+});
+
+test('closing the view stops the timer', async () => {
+    setup();
+    await openFast();
+    const m = view();
+    document.querySelector('#minigame-close').click();
+    await settle();
+    assert.equal(m._refetchTimer, null);
+    const n = fetches();
+    await new Promise(r => setTimeout(r, 80));
+    assert.equal(fetches(), n, 'no fetch after close');
+});
+
+test('a handover to a sign-in stops the timer too', async () => {
+    setup();
+    await openFast();
+    const m = view();
+    window.MinigameFramework.startMinigame('password', null, {});
+    await new Promise(r => setTimeout(r, 60));
+    assert.equal(m._refetchTimer, null);
+    assert.equal(fetches(), 1);
+});
+
+test('a failed refetch leaves the view as it was; a dropped foothold ends it', async () => {
+    setup();
+    await openFast();
+    window.ApiClient.network = async (id) => { requests.push(['network', id]); throw Object.assign(new Error('x'), { status: 500 }); };
+    await new Promise(r => setTimeout(r, 60));
+    assert.ok(row('data-host-id', 'lena_pc'), 'still drawn');
+    assert.equal(view().status, 'ready');
+    window.ApiClient.network = async (id) => { requests.push(['network', id]); throw Object.assign(new Error('gone'), { status: 404 }); };
+    const m = view();
+    await new Promise(r => setTimeout(r, 60));
+    assert.equal(m.exitReason, 'foothold_gone');
+    assert.equal(m._refetchTimer, null);
+});

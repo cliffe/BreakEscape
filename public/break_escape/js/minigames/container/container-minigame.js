@@ -10,6 +10,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage, tokenExpiredMessage } from '../../utils/remote-host-text.js';
+import { syncBeforeFetch } from '../../utils/sync-before-fetch.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, refreshTokenLines, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
@@ -807,6 +808,8 @@ export class ContainerMinigame extends MinigameScene {
             // A folder under a sign-in PC names the route its session went by (K3c, K2 m4)
             // (a share is its own scope, which the server judges without a route)
             const query = this.shareFolder ? '' : folderRouteQuery(this.sourcePcId);
+            // A share is judged on the server's copy of the globals too (9.3b plan 5.2)
+            if (this.shareFolder) await syncBeforeFetch();
             const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
@@ -864,6 +867,9 @@ export class ContainerMinigame extends MinigameScene {
         const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}`
             : (this.relay ? '?relay=1' : (this.fromRoute ? `?from=${encodeURIComponent(this.fromRoute.fromPcId)}` : ''));
         try {
+            // A remote or routed desktop is judged on the server's copy of the globals: send
+            // the latest first (9.3b plan 5.2). A walk-up desktop and a relay need no sync.
+            if (this.remote || this.fromRoute) await syncBeforeFetch();
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
