@@ -110,6 +110,10 @@
 }
 
 .lpb-step::before { content: counter(lpb-step); font-weight: normal; }
+/* Not colour alone: a finished step shows a 2px-pixel tick (zero-blur shadows) in place of its number. */
+.lpb-step.is-done::before { content: ''; width: 2px; height: 2px; margin: 0 0 8px 12px; background: currentColor;
+    box-shadow: -12px 4px 0 0 currentColor, -10px 6px 0 0 currentColor, -8px 8px 0 0 currentColor, -6px 6px 0 0 currentColor, -4px 4px 0 0 currentColor, -2px 2px 0 0 currentColor; }
+.lpb-step-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .lpb-step.is-current {
     color: var(--ui-text, #eef1f8);

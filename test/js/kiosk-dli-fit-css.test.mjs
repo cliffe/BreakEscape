@@ -70,3 +70,31 @@ test('DLI source-modal confirm uses the pixel-palette confirm look, not blue', (
     assert.match(r, /border: 2px solid #33cc66/);
     assert.match(r, /border-radius: 0/);
 });
+
+test('done steps have a non-colour cue: a 2px-pixel tick (zero-blur shadows), plus hidden (done) text', () => {
+    const skin = read('awareness-skin.css');
+    const num = block(skin, '.aw-step-done .aw-step-num::after');
+    assert.match(num, /content: ''/);
+    assert.match(num, /box-shadow: -12px 4px 0 0 currentColor/);
+    assert.doesNotMatch(num, /rotate|gradient|radius/);
+    assert.match(block(skin, '.aw-step-done .aw-step-num'), /font-size: 0/);
+    assert.doesNotMatch(skin, /\.aw-step-done \.aw-step-num \{[^}]*opacity/);
+    assert.match(block(read('inbox-triage-minigame.css'), '.tri-step.done::before'), /box-shadow: -12px 4px 0 0 currentColor/);
+    assert.match(block(read('landing-page-builder-minigame.css'), '.lpb-step.is-done::before'), /box-shadow: -12px 4px 0 0 currentColor/);
+    const js = (f) => readFileSync(join(css, '../js/minigames', f), 'utf8');
+    assert.match(js('episode-runner/step-strip.js'), /srDone: ' \(done\)'/);
+    assert.match(js('inbox-triage/inbox-triage-minigame.js'), /doneClass: 'done', srClass: 'tri-step-sr', srDone: ' \(done\)'/);
+    assert.match(js('landing-page-builder/landing-page-builder-minigame.js'), /doneClass: 'is-done', srClass: 'lpb-step-sr', srDone: ' \(done\)'/);
+});
+
+test('org prefix of a console title is hidden at short heights as well as narrow widths', () => {
+    const fw = read('minigames-framework.css');
+    const short = fw.match(/@media \(max-height: 500px\) \{[\s\S]*?\n\}/g).find((x) => /console-title-org/.test(x));
+    assert.ok(short, 'org hide sits in a max-height: 500px block');
+    assert.match(block(short, '.console-window .console-title-org'), /display: none/);
+    const narrow = fw.match(/@media \(max-width: 600px\) \{[\s\S]*?\n\}/g).find((x) => /console-title-org/.test(x));
+    assert.ok(narrow, 'still hidden at 600px wide');
+    // 844x390: title area 766 - 34 = 732px = 45 Press Start 2P characters at 16px; the longest
+    // remainders (JUMP SERVER ACCESS LOG (JS-ALBION-01), 37; CLINICAL RECOVERY CONSOLE, 25) fit on one line.
+    assert.ok(Math.floor(732 / 16) >= 'JUMP SERVER ACCESS LOG (JS-ALBION-01)'.length);
+});

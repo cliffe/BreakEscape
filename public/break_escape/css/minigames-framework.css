@@ -861,6 +861,12 @@ html .minigame-container .console-window > .console-body > * {
         min-width: 0;
         margin: 0;
     }
+    /* Short phone landscape (844x390): the org prefix goes too, as under 600px wide, so the
+       console's own name is not cut with an ellipsis. The full text stays in textContent and
+       the bar's title attribute. */
+    .console-window .console-title-org {
+        display: none;
+    }
 }
 
 /* Narrow phones: no room beside the title, so the subtitle lives in the bar's title
