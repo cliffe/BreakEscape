@@ -138,7 +138,7 @@ test('X8: the shared window has one title bar with the X inside it, a 9-slice fr
     const sub = rule('.console-window .console-subtitle');
     assert.match(sub, /font-family: 'GNF'/);
     assert.match(sub, /font-size: 16px/);
-    assert.match(rule('.console-titlebar > .minigame-close-button'), /position: static/, 'the X is laid out in the bar');
+    assert.match(rule('.console-titlebar > .minigame-close-button'), /position: relative/, 'the X is laid out in the bar');
     assert.match(rule('.minigame-container.minigame-console'), /padding: 8px/, 'phones: the whole window less 8px');
     assert.match(fw, /@media \(max-width: 600px\), \(max-height: 500px\) \{\s*\.console-window \{\s*width: 100%;\s*height: 100%;/);
 });

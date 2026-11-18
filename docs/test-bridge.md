@@ -979,8 +979,8 @@ reports the last overworld position (the player is standing still behind the ove
 ### `__test.minigame.getState()` for that same overlay
 
 The `controls` and `fields` arrays come from the base class; `noteName`,
-`noteContent`, `observationText`, `noteIndex` and `noteCount` come from the
-`NotesMinigame` override. The notes reader keeps its Continue button as `#minigame-cancel`;
+`noteContent`, `observationText`, `noteIndex`, `noteCount` and `filed` come from the
+`NotesMinigame` override (`noteIndex` and `noteCount` read 0 on a filed page, where `filed` is true). The notes reader keeps its Continue button as `#minigame-cancel`;
 since UX slice 7 most other scenes draw no `#minigame-cancel` at all and close with the X
 (`#minigame-close`) or Esc. Only scenes with `static keepsCancelButton = true` (notes and
 the password screen) list one.
@@ -1052,7 +1052,8 @@ paragraphs against `noteContent`, never against `text`.
   "noteContent": "ST. CATHERINE'S REGIONAL MEDICAL CENTRE\n\nFounded 1987\n\nServing this community for over thirty-five years",
   "observationText": "Bronze plaque by the doors. Founded 1987.",
   "noteIndex": 1,
-  "noteCount": 2
+  "noteCount": 2,
+  "filed": false
 }
 ```
 

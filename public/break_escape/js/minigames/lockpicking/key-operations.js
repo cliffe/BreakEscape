@@ -209,9 +209,7 @@ export class KeyOperations {
         });
             
             // Complete the minigame after rotation animation
-            setTimeout(() => {
-                this.parent.complete(true);
-            }, 3000); // Longer delay to allow rotation animation to complete
+            this.parent.holdSuccess(3000); // Longer delay to allow rotation animation to complete
         } else {
             // Key is wrong - show red flash and then pop up key selection again
             this.parent.keyInsertion.updateFeedback("Wrong key! The lock won't turn.");

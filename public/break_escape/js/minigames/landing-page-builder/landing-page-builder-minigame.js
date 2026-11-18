@@ -514,8 +514,9 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const current = this._currentStep();
         const items = buildStepItems(this.stepStrip, STEPS,
             { stepClass: 'lpb-step', dataKey: 'step', label: { as: 'span', class: 'lpb-step-label' } });
-        applyStepStates(items, STEPS, { currentClass: 'is-current' },
-            (step) => ({ current: step.id === current }));
+        const here = STEPS.findIndex((s) => s.id === current);
+        applyStepStates(items, STEPS, { currentClass: 'is-current', doneClass: 'is-done', srClass: 'lpb-step-sr', srDone: ' (done)' },
+            (step, i) => ({ current: step.id === current, done: here >= 0 && i < here }));
     }
 
     _renderPreview() {

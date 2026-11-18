@@ -25,6 +25,13 @@ export function moreBelow(scrollHeight, clientHeight, scrollTop) {
 // Pixelify Sans and VT323 are self-hosted in css/fonts.css (no remote font links).
 
 // Notes Minigame Scene implementation
+// The counter under the notepad counts notes (not pages), so it says so
+// While a search term is active it counts matches instead ("Match 1 of 2"); no match reads "No match"
+export function noteCounterText(index, total, filtered = false) {
+    if (filtered && total === 0) return 'No match';
+    return `${filtered ? 'Match' : 'Note'} ${index + 1} of ${total}`;
+}
+
 export class NotesMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -63,7 +70,11 @@ export class NotesMinigame extends MinigameScene {
         // Initialize note navigation
         this.currentNoteIndex = 0;
         this.collectedNotes = this.getCollectedNotes();
-        this.autoAddToNotes = true;
+        this.autoAddToNotes = params.autoAddToNotes !== false;
+        // A filed item (storeIn) opens with autoAddToNotes false and no note to go to: its own
+        // page is shown, and it is not one of the collected notes, so no counter or search row.
+        this.showsFiledPage = !this.autoAddToNotes && (params.navigateToNote === null || params.navigateToNote === undefined);
+        this.searchTerm = '';
     }
         /** Test bridge state (see MinigameScene.getTestState). */
     getTestState() {
@@ -72,8 +83,9 @@ export class NotesMinigame extends MinigameScene {
             noteName: this.item?.scenarioData?.name || null,
             ...cappedText('noteContent', this.noteContent || '', NOTE_LIMIT),
             observationText: String(this.observationText || '').slice(0, 1000),
-            noteIndex: this.currentNoteIndex,
-            noteCount: (this.collectedNotes || []).length
+            noteIndex: this.showsFiledPage ? 0 : this.currentNoteIndex,
+            noteCount: this.showsFiledPage ? 0 : (this.collectedNotes || []).length,
+            filed: !!this.showsFiledPage
         };
     }
 
@@ -160,9 +172,9 @@ export class NotesMinigame extends MinigameScene {
                     observationDiv.className = 'notes-minigame-observation';
                     setObservationText(observationDiv, this.observationText);
                     observationDiv.dataset.raw = this.observationText;
-                    observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
-                    observationDiv.title = 'Click to edit observations';
-                    observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
+                    if (!this.showsFiledPage) observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
+                    if (!this.showsFiledPage) observationDiv.title = 'Click to edit observations';
+                    if (!this.showsFiledPage) observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
 
                     // Add edit button
                     const editBtn = document.createElement('button');
@@ -178,9 +190,10 @@ export class NotesMinigame extends MinigameScene {
                     editBtn.addEventListener('click', () => this.editObservations(observationDiv));
 
                     observationContainer.appendChild(observationDiv);
-                    observationContainer.appendChild(editBtn);
+                    // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
+                    if (!this.showsFiledPage) observationContainer.appendChild(editBtn);
                     contentArea.appendChild(observationContainer);
-                } else {
+                } else if (!this.showsFiledPage) {
                     // Add empty observation area with edit button
                     const observationContainer = document.createElement('div');
                     observationContainer.className = 'notes-minigame-observation-container';
@@ -206,7 +219,8 @@ export class NotesMinigame extends MinigameScene {
                     editBtn.addEventListener('click', () => this.editObservations(observationDiv));
 
                     observationContainer.appendChild(observationDiv);
-                    observationContainer.appendChild(editBtn);
+                    // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
+                    if (!this.showsFiledPage) observationContainer.appendChild(editBtn);
                     contentArea.appendChild(observationContainer);
                 }
 
@@ -240,47 +254,53 @@ export class NotesMinigame extends MinigameScene {
         (window.requestAnimationFrame || setTimeout)(() => this._syncMore());
 
         // Create navigation buttons container (only if navigation is not hidden)
-        if (!this.params.hideNavigation) {
+        if (!this.params.hideNavigation && !this.showsFiledPage) {
             const navContainer = document.createElement('div');
             navContainer.className = 'notes-minigame-nav-container';
-            
-            // Add search input if there are multiple notes
-            if (this.collectedNotes.length > 1) {
-                const searchInput = document.createElement('input');
-                searchInput.type = 'text';
-                searchInput.placeholder = 'Search notes...';
-                searchInput.className = 'notes-minigame-search';
-                searchInput.addEventListener('input', (e) => this.searchNotes(e.target.value));
-                navContainer.appendChild(searchInput);
-                
-                const prevBtn = document.createElement('button');
-                prevBtn.className = 'minigame-button notes-minigame-nav-button';
-                prevBtn.textContent = '< Previous';
-                prevBtn.addEventListener('click', () => this.navigateToNote(-1));
-                navContainer.appendChild(prevBtn);
-                
-                const nextBtn = document.createElement('button');
-                nextBtn.className = 'minigame-button notes-minigame-nav-button';
-                nextBtn.textContent = 'Next >';
-                nextBtn.addEventListener('click', () => this.navigateToNote(1));
-                navContainer.appendChild(nextBtn);
-                
-                // Add note counter
-                const noteCounter = document.createElement('div');
-                noteCounter.className = 'notes-minigame-counter';
-                noteCounter.textContent = `${this.currentNoteIndex + 1}/${this.collectedNotes.length}`;
-                navContainer.appendChild(noteCounter);
-                
-                // In the shell's column straight under the notepad, above Continue
-                // (critique A04: it was drawn over the page)
-                if (this.gameContainer.after) this.gameContainer.after(navContainer);
-                else this.container.appendChild(navContainer);
-            }
+            // Search, Previous, Next and the counter, when there is more than one note
+            if (this.collectedNotes.length > 1) this.fillNav(navContainer);
+            this.placeNav(navContainer);
         }
-        
     }
-    
-    
+
+    // In the shell's column straight under the notepad, above Continue
+    // (critique A04: it was drawn over the page)
+    placeNav(navContainer) {
+        if (this.gameContainer?.after) this.gameContainer.after(navContainer);
+        else this.container.appendChild(navContainer);
+    }
+
+    fillNav(navContainer) {
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search notes...';
+        searchInput.className = 'notes-minigame-search';
+        searchInput.addEventListener('input', (e) => this.searchNotes(e.target.value));
+        navContainer.appendChild(searchInput);
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'minigame-button notes-minigame-nav-button';
+        prevBtn.textContent = '< Previous';
+        prevBtn.addEventListener('click', () => this.navigateToNote(-1));
+        navContainer.appendChild(prevBtn);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'minigame-button notes-minigame-nav-button';
+        nextBtn.textContent = 'Next >';
+        nextBtn.addEventListener('click', () => this.navigateToNote(1));
+        navContainer.appendChild(nextBtn);
+
+        const noteCounter = document.createElement('div');
+        noteCounter.className = 'notes-minigame-counter';
+        noteCounter.textContent = this.counterText();
+        navContainer.appendChild(noteCounter);
+    }
+
+    counterText() {
+        const filtered = (this.searchTerm || '').trim() !== '';
+        return noteCounterText(this.currentNoteIndex, this.noMatch ? 0 : this.collectedNotes.length, filtered);
+    }
+
     removeNoteFromScene() {
         // Remove the note from the scene using the same method as the inventory system
         if (this.item && this.item.objectId) {
@@ -367,7 +387,7 @@ export class NotesMinigame extends MinigameScene {
     }
 
     navigateToNote(direction) {
-        if (this.collectedNotes.length <= 1) return;
+        if (this.collectedNotes.length <= 1 || this.showsFiledPage || this.noMatch) return;
         
         this.playPageTurnSound();
         this.currentNoteIndex += direction;
@@ -383,10 +403,7 @@ export class NotesMinigame extends MinigameScene {
         this.updateDisplayedNote();
         
         // Update the counter
-        const noteCounter = this.container.querySelector('.notes-minigame-counter');
-        if (noteCounter) {
-            noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
-        }
+        this.updateCounter();
     }
     
     _syncMore() {
@@ -492,7 +509,9 @@ export class NotesMinigame extends MinigameScene {
     }
     
     searchNotes(searchTerm) {
-        if (!searchTerm || searchTerm.trim() === '') {
+        this.searchTerm = searchTerm || '';
+        this.noMatch = false;
+        if (this.searchTerm.trim() === '') {
             // Reset to show all notes
             this.collectedNotes = this.getCollectedNotes();
             this.currentNoteIndex = 0;
@@ -501,30 +520,36 @@ export class NotesMinigame extends MinigameScene {
             return;
         }
         
-        // the readable text, without the markdown escapes (an overheard login keeps its _ and -)
-        const matchingNotes = this.collectedNotes.filter(note => noteMatches(note, searchTerm));
+        // Filter the full list, not the narrowed one, so backspacing widens the matches again.
+        // The readable text, without the markdown escapes (an overheard login keeps its _ and -)
+        const matchingNotes = this.getCollectedNotes().filter(note => noteMatches(note, this.searchTerm));
         
         if (matchingNotes.length > 0) {
             this.collectedNotes = matchingNotes;
             this.currentNoteIndex = 0;
             this.updateDisplayedNote();
-            this.updateCounter();
+        } else {
+            // The page is left alone and the counter says No match
+            this.noMatch = true;
         }
+        this.updateCounter();
     }
     
     updateCounter() {
         const noteCounter = this.container.querySelector('.notes-minigame-counter');
         if (noteCounter) {
-            noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
+            noteCounter.textContent = this.counterText();
         }
+        // Previous and Next do nothing while there is no match
+        this.container.querySelectorAll('.notes-minigame-nav-button').forEach(btn => { btn.disabled = !!this.noMatch; });
     }
     
     updateNavigation() {
         // Check if navigation container exists
         let navContainer = this.container.querySelector('.notes-minigame-nav-container');
         
-        // If navigation is hidden, remove any existing navigation
-        if (this.params.hideNavigation) {
+        // If navigation is hidden (or a filed page is shown), remove any existing navigation
+        if (this.params.hideNavigation || this.showsFiledPage) {
             if (navContainer) {
                 navContainer.remove();
                 console.log('Navigation hidden as requested');
@@ -532,45 +557,18 @@ export class NotesMinigame extends MinigameScene {
             return;
         }
         
-        // If we have multiple notes and no navigation, create it
-        if (this.collectedNotes.length > 1 && !navContainer) {
-            navContainer = document.createElement('div');
-            navContainer.className = 'notes-minigame-nav-container';
-            
-            const searchInput = document.createElement('input');
-            searchInput.type = 'text';
-            searchInput.placeholder = 'Search notes...';
-            searchInput.className = 'notes-minigame-search';
-            searchInput.addEventListener('input', (e) => this.searchNotes(e.target.value));
-            navContainer.appendChild(searchInput);
-            
-            const prevBtn = document.createElement('button');
-            prevBtn.className = 'minigame-button notes-minigame-nav-button';
-            prevBtn.textContent = '< Previous';
-            prevBtn.addEventListener('click', () => this.navigateToNote(-1));
-            navContainer.appendChild(prevBtn);
-            
-            const nextBtn = document.createElement('button');
-            nextBtn.className = 'minigame-button notes-minigame-nav-button';
-            nextBtn.textContent = 'Next >';
-            nextBtn.addEventListener('click', () => this.navigateToNote(1));
-            navContainer.appendChild(nextBtn);
-            
-            const noteCounter = document.createElement('div');
-            noteCounter.className = 'notes-minigame-counter';
-            noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
-            navContainer.appendChild(noteCounter);
-            
-            this.container.appendChild(navContainer);
+        // With more than one note, create the row, or fill one that init left empty
+        if (this.collectedNotes.length > 1) {
+            if (!navContainer) {
+                navContainer = document.createElement('div');
+                navContainer.className = 'notes-minigame-nav-container';
+                this.placeNav(navContainer);
+            }
+            if (!navContainer.firstChild) this.fillNav(navContainer);
         }
         
         // Update counter if navigation exists
-        if (navContainer) {
-            const noteCounter = navContainer.querySelector('.notes-minigame-counter');
-            if (noteCounter) {
-                noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
-            }
-        }
+        this.updateCounter();
     }
     
     // Method to navigate to a specific note index
@@ -584,6 +582,7 @@ export class NotesMinigame extends MinigameScene {
     }
     
     editObservations(observationDiv) {
+        if (this.showsFiledPage) return;
         const currentText = (observationDiv.dataset.raw ?? observationDiv.textContent).trim();
         const isPlaceholder = currentText === 'Click edit to add your observations...';
         const originalText = isPlaceholder ? '' : currentText;
@@ -670,6 +669,8 @@ export class NotesMinigame extends MinigameScene {
     }
     
     saveObservationToNote(newObservationText) {
+        // A filed page is not a Notepad note; index 0 would be the Mission Brief
+        if (this.showsFiledPage) return;
         // Update the current note in the notes system
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (currentNote) {
@@ -768,6 +769,12 @@ export class NotesMinigame extends MinigameScene {
                 // Automatically remove the note from the scene
                 this.removeNoteFromScene();
             }
+        }
+        
+        // A filed page stays as init drew it: updating would swap it for note 1
+        if (this.showsFiledPage) {
+            this.updateNavigation();
+            return;
         }
         
         // Always update the UI to show the current note, even if no note was added
