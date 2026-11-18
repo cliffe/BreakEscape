@@ -41,3 +41,8 @@ Menu header. #hdr
 + {not flag} [Old hint] -> hub
 + {flag} [New hint] -> hub
 + [Never mind.] -> hub
+
+=== nomenu ===
+~ from_hub = false
++ [Option A] -> hub
++ [Never mind.] -> hub

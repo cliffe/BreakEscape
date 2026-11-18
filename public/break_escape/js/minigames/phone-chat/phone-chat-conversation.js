@@ -725,10 +725,11 @@ export default class PhoneChatConversation {
         // stitch whose re-run drifted must keep its choices); the same visible texts; and EVERY
         // choice of that run sits in this knot (a menu that diverts or threads in another knot's
         // choices is not the thread the player sat on).
-        // Known limit: a statement before the choices in the `menu` stitch (`~ x++`) runs once
-        // on this reopen, because the re-run starts at the stitch, not past its prelude; its
-        // lines and tags are dropped as already seen. The save then carries a menu-stitch
-        // sourcePath, so the next reopen matches normally and does not run it again.
+        // Known limit: a statement before the choices in the `menu` stitch (`~ x++`) runs on
+        // this reopen, because the re-run starts at the stitch, not past its prelude; its lines
+        // and tags are dropped as already seen. This is how any re-run from a stitch behaves,
+        // fallback or not: the prelude runs again on every later reopen that re-runs it (a
+        // changed global), so keep counters and other side effects out of a menu stitch's prelude.
         if (!chosen && !stitchEntry) {
             const menuEntry = this._reopenEntryPath(story, `${knot}.menu`);
             const viaMenu = menuEntry ? dryRun(menuEntry) : null;

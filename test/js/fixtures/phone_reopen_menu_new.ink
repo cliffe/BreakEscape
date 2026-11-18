@@ -98,3 +98,14 @@ Menu header. #hdr
 + {n == 1} [Option A] -> hub
 + {n >= 2} [Option B] -> hub
 + [Never mind.] -> hub
+
+// no `= menu` stitch: the choices live in another stitch with the same texts
+=== nomenu ===
+{not from_hub:
+    -> hub
+}
+~ from_hub = false
+-> main
+= main
++ [Option A] -> hub
++ [Never mind.] -> hub

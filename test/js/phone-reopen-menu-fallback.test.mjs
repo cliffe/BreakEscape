@@ -107,15 +107,29 @@ test('guard: a saved choice in another stitch of the knot is not moved to knot.m
     assert.deepEqual(texts(conv), savedTexts);
 });
 
-test('known limit: a prelude statement in the menu stitch runs once on the fallback reopen, not again on the next', async () => {
+test('known limit: a prelude statement in the menu stitch runs on every re-run from it, fallback or not', async () => {
     const { conv, out } = await reopenFrom(oldJson, 'pre');
     assert.equal(out.renavigated, true, JSON.stringify(out));
     assert.equal(conv.engine.story.variablesState.ticks, 1);
-    // reopen again from the new save: the menu-stitch sourcePath matches, flag unchanged, nothing re-runs
+    // a second reopen with no global change re-runs nothing
     const saved2 = conv.saveState();
-    const again = await open(newJson);
-    again.restoreState(saved2);
-    const out2 = again.reopenWithCurrentGlobals(syncGlobals, { homeKnot: 'nowhere' });
-    assert.equal(out2.renavigated, false);
-    assert.equal(again.engine.story.variablesState.ticks, 1);
+    setGlobals({ flag: true });
+    const same = await open(newJson);
+    same.restoreState(saved2);
+    assert.equal(same.reopenWithCurrentGlobals(syncGlobals, { homeKnot: 'nowhere' }).renavigated, false);
+    assert.equal(same.engine.story.variablesState.ticks, 1);
+    // a changed global re-runs from the stitch, so the prelude runs again
+    setGlobals({ flag: false });
+    const flipped = await open(newJson);
+    flipped.restoreState(saved2);
+    const out3 = flipped.reopenWithCurrentGlobals(syncGlobals, { homeKnot: 'nowhere' });
+    assert.equal(out3.renavigated, true, JSON.stringify(out3));
+    assert.equal(flipped.engine.story.variablesState.ticks, 2);
+});
+
+test('no menu stitch: an old-layout save keeps its choices and no other entry is guessed', async () => {
+    const { conv, out, savedTexts } = await reopenFrom(oldJson, 'nomenu');
+    assert.deepEqual(savedTexts, ['Option A', 'Never mind.']);
+    assert.equal(out.renavigated, false, JSON.stringify(out));
+    assert.deepEqual(texts(conv), savedTexts);
 });
