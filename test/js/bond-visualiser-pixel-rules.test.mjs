@@ -88,7 +88,7 @@ check('shadows were parsed', shadows > 5, `parsed ${shadows}`);
 // 3. filters
 check('no filter blur or drop-shadow', !/filter\s*:[^;}]*(blur|drop-shadow)/.test(css) && !/backdrop-filter/.test(css));
 check('no inline filter blur or drop-shadow in the JS', !/filter\s*:[^;`'"]*(blur|drop-shadow)/.test(js) && !/\.style\.filter\s*=/.test(js) && !/backdrop-filter/.test(js));
-check('no non-zero border-radius in the CSS', !/border-radius\s*:\s*(?!0(px)?\s*(;|\}|$))/.test(css));
+check('no non-zero border-radius in the CSS', [...css.matchAll(/border-radius\s*:\s*([^;}]+)/g)].every(x => /^0(px)?$/.test(x[1].trim())));
 
 // 4. font sizes
 const small = [...css.matchAll(/font-size\s*:\s*([\d.]+)px/g)].filter(x => parseFloat(x[1]) < 8).map(x => x[0]);
