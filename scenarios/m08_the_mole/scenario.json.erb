@@ -243,8 +243,8 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "NIGHTSHADE: Knocked down before he could answer, then handed to the police. No deal.", "style": "warning", "condition": "globalVars.nightshade_ko_before_fate" },
           { "text": "NIGHTSHADE: Left in place as a triple agent, on the Director's signature", "style": "warning", "condition": "globalVars.nightshade_triple_agent" },
           { "text": "HIS FIRST PAYMENT: which of our own catalogued weaknesses guard Tomb Gamma, owed on arrival", "style": "entry", "condition": "globalVars.nightshade_triple_agent && globalVars.triple_agent_first_payment" },
-          { "text": "TOMB GAMMA: Coordinates given up in the interrogation room -- Montana", "style": "entry", "condition": "globalVars.tomb_gamma_location_known" },
-          { "text": "TOMB GAMMA: Named, not located -- the coordinate is still in Nightshade's head", "style": "warning", "condition": "!globalVars.tomb_gamma_location_known" },
+          { "text": "TOMB GAMMA: Coordinates given up in the interrogation room: Montana", "style": "entry", "condition": "globalVars.tomb_gamma_location_known" },
+          { "text": "TOMB GAMMA: Named, not located: the coordinate is still in Nightshade's head", "style": "warning", "condition": "!globalVars.tomb_gamma_location_known" },
           { "text": "THE CASE FILE: Closed.", "style": "entry" },
           { "text": "" },
           { "text": "── THE SUSPECTS ──", "style": "section-header" },
@@ -268,8 +268,8 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "THE CASE: The door audit read to HaX. The Director would not have you in the room.", "style": "warning", "condition": "globalVars.named_by_hax && !globalVars.netherton_ko" },
           { "text": "THE LOCKERS: Seen picking one by an off-duty agent who saw nothing", "style": "warning", "condition": "globalVars.locker_seen_picked" },
           { "text": "NIGHTSHADE: Tipped off before he was named", "style": "warning", "condition": "globalVars.nightshade_tipped_off" },
-          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Vector -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'vector'" },
-          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
+          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Vector (wrong, and corrected)", "style": "warning", "condition": "globalVars.suspect_theory === 'vector'" },
+          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom (wrong, and corrected)", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
           { "text": "THE SUSPECTS: Vector, Phantom and Nightshade, the three names you were given.", "style": "entry" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
@@ -2020,7 +2020,7 @@ CREDITS
           "readable": true,
           "observations": "The tactical board from the night of the four attacks, still up. Somebody could not bring themselves to take it down.",
           "observationDisplay": "gameDisplay",
-          "text": "FOUR SITES, ONE TEAM -- AFTERMATH\n\nFour simultaneous operations. One agent on the ground at Portland, one tactical team for the other three. Every crisis it could not reach went unanswered. ENTROPY knew in advance where our agent would be, and that one team could not be everywhere.\n\nAT THE UNANSWERED SITES:\n  - Confirmed dead: 2 SAFETYNET field agents, plus civilians.\n  - The agent on the ground was compromised before deployment.\n\nENTROPY did not out-think us. They were told. Everything on this board -- the deployment, the timing, the agent -- was in the leak.\n\nHandwritten, Phantom's pen: 'Two of ours. HOW DID THEY KNOW.'",
+          "text": "FOUR SITES, ONE TEAM -- AFTERMATH\n\nFour simultaneous operations. One agent on the ground at Portland, one tactical team for the other three. Every crisis it could not reach went unanswered. ENTROPY knew in advance where our agent would be, and that one team could not be everywhere.\n\nAT THE UNANSWERED SITES:\n  - Confirmed dead: 2 SAFETYNET field agents, plus civilians.\n  - The agent on the ground was compromised before deployment.\n\nENTROPY did not out-think us. They were told. Everything on this board (the deployment, the timing, the agent) was in the leak.\n\nHandwritten, Phantom's pen: 'Two of ours. HOW DID THEY KNOW.'",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_leak_got_people_killed"
         },
@@ -2033,7 +2033,7 @@ CREDITS
           "readable": true,
           "observations": "A private notebook Phantom did not quite hide.",
           "observationDisplay": "gameDisplay",
-          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from Cryptography Lab terminal 03, for forty-seven minutes, on a file you read in five.\nPulled a door audit for the window on the archive terminal. The archive duty officer walked in before I could get it off the printer. Doors tell you who was in a room, not whose account. Match it to when the plan was opened.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it -- fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
+          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from Cryptography Lab terminal 03, for forty-seven minutes, on a file you read in five.\nPulled a door audit for the window on the archive terminal. The archive duty officer walked in before I could get it off the printer. Doors tell you who was in a room, not whose account. Match it to when the plan was opened.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it, fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
           "onPickup": { "setVariable": { "found_phantom_lead": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_leak_came_from_the_crypto_lab"
@@ -2067,7 +2067,7 @@ CREDITS
           "id": "vm_launcher_gitlist",
           "name": "Field Console (Kali)",
           "takeable": false,
-          "observations": "A field console racked beside SAFETYNET's internal code server, which hums in the corner and hosts the org's source -- and, it turns out, a great deal that was never meant to be source. Agent HaX has set it up as a Kali box on a quiet network of her own, so you can work the server without a single query reaching the floor upstairs. The address on the console is this Kali box's own; the repository server is elsewhere on the network, so find it first.",
+          "observations": "A field console racked beside SAFETYNET's internal code server, which hums in the corner and hosts the org's source and, it turns out, a great deal that was never meant to be source. Agent HaX has set it up as a Kali box on a quiet network of her own, so you can work the server without a single query reaching the floor upstairs. The address on the console is this Kali box's own; the repository server is elsewhere on the network, so find it first.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>,
           "showPostit": true,
@@ -2093,10 +2093,10 @@ CREDITS
     door-audit reading (Netherton's or HaX's ink), or from flag 4 only on the
     fallbacks (audit closed, Director down). %>
           "flagRewards": [
-            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "The code server's repository -- exposed, no password needed", "description": "SAFETYNET's own GitList repo browser shows the repository to anyone, no login: the README names the ops account and a credential that was never rotated" },
-            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Broke in -- credentials recovered from the repo history", "description": "GitList remote command execution, no login, then credentials dug out of the repository's deleted history" },
-            { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Logged in -- the Architect's mail is in their home directory", "description": "Logged in properly -- home directory holds the ENTROPY correspondence" },
-            { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Root -- the access logs name the account", "description": "Root via sudo apt-get -- access logs place the mole" }
+            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "The code server's repository: exposed, no password needed", "description": "SAFETYNET's own GitList repo browser shows the repository to anyone, no login: the README names the ops account and a credential that was never rotated" },
+            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Broke in: credentials recovered from the repo history", "description": "GitList remote command execution, no login, then credentials dug out of the repository's deleted history" },
+            { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Logged in: the Architect's mail is in their home directory", "description": "Logged in properly: home directory holds the ENTROPY correspondence" },
+            { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Root: the access logs name the account", "description": "Root via sudo apt-get: access logs place the mole" }
           ]
         },
         {
@@ -2110,7 +2110,7 @@ CREDITS
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "A printout tray on the floor at the relay. It prints a copy of whatever you send back through it.",
-          "text": "RELAY PRINTOUT\n\nThe relay prints a copy of whatever goes back through it. Tray's empty so far -- nothing has gone through.",
+          "text": "RELAY PRINTOUT\n\nThe relay prints a copy of whatever goes back through it. Tray's empty so far. Nothing has gone through.",
           "textVariants": [
             { "condition": "globalVars.flag4_submitted", "value": "RELAY PRINTOUT -- full chain\n\nFrom the drop in the account's home (opened with the intercept's seal):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nFrom the auth log (root dropped the redaction):\n  USER svc-planning  OPEN pnw_contingency.enc  DURATION 00:47:00\n  SOURCE Cryptography Lab terminal 03\n\nThe outbox and the log are the one account: svc-planning. Root put a name to the login. A name is still not a face." },
             { "condition": "globalVars.flag3_submitted", "value": "RELAY PRINTOUT -- so far\n\nFrom the drop in the account's home (opened with the intercept's seal):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nThat sender is the handle ENTROPY stripped off the Portland intercept. Whose login sends as 'deep_state_drop'? The outbox will not say. Root on the box will." }
@@ -2451,7 +2451,7 @@ CREDITS
           "textVariants": [
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && globalVars.found_nightshade_profile", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- ENTROPY's dead drop, opened with the seal off the Portland intercept. Inside: the mail to architect@entropy.onion.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n5. Psych eval -- ideological drift flagged a year ago. Sealed by the Director.\n\nVERDICT: conclusive." },
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- ENTROPY's dead drop, opened with the seal off the Portland intercept. Inside: the mail to architect@entropy.onion.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n\nVERDICT: conclusive." },
-            { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: Cryptography Lab terminal 03, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending -- awaiting a name the Director can act on." },
+            { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: Cryptography Lab terminal 03, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending, awaiting a name the Director can act on." },
             { "condition": "globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\nNamed on the door audit. The rest of the chain has not yet come through the relay.\n\nVERDICT: pending." }
           ]
         },
@@ -2722,7 +2722,7 @@ CREDITS
                 "puzzle_graph_role": "clue",
                 "puzzle_graph_reveals": "nightshade_knew_the_cost"
               },
-<% deep_state_body = %q{'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.}
+<% deep_state_body = %q{'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned, those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.}
    deep_state_text = %q{ENTROPY -- INSIDER THREAT INITIATIVE\n} + deep_state_body
    deep_state_unnamed = deep_state_body + %q{\n\nNo letterhead. He gave your intake the insider-threat lecture; this could be his reading for it. Or not.} %>
               {
