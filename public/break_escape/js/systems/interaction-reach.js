@@ -280,39 +280,51 @@ export function withoutLeavingNpcsIfObjects(candidates) {
 }
 
 /**
- * The NPC sitting on a seat, or null. A chair holds one person (chair.seatedBy, set by
- * seating.js when an NPC takes or reserves it), and a click or E on that person is for
- * the person: "A chair." is wrong when the centre of a seated NPC is clicked. The chair's
- * reach and the NPC's differ (the chair's is its nearest edge, hers her centre), so a
- * player in reach of the chair but not of her used to get the chair's description.
- * A sofa reading 'full' (several places) has no single occupant and is left alone.
+ * The NPCs sitting on a seat. A one-place chair holds its occupant in chair.seatedBy (set by
+ * seating.js when an NPC takes or reserves it); a sofa or bench with several places keeps one
+ * entry per place in chair._places and reads seatedBy 'full' only once every place is taken, so
+ * both are read. A click or E on that person is for the person: "A chair." is wrong when the
+ * centre of a seated NPC is clicked, and the chair's reach (its nearest edge) differs from hers
+ * (her centre), so a player in reach of the seat but not of her used to get the seat.
  *
- * @param {?object} seat - the chair sprite (seatedBy)
- * @param {Array<object>} npcSprites - NPC sprites to look through (npcId, visible, destroyed)
+ * @param {?object} seat - the chair sprite (seatedBy, _places)
+ * @param {Array<object>} npcSprites - NPC sprites to look through (npcId, visible, destroyed, active)
  * @param {object} [deps]
  * @param {function(object): boolean} [deps.isKo] - the NPC is knocked out (she is not a person to talk to)
- * @returns {?object}
+ * @param {function(object, object): boolean} [deps.isSeated] - (npc, seat): she is actually on it now, not
+ *   just holding a reservation while she walks over (seating.js reserves swivel chairs early)
+ * @returns {Array<object>}
  */
+export function seatOccupants(seat, npcSprites, deps = {}) {
+    if (!seat || !Array.isArray(npcSprites)) return [];
+    const ids = new Set(Object.values(seat._places || {}));
+    if (seat.seatedBy) ids.add(seat.seatedBy);
+    ids.delete('full');
+    ids.delete('player');
+    if (!ids.size) return [];
+    return npcSprites.filter(n => n && ids.has(n.npcId) && !n.destroyed && n.visible !== false && n.active !== false
+        && !(deps.isKo && deps.isKo(n)) && (!deps.isSeated || deps.isSeated(n, seat)));
+}
+
+/** The first NPC sitting on a seat (seatOccupants), or null. */
 export function seatOccupant(seat, npcSprites, deps = {}) {
-    const id = seat?.seatedBy;
-    if (!id || id === 'full' || !Array.isArray(npcSprites)) return null;
-    return npcSprites.find(n => n && n.npcId === id && !n.destroyed && n.visible !== false
-        && !(deps.isKo && deps.isKo(n))) || null;
+    return seatOccupants(seat, npcSprites, deps)[0] || null;
 }
 
 /**
- * Whether a tap on an NPC-occupied seat is for its occupant (seatOccupant): the occupant's
- * frame holds the tap and the tap is on her figure (deps.npcOnFigure). A tap on the chair
- * away from her (the empty part of its frame) still reaches the chair.
+ * Whether a tap on an NPC-occupied seat is for an occupant (seatOccupants): that occupant's
+ * frame holds the tap and the tap is on her figure (deps.npcOnFigure). On a two-place sofa the
+ * tap on the free place away from her still reaches the sofa. A tap on the chair away from
+ * her (the empty part of its frame) still reaches the chair.
  *
  * @param {object} seat
  * @param {Array<object>} npcsUnderTap - NPC sprites whose frame holds the tap (findNPCsAtPosition)
  * @param {object} deps
  * @param {function(object): boolean} deps.npcOnFigure
  * @param {function(object): boolean} [deps.isKo]
+ * @param {function(object, object): boolean} [deps.isSeated]
  * @returns {?object} the occupant, or null
  */
 export function occupantUnderTap(seat, npcsUnderTap, deps) {
-    const who = seatOccupant(seat, npcsUnderTap, deps);
-    return who && deps.npcOnFigure(who) ? who : null;
+    return seatOccupants(seat, npcsUnderTap, deps).find(n => deps.npcOnFigure(n)) || null;
 }

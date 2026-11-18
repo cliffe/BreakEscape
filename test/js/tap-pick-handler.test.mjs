@@ -1132,6 +1132,36 @@ test('seated NPC: a tap on her chair away from her figure still reaches the chai
     const amara = npc('amara', 150, 100, { depth: 50 });          // frame 110..190, figure 140..160
     const chair = sprite('chair', 100, 90, 30, 30, { depth: 50.01, seat: true, seatedBy: 'amara' });
     const w = world({ player, objects: [chair], npcs: [amara] });
-    w.tap(115, 100);                                               // on the chair, outside her frame
+    w.tap(115, 100);                                               // on the chair, inside her frame (110..190) but off her figure (140..160)
     assert.ok(w.log.some(l => l === 'use:chair' || l === 'sit:chair'), w.log.join());
+});
+
+// ── sofa with one NPC on one of its two places (chair._places, seatedBy unset) ──
+test('seated NPC on a sofa: her figure tapped with the sofa in reach and her out of it walks to her, never sits beside her', () => {
+    const player = { x: 100, y: 100 };
+    const amara = npc('amara', 140, 100, { depth: 50 });
+    const sofa = sprite('sofa', 105, 90, 80, 30, { depth: 50.01, seat: true, _places: { 0: 'amara' } });
+    const w = world({ player, objects: [sofa], npcs: [amara] });
+    w.ovr.out.add('amara');
+    w.tap(140, 100);
+    assert.ok(!w.log.some(l => l === 'use:sofa' || l === 'sit:sofa' || l.startsWith('menu')), w.log.join());
+    assert.ok(walkedTo(w.log), 'walks towards her: ' + w.log.join());
+});
+
+test('seated NPC on a sofa: in reach of both, she talks and the sofa is not offered', () => {
+    const player = { x: 100, y: 100 };
+    const amara = npc('amara', 120, 100, { depth: 50 });
+    const sofa = sprite('sofa', 105, 90, 80, 30, { depth: 50.01, seat: true, _places: { 0: 'amara' } });
+    const w = world({ player, objects: [sofa], npcs: [amara] });
+    w.tap(120, 100);
+    assert.deepEqual(w.log, ['talk:amara']);
+});
+
+test('seated NPC on a sofa: a tap on the free place away from her still sits', () => {
+    const player = { x: 100, y: 100 };
+    const amara = npc('amara', 150, 100, { depth: 50 });          // frame 110..190, figure 140..160
+    const sofa = sprite('sofa', 105, 90, 80, 30, { depth: 50.01, seat: true, _places: { 1: 'amara' } });
+    const w = world({ player, objects: [sofa], npcs: [amara] });
+    w.tap(120, 100);
+    assert.ok(w.log.some(l => l === 'use:sofa' || l === 'sit:sofa'), w.log.join());
 });
