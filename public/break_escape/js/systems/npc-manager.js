@@ -146,6 +146,7 @@ export default class NPCManager {
   // behind another checks this often whether it can open (_queueScriptedConversation)
   static SCRIPTED_CALL_START_MS = 500;
   static SCRIPTED_CALL_RETRY_MS = 500;
+  static HELD_SAVE_MAX = 8;   // saved fight holds (saveHeldConversations)
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_DELIVERY_TAG_MAX_CHARS = 300; // a #delivery: tag (game.rb PHONE_DELIVERY_TAG_MAX)
   static PHONE_DELIVERY_TAGS_MAX = 5;
@@ -247,6 +248,7 @@ export default class NPCManager {
     this._delayedBarkSeq = 0;          // key counter for barkDelay timers kept in _delayedMappings
     this._scriptedCall = null;        // the scripted conversation starting or open: { npcId, minigame }
     this._scriptedCallQueue = [];     // scripted conversations that arrived while one was starting or open
+    this._heldRecordsPending = this._readHeldRecords().length > 0;   // saved fight holds not yet read back (resumeHeldConversations)
     this._scriptedCallTimer = null;   // retry timer for the queue
     this._restoredTimedPending = new Map(); // id -> { triggerTime } for NPC-level texts not yet re-registered
     this._restoredTimedDelivered = new Set(); // ids of NPC-level texts delivered before a reload
@@ -377,6 +379,11 @@ export default class NPCManager {
     if (existingEntry) this._removeEventMappingListeners(realId);
     if (entry.eventMappings && this.eventDispatcher) {
       this._setupEventMappings(realId, entry.eventMappings);
+      // A held conversation saved before a reload whose NPC registered after game_loaded
+      if (this._heldLeft?.length && this._heldLeft.some(r => r.npcId === realId)) {
+        this._heldLeft = this._heldLeft.filter(r => !(r.npcId === realId && this._resumeHeldRecord(r)));
+        this.saveHeldConversations();
+      }
     } else if (entry.eventMappings && !this.eventDispatcher) {
       console.error(`❌ ${realId} has eventMappings but eventDispatcher is not available!`);
     }
@@ -1190,7 +1197,82 @@ export default class NPCManager {
     let voiced = false;
     try { voiced = conv.sceneType === 'phone-chat' && conv.params?.()?.voiced === true; } catch (e) { /* cosmetic */ }
     this._toastHeld(conv.npcId, voiced ? 'call' : (conv.sceneType === 'phone-chat' ? 'message' : 'talk'));
+    this.saveHeldConversations();
     this._pumpScriptedCallQueue();
+  }
+
+  /**
+   * Conversations held by a fight (text threads and person chats; voiced calls go to the ringer,
+   * which saves them as pending calls) are saved as a short list of mapping keys, so a reload
+   * after a KO and Restart brings them back. Browser-local, at most HELD_SAVE_MAX records of
+   * { npcId, eventPattern, handlerIndex, sceneType }, nothing in the synced player state. The
+   * list is rewritten from the live queue, so a delivered or dropped conversation leaves it.
+   */
+  _heldStoreKey() {
+    const gameId = window.breakEscapeConfig?.gameId;
+    return gameId ? `be_held_conversations:${gameId}` : null;
+  }
+
+  _readHeldRecords() {
+    try {
+      const key = this._heldStoreKey();
+      const raw = key ? window.localStorage?.getItem(key) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list.filter(r => r && typeof r.npcId === 'string' &&
+        typeof r.eventPattern === 'string' && Number.isInteger(r.handlerIndex)).slice(0, NPCManager.HELD_SAVE_MAX) : [];
+    } catch (e) { return []; }
+  }
+
+  saveHeldConversations() {
+    // Until the saved list has been read back after a load, the live queue must not overwrite it
+    if (this._heldRecordsPending) return;
+    try {
+      const key = this._heldStoreKey();
+      if (!key || !window.localStorage) return;
+      const list = this._scriptedCallQueue
+        .filter(q => q.combatHeld && q.heldKey)
+        .map(q => ({ ...q.heldKey, sceneType: q.sceneType }))
+        .concat(this._heldLeft || [])
+        .slice(0, NPCManager.HELD_SAVE_MAX);
+      if (list.length) window.localStorage.setItem(key, JSON.stringify(list));
+      else window.localStorage.removeItem(key);
+    } catch (e) { /* storage unavailable: the hold stays in memory only */ }
+  }
+
+  /**
+   * On game_loaded: queue again the conversations a reload dropped from a fight's hold. Each is
+   * rebuilt from its mapping without the mapping's side effects (they ran before the reload).
+   * A record whose NPC is not registered yet stays saved and is tried when that NPC registers.
+   */
+  resumeHeldConversations() {
+    const records = this._readHeldRecords();
+    this._heldRecordsPending = false;
+    this._heldLeft = [];
+    for (const rec of records) {
+      if (!this._resumeHeldRecord(rec)) this._heldLeft.push(rec);
+    }
+    this.saveHeldConversations();
+  }
+
+  /** True when the record was handled (queued, or dropped as no longer rebuildable). */
+  _resumeHeldRecord(rec) {
+    const npc = this.npcs.get(rec.npcId);
+    if (!npc) return false;   // not registered yet (its room has not loaded): kept, tried when it registers
+    const mapping = this._normalizeEventMappings(npc.eventMappings)[rec.handlerIndex];
+    if (!mapping || mapping.eventPattern !== rec.eventPattern) return true;
+    const config = this._buildMappingConfig(mapping, rec.handlerIndex);
+    const eventKey = `${rec.npcId}:${rec.eventPattern}:${rec.handlerIndex}`;
+    const triggered = this.triggeredEvents.get(eventKey) || { count: 0, lastTime: 0 };
+    triggered.count++;
+    triggered.lastTime = Date.now();
+    this.triggeredEvents.set(eventKey, triggered);
+    const persistOnClose = (config.once || config.maxTriggers)
+      ? () => this._persistTriggerOnClose(rec.npcId, eventKey) : () => {};
+    const ownKOEvent = rec.eventPattern.startsWith('npc_ko');
+    console.log(`📵 resuming ${rec.sceneType} for ${rec.npcId} (${rec.eventPattern}) held by a fight before the reload`);
+    this._openMappingConversation(rec.npcId, npc, rec.eventPattern, config, { _resumeHeld: true },
+      { ownKOEvent, wasHostile: false, ownWrites: {}, isRing: false, ringSetGlobalRestore: null, persistOnClose, eventKey, resumed: true });
+    return true;
   }
 
   /**
@@ -1209,7 +1291,7 @@ export default class NPCManager {
       if (hs?.isNPCKO?.(npcId)) return false;
       if (hs?.isNPCHostile?.(npcId) && !ctx.wasHostile) return false;
     }
-    if (config.condition) {
+    if (config.condition && !ctx.skipCondition) {
       const globals = window.gameState?.globalVariables;
       const own = ctx.ownWrites || {};
       const saved = [];
@@ -1257,6 +1339,7 @@ export default class NPCManager {
       if (framework && !this._scriptedCallBusy() && framework.currentMinigame &&
           head.interrupt && !head.dropIfBusy && !window.playerIsKnockedOut?.()) {
         this._scriptedCallQueue.splice(at, 1);
+        this.saveHeldConversations();
         this._interruptAndOpen(head, 'the open minigame (queued call)');
         return;
       }
@@ -1266,6 +1349,7 @@ export default class NPCManager {
         return;
       }
       const conv = this._scriptedCallQueue.splice(at, 1)[0];
+      this.saveHeldConversations();
       this._scriptedCall = { npcId: conv.npcId, minigame: null };
       this._openScriptedConversation(conv);
     };
@@ -1914,6 +1998,76 @@ export default class NPCManager {
       fullConfig: config
     });
     
+    // The conversation a mapping opens, if it opens one (see _openMappingConversation)
+    if (this._openMappingConversation(npcId, npc, eventPattern, config, eventData,
+        { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey })) return;
+
+
+    // If bark text is provided, show it directly
+    if (this.barkSystem && (config.bark || config.message)) {
+      const barkText = config.bark || config.message;
+      // A delayed bark is not an answer in view: the sender keeps its own notification
+      const delayed = Number(config.barkDelay) > 0;
+      const hasText = typeof barkText === 'string' && barkText.trim() !== '';
+      const answered = (!delayed && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
+
+      const fireBark = (stillValid) => {
+        // Add bark message to conversation history (marked as bark)
+        this.addMessage(npcId, 'npc', barkText, {
+          eventPattern,
+          knot: config.knot,
+          isBark: true  // Flag this as a bark, not full conversation
+        });
+
+        console.log(`💬 Showing bark with direct message: ${barkText}`);
+
+        this.barkSystem.showBark({
+          npcId: npc.id,
+          npcName: npc.displayName,
+          message: barkText,
+          avatar: npc.avatar,
+          inkStoryPath: npc.storyPath,
+          startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
+          phoneId: npc.phoneId,
+          useTTS: npc.npcType === 'person' && !!npc.voice,
+          stillValid,
+          eventPattern,
+          followUp: answered?.followUp || null
+        });
+      };
+
+      this._delayBark(npcId, config.barkDelay, fireBark, this._barkStillValid(npcId, config, eventData));
+    }
+    // Otherwise, if we have a knot, load the Ink story and get the text
+    else if (this.barkSystem && config.knot && npc.storyPath) {
+      console.log(`📖 Loading Ink story from knot: ${config.knot}`);
+
+      // Load the Ink story and navigate to the knot. The event is marked answered only once the
+      // knot has given text, and only while this call has not yet returned (story already
+      // loaded): marked any later, the sender has already shown its own notification (R2 m4).
+      // A delayed bark never marks it (with no delay _delayBark shows at once, in time).
+      const stillValid = this._barkStillValid(npcId, config, eventData);
+      let inTime = true;
+      const onText = Number(config.barkDelay) > 0
+        ? null
+        : () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
+      this._delayBark(npcId, config.barkDelay,
+        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid, onText), stillValid);
+      inTime = false;
+    }
+    
+    console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
+  }
+  
+
+  /**
+   * The conversation an event mapping opens (person-chat, video-call or phone-chat), queued for
+   * the scripted-conversation line. Returns true when the mapping was handled here (the caller
+   * stops), false when it falls through to the bark. Also the entry for a reload: a conversation
+   * held by a fight is re-derived from its mapping by resumeHeldConversations, with ctx.resumed.
+   */
+  _openMappingConversation(npcId, npc, eventPattern, config, eventData, ctx) {
+    const { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey } = ctx;
     // A knocked-out NPC can't hold a conversation or play a cutscene. The rest of
     // the handler (setGlobal, completeTask, timed messages, ...) has already run
     // above, so missions that rely on KO handlers keep working. The NPC's own KO
@@ -1922,13 +2076,16 @@ export default class NPCManager {
     // exemption for the NPC's own knock-out scene
     const heldCtx = {
       combatExempt: ownKOEvent,
-      recheck: () => this._heldMappingStillValid(npcId, eventPattern, config, eventData, { ownKO: ownKOEvent, wasHostile, ownWrites })
+      // Names the mapping, so a reload can rebuild this conversation (saveHeldConversations)
+      heldKey: isRing ? null : { npcId, eventPattern, handlerIndex: config.handlerIndex },
+      recheck: () => this._heldMappingStillValid(npcId, eventPattern, config, eventData,
+        { ownKO: ownKOEvent, wasHostile, ownWrites, skipCondition: ctx.resumed === true })
     };
     if ((config.conversationMode === 'person-chat' || config.conversationMode === 'video-call') &&
         npc.npcType === 'person') {
       if (!ownKOEvent && window.npcHostileSystem?.isNPCKO?.(npcId)) {
         console.log(`💤 ${npcId} is knocked out - skipping ${config.conversationMode} for ${eventPattern}`);
-        return;
+        return true;
       }
     }
 
@@ -1962,7 +2119,7 @@ export default class NPCManager {
             if (jumpSuccess) {
               persistOnClose();
               console.log(`✅ Successfully jumped to knot ${config.knot} in active conversation`);
-              return;  // Success - exit early
+              return true;  // Success - exit early
             } else {
               console.warn(`⚠️ Failed to jump to knot, falling back to new conversation`);
             }
@@ -2065,7 +2222,7 @@ export default class NPCManager {
           }
         });
 
-        return;  // Exit early - person-chat will start after delay
+        return true;  // Exit early - person-chat will start after delay
       } else {
         console.warn(`⚠️ MinigameFramework not available for person-chat`);
       }
@@ -2081,7 +2238,7 @@ export default class NPCManager {
         // alone (the queue below would close it first). Same check as a timedConversation.
         if (config.skipIfGlobal && this._skipGlobalSet(config.skipIfGlobal)) {
           console.log(`📵 video call for ${npcId} (${eventPattern}) skipped: ${config.skipIfGlobal} is set`);
-          return;
+          return true;
         }
 
         // Closes whatever is open and opens 500 ms later, or waits behind another
@@ -2118,7 +2275,7 @@ export default class NPCManager {
           }
         });
 
-        return;
+        return true;
       } else {
         console.warn(`⚠️ MinigameFramework not available for video-call`);
       }
@@ -2147,7 +2304,7 @@ export default class NPCManager {
             ringSetGlobalRestore
           });
           console.log(`[NPCManager] Event '${eventPattern}' for NPC '${npcId}' → ring offer: ${outcome}`);
-          return;
+          return true;
         }
 
         // The params are built when the call opens: a call queued behind another reads
@@ -2175,68 +2332,14 @@ export default class NPCManager {
           }
         });
 
-        return;
+        return true;
       } else {
         console.warn(`⚠️ MinigameFramework not available for phone-chat`);
       }
     }
-
-    // If bark text is provided, show it directly
-    if (this.barkSystem && (config.bark || config.message)) {
-      const barkText = config.bark || config.message;
-      // A delayed bark is not an answer in view: the sender keeps its own notification
-      const delayed = Number(config.barkDelay) > 0;
-      const hasText = typeof barkText === 'string' && barkText.trim() !== '';
-      const answered = (!delayed && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
-
-      const fireBark = (stillValid) => {
-        // Add bark message to conversation history (marked as bark)
-        this.addMessage(npcId, 'npc', barkText, {
-          eventPattern,
-          knot: config.knot,
-          isBark: true  // Flag this as a bark, not full conversation
-        });
-
-        console.log(`💬 Showing bark with direct message: ${barkText}`);
-
-        this.barkSystem.showBark({
-          npcId: npc.id,
-          npcName: npc.displayName,
-          message: barkText,
-          avatar: npc.avatar,
-          inkStoryPath: npc.storyPath,
-          startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
-          phoneId: npc.phoneId,
-          useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid,
-          eventPattern,
-          followUp: answered?.followUp || null
-        });
-      };
-
-      this._delayBark(npcId, config.barkDelay, fireBark, this._barkStillValid(npcId, config, eventData));
-    }
-    // Otherwise, if we have a knot, load the Ink story and get the text
-    else if (this.barkSystem && config.knot && npc.storyPath) {
-      console.log(`📖 Loading Ink story from knot: ${config.knot}`);
-
-      // Load the Ink story and navigate to the knot. The event is marked answered only once the
-      // knot has given text, and only while this call has not yet returned (story already
-      // loaded): marked any later, the sender has already shown its own notification (R2 m4).
-      // A delayed bark never marks it (with no delay _delayBark shows at once, in time).
-      const stillValid = this._barkStillValid(npcId, config, eventData);
-      let inTime = true;
-      const onText = Number(config.barkDelay) > 0
-        ? null
-        : () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
-      this._delayBark(npcId, config.barkDelay,
-        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid, onText), stillValid);
-      inTime = false;
-    }
-    
-    console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
+    return false;
   }
-  
+
   // Load Ink story, navigate to knot, and show the text as a bark
   async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid, onText = null) {
     try {
@@ -3179,6 +3282,7 @@ export default class NPCManager {
   resumePendingCalls() {
     this._pendingCallsResumed = true;
     for (const npc of this.npcs.values()) this._resumeCallState(npc);
+    this.resumeHeldConversations();
   }
 
   /** What a reload does for one contact: its saved call slot (row 27), then a thread left inside a call (A5 R1 M1). */
