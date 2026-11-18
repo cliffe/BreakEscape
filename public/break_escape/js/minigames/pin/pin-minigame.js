@@ -417,6 +417,8 @@ export class PinMinigame extends MinigameScene {
 
     async _checkCurrentInput() {
         this.attemptCount++;
+        // Read the code before the await: nothing that clears the entry meanwhile may blank the record.
+        const enteredCode = this.currentInput;
 
         // SECURITY: ALWAYS use server-side validation for PIN attempts
         let isCorrect;
@@ -425,7 +427,7 @@ export class PinMinigame extends MinigameScene {
 
         if (apiClient && gameId) {
             console.log('Using server-side PIN validation (security enforced)');
-            isCorrect = await this.validatePinWithServer(this.currentInput);
+            isCorrect = await this.validatePinWithServer(enteredCode);
         } else {
             console.error('SECURITY WARNING: API client not available, cannot validate PIN');
             // Fail securely - reject the attempt if we can't validate with server
@@ -434,10 +436,10 @@ export class PinMinigame extends MinigameScene {
 
         // Record attempt
         const attempt = {
-            input: this.currentInput,
+            input: enteredCode,
             isCorrect: isCorrect,
             timestamp: new Date(),
-            feedback: this.feedbackFor(this.currentInput, isCorrect)
+            feedback: this.feedbackFor(enteredCode, isCorrect)
         };
 
         // The server refused the pad's scope, not the PIN (review R3 m1): the PC the folder
@@ -521,7 +523,8 @@ export class PinMinigame extends MinigameScene {
 
     /** The Dust action: ask the server once, then grey the keys. */
     async handleDust() {
-        if (this.dustPending || this.dustSet || this.isLocked) return;
+        // Not while a code is being checked: dusting clears the entry under the in-flight attempt.
+        if (this.dustPending || this.dustSet || this.isLocked || this.checkPending) return;
         const targetId = this.getTargetId();
         const apiClient = window.ApiClient || window.APIClient;
         if (!targetId || !apiClient?.pinDust) return;

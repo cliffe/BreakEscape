@@ -29,9 +29,11 @@ test('dustHint without dustable true warns that it is inert', { skip }, () => {
     assert.ok(issues({ ...pin, dustHint: 'One digit repeats.' }).some(s => s.includes('without dustable: true')));
     assert.ok(issues({ ...pin, dustable: false, dustHint: 'x' }).some(s => s.includes('without dustable: true')));
 });
-test('a dustable PIN of one repeated digit warns that dusting reveals it', { skip }, () => {
-    assert.ok(issues({ ...pin, requires: '1111', dustable: true }).some(s => s.includes('repeats one digit')));
-    assert.deepEqual(issues({ ...pin, requires: '3883', dustable: true }), []);
+test('a dustable PIN of one or two distinct digits warns that dusting reveals it', { skip }, () => {
+    assert.ok(issues({ ...pin, requires: '1111', dustable: true }).some(s => s.includes('one or two distinct digits')));
+    assert.ok(issues({ ...pin, requires: '3883', dustable: true }).some(s => s.includes('one or two distinct digits')));
+    assert.ok(issues({ ...pin, requires: '7337', dustable: true }).some(s => s.includes('one or two distinct digits')));
+    assert.deepEqual(issues({ ...pin, requires: '3873', dustable: true }), []);
 });
 test('dustable must be a boolean', { skip }, () => {
     assert.ok(issues({ ...pin, dustable: 'no' }).some(s => s.includes('dustable must be true or false')));

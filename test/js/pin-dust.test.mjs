@@ -297,6 +297,30 @@ test('dusting clears digits typed beforehand, so no impossible code is auto-subm
     assert.equal(pin.displayElement.textContent, '____');
 });
 
+test('dust pressed while a code is being checked is ignored and the attempt keeps its code', async () => {
+    clearPinAttemptHistory();
+    const server = fakeServer('4774');
+    let release;
+    const gate = new Promise(r => { release = r; });
+    server.unlock = async () => { await gate; throw Object.assign(new Error('wrong'), { status: 422, body: {} }); };
+    const pin = makePin({ server });
+    for (const d of '4444') pin.handleNumberInput(d);
+    const check = pin.handleEnter();
+    assert.equal(pin.checkPending, true);
+    await pin.handleDust();
+    assert.equal(server.calls.length, 0, 'no dust request mid-check');
+    assert.equal(pin.dustSet, null, 'not dusted mid-check');
+    // Even if the entry is cleared meanwhile, the record keeps the code that was checked
+    pin.currentInput = '';
+    release();
+    await check;
+    assert.equal(pin.attempts.length, 1);
+    assert.equal(pin.attempts[0].input, '4444');
+    // After the check the dust works
+    await pin.handleDust();
+    assert.equal(server.calls.length, 1);
+});
+
 test('a later successful dust clears the stale "does not take" message', async () => {
     clearPinAttemptHistory();
     const server = fakeServer('4774');
