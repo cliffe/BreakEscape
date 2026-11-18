@@ -747,6 +747,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "found_medical_bills": false,
     "found_torres_journal": false,
     "found_upload_schedule": false,
+    "found_transfer_log": false,
     "found_manifest": false,
     "case_ready_notified": false,
     "case_motive": false,
@@ -1604,6 +1605,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That makes him a lead, not a name. Test his times against the badge log before you spend one.", "skipIfGlobal": "torres_identified" }
+            },
+            {
+              "_comment": "Blind run (finding 1): the upload terminal's transfer_queue.log states the 20:30 window, so reading it ticks 'Find out when the final upload runs' as the printed Upload Schedule does. found_upload_schedule is left alone: that global also gates the 'he is the operator' evidence lines, and the log names only dtorres.",
+              "eventPattern": "global_variable_changed:found_transfer_log",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_upload_schedule"
             }
           ]
         },
@@ -2671,7 +2679,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "name": "transfer_queue.log",
               "takeable": false,
               "readable": true,
-              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: most of the package (previous sessions)\nTHIS SESSION: resuming, final segment...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\""
+              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: most of the package (previous sessions)\nTHIS SESSION: resuming, final segment...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\"",
+              "onRead": { "setVariable": { "found_transfer_log": true } }
             }
           ]
         },
