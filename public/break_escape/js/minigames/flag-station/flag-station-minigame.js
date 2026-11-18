@@ -8,7 +8,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
-import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
+import { flagRefusalLine, flagRejectReason, flagHistoryHtml } from '../../utils/flag-wording.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
@@ -47,6 +47,8 @@ export class FlagStationMinigame extends MinigameScene {
         this.submittedFlags = Array.isArray(params.submittedFlags)
             ? [...params.submittedFlags, ...sessionFlags.filter(f => !params.submittedFlags.includes(f))]
             : sessionFlags.slice();
+        // Key-type flags this station recognised but sends to another device (hintOnlyFlags)
+        this.recognisedFlags = (window.gameState?.stationRecognisedFlags?.[this.stationId] || []).slice();
         this.gameId = params.gameId || window.breakEscapeConfig?.gameId || window.gameConfig?.gameId;
         this.isSubmitting = false;
         this.lockObjectId     = params.objectId          || null;
@@ -392,16 +394,7 @@ export class FlagStationMinigame extends MinigameScene {
     }
 
     buildFlagHistory() {
-        if (this.submittedFlags.length === 0) {
-            return '<li class="no-flags-yet">No flags submitted yet</li>';
-        }
-
-        return this.submittedFlags.map(flag => `
-            <li class="flag-history-item">
-                <span class="flag-value">${this.escapeHtml(flag)}</span>
-                <span class="flag-check">✓</span>
-            </li>
-        `).join('');
+        return flagHistoryHtml(this.submittedFlags, this.recognisedFlags, (x) => this.escapeHtml(x));
     }
 
     buildLaunchAbortUI() {
@@ -829,6 +822,15 @@ export class FlagStationMinigame extends MinigameScene {
                 if (window.playUISound) window.playUISound('notification');
                 const note = (data.rewards || []).find(r => r?.type === 'hint' && r.message)?.message;
                 this.showResult(resultEl, 'info', `ℹ ${note || 'Flag recognised, but this station does not take it.'}`);
+                // Keep it in the list, marked as a key for another device, and for reopening
+                if (!this.recognisedFlags.some(r => r.flag === flagValue) && !this.submittedFlags.includes(flagValue)) {
+                    this.recognisedFlags.push({ flag: flagValue, note: note || '' });
+                    if (window.gameState) {
+                        const byStation = window.gameState.stationRecognisedFlags || (window.gameState.stationRecognisedFlags = {});
+                        byStation[this.stationId] = this.recognisedFlags.slice();
+                    }
+                    this.updateFlagHistory();
+                }
                 this.emitFlagRejected('wrong_station', { hint: true });
             } else if (response.ok && data.success) {
                 // Success!

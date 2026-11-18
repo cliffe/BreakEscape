@@ -613,6 +613,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
         showHint: options.showHint || false,
         showKeyboard: options.showKeyboard || false,
         maxAttempts: options.maxAttempts || 3,
+        lockoutSeconds: options.lockoutSeconds || 0, // opt-in: attempts persist across reopening, then a lockout
         postitNote: options.postitNote || '',
         showPostit: options.showPostit || false,
         lockable: lockable,

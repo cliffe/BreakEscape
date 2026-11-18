@@ -77,3 +77,31 @@ export function flagRefusalLine(serverMessage, opts = {}) {
     }
     return `✗ Flag not accepted. ${FLAG_HINT}`;
 }
+
+/**
+ * The submitted-flags list. `submitted` are flags this station consumed; `recognised` are
+ * { flag, note } for key-type flags the station only recognises (hintOnlyFlags: a decryption
+ * key, a launch code) and sends on to another device. Those show with an arrow and the
+ * server's note instead of a tick, so a player can see the flag was valid and where it goes.
+ * `esc` escapes plain text for HTML.
+ */
+export function flagHistoryHtml(submitted, recognised, esc) {
+    const done = Array.isArray(submitted) ? submitted : [];
+    const known = (Array.isArray(recognised) ? recognised : []).filter(r => r && r.flag && !done.includes(r.flag));
+    if (done.length === 0 && known.length === 0) return '<li class="no-flags-yet">No flags submitted yet</li>';
+    const rows = done.map(flag => `
+            <li class="flag-history-item">
+                <span class="flag-value">${esc(flag)}</span>
+                <span class="flag-check">✓</span>
+            </li>
+        `);
+    for (const r of known) {
+        rows.push(`
+            <li class="flag-history-item flag-recognised" title="${esc(r.note || '')}">
+                <span class="flag-value">${esc(r.flag)}</span>
+                <span class="flag-check flag-recognised-tag">key: use elsewhere</span>
+            </li>
+        `);
+    }
+    return rows.join('');
+}
