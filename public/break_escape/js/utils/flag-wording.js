@@ -34,14 +34,14 @@ export function rejectionAlert(lockable, type, fallback) {
 }
 
 /** Why a flag was refused, as the flag_rejected event reports it (R9). */
-export const REJECT_REASONS = ['invalid', 'wrong_station', 'already_submitted', 'vm_released'];
+export const REJECT_REASONS = ['invalid', 'wrong_station', 'already_submitted', 'flag_not_recorded', 'vm_released'];
 
 /**
  * The refusal reason: the server's own `reason` when it sent a known one, else
  * read from its message (an older server, or the flag-lock path).
  * @param {string} [serverMessage]
  * @param {string} [reason]
- * @returns {'invalid'|'wrong_station'|'already_submitted'|'vm_released'}
+ * @returns {'invalid'|'wrong_station'|'already_submitted'|'flag_not_recorded'|'vm_released'}
  */
 export function flagRejectReason(serverMessage, reason) {
     if (REJECT_REASONS.includes(reason)) return reason;
@@ -68,6 +68,8 @@ export function flagRefusalLine(serverMessage, opts = {}) {
     if (reason === 'vm_released') return `${m || "This session's VMs have been released. Start the mission again to get fresh VMs."}`;
     // Already counted: the server's own line says it best
     if (reason === 'already_submitted') return `${m || 'Flag already submitted'}`;
+    // The flag was fine but the server could not record it: say so, so the player retries
+    if (reason === 'flag_not_recorded') return `${m || 'The flag could not be recorded. Try again.'}`;
     // A real flag, but another machine's: not "copied short"
     if (reason === 'wrong_station') {
         const owner = String(opts.ownerName || '').trim().replace(/\.+$/, '');

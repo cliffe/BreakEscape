@@ -656,7 +656,8 @@ export class FlagStationMinigame extends MinigameScene {
                 const reason = flagRejectReason(body.message || body.error, body.reason);
                 if (window.playUISound) window.playUISound('reject');
                 this.showResult(resultEl, 'error', flagRefusalLine(body.message || body.error, { reason, flagValue }));
-                this.emitFlagRejected(reason, { objectId: targetId });
+                // The flag was right but unrecorded: not a wrong flag, so no rejection event
+                if (reason !== 'flag_not_recorded') this.emitFlagRejected(reason, { objectId: targetId });
             } else {
                 console.error('[FlagLock] Unlock error:', error);
                 this.showResult(resultEl, 'error', 'Validation failed. Try again.');
