@@ -235,17 +235,19 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           { "text": "" },
           { "text": "ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED — Emergency Shutdown engaged", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
           { "text": "GRID HELD: 240,000 residents kept on supply", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
-          <%# Pass 5 decision 1: eleven on site = the nine night crew, Vance and the
-              gate guard. "Walked out" only when the crew got out (or never needed
+          <%# Pass 5 decision 1: eleven on the rota = the nine night crew, Vance and the
+              gate guard; office life adds two off the rota (Ibrahim Diallo, Joanne Pell),
+              so the count is thirteen. "Walked out" only when the crew got out (or never needed
               to) and nobody was carried. crew_lost is set when a bank vents with
               the crew still in Hall 2. %>
-          { "text": "ALL ELEVEN ON SITE WALKED OUT", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && !globalVars.security_guard_ko && !globalVars.robert_vance_ko" },
-          { "text": "EVERYONE ON SITE GOT OUT ALIVE — not all of them on their own feet", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && (globalVars.security_guard_ko || globalVars.robert_vance_ko)" },
+          { "text": "ALL THIRTEEN ON SITE WALKED OUT", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && !globalVars.security_guard_ko && !globalVars.robert_vance_ko && !globalVars.ibrahim_ko && !globalVars.joanne_ko" },
+          { "text": "EVERYONE ON SITE GOT OUT ALIVE — not all of them on their own feet", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && (globalVars.security_guard_ko || globalVars.robert_vance_ko || globalVars.ibrahim_ko || globalVars.joanne_ko)" },
           { "text": "NIGHT CREW: out of Hall 2 on Vance's alarm, and the cell heard it too", "style": "entry", "condition": "globalVars.crew_warned" },
           { "text": "RACK BANK B LOST — banks A and C isolated in time", "style": "entry", "condition": "globalVars.racks_vented && !globalVars.vented_by_trigger" },
           { "text": "RACK BANK B LOST — he reached the laptop before you put him down", "style": "entry", "condition": "globalVars.vented_by_trigger" },
           { "text": "CASUALTIES: the Hall 2 night crew, and the dropped feed", "style": "warning", "condition": "globalVars.crew_lost" },
           { "text": "CASUALTIES: two on the dropped feed. Hall 2 was empty when it went", "style": "warning", "condition": "globalVars.casualties_occurred && !globalVars.crew_lost" },
+          { "text": "OFFICE STAFF: hurt, and that's on you", "style": "warning", "condition": "globalVars.ibrahim_ko || globalVars.joanne_ko" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
           { "text": "VOLTAGE: CAPTURED — Blackout's field lead in custody", "style": "entry", "condition": "globalVars.voltage_captured" },
@@ -625,6 +627,9 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
     emitters, keyed on the real globals (crew_warned, hydrogen_alarm, racks_vented,
     attack_prevented...), so each glow follows its own cause on every route. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
+<%# Office life (office_life/PLAN.md): reception cooler, ops-office kettle and the two off-roster office staff. %>
+  "officePresets": true,
+  "ttsPregenerateChatter": true,
   "rooms": {
     "main_entrance": {
       "type": "room_aes_reception",
@@ -1528,7 +1533,23 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "onceOnly": true,
               "setGlobal": { "voltage_print_on_bypass": true },
               "sendTimedMessage": { "delay": 1500, "message": "Voltage's own thumb, on the bypass module. Whatever else he says tonight, that puts his hand in the cabinet." }
-            }
+            },
+<%# Office life (PLAN.md 2.7, 2.11): the kettle gate and the trouble and evacuation switches for the two
+                off-roster office staff. Appended last so no saved onceOnly index moves. ops_kettle_off starts true and
+                opens once Vance is met and his card is in hand; aes_staff_off closes it again and keeps both machines
+                off for the night; aes_staff_evacuated hides the pair on the next room entry. No || here. %>
+            { "eventPattern": "global_variable_changed:vance_met", "condition": "value === true && globalVars.vance_provided_keycard === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
+            { "eventPattern": "global_variable_changed:vance_provided_keycard", "condition": "value === true && globalVars.vance_met === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
+            { "eventPattern": "global_variable_changed:aes_staff_off", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_kettle_off": true } },
+            { "eventPattern": "npc_attacked:ibrahim_diallo", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
+            { "eventPattern": "npc_attacked:joanne_pell", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
+            { "eventPattern": "npc_attacked:robert_vance", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
+            { "eventPattern": "npc_attacked:security_guard", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
+            { "eventPattern": "global_variable_changed:guard_hostile", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
+            { "eventPattern": "global_variable_changed:robert_vance_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
+            { "eventPattern": "global_variable_changed:security_guard_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
+            { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } },
+            { "eventPattern": "global_variable_changed:racks_vented", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } }
           ]
         },
         {
@@ -1627,6 +1648,84 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "setGlobal": { "mission_complete": true }
             }<% end %>
           ]
+        },
+<%# Office life (PLAN.md 2.2, 2.14): two ambient office staff off the night rota. Both sit on the reception sofa; the
+    posts are estimates until slice B measures them. Mappings: mapped break, coupling, bark, then the evacuation hide,
+    all appended last. The hide is the dispatcher's room_entered:* prefix wildcard (no || anywhere). %>
+        {
+          "id": "ibrahim_diallo",
+          "displayName": "Ibrahim Diallo",
+          "npcType": "person",
+          "gender": "male",
+          "voice": { "name": "Sadaltager", "style": "Albion Energy Storage's office IT support lead, in his 40s, patient and unhurried; fifteen years in Leeds. Speak with a consistent English accent with a light French-West African inflection, now settled in Leeds, throughout, with no shift to any other accent.", "language": "en-GB" },
+          "position": { "x": 6.72, "y": 7.81 },
+          "seated": true,
+          "spriteSheet": "ibrahim_diallo",
+          "spriteTalk": "assets/characters/ibrahim_diallo_talk.png",
+          "spriteVisemes": "assets/characters/ibrahim_diallo_visemes.png",
+          "avatar": "assets/characters/ibrahim_diallo_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_ibrahim_diallo.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "ibrahim_ko",
+          "behavior": { "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true, "leash": true } },
+          "needsHome": { "room": "main_entrance", "x": 6.72, "y": 7.81 },
+          "needsRooms": ["main_entrance", "operations_office"],
+          "needsCompany": { "groups": ["aes_office"] },
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Two sugars, and don't tell anyone.", "This kettle is older than my car.", "Is there any milk that isn't sour?", "These desktops take an age to image."]
+          },
+<%# Exchanges (office_life/SPOKEN_LINES.md): read in order, the first unheard one whose gates hold plays when the pair
+    meet at the kettle with the first line's speaker in earshot. The knots are in his ink; his storyPath is required. %>
+          "exchanges": [
+            { "with": "joanne_pell", "knot": "ex_six_oclock", "requireGlobal": { "aes_staff_off": false, "ibrahim_ko": false, "joanne_ko": false } },
+            { "with": "joanne_pell", "knot": "ex_not_on_the_rota", "requireGlobal": { "aes_staff_off": false, "ibrahim_ko": false, "joanne_ko": false } },
+            { "with": "joanne_pell", "knot": "ex_stay_out_of_the_halls", "requireGlobal": { "vance_met": true, "aes_staff_off": false, "ibrahim_ko": false, "joanne_ko": false } }
+          ],
+          "needs": {
+            "thirst": { "initial": 90, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 },
+            "caffeine": { "initial": 85, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:operations_office", "condition": "data.previousRoom !== 'main_entrance' && !globalVars.ops_kettle_off", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:*", "condition": "globalVars.aes_staff_evacuated === true", "onceOnly": true, "setVisible": false }
+          ]
+        },
+        {
+          "id": "joanne_pell",
+          "displayName": "Joanne Pell",
+          "npcType": "person",
+          "gender": "female",
+          "voice": { "name": "Zephyr", "style": "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent.", "language": "en-GB" },
+          "position": { "x": 7.47, "y": 7.81 },
+          "seated": true,
+          "spriteSheet": "joanne_pell",
+          "spriteTalk": "assets/characters/joanne_pell_talk.png",
+          "spriteVisemes": "assets/characters/joanne_pell_visemes.png",
+          "avatar": "assets/characters/joanne_pell_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_joanne_pell.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "joanne_ko",
+          "behavior": { "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true, "leash": true } },
+          "needsHome": { "room": "main_entrance", "x": 7.47, "y": 7.81 },
+          "needsRooms": ["main_entrance", "operations_office"],
+          "needsCompany": { "groups": ["aes_office"] },
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Proper brew, none of that cooler stuff.", "Who leaves teabags in the sink?", "Who's moved my mug again, duck?", "I'll be needing another one of these."]
+          },
+          "needs": {
+            "thirst": { "initial": 90, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 },
+            "caffeine": { "initial": 85, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:main_entrance", "condition": "data.previousRoom === 'operations_office' && !globalVars.aes_staff_off", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_use_started:ops_kettle", "condition": "data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off", "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true && !globalVars.joanne_ko", "onceOnly": true, "bark": "That's the alarm. Coats on, out we go." },
+            { "eventPattern": "room_entered:*", "condition": "globalVars.aes_staff_evacuated === true", "onceOnly": true, "setVisible": false }
+          ]
         }
       ],
       "objects": [
@@ -1645,6 +1744,16 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "readable": true,
           "text": "SECURITY CHECKPOINT PROCEDURES\n\n1. Verify visitor credentials\n2. Issue visitor badge\n3. Log entry time\n4. Notify the duty engineer\n5. Provide PPE / safety briefing (battery halls)\n\nAll contractors require duty-engineer authorisation.",
           "observations": "Standard security procedures posted at the checkpoint"
+        },
+<%# Office life (PLAN.md 2.7, 3): the reception water cooler, one user at a time (its second cell is blocked). %>
+        {
+          "type": "water_cooler",
+          "id": "reception_cooler",
+          "name": "Water cooler",
+          "takeable": false,
+          "observations": "A water cooler, down to its last few cups.",
+          "offWhen": "aes_staff_off",
+          "affordance": { "capacity": 1, "useSeconds": 12, "queue": false, "useFrom": { "dx": 0, "dy": 1 } }
         }
       ]
     },
@@ -1750,6 +1859,16 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "readable": true,
           "text": "MEMORANDUM\n\nFROM: Regional Infrastructure Budget Office\nTO: All Storage Sites\nRE: Budget Reductions\n\nAll sites must reduce operational budgets by 12%. Priority: keep export availability up. Deferrable: OT security upgrades, contractor oversight.\n\nVance's handwritten note: 'How am I supposed to keep the OT network safe with these cuts?'",
           "observations": "Budget memo explaining the security gaps ENTROPY exploited"
+        },
+<%# Office life (PLAN.md 2.7, 3): the ops-office kettle. Off until Vance is met and his card is in hand (ops_kettle_off). %>
+        {
+          "type": "kettle",
+          "id": "ops_kettle",
+          "name": "Kettle",
+          "takeable": false,
+          "observations": "An office kettle, thick with limescale.",
+          "offWhen": "ops_kettle_off",
+          "affordance": { "capacity": 2, "chatter": "coffee", "useSeconds": 25, "useFrom": { "dx": 1.5, "dy": 2 }, "queue": false, "overhearRadius": 360 }
         }
       ]
     },
@@ -2736,7 +2855,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "name": "Facility Blueprints (Marked)",
           "takeable": true,
           "readable": true,
-          "text": "ALBION ENERGY STORAGE — MARKED LAYOUT\n\nCritical Mass tactical annotations:\n- Rack banks A, B, C: BYPASS MODULES INSTALLED\n- BMS / SCADA: COMPROMISED\n- Remote overcharge trigger: THIS ROOM\n- Escape route: loading dock (east exit)\n- Surveillance coverage: ALL AREAS\n\nVoltage's note: 'On site: 11. Night crew 9 in Hall 2, duty engineer, 1 on the gate. Feed casualties modelled at 40-60 (oxygen concentrators, dialysis, home ventilators). Acceptable. Signed off by Blackout, countersigned. Do not re-litigate this on site.'",
+          "text": "ALBION ENERGY STORAGE — MARKED LAYOUT\n\nCritical Mass tactical annotations:\n- Rack banks A, B, C: BYPASS MODULES INSTALLED\n- BMS / SCADA: COMPROMISED\n- Remote overcharge trigger: THIS ROOM\n- Escape route: loading dock (east exit)\n- Surveillance coverage: ALL AREAS\n\nVoltage's note: 'On site per tonight's rota: 11. Night crew 9 in Hall 2, duty engineer, 1 on the gate. Feed casualties modelled at 40-60 (oxygen concentrators, dialysis, home ventilators). Acceptable. Signed off by Blackout, countersigned. Do not re-litigate this on site.'",
           "observations": "Tactical planning documents showing the complete attack infrastructure",
           <%# Pass 5: one of the places the player can learn Blackout's name (credits gate). %>
           "onPickup": { "setVariable": { "blackout_named": true } }
@@ -3164,6 +3283,18 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
 
     <%# Phase 8 final check (F1): Relay turned hostile (the other operatives already
         have cipher_engaged / static_engaged / guard_hostile / voltage_fight_started). %>
-    "relay_engaged": false
+    "relay_engaged": false,
+
+    <%# Office life (PLAN.md 2.7, 2.12, 7): ops_kettle_off starts true and opens once Vance is met and his card is in hand;
+        aes_staff_off (trouble or evacuation) closes it and keeps the cooler off; aes_staff_evacuated hides the pair.
+        ibrahim_ko / joanne_ko feed the credits and the debrief. heard_ex_* are set by the engine. %>
+    "ops_kettle_off": true,
+    "aes_staff_off": false,
+    "aes_staff_evacuated": false,
+    "ibrahim_ko": false,
+    "joanne_ko": false,
+    "heard_ex_six_oclock": false,
+    "heard_ex_not_on_the_rota": false,
+    "heard_ex_stay_out_of_the_halls": false
   }
 }
