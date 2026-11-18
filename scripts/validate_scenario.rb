@@ -1308,6 +1308,47 @@ def scenario_npc_records(json_data)
   records + headless_npc_records(json_data)
 end
 
+# Item types whose has_<type> ink variable the engine can set from something other than the NPC's
+# itemsHeld: syncInventoryVariablesToStory (npc-conversation-state.js) sets has_keycard to "the
+# player holds anything" and has_rfid_cloner to "the player holds a cloner" in person-chat, after
+# the itemsHeld sync. A #give_item inside {has_keycard: ...} can therefore render for an NPC that
+# holds none, so it is still checked. Every other has_<type> comes only from itemsHeld
+# (person-chat-conversation.js syncItemsToInk), so its branch cannot render for an NPC without
+# the item.
+GIVE_ITEM_PLAYER_SYNCED_HAS_VARS = %w[keycard rfid_cloner].freeze
+
+# For each line of an ink file, the has_<type> item types whose `{has_<type>:` branch encloses it.
+# Brace-depth tracking over the file; only plain `{has_x:` or `{has_x and ...:` conditions count
+# (a condition with `or` or `not has_x` does not prove the NPC holds x).
+def ink_has_item_branches(ink_lines)
+  stack = []
+  ink_lines.map do |line|
+    types_at_start = stack.flat_map(&:itself).compact
+    here = types_at_start.dup
+    i = 0
+    text = line.sub(%r{//.*}, '')
+    while i < text.length
+      ch = text[i]
+      if ch == '{'
+        cond = text[i + 1..].to_s[/\A([^:{}|]*):/, 1].to_s.strip
+        terms = cond.split(/\s+and\s+/).map(&:strip)
+        types = cond.match?(/\bor\b|\bnot\b|!/) ? [] : terms.filter_map { |t| t[/\Ahas_(\w+)\z/, 1] }
+        stack << types
+        here.concat(types)
+      elsif ch == '}'
+        stack.pop
+      end
+      i += 1
+    end
+    here
+  end
+end
+
+# True when a #give_item:<type> sits in a {has_<type>: ...} branch that only the NPC's itemsHeld can open.
+def give_item_guarded_by_has_branch?(branch_types, item_type)
+  branch_types.include?(item_type) && !GIVE_ITEM_PLAYER_SYNCED_HAS_VARS.include?(item_type)
+end
+
 # Check for #give_item tags left after the last line of text they belong to.
 # A tag on its own line attaches to the next line of text below it (inkjs gives it
 # with that line's Continue(), and every chat reads tags line by line), so a tag
@@ -1454,12 +1495,15 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
         # in the NPC's itemsHeld array. If not, the give will silently fail at runtime.
         items_held_types = entry[:items_held_types] || []
         items_held = entry[:items_held] || []
+        has_branches = ink_has_item_branches(ink_lines)
         ink_lines.each_with_index do |line, i|
           stripped = line.strip
           next unless stripped.start_with?('#give_item:')
 
           item_spec = stripped.sub(/^#give_item:/, '').strip
           item_type, item_selector = item_spec.split(/[|:]/, 2).map(&:strip)
+          # Inside {has_<type>: ...} the choice only renders when the NPC holds the type.
+          next if give_item_guarded_by_has_branch?(has_branches[i], item_type)
 
           if item_selector.nil? || item_selector.empty?
             unless items_held_types.include?(item_type)
