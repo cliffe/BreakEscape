@@ -22,7 +22,7 @@ The user picked all five recommendations on the office-life questions (D118). Th
 ### Conversation
 
 - Kettle's on, for all the good it does. We're out of sugar.
-- Cold and tired, but fed. I'll take one in three.
+- Cold and tired, but fed. One out of three's not bad.
 - I'll keep one warm for you.
 
 ### Kettle chatter pool (kettle_fp)
@@ -61,4 +61,5 @@ Shown after the knocked-out line when that extra was knocked out, otherwise the 
 - DARREN PRICE: Field support. Knocked out by the agent he kept the lights on for.
 - DARREN PRICE: Field support. Kept the generator running till dawn.
 - SOFIA MARCHETTI: Welfare. Knocked out by the agent she kept a cup warm for.
+- SOFIA MARCHETTI: Welfare. Put the kettle away when the shouting started.
 - SOFIA MARCHETTI: Welfare. Kept the kettle on all night.

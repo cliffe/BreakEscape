@@ -111,6 +111,10 @@
             "style": "warning"
           },
           {
+            "text": "Welfare. Put the kettle away when the shouting started.",
+            "condition": "globalVars.fp_staff_upset === true"
+          },
+          {
             "text": "Welfare. Kept the kettle on all night."
           }
         ]
@@ -270,6 +274,10 @@
             "text": "Welfare. Knocked out by the agent she kept a cup warm for.",
             "condition": "globalVars.fp_sofia_ko === true",
             "style": "warning"
+          },
+          {
+            "text": "Welfare. Put the kettle away when the shouting started.",
+            "condition": "globalVars.fp_staff_upset === true"
           },
           {
             "text": "Welfare. Kept the kettle on all night."
