@@ -216,9 +216,7 @@ export class RFIDMinigame extends MinigameScene {
             // The door's toast names the card that opened it (unlock-system.js rfidOpenedLine)
             this.gameResult = { success: true, cardName: card.scenarioData?.name || null, emulated: false };
 
-            setTimeout(() => {
-                this.complete(true);
-            }, 1500);
+            this.holdSuccess(1500);
         } else {
             if (window.playUISound) window.playUISound('reject');
             this.animations.showTapFailure();
@@ -486,9 +484,7 @@ export class RFIDMinigame extends MinigameScene {
                 });
             }
 
-            setTimeout(() => {
-                this.complete(true);
-            }, 2000);
+            this.holdSuccess(2000);
         } else {
             if (window.playUISound) window.playUISound('reject');
             this.animations.showEmulationFailure();
@@ -740,6 +736,8 @@ export class RFIDMinigame extends MinigameScene {
     }
 
     complete(success) {
+        // A close during the "Access Granted" hold still commits the success (resolveEarlyClose)
+        success = this.resolveEarlyClose(success);
         // A superseded instance (a late timer after a hit closed this reader and another opened)
         // must not flag or restart anybody's chat; the base class ignores it (R4 m2)
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame !== this) {

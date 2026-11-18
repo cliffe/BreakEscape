@@ -12,6 +12,7 @@ VAR topic_zero_day_philosophy = false
 VAR topic_ethics = false
 VAR recruitment_discussed = false
 VAR night_confrontation_ready = false
+VAR confront_held = false // set when the player backs out of her final choice; the next talk resumes at the decision
 VAR victoria_fate = "" // Synced scenario global: Sterling's fate (recruited/arrested/escaped/ko); also set to ko by her npc_ko mapping
 // Synced scenario globals: what the player has opened (pass 3, P1/P3). usb_seen is
 // written directly by the drive's onRead; lore_directive_found arrives via a task
@@ -619,6 +620,11 @@ Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting
 
 === nighttime_confrontation ===
 #speaker:victoria_sterling
+// Backed out of the final choice with "Not yet": resume at the decision, not the speech.
+{ confront_held:
+    ~ confront_held = false
+    -> confrontation_decision
+}
 #display:victoria-neutral
 Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
 Victoria Sterling: You came back after hours. Recruits don't do that.
@@ -747,14 +753,20 @@ Victoria Sterling: So decide what you actually want from the next thirty seconds
 
 === confrontation_decision ===
 // P1: the deal needs the drive from her desk. Without it she declines once.
-+ {usb_seen or lore_directive_found} [I have your Phase 2 directive. Give me the Architect and I'll fight for a deal. Not immunity.]
++ {usb_seen or lore_directive_found} [I have your Phase 2 directive. Give me the Architect and I'll fight for a deal. Not immunity. #ending_check]
     -> confrontation_recruit
 + {not (usb_seen or lore_directive_found) and not recruit_refused} [Work for us.]
     -> recruit_declined
-+ [You're not walking out of here. Bag down, hands where I can see them.]
++ [You're not walking out of here. Bag down, hands where I can see them. #ending_check]
     -> confrontation_arrest
-+ [Go. I've got what I need off your servers. You're just the signature now.]
++ [Go. I've got what I need off your servers. You're just the signature now. #ending_check]
     -> confrontation_escape
++ [Not yet. There's something I want to finish first.]
+    ~ confront_held = true
+    Narrator: Sterling hasn't left.
+    ~ idle_quiet = true
+    #exit_conversation
+    -> idle
 
 === recruit_declined ===
 #speaker:victoria_sterling
