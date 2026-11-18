@@ -445,6 +445,11 @@ He'll call when he's ready. Not tonight.
         Agent HaX: And Vance's alarm had the night crew out before the button went in.
     - else:
         Agent HaX: The nine on the night crew were behind the inverter wall the whole time. They went home at six not knowing how close it came.
+        // Blind m04: telling Vance the truth now shows at the end. Same recorded line
+        // as the crew-lost route, so it needs no new audio.
+        {vance_is_ally and not robert_vance_ko:
+            Agent HaX: Vance had the evacuation alarm on his desk all night.
+        }
     }
 }
 

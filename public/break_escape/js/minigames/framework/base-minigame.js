@@ -340,7 +340,32 @@ export class MinigameScene {
         this.complete(false);
     }
 
+    /**
+     * Success has been decided and shown, and the minigame closes itself after a hold. From
+     * here any close (X, Esc, a click outside, a hit, another minigame displacing this one)
+     * commits the success instead of dropping it, so the onComplete that sends the unlock
+     * runs exactly once. Call it at the moment of success, before the hold starts.
+     */
+    markSuccessPending() {
+        this._successPending = true;
+    }
+
+    /** A close that arrives while a decided success is held counts as that success. */
+    resolveEarlyClose(success) {
+        return success || this._successPending === true;
+    }
+
+    /** Mark the success as decided and complete after ms; an earlier close commits it first. */
+    holdSuccess(ms, afterComplete) {
+        this.markSuccessPending();
+        setTimeout(() => {
+            this.complete(true);
+            if (typeof afterComplete === 'function') afterComplete();
+        }, ms);
+    }
+
     complete(success) {
+        success = this.resolveEarlyClose(success);
         console.log('Minigame complete called with success:', success);
 
         // Guard against stale minigame instances (e.g. a deferred showSuccess timer
@@ -386,9 +411,7 @@ export class MinigameScene {
         this.messageContainer.appendChild(messageElement);
         
         if (autoClose) {
-            setTimeout(() => {
-                this.complete(true);
-            }, duration);
+            this.holdSuccess(duration);
         }
     }
     

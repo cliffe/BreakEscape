@@ -1467,11 +1467,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 2000, "message": "Upload's dead. If you're leaving him there, take what's on that desk and go. Call me." }
             },
             {
-              "_comment": "Blind run B (finding 3): after a knockout the cursor is still a fist, and a fist click on the drop-site or a document does nothing. Once the fate is set and his scene closes, a reminder after the fate text.",
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "conversation_closed:david_torres",
-              "condition": "globalVars.torres_ko === true && globalVars.final_choice !== ''",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             },
             {
               "_comment": "Pass 5 A2: any fate (in person, after the knockout, or by phone) opens the call-in task.",
@@ -1507,7 +1506,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             <%# Engine regression 2026-10-16 (E4, and the Restart ruling): torres_hostile
                 was set only by the onceOnly text above, so a second fight after a
@@ -1528,14 +1527,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "cooldown": 0,
               "setGlobal": { "torres_fought": false }
             },
-            <%# Orchestrator's correction: Q cycles open hand, jab, cross (hud.js), so it
-                never "stows" the fists. Split for the 30-word cap. Since engine 7.1a a
+            <%# Orchestrator's correction: no key stows or raises the fists now (F punches,
+                Q held blocks). Split for the 30-word cap. Since engine 7.1a a
                 hostile gives up at its own room's door, so stepping out does end it. %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Press Q till the open hand shows to walk by clicking. Can't take him? Leave the data centre, then message me for Security: he swings while you're on your phone." }
+              "sendTimedMessage": { "delay": 5500, "message": "Can't take him? Leave the data centre, then message me for Security: he swings while you're on your phone." }
             },
             <%# Post-engine follow-ups (2026-10-16): a Restart after a knockout now
                 resets a Torres who isn't KO'd to calm (engine 7.1d), so game_loaded
@@ -1562,7 +1561,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": false,
               "cooldown": 0,
               "setGlobal": { "torres_hostile": true },
-              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or get clear and message me for Security." }
+              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. F to punch, hold Q to block. Or get clear and message me for Security." }
             },
             {
               "_comment": "PASS 2 review B1 safety net. post_ko_choice is disableClose, but if it is ever lost (a reload mid-choice), npc_ko won't re-fire and a KO'd NPC can't be talked to (interactions.js:1690). Re-entering the data centre with Torres down and no fate set offers the same two choices by phone.",

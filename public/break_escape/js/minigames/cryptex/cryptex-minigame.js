@@ -371,7 +371,7 @@ export class CryptexMinigame extends MinigameScene {
             serverResponse: this.serverResponse
         };
 
-        setTimeout(() => this.complete(true), 1500);
+        this.holdSuccess(1500);
     }
 
     _handleFailure() {
