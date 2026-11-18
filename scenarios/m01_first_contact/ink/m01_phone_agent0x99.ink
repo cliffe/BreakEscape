@@ -143,7 +143,8 @@ So: quiet, deniable. Message me the moment you're stuck and I'll walk you throug
     -> request_field_guide
 + {priv_esc_guide_offered and not priv_esc_guide_hint_given} [I need the privilege escalation guide]
     -> request_priv_esc_guide
-+ {entropy_reveal_read and (player_aborted_attack or player_launched_attack)} [Operation Shatter resolved — I'm ready for debrief]
+// The debrief waits for the report: the player has to tell SAFETYNET what ENTROPY planned first.
++ {entropy_reveal_read and operation_shatter_reported and (player_aborted_attack or player_launched_attack)} [Operation Shatter resolved — I'm ready for debrief]
     #place_call:closing_debrief
     -> DONE
 + {(entropy_reveal_read or (talked_to_maya and discussed_operation)) and not operation_shatter_reported} [I discovered what ENTROPY is planning - Operation Shatter]
@@ -379,7 +380,6 @@ Most people at Viral Dynamics are legitimate employees. We want ENTROPY, not col
 // ================================================
 
 === report_operation_shatter ===
-~ operation_shatter_reported = true
 #unlock_task:inform_safetynet_operation_shatter
 
 ...Say that again.
@@ -445,6 +445,7 @@ Every piece of evidence you find brings us closer to stopping this.
 -> mission_commitment
 
 === mission_commitment ===
+~ operation_shatter_reported = true
 #complete_task:inform_safetynet_operation_shatter
 
 Good work discovering this. Now we know what we're dealing with.
@@ -990,6 +991,12 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
 + [On my way. #ending_check]
     #set_global:start_debrief_cutscene:true
     Walk out the way you came in. As far as Viral Dynamics knows, you were never here.
+    #exit_conversation
+    -> END
+// "Keep going" on the choice above leaves the call on these choices, so there is a way to carry on.
+// The hub's "ready for debrief" choice rings this call again later.
++ [Not yet. I want to finish up first.]
+    Good. Off you go.
     #exit_conversation
     -> END
 

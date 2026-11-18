@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: PIN dust",
+  "description": "Test of dusting a PIN pad with the fingerprint kit: a PIN door, a PIN safe with repeated digits, a safe that opts out, the fingerprint kit and the PIN cracker on the lobby table. Nothing to solve beyond the codes.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "pin_dust",
+  "test_objective": "Prove the Dust action shows on a PIN pad only while the kit is held, greys every key that is not a digit of the PIN (repeated digits too), keeps it across a reload, respects dustable false, and works alongside the PIN cracker"
+}

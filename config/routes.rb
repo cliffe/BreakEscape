@@ -40,6 +40,7 @@ BreakEscape::Engine.routes.draw do
       post 'lock_session'    # Lock a held session (UI slice 6): stays held, needs the password again
       get 'login_accounts'   # Account tiles for a sign-in PC's loginPicker
       post 'clone_card'      # Record a card copy the card copier saved
+      post 'pin_dust'        # Dust a PIN pad with the fingerprint kit: the PIN's distinct digits, once per lock
       post 'wear'            # Put a held wearable item on or take it off (docs/achitechture/WEARABLE_BUILD_LOG.md)
       post 'npc_frustration' # Slice 9.2: an NPC's failed and met uses (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1)
       post 'npc_workaround'  # Slice 9.2: a workaround performed or dropped (plan 6)

@@ -245,6 +245,8 @@
       vmSetActivatedUntil: <%= raw json_escape(_vm_set_activated_until&.iso8601.to_json) %>,
       vmActivationMode: '<%= BreakEscape::Mission.hacktivity_mode? ? @game.mission.vm_activation_mode.to_s : '' %>',
       missionConcludedAt: <%= raw json_escape(@game.mission_concluded_at&.iso8601.to_json) %>,
+      // the engine's score, only for a concluded game and only when no host owns scoring (null otherwise)
+      missionScore: <%= raw json_escape((@game.mission_concluded_at ? @game.score_for_client : nil).to_json) %>,
       // false when mission.json says "endingCheck": false: no warning before the ending (systems/ending-check.js)
       endingCheck: <%= @mission.ending_check? ? 'true' : 'false' %>,
       missionId: <%= @game.mission_id %>,

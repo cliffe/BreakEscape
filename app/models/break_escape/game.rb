@@ -11,6 +11,7 @@ module BreakEscape
     include NpcFrustration
     include SocialFeed
     include Wearables
+    include PinDust
 
     # Associations
     belongs_to :player, polymorphic: true
@@ -72,6 +73,22 @@ module BreakEscape
     # 70 × tasks/total + 30 × aims/total. The default ("tasks") score.
     def raw_task_score
       self.class.raw_score(tasks_completed, total_tasks, objectives_completed, total_aims)
+    end
+
+    # True when a host (Hacktivity) owns this game's score: its GameScoringJob
+    # writes games.score from the listing's policy, so the engine's own number
+    # may differ and must not be shown to the player as the mission score.
+    # That holds for a game with a slot, and for any game run inside Hacktivity
+    # (not standalone) even without one: an unlinked game there (admin-created,
+    # legacy, or a "New session" after the event closed) is not counted by the host.
+    def host_owns_score?
+      slot = respond_to?(:game_slot) ? game_slot : nil
+      slot.present? || !BreakEscape.standalone_mode?
+    end
+
+    # The score the client may display, or nil when a host owns scoring.
+    def score_for_client
+      host_owns_score? ? nil : score
     end
 
     # Get score based on game_slot scoring method (if available)
@@ -2383,12 +2400,14 @@ module BreakEscape
           # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
           # access, acceptsUIDOnly: an rfid door's role list and whether a UID-only copy opens it
           # (access model 4.1). They name roles and NPC ids, nothing secret.
+          # dustable, dustHint: a PIN door's opt-in to fingerprint-kit dusting and its hint line
+          # (neither is secret), so a door pad that opens before its room loads sees them (pin dust R1 M1).
           # cryptexConfig: a cryptex door's wheels (wheelCount, alphabets, hintStrip, wornRings,
           # maxAttempts), so its pad shows the right wheels before the room loads (unlock gaps
           # R1 M2). Its old `answer` field is stripped here and again by the controller filter.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
              maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
-             access acceptsUIDOnly cryptexConfig].each do |field|
+             access acceptsUIDOnly cryptexConfig dustable dustHint].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
           self.class.strip_lock_answers!(kept_fields)
@@ -3016,7 +3035,10 @@ module BreakEscape
       # Keyring K3d R1 (CREDENTIAL_KEYRING_PLAN.md 8.7): { registryId => server ms } the first time
       # GET /keyring listed each registry entry, so the Sign-ins order survives a reload.
       # Server-written only, at most 128 keys, never sent to the client except as an entry's gainedAt.
-      'keyringGained' => {}
+      'keyringGained' => {},
+      # Fingerprint-kit dusting of PIN pads (PinDust): { lockKey => the PIN's distinct digits }.
+      # Server-written only, one short string per PIN lock, never in a sync body or the bootstrap.
+      'pinDusted' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures

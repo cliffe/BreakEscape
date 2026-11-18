@@ -80,3 +80,15 @@ test('converse leaves open a minigame the conversation opened; closes a finished
     const session = readFileSync(join(scripts, 'playtest-session.js'), 'utf8');
     assert.match(session, /const ending = converseEnding\(\{ pendingChoice: !!pendingChoice, closeAsked: c\.close === true, activeMinigameId: nowActiveId \}\);/);
 });
+
+// m02 release gate m3: converse on the press terminal (phone-chat) closed it after one pick,
+// because the thread types its next message after a delay and the empty panel read as "finished".
+test('converse waits through an empty phone-chat panel, but not forever and not once ended', async () => {
+    const { converseIdleAction, MAX_IDLE_WAITS } = await import(join(scripts, 'bootstrap-steps.js')).then(m => m.default || m);
+    assert.equal(converseIdleAction({ idleWaits: 0 }), 'wait');
+    assert.equal(converseIdleAction({ idleWaits: MAX_IDLE_WAITS - 1 }), 'wait');
+    assert.equal(converseIdleAction({ idleWaits: MAX_IDLE_WAITS }), 'stop');
+    assert.equal(converseIdleAction({ ended: true, idleWaits: 0 }), 'stop');
+    const session = readFileSync(join(scripts, 'playtest-session.js'), 'utf8');
+    assert.match(session, /converseIdleAction\(\{ ended: !!d\.ended, idleWaits \}\) === 'wait'/);
+});

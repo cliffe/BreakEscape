@@ -2483,6 +2483,13 @@ def check_pin_locks(json_data)
     when Hash
       if node['lockType'] == 'pin'
         where = "'#{path}'#{node['name'] ? " (#{node['name']})" : ''}"
+        issues << "❌ ERROR: #{where} dustable must be true or false, got #{node['dustable'].inspect}." if node.key?('dustable') && ![true, false].include?(node['dustable'])
+        issues << "❌ ERROR: #{where} dustHint must be a non-empty string, got #{node['dustHint'].inspect}." if node.key?('dustHint') && (!node['dustHint'].is_a?(String) || node['dustHint'].strip.empty?)
+        where_hint = where
+        issues << "⚠️ WARNING: #{where_hint} sets dustHint without dustable: true, so the hint is never shown (dusting is opt-in)." if node.key?('dustHint') && node['dustable'] != true
+        if node['dustable'] == true && node['requires'].to_s =~ /\A\d+\z/ && node['requires'].to_s.chars.uniq.length <= 2
+          issues << "⚠️ WARNING: #{where_hint} is dustable but its PIN uses only one or two distinct digits, so dusting reveals all or nearly all of it."
+        end
         pin = node['requires']
         declared = node['pinLength']
         if pin.nil? || pin.to_s.empty?
@@ -2499,6 +2506,11 @@ def check_pin_locks(json_data)
           issues << "❌ ERROR: #{where} has pinLength #{declared.inspect} but its PIN is #{pin.to_s.length} digits. " \
                     "The server sends the PIN's own length, so remove pinLength (it is not needed) or fix the PIN."
         end
+      end
+      if node['lockType'] != 'pin' && (node.key?('dustable') || node.key?('dustHint'))
+        where = "'#{path}'#{node['name'] ? " (#{node['name']})" : ''}"
+        issues << "⚠️ WARNING: #{where} sets dustable/dustHint but is not a PIN lock (lockType #{node['lockType'].inspect}). " \
+                  "Dusting applies to PIN keypads only, so these fields are ignored."
       end
       node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
     end
@@ -6807,7 +6819,7 @@ end
 # never does in play, since the bootstrap scenario has no doors. requires is checked on
 # its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
 DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
-                            maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength].freeze
+                            maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength dustable dustHint].freeze
 # ─────────────────────────────────────────────────────────────
 # Gated-door credit (GATED_DOOR_SERVER_CHECK_PLAN.md §12). The server owns the credit for
 # passing a split gated door: at promotion it sets the gate's creditOnPass globals and completes

@@ -33,6 +33,13 @@ globalThis.requestAnimationFrame = (fn) => setTimeout(fn, 0);
 window.requestAnimationFrame = globalThis.requestAnimationFrame;
 
 const { minigameBridge } = await import(pathToFileURL(join(dir, 'systems/test-bridge/minigames.js')));
+// jsdom has no layout: size every element not display:none, so the real MinigameScene
+// visibility helper (isTestVisible) is what close() consults for the X.
+window.HTMLElement.prototype.getBoundingClientRect = function () {
+    const shown = this.style.display !== 'none';
+    return { width: shown ? 20 : 0, height: shown ? 20 : 0, left: 0, top: 0, right: 20, bottom: 20, x: 0, y: 0 };
+};
+const { MinigameScene } = await import(pathToFileURL(join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js/minigames/framework/base-minigame.js')));
 
 // The real close functions' effects, in miniature: hide, re-enable input, drain barks
 function rig(which) {
@@ -80,15 +87,15 @@ test('close() with nothing open still says no-active-minigame', async () => {
 
 test('a real minigame open over nothing else still closes by its X button, not the popup path', async () => {
     const r = rig(null);
-    const container = document.createElement('div');
-    const x = document.createElement('button');
-    x.className = 'minigame-close-button';
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const scene = new MinigameScene(host, { title: 'Chat' });
+    scene.init();
+    const x = scene.container.querySelector('.minigame-close-button');
+    assert.ok(x, 'the real scene builds its X');
     let clicked = 0;
     x.addEventListener('click', () => { clicked++; window.MinigameFramework.currentMinigame = null; });
-    container.appendChild(x);
-    document.body.appendChild(container);
-    Object.defineProperty(window.HTMLElement.prototype, 'offsetParent', { get() { return this.parentNode; }, configurable: true });
-    window.MinigameFramework = { currentMinigame: { container, gameState: { isActive: true } } };
+    window.MinigameFramework = { currentMinigame: scene, endMinigame() {} };
     const res = await minigameBridge.close();
     assert.equal(res.ok, true);
     assert.equal(clicked, 1);

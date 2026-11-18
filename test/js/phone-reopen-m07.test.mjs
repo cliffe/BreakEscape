@@ -73,9 +73,33 @@ test('R4 m3: the stuck_topics menu stitch drops a hint once its flag flips', asy
     assert.ok(!after.some(t => /Now what\?/.test(t)), `got ${JSON.stringify(after)}`);
 });
 
+// Per submenu: the globals at save time, the globals at reopen (one flips a menu item), and the
+// menu seen before and after. The saved menu is the old layout's; the reopened one must be the
+// new json's same submenu with the flipped item applied.
+const CASES = {
+    stuck_topics: {
+        saved: { flag2_submitted: true },
+        reopen: { flag2_submitted: true, flag3_submitted: true },
+        before: ["I've got a username and a password. Now what?", 'Never mind.'],
+        after: ["I'm in as their operator. How do I stop the cascade?", 'Never mind.'],
+    },
+    people_topics: {
+        saved: { flag2_submitted: true },
+        reopen: { flag2_submitted: true, mercer_ko: true },
+        before: ['Never mind.'],
+        after: ["I've dealt with Mercer.", 'Never mind.'],
+    },
+    vault_finds: {
+        saved: { flag2_submitted: true },
+        reopen: { flag2_submitted: true, found_mole_evidence: true },
+        before: ['Never mind.'],
+        after: ["An intercept. They didn't leak the operation. They leaked me.", 'Never mind.'],
+    },
+};
+
 test('R4 m2: a save taken on an old-layout submenu reopens in the new json without throwing', async () => {
-    for (const knot of ['stuck_topics', 'people_topics', 'vault_finds']) {
-        globalThis.window = { gameState: { globalVariables: { flag2_submitted: true } } };
+    for (const [knot, c] of Object.entries(CASES)) {
+        globalThis.window = { gameState: { globalVariables: { ...c.saved } } };
         const oldConv = new PhoneChatConversation('hax', { getNPC: () => null }, new InkEngine('hax'));
         await oldConv.loadStory(oldJson);
         syncGlobals(oldConv.engine.story);
@@ -86,7 +110,7 @@ test('R4 m2: a save taken on an old-layout submenu reopens in the new json witho
         const saved = oldConv.saveState();
 
         // a global lands, so the reopen has something to re-run for
-        globalThis.window = { gameState: { globalVariables: { flag2_submitted: true, flag3_submitted: true, hollis_ko: true } } };
+        globalThis.window = { gameState: { globalVariables: { ...c.reopen } } };
         const conv = new PhoneChatConversation('hax', { getNPC: () => null }, new InkEngine('hax'));
         await conv.loadStory(newJson);
         let out;
@@ -95,9 +119,12 @@ test('R4 m2: a save taken on an old-layout submenu reopens in the new json witho
             out = conv.reopenWithCurrentGlobals(syncGlobals, { homeKnot: 'start' });
         }, `${knot}`);
         assert.ok(out && typeof out.renavigated === 'boolean', `${knot}: ${JSON.stringify(out)}`);
-        // whatever it did, the thread is left on a usable menu (or ended), never half loaded
+        // the thread must come back on the same visible submenu, not a different knot's menu
         const texts = conv.engine.story.currentChoices.map(c => c.text);
-        assert.ok(texts.length > 0 || out.renavigated === false || conv.engine.story.canContinue === false,
-            `${knot}: old ${JSON.stringify(oldTexts)} -> ${JSON.stringify(texts)}`);
+        assert.deepEqual(oldTexts, c.before, `${knot}: old save menu`);
+        assert.equal(out.renavigated, true, `${knot}: ${JSON.stringify(out)}`);
+        assert.deepEqual(out.messages, [], `${knot}: nothing replayed`);
+        assert.deepEqual(out.tags, [], `${knot}: no tag fired again`);
+        assert.deepEqual(texts, c.after, `${knot}: reopened menu, got ${JSON.stringify(texts)}`);
     }
 });

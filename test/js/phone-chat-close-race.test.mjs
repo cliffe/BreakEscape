@@ -82,6 +82,7 @@ function harness({ loadStory }) {
         other: { id: 'other', displayName: 'Other', storyPath: 'o.json', currentKnot: 'start' }
     };
     const mg = {
+        _resetSkip() {}, _pace: () => Promise.resolve(),
         params: { voiced: true },
         gameState: { isActive: false },
         npcManager: { getNPC: id => npcs[id] },

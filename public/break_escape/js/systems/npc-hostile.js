@@ -225,6 +225,8 @@ export function recordCalm(npcId) {
  * attackRange, maxHP). restoreHostility runs before any behavior exists, so the
  * state it builds carries the defaults; the behavior calls this once it has its
  * config, for every restored NPC (KO and calm included, which are never announced).
+ * maxHP is the exception: it is not applied to a KO NPC, whose maxHP stays at the
+ * default and whose HP stays 0, so do not trust getState(ko).maxHP.
  * Local only: nothing here is recorded or synced.
  */
 export function applyRestoredStats(npcId, config) {
