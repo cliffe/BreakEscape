@@ -13,6 +13,10 @@ for (const k of ['log', 'info', 'debug', 'warn']) console[k] = () => {};
 const js = process.env.SWEEP_JS_ROOT || join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
 
 const dom = new JSDOM('<!doctype html><body><div id="notification-container"></div></body>', { pretendToBeVisual: true });
+// jsdom has no PointerEvent; the module listens to pointer events when the page has them
+dom.window.PointerEvent = class extends dom.window.MouseEvent {
+    constructor(type, init = {}) { super(type, init); this.pointerType = init.pointerType || ''; }
+};
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const T = await import(pathToFileURL(join(js, 'systems/notifications.js')).href);
@@ -23,7 +27,8 @@ const els = () => [...container().querySelectorAll('.notification')];
 const messages = () => els().map((e) => e._toast.message);
 const reset = () => { container().innerHTML = ''; T.clearWaitingToasts(); };
 const old = (el, ms) => { el._toast.shownAt = Date.now() - ms; };
-const mouseAt = (x, y) => document.dispatchEvent(new dom.window.MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true }));
+const pointerAt = (x, y, pointerType = 'mouse') => document.dispatchEvent(new dom.window.PointerEvent('pointermove', { clientX: x, clientY: y, pointerType, bubbles: true }));
+const mouseAt = (x, y) => pointerAt(x, y, 'mouse');
 const live = () => document.getElementById('toast-live-polite')?.textContent;
 
 test('dwellForBacklog: shortens only low-priority timed toasts with a backlog', () => {
@@ -177,7 +182,7 @@ test('R2 M1: the hold moves when the toast above closes and the toasts slide up'
     a.getBoundingClientRect = () => box(slot.a);
     b.getBoundingClientRect = () => box(slot.b);
     c.getBoundingClientRect = () => box(slot.c);
-    document.dispatchEvent(new dom.window.MouseEvent('mousemove', { clientX: 50, clientY: 90, bubbles: true }));
+    mouseAt(50, 90);
     assert.equal(b._hoverHeld, true);
     assert.ok(b._pausedLeft > 0, 'the middle toast is paused');
     assert.ok(!c._hoverHeld);
@@ -194,11 +199,37 @@ test('R2 M1: the hold moves when the toast above closes and the toasts slide up'
     reset();
 });
 
+test('R3 m2: a touch-type pointer move sets no hover hold; a mouse one does', () => {
+    reset();
+    const el = T.showNotification('held', 'info', '', 60000);
+    el.getBoundingClientRect = () => ({ left: 10, right: 110, top: 10, bottom: 60, width: 100, height: 50 });
+    pointerAt(50, 30, 'touch');
+    assert.ok(!el._hoverHeld, 'a touch is not a hover');
+    pointerAt(50, 30, 'pen');
+    assert.ok(!el._hoverHeld, 'nor is a pen');
+    mouseAt(50, 30);
+    assert.equal(el._hoverHeld, true);
+    reset();
+});
+
+test('R3 n1/n3: verbatim items are joined unaltered, and all-aside batches do not start with Also', () => {
+    const t = T.composeAnnouncement([{ text: 'Password' , verbatim: false }, { text: 'Winter2026', verbatim: true }, { text: 'Next line' }]);
+    assert.ok(t.includes('Winter2026'), t);
+    assert.ok(!t.includes('Winter2026.'), `no full stop added to a verbatim item: ${t}`);
+    assert.equal(t, 'Password. \u2014 Winter2026 \u2014 Next line.');
+    const v = T.composeAnnouncement([{ text: 'a!', verbatim: true }, { text: 'b.' }]);
+    assert.equal(v, 'a! \u2014 b.');
+    const d = T.composeAnnouncement([{ text: 'Dropped the mug', dropped: true }, { text: 'Someone is in the way.', dropped: true }]);
+    assert.equal(d, 'Dropped the mug; Someone is in the way.');
+    assert.ok(!d.startsWith('Also'));
+    assert.equal(T.composeAnnouncement([{ text: 'Teach' }, { text: 'mug', dropped: true }, { text: 'door', dropped: true }]), 'Teach. Also: mug; door.');
+});
+
 test('R2 m1: a mouseleave on an ordinary element does not release the hold', () => {
     reset();
     const el = T.showNotification('held', 'info', '', 60000);
     el.getBoundingClientRect = () => ({ left: 10, right: 110, top: 10, bottom: 60, width: 100, height: 50 });
-    document.dispatchEvent(new dom.window.MouseEvent('mousemove', { clientX: 50, clientY: 30, bubbles: true }));
+    mouseAt(50, 30);
     assert.equal(el._hoverHeld, true);
     const other = document.createElement('div');
     document.body.appendChild(other);

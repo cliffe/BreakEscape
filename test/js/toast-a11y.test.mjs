@@ -54,6 +54,28 @@ test('each type is announced once in the right region: errors in the alert regio
   done(win);
 });
 
+test('R3 m1: announcements from separate tasks within one frame join instead of overwriting', () => {
+  const frames = [];
+  const win = page({ patch: (w) => { w.requestAnimationFrame = (cb) => frames.push(cb); } });
+  N.announceToast('info', 'X1 first task line');
+  tick(2);   // a second task, 2 ms later, in the same frame
+  N.announceToast('info', 'X2 second task line');
+  tick(1);
+  assert.equal(text('toast-live-polite'), '', 'nothing is written until the frame has passed, so X1 is not there to be overwritten');
+  frames.splice(0).forEach((cb) => cb());
+  tick(1);
+  assert.equal(text('toast-live-polite'), 'X1 first task line. X2 second task line.', 'one write holds both, in order');
+  done(win);
+});
+
+test('R3 m1: a tab that never runs a frame still announces, by the fallback timer', () => {
+  const win = page({ patch: (w) => { w.requestAnimationFrame = () => {}; } });
+  N.announceToast('info', 'Hidden tab line');
+  tick(N.ANNOUNCE_FALLBACK_MS + 1);
+  assert.equal(text('toast-live-polite'), 'Hidden tab line');
+  done(win);
+});
+
 test('the same message twice is announced twice: the region is emptied first and filled a tick later', () => {
   const win = page();
   const a = N.showNotification('Saved', 'info', '', 0);

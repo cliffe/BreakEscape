@@ -308,11 +308,19 @@ function refreshHover() {
 function watchPointer() {
     if (pointerWatched || typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
     pointerWatched = true;
-    document.addEventListener('mousemove', (e) => {
+    // A tap makes a compatibility mousemove on plain HTML, which must not set a hover point
+    // (R3 m2): pointer events say what made the move, mousemove is the fallback without them.
+    const hoverAt = (e) => {
         lastPointerX = e.clientX;
         lastPointerY = e.clientY;
         updateHoverFromPointer(lastPointerX, lastPointerY);
-    }, true);
+    };
+    const hasPointerEvents = typeof window !== 'undefined' && typeof window.PointerEvent === 'function';
+    if (hasPointerEvents) {
+        document.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') hoverAt(e); }, true);
+    } else {
+        document.addEventListener('mousemove', (e) => { if (!e.sourceCapabilities?.firesTouchEvents) hoverAt(e); }, true);
+    }
     // mouseleave does not bubble: on the root element it fires only when the pointer leaves the page
     document.documentElement?.addEventListener?.('mouseleave', () => {
         lastPointerX = -1;
@@ -530,19 +538,30 @@ function dropWaitingWarnings(container, keep) {
 // its toast closed). Both regions are emptied that long after each write; a token stops an
 // older timer wiping a newer announcement.
 export const ANNOUNCE_CLEAR_MS = 8000;
+export const ANNOUNCE_FALLBACK_MS = 100;   // flush anyway when no frame comes (hidden tab)
 let announceSerial = 0;
 const announceSerials = {};   // region id -> token of its latest write
 const pendingAnnouncements = { 'toast-live-alert': [], 'toast-live-polite': [] };
 const sentencePunct = (t) => (/[.!?]$/.test(t) ? t : `${t}.`);
+// A verbatim item (a password, a code) is joined exactly as given, never with a full stop added.
+const VERBATIM_SEP = ' \u2014 ';
 
 export function composeAnnouncement(items) {
     if (items.length === 1) return items[0].text;   // one toast: its text exactly as spoken
     const main = items.filter((i) => !i.dropped);
     const ordered = [...main.filter((i) => !i.low), ...main.filter((i) => i.low)];
-    const parts = ordered.map((i) => sentencePunct(i.text));
     const dropped = items.filter((i) => i.dropped).map((i) => i.text.replace(/[.!?]$/, ''));
-    if (dropped.length) parts.push(`Also: ${dropped.join('; ')}.`);
-    return parts.join(' ');
+    let out = '';
+    ordered.forEach((i, n) => {
+        const piece = i.verbatim ? i.text : sentencePunct(i.text);
+        if (n === 0) out = piece;
+        else out += (i.verbatim || ordered[n - 1].verbatim) ? VERBATIM_SEP + piece : ` ${piece}`;
+    });
+    if (dropped.length) {
+        const tail = `Also: ${dropped.join('; ')}.`;
+        out = main.length ? `${out} ${tail}` : dropped.join('; ') + '.';   // all asides: no "Also:" with nothing before it
+    }
+    return out;
 }
 
 function flushAnnouncements(id) {
@@ -563,7 +582,7 @@ function flushAnnouncements(id) {
     }, ANNOUNCE_CLEAR_MS);
 }
 
-function announceToast(type, text, flags = {}) {
+export function announceToast(type, text, flags = {}) {
     try {
         if (typeof document === 'undefined') return;
         const body = document.body;
@@ -583,11 +602,20 @@ function announceToast(type, text, flags = {}) {
             body.appendChild(region);
         }
         const queue = pendingAnnouncements[id];
-        queue.push({ text: String(text ?? ''), low: flags.low === true, dropped: flags.dropped === true });
+        queue.push({ text: String(text ?? ''), low: flags.low === true, dropped: flags.dropped === true, verbatim: flags.verbatim === true });
         if (queue.length === 1) region.textContent = '';
-        // one flush per announcement (a later one finds the queue already empty and does nothing),
-        // so a flush timer that never ran cannot leave the queue stuck
-        setTimeout(() => flushAnnouncements(id), 0);
+        // The flush waits a frame (then a tick), so announcements raised in separate tasks of
+        // one frame join instead of overwriting each other (R3 m1). One flush per announcement
+        // (a later one finds the queue already empty and does nothing), so a timer that never
+        // ran cannot leave the queue stuck; a hidden tab never runs rAF, so a plain timer backs it.
+        const flush = () => flushAnnouncements(id);
+        const win = typeof window !== 'undefined' ? window : null;
+        if (win && typeof win.requestAnimationFrame === 'function') {
+            win.requestAnimationFrame(() => setTimeout(flush, 0));
+            setTimeout(flush, ANNOUNCE_FALLBACK_MS);
+        } else {
+            setTimeout(flush, 0);
+        }
     } catch (e) { /* not announced */ }
 }
 
@@ -956,7 +984,7 @@ function renderNotification(message, type, title, duration, seen = false, option
         if (duration > 0) startCountdown(notification, duration);
         armErrorFloor(notification);
     }
-    announceToast(type, spokenText(notification, title, message, plainText, verbatim), { low: options?.low === true });
+    announceToast(type, spokenText(notification, title, message, plainText, verbatim), { low: options?.low === true, verbatim });
     refreshHover();
 
     // The X is a real button. Enter and Space stop at it: the PIN pad's document handler
