@@ -35,3 +35,8 @@ Checks: ink compile 11 of 11 (existing json unchanged); dialoguelint on both .in
 - Lerato `seated` is now `{ "facing": "south" }` (schema: sets a swivel chair's starting direction); live result in LIVE_FIX1.md.
 - Static: validator 0 errors, 44 warnings; lock diff empty.
 - Fix round 1 live (LIVE_FIX1.md, 12abb95dc): Dani talk then wait 5 of 5, exchange 1 plays at about 10 s, heard true at 40 s; natural Tomasz coffee with Lerato joining 5 of 5; coupling blocked by floor_staff_ko (debugKO). Lerato facing change has no visible effect and is unresolved (see LIVE_FIX1.md part 4).
+
+## Build review round 1 fixes (commits e508c5a87 and follow-ups; LIVE_FIX_R1.md)
+- M2: `lerato_desk` `useFrom { dx: 0, dy: 2 }`, Lerato `seated: true`, spawn position `{ 7.4, 5.16 }`; her home is (236, -220) every load; seated in the south chair facing her monitor. `dy: 1` was rejected: her home flipped with her own spawn cell. Phone 3 of 3, coffee and fridge trips 3 of 3 each (expected away 15.7 s and 18.6 s), coupled break chain 2 of 2 and Tomasz-pulls-Lerato pair 2 of 2.
+- m1, m2, m4, m6: PLAN.md updated to match the build (3.1, 2.4, 2.8, 7). m3: observation now "front row". m5: exchange 2 Tomasz line "I did. They walked her out past my desk." to "I did. Two officers, very quiet." (ink, SPOKEN_LINES.md; unvoiced).
+- Static: validator 0 errors 44 warnings; lock diff empty; ink 11 of 11; dialoguelint clean; summary and positions diffs show only planned additions. M1 (V4 probe) left for the next agent.

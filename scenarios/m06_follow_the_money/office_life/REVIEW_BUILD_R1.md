@@ -78,3 +78,15 @@ Fix: mark both as non-monotonic (last write wins, written only by the owner's cl
 - 10.1 (scripted walkthrough with office life on) and 10.2 item 7 (Irina badge clone while Dani walks). Neither appears in the build evidence.
 - The talk-away-from-post check (10.2 item 4).
 - LIVE_S5 2's open no-DOM-root anomaly on game 7989.
+
+## Outcomes (fix round 1; live write-up in LIVE_FIX_R1.md)
+
+- M1: NOT done here by instruction (the V4 attack probe is run by another agent next). Still open.
+- M2: fixed. `lerato_desk` `useFrom { dx: 0, dy: 2 }` (the reviewer's `dy: 1` makes her home flip between -252 and -284 depending on her own spawn, measured on games 8098 and 8099), `seated: true`, spawn `position` `{ 7.4, 5.16 }`. Home (236, -220) on 4 fresh games and 3 reloads; seated frame `sit_north`, in the south chair facing her monitor (screenshot checked). Phone answered at post 3 of 3, coffee 3 of 3 and fridge 3 of 3 trips return to post, coupled breaks 2 of 2 (Dani chain) and 2 of 2 (Tomasz pulls Lerato).
+- m1: documented in PLAN 3.1 (four objects take `desk_pc`: reason, adding `affordance: false` would add keys to existing records for no play effect).
+- m2: documented in PLAN 2.4 (build note). The keys stay because the pair proofs were run with them; one shared group with no avoids behaves like none.
+- m3: fixed ("the front row of desks").
+- m4: PLAN 2.8 changed to match the build (no cooldown, idempotent `setGlobal`).
+- m5: fixed. Tomasz exchange 2 line is now "I did. Two officers, very quiet." (32 characters; the suggested 41-character line was over the 40 limit). `SPOKEN_LINES.md` updated. Ask before voicing.
+- m6: fixed. PLAN 7 table gains a row naming `tomasz_laptop_owner_away` and `tomasz_laptop_screen_locked` as non-monotonic (last write wins, written only by the owner's client).
+- Carried to round 2 unchanged: 10.1 scripted walkthrough, 10.2 item 7 (badge clone while Dani walks), 10.2 item 4 (talk away from post), LIVE_S5 2's no-DOM-root anomaly. New open note: games 8148 and 8149 showed no natural coffee trip and a `no_source` park under heavy machine load (not reproduced on fresh games).
