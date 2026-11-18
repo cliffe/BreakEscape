@@ -1,0 +1,179 @@
+{
+  "mode": "signin",
+  "gameId": 8933,
+  "base": "http://127.0.0.1:3186",
+  "startedAt": "2026-11-18T10:46:17.568Z",
+  "steps": [
+    {
+      "t": 22614,
+      "step": "page A loaded"
+    },
+    {
+      "t": 25459,
+      "step": "enter comms_room",
+      "ok": true
+    },
+    {
+      "t": 26693,
+      "step": "interact comms_port (plant)",
+      "confirmed": true,
+      "via": "engine-record"
+    },
+    {
+      "t": 27557,
+      "step": "confirm \"Plug it in\"",
+      "ok": true
+    },
+    {
+      "t": 29563,
+      "step": "view open",
+      "minigame": "network-view"
+    },
+    {
+      "t": 29596,
+      "step": "flipped global live_proof_flip client side",
+      "at": 29596
+    },
+    {
+      "t": 29625,
+      "step": "clicked lena_pc sign-in row",
+      "clickedSignIn": true
+    },
+    {
+      "t": 31129,
+      "step": "remote sign-in screen",
+      "mg": "password",
+      "tiles": 1,
+      "other": true
+    }
+  ],
+  "checks": {
+    "viewOpenedInA": true,
+    "syncWithFlip": {
+      "t": 32364,
+      "bodyHasFlip": true
+    },
+    "loginRequest": {
+      "t": 32406,
+      "foothold": true,
+      "body": "{\"username\":\"lfox\",\"password\":\"<redacted>\",\"foothold\":\"jack_comms_port\",\"pc_id\":\"lena_pc\"}"
+    },
+    "loginResponseStatus": 200,
+    "syncBeforeLogin": true,
+    "sessionsAfter": [
+      {
+        "pcId": "lena_pc",
+        "npcId": "lena",
+        "username": "lfox",
+        "displayName": "Lena Fox",
+        "via": "password",
+        "remote": true,
+        "footholdId": "jack_comms_port",
+        "host": "HB-FIN-02",
+        "portrait": "assets/characters/female_blowse_talk.png"
+      }
+    ],
+    "networkViewedEmitsDuringSignin": 0,
+    "pass": true
+  },
+  "requestLog": [
+    {
+      "t": 27509,
+      "who": "A",
+      "phase": "request",
+      "method": "POST",
+      "path": "/network/plant",
+      "body": "{\"jack_id\":\"comms_port\",\"delta\":true,\"device_id\":\"kit_dropbox\"}"
+    },
+    {
+      "t": 27605,
+      "who": "A",
+      "phase": "response",
+      "method": "POST",
+      "path": "/network/plant",
+      "status": 200
+    },
+    {
+      "t": 27633,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"globalVariables\":{\"n7_armed\":false,\"bench_pc_off\":true,\"n14_seen_off\":false,\"p5_lena_remote\":false,\"servers_offline\":false,\"capture_card_ian\":false,\"capture_card_lena\":false,\"bench_port_planted\":false,\"comms_port_planted\":true},\"notes\":[{\"id\":1794998797506001,\"title\":\"Notepad\",\"text\":\"Use this notepad to review your collected notes and observations.\\n\\nObservation: A handy notepad for keeping tr"
+    },
+    {
+      "t": 27762,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 27765,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 27798,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 32364,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"globalVariables\":{\"live_proof_flip\":true},\"triggeredEvents\":{\"sam:network_viewed:1\":1},\"scenarioClock\":{\"elapsedMs\":13365},\"timedMessages\":{\"pending\":[],\"delivered\":[]},\"clientTs\":1794998809929}"
+    },
+    {
+      "t": 32404,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 32406,
+      "who": "A",
+      "phase": "request",
+      "method": "POST",
+      "path": "/login",
+      "body": "{\"username\":\"lfox\",\"password\":\"<redacted>\",\"foothold\":\"jack_comms_port\",\"pc_id\":\"lena_pc\"}"
+    },
+    {
+      "t": 32454,
+      "who": "A",
+      "phase": "response",
+      "method": "POST",
+      "path": "/login",
+      "status": 200,
+      "answer": "{\"success\":true,\"npcId\":\"lena\",\"username\":\"lfox\",\"displayName\":\"Lena Fox\",\"via\":\"password\",\"portrait\":\"assets/characters/female_blowse_talk.png\",\"remote\":true,\"footholdId\":\"jack_comms_port\",\"host\":\"HB-FIN-02\"}"
+    },
+    {
+      "t": 33221,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"globalVariables\":{\"p5_lena_remote\":true},\"triggeredEvents\":{\"sam:pc_signed_in:3\":1},\"scenarioClock\":{\"elapsedMs\":14220},\"timedMessages\":{\"pending\":[],\"delivered\":[]},\"clientTs\":1794998810784}"
+    },
+    {
+      "t": 33277,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    }
+  ],
+  "finishedAt": "2026-11-18T10:46:53.194Z"
+}
