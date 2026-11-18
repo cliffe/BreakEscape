@@ -3096,7 +3096,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             <%= after_end_json.('security_office') %>
             { "eventPattern": "room_entered:security_office", "condition": "globalVars.security_alerted === true", "setPatrolSpeed": 95 },
             <%# RL 3: picking the fitter's locker under his eye is the quiet route's intended risk (systems/lockpick-catch.js). %>
-            { "eventPattern": "lockpick_used_in_view", "conversationMode": "person-chat", "targetKnot": "duty", "cooldown": 250 }
+            { "eventPattern": "lockpick_used_in_view", "conversationMode": "person-chat", "targetKnot": "duty_caught", "cooldown": 250 }
           ],
           "observations": "The duty guard walking the office floor between the monitors and the stair."
         },
@@ -4712,6 +4712,7 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "hall_a_engaged": false,
     "hall_b_warnings": 0,
     "hall_b_engaged": false,
+    "duty_warnings": 0,
     "gallery_call_deferred": false,
     "static_power_ko": false,
     "power_fight_over": false,
