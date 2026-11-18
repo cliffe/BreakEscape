@@ -103,7 +103,9 @@ test('callers set the expectation before the toast', () => {
     // next callback) the success toast
     const exp = starters.indexOf('window.expectContainerAfterUnlock?.(lockable);');
     assert.ok(exp > 0, 'lockpick success sets the expectation');
-    const branch = starters.slice(exp, starters.indexOf('callback(true, { method:', exp));
+    const end = starters.indexOf('callback(true, { method:', exp);
+    assert.ok(end > exp, 'the onComplete branch ends at the method callback');
+    const branch = starters.slice(exp, end);
     assert.match(branch, /'Lockpicking', 4000/, 'the pick toast follows the expectation');
     assert.match(branch, /'Unlock Successful', 4000/, 'so does the key toast');
     for (const toast of ["'Unlock Successful', 4000);\n                // Small delay", "'PIN Accepted', 4000);\n                callback(true, result)", "'Password Accepted', 4000);\n                callback(true, result)"]) {
