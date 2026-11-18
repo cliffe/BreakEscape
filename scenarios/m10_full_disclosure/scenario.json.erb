@@ -1822,7 +1822,8 @@ end
             { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard_kettle' && data.isHostile === true", "setGlobal": { "tunnel_fight_on": true } },
             { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard' && data.isHostile === false", "setGlobal": { "tunnel_fight_on": false } },
             { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard_kettle' && data.isHostile === false", "setGlobal": { "tunnel_fight_on": false } },
-            { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard' || data.npcId === 'tunnel_guard_kettle'", "setGlobal": { "tunnel_fight_on": false } },
+            { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard'", "setGlobal": { "tunnel_fight_on": false } },
+            { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard_kettle'", "setGlobal": { "tunnel_fight_on": false } },
             { "eventPattern": "global_variable_changed:tunnel_fight_on", "condition": "value === false && globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
 <%# --- The inner door and the tripwire (OT 4.3) ------------------------------ %>
             { "eventPattern": "room_entered:blast_tunnel", "condition": "!globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 800 },
