@@ -302,8 +302,9 @@ U.FONT["&"] = [".#.", "#.#", ".#.", "#.#", ".##"]
 
 
 def archive_plate():
-    """A brass DEEDS & ARCHIVE name plate, the lw_sign_records1 shape (67x11)."""
-    plate("DEEDS & ARCHIVE", "lw_sign_archive1")
+    """A brass DEEDS AND ARCHIVE name plate, the lw_sign_records1 shape (75x11). Spelt
+    out: the 3x5 ampersand read as an 8."""
+    plate("DEEDS AND ARCHIVE", "lw_sign_archive1")
 
 
 def framed_notice():
@@ -362,19 +363,21 @@ def lanyard():
     w, h = 10, 16
     c = Canvas(w, h)
     GREEN, GREEN_D = (30, 92, 62), (20, 60, 42)
+    # a loose loop of strap lying on the worktop: an outlined ring with an open middle,
+    # the clip at its foot and the pass card lying under it
     c.rect(1, 0, 8, 0, OUTLINE)
-    c.rect(1, 1, 8, 1, GREEN)
-    c.rect(1, 2, 2, 6, GREEN)
-    c.rect(7, 2, 8, 6, GREEN)
-    c.hline(1, 8, 2, GREEN_D)
-    c.px(0, 1, OUTLINE); c.px(9, 1, OUTLINE)
-    c.rect(4, 6, 5, 7, BRASS)
-    c.rect(1, 8, 8, 14, OUTLINE)
+    c.rect(0, 1, 9, 7, OUTLINE)
+    c.rect(1, 1, 8, 6, GREEN)
+    c.hline(1, 8, 6, GREEN_D)
+    c.rect(3, 2, 6, 5, OUTLINE)              # the open middle of the loop
+    c.rect(4, 3, 5, 4, (0, 0, 0, 0))         # transparent: the worktop shows through
+    c.rect(1, 8, 8, 14, OUTLINE)             # the card
     c.rect(2, 9, 7, 13, CREAM)
     c.rect(3, 10, 4, 11, GREY)               # photo
     c.hline(5, 6, 10, GREY)
     c.hline(5, 6, 12, GREY)
     c.hline(3, 6, 13, BRASS_DARK)
+    c.rect(4, 7, 5, 8, BRASS)                # clip joining loop and card
     c.hline(2, 7, 15, (0, 0, 0, 60))
     c.save(OBJ, "lw_lanyard1")
 
