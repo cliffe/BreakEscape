@@ -736,6 +736,32 @@ export function blockPlayerIntoNpc(playerBody, npcBody) {
     return true;
 }
 
+/**
+ * q53 wall case, the NPC walking into a player who stands still: after the undo above they can
+ * still overlap. Move the player out by the shortest way that ends clear of every wall rect and
+ * static body, so he is never pressed into a wall box (that is how bodies tunnel). If every way
+ * out is blocked, nothing moves and the NPC's own avoidance routes round him.
+ */
+export function clearPlayerOfNpc(playerBody, npcBody, wallRects) {
+    if (!playerBody || !npcBody) return false;
+    const overlaps = (x, y, r) => x < r.x + r.width && x + playerBody.width > r.x && y < r.y + r.height && y + playerBody.height > r.y;
+    const npc = { x: npcBody.x, y: npcBody.y, width: npcBody.width, height: npcBody.height };
+    if (!overlaps(playerBody.x, playerBody.y, npc)) return false;
+    const hitsWall = (x, y) => wallRects.some(w => overlaps(x, y, { x: w.l, y: w.t, width: w.r - w.l, height: w.b - w.t }));
+    const px = playerBody.x, py = playerBody.y;
+    const gap = 0.5;
+    const cands = [
+        [npc.x - playerBody.width - gap, py], [npc.x + npc.width + gap, py],
+        [px, npc.y - playerBody.height - gap], [px, npc.y + npc.height + gap],
+    ].map(([x, y]) => ({ x, y, d: Math.abs(x - px) + Math.abs(y - py) })).sort((a, b) => a.d - b.d);
+    const best = cands.find(c => !hitsWall(c.x, c.y));
+    if (!best) return false;
+    if (playerBody.position) { playerBody.position.x = best.x; playerBody.position.y = best.y; }
+    else { playerBody.x = best.x; playerBody.y = best.y; }
+    playerBody.updateCenter?.();
+    return true;
+}
+
 function wallRectsFor(roomIds) {
     const out = [];
     for (const id of roomIds) {
@@ -909,6 +935,7 @@ export function createNPCCollision(scene, npcSprite, player) {
                 const mode = playerPushMode({ routed, playerNearWall: !!plyr.body && bodyNearWall(plyr.body, walls) });
                 if (mode === 'block') {
                     blockPlayerIntoNpc(plyr.body, npc.body);
+                    clearPlayerOfNpc(plyr.body, npc.body, walls);
                     return false;
                 }
                 pinForPlayer(scene, npc.body);

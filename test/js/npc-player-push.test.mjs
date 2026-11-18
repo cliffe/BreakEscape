@@ -28,7 +28,7 @@ const quiet = console.log;
 console.log = () => {};
 const mod = await import(pathToFileURL(join(dir, 'npc-sprites.mjs')).href);
 console.log = quiet;
-const { blockPlayerIntoNpc, keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision, staticRectsNear } = mod;
+const { clearPlayerOfNpc, blockPlayerIntoNpc, keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision, staticRectsNear } = mod;
 
 test('who keeps a route against the player: patrol on, not hostile, not KO', () => {
     const patrol = { config: { patrol: { enabled: true } } };
@@ -60,6 +60,8 @@ test('the rule: a plain NPC separates as before; a routed one pins, or lets the 
 
 // The real collider: createNPCCollision's process callback on a fake scene
 // A fake arcade overlapRect over a list of static bodies { x, y, width, height }
+// A fake arcade body whose x and y read through position, as Phaser's do
+const fakeBody = (x, y, extra = {}) => { const position = { x, y }; return { get x() { return position.x; }, get y() { return position.y; }, width: 16, height: 10, position, ...extra }; };
 const overlapRectOver = (statics) => (x, y, w, h, dyn, stat) => !stat ? [] :
     statics.filter(b => x < b.x + b.width && x + w > b.x && y < b.y + b.height && y + h > b.y);
 
@@ -69,7 +71,7 @@ function harness({ patrol = true, playerY = 100, playerX = 100, statics = null, 
     const scene = { physics: { add: { collider: (a, b, c, p) => { collide = c; process = p; } }, world: { on: (ev, fn) => { handlers[ev] = fn; } } } };
     if (statics) scene.physics.overlapRect = overlapRectOver(statics);
     const npc = { npcId: 'guard', body: { x: npcX, y: npcY, width: 16, height: 10, pushable: true } };
-    const player = { currentRoom: 'r', body: { x: playerX, y: playerY, width: 16, height: 10, prev: prev || { x: playerX, y: playerY }, velocity: { x: 0, y: 0 }, position: { x: playerX, y: playerY } } };
+    const player = { currentRoom: 'r', body: fakeBody(playerX, playerY, { prev: prev || { x: playerX, y: playerY }, velocity: { x: 0, y: 0 } }) };
     window.rooms = { r: { wallCollisionBoxes: [{ body: { left: 0, top: 0, right: 320, bottom: 8 } }] } };
     window.player = player;
     window.npcBehaviorManager = { getBehavior: () => behavior || ({ roomId: 'r', config: { patrol: { enabled: patrol } } }) };
@@ -188,4 +190,20 @@ test('collider: a needs errand walker is held like a patrol: pin in open floor, 
     const still = harness({ playerY: 100, behavior: arrived });
     assert.equal(still.process(), true);
     assert.equal(still.npc.body.pushable, true, 'arrived: pushed as before');
+});
+
+// The NPC walks into a player who stands still beside a wall: pushed out the free way, never into the wall
+test('clearPlayerOfNpc: the player is moved clear of the NPC by the shortest way that hits no wall', () => {
+    const wall = [{ l: 0, t: 0, r: 320, b: 8 }];
+    const npc = { x: 100, y: 20, width: 16, height: 10 };
+    const up = fakeBody(100, 12);   // overlaps; clear-above would be y -0.5 (in the wall)
+    assert.equal(clearPlayerOfNpc(up, npc, wall), true);
+    assert.ok(up.position.y >= 8, 'not pressed into the wall box');
+    assert.equal(up.position.y + up.height <= npc.y || up.position.x + up.width <= npc.x || up.position.x >= npc.x + npc.width || up.position.y >= npc.y + npc.height, true, 'clear of the NPC');
+    const apart = fakeBody(200, 40);
+    assert.equal(clearPlayerOfNpc(apart, npc, wall), false, 'not overlapping: untouched');
+    const boxed = fakeBody(100, 12);
+    const box = wall.concat([{ l: 60, t: 0, r: 100, b: 100 }, { l: 116, t: 0, r: 160, b: 100 }, { l: 0, t: 30, r: 320, b: 100 }, { l: 0, t: 8, r: 320, b: 11 }]);
+    assert.equal(clearPlayerOfNpc(boxed, npc, box), false, 'no free way out: nothing moves');
+    assert.equal(boxed.position.y, 12);
 });
