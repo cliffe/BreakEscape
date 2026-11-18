@@ -1,10 +1,10 @@
 /**
- * Keys on the session-resume overlay (games/show.html.erb: Resume / Restart / New Session).
+ * Keys on the session-resume overlay (games/show.html.erb: Resume / Start over / New Session).
  *
  * User decision 2026-10-17: while the overlay is showing, Enter (and numpad Enter) means
  * Resume, and every other key does nothing. Before this the overlay let keys through, so
  * Enter also moved the title screen on underneath while the overlay stayed up (round-4
- * engine check). Clicks are untouched, so all three buttons still work with the mouse.
+ * engine check). Clicks are untouched, so all the buttons still work with the mouse.
  *
  * The guard listens on window in the capture phase, which runs before any listener on
  * document or the page (the title screen's Space/Enter, the player's keys, Phaser's
@@ -29,9 +29,11 @@ export function isBrowserShortcut(e) {
 /**
  * Install the guard. `isShowing()` says whether the overlay is up; `onResume()` runs on
  * Enter (the page clicks the Resume button, so it takes the same path as a click).
+ * `onEscape()` runs on Escape and returns true when it used the key (the page closes
+ * the Start over step with it); Tab stays blocked.
  * Returns a function that removes the guard.
  */
-export function installResumeKeyGuard({ target = globalThis.window, isShowing, onResume } = {}) {
+export function installResumeKeyGuard({ target = globalThis.window, isShowing, onResume, onEscape } = {}) {
   if (!target?.addEventListener || typeof isShowing !== 'function') return () => {};
   // After Enter resumes on keydown, the matching keyup (and any repeats) still arrive
   // with the overlay gone; swallow them too so they don't land on the title screen.
@@ -58,6 +60,8 @@ export function installResumeKeyGuard({ target = globalThis.window, isShowing, o
     if (e.type === 'keydown' && !e.repeat && isResumeKey(e)) {
       swallowUntilKeyup = keyId(e);
       onResume?.();
+    } else if (e.type === 'keydown' && !e.repeat && (e.key === 'Escape' || e.code === 'Escape')) {
+      onEscape?.();
     }
   };
 

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: patrols and the player by walls, corridors and locked doors",
+  "description": "Engine test for the q53 wall rule: fixed-waypoint patrols hugging a wall, through a one-tile gap and toward a closed locked door.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 3,
+  "test_type": "engine_npc_player_push",
+  "test_objective": "Verify a patrol walking into a player beside a wall, a corridor or a closed door never passes through him, never puts him into a wall or across the locked door, and a paused patrol in a one-tile gap never soft-locks him."
+}

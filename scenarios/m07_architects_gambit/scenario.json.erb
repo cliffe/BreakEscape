@@ -1076,6 +1076,14 @@ scada_password = "CascadeWindow19"
               "sendTimedMessage": { "delay": 1500, "message": "They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it." }
             },
             {
+              "_comment": "Blind m07 minor 6: the first time the player opens the attack terminal, say plainly that going live on the host as the operator locks the team assignment. Fires while the window is open and the team is not already on Trojan Horse; the flag 2 and reuse nudges still follow. Latched on live_warning_sent.",
+              "eventPattern": "object_interacted",
+              "condition": "data.objectType === 'vm-launcher' && !globalVars.live_warning_sent && !globalVars.redirect_window_closed && !globalVars.team_redirected && globalVars.team_assignment !== 'trojan_horse' && !globalVars.grid_saved",
+              "onceOnly": true,
+              "setGlobal": { "live_warning_sent": true },
+              "sendTimedMessage": { "delay": 7000, "message": "One thing before you go live. Log in as the operator and they see you, and the team assignment locks. Move the team first if you mean to." }
+            },
+            {
               "_comment": "PASS 3 (r3-m6): the same for a player who never committed the team. They still can (HaX's hub), so don't say it's committed.",
               "eventPattern": "global_variable_changed:flag3_submitted",
               "condition": "value === true && !globalVars.grid_saved && !globalVars.team_assigned",
@@ -1348,9 +1356,22 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.flag<%= n %>_submitted && !globalVars.flags_nag_sent",
               "onceOnly": true,
               "setGlobal": { "flags_nag_sent": true },
-              "sendTimedMessage": { "delay": 4000, "message": "Grid's held. Some of what you took off that host hasn't gone through the relay yet. Submit the rest, then call me and I'll put you through." }
+              "sendTimedMessage": { "delay": 6000, "message": "Grid's held. Some of what you took off that host hasn't gone through the relay yet. Submit the rest, then call me and I'll put you through." }
             },
 <% end %>
+            {
+              "_comment": "Blind m07 minor 3: the abort console prints a take-able confirmation, and the countdown stopping was the only sign it had worked. HaX says so the moment the abort lands. Two rows, disjoint on countdown_expired.",
+              "eventPattern": "global_variable_changed:grid_saved",
+              "condition": "value === true && !globalVars.countdown_expired",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 900, "message": "Abort accepted. The sequence is cancelled and the breakers are holding. You stopped it." }
+            },
+            {
+              "eventPattern": "global_variable_changed:grid_saved",
+              "condition": "value === true && globalVars.countdown_expired === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 900, "message": "Abort accepted. Steps two to four are cancelled and the breakers are holding. Seattle's on manual, but the rest of the grid is safe." }
+            },
             {
               "_comment": "PASS 4 (design review fix 1): after the Architect hangs up, HaX says the debrief waits on the player and the plant is still open. Only when all four flags are in; otherwise the nag above has already told them what's missing.",
               "eventPattern": "global_variable_changed:architect_signoff_done",
@@ -2623,6 +2644,7 @@ scada_password = "CascadeWindow19"
     "hurt_line_said": false,
     "hands_down_said": false,
     "flags_nag_sent": false,
+    "live_warning_sent": false,
     "debrief_requested": false,
     "debrief_timer_fired": false,
 

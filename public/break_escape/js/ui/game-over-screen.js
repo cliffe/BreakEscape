@@ -6,6 +6,16 @@
 import { CombatEvents } from '../events/combat-events.js';
 import { isAppWindow, appHomeUrl, safeShellUrl } from '../utils/desktop-app.js';
 
+export const DEFEATED_TEXT = 'You have been defeated';
+export const RESPAWN_LABEL = 'Respawn';
+export const RESPAWN_NOTE = 'Your progress is kept. You wake at the start.';
+
+/** "Knocked out by <name>." when the cause names someone, else the generic line. */
+export function knockoutMessage(cause) {
+  const name = cause && typeof cause.name === 'string' ? cause.name.trim() : '';
+  return name ? `Knocked out by ${name}.` : DEFEATED_TEXT;
+}
+
 export class GameOverScreen {
   constructor() {
     this.overlay = null;
@@ -51,7 +61,8 @@ export class GameOverScreen {
 
     // Message
     const message = document.createElement('p');
-    message.textContent = 'You have been defeated';
+    message.textContent = DEFEATED_TEXT;
+    this.message = message;
     message.style.cssText = `
       color: #ffffff;
       font-size: 24px;
@@ -66,9 +77,10 @@ export class GameOverScreen {
       gap: 20px;
     `;
 
-    // Restart button
+    // Respawn button
     const restartBtn = document.createElement('button');
-    restartBtn.textContent = 'Restart';
+    restartBtn.textContent = RESPAWN_LABEL;
+    restartBtn.id = 'game-over-respawn-btn';
     restartBtn.style.cssText = `
       padding: 15px 40px;
       font-size: 20px;
@@ -107,6 +119,18 @@ export class GameOverScreen {
     this.overlay.appendChild(message);
     this.overlay.appendChild(buttonsContainer);
 
+    // What Respawn does, so it is not mistaken for a wipe (the resume screen's Start over is)
+    const note = document.createElement('p');
+    note.id = 'game-over-respawn-note';
+    note.textContent = RESPAWN_NOTE;
+    note.style.cssText = `
+      color: #aaaaaa;
+      font-size: 20px;
+      font-family: 'VT323', monospace;
+      margin: 0;
+    `;
+    this.overlay.appendChild(note);
+
     // Add CSS animation for pulse
     const style = document.createElement('style');
     style.textContent = `
@@ -127,7 +151,9 @@ export class GameOverScreen {
     }
 
     // Listen for player KO
-    window.eventDispatcher.on(CombatEvents.PLAYER_KO, () => {
+    window.eventDispatcher.on(CombatEvents.PLAYER_KO, (payload) => {
+      // Who did it, when the hit said (player-health.js); textContent only, names are scenario data
+      this.message.textContent = knockoutMessage(payload?.cause);
       // Add 1 second delay before showing game over screen
       setTimeout(() => {
         this.show();
@@ -189,7 +215,7 @@ export class GameOverScreen {
     this.hide();
 
     // Reload the page to restart. skip_resume=1 stops show.html.erb opening the
-    // "Resume session?" / "Other sessions" overlay: the player just chose Restart, and
+    // "Resume session?" / "Other sessions" overlay: the player just chose Respawn, and
     // a plain reload has saved progress, so the overlay would otherwise appear.
     const url = new URL(window.location.href);
     url.searchParams.set('skip_resume', '1');

@@ -290,7 +290,7 @@ Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops b
 // claims the dilemma only when the button is on offer.
 {confrontation_choice == 1:
     {attack_mechanism_known and anomaly_detected:
-        Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. You cannot reach both.
+        Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. Fighting him starts a clock on that laptop.
     - else:
         Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown.
     }
@@ -311,7 +311,7 @@ Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops b
 - operative_static_defeated:
     Voltage: Static's down. So it's you, me, and one keystroke.
 - attack_mechanism_known and anomaly_detected:
-    Voltage: You don't get to have both. I'd decide quickly.
+    Voltage: Fight me and the keystroke lands before you get to your button. I'd decide quickly.
 - else:
     Voltage: And Static's still in this room. I'd decide quickly.
 }

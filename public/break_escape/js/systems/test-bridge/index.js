@@ -49,6 +49,7 @@ import {
 import { logAction, logNote, installEventCapture, drain, peek, clear, currentSeq, eventsSince } from './log.js';
 import { minigameBridge } from './minigames.js';
 import { accessBridge } from './access.js';
+import { throttleFps, unthrottleFps } from './throttle.js';
 // Imported directly rather than read off window: player.js exports this but
 // never assigns it globally. Used only by moveTo's documented off-screen
 // exception — see moveTo below.
@@ -861,6 +862,21 @@ const bridge = {
         return scanNearby(radius, limit);
     },
 
+    /**
+     * Headless: run the game loop at `fps` (default 20) with physics fixed
+     * steps on. Returns { ok, before, after } in game steps per second, counted
+     * from the game's own 'step' events (loop.actualFps still reads the browser
+     * rate and cannot show the effect). See test-bridge/throttle.js.
+     */
+    throttleFps(fps = 20, opts) {
+        return throttleFps(fps, { game: window.game?.game, scene: window.game }, opts);
+    },
+
+    /** Undo throttleFps. */
+    unthrottleFps(opts) {
+        return unthrottleFps({ game: window.game?.game }, opts);
+    },
+
     /** True once the scene, player and scenario have finished loading. */
     isReady() {
         return !!(window.player && window.game && window.rooms && Object.keys(window.rooms).length);
@@ -1547,7 +1563,7 @@ const bridge = {
      *
      * Deliberately refuses to guess when there is more than one button and no
      * `labelMatch` is given. Some of these choices are destructive: the
-     * session-resume overlay offers Resume / Restart / New Session, and
+     * session-resume overlay offers Resume / Start over / New Session, and
      * picking wrong silently discards a save or reloads the page mid-run.
      * The caller must say which button it means.
      */

@@ -1,5 +1,5 @@
 // Timed dialogue held while the session-resume overlay is up (engine fixes round 6, item 6
-// follow-up). A game reloaded mid-cutscene boots under Resume / Restart / New Session, and
+// follow-up). A game reloaded mid-cutscene boots under Resume / Start over / New Session, and
 // person-chat's auto-advance used to keep going underneath, so lines went by unseen.
 // Run with: node --test test/js/session-overlay-pause.test.mjs
 import test from 'node:test';

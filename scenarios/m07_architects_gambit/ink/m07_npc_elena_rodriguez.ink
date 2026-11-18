@@ -65,6 +65,13 @@ VAR vault_entered = false
 {elena_outcome == "turned":
     -> post_turn_hub
 }
+// A reload restores her local flags and the synced elena_met, then restarts here.
+// Resume at the hub (her asked_ flags keep the topics already covered) instead of
+// replaying the intro; hub_quiet false gives the re-entry line.
+{elena_met:
+    ~ hub_quiet = false
+    -> hub
+}
 -> opening
 
 // ===========================================

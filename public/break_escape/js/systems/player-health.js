@@ -20,7 +20,7 @@ export function initPlayerHealth() {
     getHP: () => state.currentHP,
     getMaxHP: () => state.maxHP,
     isKO: () => state.isKO,
-    damage: (amount) => damagePlayer(amount),
+    damage: (amount, source) => damagePlayer(amount, source),
     heal: (amount) => healPlayer(amount),
     reset: () => { state = createInitialState(); },
     exportState: () => exportPlayerHealth(),
@@ -59,7 +59,20 @@ export function restorePlayerHealth(saved) {
   return true;
 }
 
-function damagePlayer(amount) {
+/**
+ * Who or what dealt a hit, kept to plain strings for the KO screen ("Knocked out by <name>").
+ * `source` is { npcId, name } from an attacking NPC; anything else (or no name) gives null.
+ */
+export function normaliseDamageSource(source) {
+  if (!source || typeof source !== 'object') return null;
+  const clean = (v) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, 60) : '');
+  const name = clean(source.name);
+  const npcId = clean(source.npcId);
+  if (!name) return null;
+  return { npcId: npcId || null, name };
+}
+
+function damagePlayer(amount, source) {
   if (!state) {
     console.error('Player health not initialized');
     return false;
@@ -107,7 +120,7 @@ function damagePlayer(amount) {
     }
 
     if (window.eventDispatcher) {
-      window.eventDispatcher.emit(CombatEvents.PLAYER_KO, {});
+      window.eventDispatcher.emit(CombatEvents.PLAYER_KO, { cause: normaliseDamageSource(source) });
     }
   }
 
