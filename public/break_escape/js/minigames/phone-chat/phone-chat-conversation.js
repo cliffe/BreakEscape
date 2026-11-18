@@ -287,6 +287,35 @@ export default class PhoneChatConversation {
     }
     
     /**
+     * True when the restored story has only the divert to DONE/END left: the call ended
+     * `line / #exit_conversation / -> DONE` and was saved before the tag line was read, so
+     * getCurrentState() says canContinue and the thread would be shown as unfinished.
+     * Reads one step straight from the engine (no tag processing, so nothing fires). If
+     * that step is empty with no choices the story is spent and is left that way for
+     * restartAfterEnd(); anything else is put back exactly as it was.
+     * @returns {boolean}
+     */
+    restoredStoryHasOnlyTheEnd() {
+        const story = this.engine?.story;
+        if (!this.storyLoaded || !story || story.currentChoices?.length > 0 || !story.canContinue) return false;
+        let saved;
+        try {
+            saved = story.state.ToJson();
+            const step = this.engine.continue();
+            const tags = step.tags || [];
+            const spent = !(step.text && step.text.trim()) && !(step.choices && step.choices.length > 0) &&
+                !step.canContinue && !tags.some(t => String(t).trim().toLowerCase() === 'end_conversation');
+            if (spent) return true;
+            story.state.LoadJson(saved);
+            return false;
+        } catch (error) {
+            console.error('❌ Error probing the restored story:', error);
+            if (saved) { try { story.state.LoadJson(saved); } catch (e) { /* keep the story as it is */ } }
+            return false;
+        }
+    }
+
+    /**
      * Sync NPC's held items to Ink variables
      * Sets has_<type> based on itemsHeld array
      * IMPORTANT: Also sets variables to false for items NOT in inventory

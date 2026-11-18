@@ -63,6 +63,32 @@ export function reopenContextLine({ isReopen, result, remembered }) {
 }
 
 /**
+ * A reopen whose resumed story had only the divert to DONE/END left. The knot ended
+ * `line / #exit_conversation / -> DONE` and the chat was closed (Esc, X, a reload)
+ * before the tag was read, so the saved story still had canContinue true: the restore
+ * took it for mid-conversation and the next continue() ran straight into the end,
+ * giving no text, no choices and "(End of conversation)". That is a finished story,
+ * and restartAfterEnd() should start it again like any other finished one.
+ *
+ * A `#end_conversation` tag is excluded: that is a deliberate close, already handled.
+ * NPC config "restartOnRetalk": false opts out, for one-shot scenes.
+ * The empty result's tags are dropped by the caller: the tag line never ran (the save
+ * came before it was read), and the restarted knot runs its own tags when it is played.
+ * @param {Object} opts
+ * @param {boolean} opts.isReopen - saved state was restored this session
+ * @param {Object} opts.result - the first continue() result
+ * @param {*} opts.restartOnRetalk - the NPC's restartOnRetalk setting
+ * @returns {boolean}
+ */
+export function resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk }) {
+    if (isReopen !== true || restartOnRetalk === false || !result) return false;
+    if (result.hasEnded !== true) return false;
+    if (result.text && result.text.trim()) return false;
+    if (result.choices && result.choices.length > 0) return false;
+    return !(result.tags || []).some(t => String(t).trim().toLowerCase() === 'end_conversation');
+}
+
+/**
  * The knot that owns the story's current choices ("hub.0.c-1" -> "hub"), or null.
  * currentPathString is null at a choice point, so the first choice's source path
  * is read instead (as the reopen re-navigation in person-chat-minigame.js does).

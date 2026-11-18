@@ -22,7 +22,7 @@ import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.j
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
-import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -659,6 +659,17 @@ export class PersonChatMinigame extends MinigameScene {
 
             // Check if story has ended
             if (result.hasEnded) {
+                // A reopen whose saved story had only the divert to DONE left (closed before the
+                // `#exit_conversation` line was read): it is a finished story, so restart it at
+                // the NPC's knot as restoreNPCState does for one that ended. The empty result's
+                // tags are dropped here: they never ran, and the restarted knot runs its own.
+                if (resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk: this.npc?.restartOnRetalk }) &&
+                    this.conversation.restartAfterEnd()) {
+                    console.log(`🔁 Resumed ${this.npcId} had only the end left - restarting at knot: ${this.npc?.currentKnot}`);
+                    this._resumedMidKnot = false;
+                    return this.showCurrentDialogue();
+                }
+
                 // Check if this is a graceful conversation end (with #end_conversation tag)
                 const hasEndConversationTag = result.tags?.some(tag =>
                     tag.trim().toLowerCase() === 'end_conversation'

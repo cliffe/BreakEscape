@@ -1042,7 +1042,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (reopen.renavigated) {
             this._presentReopened(reopen);
         } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
-            this.conversation.getCurrentState().hasEnded &&
+            (this.conversation.getCurrentState().hasEnded || this.conversation.restoredStoryHasOnlyTheEnd()) &&
             this.conversation.restartAfterEnd()) {
             console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
             this.continueStory();
