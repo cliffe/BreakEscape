@@ -9,6 +9,16 @@ const [gid, out, ...picks] = process.argv.slice(2);
 const g = await start(gid, { reload: true });
 const logs = [];
 g.page.on('console', (m) => { const x = m.text(); if (/ending-check|ending|credits|Choice|conclu|night_closed|closing/i.test(x)) logs.push(x.slice(0, 200)); });
+// Resume overlay, then the title card and any popup (as m10-hold-proof.mjs boot()).
+for (let i = 0; i < 12; i++) {
+  const bl = await g.ev(() => { try { const st = window.__test.getState(); const b = st.blockingUi; return { b: b && b.blocking ? { text: b.text } : null, mg: st.activeMinigame && st.activeMinigame.type }; } catch (e) { return {}; } });
+  if (!bl.b && !bl.mg) break;
+  if (bl.b && /RESUME SESSION/i.test(bl.b.text || '')) await g.ev(() => window.__test.dismissBlockingUi('Resume')).catch(() => {});
+  else if (bl.b) await g.ev(() => window.__test.dismissBlockingUi()).catch(() => {});
+  else await g.ev(() => window.__test.minigame && window.__test.minigame.close && window.__test.minigame.close()).catch(() => {});
+  await g.t(1200);
+}
+await g.page.waitForFunction(() => window.gameScenario && window.player && window.player.body, null, { timeout: 60000 }).catch(() => {});
 await g.ev(() => window.__test.throttleFps(20));
 const st = () => g.ev(() => {
   const s = window.__test.getState();
@@ -16,6 +26,9 @@ const st = () => g.ev(() => {
   return { mg: s.activeMinigame && s.activeMinigame.type, npc: window.currentConversationNPCId || null,
     blocking: s.blockingUi && s.blockingUi.blocking ? (s.blockingUi.text || '').slice(0, 80) : null,
     modal: !!document.getElementById('ending-check-overlay'),
+    modalVis: (() => { const o = document.getElementById('ending-check-overlay'); if (!o) return null; const r = o.getBoundingClientRect(); const cs = getComputedStyle(o); return { w: r.width, h: r.height, z: cs.zIndex, disp: cs.display, vis: cs.visibility, top: document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('#ending-check-overlay') ? 'on-top' : 'covered' }; })(),
+    asking: window.endingCheck?.isAsking?.(), needs: window.endingCheck?.needsAnswer?.(), open: (window.endingCheck?.openOptional?.() || []).map((o) => o.taskId),
+    mgAsking: !!(window.MinigameFramework?.currentMinigame?._endingAsking),
     choices: ((s.dialogue && s.dialogue.choices) || []).map((c) => c.text), line: s.dialogue && s.dialogue.text ? String(s.dialogue.text).slice(0, 90) : null,
     ending: gv.ending, six_done: gv.six_done, closing_done: gv.closing_done, night_closed: gv.night_closed,
     credits: !!document.querySelector('.credits-overlay, #credits-overlay, .mission-credits, .closing-card') };
