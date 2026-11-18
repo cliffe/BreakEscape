@@ -53,6 +53,16 @@ export class ObjectivesPanel {
     window.addEventListener?.('keydown', this._escCue, true);
     this.manager.addListener((aims) => this.render(aims));
 
+    // Desktop: the open list covered a third of the view at mission start (m08 and m09 blind
+    // runs). It stays open for AUTO_COLLAPSE_MS after the first aims show, so a new player
+    // reads it, then folds to a one-line summary unless the player has used it.
+    this._autoCollapseTimer = null;
+    this._autoCollapseDone = false;
+    this._userTouched = false;
+    this._hovering = false;
+    this.container.addEventListener('mouseenter', () => { this._hovering = true; });
+    this.container.addEventListener('mouseleave', () => { this._hovering = false; });
+
     // Initial render
     this.render(this.manager.getActiveAims());
   }
@@ -70,7 +80,7 @@ export class ObjectivesPanel {
       <span class="objectives-title"><i class="objectives-clipboard" aria-hidden="true"></i><span class="objectives-title-text">Objectives</span></span>
       <span class="objectives-pill-summary" aria-live="polite"><span class="objectives-pill-count"></span><span class="objectives-pill-text"></span></span>
       <div class="objectives-controls">
-        <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">${CHEVRON}</button>
+        <button type="button" class="objectives-toggle" aria-label="Close objectives" aria-expanded="true" aria-controls="objectives-content" title="Collapse/Expand">${CHEVRON}</button>
       </div>
     `;
     
@@ -88,6 +98,7 @@ export class ObjectivesPanel {
     // Create content area
     this.content = document.createElement('div');
     this.content.className = 'objectives-content';
+    this.content.id = 'objectives-content';
     
     // Delegate aim header clicks to toggle individual aim collapse
     this.content.addEventListener('click', (e) => {
@@ -153,7 +164,38 @@ export class ObjectivesPanel {
     panel.classList.toggle('has-more-below', more);
   }
   
+  /**
+   * Whether the one-off desktop auto-fold should happen now. Pure; tested. Never on a phone
+   * (the pill is already collapsed), after the player has used the panel, or while it is
+   * collapsed, hovered or has keyboard focus inside.
+   */
+  static shouldAutoCollapse({ compact, collapsed, userTouched, hovering, focusInside, done }) {
+    return !(compact || collapsed || userTouched || hovering || focusInside || done);
+  }
+
+  /** Start the auto-fold clock once, when the first aims have been shown. */
+  _startAutoCollapse() {
+    if (this._autoCollapseDone || this._autoCollapseTimer || this._userTouched) return;
+    const tick = () => {
+      this._autoCollapseTimer = null;
+      const focusInside = !!this.container?.contains?.(document.activeElement);
+      if (this._hovering || focusInside) {   // in use: look again shortly
+        this._autoCollapseTimer = setTimeout(tick, ObjectivesPanel.AUTO_COLLAPSE_RETRY_MS);
+        return;
+      }
+      if (ObjectivesPanel.shouldAutoCollapse({
+        compact: ObjectivesPanel.compactNow(), collapsed: this.isCollapsed,
+        userTouched: this._userTouched, hovering: false, focusInside: false, done: this._autoCollapseDone
+      })) this.setCollapsed(true);
+      this._autoCollapseDone = true;
+    };
+    this._autoCollapseTimer = setTimeout(tick, ObjectivesPanel.AUTO_COLLAPSE_MS);
+  }
+
   toggleCollapse() {
+    this._userTouched = true;
+    clearTimeout(this._autoCollapseTimer);
+    this._autoCollapseTimer = null;
     this.setCollapsed(!this.isCollapsed);
     if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
   }
@@ -167,6 +209,7 @@ export class ObjectivesPanel {
     const toggle = this.container.querySelector('.objectives-toggle');
     toggle?.classList.toggle('is-collapsed', this.isCollapsed);
     toggle?.setAttribute('aria-label', this.isCollapsed ? 'Open objectives' : 'Close objectives');
+    toggle?.setAttribute('aria-expanded', String(!this.isCollapsed));
   }
 
   /** The phone layout (ui/hud-lanes.js isCompactViewport: under 900 px wide or 500 px tall). */
@@ -213,6 +256,16 @@ export class ObjectivesPanel {
    * on the phone layout with the pill showing.
    */
   foldToast(title, message, ms = ObjectivesPanel.PILL_FLASH_MS) {
+    // Desktop, folded to its summary line: blink it for news, and let the toast show as usual
+    if (!ObjectivesPanel.compactNow() && this.isCollapsed && this.container && !this.container.classList.contains('hidden')
+      && !document.body?.classList?.contains('minigame-active')) {
+      this.container.classList.remove('pill-pulse');
+      void this.container.offsetWidth;
+      this.container.classList.add('pill-pulse');
+      clearTimeout(this._pillFlashTimer);
+      this._pillFlashTimer = setTimeout(() => this.container?.classList.remove('pill-pulse'), ms);
+      return false;
+    }
     if (!ObjectivesPanel.compactNow() || !this.container || this.container.classList.contains('hidden')) return false;
     if (document.body?.classList?.contains('minigame-active')) return false;   // pill hidden: keep the toast
     this.container.classList.remove('pill-pulse');
@@ -349,6 +402,14 @@ export class ObjectivesPanel {
         + 'title="Some optional objectives are still open">End the mission</button></div>';
     }
     this.content.innerHTML = html;
+    // A new aim lengthens the list: if the player has not taken the panel over, it gets another
+    // AUTO_COLLAPSE_MS to be read before it folds again (m08 part 2: three aims, a third of the view)
+    if (newAimIds.length && !this._userTouched && !this.isCollapsed) {
+      clearTimeout(this._autoCollapseTimer);
+      this._autoCollapseTimer = null;
+      this._autoCollapseDone = false;
+    }
+    this._startAutoCollapse();
     if (newAimIds.length) this.revealAim(this.aimToReveal(newAimIds, aims));
     this.updateMoreBelow();
   }
@@ -462,6 +523,7 @@ export class ObjectivesPanel {
     if (this._compactCue) window.removeEventListener?.('resize', this._compactCue);
     if (this._escCue) window.removeEventListener?.('keydown', this._escCue, true);
     clearTimeout(this._pillFlashTimer);
+    clearTimeout(this._autoCollapseTimer);
     this._moreBelowObserver?.disconnect();
     this._moreBelowObserver = null;
     this.manager.removeListener(this.render);
@@ -469,5 +531,8 @@ export class ObjectivesPanel {
 }
 
 ObjectivesPanel.PILL_FLASH_MS = 4000;
+/** Desktop: how long the list stays open at mission start before it folds (ms), and the recheck while in use. */
+ObjectivesPanel.AUTO_COLLAPSE_MS = 20000;
+ObjectivesPanel.AUTO_COLLAPSE_RETRY_MS = 5000;
 
 export default ObjectivesPanel;

@@ -7,7 +7,7 @@
   top: 14px;
   left: 20px;
   width: 280px;
-  max-height: 60vh;
+  max-height: 46vh;
   background: rgba(0, 0, 0, 0.85);
   border: 2px solid #444;
   font-family: 'GNF', monospace;
@@ -419,6 +419,40 @@
    pill (foldToast). Same test as ui/hud-lanes.js isCompactViewport. */
 .objectives-pill-summary {
   display: none;
+}
+
+/* Desktop, folded (it folds itself once, 20 s after the first aims show): the title gives way to
+   the same one-line summary the phone pill has, count then current aim, so a folded panel still
+   says what to do next. A click, or the toggle, opens it again. */
+.objectives-panel.collapsed .objectives-title-text {
+  display: none;
+}
+.objectives-panel.collapsed .objectives-clipboard {
+  margin-right: 0;
+}
+.objectives-panel.collapsed .objectives-pill-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  margin: 0 8px;
+  font-family: 'GNF', monospace;
+  font-size: 16px;
+  color: #ddd;
+  white-space: nowrap;
+}
+.objectives-panel.collapsed .objectives-pill-count {
+  flex: 0 0 auto;
+}
+.objectives-panel.collapsed .objectives-pill-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.objectives-panel.pill-pulse {
+  animation: objectives-pill-pulse 0.5s steps(2, end) 4;
 }
 
 @media (max-width: 899.98px), (max-height: 500px) {
