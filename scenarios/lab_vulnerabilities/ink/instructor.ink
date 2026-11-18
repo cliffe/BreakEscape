@@ -470,7 +470,7 @@ Penetration Testing Instructor: A classic example is the Adobe PDF Escape EXE vu
 
     Penetration Testing Instructor: Start Apache: sudo service apache2 start
 
-    Penetration Testing Instructor: Then the victim can browse to http://YOUR_IP/share/timetable.pdf
+    Penetration Testing Instructor: Then the victim can browse to http:\/\/YOUR_IP/share/timetable.pdf
 
     ~ instructor_rapport += 5
 
@@ -656,7 +656,7 @@ Penetration Testing Instructor: On attacker: nc VICTIM_IP 31337
 
     Penetration Testing Instructor: Start Apache: sudo service apache2 start
 
-    Penetration Testing Instructor: Access from victim: http://KALI_IP/share/filename.pdf
+    Penetration Testing Instructor: Access from victim: http:\/\/KALI_IP/share/filename.pdf
 
     ~ instructor_rapport += 3
 
@@ -671,7 +671,7 @@ Penetration Testing Instructor: On attacker: nc VICTIM_IP 31337
 
     Penetration Testing Instructor: Create file: echo TEXT > filename.txt
 
-    Penetration Testing Instructor: Open browser (Windows): explorer "https://example.com"
+    Penetration Testing Instructor: Open browser (Windows): explorer "https:\/\/example.com"
 
     ~ instructor_rapport += 3
 
