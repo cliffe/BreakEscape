@@ -328,7 +328,7 @@
     width: max-content;
     /* The right padding clears the pin (.postit-note::after: 8px wide, 5px from the edge) */
     padding: 10px 18px 10px 14px;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 20px;
 }
 
