@@ -35,8 +35,8 @@ test('field-guide links point at published pages, not the missing field-guide-* 
     for (const u of urls) assert.match(u, /\/m09-digital-archaeology(-vm-technical-steps)?\/#[a-z-]+$/);
 });
 
-test('Last Box: talked-down variant comes after the clock-run one so it wins', () => {
+test('Last Box: talked-down variant comes before the clock-run one (first match wins)', () => {
     const a = src.indexOf('"value": "Strips in the bin. The last box is gone." }');
     const b = src.indexOf("globalVars.legacy_clock_run && globalVars.sorensen_fate === 'talked'");
-    assert.ok(a > 0 && b > a);
+    assert.ok(b > 0 && a > b);
 });
