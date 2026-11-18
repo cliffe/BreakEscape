@@ -44,6 +44,91 @@ export function forgetNpcLine(npcId) {
 }
 
 /**
+ * Reopen echo. Closing a chat at a choice point and reopening it re-enters the knot
+ * that owns the choices (so conditions re-read the current globals), and a knot that
+ * prints lines before its choices prints them all again: the player saw and heard
+ * them a moment ago, and hears the same lines twice. Each line displayed is
+ * remembered here (raw ink text, per NPC, per page load, newest 40); a reopen whose
+ * first continue() prints only lines already in that memory is an echo, and the
+ * caller shows the choices with the usual one-line recap instead (display only, no
+ * TTS, no tags). Anything new in the text (a changed return greeting, a line a changed
+ * global now prints) makes it a real re-entry and it plays as normal.
+ */
+const MAX_SHOWN = 40;
+const shownLines = new Map();
+const normLine = l => String(l).replace(/\s+/g, ' ').trim();
+
+export function rememberShownText(npcId, text) {
+    if (!npcId || typeof text !== 'string') return;
+    const lines = text.split('\n').map(normLine).filter(Boolean);
+    if (!lines.length) return;
+    const list = shownLines.get(npcId) || [];
+    for (const l of lines) list.push(l);
+    shownLines.set(npcId, list.slice(-MAX_SHOWN));
+}
+
+export function forgetShownText(npcId) {
+    if (npcId === undefined) shownLines.clear();
+    else shownLines.delete(npcId);
+}
+
+/**
+ * True when every line of a result's text is one this page load already showed for
+ * this NPC, and there is at least one line.
+ */
+export function linesAlreadyShown(npcId, text) {
+    const seen = shownLines.get(npcId);
+    if (!seen || !seen.length || typeof text !== 'string') return false;
+    const lines = text.split('\n').map(normLine).filter(Boolean);
+    if (!lines.length) return false;
+    const pool = new Set(seen);
+    return lines.every(l => pool.has(l));
+}
+
+/**
+ * Run a reopened story forward in silence to see whether it only replays lines
+ * already shown. ink prints one line per continue(), so the replay is only known
+ * to be an echo once the choices are reached. Reads from the story as it rests after
+ * the reopen's restore and re-navigation; takes a snapshot first.
+ *
+ * - Echo (every line seen, ends at choices, no exit tag): returns the choices result
+ *   with its text and tags blanked. The story is left at the choices, as a normal
+ *   continue would leave it.
+ * - Anything else (a new line, no choices, an exit or end tag, a thrown error):
+ *   restores the snapshot and returns null; the caller continues as usual.
+ * @param {Object} opts
+ * @param {string} opts.npcId
+ * @param {Object} opts.engine - InkEngine-like, continue() -> { text, choices, tags, canContinue }
+ * @param {Object} opts.story - inkjs Story (state.ToJson / state.LoadJson)
+ * @returns {Object|null}
+ */
+export function drainReopenEcho({ npcId, engine, story }) {
+    if (!engine || !story?.state || !shownLines.get(npcId)?.length) return null;
+    let snapshot;
+    try { snapshot = story.state.ToJson(); } catch (e) { return null; }
+    const restore = () => { try { story.state.LoadJson(snapshot); } catch (e) { console.warn('⚠️ Could not restore story after echo check:', e.message); } };
+    let sawText = false;
+    try {
+        for (let i = 0; i < 60; i++) {
+            const r = engine.continue();
+            if (!r) break;
+            if ((r.tags || []).some(t => /^(exit|end)_conversation\b/i.test(String(t).trim()))) break;
+            if (r.text && r.text.trim()) {
+                if (!linesAlreadyShown(npcId, r.text)) break;
+                sawText = true;
+            }
+            if (r.choices && r.choices.length > 0) {
+                if (!sawText) break;
+                return { ...r, text: '', tags: [], hasEnded: false };
+            }
+            if (!r.canContinue) break;
+        }
+    } catch (e) { /* fall through to restore */ }
+    restore();
+    return null;
+}
+
+/**
  * Decide whether a reopened conversation needs a context line.
  * Returns the remembered line when the conversation was resumed from saved
  * state, the first continue() printed no text, and there are choices to show

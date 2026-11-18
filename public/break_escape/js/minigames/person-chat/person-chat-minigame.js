@@ -22,7 +22,7 @@ import { splitReplyTags, partitionSlowTags, tagAction } from './person-chat-pend
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
-import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, rememberShownText, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -641,7 +641,16 @@ export class PersonChatMinigame extends MinigameScene {
 
         try {
             // Get current content without advancing
-            const result = this.conversation.continue();
+            // Re-entering the knot on a reopen replays lines the player has just seen and heard.
+            // Run it forward in silence first: if it is only those lines, keep the choices, drop the
+            // replay (and its tags, which already ran) and let the recap below show the last line
+            // once, display only. Anything new in it plays as normal (person-chat-reopen.js).
+            let result = null;
+            if (this.isResumedConversation) {
+                result = drainReopenEcho({ npcId: this.npcId, engine: this.inkEngine, story: this.inkEngine?.story });
+                if (result) console.log(`🔇 ${this.npcId}: reopen would replay lines already shown - showing choices with a recap`);
+            }
+            if (!result) result = this.conversation.continue();
             // Only the first display after a reopen may need the context line
             const isReopen = this.isResumedConversation;
             this.isResumedConversation = false;
@@ -743,6 +752,7 @@ export class PersonChatMinigame extends MinigameScene {
                         this.ui.showChoices(result.choices);
                         this.ui.showDialogue(result.text, speaker, true); // preserveChoices=true
                         rememberNpcLine(this.npcId, { text: result.text, speaker });
+                        rememberShownText(this.npcId, result.text);
                     }
                 } else {
                     // No text, just choices - show them immediately
@@ -1353,6 +1363,7 @@ export class PersonChatMinigame extends MinigameScene {
      * @param {Object} result - Result with potentially multiple lines and tags
      */
     displayAccumulatedDialogue(result) {
+        rememberShownText(this.npcId, result?.text);
         // PHASE 0: State locking to prevent race conditions during rapid dialogue advancement
         if (this.isProcessingDialogue) {
             console.log('⏳ Already processing dialogue, ignoring call');
@@ -1869,6 +1880,7 @@ export class PersonChatMinigame extends MinigameScene {
                 console.log(`🗣️ Calling showDialogue with speaker: ${speaker}`);
                 this.ui.showDialogue(result.text, speaker);
                 rememberNpcLine(this.npcId, { text: result.text, speaker });
+                rememberShownText(this.npcId, result.text);
             } else {
                 console.log(`⚠️ Skipping showDialogue - no text or text is empty`);
             }
