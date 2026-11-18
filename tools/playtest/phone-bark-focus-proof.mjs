@@ -90,7 +90,7 @@ async function run(w, h, tag) {
   const before = await barks();
   // Add the history row first (unread), sample the phone's unread total, then deliver the bark
   // so the fold has something to mark read: the drop is measured across the fold itself.
-  await page.evaluate((id) => window.npcManager.addMessage(id, 'npc', `${P} one: eyes on the vault.`, { isBark: true }), HAX);
+  await page.evaluate(({ id, t }) => window.npcManager.addMessage(id, 'npc', t, { isBark: true }), { id: HAX, t: `${P} one: eyes on the vault.` });
   const totalBefore = await total();
   const haxBefore = await page.evaluate((id) => (window.npcManager.getConversationHistory(id) || [])
     .filter(m => !m.read && (m.type === 'npc' || (m.type === 'call' && m.callEvent === 'missed'))).length, HAX);
