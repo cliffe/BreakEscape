@@ -83,3 +83,17 @@ Own slip in this game: my first punch script began by closing the open minigame,
 
 - Headless browser closes at the start or replay of the credits (second occurrence, run 2 of B2c and now game 8090). Cause unknown; not tied to the extras.
 - Engine log reload semantics: after a reload the needs clock restarts near 0 (page clock 1 to 17), so clock times before and after a reload are not comparable.
+
+## Check D rerun (game 8125)
+
+One real punch on Sofia at clock 138 to 141 (21 px, `playerCombat.attack`): `fp_staff_upset` true, `fp_sofia_ko` false, hostile, not knocked out. Played to the lethal ending with stand-in flags; `closing_done` true, `missionEnd.kind` "credits". The credits overlay shows one line at a time and the recorder watched the wrong element, so the DOM pass was missed. The orchestrator then called the engine's own `window.endingReplayOptions(window.gameScenario)` in the live page (the builder a reload of a concluded game uses, from the saved globals) and read:
+
+| Order | Line |
+|---|---|
+| 1 | OFFICER KENJI ARAKAWA: Held the blast door all night beside Nightshade. |
+| 2 | OFFICER DEV MALHOTRA: Comms, both vans. |
+| 3 | DARREN PRICE: Field support. Kept the generator running till dawn. |
+| 4 | SOFIA MARCHETTI: Welfare. Put the kettle away when the shouting started. |
+| 5 | HALINA KOWALCZYK, 'WREN': Breaching lead, Task Force Null. ... |
+
+PASS on the clause chosen from live globals; the line was not seen on screen in this run.
