@@ -409,7 +409,7 @@ He'll call when he's ready. Not tonight.
     {
     - crew_lost:
         // C2 (D6-1): a recap now; the nine were named at the top.
-        Agent HaX: And two more on the feed before the grid caught up.
+        Agent HaX: Nine in Hall 2, and two more on the feed before the grid caught up.
         // Phase 4 dialogue C1 (D5-3, user decision): the alarm that wasn't sounded,
         // stated once and left. crew_lost means it never went.
         {

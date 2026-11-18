@@ -903,7 +903,7 @@ They own the SCADA layer, and there's a remote trigger sitting on top of it.
 
 Right. Faked temperatures, interlocks bypassed, an overcharge on a timer.
 
-So you use the hardwired shutdown button in the plant room. No network path, nothing for them to undo.
+So the answer's the hardwired shutdown button in the plant room. No network path, nothing for them to undo.
 
 // Phase 4 dialogue C1 (D5-5): not "press it" before it can arm.
 {anomaly_detected:

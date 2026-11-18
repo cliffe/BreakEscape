@@ -61,7 +61,7 @@ Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
 === briefing_main ===
 #speaker:agent_0x99
 
-Agent HaX: Albion Energy Storage. Two hundred megawatt-hours of grid batteries, and two hundred and forty thousand people get their power through them.
+Agent HaX: Albion Energy Storage. Two hundred megawatt-hours of grid batteries, and two hundred and forty thousand people get their power through that site.
 
 Agent HaX: A cell called Critical Mass got in as maintenance contractors, under the name OptiGrid Solutions.
 
@@ -108,7 +108,7 @@ Agent HaX: Lithium cells are safe while they stay under their charge limit and t
 
 Agent HaX: Critical Mass have bypassed the safety interlocks on all three rack banks and faked the temperature sensors. An overcharge trigger is armed.
 
-Agent HaX: If it fires, the cells heat past saving and catch. One rack lights the next, then the hydrogen goes. The hall burns and the grid drops.
+Agent HaX: If it fires, the cells heat until they can't stop themselves, and they catch. One rack lights the next, then the hydrogen goes. The hall burns and the grid drops.
 
 + [Then we stop them before they press it.]
     Agent HaX: Yes.
@@ -319,7 +319,7 @@ Agent HaX: But if he goes for the trigger, stop him any way you have to. Lives f
 === mission_departure ===
 #speaker:agent_0x99
 
-Agent HaX: The site's twenty minutes out. Show the gate your regulator badge: a routine audit that came early.
+Agent HaX: The site's twenty minutes out. Show the gate your regulator badge. You're a routine audit that came early.
 
 Agent HaX: {combat_ready: If it comes to a fight, keep your head.| Stay alert. They're expecting somebody.}
 
