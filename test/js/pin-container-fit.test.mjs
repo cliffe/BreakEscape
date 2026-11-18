@@ -206,19 +206,28 @@ test('B6: a short narrow phone keeps the 400px display size (digits never grow o
     assert.ok(pin.indexOf('(max-height: 840px) and (max-width: 400px)') > pin.indexOf('@media (max-height: 840px) {'));
 });
 
-test('B6 r2: 720-high pad with the cracker row wins 40px back and keeps 32px keys', () => {
+test('B6 r2: 720-high pad with the cracker row wins about 56px back and keeps 32px keys', () => {
     const media = '(max-height: 760px)';
-    const kp = rule(pin, '.pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-keypad', media);
-    const key = rule(pin, '.pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-key', media);
+    const sel = '.pin-minigame-interface:has(.pin-minigame-toggle-container)';
+    const kp = rule(pin, sel + ' .pin-minigame-keypad', media);
+    const key = rule(pin, sel + ' .pin-minigame-key', media);
+    const gap = rule(pin, sel, media);
     const baseKp = rule(pin, '.pin-minigame-keypad', '(max-height: 840px)');
     const baseKey = rule(pin, '.pin-minigame-key', '(max-height: 840px)');
-    const saved = 2 * (px(baseKp.padding) - px(kp.padding)) + 4 * 2 * (px(baseKey.padding) - px(key.padding));
-    assert.ok(saved >= 40, `saves ${saved}px (needs 30px plus margin)`);
-    // key height: 24px glyph line + padding + 2px borders must stay at least a 32px target
-    assert.ok(24 + 2 * px(key.padding) + 4 >= 32);
-    // only the cracker pad, only 521..760px high and wide windows: 1280x800 and the phone landscape block are untouched
-    assert.ok(pin.includes('@media (max-height: 760px) and (min-height: 521px) and (min-width: 700px)'));
-    // the base keypad padding is 14px each side, so the saving above is 2 x 4px (top and bottom)
+    const baseGap = rule(pin, '.pin-minigame-interface', '(max-height: 840px)');
     assert.equal(px(baseKp.padding), 14);
-    assert.equal(px(baseKey.padding), 8);
+    assert.equal(px(baseKey['min-height']), 40);
+    assert.equal(px(baseGap.gap), 10);
+    // key height is its min-height or glyph line (24px) + padding + borders, whichever is larger
+    const keyH = Math.max(px(key['min-height']), 24 + 2 * px(key.padding) + 4);
+    assert.ok(keyH >= 32, `key ${keyH}px stays a 32px touch target`);
+    const saved = 2 * (px(baseKp.padding) - px(kp.padding)) + 4 * (40 - keyH) + 4 * (px(baseGap.gap) - px(gap.gap));
+    assert.ok(saved >= 50, `saves ${saved}px (needs 25px plus margin)`);
+    assert.ok(pin.includes('@media (max-height: 760px) and (min-height: 521px) and (min-width: 700px)'));
+});
+
+test('B6 r2: the cracker help text is 16px GNF on a 24px line', () => {
+    const h = rule(pin, '.pin-minigame-cracker-help');
+    assert.equal(h['font-size'], '16px');
+    assert.equal(h['line-height'], '24px');
 });
