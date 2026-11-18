@@ -3,7 +3,8 @@
 //  - PLAYER_KO carries the cause (attacker name) and the screen says "Knocked out by <name>.",
 //    falling back to "You have been defeated". Set with textContent.
 //  - The Resume overlay's "Start over" opens a confirm step; only its Start over POSTs /reset,
-//    and X or Keep my progress close it without a POST.
+//    and X, Enter or Escape close it without a POST; there is no Keep button. The confirm
+//    button is danger-styled under every theme (ui-themes.css rule test).
 // Real sources against jsdom. Run with: bin/test-js test/js/ko-restart-clarity.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -94,7 +95,7 @@ test('NPC combat passes the attacker (display name) to the health system', () =>
 
 // The Resume overlay -----------------------------------------------------------------
 
-function overlay() {
+function overlay(opts = {}) {
     const d = new JSDOM(`<!doctype html><body>
       <div id="session-main-row" style="display:flex">
         <button id="session-resume-btn">Resume</button>
@@ -103,15 +104,14 @@ function overlay() {
       </div>
       <div id="session-restart-confirm" style="display:none">
         <button id="session-restart-close-btn" aria-label="Close">X</button>
-        <button id="session-restart-keep-btn">Keep my progress</button>
         <button id="session-restart-confirm-btn">Start over</button>
       </div>
       <p id="session-restart-status" style="display:none"></p></body>`).window.document;
     const calls = []; let reloads = 0;
     const ctl = installRestartConfirm({
         doc: d, apiBasePath: '/break_escape/games/7', csrfToken: 'tok',
-        fetchFn: (url, opts) => { calls.push({ url, opts }); return Promise.resolve({ json: () => Promise.resolve({ success: true }) }); },
-        reload: () => { reloads++; }
+        fetchFn: opts.fetchFn || ((url, o) => { calls.push({ url, opts: o }); return Promise.resolve({ json: () => Promise.resolve({ success: true }) }); }),
+        reload: opts.reload || (() => { reloads++; })
     });
     return { d, calls, ctl, reloads: () => reloads };
 }
@@ -138,24 +138,49 @@ test('overlay: confirm Start over POSTs /reset then reloads', async () => {
     assert.equal(reloads(), 1);
 });
 
-test('overlay: X and Keep my progress close the step without a POST', async () => {
-    for (const id of ['session-restart-close-btn', 'session-restart-keep-btn']) {
-        const { d, calls, ctl, reloads } = overlay();
+test('overlay: X closes the step without a POST and returns focus to Start over', async () => {
+    const { d, calls, ctl, reloads } = overlay();
+    d.getElementById('session-restart-btn').click();
+    assert.equal(ctl.isConfirming(), true);
+    assert.equal(d.activeElement.id, 'session-restart-close-btn');
+    d.getElementById('session-restart-close-btn').click();
+    await tick();
+    assert.equal(ctl.isConfirming(), false);
+    assert.ok(shown(d.getElementById('session-main-row')));
+    assert.ok(!shown(d.getElementById('session-restart-confirm')));
+    assert.equal(d.activeElement.id, 'session-restart-btn');
+    assert.equal(calls.length, 0);
+    assert.equal(reloads(), 0);
+    assert.equal(d.getElementById('session-restart-keep-btn'), null);
+});
+
+test('overlay: Enter and Escape close the step only while it is open', () => {
+    for (const key of ['handleEnter', 'handleEscape']) {
+        const { d, calls, ctl } = overlay();
+        assert.equal(ctl[key](), false, key + ' is a no-op on the main row');
+        assert.ok(shown(d.getElementById('session-main-row')));
         d.getElementById('session-restart-btn').click();
-        assert.equal(ctl.isConfirming(), true);
-        d.getElementById(id).click();
-        await tick();
+        assert.equal(ctl[key](), true);
         assert.equal(ctl.isConfirming(), false);
         assert.ok(shown(d.getElementById('session-main-row')));
-        assert.ok(!shown(d.getElementById('session-restart-confirm')));
+        assert.equal(d.activeElement.id, 'session-restart-btn');
         assert.equal(calls.length, 0);
-        assert.equal(reloads(), 0);
     }
 });
 
+test('overlay: a stale status line is hidden when the step opens', () => {
+    const { d } = overlay();
+    const st = d.getElementById('session-restart-status');
+    st.textContent = 'Error: boom'; st.style.display = 'block';
+    d.getElementById('session-restart-btn').click();
+    assert.ok(!shown(st));
+});
+
 test('overlay: a failed reset shows the error and re-enables the buttons', async () => {
-    const d = overlay().d;
-    installRestartConfirm({ doc: d, fetchFn: () => Promise.resolve({ json: () => Promise.resolve({ success: false, error: 'No' }) }), reload() { throw new Error('no reload'); } });
+    const { d } = overlay({
+        fetchFn: () => Promise.resolve({ json: () => Promise.resolve({ success: false, error: 'No' }) }),
+        reload() { throw new Error('no reload'); }
+    });
     d.getElementById('session-restart-btn').click();
     d.getElementById('session-restart-confirm-btn').click();
     await tick(); await tick(); await tick();
@@ -168,6 +193,34 @@ test('the view labels the button Start over and loads the confirm module', () =>
     assert.match(erb, /id="session-restart-btn"[^>]*>Start over<\/button>/);
     assert.match(erb, /session-restart-confirm\.js/);
     assert.match(erb, /aria-label="Close"[^>]*>X<\/button>/);
-    assert.match(erb, /Keep my progress/);
+    assert.doesNotMatch(erb, /Keep my progress|session-restart-keep-btn/);
+    assert.match(erb, /role="dialog" aria-modal="true"/);
+    assert.match(erb, /if \(window\.BreakEscapeSessionRestartConfirm\)|window\.BreakEscapeSessionRestartConfirm\s*\?/);
+    assert.match(erb, /onEscape:/);
     assert.doesNotMatch(erb, />Restart<\/button>/);
+});
+
+test('themes: the confirm Start over has a danger rule that beats the shared button skin', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/ui-themes.css'), 'utf8');
+    const m = css.match(/\[data-ui-theme\] #session-resume-overlay #session-restart-confirm-btn\s*\{([^}]*)\}/);
+    assert.ok(m, 'rule with attribute + id + id specificity');
+    assert.match(m[1], /border:\s*2px solid var\(--ui-danger\) !important/);
+    assert.match(m[1], /border-image:\s*none !important/);
+    assert.match(m[1], /color:\s*var\(--ui-danger\) !important/);
+    assert.match(m[1], /background:[^;]*var\(--ui-danger\)[^;]*!important/);
+    assert.doesNotMatch(m[1], /radius/);
+    // Resume's accent uses the same id + id form, so it is not overridden either.
+    assert.match(css, /\[data-ui-theme\] #session-resume-overlay #session-resume-btn\s*\{[^}]*var\(--ui-accent\) !important/);
+});
+
+test('the test bridge lists the step X, and bootstrap restart clicks Start over', () => {
+    const st = readFileSync(join(js, 'systems/test-bridge/state.js'), 'utf8');
+    assert.match(st, /'session-restart-close-btn'/);
+    assert.doesNotMatch(st, /keep-btn/);
+    for (const f of ['../../.claude/skills/playtest-scenario/scripts/playtest-session.js', '../../tools/phone_calls/ps.js']) {
+        const src = readFileSync(join(here, f), 'utf8');
+        const m = src.match(/restart: (\/[^,]+\/i)/);
+        const re = new RegExp(m[1].slice(1, -2), 'i');
+        assert.ok(re.test('Start over') && re.test('Restart') && !re.test('Resume'), f);
+    }
 });

@@ -99,7 +99,7 @@ export function sessionOverlayShowing() {
  * the links (bootstrap: 'the resume overlay has no "resume" button').
  */
 export function sessionOverlayButtons() {
-    return ['session-resume-btn', 'session-restart-btn', 'session-new-btn', 'session-restart-keep-btn', 'session-restart-confirm-btn']
+    return ['session-resume-btn', 'session-restart-btn', 'session-new-btn', 'session-restart-close-btn', 'session-restart-confirm-btn']
         .map(id => document.getElementById(id))
         .filter(el => el && el.getBoundingClientRect().width > 0);
 }
@@ -117,7 +117,7 @@ export function sessionOverlayUi() {
         text: (panel.innerText || 'RESUME SESSION?').trim().slice(0, 500),
         buttons: sessionOverlayButtons().map((el, i) => ({ index: i, id: el.id || null, label: (el.innerText || '').trim().slice(0, 100) })),
         hint: 'The session overlay covers the whole page, a minigame included; the world loads underneath and timed dialogue waits. '
-            + 'Choose with __test.dismissBlockingUi("Resume") (or "Start over", then "Start over" again in its confirm step, or "New Session"); Enter also resumes.'
+            + 'Choose with __test.dismissBlockingUi("Resume") (or "Start over", which opens a confirm step and so answers still-blocked-after-dismiss, then "Start over" again in the step, or "Close" to back out, or "New Session"); Enter also resumes.'
     };
 }
 

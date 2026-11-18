@@ -77,7 +77,7 @@ export class GameOverScreen {
       gap: 20px;
     `;
 
-    // Restart button
+    // Respawn button
     const restartBtn = document.createElement('button');
     restartBtn.textContent = RESPAWN_LABEL;
     restartBtn.id = 'game-over-respawn-btn';
@@ -215,7 +215,7 @@ export class GameOverScreen {
     this.hide();
 
     // Reload the page to restart. skip_resume=1 stops show.html.erb opening the
-    // "Resume session?" / "Other sessions" overlay: the player just chose Restart, and
+    // "Resume session?" / "Other sessions" overlay: the player just chose Respawn, and
     // a plain reload has saved progress, so the overlay would otherwise appear.
     const url = new URL(window.location.href);
     url.searchParams.set('skip_resume', '1');

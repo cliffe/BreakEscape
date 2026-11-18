@@ -1547,7 +1547,7 @@ const bridge = {
      *
      * Deliberately refuses to guess when there is more than one button and no
      * `labelMatch` is given. Some of these choices are destructive: the
-     * session-resume overlay offers Resume / Restart / New Session, and
+     * session-resume overlay offers Resume / Start over / New Session, and
      * picking wrong silently discards a save or reloads the page mid-run.
      * The caller must say which button it means.
      */

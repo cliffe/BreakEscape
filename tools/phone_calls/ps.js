@@ -538,7 +538,7 @@ const vmSteps = createVmSteps({
           // The overlay's own button can carry an icon or arrow ("▶ Resume"), so match the word,
           // not the whole label; "Resume session" headings are not buttons. Never paginate the
           // OTHER SESSIONS list (Prev/Next): that is what looped for minutes after a reload.
-          const want = { resume: /\bresume\b/i, restart: /\brestart\b/i, new: /new session/i }[resume];
+          const want = { resume: /\bresume\b/i, restart: /\bstart over\b|\brestart\b/i, new: /new session/i }[resume];
           pick = labels.find(l => want.test(l) && !/prev|next|load session/i.test(l));
           if (!pick) {
             throw new Error(`bootstrap: the resume overlay has no "${resume}" button (buttons: ${labels.join(' | ')}). `
