@@ -8,8 +8,10 @@ async () => {
   const beh = window.npcBehaviorManager.getBehavior(A);
   const pm = window.pathfindingManager;
   // nearestBlockerOnPath from the module the page is running (the old engine when it is served)
-  let nbp = null, modUrl = null;
-  try { modUrl = performance.getEntriesByType('resource').map(e => e.name).find(n => /systems\/npc-behavior\.js/.test(n)); nbp = (await import(modUrl)).nearestBlockerOnPath; } catch (e) { nbp = null; }
+  // (a plain import of the module path: the resource timing list does not hold the dynamically imported
+  // npc-behavior.js; the function is pure and the page.route hook serves the same engine file for any query)
+  let nbp = null; const modUrl = '/break_escape/js/systems/npc-behavior.js';
+  try { nbp = (await import(modUrl)).nearestBlockerOnPath; } catch (e) { nbp = null; }
   const evs = () => sys.getLog().filter(e => e.npc === A);
   for (let i = 0; i < 600; i++) { const s = st(A); if (s && s.atPost && !s.job && s.mode !== 'returning') break; await sl(100); }
   await sl(3000);
@@ -44,7 +46,7 @@ async () => {
   // Nudge only: PLACE = [x|null, y]; body.reset keeps Vector's immovable value as found.
   if (PLACE) { const dx = V.body.center.x - V.x, dy = V.body.center.y - V.y; V.body.reset((PLACE[0] ?? V.body.center.x) - dx, PLACE[1] - dy); await sl(1500); }
   const behV = window.npcBehaviorManager.getBehavior('agent_vector');
-  const pre = { vecNatural, vecImmovable: !!V.body.immovable, vecEnable: !!V.body.enable, vecVel: [R(V.body.velocity.x), R(V.body.velocity.y)], vecInBlockers: beh._dynamicBlockers().some(b => b.id === 'agent_vector'), aStart: [R(spA.body.center.x), R(spA.body.center.y)], nbpLoaded: !!nbp, modUrl: modUrl && modUrl.replace(/^https?:\/\/[^/]+/, '') };
+  const pre = { vecNatural, vecImmovable: !!V.body.immovable, vecEnable: !!V.body.enable, vecVel: [R(V.body.velocity.x), R(V.body.velocity.y)], vecInBlockers: beh._dynamicBlockers().some(b => b.id === 'agent_vector'), aStart: [R(spA.body.center.x), R(spA.body.center.y)], nbpLoaded: !!nbp, modUrl };
   const vecBody = () => [R(V.body.center.x), R(V.body.center.y)];
   const vec = vecBody();
   const tiers = [];

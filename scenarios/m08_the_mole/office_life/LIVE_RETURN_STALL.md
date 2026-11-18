@@ -1,3 +1,38 @@
+# Live contrast R3: f48c80af8 against the branch, instrumented (code review R3, m3)
+
+Added 2026-11-18, branch fix/needs-return-npc-stall at 5bb5cf541 (engine) with the driver fix noted below. Keyless server on :3092 from the worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Six fresh games from new-game.rb, alternating f48c80af8 (its npc-pathfinding.js and npc-behavior.js served through the page.route hook, OLD=1; the hook previously served f48c80af8^), then HEAD, three games each, three trips per game with `drivers/trip4.js` (trip3.js plus the logs R3 asked for). Trip 1 of each game is natural (Vector where earlier play left him); trips 2 and 3 nudge only his y with `body.reset` to 152.7 and 157.0 (x kept, `immovable` as found). No globals set, no game row edited. Each trip started once she was home and idle plus 3 s, with thirst 5 on julian_sallow and agnieszka_duda.
+
+Per-trip logs: before the trip, Vector's `body.immovable`, `body.enable`, velocity, whether `_dynamicBlockers()` holds `agent_vector`, her start body centre; at the start of `returning`, her body centre; after each return plan, `nearestBlockerOnPath(pos, path, _dynamicBlockers(), 42, 13, 0)`.
+
+| Game | Engine | Trip | Vector body y at trip start -> end | immovable / enable / velocity / in _dynamicBlockers() | Her start (idle) | Her body when `returning` began | First return plan tier | nearestBlockerOnPath on the first return plan | Later plans with a lane hit | Return s | return_resumed | return_stuck | Hold snapshots |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 9529 | old | 1 | 153.6 -> 151.3 | false / true / 0,0 / true | 425,182 | 530.4,185.9 | plain | null | plain lat 12.7 | 4.1 | 0 | 0 | 0 |
+| 9529 | old | 2 | 152.7 -> 152.7 | false / true / 0,0 / true | 425,182 | 521.9,176 | plain | null |  | 3.1 | 0 | 0 | 0 |
+| 9529 | old | 3 | 157 -> 157 | false / true / 0,0 / true | 425,182 | 519.7,175.7 | plain | null |  | 3.2 | 0 | 0 | 0 |
+| 9532 | new | 1 | 153.6 -> 153.4 | false / true / 0,0 / true | 425,182 | 532.6,192.7 | ring | null | plain lat -7.8; plain lat 10.6 | 9.6 | 2 | 0 | 1 |
+| 9532 | new | 2 | 152.7 -> 152.7 | false / true / 0,0 / true | 425,182 | 515.9,171.9 | ring | null |  | 3.1 | 0 | 0 | 0 |
+| 9532 | new | 3 | 157 -> 157 | false / true / 0,0 / true | 425,182 | 534,185.2 | - | null |  | 3.6 | 0 | 0 | 0 |
+| 9536 | old | 1 | 153.6 -> 153.6 | false / true / 0,0 / true | 425,182 | 529.4,198 | ring | null |  | 3.6 | 0 | 0 | 0 |
+| 9536 | old | 2 | 152.7 -> 152.7 | false / true / 0,0 / true | 425,182 | 532.7,194.1 | plain | null |  | 3.6 | 0 | 0 | 0 |
+| 9536 | old | 3 | 157 -> 157 | false / true / 0,0 / true | 425,182 | 538,186.8 | plain | null |  | 3.5 | 0 | 0 | 0 |
+| 9540 | new | 1 | 153.6 -> 153.6 | false / true / 0,0 / true | 425,182 | 532,191.8 | ring | null |  | 3.6 | 0 | 0 | 0 |
+| 9540 | new | 2 | 152.7 -> 152.7 | false / true / 0,0 / true | 425,182 | 532.8,193.6 | plain | null |  | 3 | 0 | 0 | 0 |
+| 9540 | new | 3 | 157 -> 157 | false / true / 0,0 / true | 425,182 | 532.5,191.4 | ring | null |  | 3.6 | 0 | 0 | 0 |
+| 9542 | old | 1 | 153.6 -> 151.4 | false / true / 0,0 / true | 425,182 | 535.9,190.3 | plain | lat 12.6 fwd 21.6 | plain lat 12.6 | 4.1 | 0 | 0 | 0 |
+| 9542 | old | 2 | 152.7 -> 152.7 | false / true / 0,0 / true | 425,182 | 532,192 | ring | null |  | 3.6 | 0 | 0 | 0 |
+| 9542 | old | 3 | 157 -> 157 | false / true / 0,0 / true | 425,182 | 530.5,191.3 | ring | null |  | 3.5 | 0 | 0 | 0 |
+| 9550 | new | 1 | 153.6 -> 153.6 | false / true / 0,0 / true | 425,182 | 532.3,192.2 | ring | null |  | 3.7 | 0 | 0 | 0 |
+| 9550 | new | 2 | 152.7 -> 152.7 | false / true / 0,0 / true | 425,182 | 520.2,174 | ring | null |  | 3.1 | 0 | 0 | 0 |
+| 9550 | new | 3 | 157 -> 157 | false / true / 0,0 / true | 425,182 | 525.7,183.2 | plain | null |  | 3.6 | 0 | 0 | 0 |
+
+Reading.
+- Vector was a lane blocker on every one of the 18 trips: `immovable` false, `enable` true, velocity 0, present in `_dynamicBlockers()`. So the R3 explanation 1 (Vector invisible to the lane check because he was an immovable body) is ruled out for this layout, on both engines. Placing him at 152.7 and 157.0 left those values as found.
+- f48c80af8: 0 of 9 trips held (none over 3 s, no hold snapshot, no return_stuck), all home in 3.1 to 4.1 s. The first return plan had no lane blocker in 7 of 9 trips (`nearest` null: a ring plan, or a plain plan that leaves the y 164 leg), and a lane edge hit in 2 (lat 12.6 and 12.7, fwd 21.6) that she walked through without a stop. The stall needs a plain plan from the start cell (508,164) with Vector 10 to 11 px off the y 164 leg; none of the nine old-engine trips produced that plan. Her body when `returning` began varied from x 520 to 538, y 174 to 198, and with it the first plan; a thirst trip does not reproduce the old stall on demand. This closes m3 on the "log shows why it cannot" branch: the setup is sound (Vector a blocker, at the stalling height), the old engine simply was not given the plan that stalls it in these nine trips.
+- HEAD: 8 of 9 trips home in 3.0 to 3.7 s. One trip held (game 9532 trip 1, Vector natural at y 153.6, her body 532.6,192.7 at the start of the return): home after 9.6 s, return_resumed twice, no return_stuck, one hold snapshot at 26.9 s (sprite 506,132.4, body 496..516 x 158.4..168.4, velocity 0, 12 of 12 frames in `_handleBlockerAhead`, `gaveUp` false). Plan record: the first plan was the ring plan (a y 172 path, `nearest` null). The walk stopped when the next plans, tier `plain` from (508,164), ran along y 164: `nearest` agent_vector lat 10.6, fwd 21.6, the lane stop. The ring re-plans (y 172, `nearest` null) came 2 to 3 s later and she walked home. So HEAD does not stall for 30 s, but it is not hold-free: a plain plan is still issued from the start of the return (the first `return_resumed` re-issue is plain by design) and it can put her back in Vector's lane. The pass condition "HEAD must not hold" is not met by this run; the old 30 s loop (return_stuck, 15 s back-off) did not occur.
+- Driver fix made during the run: the first attempt logged `nbpLoaded: false` (the resource-timing list does not hold the dynamically imported npc-behavior.js); the aborted game 9524 (one trip) is not in the table. trip4.js now imports `/break_escape/js/systems/npc-behavior.js` directly (pure function, same engine file via the hook).
+
+---
+
 # Live contrast on m08, same session: old engine against the branch engine (code review R2, m3)
 
 Added 2026-11-18, branch fix/needs-return-npc-stall at b8a345be7. Keyless server on :3092 from the worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Four fresh games made with new-game.rb, alternating engines (old, new, old, new), the audit read in play, then two trips per game with Vector's body placed through the bridge and Agnieszka's and Julian's thirst set to 5 once she was home and idle plus 3 s. The old engine is npc-pathfinding.js and npc-behavior.js from f48c80af8^ served through the page.route hook (OLD=1 in the playtest session). No globals set, no game row edited. Driver: `docs/achitechture/reviews/return-stall/drivers/trip3.js`, `runtrip3.sh` and `game3.sh` (a copy of diag.js with placement, the tier record and `performance.now()` round every plan from her position; it snapshots every body, blocker and path at any hold of 3 s).
