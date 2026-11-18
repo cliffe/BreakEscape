@@ -75,7 +75,7 @@ const path = require('path');
 const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
-const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
+const { nextBootstrapTarget, readBootstrapFacts, converseEnding, converseIdleAction } = require('./bootstrap-steps');
 const { installToastCapture } = require('./toast-capture');
 const { createResponseCapture } = require('./response-capture');
 const endingGuard = require('./ending-overlay-guard');
@@ -748,6 +748,7 @@ const vmSteps = createVmSteps({
       let exhaustedBranches = false;
       let turns = 0;
       let endingAccepted = false;
+      let idleWaits = 0;
       for (; turns < maxTurns; turns++) {
         // The debrief choice can carry #ending_check, which raises the "Before the
         // mission ends" overlay (systems/ending-check.js) when optional objectives
@@ -813,9 +814,29 @@ const vmSteps = createVmSteps({
           await page.evaluate(n => window.__test.minigame.chooseIndex(n), idx + 1);
         } else if (d.canContinue) {
           await page.evaluate(() => window.__test.minigame.continue());
+        } else if (converseIdleAction({ ended: !!d.ended, idleWaits }) === 'wait') {
+          // A phone-chat or terminal thread types its next message after a delay: for a few
+          // seconds the panel shows no text, no choices and no Continue. That is "not yet",
+          // not "finished" (the m02 press terminal closed after one pick this way, gate m3).
+          idleWaits += 1;
+          const before = dialogueKey;
+          const changed = await page.evaluate((k) => new Promise(resolve => {
+            const t0 = Date.now();
+            const tick = () => {
+              const m = window.MinigameFramework && window.MinigameFramework.currentMinigame;
+              const st = m && window.__test.minigame.getState();
+              const dd = st && st.dialogue;
+              const now = dd ? [dd.speaker, dd.text, dd.awaitingChoice, dd.canContinue, (dd.choices || []).length].join('|') : 'closed';
+              if (now !== k) resolve(true); else if (Date.now() - t0 > 3000) resolve(false); else setTimeout(tick, 100);
+            };
+            tick();
+          }), before).catch(() => false);
+          if (!changed) break;
+          continue;
         } else {
           break;
         }
+        idleWaits = 0;
         // waitForDialogue resolves at once while the old line still shows a Continue
         // button, so wait for the panel to actually change (or close) before reading
         // again; otherwise the same line is read, and a turn spent, on every pass.
