@@ -226,6 +226,30 @@ Per `README_ink_best_practices.md` "Remote conversations: write for the mode". F
 
 For each text with a toast that plays a knot (`sendTimedMessage` with `targetKnot`) and sets a global or gives an item, check the m09 read-out pattern (`README_ink_best_practices.md` "Texts that carry progress"): reachable by opening the thread by hand (hub guard), resumable after a close mid-knot (two-level guard), idempotent (no replay, no second item), `skipIfGlobal` on texts that can go stale, and a latch plus `game_loaded` backstop for reloads. Walk each read-out through: toast tapped, toast ignored, thread opened before the text arrives, closed mid-knot, reload before and after delivery. A read-out that only a toast tap can reach is **Must-fix** when another beat waits on its global.
 
+### 2l. Concision pass (named check, always report)
+
+Aim: quick, snappy conversations that entertain, immerse and tell the story without overstaying. Writers' version: [`README_ink_best_practices.md` "Concision"](../../../README_ink_best_practices.md#concision). Run this before anything is voiced, since every cut line orphans a clip. Read the NPC lines in order, spoken text only (ink, plus barks, chatter and exchanges and message bodies in `scenario.json.erb`). Real examples below come from the m01, m04 and m09 sweep.
+
+| Code | Pattern | Before, then after |
+|---|---|---|
+| P1 | Three or more short sentences saying one thing | "So. Here we are. You've heard my reasoning. You've seen the evidence. What happens now is up to you." (m01 Derek) becomes "You've heard my reasoning. Your call." |
+| P2 | Repeats what the player already has (this NPC, another NPC, briefing, objective, earlier knot) | The 42 to 85 casualty figure told in the briefing, by Maya, Derek, the phone and the debrief (m01): keep one telling, the rest become "the projections" |
+| P3 | Throat-clearing before the point | "Wait. I want to be sure I've read this right." (m09 HaX): cut, state the fact |
+| P4 | Speech that sums itself up, or a sign-off sermon | "…Not every agent would have taken the time. Not every agent would have cared." (m01 HaX): stop at "You disagreed. That matters." |
+| P5 | Monologue: four or more NPC lines with no player choice | m04 briefing, eight lines before the first choice: split with a choice, or cut to the lines that carry story or character |
+| P6 | Exposition not needed now, or already shown by the scene or an item | HaX reading back the player's own VM route in the debrief (m01 :151-153) |
+| P7 | Explains a joke, clue or feeling after it landed | "That's how you know it's serious." after "a lanyard with my name spelt right" (m09 Gary): end on the lanyard |
+| P8 | Padding: inflated phrasing, empty intensifiers, lists of three where one carries it, "not X, it's Y" | "This is the part where your choices matter most." (m01 HaX): cut. "It means we're not fighting criminals. We're fighting true believers." becomes "We're fighting true believers." |
+
+Also check:
+
+- **Cross-NPC and cross-file repeats.** List each fact told by two or more characters or in several knots, phone calls and branches (a fact may appear in several branches of one debrief, but one playthrough should hear it once or twice). Keep the best telling, trim the others to a nod ("the projections", "like Maya said").
+- **Monologue rule.** Four or more NPC lines in a row with no player choice must justify themselves: each line carries a new fact, a turn or characterisation. Otherwise cut or break up with a choice.
+- **Mannerism exception, named per character.** Before judging, write one line per speaker: "Voltage: formal and measured, skip P1/P3 unless padding." A rambling, pompous, nervous or verbose voice is allowed when written on purpose (check the character's first knot, the voice bible and mission docs); a line can still be padding even for them. A character with no stated mannerism gets the full check.
+- **Do not pad teaching content, and do not cut needed facts.** Teaching the security concept is allowed its length, but not repeats around it. Never cut a line a puzzle, code, name or `#set_global` depends on (grep before cutting, per Step 3).
+
+Report each finding as file:line, speaker, pattern code, strength (strong or mild) and a proposed tighter line. The review does not rewrite; changed lines need dialogue sign-off, and voiced lines changed after audio exists need the user's yes to re-voice.
+
 ## Step 3 — prioritised action list
 
 Short, one line per item, grouped:
@@ -251,5 +275,11 @@ Short, one line per item, grouped:
 - Exit-conversation trims, list-to-sentence conversions.
 
 Before recommending that a line be cut, grep the later missions for the line or its idea (`grep -rn -i "<key phrase>" scenarios/*/ink/`). A line that looks loose may be a setup: m03's review nearly cut Nightshade's "One day it'll be our badge somebody clones", which m08 pays off.
+
+**Concision (2l), always its own section in the report**
+
+- Counts: P1 to P8 findings (strong / mild), repeat facts across NPCs, monologues of four or more lines, mannerism speakers skipped (named).
+- Then the strong findings only, by file:line with the proposed line. Mild ones as a count unless asked.
+- Strong concision findings go under Should fix; mild under Worth considering.
 
 Keep it concise; don't repeat detail already given in the review sections above.

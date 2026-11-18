@@ -942,6 +942,19 @@ VAR quest_complete = false
 -> hub
 ```
 
+## Concision
+
+Conversations should be quick, entertain, immerse and tell the story, then get out of the way. Most lines are fine; the failure is a line that speaks a lot and says little. Write each line tight the first time, so review has little to cut (the `npc-dialog-review` skill, check 2l, applies these as P1 to P8).
+
+- **One thought, one sentence.** Three short sentences saying one thing become one. Not "So. Here we are. You've heard my reasoning. You've seen the evidence." but "You've heard my reasoning. Your call."
+- **Start at the point.** No "Look, here's the thing", "Wait. I want to be sure I've read this right." before a plain statement.
+- **Do not retell.** Before writing a fact, check whether the player already has it (briefing, objective, item, another NPC, an earlier knot). If so, give a nod ("the projections") or say nothing. Tell each fact once, in the best place.
+- **Stop when it lands.** Do not explain a joke, a clue or a feeling, and do not close with a moral ("Not every agent would have cared").
+- **Cut padding.** No empty intensifiers ("this is the part where your choices matter most"), no list of three where one item carries it, no "it's not X, it's Y".
+- **Four NPC lines in a row without a choice need a reason.** Each carries a new fact, a turn or character. Otherwise cut, or give the player a choice.
+- **Mannerisms are allowed, on purpose.** A rambling or verbose character is fine when written that way; say so in the character's notes so reviewers leave it alone.
+- **Teaching content keeps its length, facts stay.** Do not pad the lesson, and do not cut a line a puzzle or global depends on.
+
 ## Anti-Patterns (Avoid These)
 
 ❌ **The starved knot: a re-enterable knot where every choice is once-only (`*`)**
