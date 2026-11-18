@@ -223,7 +223,14 @@
 .dusting-short .dusting-main { display: contents; }
 .dusting-short .dusting-stage { grid-column: 1; grid-row: 2 / 6; align-self: start; max-height: 100%; overflow-y: auto; }
 .dusting-short .dusting-panel { grid-column: 2; grid-row: 2; min-width: 0; width: auto; overflow-y: auto; align-self: stretch;
-    --d-pin-h: 44px; display: flex; flex-direction: column; }
+    --d-pin-h: 44px; --d-strip-h: 80px; scroll-padding-bottom: var(--d-strip-h); display: flex; flex-direction: column; }
+/* Strip height 80 = buttons 44 + Coverage meter 36 (16 label + 16 bar + 2 rule + 2 padding). Tighter text rows
+   and compact one-line tool cards (no icon, 28 px) keep the tool row in the room above the strip. */
+.dusting-short .dusting-panel h3 { margin: 0 0 4px; }
+.dusting-short .dusting-panel p { margin: 0 0 4px; }
+.dusting-short .dusting-tools { flex-wrap: nowrap; gap: 4px; margin-bottom: 4px; }
+.dusting-short .dusting-tools .dusting-tool { flex: 1 1 auto; min-width: 0; min-height: 28px; padding: 2px 4px; line-height: 16px; font-size: 16px; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: clip; }
+.dusting-short .dusting-tools .dusting-tool [data-slot], .dusting-short .dusting-actions .dusting-btn [data-slot] { display: none; }
 .dusting-short .dusting-forensic { grid-column: 2; grid-row: 3; margin: 4px 0 0; padding-top: 4px; font-size: 16px; }
 .dusting-short .dusting-status { grid-column: 2; grid-row: 4; font-size: 16px; }
 .dusting-short .dusting-options { grid-column: 2; grid-row: 5; gap: 4px 12px; font-size: 16px; }
@@ -234,7 +241,7 @@
 .dusting-short .dusting-panel > *, .dusting-short .dusting-actions .dusting-meter { flex: 0 0 auto; }
 .dusting-short .dusting-actions { display: contents; position: static; border-top: 0; padding-top: 0; margin: 0; }
 .dusting-short .dusting-actions .dusting-meters { display: contents; margin: 0; }
-.dusting-short .dusting-actions .dusting-meter { margin: 0 0 2px; font-size: 16px; }
+.dusting-short .dusting-actions .dusting-meter { margin: 0 0 2px; font-size: 16px; line-height: 16px; }
 .dusting-short .dusting-actions .dusting-meter:nth-child(2) { order: 1; }
 .dusting-short .dusting-actions .dusting-estimate { order: 2; flex: 0 0 auto; margin: 0 0 4px; }
 .dusting-short .dusting-actions .dusting-feedback { order: 3; flex: 0 0 auto; margin: 0 0 4px; }
@@ -247,8 +254,10 @@
     height: var(--d-pin-h); margin: 0; padding: 4px 0; gap: 6px; flex-wrap: nowrap; align-items: stretch;
 }
 .dusting-short .dusting-actions .dusting-btn {
-    flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 2px 6px; font-size: 16px; white-space: nowrap; text-align: center;
+    flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 2px 4px; font-size: 16px; white-space: nowrap; text-align: center;
+    overflow: hidden; text-overflow: clip;   /* guard only: the short labels fit */
 }
+.dusting-short .dusting-actions .dusting-buttons { gap: 4px; }
 /* Compare screen in short landscape: the frame scrolls as a whole (the panel no longer scrolls on its own) so
    the reference cards sit right under the instructions on first view; the options and key lines are below. */
 .dusting-short[data-step="compare"] { grid-template-rows: auto auto auto auto auto; overflow-y: auto; }

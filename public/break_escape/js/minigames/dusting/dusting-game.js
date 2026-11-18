@@ -33,6 +33,9 @@ if (!document.getElementById('dusting-css')) {
 
 const N = 128;
 /** Phone on its side: at or under this height the kit uses two columns (see dusting.css). */
+// A label with a long and a short form (short landscape swaps them in _applyLabels). Text is fixed strings only.
+const lblSpan = (long, short) => `<span class="dusting-lbl" data-long="${long}" data-short="${short}">${long}</span>`;
+
 export const SHORT_LANDSCAPE_MAX_H = 500;
 /** Height the title, frame padding and canvas border take in the two-column layout. */
 export const SHORT_LANDSCAPE_CHROME = 100;
@@ -362,7 +365,12 @@ export class DustingMinigame extends MinigameScene {
         // Short landscape (a phone on its side): two columns, canvas left at the largest whole scale that fits,
         // controls right (dusting.css .dusting-short). Whole scales only, never below 1x.
         const short = window.innerHeight <= SHORT_LANDSCAPE_MAX_H && window.innerWidth > window.innerHeight;
+        const was = !!this.root.classList.contains?.('dusting-short');
         this.root.classList.toggle('dusting-short', short);
+        if (this.panel && was !== short) {
+            this._applyLabels();
+            this._refreshDynamic();
+        }
         const maxPx = short
             ? Math.min(window.innerHeight - SHORT_LANDSCAPE_CHROME, window.innerWidth * 0.45, 512)
             : Math.min(window.innerHeight * 0.52, window.innerWidth * 0.86, 512);
@@ -461,7 +469,19 @@ export class DustingMinigame extends MinigameScene {
             this.stageNote.innerHTML = note;
             this.stageNote.hidden = !note;
         }
+        this._applyLabels();
         this._refreshDynamic();
+    }
+
+    // Short landscape shows compact labels so every button fits; the full text stays as the accessible name.
+    _applyLabels() {
+        if (!this.panel) return;
+        const short = !!this.root.classList.contains('dusting-short');
+        this.panel.querySelectorAll('.dusting-lbl').forEach(span => {
+            span.textContent = short ? span.dataset.short : span.dataset.long;
+            const btn = span.closest('button');
+            if (btn) { btn.setAttribute('aria-label', span.dataset.long); btn.title = span.dataset.long; }
+        });
     }
 
     _htmlExamine() {
@@ -515,8 +535,9 @@ export class DustingMinigame extends MinigameScene {
             const key = t === 'fine' ? 'F' : t === 'broad' ? 'B' : 'W';
             const slot = t === 'fine' ? 'brush-fine' : t === 'broad' ? 'brush-feather' : 'wand';
             const label = t === 'fine' ? 'Fine brush' : t === 'broad' ? 'Feather brush' : 'Magnetic wand';
-            return `<button class="dusting-btn dusting-tool" data-action="tool" data-tool="${t}" aria-pressed="${this.tool === t}" title="Press ${key}">
-                <span data-slot="${slot}" data-scale="1"></span> ${label} (${key})</button>`;
+            const shortLabel = t === 'fine' ? 'Fine' : t === 'broad' ? 'Feather' : 'Wand';
+            return `<button class="dusting-btn dusting-tool" data-action="tool" data-tool="${t}" aria-pressed="${this.tool === t}" title="${label} (${key})">
+                <span data-slot="${slot}" data-scale="1"></span> ${lblSpan(`${label} (${key})`, `${shortLabel} (${key})`)}</button>`;
         }).join('');
     }
 
@@ -535,9 +556,9 @@ export class DustingMinigame extends MinigameScene {
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn">Lift (L)</button>
-                <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Press T">Puff off excess (T)</button>
-                <button class="dusting-btn" data-action="change-powder" title="Press C">Change powder (C)</button>
+                <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn">${lblSpan('Lift (L)', 'Lift (L)')}</button>
+                <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Puff off excess (T)">${lblSpan('Puff off excess (T)', 'Puff (T)')}</button>
+                <button class="dusting-btn" data-action="change-powder" title="Change powder (C)">${lblSpan('Change powder (C)', 'Powder (C)')}</button>
             </div>
             </div>`;
     }
@@ -553,8 +574,8 @@ export class DustingMinigame extends MinigameScene {
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-primary" data-action="peel" title="Press P"><span data-slot="tape-roll" data-scale="1"></span> Peel and mount (P)</button>
-                <button class="dusting-btn" data-action="back-dust">Back to dusting</button>
+                <button class="dusting-btn dusting-primary" data-action="peel" title="Peel and mount (P)"><span data-slot="tape-roll" data-scale="1"></span> ${lblSpan('Peel and mount (P)', 'Mount (P)')}</button>
+                <button class="dusting-btn" data-action="back-dust" title="Back to dusting">${lblSpan('Back to dusting', 'Re-dust')}</button>
             </div>
             </div>`;
     }
@@ -1095,7 +1116,12 @@ export class DustingMinigame extends MinigameScene {
             return;
         }
         if (this.step === 'dust') {
-            this._setDyn('cov-text', el => { el.textContent = `${pctFloor(m.coverage)} (${word(m.coverage)})`; });
+            const shortMode = !!this.root?.classList?.contains('dusting-short');
+            const belowMin = m.coverage < this.diff.minCoverage;
+            // Short landscape has no room for the "needs 45% coverage" button text, so the hint rides on the Coverage line.
+            this._setDyn('cov-text', el => {
+                el.textContent = shortMode && belowMin ? `${pctFloor(m.coverage)} / ${pct(this.diff.minCoverage)} to lift` : `${pctFloor(m.coverage)} (${word(m.coverage)})`;
+            });
             this._setDyn('cov-bar', el => { el.style.width = pct(Math.min(1, m.coverage)); });
             this._setDyn('cov-min', el => { el.style.left = pct(this.diff.minCoverage); el.title = `Lift unlocks at ${pct(this.diff.minCoverage)}`; });
             this._setDyn('clar-text', el => { el.textContent = `${pct(m.clarity)} (${word(m.clarity)})`; });
@@ -1105,7 +1131,11 @@ export class DustingMinigame extends MinigameScene {
             const canLift = m.coverage >= this.diff.minCoverage;
             this._setDyn('lift-btn', el => {
                 el.disabled = !canLift;
-                el.textContent = canLift ? 'Lift (L)' : `Lift (needs ${pct(this.diff.minCoverage)} coverage)`;
+                const lbl = el.querySelector?.('.dusting-lbl');
+                if (!lbl) return;
+                lbl.dataset.long = canLift ? 'Lift (L)' : `Lift (needs ${pct(this.diff.minCoverage)} coverage)`;
+                lbl.dataset.short = canLift ? 'Lift (L)' : `Lift (${pct(this.diff.minCoverage)})`;
+                this._applyLabels();
             });
             this._setDyn('feedback', el => { el.textContent = this.message || this._coach(); });
         } else if (this.step === 'lift') {
