@@ -467,6 +467,37 @@ test('sync size: an exchange writes one heard_<knot> key, once, whatever the num
     assert.deepEqual(writes.filter(n => n.startsWith('heard_')), ['heard_ex_parcel']);
 });
 
+// ── topic filter: an exchange plays only on a matching chatter topic (showcase M1) ──
+
+test('topic: an entry whose topic matches the chat plays', () => {
+    const o = office({ extra: { ann: { needs: thirsty(), exchanges: [{ with: 'bob', knot: 'ex_parcel', topic: 'cooler' }] } } });
+    o.sys.step(40000);
+    assert.equal(o.exLines().length, LINES.length, 'the cooler exchange plays at the cooler (topic cooler)');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
+    assert.equal(o.globals.heard_ex_parcel, true);
+});
+
+test('topic: an entry whose topic does not match the chat never plays; they bark instead', () => {
+    const o = office({ extra: { ann: { needs: thirsty(), exchanges: [{ with: 'bob', knot: 'ex_parcel', topic: 'cake' }] } } });
+    o.sys.step(40000);
+    assert.equal(o.evs('exchange_started').length, 0, 'no exchange at the cooler for a cake-topic entry');
+    assert.equal(o.exLines().length, 0);
+    assert.equal(o.globals.heard_ex_parcel, undefined);
+    assert.ok(o.emitted('npc_chatted:').length >= 1, 'they chat with barks or pictures instead');
+    // the same pair at a cake-topic object would play it (the engine passes c.topic through)
+    const A = o.sys.states.get('ann'), B = o.sys.states.get('bob');
+    assert.equal(o.sys._findExchange(A, B, 'cake')?.knot, 'ex_parcel', 'matches when the topic is cake');
+    assert.equal(o.sys._findExchange(A, B, 'cooler'), null, 'and never at the cooler');
+});
+
+test('topic: an entry with no topic plays at any chatter object (unchanged)', () => {
+    const o = office();   // EX has no topic
+    const A = o.sys.states.get('ann'), B = o.sys.states.get('bob');
+    assert.equal(o.sys._findExchange(A, B, 'cooler')?.knot, 'ex_parcel', 'plays at the cooler');
+    assert.equal(o.sys._findExchange(A, B, 'cake')?.knot, 'ex_parcel', 'and at a cake object');
+    assert.equal(o.sys._findExchange(A, B, undefined)?.knot, 'ex_parcel', 'and with no topic given');
+});
+
 // ── validator (scripts/validate_npc_needs.rb check_exchanges), R1 m3 ─────────
 
 test('validator: the line timing matches the engine', { skip: skipRuby }, () => {

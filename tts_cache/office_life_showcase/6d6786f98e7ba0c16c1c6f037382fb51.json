@@ -1,0 +1,13 @@
+{
+  "key": "6d6786f98e7ba0c16c1c6f037382fb51",
+  "npc": "agnieszka_duda",
+  "text": "Who switched the coffee off?",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:51:04Z"
+}

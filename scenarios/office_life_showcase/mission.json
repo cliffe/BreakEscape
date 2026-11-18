@@ -1,0 +1,9 @@
+{
+  "display_name": "Office Life Tour",
+  "description": "A non-combat tour of ambient office life, hosted by Ama Owusu. Five staff follow their needs: they queue for coffee, meet at the water cooler, tidy, lock or leave their screens, and stay late. Nothing to solve; watch the office run itself.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 8,
+  "test_type": "office_life",
+  "test_objective": "A guided demo of the office-life features on existing engine behaviour: needs and affordances, a single-capacity coffee queue, a coupled cooler exchange, screen-lock habits, carried items, a player lever (the coffee socket), and evening routines, with no VM and no combat."
+}
