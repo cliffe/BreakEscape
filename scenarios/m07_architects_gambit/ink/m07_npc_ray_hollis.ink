@@ -244,6 +244,8 @@ Ray Hollis: Stay there. STAY THERE.
 + [Put it down. (Fight him.)]
     -> goes_loud
 + [I'm stepping back. Look at me. I'm stepping back.]
+    // Blind m07 (part 2): talking him down from the corner is dealing with him. He stays at the desk and is not resolved.
+    #complete_task:clear_the_checkpoint
     -> evade
 
 === goes_loud ===

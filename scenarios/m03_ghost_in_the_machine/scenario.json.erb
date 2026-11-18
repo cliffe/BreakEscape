@@ -51,7 +51,7 @@ whiteboard_message_encoded = rot13("NIGHT TEAM: CATALOGUE STAYS IN THE WALL SAFE
 client_roster_content = "ZERO DAY: ACTIVE CLIENT ROSTER (export)\n- GHOST / Ransomware Incorporated: healthcare package, DELIVERED. Target selected for client: St. Catherine's, from the 214-site survey\n- OBSIDIAN: ransomware deployment, Q4 pricing sent\n- VORTEX: credential harvesting\n- CRITICAL MASS: grid storage / BMS access, Phase 2 priority\n- ECLIPSE: industrial espionage"
 client_roster_hex = hex_encode(client_roster_content)
 
-architect_directive = "PHASE 2 -- INFRASTRUCTURE.\nZero Day supplies. Critical Mass executes.\nPriority one: grid storage and substation control (BMS, SCADA). Priority two: hospitals on generator when the grid drops.\nThe window opens within weeks. Winter.\nSt. Catherine's was the proof of concept. Either they paid, or they buried people. Both fund us; both teach the next client.\n-- A"
+architect_directive = "PHASE 2 -- INFRASTRUCTURE.\nZero Day supplies. Critical Mass executes.\nPriority one: grid storage and substation control (BMS, SCADA). Priority two: hospitals on generator when the grid drops.\nThe window opens within weeks. Winter.\nSt. Catherine's was the proof of concept. Either they paid, or they buried people. Both fund us; both teach the next client.\n-- The Architect"
 architect_directive_double = base64_encode(rot13(architect_directive))
 
 lore_fragment_1 = "ZERO DAY: A BRIEF HISTORY (internal -- not for day staff)\n\nWhiteHat Security Services: founded 2010 by Victoria Sterling. Legitimate pentest firm. Still is, on the ground floor.\n\nThe research division is the other thing. It stopped reporting what it found to vendors and started selling it -- first quietly, then as a marketplace. Cell name: Zero Day Syndicate. Cell lead: 0day (identity held).\n\nSterling runs the front and the sales floor under the sign-off name SABLE. She answers to 0day and, above him, the Architect.\n\nHouse line: 'Every vulnerability we sell proves security was already broken. We just got paid for the honesty.'"
@@ -1055,7 +1055,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:reception_badge_cloned",
               "condition": "value === true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader. Read, crack, emulate -- same order every time." }
+              "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader." }
             },
             {
               "eventPattern": "npc_ko:ffion_rees",
@@ -2224,6 +2224,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "player_approach": "",
     "knows_m2_connection": false,
     "danny_fate": "",
+    "danny_scene_opened": false,
+    "victoria_night_opened": false,
     "danny_named_sites": false,
     "flag_scan_submitted": false,
     "flag_ftp_submitted": false,

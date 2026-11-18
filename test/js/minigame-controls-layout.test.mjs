@@ -84,7 +84,8 @@ test('the case-lock panel has no soft focus glow (R2 m1)', () => {
 });
 
 test('the container panel fits inside the game area, the password area inside its frame; the desktop sizes to its screen', () => {
-    const r = rule(css('container-minigame.css'), '.container-minigame');
+    // Base rule only: the phone-width @media rule slims these (pin-container-fit covers it)
+    const r = rules(css('container-minigame.css'), '.container-minigame')[0];
     assert.equal(r.padding, '20px');
     assert.equal(r.margin, '20px auto');
     // 20px margin and 20px padding top and bottom: 80px less than the area

@@ -234,5 +234,5 @@ test('wiring: both flags are read where the minigames decide (opt-in only)', () 
     const person = readFileSync(join(js, 'minigames/person-chat/person-chat-minigame.js'), 'utf8');
     assert.match(person, /optedIn: this\.npc\?\.reopenRefreshesHub/);
     const ui = readFileSync(join(js, 'minigames/phone-chat/phone-chat-ui.js'), 'utf8');
-    assert.match(ui, /if \(npc\.livePreview === true\) this\.refreshLivePreview\(npc, contactItem\)/);
+    assert.match(ui, /livePreview === true[\s\S]{0,200}this\.refreshLivePreview\(npc, contactItem\)/);
 });

@@ -267,8 +267,7 @@ Our profile says that keeps her up at night. Not enough to quit.
     -> arrest_strategy
 
 === recruitment_strategy ===
-Show her what her code pays for. Evidence, in front of her.
-Don't argue privacy with her. She'll win. Argue about what it's buying.
+Don't argue privacy with her; she'll win. Put what her code is buying in front of her.
 Turned tonight, she opens the mixer before anyone knows she's talked.
 -> hub
 
@@ -290,7 +289,7 @@ Try the other way first.
     Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
 }
 // Struggling run A (S4): point at the checklist early, for a player who skipped it.
-{not server_passphrase_known and not server_room_entered:
+{not server_passphrase_known and not server_room_entered and not found_password_lists:
     There's an IT checklist on the checkpoint noticeboard. It has their house rule for door passphrases.
 }
 {not found_password_lists and not server_room_entered:
@@ -472,11 +471,9 @@ Or watch it. We map every cell that draws on it, and the money reaches them.
 
 === handler_recommendation ===
 // lint: call-knot
-I'll give you the cost of each. The call's yours.
-If you freeze it, the balances never reach the cells, and ENTROPY knows its bank is burned.
-If you watch it, the balances pay for what's on that page, and we get the map.
+The call's yours. Freeze it, and ENTROPY knows its bank is burned.
+Watch it, and the balances pay for what's on that page, but we get the map.
 Watching still works if we detain him. The payout's pre-signed; we keep it quiet until it's gone.
-The advances are gone either way.
 ~ reacted_fund = true
 #exit_conversation
 -> DONE
