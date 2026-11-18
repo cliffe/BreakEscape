@@ -515,7 +515,7 @@ Narrator: You put your SAFETYNET credentials on the desk.
         Dr. Irina Volkova: Financial privacy is a right. If people abuse it, that is on them.
     }
     {not shown_casualties:
-        Dr. Irina Volkova: That page is his plan. Being pleasant isn't proof of what my mixer moved. Show me where the money went.
+        Dr. Irina Volkova: Being pleasant isn't proof of what my mixer moved. Show me where the money went.
     }
 
     + [Then you're complicit. You're detained until the police arrive.]

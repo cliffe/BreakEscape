@@ -441,7 +441,7 @@ This place is mine to answer for. I'd rather hear it from you than from the fire
 
 === vance_priority ===
 {vance_priority > 1:
-    Robert Vance: {&Nothing's changed my end.|Same answer, I'm afraid.|I'd tell you if it had.}
+    Robert Vance: {&Nothing's changed at my end.|Same answer, I'm afraid.|I'd tell you if it had.}
 }
 {
 - attack_prevented:

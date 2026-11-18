@@ -215,7 +215,7 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
 === the_choice ===
 ~ held_at_choice = false
 Narrator: The disposition screen behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|{netherton_hostile:the Director, who will not see you tonight, countersigns whatever goes in|the Director countersigns whatever goes in}}. Nightshade is watching you.
-Narrator: Once it is entered the Director comes down and the case closes. Anything else in the building, finish it first.
+Narrator: Once it is entered, the case closes. Anything else in the building, finish it first.
 Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was right?
 + [No deals. The police get the file. You answer for those two names in court.]
     #complete_task:decide_the_fate
