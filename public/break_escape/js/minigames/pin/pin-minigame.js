@@ -540,6 +540,9 @@ export class PinMinigame extends MinigameScene {
             this.showPinMessage(''); // a stale 'The dust does not take.' from an earlier try
             if (this.historyKey) pinDustKnown.set(this.historyKey, { set, hint: body.hint || '' });
             this.applyDust(set, body.hint || this.dustHint);
+            // For eventMappings (a debrief can credit the dusted route): which lock, never the digits.
+            // Only a fresh dust emits; reopening a dusted pad (restoreDust) does not.
+            window.eventDispatcher?.emit?.('pin_dusted', { targetType: this.getTargetType(), targetId });
         } catch (error) {
             const reason = error?.body?.reason;
             const line = reason === 'not_dustable' ? 'This keypad is too clean to show anything.'

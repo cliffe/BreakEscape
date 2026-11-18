@@ -342,3 +342,22 @@ test('dustSummary lists the digits in order', () => {
     assert.equal(dustSummary(new Set(['7', '4'])), 'Dust shows the code uses: 4 7. It does not show the order.');
     assert.equal(dustSummary(null), '');
 });
+
+test('a fresh dust emits pin_dusted with the lock (no digits); a refusal or a reopen does not', async () => {
+    clearPinAttemptHistory();
+    const events = [];
+    window.eventDispatcher = { emit: (name, data) => events.push({ name, data }) };
+    try {
+        const server = fakeServer('7041');
+        await makePin({ server, lockId: 'p4_safe' }).handleDust();
+        assert.deepEqual(events, [{ name: 'pin_dusted', data: { targetType: 'object', targetId: 'p4_safe' } }]);
+        clearPinAttemptHistory();
+        await makePin({ server, lockId: 'p4_safe' }).restoreDust();
+        assert.equal(events.length, 1);
+        const refusing = { async pinDust() { throw Object.assign(new Error('x'), { status: 422, body: { reason: 'not_dustable' } }); } };
+        await makePin({ server: refusing, lockId: 'other' }).handleDust();
+        assert.equal(events.length, 1);
+    } finally {
+        delete window.eventDispatcher;
+    }
+});

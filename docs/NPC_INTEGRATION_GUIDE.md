@@ -430,6 +430,7 @@ The JSON file is what gets loaded by the game engine.
 | `door_unlocked` | `doorId`, `targetRoom`, `unlockMethod` | Any door unlocked |
 | `door_unlock_attempt` | `doorId`, `success` | Player tries to unlock door |
 | `item_unlocked` | `objectType`, `objectName`, `unlockMethod` | Container/object unlocked |
+| `pin_dusted` | `targetType` (`door`, or the pad's object type), `targetId` (room id for a door, else the object id) | A `dustable` PIN pad was dusted with the fingerprint kit (once per lock; reopening a dusted pad does not emit). Carries no digits |
 
 ### Minigames
 
