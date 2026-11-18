@@ -65,20 +65,24 @@ export const COMBAT_QUIET_MS = 4000;
 export const COMBAT_LINGER_MS = 1500;
 /** A fight held only by a chaser that is getting nowhere (not reaching the player's room, not moving) stops counting after this long, and stays stopped for the rest of that run: the hit window then rules. */
 export const COMBAT_CHASE_CAP_MS = 20000;
-/** A chaser counts as moving once its sprite is this far (px) from where it was last anchored. */
-export const COMBAT_CHASE_MOVE_PX = 8;
+/** A chaser counts as moving once its sprite is more than this far (px) from where it was up to COMBAT_CHASE_WINDOW_MS ago (net movement, so a back-and-forth swing never counts). */
+export const COMBAT_CHASE_MOVE_PX = 16;
+/** How long a chaser's anchor position is kept before it is refreshed. */
+export const COMBAT_CHASE_WINDOW_MS = 2000;
 
 let chaseRunStart = 0;     // when the current stretch without chaser progress began (0: none)
 let lastChaserAt = -Infinity;   // the last sample that saw a chaser
-let cappedRun = false;     // the cap has fired in this run; only a new run (a gap over the linger) clears it
-const chaserAnchors = new Map();   // npcId -> { x, y } where that chaser's sprite was last anchored
+let cappedRun = false;     // the cap has fired in this run; only a new run (a gap over the linger), a chaser newly reaching the player's room, or a room chaser that is making progress clears it
+const chaserAnchors = new Map();   // npcId -> { x, y, t } where that chaser's sprite was last anchored
+let roomIds = new Set();   // npcIds that were 'room' chasers in the last sample
 
-/** Forget the chase run and the linger (a new game, or a test). */
+/** Forget the chase run, the linger, the latch and the anchors. Nothing in the game calls it (a new run clears them anyway, after any gap over the linger); it is for tests. */
 export function resetCombatState() {
   chaseRunStart = 0;
   lastChaserAt = -Infinity;
   cappedRun = false;
   chaserAnchors.clear();
+  roomIds = new Set();
 }
 
 /**
@@ -155,6 +159,17 @@ function chaserPosition(behavior, deps) {
   return { x: s.x, y: s.y };
 }
 
+/** Is the chaser within attack range of the player (counts as progress for a chaser in the player's room)? */
+function inAttackRange(behavior, deps) {
+  if (typeof deps.inAttackRange === 'function') return !!deps.inAttackRange(behavior);
+  const w = typeof window !== 'undefined' ? window : {};
+  const ps = w.player?.sprite ?? w.player;
+  const pos = chaserPosition(behavior, deps);
+  if (!pos || !ps || typeof ps.x !== 'number' || typeof ps.y !== 'number') return false;
+  const range = w.npcHostileSystem?.getState?.(behavior.npcId)?.attackRange || 32;
+  return Math.hypot(pos.x - ps.x, pos.y - ps.y) <= range;
+}
+
 /**
  * True while the player is in a fight: a live hostile NPC is chasing the player, in any room (its
  * chase state covers the attack swing) or the player took a hit in the last COMBAT_QUIET_MS.
@@ -164,13 +179,15 @@ function chaserPosition(behavior, deps) {
  * a chaser has to be hostile, awake and in chase state (a hostile that gave up stops counting), the chase term
  * lingers COMBAT_LINGER_MS after the last sighting so a leashed guard flipping at its edge does
  * not stutter the hold, and a chase that reaches the player (a chaser in the player's room that
- * can get to them) never ends. Any other chase (a reachable chaser in another room, or one that
- * cannot get to the player) stops counting after COMBAT_CHASE_CAP_MS without any of those chasers
- * moving (their own sprite more than COMBAT_CHASE_MOVE_PX from its anchor), and stays stopped until
+ * can get to them) counts while it makes progress: it moves (net movement, see
+ * COMBAT_CHASE_MOVE_PX), is within attack range, or has only just reached the room. Any chase
+ * without progress (a reachable chaser in another room, one that cannot get to the player, or a
+ * wedged one in the player's room) stops counting after COMBAT_CHASE_CAP_MS, and stays stopped until
  * a new run, so a held call that has rung is not pulled back by the chaser's later progress. Then
  * only the hit window holds. The player opening their own phone is never asked about this.
  * @param {object} [deps] - overridable for tests: behaviors, hostileSystem, npcManager,
- *   playerRoom, now (performance clock ms), canReach(behavior), positionOf(behavior)
+ *   playerRoom, now (performance clock ms), canReach(behavior), positionOf(behavior),
+ *   inAttackRange(behavior)
  */
 export function playerInCombat(deps = {}) {
   const t = typeof deps.now === 'number' ? deps.now
@@ -179,26 +196,39 @@ export function playerInCombat(deps = {}) {
   const chasers = collectChasers({ ...deps, anyRoom: true });
   if (chasers.length) {
     if (!chaseRunStart || t - lastChaserAt > COMBAT_LINGER_MS) {
-      chaseRunStart = t; cappedRun = false; chaserAnchors.clear();
+      chaseRunStart = t; cappedRun = false; chaserAnchors.clear(); roomIds = new Set();
     }
-    if (chasers.some(c => c.kind === 'room')) {
-      // A real fight in the player's room: never capped, and it clears a latch from earlier
-      chaseRunStart = t; cappedRun = false;
-    } else {
+    const present = new Set(chasers.map(c => c.behavior.npcId));
+    for (const id of [...chaserAnchors.keys()]) if (!present.has(id)) chaserAnchors.delete(id);
+    let roomProgress = false;
+    let reachProgress = false;
+    const nowRoom = new Set();
+    for (const { kind, behavior } of chasers) {
+      const id = behavior.npcId;
       let moved = false;
-      for (const { behavior } of chasers) {
-        const pos = chaserPosition(behavior, deps);
-        if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') continue;
-        const a = chaserAnchors.get(behavior.npcId);
-        if (!a) chaserAnchors.set(behavior.npcId, { x: pos.x, y: pos.y });
+      const pos = chaserPosition(behavior, deps);
+      if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+        const a = chaserAnchors.get(id);
+        if (!a) chaserAnchors.set(id, { x: pos.x, y: pos.y, t });
         else if (Math.hypot(pos.x - a.x, pos.y - a.y) > COMBAT_CHASE_MOVE_PX) {
-          chaserAnchors.set(behavior.npcId, { x: pos.x, y: pos.y });
+          chaserAnchors.set(id, { x: pos.x, y: pos.y, t });
           moved = true;
+        } else if (t - a.t >= COMBAT_CHASE_WINDOW_MS) {
+          chaserAnchors.set(id, { x: pos.x, y: pos.y, t });
         }
       }
-      if (moved && !cappedRun) chaseRunStart = t;
-      if (t - chaseRunStart >= COMBAT_CHASE_CAP_MS) cappedRun = true;
+      if (kind === 'room') {
+        nowRoom.add(id);
+        if (!roomIds.has(id) || moved || inAttackRange(behavior, deps)) roomProgress = true;
+      } else if (moved) {
+        reachProgress = true;
+      }
     }
+    roomIds = nowRoom;
+    // A chaser newly in the player's room, or one there that is closing or fighting, clears a latch
+    if (roomProgress) { chaseRunStart = t; cappedRun = false; }
+    else if (reachProgress && !cappedRun) chaseRunStart = t;
+    if (t - chaseRunStart >= COMBAT_CHASE_CAP_MS) cappedRun = true;
     lastChaserAt = t;
   } else if (chaseRunStart && t - lastChaserAt > COMBAT_LINGER_MS) {
     chaseRunStart = 0;

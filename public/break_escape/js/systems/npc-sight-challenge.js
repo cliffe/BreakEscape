@@ -184,9 +184,9 @@ export class SightChallengeWatcher {
         }
         // A conversation or minigame is open: the player isn't walking about
         if (window.MinigameFramework?.currentMinigame) return [];
-        // Nor in a fight (player-damage-interrupt.js playerInCombat): a challenge is not fired, only
-        // marked owed (below) and sighting state kept up to date, so it fires once the fight is over
-        // if the player is still in its cone, and not at all if they left it
+        // Nor in a fight (player-damage-interrupt.js playerInCombat): a challenge is not fired, and
+        // sighting state is kept up to date, so one not fired in the fight fires afterwards if the
+        // player is still in its cone (firedThisSighting stays false), and not at all if they left it
         const inCombat = !!window.playerInCombat?.();
         // Nor while the tutorial prompt (plain DOM, not a minigame) is up
         if (window.getTutorialManager?.()?.isPromptOpen?.()) return [];
@@ -227,19 +227,17 @@ export class SightChallengeWatcher {
                 // Out of sight: the next sighting is a new one
                 state.inSight = false;
                 state.firedThisSighting = false;
-                state.owed = false;
                 continue;
             }
             state.inSight = true;
             if (state.firedThisSighting) continue;
-            if (inCombat) { state.owed = true; continue; }
+            if (inCombat) continue;
             if (cfg.rooms && !cfg.rooms.includes(playerRoom)) continue;
             if (!requiredGlobalsHold(cfg.requireGlobal, globals)) continue;
             if (skippedByGlobal(cfg.skipIfGlobal, globals)) continue;
             if (state.lastFired && now - state.lastFired < cfg.cooldown) continue;
 
             state.firedThisSighting = true;
-            state.owed = false;
             state.lastFired = now;
             fired.push(npc.id);
             console.log(`👁️ SIGHT CHALLENGE: "${npc.id}" spotted the player in "${playerRoom}" → ${cfg.event}`);

@@ -353,7 +353,8 @@ test('sight watcher: skips while in combat without marking the sighting, and rea
 // ---- R1: the cap times only a chaser that makes no progress -------------------------
 test('R1 M1: a kited chase in the player room holds past 25 s with no hit, and a later hit changes nothing', () => {
     I.resetCombatState();
-    const d = deps(chaser());
+    let kx = 0;
+    const d = deps(chaser(), { positionOf: () => ({ x: kx += 10, y: 0 }) });   // closing in or circling: moves
     const start = 300000;
     assert.equal(sample(d, start, start + 25000), true, 'still held at 25 s');
     assert.equal(sample(d, start + 25000, start + 60000), true, 'and at 60 s');
@@ -368,7 +369,7 @@ test('R1 M1: an other-room chaser that keeps moving is not capped; one that is s
     const start = 400000;
     const moving = deps(chaser({ roomId: 'vault' }), { positionOf: () => ({ x, y: 0 }) });
     let last;
-    for (let t = start; t <= start + 30000; t += 500) { x -= 4; last = I.playerInCombat({ ...moving, now: t }); }
+    for (let t = start; t <= start + 30000; t += 500) { x -= 8; last = I.playerInCombat({ ...moving, now: t }); }
     assert.equal(last, true, 'moving for 30 s: held');
     I.resetCombatState();
     const stuck = deps(chaser({ roomId: 'vault' }), { positionOf: () => ({ x: 120, y: 0 }) });
@@ -462,11 +463,13 @@ test('R2 m3: an in-room chaser that cannot reach the player is capped like an ot
     assert.equal(sample(unreachable, start + I.COMBAT_CHASE_CAP_MS - 500, start + I.COMBAT_CHASE_CAP_MS + 2000), false, 'capped');
     I.resetCombatState();
     const reachable = deps(chaser(), { canReach: () => true, positionOf: () => ({ x: 10, y: 10 }) });
-    assert.equal(sample(reachable, start, start + 60000), true, 'reachable, in the room: held at 60 s');
+    let rx = 0;
+    const closing = deps(chaser(), { canReach: () => true, positionOf: () => ({ x: rx += 10, y: 10 }) });
+    assert.equal(sample(closing, start, start + 60000), true, 'reachable and moving in the room: held at 60 s');
     // A path makes an unreachable-by-test in-room chaser count as reachable
     I.resetCombatState();
     const pathed = deps(chaser({ chasePath: [{ x: 1, y: 1 }] }), { canReach: () => false, positionOf: () => ({ x: 10, y: 10 }) });
-    assert.equal(sample(pathed, start, start + 30000), true);
+    assert.equal(sample(pathed, start, start + 15000), true);   // counts as reachable (R3 m2: a wedged one is still capped at 20 s)
     // Latched run, then the hostile enters the room reachable: a real fight again
     I.resetCombatState();
     sample(unreachable, start, start + I.COMBAT_CHASE_CAP_MS + 1000);
@@ -492,4 +495,76 @@ test('R2 n3: the default canReachPlayer path (window.npcCombat) decides an other
         assert.equal(I.playerInCombat(cold), false);
         assert.equal(calls, 0, 'reach test skipped for a non-hostile');
     } finally { window.npcCombat = was; if (was === undefined) delete window.npcCombat; }
+});
+
+// ---- R3 fixes (m1, m2, n4) ----------------------------------------------------------
+test('R3 m1: a chaser swinging back and forth is net movement of nothing, so it is capped', () => {
+    I.resetCombatState();
+    let x = 0, k = 0;
+    const d = deps(chaser({ roomId: 'vault' }), { positionOf: () => ({ x: (k++ % 2) ? 7 : -7, y: 0 }) });
+    const start = 2000000;
+    assert.equal(sample(d, start, start + I.COMBAT_CHASE_CAP_MS - 1000), true);
+    assert.equal(sample(d, start + I.COMBAT_CHASE_CAP_MS - 500, start + 60000), false, 'swing of 14 px peak to peak: capped');
+});
+
+test('R3 m1: the move boundary is 16 px of net movement from the anchor (16 holds, 17 moves)', () => {
+    for (const [step, capped] of [[16, true], [17, false]]) {
+        I.resetCombatState();
+        let x = 0;
+        // samples 1 s apart: the anchor is compared after one and two samples (the 2 s window), step px per 2 s
+        const d = deps(chaser({ roomId: 'vault' }), { positionOf: () => ({ x, y: 0 }) });
+        let last;
+        for (let t = 2100000; t <= 2100000 + 30000; t += 1000) { x += step / 2; last = I.playerInCombat({ ...d, now: t }); }
+        assert.equal(last, !capped, `step ${step}`);
+    }
+});
+
+test('R3 m2: a chaser wedged in the player room is capped; one within attack range, or moving, is not', () => {
+    const start = 2200000;
+    I.resetCombatState();
+    const wedged = deps(chaser(), { canReach: () => true, positionOf: () => ({ x: 10, y: 10 }), inAttackRange: () => false });
+    assert.equal(sample(wedged, start, start + I.COMBAT_CHASE_CAP_MS - 1000), true);
+    assert.equal(sample(wedged, start + I.COMBAT_CHASE_CAP_MS - 500, start + I.COMBAT_CHASE_CAP_MS + 2000), false, 'wedged on furniture: capped');
+    I.resetCombatState();
+    const adjacent = deps(chaser(), { canReach: () => true, positionOf: () => ({ x: 10, y: 10 }), inAttackRange: () => true });
+    assert.equal(sample(adjacent, start, start + 60000), true, 'in attack range: held');
+});
+
+test('R3 n4: the default sprite.x/y path moves the anchor (a sprite that walks is not capped, one that sits is)', () => {
+    const start = 2300000;
+    I.resetCombatState();
+    const sprite = { x: 0, y: 0 };
+    const b = chaser({ roomId: 'vault', sprite });
+    const d = { behaviors: new Map([['guard', b]]), hostileSystem: hs(), playerRoom: 'hall', canReach: () => true };
+    let last;
+    for (let t = start; t <= start + 30000; t += 500) { sprite.x += 10; last = I.playerInCombat({ ...d, now: t }); }
+    assert.equal(last, true, 'walking sprite held');
+    I.resetCombatState();
+    sprite.x = 0;
+    assert.equal(sample(d, start, start + I.COMBAT_CHASE_CAP_MS + 2000), false, 'still sprite capped');
+});
+
+test('R3 n4: pins today: a gap over the linger re-arms the cap (a new run), so aggro-edge flicker starts a fresh 20 s (R3 M2, awaits D152)', () => {
+    I.resetCombatState();
+    const b = chaser({ roomId: 'vault' });
+    const d = deps(b, { positionOf: () => ({ x: 5, y: 5 }) });
+    const start = 2400000;
+    assert.equal(sample(d, start, start + I.COMBAT_CHASE_CAP_MS + 1000), false, 'latched');
+    b.currentState = 'patrol';
+    sample(d, start + I.COMBAT_CHASE_CAP_MS + 1500, start + I.COMBAT_CHASE_CAP_MS + 3500);
+    b.currentState = 'chase';
+    assert.equal(I.playerInCombat({ ...d, now: start + I.COMBAT_CHASE_CAP_MS + 4000 }), true, 'new run holds again');
+});
+
+test('R3 n2: a chaser that leaves chase and returns in the same run is not counted as moved on its first sample', () => {
+    I.resetCombatState();
+    const a = chaser({ npcId: 'a', roomId: 'vault' }), c = chaser({ npcId: 'c', roomId: 'annex' });
+    let cx = 0;
+    const d = { behaviors: new Map([['a', a], ['c', c]]), hostileSystem: hs(), playerRoom: 'hall', canReach: () => true,
+        positionOf: (b) => b === a ? { x: 0, y: 0 } : { x: cx, y: 0 } };
+    const start = 2500000;
+    c.currentState = 'patrol';
+    sample(d, start, start + I.COMBAT_CHASE_CAP_MS - 1000);   // a alone, wedged, nearly capped
+    cx = 500; c.currentState = 'chase';                       // c comes back from far away
+    assert.equal(sample(d, start + I.COMBAT_CHASE_CAP_MS - 500, start + I.COMBAT_CHASE_CAP_MS + 2000), false, 'its first sample is no progress');
 });
