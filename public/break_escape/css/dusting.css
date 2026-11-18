@@ -188,6 +188,11 @@
 .dusting-key-glyph { display: inline-block; width: 14px; height: 14px; image-rendering: pixelated; vertical-align: -2px; margin: 0 2px; }
 /* F26 follow-up: each card has a separate View large button; the card on show in the big frame is outlined */
 .dusting-ref-wrap { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+/* Cap each card at REF_CARD_W (144) so a long label ("2. Femi Adeyemi (not a match)") wraps at word boundaries inside the card
+   instead of widening it and pushing the row onto a second line. The four-card grid sizes its own columns. */
+.dusting-refs:not([data-count="4"]) .dusting-ref-wrap { flex: 0 0 144px; max-width: 144px; min-width: 0; }
+.dusting-ref > span { overflow-wrap: anywhere; min-width: 0; }
+.dusting-view { overflow-wrap: anywhere; }
 .dusting-view { font-size: 0.85em; padding: 3px 8px; }
 .dusting-view[aria-pressed="true"] { border-color: var(--d-accent); }
 .dusting-ref[data-viewing] { border-color: var(--d-accent); outline: 2px solid var(--d-accent); }

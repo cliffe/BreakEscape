@@ -15,7 +15,7 @@ import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
     liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
-    comparePanelMin, COMPARE_PANEL_MIN_2X2, ZOOM_STATUS_MAX_H, ZOOM_CHROME_H
+    zoomPlanBeside, ZOOM_STATUS_MAX_H, ZOOM_CHROME_H
 } from './dusting-model.js';
 import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide, fitCropToMarks, markGlyph, describeMarks, uprightMarks, rotateUpright } from './print-features.js';
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
@@ -502,6 +502,7 @@ export class DustingMinigame extends MinigameScene {
                 keys = this.identified ? `Keys: ${whole}` : `Keys: 1 to ${n} picks a card, V views it large${whole}`;
             }
             this.keysEl.textContent = keys;
+            this.keysEl.hidden = keys === 'Keys: ';   // nothing to list after the match in short landscape
         }
         this._drawKeyGlyphs();
         if (this.step === 'compare' && this.patternOk) this._drawZoom();
@@ -680,7 +681,7 @@ export class DustingMinigame extends MinigameScene {
         return this.candidates.map(c => {
             const viewing = !done && this.viewing === c.index;
             const view = done ? '' : `
-                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-keyshortcuts="V" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
+                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
             return `
             <div class="dusting-ref-wrap">
             <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}">
@@ -1148,6 +1149,7 @@ export class DustingMinigame extends MinigameScene {
         }
         if (this.step === 'compare' && this.patternOk && !this.identified && lower === 'v') {
             e.preventDefault();
+            if (e.repeat) return;   // holding V must not spin through the cards
             this._cycleView();
             return;
         }
@@ -1628,16 +1630,12 @@ export class DustingMinigame extends MinigameScene {
         }
         const rootW = this.root.clientWidth || (this.wide ? 960 : 360);
         const budgetH = zoomBudgetH(window.innerHeight || 720, this._zoomChrome());
-        const plan = (availW, maxS, preferStack) => zoomPlan({ side, availW, budgetH, maxS, preferStack });
         let p;
         if (this.wide) {
-            // beside the panel: leave it one row of cards plus the button row (comparePanelMin), less if the pair cannot fit
-            const avail = minPanel => rootW - 36 - 16 - minPanel;
-            p = plan(avail(comparePanelMin(this.candidates.length)), 6, false);
-            // four cards fall back to 2x2 in a narrower panel, which keeps the crop whole
-            if (p.limited && this.candidates.length >= 4) p = plan(avail(COMPARE_PANEL_MIN_2X2), 6, false);
+            // beside the panel: it keeps one row of cards plus the button row, and a 3x pair never squeezes it under 420 px
+            p = zoomPlanBeside({ side, rootW, cards: this.candidates.length, budgetH });
         } else {
-            p = plan(rootW - 16 - 4, 2, true);   // the 8 px padding either side of the content; portrait stacks when it fits
+            p = zoomPlan({ side, availW: rootW - 16 - 4, budgetH, maxS: 2 });   // the 8 px padding either side of the content
         }
         if (p.limited) {
             // last resort: a smaller crop, its centre moved onto the marks (or the crop widened) so every mark still shows

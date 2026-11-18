@@ -544,24 +544,29 @@ export const ZOOM_MARGIN_H = 6 + 6 + 8;
 /** Side by side: W + caption + border + margins (46). Stacked: 2 (W + caption + border) + the 8 px pane gap + margins (80). */
 export const ZOOM_SBS_EXTRA = ZOOM_CAP_H + ZOOM_PANE_BORDER + ZOOM_MARGIN_H;
 export const ZOOM_STACK_EXTRA = 2 * (ZOOM_CAP_H + ZOOM_PANE_BORDER) + ZOOM_PANE_GAP + ZOOM_MARGIN_H;
-/** Reference card width: 128 canvas + 2 x 6 padding + 2 x 2 border. Gap between cards 10 (flex row) or 8 (the four-card grid). */
-export const REF_CARD_W = 144, REF_GAP = 10, REF_GAP_GRID = 8, PANEL_SIDE_PAD = 32;
+/**
+ * Reference card width: 128 canvas + 2 x 6 padding + 2 x 2 border. The CSS caps every card (and its View button) at this
+ * width, so a long label wraps inside the card instead of widening it. Gap between cards 10 (flex row) or 8 (the four-card grid).
+ * PANEL_SLACK is slack, not padding: room the row needs beyond the cards themselves, e.g. the pressed "Back to my lift (V)"
+ * button (about 163 px) and the panel's own scrollbar and borders.
+ */
+export const REF_CARD_W = 144, REF_GAP = 10, REF_GAP_GRID = 8, PANEL_SLACK = 32;
+/** The panel is never squeezed below this by a 3x or larger pair: it falls back to 2x instead. */
+export const PANEL_COMFORT_W = 420;
 /** The panel width the cards need in one row (four cards: the 600 px at which dusting.css switches 2x2 to 4x1), plus the button row's room. */
 export function comparePanelMin(cards) {
     if (cards >= 4) return 4 * REF_CARD_W + 3 * REF_GAP_GRID;
-    return Math.max(330, cards * REF_CARD_W + (cards - 1) * REF_GAP + PANEL_SIDE_PAD);
+    return Math.max(330, cards * REF_CARD_W + (cards - 1) * REF_GAP + PANEL_SLACK);
 }
-/** Four cards that cannot have a 600 px panel fall back to 2x2, which needs about this much. */
-export const COMPARE_PANEL_MIN_2X2 = 300;
 /**
  * The pair for the stage column (non-short screens). Panes sit side by side (width 2 (S side + 4) + 8, height S side + 46)
  * or stacked, lift above card (width S side + 4, height 2 S side + 80). The largest whole S from 2 to `maxS` that fits
- * the width `availW` and the height budget wins; side by side on a tie, unless `preferStack` (a narrow or portrait layout)
- * and a stacked pair fits. If even 2x does not fit, the crop is limited to what fits (stacked, 2x) and `limited` is true:
+ * the width `availW` and the height budget wins; side by side on a tie, stacked only when that gives a larger scale.
+ * If even 2x does not fit, the crop is limited to what fits (stacked, 2x) and `limited` is true:
  * a mark near the edge of a wide crop may then lose its margin.
  * @returns {{side:number, S:number, W:number, stacked:boolean, limited:boolean}}
  */
-export function zoomPlan({ side, availW, budgetH, maxS = 6, preferStack = false }) {
+export function zoomPlan({ side, availW, budgetH, maxS = 6 }) {
     const capSbs = budgetH - ZOOM_SBS_EXTRA, capStack = Math.floor((budgetH - ZOOM_STACK_EXTRA) / 2);
     const best = (stacked) => {
         const cap = stacked ? capStack : capSbs;
@@ -575,12 +580,25 @@ export function zoomPlan({ side, availW, budgetH, maxS = 6, preferStack = false 
     };
     const a = best(false), b = best(true);
     if (a || b) {
-        const stacked = preferStack && b ? true : b > a;
+        const stacked = b > a;
         const S = stacked ? b : a;
         return { side, S, W: S * side, stacked, limited: false };
     }
     const lim = Math.max(48, 2 * Math.floor(Math.min(capStack, availW - 4) / 4));
     const s2 = Math.min(side, lim);
     return { side: s2, S: 2, W: 2 * s2, stacked: true, limited: s2 < side };
+}
+/**
+ * zoomPlan for the stage column beside the panel: `rootW` is the frame's width, `cards` the candidate count. The panel
+ * keeps comparePanelMin; a 3x or larger pair that would leave it under PANEL_COMFORT_W is capped at 2x.
+ */
+export function zoomPlanBeside({ side, rootW, cards, budgetH, maxS = 6 }) {
+    const availW = rootW - 36 - 16 - comparePanelMin(cards);
+    let p = zoomPlan({ side, availW, budgetH, maxS });
+    if (!p.limited && p.S > 2) {
+        const pairW = p.stacked ? p.W + 4 : 2 * (p.W + 4) + 8;
+        if (rootW - 36 - 16 - pairW < PANEL_COMFORT_W) p = zoomPlan({ side, availW, budgetH, maxS: 2 });
+    }
+    return p;
 }
 export const ZOOM_MAX_H_SHORT = 128;

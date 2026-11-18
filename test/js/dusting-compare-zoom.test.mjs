@@ -158,15 +158,58 @@ test('M2: at availW 112 with four cards every lift mark (and card mark) lies ins
     }
 });
 
-test('n3: preferStack stacks the pair when it fits, a wide layout still prefers side by side', () => {
+test('n4: no preferStack; the pair stacks only when side by side would need a smaller scale', () => {
     const budgetH = M.zoomBudgetH(844);
-    const wideAvail = 700;
-    assert.equal(M.zoomPlan({ side: 60, availW: wideAvail, budgetH, maxS: 2 }).stacked, false, 'room for both: side by side');
-    const p = M.zoomPlan({ side: 60, availW: wideAvail, budgetH, maxS: 2, preferStack: true });
-    assert.equal(p.stacked, true);
-    assert.equal(p.limited, false);
+    assert.equal(M.zoomPlan({ side: 60, availW: 700, budgetH, maxS: 2 }).stacked, false, 'room for both: side by side');
+    const narrow = M.zoomPlan({ side: 60, availW: 200, budgetH, maxS: 2 });
+    assert.equal(narrow.stacked, true, 'side by side does not fit, stacked does');
+    assert.equal(narrow.limited, false);
     const game = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
-    assert.match(game, /plan\(rootW - 16 - 4, 2, true\)/);
+    const model = readFileSync(join(pub, 'js/minigames/dusting/dusting-model.js'), 'utf8');
+    assert.doesNotMatch(game + model, /preferStack/);
+});
+
+test('M1: the CSS caps each card at REF_CARD_W so a long label wraps inside the card', () => {
+    const css = readFileSync(join(pub, 'css/dusting.css'), 'utf8');
+    const m = css.match(/\.dusting-refs:not\(\[data-count="4"\]\) \.dusting-ref-wrap \{([^}]*)\}/);
+    assert.ok(m, 'cap rule exists');
+    assert.match(m[1], new RegExp(`flex: 0 0 ${M.REF_CARD_W}px`));
+    assert.match(m[1], new RegExp(`max-width: ${M.REF_CARD_W}px`));
+    assert.match(css, /\.dusting-ref > span \{[^}]*overflow-wrap: anywhere/);
+    assert.equal(M.REF_CARD_W, 144);
+    // the four-card grid sizes its own columns (minmax(0, 1fr)), so it needs no fixed cap
+    assert.match(css, /\.dusting-refs\[data-count="4"\] \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});
+
+test('m1: a 3x or larger pair never leaves the panel under 420 px (real sides 86 to 102)', () => {
+    assert.equal(M.PANEL_COMFORT_W, 420);
+    for (const rootW of [956, 940]) for (const innerH of [720, 700]) for (const cards of [2, 3, 4]) for (let side = 72; side <= 106; side += 2) {
+        const p = M.zoomPlanBeside({ side, rootW, cards, budgetH: M.zoomBudgetH(innerH) });
+        if (p.limited) continue;
+        const pairW = p.stacked ? p.W + 4 : 2 * (p.W + 4) + 8;
+        const panel = rootW - 52 - pairW;
+        assert.ok(panel >= M.comparePanelMin(cards));
+        if (p.S > 2) assert.ok(panel >= 420, `${cards} cards side ${side} S ${p.S}: panel ${panel}`);
+    }
+    const p2 = M.zoomPlanBeside({ side: 86, rootW: 956, cards: 2, budgetH: M.zoomBudgetH(700) });
+    assert.equal(p2.S, 2, '2 cards at side 86 would be 3x with a 376 px panel: capped at 2x');
+});
+
+test('m2: the 2x2 retry is gone; 600 px stays the four-card minimum', () => {
+    const model = readFileSync(join(pub, 'js/minigames/dusting/dusting-model.js'), 'utf8');
+    const game = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
+    assert.doesNotMatch(model + game, /COMPARE_PANEL_MIN_2X2/);
+    assert.equal(M.COMPARE_PANEL_MIN_2X2, undefined);
+    assert.equal(M.comparePanelMin(4), 600);
+});
+
+test('n1/n2/n3: empty Keys line hidden, PANEL_SLACK, V without aria-keyshortcuts on View buttons and with a repeat guard', () => {
+    const game = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
+    assert.match(game, /this\.keysEl\.hidden = keys === 'Keys: '/);
+    assert.equal(M.PANEL_SLACK, 32);
+    assert.equal(M.PANEL_SIDE_PAD, undefined);
+    assert.doesNotMatch(game, /aria-keyshortcuts="V"/);
+    assert.match(game, /if \(e\.repeat\) return;   \/\/ holding V/);
 });
 
 test('m1/m2/m3/n1/n2/n4: labels, keys line, spoken marks again, held L, fullLift reason, corner colour', () => {
