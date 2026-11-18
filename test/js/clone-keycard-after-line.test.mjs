@@ -87,7 +87,7 @@ function harness({ cloner = true, scene = 'person-chat' } = {}) {
         npcConversationStateManager: { saveNPCState: () => saved.push(shown.length) },
         isSessionOverlayShowing: () => false, onSessionOverlayClosed: () => () => {},
         whenSessionOverlayClosed: async () => {},
-        rememberNpcLine: () => {}, rememberShownText: () => {}, readingTimeMs: () => READ_MS, advanceDelayMs: () => READ_MS,
+        rememberNpcLine: () => {}, rememberShownText: () => {}, markClosedByExit: () => {}, readingTimeMs: () => READ_MS, advanceDelayMs: () => READ_MS,
         DIALOGUE_AUTO_ADVANCE_DELAY: 1500
     };
     const next = [];

@@ -53,7 +53,7 @@ async function chatAtTheReply() {
     conv.continue = () => { continues++; return realContinue(); };
     const win = { currentConversationNPCId: null };
     const deps = {
-        splitReplyTags, partitionSlowTags, tagAction, window: win,
+        splitReplyTags, partitionSlowTags, tagAction, window: win, markClosedByExit: () => {},
         processGameActionTags: (tags) => { applied.push([...tags]); return Promise.resolve([]); },
         npcConversationStateManager: { saveNPCState: () => saves.push('save') },
         isSessionOverlayShowing: () => false, onSessionOverlayClosed: () => () => {},

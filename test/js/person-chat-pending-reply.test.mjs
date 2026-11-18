@@ -52,7 +52,7 @@ function harness() {
     const shown = [];
     const deps = {
         processGameActionTags, splitReplyTags, partitionSlowTags, tagAction, window: win,
-        npcConversationStateManager: { saveNPCState() {} }, rememberShownText: () => {},
+        npcConversationStateManager: { saveNPCState() {} }, rememberShownText: () => {}, markClosedByExit: () => {},
         isSessionOverlayShowing: () => false, onSessionOverlayClosed: () => () => {},
         DIALOGUE_AUTO_ADVANCE_DELAY: 1500
     };

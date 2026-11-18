@@ -77,7 +77,7 @@ function chatHarness() {
     const scheduled = [];
     const deps = {
         deliveryFromTags, window: globalThis.window,
-        whenSessionOverlayClosed: async () => {}, rememberNpcLine: () => {}, rememberShownText: () => {},
+        whenSessionOverlayClosed: async () => {}, rememberNpcLine: () => {}, rememberShownText: () => {}, markClosedByExit: () => {},
         readingTimeMs: () => 1000, advanceDelayMs: () => 1000,
         processGameActionTags: async () => {}, npcConversationStateManager: { saveNPCState() {} }
     };
