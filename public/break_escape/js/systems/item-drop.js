@@ -62,7 +62,8 @@ function roomObstacles(room, except) {
     return out;
 }
 
-const isMagnet = data => !!(data?.affordance && typeof data.affordance.magnet === 'object' && data.affordance.magnet);
+/** A magnet: the same test the npc-needs system uses (affordance.magnet is an object, see magnetOf). */
+export const isMagnet = data => !!(data?.affordance && typeof data.affordance.magnet === 'object' && data.affordance.magnet);
 
 /** The neutral picture of a dropped item whose own picture file is missing. */
 export const DROPPED_ITEM_TEXTURE = 'dropped_item';
