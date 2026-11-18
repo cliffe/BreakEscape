@@ -9,15 +9,17 @@
  * NPC-owned `onUse` map; it never reads the NPC's `usePayload`, only clones it
  * onto npc_used.
  *
- * No static imports on purpose: the engine reaches it through window, and the
- * node tests import it directly with a stub world (see createEngineWorld for the
- * live adapter).
+ * One static import, the import-free compass8.js (the 8 facings, shared with seating.js): the
+ * engine reaches this module through window, and the node tests import it directly with a stub
+ * world (see createEngineWorld for the live adapter).
  *
  * Determinism: every decision happens on a fixed 250 ms tick of the needs clock, which the
  * engine advances by the frame step its walks use (see update);
  * the only randomness is a per-NPC mulberry32 seeded from (seed, npcId), used for
  * jitterPct. Arrivals are queued and handled at the next tick.
  */
+
+import { COMPASS8, facingPointFrom } from './compass8.js';
 
 export const NEEDS_TICK_MS = 250;
 const MAX_FRAME_MS = 1000;
@@ -1495,6 +1497,11 @@ export class NPCNeedsSystem {
 
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
+            // A coordinate home with a facing: stand turned that way (a seat takes it from here)
+            if (s.home?.facing && !s.home.objectId) {
+                const p = facingPointFrom(pos, s.home.facing, 64);
+                if (p) this.world.faceTo(id, p.x, p.y);
+            }
             // Only a real trip emits; a session at one's own post object never left it
             s.returnAbandon = null;
             s.returnLate = 0;   // late walks are counted per return (R3 m1)
@@ -1532,6 +1539,14 @@ export class NPCNeedsSystem {
         // Slice 19 (OQ55): on a desk-phone call nothing is selected; decay goes on, and an urgent
         // need, a due errand or a tempted magnet starts on the first select after the call
         if (s.call) return;
+
+        // Idle at a coordinate home with a facing: back to that facing after a conversation or a turn
+        // to the player (the world skips a seated NPC, a pose hold and a player in turn-to range)
+        if (s.home?.facing && !s.home.objectId && (s.mode === 'idle' || (s.mode === 'returning' && s.atPost))
+            && Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS * 2) {
+            const p = facingPointFrom(pos, s.home.facing, 64);
+            if (p) this.world.restoreFacing?.(id, p.x, p.y);
+        }
 
         // Access 9.2 A (plan 5.3): a queued visit starts before the selector runs
         if (s.visits.length && this._startVisit(s)) return;
@@ -4142,7 +4157,14 @@ export class NPCNeedsSystem {
                 const woken = Object.keys(s.parked).sort().filter(n => s.parked[n].reason === 'no_source');
                 this._wakeParkedFor(s, woken);
             }
+            const first = !s.home || s.home.provisional;
             s.home = h;
+            // Spawn and reload: a coordinate home with a facing turns the NPC at it once, the first time
+            // the home resolves while it stands there (a trip's return turns it separately)
+            if (first && h.facing && !h.objectId && pos && Math.hypot(pos.x - h.x, pos.y - h.y) <= HOME_EPS * 2) {
+                const p = facingPointFrom(pos, h.facing, 64);
+                if (p) this.world.faceTo?.(s.npcId, p.x, p.y);
+            }
             return;
         }
         if (!s.home) s.home = h;   // keep the first provisional spot; don't chase the NPC's position
@@ -4159,7 +4181,11 @@ export class NPCNeedsSystem {
             return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null, provisional: true };
         } else if (h && typeof h === 'object' && h.room) {
             const w = this.world.tileToWorld(h.room, h.x, h.y);
-            if (w) return { x: w.x, y: w.y, roomId: h.room, objectId: null };
+            if (w) {
+                const home = { x: w.x, y: w.y, roomId: h.room, objectId: null };
+                if (COMPASS8.includes(h.facing)) home.facing = h.facing;   // seating.js turns the sitter this way
+                return home;
+            }
         }
         return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null };
     }
@@ -5772,6 +5798,17 @@ export function createEngineWorld() {
         },
         faceTo(id, x, y) {
             behaviour(id)?.faceWorldPoint?.(x, y);
+        },
+        /** Turn an idle, standing NPC back to a point unless it is seated, held in a pose, or the player is close enough to be faced. */
+        restoreFacing(id, x, y) {
+            const b = behaviour(id);
+            if (!b || b._seat || b._seatMove || b._poseHoldFacing || !b.npcBodyPos) return;
+            const p = b.npcBodyPos();
+            const pl = W().player;
+            const range = b.config?.facePlayerDistance || 96;
+            if (b.config?.facePlayer && pl && Math.hypot((pl.x ?? 0) - p.x, (pl.y ?? 0) - p.y) < range) return;
+            const dir = b.calculateDirection(x - p.x, y - p.y);
+            if (b.direction !== dir) { b.direction = dir; b.playAnimation?.('idle', dir); }
         },
         pickUp(npcId, itemId) {
             const f = findSprite(itemId);
