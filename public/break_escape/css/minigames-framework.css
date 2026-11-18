@@ -549,14 +549,15 @@
     right: calc(15px + var(--minigame-shell-bar, 0px));
 }
 
-/* A conversation's only exit on a phone is its X (UX q100): keep the drawn size but give it
-   a hit area of at least 44 px on small or touch screens. Nothing is drawn. */
-@media (max-width: 600px), (pointer: coarse) {
-    [data-minigame="person-chat"] .minigame-close-button::after {
-        content: '';
-        position: absolute;
-        inset: -14px; /* from the padding box: the themed border is up to 6 px, so the target is at least 44 px */
-    }
+/* Every minigame X keeps its drawn size but gets a hit area of at least 44 px (UX q100). The
+   box is 30 px plus the 4-6 px themed border, so inset -14px from the padding box reaches 44+.
+   Applies at every size, not only under a width query: phone landscape (844x390) is wider than
+   600px, and a larger target with the same glyph is harmless on desktop. Nothing is drawn.
+   The console title bar X is position: relative (below) so the hit area anchors to it. */
+.minigame-close-button::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
 }
 
 .minigame-close-button:hover {
@@ -755,7 +756,7 @@ html .minigame-container.minigame-console {
 
 /* The X is a box in the bar, not fixed to the window or placed over the frame */
 .console-titlebar > .minigame-close-button {
-    position: static;
+    position: relative;   /* in flow, and the anchor for the hit area */
     flex: none;
     top: auto;
     right: auto;
