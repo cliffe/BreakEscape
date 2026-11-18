@@ -424,7 +424,7 @@ Agent HaX: Once you were in, one account was allowed to run far more than its jo
     // Restraint praise: held the Ben lead and spent no name (or wrong reason) on anyone.
     // Skipped when no Torres indicators were found (it sits inside indicators_found() > 0).
     {ashworth_lead_texted and not ashworth_named and not torres_reason_guessed and not halloran_accused:
-        Agent HaX: You had a file on Ben Ashworth, broke and on nights, and you never spent a name on him. That's the job.
+        Agent HaX: You had a lead on Ben Ashworth, broke and on nights, and you never spent a name on him. That's the job.
     }
 - else:
     Agent HaX: You found him by what he did. Next time, look for the signs that come before.
