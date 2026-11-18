@@ -338,6 +338,41 @@ export function fitContentLabels(grid) {
     if (typeof document !== 'undefined' && document.fonts?.load) document.fonts.load('16px GNF').then(fit, () => {});
 }
 
+/**
+ * The element that actually scrolls a container's contents: the nearest ancestor of the
+ * grid that overflows and scrolls (the framed game container or the minigame container; the
+ * grid itself has no overflow). Found at run time so a layout change cannot break it.
+ */
+export function scrollingAncestor(el) {
+    if (!el || typeof getComputedStyle !== 'function') return null;
+    for (let node = el.parentElement; node; node = node.parentElement) {
+        const oy = getComputedStyle(node).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+    }
+    return null;
+}
+
+/**
+ * Whether a note read on pickup was the last thing in an ordinary container, so closing the
+ * note ends in the world instead of an empty list. Desktops, shares, folders, sign-in PCs,
+ * NPC containers and takeable containers (the Take Container button) keep their own return.
+ */
+export function lastNoteClosesToWorld(containerState) {
+    if (!containerState || !containerState.itemToTake) return false;
+    if (!Array.isArray(containerState.contents) || containerState.contents.length !== 0) return false;
+    const ci = containerState.containerItem;
+    return !containerState.npcOptions
+        && !containerState.isTakeable
+        && !isNetworkScreenContainer(ci)
+        && ci?.scenarioData?.lockType !== 'login'
+        && !shouldUseDesktopModeForContainer(ci)
+        && !ci?.parentLockable
+        && !ci?.sourcePcId
+        && !ci?.scenarioData?.networkShare;
+}
+
+if (typeof window !== 'undefined') window.lastNoteClosesToWorld = lastNoteClosesToWorld;
+
 const LABEL_SEP = /[_.\-\/]/;
 const LABEL_TRAIL = /[_.\-\/\s]+$/;
 const LABEL_LINES = 3;
@@ -1744,7 +1779,14 @@ export class ContainerMinigame extends MinigameScene {
         // Back from a note read on pickup: same scroll position, focus kept inside the frame
         if (this.params?.fromReturn) {
             const top = Number(this.params.scrollTop);
-            if (Number.isFinite(top) && top > 0) contentsGrid.scrollTop = top;
+            if (Number.isFinite(top) && top > 0) {
+                // The scroller is an ancestor, not the grid. Again after the label re-fit
+                // (next frame, and once the pixel font arrives) changes the row heights.
+                const restore = () => { const sc = scrollingAncestor(contentsGrid); if (sc) sc.scrollTop = top; };
+                restore();
+                if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(restore));
+                if (typeof document !== 'undefined' && document.fonts?.load) document.fonts.load('16px GNF').then(() => requestAnimationFrame?.(restore), () => {});
+            }
             if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
             contentsGrid.focus?.({ preventScroll: true });
         }
@@ -2231,7 +2273,7 @@ export class ContainerMinigame extends MinigameScene {
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
                 // Where the list was scrolled to, so the container comes back there
-                scrollTop: document.getElementById('container-contents-grid')?.scrollTop || 0,
+                scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
                 // Where the note came from (a PC or a share), so the server's add finds it
                 sourceExtras: this.sourceExtras(),
@@ -2693,7 +2735,10 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // The container reopens just below, so this toast waits for it with the
             // others. Shown now it was pulled back by the container opening and shown
             // again when it closed: "has been noted" twice (F13, engine F24).
-            window.expectPanelWithin?.(1000);
+            // The last note of an ordinary container reopens nothing, so no panel is expected
+            // and the toast must not wait for one.
+            if (!lastNoteClosesToWorld(containerState)) window.expectPanelWithin?.(1000);
+            else window.clearExpectedPanel?.();
             window.gameAlert(`${containerState.itemToTake.name} has been noted`, 'success', 'Added to Notes', 2000);
         }
         
@@ -2704,12 +2749,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
         // The note was the last thing in an ordinary container: nothing is left to take, so
         // it closes to the world instead of reopening an empty list. A desktop or a network
         // screen keeps its own return (its folder is a place, not a pile).
-        if (containerState.itemToTake && Array.isArray(containerState.contents)
-            && containerState.contents.length === 0 && !containerState.npcOptions
-            && !isNetworkScreenContainer(containerState.containerItem)
-            && containerState.containerItem?.scenarioData?.lockType !== 'login') {
-            return;
-        }
+        if (lastNoteClosesToWorld(containerState)) return;
 
         // A PC's sign-in desktop whose session ended while the file was open (the owner came
         // back, the screen locked, someone signed in there): the desktop was not open to
