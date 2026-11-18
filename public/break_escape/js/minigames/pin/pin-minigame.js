@@ -383,8 +383,24 @@ export class PinMinigame extends MinigameScene {
             // in a text field is not PIN entry. Pad keys, the display and the body stay ours.
             const target = e.target;
             const tag = target && target.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return;
+            // Only text-entry inputs keep digits and Backspace; a checkbox, radio, button, range,
+            // colour or file input is not typing, so the pad still takes digits there.
+            const NON_TEXT_INPUTS = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image'];
+            const isInput = tag === 'INPUT';
+            const nonTextInput = isInput && NON_TEXT_INPUTS.includes(String(target.type || '').toLowerCase());
+            if (tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return;
+            if (isInput && !nonTextInput) return;
+            // Enter on a non-text input (the cracker checkbox) keeps its own behaviour
+            if (key === 'Enter' && nonTextInput) return;
             if (key === 'Enter' && (tag === 'BUTTON' || tag === 'A') && !target.classList?.contains('pin-minigame-key')) return;
+            // Enter on a pad key that has keyboard focus acts as that key: the native click runs
+            // once (no preventDefault, no handleEnter). A key focused by a mouse click is not
+            // focus-visible, so a physical Enter still submits.
+            if (key === 'Enter' && target.classList?.contains('pin-minigame-key')) {
+                let keyboardFocused = false;
+                try { keyboardFocused = !!target.matches(':focus-visible'); } catch (_) { keyboardFocused = false; }
+                if (keyboardFocused) return;
+            }
             
             // Handle number keys
             if (key >= '0' && key <= '9') {

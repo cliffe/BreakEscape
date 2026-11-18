@@ -1658,3 +1658,13 @@
 @media (max-width: 500px) {
     [data-minigame="phone-chat"] .phone-messages-container { margin-top: 44px; }
 }
+
+/* Read by screen readers only (the unread badge's " unread") */
+.contact-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}

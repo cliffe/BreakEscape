@@ -603,6 +603,9 @@ export default class PhoneChatUI {
             console.warn('⚠️ Phone UI torn down; not showing the contact list');
             return;
         }
+        // Back from a thread opened with the keyboard returns focus to that contact's row
+        const returnTo = this.currentView === 'conversation' && this._threadByKeyboard ? this.currentNPCId : null;
+        this._threadByKeyboard = false;
         this.currentView = 'contact-list';
         this.currentNPCId = null;
         this.syncSkipHint();
@@ -618,6 +621,7 @@ export default class PhoneChatUI {
         this.populateContactList(phoneId);
         
         this.focusIntoPhone();
+        if (returnTo) this.focusContactRow(returnTo);
         console.log('📋 Showing contact list');
     }
 
@@ -770,6 +774,10 @@ export default class PhoneChatUI {
      */
     populateContactList(phoneId = null) {
         const contactList = this.elements.contactList;
+        // A rebuild drops the focused row: remember it and focus its replacement
+        const active = document.activeElement;
+        const focusedId = active && contactList.contains(active) && active.classList?.contains('contact-item')
+            ? active.dataset.npcId : null;
         contactList.innerHTML = '';
         const npcs = this.listContacts(phoneId);
         
@@ -794,7 +802,22 @@ export default class PhoneChatUI {
             }
         });
 
+        if (focusedId) this.focusContactRow(focusedId);
         console.log(`📋 Populated ${npcs.length} contacts`);
+    }
+
+    /**
+     * Focus the contact row for an NPC, if the list has one.
+     * @returns {boolean} whether a row took focus
+     */
+    focusContactRow(npcId) {
+        try {
+            const rows = Array.from(this.elements?.contactList?.querySelectorAll('.contact-item') || []);
+            const row = rows.find(r => r.dataset.npcId === npcId);
+            if (!row) return false;
+            row.focus({ preventScroll: true });
+            return true;
+        } catch (e) { return false; }
     }
 
     /**
@@ -872,8 +895,11 @@ export default class PhoneChatUI {
             if (e.target !== contactItem || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
             if (e.key !== 'Enter' && e.key !== ' ') return;
             e.preventDefault();
-            contactItem.click();
+            // A thread opened this way gives focus back to its row on Back
+            this._kbOpen = true;
+            try { contactItem.click(); } finally { this._kbOpen = false; }
         });
+        contactItem.addEventListener('click', () => { this._threadByKeyboard = !!this._kbOpen; });
         
         // Format last message preview
         let lastMessagePreview = 'No messages yet';
@@ -900,20 +926,26 @@ export default class PhoneChatUI {
             }
         }
 
+        const nameId = `contact-name-${String(npc.id).replace(/[^A-Za-z0-9_-]/g, '_')}`;
         contactItem.innerHTML = `
             <div class="contact-avatar">
-                ${avatar ? `<img src="${escHtml(avatarSrc)}" alt="">` : '👤'}
+                ${avatar ? `<img src="${escHtml(avatarSrc)}" alt="">` : '<span aria-hidden="true">👤</span>'}
             </div>
             <div class="contact-info">
-                <div class="contact-name">${escHtml(npc.displayName || npc.id)}</div>
+                <div class="contact-name" id="${nameId}">${escHtml(npc.displayName || npc.id)}</div>
                 ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
                 <div class="contact-last-message${lastIsMissedCall ? ' missed' : ''}">${escHtml(displayDashes(lastMessagePreview))}</div>
             </div>
             <div class="contact-meta">
-                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-                <div class="contact-time">${escHtml(lastMessageTime)}</div>
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}<span class="contact-sr-only"> unread</span></div>` : ''}
+                <div class="contact-time" id="${nameId}-time">${escHtml(lastMessageTime)}</div>
             </div>
         `;
+        // Name = the contact name alone (the row's ::before "// " is not part of it);
+        // the preview and time are the description
+        contactItem.querySelector('.contact-last-message')?.setAttribute('id', `${nameId}-preview`);
+        contactItem.setAttribute('aria-labelledby', nameId);
+        contactItem.setAttribute('aria-describedby', `${nameId}-preview ${nameId}-time`);
         
         return contactItem;
     }
