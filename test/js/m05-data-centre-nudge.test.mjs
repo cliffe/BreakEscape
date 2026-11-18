@@ -70,9 +70,7 @@ test('KO variant: only the matching branch fires', { skip }, () => {
         window.gameState.globalVariables = { torres_identified: false, patricia_ko: pko };
         for (const x of [std, ko]) {
             const cfg = mgr._buildMappingConfig(x.m, x.i);
-            if (mgr._mappingWouldFire ? mgr._mappingWouldFire('hax', cfg, {}) !== false : true) {
-                mgr._handleEventMapping('hax', 'room_entered:data_center', cfg, {});
-            }
+            mgr._handleEventMapping('hax', 'room_entered:data_center', cfg, {});
         }
         mgr.gameStartTime -= 3000;
         mgr._checkTimedMessages();
@@ -107,6 +105,26 @@ test('reload does not resend a fired nudge or lose a pending one', { skip }, () 
     d._handleEventMapping('hax', 'room_entered:data_center', d._buildMappingConfig(m, std.i), {});
     d.gameStartTime -= 3000; d._checkTimedMessages();
     assert.deepEqual(timed(d), [m.sendTimedMessage.message], 'exactly one after restore');
+    window.gameState.globalVariables = {};
+});
+
+test('flip: standard text fires, then patricia_ko turns true, re-entry gives exactly one KO text', { skip }, () => {
+    const mgr = fresh();
+    const enter = () => {
+        for (const x of [std, ko]) {
+            mgr._handleEventMapping('hax', 'room_entered:data_center', mgr._buildMappingConfig(x.m, x.i), {});
+        }
+        mgr.gameStartTime -= 3000;
+        mgr._checkTimedMessages();
+    };
+    window.gameState.globalVariables = { torres_identified: false, patricia_ko: false };
+    enter();
+    assert.deepEqual(timed(mgr), [std.m.sendTimedMessage.message], 'standard text first');
+    window.gameState.globalVariables = { torres_identified: false, patricia_ko: true };
+    enter();
+    assert.deepEqual(timed(mgr), [std.m.sendTimedMessage.message, ko.m.sendTimedMessage.message], 'one KO text, standard not repeated');
+    enter();
+    assert.equal(timed(mgr).length, 2, 'no further texts on another entry');
     window.gameState.globalVariables = {};
 });
 
