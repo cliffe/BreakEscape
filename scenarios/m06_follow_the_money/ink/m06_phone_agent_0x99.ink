@@ -365,6 +365,9 @@ Try the other way first.
 {irina_recruited and not architect_identity_found:
     Volkova says Satoshi's safe is 2140.
 }
+{satoshi_confronted and not irina_recruited and not architect_identity_found:
+    His safe is optional. Priya's margin notes, the clipping in his corridor and Volkova's email all point at one number.
+}
 {satoshi_confronted and found_architects_fund and not assets_decided:
     The wallet's still yours to decide. Freeze it, or leave it running and watch it.
 }

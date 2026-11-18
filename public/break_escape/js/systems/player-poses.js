@@ -103,9 +103,14 @@ export class PlayerPoses {
         if (w.playerIsKnockedOut?.() || w.playerHealth?.isKO?.()) return 'knocked out';
         const cur = p.anims?.currentAnim?.key || '';
         if (FIGHT_ANIM_RE.test(cur) && p.anims?.isPlaying) return 'fighting';
-        const behaviours = w.npcBehaviorManager?.behaviors;
-        if (behaviours instanceof Map) {
-            for (const b of behaviours.values()) if (b?.currentState === 'chase') return 'fighting';
+        // The same chase test as the combat hold (player-damage-interrupt.js): one place decides
+        if (typeof w.playerHasChaser === 'function') {
+            if (w.playerHasChaser()) return 'fighting';
+        } else {
+            const behaviours = w.npcBehaviorManager?.behaviors;
+            if (behaviours instanceof Map) {
+                for (const b of behaviours.values()) if (b?.currentState === 'chase') return 'fighting';
+            }
         }
         return null;
     }

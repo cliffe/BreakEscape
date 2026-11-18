@@ -37,7 +37,7 @@ writeFileSync(join(sysBridge, 'state.js'),
 writeFileSync(join(sysBridge, 'input.js'),
     'export const sleepFrames = async () => {};\n' +
     'export const sleep = async () => {};\n' +
-    'export const clickElement = () => { globalThis.__clicked = true; };\n' +
+    'export const clickElement = (el) => { globalThis.__clicked = true; (globalThis.__clickLog ||= []).push(el && el.innerText); if (el && el.innerText === "Resume") globalThis.__menuOpen = false; };\n' +
     ['clickWorld', 'pressKey', 'keyDown', 'keyUp', 'worldToClient', 'isWorldPointOnScreen', 'getScene']
         .map(n => `export const ${n} = () => {};`).join('\n') + '\n');
 
@@ -52,6 +52,7 @@ writeFileSync(join(sysBridge, 'log.js'),
 
 writeFileSync(join(sysBridge, 'minigames.js'), 'export const minigameBridge = {};\n');
 writeFileSync(join(sysBridge, 'access.js'), 'export const accessBridge = {};\n');
+writeFileSync(join(sysBridge, 'throttle.js'), 'export const throttleFps = async () => ({}); export const unthrottleFps = async () => ({});\n');
 writeFileSync(join(sysBridge, 'aim.js'), 'export const chooseAimPoint = () => null;\nexport const rivalsAt = () => [];\n');
 writeFileSync(join(dir, 'systems/tap-pick.js'), 'export const opaqueAt = () => true;\n');
 writeFileSync(join(dir, 'utils/constants.js'), 'export const INTERACTION_RANGE = 1;\nexport const DOOR_INTERACTION_RANGE = 1;\n');
@@ -62,10 +63,17 @@ writeFileSync(join(dir, 'core/player.js'), 'export const movePlayerToPoint = () 
 
 // A minimal DOM: one overlay panel holding one button, over a sized canvas.
 const button = { innerText: 'OK', getBoundingClientRect: () => ({ left: 0, top: 0, width: 50, height: 20 }) };
+const resumeBtn = { innerText: 'Resume', getBoundingClientRect: () => ({ left: 0, top: 0, width: 50, height: 20 }) };
 const panel = { closest: () => panel, querySelectorAll: () => [button] };
 const canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) };
 globalThis.document = {
-    querySelector: (sel) => (sel.includes('canvas') ? canvas : null),
+    querySelector: (sel) => {
+        if (sel.includes('canvas')) return canvas;
+        if (globalThis.__menuOpen && sel === '#game-menu-overlay.visible') {
+            return { querySelector: (s) => (s === '.game-menu-resume' ? resumeBtn : null) };
+        }
+        return null;
+    },
     elementsFromPoint: () => [panel],
     body: {}
 };
@@ -103,4 +111,34 @@ test('nothing to dismiss answers ok:true nothingToDismiss', async () => {
     detectSequence([]); // no blocker at all
     const r = await bridge.dismissBlockingUi();
     assert.deepEqual(r, { ok: true, nothingToDismiss: true });
+});
+
+test('a game menu left open behind the dismiss is resumed, not left up', async () => {
+    detectSequence([{ kind: 'overlay' }]);
+    globalThis.__clickLog = [];
+    globalThis.__menuOpen = true;
+    const r = await bridge.dismissBlockingUi();
+    assert.equal(r.ok, true);
+    assert.equal(r.closedGameMenu, true);
+    assert.deepEqual(globalThis.__clickLog, ['OK', 'Resume'], 'the real Resume button is clicked after the dismiss');
+    assert.equal(globalThis.__menuOpen, false);
+});
+
+test('no game menu open: no Resume click and no closedGameMenu flag', async () => {
+    detectSequence([{ kind: 'overlay' }]);
+    globalThis.__clickLog = [];
+    globalThis.__menuOpen = false;
+    const r = await bridge.dismissBlockingUi();
+    assert.deepEqual(globalThis.__clickLog, ['OK']);
+    assert.equal(r.closedGameMenu, undefined);
+});
+
+test('enterRoom clears a stray game menu before checking for blocking UI', async () => {
+    detectSequence([]);
+    globalThis.__clickLog = [];
+    globalThis.__menuOpen = true;
+    globalThis.window.player = null; // stops right after the guards: no-player
+    const r = await bridge.enterRoom('room_b');
+    assert.equal(r.reason, 'no-player');
+    assert.deepEqual(globalThis.__clickLog, ['Resume']);
 });

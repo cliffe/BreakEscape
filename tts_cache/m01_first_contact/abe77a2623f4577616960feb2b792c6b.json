@@ -1,0 +1,13 @@
+{
+  "key": "abe77a2623f4577616960feb2b792c6b",
+  "npc": "fatima_begum",
+  "text": "HR doesn't take orders from Marketing. Somebody upstairs signed it off, and that's all you're getting.",
+  "voice": "Vindemiatrix",
+  "style": "Recruitment lead in her thirties, British Bangladeshi, Yorkshire accent. Brisk, friendly, a little rushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:57:48Z"
+}

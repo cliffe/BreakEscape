@@ -1,0 +1,13 @@
+{
+  "key": "ed38ac205957b6649a70d830704ad71e",
+  "npc": "security_guard_patrol",
+  "text": "Here. Take the whole thing. I've been waiting six weeks for somebody to want it.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:13:19Z"
+}

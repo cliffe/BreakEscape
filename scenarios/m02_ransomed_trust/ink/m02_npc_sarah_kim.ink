@@ -283,10 +283,11 @@ Dr. Sarah Kim: And what will finish me, when I'm old, is that he'll believe it w
 === protect_gary ===
 ~ player_warned_kim = true
 # influence_increased
-#complete_task:learn_about_scapegoating
+// The task completes when Gary is told (m02_npc_gary_whitlock: kim_wrote_it).
 #set_global:gary_protected:true
 {not kim_statement_given:
     ~ kim_statement_given = true
+    #set_global:kim_statement_given:true
     #give_item:notes:kim_statement
 }
 
@@ -311,10 +312,11 @@ Dr. Sarah Kim: If they want a name on this, they can have the correct one.
 
 === board_coverup ===
 ~ player_warned_kim = true
-#complete_task:learn_about_scapegoating
+// The task completes when Gary is told (m02_npc_gary_whitlock: kim_wrote_it).
 #set_global:gary_protected:true
 {not kim_statement_given:
     ~ kim_statement_given = true
+    #set_global:kim_statement_given:true
     #give_item:notes:kim_statement
 }
 

@@ -10,6 +10,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage, tokenExpiredMessage } from '../../utils/remote-host-text.js';
+import { syncBeforeFetch } from '../../utils/sync-before-fetch.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, refreshTokenLines, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
@@ -807,6 +808,8 @@ export class ContainerMinigame extends MinigameScene {
             // A folder under a sign-in PC names the route its session went by (K3c, K2 m4)
             // (a share is its own scope, which the server judges without a route)
             const query = this.shareFolder ? '' : folderRouteQuery(this.sourcePcId);
+            // A share is judged on the server's copy of the globals too (9.3b plan 5.2)
+            if (this.shareFolder) await syncBeforeFetch();
             const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
@@ -829,7 +832,8 @@ export class ContainerMinigame extends MinigameScene {
                     return [];
                 }
                 if (response.status === 403) {
-                    if (window.gameAlert) {
+                    // No error toast for a screen the player already left (R2 n5)
+                    if (window.gameAlert && !this.screenGone()) {
                         window.gameAlert('Container is locked', 'error', 'Locked', 2000);
                     }
                     this.complete(false);
@@ -843,7 +847,7 @@ export class ContainerMinigame extends MinigameScene {
             return data.contents || [];
         } catch (error) {
             console.error('Failed to load container contents:', error);
-            if (window.gameAlert) {
+            if (window.gameAlert && !this.screenGone()) {
                 window.gameAlert('Could not load container contents', 'error', 'Error', 3000);
             }
             return [];
@@ -864,6 +868,9 @@ export class ContainerMinigame extends MinigameScene {
         const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}`
             : (this.relay ? '?relay=1' : (this.fromRoute ? `?from=${encodeURIComponent(this.fromRoute.fromPcId)}` : ''));
         try {
+            // A remote or routed desktop is judged on the server's copy of the globals: send
+            // the latest first (9.3b plan 5.2). A walk-up desktop and a relay need no sync.
+            if (this.remote || this.fromRoute) await syncBeforeFetch();
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
@@ -1228,11 +1235,15 @@ export class ContainerMinigame extends MinigameScene {
         if (gameId && this.loginPcId) {
             // A sign-in PC stays locked in room data: its session, not the lock, opens it.
             const loaded = await this.loadLoginDesktop();
-            if (loaded === null) return;
+            if (loaded === null || this.screenGone()) return;
             this.contents = loaded;
         } else if (gameId && this.containerItem.scenarioData.locked === false) {
             console.log('Reloading container contents from server to get latest state');
-            this.contents = await this.loadContainerContents();
+            const contents = await this.loadContainerContents();
+            // Closed (or replaced) while the contents were on their way: build no UI, start no
+            // timer and report no share opened (review R1 m5)
+            if (this.screenGone()) return;
+            this.contents = contents;
             this.shareOpened();
         } else if (this.params.contents && this.params.contents.length > 0) {
             // Only use passed contents if server loading isn't available (locked container or local game)
@@ -1241,9 +1252,16 @@ export class ContainerMinigame extends MinigameScene {
         }
 
         // Create the container minigame UI
+        if (this.screenGone()) return;
         this.createContainerUI();
     }
     
+    /** True once this screen was closed or replaced, so a late answer must not build on it. */
+    screenGone() {
+        const cur = window.MinigameFramework?.currentMinigame;
+        return !!this._ending || (!!cur && cur !== this);
+    }
+
     createContainerUI() {
         if (this.mode === 'npc') {
             this.createNPCUI();
@@ -2643,10 +2661,6 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
                 containerState.contents.splice(itemIndex, 1);
             }
             
-            // The container reopens just below, so this toast waits for it with the
-            // others. Shown now it was pulled back by the container opening and shown
-            // again when it closed: "has been noted" twice (F13, engine F24).
-            window.expectPanelWithin?.(1000);
             // The container reopens just below, so this toast waits for it with the
             // others. Shown now it was pulled back by the container opening and shown
             // again when it closed: "has been noted" twice (F13, engine F24).

@@ -831,25 +831,25 @@ Agent HaX: One last section, and then I'll let you go. The people.
 
 {guard_knocked_out:
     Agent HaX: Val Okonkwo, security officer, north corridor. Concussion, four days off, and a written statement that she was assaulted by an intruder.
-    Agent HaX: She'd spent eight weeks logging Graham Reeves and getting told to drop it.
+    Agent HaX: She'd spent six weeks logging Graham Reeves and getting told to drop it.
     Agent HaX: The closest thing you had to an ally in that building, and you put her on the floor.
     Agent HaX: I'm not going to lecture you. You've read the file. I just want it said out loud once.
 - else:
     // Round 1 (B3): a fight with Val that didn't end with her on the floor.
     {attacked_guard and player_was_ko:
         Agent HaX: Val Okonkwo. You went for her in her own corridor, and she put you on the floor.
-        Agent HaX: She'd spent eight weeks logging Graham Reeves. Then she had to log you.
+        Agent HaX: She'd spent six weeks logging Graham Reeves. Then she had to log you.
     }
     {attacked_guard and not player_was_ko:
         Agent HaX: Val Okonkwo. You went for her in her own corridor, and she logged every second of it.
-        Agent HaX: She'd spent eight weeks logging Graham Reeves. Then she had to log you.
+        Agent HaX: She'd spent six weeks logging Graham Reeves. Then she had to log you.
     }
     {val_caught_picking:
         Agent HaX: Val Okonkwo's incident log has you in it, crouched at her office door with a pick set.
         Agent HaX: Time, description, what you said. It's the most accurate document anybody produced that night.
     }
     {insider_identified:
-        Agent HaX: Val Okonkwo had Reeves in her notebook for eight weeks and was told twice to leave it.
+        Agent HaX: Val Okonkwo had Reeves in her notebook for six weeks and was told twice to leave it.
     Agent HaX: Her log is now the spine of the case against him.
         Agent HaX: She has asked, through her union, that the record show she raised it. It will.
     }

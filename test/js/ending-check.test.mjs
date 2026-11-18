@@ -174,7 +174,7 @@ test('a held ending: the panel offers End the mission, and ending it does not as
     window.endingCheck = { hasHeld: E.hasHeldEnding, endHeld: E.endHeldEnding };
     try {
         panel.render(window.objectivesManager.getActiveAims());
-        const button = panel.content.querySelector('.objectives-end-button');
+        const button = panel.container.querySelector('.objectives-end-button');
         assert.ok(button);
         assert.equal(button.textContent, E.PANEL_BUTTON_LABEL);
         button.click();

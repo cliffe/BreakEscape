@@ -104,6 +104,13 @@ test('<vmflag:REF> is replaced by the value, logged as vm-step without the value
   assert.equal((await vs.substituteVmFlags('no tokens here', 'x')), 'no tokens here');
 });
 
+test('R3 m3: a resolved <vmflag:> value is reported to onSecret, once per fetch', async () => {
+  const seen = [];
+  const { vs } = make({ onSecret: (v) => seen.push(v) });
+  await vs.substituteVmFlags('<vmflag:stub:flag_1>', 'mg');
+  assert.deepEqual(seen, ['flag{stub-one}']);
+});
+
 test('an unresolvable or malformed flag ref is an error, not a silent pass-through', async () => {
   const { vs } = make();
   await assert.rejects(vs.substituteVmFlags('<vmflag:stub:nope>', 'mg'), /vm-flag-unavailable/);

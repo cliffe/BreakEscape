@@ -30,6 +30,7 @@ copy('utils/author-html.js');
 copy('utils/conditional-text.js');
 copy('systems/global-writer.js');
 copy('utils/remote-host-text.js');
+copy('utils/sync-before-fetch.js');
 copy('systems/network-links.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/network-view/network-view-minigame.js');
@@ -522,6 +523,7 @@ test('a stale view shows the "may be out of date" line and refetches once when t
     assert.equal(requests.filter(r => r[0] === 'network').length, 2, 'fetched once more');
     assert.equal(document.querySelector('.network-view-stale'), null, 'the fresh view drops the line');
     assert.equal(syncs, 1, 'the refetch sends no second sync: the globals have landed');
+    document.querySelector('#minigame-close')?.click();
     delete links.viewSyncWaitMs;
     delete window.stateSync;
 });
@@ -1104,4 +1106,402 @@ test('Open on a row whose session came from another desktop opens it with from',
     assert.deepEqual(froms, [['ops_pc', 'lena_pc']]);
     assert.deepEqual(desktops, [], 'not the foothold desktop');
     delete window.openFromDesktop;
+});
+
+// Plan 9.3b 5.2: an open view refetches every five seconds. The ticks are driven by hand
+// (refetchMs 0 starts no timer, then `await view().refetch()`), or with mocked timers for the
+// wiring itself: no sleeps, so a loaded machine cannot miss a window (review R1 t1).
+const openManual = async (extra = {}) => {
+    window.startNetworkViewMinigame = (footholdId, { message = null } = {}) =>
+        window.MinigameFramework.startMinigame('network-view', null, { title: 'Link', footholdId, message, refetchMs: 0, ...extra });
+    links.open('jack_comms_port');
+    for (let i = 0; i < 8; i++) await new Promise(r => setImmediate(r));
+};
+const fetches = () => requests.filter(r => r[0] === 'network').length;
+const flush = async (n = 12) => { for (let i = 0; i < n; i++) await new Promise(r => setImmediate(r)); };
+const withNewPc = () => ({ footholds: [{ ...foothold, hosts: [...HOSTS.map(h => ({ ...h })),
+    { id: 'new_pc', kind: 'pc', name: 'New arrival', host: 'HB-NEW-01', sprite: 'pc_desktop', headless: false, remoteSignIn: true }] }] });
+const closeView = () => document.querySelector('#minigame-close')?.click();
+
+test('REFETCH_MS is five seconds, and the view defaults to it', async () => {
+    const { REFETCH_MS } = await imp('minigames/network-view/network-view-minigame.js');
+    assert.equal(REFETCH_MS, 5000);
+    setup();
+    links.open('jack_comms_port');
+    await settle();
+    assert.equal(view().refetchMs, 5000);
+    closeView();
+});
+
+test('a refetch shows a change from the server without reopening', async () => {
+    setup();
+    await openManual();
+    assert.equal(fetches(), 1);
+    assert.equal(view()._refetchTimer, null, 'refetchMs 0 starts no timer');
+    answer = withNewPc();
+    await view().refetch();
+    assert.equal(fetches(), 2);
+    assert.ok(row('data-host-id', 'new_pc'), 'the change shows');
+    closeView();
+});
+
+test('a refetch that brings a host up emits network_viewed for it once; an unchanged one emits none (R1 m2)', async () => {
+    setup();
+    await openManual();
+    const before = named('network_viewed').length;
+    await view().refetch();
+    assert.equal(named('network_viewed').length, before, 'nothing new, nothing emitted');
+    answer = withNewPc();
+    await view().refetch();
+    const fresh = named('network_viewed').slice(before);
+    assert.equal(fresh.length, 1);
+    assert.ok(fresh[0].hostIds.includes('new_pc'));
+    await view().refetch();
+    assert.equal(named('network_viewed').length, before + 1, 'seen once, not again');
+    closeView();
+});
+
+test('a refetch keeps the list scroll and emits nothing when the hosts are the same', async () => {
+    setup();
+    await openManual();
+    const before = named('network_viewed').length;
+    view().gameContainer.scrollTop = 37;
+    answer = { footholds: [{ ...foothold, hosts: HOSTS.map(h => h.id === 'print_queue' ? { ...h, observations: 'Four payslips wait.' } : { ...h }) }] };
+    await view().refetch();
+    assert.equal(named('network_viewed').length, before);
+    assert.equal(view().gameContainer.scrollTop, 37);
+    closeView();
+});
+
+test('an unchanged answer draws nothing again', async () => {
+    setup();
+    await openManual();
+    let renders = 0;
+    const m = view();
+    const render = m.render.bind(m);
+    m.render = () => { renders++; render(); };
+    await m.refetch();
+    assert.equal(fetches(), 2);
+    assert.equal(renders, 0);
+    closeView();
+});
+
+test('refetches never overlap: one on its way holds the next', async () => {
+    setup();
+    await openManual();
+    let inFlight = 0, peak = 0, release;
+    window.ApiClient.network = async (id) => {
+        requests.push(['network', id]);
+        inFlight++; peak = Math.max(peak, inFlight);
+        await new Promise(r => { release = r; });
+        inFlight--;
+        return answer;
+    };
+    const first = view().refetch();
+    await flush();
+    assert.equal(await view().refetch(), null, 'the second tick is skipped');
+    assert.equal(peak, 1);
+    release();
+    await first;
+    assert.equal(fetches(), 2);
+    closeView();
+});
+
+test('each refetch syncs first, and sync failure still fetches', async () => {
+    setup();
+    let syncs = 0;
+    window.stateSync = { sync: () => { syncs++; return Promise.resolve(syncs === 2 ? false : true); } };
+    await openManual();
+    await view().refetch();
+    await view().refetch();
+    assert.equal(syncs, 3);
+    assert.equal(fetches(), 3, 'a sync that reports false does not stop the fetch');
+    closeView();
+    delete window.stateSync;
+});
+
+test('the timer drives refetches (mocked clock), five seconds apart', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        await openManual({ refetchMs: 5000 });
+        await flush();
+        assert.equal(fetches(), 1);
+        mock.timers.tick(4999);
+        await flush();
+        assert.equal(fetches(), 1);
+        mock.timers.tick(1);
+        await flush();
+        assert.equal(fetches(), 2);
+        answer = withNewPc();
+        mock.timers.tick(5000);
+        await flush();
+        assert.equal(fetches(), 3);
+        assert.ok(row('data-host-id', 'new_pc'));
+        closeView();
+    } finally { mock.timers.reset(); }
+});
+
+test('after three unchanged answers the gap widens to 15 s; a change or a click brings it back to 5 s (R1 m3)', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        await openManual({ refetchMs: 5000 });
+        await flush();
+        for (let i = 0; i < 3; i++) { mock.timers.tick(5000); await flush(); }
+        assert.equal(fetches(), 4, 'three unchanged ticks');
+        mock.timers.tick(5000); await flush();
+        assert.equal(fetches(), 4, 'now the gap is wider');
+        mock.timers.tick(10000); await flush();
+        assert.equal(fetches(), 5, 'at 15 s');
+        // A change: back to 5 s
+        answer = withNewPc();
+        mock.timers.tick(15000); await flush();
+        assert.equal(fetches(), 6);
+        mock.timers.tick(5000); await flush();
+        assert.equal(fetches(), 7, 'five seconds again');
+        // Idle again, then a click on Look
+        for (let i = 0; i < 3; i++) { mock.timers.tick(5000); await flush(); }
+        const n = fetches();
+        view().act({ id: 'print_queue', kind: 'printer', observations: 'x' }, 'observe');
+        mock.timers.tick(5000); await flush();
+        assert.equal(fetches(), n + 1, 'a user action brought the short gap back');
+        closeView();
+    } finally { mock.timers.reset(); }
+});
+
+test('a hidden tab is not asked (R1 m3)', async () => {
+    setup();
+    await openManual();
+    let hidden = true;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    try {
+        assert.equal(await view().refetch(), null);
+        assert.equal(fetches(), 1);
+        hidden = false;
+        await view().refetch();
+        assert.equal(fetches(), 2);
+    } finally { delete document.hidden; }
+    closeView();
+});
+
+test('closing the view stops the timer', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        await openManual({ refetchMs: 5000 });
+        await flush();
+        const m = view();
+        closeView();
+        await flush();
+        assert.equal(m._refetchTimer, null);
+        mock.timers.tick(60000);
+        await flush();
+        assert.equal(fetches(), 1, 'no fetch after close');
+    } finally { mock.timers.reset(); }
+});
+
+test('an answer that lands after the view closed draws nothing, completes nothing and starts no timer (R1 t2)', async () => {
+    setup();
+    await openManual({ refetchMs: 5000 });
+    const m = view();
+    let release;
+    window.ApiClient.network = async (id) => {
+        requests.push(['network', id]);
+        await new Promise(r => { release = r; });
+        return { footholds: [{ ...foothold, hosts: [] }] };
+    };
+    const pending = m.refetch();
+    await flush();
+    let renders = 0, completes = 0;
+    m.render = () => { renders++; };
+    const landed = links.landed.bind(links);
+    let landedCalls = 0;
+    links.landed = (...a) => { landedCalls++; return landed(...a); };
+    closeView();
+    await flush();
+    const landedAtClose = landedCalls;
+    const complete = m.complete.bind(m);
+    m.complete = (...a) => { completes++; return complete(...a); };
+    release();
+    await pending;
+    await flush();
+    assert.equal(renders, 0);
+    assert.equal(completes, 0);
+    assert.equal(landedCalls, landedAtClose, 'no second landed()');
+    assert.equal(m._refetchTimer, null);
+});
+
+test('a handover through a row\'s Sign in stops the timer', async () => {
+    setup();
+    await openManual({ refetchMs: 5000 });
+    const m = view();
+    row('data-host-id', 'door_box').querySelector('[data-action="sign-in"]').click();
+    await flush();
+    assert.equal(m.exitReason, 'handover');
+    assert.equal(m._refetchTimer, null);
+    assert.equal(fetches(), 1);
+});
+
+test('a failed refetch leaves the view as it was; a dropped foothold ends it', async () => {
+    setup();
+    await openManual({ refetchMs: 5000 });
+    window.ApiClient.network = async (id) => { requests.push(['network', id]); throw Object.assign(new Error('x'), { status: 500 }); };
+    await view().refetch();
+    assert.ok(row('data-host-id', 'lena_pc'), 'still drawn');
+    assert.equal(view().status, 'ready');
+    window.ApiClient.network = async (id) => { requests.push(['network', id]); throw Object.assign(new Error('gone'), { status: 404 }); };
+    const m = view();
+    await m.refetch();
+    assert.equal(m.exitReason, 'foothold_gone');
+    assert.equal(m._refetchTimer, null);
+});
+
+test('a Look notice survives a redraw, and goes when its row goes (R1 m1)', async () => {
+    setup();
+    await openManual();
+    row('data-resource-id', 'print_queue').querySelector('[data-action="observe"]').click();
+    assert.equal(document.querySelector('.network-view-notice').textContent, 'Three payslips wait.');
+    answer = withNewPc();
+    await view().refetch();
+    assert.equal(document.querySelector('.network-view-notice').textContent, 'Three payslips wait.', 'still there after the redraw');
+    answer = { footholds: [{ ...foothold, hosts: HOSTS.filter(h => h.id !== 'print_queue').map(h => ({ ...h })) }] };
+    await view().refetch();
+    assert.equal(document.querySelector('.network-view-notice').textContent, '', 'the row is gone, so is its text');
+    closeView();
+});
+
+test('a redraw gives keyboard focus back to the same control (R1 m1)', async () => {
+    setup();
+    await openManual();
+    row('data-resource-id', 'print_queue').querySelector('[data-action="observe"]').focus();
+    answer = withNewPc();
+    await view().refetch();
+    const now = document.activeElement;
+    assert.equal(now?.dataset?.action, 'observe');
+    assert.equal(now.closest('[data-resource-id]').dataset.resourceId, 'print_queue');
+    closeView();
+});
+
+test('a redraw waits while a press is in progress in the list, and draws on the next tick (R1 m1)', async () => {
+    setup();
+    await openManual();
+    const m = view();
+    m.gameContainer.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+    answer = withNewPc();
+    await m.refetch();
+    assert.equal(row('data-host-id', 'new_pc'), null, 'held');
+    document.dispatchEvent(new window.Event('pointerup'));
+    await flush();
+    assert.ok(row('data-host-id', 'new_pc'), 'drawn once the press is over');
+    closeView();
+});
+
+test('redraws add no listeners, and a click still reaches its row (R1 n2)', async () => {
+    setup();
+    await openManual();
+    const m = view();
+    const count = m._eventListeners.length;
+    for (let i = 0; i < 3; i++) {
+        answer = { footholds: [{ ...foothold, hosts: [...HOSTS.map(h => ({ ...h })), { id: `extra_${i}`, kind: 'pc', name: 'x', host: `HB-X-0${i}`, remoteSignIn: true }] }] };
+        await m.refetch();
+    }
+    assert.equal(m._eventListeners.length, count);
+    row('data-resource-id', 'print_queue').querySelector('[data-action="observe"]').click();
+    assert.equal(m.notice, 'Three payslips wait.');
+    closeView();
+});
+
+
+test('R2 m1: a press on Unplug holds the redraw, and an unchanged header keeps the same button', async () => {
+    setupUnplug();
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    const m = view();
+    const btn = document.querySelector('.network-view-header [data-unplug]');
+    // Unchanged answer: the header is not rewritten, so the button element stays
+    await m.refetch();
+    assert.equal(document.querySelector('.network-view-header [data-unplug]'), btn, 'unchanged header keeps its button');
+    // A press on Unplug (outside the list) holds a changed redraw
+    btn.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+    answer = withNewPc();
+    await m.refetch();
+    assert.equal(row('data-host-id', 'new_pc'), null, 'held behind the Unplug press');
+    assert.equal(document.querySelector('.network-view-header [data-unplug]'), btn, 'same button under the press');
+    closeView();
+});
+
+test('R2 m2: failed refetches back off like idle ones', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        await openManual({ refetchMs: 5000 });
+        await flush();
+        window.ApiClient.network = async (id) => { requests.push(['network', id]); throw Object.assign(new Error('x'), { status: 500 }); };
+        for (let i = 0; i < 3; i++) { mock.timers.tick(5000); await flush(); }
+        assert.equal(fetches(), 4, 'three failed ticks at 5 s');
+        mock.timers.tick(5000); await flush();
+        assert.equal(fetches(), 4, 'the fourth waits longer');
+        mock.timers.tick(10000); await flush();
+        assert.equal(fetches(), 5, 'at 15 s');
+        closeView();
+    } finally { mock.timers.reset(); }
+});
+
+test('R2 n2: a change held behind a press draws on release, even in the idle gap', async () => {
+    setup();
+    await openManual();
+    const m = view();
+    m._unchanged = 5;
+    m.gameContainer.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+    answer = withNewPc();
+    await m.refetch();
+    assert.equal(m._unchanged, 0, 'back to the short gap');
+    assert.equal(row('data-host-id', 'new_pc'), null);
+    document.dispatchEvent(new window.Event('pointerup'));
+    await flush();
+    assert.ok(row('data-host-id', 'new_pc'), 'drawn on release');
+    closeView();
+});
+
+test('R2 n3: a press whose release never arrives stops holding after three seconds', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    mock.timers.enable({ apis: ['Date'] });
+    try {
+        await openManual();
+        const m = view();
+        m.gameContainer.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+        answer = withNewPc();
+        await m.refetch();
+        assert.equal(row('data-host-id', 'new_pc'), null, 'held');
+        mock.timers.tick(3001);
+        await m.refetch();
+        assert.ok(row('data-host-id', 'new_pc'), 'the stuck flag no longer holds');
+        closeView();
+    } finally { mock.timers.reset(); }
+});
+
+test('R2 n4: coming back to a visible tab asks at once', async () => {
+    setup();
+    await openManual();
+    const before = fetches();
+    let hidden = true;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    try {
+        document.dispatchEvent(new window.Event('visibilitychange'));
+        await flush();
+        assert.equal(fetches(), before, 'still hidden: nothing asked');
+        hidden = false;
+        answer = withNewPc();
+        document.dispatchEvent(new window.Event('visibilitychange'));
+        await flush();
+        assert.equal(fetches(), before + 1);
+        assert.ok(row('data-host-id', 'new_pc'));
+    } finally { delete document.hidden; }
+    closeView();
 });

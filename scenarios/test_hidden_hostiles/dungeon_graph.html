@@ -309,7 +309,11 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
   rc_npc_guard_1("Guard")
   rc_npc_reserve_guard_2("Reserve Guard")
   rc_npc_clerk_3("Clerk")
-  rc_npc_day_guard_4("Day Guard")
+  rc_npc_text_contact_4("Text Contact")
+  rc_npc_voice_contact_5("Voice Contact")
+  rc_npc_forced_contact_6("Forced Contact")
+  rc_npc_post_guard_7("Post Guard")
+  rc_npc_day_guard_8("Day Guard")
 
   lobby --> vault
   lobby --> annex
@@ -318,11 +322,15 @@ Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko
   lobby --> rc_npc_guard_1
   lobby --> rc_npc_reserve_guard_2
   lobby --> rc_npc_clerk_3
-  annex --> rc_npc_day_guard_4
+  lobby --> rc_npc_text_contact_4
+  lobby --> rc_npc_voice_contact_5
+  lobby --> rc_npc_forced_contact_6
+  annex --> rc_npc_post_guard_7
+  annex --> rc_npc_day_guard_8
 
   class lobby,annex room
   class vault,cellar,closet lock
-  class rc_npc_guard_1,rc_npc_reserve_guard_2,rc_npc_clerk_3,rc_npc_day_guard_4 npc
+  class rc_npc_guard_1,rc_npc_reserve_guard_2,rc_npc_clerk_3,rc_npc_text_contact_4,rc_npc_voice_contact_5,rc_npc_forced_contact_6,rc_npc_post_guard_7,rc_npc_day_guard_8 npc
   class node_start start`
     };
     const rendered = {};

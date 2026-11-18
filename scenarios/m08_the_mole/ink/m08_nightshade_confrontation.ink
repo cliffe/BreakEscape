@@ -38,6 +38,9 @@ VAR accused_nightshade = false
 // PASS 4 (fixes 1, 11)
 VAR nightshade_print_lifted = false
 VAR asked_cracker = false
+// Ending convention: set when the player steps out at the disposition choice to
+// finish up first; a reopen then lands back on the choice, not the whole scene.
+VAR held_at_choice = false
 // PASS 5 (M3, m6): a tipped-off mole tidied his locker; the triple agent's first payment.
 VAR nightshade_tidied = false
 VAR triple_agent_first_payment = false
@@ -69,6 +72,7 @@ VAR found_nightshade_profile = false
 
 === start ===
 { fate_decided: -> after_choice }
+{ held_at_choice: -> the_choice }
 #complete_task:confront_nightshade
 Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
 Narrator: Behind him the evidence wall is lit. He follows your eyes to it and waits.
@@ -172,7 +176,7 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
     Agent 0x47 'Nightshade': Then they waited fifteen years. I doubt I was the only tired one they found.
     -> hub
 // PASS 4 (fix 11): the PIN cracker, held back since m03 "on his bench".
-+ { not asked_cracker } [Every mission, the PIN cracker stayed on your bench.]
++ { not asked_cracker } [ATHENA logged the PIN device against you since St. Catherine's. It stayed on your bench.]
     ~ asked_cracker = true
     Agent 0x47 'Nightshade': It did. Every lock it would have opened in a minute, you opened the long way.
     Agent 0x47 'Nightshade': Nobody asks a careful man why he's keeping a device for study. I chose what you went in without.
@@ -209,7 +213,9 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
 + { not asked_architect } [Enough talk. What happens to you now.] -> the_choice
 
 === the_choice ===
+~ held_at_choice = false
 Narrator: The disposition screen behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|{netherton_hostile:the Director, who will not see you tonight, countersigns whatever goes in|the Director countersigns whatever goes in}}. Nightshade is watching you.
+Narrator: Once it is entered, the case closes. Anything else in the building, finish it first.
 Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was right?
 + [No deals. The police get the file. You answer for those two names in court.]
     #complete_task:decide_the_fate
@@ -227,6 +233,11 @@ Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was
     Agent 0x47 'Nightshade': First payment, then. Tomb Gamma's defences were chosen out of our own threat database. I know which entries. Ask me when you're standing at the door.
     Agent 0x47 'Nightshade': I'll be your ghost inside their machine, for exactly as long as it suits me. Never forget I told you that part. #set_global:triple_agent_first_payment:true
     -> aftermath
++ [Not yet. There is something I want to finish first.]
+    ~ held_at_choice = true
+    Agent 0x47 'Nightshade': Of course. I am not going anywhere. Come back when you are ready.
+    #exit_conversation
+    -> the_choice
 
 // PASS 2 playtest D1 found End Conversation ignoring disableClose; the engine
 // now hides it (base-minigame.js), so only a reload can interrupt the scene.

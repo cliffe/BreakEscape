@@ -374,6 +374,17 @@ boardroom_pin = "0417"
           "type": "enter_room",
           "targetRoom": "server_room",
           "status": "active"
+        },
+        {
+          <%# Hidden until Val's "I said I'd tell you what I found" choice can appear (cover
+              restored, and the backdoor owned or the insider named). Completed in her
+              report_back knot; its #ending_check choice-mates are the press terminal confirms,
+              so finishing without it raises the engine's optional-objective warning. %>
+          "taskId": "tell_val_findings",
+          "title": "Tell Val what you found",
+          "type": "manual",
+          "status": "locked",
+          "optional": true
         }
       ]
     },
@@ -1219,6 +1230,26 @@ boardroom_pin = "0417"
     gone; HaX's phone hub gives graded nudges on request (doors_nudge) instead.
     The badge number comes only from Ghost's log (flag 4), by user decision. %>
             {
+              "eventPattern": "global_variable_changed:cover_restored",
+              "condition": "value === true && globalVars.backdoor_fully_exploited === true",
+              "unlockTask": "tell_val_findings"
+            },
+            {
+              "eventPattern": "global_variable_changed:cover_restored",
+              "condition": "value === true && globalVars.insider_identified === true",
+              "unlockTask": "tell_val_findings"
+            },
+            {
+              "eventPattern": "global_variable_changed:backdoor_fully_exploited",
+              "condition": "value === true && globalVars.cover_restored === true",
+              "unlockTask": "tell_val_findings"
+            },
+            {
+              "eventPattern": "global_variable_changed:insider_identified",
+              "condition": "value === true && globalVars.cover_restored === true",
+              "unlockTask": "tell_val_findings"
+            },
+            {
               "_comment": "Backstop: both naming routes (HaX's hub, Reeves' name_him) complete unmask_identify themselves; this covers any other setter. HaX confirms in her own knot; Reeves confirms it to the player's face.",
               "eventPattern": "global_variable_changed:insider_identified",
               "condition": "value === true",
@@ -1721,7 +1752,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'distressed' && !globalVars.ward_nurse_ko",
               "onceOnly": true,
-              "bark": "I can't leave Bed 2 -- someone get to Bed 4, now!",
+              "bark": "I can't leave Bed 2. Someone get to Bed 4, now!",
               "barkDelay": 500
             },
             {
@@ -1788,7 +1819,7 @@ boardroom_pin = "0417"
               "condition": "value === 'distressed' && !globalVars.raval_ko",
               "onceOnly": true,
               "fireOnlyWhenLoaded": true,
-              "bark": "Bed 4 -- I'm going. Out the way.",
+              "bark": "Bed 4. I'm going. Out the way.",
               "barkDelay": 200,
               "patrolOverride": { "targetTile": { "x": 4, "y": 8 }, "speed": 150, "stopOnArrival": true }
             }
@@ -1916,7 +1947,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'distressed' && !globalVars.patient_bed5_ko",
               "onceOnly": true,
-              "bark": "Bed 4's alarming. Nobody's coming — the desk can't see it. You. Do something.",
+              "bark": "Bed 4's alarming. Nobody's coming. The desk can't see it. You. Do something.",
               "barkDelay": 800
             },
             {
@@ -3938,6 +3969,8 @@ boardroom_pin = "0417"
 
     "insider_evidence_partial": false,
     "val_notebook_given": false,
+    "val_reported_back": false,
+    "kim_statement_given": false,
     "insider_badge_id_found": false,
     "read_night_rota": false,
     "reeves_known": false,

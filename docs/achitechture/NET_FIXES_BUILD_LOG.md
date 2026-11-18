@@ -295,3 +295,27 @@ the session scratchpad `net-r4fix/`):
 - Plan 5.2's five-second refetch of an open view, and a sync before a remote sign-in or a desktop
   or share fetch, are not built (the view's sync covers the usual path). In the backlog.
 - The dungeon graph does not draw links, outages, Wi-Fi or implants (build/graph-net is on it).
+
+## Refetch and pre-fetch sync (build/net-refetch-sync, 2026-11-18)
+
+Plan 5.2's two client items that the "Open" list above left unbuilt.
+
+- Five-second refetch (`minigames/network-view/network-view-minigame.js`): once the first view
+  is drawn the view starts one `setInterval` (`REFETCH_MS` = 5000; `params.refetchMs` for
+  tests). Each tick calls `refetch()`, which runs the same `networkLinks.view()` as the first
+  load (so it syncs first). It never overlaps (`_refetching`), skips a view that is closed,
+  handed over or not the current minigame, emits no second `network_viewed`, keeps the list's
+  scroll position and draws again only when the answer differs. A failed answer leaves the view
+  as it was; a 404 ends it as the first load does (`foothold_gone`). `cleanup()` clears the
+  timer, so a close, the X, Esc and a handover all stop it.
+- Player state: nothing new is stored or sent. The refetch reuses `stateSync.sync()`, which
+  sends only changed globals (deltas), and the view's answer lives in `networkLinks.views`
+  (client memory), never in synced `player_state`.
+- Sync before a remote sign-in, a remote or routed desktop fetch and a share fetch: new
+  `utils/sync-before-fetch.js` (`syncBeforeFetch`: the network view's wait, 3 s, never rejects,
+  a failed or slow sync still lets the request go). Called from `pc-sessions.js` `signIn` (only
+  with a foothold or `from` route), `container-minigame.js` `loadLoginDesktop` (only `remote`
+  or `fromRoute`) and `loadContainerContents` (only `shareFolder`). Walk-up sign-in, keyboard
+  desktops and relay desktops are untouched.
+- Harness lists: the new util is on the copy list of every JS test that loads `pc-sessions.js`
+  or `container-minigame.js` (see the commit).

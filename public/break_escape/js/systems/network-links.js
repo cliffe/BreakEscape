@@ -51,6 +51,7 @@
 
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { writeGlobal } from './global-writer.js';
+import { syncBeforeFetch } from '../utils/sync-before-fetch.js';
 import { sessionEndedMessage, unreachableMessage, notRespondingMessage } from '../utils/remote-host-text.js';
 
 export const NO_DEVICE_HINT = 'You have nothing to plug into this port.';
@@ -264,14 +265,11 @@ export class NetworkLinks {
         // after VIEW_SYNC_WAIT_MS it opens with the server's last known state (review R1 m1).
         let synced = null;
         let stale = false;
-        if (sync) try {
-            synced = Promise.resolve(win().stateSync?.sync?.()).then(ok => ok !== false, () => false);
-            const TIMED_OUT = {};
-            let timer;
-            const waited = new Promise(r => { timer = setTimeout(() => r(TIMED_OUT), this.viewSyncWaitMs ?? VIEW_SYNC_WAIT_MS); });
-            stale = (await Promise.race([synced, waited])) === TIMED_OUT;
-            clearTimeout(timer);
-        } catch (e) { /* fetch the view anyway */ }
+        if (sync) {
+            const r = await syncBeforeFetch({ waitMs: this.viewSyncWaitMs ?? VIEW_SYNC_WAIT_MS });
+            stale = r.timedOut;
+            synced = r.run || null;
+        }
         let body;
         try {
             body = await api.network(footholdId);

@@ -108,7 +108,7 @@ Agent, report.
 * {vented_by_trigger} [He reached the laptop before I put him down. Shutdown held A and C.]
     -> debrief_attack_stopped
 
-* [Voltage is {voltage_captured:in custody.|out through the dock.}]
+* [Voltage is {voltage_captured:down and secured.|out through the dock.}]
     -> debrief_voltage_status
 
 === debrief_attack_stopped ===
@@ -129,7 +129,7 @@ Agent, report.
 -> debrief_people ->
 
 {voltage_captured:
-    And you've got Voltage.
+    And Voltage is ours, cuffed or not.
 - else:
     And Voltage got out through the dock.
 }
@@ -171,7 +171,7 @@ Agent, report.
 {voltage_captured:
     #set_global:blackout_named:true
     // C3 (D7-9): no "Good." before the nine.
-    {crew_lost:In custody.|Good.} Nobody else in that building knows the chain above Blackout.
+    {crew_lost:Secured.|Good.} Nobody else in that building knows the chain above Blackout.
 
     He'll talk. He wants someone to check his sums.
 - else:
@@ -443,6 +443,8 @@ He'll call when he's ready. Not tonight.
         Agent HaX: And Vance's alarm had the night crew out before the button went in. It started your clock early.
     - crew_warned:
         Agent HaX: And Vance's alarm had the night crew out before the button went in.
+    - else:
+        Agent HaX: The nine on the night crew were behind the inverter wall the whole time. They went home at six not knowing how close it came.
     }
 }
 
