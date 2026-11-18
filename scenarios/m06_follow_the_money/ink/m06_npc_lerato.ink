@@ -48,7 +48,7 @@ Lerato Dlamini: Evening. I'm on the phones and the rota tonight.
 // Gate: irina_taken (she has been collected from the floor). The arrest itself, nothing about Irina's character or work.
 === ex_floor_after_irina ===
 Lerato Dlamini: Did you see the police come through?
-Tomasz Wisniewski: I did. They walked her out past my desk.
+Tomasz Wisniewski: I did. Two officers, very quiet.
 Lerato Dlamini: Nobody has told us a thing.
 Tomasz Wisniewski: I only keep the queue running.
 Lerato Dlamini: Same. The floor won't run itself.

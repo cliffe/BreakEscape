@@ -47,7 +47,7 @@ Pool lines: 27. The `grumble_gone` pool (pizza gone) is not written: with two se
 | ex_dani_tomasz_late_shift | Tomasz Wisniewski | One said his notification rang twice. | 37 |
 | ex_dani_tomasz_late_shift | Dani Okonkwo | Tell him it's a feature. Works for me. | 38 |
 | ex_floor_after_irina | Lerato Dlamini | Did you see the police come through? | 36 |
-| ex_floor_after_irina | Tomasz Wisniewski | I did. They walked her out past my desk. | 40 |
+| ex_floor_after_irina | Tomasz Wisniewski | I did. Two officers, very quiet. | 32 |
 | ex_floor_after_irina | Lerato Dlamini | Nobody has told us a thing. | 27 |
 | ex_floor_after_irina | Tomasz Wisniewski | I only keep the queue running. | 30 |
 | ex_floor_after_irina | Lerato Dlamini | Same. The floor won't run itself. | 33 |

@@ -2041,7 +2041,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             { "with": "tomasz_wisniewski", "knot": "ex_floor_after_seizure", "requireGlobal": { "assets_seized": true, "floor_staff_ko": false } }
           ],
           "globalVarOnKO": "lerato_ko",
-          "seated": { "facing": "south" },
+          "seated": true,
           "needsHome": "lerato_desk",
           "needsRooms": ["trading_floor"],
           "needsCompany": { "groups": ["late_floor"] },
@@ -2053,7 +2053,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "eventMappings": [
             { "eventPattern": "npc_use_started:floor_coffee", "condition": "data.npcId === 'tomasz_wisniewski' && !globalVars.floor_staff_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
           ],
-          "observations": "A night floor coordinator at the end of the second row of desks, a desk phone at her elbow."
+          "observations": "A night floor coordinator at the end of the front row of desks, a desk phone at her elbow."
         },
         {
           "id": "tomasz_wisniewski",
@@ -2118,6 +2118,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "id": "lerato_desk",
           "name": "Lerato's Desk",
           "takeable": false,
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } },
           "observations": "A trading-floor desk with a desk phone and a mug ring on the blotter."
         },
 <% 6.times do |n| %>

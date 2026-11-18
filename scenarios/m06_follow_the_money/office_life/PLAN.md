@@ -72,6 +72,8 @@ Need names match the presets' `affordance.satisfies`: the coffee preset satisfie
 
 No machine needs a beat gate: no beat needs Dani at a spot. The only `offWhen` on the floor machines is the trouble global `floor_staff_ko` (2.8). While it holds, the coffee point, copier and fridge are off for all three; pairs stop talking; if `floor_staff_ko` is set before the player first talks to Irina, Tomasz's handover sheet is never printed (the mapping's condition fails and a blocked print is not retried, `npc-needs.js:1131`, `:3935` to `:3943`); the pizza magnet still works (it is an item, not a machine), so a dropped box can still draw an extra off post.
 
+Build note (review R1 m2): the three people each carry `needsCompany: { "groups": ["late_floor"] }` with no avoids. One shared group with no avoids behaves like no `needsCompany` (schema `needsCompany`), so the table's "none" is behaviourally right. The keys were kept because the coupled and paired breaks were live-proven with them (LIVE_S3, LIVE_FIX1) and removing them would need those proofs repeated for no gain.
+
 ### 2.5 Found at post first, and Dani's rhythm
 
 - Natural decay of `caffeine` is very slow and `initial` is 100, so Dani does not leave on his own for longer than any normal first visit to the trading floor (the build sets the rate from the needs-clock measurement in `references/measurement-recipes.md` section 10 so the first natural trip comes no sooner than 20 real minutes after the floor loads).
@@ -101,7 +103,7 @@ Moved existing NPCs: Dani only.
 
 New scalar global `floor_staff_ko`, declared `false`.
 
-- Set `true` by appended mappings on HaX (registered at game start in the start room) on `npc_ko:trader_npc`, `npc_ko:irina_volkova`, `npc_ko:lerato_dlamini` and `npc_ko:tomasz_wisniewski`. Cooldown only, not `onceOnly`. These sit beside, and never edit, the existing KO loop at `erb:1459` to `:1470`.
+- Set `true` by appended mappings on HaX (registered at game start in the start room) on `npc_ko:trader_npc`, `npc_ko:irina_volkova`, `npc_ko:lerato_dlamini` and `npc_ko:tomasz_wisniewski`. Not `onceOnly`, and no cooldown (built without one: `setGlobal true` is idempotent, so a repeat KO changes nothing). These sit beside, and never edit, the existing KO loop at `erb:1459` to `:1470`.
 - Read as `offWhen: "floor_staff_ko"` on `coffee_station`, `photocopier` and `mini_fridge` on the trading floor. Staff turn back from these and walk home (`_turnBack(s, 'off')`).
 - It never clears; a knock-out on the floor is remembered for the rest of the mission. Monotonic.
 - Office life never writes `cover_strained`, which is read by Irina's badge trust (`ink/m06_npc_irina_volkova.ink:336`, `:351`), Kemal and Satoshi. The existing loop still sets it when Dani or Irina is knocked out; knocking out Lerato or Tomasz leaves it as it was. The build greps every new mapping and knot for `cover_strained`.
@@ -142,7 +144,7 @@ Scenario `officePresets: true`.
 
 Machines are declared by base type name with no `position`, except `tomasz_laptop` (`as-type:laptop`) and the copier tray slot. The build checks one of each lands on its Tiled sprite after two loads, and that only one laptop is drawn, in the same place both times. Hand-written `useFrom` or `queue.cells` where a preset's cells hit a wall or a neighbour.
 
-`trading_workstation` and `blockchain_workstation` (`erb:2316`) stay as they are: plain `pc`s with no `lockType`, no owner and no contents; `host` is a taskbar label only (schema `:5495`); m06 declares no networks or sign-in PCs. Their records are not edited, but with `officePresets: true` both gain the desk_pc preset (`satisfies: work`, `capacity: 1`, `public/break_escape/js/data/office-presets.json`). That is harmless, since no NPC here has a `work` need, and the V1 summary is expected to list them.
+`trading_workstation` and `blockchain_workstation` (`erb:2316`) stay as they are: plain `pc`s with no `lockType`, no owner and no contents; `host` is a taskbar label only (schema `:5495`); m06 declares no networks or sign-in PCs. Their records are not edited, but with `officePresets: true` both gain the desk_pc preset (`satisfies: work`, `capacity: 1`, `public/break_escape/js/data/office-presets.json`). That is harmless, since no NPC here has a `work` need, and the V1 summary is expected to list them. Build note (review R1 m1): the scenario-wide `officePresets: true` also gives the preset to `transaction_server` (server room) and `irina_workstation` (Irina's office), so four objects carry it, not two. Documented rather than set to `affordance: false`, because it adds a key to existing records for no play effect.
 
 ### 3.2 Blockchain lab (`room_hce_lab.json`)
 
@@ -215,6 +217,7 @@ Total 55 clips as built (27 pool lines, 16 exchange lines, 12 conversation lines
 |---|---|---|
 | Workstation globals | 3 | `tomasz_laptop_owner_away`, `tomasz_laptop_screen_locked`, `tomasz_laptop_accessed` (`workstation-state.js:50` to `:57`, `:622`) |
 | `heard_` keys | 3 | one per exchange |
+| Away and lock flags | 2 | `tomasz_laptop_owner_away` and `tomasz_laptop_screen_locked` are part of the workstation count above but non-monotonic: they flip on every trip (true for about 23 to 27 s, then false; LIVE_S4). Last write wins, written only by the owner's client; bounded scalars sent as deltas |
 | Servings | 1 | `pizza_servings`, non-monotonic; last write wins because it only falls and only the client eating writes it |
 | Dropped magnet position | 1 | where the box was dropped |
 | Office-life items | 2 | pizza box, handover sheet (both takeable) |
