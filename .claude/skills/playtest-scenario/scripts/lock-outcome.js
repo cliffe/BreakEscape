@@ -12,21 +12,27 @@
  * Key locks never record a success in their result (the correct key completes the
  * minigame with a null gameResult, the pick path sets {lockable} only), so when the own
  * verdict is undefined the target lockable's real locked state decides: locked when the
- * command began and unlocked once the pad closed -> ok (via:'lockable-state').
+ * command began and unlocked once the pad closed -> ok (via:'lockable-state'). The fallback
+ * also needs evidence that this pad did it: the pad is closed (activeId differs from
+ * startId) and a key was inserted, the pad was in key mode, or the pick path left {lockable};
+ * a scripted unlock while the pad is still open, or after only wrong keys, is not ok.
  *
  * Kept apart from the session script so node tests can load it without Playwright
  * (test/js/playtest-lock-outcome.test.mjs).
  *
  * @param {{startId: string|null, ownSt: object|null, after: {activeMinigame: {id?: string}|string|null},
- *          lockState?: {startLocked: boolean|null, nowLocked: boolean|null}}} a
+ *          lockState?: {startLocked: boolean|null, nowLocked: boolean|null},
+ *          keyInserted?: boolean}} a
  */
-function lockOutcome({ startId, ownSt, after, lockState }) {
+function lockOutcome({ startId, ownSt, after, lockState, keyInserted = false }) {
   const active = after && after.activeMinigame;
   const activeId = active && typeof active === 'object' ? (active.id || active.type || null) : (active || null);
   const chainedInto = activeId && startId && activeId !== startId ? activeId : null;
   const result = ownSt && ownSt.result ? ownSt.result : null;
   const verdict = result ? result.success : undefined;
-  const viaLockable = verdict === undefined && !!lockState
+  const padClosed = !activeId || activeId !== startId;
+  const padDidIt = keyInserted || !!(ownSt && (ownSt.keyMode === true || (result && result.lockable)));
+  const viaLockable = verdict === undefined && !!lockState && padClosed && padDidIt
     && lockState.startLocked === true && lockState.nowLocked === false;
   const ok = verdict === true || viaLockable;
   const out = { ok };
@@ -55,17 +61,25 @@ function padGone(st) {
  * server answers, so only the "Incorrect ..." line marks an answered wrong attempt.
  */
 function attemptSnapshot(st) {
-  if (padGone(st)) return { used: null, max: null, history: null, wrongLine: null };
+  if (padGone(st)) return { used: null, max: null, history: null, wrongLine: null, message: null, blind: false };
   const text = typeof st.text === 'string' ? st.text : '';
   const m = /Attempts:\s*(\d+)\s*\/\s*(\d+)/i.exec(text);
   const fromAttemptsText = typeof st.attemptsText === 'string' && /^\d+$/.test(st.attemptsText.trim())
     ? Number(st.attemptsText.trim()) : null;
   const wrong = /Incorrect[^\n]*/i.exec(text);
+  const used = typeof st.attemptsUsed === 'number' ? st.attemptsUsed : (m ? Number(m[1]) : fromAttemptsText);
+  const history = typeof st.historyLength === 'number' ? st.historyLength : null;
+  // Sign-in and Wi-Fi join screens keep no attempt counter; their only sign of an answer
+  // is the message line (signIn.message / join.message).
+  const hasScreen = !!(st.signIn || st.join);
+  const msg = (st.join && st.join.message) || (st.signIn && st.signIn.message) || null;
   return {
-    used: typeof st.attemptsUsed === 'number' ? st.attemptsUsed : (m ? Number(m[1]) : fromAttemptsText),
+    used,
     max: typeof st.maxAttempts === 'number' ? st.maxAttempts : (m ? Number(m[2]) : null),
-    history: typeof st.historyLength === 'number' ? st.historyLength : null,
-    wrongLine: wrong ? wrong[0].trim() : null
+    history,
+    wrongLine: wrong ? wrong[0].trim() : null,
+    message: typeof msg === 'string' ? msg : null,
+    blind: hasScreen && used === null && history === null
   };
 }
 
@@ -84,6 +98,18 @@ function attemptStep(base, st, elapsedMs, steps = []) {
   const grew = now.history !== null && base.history !== null && now.history > base.history;
   const sent = grew || (now.used !== null && base.used !== null && now.used > base.used);
   const answered = grew || (now.history === null && sent && now.wrongLine !== null);
+  if (base.blind) {
+    // No counters to compare: a changed message line is the answer, otherwise wait out the
+    // timeout. Never 'not-submitted': a correct sign-in can take longer than the grace.
+    const changed = now.message !== null && now.message !== base.message;
+    const out = (reason) => ({
+      ok: false, reason, steps, attemptsUsed: null, maxAttempts: null, lastFeedback: now.message,
+      finalState: { isComplete: st.isComplete, result: st.result, text: st.text }
+    });
+    if (changed) return { state: 'wrong', reply: out('wrong-code') };
+    if (elapsedMs >= ANSWER_TIMEOUT_MS) return { state: 'no-answer', reply: out('no-answer') };
+    return { state: 'pending' };
+  }
   const reply = (reason) => ({
     ok: false, reason, steps,
     attemptsUsed: now.used, maxAttempts: now.max,
@@ -91,7 +117,15 @@ function attemptStep(base, st, elapsedMs, steps = []) {
     finalState: { isComplete: st.isComplete, result: st.result, text: st.text }
   });
   if (answered) return { state: 'wrong', reply: reply('wrong-code') };
-  if (!sent && elapsedMs >= SUBMIT_GRACE_MS) return { state: 'not-submitted', reply: reply('not-submitted') };
+  if (!sent && elapsedMs >= SUBMIT_GRACE_MS) {
+    // A refunded counter (network error) or a time lock also leaves the counter unchanged;
+    // name them instead of calling the code never sent.
+    const txt = typeof st.text === 'string' ? st.text : '';
+    const why = /network error/i.test(txt) ? 'network-error'
+      : /locked for \d+ more second|too many wrong passwords/i.test(txt) ? 'time-locked'
+      : 'not-submitted';
+    return { state: 'not-submitted', reply: reply(why) };
+  }
   if (elapsedMs >= ANSWER_TIMEOUT_MS) return { state: 'no-answer', reply: reply('no-answer') };
   return { state: 'pending' };
 }

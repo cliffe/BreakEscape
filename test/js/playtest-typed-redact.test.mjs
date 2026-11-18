@@ -71,3 +71,35 @@ test('scrub with no secrets returns the node unchanged', () => {
   const n = { a: 'b' };
   assert.equal(scrub(n, new Set()), n);
 });
+
+// R3 m4: only a real flag station, or a flag{...} shape, adds to the session-wide secrets.
+const { isFlagStation } = require('../../.claude/skills/playtest-scenario/scripts/typed-redact.js');
+
+test('R3 m4: a screen that merely mentions flag does not register typed text or field values', () => {
+  const triage = { id: 'inbox', title: 'Flag suspicious lines', text: 'Flag the bad ones', fields: [{ value: 'admin_office' }] };
+  assert.equal(isFlagTyped(triage, 'admin'), false);
+  assert.deepEqual(stateSecrets(triage), []);
+  assert.equal(isFlagStation(triage), false);
+});
+
+test('R3 m4: the loose match still masks the one echo', () => {
+  const r = redactTyped({ ok: true, typed: 'admin' }, { state: { id: 'inbox', title: 'Flag suspicious lines' }, text: 'admin' });
+  assert.equal(r.typedRedacted, true);
+});
+
+test('R3 m4: flag{...} values are secrets anywhere; plain values only at a station', () => {
+  assert.deepEqual(stateSecrets({ id: 'inbox', fields: [{ value: 'flag{made_up_x}' }, { value: 'admin_office' }] }), ['flag{made_up_x}']);
+  assert.equal(isFlagStation({ id: 'x', stationId: 's1' }), true);
+  assert.equal(isFlagStation({ type: 'FlagStationMinigame' }), true);
+});
+
+test('R3 m3: scrub with shape masks an unregistered flag{...} everywhere', () => {
+  const out = scrub({ in: 'type flag{made_up_y} now', nested: ['a flag{b}'] }, new Set(), true);
+  assert.equal(JSON.stringify(out).includes('made_up_y'), false);
+  assert.equal(out.nested[0], 'a [redacted 7 chars]');
+});
+
+test('R3 n3: only the flag/value field of an object submittedFlags entry is a secret', () => {
+  const s = stateSecrets({ id: 'flag-station', submittedFlags: [{ flag: 'flag{made_up_z}', status: 'accepted' }] });
+  assert.deepEqual(s, ['flag{made_up_z}']);
+});

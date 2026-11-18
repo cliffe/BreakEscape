@@ -53,6 +53,7 @@ function createVmSteps(o) {
   const command = o.command && o.command.length ? o.command : DEFAULT_COMMAND;
   const env = o.env || process.env;
   const log = o.log || (() => {});
+  const onSecret = typeof o.onSecret === 'function' ? o.onSecret : () => {};
   const jobs = new Map();
   const flagCache = new Map();
   let nextJob = 0;
@@ -144,6 +145,7 @@ function createVmSteps(o) {
       throw fail('vm-flag-unavailable', `flag ${ref}: ${String(why).slice(0, 200)}`);
     }
     flagCache.set(ref, s.json.value);
+    onSecret(s.json.value);   // the caller masks it everywhere from now on
     return s.json.value;
   }
 

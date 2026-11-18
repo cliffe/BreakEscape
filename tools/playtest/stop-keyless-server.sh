@@ -5,8 +5,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${1:-3001}"
 case "$PORT" in
-  ''|*[!0-9]*|3000) echo "FAIL: give a numeric port other than 3000" >&2; exit 2 ;;
+  ""|*[!0-9]*) echo "FAIL: port must be a number, got '$PORT'" >&2; exit 2 ;;
 esac
+PORT="$((10#$PORT))"   # 03000 is 3000 to Rails
+if [ "$PORT" -eq 3000 ] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
+  echo "FAIL: pick a port from 1024 to 65535 other than 3000 (:3000 is the user's server)" >&2; exit 2
+fi
 PIDFILE="$ROOT/test/dummy/tmp/pids/server-${PORT}.pid"
 if [ ! -f "$PIDFILE" ]; then
   echo "No pid file at $PIDFILE - nothing to stop."

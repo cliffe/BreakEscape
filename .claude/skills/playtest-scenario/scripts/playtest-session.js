@@ -127,12 +127,12 @@ let seq = 0;
 const secrets = new Set();
 function logLine(dir, obj) {
   if (!logStream) return null;
-  logStream.write(JSON.stringify(scrub({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }, secrets)) + '\n');
+  logStream.write(JSON.stringify(scrub({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }, secrets, true)) + '\n');
   return seq;
 }
 
 function emit(obj, { raw = false } = {}) {
-  process.stdout.write(JSON.stringify(raw ? obj : scrub(obj, secrets)) + '\n');
+  process.stdout.write(JSON.stringify(raw ? obj : scrub(obj, secrets, true)) + '\n');
   logLine('out', obj);
 }
 
@@ -179,7 +179,8 @@ const vmSteps = createVmSteps({
   hacktivityDir: typeof argv['hacktivity-dir'] === 'string' ? argv['hacktivity-dir'] : process.env.HACKTIVITY_DIR,
   gameId: typeof argv['game-id'] === 'string' ? argv['game-id'] : (process.env.PLAYTEST_GAME_ID || undefined),
   command: process.env.PLAYTEST_VM_STEP_CMD ? process.env.PLAYTEST_VM_STEP_CMD.split(' ') : undefined,
-  log: logLine
+  log: logLine,
+  onSecret: (v) => secrets.add(v)
 });
 
 (async () => {
@@ -1080,20 +1081,25 @@ const vmSteps = createVmSteps({
         st = track(await read());
         if (!st) break;
       }
-      const after = await page.evaluate(() => {
+      const readAfter = () => page.evaluate(() => {
         const s2 = window.__test.getState();
         return { activeMinigame: s2.activeMinigame, room: s2.room };
       });
+      let after = await readAfter();
+      // The room reads null while a door transition runs; give it a moment to settle.
+      for (let i = 0; i < 8 && !after.room; i++) { await page.waitForTimeout(250); after = await readAfter(); }
       // No own verdict (key locks): the unlock lands in a callback after the pad closes, so
       // give the lockable's real state a few seconds to flip before reading it.
       const noVerdict = !(ownSt && ownSt.result && ownSt.result.success !== undefined);
       let nowLocked = await lockableLocked();
-      for (let i = 0; i < 12 && noVerdict && startLocked === true && nowLocked === true; i++) {
+      const padStillOpen = !!after.activeMinigame && (after.activeMinigame.id || after.activeMinigame.type || after.activeMinigame) === startId;
+      for (let i = 0; i < 12 && noVerdict && !padStillOpen && startLocked === true && nowLocked === true; i++) {
         await page.waitForTimeout(400);
         nowLocked = await lockableLocked();
       }
       return {
-        ...lockOutcome({ startId, ownSt, after, lockState: { startLocked, nowLocked } }),
+        ...lockOutcome({ startId, ownSt, after, lockState: { startLocked, nowLocked },
+          keyInserted: steps.some(x => /^insert key/.test(x)) }),
         steps,
         finalState: st && st.available !== false ? { isComplete: st.isComplete, result: st.result, text: st.text } : null,
         activeMinigame: after.activeMinigame,

@@ -31,22 +31,37 @@ function redactTyped(result, { state, text, show }) {
 const MIN_SECRET = 4;
 const marker = (n) => `[redacted ${n} chars]`;
 
+/**
+ * A real flag station: the flag-station minigame (id 'flag-station', or its class name,
+ * or its stationId state field). looksLikeFlagTarget is looser (any screen whose text
+ * mentions "flag") and is used only to mask one echo; secrets are session-wide, so
+ * registering a value needs this stricter test or a flag{...} shape.
+ */
+function isFlagStation(state) {
+  if (!state) return false;
+  return state.id === 'flag-station' || state.type === 'FlagStationMinigame'
+    || typeof state.stationId === 'string';
+}
+
 /** Whether typed text should be treated as a flag value to keep out of every output. */
 function isFlagTyped(state, text) {
-  return typeof text === 'string' && text.length > 0 && (looksLikeFlagTarget(state) || FLAG_SHAPE.test(text));
+  return typeof text === 'string' && text.length > 0 && (isFlagStation(state) || FLAG_SHAPE.test(text));
 }
 
 /**
  * The flag values a flag-station state exposes: submittedFlags, and the text of any
- * non-empty field (before a submit the field holds what was typed). Empty unless the
- * state looks like a flag target.
+ * non-empty field (before a submit the field holds what was typed). Everything at a real
+ * flag station; only flag{...}-shaped values anywhere else.
  */
 function stateSecrets(state) {
-  if (!looksLikeFlagTarget(state)) return [];
+  if (!state) return [];
+  const station = isFlagStation(state);
   const out = [];
-  const add = (v) => { if (typeof v === 'string' && v.length >= MIN_SECRET) out.push(v); };
+  // At a real flag station every value is a candidate; elsewhere only flag{...}-shaped ones.
+  const add = (v) => { if (typeof v === 'string' && v.length >= MIN_SECRET && (station || FLAG_SHAPE.test(v))) out.push(v); };
   for (const f of Array.isArray(state.submittedFlags) ? state.submittedFlags : []) {
-    if (f && typeof f === 'object') Object.values(f).forEach(add); else add(f);
+    // An object entry: take only its flag/value field, not status words like "accepted".
+    if (f && typeof f === 'object') { add(f.flag); add(f.value); } else add(f);
   }
   for (const f of Array.isArray(state.fields) ? state.fields : []) if (f) add(f.value);
   return out;
@@ -77,4 +92,4 @@ function scrub(node, secrets, shape = false) {
   return walk(node);
 }
 
-module.exports = { redactTyped, looksLikeFlagTarget, isFlagTyped, stateSecrets, scrub, MIN_SECRET };
+module.exports = { redactTyped, looksLikeFlagTarget, isFlagStation, isFlagTyped, stateSecrets, scrub, MIN_SECRET };

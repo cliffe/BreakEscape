@@ -209,3 +209,56 @@ test('stuck server: no-answer at the timeout', async () => {
   const reply = await awaitAttempt({ base: attemptSnapshot(pin()), ...f });
   assert.equal(reply.reason, 'no-answer');
 });
+
+// R3 m1: the lockable fallback needs the pad closed and evidence the pad did it.
+test('R3 m1: pad still open while a script unlocks the door is not ok', () => {
+  const r = lockOutcome({ startId: 'lockpicking', ownSt: keyState, after: { activeMinigame: { id: 'lockpicking' } }, lockState: { startLocked: true, nowLocked: false }, keyInserted: true });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'unsolved');
+});
+
+test('R3 m1: pad closed, no key inserted, not key mode, no pick result: a scripted unlock is not ok', () => {
+  const plain = { id: 'lockpicking', keyMode: false, result: null, isComplete: false };
+  const r = lockOutcome({ startId: 'lockpicking', ownSt: plain, after: { activeMinigame: null }, lockState: { startLocked: true, nowLocked: false } });
+  assert.equal(r.ok, false);
+});
+
+test('R3 m1: a key inserted and the pad closed is ok even if the state was not read in key mode', () => {
+  const plain = { id: 'lockpicking', keyMode: false, result: null, isComplete: false };
+  const r = lockOutcome({ startId: 'lockpicking', ownSt: plain, after: { activeMinigame: null }, lockState: { startLocked: true, nowLocked: false }, keyInserted: true });
+  assert.equal(r.ok, true);
+  assert.equal(r.via, 'lockable-state');
+});
+
+// R3 m2: screens with no attempt counter (sign-in, Wi-Fi join) are judged by the message line.
+const signin = (message, o) => ({ available: true, id: 'password', isComplete: false, result: null, text: 'Sign in', signIn: { message }, ...o });
+const join = (message) => ({ available: true, id: 'password', isComplete: false, result: null, text: 'Join', join: { apId: 'x', message } });
+
+test('R3 m2: sign-in answered wrong at 1.6 s is wrong-code, not not-submitted', () => {
+  const base = attemptSnapshot(signin(null));
+  assert.equal(base.blind, true);
+  assert.equal(attemptStep(base, signin(null), 1600).state, 'pending');
+  const r = attemptStep(base, signin('Incorrect username or password. 2 attempts left.'), 1600);
+  assert.equal(r.state, 'wrong');
+  assert.equal(r.reply.reason, 'wrong-code');
+});
+
+test('R3 m2: a slow correct sign-in is pending until the pad closes, then left to lockOutcome', () => {
+  const base = attemptSnapshot(signin(null));
+  assert.equal(attemptStep(base, signin(null), 5000).state, 'pending');
+  assert.equal(attemptStep(base, { available: false }, 5200).state, 'closed');
+  assert.equal(attemptStep(base, signin(null), 8100).reply.reason, 'no-answer');
+});
+
+test('R3 m2: Wi-Fi join wrong key is read from join.message', () => {
+  const base = attemptSnapshot(join(null));
+  assert.equal(attemptStep(base, join('That key was not accepted.'), 700).reply.reason, 'wrong-code');
+});
+
+// R3 n2: a refunded or time-locked attempt names itself.
+test('R3 n2: network error and time lock are named after the grace', () => {
+  const base = attemptSnapshot(pw());
+  assert.equal(attemptStep(base, pw({ text: 'Attempts: 0/3\nNetwork error. Please try again.' }), 1600).reply.reason, 'network-error');
+  assert.equal(attemptStep(base, pw({ text: 'Too many wrong passwords. Locked for 20 more seconds.' }), 1600).reply.reason, 'time-locked');
+  assert.equal(attemptStep(base, pw(), 1600).reply.reason, 'not-submitted');
+});

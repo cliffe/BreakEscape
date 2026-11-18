@@ -10,9 +10,12 @@ set -euo pipefail
 
 PORT="${1:-3001}"
 case "$PORT" in
-  ''|*[!0-9]*) echo "FAIL: port must be a number, got '$PORT'" >&2; exit 2 ;;
-  3000) echo "FAIL: :3000 is the user's server; pick another port" >&2; exit 2 ;;
+  ""|*[!0-9]*) echo "FAIL: port must be a number, got '$PORT'" >&2; exit 2 ;;
 esac
+PORT="$((10#$PORT))"   # 03000 is 3000 to Rails
+if [ "$PORT" -eq 3000 ] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
+  echo "FAIL: pick a port from 1024 to 65535 other than 3000 (:3000 is the user's server)" >&2; exit 2
+fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG="$ROOT/tmp/keyless-${PORT}.log"
 PIDFILE="tmp/pids/server-${PORT}.pid"   # relative to the dummy app, as rails resolves it
