@@ -174,6 +174,12 @@ check('landscape social chats: handle hidden, name and View profile share one ro
     const blk = L('.phone-social-theme:not(.phone-call-mode) .npc-id-block');
     assert.match(blk.body, /flex-direction:\s*row/);
     assert.match(blk.body, /flex-wrap:\s*nowrap/);
+    // long names ellipsise: the name and its flex parent can shrink (R4 m1, n1)
+    assert.match(L('.phone-social-theme:not(.phone-call-mode) .conversation-info').body, /min-width:\s*0/);
+    const nm = L('.phone-social-theme:not(.phone-call-mode) .npc-id-block .npc-name');
+    assert.match(nm.body, /min-width:\s*0/);
+    assert.match(nm.body, /text-overflow:\s*ellipsis/);
+    assert.match(nm.body, /white-space:\s*nowrap/);
     const handle = L('.phone-social-theme:not(.phone-call-mode) .npc-id-block .npc-handle');
     assert.match(handle.body, /clip:\s*rect\(0 0 0 0\)/);
     assert.match(handle.body, /position:\s*absolute/);

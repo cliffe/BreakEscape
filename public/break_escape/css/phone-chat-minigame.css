@@ -1116,6 +1116,9 @@
         align-items: center;
         gap: 8px;
     }
+    /* min-width 0 on the flex item that holds the name block, or a long name widens it and the
+       header wraps to a second line (R4 m1); with it, the name ellipsises. */
+    .phone-social-theme:not(.phone-call-mode) .conversation-info { min-width: 0; }
     .phone-social-theme:not(.phone-call-mode) .npc-id-block .npc-name {
         min-width: 0;
         overflow: hidden;
