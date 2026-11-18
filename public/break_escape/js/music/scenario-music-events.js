@@ -22,7 +22,7 @@ import MusicController from './music-controller.js';
 import { buildEndSequence, replayEndingEntry } from './closing-sequence.js';
 import { playEndingMusic, whenEndingAudible } from './ending-audio.js';
 import { MUSIC_CONFIG } from './music-config.js';
-import { concludeWithRetry, offlineEndingOptions, queueConcludeRetry } from './conclude-mission.js';
+import { concludeWithRetry, offlineEndingOptions, queueConcludeRetry, withScoreLine } from './conclude-mission.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -305,8 +305,8 @@ function playEntry(entry, data) {
         // has agreed, so MISSION COMPLETE can no longer print over a game the
         // server still calls in_progress -- which is exactly what used to
         // happen here, because this path opened the visualiser and never asked.
-        const openCredits = (adjust = (o) => o) => window.BondVisualiser.open(adjust({
-            credits:      filteredLines,
+        const openCredits = (adjust = (o) => o, score = null) => window.BondVisualiser.open(adjust({
+            credits:      withScoreLine(filteredLines, score),
             autoClose:    !!entry.stopAfterTrack,  // legacy: close when track ends
             autoStop:     !!entry.autoStop,         // new: stop music, keep vis open
             disableClose: !!entry.disableClose,
@@ -334,7 +334,8 @@ function playEntry(entry, data) {
             if (result.concluded) {
                 _endingOwnsMusic = true;
                 closeRinger();
-                openCredits();
+                // The score the server holds goes on the screen as the last credit line.
+                openCredits(undefined, result.score);
                 return;
             }
             // Refused: the scenario declared technical work that is not done.

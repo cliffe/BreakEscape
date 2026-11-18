@@ -52,7 +52,11 @@ export async function postConclude(gameId, deps = {}) {
     }
     try {
         const json = await response.json();
-        return { concluded: !!(json.success || json.alreadyConcluded), missing: json.missing || [] };
+        return {
+            concluded: !!(json.success || json.alreadyConcluded),
+            missing: json.missing || [],
+            score: Number.isFinite(json.score) ? json.score : null,
+        };
     } catch (err) {
         return { failed: true, why: 'a 200 that is not JSON' };
     }
@@ -107,6 +111,19 @@ export function offlineEndingOptions(opts = {}) {
         out.unshift({ text: OFFLINE_TITLE, style: 'title' }, { text: OFFLINE_NOTE, style: 'warning' });
     }
     return { ...opts, credits: out, headerText: OFFLINE_HEADER, statusText: OFFLINE_STATUS };
+}
+
+/**
+ * The credits with the server's score as their last line, so the ending shows the
+ * result the verifier holds. A missing or non-numeric score leaves the credits alone.
+ * @param {Array} credits - the credits lines
+ * @param {number|null} score - the score the conclude request returned
+ * @returns {Array} a new array
+ */
+export function withScoreLine(credits, score) {
+    const lines = Array.isArray(credits) ? credits : [];
+    if (!Number.isFinite(score)) return lines;
+    return [...lines, { text: '' }, { text: `MISSION SCORE: ${Math.round(score)} / 100`, style: 'entry' }];
 }
 
 /**
