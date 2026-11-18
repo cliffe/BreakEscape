@@ -37,8 +37,6 @@ Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. I wo
 
 Director Magnus Netherton: I have a handler who knows this one cold, and a hospital running out of time while I make introductions. HaX -- it's yours.
 
-Agent HaX: Agent. I'll be quick. The hospital can't afford slow.
-
 Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clinical system encrypted in the same minute.
 
 Agent HaX: Monitoring, medication records, imaging. All of it behind a ransom screen.
@@ -48,8 +46,7 @@ Agent HaX: Forty-seven people are on life support in there, running on backup ge
 Agent HaX: After that, the machines keeping them breathing start going quiet.
 
 * [Who did this?]
-    Agent HaX: There's a name, and there's the part that matters. Ask me in that order.
-    -> briefing_hub
+    -> q_ransomware
 
 * [Why is SAFETYNET on a ransomware call? Isn't this one for the police?]
     -> why_us
@@ -105,12 +102,11 @@ Agent HaX: One entry in it matches this attack almost exactly. This is them.
 
 === briefing_hub ===
 #speaker:agent_0x99
-{briefing_hub > 1: Agent HaX: {&What else?|Anything else?|Go on.}}
 
 + {not knows_entropy_link} [How can you be sure it's ENTROPY and not an ordinary crew?]
     -> q_entropy_link
 
-+ {not asked_zds} [You said the cells trade with each other. Trade what?]
++ {not asked_zds} [Who sells them the way in?]
     -> q_zds
 
 + {not asked_ransomware} [So who actually pulled the trigger on this?]
@@ -171,7 +167,7 @@ Agent HaX: Confirm the cell is real. Anything that ties it back to the Syndicate
 #speaker:agent_0x99
 ~ knows_stakes = true
 
-Agent HaX: Two clocks. The generators give you twelve hours before life support starts failing. The hospital board votes on paying the ransom in about four.
+Agent HaX: Two clocks. The generators are one. The other is the hospital board, which votes on paying the ransom in about four hours.
 
 Agent HaX: If they pay, the systems come back fast, and ENTROPY walks off a hundred and fifty thousand pounds richer. That funds the next hospital.
 
@@ -208,7 +204,7 @@ Agent HaX: Then turn their own backdoor on them. Recover the decryption keys and
 
 Agent HaX: Their CTO, Dr. Sarah Kim, put out a call at one this morning for an emergency security consultant. We made sure you answered it.
 
-Agent HaX: So you're genuinely booked. There's a line in their visitor log with your job title on it.
+Agent HaX: There's a line in their visitor log with your job title on it.
 
 Agent HaX: Kim doesn't know SAFETYNET's involved, or that this is ENTROPY. To her you're a contractor on a very bad night. Keep it that way.
 
@@ -223,11 +219,7 @@ Agent HaX: Kim doesn't know SAFETYNET's involved, or that this is ENTROPY. To he
 === security_warning ===
 #speaker:agent_0x99
 
-Agent HaX: Here's what everyone gets wrong about this one.
-
 Agent HaX: Ransomware Incorporated encrypted the access control server along with everything else.
-
-Agent HaX: The system that decides who's allowed where is behind the ransom screen. There's no permission left to give you.
 
 Agent HaX: Kim can authorise you all she likes. It won't move a single reader.
 
@@ -277,10 +269,6 @@ Agent HaX: Ghost is still in the wires, watching that network. If they reach out
 Agent HaX: And Ghost may have had help. Fourteen months of preparation, and they picked the one hospital with a perfect paper trail of ignored warnings.
 
 Agent HaX: You don't find that with a scanner. Somebody tells you.
-
-{knows_stakes:
-    Agent HaX: Whatever the ward looks like in there, those numbers are on ENTROPY. Do the work and get the keys.
-}
 
 Agent HaX: Good luck, Agent. Forty-seven lives, twelve hours. Go.
 -> arrival
