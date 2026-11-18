@@ -1864,7 +1864,7 @@ CREDITS
           "observations": "The duty desk's console.",
           "text": "The duty officer's console. He angles it away from you without looking up.",
           "textVariants": [
-            { "condition": "globalVars.ops_watch_upset", "value": "The console has been snapped to the lock screen." },
+            { "condition": "globalVars.ops_watch_upset && !globalVars.julian_console_owner_away", "value": "The console has been snapped to the lock screen." },
             { "condition": "globalVars.julian_console_screen_locked", "value": "J. SALLOW -- SESSION LOCKED.\nRe-authentication required (Level Red)." },
             { "condition": "globalVars.julian_console_owner_away", "value": "NIGHT WATCH CONSOLE. Signed in: J. SALLOW, duty officer.\n\nOPERATIONS: all teams stood down.\nINTERNAL INVESTIGATION: active.\n\nWATCH LOG, this watch\nRelief watch on. Duty desk handed over.\nLevel Red notice: all classified systems require re-authentication.\n\nAnything typed here now goes in the log as J. SALLOW." }
           ]

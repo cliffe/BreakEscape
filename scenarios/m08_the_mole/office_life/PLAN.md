@@ -93,13 +93,13 @@ Cast diversity against m08: Netherton (older, RP), Vector (early 30s, Glasgow), 
 ### 2.4 Needs and breaks
 
 - `thirst`: Julian `initial` 100, `decayPerMin` 7, `urgentAt` 40, `jitterPct` 20; Agnieszka `initial` 85, same decay. The show mapping resets these values at the reveal, so the first natural trip comes several needs-minutes after arrival and the player finds both at post on the first return.
-- Mapped break (Julian): three exclusive mappings on `room_entered:operations_floor` (payload carries `previousRoom`, `rooms.js:3236-3239`) with `data.previousRoom === 'main_lobby'`, `=== 'intel_analysis'` and `=== 'server_room'` (the validator rejects `||`). Each condition also `globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko`, `delayMs` 2000, `cooldown` 150000, `needs: { set: { thirst: 20 } }`. The archives are left out: the first return after the reveal is always from there, and the player should first see the pair at post.
-- One-way coupling: on Agnieszka, `npc_use_started:ops_cooler` (payload carries `npcId`, `npc-needs.js:3599`) with `data.npcId === 'julian_sallow' && !globalVars.ops_watch_upset && !globalVars.agnieszka_ko`, `delayMs` 2000, `cooldown` 120000, sets her thirst to 20. Never the other way.
+- Mapped break (Julian): three exclusive mappings on `room_entered:operations_floor` (payload carries `previousRoom`, `rooms.js:3236-3239`) with `data.previousRoom === 'main_lobby'`, `=== 'intel_analysis'` and `=== 'server_room'` (the validator rejects `||`). Each condition also `globalVars.found_badge_audit === true && !globalVars.ops_watch_ko && !globalVars.julian_ko`, `delayMs` 2000, `cooldown` 150000, `needs: { set: { thirst: 20 } }`. The archives are left out: the first return after the reveal is always from there, and the player should first see the pair at post.
+- One-way coupling: on Agnieszka, `npc_use_started:ops_cooler` (payload carries `npcId`, `npc-needs.js:3599`) with `data.npcId === 'julian_sallow' && !globalVars.ops_watch_ko && !globalVars.agnieszka_ko`, `delayMs` 2000, `cooldown` 120000, sets her thirst to 20. Never the other way.
 - Cooler `useSeconds` 18 and capacity 2, so the pair overlap long enough to talk.
 
 ### 2.5 Trouble
 
-`ops_watch_upset` (never cleared), set by `onceOnly` mappings on `agent_0x99`, appended last: `npc_attacked:julian_sallow`, `npc_attacked:agnieszka_duda`, and `global_variable_changed:` for `julian_ko`, `agnieszka_ko`, `analyst_ko` and `vector_ko` (each `value === true`). The cooler carries `offWhen: "ops_watch_upset"`; every mapped break and exchange is gated on it. No `patrolOverride`.
+`ops_watch_upset` (never cleared), set by `onceOnly` mappings on `agent_0x99`, appended last: `npc_attacked:julian_sallow`, `npc_attacked:agnieszka_duda`, and `global_variable_changed:` for `julian_ko`, `agnieszka_ko`, `analyst_ko` and `vector_ko` (each `value === true`). `ops_watch_ko` (never cleared) is set by the `julian_ko` and `agnieszka_ko` mappings alongside upset. The cooler carries `offWhen: "ops_watch_ko"` and the trips and the coupling read `ops_watch_ko`, so trips continue while the floor is merely upset. Both officers' cooler chatter pools carry `requireGlobal: {ops_watch_upset: false}` and are silent while upset, as are the exchanges and the bark. The `julian_console` upset lock-screen text applies only while Julian is at his post (`globalVars.ops_watch_upset && !globalVars.julian_console_owner_away`); while he is away the console reads signed in (or locked, if the screen locked), matching the amber glow and the claim. No `patrolOverride`.
 
 ### 2.6 KO tip-off, credits and debrief
 
@@ -266,7 +266,7 @@ Exchanges (`exchanges` on Julian, `with: "agnieszka_duda"`, `topic: "cooler"`):
 
 `flag4_submitted` is set only by the VM flag (SCN:1951). Gating an optional exchange on it leaves the flag as required as before. The needs clock stops while the VM is open, so this exchange cannot fire then; it plays on a later cooler meeting.
 
-Bark: one, Julian, `room_entered:operations_floor`, `onceOnly`, `delayMs` 3000, condition `globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko`: "Relief watch is on, Agent. Don't mind us." Reason: tells a returning player the floor has changed.
+Bark: one, Julian, `room_entered:operations_floor`, `onceOnly`, `delayMs` 3000, condition `globalVars.found_badge_audit === true && !globalVars.ops_watch_ko && !globalVars.julian_ko`: "Relief watch is on, Agent. Don't mind us." Reason: tells a returning player the floor has changed.
 
 Existing lines changed: none. New line in an existing file: the debrief block in 2.6.
 
