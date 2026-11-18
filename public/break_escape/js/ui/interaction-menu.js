@@ -574,7 +574,7 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText,
             closeInteractionMenu();
             if (reason) {
                 const msg = reason === 'Out of reach.' ? "Can't reach it from here." : "That's no longer there.";
-                window.gameAlert?.(msg, 'info', '', 2500);
+                window.gameAlert?.(msg, 'info', '', 2500, { low: true });
                 return;
             }
             try {

@@ -1,0 +1,13 @@
+{
+  "key": "8274f95a9962b298a94c81e4dee380ce",
+  "npc": "narrator",
+  "text": "You tell her about the backup server and the door ENTROPY left in it. She listens like she's logging every word.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:21:36Z"
+}

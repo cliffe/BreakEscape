@@ -1,0 +1,13 @@
+{
+  "key": "c3e6c25ec9ed239f2b461dfff3891081",
+  "npc": "narrator",
+  "text": "The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. Fighting him starts a clock on that laptop.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:15:03Z"
+}

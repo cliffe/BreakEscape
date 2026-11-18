@@ -102,7 +102,7 @@ test('"Added to" toast on a filed arrival, in place of the pulse', async () => {
     await add(holder);
     toasts.length = 0;
     await add(finding);
-    assert.deepEqual(toasts, [['Added to Capture log: Juice-jack capture', 'info', '', 3000]]);
+    assert.deepEqual(toasts, [['Added to Capture log: Juice-jack capture', 'info', '', 3000, { low: true }]]);
     assert.equal(held('cable_capture').parentElement.classList.contains('pulse'), false);
     await add(lockpick);
     assert.equal(toasts.length, 1, 'an unfiled item gets no toast');
@@ -180,7 +180,7 @@ test('a replaced inventory: what left is gone, what arrived is filed and announc
     refreshInventoryTray();
     assert.equal(held('cable_capture'), undefined);
     assert.equal(hidden(el), true);
-    assert.deepEqual(toasts, [['Added to Capture log: Drop box link', 'info', '', 3000]]);
+    assert.deepEqual(toasts, [['Added to Capture log: Drop box link', 'info', '', 3000, { low: true }]]);
     refreshInventoryTray();
     assert.equal(toasts.length, 1, 'a second refresh is not a second arrival');
 });

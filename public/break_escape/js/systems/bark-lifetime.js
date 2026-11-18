@@ -48,3 +48,15 @@ export function barksToTrim(barks, availableHeight, { maxVisible = MAX_VISIBLE_B
   while (drop < n - 1 && heightFrom(drop) > availableHeight) drop++;
   return drop;
 }
+
+// The two lanes (bark texts and notifications.js toasts) share a budget of this many.
+export const LANE_BUDGET = 4;
+
+/**
+ * How many bark texts may show when `shownToasts` timed toasts are up (notifications.js
+ * shownToasts: toasts that stay until closed are not counted). At least one text, at most
+ * MAX_VISIBLE_BARKS.
+ */
+export function barkMaxVisible(shownToasts, budget = LANE_BUDGET) {
+  return Math.max(1, Math.min(MAX_VISIBLE_BARKS, budget - (Number(shownToasts) || 0)));
+}

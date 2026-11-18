@@ -1,0 +1,13 @@
+{
+  "key": "415535ac7936ed351194f31ea001d4b4",
+  "npc": "joanne_pell",
+  "text": "Is that the last of the biscuits?",
+  "voice": "Zephyr",
+  "style": "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:15:31Z"
+}
