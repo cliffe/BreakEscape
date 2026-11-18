@@ -62,6 +62,16 @@
     color: #3498db;
 }
 
+/* No observations text: no empty paragraph, and no gap left under the heading, so the strip
+   wraps its content instead of showing a blank band */
+.lockpicking-item-info p:empty {
+    display: none;
+}
+
+.lockpicking-item-info h4:last-child {
+    margin-bottom: 0;
+}
+
 .lockpicking-item-info p {
     font-size: 16px;
     margin: 0;
@@ -199,7 +209,7 @@
     }
 
     .lockpicking-item-info h4 {
-        font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R5 M2) */
+        font-size: 12px;   /* Press Start 2P heading: 12px is the smallest legible size (was 8px) */
         line-height: 16px;
     }
 
