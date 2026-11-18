@@ -366,9 +366,9 @@ hax_maps << text_map("global_variable_changed:salvage_opened", "value === true",
 # Gated on the coded line: flag1_read_heard is set as the read-out gives it. Tried first, the
 # hint waits for the line (second arm); tried after, it goes at once (first arm). Never both.
 hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && !globalVars.m02_gary_protected && globalVars.flag1_read_heard",
-                     "The catalogue line is Vigenère. The key is this bay's word on her shelf-mark chart. The word itself won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
+                     "The catalogue line is Vigenère. The key is the cage's own bay word on her shelf-mark chart. The word itself won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
 hax_maps << text_map("global_variable_changed:flag1_read_heard", "value === true && !globalVars.m02_gary_protected && globalVars.salvage_keypad_seen",
-                     "The catalogue line is Vigenère. The key is this bay's word on her shelf-mark chart. The word itself won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
+                     "The catalogue line is Vigenère. The key is the cage's own bay word on her shelf-mark chart. The word itself won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true }, delay: 2000)
 hax_maps << { "eventPattern" => "global_variable_changed:salvage_keypad_seen", "condition" => "value === true && globalVars.m02_gary_protected", "onceOnly" => true, "setGlobal" => { "archive_code_guide_offered" => true } }
 hax_maps << text_map("room_entered:salvage_cage", nil, "Field guide for his box is ready. Say the word.", set: { "tomb_beta_guide_offered" => true })
 
@@ -1465,7 +1465,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             { "eventPattern": "player_spotted:old_coyote", "condition": "!globalVars.old_coyote_cover_given", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
             { "eventPattern": "player_spotted:old_coyote", "condition": "globalVars.old_coyote_cover_given", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 240000 },
             { "eventPattern": "global_variable_changed:old_coyote_cover_given", "condition": "value === true", "setGlobal": { "old_coyote_quiet": true } },
-            { "eventPattern": "global_variable_changed:old_coyote_quiet", "condition": "value === true", "delayMs": 240000, "setGlobal": { "old_coyote_quiet": false } },
+            { "eventPattern": "global_variable_changed:old_coyote_quiet", "condition": "value === true", "delayMs": 240000, "fireOnlyWhenLoaded": true, "setGlobal": { "old_coyote_quiet": false } },
+            { "_comment": "Reload mid-window: the delay timer is not saved but quiet is, so re-set it on re-entry to restart the 240 s timer.", "eventPattern": "room_entered:open_stacks", "condition": "globalVars.old_coyote_quiet && !globalVars.old_coyote_told", "setGlobal": { "old_coyote_quiet": true } },
             { "eventPattern": "global_variable_changed:old_coyote_told", "condition": "value === true", "setVisible": false },
             { "eventPattern": "room_entered:open_stacks", "condition": "globalVars.old_coyote_told", "setVisible": false },
             {
@@ -2585,7 +2586,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "Printer tray, empty. It prints what the drop link takes: take full control and submit it, then come back.",
+          "observations": "Printer tray, empty. It prints what the drop link takes: take full control of the mirror and submit the flag, then come back.",
           "observationVariants": [
             { "condition": "globalVars.flag4_submitted", "value": "Two pages in the printer tray. The first is signed." }
           ],
