@@ -59,6 +59,39 @@ export function lastPlayerHitAtWall() {
   return lastHitAt;
 }
 
+/** How long after the last hit on the player a fight still counts as on (performance clock ms). */
+export const COMBAT_QUIET_MS = 4000;
+
+/**
+ * True while the player is in a fight: a live hostile NPC is chasing (its chase state covers the
+ * attack swing), or the player took a hit in the last COMBAT_QUIET_MS. Scripted phone chats and
+ * calls wait on this (npc-manager.js _queueScriptedConversation, phone-ringer-dom.js ringBlocked):
+ * a popup that locks the world mid-fight leaves the player unable to fight or flee (m04 playtest).
+ * A hostile that is knocked out, hidden by a mapping or not hostile any more does not count.
+ * The player opening their own phone is never asked about this.
+ * @param {object} [deps] - overridable for tests: behaviors (Map or iterable of behaviors),
+ *   hostileSystem, npcManager, now
+ */
+export function playerInCombat(deps = {}) {
+  const w = typeof window !== 'undefined' ? window : {};
+  if (playerHitWithin(COMBAT_QUIET_MS, deps.now)) return true;
+  const hostile = deps.hostileSystem ?? w.npcHostileSystem;
+  const behaviors = deps.behaviors ?? w.npcBehaviorManager?.behaviors;
+  if (!hostile || !behaviors) return false;
+  const manager = deps.npcManager ?? w.npcManager;
+  const list = typeof behaviors.values === 'function' ? behaviors.values() : behaviors;
+  for (const behavior of list) {
+    if (!behavior || behavior.currentState !== 'chase') continue;
+    const id = behavior.npcId;
+    try {
+      if (!hostile.isNPCHostile?.(id) || hostile.isNPCKO?.(id)) continue;
+      if (manager?.isHiddenByMapping?.(id)) continue;
+    } catch (err) { continue; }
+    return true;
+  }
+  return false;
+}
+
 /**
  * True if the player was hit within the last `ms` milliseconds (performance clock).
  * @param {number} ms
@@ -213,6 +246,7 @@ if (typeof window !== 'undefined') {
   window.lastPlayerHitAt = lastPlayerHitAt;
   window.lastPlayerHitAtWall = lastPlayerHitAtWall;
   window.playerHitWithin = playerHitWithin;
+  window.playerInCombat = playerInCombat;
   window.playerIsKnockedOut = playerIsKnockedOut;
   window.closeMinigameForKnockout = closeMinigameForKnockout;
   window.dismissPhoneHitNotice = dismissPhoneHitNotice;

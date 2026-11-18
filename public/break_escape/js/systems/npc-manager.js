@@ -963,6 +963,17 @@ export default class NPCManager {
    */
   _queueScriptedConversation(conv) {
     const framework = window.MinigameFramework;
+    // Mid-fight a conversation does not take over the screen: it waits in the queue until the
+    // fight is over (_combatHold). An auto-challenge is stale by then, so it is dropped (it
+    // re-fires on the next sighting). The player's own phone never comes through here.
+    if (this._combatHold()) {
+      if (conv.dropIfBusy) {
+        console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: the player is in combat (auto-challenge)`);
+        return;
+      }
+      this._deferForCombat(conv);
+      return;
+    }
     // A task or objective toast raised a moment ago (the room-entry task whose event
     // started this) was showing when the conversation opened, got pulled back and showed
     // again on close. Pull it back now, before it is visible, and hold toasts until the
@@ -994,6 +1005,16 @@ export default class NPCManager {
         // minigame opened AFTER, during the delay.) An auto-challenge is DROPPED — it is
         // stale and re-fires on the next sighting; a scripted conversation is DEFERRED
         // to the queue so it is not lost.
+        // A fight started during the start delay: wait for it to end
+        if (this._combatHold()) {
+          this._scriptedCall = null;
+          if (conv.dropIfBusy) {
+            if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+            return;
+          }
+          this._deferForCombat(conv);
+          return;
+        }
         if (window.MinigameFramework?.currentMinigame) {
           // interrupt (an opt-in video-call mapping, m02 R4 M1): the call is meant to
           // cut in before the player acts in the minigame they just opened (Ghost's
@@ -1104,6 +1125,32 @@ export default class NPCManager {
     this._openScriptedConversation({ ...conv, beforeOpen: null });
   }
 
+  /** True while the player is in a fight (player-damage-interrupt.js playerInCombat). */
+  _combatHold() {
+    try { return !!window.playerInCombat?.(); } catch (e) { return false; }
+  }
+
+  /**
+   * Hold a scripted conversation until the fight is over. It joins the queue (the pump opens it
+   * once no fight, minigame or other scripted scene is up) and the player is told once, by a
+   * toast, that the contact is trying to reach them. A conversation carries its story in the
+   * minigame, so there is no thread row to badge before it opens.
+   */
+  _deferForCombat(conv) {
+    const first = !this._scriptedCallQueue.includes(conv);
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) deferred: the player is in combat`);
+    if (first) {
+      this._scriptedCallQueue.push(conv);
+      if (!conv.combatNotified) {
+        conv.combatNotified = true;
+        const name = this.getNPC(conv.npcId)?.displayName || conv.npcId;
+        const what = conv.sceneType === 'phone-chat' ? 'is calling' : 'wants to talk to you';
+        try { window.showNotification?.(`${name} ${what}. It opens when the fight is over.`, 'info', 'Incoming', 4000); } catch (e) { /* cosmetic */ }
+      }
+    }
+    this._pumpScriptedCallQueue();
+  }
+
   // A queued conversation opens when none is starting or open, no minigame is open
   // (the player may have gone from the call to the notepad and back) and the player is
   // not knocked out (startMinigame would refuse it, and it would be lost). One marked
@@ -1116,6 +1163,10 @@ export default class NPCManager {
       if (!this._scriptedCallQueue.length) return;
       const framework = window.MinigameFramework;
       const head = this._scriptedCallQueue[0];
+      if (this._combatHold()) {
+        this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
+        return;
+      }
       if (framework && !this._scriptedCallBusy() && framework.currentMinigame &&
           head.interrupt && !head.dropIfBusy && !window.playerIsKnockedOut?.()) {
         this._scriptedCallQueue.shift();

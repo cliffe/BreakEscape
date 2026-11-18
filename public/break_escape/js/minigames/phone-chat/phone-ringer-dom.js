@@ -240,7 +240,10 @@ export function installPhoneRinger(win = window) {
         // The tutorial hold is timed, so it is not here: the ringer consults tutorialPromptOpen /
         // tutorialStep and holds per offer (sweep item 9).
         ringBlocked() {
-            return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut();
+            // A fight in progress holds a new ring: it rings once the fight is over (a ringing or
+            // forced call is requeued, row 23)
+            return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut() ||
+                !!win.playerInCombat?.();
         },
         tutorialPromptOpen,
         tutorialStep,
