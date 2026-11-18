@@ -31,7 +31,7 @@ module BreakEscape
     # under a sign-in scope the player has not opened, or in a served-but-unearned route
     # room, answers as if nothing were there.
     def pin_dust_lock(target_type, target_id)
-      return nil unless %w[door object].include?(target_type.to_s) && target_id.present?
+      return nil unless target_id.present?
       return nil if target_type.to_s != 'door' && unlock_scope_refused?(target_id.to_s)
       return nil if target_type.to_s != 'door' && object_in_unpromoted_route_room?(target_id.to_s)
 
@@ -46,6 +46,9 @@ module BreakEscape
     # Apply (apply true): dust the lock now. One time per lock; a second ask returns the
     # same record. Returns { status:, body: } for the controller.
     def pin_dust!(target_type, target_id, apply:)
+      # Like unlock: a pad on a door says 'door', anything else (the client sends 'item' for a
+      # safe or PC) is an object.
+      target_type = target_type.to_s == 'door' ? 'door' : 'object'
       key = "#{target_type}:#{target_id}"
       record = pin_dust_records[key]
       lock = pin_dust_lock(target_type, target_id)

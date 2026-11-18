@@ -109,8 +109,15 @@ module BreakEscape
       assert_equal key_answer, response.body
       dust('door', 'office')
       assert_response :not_found
-      dust('widget', 'wall_safe')
-      assert_response :not_found
+    end
+
+    test 'the client sends item for a safe: it dusts as an object and shares its record' do
+      take_kit
+      body = dust('item', 'wall_safe')
+      assert_response :ok
+      assert_equal %w[3 8], body['digits']
+      peek = dust('object', 'wall_safe', false)
+      assert_equal %w[3 8], peek['digits']
     end
 
     test 'it is one time per lock and persists: a second ask and a peek give the same record' do
