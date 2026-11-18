@@ -57,6 +57,9 @@ export const MinigameFramework = {
         // A tap or key menu left open would sit over the minigame
         window.closeInteractionMenu?.();
 
+        // Where focus was before any minigame took it, so the close can give it back
+        this._noteFocusOpener();
+
         // If there's already a minigame running, end it first
         // (a minigame already mid-end, i.e. we were called from its onComplete, is
         // finished: ending it again would re-run cleanup and its callback)
@@ -69,6 +72,8 @@ export const MinigameFramework = {
                 suspendedParent = { sceneType: running._sceneType, params: running.params };
             }
             console.log('Ending current minigame before starting new one');
+            this._displacing = true;
+            try {
             this.endMinigame(false, null);
             // N-02 (Phase 0 round 2): ending the displaced minigame can run a
             // chain of onCompletes — a child's returnTo releasing a suspended
@@ -85,6 +90,9 @@ export const MinigameFramework = {
                 console.log('Ending a minigame opened during teardown before the interrupt (N-02)');
                 this.endMinigame(false, null);
                 if (this.currentMinigame === stray) { this.currentMinigame = null; break; }
+            }
+            } finally {
+                this._displacing = false;
             }
         }
 
@@ -173,6 +181,7 @@ export const MinigameFramework = {
         // The player's phone pose for a phone-style minigame (systems/player-poses.js)
         try { window.playerPoses?.onMinigameStart?.(sceneType, params, this.currentMinigame); } catch (e) { /* cosmetic */ }
         this._updateBarkLayer();
+        this._installFocusTrap();
         // A task or pickup toast raised just before this opened waits for it to close
         // (notifications.js; m07 confirmation N1)
         window.holdRecentNotifications?.();
@@ -209,6 +218,103 @@ export const MinigameFramework = {
     isOpen(sceneType) {
         const m = this.currentMinigame;
         return !!m && !m._ending && m._sceneType === sceneType;
+    },
+
+    // ---- Focus trap (UI sweep) -------------------------------------------------------
+    // While a modal minigame is open, Tab and Shift+Tab cycle inside its container and never
+    // reach the HUD behind it. One capture-phase listener serves every minigame: the
+    // focusable set is recomputed on each Tab because panels change their content. It steps
+    // aside for a higher modal (the ending confirm, gameConfirm, the game menu), for an
+    // element inside a modal or listbox that runs its own Tab cycle, and for an embedded
+    // container (data-external) or a scene that opts out with params.focusTrap === false.
+
+    FOCUSABLE_SELECTOR: 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]',
+
+    _installFocusTrap() {
+        if (this._trapHandler || typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
+        this._trapHandler = (e) => this._onTrapKeyDown(e);
+        document.addEventListener('keydown', this._trapHandler, true);
+    },
+
+    _removeFocusTrap() {
+        if (!this._trapHandler) return;
+        try { document.removeEventListener('keydown', this._trapHandler, true); } catch (e) { /* torn down */ }
+        this._trapHandler = null;
+    },
+
+    /** True when the element can take focus by Tab: enabled, shown, not inert. */
+    _isTabbable(el, root) {
+        if (!el || el.disabled || el.hidden) return false;
+        if (el.getAttribute?.('tabindex') === '-1') return false;
+        if (el.tagName === 'INPUT' && el.type === 'hidden') return false;
+        if (el.getAttribute?.('aria-hidden') === 'true') return false;
+        const gcs = typeof window !== 'undefined' ? window.getComputedStyle : null;
+        for (let n = el; n && n !== root.parentNode; n = n.parentElement) {
+            if (n.hidden || n.hasAttribute?.('inert')) return false;
+            const cs = gcs ? gcs.call(window, n) : null;
+            if (cs && (cs.display === 'none' || (n === el && cs.visibility === 'hidden'))) return false;
+        }
+        return true;
+    },
+
+    /** The open minigame's tabbable elements, in DOM order. */
+    _trapFocusables(root) {
+        return Array.from(root.querySelectorAll(this.FOCUSABLE_SELECTOR)).filter((el) => this._isTabbable(el, root));
+    },
+
+    /** A modal above the minigame, with its own keys: the trap leaves Tab to it. */
+    _higherModalOpen(root) {
+        if (window.gameConfirmOpen?.()) return true;
+        const above = document.querySelectorAll('[aria-modal="true"], .game-confirm-overlay');
+        for (const m of above) {
+            if (!root.contains(m)) return true;
+        }
+        return false;
+    },
+
+    _onTrapKeyDown(e) {
+        if (!e || e.key !== 'Tab' || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey) return;
+        const m = this.currentMinigame;
+        if (!m || m._ending) return;
+        const root = m.container;
+        if (!root || root.isConnected === false || typeof root.querySelectorAll !== 'function') return;
+        if (m.params?.focusTrap === false || root.hasAttribute?.('data-external')) return;
+        if (this._higherModalOpen(root)) return;
+        const active = document.activeElement;
+        // A modal or listbox inside the minigame that cycles Tab itself keeps it
+        if (active && root.contains(active) && active.closest?.('[aria-modal="true"], [role="listbox"]')) return;
+
+        const items = this._trapFocusables(root);
+        e.preventDefault();
+        if (!items.length) {
+            if (root.getAttribute('tabindex') === null) root.setAttribute('tabindex', '-1');
+            try { root.focus({ preventScroll: true }); } catch (err) { /* no focus in this environment */ }
+            return;
+        }
+        const i = active ? items.indexOf(active) : -1;
+        let next;
+        if (i === -1) next = e.shiftKey ? items[items.length - 1] : items[0];
+        else next = items[(i + (e.shiftKey ? -1 : 1) + items.length) % items.length];
+        try { next.focus({ preventScroll: true }); } catch (err) { /* no focus in this environment */ }
+    },
+
+    /** Remember the element that had focus when the first minigame of a chain opened. */
+    _noteFocusOpener() {
+        if (typeof document === 'undefined') return;
+        const a = document.activeElement;
+        if (!a || a === document.body || a === document.documentElement) return;
+        if (a.closest?.('.minigame-container')) return;
+        this._focusOpener = a;
+    },
+
+    /** Give focus back once the whole chain has closed, if nothing else took it. */
+    _restoreFocusOpener() {
+        const el = this._focusOpener;
+        this._focusOpener = null;
+        if (!el || typeof document === 'undefined' || el.isConnected === false) return;
+        const now = document.activeElement;
+        if (now && now !== document.body && now !== document.documentElement) return;
+        try { el.focus({ preventScroll: true }); } catch (err) { /* no focus in this environment */ }
     },
 
     _updateBarkLayer() {
@@ -365,6 +471,9 @@ export const MinigameFramework = {
             // Barks held back while the minigame was open play now (D5)
             this._updateBarkLayer();
             if (!this.currentMinigame) {
+                this._removeFocusTrap();
+                // A minigame displaced by another keeps the chain's opener for the new one
+                if (!this._displacing) this._restoreFocusOpener();
                 window.barkSystem?.drainDeferredBarks?.();
             }
             console.log(`Ended minigame with success: ${success}`);
