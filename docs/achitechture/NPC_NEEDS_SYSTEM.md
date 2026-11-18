@@ -654,9 +654,10 @@ during the walk home (exists). Player-facing behaviour:
   (`npcThoughts` false) a closed pool therefore leaves the pair standing silent. The validator warns
   (V12) when a gate names a global that `globalVariables` does not declare, when a `{ name: value }`
   value has a different JSON type from the declared global (`"2"` against `2`), and when a gate sits on
-  a security pool (`login_aloud`, `usb_refused`, `work_fail*`, `wk_*`), because a closed gate then
+  a security pool (`login_aloud`, `usb_refused`, `work_fail*`, `station_fail`, `social_blocked`, `wk_*`), because a closed gate then
   silently closes the window. V10 ignores gates. Showcase: `scenarios/test_chatter_pool_gate`.
   - A desk call draws its pool lines when it starts, so a gate that closes mid-call does not cut them.
+  - A mutter queued while its gate was open keeps that choice: if the gate closes during the wait, it still waits for the speech lock (at most `MUTTER_WAIT_MS`) and then shows the picture for its topic, not a line. Nothing is spoken from the closed pool.
   - A gate flip changes the merged pool, so that topic's shuffle-bag starts again (a line said just
     before the flip can come round again soon after).
   - A system whose world cannot judge a gate (no `globalHolds`) reads it as closed; the pure
