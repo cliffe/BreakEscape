@@ -23,15 +23,20 @@ def check_capture_log(json_data)
   warn = ->(msg) { issues << "⚠️ WARNING: capture log: #{msg}" }
 
   # ---- Unique target ids: first capture wins, so a second writer is never recorded ----
-  seen = {}
+  # Two writers whose mapping conditions cannot both hold (pass4c_conditions_exclusive?, e.g.
+  # data.footholdId === 'a' against === 'b') never both fire, so they may share an id.
+  seen = Hash.new { |h, k| h[k] = [] }
   cm.capture_writers(json_data).each do |writer|
     id = writer[:target_id]
-    if seen.key?(id)
-      err.call("two capture routes write targetId \"#{id}\" (#{seen[id]} and #{writer[:path]}): " \
-               'first capture wins: the second is never recorded. Give each capture its own targetId')
-    else
-      seen[id] = writer[:path]
+    clash = seen[id].find do |prev|
+      !(respond_to?(:pass4c_conditions_exclusive?, true) &&
+        pass4c_conditions_exclusive?(prev[:condition], writer[:condition]))
     end
+    if clash
+      err.call("two capture routes write targetId \"#{id}\" (#{clash[:path]} and #{writer[:path]}): " \
+               'first capture wins: the second is never recorded. Give each capture its own targetId')
+    end
+    seen[id] << writer
   end
 
   # ---- Sign-ins list row fields (K3d, plan 8.7) ----
