@@ -539,7 +539,7 @@ export function dropInventoryItem(sprite) {
             });
         });
     }
-    w.gameAlert?.(`Dropped ${obj.name}`, 'info', '', 1500);
+    w.gameAlert?.(`Dropped ${obj.name}`, 'info', '', 1500, { low: true });
     return payload;
 }
 
