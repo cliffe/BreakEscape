@@ -232,7 +232,7 @@ test('VM launcher: title, IP and console link are text, and the href stays one a
     const mg = new VmLauncherMinigame(fresh(), { vm: { title: HOSTILE, ip: HOSTILE }, hacktivityMode: true });
     delete window.breakEscapeConfig;
     const box = document.getElementById('mg');
-    box.innerHTML = mg.buildVmDisplay();
+    box.appendChild(mg.buildVmDisplay());
     assertClean(box, 'VM launcher');
     assertText(box.querySelector('.vm-title'), 'VM title');
     assertText(box.querySelector('.vm-ip-value'), 'VM IP');
