@@ -113,6 +113,18 @@
   cursor: pointer;
   padding: 4px 8px;
   font-family: inherit;
+  position: relative;
+}
+
+/* The glyph is small; a 32x32 pseudo-element is the touch target without moving the layout */
+.objectives-toggle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  transform: translate(-50%, -50%);
 }
 
 .objectives-toggle:hover {
