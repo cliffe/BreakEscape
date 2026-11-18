@@ -457,7 +457,7 @@ And whatever you do, don't ask how he let this happen. He'll hand you the card a
 
 + [What am I actually after from him?]
     The server room card, and the credentials on the backup box. Shared admin login, never rotated. One of three.
-    He'll point you at it if he trusts you. It's on a sticky note on his monitor either way, which tells you everything about that department.
+    He'll point you at it if he trusts you. Either way it's on a sticky note on his monitor.
     -> support_hub
 
 + [Understood]

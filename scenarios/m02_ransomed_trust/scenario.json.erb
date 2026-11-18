@@ -1013,7 +1013,7 @@ wall_safe_pin = "5829"
               "condition": "data.itemId === 'contractor_lanyard'",
               "onceOnly": true,
               "setGlobal": { "staff_lanyard_obtained": true, "holds_contractor_pass": true },
-              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock, no name. Nobody questions one, which is exactly what Gary's been writing emails about. Hang on to it. If anyone asks what you're doing with it, have an answer that fits an IT pass." }
+              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock, no name. Nobody questions one, which is what Gary's been writing emails about. Have an IT reason ready if anyone asks." }
             },
             {
               "eventPattern": "item_picked_up:id_badge",
@@ -1450,13 +1450,13 @@ wall_safe_pin = "5829"
               "eventPattern": "global_variable_changed:bernie_key_withheld",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Bernie's kept her key. The IT door is a standard override lock and your picks will do it. Or get Kim's signature and take it back to her." }
+              "sendTimedMessage": { "delay": 5000, "message": "Bernie's kept her key. The IT door is a standard override lock and your picks will do it. Or get Kim's signature and take it back to her." }
             },
             {
               "eventPattern": "room_entered:security_office",
               "onceOnly": true,
               "setGlobal": { "seen_wall_safe": true },
-              "sendTimedMessage": { "delay": 6000, "message": "Keypad safe on the wall, no code on it anywhere. Nobody here can give you that one. If you find anything that reads a keypad back to you, bring it here." }
+              "sendTimedMessage": { "delay": 6000, "message": "Keypad safe on the wall, no code on it anywhere. If you find anything that reads a keypad back to you, bring it here." }
             },
             {
               "eventPattern": "global_variable_changed:reeves_safe_opened",

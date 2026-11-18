@@ -278,13 +278,13 @@ Val Okonkwo: Go on. But you come past me on the way out and tell me what you fou
 Narrator: She turns the lanyard over. Contractor, issued by IT, no name.
 Val Okonkwo: Blank IT pass. So what are you here for, on an IT pass?
 
++ [Agency nursing. They've sent me up from the ward.]
+    Val Okonkwo: Agency are on green. That's not green.
+    -> pretext_failed
 + [IT sent me for the server room reader. It's on its own controller.]
     Val Okonkwo: The one reader in the building that still works. Gary's baby.
     Val Okonkwo: That's the first thing anyone's said tonight that matches what they're holding.
     -> show_lanyard_cleared
-+ [Agency nursing. They've sent me up from the ward.]
-    Val Okonkwo: Agency are on green. That's not green.
-    -> pretext_failed
 + [Estates. I'm checking the doors after the drill.]
     Val Okonkwo: Estates don't come out at night. They didn't even come out on Wednesday.
     -> pretext_failed

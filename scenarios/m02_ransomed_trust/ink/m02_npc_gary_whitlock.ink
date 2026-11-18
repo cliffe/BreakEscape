@@ -294,6 +294,9 @@ Gary Whitlock: It's on the list. The list is four years long, and the list is wh
 Gary Whitlock: Before it goes round your neck. You talk like you've read them. #delivery: testing, not unkind
 Gary Whitlock: Go on then. What did I cost it at?
 
+* [A hundred and fifty thousand.]
+    ~ cost_checked = true
+    -> cost_wrong
 * [Eighty-five thousand.]
     ~ cost_checked = true
     Gary Whitlock: Eighty-five. Yeah.
@@ -302,9 +305,6 @@ Gary Whitlock: Go on then. What did I cost it at?
 * [I don't know the figure. I'd rather not guess.]
     ~ cost_checked = true
     -> cost_unknown
-* [A hundred and fifty thousand.]
-    ~ cost_checked = true
-    -> cost_wrong
 * [Three point two million.]
     ~ cost_checked = true
     -> cost_wrong

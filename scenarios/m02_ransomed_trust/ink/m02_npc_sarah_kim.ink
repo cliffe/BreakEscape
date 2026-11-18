@@ -148,7 +148,7 @@ Dr. Sarah Kim: "Never once failed." That was the actual sentence. I said it out 
 
 === access_problem ===
 ~ access_explained = true
-#give_item:id_badge:kim_countersigned_badge
+#give_item:id_badge:Visitor Badge (Countersigned)
 
 Dr. Sarah Kim: Now I disappoint you, and I'll be precise, because everyone I've told tonight assumes I'm being obstructive.
 

@@ -149,7 +149,9 @@ Agent 0x47 'Nightshade': Somebody manufactures these at scale, for people they t
 Agent 0x47 'Nightshade': I'll write it up properly. Short version: the people you're chasing have a supply chain.
 
 Agent 0x47 'Nightshade': That should worry you more than the one device.
-{reeves_safe_opened: Agent 0x47 'Nightshade': And you turned it on their own man's wall safe. That's the lesson in one go. A keypad that tells you how close you were has already given the code away.}
+{reeves_safe_opened:
+    Agent 0x47 'Nightshade': And you turned it on their own man's wall safe. That's the lesson in one go. A keypad that tells you how close you were has already given the code away.
+}
 Agent HaX: He's not wrong. He usually isn't. #delivery: quietly
 -> debrief_hub
 
