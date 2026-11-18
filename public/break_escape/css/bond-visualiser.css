@@ -519,6 +519,14 @@
   overflow-wrap: anywhere;
   text-wrap: pretty;
   text-wrap: balance;
+  /* between the header band and the controls bar (bond-visualiser.js _fitCreditsBand
+     sets --bv-cr-inset on the overlay); a card taller than that scrolls inside itself
+     instead of covering either bar. The overlay ignores the pointer, the label takes it
+     so the card can be scrolled. */
+  max-height: calc(100% - 2 * var(--bv-cr-inset, 0px));
+  overflow-y: auto;
+  pointer-events: auto;
+  scrollbar-width: none;
 }
 
 /* Closing-card lines (bond-visualiser.js _startCredits): no wider than the
@@ -540,4 +548,15 @@
   /* side panels are hidden here, so the centre is the whole width */
   .bv-cr-card-line { max-width: none; }
   #bv-credits-overlay #bv-cr-label.bv-cr-label { max-width: 100%; padding: 0 10%; }
+}
+
+/* Short windows (phone landscape) and narrow ones (phone portrait): the closing card
+   uses the 16px pixel font size so its box fits between the header and the controls bar
+   (844x390 and 390x844 overlapped both at 30px). Larger windows keep the 30px card. */
+@media (max-height: 500px), (max-width: 600px) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label .bv-cr-card-line {
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+  }
 }

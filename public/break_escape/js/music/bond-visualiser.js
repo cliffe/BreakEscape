@@ -1469,6 +1469,27 @@ function _writeEndNote() {
     el.classList.remove('bv-blink');
 }
 
+/**
+ * Keep the credits label between the header band and the controls bar. The overlay is a
+ * full-window flex box that centres the label, so the same inset goes top and bottom
+ * (the larger of the two bands plus a small gap): the label stays centred on the window
+ * and CSS (--bv-cr-inset, label max-height) lets its own content scroll if it still
+ * does not fit. A card that already fits is untouched.
+ */
+function _fitCreditsBand(overlay) {
+    if (!overlay) return;
+    let inset = 0;
+    const app = document.getElementById('bond-vis-overlay');
+    const hd = app && app.querySelector('.bv-header');
+    const ct = app && app.querySelector('.bv-controls');
+    if (hd && ct) {
+        const top = hd.getBoundingClientRect().bottom;
+        const bottom = window.innerHeight - ct.getBoundingClientRect().top;
+        if (top > 0 && bottom > 0) inset = Math.ceil(Math.max(top, bottom)) + 8;
+    }
+    overlay.style.setProperty('--bv-cr-inset', `${inset}px`);
+}
+
 function _startCredits(lines) {
     const overlay = document.getElementById('bv-credits-overlay');
     if (!overlay) return;
@@ -1501,6 +1522,7 @@ function _startCredits(lines) {
     }
     label.className = 'bv-cr-label';
     label.style.cssText = 'text-align:center;transition:opacity 0.4s ease;';
+    _fitCreditsBand(overlay);
 
     // Filter to non-empty lines only (a card carries its own lines)
     const items = lines.filter(l => (Array.isArray(l.lines) && l.lines.length) || (l.text && l.text.trim()));
@@ -1531,6 +1553,8 @@ function _startCredits(lines) {
         _creditsTimerId = setTimeout(() => {
             label.className = 'bv-cr-label';
             label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${baseStyle}`;
+            _fitCreditsBand(overlay);
+            label.scrollTop = 0;
             let holdMs = 3000;
             if (Array.isArray(item.lines) && item.lines.length) {
                 // A closing card or teaser: its lines together, one per row
@@ -1574,6 +1598,7 @@ function _showCreditsHold(text) {
     }
     label.className = 'bv-cr-label';
     label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    _fitCreditsBand(overlay);
     label.textContent = text;
     label.style.opacity = '1';
 }
