@@ -218,7 +218,14 @@
   overflow-x: hidden;
   overflow-y: auto; /* a short window scrolls the panel instead of cutting the last VIS MODE button */
   box-shadow: 0 0 8px rgba(0,255,65,0.08);
+  scrollbar-width: thin;
+  scrollbar-color: var(--bv-green-dim) transparent;
 }
+
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar { width: 8px; height: 8px; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-track { background: transparent; border-left: 2px solid var(--bv-green-dim); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-thumb { background: var(--bv-green-dim); border: 2px solid var(--bv-green); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 
 @media (max-width: 700px) {
   #bond-vis-overlay .bv-header { flex-wrap: wrap; gap: 8px 12px; }

@@ -43,27 +43,58 @@ test('C11: the credits side panel scrolls instead of clipping, and the mode grid
     assert.match(rule(css, '#bond-vis-overlay .bv-mode-group-panel'), /grid-template-columns: repeat\(3/);
 });
 
-test('C2: a click or hover on the slot beside the img reaches the img handlers', () => {
+test('C11: the credits side panel scrollbar is the thin CRT green', () => {
+    const css = read('css/bond-visualiser.css');
+    const panel = rule(css, '#bond-vis-overlay .bv-side-panel');
+    assert.match(panel, /scrollbar-width: thin/);
+    assert.match(panel, /scrollbar-color: var\(--bv-green-dim\) transparent/);
+    assert.match(css, /\.bv-side-panel::-webkit-scrollbar-thumb \{[^}]*var\(--bv-green-dim\)/);
+    assert.match(css, /\.bv-side-panel::-webkit-scrollbar-thumb \{[^}]*border-radius: 0/);
+});
+
+function load() {
     const src = read('js/systems/inventory.js');
-    assert.match(src, /forwardSlotPointer\(slot, itemImg\)/, 'both tray builders wire it');
-    assert.equal(src.split('forwardSlotPointer(slot, itemImg)').length - 1, 2);
-    assert.match(rule(read('css/inventory.css'), '.inventory-slot'), /cursor: pointer/);
     const fn = src.slice(src.indexOf('export function forwardSlotPointer'), src.indexOf('// Helper function to create'));
     const dom = new JSDOM('<div id="s"><img id="i"><span id="b"></span></div>');
     const { window } = dom;
-    const make = new Function('MouseEvent', fn.replace('export function', 'function') + '; return forwardSlotPointer;');
-    const forward = make(window.MouseEvent);
-    const slot = window.document.getElementById('s');
-    const img = window.document.getElementById('i');
-    forward(slot, img);
+    const labels = [];
+    const make = new Function('MouseEvent', 'setHudLabel', 'clearHudLabel',
+        fn.replace(/export function/g, 'function') + '; return { forwardSlotPointer, bindSlotHover };');
+    const api = make(window.MouseEvent, (t) => labels.push(t), () => labels.push(null));
+    const $ = (id) => window.document.getElementById(id);
+    return { api, window, labels, slot: $('s'), img: $('i'), badge: $('b'), src };
+}
+
+test('C2: both tray builders wire the whole-slot click and hover; the slot is a pointer', () => {
+    const src = read('js/systems/inventory.js');
+    assert.equal(src.split('forwardSlotPointer(slot, itemImg)').length - 1, 2);
+    assert.equal(src.split('bindSlotHover(slot, () =>').length - 1, 2);
+    assert.doesNotMatch(src, /itemImg\.addEventListener\('mouse(enter|leave)'/, 'hover lives on the slot');
+    // inventory.css is not loaded by the game; hud.css is
+    assert.match(rule(read('css/hud.css'), '.inventory-slot'), /cursor: pointer/);
+});
+
+test('C2: a click on the slot margin or a non-img child reaches the img handler once', () => {
+    const { api, window, slot, img, badge } = load();
+    api.forwardSlotPointer(slot, img);
     const got = [];
-    img.addEventListener('click', (e) => got.push(['click', e.clientX, e.clientY]));
-    img.addEventListener('mouseenter', () => got.push(['enter']));
+    img.addEventListener('click', (e) => got.push([e.clientX, e.clientY]));
     slot.dispatchEvent(new window.MouseEvent('click', { clientX: 5, clientY: 9 }));
-    assert.deepEqual(got, [['click', 5, 9]]);
-    slot.dispatchEvent(new window.MouseEvent('mouseenter'));
-    assert.equal(got.length, 2);
-    // a click on the img itself is not forwarded a second time
+    assert.deepEqual(got, [[5, 9]]);
+    badge.dispatchEvent(new window.MouseEvent('click', { bubbles: true, clientX: 1, clientY: 2 }));
+    assert.deepEqual(got, [[5, 9], [1, 2]], 'a click on the badge opens the item');
     img.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-    assert.equal(got.length, 3);
+    assert.equal(got.length, 3, 'a click on the img is not forwarded a second time');
+});
+
+test('C2: the hover label is set once and survives img to slot margin moves', () => {
+    const { api, window, labels, slot, img } = load();
+    api.bindSlotHover(slot, () => 'Phone');
+    slot.dispatchEvent(new window.MouseEvent('mouseenter'));
+    // the img's own mouseenter/mouseleave (pointer moving img to margin) do not reach the slot
+    img.dispatchEvent(new window.MouseEvent('mouseleave'));
+    img.dispatchEvent(new window.MouseEvent('mouseenter'));
+    assert.deepEqual(labels, ['Phone'], 'not cleared while the pointer is still on the slot');
+    slot.dispatchEvent(new window.MouseEvent('mouseleave'));
+    assert.deepEqual(labels, ['Phone', null]);
 });
