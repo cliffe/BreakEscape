@@ -5,7 +5,7 @@ import { KeyDataGenerator } from './key-data-generator.js';
 import { KeySelection } from './key-selection.js';
 import { KeyOperations } from './key-operations.js';
 import { PinManagement } from './pin-management.js';
-import { ToolManager } from './tool-manager.js';
+import { ToolManager, createPickCaption } from './tool-manager.js';
 import { KeyAnimation } from './key-animation.js';
 import { HookMechanics } from './hook-mechanics.js';
 import { PinVisuals } from './pin-visuals.js';
@@ -350,6 +350,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             const buttonContainer = document.createElement('div');
             buttonContainer.style.cssText = `
                 display: flex;
+                flex-wrap: wrap;
+                align-items: center;
                 gap: 10px;
                 margin-top: 10px;
                 justify-content: center;
@@ -361,6 +363,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             switchModeBtn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
             switchModeBtn.onclick = () => this.toolMgr.switchToPickMode();
             
+            buttonContainer.appendChild(createPickCaption());
             buttonContainer.appendChild(switchModeBtn);
             itemDisplayDiv.appendChild(buttonContainer);
         } else if (this.canSwitchToKeyMode && !this.keyMode) {

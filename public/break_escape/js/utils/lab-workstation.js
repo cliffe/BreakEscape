@@ -28,6 +28,18 @@ export function withEmbeddedParam(url) {
     return `${base}${sep}embedded=1${hash}`;
 }
 
+/** The reverse of withEmbeddedParam: the full page, for "Open in new tab". */
+export function withoutEmbeddedParam(url) {
+    if (typeof url !== 'string' || !url) return url;
+    const hashAt = url.indexOf('#');
+    const hash = hashAt >= 0 ? url.slice(hashAt) : '';
+    const base = hashAt >= 0 ? url.slice(0, hashAt) : url;
+    const qAt = base.indexOf('?');
+    if (qAt < 0) return url;
+    const kept = base.slice(qAt + 1).split('&').filter(p => p !== '' && !/^embedded(=|$)/.test(p));
+    return `${base.slice(0, qAt)}${kept.length ? '?' + kept.join('&') : ''}${hash}`;
+}
+
 // Open the lab workstation
 export function openLabWorkstation(url) {
     url = withEmbeddedParam(url);
@@ -87,7 +99,7 @@ export function openLabWorkstationInNewTab() {
     const labFrame = document.getElementById('lab-frame');
     
     if (labFrame && labFrame.src) {
-        window.open(labFrame.src, '_blank');
+        window.open(withoutEmbeddedParam(labFrame.src), '_blank');
     }
 }
 

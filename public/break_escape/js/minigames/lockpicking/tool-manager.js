@@ -12,6 +12,19 @@
  * - this.parent.lockState (lock state object)
  * etc.
  */
+/**
+ * Caption for the "Switch to Lockpicking" button in key mode: a player who holds a
+ * lockpick should see at once that picking the lock is an option. Text via
+ * textContent; styled by .lockpicking-or-caption in lockpicking.css.
+ */
+export function createPickCaption(doc = document) {
+    const caption = doc.createElement('span');
+    caption.className = 'lockpicking-or-caption';
+    caption.id = 'lockpicking-or-caption';
+    caption.textContent = 'Or pick the lock:';
+    return caption;
+}
+
 export class ToolManager {
     
     constructor(parent) {
@@ -131,6 +144,10 @@ export class ToolManager {
         const switchBtn = document.getElementById('lockpicking-switch-mode-btn');
         if (switchBtn) {
             switchBtn.style.display = 'none';
+        }
+        const orCaption = document.getElementById('lockpicking-or-caption');
+        if (orCaption) {
+            orCaption.style.display = 'none';
         }
         
         // Exit key mode
@@ -258,6 +275,8 @@ export class ToolManager {
                 const buttonContainer = document.createElement('div');
                 buttonContainer.style.cssText = `
                     display: flex;
+                    flex-wrap: wrap;
+                    align-items: center;
                     gap: 10px;
                     margin-top: 10px;
                     justify-content: center;
@@ -269,6 +288,7 @@ export class ToolManager {
                 switchModeBtn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
                 switchModeBtn.onclick = () => this.switchToPickMode();
                 
+                buttonContainer.appendChild(createPickCaption());
                 buttonContainer.appendChild(switchModeBtn);
                 itemDisplayDiv.appendChild(buttonContainer);
             }

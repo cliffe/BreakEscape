@@ -203,3 +203,23 @@
         font-size: 12px;
     }
 }
+
+/* Key mode with a lockpick in the pack: "Or pick the lock:" sits beside the Switch to
+   Lockpicking button so the way across is obvious. GNF at 16px, no border or radius. On a
+   phone (390 wide: 370px of strip after 10px padding) it takes its own line above the
+   button (button about 290px) instead of squeezing it; on a wide strip the row wraps only
+   when caption (about 160px) + gap 10 + button no longer fit. */
+.lockpicking-or-caption {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #ecf0f1;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .lockpicking-or-caption {
+        flex: 0 0 100%;
+        text-align: center;
+    }
+}

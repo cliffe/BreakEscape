@@ -16,7 +16,7 @@ import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, 
 import { playUISound } from './ui-sounds.js';
 import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
-import { catchLockpickInView, anyKeyMightFitLock } from './lockpick-catch.js';
+import { catchLockpickInView, anyKeyMightFitLock, lockKeyPinsOf } from './lockpick-catch.js';
 import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
 import { remoteOffMessage, notRespondingMessage, unreachableMessage } from '../utils/remote-host-text.js';
 
@@ -1104,10 +1104,7 @@ export function handleUnlock(lockable, type) {
             // keys they hold can fit this lock: then open in lockpicking mode (the
             // pick UI still offers "Switch to Key Mode"). m01 Derek's door: the only
             // key that fits is inside a locked briefcase.
-            const lockKeyPinsForFit = lockable.doorProperties?.keyPins || lockable.doorProperties?.key_pins ||
-                lockable.scenarioData?.keyPins || lockable.scenarioData?.key_pins ||
-                lockable.properties?.keyPins || lockable.properties?.key_pins ||
-                lockRequirements.keyPins || lockRequirements.key_pins;
+            const lockKeyPinsForFit = lockKeyPinsOf(lockable);
             const noHeldKeyFits = hasLockpick && playerKeys.length > 0 &&
                 !anyKeyMightFitLock(playerKeys, lockKeyPinsForFit);
 
@@ -1155,10 +1152,14 @@ export function handleUnlock(lockable, type) {
                 startLockpickingMinigame(lockable, window.game, difficulty, async (success, outcome) => {
                     if (success) {
                         // Notify server of successful lockpick to update player_state and get room/container data
-                        const serverResponse = await notifyServerUnlock(lockable, type, 'lockpick');
+                        // 'key' when the player switched to key mode and a key opened it
+                        const method = outcome?.method === 'key' ? 'key' : 'lockpick';
+                        const serverResponse = await notifyServerUnlock(lockable, type, method);
                         setTimeout(() => {
                             unlockTarget(lockable, type, lockable.layer, serverResponse);
-                            window.gameAlert(`Successfully picked the lock!`, 'success', 'Lock Picked', 4000);
+                            if (method === 'lockpick') {
+                                window.gameAlert(`Successfully picked the lock!`, 'success', 'Lock Picked', 4000);
+                            }
                         }, 100);
                     } else {
                         console.log('LOCKPICK FAILED');

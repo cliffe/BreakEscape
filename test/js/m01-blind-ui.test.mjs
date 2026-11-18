@@ -15,13 +15,16 @@ import { tmpdir } from 'node:os';
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'm01-blind-ui-'));
-const copy = (src, out) => {
-    writeFileSync(join(dir, out), readFileSync(join(js, src), 'utf8'));
+const copy = (src, out, rewrites = []) => {
+    let code = readFileSync(join(js, src), 'utf8');
+    for (const [a, b] of rewrites) code = code.replace(a, b);
+    writeFileSync(join(dir, out), code);
     return pathToFileURL(join(dir, out)).href;
 };
 globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.document = { getElementById: () => null };
-const { anyKeyMightFitLock } = await import(copy('systems/lockpick-catch.js', 'lockpick-catch.mjs'));
+copy('utils/key-cut-calculator.js', 'key-cut-calculator.mjs');
+const { anyKeyMightFitLock } = await import(copy('systems/lockpick-catch.js', 'lockpick-catch.mjs', [["'../utils/key-cut-calculator.js'", "'./key-cut-calculator.mjs'"]]));
 const labMod = await import(copy('utils/lab-workstation.js', 'lab-workstation.mjs'));
 
 const key = (keyPins) => ({ scenarioData: { type: 'key', keyPins } });
@@ -60,4 +63,17 @@ test('openLabWorkstation loads the embedded URL into the frame', () => {
     labMod.openLabWorkstation('https://x.test/labs/safetynet/lockpicking/');
     assert.equal(frame.src, 'https://x.test/labs/safetynet/lockpicking/?embedded=1');
     assert.equal(popup.style.display, 'block');
+});
+
+test('"Open in new tab" opens the page without the embedded param', () => {
+    const f = labMod.withoutEmbeddedParam;
+    assert.equal(f('https://x.test/a/?embedded=1'), 'https://x.test/a/');
+    assert.equal(f('https://x.test/a/?v=2&embedded=1#top'), 'https://x.test/a/?v=2#top');
+    assert.equal(f('https://x.test/a/?embedded=1&v=2'), 'https://x.test/a/?v=2');
+    assert.equal(f('https://x.test/a/'), 'https://x.test/a/');
+    const opened = [];
+    globalThis.window = { open: (u, t) => opened.push([u, t]), gameState: { globalVariables: {} } };
+    globalThis.document = { getElementById: (id) => (id === 'lab-frame' ? { src: 'https://x.test/a/?embedded=1' } : null) };
+    labMod.openLabWorkstationInNewTab();
+    assert.deepEqual(opened, [['https://x.test/a/', '_blank']]);
 });

@@ -142,8 +142,24 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         itemObservations: itemObservations,
         canSwitchToKeyMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
-            item.scenarioData.type === 'key'
+            (item.scenarioData.type === 'key' ||
+             (item.scenarioData.type === 'key_ring' && item.scenarioData.allKeys?.length > 0))
         ),
+        // Held keys plus a lockpick: "Switch to Key Mode" shows, so the way back to
+        // picking must work and pass the same watcher gate as the first pick.
+        canSwitchToPickMode: window.inventory.items.some(item =>
+            item && item.scenarioData &&
+            item.scenarioData.type === 'lockpick'
+        ),
+        beforeSwitchToPickMode: () => !!catchLockpickInView(lockable, {
+            beforeEmit: () => {
+                const mg = window.MinigameFramework?.currentMinigame;
+                if (mg) {
+                    mg.gameResult = { caughtLockpicking: true };
+                    mg.complete(false);
+                }
+            }
+        }),
         availableKeys: (() => {
             // Collect all available keys for mode switching
             const keys = [];
@@ -207,10 +223,17 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         })(),
         onComplete: (success, result) => {
             if (success) {
-                console.log('LOCKPICK SUCCESS');
+                // The player may have switched to key mode and opened it with a key:
+                // keyMode is true then (read while currentMinigame is still live).
+                const usedKey = window.MinigameFramework?.currentMinigame?.keyMode === true;
+                console.log(`LOCKPICK SUCCESS (method=${usedKey ? 'key' : 'lockpick'})`);
                 window.expectContainerAfterUnlock?.(lockable);
-                window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
-                callback(true);
+                if (usedKey) {
+                    window.gameAlert('Successfully unlocked with the correct key!', 'success', 'Unlock Successful', 4000);
+                } else {
+                    window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
+                }
+                callback(true, { method: usedKey ? 'key' : 'lockpick' });
             } else {
                 // The Phaser lockpick game has no failed-attempt state: it only ends
                 // unsuccessfully when closed (Close, ×, Esc, or a hit). Closing is not a

@@ -12,6 +12,8 @@
  * `beforeEmit` runs after the decision and before the event, so a caller can
  * close an open minigame first (the conversation must not open on top of it).
  */
+import KeyCutCalculator from '../utils/key-cut-calculator.js';
+
 // A catch holds for a moment: a second attempt on the same lock straight after
 // (one click reaching two handlers, before the catch conversation has opened)
 // must not find the mapping on cooldown and let the pick through. The repeat
@@ -70,24 +72,37 @@ export function lockpickWatchRooms(lockable) {
 }
 
 /**
- * Could any key the player holds open a lock with these pin heights? A key that
- * carries no pin or cut data is treated as "might fit" (we cannot tell), so only
- * a hand that is provably all wrong keys returns false. Same tolerance (5px) as
- * the key minigame's correctness check; cut = pin height - 20.
+ * The lock's pin heights as key mode reads them (startKeySelectionMinigame): the
+ * door's keyPins, else the item's scenarioData.keyPins, else keyPins on the lockable
+ * itself. Undefined when none is set (the minigame then falls back to a preset).
+ */
+export function lockKeyPinsOf(lockable) {
+    const pins = lockable?.doorProperties?.keyPins || lockable?.scenarioData?.keyPins || lockable?.keyPins;
+    return Array.isArray(pins) ? pins : undefined;
+}
+
+/**
+ * Could any key the player holds open a lock with these pin heights? Mirrors the key
+ * minigame exactly: a key's cuts are its `cuts`, else its keyPins (or key.keyPins)
+ * run through KeyCutCalculator.calculateCutDepthsRounded; the lock's cuts come from
+ * the same call on the lock's pins; the cut lists must be the same length and each
+ * cut within 5px. A key that carries no cut or pin data is treated as "might fit"
+ * (we cannot tell), so only a hand that is provably all wrong keys returns false.
  * Used to open a key-holding player straight in lockpicking mode when no held
  * key matches (m01 blind playtest, item 4).
  */
 export function anyKeyMightFitLock(playerKeys, lockKeyPins) {
     if (!Array.isArray(lockKeyPins) || lockKeyPins.length === 0) return true;
     if (!Array.isArray(playerKeys) || playerKeys.length === 0) return false;
-    const GAP = 20, TOL = 5;
-    const close = (a, b) => Array.isArray(a) && a.length === b.length &&
-        a.every((v, i) => Math.abs(v - b[i]) <= TOL);
+    const TOL = 5;
+    const lockCuts = KeyCutCalculator.calculateCutDepthsRounded(lockKeyPins);
+    const close = (a) => Array.isArray(a) && a.length === lockCuts.length &&
+        a.every((v, i) => Math.abs(v - lockCuts[i]) <= TOL);
     return playerKeys.some(key => {
         const d = key?.scenarioData || {};
-        const pins = d.keyPins || d.key_pins || key?.keyPins;
-        if (Array.isArray(pins)) return close(pins, lockKeyPins);
-        if (Array.isArray(d.cuts)) return close(d.cuts, lockKeyPins.map(p => Math.max(0, Math.min(110, p - GAP))));
+        if (Array.isArray(d.cuts)) return close(d.cuts);
+        const pins = d.keyPins || key?.keyPins;
+        if (Array.isArray(pins)) return close(KeyCutCalculator.calculateCutDepthsRounded(pins));
         return true;
     });
 }
