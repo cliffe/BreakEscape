@@ -1741,6 +1741,13 @@ export class ContainerMinigame extends MinigameScene {
         });
         if (this.shareFolder) evenShareLabels(contentsGrid);
         else fitContentLabels(contentsGrid);
+        // Back from a note read on pickup: same scroll position, focus kept inside the frame
+        if (this.params?.fromReturn) {
+            const top = Number(this.params.scrollTop);
+            if (Number.isFinite(top) && top > 0) contentsGrid.scrollTop = top;
+            if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
+            contentsGrid.focus?.({ preventScroll: true });
+        }
     }
     
     populateDesktopIcons() {
@@ -2223,6 +2230,8 @@ export class ContainerMinigame extends MinigameScene {
                 contents: this.contents,
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
+                // Where the list was scrolled to, so the container comes back there
+                scrollTop: document.getElementById('container-contents-grid')?.scrollTop || 0,
                 itemElement: itemElement,
                 // Where the note came from (a PC or a share), so the server's add finds it
                 sourceExtras: this.sourceExtras(),
@@ -2609,6 +2618,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
         focusReturn: extra?.focusReturn || null,
+        scrollTop: extra?.scrollTop || 0,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
             npcId: npcOptions.npcId,
@@ -2691,6 +2701,16 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
         // (containerReturnBlocked): the note above is still taken, the container stays shut
         if (!reopen) return;
 
+        // The note was the last thing in an ordinary container: nothing is left to take, so
+        // it closes to the world instead of reopening an empty list. A desktop or a network
+        // screen keeps its own return (its folder is a place, not a pile).
+        if (containerState.itemToTake && Array.isArray(containerState.contents)
+            && containerState.contents.length === 0 && !containerState.npcOptions
+            && !isNetworkScreenContainer(containerState.containerItem)
+            && containerState.containerItem?.scenarioData?.lockType !== 'login') {
+            return;
+        }
+
         // A PC's sign-in desktop whose session ended while the file was open (the owner came
         // back, the screen locked, someone signed in there): the desktop was not open to
         // close, so its message is shown now and the player stays in the world. Never the
@@ -2716,7 +2736,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true, focusReturn: containerState.focusReturn || null }
+            { fromReturn: true, focusReturn: containerState.focusReturn || null, scrollTop: containerState.scrollTop || 0 }
         );
     } else {
         console.log('No pending container return found');
