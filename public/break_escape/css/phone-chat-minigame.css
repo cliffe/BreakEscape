@@ -1027,6 +1027,8 @@
         gap: 4px;
     }
     .conversation-view .choice-button { padding: 4px 10px; font-size: 14px; line-height: 1.2; }
+    /* Terminal theme: the empty strip keeps room for the skip hint so it never covers the typing line */
+    .phone-terminal-theme .conversation-view .choices-container:empty { min-height: 36px; }
 }
 
 /* Render-only tell. Not part of the contact's saved history. */

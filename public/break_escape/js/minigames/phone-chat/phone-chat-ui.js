@@ -24,6 +24,15 @@ import { isPhoneCallMode, callLabelFor, formatCallDuration, callSubtitle, CALL_S
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { escapeHtml as escHtml } from '../../utils/escape-html.js';
 
+/** Touch screens say "Tap", others name the keys; Space and Enter both skip, as does a click. */
+export function skipHintText() {
+    try {
+        const w = globalThis.window;
+        if (w?.matchMedia?.('(pointer: coarse)')?.matches || w?.matchMedia?.('(hover: none)')?.matches) return 'Tap to skip';
+    } catch (e) { /* fall through */ }
+    return 'Space, Enter or click to skip';
+}
+
 /** The player's OS asks for less motion: terminal lines appear whole. */
 function prefersReducedMotion() {
     try { return globalThis.window?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true; } catch (e) { return false; }
@@ -141,14 +150,14 @@ export default class PhoneChatUI {
             this.container.querySelector('.phone-messages-container')
                 .classList.add('phone-terminal-theme');
             this.container.querySelector('#messages-container')
-                ?.setAttribute('title', 'Click, Space or Enter to skip');
+                ?.setAttribute('title', skipHintText());
             // Visible skip hint, shown only while a line types or a pause runs (syncSkipHint)
             const hint = document.createElement('div');
             hint.className = 'phone-skip-hint';
             hint.id = 'phone-skip-hint';
             hint.setAttribute('aria-hidden', 'true');
             hint.hidden = true;
-            hint.textContent = 'Space or click to skip';
+            hint.textContent = skipHintText();
             this.container.querySelector('.phone-screen')?.appendChild(hint);
         }
         if (this.isCallMode) this._renderCallChrome();
@@ -339,6 +348,8 @@ export default class PhoneChatUI {
 
     /** The speaking indicator under the portrait: on while a call line plays. */
     setCallSpeaking(on) {
+        this._clipPlaying = !!on;   // a click or Space skips the clip, so the skip hint stays up
+        this.syncSkipHint();
         if (!this.isCallMode) return;
         this.elements?.conversationView?.classList.toggle('call-speaking-now', !!on);
     }
@@ -596,6 +607,7 @@ export default class PhoneChatUI {
         }
         this.currentView = 'contact-list';
         this.currentNPCId = null;
+        this.syncSkipHint();
         this.stopCallTimer();
         
         // Hide conversation, show contact list
@@ -843,6 +855,7 @@ export default class PhoneChatUI {
 
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
+        this.syncSkipHint();
         
         // Hide contact list, show conversation
         this.elements.contactListView.style.display = 'none';
@@ -1145,7 +1158,9 @@ export default class PhoneChatUI {
     syncSkipHint() {
         const hint = this.container?.querySelector?.('#phone-skip-hint');
         if (!hint) return;
-        hint.hidden = !(this.isTerminalTheme && (this.isTypewriting() || this._paceActive));
+        const choicesUp = !!this.elements?.choicesContainer?.querySelector?.('.choice-button');
+        hint.hidden = !(this.isTerminalTheme && this.currentView === 'conversation' && !choicesUp
+            && (this.isTypewriting() || this._paceActive || this._clipPlaying));
     }
 
     /** Finish the line being typed at once. Returns true if there was one. */
@@ -1328,6 +1343,7 @@ export default class PhoneChatUI {
 
         this.scrollToBottom();
         this.updateChoicesScrollCue();
+        this.syncSkipHint();
         // Measure again once the buttons have laid out
         if (typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => this.updateChoicesScrollCue());
@@ -1352,6 +1368,7 @@ export default class PhoneChatUI {
         this.elements.choicesContainer.innerHTML = '';
         this.elements.choicesMoreCue?.classList.remove('visible');
         if (this.isCallMode) this.elements.conversationView?.classList.remove('call-has-choices');
+        this.syncSkipHint();
     }
     
     /**

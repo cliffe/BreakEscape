@@ -25,7 +25,7 @@ const displayPhoneLine = (type, text) => ({ type, text }), otherSpeaker = () => 
 const noop = () => {};
 const portraitFor = () => ({}), npcDmFields = () => ({}), onAccentColour = noop;
 class TTSManager {} class MusicController {} class ChatInfluence {} class PhoneChatConversation {} class InkEngine {}
-const hasHiddenChoicesBelow = noop, numberedChoiceText = noop, createBottomPin = () => ({}),
+const hasHiddenChoicesBelow = noop, numberedChoiceText = noop, createBottomPin = () => ({ destroy: noop, pin: noop }),
   isPhoneCallMode = () => false, callLabelFor = noop, formatCallDuration = noop, callSubtitle = noop,
   CALL_STATUS_HTML = '', CALL_SPEAKING_HTML = '', CALL_CONTROLS_HTML = '';
 `;
@@ -86,10 +86,11 @@ function clock() {
 }
 
 function rig() {
-    document.body.innerHTML = '<div id="host"><div id="messages-container"></div><div id="choices-container"><button class="choice-button">1. Go</button></div><div id="typing-indicator" style="display:none"></div><div id="phone-skip-hint" class="phone-skip-hint" hidden>Space or click to skip</div></div>';
+    document.body.innerHTML = '<div id="host"><div id="messages-container"></div><div id="choices-container"></div><div id="typing-indicator" style="display:none"></div><div id="phone-skip-hint" class="phone-skip-hint" hidden>Space or click to skip</div></div>';
     const ui = Object.create(UI.prototype);
     ui.isTerminalTheme = true;
     ui.isCallMode = false;
+    ui.currentView = 'conversation';
     ui.container = document.getElementById('host');
     ui.elements = {
         messagesContainer: document.getElementById('messages-container'),
@@ -97,7 +98,11 @@ function rig() {
         typingIndicator: document.getElementById('typing-indicator'),
     };
     ui.scrollToBottom = () => {};
-    ui.addChoices = () => { ui._choicesShown = true; };
+    ui.addChoices = () => {
+        ui._choicesShown = true;
+        ui.elements.choicesContainer.innerHTML = '<button class="choice-button">1. Go</button>';
+        ui.syncSkipHint();
+    };
     const shown = [];
     const mg = Object.create(PhoneChatMinigame.prototype);
     mg.ui = ui;
@@ -147,6 +152,7 @@ test('a skip press hides the hint once nothing is left to skip', async () => {
     try {
         const done = r.mg._presentOutput(['One line.'], [], RESULT, { tagsApplied: true });
         await c.advance(10);
+        assert.equal(hint().hidden, false, 'showing before the presses');
         r.mg._onSkipPress();
         r.mg._onSkipPress();
         await c.advance(2000);
@@ -169,5 +175,84 @@ test('markup and style: pixel font, no radius, hidden attribute respected', () =
     assert.match(block, /font-family: 'GNF'/);
     assert.doesNotMatch(block, /border-radius/);
     assert.match(css, /\.phone-skip-hint\[hidden\]\s*\{\s*display: none/);
-    assert.match(uiSrc, /Space or click to skip/);
+    assert.match(css, /\.phone-terminal-theme \.conversation-view \.choices-container:empty \{ min-height: 36px; \}/);
+});
+
+test('M1: choices up while a preloaded opening still types keeps the hint hidden', async () => {
+    const c = clock(); const r = rig();
+    try {
+        const typing = r.ui.addMessage('npc', 'A long preloaded opening line.', true);
+        assert.equal(r.ui.isTypewriting(), true);
+        assert.equal(hint().hidden, false, 'shown while typing');
+        r.ui.addChoices([{ text: 'a' }]);
+        assert.equal(r.ui.isTypewriting(), true, 'still typing');
+        assert.equal(hint().hidden, true, 'hidden with choices up');
+        r.ui.clearChoices();
+        assert.equal(hint().hidden, false, 'back once the choices go and the line still types');
+        r.ui.skipTypewriter();
+        await typing;
+        assert.equal(hint().hidden, true);
+    } finally { c.restore(); }
+});
+
+test('m1: going back to the contact list mid-line hides the hint; reopening shows it again', async () => {
+    const c = clock(); const r = rig();
+    try {
+        const typing = r.ui.addMessage('npc', 'Mid line text here.', true);
+        assert.equal(hint().hidden, false);
+        r.ui.currentView = 'contact-list';
+        r.ui.syncSkipHint();
+        assert.equal(hint().hidden, true, 'hidden on the contact list');
+        await c.advance(10);
+        r.ui.currentView = 'conversation';
+        r.ui.syncSkipHint();
+        assert.equal(hint().hidden, false, 'shown again in the thread while the line still types');
+        r.ui.skipTypewriter();
+        await typing;
+    } finally { c.restore(); }
+});
+
+test('m1: showContactList and showConversation call syncSkipHint', () => {
+    const body = (name) => uiSrc.slice(uiSrc.indexOf(`    ${name}(`)).split('\n    }\n')[0];
+    assert.match(body('showContactList'), /syncSkipHint\(\)/);
+    assert.match(body('showConversation'), /syncSkipHint\(\)/);
+});
+
+test('n4: the hint stays up while a voiced clip plays and goes when it ends', () => {
+    const r = rig();
+    r.ui.setCallSpeaking(true);
+    assert.equal(hint().hidden, false);
+    r.ui.setCallSpeaking(false);
+    assert.equal(hint().hidden, true);
+});
+
+test('n3: one wording, same keys as the thread tooltip; touch says Tap', () => {
+    const { skipHintText } = uiMod;
+    assert.equal(skipHintText(), 'Space, Enter or click to skip');
+    const saved = globalThis.window;
+    globalThis.window = { matchMedia: (q) => ({ matches: /pointer: coarse|hover: none/.test(q) }) };
+    try { assert.equal(skipHintText(), 'Tap to skip'); } finally { globalThis.window = saved; }
+    assert.doesNotMatch(uiSrc, /Click, Space or Enter to skip/);
+});
+
+test('n2: render() creates the hint only in the terminal theme, once, inside .phone-screen', () => {
+    const build = (theme) => {
+        document.body.innerHTML = '<div id="host"></div>';
+        const ui = Object.create(UI.prototype);
+        ui.container = document.getElementById('host');
+        ui.params = { theme };
+        ui.isTerminalTheme = theme === 'terminal';
+        ui.isSocialTheme = theme === 'social';
+        ui.isCallMode = false;
+        ui.appChrome = false;
+        ui.app = null;
+        ui.render();
+        ui.render();
+        return document.querySelectorAll('#phone-skip-hint');
+    };
+    const term = build('terminal');
+    assert.equal(term.length, 1);
+    assert.ok(term[0].closest('.phone-screen'));
+    assert.equal(term[0].hidden, true);
+    assert.equal(build('default').length, 0);
 });
