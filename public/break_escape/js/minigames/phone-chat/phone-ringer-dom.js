@@ -97,6 +97,29 @@ export function installPhoneRinger(win = window) {
         while (layer.firstChild) layer.removeChild(layer.firstChild);
     }
 
+    /** True when keyboard focus sits on something inside the ring layer (about to be removed). */
+    function layerHasFocus() {
+        const a = doc.activeElement;
+        return !!a && a !== doc.body && layer.contains(a);
+    }
+
+    // The ringer takes the banner down and then shows the pill (or the reverse) in one render, so
+    // a removal that held focus is remembered for the show that follows it in the same tick.
+    let focusLost = false;
+
+    /** The layer lost its focused control with no pill to take over: hand focus to the open minigame, if any. */
+    function focusOpenMinigame() {
+        const m = openMinigame();
+        const root = m?.container;
+        if (!root || root.isConnected === false) return;
+        try {
+            const items = fw()?._trapFocusables?.(root, false)
+                || Array.from(root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+                    .filter((n) => !n.disabled);
+            items[0]?.focus?.();
+        } catch (e) { /* no focus in this environment */ }
+    }
+
     /** Take the in-phone panel down, wherever it is (the phone it was in may be gone already). */
     function hidePhonePanel() {
         try { registeredPhone?.hideIncomingCall?.(); } catch (e) { /* the phone is being torn down */ }
@@ -149,6 +172,8 @@ export function installPhoneRinger(win = window) {
             if (showPhonePanel(view, npc, phoneName)) return;
         }
         hidePhonePanel();
+        const hadFocus = layerHasFocus() || focusLost;
+        focusLost = false;
         clearLayer();
         // Sweep item 9: when the banner rings while a tutorial step panel is up, drop it clear of
         // SKIP TUTORIAL and the step counter (CSS moves the top-centre layer to the bottom).
@@ -188,10 +213,13 @@ export function installPhoneRinger(win = window) {
         }
         box.appendChild(buttons);
         layer.appendChild(box);
+        if (hadFocus) { try { answer.focus(); } catch (e) { /* no focus in this environment */ } }
     }
 
     function showPill(view) {
         hidePhonePanel();
+        const hadFocus = layerHasFocus() || focusLost;
+        focusLost = false;
         clearLayer();
         const npc = nm()?.getNPC?.(view.npcId);
         const name = view.withheld ? 'Caller' : (npc?.displayName || view.npcId);
@@ -206,6 +234,27 @@ export function installPhoneRinger(win = window) {
             box.appendChild(hang);
         }
         layer.appendChild(box);
+        // The focused Answer or Hang up button was just removed: keep keyboard focus in the ring
+        if (hadFocus) {
+            const hang = box.querySelector('button');
+            if (hang) { try { hang.focus(); } catch (e) { /* no focus in this environment */ } }
+            else focusOpenMinigame();
+        }
+    }
+
+    /** Take the ring down (banner or pill); focus moves on if the removed control had it. */
+    function hideLayer() {
+        if (layerHasFocus()) {
+            focusLost = true;
+            // Nothing took the ring's place: give focus to the open minigame, unless it went elsewhere
+            Promise.resolve().then(() => {
+                if (!focusLost) return;
+                focusLost = false;
+                const a = doc.activeElement;
+                if (!a || a === doc.body) focusOpenMinigame();
+            });
+        }
+        clearLayer();
     }
 
     // ---- sound -------------------------------------------------------------------
@@ -431,9 +480,9 @@ export function installPhoneRinger(win = window) {
             }
         },
         showBanner,
-        hideBanner() { hidePhonePanel(); clearLayer(); layer.classList.remove('under-tutorial'); },
+        hideBanner() { hidePhonePanel(); hideLayer(); layer.classList.remove('under-tutorial'); },
         showPill,
-        hidePill: clearLayer,
+        hidePill: hideLayer,
         ringtone(on) {
             stopRingtone();
             if (on) startRingtone();

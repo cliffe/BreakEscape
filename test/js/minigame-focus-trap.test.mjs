@@ -131,10 +131,10 @@ test('a higher modal (game-confirm overlay, aria-modal outside the minigame) kee
     close();
 });
 
-test('an inner aria-modal or listbox keeps its own Tab; an inner role=dialog becomes the trap root', () => {
+test('an inner [data-own-tab-cycle] panel or listbox keeps its own Tab; an inner role=dialog becomes the trap root', () => {
     MF.startMinigame('demo', null, {});
     const host = MF.currentMinigame.gameContainer;
-    host.insertAdjacentHTML('beforeend', '<div aria-modal="true"><button id="in-modal">M</button></div>'
+    host.insertAdjacentHTML('beforeend', '<div aria-modal="true" data-own-tab-cycle><button id="in-modal">M</button></div>'
         + '<ul role="listbox"><li tabindex="0" id="opt">o</li></ul><div role="dialog"><button id="in-dialog">D</button></div>');
     document.getElementById('in-modal').focus();
     assert.equal(tab().defaultPrevented, false);
@@ -278,15 +278,107 @@ test('m1: one radio per name group, the checked one', () => {
     close();
 });
 
-test('m2: a visible inner aria-modal is the trap root when focus is outside it', () => {
+test('m2: a visible inner own-cycle aria-modal is the trap root when focus is outside it; inside, its own cycle runs', () => {
     MF.startMinigame('demo', null, {});
-    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend', '<div aria-modal="true" id="deb"><button id="d1">1</button><button id="d2">2</button></div>');
+    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend', '<div aria-modal="true" data-own-tab-cycle id="deb"><button id="d1">1</button><button id="d2">2</button></div>');
     document.body.focus();
     document.getElementById('minigame-close').focus();
     assert.equal(tab().defaultPrevented, true);
     assert.equal(active(), 'd1');
     document.getElementById('d1').focus();
     assert.equal(tab().defaultPrevented, false, 'inside the modal its own Tab cycle runs');
+    close();
+});
+
+test('R2 M1: an inner aria-modal with no Tab cycle of its own is cycled by the trap', () => {
+    MF.startMinigame('demo', null, {});
+    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend',
+        '<div aria-modal="true" role="dialog" id="sheet"><button id="s1">1</button><button id="s2">2</button><button id="s3">3</button></div>');
+    document.getElementById('s1').focus();
+    const seen = [];
+    for (let i = 0; i < 4; i++) { const ev = tab(); assert.equal(ev.defaultPrevented, true); seen.push(active()); }
+    assert.deepEqual(seen, ['s2', 's3', 's1', 's2'], 'Tab never leaves the sheet');
+    tab(true);
+    assert.equal(active(), 's1');
+    tab(true);
+    assert.equal(active(), 's3', 'Shift+Tab wraps too');
+    // focus that escaped to the scene or the HUD is pulled into the sheet
+    hud.focus();
+    tab();
+    assert.equal(active(), 's1');
+    close();
+});
+
+class RootDialog extends MinigameScene {
+    init() {
+        super.init();
+        this.root = document.createElement('div');
+        this.root.setAttribute('role', 'dialog');
+        this.root.innerHTML = '<button id="rd1">1</button><button id="rd2">2</button>';
+        this.gameContainer.appendChild(this.root);
+    }
+}
+MF.registerScene('rootdialog', RootDialog);
+
+test('R2 m1: a role=dialog that is the whole scene is the root, so the ring banner stays reachable', () => {
+    document.body.insertAdjacentHTML('beforeend', '<div id="ring" data-focus-trap-include><button id="answer">A</button></div>');
+    MF.startMinigame('rootdialog', null, {});
+    assert.equal(MF._innerDialog(MF.currentMinigame.container), null, 'the scene root is not an inner dialog');
+    document.getElementById('rd2').focus();
+    const seen = [];
+    for (let i = 0; i < 3; i++) { tab(); seen.push(active()); }
+    assert.deepEqual(seen.slice(0, 1), ['answer'], 'the banner is in the cycle');
+    assert.ok(seen.includes('rd1') || seen.includes('minigame-close'));
+    close();
+    document.getElementById('ring').remove();
+    // a dialog nested inside the scene root is still an inner dialog
+    MF.startMinigame('rootdialog', null, {});
+    MF.currentMinigame.root.insertAdjacentHTML('beforeend', '<div role="dialog" id="inner"><button id="i1">x</button></div>');
+    assert.equal(MF._innerDialog(MF.currentMinigame.container).id, 'inner');
+    close();
+});
+
+test('R2 m3: a chained minigame keeps the first opener', () => {
+    const btn = document.createElement('div');
+    btn.tabIndex = 0;
+    btn.id = 'first-opener';
+    document.body.appendChild(btn);
+    btn.focus();
+    MF.startMinigame('demo', null, {});
+    assert.equal(MF._focusOpener, btn);
+    document.getElementById('a').focus();
+    MF.startMinigame('demo2', null, {});
+    assert.equal(MF._focusOpener, btn, 'the second minigame does not replace it');
+    MF.endMinigame(false, null);
+    assert.equal(document.activeElement, btn);
+    btn.remove();
+});
+
+test('R2 m3: a scene that throws on construction leaves no stale opener', () => {
+    class Boom extends MinigameScene { constructor() { super(...arguments); throw new Error('boom'); } }
+    MF.registerScene('boom', Boom);
+    const btn = document.createElement('div');
+    btn.tabIndex = 0;
+    document.body.appendChild(btn);
+    btn.focus();
+    assert.throws(() => MF.startMinigame('boom', null, {}), /boom/);
+    assert.equal(MF._focusOpener, null);
+    btn.remove();
+    close();
+});
+
+test('R2 n1/n2: :disabled and contenteditable variants', () => {
+    MF.startMinigame('demo', null, {});
+    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend',
+        '<fieldset disabled><button id="fs-btn">x</button></fieldset><div contenteditable id="ce1"></div><div contenteditable="plaintext-only" id="ce2"></div><div contenteditable="false" id="ce3"></div>');
+    const ids = MF._trapFocusables(MF.currentMinigame.container).map((el) => el.id);
+    assert.ok(!ids.includes('fs-btn'), 'a button in a disabled fieldset is not tabbable');
+    assert.ok(ids.includes('ce1') && ids.includes('ce2'));
+    assert.ok(!ids.includes('ce3'));
+    const bare = document.createElement('button');
+    MF.currentMinigame.gameContainer.appendChild(bare);
+    bare.matches = undefined;
+    assert.equal(MF._isTabbable(bare, MF.currentMinigame.container), true, 'an element without matches does not throw');
     close();
 });
 

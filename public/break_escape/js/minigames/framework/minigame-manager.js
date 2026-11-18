@@ -57,8 +57,10 @@ export const MinigameFramework = {
         // A tap or key menu left open would sit over the minigame
         window.closeInteractionMenu?.();
 
-        // Where focus was before any minigame took it, so the close can give it back
-        this._noteFocusOpener();
+        // Where focus was before any minigame took it, so the close can give it back.
+        // Only the first minigame of a chain notes it: a chained one opens while focus is
+        // already inside the previous panel (or on a stale element).
+        if (!this.currentMinigame) this._noteFocusOpener();
 
         // If there's already a minigame running, end it first
         // (a minigame already mid-end, i.e. we were called from its onComplete, is
@@ -176,7 +178,14 @@ export const MinigameFramework = {
 
         // Create and start the minigame
         const MinigameClass = this.registeredScenes[sceneType];
-        this.currentMinigame = new MinigameClass(container, params);
+        try {
+            this.currentMinigame = new MinigameClass(container, params);
+        } catch (err) {
+            // Nothing opened, so nothing will close and hand focus back: drop the noted opener
+            this._focusOpener = null;
+            this._focusOpenerKeyboard = false;
+            throw err;
+        }
         this.currentMinigame._sceneType = sceneType;
         // The player's phone pose for a phone-style minigame (systems/player-poses.js)
         try { window.playerPoses?.onMinigameStart?.(sceneType, params, this.currentMinigame); } catch (e) { /* cosmetic */ }
@@ -227,8 +236,13 @@ export const MinigameFramework = {
     // aside for a higher modal (the ending confirm, gameConfirm, the game menu), for an
     // element inside a modal or listbox that runs its own Tab cycle, and for an embedded
     // container (data-external) or a scene that opts out with params.focusTrap === false.
+    // An inner panel opts in to stepping aside by carrying data-own-tab-cycle (it must handle
+    // Tab itself); a listbox always does. Any other inner aria-modal or role=dialog becomes
+    // the trap's scope (_innerDialog). Limit: Tab pressed inside an iframe (the VM console) is
+    // delivered to the iframe's document, so this listener never sees it; focus stays in the
+    // frame until the browser's Tab leaves it, and the next Tab out here lands back in the trap.
 
-    FOCUSABLE_SELECTOR: 'a[href], button, input, select, textarea, summary, iframe, object, embed, audio[controls], video[controls], [tabindex], [contenteditable="true"]',
+    FOCUSABLE_SELECTOR: 'a[href], button, input, select, textarea, summary, iframe, object, embed, audio[controls], video[controls], [tabindex], [contenteditable]:not([contenteditable="false"])',
 
     _installFocusTrap() {
         if (this._trapHandler || typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
@@ -268,6 +282,7 @@ export const MinigameFramework = {
     /** True when the element can take focus by Tab: enabled, shown, not inert. */
     _isTabbable(el, root) {
         if (!el || el.disabled || el.hidden) return false;
+        try { if (typeof el.matches === 'function' && el.matches(':disabled')) return false; } catch (e) { /* selector unsupported */ }
         const ti = el.getAttribute?.('tabindex');
         if (ti !== null && ti !== undefined && Number.isFinite(parseInt(ti, 10)) && parseInt(ti, 10) < 0) return false;
         if (el.tagName === 'INPUT' && el.type === 'hidden') return false;
@@ -317,10 +332,17 @@ export const MinigameFramework = {
         return false;
     },
 
-    /** A rendered dialog inside the minigame (the last one), or null. */
+    /**
+     * A rendered dialog inside the minigame (the last one), or null. A dialog that is the
+     * scene itself (the only child of the game container, or the minigame's own root element) is
+     * the minigame, not an inner panel, so it does not count.
+     */
     _innerDialog(root) {
+        const m = this.currentMinigame;
+        const sceneRoots = [root, m?.gameContainer, m?.rootElement, m?.root, m?.element];
+        const isSceneRoot = (el) => el.parentElement === root || (m?.gameContainer && el.parentElement === m.gameContainer && m.gameContainer.children.length === 1) || sceneRoots.includes(el);
         const found = Array.from(root.querySelectorAll('[aria-modal="true"], [role="dialog"]'))
-            .filter((el) => this._isRendered(el, root));
+            .filter((el) => !isSceneRoot(el) && this._isRendered(el, root));
         return found.length ? found[found.length - 1] : null;
     },
 
@@ -334,7 +356,7 @@ export const MinigameFramework = {
         if (this._higherModalOpen(root)) return;
         const active = document.activeElement;
         // A modal or listbox inside the minigame that cycles Tab itself keeps it
-        if (active && root.contains(active) && active.closest?.('[aria-modal="true"], [role="listbox"]')) return;
+        if (active && root.contains(active) && active.closest?.('[role="listbox"], [data-own-tab-cycle]')) return;
 
         // A visible inner dialog is the trap root even before focus has moved into it
         const dialog = this._innerDialog(root);
