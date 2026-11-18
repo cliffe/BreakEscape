@@ -2215,7 +2215,9 @@ function handleContainerInteraction(sprite) {
     
     // Check if container has contents
     if (!data.contents || data.contents.length === 0) {
-        window.gameAlert(`${data.name} is empty.`, 'info', 'Empty Container', 3000);
+        // A scenario can say where the contents went (a safe whose notes now sit in the notepad).
+        const emptyText = typeof data.emptyText === 'string' && data.emptyText.trim() ? data.emptyText : `${data.name} is empty.`;
+        window.gameAlert(emptyText, 'info', 'Empty Container', 3000);
         return;
     }
     

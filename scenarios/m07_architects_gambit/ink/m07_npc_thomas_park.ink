@@ -70,6 +70,9 @@ Thomas Park: Four minutes and I'd have been out. Four.
 === refuse ===
 {refuse > 1:
     Thomas Park: {&Still no.|You heard me the first time.|Words aren't going to move this wire.}
+    {not casualty_projection_found:
+        Narrator: A page with a number on it might move him. Somebody in this building signed one.
+    }
     -> hub
 }
 Thomas Park: No.
@@ -82,6 +85,9 @@ Thomas Park: I lean four inches and this building goes to candles. Talk quieter.
 === paid ===
 {paid > 1:
     Thomas Park: {&Same answer. A building.|I told you. I don't ask.}
+    {not casualty_projection_found:
+        Narrator: He wants a reason he can't wave away. Look for a signed number.
+    }
     -> hub
 }
 Thomas Park: Job's a building. Cut the backup, walk out, get paid. I don't ask about the rest.

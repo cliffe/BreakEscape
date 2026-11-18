@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Chatter pool gate",
+  "description": "Test of the optional requireGlobal gate on a chatter pool: two colleagues chat at a water cooler; a wall switch closes the gated pool. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 3,
+  "test_type": "npc_needs",
+  "test_objective": "Prove a chatter pool with requireGlobal speaks while the global holds, falls silent when the player flips it (the pair still walks to the cooler and chats), ungated pools keep speaking, and the state survives a reload"
+}

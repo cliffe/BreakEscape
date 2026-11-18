@@ -219,7 +219,7 @@ test('UI: the contact preview shows the last row, red for a missed call, and a m
     const preview = missed.querySelector('.contact-last-message');
     assert.equal(preview.textContent, 'Missed call');
     assert.ok(preview.classList.contains('missed'));
-    assert.equal(missed.querySelector('.unread-badge').textContent, '1');
+    assert.equal(missed.querySelector('.unread-badge').textContent, '1 unread');
     const ended = mk([{ type: 'call', callEvent: 'incoming', text: 'Incoming call, 0:30', read: true, timestamp: 2 }]);
     assert.equal(ended.querySelector('.contact-last-message').textContent, 'Incoming call, 0:30');
     assert.ok(!ended.querySelector('.contact-last-message').classList.contains('missed'));

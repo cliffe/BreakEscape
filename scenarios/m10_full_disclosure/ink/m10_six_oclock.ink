@@ -362,8 +362,7 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
     Director Magnus Netherton: We followed Zero Day's share. Four buyers, and one of them was careless.
 }
 // R36 (VM weave): HaX names the night's own technical arc once, for every ending that hears the numbers.
-agent_0x99: Our half of it, for the record. Their own monitoring software had a hole; we walked in through it and their cameras were ours.
-agent_0x99: The staging copy sat behind its own sign-in on that same box, and we were already on it.
+agent_0x99: Our half, for the record. A hole in their own monitoring gave us their cameras, and the staging copy sat behind its own sign-in on that same box.
 agent_0x99: Then out of the release container onto its host, and out of his own wall onto his box. Three hosts. Foothold, climb, his notice in the clear.
 ->->
 

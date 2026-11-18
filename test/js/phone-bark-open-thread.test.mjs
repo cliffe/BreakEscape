@@ -245,7 +245,7 @@ test('the dialog watch and the drain both fold before releasing (n2)', () => {
 // A1: focus moves into the phone view.
 const uiSrc = readFileSync(join(js, 'minigames/phone-chat/phone-chat-ui.js'), 'utf8');
 test('phone UI focuses its visible view, but never steals from a field outside', () => {
-    assert.match(uiSrc, /this\.focusIntoPhone\(\);\s*\n\s*console\.log\('📋 Showing contact list'\)/);
+    assert.match(uiSrc, /this\.focusIntoPhone\(\);\s*\n(\s*if \(returnTo\)[^\n]*\n)?\s*console\.log\('📋 Showing contact list'\)/);
     assert.match(uiSrc, /this\.focusIntoPhone\(\);\s*\n\s*console\.log\(`💬 Showing conversation/);
     const body = uiSrc.match(/focusIntoPhone\(\) \{[\s\S]*?\n    \}\n/)[0];
     const make = (activeEl) => {

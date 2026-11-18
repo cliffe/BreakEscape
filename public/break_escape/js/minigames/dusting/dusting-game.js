@@ -33,6 +33,20 @@ if (!document.getElementById('dusting-css')) {
 }
 
 const N = 128;
+
+// Button labels with a long and a short form. Parts: a plain string (always shown), {x} (long mode only: display:none
+// in short landscape), {s} (short landscape only: visually hidden detail read after the visible text) or {v:[long, short]}
+// (swapped by _applyLabels). The accessible name therefore begins with the exact visible text and may add detail
+// after it (WCAG 2.5.3): "Fine (F), fine brush". Long mode shows and reads the same words. Parts are fixed strings and numbers only.
+const lblHtml = parts => parts.map(q => (typeof q === 'string' ? q
+    : q.x !== undefined ? `<span class="dusting-lx">${q.x}</span>`
+    : q.s !== undefined ? `<span class="dusting-ls">${q.s}</span>`
+    : `<span class="dusting-lv" data-long="${q.v[0]}" data-short="${q.v[1]}">${q.v[0]}</span>`)).join('');
+const lblPlain = parts => parts.map(q => (typeof q === 'string' ? q : q.x !== undefined ? q.x : q.s !== undefined ? '' : q.v[0])).join('');
+const lblSpan = parts => `<span class="dusting-lbl">${lblHtml(parts)}</span>`;
+const LIFT_LOCKED = pct => ['Lift (', { x: 'needs ' }, pct, { x: ' coverage' }, ')', { s: `, needs ${pct} coverage` }];
+const LIFT_READY = ['Lift (L)'];
+
 /** Phone on its side: at or under this height the kit uses two columns (see dusting.css). */
 export const SHORT_LANDSCAPE_MAX_H = 500;
 /** Height the title, frame padding and canvas border take in the two-column layout. */
@@ -379,7 +393,12 @@ export class DustingMinigame extends MinigameScene {
         // Short landscape (a phone on its side): two columns, canvas left at the largest whole scale that fits,
         // controls right (dusting.css .dusting-short). Whole scales only, never below 1x.
         const short = window.innerHeight <= SHORT_LANDSCAPE_MAX_H && window.innerWidth > window.innerHeight;
+        const was = this.root.classList.contains('dusting-short');
         this.root.classList.toggle('dusting-short', short);
+        if (was !== short) {
+            this._applyLabels();
+            if (this.metrics) this._refreshDynamic();
+        }
         const maxPx = short
             ? Math.min(window.innerHeight - SHORT_LANDSCAPE_CHROME, window.innerWidth * 0.45, 512)
             : Math.min(window.innerHeight * 0.52, window.innerWidth * 0.86, 512);
@@ -459,6 +478,7 @@ export class DustingMinigame extends MinigameScene {
         this.forensicEl.textContent = FORENSIC[step] || '';
         if (step === 'compare' && this.patternOk && this.identified) this.forensicEl.textContent = `${FORENSIC.compare} ${FORENSIC_MATCH}`;
         this.message = '';
+        this.advice = '';
         this._renderPanel();
         this._updateAria();
         this.dirty = true;
@@ -506,7 +526,18 @@ export class DustingMinigame extends MinigameScene {
         }
         this._drawKeyGlyphs();
         if (this.step === 'compare' && this.patternOk) this._drawZoom();
+        this._applyLabels();
         this._refreshDynamic();
+    }
+
+    // Short landscape shows compact labels so every button fits. {x} parts are hidden by CSS (still read aloud);
+    // {v} parts swap here. Only changed text is written, since this runs on every refresh.
+    _applyLabels() {
+        const short = this.root.classList.contains('dusting-short');
+        this.panel.querySelectorAll('.dusting-lv').forEach(span => {
+            const want = short ? span.dataset.short : span.dataset.long;
+            if (span.textContent !== want) span.textContent = want;
+        });
     }
 
     _htmlExamine() {
@@ -565,9 +596,11 @@ export class DustingMinigame extends MinigameScene {
         return pw.tools.map(t => {
             const key = t === 'fine' ? 'F' : t === 'broad' ? 'B' : 'W';
             const slot = t === 'fine' ? 'brush-fine' : t === 'broad' ? 'brush-feather' : 'wand';
-            const label = t === 'fine' ? 'Fine brush' : t === 'broad' ? 'Feather brush' : 'Magnetic wand';
-            return `<button class="dusting-btn dusting-tool" data-action="tool" data-tool="${t}" aria-pressed="${this.tool === t}" title="Press ${key}">
-                <span data-slot="${slot}" data-scale="1"></span> ${label} (${key})</button>`;
+            const parts = t === 'fine' ? ['Fine', { x: ' brush' }, ` (${key})`, { s: ', fine brush' }]
+                : t === 'broad' ? ['Feather', { x: ' brush' }, ` (${key})`, { s: ', feather brush' }]
+                : [{ x: 'Magnetic ' }, { v: ['wand', 'Wand'] }, ` (${key})`, { s: ', magnetic wand' }];
+            return `<button class="dusting-btn dusting-tool" data-action="tool" data-tool="${t}" aria-pressed="${this.tool === t}" title="${lblPlain(parts)}">
+                <span data-slot="${slot}" data-scale="1"></span> ${lblSpan(parts)}</button>`;
         }).join('');
     }
 
@@ -575,7 +608,7 @@ export class DustingMinigame extends MinigameScene {
         const pw = POWDERS[this.powder];
         return `
             <h3>Dust the print</h3>
-            <p>Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</p>
+            <p class="dusting-instr"><span class="dusting-lo">Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</span><span class="dusting-so">Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'}, or hold Space and use the arrows. Enter keeps brushing.</span></p>
             <div class="dusting-tools">${this._brushButtons()}</div>
             <p class="dusting-powder-line"><span class="mg-field-label">Powder:</span> ${escapeHtml(pw.label)}</p>
             <div class="dusting-actions">
@@ -586,9 +619,9 @@ export class DustingMinigame extends MinigameScene {
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn">Lift (L)</button>
-                <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Press T">Puff off excess (T)</button>
-                <button class="dusting-btn" data-action="change-powder" title="Press C">Change powder (C)</button>
+                <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn" title="Lift (L)">${lblSpan(LIFT_READY)}</button>
+                <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Puff off excess (T)">${lblSpan(['Puff', { x: ' off excess' }, ' (T)', { s: ', puff off excess' }])}</button>
+                <button class="dusting-btn" data-action="change-powder" title="Change powder (C)">${lblSpan([{ x: 'Change ' }, { v: ['powder', 'Powder'] }, ' (C)', { s: ', change powder' }])}</button>
             </div>
             </div>`;
     }
@@ -604,8 +637,8 @@ export class DustingMinigame extends MinigameScene {
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-primary" data-action="peel" title="Press P"><span data-slot="tape-roll" data-scale="1"></span> Peel and mount (P)</button>
-                <button class="dusting-btn" data-action="back-dust">Back to dusting</button>
+                <button class="dusting-btn dusting-primary" data-action="peel" title="Peel and mount (P)"><span data-slot="tape-roll" data-scale="1"></span> ${lblSpan([{ x: 'Peel and ' }, { v: ['mount', 'Mount'] }, ' (P)', { s: ', peel and mount' }])}</button>
+                <button class="dusting-btn" data-action="back-dust" title="Back to dusting">${lblSpan(['Back', { x: ' to dusting' }, { s: ', back to dusting' }])}</button>
             </div>
             </div>`;
     }
@@ -726,14 +759,19 @@ export class DustingMinigame extends MinigameScene {
         this.puffMode = false;
         this._setStep('dust');
         this._refreshMetrics(true);
-        const why = wrongPowderReason(this.powder, this.surfaceId);
-        if (why) this.announce(`${why} You can change powder.`);
+        // after the step render and the metric refresh: both run _refreshDynamic, which would
+        // otherwise set brushed again from the previous powder's coverage
+        this._setBrushed(false);
+        // short landscape drops the trailing sentence: the Powder (C) button sits right below the feedback line
+        const short = !!(this.root && this.root.classList.contains('dusting-short'));
+        const why = wrongPowderReason(this.powder, this.surfaceId, short);
+        if (why) this.advise(short ? why : `${why} You can change powder.`);
     }
 
     _chooseTool(t) {
         if (!TOOLS[t] || !POWDERS[this.powder].tools.includes(t)) return;
         if (this.tool !== t) this.toolStrokes = 0;
-        this.tool = t; this.puffMode = false;
+        this.tool = t; this.puffMode = false; this.advice = '';
         if (this.step === 'dust') this._renderPanel();
         this.announce(`${TOOLS[t].label} selected.`);
     }
@@ -1061,6 +1099,13 @@ export class DustingMinigame extends MinigameScene {
         this.lastPt = null;
     }
 
+    /** First stroke on this powder: short landscape then hides the instruction paragraph (CSS, [data-brushed]) to make room
+     *  for the feedback line. The paragraph stays in the tree for screen readers. */
+    _setBrushed(on) {
+        this.brushed = !!on;
+        if (this.root && this.root.setAttribute) { if (on) this.root.setAttribute('data-brushed', '1'); else if (this.root.removeAttribute) this.root.removeAttribute('data-brushed'); }
+    }
+
     /** A brush stroke starts (pointer down, Space held, Enter brushing on): feeds the feather suggestion. */
     _countStroke() {
         if (this.step !== 'dust' || this.puffMode) return;
@@ -1119,7 +1164,7 @@ export class DustingMinigame extends MinigameScene {
             e.preventDefault();
             if (this.step === 'find') { if (!e.repeat) this._attemptFind(this.reticle); return; }
             if (this.step === 'dust' && k === 'Enter') {
-                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) this._countStroke(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); }
+                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) this._countStroke(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); if (this.metrics) this._refreshDynamic(); }
                 return;
             }
             if (this.step === 'dust' || this.step === 'lift') {
@@ -1236,6 +1281,17 @@ export class DustingMinigame extends MinigameScene {
         if (el) fn(el);
     }
 
+    /** Sets the feedback line; in short landscape, when the text changed, scrolls it into view above the pinned foot
+     *  (the panel's scroll-padding-bottom is the foot height). Unchanged text never scrolls, so the panel does not jitter. */
+    _setFeedback(text, tip) {
+        this._setDyn('feedback', el => {
+            if (tip !== undefined) { if (tip) el.title = tip; else if (el.removeAttribute) el.removeAttribute('title'); }
+            if (el.textContent === text) return;
+            el.textContent = text;
+            if (this.root && this.root.classList.contains('dusting-short') && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
+        });
+    }
+
     _refreshDynamic() {
         const m = this.metrics;
         const pct = v => `${Math.round(v * 100)}%`;
@@ -1246,7 +1302,13 @@ export class DustingMinigame extends MinigameScene {
             return;
         }
         if (this.step === 'dust') {
-            this._setDyn('cov-text', el => { el.textContent = `${pctFloor(m.coverage)} (${word(m.coverage)})`; });
+            const shortMode = this.root.classList.contains('dusting-short');
+            const belowMin = m.coverage < this.diff.minCoverage;
+            // Short landscape has no room for the "needs 45% coverage" button text, so the hint rides on the Coverage line.
+            this._setDyn('cov-text', el => {
+                const want = shortMode && belowMin ? `${pctFloor(m.coverage)} (${word(m.coverage)}) / ${pct(this.diff.minCoverage)} to lift` : `${pctFloor(m.coverage)} (${word(m.coverage)})`;
+                if (el.textContent !== want) el.textContent = want;
+            });
             this._setDyn('cov-bar', el => { el.style.width = pct(Math.min(1, m.coverage)); });
             this._setDyn('cov-min', el => { el.style.left = pct(this.diff.minCoverage); el.title = `Lift unlocks at ${pct(this.diff.minCoverage)}`; });
             this._setDyn('clar-text', el => { el.textContent = `${pct(m.clarity)} (${word(m.clarity)})`; });
@@ -1256,9 +1318,21 @@ export class DustingMinigame extends MinigameScene {
             const canLift = m.coverage >= this.diff.minCoverage;
             this._setDyn('lift-btn', el => {
                 el.disabled = !canLift;
-                el.textContent = canLift ? 'Lift (L)' : `Lift (needs ${pct(this.diff.minCoverage)} coverage)`;
+                const key = canLift ? 'ready' : 'locked';
+                if (el.dataset.state !== key) {
+                    const parts = canLift ? LIFT_READY : LIFT_LOCKED(pct(this.diff.minCoverage));
+                    el.dataset.state = key;
+                    el.title = lblPlain(parts);
+                    el.querySelector('.dusting-lbl').innerHTML = lblHtml(parts);
+                }
             });
-            this._setDyn('feedback', el => { el.textContent = this.message || this._coach(); });
+            // Short landscape hides the status line and the Keys line on this step, so sticky keyboard brushing
+            // shows its state on the feedback line too (R6 m1); the announcement is unchanged.
+            const brushing = this.stickyBrush && this.root.classList.contains('dusting-short') ? 'Brushing on. ' : '';
+            // the Enter key help: Keys line and instruction are hidden here, so it rides on the line's tooltip too
+            this._setFeedback(brushing + (this.message || this.advice || this._coach()), shortMode && this.stickyBrush ? 'Enter stops brushing' : '');
+            // a real ridge brushed in (coverage above 0) hides the instruction in short dust; a stray click does not
+            if (!this.brushed && m.coverage > 0) this._setBrushed(true);
         } else if (this.step === 'lift') {
             const tc = this.tape.coverage();
             this._setDyn('tape-text', el => { el.textContent = `${pct(tc)} (${tc >= 0.85 ? 'good' : tc >= 0.5 ? 'fair' : 'bubbles left'})`; });
@@ -1273,14 +1347,26 @@ export class DustingMinigame extends MinigameScene {
 
     _coach() {
         const m = this.metrics;
-        const why = wrongPowderReason(this.powder, this.surfaceId);
-        if (why && m.coverage > 0.03) return `${why} Change powder to see the difference.`;
+        const short = !!(this.root && this.root.classList.contains('dusting-short'));
+        const why = wrongPowderReason(this.powder, this.surfaceId, short);
+        if (why && m.coverage > 0.03) return short ? why : `${why} Change powder to see the difference.`;
         if (m.foggy > 0.08) return foggyCoach(m.coverage, this.diff.minCoverage);
         if (m.coverage < 0.03) return 'Brush over the print. Ridges appear where the powder clings.';
         if (this._suggestFeather()) return FEATHER_SUGGESTION;
         if (m.coverage < this.diff.minCoverage) return 'Ridges are coming up. Keep sweeping across the print.';
         if (m.clarity < 0.75) return 'Good start. Cover the rest of the print with light strokes, then lift.';
         return 'The ridges are clear. Lift when you are happy, or fill any gaps first.';
+    }
+
+    /** Advice that can run long (the wrong-powder reason). It is announced as usual; in short landscape the status line is
+     *  visually hidden on the dust and lift steps, so the full text rides on the panel's feedback line, which is not a live
+     *  region: a screen reader hears it once, from the status line. The feather tip is not stored here: a live warning about
+     *  the current state (fog, over-brushing) beats stale advice, and _coach() already ranks and drops the tip. */
+    advise(msg) {
+        if (!msg) return;
+        this.advice = this.root && this.root.classList.contains('dusting-short') ? msg : '';
+        if (this.advice) this._setFeedback(this.advice);
+        this.announce(msg);
     }
 
     announce(msg) {
