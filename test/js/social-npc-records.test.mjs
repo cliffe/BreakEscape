@@ -237,13 +237,16 @@ test('person-chat: a social NPC wins a display-name tie in its own conversation'
     });
 });
 
-test('person-chat: a non-social NPC keeps the first match on a tie (R-01)', () => {
-    // No social scenario at all (m01 to m08): no window.socialInfluence
-    assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance_phone');
-    // A social scenario, but this conversation's NPC is not a social character
+test('person-chat: any NPC wins a display-name tie in its own conversation (m05 Patricia)', () => {
+    // No social scenario at all: no window.socialInfluence
+    assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance');
+    assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance_phone'), 'Robert Vance'), 'robert_vance_phone');
+    // A social scenario whose social list does not include this NPC
     withSocial(['gary'], () => {
-        assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance_phone');
+        assert.equal(normalizeSpeakerId.call(fakeChat('robert_vance'), 'Robert Vance'), 'robert_vance');
     });
+    // Another NPC's conversation keeps the first match
+    assert.equal(normalizeSpeakerId.call(fakeChat('gary'), 'Robert Vance'), 'robert_vance_phone');
 });
 
 test('person-chat: an exact id match still wins, and the special cases are kept', () => {

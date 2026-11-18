@@ -173,11 +173,20 @@ test('R9: an undiscovered owner is not named', async () => {
     assert.deepEqual(events[0].data, { stationId: 'front_desk', reason: 'wrong_station' });
 });
 
+test('a malformed flag is refused with what a flag looks like', async () => {
+    world();
+    respond(422, { success: false, message: 'Invalid flag', reason: 'invalid' });
+    const { s, els } = makeStation();
+    els['#flag-input'].value = 'not a flag';
+    await s.submitFlag();
+    assert.match(els['#flag-result'].textContent, /^✗ Flag not accepted\. Flags usually look like flag\{\.\.\.\}/);
+});
+
 test('R9: invalid and already_submitted reasons', async () => {
     let w = world();
     respond(422, { success: false, message: 'Invalid flag', reason: 'invalid' });
     let { s, els } = makeStation();
-    els['#flag-input'].value = 'flag{typo';
+    els['#flag-input'].value = 'flag{typo}';
     await s.submitFlag();
     assert.match(els['#flag-result'].textContent, /copied in full/);
     assert.deepEqual(w.events[0].data, { stationId: 'front_desk', reason: 'invalid' });
@@ -221,6 +230,37 @@ test('R9: a wrong flag at a flag lock (422 thrown by ApiClient) is a refusal, no
     assert.match(els['#flag-result'].textContent, /Flag not accepted/);
     assert.deepEqual(sounds, ['reject']);
     assert.deepEqual(events[0], { name: 'flag_rejected', data: { stationId: 'flag-station', reason: 'invalid', objectId: 'safe_1' } });
+    delete window.ApiClient;
+});
+
+function lockStation() {
+    return makeStation({ mode: 'lock', stationId: 'flag-station', lockObjectId: 'safe_1',
+        params: { type: 'item', lockable: { scenarioData: { id: 'safe_1' } } } });
+}
+
+test('a flag lock refused with success:false names the flag shape only for a malformed value', async () => {
+    for (const [typed, re] of [['not a flag', /Flags usually look like flag\{\.\.\.\}/], ['flag{wrong}', /copied in full/]]) {
+        world();
+        window.ApiClient = { unlock: async () => ({ success: false }) };
+        const { s, els } = lockStation();
+        els['#flag-input'].value = typed;
+        await s.submitFlagForLock();
+        assert.match(els['#flag-result'].textContent, re, typed);
+    }
+    delete window.ApiClient;
+});
+
+test('a flag lock refused 422 names the flag shape only for a malformed value', async () => {
+    for (const [typed, re] of [['abc', /Flags usually look like flag\{\.\.\.\}/], ['flag{wrong}', /copied in full/]]) {
+        world();
+        window.ApiClient = { unlock: async () => {
+            throw Object.assign(new Error('Invalid flag'), { status: 422, body: { success: false, message: 'Invalid flag', reason: 'invalid' } });
+        } };
+        const { s, els } = lockStation();
+        els['#flag-input'].value = typed;
+        await s.submitFlagForLock();
+        assert.match(els['#flag-result'].textContent, re, typed);
+    }
     delete window.ApiClient;
 });
 
@@ -345,9 +385,9 @@ test('R14: a retry that gets through is a normal conclusion; a refusal stays a r
         if (n++ === 0) throw new Error('blip');
         return { ok: true, json: async () => ({ success: true }) };
     } });
-    assert.deepEqual(r, { concluded: true, missing: [], offline: false });
+    assert.deepEqual(r, { concluded: true, missing: [], offline: false, score: null });
     r = await conclude.concludeWithRetry(7, { ...noWait, fetch: async () => ({ ok: true, json: async () => ({ success: false, missing: ['submit_flag_2'] }) }) });
-    assert.deepEqual(r, { concluded: false, missing: ['submit_flag_2'], offline: false });
+    assert.deepEqual(r, { concluded: false, missing: ['submit_flag_2'], offline: false, score: null });
 });
 
 test('R14: the offline ending says not yet recorded, never the plain MISSION COMPLETE', () => {

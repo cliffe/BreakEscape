@@ -4239,6 +4239,8 @@
           "type": "array",
           "items": { "type": "integer" }
         },
+        "dustable": { "type": "boolean", "description": "PIN door only: true lets a fingerprint kit dust this door's keypad (opt-in, default off)." },
+        "dustHint": { "type": "string", "description": "PIN door only: shown after dusting, for example to say a digit repeats." },
         "lockedHint": { "type": "string", "minLength": 1, "description": "Opt-in: appended to the Requires key and wrong-key alerts of a locked key lock, to say where the key comes from (utils/locked-hint.js). Linted by scripts/validate_social/options.rb" },
         "difficulty": {
           "type": "string",
@@ -5298,6 +5300,8 @@
         },
         "passwordHint": { "type": "string" },
         "showHint": { "type": "boolean" },
+        "dustable": { "type": "boolean", "description": "PIN locks only: true lets a fingerprint kit dust this pad (opt-in, default off; set it on the room for a door)." },
+        "dustHint": { "type": "string", "description": "PIN locks only: shown after dusting, for example to say a digit repeats." },
         "showKeyboard": { "type": "boolean" },
         "maxAttempts": { "type": "integer" },
         "postitNote": { "type": "string", "description": "A sticky note shown on the lock screen. On a sign-in PC a writesDown habit on the owner (slice 9.1) can supply one, served by GET /login_accounts; an authored note wins." },
@@ -5319,7 +5323,24 @@
         },
         "fingerprintCandidates": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "description": "A reference card with its pattern class fixed (F26): a decoy in the lift's class forces ridge comparison",
+                "properties": {
+                  "name": { "type": "string" },
+                  "pattern": { "type": "string", "enum": ["loop", "whorl", "arch"] }
+                },
+                "required": ["name"]
+              }
+            ]
+          }
+        },
+        "fingerprintCandidateCount": {
+          "type": "integer", "minimum": 2, "maximum": 4,
+          "description": "How many reference cards the Compare step shows (the lift's owner plus decoys); default from fingerprintDifficulty (easy 2, medium and hard 3)"
         },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "mac": { "type": "string" },

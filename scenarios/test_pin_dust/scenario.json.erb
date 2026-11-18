@@ -1,0 +1,115 @@
+{
+  "scenario_brief": "TEST: PIN dust\n\nOne lobby, one vault. The vault door (north) and the wall safe both take a PIN. On the table: a fingerprint kit and a PIN cracker. With the kit in your inventory, a PIN pad shows a Dust action; using it greys every key that is not in the code (not the order). Dust is opt-in: the vault door and the wall safe set dustable true; the clean safe sets dustable false and shows no Dust action.",
+  "endGoal": "Test only: dust the pads, then open them.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 5, "y": 7 },
+  "needsDebugOverlay": true,
+
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "door_sign": "Lobby",
+      "connections": { "north": "vault" },
+      "locked": false,
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_pin_dust",
+          "name": "Sign: PIN dust",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "PIN dust.\nTake the fingerprint kit from the table. Open a PIN pad (the vault door north, the wall safe, the clean safe) and press DUST KEYPAD: keys that are not in the code go dull. The vault is 4172 (24 orderings), the wall safe 3883 (repeated digits), the clean safe 1357 has no dust action (it sets dustable false). Take the PIN cracker too: its lights still work on the keys left.",
+          "observations": "A sign on the wall."
+        },
+        {
+          "type": "fingerprint_kit",
+          "id": "dust_kit",
+          "name": "Fingerprint Kit",
+          "position": { "x": 4, "y": 5 },
+          "takeable": true,
+          "observations": "A professional kit for collecting fingerprint samples. Worn or greasy keys on a keypad show which digits a code uses."
+        },
+        {
+          "type": "pin-cracker",
+          "id": "dust_pin_cracker",
+          "name": "PIN Cracker",
+          "position": { "x": 6, "y": 5 },
+          "takeable": true,
+          "observations": "Clamps over a keypad and reads how many digits are right, and how many are right but in the wrong place."
+        },
+        {
+          "type": "safe",
+          "id": "wall_safe",
+          "name": "Wall safe",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "3883",
+          "dustable": true,
+          "dustHint": "Only two keys are worn. The code repeats a digit.",
+          "observations": "A small wall safe with a four-digit keypad. Two of the keys are shiny with use.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "wall_safe_note",
+              "name": "Wall safe note",
+              "takeable": true,
+              "readable": true,
+              "text": "Opened the wall safe.",
+              "observations": "A note from the safe."
+            }
+          ]
+        },
+        {
+          "type": "safe",
+          "id": "clean_safe",
+          "name": "Clean safe",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "1357",
+          "dustable": false,
+          "observations": "A freshly wiped safe. Nothing will show on those keys.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "clean_safe_note",
+              "name": "Clean safe note",
+              "takeable": true,
+              "readable": true,
+              "text": "Opened the clean safe.",
+              "observations": "A note from the safe."
+            }
+          ]
+        }
+      ]
+    },
+
+    "vault": {
+      "type": "room_servers",
+      "door_sign": "Vault",
+      "connections": { "south": "lobby" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "4172",
+      "dustable": true,
+      "objects": [
+        {
+          "type": "notes",
+          "id": "vault_note",
+          "name": "Vault note",
+          "position": { "x": 4, "y": 4 },
+          "takeable": true,
+          "readable": true,
+          "text": "You are in the vault.",
+          "observations": "A note on the floor."
+        }
+      ]
+    }
+  }
+}

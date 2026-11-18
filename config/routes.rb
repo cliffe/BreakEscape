@@ -40,6 +40,7 @@ BreakEscape::Engine.routes.draw do
       post 'lock_session'    # Lock a held session (UI slice 6): stays held, needs the password again
       get 'login_accounts'   # Account tiles for a sign-in PC's loginPicker
       post 'clone_card'      # Record a card copy the card copier saved
+      post 'pin_dust'        # Dust a PIN pad with the fingerprint kit: the PIN's distinct digits, once per lock
       post 'wear'            # Put a held wearable item on or take it off (docs/achitechture/WEARABLE_BUILD_LOG.md)
       post 'npc_frustration' # Slice 9.2: an NPC's failed and met uses (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.1)
       post 'npc_workaround'  # Slice 9.2: a workaround performed or dropped (plan 6)
@@ -72,6 +73,9 @@ BreakEscape::Engine.routes.draw do
       # Hacktivity VM panel endpoints (vm_set_panel body added in Phase 4.4.3)
       get 'vm_panel'
       get 'vm_set_panel'
+      # Called by the vm-launcher minigame when it opens in Hacktivity mode, to set the
+      # reached VM's console to its default (attack VMs on, "*server*" targets stay locked).
+      post 'unlock_vm_console'
     end
   end
 

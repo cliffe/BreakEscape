@@ -1,0 +1,1427 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m10_full_disclosure",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "door_blast_tunnel",
+        "optional": false
+      },
+      {
+        "id": "door_core",
+        "optional": false
+      },
+      {
+        "id": "door_gallery",
+        "optional": false
+      },
+      {
+        "id": "door_power_room",
+        "optional": false
+      },
+      {
+        "id": "door_security_office",
+        "optional": false
+      },
+      {
+        "id": "door_workshop_floor",
+        "optional": false
+      },
+      {
+        "id": "lock_core_host_terminal",
+        "optional": false
+      },
+      {
+        "id": "lock_fitter_locker",
+        "optional": false
+      },
+      {
+        "id": "lock_lock_records_cupboard",
+        "optional": false
+      },
+      {
+        "id": "lock_model_terminal",
+        "optional": false
+      },
+      {
+        "id": "lock_records_cupboard",
+        "optional": false
+      },
+      {
+        "id": "lock_sealed_hatch",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "core_access_code",
+        "optional": false
+      },
+      {
+        "id": "duty_handset",
+        "optional": false
+      },
+      {
+        "id": "guard_post_ladder",
+        "optional": true
+      },
+      {
+        "id": "maintenance_tag",
+        "optional": false
+      },
+      {
+        "id": "npc_agent_0x23_vector",
+        "optional": false
+      },
+      {
+        "id": "npc_agent_0x47_nightshade",
+        "optional": false
+      },
+      {
+        "id": "npc_director_magnus_netherton",
+        "optional": false
+      },
+      {
+        "id": "npc_gary_whitlock",
+        "optional": false
+      },
+      {
+        "id": "npc_ghost",
+        "optional": false
+      },
+      {
+        "id": "npc_imran_siddiqui",
+        "optional": false
+      },
+      {
+        "id": "npc_officer_kenji_arakawa",
+        "optional": false
+      },
+      {
+        "id": "npc_pieter_vos",
+        "optional": false
+      },
+      {
+        "id": "npc_sione_fonoti",
+        "optional": false
+      },
+      {
+        "id": "npc_victoria_sterling",
+        "optional": false
+      },
+      {
+        "id": "npc_voltage_critical_mass",
+        "optional": false
+      },
+      {
+        "id": "npc_wendell_briggs",
+        "optional": false
+      },
+      {
+        "id": "operator_s_duty_sheet",
+        "optional": false
+      },
+      {
+        "id": "schedule_copy_sign_in_card",
+        "optional": false
+      },
+      {
+        "id": "spare_power_room_card",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "blast_tunnel",
+      "core",
+      "forward_post",
+      "gallery",
+      "power_room",
+      "security_office",
+      "server_hall",
+      "workshop_floor"
+    ],
+    "edges": [
+      [
+        "action_arakawa_call",
+        "door_blast_tunnel",
+        false
+      ],
+      [
+        "action_cut_the_shutter",
+        "door_gallery",
+        false
+      ],
+      [
+        "action_opened_from_inside",
+        "door_core",
+        true
+      ],
+      [
+        "action_opens_power_room",
+        "door_power_room",
+        true
+      ],
+      [
+        "action_settle_the_table",
+        "door_blast_tunnel",
+        false
+      ],
+      [
+        "action_split_line",
+        "action_arakawa_call",
+        false
+      ],
+      [
+        "action_tether_question",
+        "door_blast_tunnel",
+        true
+      ],
+      [
+        "alarm_log_refit_to_date",
+        "lock_lock_records_cupboard",
+        true
+      ],
+      [
+        "andgate1",
+        "door_gallery",
+        false
+      ],
+      [
+        "blast_tunnel",
+        "guard_post_ladder",
+        true
+      ],
+      [
+        "core",
+        "core_access_code",
+        false
+      ],
+      [
+        "core",
+        "field_console_core",
+        false
+      ],
+      [
+        "core_access_code",
+        "lock_core_host_terminal",
+        false
+      ],
+      [
+        "door_blast_tunnel",
+        "blast_tunnel",
+        false
+      ],
+      [
+        "door_core",
+        "core",
+        false
+      ],
+      [
+        "door_gallery",
+        "gallery",
+        false
+      ],
+      [
+        "door_power_room",
+        "power_room",
+        false
+      ],
+      [
+        "door_security_office",
+        "security_office",
+        false
+      ],
+      [
+        "door_workshop_floor",
+        "workshop_floor",
+        false
+      ],
+      [
+        "duty_handset",
+        "door_workshop_floor",
+        false
+      ],
+      [
+        "field_console_gate",
+        "vmch_submit_flag_1",
+        false
+      ],
+      [
+        "fitter_s_locker",
+        "door_power_room",
+        true
+      ],
+      [
+        "forward_post",
+        "breaching_case_sign_out_sheet",
+        false
+      ],
+      [
+        "forward_post",
+        "citadel_incident_file_v_47",
+        false
+      ],
+      [
+        "forward_post",
+        "field_console_gate",
+        false
+      ],
+      [
+        "forward_post",
+        "fingerprint_kit",
+        false
+      ],
+      [
+        "forward_post",
+        "gate_terminal",
+        false
+      ],
+      [
+        "forward_post",
+        "helena_s_plans_tomb_gamma_as_built",
+        false
+      ],
+      [
+        "forward_post",
+        "lock_pick_kit",
+        true
+      ],
+      [
+        "forward_post",
+        "maintenance_tag",
+        false
+      ],
+      [
+        "forward_post",
+        "npc_agent_0x23_vector",
+        false
+      ],
+      [
+        "forward_post",
+        "npc_agent_0x47_nightshade",
+        false
+      ],
+      [
+        "forward_post",
+        "npc_director_magnus_netherton",
+        false
+      ],
+      [
+        "forward_post",
+        "npc_ghost",
+        false
+      ],
+      [
+        "forward_post",
+        "npc_officer_kenji_arakawa",
+        false
+      ],
+      [
+        "forward_post",
+        "pin_cracker_kowalczyk_s",
+        true
+      ],
+      [
+        "forward_post",
+        "rfid_cloner",
+        false
+      ],
+      [
+        "gallery",
+        "keypad_face_plate",
+        true
+      ],
+      [
+        "gallery",
+        "npc_pieter_vos",
+        false
+      ],
+      [
+        "gallery",
+        "npc_sione_fonoti",
+        false
+      ],
+      [
+        "gallery",
+        "npc_victoria_sterling",
+        false
+      ],
+      [
+        "gallery_shift_code_card",
+        "door_core",
+        true
+      ],
+      [
+        "gallery_shift_rota",
+        "door_core",
+        true
+      ],
+      [
+        "gate_terminal",
+        "door_blast_tunnel",
+        false
+      ],
+      [
+        "guard_post_ladder",
+        "door_security_office",
+        true
+      ],
+      [
+        "keypad_face_plate",
+        "door_core",
+        true
+      ],
+      [
+        "lock_fitter_locker",
+        "spare_power_room_card",
+        false
+      ],
+      [
+        "lock_model_terminal",
+        "asante_s_corrected_model",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_fitter_locker",
+        true
+      ],
+      [
+        "lock_records_cupboard",
+        "alarm_log_refit_to_date",
+        true
+      ],
+      [
+        "lock_records_cupboard",
+        "gallery_shift_rota",
+        true
+      ],
+      [
+        "maintenance_tag",
+        "gate_terminal",
+        false
+      ],
+      [
+        "npc_agent_0x23_vector",
+        "records_cupboard_vector_s_code",
+        true
+      ],
+      [
+        "npc_agent_0x23_vector",
+        "records_cupboard_vector_s_code",
+        true
+      ],
+      [
+        "npc_agent_0x47_nightshade",
+        "action_settle_the_table",
+        false
+      ],
+      [
+        "npc_director_magnus_netherton",
+        "action_split_line",
+        false
+      ],
+      [
+        "npc_director_magnus_netherton",
+        "action_tether_question",
+        false
+      ],
+      [
+        "npc_gary_whitlock",
+        "action_opens_power_room",
+        false
+      ],
+      [
+        "npc_ghost",
+        "outer_lock_maintenance_code",
+        true
+      ],
+      [
+        "npc_ghost",
+        "records_cupboard_ghost_s_code",
+        true
+      ],
+      [
+        "npc_imran_siddiqui",
+        "action_opens_power_room",
+        false
+      ],
+      [
+        "npc_imran_siddiqui",
+        "action_opens_power_room",
+        false
+      ],
+      [
+        "npc_officer_kenji_arakawa",
+        "action_arakawa_call",
+        false
+      ],
+      [
+        "npc_pieter_vos",
+        "action_opened_from_inside",
+        false
+      ],
+      [
+        "npc_pieter_vos",
+        "visitor_s_code_card",
+        true
+      ],
+      [
+        "npc_sione_fonoti",
+        "gallery_shift_code_card",
+        true
+      ],
+      [
+        "npc_victoria_sterling",
+        "action_opened_from_inside",
+        false
+      ],
+      [
+        "npc_voltage_critical_mass",
+        "action_cut_the_shutter",
+        false
+      ],
+      [
+        "npc_voltage_critical_mass",
+        "action_cut_the_shutter",
+        false
+      ],
+      [
+        "npc_wendell_briggs",
+        "action_cut_the_shutter",
+        false
+      ],
+      [
+        "operator_s_duty_sheet",
+        "lock_sealed_hatch",
+        false
+      ],
+      [
+        "outer_lock_maintenance_code",
+        "door_core",
+        true
+      ],
+      [
+        "pin_cracker_kowalczyk_s",
+        "door_core",
+        true
+      ],
+      [
+        "pin_cracker_kowalczyk_s",
+        "lock_lock_records_cupboard",
+        true
+      ],
+      [
+        "power_room",
+        "npc_voltage_critical_mass",
+        false
+      ],
+      [
+        "power_room",
+        "npc_voltage_critical_mass",
+        false
+      ],
+      [
+        "power_room",
+        "npc_wendell_briggs",
+        false
+      ],
+      [
+        "records_cupboard",
+        "door_core",
+        true
+      ],
+      [
+        "records_cupboard_ghost_s_code",
+        "lock_lock_records_cupboard",
+        true
+      ],
+      [
+        "records_cupboard_vector_s_code",
+        "lock_lock_records_cupboard",
+        true
+      ],
+      [
+        "records_cupboard_vector_s_code",
+        "lock_lock_records_cupboard",
+        true
+      ],
+      [
+        "release_console",
+        "andgate1",
+        false
+      ],
+      [
+        "schedule_copy_sign_in_card",
+        "release_console",
+        false
+      ],
+      [
+        "sealed_section_hatch",
+        "andgate1",
+        true
+      ],
+      [
+        "sealed_section_hatch",
+        "door_gallery",
+        false
+      ],
+      [
+        "security_office",
+        "duty_handset",
+        false
+      ],
+      [
+        "security_office",
+        "fitter_s_locker",
+        true
+      ],
+      [
+        "security_office",
+        "lock_fitter_locker",
+        false
+      ],
+      [
+        "security_office",
+        "lock_records_cupboard",
+        false
+      ],
+      [
+        "security_office",
+        "monitoring_desk_door_log",
+        false
+      ],
+      [
+        "security_office",
+        "npc_agent_0x23_vector",
+        false
+      ],
+      [
+        "security_office",
+        "records_cupboard",
+        true
+      ],
+      [
+        "server_hall",
+        "field_console_server_hall",
+        false
+      ],
+      [
+        "server_hall",
+        "operator_s_duty_sheet",
+        false
+      ],
+      [
+        "server_hall",
+        "release_console",
+        false
+      ],
+      [
+        "server_hall",
+        "schedule_copy_sign_in_card",
+        false
+      ],
+      [
+        "server_hall",
+        "sealed_section_hatch",
+        false
+      ],
+      [
+        "spare_power_room_card",
+        "door_power_room",
+        false
+      ],
+      [
+        "visitor_s_code_card",
+        "door_core",
+        true
+      ],
+      [
+        "vmch_submit_flag_1",
+        "vmfl_submit_flag_1",
+        false
+      ],
+      [
+        "vmch_submit_flag_2",
+        "vmfl_submit_flag_2",
+        false
+      ],
+      [
+        "vmch_submit_flag_3",
+        "vmfl_submit_flag_3",
+        false
+      ],
+      [
+        "vmch_submit_flag_4",
+        "vmfl_submit_flag_4",
+        false
+      ],
+      [
+        "vmfl_submit_flag_1",
+        "door_blast_tunnel",
+        false
+      ],
+      [
+        "vmfl_submit_flag_1",
+        "vmch_submit_flag_2",
+        true
+      ],
+      [
+        "vmfl_submit_flag_2",
+        "door_gallery",
+        false
+      ],
+      [
+        "vmfl_submit_flag_2",
+        "vmch_submit_flag_3",
+        true
+      ],
+      [
+        "vmfl_submit_flag_3",
+        "door_gallery",
+        false
+      ],
+      [
+        "vmfl_submit_flag_3",
+        "vmch_submit_flag_4",
+        true
+      ],
+      [
+        "workshop_floor",
+        "bench_log_outgoing",
+        false
+      ],
+      [
+        "workshop_floor",
+        "casualty_sheet",
+        false
+      ],
+      [
+        "workshop_floor",
+        "lock_model_terminal",
+        false
+      ],
+      [
+        "workshop_floor",
+        "margin_strip",
+        false
+      ],
+      [
+        "workshop_floor",
+        "npc_gary_whitlock",
+        false
+      ],
+      [
+        "workshop_floor",
+        "npc_imran_siddiqui",
+        false
+      ],
+      [
+        "workshop_floor",
+        "npc_imran_siddiqui",
+        false
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/blast_tunnel",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "0f59b325f7810408",
+      "requiresHash": "256834f6451ef378"
+    },
+    {
+      "path": "/rooms/core",
+      "id": null,
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "99bd31b1f18939e7",
+      "requiresHash": "718a5cb3744fe826"
+    },
+    {
+      "path": "/rooms/gallery",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "b05645513c69d844",
+      "requiresHash": "b2975625a43eedf2"
+    },
+    {
+      "path": "/rooms/power_room",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "577b03023391ca41",
+      "requiresHash": "c2e799375ce417ad"
+    },
+    {
+      "path": "/rooms/security_office",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "762b4e7ab9d281c2",
+      "requiresHash": "91a2fe5ae3714e62"
+    },
+    {
+      "path": "/rooms/security_office/objects[fitter_locker]",
+      "id": "fitter_locker",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "a067208b2b718550",
+      "requiresHash": "d695b11793aa186d"
+    },
+    {
+      "path": "/rooms/security_office/objects[records_cupboard]",
+      "id": "records_cupboard",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "c0a80c68ee313e95",
+      "requiresHash": "5ce4e7f730593667"
+    },
+    {
+      "path": "/rooms/workshop_floor",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "effbd01c404cd73b",
+      "requiresHash": "5c0ffdaff59b802b"
+    },
+    {
+      "path": "/rooms/workshop_floor/objects[model_terminal]",
+      "id": "model_terminal",
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "97614194af7678d6",
+      "requiresHash": "d1db01b9d17be8af"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "breach_the_perimeter",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "take_the_briefing",
+          "type": "custom"
+        },
+        {
+          "taskId": "settle_the_table",
+          "type": "custom"
+        },
+        {
+          "taskId": "submit_flag_1",
+          "type": "submit_flags",
+          "targetFlags": [
+            "gate_terminal:bunker_monitor-flag1"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "blast_tunnel"
+        },
+        {
+          "taskId": "go_through_the_blast_door",
+          "type": "enter_room",
+          "targetRoom": "blast_tunnel"
+        }
+      ]
+    },
+    {
+      "aimId": "get_below_ground",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "breach_the_perimeter"
+      },
+      "tasks": [
+        {
+          "taskId": "reach_security_office",
+          "type": "enter_room",
+          "targetRoom": "security_office"
+        },
+        {
+          "taskId": "answer_the_handset",
+          "type": "custom"
+        },
+        {
+          "taskId": "take_the_stair_down",
+          "type": "enter_room",
+          "targetRoom": "workshop_floor"
+        }
+      ]
+    },
+    {
+      "aimId": "cut_the_gallery_power",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "get_below_ground"
+      },
+      "tasks": [
+        {
+          "taskId": "read_the_casualty_sheet",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "decode_the_margin",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "reach_power_room",
+          "type": "enter_room",
+          "targetRoom": "power_room"
+        },
+        {
+          "taskId": "cut_the_shutter",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "find_the_release",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "cut_the_gallery_power"
+      },
+      "tasks": [
+        {
+          "taskId": "reach_server_hall",
+          "type": "enter_room",
+          "targetRoom": "server_hall"
+        },
+        {
+          "taskId": "submit_flag_2",
+          "type": "submit_flags",
+          "targetFlags": [
+            "release_console:bunker_monitor-flag1"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "gallery"
+        },
+        {
+          "taskId": "submit_flag_3",
+          "type": "submit_flags",
+          "targetFlags": [
+            "sealed_hatch:release_host-flag1"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "gallery"
+        },
+        {
+          "taskId": "use_the_console",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "close_the_backdoor",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "reach_the_core",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "find_the_release"
+      },
+      "tasks": [
+        {
+          "taskId": "cross_the_gallery",
+          "type": "enter_room",
+          "targetRoom": "gallery"
+        },
+        {
+          "taskId": "open_the_outer_lock",
+          "type": "custom"
+        },
+        {
+          "taskId": "submit_flag_4",
+          "type": "submit_flags",
+          "targetFlags": [
+            "core_host_terminal:core_host-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "hear_him_out",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "end_it",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "reach_the_core"
+      },
+      "tasks": [
+        {
+          "taskId": "decide_the_console",
+          "type": "custom"
+        },
+        {
+          "taskId": "decide_the_database",
+          "type": "custom"
+        },
+        {
+          "taskId": "decide_his_end",
+          "type": "custom"
+        },
+        {
+          "taskId": "close_the_night",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "find_the_sleeper",
+      "order": 6,
+      "optional": false,
+      "unlockCondition": {
+        "globalVariable": "whodunit_open"
+      },
+      "tasks": [
+        {
+          "taskId": "read_the_door_log",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "check_the_alibis",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "read_the_bench_log",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "name_the_sleeper",
+          "type": "custom",
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[end_it]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_flag_1",
+          "submit_flag_2",
+          "submit_flag_3",
+          "submit_flag_4"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99": "forward_post",
+    "alarm_log": "security_office",
+    "alarm_override": "forward_post",
+    "alarm_panel": "security_office",
+    "arakawa_blast": "forward_post",
+    "arakawa_call": "forward_post",
+    "arakawa_gate": "forward_post",
+    "arakawa_hall": "server_hall",
+    "arakawa_post": "forward_post",
+    "arakawa_pr": "power_room",
+    "arakawa_so": "security_office",
+    "arakawa_ws": "workshop_floor",
+    "asante": "server_hall",
+    "asante_model": "workshop_floor",
+    "bench_log": "workshop_floor",
+    "bypass_panel": "power_room",
+    "case_signout_sheet": "forward_post",
+    "casualty_margin_note": "workshop_floor",
+    "casualty_sheet": "workshop_floor",
+    "citadel": "forward_post",
+    "clock_blast_door": "blast_tunnel",
+    "clock_core": "core",
+    "clock_forward_post": "forward_post",
+    "clock_gallery": "gallery",
+    "clock_power": "power_room",
+    "clock_security": "security_office",
+    "clock_server_hall": "server_hall",
+    "clock_workshop": "workshop_floor",
+    "core_access_key": "core",
+    "core_console_vm": "core",
+    "core_files": "core",
+    "core_host_terminal": "core",
+    "cracker_rack": "workshop_floor",
+    "cut_the_shutter": "power_room",
+    "director_netherton": "forward_post",
+    "door_log": "security_office",
+    "duty_board": "security_office",
+    "duty_guard": "security_office",
+    "duty_guard_b": "security_office",
+    "duty_handset": "security_office",
+    "elena_phone": "forward_post",
+    "farah_chair": "gallery",
+    "farah_guard": "gallery",
+    "fitter_locker": "security_office",
+    "fitter_spare_card": "security_office",
+    "gallery_code_card": "gallery",
+    "gallery_rota": "security_office",
+    "gary_consultant": "workshop_floor",
+    "gary_tech": "workshop_floor",
+    "gary_voice": "forward_post",
+    "gate_console": "forward_post",
+    "gate_hut": "forward_post",
+    "gate_terminal": "forward_post",
+    "ghost_cupboard_code": "forward_post",
+    "ghost_lock_code": "forward_post",
+    "ghost_phone": "forward_post",
+    "hall_console": "server_hall",
+    "hall_guard_a": "server_hall",
+    "hall_guard_b": "server_hall",
+    "hax_post": "forward_post",
+    "hearing": "forward_post",
+    "helena_plans": "forward_post",
+    "imran": "workshop_floor",
+    "imran_voice": "forward_post",
+    "imran_watched": "workshop_floor",
+    "incident_file": "forward_post",
+    "key_console": "core",
+    "kit_table": "forward_post",
+    "kowalczyk_core": "core",
+    "kowalczyk_core_waiting": "core",
+    "kowalczyk_hall": "server_hall",
+    "kowalczyk_post": "forward_post",
+    "kowalczyk_pr": "power_room",
+    "kowalczyk_so": "security_office",
+    "kowalczyk_van": "forward_post",
+    "kowalczyk_ws": "workshop_floor",
+    "lock_guard": "gallery",
+    "lock_keypad_plate": "gallery",
+    "m10_guide_flag1": "forward_post",
+    "m10_guide_flag2": "forward_post",
+    "m10_guide_flag3": "forward_post",
+    "m10_guide_flag4": "forward_post",
+    "malhotra_post": "forward_post",
+    "mercer": "server_hall",
+    "minder_blast": "forward_post",
+    "minder_lock": "gallery",
+    "minder_post": "forward_post",
+    "model_terminal": "workshop_floor",
+    "monitor_guard": "gallery",
+    "monitor_maintenance_tag": "forward_post",
+    "nightshade_blast": "forward_post",
+    "nightshade_lock": "gallery",
+    "nightshade_payment": "forward_post",
+    "nightshade_table": "forward_post",
+    "nightshade_van": "forward_post",
+    "opened_from_inside": "gallery",
+    "opens_power_room": "workshop_floor",
+    "phantom_post": "forward_post",
+    "plotting_board": "server_hall",
+    "post_ladder": "blast_tunnel",
+    "projection_desk": "forward_post",
+    "quintero_core": "core",
+    "quintero_hall": "server_hall",
+    "quintero_lock": "gallery",
+    "quintero_post": "forward_post",
+    "quintero_pr": "power_room",
+    "quintero_so": "security_office",
+    "quintero_ws": "workshop_floor",
+    "records_cupboard": "security_office",
+    "reinforcement_a": "gallery",
+    "reinforcement_b": "gallery",
+    "release_console": "server_hall",
+    "release_console_controls": "server_hall",
+    "release_operator_card": "server_hall",
+    "release_staging_card": "server_hall",
+    "schedule_terminal": "server_hall",
+    "sealed_hatch": "server_hall",
+    "service_door": "core",
+    "settle_the_table": "forward_post",
+    "shutter_isolator": "power_room",
+    "six_oclock": "forward_post",
+    "slit_window": "gallery",
+    "split_line": "forward_post",
+    "static_kit": "power_room",
+    "static_power": "power_room",
+    "tesseract": "core",
+    "tesseract_voice": "forward_post",
+    "tether_question": "forward_post",
+    "tunnel_guard": "blast_tunnel",
+    "tunnel_guard_kettle": "blast_tunnel",
+    "tunnel_rota": "blast_tunnel",
+    "uplink_printer": "server_hall",
+    "van_one": "forward_post",
+    "van_two": "forward_post",
+    "vance_phone": "forward_post",
+    "vector_cupboard_code": "forward_post",
+    "vector_post": "forward_post",
+    "vector_so": "security_office",
+    "victoria_gallery": "gallery",
+    "victoria_line": "forward_post",
+    "victoria_threat": "gallery",
+    "voltage_power": "power_room",
+    "voltage_power_captured": "power_room",
+    "voltage_van": "forward_post",
+    "vos": "gallery",
+    "vos_code_card": "gallery",
+    "wanted_photo": "security_office",
+    "wendell": "power_room",
+    "wendell_far": "power_room",
+    "wendell_voice": "forward_post",
+    "workshop_guard": "workshop_floor"
+  },
+  "layout": {
+    "start": "forward_post",
+    "adj": {
+      "blast_tunnel": [
+        "forward_post",
+        "security_office"
+      ],
+      "core": [
+        "gallery"
+      ],
+      "forward_post": [
+        "blast_tunnel"
+      ],
+      "gallery": [
+        "core",
+        "server_hall"
+      ],
+      "power_room": [
+        "server_hall",
+        "workshop_floor"
+      ],
+      "security_office": [
+        "blast_tunnel",
+        "workshop_floor"
+      ],
+      "server_hall": [
+        "gallery",
+        "power_room"
+      ],
+      "workshop_floor": [
+        "power_room",
+        "security_office"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "blast_tunnel",
+      "task go_through_the_blast_door",
+      null
+    ],
+    [
+      "core",
+      "VM launcher (flag tasks)",
+      "core_console_vm"
+    ],
+    [
+      "core",
+      "task decide_his_end (mapping 'global_variable_changed:ending')",
+      null
+    ],
+    [
+      "core",
+      "task decide_the_console (mapping 'global_variable_changed:console_choice')",
+      null
+    ],
+    [
+      "core",
+      "task decide_the_database (mapping 'global_variable_changed:database_outcome')",
+      null
+    ],
+    [
+      "core",
+      "task hear_him_out (mapping 'global_variable_changed:exchange_3')",
+      null
+    ],
+    [
+      "core",
+      "task submit_flag_4 (flag station)",
+      "core_host_terminal"
+    ],
+    [
+      "forward_post",
+      "VM launcher (flag tasks)",
+      "gate_console"
+    ],
+    [
+      "forward_post",
+      "task answer_the_handset (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task answer_the_handset (mapping 'global_variable_changed:ghost_call_done')",
+      null
+    ],
+    [
+      "forward_post",
+      "task close_the_night (mapping 'conversation_closed:citadel')",
+      "citadel"
+    ],
+    [
+      "forward_post",
+      "task close_the_night (mapping 'conversation_closed:hearing')",
+      "hearing"
+    ],
+    [
+      "forward_post",
+      "task close_the_night (mapping 'conversation_closed:six_oclock')",
+      "six_oclock"
+    ],
+    [
+      "forward_post",
+      "task close_the_night (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task close_the_night (mapping 'room_entered')",
+      null
+    ],
+    [
+      "forward_post",
+      "task cut_the_shutter (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task cut_the_shutter (mapping 'global_variable_changed:gallery_shutter_cut')",
+      null
+    ],
+    [
+      "forward_post",
+      "task decide_his_end (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task decide_his_end (mapping 'global_variable_changed:ending')",
+      null
+    ],
+    [
+      "forward_post",
+      "task decide_the_console (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task decide_the_console (mapping 'global_variable_changed:console_choice')",
+      null
+    ],
+    [
+      "forward_post",
+      "task decide_the_database (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task decide_the_database (mapping 'global_variable_changed:database_outcome')",
+      null
+    ],
+    [
+      "forward_post",
+      "task hear_him_out (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task hear_him_out (mapping 'global_variable_changed:exchange_3')",
+      null
+    ],
+    [
+      "forward_post",
+      "task open_the_outer_lock (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task open_the_outer_lock (mapping 'global_variable_changed:head_start_out')",
+      null
+    ],
+    [
+      "forward_post",
+      "task settle_the_table (mapping 'game_loaded')",
+      null
+    ],
+    [
+      "forward_post",
+      "task settle_the_table (mapping 'global_variable_changed:door_scene_done')",
+      null
+    ],
+    [
+      "forward_post",
+      "task submit_flag_1 (flag station)",
+      "gate_terminal"
+    ],
+    [
+      "forward_post",
+      "task take_the_briefing (ink of 'director_netherton')",
+      "director_netherton"
+    ],
+    [
+      "gallery",
+      "task cross_the_gallery",
+      null
+    ],
+    [
+      "gallery",
+      "task settle_the_table (mapping 'global_variable_changed:door_scene_done')",
+      null
+    ],
+    [
+      "power_room",
+      "task cut_the_shutter (mapping 'global_variable_changed:gallery_shutter_cut')",
+      null
+    ],
+    [
+      "power_room",
+      "task reach_power_room",
+      null
+    ],
+    [
+      "security_office",
+      "task reach_security_office",
+      null
+    ],
+    [
+      "server_hall",
+      "VM launcher (flag tasks)",
+      "hall_console"
+    ],
+    [
+      "server_hall",
+      "task reach_server_hall",
+      null
+    ],
+    [
+      "server_hall",
+      "task submit_flag_2 (flag station)",
+      "release_console"
+    ],
+    [
+      "server_hall",
+      "task submit_flag_3 (flag station)",
+      "sealed_hatch"
+    ],
+    [
+      "workshop_floor",
+      "task take_the_stair_down",
+      null
+    ]
+  ]
+}
