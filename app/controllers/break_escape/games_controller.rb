@@ -272,7 +272,7 @@ module BreakEscape
       # nothing to bind, so the player is sent back to start it again for fresh VMs. A VM-free
       # mission and standalone mode (state :none) copy exactly as before.
       if @game.vm_set_state == :released
-        return render json: { success: false, reason: 'vm_released', error: Game::VM_RELEASED_MESSAGE },
+        return render json: { success: false, reason: 'vm_released', error: Game::VM_RELEASED_NEW_SESSION_MESSAGE },
                       status: :unprocessable_entity
       end
 

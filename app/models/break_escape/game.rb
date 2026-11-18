@@ -7672,9 +7672,18 @@ module BreakEscape
     VM_RELEASED_MESSAGE = "This session's VMs have been released, so new flags can't be scored here. " \
                           "Start the mission again to get fresh VMs."
 
+    # The sentence a player sees when New Session is refused on a released game.
+    VM_RELEASED_NEW_SESSION_MESSAGE = "This session's VMs have been released. Start the mission from the " \
+                                      "mission page to get fresh VMs."
+
     # Build states that never count as a set the player holds. 'pending' is not in the list:
-    # a set still building is the player's and is not released.
-    VM_SET_RELEASED_BUILD_STATUSES = %w[error relinquished].freeze
+    # a set still building is the player's and is not released. This is wider than
+    # Hacktivity's GameSlot#active_game_for, which still treats deleted (VMs archived),
+    # removed (gone from the cluster) and build_stopped as active: those VMs cannot be used,
+    # so the launcher must not offer them and new flags must not score. Hacktivity also tests
+    # failed_to_revert by substring, so it is matched the same way (see below).
+    VM_SET_RELEASED_BUILD_STATUSES = %w[error relinquished deleted removed build_stopped marked_broken
+                                        failed_to_revert].freeze
 
     # The one place the host's VmSet is looked up for the state check, so tests can stub it
     # (the dummy app must keep ::VmSet undefined).
@@ -7682,6 +7691,13 @@ module BreakEscape
       return nil unless defined?(::VmSet)
 
       ::VmSet.find_by(id: id)
+    end
+
+    # The one source for this game's VM set id: the column first, then player_state. 0 = none.
+    def vm_set_id_for_state
+      raw_id = self[:vm_set_id].presence
+      raw_id ||= player_state['vm_set_id'] if player_state.is_a?(Hash)
+      raw_id.to_i
     end
 
     # Where this game stands with its VM set, worked out from the host's VmSet row on each
@@ -7692,15 +7708,14 @@ module BreakEscape
     def vm_set_state
       return :none unless BreakEscape::Mission.hacktivity_mode?
 
-      raw_id = self[:vm_set_id].presence
-      raw_id ||= player_state['vm_set_id'] if player_state.is_a?(Hash)
-      id = raw_id.to_i
+      id = vm_set_id_for_state
       return :none unless id.positive?
 
       record = self.class.find_vm_set_record(id)
       return :released unless record
       return :released if record.respond_to?(:relinquished) && record.relinquished
-      return :released if VM_SET_RELEASED_BUILD_STATUSES.include?(record.try(:build_status).to_s)
+      status = record.try(:build_status).to_s
+      return :released if VM_SET_RELEASED_BUILD_STATUSES.include?(status) || status.include?('failed_to_revert')
       return :released unless vm_set_held_by_player?(record)
 
       :live
@@ -7891,9 +7906,9 @@ module BreakEscape
     # Used for backward compat when a flag was previously consumed by the wrong
     # station but already counted in Hacktivity.
     def hacktivity_flag_solved?(flag_key)
-      return false unless defined?(::Flag) && player_state['vm_set_id'].present?
+      return false unless defined?(::Flag) && vm_set_id_for_state.positive?
 
-      vm_set = self.class.find_vm_set_record(player_state['vm_set_id'])
+      vm_set = self.class.find_vm_set_record(vm_set_id_for_state)
       return false unless vm_set
 
       ::Flag.joins(:vm)
@@ -7906,9 +7921,9 @@ module BreakEscape
     # Submit flag to Hacktivity's FlagService
     def submit_to_hacktivity(flag_key)
       return { success: false, message: 'FlagService not available' } unless defined?(::FlagService)
-      return { success: false, message: 'No VM set associated' } unless player_state['vm_set_id'].present?
+      return { success: false, message: 'No VM set associated' } unless vm_set_id_for_state.positive?
 
-      vm_set = ::VmSet.find_by(id: player_state['vm_set_id'])
+      vm_set = ::VmSet.find_by(id: vm_set_id_for_state)
       return { success: false, message: 'VM set not found' } unless vm_set
 
       # Find the specific VM that owns this flag — FlagService.process_flag takes a VM, not a user

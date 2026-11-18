@@ -455,6 +455,14 @@
           })
         : null;
 
+      // D144: a released VM set hides New Session and Start over, with a way back to missions.
+      if (window.BreakEscapeSessionRestartConfirm && window.BreakEscapeSessionRestartConfirm.applyReleasedState) {
+        window.BreakEscapeSessionRestartConfirm.applyReleasedState({
+          released: window.breakEscapeConfig.vmSetState === 'released',
+          cfg: window.breakEscapeConfig
+        });
+      }
+
       newSessionBtn.addEventListener('click', function() {
         var status = document.getElementById('session-restart-status');
         status.textContent = 'Starting new session...';

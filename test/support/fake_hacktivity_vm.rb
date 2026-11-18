@@ -98,22 +98,33 @@ module FakeHacktivityVm
     end
   end
 
-  # What ::Flag.joins(:vm).where(...)... answers: whether the flag is already solved.
+  # What ::Flag.joins(:vm).where(...)... answers: whether the flag is already solved. `solved`
+  # is false/true (any flag, any set) or a list of [vm_set_id, flag_key] pairs, so a test can
+  # show that one solved flag, or a solve on another set, does not let a different one through.
   class FakeFlagQuery
     def initialize(solved)
       @solved = solved
+      @set_id = nil
+      @flag_key = nil
     end
 
     def joins(*)
       self
     end
 
-    def where(*)
+    def where(cond, *args)
+      if cond.is_a?(Hash)
+        @set_id = cond['vms.vm_set_id'] || cond[:'vms.vm_set_id'] || @set_id
+      elsif cond.to_s.include?('flag_key')
+        @flag_key = args.first.to_s.downcase
+      end
       self
     end
 
     def exists?
-      @solved
+      return !!@solved unless @solved.is_a?(Array)
+
+      @solved.any? { |sid, key| sid.to_i == @set_id.to_i && key.to_s.downcase == @flag_key }
     end
   end
 

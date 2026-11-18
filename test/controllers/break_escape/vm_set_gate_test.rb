@@ -18,9 +18,14 @@ module BreakEscape
         pref.in_game_name    = 'TestAgent'
       end
       @game = make_game(@owner)
+      # Hacktivity scores a flag through this callback; record every call.
+      @cb_calls = []
+      @saved_callback = BreakEscape.configuration.on_flag_submit
+      BreakEscape.configuration.on_flag_submit = ->(_game, key, _vm) { @cb_calls << key }
     end
 
     teardown do
+      BreakEscape.configuration.on_flag_submit = @saved_callback
       FakeHacktivityVm.uninstall!
       @owner.update!(role: 'user')
     end
@@ -65,7 +70,40 @@ module BreakEscape
       assert_equal 'vm_released', body['reason']
       assert_equal Game::VM_RELEASED_MESSAGE, body['message']
       assert_empty FakeHacktivityVm.scored
+      assert_empty @cb_calls, 'on_flag_submit not called'
       assert_empty @game.reload.player_state['submitted_flags']
+    end
+
+    test 'flags: only the flag solved before release is accepted; another is refused (per set and flag)' do
+      other_flag = 'flag{two}'
+      @game.player_state['standalone_flags'] = [FLAG, other_flag]
+      @game.save!
+      s = fake_set(relinquished: true)
+      s.vms = FakeHacktivityVm::FlagVms.new([FakeHacktivityVm::FlagVm.new([FLAG, other_flag], 'kali')])
+      install(s, solved: [[11, FLAG]])
+
+      post flags_game_url(@game), params: { flag: other_flag }, as: :json
+      assert_response :unprocessable_entity
+      assert_equal 'vm_released', JSON.parse(response.body)['reason']
+
+      post flags_game_url(@game), params: { flag: FLAG }, as: :json
+      assert_response :success
+      assert_empty @cb_calls
+      assert_empty FakeHacktivityVm.scored
+    end
+
+    test 'flags: a flag solved on a different set does not count' do
+      install(fake_set(relinquished: true), solved: [[99, FLAG]])
+      post flags_game_url(@game), params: { flag: FLAG }, as: :json
+      assert_response :unprocessable_entity
+      assert_empty @cb_calls
+    end
+
+    test 'unlock: solving flag A does not open a lock that wants flag B' do
+      install(fake_set(relinquished: true), solved: [[11, 'flag{other}']])
+      unlock_cache
+      assert_response :unprocessable_entity
+      assert_not @game.reload.object_unlocked?('cache')
     end
 
     test 'flags: a released set takes a flag already solved on it, with no new score' do
@@ -75,6 +113,7 @@ module BreakEscape
       assert_equal true, JSON.parse(response.body)['success']
       assert_empty FakeHacktivityVm.scored, 'no host scoring call'
       assert_includes @game.reload.player_state['submitted_flags'], FLAG
+      assert_empty @cb_calls, 'on_flag_submit not called'
     end
 
     test 'flags: a live set scores as today' do
@@ -82,6 +121,7 @@ module BreakEscape
       post flags_game_url(@game), params: { flag: FLAG }, as: :json
       assert_response :success
       assert_includes FakeHacktivityVm.scored, FLAG
+      assert_equal [FLAG], @cb_calls, 'live: on_flag_submit is the host scoring route'
     end
 
     test 'flags: standalone / no VM set behaves as today' do
@@ -253,7 +293,8 @@ module BreakEscape
       assert_response :unprocessable_entity
       body = JSON.parse(response.body)
       assert_equal 'vm_released', body['reason']
-      assert_equal Game::VM_RELEASED_MESSAGE, body['error']
+      assert_equal Game::VM_RELEASED_NEW_SESSION_MESSAGE, body['error']
+      assert_not_equal Game::VM_RELEASED_MESSAGE, body['error']
       assert_equal 'in_progress', @game.reload.status
     end
 

@@ -394,7 +394,7 @@ export class VmLauncherMinigame extends MinigameScene {
         launcher.className = 'vm-launcher';
         
         if (this.vmSetReleased) {
-            launcher.innerHTML = this.buildReleasedMessage();
+            launcher.appendChild(this.buildReleasedMessage());
         } else if (!this.vm) {
             launcher.innerHTML = this.buildNoVmMessage();
         } else {
@@ -415,20 +415,35 @@ export class VmLauncherMinigame extends MinigameScene {
         this.attachEventHandlers();
     }
     
-    /** The VM set was handed back (D144). Fixed text, no VM title or IP, and a link only to the host's menu. */
+    /**
+     * The VM set was handed back (D144). Fixed text, no VM title or IP, and a link only to the
+     * host's menu (else its return page), each only if same-origin. Built with createElement and
+     * textContent (engine text rule); returns the element.
+     */
     buildReleasedMessage() {
-        const menu = safeVmPanelUrl(window.breakEscapeConfig?.shellMenuUrl);
-        const link = menu
-            ? `<p><a class="vm-action-btn" href="${this.escapeHtml(menu)}">Back to missions</a></p>`
-            : '';
-        return `
-            <div class="no-vms-message vm-released">
-                <h4>VMs released</h4>
-                <p>The VMs for this session have been released. Your progress is kept.</p>
-                <p>To keep hacking, start the mission again from the mission page.</p>
-                ${link}
-            </div>
-        `;
+        const cfg = window.breakEscapeConfig;
+        const back = safeVmPanelUrl(cfg?.shellMenuUrl) || safeVmPanelUrl(cfg?.shellReturnUrl);
+        const box = document.createElement('div');
+        box.className = 'no-vms-message vm-released';
+        const add = (tag, text) => {
+            const el = document.createElement(tag);
+            el.textContent = text;
+            box.appendChild(el);
+        };
+        add('h4', 'VMs released');
+        add('p', 'The VMs for this session have been released. Your progress is kept.');
+        add('p', 'To keep hacking, start the mission again from the mission page.');
+        if (back) {
+            const row = document.createElement('div');
+            row.className = 'vm-actions';
+            const a = document.createElement('a');
+            a.className = 'vm-action-btn';
+            a.textContent = 'Back to missions';
+            a.href = back;
+            row.appendChild(a);
+            box.appendChild(row);
+        }
+        return box;
     }
 
     buildNoVmMessage() {

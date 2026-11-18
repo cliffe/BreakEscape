@@ -77,12 +77,40 @@ module BreakEscape
       assert_equal :released, game.vm_set_state
     end
 
-    test 'released: build status relinquished or error' do
-      %w[relinquished error].each do |status|
+    test 'released: every build status in Game::VM_SET_RELEASED_BUILD_STATUSES' do
+      %w[error relinquished deleted removed build_stopped marked_broken failed_to_revert].each do |status|
+        assert_includes Game::VM_SET_RELEASED_BUILD_STATUSES, status
+      end
+      (Game::VM_SET_RELEASED_BUILD_STATUSES + ['failed_to_revert_again']).each do |status|
         game = make_game
         install(set_for_owner(build_status: status))
         assert_equal :released, game.vm_set_state, status
       end
+    end
+
+    test 'live: success, awaiting_revert and todo are not released' do
+      %w[success awaiting_revert todo running built].each do |status|
+        game = make_game
+        install(set_for_owner(build_status: status))
+        assert_equal :live, game.vm_set_state, status
+      end
+    end
+
+    test 'a lookup error propagates (it is not read as released)' do
+      game = make_game
+      install(set_for_owner)
+      boom = ->(_id) { raise ActiveRecord::ConnectionNotEstablished, 'db down' }
+      Game.stub(:find_vm_set_record, boom) do
+        assert_raises(ActiveRecord::ConnectionNotEstablished) { game.vm_set_state }
+      end
+    end
+
+    test 'the set id comes from the column first, then player_state, for state and flag lookups alike' do
+      game = make_game(vm_set_id: 11)
+      assert_equal 11, game.vm_set_id_for_state
+      game.update_columns(vm_set_id: 12)
+      assert_equal 12, game.vm_set_id_for_state
+      assert_equal 0, make_game(vm_set_id: nil).vm_set_id_for_state
     end
 
     test 'released: the set row is gone' do

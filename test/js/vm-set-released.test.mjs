@@ -42,28 +42,48 @@ function setConfig(cfg) {
 }
 
 /** Run the real buildUI on a jsdom container and return {container, fetchCalls}. */
-function openLauncher({ shellMenuUrl, vmSetState = 'released', hacktivityMode = true } = {}) {
+function openLauncher({ shellMenuUrl, shellReturnUrl, vmSetState = 'released', hacktivityMode = true } = {}) {
     setConfig({
-        hacktivityMode, vmSetState, shellMenuUrl,
+        hacktivityMode, vmSetState, shellMenuUrl, shellReturnUrl,
         vmPanelUrl: '/break_escape/games/42/vm_panel'
     });
     const fetchCalls = [];
     globalThis.fetch = async (url, opts) => { fetchCalls.push({ url, opts }); return { ok: true, json: async () => ({}) }; };
     const gameContainer = document.createElement('div');
     document.body.appendChild(gameContainer);
-    const s = Object.create(VmLauncherMinigame.prototype);
-    Object.assign(s, {
-        hacktivityMode, gameId: 42, gameContainer,
-        vm: { title: HOSTILE_TITLE, ip: HOSTILE_IP },
-        vmPanelUrl: 'https://be.example/break_escape/games/42/vm_panel',
-        vmPanelRefused: false,
-        vmSetReleased: hacktivityMode && vmSetState === 'released',
-        showPostit: false, postitNote: '', flagNote: '',
-        attachEventHandlers() {}
-    });
+    // The real constructor works out vmSetReleased, vmPanelUrl and vmPanelRefused from the
+    // page config; the stubbed MinigameScene base does nothing, so the container is set here.
+    const s = new VmLauncherMinigame(gameContainer, { vm: { title: HOSTILE_TITLE, ip: HOSTILE_IP }, hacktivityMode, gameId: 42 });
+    Object.assign(s, { gameContainer, attachEventHandlers() {} });
     s.buildUI();
-    return { container: gameContainer, fetchCalls };
+    return { container: gameContainer, fetchCalls, scene: s };
 }
+
+test('the constructor works out the released state from the page config', () => {
+    assert.equal(openLauncher({ vmSetState: 'released' }).scene.vmSetReleased, true);
+    assert.equal(openLauncher({ vmSetState: 'live' }).scene.vmSetReleased, false);
+    assert.equal(openLauncher({ vmSetState: 'none' }).scene.vmSetReleased, false);
+    assert.equal(openLauncher({ hacktivityMode: false, vmSetState: 'released' }).scene.vmSetReleased, false);
+    assert.equal(openLauncher({}).scene.vmPanelUrl, 'https://be.example/break_escape/games/42/vm_panel');
+});
+
+test('released: the link sits in the actions row as a block button, not inline in a paragraph', () => {
+    const c = openLauncher({ shellMenuUrl: '/hacktivity/events/1-break-escape' }).container;
+    const a = c.querySelector('a.vm-action-btn');
+    assert.ok(a);
+    assert.equal(a.parentElement.className, 'vm-actions');
+    assert.equal(a.closest('p'), null, 'not inside a paragraph');
+    const css = readFileSync(join(js, '../css/vm-launcher-minigame.css'), 'utf8');
+    assert.match(css, /a\.vm-action-btn\s*\{[^}]*display:\s*inline-block;[^}]*text-decoration:\s*none;/);
+});
+
+test('released: shellReturnUrl is the fallback, and also only when same-origin', () => {
+    const ok = openLauncher({ shellReturnUrl: '/hacktivity/events/1' }).container.querySelector('a');
+    assert.equal(ok.getAttribute('href'), 'https://be.example/hacktivity/events/1');
+    const menuWins = openLauncher({ shellMenuUrl: '/menu', shellReturnUrl: '/ret' }).container.querySelector('a');
+    assert.equal(menuWins.getAttribute('href'), 'https://be.example/menu');
+    assert.equal(openLauncher({ shellReturnUrl: 'https://evil.example/x' }).container.querySelector('a'), null);
+});
 
 test('released: fixed text only; hostile VM title and IP never reach the DOM', () => {
     const { container } = openLauncher({});
