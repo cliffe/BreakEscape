@@ -246,9 +246,9 @@ Priya Raghavan: Three of them have names on. Another twelve million or so since 
 === destination_discussion ===
 #speaker:analyst
 
-Priya Raghavan: That's the weird bit. I lose it in the mixer. But the shape says it all ends up in one place.
+Priya Raghavan: That's the weird bit. I lose it in the mixer, but different wallets go in and I'd bet one comes out.
 
-Priya Raghavan: Different wallets in, and I'd bet one wallet out. Either someone's pooling it, or...
+Priya Raghavan: Either someone's pooling it, or...
 
 + [Or what?]
     -> coordinated_funding
@@ -322,7 +322,7 @@ Priya Raghavan: So either it's fine or she's building a case. She's cleverer tha
 
 Priya Raghavan: Look at this. Three wallets with names, plus a load without. #delivery: eager, showing her working
 
-Priya Raghavan: Into our mixer on a schedule, out the other side. And I'd swear it lands in the same place.
+Priya Raghavan: Into our mixer on a schedule, and I'd swear it all lands in the same place.
 
 + [What do you think it means?]
     -> pattern_interpretation
