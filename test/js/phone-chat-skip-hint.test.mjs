@@ -98,11 +98,6 @@ function rig() {
         typingIndicator: document.getElementById('typing-indicator'),
     };
     ui.scrollToBottom = () => {};
-    ui.addChoices = () => {
-        ui._choicesShown = true;
-        ui.elements.choicesContainer.innerHTML = '<button class="choice-button">1. Go</button>';
-        ui.syncSkipHint();
-    };
     const shown = [];
     const mg = Object.create(PhoneChatMinigame.prototype);
     mg.ui = ui;
@@ -142,7 +137,7 @@ test('hint is hidden when idle, shown while a pause runs and while a line types,
         assert.equal(hint().hidden, false, 'shown while the line types');
         await c.advance(2000);
         await done;
-        assert.equal(r.ui._choicesShown, true);
+        assert.ok(document.querySelector('.choice-button'), 'real addChoices put the choices up');
         assert.equal(hint().hidden, true, 'hidden once the choices are up');
     } finally { c.restore(); }
 });
@@ -184,7 +179,8 @@ test('M1: choices up while a preloaded opening still types keeps the hint hidden
         const typing = r.ui.addMessage('npc', 'A long preloaded opening line.', true);
         assert.equal(r.ui.isTypewriting(), true);
         assert.equal(hint().hidden, false, 'shown while typing');
-        r.ui.addChoices([{ text: 'a' }]);
+        r.ui.addChoices([{ text: 'a' }]);   // the real method, run against the rig DOM
+        assert.ok(document.querySelector('.choice-button'), 'real addChoices built the button');
         assert.equal(r.ui.isTypewriting(), true, 'still typing');
         assert.equal(hint().hidden, true, 'hidden with choices up');
         r.ui.clearChoices();
@@ -255,4 +251,40 @@ test('n2: render() creates the hint only in the terminal theme, once, inside .ph
     assert.ok(term[0].closest('.phone-screen'));
     assert.equal(term[0].hidden, true);
     assert.equal(build('default').length, 0);
+});
+
+test('m1: addChoices calls syncSkipHint itself (source match)', () => {
+    const body = (name) => uiSrc.slice(uiSrc.indexOf(`    ${name}(`)).split('\n    }\n')[0];
+    assert.match(body('addChoices'), /syncSkipHint\(\)/);
+    assert.match(body('clearChoices'), /syncSkipHint\(\)/);
+});
+
+test('n1: the choices container template is empty so :empty matches before clearChoices', () => {
+    document.body.innerHTML = '<div id="host"></div>';
+    const ui = Object.create(UI.prototype);
+    ui.container = document.getElementById('host');
+    ui.params = { theme: 'terminal' };
+    ui.isTerminalTheme = true; ui.isSocialTheme = false; ui.isCallMode = false; ui.appChrome = false; ui.app = null;
+    ui.render();
+    assert.equal(document.querySelector('.choices-container').matches(':empty'), true);
+});
+
+test('n3: the hint hides while an overlay panel is up, even with a clip playing', () => {
+    const r = rig();
+    r.ui.setCallSpeaking(true);
+    assert.equal(hint().hidden, false);
+    r.ui.setOverlayOpen(true);
+    assert.equal(hint().hidden, true, 'hidden under the debrief');
+    r.ui.setCallSpeaking(false);
+    r.ui.setCallSpeaking(true);
+    assert.equal(hint().hidden, true, 'still hidden when another clip starts');
+    r.ui.setOverlayOpen(false);
+    assert.equal(hint().hidden, false);
+    r.ui.setCallSpeaking(false);
+});
+
+test('n3: the pretext debrief path tells the phone UI to hide and restore the hint', () => {
+    const src = readFileSync(join(here, '../../public/break_escape/js/minigames/person-chat/person-chat-pretext.js'), 'utf8');
+    assert.match(src, /setOverlayOpen\?\.\(true\)[\s\S]*renderDebrief\(container/);
+    assert.match(src, /onDone: \(\) => \{[\s\S]*setOverlayOpen\?\.\(false\)/);
 });

@@ -137,9 +137,7 @@ export default class PhoneChatUI {
                             <span></span>
                             <span></span>
                         </div>
-                        <div class="choices-container" id="choices-container">
-                            <!-- Choice buttons will be added here -->
-                        </div>
+                        <div class="choices-container" id="choices-container"></div>
                         <div class="choices-more-cue" id="choices-more-cue" aria-hidden="true">▼ more choices</div>
                     </div>
                 </div>
@@ -1154,12 +1152,19 @@ export default class PhoneChatUI {
         this.syncSkipHint();
     }
 
+    /** A panel over the thread (the pretext debrief) is up or gone: the hint hides while it is. */
+    setOverlayOpen(on) {
+        this._overlayOpen = !!on;
+        this.syncSkipHint();
+    }
+
     /** Show the skip hint while a line types or a pause runs; hidden otherwise (choices, idle). */
     syncSkipHint() {
         const hint = this.container?.querySelector?.('#phone-skip-hint');
         if (!hint) return;
         const choicesUp = !!this.elements?.choicesContainer?.querySelector?.('.choice-button');
         hint.hidden = !(this.isTerminalTheme && this.currentView === 'conversation' && !choicesUp
+            && !this._overlayOpen && !this._incomingCallPanel
             && (this.isTypewriting() || this._paceActive || this._clipPlaying));
     }
 
