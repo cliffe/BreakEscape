@@ -247,7 +247,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           { "text": "RACK BANK B LOST — he reached the laptop before you put him down", "style": "entry", "condition": "globalVars.vented_by_trigger" },
           { "text": "CASUALTIES: the Hall 2 night crew, and the dropped feed", "style": "warning", "condition": "globalVars.crew_lost" },
           { "text": "CASUALTIES: two on the dropped feed. Hall 2 was empty when it went", "style": "warning", "condition": "globalVars.casualties_occurred && !globalVars.crew_lost" },
-          { "text": "OFFICE STAFF: HURT, ON YOUR ACCOUNT", "style": "warning", "condition": "globalVars.ibrahim_ko || globalVars.joanne_ko" },
+          { "text": "OFFICE STAFF: hurt, and that's on you", "style": "warning", "condition": "globalVars.ibrahim_ko || globalVars.joanne_ko" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
           { "text": "VOLTAGE: CAPTURED — Blackout's field lead in custody", "style": "entry", "condition": "globalVars.voltage_captured" },
@@ -1673,7 +1673,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "needsCompany": { "groups": ["aes_office"] },
           "chatterCooldownMin": 2,
           "chatter": {
-            "coffee": ["Two sugars, and don't tell anyone.", "This kettle is older than my car.", "Is there any milk that isn't sour?", "Four more desktops, then I'm done."]
+            "coffee": ["Two sugars, and don't tell anyone.", "This kettle is older than my car.", "Is there any milk that isn't sour?", "These desktops take an age to image."]
           },
 <%# Exchanges (office_life/SPOKEN_LINES.md): read in order, the first unheard one whose gates hold plays when the pair
     meet at the kettle with the first line's speaker in earshot. The knots are in his ink; his storyPath is required. %>
@@ -1722,7 +1722,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "eventMappings": [
             { "eventPattern": "room_entered:main_entrance", "condition": "data.previousRoom === 'operations_office' && !globalVars.aes_staff_off", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_use_started:ops_kettle", "condition": "data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off", "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true && !globalVars.joanne_ko", "onceOnly": true, "bark": "That's the evacuation. Coats, now." },
+            { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true && !globalVars.joanne_ko", "onceOnly": true, "bark": "That's the alarm. Coats on, out we go." },
             { "eventPattern": "room_entered:*", "condition": "globalVars.aes_staff_evacuated === true", "onceOnly": true, "setVisible": false }
           ]
         }

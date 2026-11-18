@@ -13,7 +13,7 @@ VAR aes_staff_off = false
 {aes_staff_off:
     Joanne Pell: I'd rather you kept your distance, love. #exit_conversation
 - else:
-    Joanne Pell: Hiya, duck. I've a dozen inductions at six, so I came in early to set the room up. Don't mind me. #exit_conversation
+    Joanne Pell: Hiya, duck. I've a dozen inductions at six, so I came in early to get ahead. Don't mind me. #exit_conversation
 }
 // Loop to the knot, not DONE: the chat closes on the tag with the divert still unread, so the
 // saved story is mid-knot and a plain DONE here made every later talk show only "(End of

@@ -10,9 +10,9 @@ Two people sit on the reception sofa while the briefing plays. Coming back into 
 
 ## Talk lines (E on either of them; `ink/m04_npc_ibrahim_diallo.ink`, `ink/m04_npc_joanne_pell.ink`)
 
-- Ibrahim: "Morning. I'm swapping the office desktops while nobody needs them. It was booked late, so I won't be on tonight's list."
+- Ibrahim: "Morning. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list."
 - Ibrahim, after trouble: "I'll keep to my work, if it's all the same to you."
-- Joanne: "Hiya, duck. I've a dozen inductions at six, so I came in early to set the room up. Don't mind me."
+- Joanne: "Hiya, duck. I've a dozen inductions at six, so I came in early to get ahead. Don't mind me."
 - Joanne, after trouble: "I'd rather you kept your distance, love."
 
 ## Pool lines at the kettle (one bubble at a time; scenario `chatter.coffee`)
@@ -21,7 +21,7 @@ Ibrahim:
 - "Two sugars, and don't tell anyone."
 - "This kettle is older than my car."
 - "Is there any milk that isn't sour?"
-- "Four more desktops, then I'm done."
+- "These desktops take an age to image."
 
 Joanne:
 - "Proper brew, none of that cooler stuff."
@@ -44,8 +44,8 @@ Each exchange line is at most 40 characters of speech (the validator's cap).
 
 > Ibrahim Diallo: Neither of us is on tonight's rota.
 > Joanne Pell: Your swap was booked late, then?
-> Ibrahim Diallo: After it went out. And you're early.
-> Joanne Pell: We used to have someone on nights.
+> Ibrahim Diallo: After the rota went out. You're early.
+> Joanne Pell: Inductions at six. Nobody knows I'm in.
 
 `ex_stay_out_of_the_halls` (only after you have met Vance):
 
@@ -55,13 +55,14 @@ Each exchange line is at most 40 characters of speech (the validator's cap).
 
 ## Bark (Joanne, when Vance sounds the evacuation; scenario eventMapping `bark`)
 
-- "That's the evacuation. Coats, now."
+- "That's the alarm. Coats on, out we go."
 
 ## Changed existing lines (Q2 (d), off the roster)
 
 | Where | Old | New | Voiced? |
 |---|---|---|---|
 | credit, `scenario.json.erb` (the "ALL ... ON SITE" entry) | ALL ELEVEN ON SITE WALKED OUT | ALL THIRTEEN ON SITE WALKED OUT | no (text) |
+| credit, `scenario.json.erb:250` (new) | n/a | OFFICE STAFF: hurt, and that's on you | no (text) |
 | blueprint note, `scenario.json.erb` ("Facility Blueprints (Marked)") | 'On site: 11. ...' | 'On site per tonight's rota: 11. ...' | no (text) |
 | debrief, `ink/m04_closing_debrief.ink` (HaX head-count line) | Eleven people walked out of there tonight. Two hundred and forty thousand people kept their lights on and never knew why. | Thirteen people walked out of there tonight, two of them not on anyone's list. Two hundred and forty thousand people kept their lights on and never knew why. | yes: needs a re-voice, its own yes |
 

@@ -15,7 +15,7 @@ All new lines are unvoiced. Text is word for word from `DIALOGUE_SAMPLE.md`; eac
 | `ex_stay_out_of_the_halls` (3) | `ink/m04_npc_ibrahim_diallo.ink:48` to `:50` | unvoiced |
 | Joanne bark (evacuation) | `scenario.json.erb:1725` | unvoiced |
 | Credit "ALL THIRTEEN ON SITE WALKED OUT" | `scenario.json.erb:243` | text only |
-| Credit "OFFICE STAFF: HURT, ON YOUR ACCOUNT" | `scenario.json.erb:250` | text only |
+| Credit "OFFICE STAFF: hurt, and that's on you" | `scenario.json.erb:250` | text only |
 | Blueprint note "On site per tonight's rota: 11." | `scenario.json.erb:2857` | text only |
 | Debrief head-count line (changed, was voiced) | `ink/m04_closing_debrief.ink:436` and `:438` | **re-voice needs its own yes** |
 

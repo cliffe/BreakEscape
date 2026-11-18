@@ -98,3 +98,19 @@ F1 fixed (commit abcb3f683, proof in `LIVE_PROOF_6.md` section F1): Ibrahim's an
 | m6 R2 minors still open | Open/known: R2 m3 (user's yes for the `--set` deviation, via AC0) and R2 m5 (probe-library id guard, tooling note). R2 m2 and m4 closed by LIVE_PROOF_7, below |
 
 Also from this round's live work (`LIVE_PROOF_7`): L6 closed (seeded, by `new-game.rb --set` of the timer start globals); R2 m2 (pair render) closed; R2 m4 (sofa re-shoot) closed.
+
+## Dialogue review outcomes (`DIALOGUE_REVIEW.md`: 0 B, 1 M, 7 m)
+
+| Finding | Outcome |
+|---|---|
+| M1 bark repeats the text that follows it | Fixed: "That's the alarm. Coats on, out we go." (38) |
+| m1 Ibrahim says he is swapping desktops but sits all night | Fixed: "Morning. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list." |
+| m2 pool line goes stale on repeat | Fixed: "These desktops take an age to image." (36) |
+| m3 Joanne says she is setting a room up but sits | Fixed: "...so I came in early to get ahead. Don't mind me." |
+| m4 "it" unclear aloud | Fixed: "After the rota went out. You're early." (38) |
+| m5 Joanne's last rota line does not follow | Fixed, orchestrator's wording: "Inductions at six. Nobody knows I'm in." (39) |
+| m6 credit styled unlike its neighbours | Fixed: "OFFICE STAFF: hurt, and that's on you"; r41 and r42 assertions updated and pass |
+| m7 stale line numbers | Fixed in the R3 docs commit |
+| Clone playthrough minor: Voltage says eleven, credits thirteen | Accepted: Q2 (d), Voltage quotes his rota (blueprint note says "per tonight's rota") |
+
+Checks: validator 0 errors, 33 warnings; dialoguelint nothing new; r41 and r42 pass, r5 and r6 fail only on their base-set lines.

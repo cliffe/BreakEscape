@@ -22,7 +22,7 @@ VAR heard_ex_stay_out_of_the_halls = false
 {aes_staff_off:
     Ibrahim Diallo: I'll keep to my work, if it's all the same to you. #exit_conversation
 - else:
-    Ibrahim Diallo: Morning. I'm swapping the office desktops while nobody needs them. It was booked late, so I won't be on tonight's list. #exit_conversation
+    Ibrahim Diallo: Morning. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list. #exit_conversation
 }
 // Loop to the knot, not DONE: the chat closes on the tag with the divert still unread, so the
 // saved story is mid-knot and a plain DONE here made every later talk show only "(End of
@@ -40,8 +40,8 @@ Ibrahim Diallo: Paper never needs me. That's its flaw.
 === ex_not_on_the_rota ===
 Ibrahim Diallo: Neither of us is on tonight's rota.
 Joanne Pell: Your swap was booked late, then?
-Ibrahim Diallo: After it went out. And you're early.
-Joanne Pell: We used to have someone on nights.
+Ibrahim Diallo: After the rota went out. You're early.
+Joanne Pell: Inductions at six. Nobody knows I'm in.
 -> DONE
 
 === ex_stay_out_of_the_halls ===
