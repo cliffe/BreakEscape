@@ -707,11 +707,15 @@ export function playerPushMode({ routed, playerNearWall, npcMoving = true }) {
     return npcMoving ? 'block' : 'slide';
 }
 
-/** Is the NPC actually walking (non-zero velocity, or an active walk), not paused or stopped? */
+/**
+ * Is the NPC actually walking (non-zero velocity, or an active walk: following its path in the
+ * patrol state, which includes the short stop of its own look-ahead avoidance), not paused for
+ * the player, seated, talking or dwelling?
+ */
 export function npcIsMoving(npcBody, behavior) {
     const v = npcBody?.velocity;
     if (v && (Math.abs(v.x) > 1 || Math.abs(v.y) > 1)) return true;
-    return behavior?.isMoving === true;
+    return behavior?.isMoving === true || behavior?._avoidIsWalking?.() === true;
 }
 
 const rectsOverlap = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;

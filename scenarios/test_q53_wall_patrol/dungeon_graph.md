@@ -6,9 +6,9 @@ TEST: patrol NPCs and the player by walls, a one-tile gap and a locked door
 
 Three patrols on fixed waypoints (random patrols steer round the player and never make contact):
 
-1. Wall Walker shuttles along the west wall between two waypoints. Stand in its way against the wall: it must not pass through you or push you into the wall.
+1. Wall Walker shuttles along the north wall between two waypoints. Stand in its way against the wall: it must not pass through you or push you into the wall.
 2. Gap Guard shuttles through the one-tile gap in the desk row at the south of the room (about 38 px wide). It pauses when you are near. Stand in the gap and walk through it: you must never be stuck.
-3. Door Watcher shuttles toward the locked door in the north wall. Stand between it and the door: you must never end up on the far side of the locked door.
+3. Door Watcher shuttles toward the locked door in the north wall (north-west corner). Stand between it and the door: you must never end up on the far side of the locked door.
 
 TEST DURATION: 2 to 3 minutes. Nothing to solve.
 

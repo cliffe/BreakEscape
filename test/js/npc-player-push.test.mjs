@@ -28,7 +28,7 @@ const quiet = console.log;
 console.log = () => {};
 const mod = await import(pathToFileURL(join(dir, 'npc-sprites.mjs')).href);
 console.log = quiet;
-const { clearPlayerOfNpc, blockPlayerIntoNpc, keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision, staticRectsNear } = mod;
+const { clearPlayerOfNpc, blockPlayerIntoNpc, keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision, staticRectsNear, npcIsMoving } = mod;
 
 test('who keeps a route against the player: patrol on, not hostile, not KO', () => {
     const patrol = { config: { patrol: { enabled: true } } };
@@ -279,6 +279,14 @@ test('collider: a paused patrol in a corridor lets the player pass (never a soft
     const walking = stepInto({ moving: true });
     walking.process();
     assert.equal(walking.player.body.position.y, 34, 'the same step against a walking NPC is blocked');
+});
+
+test('npcIsMoving: velocity, isMoving or an active path walk; a paused or dwelling NPC is not moving', () => {
+    assert.equal(npcIsMoving({ velocity: { x: 0, y: -40 } }, null), true);
+    assert.equal(npcIsMoving({ velocity: { x: 0, y: 0 } }, { isMoving: true }), true);
+    assert.equal(npcIsMoving({ velocity: { x: 0, y: 0 } }, { isMoving: false, _avoidIsWalking: () => true }), true, 'stopped by its own look-ahead mid-walk');
+    assert.equal(npcIsMoving({ velocity: { x: 0, y: 0 } }, { isMoving: false, _avoidIsWalking: () => false }), false, 'face_player, dwelling');
+    assert.equal(npcIsMoving({ velocity: { x: 0, y: 0 } }, null), false);
 });
 
 test('blockPlayerIntoNpc: a sideways move alongside the NPC is not undone; running into it is (m1)', () => {

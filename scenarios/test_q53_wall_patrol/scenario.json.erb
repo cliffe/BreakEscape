@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: patrol NPCs and the player by walls, a one-tile gap and a locked door\n\nThree patrols on fixed waypoints (random patrols steer round the player and never make contact):\n\n1. Wall Walker shuttles along the west wall between two waypoints. Stand in its way against the wall: it must not pass through you or push you into the wall.\n2. Gap Guard shuttles through the one-tile gap in the desk row at the south of the room (about 38 px wide). It pauses when you are near. Stand in the gap and walk through it: you must never be stuck.\n3. Door Watcher shuttles toward the locked door in the north wall. Stand between it and the door: you must never end up on the far side of the locked door.\n\nTEST DURATION: 2 to 3 minutes. Nothing to solve.",
+  "scenario_brief": "TEST: patrol NPCs and the player by walls, a one-tile gap and a locked door\n\nThree patrols on fixed waypoints (random patrols steer round the player and never make contact):\n\n1. Wall Walker shuttles along the north wall between two waypoints. Stand in its way against the wall: it must not pass through you or push you into the wall.\n2. Gap Guard shuttles through the one-tile gap in the desk row at the south of the room (about 38 px wide). It pauses when you are near. Stand in the gap and walk through it: you must never be stuck.\n3. Door Watcher shuttles toward the locked door in the north wall (north-west corner). Stand between it and the door: you must never end up on the far side of the locked door.\n\nTEST DURATION: 2 to 3 minutes. Nothing to solve.",
   "endGoal": "Engine test only: stand in the patrols' way and check you are never passed through, pushed into a wall or pushed across the locked door.",
   "startRoom": "hall",
   "startPosition": { "x": 5, "y": 4 },
@@ -28,7 +28,7 @@
           "id": "wall_walker",
           "displayName": "Wall Walker",
           "npcType": "person",
-          "position": { "x": 0.7, "y": 2.5 },
+          "position": { "x": 3.5, "y": 2.1 },
           "spriteSheet": "male_office_worker_v2",
           "storyPath": "scenarios/ink/test-npc.json",
           "currentKnot": "start",
@@ -37,7 +37,7 @@
             "patrol": {
               "enabled": true,
               "speed": 80,
-              "waypoints": [ { "x": 0.7, "y": 2.5 }, { "x": 0.7, "y": 5.3 } ],
+              "waypoints": [ { "x": 3.5, "y": 2.1 }, { "x": 8, "y": 2.1 } ],
               "waypointMode": "sequential",
               "loop": true,
               "pauseForPlayer": false
@@ -56,7 +56,7 @@
             "patrol": {
               "enabled": true,
               "speed": 70,
-              "waypoints": [ { "x": 3.2, "y": 5.4 }, { "x": 3.2, "y": 7.6 } ],
+              "waypoints": [ { "x": 3.2, "y": 5.4 }, { "x": 3.2, "y": 8.3 } ],
               "waypointMode": "sequential",
               "loop": true,
               "pauseForPlayer": true
@@ -67,7 +67,7 @@
           "id": "door_watcher",
           "displayName": "Door Watcher",
           "npcType": "person",
-          "position": { "x": 5, "y": 5.3 },
+          "position": { "x": 1.75, "y": 4 },
           "spriteSheet": "hacker-red",
           "spriteConfig": { "idleFrameStart": 20, "idleFrameEnd": 23 },
           "storyPath": "scenarios/ink/test-npc.json",
@@ -77,7 +77,7 @@
             "patrol": {
               "enabled": true,
               "speed": 80,
-              "waypoints": [ { "x": 5, "y": 5.3 }, { "x": 5, "y": 2.4 } ],
+              "waypoints": [ { "x": 1.75, "y": 4 }, { "x": 1.75, "y": 2.3 } ],
               "waypointMode": "sequential",
               "loop": true,
               "pauseForPlayer": false
