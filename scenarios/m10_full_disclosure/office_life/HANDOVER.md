@@ -10,23 +10,52 @@ Branch `build/ol-m10`, worktree `.claude/worktrees/p-ol-m10`. The plan closed at
 - `3c31d555b` build review R1 (0 B, 2 M, 8 m). `0d50e66b9` R1 fixes: `chaseRange` 32 (table items reachable 17 to 28 px from the extras, so no range clears the table), two pool lines reworded, docs, DIALOGUE_SAMPLE.md. Outcomes in BUILD_REVIEW_R1.md.
 - `a228b9c2a` LIVE_B2A.md, `9c42608b7` LIVE_B2B.md plus `tools/playtest/m10-ol-b2b-*.mjs`, `e3b7fcdd6` LIVE_B2C.md (all partial).
 
+## Session 2 (2026-11-17/18), commits on build/ol-m10
+
+- `f5b7feead` dialogue R1 fixes (all 8). `93cc9ca10` post-breach brew needs `!!data.previousRoom` (a load no longer brews). `0a8d4e609` live B2b, B2c run 2, L2 control. `862860a6c` R2 fixes: Sofia credit clause on `fp_staff_upset` ("Welfare. Put the kettle away when the shouting started.", both copies), PLAN 2.1 lunge note, ink:48 reworded; untethered E2. `a6738ecfa` R3, LIVE_B2D. `0447998ff` R4, check D rerun. `a18be8bfb` dialogue R2. `2c07133d6` R5 fixes (ink:45 "Bitter out here, and we're out of sugar.", ink:54 "I'll keep a cup warm for you.").
+- **chaseRange 32 was the orchestrator's call** (table items sit 17 to 28 px from the extras, so no range clears the table). AC0 relayed that the user accepts it.
+
 ## Review rounds
 
 | Round | Tier | B | M | m |
 |---|---|---|---|---|
-| Build R1 | review tier (planning tier model) | 0 | 2 | 8 |
-| Dialogue R1 (npc-dialog-review, new lines) | planning tier | 0 | 2 | 6 |
+| Build R1 | planning tier | 0 | 2 | 8 |
+| Dialogue R1 | planning tier | 0 | 2 | 6 |
+| Build R2 | opus55 | 0 | 0 | 4 |
+| Build R3 (delta) | Sonnet | 0 | 0 | 1 |
+| Build R4 (delta) | Sonnet | 0 | 0 | 0 |
+| Dialogue R2 (changed lines) | Sonnet | 0 | 0 | 1 |
+| Build R5 (delta) | Sonnet | 0 | 0 | 3 |
+
+All findings fixed. R5's fixes changed two ink lines, so one more Sonnet delta (R6, minors only) on `2c07133d6` is due before voicing: check ink:45 and :54 in their knot, the compile, and SPOKEN_LINES lengths (40, 29).
+
+## Live proof (all keyless :3099, fresh games)
+
+- Radios orders (LIVE_B2B): console 7997 and table 7998 heard, Sofia first, Darren brews +2.0 s, Sofia +4.7 s; door 8000 missed at 326 px (accepted). No brew on the split close or a second Arakawa talk; reload past the split holds.
+- Real strike (8013 Sofia, 8014 Darren): `npc_attacked` sets `fp_staff_upset` on the first hit, kettle off, survivor never brews. **The B2A gap was a debugKO artefact; no mapping added.**
+- Chase at 32: max 28.8 px lunge, no pursuit; a struck extra stays where the lunge ended (engine walks home only past 32 px; PLAN 2.1 notes it).
+- Walkthrough 1 to 16 (7999) and untethered route to the tunnel (8051): 0 NPCs within 14 px of the homes, no stalled walk.
+- Reload past the breach (8071): no brew on load for 116 s; a real walk-in brews 2.7 s later. E1: both hide at `closing_done` and stay hidden after a reload. Credits order: Arakawa, Malhotra, Darren, Sofia (plain).
+- Upset credit (8125): Sofia's upset clause chosen, read through `window.endingReplayOptions` on live globals; not seen on screen (the credits overlay shows one line at a time).
+- L2 (LIVE_L2_CONTROL): the van_two and malhotra_post fails are the `moveToNear` helper stopping short; the extras change nothing. Pressing E there opens Minder's or Nightshade's chat: base van layout, out of scope, for the level designer.
+- Not proven live: a real KO's credit line and the six o'clock "bruises" line; an Arakawa KO in the yard.
 
 ## Open (resume here)
 
-1. **Dialogue R1 findings** (`DIALOG_REVIEW_R1.md`): majors are Darren's pool line "Van two's battery is on its last bar." (van two is in the whodunnit) and `ex_fp_radios` opening "The radios have gone very quiet." (reads as a report on the team's comms). Recommended: take the reviewer's replacements for both majors and minors 3, 5, 6, 7, 8; minor 4 too. Then recompile, refresh SPOKEN_LINES.md and DIALOGUE_SAMPLE.md, and re-run the validator.
-2. **Trouble gap to verify**: in LIVE_B2A the KO of an extra (via debugKO) set its KO global but not `fp_staff_upset`, so the other kept brewing. Check whether a real KO in play emits `npc_attacked` first (then it is a probe artefact); if not, add `global_variable_changed:fp_darren_ko` and `:fp_sofia_ko` onceOnly mappings to `agent_0x99` setting `fp_staff_upset` (design: any hurt person stops the tea).
-3. **Minor from LIVE_B2C**: after a reload with `breach_open` true, the `room_entered:forward_post` break fires on load (no cooldown in the new session). No exchange repeats. Decide: accept, or add a short `delayMs`/condition so a load does not count.
-4. **Live proof still open**: chase against 32 px (B2A walks hit blocking UI); L2 control run for `van_two` and `malhotra_post` with the pair away (failed with them at the kettle: check whether that is the pair or the harness); `kit_table` recheck; B2B all five checks (console, table, blast-door orders of `ex_fp_radios`, split_line close no brew, reload after split, E2) using `tools/playtest/m10-ol-b2b-run.mjs` (its game 7872 console run output is in the session scratchpad, likely lost); B2C walkthrough steps 6 to 16, untethered E2, E1 hide at `closing_done` and after reload, live credits order. Already shown live: `ex_fp_kettle_on` (Darren first), `ex_fp_radios` after the gate scene, `ex_fp_door_open` (Sofia first, once), E3 unchanged, reloads in the briefing and after the breach, no NPC on the extras' cells.
-5. Harness notes: new-game.rb prints no FLAGS_XML for m10; flag 1 stand-in `flag{m10_monitoring_foothold}` typed at the gate terminal works. The tutorial modal needs dismissing. The opening Netherton chat must be played through (`settle()` in `tools/playtest/m10-ol-lib.mjs`).
-6. Build review rounds R2 to R5 (R2 on the planning tier after majors; deltas on the review tier from R4 unless a major or a line/reveal change), until 0 B / 0 M.
-7. Uncommitted, not ours to stage: `dungeon_graph.*`, `node_modules` (symlink), `tools/playtest/m10-ol-b2c-session.jsonl` (harness log; leave or move to tmp/delete/).
+1. R6 Sonnet delta on `2c07133d6` (above).
+2. **Voicing: AC0 relayed the user's "Implement these using your best judgement" for m10.** Once R6 is clean: voice the new lines with the tts-audio skill (Sofia under Despina, Darren under Orus, the m10_fp_support conversation and exchange lines, the eight kettle_fp pool lines; check `ttsPregenerateChatter` for the pools), 0 wasted clips (`tts:wasted`), listen-check by transcript, then strip model names from repo files, commit, and report the train hash to AC0. No separate card. Not started.
+3. Uncommitted, not ours: `dungeon_graph.*`, `node_modules`.
 
-## Lines needing the user's yes
+## Wording sign-off (AC0 says it counts as signed off once the loops are clean)
 
-Wording (DIALOGUE_SAMPLE.md) and voicing are separate yeses. Unvoiced lines: `ink/m10_fp_support.ink:27`, `:30`, `:36`, `:45`, `:48`, `:54`, `:61` to `:64`, `:69` to `:71`, `:76` to `:78`, and the eight `kettle_fp` pool lines in `scenario.json.erb` (around `:2628` and `:2662`). Line numbers move if dialogue R1 fixes go in.
+All in `DIALOGUE_SAMPLE.md`: Darren's 3 conversation lines and 4 pool lines; Sofia's 3 conversation lines and 4 pool lines; the three exchanges (4 + 3 + 3 lines); credits (not voiced): Darren 2 clauses, Sofia 3 clauses, including the new upset clause.
+
+## Voicing list (clip counts per voice)
+
+| Voice | Speaker | Conversation (ink) | Exchanges (ink) | Pool (kettle_fp) | Clips |
+|---|---|---|---|---|---|
+| Orus | Darren Price | 3 (`ink:27`, `:30`, `:36`) | 4 (`:61`, `:63`, `:70`, `:77`) | 4 | 11 |
+| Despina | Sofia Marchetti | 3 (`ink:45`, `:48`, `:54`) | 6 (`:62`, `:64`, `:69`, `:71`, `:76`, `:78`) | 4 | 13 |
+| | | | | Total | 24 |
+
+Line numbers are from SPOKEN_LINES.md; recheck there before voicing.
