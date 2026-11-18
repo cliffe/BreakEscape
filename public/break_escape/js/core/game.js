@@ -484,6 +484,14 @@ export function preload() {
     this.load.image('network_port_cabinet', 'objects/network_port_cabinet.png');
     this.load.image('network_dropbox_planted_cabinet', 'objects/network_dropbox_planted_cabinet.png');
     this.load.image('rogue_ap_tucked', 'objects/rogue_ap_tucked.png');
+    this.load.image('lw_sign_archive1', 'objects/lw_sign_archive1.png');
+    this.load.image('lw_framed_notice1', 'objects/lw_framed_notice1.png');
+    this.load.image('lw_recycling_bin1', 'objects/lw_recycling_bin1.png');
+    this.load.image('lw_lanyard1', 'objects/lw_lanyard1.png');
+    this.load.image('lw_chair_s1', 'objects/lw_chair_s1.png');
+    this.load.image('lw_chair_n1', 'objects/lw_chair_n1.png');
+    this.load.image('lw_chair_w1', 'objects/lw_chair_w1.png');
+    this.load.image('lw_chair_e1', 'objects/lw_chair_e1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');

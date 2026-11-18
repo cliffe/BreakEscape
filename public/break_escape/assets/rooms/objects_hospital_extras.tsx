@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="680" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="688" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -2040,5 +2040,29 @@
  </tile>
  <tile id="689">
   <image source="../objects/rogue_ap_tucked.png" width="12" height="10"/>
+ </tile>
+ <tile id="690">
+  <image source="../objects/lw_sign_archive1.png" width="67" height="11"/>
+ </tile>
+ <tile id="691">
+  <image source="../objects/lw_framed_notice1.png" width="22" height="28"/>
+ </tile>
+ <tile id="692">
+  <image source="../objects/lw_recycling_bin1.png" width="18" height="22"/>
+ </tile>
+ <tile id="693">
+  <image source="../objects/lw_lanyard1.png" width="10" height="16"/>
+ </tile>
+ <tile id="694">
+  <image source="../objects/lw_chair_s1.png" width="16" height="35"/>
+ </tile>
+ <tile id="695">
+  <image source="../objects/lw_chair_n1.png" width="16" height="30"/>
+ </tile>
+ <tile id="696">
+  <image source="../objects/lw_chair_w1.png" width="17" height="32"/>
+ </tile>
+ <tile id="697">
+  <image source="../objects/lw_chair_e1.png" width="17" height="32"/>
  </tile>
 </tileset>

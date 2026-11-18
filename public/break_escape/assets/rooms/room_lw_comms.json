@@ -161,15 +161,15 @@
      "y": 30.0
     },
     {
-     "gid": 1114,
-     "height": 57,
+     "gid": 869,
+     "height": 56,
      "id": 89,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 34,
-     "x": 120.0,
+     "width": 31,
+     "x": 116.0,
      "y": 120.0
     },
     {
@@ -181,8 +181,8 @@
      "type": "",
      "visible": true,
      "width": 18,
-     "x": 128.0,
-     "y": 54.0
+     "x": 13.0,
+     "y": 68.0
     }
    ],
    "opacity": 1,

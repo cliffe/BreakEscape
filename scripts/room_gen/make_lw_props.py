@@ -295,6 +295,126 @@ def exit_button():
     c.save(OBJ, "lw_exit_button1")
 
 
+# --- dressing round 1 (DRESSING_REVIEW_R1.md): plate, notice, bin, lanyard, cafe chairs ----
+# Drawn at native size; the chairs are a hue shift and a mirror, never a rescale.
+
+U.FONT["&"] = [".#.", "#.#", ".#.", "#.#", ".##"]
+
+
+def archive_plate():
+    """A brass DEEDS & ARCHIVE name plate, the lw_sign_records1 shape (67x11)."""
+    plate("DEEDS & ARCHIVE", "lw_sign_archive1")
+
+
+def framed_notice():
+    """A framed two-person-rule notice, 22x28: brass frame, cream sheet, two figures
+    over grey rules and a green 'RULE' strap."""
+    w, h = 22, 28
+    c = Canvas(w, h)
+    c.rect(0, 0, w - 1, h - 1, OUTLINE)
+    c.frame(1, 1, w - 2, h - 2, BRASS)
+    c.rect(2, 2, w - 3, h - 3, CREAM)
+    c.rect(2, 2, w - 3, 8, PLATE)
+    c.text_centred(2, w - 3, 3, "RULE", CREAM)
+    for cx in (6, 15):                       # two figures: head, gap, shoulders
+        c.rect(cx - 1, 10, cx + 1, 12, PLATE)
+        c.rect(cx - 2, 14, cx + 2, 18, PLATE)
+        c.px(cx - 2, 14, CREAM)
+        c.px(cx + 2, 14, CREAM)
+    c.hline(4, 17, 21, GREY)
+    c.hline(4, 15, 23, GREY)
+    c.hline(4, 17, 25, GREY)
+    c.save(OBJ, "lw_framed_notice1")
+
+
+def recycling_bin():
+    """An open blue recycling bin, 18x22, loose paper standing out of the top."""
+    w, h = 18, 22
+    c = Canvas(w, h)
+    BL, BLD, BLH = (58, 104, 164), (40, 76, 126), (96, 142, 200)
+    PAPER, PAPER_D = (244, 240, 226), (206, 200, 184)
+    # paper first (behind the rim): three sheets at slightly different heights
+    for (x0, x1, y0) in ((3, 8, 1), (7, 12, 0), (11, 15, 3)):
+        c.rect(x0, y0, x1, 7, PAPER)
+        c.frame(x0, y0, x1, 7, OUTLINE)
+        c.hline(x0 + 1, x1 - 1, y0 + 2, PAPER_D)
+        c.hline(x0 + 1, x1 - 2, y0 + 4, PAPER_D)
+    # rim and body (tapers towards the foot)
+    c.rect(1, 6, w - 2, 8, OUTLINE)
+    c.rect(2, 6, w - 3, 7, BLH)
+    c.hline(2, w - 3, 8, BLD)
+    for j, y in enumerate(range(9, 21)):
+        inset = 1 + j // 6
+        c.rect(inset, y, w - 1 - inset, y, BL)
+        c.px(inset, y, OUTLINE)
+        c.px(w - 1 - inset, y, OUTLINE)
+        c.px(w - 2 - inset, y, BLD)
+    c.rect(3, 21, w - 4, 21, OUTLINE)
+    # a white recycling-arrow mark
+    for (x, y) in ((8, 12), (9, 12), (10, 12), (7, 13), (11, 13), (7, 14), (11, 14), (8, 15), (10, 15), (9, 16)):
+        c.px(x, y, CREAM)
+    c.save(OBJ, "lw_recycling_bin1")
+
+
+def lanyard():
+    """A bottle-green staff lanyard with a brass clip and a white pass card, 10x16,
+    laid flat on a worktop."""
+    w, h = 10, 16
+    c = Canvas(w, h)
+    GREEN, GREEN_D = (30, 92, 62), (20, 60, 42)
+    c.rect(1, 0, 8, 0, OUTLINE)
+    c.rect(1, 1, 8, 1, GREEN)
+    c.rect(1, 2, 2, 6, GREEN)
+    c.rect(7, 2, 8, 6, GREEN)
+    c.hline(1, 8, 2, GREEN_D)
+    c.px(0, 1, OUTLINE); c.px(9, 1, OUTLINE)
+    c.rect(4, 6, 5, 7, BRASS)
+    c.rect(1, 8, 8, 14, OUTLINE)
+    c.rect(2, 9, 7, 13, CREAM)
+    c.rect(3, 10, 4, 11, GREY)               # photo
+    c.hline(5, 6, 10, GREY)
+    c.hline(5, 6, 12, GREY)
+    c.hline(3, 6, 13, BRASS_DARK)
+    c.hline(2, 7, 15, (0, 0, 0, 60))
+    c.save(OBJ, "lw_lanyard1")
+
+
+def cafe_chairs():
+    """The kitchen's four straight-on chairs: the aw slate chairs turned bottle green,
+    plus a mirrored east-facing copy. lw_chair_s1 faces south (front view),
+    lw_chair_n1 faces north (back view), lw_chair_w1 faces west, lw_chair_e1 east."""
+    from PIL import Image, ImageOps
+    import colorsys
+    pairs = (("aw_chair_south_slate1", "lw_chair_s1"), ("aw_chair_north_slate1", "lw_chair_n1"),
+             ("aw_chair_w_slate1", "lw_chair_w1"))
+    for src_name, out_name in pairs:
+        src = Image.open(OBJ / f"{src_name}.png").convert("RGBA")
+        out = src.copy()
+        sp, op = src.load(), out.load()
+        for y in range(src.height):
+            for x in range(src.width):
+                r, g, b, a = sp[x, y]
+                if a == 0:
+                    continue
+                hh, ss, vv = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                if ss > 0.25 and 0.50 < hh < 0.75:       # the blue upholstery only
+                    nr, ng, nb = colorsys.hsv_to_rgb(0.40, min(1.0, ss * 0.9), vv * 0.92)
+                    op[x, y] = (int(nr * 255), int(ng * 255), int(nb * 255), a)
+        out.save(OBJ / f"{out_name}.png")
+        print(f"wrote {out_name} {out.width}x{out.height}")
+        if out_name == "lw_chair_w1":
+            ImageOps.mirror(out).save(OBJ / "lw_chair_e1.png")
+            print(f"wrote lw_chair_e1 {out.width}x{out.height}")
+
+
+def round1_props():
+    archive_plate()
+    framed_notice()
+    recycling_bin()
+    lanyard()
+    cafe_chairs()
+
+
 def main():
     credenza()
     sash_window()
@@ -311,6 +431,7 @@ def main():
     plate("RECORDS", "lw_sign_records1")
     plate("ADMIN", "lw_sign_admin1")
     plate("STORE", "lw_sign_store1")
+    round1_props()
 
 
 if __name__ == "__main__":
