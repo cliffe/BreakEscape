@@ -46,6 +46,7 @@ const unlockSrc = stubAll(read('systems/unlock-system.js'), {
     '../utils/remote-host-text.js': dataUrl(read('utils/remote-host-text.js')),
     '../minigames/biometrics/fingerprint-reader-minigame.js': dataUrl('export function startFingerprintReader() {}'),
     '../utils/lock-scope-refusal.js': dataUrl(`export async function unlockWithRouteRoomRetry(...a) { globalThis.__unlocks.push(a); return { ok: true }; }`),
+    '../utils/dispense-on-unlock.js': dataUrl('export const wantsDispense = () => false; export const dispenseContents = async () => ({ ok: false }); export const afterContainerUnlock = async (d, o = {}) => { if (o.autoOpen !== false && o.openScreen) o.openScreen(); };'),
     './lockpick-catch.js': catchUrl
 });
 const { handleUnlock } = await import(dataUrl(unlockSrc));
