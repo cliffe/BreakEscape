@@ -588,7 +588,7 @@ during the walk home (exists). Player-facing behaviour:
 - **Pools.** Since slice 15 there are no built-in lines (5.6a): a scenario's `chatter` pools
   (`coffee`, `cooler`, `greet`, `grumble`) and an NPC's own `chatter` lines for that topic make up
   what an NPC can say, and with none it shows picture chat. `"chatter": false` turns chat off
-  entirely. A pool is a list or `{ lines, hush, overhearRadius }`.
+  entirely. A pool is a list or `{ lines, hush, overhearRadius, requireGlobal }`.
   `chattiness` (0..1, default 1) is the seeded chance an NPC speaks on its turn. Lines are at most
   40 characters, one line (validator error).
 - **Ends** when either NPC is frozen in a conversation, finishes, or is interrupted; the other
@@ -639,6 +639,20 @@ during the walk home (exists). Player-facing behaviour:
 - **Bag.** An NPC draws from a seeded shuffle-bag per NPC and topic over the pool it speaks (shared
   plus own lines). It refills when empty and a refill never starts with the line just said. Bags are
   in memory only (not saved).
+- **Gated pools (`requireGlobal`).** A pool in its object form may carry `requireGlobal`: a global
+  name (truthy) or `{ name: value }` (every entry matches by strict equality), judged by
+  `requiredGlobalsHold`, as an exchange's gate is. `chatterPool(topic, scenario, own, thoughts, holds)`
+  asks `holds` for each pool at the moment a line is drawn (pair chat at a chatter object, queue
+  chat, grumbles, mutters, announces, phone-pool lines and the has-lines checks all go through it),
+  so the gate reacts live to the global changing and, being read from the saved globals, holds after
+  a reload. A closed pool contributes nothing: no lines, no `hush`, no `overhearRadius`. With several
+  pools under one key (the scenario's and the NPC's own) only the closed ones are skipped. A plain
+  array pool has no gate. Exchanges are unchanged. **A closed pool silences the speech only.** The
+  pair still forms, walks to the object, uses it for the same time and takes its chat turns, so trips
+  and use timing do not change; with no open lines a turn is picture chat as for any topic with no
+  lines (`"chatter": false` or `"npcThoughts": false` removes those too). The validator warns (V12)
+  when a gate names a global that `globalVariables` does not declare; V10 ignores gates. Showcase:
+  `scenarios/test_chatter_pool_gate`.
 - **Earshot (E7 to E9).** A chat turn counts as heard by `playerHears(speakerId, radius)`: the
   player in the speaker's room, within the radius, the room lit, a clear line. The radius is one
   rule, `_chatRadius`: the object's `overhearRadius`, else the `overhearRadius` of that speaker's
