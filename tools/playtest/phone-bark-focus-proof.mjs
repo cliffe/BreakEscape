@@ -21,11 +21,11 @@ async function run(w, h, tag) {
   for (const sel of ['#session-resume-btn', '.mission-brief-close', '.mission-brief-start']) {
     const el = await page.$(sel); if (el && await el.isVisible()) { await el.click(); await page.waitForTimeout(300); }
   }
-  const send = (text, startKnot) => page.evaluate(({ id, text, startKnot }) => {
-    window.npcManager.addMessage(id, 'npc', text, { isBark: true });
+  const send = (text, startKnot, skipAdd) => page.evaluate(({ id, text, startKnot, skipAdd }) => {
+    if (!skipAdd) window.npcManager.addMessage(id, 'npc', text, { isBark: true });
     const npc = window.npcManager.getNPC(id);
     window.barkSystem.showBark({ npcId: id, npcName: npc?.displayName, message: text, avatar: npc?.avatar, phoneId: npc?.phoneId, startKnot });
-  }, { id: HAX, text, startKnot });
+  }, { id: HAX, text, startKnot, skipAdd });
   const barks = () => page.evaluate(() => document.querySelectorAll('#npc-bark-container .npc-bark').length);
   const active = () => page.evaluate(() => { const a = document.activeElement; return a ? (a.className || a.id || a.tagName) + '' : null; });
 
@@ -45,11 +45,16 @@ async function run(w, h, tag) {
   await page.evaluate((id) => window.MinigameFramework.currentMinigame.openConversation(id), HAX);
   await page.waitForTimeout(1500);
   const hud = () => page.evaluate(() => { const b = document.querySelector('.phone-badge'); return b ? (parseInt(b.textContent, 10) || 0) : 0; });
-  const hudBefore = await hud();
+  const total = () => page.evaluate(() => { const m = window.MinigameFramework.currentMinigame; return window.npcManager.getTotalUnreadCount(m.phoneId, m.allowedNpcIds || null); });
+  const before = await barks();
+  // Add the history row first (unread), sample the phone's unread total, then deliver the bark
+  // so the fold has something to mark read: the drop is measured across the fold itself.
+  await page.evaluate((id) => window.npcManager.addMessage(id, 'npc', 'Proof text one: eyes on the vault.', { isBark: true }), HAX);
+  const totalBefore = await total();
   const haxBefore = await page.evaluate((id) => (window.npcManager.getConversationHistory(id) || [])
     .filter(m => !m.read && (m.type === 'npc' || (m.type === 'call' && m.callEvent === 'missed'))).length, HAX);
-  const before = await barks();
-  await send('Proof text one: eyes on the vault.');
+  check(haxBefore >= 1, `${tag}: the proof text is unread before the fold (HaX unread ${haxBefore})`);
+  await send('Proof text one: eyes on the vault.', undefined, true);
   await page.waitForTimeout(1500);
   check((await barks()) === before, `${tag}: no toast for HaX while HaX's conversation is open`);
   check(await page.evaluate(() => document.body.innerText.includes('Proof text one')), `${tag}: the open thread shows the text`);
@@ -59,9 +64,9 @@ async function run(w, h, tag) {
   // Another contact may still have unread texts, so the badge need not vanish: its count
   // must equal the phone's total, and have dropped by HaX's own unread count
   const hudAfter = await hud();
-  const total = await page.evaluate(() => { const m = window.MinigameFramework.currentMinigame; return window.npcManager.getTotalUnreadCount(m.phoneId, m.npcIds || null); });
-  check(hudAfter === total, `${tag}: HUD badge (${hudAfter}) equals the phone's unread total (${total})`);
-  check(hudBefore - hudAfter === haxBefore, `${tag}: HUD badge dropped by HaX's unread count (${hudBefore} -> ${hudAfter}, HaX had ${haxBefore})`);
+  const totalAfter = await total();
+  check(hudAfter === totalAfter, `${tag}: HUD badge (${hudAfter}) equals the phone's unread total (${totalAfter})`);
+  check(totalBefore - totalAfter === haxBefore, `${tag}: unread total dropped by HaX's unread count across the fold (${totalBefore} -> ${totalAfter}, HaX had ${haxBefore})`);
   await page.screenshot({ path: `${outdir}/${tag}-2-open-thread-no-toast.png` });
   check(await page.evaluate(() => !!document.activeElement?.closest?.('.phone-messages-container')), `${tag}: focus still in the phone after the text`);
 
