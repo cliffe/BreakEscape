@@ -250,7 +250,7 @@ Director Magnus Netherton: I will need an explanation for that in writing. Not t
 }
 
 { projection_revised and not team_redirected:
-    Director Magnus Netherton: Your field notes say the Trojan Horse projection was understated. Nine days, not ninety, and dispatch on the manifest.
+    Director Magnus Netherton: Your field notes say the Trojan Horse projection was understated.
     // PASS 2: was "timestamped an hour and six minutes before the tactical
     // element was committed", impossible -- the team is committed in the
     // briefing, before the player is inside.
