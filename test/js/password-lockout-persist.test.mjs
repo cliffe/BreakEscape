@@ -102,3 +102,48 @@ test('without lockoutSeconds the count resets on reopening, as before', async ()
     const b = mk(0);
     assert.equal(b.gameData.attempts, 0);
 });
+
+test('a door lock keys on its room, so lockoutSeconds works on doors too', async () => {
+    clearPasswordLocks();
+    const mkDoor = () => {
+        const g = new M.PasswordMinigame({}, { lockable: { doorProperties: { connectedRoom: 'vault' } }, type: 'door', lockoutSeconds: 30, maxAttempts: 3 });
+        return g;
+    };
+    assert.equal(mkDoor().lockKey, 'door:vault');
+    notePasswordAttempts('door:vault', 2, 3, 30, Date.now());
+    assert.equal(mkDoor().gameData.attempts, 2);
+});
+
+test('the max-attempts message says how long the wait is when a lockout is set', () => {
+    for (const [secs, re] of [[30, /Locked for 30 seconds\./], [0, /^Maximum attempts exceeded\. Access denied\.$/]]) {
+        const lockable = { scenarioData: { id: 'pc' } };
+        const g = new M.PasswordMinigame({}, { lockable, type: 'object', lockoutSeconds: secs, maxAttempts: 3 });
+        g.cleanup = () => {};
+        g.msgs = [];
+        g.showScreenMessage = (t) => g.msgs.push(t);
+        g.passwordFailed();
+        assert.match(g.msgs[0], re);
+    }
+});
+
+test('handleUnlock passes lockoutSeconds from the lock to the password minigame', () => {
+    const us = readFileSync(join(here, '../../public/break_escape/js/systems/unlock-system.js'), 'utf8');
+    assert.match(us, /lockoutSeconds:\s*lockable\.lockoutSeconds \|\| lockable\.scenarioData\?\.lockoutSeconds \|\| pwDoor\.lockoutSeconds/);
+    const st = readFileSync(join(here, '../../public/break_escape/js/systems/minigame-starters.js'), 'utf8');
+    assert.match(st, /lockoutSeconds:\s*options\.lockoutSeconds/);
+});
+
+test('m01: Derek access task ticks on the door opening, and Derek computer sets a lockout', () => {
+    const erb = readFileSync(join(here, '../../scenarios/m01_first_contact/scenario.json.erb'), 'utf8');
+    const task = erb.match(/"taskId": "find_derek_access"[\s\S]*?\}/)[0];
+    assert.match(task, /"type": "unlock_room"/);
+    assert.match(task, /"targetRoom": "derek_office"/);
+    assert.match(erb, /"id": "derek_computer"[\s\S]{0,3000}?"lockoutSeconds": 30/);
+});
+
+test('m01: the Derek-is-stalling HaX text waits for the casualty projections', () => {
+    const erb = readFileSync(join(here, '../../scenarios/m01_first_contact/scenario.json.erb'), 'utf8');
+    const m = erb.match(/"condition": "([^"]*)",\s*"onceOnly": true,\s*"sendTimedMessage": \{[^}]*Derek won't engage/);
+    assert.ok(m, 'stalling text trigger found');
+    assert.match(m[1], /globalVars\.found_casualty_projections/);
+});

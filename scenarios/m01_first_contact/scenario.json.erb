@@ -971,11 +971,11 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             },
             {
               "eventPattern": "conversation_closed:derek_lawson",
-              "condition": "!globalVars.entropy_reveal_read && !globalVars.derek_confronted",
+              "condition": "globalVars.found_casualty_projections && !globalVars.entropy_reveal_read && !globalVars.derek_confronted",
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Derek is stalling because you have nothing he can't wave away. Unlock the ENTROPY encrypted archive in the server room (the decryption key is on the attack server), take the ENTROPY Network Architecture file from it, then go back to him. 🦎"
+                "message": "Derek won't engage until you have the ENTROPY Network Architecture file. It's in the encrypted archive in the server room; the key is on the attack server. 🦎"
               }
             },
             {
@@ -1532,7 +1532,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "readable": true,
               "puzzle_graph_unlocks": "vm_launcher_intro_linux",
               "puzzle_graph_reveals": "derek_ssh_password",
-              "text": "Derek0419\nDerek_0419\n0419Derek\nApril19Derek\nViralDynamics\nViralMedia2024\nMarketing2024\nCampaign2024\nSocialFabric2024\nViral_Dynamics_Admin\nViralAdmin0419\nOperationShatter\nOpShatter2024\nEntropy2024\nZDS_Partner\nTrustIsLie\nVerifyEverything\nFilingCabinet0419\nInevitable\nTheArchitect\nPatriciaKnew\nMisinformation\nNetworkSegment\nSafetyNet\nDerek_Marketing\n0419Marketing\nArchitect0419\n\n(Server list. Most of these are guesses at what he might use. Derek builds every password the same way: a name or word plus a date, keyed month first then day (MMDD). For his own PC and cabinet, it is only the date.)",
+              "text": "Derek0419\nDerek_0419\n0419Derek\nApril19Derek\nViralDynamics\nViralMedia2024\nMarketing2024\nCampaign2024\nSocialFabric2024\nViral_Dynamics_Admin\nViralAdmin0419\nOperationShatter\nOpShatter2024\nEntropy2024\nZDS_Partner\nTrustIsLie\nVerifyEverything\nFilingCabinet0419\nInevitable\nTheArchitect\nPatriciaKnew\nMisinformation\nNetworkSegment\nSafetyNet\nDerek_Marketing\n0419Marketing\nArchitect0419\n\n(Server list. Most of these are guesses at what he might use. Many of Derek's passwords follow a pattern: a name or word plus a date, keyed month first then day (MMDD). For his own PC and cabinet, it is only the date.)",
               "observations": "A printed list of Derek's passwords for the shatter_server (172.16.0.2). Username: derek. Connect via SSH to test credentials."
             }
           ]
@@ -1933,7 +1933,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Patricia's Note — CyberChef",
               "takeable": true,
               "readable": true,
-              "text": "PATRICIA'S NOTES — ENCODING METHODS\n\nI found evidence Derek is obfuscating messages using two very basic schemes: Base64 and ROT13. He leaves encoded notes around, probably thinking no one will notice.\n\n────────────\nBASE64\n────────────\nBase64 converts text to a string of letters, numbers, + and /.\nIt almost always ends in = or ==.\n\nExample:\n  Plain:   Meet at the server room\n  Base64:  TWVldCBhdCB0aGUgc2VydmVyIHJvb20=\n\nAnother:\n  Plain:   1337\n  Base64:  MTMzNw==\n\nTo decode: open CyberChef, drag in 'From Base64', paste the text.\nOr on Kali terminal:\n  echo \"MTMzNw==\" | base64 -d\n\n────────────\nROT13\n────────────\nROT13 shifts every letter 13 places. A→N, B→O, etc.\nSpaces and punctuation stay the same, so word lengths are preserved.\n\nExample:\n  Plain:   Derek is the leak\n  ROT13:   Qrexr vf gur yrny\n\nAnother:\n  Plain:   The meeting is at noon\n  ROT13:   Gur zrrgvat vf ng abba\n\nTo decode: open CyberChef, drag in 'ROT13', paste the text.\nOr on Kali terminal:\n  echo \"Gur zrrgvat vf ng abba\" | tr 'A-Za-z' 'N-ZA-Mn-za-m'\n\n────────────\nTIP: If it ends in = — try Base64 first.\nIf the words look scrambled but the lengths match — try ROT13.\n────────────",
+              "text": "PATRICIA'S NOTES — ENCODING METHODS\n\nI found evidence Derek is obfuscating messages using two very basic schemes: Base64 and ROT13. He leaves encoded notes around, probably thinking no one will notice.\n\n────────────\nBASE64\n────────────\nBase64 converts text to a string of letters, numbers, + and /.\nIt almost always ends in = or ==.\n\nExample:\n  Plain:   Meet at the server room\n  Base64:  TWVldCBhdCB0aGUgc2VydmVyIHJvb20=\n\nAnother:\n  Plain:   2048\n  Base64:  MjA0OA==\n\nTo decode: open CyberChef, drag in 'From Base64', paste the text.\nOr on Kali terminal:\n  echo \"MjA0OA==\" | base64 -d\n\n────────────\nROT13\n────────────\nROT13 shifts every letter 13 places. A→N, B→O, etc.\nSpaces and punctuation stay the same, so word lengths are preserved.\n\nExample:\n  Plain:   Derek is the leak\n  ROT13:   Qrerx vf gur yrnx\n\nAnother:\n  Plain:   The meeting is at noon\n  ROT13:   Gur zrrgvat vf ng abba\n\nTo decode: open CyberChef, drag in 'ROT13', paste the text.\nOr on Kali terminal:\n  echo \"Gur zrrgvat vf ng abba\" | tr 'A-Za-z' 'N-ZA-Mn-za-m'\n\n────────────\nTIP: If it ends in = — try Base64 first.\nIf the words look scrambled but the lengths match — try ROT13.\n────────────",
               "observations": "Patricia's handwritten notes on the encoding methods Derek uses"
             },
             {

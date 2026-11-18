@@ -530,7 +530,9 @@ export class PasswordMinigame extends MinigameScene {
         
         // Opt-in lockout that survives reopening (scenario lockoutSeconds on the lock)
         this.lockoutSeconds = Number(params.lockoutSeconds) > 0 ? Number(params.lockoutSeconds) : 0;
-        const lockId = params.lockable?.scenarioData?.id || params.lockable?.objectId || null;
+        const lockDoor = params.lockable?.doorProperties;
+        const lockId = params.lockable?.scenarioData?.id || params.lockable?.objectId
+            || lockDoor?.connectedRoom || lockDoor?.roomId || null; // a door keys on its room, as the server check does
         this.lockKey = this.lockoutSeconds && lockId ? `${params.type || 'object'}:${lockId}` : null;
         if (this.lockKey) this.gameData.attempts = passwordLockStatus(this.lockKey).attempts;
 
@@ -1497,10 +1499,11 @@ export class PasswordMinigame extends MinigameScene {
     passwordFailed({ caseMismatch = false } = {}) {
         this.cleanup();
         if (window.playUISound) window.playUISound('reject');
+        const wait = this.lockKey ? ` Locked for ${this.lockoutSeconds} second${this.lockoutSeconds === 1 ? '' : 's'}.` : '';
         this.showScreenMessage(
             caseMismatch
-                ? "Maximum attempts exceeded. Access denied. Passwords are case-sensitive."
-                : "Maximum attempts exceeded. Access denied.",
+                ? `Maximum attempts exceeded. Access denied.${wait} Passwords are case-sensitive.`
+                : `Maximum attempts exceeded. Access denied.${wait}`,
             { closeAfterMs: caseMismatch ? 2500 : 1500 });
         
         this.gameResult = {
