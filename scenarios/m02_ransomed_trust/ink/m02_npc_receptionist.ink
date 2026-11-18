@@ -393,7 +393,7 @@ Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
 + {not asked_situation} [How bad is it upstairs, honestly?]
     -> ask_situation
 
-+ {not observed_stranger} [Has anyone come through tonight who doesn't belong?]
++ {cover_burned and not observed_stranger} [Has anyone come through tonight who doesn't belong?]
     -> observe_stranger
 
 + {observed_stranger and not asked_about_reeves_hours} [This man in the plain suit. How long has he been around?]
