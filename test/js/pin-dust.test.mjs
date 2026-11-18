@@ -174,14 +174,16 @@ test('a lock never dusted opens undusted', async () => {
     assert.deepEqual(pin.getTestState().greyedKeyDigits, []);
 });
 
-test('without the kit, or with dustable false, the pad offers no Dust and asks nothing', async () => {
+test('with dustable false the pad offers no Dust and asks nothing; without the kit it offers no button', async () => {
     for (const opts of [{ kit: false }, { dustable: false }]) {
         clearPinAttemptHistory();
         const server = fakeServer('4774');
         const pin = makePin({ ...opts, server });
         assert.equal(pin.getTestState().dustAvailable, false);
         await pin.restoreDust();
-        assert.equal(server.calls.length, 0);
+        // A non-dustable pad asks nothing; a kitless dustable one may only peek (never apply)
+        assert.equal(server.calls.filter(c => c.apply).length, 0);
+        if (opts.dustable === false) assert.equal(server.calls.length, 0);
     }
 });
 
@@ -209,22 +211,107 @@ test('a door pad dusts by the room it opens', async () => {
     assert.deepEqual(server.calls[0], { type: 'door', id: 'vault', apply: true });
 });
 
-test('with the PIN cracker too, the cracker works inside the dusted keys (its search space shrinks)', async () => {
+test('with the PIN cracker too, a real attempt records the server pips and the dust survives it', async () => {
     clearPinAttemptHistory();
     const secret = '4774';
     const server = fakeServer(secret);
-    server.unlock = null;
+    const unlocks = [];
+    // The server's answer to a wrong code: 422 with the cracker's pips (right place, right number)
+    server.unlock = async (type, id, attempt) => {
+        unlocks.push({ type, id, attempt });
+        if (attempt === secret) return { success: true };
+        let rightPlace = 0;
+        const rest = [];
+        const pool = [];
+        for (let i = 0; i < 4; i++) { if (attempt[i] === secret[i]) rightPlace++; else { rest.push(attempt[i]); pool.push(secret[i]); } }
+        let rightNumber = 0;
+        for (const d of rest) { const k = pool.indexOf(d); if (k >= 0) { rightNumber++; pool.splice(k, 1); } }
+        throw Object.assign(new Error('wrong'), { status: 422, body: { feedback: { rightPlace, rightNumber } } });
+    };
     const pin = makePin({ server, cracker: true });
+    assert.equal(pin.maxAttempts, Infinity, 'cracker: no attempt limit');
     await pin.handleDust();
-    // Everything a player can now type uses only 4 and 7: 2^4 = 16 codes, not 10^4
-    const typeable = [];
-    for (let n = 0; n < 10000; n++) {
-        const code = String(n).padStart(4, '0');
-        if (code.split('').every(d => !isKeyGreyed(d, pin.dustSet))) typeable.push(code);
+    // Seven wrong codes in a row, all typed on the lit keys only; none locks the pad
+    const guesses = ['4444', '7777', '4477', '7744', '4747', '7474', '4777'];
+    for (const g of guesses) {
+        for (const d of g) pin.handleNumberInput(d);
+        assert.equal(pin.currentInput, g);
+        await pin.handleEnter();
+        assert.equal(pin.isLocked, false, `${g} must not lock the pad`);
+        assert.equal(pin.currentInput, '');
+        assert.deepEqual(pin.getTestState().greyedKeyDigits, ['0', '1', '2', '3', '5', '6', '8', '9'], 'dust survives a wrong code');
     }
-    assert.equal(typeable.length, 16);
-    assert.ok(typeable.includes(secret));
-    assert.equal(pin.getTestState().hasPinCracker, true);
+    assert.equal(unlocks.length, 7);
+    assert.equal(pin.attempts.length, 7);
+    assert.equal(pin.getTestState().attemptsUsed, 7);
+    assert.equal(pin.getTestState().maxAttempts, null);
+    // Pips from the server: 4444 vs 4774 has the first and last in place; 4477 and 7744 have two
+    // in place and the other two digits right but misplaced
+    assert.deepEqual(pin.attempts[0].feedback, { rightPlace: 2, rightNumber: 0 });
+    assert.deepEqual(pin.attempts[2].feedback, { rightPlace: 2, rightNumber: 2 });
+    assert.deepEqual(pin.attempts[3].feedback, { rightPlace: 2, rightNumber: 2 });
+    // The real code finishes it, with all-green pips
+    for (const d of secret) pin.handleNumberInput(d);
+    await pin.handleEnter();
+    assert.equal(pin.attempts.at(-1).isCorrect, true);
+    assert.deepEqual(pin.attempts.at(-1).feedback, { rightPlace: 4, rightNumber: 0 });
+});
+
+test('opt-in: a pad given no dustable flag never offers dust, even with a kit', async () => {
+    clearPinAttemptHistory();
+    window.ApiClient = fakeServer('4774');
+    const pin = new PinMinigame({}, { pinLength: 4, hasFingerprintKit: true, lockable: { scenarioData: { id: 'safe_a' } } });
+    assert.equal(pin.dustable, false);
+    assert.equal(pin.getTestState().dustAvailable, false);
+    await pin.restoreDust();
+    assert.equal(window.ApiClient.calls.length, 0);
+    const truthy = new PinMinigame({}, { pinLength: 4, hasFingerprintKit: true, dustable: 'yes', lockable: { scenarioData: { id: 'safe_a' } } });
+    assert.equal(truthy.dustable, false, 'only a real true opts in');
+});
+
+test('a dusted pad is restored on reopening even when the kit is gone (greyed keys, note, no button)', async () => {
+    clearPinAttemptHistory();
+    const server = fakeServer('4774');
+    await makePin({ server }).handleDust();
+    clearPinAttemptHistory();
+    const noKit = makePin({ kit: false, server });
+    assert.equal(noKit.getTestState().dustAvailable, false, 'no button without the kit');
+    await noKit.restoreDust();
+    assert.deepEqual(noKit.getTestState().dustDigits, ['4', '7']);
+    assert.equal(noKit.getTestState().greyedKeyDigits.length, 8);
+    assert.match(noKit.dustNoteElement.textContent, /4 7/);
+    // A lock that was never dusted stays clean without a kit
+    const other = makePin({ kit: false, server: fakeServer('1357'), lockId: 'safe_b' });
+    await other.restoreDust();
+    assert.equal(other.dustSet, null);
+});
+
+test('dusting clears digits typed beforehand, so no impossible code is auto-submitted', async () => {
+    clearPinAttemptHistory();
+    const pin = makePin({ server: fakeServer('4774') });
+    pin.handleNumberInput('5');
+    pin.handleNumberInput('9');
+    assert.equal(pin.currentInput, '59');
+    await pin.handleDust();
+    assert.equal(pin.currentInput, '');
+    assert.equal(pin.displayElement.textContent, '____');
+});
+
+test('a later successful dust clears the stale "does not take" message', async () => {
+    clearPinAttemptHistory();
+    const server = fakeServer('4774');
+    let fail = true;
+    const realDust = server.pinDust.bind(server);
+    server.pinDust = async (...args) => {
+        if (fail) { fail = false; throw Object.assign(new Error('x'), { status: 500, body: {} }); }
+        return realDust(...args);
+    };
+    const pin = makePin({ server });
+    await pin.handleDust();
+    assert.match(pin.messageLineElement.textContent, /does not take/);
+    await pin.handleDust();
+    assert.equal(pin.messageLineElement.textContent, '');
+    assert.deepEqual(pin.getTestState().dustDigits, ['4', '7']);
 });
 
 test('dustSummary lists the digits in order', () => {
