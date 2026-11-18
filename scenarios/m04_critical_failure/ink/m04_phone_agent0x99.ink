@@ -280,9 +280,16 @@ Sent. Paste it in, hit Magic, and it'll tell you what it is.
 === operative_down_advice ===
 ~ operative_down_given = true
 {operatives_defeated >= 2:
-    Two down. Both halls clear.
-    {not operative_static_defeated:
-        Static's still with Voltage in the plant room.
+    {operative_static_defeated and voltage_neutralised:
+        That's all four down. Both halls and the plant room are clear.
+    - else:
+        Both halls are clear.
+        {not operative_static_defeated:
+            Static's still with Voltage in the plant room.
+        }
+        {operative_static_defeated and not voltage_neutralised:
+            Only Voltage is left.
+        }
     }
 - else:
     {operative_relay_defeated:

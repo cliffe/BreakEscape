@@ -8,6 +8,7 @@
 // Phase 4 dialogue C1 (D5-27): guard_suspicious and entry_method removed (never read).
 // D5-25: guard_quiet skips the idle re-entry line once, right after admission or a goodbye.
 VAR guard_quiet = false
+VAR security_unusual_asked = false
 VAR guard_admitted = false       // Has the guard let the player in? Pass 5: synced global; skips his sight challenge (A3)
 
 // External variables (set by game)
@@ -182,7 +183,13 @@ Security Guard: Go on, then. Let's have a proper look at it.
 }
 
 + [Anything unusual on shift tonight?]
-    Security Guard: Quiet. That OptiGrid lot came through late on the ninth, but they had cards. Mr Vance is the one to ask.
+    {
+    - security_unusual_asked:
+        Security Guard: {&Same as I said. The OptiGrid lot, late on the ninth, and Mr Vance knows more than I do.|Nothing new. If something turns up, you'll hear the radio before I do.}
+    - else:
+        ~ security_unusual_asked = true
+        Security Guard: Quiet. That OptiGrid lot came through late on the ninth, but they had cards. Mr Vance is the one to ask.
+    }
     -> guard_idle
 
 + [Where's Mr Vance?]
