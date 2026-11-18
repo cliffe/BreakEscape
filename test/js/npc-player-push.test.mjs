@@ -28,7 +28,7 @@ const quiet = console.log;
 console.log = () => {};
 const mod = await import(pathToFileURL(join(dir, 'npc-sprites.mjs')).href);
 console.log = quiet;
-const { keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision, staticRectsNear } = mod;
+const { blockPlayerIntoNpc, keepsRouteAgainstPlayer, bodyNearWall, playerPushMode, PLAYER_WALL_MARGIN_PX, createNPCCollision, staticRectsNear } = mod;
 
 test('who keeps a route against the player: patrol on, not hostile, not KO', () => {
     const patrol = { config: { patrol: { enabled: true } } };
@@ -55,7 +55,7 @@ test('the rule: a plain NPC separates as before; a routed one pins, or lets the 
     assert.equal(playerPushMode({ routed: false, playerNearWall: true }), 'separate');
     assert.equal(playerPushMode({ routed: false, playerNearWall: false }), 'separate');
     assert.equal(playerPushMode({ routed: true, playerNearWall: false }), 'pin');
-    assert.equal(playerPushMode({ routed: true, playerNearWall: true }), 'slide');
+    assert.equal(playerPushMode({ routed: true, playerNearWall: true }), 'block');
 });
 
 // The real collider: createNPCCollision's process callback on a fake scene
@@ -63,13 +63,13 @@ test('the rule: a plain NPC separates as before; a routed one pins, or lets the 
 const overlapRectOver = (statics) => (x, y, w, h, dyn, stat) => !stat ? [] :
     statics.filter(b => x < b.x + b.width && x + w > b.x && y < b.y + b.height && y + h > b.y);
 
-function harness({ patrol = true, playerY = 100, playerX = 100, statics = null, behavior = null } = {}) {
+function harness({ patrol = true, playerY = 100, playerX = 100, statics = null, behavior = null, npcX = 100, npcY = 120, prev = null } = {}) {
     let process = null, collide = null;
     const handlers = {};
     const scene = { physics: { add: { collider: (a, b, c, p) => { collide = c; process = p; } }, world: { on: (ev, fn) => { handlers[ev] = fn; } } } };
     if (statics) scene.physics.overlapRect = overlapRectOver(statics);
-    const npc = { npcId: 'guard', body: { x: 100, y: 120, width: 16, height: 10, pushable: true } };
-    const player = { currentRoom: 'r', body: { x: playerX, y: playerY, width: 16, height: 10 } };
+    const npc = { npcId: 'guard', body: { x: npcX, y: npcY, width: 16, height: 10, pushable: true } };
+    const player = { currentRoom: 'r', body: { x: playerX, y: playerY, width: 16, height: 10, prev: prev || { x: playerX, y: playerY }, velocity: { x: 0, y: 0 }, position: { x: playerX, y: playerY } } };
     window.rooms = { r: { wallCollisionBoxes: [{ body: { left: 0, top: 0, right: 320, bottom: 8 } }] } };
     window.player = player;
     window.npcBehaviorManager = { getBehavior: () => behavior || ({ roomId: 'r', config: { patrol: { enabled: patrol } } }) };
@@ -87,10 +87,36 @@ test('collider: a patrolling NPC is unpushable for the player pair, and pushable
     assert.equal(h.npc.body.pushable, true, 'NPC-NPC collisions see a pushable body again');
 });
 
-test('collider: with the player by a wall the pair does not separate (the player slides past)', () => {
+test('collider: with the player by a wall the pair does not separate (no push)', () => {
     const h = harness({ playerY: 12 });
     assert.equal(h.process(), false);
     assert.equal(h.npc.body.pushable, true, 'never pinned');
+});
+
+// q53 wall case: the old no-separation rule let the player walk straight through the NPC by a wall.
+const stepInto = (extra = {}) => harness({ playerX: 100, playerY: 18, npcX: 100, npcY: 22, prev: { x: 100, y: 34 }, ...extra });
+test('collider: by a wall the player is blocked by the NPC, never passed through', () => {
+    // player walked up from y 34 to y 18 into an NPC at y 22 (body rects overlap); the wall is at y 0..8
+    const h = stepInto();
+    assert.equal(h.process(), false, 'no separation: nothing presses the player into the wall');
+    assert.equal(h.player.body.position.y, 34, 'the step into the NPC is undone');
+    assert.equal(h.player.body.velocity.y, 0);
+    assert.equal(h.npc.body.y, 22, 'the NPC is not moved');
+    assert.equal(h.npc.body.pushable, true);
+});
+
+test('blockPlayerIntoNpc: closes in only is undone; stepping away or along is left alone', () => {
+    const npc = { x: 100, y: 24, width: 16, height: 10 };
+    const body = (x, y, px, py) => ({ x, y, width: 16, height: 10, prev: { x: px, y: py }, velocity: { x: 5, y: 5 }, position: { x, y } });
+    const away = body(100, 40, 100, 30);
+    assert.equal(blockPlayerIntoNpc(away, npc), false, 'moving away');
+    assert.equal(away.position.y, 40);
+    const diag = body(96, 30, 110, 40);                         // closing on both axes
+    assert.equal(blockPlayerIntoNpc(diag, npc), true);
+    const slideAlong = body(112, 30, 100, 30);                  // x move toward centre line? starts 0 off, ends 12 off: away
+    assert.equal(blockPlayerIntoNpc(slideAlong, npc), false);
+    const noPrev = { x: 1, y: 1, width: 16, height: 10 };
+    assert.equal(blockPlayerIntoNpc(noPrev, npc), false);
 });
 
 test('collider: an NPC that does not patrol is pushed as before', () => {
@@ -155,7 +181,7 @@ test('collider: a needs errand walker is held like a patrol: pin in open floor, 
     assert.equal(byDesk.npc.body.pushable, true);
 
     const byWall = harness({ playerY: 12, behavior: walking() });
-    assert.equal(byWall.process(), false, 'by a wall (a doorway, a corridor) the player passes through');
+    assert.equal(byWall.process(), false, 'by a wall the pair do not separate');
 
     const arrived = walking();
     arrived.config.patrol.enabled = false; arrived._stopOnArrival = false; arrived._moveOwner = undefined;

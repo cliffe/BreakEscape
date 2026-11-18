@@ -649,8 +649,10 @@ export function updateNPCDepth(sprite) {
 // patrolling NPC off its route: for the player pair only, the NPC is made unpushable for the
 // rest of the physics step, so the player stops against him and he keeps his line. With the
 // player against or within PLAYER_WALL_MARGIN_PX (12, more than one 20 fps step of a 200 px/s
-// NPC) of a wall the pair does not separate at all and the player slides past: an unpushable NPC would otherwise press the player into the 8 px wall
-// boxes, which is how bodies tunnel through walls. A desk, table or other static body counts as
+// NPC) of a wall the pair does not separate (an unpushable NPC would otherwise press the player into the 8 px wall
+// boxes) and the player's step into the NPC is undone instead (blockPlayerIntoNpc), so he is blocked, never passed through.
+// The old no-separation rule let the player walk through him.
+// Bodies tunnel through walls when pressed into the 8 px boxes. A desk, table or other static body counts as
 // a wall here too (code review R1, G2). The pin lasts until the end of that physics step, so an
 // NPC-NPC collider later in the same step also sees him unpushable: one step at most.
 export const PLAYER_WALL_MARGIN_PX = 12;
@@ -693,11 +695,45 @@ export function bodyNearWall(body, wallRects, margin = PLAYER_WALL_MARGIN_PX) {
 
 /**
  * The rule for one player and NPC contact: 'separate' (the old push, both move), 'pin' (the
- * NPC holds, only the player moves), 'slide' (no separation: the player passes).
+ * NPC holds, only the player moves), 'block' (by a wall: no separation, the player's own step
+ * into the NPC is undone instead, see blockPlayerIntoNpc).
  */
 export function playerPushMode({ routed, playerNearWall }) {
     if (!routed) return 'separate';
-    return playerNearWall ? 'slide' : 'pin';
+    return playerNearWall ? 'block' : 'pin';
+}
+
+/**
+ * q53 wall case: by a wall the pair is not separated (an unpushable NPC would press the player
+ * into the 8 px wall boxes), so the player is stopped by undoing the part of this step's move
+ * that took its body closer to the NPC's. Per axis, so it still slides along the NPC, and a
+ * move that does not close the gap (stepping away) is left alone. Returns true if it undid any.
+ */
+export function blockPlayerIntoNpc(playerBody, npcBody) {
+    const prev = playerBody?.prev;
+    if (!prev || !npcBody) return false;
+    const w = playerBody.width, h = playerBody.height;
+    const ncx = npcBody.x + npcBody.width / 2, ncy = npcBody.y + npcBody.height / 2;
+    const dist2 = (x, y) => (x + w / 2 - ncx) ** 2 + (y + h / 2 - ncy) ** 2;
+    const startX = playerBody.x, startY = playerBody.y;
+    if (dist2(startX, startY) >= dist2(prev.x, prev.y)) return false;
+    let x = startX, y = startY;
+    // Undo whichever axis undoes more closing first; the other only if still closing
+    const tryX = () => { if (x !== prev.x) x = prev.x; };
+    const tryY = () => { if (y !== prev.y) y = prev.y; };
+    const gainX = dist2(startX, startY) - dist2(prev.x, startY);
+    const gainY = dist2(startX, startY) - dist2(startX, prev.y);
+    const order = gainX >= gainY ? [tryX, tryY] : [tryY, tryX];
+    for (const undo of order) {
+        if (dist2(x, y) < dist2(prev.x, prev.y)) undo(); else break;
+    }
+    if (x === startX && y === startY) return false;
+    if (playerBody.position) { playerBody.position.x = x; playerBody.position.y = y; }
+    else { playerBody.x = x; playerBody.y = y; }
+    if (x !== startX && playerBody.velocity) playerBody.velocity.x = 0;
+    if (y !== startY && playerBody.velocity) playerBody.velocity.y = 0;
+    playerBody.updateCenter?.();
+    return true;
 }
 
 function wallRectsFor(roomIds) {
@@ -871,7 +907,10 @@ export function createNPCCollision(scene, npcSprite, player) {
                 const walls = wallRectsFor([plyr.currentRoom || window.player?.currentRoom, behavior?.roomId])
                     .concat(staticRectsNear(scene, plyr.body));
                 const mode = playerPushMode({ routed, playerNearWall: !!plyr.body && bodyNearWall(plyr.body, walls) });
-                if (mode === 'slide') return false;
+                if (mode === 'block') {
+                    blockPlayerIntoNpc(plyr.body, npc.body);
+                    return false;
+                }
                 pinForPlayer(scene, npc.body);
                 return true;
             }
