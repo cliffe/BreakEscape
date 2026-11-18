@@ -328,7 +328,10 @@ export const minigameBridge = {
      * uses Escape to close.
      */
     async pressKey(key, { holdMs = 60 } = {}) {
-        if (!current()) return fail('no-active-minigame');
+        // A read note or confirm dialog over the game takes Escape from the engine's modal
+        // stack (ui/modal-stack.js), minigame or not.
+        const overlayEsc = key === 'Escape' && !!document.querySelector('.game-display-dialog, .game-confirm-dialog');
+        if (!current() && !overlayEsc) return fail('no-active-minigame');
         keyDown(key);
         await sleep(holdMs);
         keyUp(key);
