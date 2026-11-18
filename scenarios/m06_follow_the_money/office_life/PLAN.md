@@ -62,6 +62,8 @@ Neither has a story duty, a key, a task or an `itemsHeld`. Both are attackable; 
 
 ### 2.4 People table
 
+Leash (build review R2 M1): `trader_npc`, `lerato_dlamini` and `tomasz_wisniewski` each carry `"behavior": { "hostile": { "leash": true } }` (as m02's extras), so a punched extra gives up the chase when the player leaves the trading floor and walks back to its post. The engine default `chaseRange` (400 px) applies. Only `behavior.patrol` is barred on needs NPCs.
+
 | NPC | class | post (`needsHome`) | leash | needs | groups, avoids | habits | beats protected by | gate | if attacked mid-walk |
 |---|---|---|---|---|---|---|---|---|---|
 | trader_npc (Dani) | optional flavour / free | tile {trading_floor, 5, 7} | `needsRooms: [trading_floor]` | `caffeine` (coffee_station) only | none | none | no beat needs him at post (open-conversation rule); found at post first by a first-talk break (2.5) | none | carries nothing (coffee is drunk at the machine); stays down for the rest of the game once knocked out (KO is permanent: `npc-hostile.js` has no path that clears `isKO`, and `resetHostilesForRespawn`, `:124` to `:140`, skips knocked-out NPCs); attacked but still conscious, it turns hostile, and walks home once it calms after the player respawns; on a knock-out the existing HaX loop sets `cover_strained` |
@@ -104,7 +106,8 @@ Moved existing NPCs: Dani only.
 New scalar global `floor_staff_ko`, declared `false`.
 
 - Set `true` by appended mappings on HaX (registered at game start in the start room) on `npc_ko:trader_npc`, `npc_ko:irina_volkova`, `npc_ko:lerato_dlamini` and `npc_ko:tomasz_wisniewski`. Not `onceOnly`, and no cooldown (built without one: `setGlobal true` is idempotent, so a repeat KO changes nothing). These sit beside, and never edit, the existing KO loop at `erb:1459` to `:1470`.
-- Read as `offWhen: "floor_staff_ko"` on `coffee_station`, `photocopier` and `mini_fridge` on the trading floor. Staff turn back from these and walk home (`_turnBack(s, 'off')`).
+- Read as `offWhen: "floor_staff_ko"` on `coffee_station`, `photocopier` and `mini_fridge` on the trading floor. Staff turn back from these and walk home (`_turnBack(s, 'off')`). (one already using it finishes the use, then walks home).
+- A punch at the coffee point can hit the partner standing there as well (the cone hits every NPC in it); each knocked-out NPC sets its own `_ko` global. The leash (2.4) limits what a hostile bystander does next.
 - It never clears; a knock-out on the floor is remembered for the rest of the mission. Monotonic.
 - Office life never writes `cover_strained`, which is read by Irina's badge trust (`ink/m06_npc_irina_volkova.ink:336`, `:351`), Kemal and Satoshi. The existing loop still sets it when Dani or Irina is knocked out; knocking out Lerato or Tomasz leaves it as it was. The build greps every new mapping and knot for `cover_strained`.
 - Credits: two new conditional entries in the music credits list (`erb:232` to `:297`), one on `lerato_ko` and one on `tomasz_ko`, in the same shape as the existing `trader_ko` and `analyst_ko` entries.
@@ -282,7 +285,7 @@ Reload with Dani away: he reappears at post. Reload after `floor_staff_ko`: mach
 
 ### 10.4 Attack probe (fresh game per step)
 
-Attack a walking extra, a seated extra, an extra leaving the coffee point, and Dani at the coffee point. A knocked-out NPC stays down where it fell for the rest of the game, and any carried item lands there; an attacked NPC that turns hostile without a knock-out walks home after the player respawns. On each knock-out `floor_staff_ko` becomes true and the three machines go off. `cover_strained` becomes true for Dani through the existing HaX loop (as on main) and stays unchanged for Lerato and Tomasz. `lerato_ko` and `tomasz_ko` show their credits lines.
+Attack a walking extra, a seated extra, an extra leaving the coffee point, and Dani at the coffee point. A knocked-out NPC stays down where it fell for the rest of the game, and any carried item lands there; an attacked NPC that turns hostile without a knock-out walks home after the player respawns. A punch at the coffee point can also hit the partner there; each knocked-out NPC sets its own `_ko` global (2.8). A hostile extra chases only while the player is on the trading floor (leash, 2.4). On each knock-out `floor_staff_ko` becomes true and the three machines go off. `cover_strained` becomes true for Dani through the existing HaX loop (as on main) and stays unchanged for Lerato and Tomasz. `lerato_ko` and `tomasz_ko` show their credits lines.
 
 ### 10.5 Open numbers
 

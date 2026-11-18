@@ -88,3 +88,10 @@ Fix: in the 10.1 walkthrough script and future probes, poll `atPost && !npcHosti
 - LIVE_S5 2: the no-DOM-root anomaly on game 7989 (`r2.mjs s5`, untested).
 - 10.4: the `lerato_ko` and `tomasz_ko` credits lines were not seen on screen. The machines going off was checked by condition only (`offWhen` on all three), not on the sprites.
 - 10.4 after M1: the leashed chase and give-up, and a reload of a body that fell at the floor's south edge near the coffee point.
+
+## Outcomes
+
+- M1 fixed: `"behavior": { "hostile": { "leash": true } }` added after `globalVarOnKO` on `trader_npc`, `lerato_dlamini` and `tomasz_wisniewski` (no existing behaviour keys on any of them; the engine default `chaseRange` 400 px and the same-room rule apply). PLAN 2.4 and 2.8 updated. Validator 0 errors, 44 warnings; lock and key diff empty. Live re-test: see LIVE_FIX_R2.md.
+- m1 fixed in PLAN 10.4 and 2.8 (a punch at the coffee point can hit the partner; each KO sets its own `_ko` global).
+- m2 fixed in PLAN 2.8 (one already using a switched-off machine finishes the use, then walks home).
+- m3 recorded in BUILD_LOG.md as an engine note for the orchestrator; the skill is not edited.

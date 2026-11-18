@@ -40,3 +40,8 @@ Checks: ink compile 11 of 11 (existing json unchanged); dialoguelint on both .in
 - M2: `lerato_desk` `useFrom { dx: 0, dy: 2 }`, Lerato `seated: true`, spawn position `{ 7.4, 5.16 }`; her home is (236, -220) every load; seated in the south chair facing her monitor. `dy: 1` was rejected: her home flipped with her own spawn cell. Phone 3 of 3, coffee and fridge trips 3 of 3 each (expected away 15.7 s and 18.6 s), coupled break chain 2 of 2 and Tomasz-pulls-Lerato pair 2 of 2.
 - m1, m2, m4, m6: PLAN.md updated to match the build (3.1, 2.4, 2.8, 7). m3: observation now "front row". m5: exchange 2 Tomasz line "I did. They walked her out past my desk." to "I did. Two officers, very quiet." (ink, SPOKEN_LINES.md; unvoiced).
 - Static: validator 0 errors 44 warnings; lock diff empty; ink 11 of 11; dialoguelint clean; summary and positions diffs show only planned additions. M1 (V4 probe) left for the next agent.
+
+## Build review R2 fixes
+- M1: hostile leash (`behavior.hostile.leash: true`) on trader_npc, lerato_dlamini, tomasz_wisniewski. Validator 0 errors, 44 warnings, lock diff empty.
+- m1, m2: PLAN 10.4 and 2.8 wording.
+- Engine note for the orchestrator (m3): `needs.state(id).atPost` reads true for a hostile NPC far from its post and for a knocked-out NPC, because the needs layer drops hostile and KO'd NPCs from its updates (`npc-needs.js:1031`). Live probes should poll `atPost && !npcHostileSystem.isNPCHostile(id) && !npcHostileSystem.isNPCKO(id)` before interacting. Not a build change; skill not edited.

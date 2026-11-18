@@ -1998,6 +1998,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             "grumble": ["Seriously? Not tonight.", "I'll sulk at my desk, then."]
           },
           "globalVarOnKO": "trader_ko",
+          "behavior": { "hostile": { "leash": true } },
           "taskOnKO": "question_the_trader",
 <%# Office life (PLAN 2.5): Dani is free (no itemsHeld, no beat needs him at post). Post is his first-meeting
     tile. caffeine starts at 100 and decays slowly, so he is at post when first met; the two mapped breaks
@@ -2041,6 +2042,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             { "with": "tomasz_wisniewski", "knot": "ex_floor_after_seizure", "requireGlobal": { "assets_seized": true, "floor_staff_ko": false } }
           ],
           "globalVarOnKO": "lerato_ko",
+          "behavior": { "hostile": { "leash": true } },
           "seated": true,
           "needsHome": "lerato_desk",
           "needsRooms": ["trading_floor"],
@@ -2080,6 +2082,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             { "with": "trader_npc", "knot": "ex_dani_tomasz_late_shift", "requireGlobal": { "irina_arrested": false, "floor_staff_ko": false } }
           ],
           "globalVarOnKO": "tomasz_ko",
+          "behavior": { "hostile": { "leash": true } },
           "seated": true,
           "needsHome": "tomasz_laptop",
           "needsRooms": ["trading_floor"],
