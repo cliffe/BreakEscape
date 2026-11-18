@@ -1,0 +1,13 @@
+{
+  "key": "00ab9e61383232b86b1da28441706920",
+  "npc": "adaeze_okafor",
+  "text": "Almost there. Almost.",
+  "voice": "Gacrux",
+  "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent General American accent with a light Nigerian inflection throughout, do not shift to any other accent.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:52:19Z"
+}
