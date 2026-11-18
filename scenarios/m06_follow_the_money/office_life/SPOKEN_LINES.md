@@ -1,6 +1,6 @@
 # m06 Follow the Money: office-life spoken lines (slice 5)
 
-Every line the office-life build adds. Pool lines are scenario data (NPC `chatter` in `scenario.json.erb`); exchanges and conversations are ink knots. No `DIALOGUE_SAMPLE.md` existed, so the lines follow PLAN.md section 6 and the banned-topic list in 3.3. Nothing is voiced yet; no barks are added.
+Every line the office-life build adds. Pool lines are scenario data (NPC `chatter` in `scenario.json.erb`); exchanges and conversations are ink knots. No `DIALOGUE_SAMPLE.md` existed, so the lines follow PLAN.md section 6 and the banned-topic list in 3.3. Voiced 2026-11-18 (59 clips with the four non-office-life debrief and Irina lines the same top-up filled); no barks are added.
 
 ## Pools (one line each, 40 characters at most)
 
