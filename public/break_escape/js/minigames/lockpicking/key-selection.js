@@ -148,6 +148,12 @@ export class KeySelection {
         // correctKeyId: ID of the correct key (if null, uses index 0 as fallback)
         // Shows 3 keys at a time with navigation buttons for more than 3 keys
 
+        // Never leave an earlier panel behind (a fast key/pick round trip, a retry)
+        if (this.parent.keySelectionContainer) {
+            this.parent.keySelectionContainer.destroy();
+            this.parent.keySelectionContainer = null;
+        }
+
         // Resolve Phaser scene (may not be ready yet if key selection runs before scene create())
         const scene = this.parent.scene || (this.parent.game && this.parent.game.scene && this.parent.game.scene.getScene('LockpickingScene'));
         if (!scene) {

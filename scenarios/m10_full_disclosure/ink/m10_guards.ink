@@ -74,20 +74,58 @@ Guard: Coffee's on. If you're my relief, you're early.
 // ---------------------------------------------------------------
 // The security office.
 // ---------------------------------------------------------------
+// Caught picking the fitter's locker under his eye (lockpick_used_in_view). The
+// photo note is not a pass for him. Same ladder as the hall guards: a warning
+// beat first, one Back off (duty_warnings, a VAR so a reload keeps it), and a
+// second catch turns him with no more talk. Blind fix m10 F1.
 === duty ===
+{duty_warnings > 0:
+    -> duty_after
+}
 Guard: That's the one off the wall.
 + [Read what it says under the photo.]
-    #hostile:duty_guard
     Guard: I read it. It doesn't say let you past.
-    ~ grd_quiet = true
-    #exit_conversation
-    -> fight
+    -> duty_warn
 + [You don't want to do this.]
-    #hostile:duty_guard
     Guard: I get paid either way.
+    -> duty_warn
+
+=== duty_warn ===
+Narrator: The guard squares up, baton out.
+Guard: Step away from that locker. Last chance.
++ [(Back off.)]
+    ~ duty_warnings = duty_warnings + 1
+    #exit_conversation
+    -> duty_after
++ [(Pick it anyway.)]
+    #hostile:duty_guard
+    Guard: Then come on.
     ~ grd_quiet = true
     #exit_conversation
     -> fight
+
+// The lockpick catch opens here: the first catch is the warning, a repeat is the end of it.
+=== duty_caught ===
+{duty_warnings > 0:
+    -> duty_final
+}
+-> duty
+
+// He does not ask twice: the line itself turns him (as hall_a_final), so
+// closing the chat with X or Esc changes nothing.
+=== duty_final ===
+Guard: I told you. Floor, now. #hostile:duty_guard
++ [(Stand your ground.)]
+    ~ grd_quiet = true
+    #exit_conversation
+    -> fight
+
+// A click on him after a Back off: he is watching, not talking.
+=== duty_after ===
+Guard: Keep away from that locker.
++ [(Going.)]
+    #exit_conversation
+    -> duty_after
 
 === duty_b ===
 {grd_duty_b_ok:

@@ -28,7 +28,7 @@ const N = await import(dataUrl(notifSrc));
 test('a toast the player has already read is dismissed when a panel opens, not replayed', () => {
     const now = 100_000;
     const shown = [
-        { type: 'success', shownAt: now - 300 },                 // a glimpse: replay once
+        { type: 'success', shownAt: now - 200 },                 // a glimpse: replay once
         { type: 'success', shownAt: now - 1200 },                // read: dismiss
         { type: 'info', shownAt: now - 100, seen: true },        // already replayed once: dismiss
         { type: 'warning', shownAt: now - 100 },                 // warnings never held
@@ -66,6 +66,27 @@ test('holdRecentNotifications replays a glimpsed toast once, and a replayed one 
     window.MinigameFramework.currentMinigame = null;
     await new Promise((r) => setTimeout(r, 400));
     assert.deepEqual(shownMessages(), [], 'no third copy');
+});
+
+// m07 blind playtest: submit flag 1, close the relay, the NFS "Task Complete" toast slides
+// in, the phone opens 0.3 to 0.7 s later. The toast was pulled back and shown a second time
+// when the phone closed. A toast that has been up for 0.3 s has been read: dismissed, once.
+test('a task toast up for half a second when the phone opens is dismissed, not replayed', async () => {
+    const container = { els: [], appendChild(n) { this.els.push(n); n.parentNode = this; }, removeChild(n) { this.els = this.els.filter((e) => e !== n); n.parentNode = null; },
+        querySelectorAll() { return this.els; } };
+    const el = () => ({ classList: { add() {}, remove() {} }, style: {}, set innerHTML(v) { this.html = v; },
+        querySelector: () => ({ style: {}, addEventListener() {}, appendChild() {} }) });
+    globalThis.document = { getElementById: (id) => (id === 'notification-container' ? container : null), createElement: el, createTextNode: (text) => ({ text }) };
+    window.MinigameFramework = { currentMinigame: null };
+    N.showNotification("Mount the attack host's NFS export", 'success', 'Task Complete', 0);
+    assert.equal(container.els.length, 1);
+    container.els[0]._toast.shownAt = Date.now() - 500;
+    window.MinigameFramework.currentMinigame = {};
+    assert.equal(N.holdRecentNotifications(), 0, 'nothing pulled back');
+    window.MinigameFramework.currentMinigame = null;
+    await new Promise((r) => setTimeout(r, 500));
+    const live = container.els.filter((e) => !e._toast.closing);
+    assert.equal(live.length, 0, 'no second copy after the phone closes');
 });
 
 test('the same toast raised twice while a panel is open shows once', async () => {

@@ -548,8 +548,10 @@
     font-style: italic;
 }
 
-.container-actions:empty {
-    display: none;   /* no stray rule with nothing under it (critique A33) */
+.container-actions:empty,
+.container-actions:not(:has(*)) {
+    display: none;   /* no stray rule with nothing under it (critique A33); a row holding only
+                        whitespace is empty too (the markup has line breaks inside it) */
 }
 
 .container-actions {
@@ -1166,4 +1168,61 @@
     display: block;
     color: #9fb0bf;
     overflow-wrap: anywhere;
+}
+
+/* Contents of a safe, cabinet or bin: each name wraps in full under its item (no ellipsis,
+   no clamp, no break inside a word unless the word is wider than the label) and the grid
+   makes room for however many lines it needs, so the frame wraps the contents with no empty
+   band. fitContentLabels sets each slot's bottom margin from its label once laid out; the
+   margin here is the two-line fallback. A share's folder window keeps its own rules. */
+.container-contents-grid:not(.share-folder-files) {
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 12px 10px;
+    padding: 15px;
+    min-height: 0;
+    max-height: none;
+}
+
+.container-contents-grid:not(.share-folder-files) .container-content-slot {
+    margin-bottom: 42px;
+}
+
+.container-contents-grid:not(.share-folder-files) .container-content-label {
+    width: 128px;
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    line-clamp: none;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+    line-height: 18px;
+}
+
+/* Phone width: slimmer container chrome so two 128px label columns fit inside the
+   themed frame at 390 (frame up to 28px each side + 20px padding + grid 34px) */
+@media (max-width: 480px) {
+    .container-minigame {
+        height: calc(100% - 20px);
+        padding: 10px;
+        margin: 0 auto;
+    }
+}
+/* Narrow and short (split screen): the short-window rule's 20px sides would undo the above */
+@media (max-width: 480px) and (max-height: 560px) {
+    .container-minigame:not(.desktop-mode) {
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-contents-grid:not(.share-folder-files) {
+        grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+        gap: 12px 10px;
+        padding: 15px;
+    }
+    .container-contents-grid:not(.share-folder-files) .container-content-label {
+        width: 128px;
+    }
 }

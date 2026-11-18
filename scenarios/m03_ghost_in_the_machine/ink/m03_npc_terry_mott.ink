@@ -366,7 +366,7 @@ Terry Mott: Who's your supervisor, then?
 - else:
     Terry Mott: No badge, a face I've never seen, and here at eleven at night. Pull the other one.
 }
-* [Maybe we can work something out. I need to finish here.]
+* [(Offer him something.) Maybe we can work something out. I need to finish here.]
     -> offer_bribe
 * [Ring Ms. Sterling if you like. She'll vouch for me.]
     ~ guard_influence = guard_influence - 10
@@ -486,7 +486,7 @@ Terry Mott: What do you need from me?
     -> ask_building
 + {not topic_victoria} [What's Sterling like to work for?]
     -> ask_victoria
-+ {(guard_influence >= 20) && not bribe_offered} [Maybe we can work something out.]
++ {(guard_influence >= 20) && not bribe_offered} [(Offer him something.) Maybe we can work something out.]
     -> offer_bribe
 + [I'll let you get on.]
     { guard_suspicious:

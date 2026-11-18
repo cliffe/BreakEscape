@@ -1,0 +1,138 @@
+{
+  "scenario_brief": "TEST: Chatter pool gate\n\nAnn and Bob get thirsty and meet at the water cooler, where they chat. The scenario's cooler pool is gated on the global chatter_gate_open (open at the start); each of them also has an ungated cooler line of their own. Use the wall switch by the door to close the gate: they still walk to the cooler and chat, but the gated lines stop.",
+  "endGoal": "Demo only: flip the switch and listen.",
+  "startRoom": "office",
+  "startPosition": { "x": 5, "y": 6 },
+  "npcNeedsSeed": "test_chatter_pool_gate",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "chatter": {
+    "cooler": { "lines": ["Gated: lovely weather.", "Gated: kettle's on.", "Gated: quiet today."], "requireGlobal": "chatter_gate_open" }
+  },
+
+  "globalVariables": {
+    "chatter_gate_open": true
+  },
+
+  "objectives": [
+    {
+      "aimId": "watch_the_gate",
+      "title": "Watch the gate",
+      "description": "Nothing to solve.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_chat", "title": "Ann and Bob chat at the cooler", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "pc",
+          "id": "ann_pc",
+          "name": "Ann's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 2, "y": 3 },
+          "observations": "Ann's desk PC.",
+          "affordance": { "useSeconds": 5 }
+        },
+        {
+          "type": "pc",
+          "id": "bob_pc",
+          "name": "Bob's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 4, "y": 3 },
+          "observations": "Bob's desk PC.",
+          "affordance": { "useSeconds": 5 }
+        },
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 40, "capacity": 2, "chatter": "cooler" }
+        },
+        {
+          "type": "power_socket_drop1",
+          "id": "gate_switch",
+          "name": "Wall switch",
+          "position": { "x": 5.90625, "y": 0.5 },
+          "wallMounted": true,
+          "spriteVariants": [{ "condition": "globalVars.chatter_gate_open === false", "value": "power_socket_drop_off1" }],
+          "takeable": false,
+          "observations": "A wall switch. The label says: staff chatter.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.chatter_gate_open",
+              "text": "Close the gate on the gated chatter?",
+              "confirmLabel": "Close it",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "chatter_gate_open", "value": false },
+                { "type": "hint", "title": "Wall switch", "message": "The gated cooler chatter is switched off." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.chatter_gate_open",
+              "text": "Open the gate on the gated chatter?",
+              "confirmLabel": "Open it",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "chatter_gate_open", "value": true },
+                { "type": "hint", "title": "Wall switch", "message": "The gated cooler chatter is switched on." }
+              ]
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ann",
+          "displayName": "Ann Okoye",
+          "npcType": "person",
+          "position": { "x": 2, "y": 5 },
+          "spriteSheet": "female_office_worker",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "ann_pc",
+          "needsSpeed": 90,
+          "needs": { "thirst": { "decayPerMin": 60, "urgentAt": 40, "initial": 35 } },
+          "chatterCooldownMin": 0.25,
+          "chatter": { "cooler": ["Plain: busy morning.", "Plain: any biscuits?"] },
+          "eventMappings": [
+            { "eventPattern": "npc_chatted:water_cooler", "onceOnly": true, "cooldown": 0, "completeTask": "see_chat" }
+          ]
+        },
+        {
+          "id": "bob",
+          "displayName": "Bob Lindqvist",
+          "npcType": "person",
+          "position": { "x": 4, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "bob_pc",
+          "needsSpeed": 90,
+          "needs": { "thirst": { "decayPerMin": 60, "urgentAt": 40, "initial": 35 } },
+          "chatterCooldownMin": 0.25,
+          "chatter": { "cooler": ["Plain: long week.", "Plain: nice shirt."] }
+        }
+      ]
+    }
+  }
+}

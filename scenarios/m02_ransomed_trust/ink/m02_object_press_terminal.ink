@@ -160,7 +160,7 @@ Recover the patient systems and log the ransom decision at the recovery console 
 
 CONFIRM UPLOAD?
 
-The board chair's cover-up memo, the budget decisions and six months of Gary Whitlock's ignored warnings will be authenticated, attributed and transmitted.
+The full evidence package will be authenticated, attributed and transmitted.
 
 St. Catherine's board cannot suppress this.
 
