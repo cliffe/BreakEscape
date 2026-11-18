@@ -637,6 +637,34 @@ export default class PhoneChatConversation {
         }
     }
 
+    /**
+     * True when every saved choice is a way out: taking it (and what follows) leaves no
+     * choices, so the story ends or closes with #exit_conversation / -> DONE. A lone
+     * "Understood." is one. Each choice is tried on `state` (the synced story) with the observer detached, and the
+     * story is put back to `state` afterwards. An empty choice list is not "all exits".
+     */
+    _savedChoicesAreExits(story, state) {
+        const count = story.currentChoices?.length || 0;
+        if (count === 0) return false;
+        const observer = story.variablesState.variableChangedEvent;
+        story.variablesState.variableChangedEvent = null;
+        try {
+            for (let i = 0; i < count; i++) {
+                story.state.LoadJson(state);
+                story.ChooseChoiceIndex(i);
+                PhoneChatConversation.collectSteps(story);
+                // Still choices after it: a branch, not a way out
+                if (story.currentChoices?.length > 0) return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        } finally {
+            try { story.state.LoadJson(state); } catch (e) { /* keep what we have */ }
+            story.variablesState.variableChangedEvent = observer;
+        }
+    }
+
     /** True when the story has a top-level knot of that name. */
     _hasKnot(story, name) {
         try {
@@ -811,6 +839,25 @@ export default class PhoneChatConversation {
         // keeps its choices. Dialogue only, no globals written, so left as is.
         const home = String(homeKnot || 'start').split('.')[0];
         const sameChoices = !chosen || JSON.stringify(chosen.choices) === savedKey;
+        // The player is looking at nothing but ways out (m09's identity call ends on a lone
+        // "Understood.") and a global has changed since that was saved: the thread's resting
+        // point is a dead end, and what the home knot now has pending (a hub read-out) has not
+        // been seen from here. Play the home knot in full, not trimmed against its own run under
+        // the old globals: a read-out that was already pending then (e.g. a catalogue read the
+        // player skipped) would run identically in both and read as "nothing new".
+        // Only when the home run prints something or closes the phone; a multi-way menu with a
+        // real branch in it is not a dead end and resumes as before.
+        if (knot !== home && this._hasKnot(story, home) && this._savedChoicesAreExits(story, syncedState)) {
+            const full = dryRun(home);
+            const closesHome = tags => (tags || []).some(t =>
+                /^(exit_conversation|end_conversation)$/i.test(String(t).split(':')[0].trim()));
+            if (full && full.steps.some(st => phoneStepLines(st.text, st.tags).length > 0 || closesHome(st.tags))) {
+                full.baseline = [];
+                full.replayed = 0;
+                full.fresh = full.steps.length;
+                chosen = full;
+            }
+        }
         if ((!chosen || chosen.fresh === 0) && sameChoices && knot !== home && this._hasKnot(story, home)) {
             const viaHome = dryRun(home);
             // Visible output only: a tag-only step (m02 support_hub opens with one) is a
