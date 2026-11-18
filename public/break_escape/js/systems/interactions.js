@@ -2275,6 +2275,11 @@ export function tryInteractWithNearest() {
     // Ids of the objects in reach: an owner on the move from her own PC among them gives way (review R2 m1)
     const inReachIds = [];
 
+    // What the player was last turned to face (a tap's use, or E's own turn), while they still stand and face the same
+    // way. Neighbouring props share one of the eight facings; this one is the one meant.
+    const aim = player.faceAim;
+    const aimKept = !!aim && aim.dir === player.direction && Math.hypot(px - aim.px, py - aim.py) <= 4;
+
     function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX, faceY = objY) {
         const dx = objX - px;
         const dy = objY - py;
@@ -2290,7 +2295,8 @@ export function tryInteractWithNearest() {
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
+        if (aimKept && target && aim.obj === target) score -= 1000000; // the one faced on purpose beats a nearer neighbour
+        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn, target }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -2355,7 +2361,9 @@ export function tryInteractWithNearest() {
 
     // If the best item is not roughly in the facing direction, turn toward it before interacting
     if (angularDiff(best.objX, best.objY) > ANGLE_TOLERANCE) {
-        facePlayerToward(best.objX, best.objY);
+        facePlayerToward(best.objX, best.objY, best.target);
+    } else if (best.target && aimKept && aim.obj !== best.target) {
+        player.faceAim = null; // a different pick than the remembered aim
     }
 
     const chosen = best;
