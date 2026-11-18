@@ -248,7 +248,7 @@ test('R4 m1: a repeat Enter at the minigame control focused after Decline is pre
         const rep3 = keyEv(w, 'keydown', 'Enter', true);
         kp.dispatchEvent(rep3);
         assert.equal(rep3.defaultPrevented, false, 'the listener removed itself on keyup');
-    } finally { w.restore(); }
+    } finally { releaseKeys(w); w.restore(); }
 });
 
 test('R4 m1: a fresh (non-repeat) Enter is never prevented while the swallower is active', async () => {
@@ -262,7 +262,7 @@ test('R4 m1: a fresh (non-repeat) Enter is never prevented while the swallower i
         const fresh = keyEv(w, 'keydown', 'Enter', false);
         doc.getElementById('kp-1').dispatchEvent(fresh);
         assert.equal(fresh.defaultPrevented, false);
-    } finally { w.restore(); }
+    } finally { releaseKeys(w); w.restore(); }
 });
 
 test('R4 m1: the swallower removes itself after about a second with no keyup', async () => {
@@ -281,7 +281,7 @@ test('R4 m1: the swallower removes itself after about a second with no keyup', a
         const late = keyEv(w, 'keydown', 'Enter', true);
         kp.dispatchEvent(late);
         assert.equal(late.defaultPrevented, false, 'fallback timer removed the listener');
-    } finally { w.restore(); }
+    } finally { releaseKeys(w); w.restore(); }
 });
 
 test('R4 m1: the Answer to Hang up hop also swallows a held Enter', async () => {
@@ -301,7 +301,7 @@ test('R4 m1: the Answer to Hang up hop also swallows a held Enter', async () => 
         const rep2 = keyEv(w, 'keydown', 'Enter', true);
         doc.getElementById('kp-1').dispatchEvent(rep2);
         assert.equal(rep2.defaultPrevented, false, 'removed on keyup');
-    } finally { w.restore(); }
+    } finally { releaseKeys(w); w.restore(); }
 });
 
 test('R4 n3: when :focus-visible throws, focus is treated as keyboard and carried on', async () => {
@@ -318,5 +318,26 @@ test('R4 n3: when :focus-visible throws, focus is treated as keyboard and carrie
         await w.advance(100);
         assert.ok(hangOf(doc), 'pill shown');
         assert.equal(doc.activeElement, hangOf(doc), 'keyboard assumed: Hang up kept focus');
-    } finally { Elem.matches = saved; w.restore(); }
+    } finally { Elem.matches = saved; releaseKeys(w); w.restore(); }
+});
+
+test('R5 m1: a fresh Space disarms the swallower, so a later repeat Space is not prevented', async () => {
+    const w = await ringOverKeypad();
+    releaseKeys(w);
+    try {
+        const doc = w.win.document;
+        doc.querySelector('.incoming-call-decline').focus();
+        w.click('.incoming-call-decline');
+        await w.advance(100);
+        const kp = doc.getElementById('kp-1');
+        const armed = keyEv(w, 'keydown', ' ', true);
+        kp.dispatchEvent(armed);
+        assert.equal(armed.defaultPrevented, true, 'armed after the hop');
+        const fresh = keyEv(w, 'keydown', ' ', false);
+        kp.dispatchEvent(fresh);
+        assert.equal(fresh.defaultPrevented, false, 'a fresh Space is not touched');
+        const later = keyEv(w, 'keydown', ' ', true);
+        kp.dispatchEvent(later);
+        assert.equal(later.defaultPrevented, false, 'the swallower disarmed on the fresh press');
+    } finally { releaseKeys(w); w.restore(); }
 });

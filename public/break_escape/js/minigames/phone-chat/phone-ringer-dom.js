@@ -144,10 +144,12 @@ export function installPhoneRinger(win = window) {
     function swallowHeldKeys() {
         if (repeatSwallow) repeatSwallow();
         const onKeydown = (e) => {
-            if (e.repeat && (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+            if (!(e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')) return;
+            // A fresh press means the old hold is over (Space activates on keyup, so a Space hop has no
+            // further keyup coming; this also covers a keyup lost to a blur): disarm and let it through
+            if (!e.repeat) { done(); return; }
+            e.preventDefault();
+            e.stopPropagation();
         };
         const onKeyup = (e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') done(); };
         let timer = null;
