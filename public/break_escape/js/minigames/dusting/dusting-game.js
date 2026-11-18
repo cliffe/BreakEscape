@@ -1009,7 +1009,7 @@ export class DustingMinigame extends MinigameScene {
             e.preventDefault();
             if (this.step === 'find') { if (!e.repeat) this._attemptFind(this.reticle); return; }
             if (this.step === 'dust' && k === 'Enter') {
-                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) this._countStroke(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); }
+                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) this._countStroke(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); if (this.metrics) this._refreshDynamic(); }
                 return;
             }
             if (this.step === 'dust' || this.step === 'lift') {
@@ -1152,7 +1152,10 @@ export class DustingMinigame extends MinigameScene {
                     el.querySelector('.dusting-lbl').innerHTML = lblHtml(parts);
                 }
             });
-            this._setDyn('feedback', el => { el.textContent = this.message || this.advice || this._coach(); });
+            // Short landscape hides the status line and the Keys line on this step, so sticky keyboard brushing
+            // shows its state on the feedback line too (R6 m1); the announcement is unchanged.
+            const brushing = this.stickyBrush && this.root.classList.contains('dusting-short') ? 'Brushing on (Enter stops). ' : '';
+            this._setDyn('feedback', el => { el.textContent = brushing + (this.message || this.advice || this._coach()); });
         } else if (this.step === 'lift') {
             const tc = this.tape.coverage();
             this._setDyn('tape-text', el => { el.textContent = `${pct(tc)} (${tc >= 0.85 ? 'good' : tc >= 0.5 ? 'fair' : 'bubbles left'})`; });

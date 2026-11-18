@@ -419,3 +419,17 @@ test('r6 M1: advice clears on a tool change and on a step change', () => {
     b.g._setStep('lift');
     assert.equal(b.g.advice, '');
 });
+
+test('r6 m1: sticky keyboard brushing shows on the short-mode feedback line (status and Keys lines are hidden there)', () => {
+    const s = feedbackGame({ foggy: 0 });
+    s.g.stickyBrush = true;
+    s.g._refreshDynamic();
+    assert.match(s.fb.textContent, /^Brushing on \(Enter stops\)\. /);
+    s.g.stickyBrush = false;
+    s.g._refreshDynamic();
+    assert.doesNotMatch(s.fb.textContent, /Brushing on/);
+    const l = feedbackGame({ foggy: 0, short: false });
+    l.g.stickyBrush = true;
+    l.g._refreshDynamic();
+    assert.doesNotMatch(l.fb.textContent, /Brushing on/, 'long mode keeps its visible Keys line instead');
+});
