@@ -859,7 +859,9 @@ Agent HaX: Somebody pays the Architect, too. Next, we follow the money.
     {confront_stance == "sympathetic":
         Agent HaX: You went looking for the man underneath. That mattered, whatever you decided in the end.
     }
-    {confront_stance == "hardline":
+    // Blind playtest m05 F5: "Cold" described the whole confrontation, but the stance is only the
+    // opening question. A player who then turned him (helped him) was not cold, so that ending skips it.
+    {confront_stance == "hardline" and final_choice != "turn_double_agent":
         Agent HaX: You never let him hide behind his story. Cold, maybe. But you saw it clearly.
     }
     {

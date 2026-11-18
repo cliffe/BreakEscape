@@ -412,7 +412,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         {
           "taskId": "find_vetting_file",
           "_comment": "Struggling run A (D2): was 'Find out who on the team is under pressure', which ticked on the hand-over of Torres' file (both files arrive together) and read as an answer. Now it says what ticks it.",
-          "title": "Get the vetting files on the cryptography team",
+          "title": "Ask Patricia for the vetting files on the cryptography team",
+          "description": "Patricia Morgan keeps the personnel security files on the team in her office. Ask her for them. The key vault is a separate sweep, and HaX will ask for that once the upload is dead.",
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["torres_vetting_file"],
@@ -568,9 +569,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         {
           "taskId": "find_upload_schedule",
           "title": "Find out when the final upload runs",
-          "type": "collect_items",
-          "targetCount": 1,
-          "targetItemIds": ["upload_schedule"],
+          "_comment": "Blind run (finding 1): was collect_items on upload_schedule alone. The server hard-checks collect_items against the inventory, so a mapping cannot tick it from the terminal's transfer_queue.log, which states the same 20:30 window. Custom, ticked by found_upload_schedule (the schedule, read or taken) or found_transfer_log (the log).",
+          "type": "custom",
           "status": "active"
         }
       ]
@@ -746,6 +746,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "found_medical_bills": false,
     "found_torres_journal": false,
     "found_upload_schedule": false,
+    "found_transfer_log": false,
     "found_manifest": false,
     "case_ready_notified": false,
     "case_motive": false,
@@ -1602,6 +1603,19 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That makes him a lead, not a name. Test his times against the badge log before you spend one.", "skipIfGlobal": "torres_identified" }
+            },
+            {
+              "_comment": "Blind run (finding 1): the upload terminal's transfer_queue.log states the 20:30 window, so reading it ticks the Find-the-upload-time task (the printed Upload Schedule does the same through found_upload_schedule). found_upload_schedule is left alone: that global also gates the 'he is the operator' evidence lines, and the log names only dtorres.",
+              "eventPattern": "global_variable_changed:found_transfer_log",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_upload_schedule"
+            },
+            {
+              "eventPattern": "global_variable_changed:found_upload_schedule",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_upload_schedule"
             }
           ]
         },
@@ -2669,7 +2683,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "name": "transfer_queue.log",
               "takeable": false,
               "readable": true,
-              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: most of the package (previous sessions)\nTHIS SESSION: resuming, final segment...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\""
+              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: most of the package (previous sessions)\nTHIS SESSION: resuming, final segment...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\"",
+              "onRead": { "setVariable": { "found_transfer_log": true } }
             }
           ]
         },
