@@ -8,6 +8,7 @@
 VAR confrontation_approach = ""    // diplomatic, aggressive, evidence_based
 VAR derek_knows_safetynet = false
 VAR derek_showed_remorse = false   // Spoiler: he won't
+VAR heard_reasoning = false        // true once Derek has given his reasoning (the monologue); gates "You've heard my reasoning"
 VAR final_choice = ""              // arrest, recruit, expose
 VAR derek_confronted = false // Synced scenario global: the confrontation with Derek is over; also set by his globalVarOnKO
 
@@ -167,6 +168,7 @@ I calculated every one of them.
 // ================================================
 
 === evil_monologue_part1 ===
+~ heard_reasoning = true
 Murder? No. Think of it as... forced education.
 
 Every security professional in the world says "humans are the weakest link." They write papers about it. Give talks at conferences. Collect consulting fees.
