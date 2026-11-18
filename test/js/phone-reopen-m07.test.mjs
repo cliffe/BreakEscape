@@ -73,6 +73,13 @@ test('R4 m3: the stuck_topics menu stitch drops a hint once its flag flips', asy
     assert.ok(!after.some(t => /Now what\?/.test(t)), `got ${JSON.stringify(after)}`);
 });
 
+// The menu each submenu shows with these globals (flag2 only for the save; flag3/hollis_ko on reopen).
+const EXPECTED_MENU = {
+    stuck_topics: ["I've got a username and a password. Now what?", 'Never mind.'],
+    people_topics: ['Never mind.'],
+    vault_finds: ['Never mind.'],
+};
+
 test('R4 m2: a save taken on an old-layout submenu reopens in the new json without throwing', async () => {
     for (const knot of ['stuck_topics', 'people_topics', 'vault_finds']) {
         globalThis.window = { gameState: { globalVariables: { flag2_submitted: true } } };
@@ -95,9 +102,9 @@ test('R4 m2: a save taken on an old-layout submenu reopens in the new json witho
             out = conv.reopenWithCurrentGlobals(syncGlobals, { homeKnot: 'start' });
         }, `${knot}`);
         assert.ok(out && typeof out.renavigated === 'boolean', `${knot}: ${JSON.stringify(out)}`);
-        // whatever it did, the thread is left on a usable menu (or ended), never half loaded
+        // the thread must come back on the same visible submenu, not a different knot's menu
         const texts = conv.engine.story.currentChoices.map(c => c.text);
-        assert.ok(texts.length > 0 || out.renavigated === false || conv.engine.story.canContinue === false,
-            `${knot}: old ${JSON.stringify(oldTexts)} -> ${JSON.stringify(texts)}`);
+        assert.deepEqual(oldTexts, EXPECTED_MENU[knot], `${knot}: old save menu`);
+        assert.deepEqual(texts, EXPECTED_MENU[knot], `${knot}: reopened menu, got ${JSON.stringify(texts)}`);
     }
 });
