@@ -107,3 +107,11 @@ Clicking a seated NPC's sprite centre hits the chair's hit box ("A chair.") inst
 # R1 fix handover (2026-11-18)
 
 Done: M1, m1, m2, m3, m4, m6, m7, m8 (see LOG.md and LIVE_SLICE3.md "R1 fixes"). Not done: m5 (L1 and the real walkthrough route to the server room on a fresh game with seeded flags). Resolved, see `LOG.md` (R1 table, m5) and `LIVE_SLICE3.md` "R1 m5 walkthrough run". Server :3098 stopped by PID 1039641. Game ids used up to 8210. New probes: tools/playtest/m07-ol-r1m1.mjs, m07-ol-r1m4.mjs, m07-ol-r1chairs.mjs. Dismiss the HaX phone bark with `__test.dismissBlockingUi()` before moveToNear or it returns blocking-ui.
+
+## Orchestrator state, 18 Nov 2026 (tip 4b3ae5a11 plus this note)
+
+- Done: lines and ink (99f3ad4b4), slice 3 build, measurements and live checks (all pass; LIVE_SLICE3.md), D113 American voice styles and wording (de554bc96), dialogue review of the new lines (785287e2d, B0 M0 m4, fixed), slice 6 lighting (323b5e234, no emitter needed). Main merged at 56930fb23 (main dae6589ee).
+- Build review: R1 B0 M1 m8 (fixed f0440a469, 9a2bde232, 5b4c6fc9d), R2 B0 M0 m5 (fixed 6f356a2cf), R3 B0 M0 m6 (document fixes 4b3ae5a11). Outcomes in LOG.md.
+- Next: merge main again; R4 and R5 as delta reviews on the cheaper tier (diff since 227a6710e plus REVIEW_BUILD_R3.md); fix; after R5 minors only. Then, per the coordinator's relay of the user's "Implement these using your best judgement" (18 Nov): wording is signed off once reviews are clean; voice all 28 new lines (adaeze_okafor, gwen_pritchard; SPOKEN_LINES.md) with the tts-audio skill, 0 wasted clips, listen-check by transcript; strip model names; commit; send the hash to AC0 for a train.
+- Open for the user: engine follow-up, clicking a seated NPC's sprite centre hits the chair's hit box ("A chair.") instead of opening the chat (games 7779, 7789, 7793). Accepted: a punch from between the two seats can hit both operators.
+- Gotchas: dismiss popups with window.__test.dismissBlockingUi() only (Escape opens the pause menu); click 12 px right of a seated operator's centre to talk; the RFID door opens by interaction with the badge, not enterRoom; dungeon_graph.* stays modified and unstaged.
