@@ -628,6 +628,13 @@ Come back to the ops desk when you need me. I'm on comms while you move.
 }
 + {not vance_provided_keycard} [I'll need into the halls.]
     -> vance_clone_ally
+// Blind m04: telling him the truth is what puts the evacuation in his hands, so
+// the player is offered it here, not only on a later visit to the hub. Same
+// knots and recorded lines as the hub's topic.
++ {(anomaly_detected or attack_mechanism_known) and not crew_warned and not crew_discussed and not racks_vented and not attack_prevented} [Is anyone working in the halls tonight?]
+    -> vance_crew_offer
++ {crew_discussed and not crew_warned and not racks_vented and not attack_prevented} [Sound the evacuation. Get the night crew out.]
+    -> vance_crew_sound
 + [I'm going.]
     -> vance_commits_exit
 

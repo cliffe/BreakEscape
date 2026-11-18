@@ -240,6 +240,8 @@ export class FingerprintReaderMinigame extends MinigameScene {
 
         if (result === 'accepted') {
             this.accepted = true;
+            // A close during the accept hold still unlocks (complete() below)
+            this.markSuccessPending();
             this.setLed('ok');
             window.playUISound?.('confirm');
             window.gameAlert?.(`You unlocked the ${this.lockType} with ${sample.ownerName || sample.owner}'s fingerprint.`,
@@ -252,7 +254,6 @@ export class FingerprintReaderMinigame extends MinigameScene {
                 // see them yet: expect the panel for any non-door lock.
                 if (this.lockType !== 'door' && !this.lockable?.doorProperties) window.expectPanelWithin?.(1500);
                 this.complete(true);
-                if (typeof this.onAccepted === 'function') this.onAccepted();
             });
             return;
         }
@@ -281,6 +282,18 @@ export class FingerprintReaderMinigame extends MinigameScene {
         body.className = 'fpr-result-body';
         body.textContent = message;
         this.resultElement.append(head, body);
+    }
+
+    // The unlock callback runs once, whether the hold ran out or the player closed the reader
+    // first (the hold's timer is cleared on close, so it could not be left to the timer)
+    complete(success) {
+        const accepted = this.accepted === true && this._successPending === true;
+        if (accepted && !this._acceptedFired && this.lockType !== 'door' && !this.lockable?.doorProperties) window.expectPanelWithin?.(1500);
+        super.complete(success);
+        if (accepted && !this._acceptedFired) {
+            this._acceptedFired = true;
+            if (typeof this.onAccepted === 'function') this.onAccepted();
+        }
     }
 
     after(ms, fn) {

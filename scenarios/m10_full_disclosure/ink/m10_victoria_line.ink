@@ -7,7 +7,7 @@ INCLUDE m10_carryover_vars.ink
 
 === start ===
 + [(Put the phone away.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> start
 
 // ---------------------------------------------------------------
@@ -47,7 +47,7 @@ A reduced charge, and you get the rest of my book. Or nothing, and you still hav
 // After the call: no text, one way out.
 === call_after ===
 + [(Put the phone away.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> call_after
 
 // Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after
