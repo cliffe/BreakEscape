@@ -49,6 +49,7 @@ VAR hub_quiet = false                // pass 4 dialogue: re-entry line on a re-t
 VAR gary_evidence_recovered = false
 VAR gary_cabinet_permission = false  // Gary said "take the lot": the cabinet catch no longer fires. Synced scenario global, set here
 VAR board_coverup_email_found = false
+VAR kim_statement_given = false      // Synced scenario global: Dr Kim has signed her statement for the player to carry
 VAR cover_burned = false // Synced scenario global: the player's booking has been pulled; also set by the talk_to_gary task mapping
 VAR cover_restored = false
 VAR insider_evidence_partial = false
@@ -453,6 +454,9 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 + {board_coverup_email_found and not gary_protected_locally} [There's something in the boardroom you need to see.]
     -> tell_him_about_board
 
++ {kim_statement_given and not board_coverup_email_found and not gary_protected_locally} [Dr. Kim has put it in writing. The deferral was hers.]
+    -> kim_wrote_it
+
 + {(cover_burned or gave_keycard) and not cover_restored and not gave_lanyard and not staff_lanyard_obtained and (not lanyard_refused or gary_influence >= 15)} [Someone's pulled my booking with security. I need something that holds up.]
     -> the_lanyard
 
@@ -609,6 +613,17 @@ Gary Whitlock: Best day of the year, and I spent twenty minutes of it on an emai
     Gary Whitlock: If anybody ever tells her. That's the bit that gets me.
     ~ hub_quiet = true
     -> hub
+
+// Blind playtest: the scapegoating task completes here, with Gary, not at Kim's desk.
+=== kim_wrote_it ===
+~ gary_protected_locally = true
+~ gary_influence += 12
+# influence_increased
+#complete_task:learn_about_scapegoating
+Narrator: He reads the statement twice, then folds it flat as though it might bruise.
+Gary Whitlock: Her name. Her signature. Seven emails and one honest page.
+~ hub_quiet = true
+-> hub
 
 === tell_him_about_board ===
 ~ gary_protected_locally = true
