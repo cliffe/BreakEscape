@@ -216,7 +216,7 @@
     .dusting-root:not(.dusting-short) .dusting-actions, .dusting-root:not(.dusting-short) .dusting-buttons { display: contents; }
     .dusting-root:not(.dusting-short) .dusting-meters { border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 8px; }
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary {
-        position: sticky; bottom: 0; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
+        position: sticky; bottom: -8px; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
         margin: 4px 0; background: var(--d-bg); border-color: var(--d-accent);
     }
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #0e3b1b; }
