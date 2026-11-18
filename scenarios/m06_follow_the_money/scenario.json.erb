@@ -2141,7 +2141,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "takeable": false,
           "offWhen": "floor_staff_ko",
           "observations": "A pod coffee machine, the mugs beside it still wet.",
-          "affordance": { "capacity": 2, "chatter": "coffee", "overhearRadius": 360, "queue": { "cells": [ { "dx": 2, "dy": 1 }, { "dx": 3, "dy": 1 } ] } }
+          "affordance": { "capacity": 2, "chatter": "coffee", "overhearRadius": 360, "queue": { "cells": [ { "dx": 2, "dy": 0 }, { "dx": 3, "dy": 0 } ] } }
         },
         {
           "type": "photocopier",
@@ -2158,7 +2158,8 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Floor Mini Fridge",
           "takeable": false,
           "observations": "A small fridge with a shelf of lunch boxes.",
-          "offWhen": "floor_staff_ko"
+          "offWhen": "floor_staff_ko",
+          "affordance": { "useFrom": { "dx": 1, "dy": 0 } }
         },
         {
           "type": "laptop1",
