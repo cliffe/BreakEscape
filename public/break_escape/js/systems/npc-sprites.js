@@ -655,6 +655,7 @@ export function updateNPCDepth(sprite) {
 // Bodies tunnel through walls when pressed into the 8 px boxes. A desk, table or other static body counts as
 // a wall here too (code review R1, G2). The pin lasts until the end of that physics step, so an
 // NPC-NPC collider later in the same step also sees him unpushable: one step at most.
+const CLEAR_QUERY_MARGIN_PX = 32;   // wider than any overlap depth clearPlayerOfNpc moves by
 export const PLAYER_WALL_MARGIN_PX = 12;
 
 /**
@@ -695,37 +696,56 @@ export function bodyNearWall(body, wallRects, margin = PLAYER_WALL_MARGIN_PX) {
 
 /**
  * The rule for one player and NPC contact: 'separate' (the old push, both move), 'pin' (the
- * NPC holds, only the player moves), 'block' (by a wall: no separation, the player's own step
- * into the NPC is undone instead, see blockPlayerIntoNpc).
+ * NPC holds, only the player moves), 'block' (by a wall and the NPC is walking: no separation,
+ * the player's own step into the NPC is undone instead, see blockPlayerIntoNpc), 'slide' (by a
+ * wall and the NPC is stopped, paused for the player, seated or talking: no separation and
+ * nothing undone, so a stopped patrol in a 1-tile corridor or doorway never soft-locks him).
  */
-export function playerPushMode({ routed, playerNearWall }) {
+export function playerPushMode({ routed, playerNearWall, npcMoving = true }) {
     if (!routed) return 'separate';
-    return playerNearWall ? 'block' : 'pin';
+    if (!playerNearWall) return 'pin';
+    return npcMoving ? 'block' : 'slide';
 }
+
+/** Is the NPC actually walking (non-zero velocity, or an active walk), not paused or stopped? */
+export function npcIsMoving(npcBody, behavior) {
+    const v = npcBody?.velocity;
+    if (v && (Math.abs(v.x) > 1 || Math.abs(v.y) > 1)) return true;
+    return behavior?.isMoving === true;
+}
+
+const rectsOverlap = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 
 /**
  * q53 wall case: by a wall the pair is not separated (an unpushable NPC would press the player
  * into the 8 px wall boxes), so the player is stopped by undoing the part of this step's move
- * that took its body closer to the NPC's. Per axis, so it still slides along the NPC, and a
- * move that does not close the gap (stepping away) is left alone. Returns true if it undid any.
+ * that ran into the NPC's body. Judged per axis on the body edges: only an axis along which the
+ * bodies were separated before the step and overlap now is undone, so a sideways move alongside
+ * the NPC (spans already overlapping on that axis) is left alone and the player can slide along
+ * it; stepping away is left alone too. The longer move is undone first, the other only if the
+ * bodies still overlap. Returns true if it undid any.
  */
 export function blockPlayerIntoNpc(playerBody, npcBody) {
     const prev = playerBody?.prev;
     if (!prev || !npcBody) return false;
     const w = playerBody.width, h = playerBody.height;
-    const ncx = npcBody.x + npcBody.width / 2, ncy = npcBody.y + npcBody.height / 2;
-    const dist2 = (x, y) => (x + w / 2 - ncx) ** 2 + (y + h / 2 - ncy) ** 2;
+    const npc = { x: npcBody.x, y: npcBody.y, width: npcBody.width, height: npcBody.height };
     const startX = playerBody.x, startY = playerBody.y;
-    if (dist2(startX, startY) >= dist2(prev.x, prev.y)) return false;
+    if (!rectsOverlap({ x: startX, y: startY, width: w, height: h }, npc)) return false;
+    // An axis move is the one that ran into the NPC if the bodies were separated along it before
+    // (signed gap >= 0) and overlap along it now. Spans already overlapping before the step (a
+    // sideways move alongside the NPC) are left alone.
+    const signedGap = (pos, size, bPos, bSize) => Math.max(bPos - (pos + size), pos - (bPos + bSize));
+    const enteredX = signedGap(prev.x, w, npc.x, npc.width) >= 0 && signedGap(startX, w, npc.x, npc.width) < 0;
+    const enteredY = signedGap(prev.y, h, npc.y, npc.height) >= 0 && signedGap(startY, h, npc.y, npc.height) < 0;
     let x = startX, y = startY;
-    // Undo whichever axis undoes more closing first; the other only if still closing
-    const tryX = () => { if (x !== prev.x) x = prev.x; };
-    const tryY = () => { if (y !== prev.y) y = prev.y; };
-    const gainX = dist2(startX, startY) - dist2(prev.x, startY);
-    const gainY = dist2(startX, startY) - dist2(startX, prev.y);
-    const order = gainX >= gainY ? [tryX, tryY] : [tryY, tryX];
-    for (const undo of order) {
-        if (dist2(x, y) < dist2(prev.x, prev.y)) undo(); else break;
+    const steps = [];
+    if (enteredX && startX !== prev.x) steps.push({ gain: Math.abs(startX - prev.x), undo: () => { x = prev.x; } });
+    if (enteredY && startY !== prev.y) steps.push({ gain: Math.abs(startY - prev.y), undo: () => { y = prev.y; } });
+    steps.sort((a, b) => b.gain - a.gain);
+    for (const st of steps) {
+        if (!rectsOverlap({ x, y, width: w, height: h }, npc)) break;
+        st.undo();
     }
     if (x === startX && y === startY) return false;
     if (playerBody.position) { playerBody.position.x = x; playerBody.position.y = y; }
@@ -737,29 +757,76 @@ export function blockPlayerIntoNpc(playerBody, npcBody) {
 }
 
 /**
- * q53 wall case, the NPC walking into a player who stands still: after the undo above they can
- * still overlap. Move the player out by the shortest way that ends clear of every wall rect and
- * static body, so he is never pressed into a wall box (that is how bodies tunnel). If every way
- * out is blocked, nothing moves and the NPC's own avoidance routes round him.
+ * q53 wall case, the NPC walking into a player who stands still: the undo above has nothing to
+ * undo. Move the player out of the NPC by at most the overlap depth on one axis, away from the
+ * NPC, and only to a spot clear of every blocker rect { l, t, r, b } (walls of this and the
+ * neighbouring rooms, closed door bodies, other NPC bodies, static bodies). The NPC is never
+ * passed through: there are no far-side candidates. If neither axis has a clear spot, nothing
+ * moves and the pair stay overlapped (the accepted rare fallback: the NPC is not stopped, so it
+ * carries on along its route and the overlap ends once it has passed).
  */
-export function clearPlayerOfNpc(playerBody, npcBody, wallRects) {
+export function clearPlayerOfNpc(playerBody, npcBody, blockers) {
     if (!playerBody || !npcBody) return false;
-    const overlaps = (x, y, r) => x < r.x + r.width && x + playerBody.width > r.x && y < r.y + r.height && y + playerBody.height > r.y;
+    const w = playerBody.width, h = playerBody.height;
     const npc = { x: npcBody.x, y: npcBody.y, width: npcBody.width, height: npcBody.height };
-    if (!overlaps(playerBody.x, playerBody.y, npc)) return false;
-    const hitsWall = (x, y) => wallRects.some(w => overlaps(x, y, { x: w.l, y: w.t, width: w.r - w.l, height: w.b - w.t }));
     const px = playerBody.x, py = playerBody.y;
-    const gap = 0.5;
+    if (!rectsOverlap({ x: px, y: py, width: w, height: h }, npc)) return false;
+    const hits = (x, y) => blockers.some(r => rectsOverlap({ x, y, width: w, height: h }, { x: r.l, y: r.t, width: r.r - r.l, height: r.b - r.t }));
+    const depthX = Math.min(px + w, npc.x + npc.width) - Math.max(px, npc.x);
+    const depthY = Math.min(py + h, npc.y + npc.height) - Math.max(py, npc.y);
+    const gap = 0.1;
+    const awayX = (px + w / 2) < (npc.x + npc.width / 2) ? -1 : 1;
+    const awayY = (py + h / 2) < (npc.y + npc.height / 2) ? -1 : 1;
     const cands = [
-        [npc.x - playerBody.width - gap, py], [npc.x + npc.width + gap, py],
-        [px, npc.y - playerBody.height - gap], [px, npc.y + npc.height + gap],
-    ].map(([x, y]) => ({ x, y, d: Math.abs(x - px) + Math.abs(y - py) })).sort((a, b) => a.d - b.d);
-    const best = cands.find(c => !hitsWall(c.x, c.y));
+        { x: px + awayX * (depthX + gap), y: py, d: depthX },
+        { x: px, y: py + awayY * (depthY + gap), d: depthY },
+    ].sort((a, b) => a.d - b.d);
+    const best = cands.find(c => !hits(c.x, c.y));
     if (!best) return false;
     if (playerBody.position) { playerBody.position.x = best.x; playerBody.position.y = best.y; }
     else { playerBody.x = best.x; playerBody.y = best.y; }
     playerBody.updateCenter?.();
     return true;
+}
+
+/** The given rooms plus every room one door away (m3: at a doorway the next room's walls count). */
+function withNeighbourRooms(roomIds) {
+    const out = new Set();
+    for (const id of roomIds) {
+        if (!id) continue;
+        out.add(id);
+        for (const d of (window.rooms?.[id]?.doorSprites || [])) {
+            const c = d?.doorInfo?.connectedRoom;
+            if (c) out.add(c);
+        }
+    }
+    return [...out];
+}
+
+/** Closed doors (doors.js gives each a dynamic immovable body; an opened door is destroyed). */
+function doorRectsFor(roomIds) {
+    const out = [];
+    for (const id of roomIds) {
+        for (const d of (window.rooms?.[id]?.doorSprites || [])) {
+            const b = d?.body;
+            if (!b || b.enable === false) continue;
+            out.push({ l: b.x, t: b.y, r: b.x + b.width, b: b.y + b.height });
+        }
+    }
+    return out;
+}
+
+/** Bodies of the other NPCs in the given rooms, as rects. */
+function otherNpcRects(roomIds, exceptSprite) {
+    const out = [];
+    for (const id of roomIds) {
+        for (const s of (window.rooms?.[id]?.npcSprites || [])) {
+            const b = s?.body;
+            if (!b || s === exceptSprite || b.enable === false) continue;
+            out.push({ l: b.x, t: b.y, r: b.x + b.width, b: b.y + b.height });
+        }
+    }
+    return out;
 }
 
 function wallRectsFor(roomIds) {
@@ -933,12 +1000,20 @@ export function createNPCCollision(scene, npcSprite, player) {
                 // q53 g: a routed or patrolling NPC is not shoved off its route
                 const routed = keepsRouteAgainstPlayer(behavior, npc.npcId);
                 if (!routed) return true;
-                const walls = wallRectsFor([plyr.currentRoom || window.player?.currentRoom, behavior?.roomId])
-                    .concat(staticRectsNear(scene, plyr.body));
-                const mode = playerPushMode({ routed, playerNearWall: !!plyr.body && bodyNearWall(plyr.body, walls) });
+                // Walls and closed doors of this room and the rooms a door away (m3), plus statics near the player
+                const ids = withNeighbourRooms([plyr.currentRoom || window.player?.currentRoom, behavior?.roomId]);
+                const walls = wallRectsFor(ids).concat(doorRectsFor(ids), staticRectsNear(scene, plyr.body));
+                const mode = playerPushMode({
+                    routed,
+                    playerNearWall: !!plyr.body && bodyNearWall(plyr.body, walls),
+                    npcMoving: npcIsMoving(npc.body, behavior),
+                });
+                if (mode === 'slide') return false;
                 if (mode === 'block') {
                     blockPlayerIntoNpc(plyr.body, npc.body);
-                    clearPlayerOfNpc(plyr.body, npc.body, walls);
+                    // Candidate spots are tested against everything solid, statics over the whole move
+                    clearPlayerOfNpc(plyr.body, npc.body, walls.concat(
+                        staticRectsNear(scene, plyr.body, CLEAR_QUERY_MARGIN_PX), otherNpcRects(ids, npc)));
                     return false;
                 }
                 pinForPlayer(scene, npc.body);
