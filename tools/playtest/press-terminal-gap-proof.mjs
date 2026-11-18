@@ -2,7 +2,10 @@
 // player's first pick and the next choices. Samples the panel every 250 ms and takes
 // screenshots at fixed times. Headless, setFPS(20) with fixed steps on.
 //
-//   node tools/playtest/press-terminal-gap-proof.mjs <gameId> <port> <label> [outDir]
+//   [SKIP_AT=500,1500 SKIP_KIND=click|space|enter] node tools/playtest/press-terminal-gap-proof.mjs <gameId> <port> <label> [outDir]
+//
+// SKIP_AT lists the ms after the pick at which to press the skip control (default none, the
+// baseline). SKIP_KIND picks a click on the thread, Space or Enter.
 //
 // Drive only a game id new-game.rb printed in this run.
 import { createRequire } from 'node:module';
@@ -59,13 +62,23 @@ const pick = await page.evaluate(() => {
 });
 const t0 = Date.now();
 await page.evaluate(i => document.querySelectorAll('#choices-container .choice-button')[i].click(), pick);
+const skipAt = (process.env.SKIP_AT || '').split(',').filter(Boolean).map(Number);
+const skipKind = process.env.SKIP_KIND || 'click';
+const skipsDone = []; const skipLog = [];
 const samples = []; const shots = new Set();
 let firstChoicesAt = null;
 while (Date.now() - t0 < 40000) {
     const at = Date.now() - t0; const s = await panel(); samples.push({ at, ...s });
     for (const mark of [1000, 3000, 5000, 7000, 9000]) if (at >= mark && !shots.has(mark)) { shots.add(mark); await page.screenshot({ path: `${outDir}/${label}-${String(mark / 1000)}s.png` }); }
     if (s.choices > 0) { firstChoicesAt = at; break; }
-    await t(250);
+    for (const m of skipAt) if (at >= m && !skipsDone.includes(m)) {
+        skipsDone.push(m);
+        if (skipKind === 'click') await page.evaluate(() => document.querySelector('#messages-container').click());
+        else await page.keyboard.press(skipKind === 'enter' ? 'Enter' : 'Space');
+        skipLog.push({ at, kind: skipKind, before: s });
+        await page.screenshot({ path: `${outDir}/${label}-skip${skipsDone.length}.png` });
+    }
+    await t(skipAt.length ? 50 : 250);
 }
 await page.screenshot({ path: `${outDir}/${label}-choices.png` });
 // "Empty" sample = no typing indicator, no cursor, and no change in the bubble text length.
@@ -75,7 +88,7 @@ for (const s of samples) {
     if (quiet) { empty++; run = run ?? s.at; longestEmptyMs = Math.max(longestEmptyMs, s.at - run); } else run = null;
     prev = s;
 }
-const report = { gid, label, menu, picked: menu[pick], firstChoicesAtMs: firstChoicesAt, samples: samples.length, quietSamples: empty, longestQuietMs: longestEmptyMs, typingSamples: samples.filter(s => s.typingShown).length, errs };
+const report = { gid, label, skipAt, skipKind, skips: skipLog.length, menu, picked: menu[pick], firstChoicesAtMs: firstChoicesAt, samples: samples.length, quietSamples: empty, longestQuietMs: longestEmptyMs, typingSamples: samples.filter(s => s.typingShown).length, errs };
 fs.writeFileSync(`${outDir}/${label}-report.json`, JSON.stringify({ ...report, samples }, null, 1));
 console.log(JSON.stringify(report, null, 1));
 await browser.close();
