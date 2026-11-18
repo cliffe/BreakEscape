@@ -1,15 +1,24 @@
-// D5 KO position on reload - live proof. Keyless server on PORT (default 3095).
-// Usage: node ko-pos-proof.mjs <gameId>   (OUT=<dir> for before/after crop PNGs)
+// Hostile restore keeps configured combat stats - live proof. Keyless server on PORT (default 3095).
+// Usage: node hostile-restore-damage-proof.mjs <gameId> <hostileNpcId> <calmNpcId> <koNpcId>
+//   The three ids must be NPCs with a behaviour in the game's scenario. Each should have a
+//   hostile.attackDamage set that differs from the engine default of 10, or the check proves
+//   nothing. Exits 0 when every NPC's attackDamage matches its configured value after a reload,
+//   1 on a mismatch or a missing NPC.
+// WARNING: this turns NPCs hostile and KOs one through the page, which syncs into the game's
+//   saved npcHostility. Run it only against a fresh throwaway game on a test scenario, never an
+//   existing playtest or student game.
 // Run from inside the worktree so playwright resolves its node_modules.
 import { chromium } from 'playwright';
-import fs from 'node:fs';
 
 const PORT = Number(process.env.PORT || 3095), BASE = `http://127.0.0.1:${PORT}`;
 const gameId = Number(process.argv[2]);
+const [, , , hostileId, calmId, koId] = process.argv;
+if (!gameId || !hostileId || !calmId || !koId) {
+  console.error('Usage: node hostile-restore-damage-proof.mjs <gameId> <hostileNpcId> <calmNpcId> <koNpcId>');
+  process.exit(2);
+}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const out = { gameId };
-const OUT = process.env.OUT || '';
-if (OUT) fs.mkdirSync(OUT, { recursive: true });
 
 // Capture every sync_state request body with npcHostility
 const syncBodies = [];
@@ -60,73 +69,6 @@ async function open(browser) {
   return page;
 }
 
-const npcPos = (page, id) => page.evaluate(i => {
-  const p = window.npcNeedsSystem?.world?.npcPos?.(i);
-  return p ? { x: Math.round(p.x), y: Math.round(p.y), room: p.roomId } : null;
-}, id);
-
-
-// Sprite anchor, body centre and the synced KO fields, read live.
-const readNpc = (page, id) => page.evaluate(i => {
-  const n = window.npcManager?.getNPC?.(i); const sp = n?._sprite || n?.sprite;
-  const st = window.npcHostileSystem?.getState?.(i);
-  const bc = sp?.body?.center;
-  const r = v => (Number.isFinite(v) ? Math.round(v) : null);
-  return { spriteX: r(sp?.x), spriteY: r(sp?.y), bodyX: r(bc?.x), bodyY: r(bc?.y),
-    visible: sp ? !!sp.visible : null, koRoom: st?.koRoom ?? null, koX: st?.koX ?? null, koY: st?.koY ?? null,
-    isKO: !!window.npcHostileSystem?.isNPCKO?.(i) };
-}, id);
-
-// 160x160 screenshot crop centred on the sprite as it is drawn (camera + zoom aware).
-async function cropNpc(page, id, name) {
-  if (!OUT) return null;
-  // Hide HUD panels that overlap the canvas so the crop shows the room, not the activity log.
-  await page.evaluate(() => {
-    const cv = document.querySelector('canvas'); if (!cv) return;
-    for (const el of document.body.querySelectorAll('*')) {
-      if (el === cv || el.contains(cv) || cv.contains(el) || el.tagName === 'SCRIPT') continue;
-      const cs = getComputedStyle(el);
-      if ((cs.position === 'fixed' || cs.position === 'absolute') && cs.visibility !== 'hidden') el.style.visibility = 'hidden';
-    }
-  });
-  const box = await page.evaluate(i => {
-    const n = window.npcManager?.getNPC?.(i); const sp = n?._sprite || n?.sprite;
-    const cam = sp?.scene?.cameras?.main || window.game?.scene?.scenes?.[0]?.cameras?.main;
-    const cv = (window.game?.canvas || document.querySelector('canvas'))?.getBoundingClientRect?.();
-    if (!sp || !cam || !cv) return null;
-    const z = cam.zoom || 1, k = cv.width / cam.width;
-    // world -> canvas pixel: about the camera's centre point (works whatever the zoom/bounds)
-    const mx = cam.midPoint?.x ?? (cam.scrollX + cam.width / 2), my = cam.midPoint?.y ?? (cam.scrollY + cam.height / 2);
-    return { x: cv.left + (cam.x + cam.width / 2 + (sp.x - mx) * z) * k, y: cv.top + (cam.y + cam.height / 2 + (sp.y - my) * z) * k };
-  }, id);
-  if (!box) return { error: 'no-box' };
-  const vp = page.viewportSize(), S = 160;
-  const clip = { x: Math.max(0, Math.min(vp.width - S, Math.round(box.x - S / 2))), y: Math.max(0, Math.min(vp.height - S, Math.round(box.y - S / 2))), width: S, height: S };
-  const file = `${OUT}/g${gameId}-${name}.png`;
-  await page.screenshot({ path: file, clip });
-  return { file, clip };
-}
-
-// Move an NPC's sprite and body into a room (target = where its body centre should be) as
-// if it had walked there, and freeze the needs update, the behaviour update and the body
-// itself (moves = false) so nothing walks it back before the KO.
-async function placeNpc(page, id, roomId, fx = 0.5, fy = 0.6) {
-  return page.evaluate(([i, rid, ax, ay]) => {
-    const n = window.npcManager?.getNPC?.(i); const sp = n?._sprite || n?.sprite;
-    const room = window.rooms?.[rid];
-    if (!sp?.body || !room?.position || !room?.map) return { ok: false, why: 'no sprite or room' };
-    try { window.npcNeedsSystem.update = () => {}; } catch { /* */ }
-    try { window.npcBehaviorManager.update = () => {}; } catch { /* */ }
-    const tx = room.position.x + room.map.widthInPixels * ax, ty = room.position.y + room.map.heightInPixels * ay;
-    const offX = sp.body.center.x - sp.x, offY = sp.body.center.y - sp.y;
-    sp.body.moves = false;
-    sp.setPosition(tx - offX, ty - offY);
-    sp.body.reset(tx - offX, ty - offY);
-    sp.body.setVelocity(0, 0);
-    return { ok: true, target: { x: Math.round(tx), y: Math.round(ty) }, sprite: { x: sp.x, y: sp.y }, bc: { x: sp.body.center.x, y: sp.body.center.y } };
-  }, [id, roomId, fx, fy]);
-}
-
 async function flushNav(page) {
   // Real reload: go to about:blank first so pagehide flushes, then back.
   await page.goto('about:blank', { waitUntil: 'domcontentloaded' });
@@ -137,30 +79,53 @@ async function flushNav(page) {
 }
 
 
-const read = (page) => page.evaluate(() => {
+const ids = [hostileId, calmId, koId];
+const read = (page) => page.evaluate((list) => {
   const h = window.npcHostileSystem, r = {};
-  for (const id of ['security_guard', 'operative_relay', 'voltage']) {
+  for (const id of list) {
+    const cfg = window.npcBehaviorManager.getBehavior(id)?.config?.hostile?.attackDamage;
+    if (cfg === undefined) { r[id] = { missing: true }; continue; }
     const st = h.getState(id);
-    r[id] = { attackDamage: st.attackDamage, hostile: st.isHostile, ko: st.isKO, hp: st.currentHP, cfg: window.npcBehaviorManager.getBehavior(id)?.config?.hostile?.attackDamage };
+    r[id] = { attackDamage: st.attackDamage, hostile: st.isHostile, ko: st.isKO, hp: st.currentHP, cfg };
   }
   return r;
-});
+}, ids);
 const browser = await chromium.launch();
+let failed = false;
 try {
   const page = await open(browser);
   out.beforeActions = await read(page);
-  await page.evaluate(() => {
-    const h = window.npcHostileSystem;
-    h.setNPCHostile('operative_relay', true); h.setNPCHostile('voltage', true); h.setNPCHostile('voltage', false);
-    h.setNPCHostile('security_guard', true);
-    h.damageNPC('security_guard', 10000);
-  });
-  await sleep(1500);
-  out.beforeReload = await read(page);
-  out.exportBefore = await page.evaluate(() => window.npcHostileSystem.exportHostility());
-  await sleep(4000);
-  await flushNav(page);
-  out.afterReload = await read(page);
-  out.exportAfter = await page.evaluate(() => window.npcHostileSystem.exportHostility());
+  const missing = ids.filter(id => out.beforeActions[id].missing);
+  if (missing.length) {
+    console.error(`No behaviour for: ${missing.join(', ')} (wrong game or scenario?)`);
+    failed = true;
+  } else {
+    await page.evaluate(([hid, cid, kid]) => {
+      const h = window.npcHostileSystem;
+      h.setNPCHostile(hid, true); h.setNPCHostile(cid, true); h.setNPCHostile(cid, false);
+      h.setNPCHostile(kid, true);
+      h.damageNPC(kid, 10000);
+    }, ids);
+    await sleep(1500);
+    out.beforeReload = await read(page);
+    out.exportBefore = await page.evaluate(() => window.npcHostileSystem.exportHostility());
+    await sleep(4000);
+    await flushNav(page);
+    out.afterReload = await read(page);
+    out.exportAfter = await page.evaluate(() => window.npcHostileSystem.exportHostility());
+    for (const id of ids) {
+      const a = out.afterReload[id];
+      if (a.missing || a.attackDamage !== a.cfg) {
+        console.error(`FAIL ${id}: attackDamage ${a.attackDamage} after reload, configured ${a.cfg}`);
+        failed = true;
+      }
+    }
+    if (JSON.stringify(out.exportBefore) !== JSON.stringify(out.exportAfter)) {
+      console.error('FAIL: exported hostility changed across the reload');
+      failed = true;
+    }
+  }
   console.log(JSON.stringify(out, null, 1));
+  console.log(failed ? 'RESULT: FAIL' : 'RESULT: PASS');
 } finally { await browser.close(); }
+process.exit(failed ? 1 : 0);

@@ -417,6 +417,51 @@ export class MinigameScene {
     }
     
     /**
+     * The one visibility test the test bridge uses, for getTestState().controls
+     * and fields AND for clickControl / close. It is computed style plus size,
+     * not offsetParent: a position:fixed element (the minigame X, #minigame-close)
+     * has a null offsetParent even when it is plainly on screen, so an
+     * offsetParent filter drops it and shifts every control index by one.
+     */
+    isTestVisible(el) {
+        if (!el) return false;
+        if (el.hidden) return false;
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    }
+
+    /**
+     * The control elements behind getTestState().controls, in the same order
+     * and with the same cap, so index N means the same element in both.
+     * .tri-chip: the inbox triage flag chips (a label round a checkbox); the
+     * class is only in that overlay. [role="option"]: the mail composer and
+     * pretext-prep blank-picker rows; .mail-create-option: the mail Create-account
+     * radio rows.
+     */
+    getTestControlElements() {
+        const root = this.container;
+        if (!root) return [];
+        return Array.from(
+            root.querySelectorAll('button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option')
+        ).filter((el) => this.isTestVisible(el)).slice(0, 60);
+    }
+
+    /**
+     * The field elements behind getTestState().fields, in the same order and
+     * with the same cap (30), so index N means the same element in both and
+     * the bridge's type / select cannot drift from getState().
+     */
+    getTestFieldElements() {
+        const root = this.container;
+        if (!root) return [];
+        return Array.from(
+            root.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select')
+        ).filter((el) => this.isTestVisible(el)).slice(0, 30);
+    }
+
+    /**
      * ── Test bridge hook ─────────────────────────────────────────────────────
      *
      * Return a JSON-safe snapshot of this minigame for window.__test.
@@ -442,22 +487,8 @@ export class MinigameScene {
         const root = this.container;
         if (!root) return { available: false };
 
-        const visible = (el) => {
-            if (!el) return false;
-            if (el.hidden) return false;
-            const style = window.getComputedStyle(el);
-            if (style.display === 'none' || style.visibility === 'hidden') return false;
-            const rect = el.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
-        };
-
-        // .tri-chip: the inbox triage flag chips (a label round a checkbox); the
-        // class is only in that overlay. [role="option"]: the mail composer and
-        // pretext-prep blank-picker rows; .mail-create-option: the mail Create-account
-        // radio rows. Keep in step with test-bridge clickControl.
-        const controls = Array.from(
-            root.querySelectorAll('button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option')
-        ).filter(visible).slice(0, 60).map((el, i) => ({
+        const controls = this.getTestControlElements()
+            .map((el, i) => ({
             index: i,
             label: (el.innerText || el.value || el.getAttribute('aria-label') || '').trim().slice(0, 120),
             id: el.id || null,
@@ -465,9 +496,7 @@ export class MinigameScene {
             disabled: !!el.disabled || el.getAttribute('aria-disabled') === 'true'
         }));
 
-        const fields = Array.from(
-            root.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select')
-        ).filter(visible).slice(0, 30).map((el, i) => ({
+        const fields = this.getTestFieldElements().map((el, i) => ({
             index: i,
             id: el.id || null,
             name: el.name || null,

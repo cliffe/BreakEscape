@@ -671,12 +671,14 @@ export default class PhoneChatConversation {
                 let baseline;
                 let baselineKey = null;
                 let baselineFirst = null;
+                let baselinePaths = [];
                 try {
                     story.state.LoadJson(savedState);
                     story.ChoosePathString(path);
                     baseline = PhoneChatConversation.collectSteps(story);
                     baselineKey = JSON.stringify((story.currentChoices || []).map(c => c.text));
                     baselineFirst = pathOf(story.currentChoices?.[0]);
+                    baselinePaths = (story.currentChoices || []).map(pathOf);
                 } catch (e) {
                     console.warn(`⚠️ Baseline run of "${path}" failed; showing the whole re-run:`, e.message);
                     baseline = [];
@@ -688,7 +690,7 @@ export default class PhoneChatConversation {
                 let common = 0;
                 while (common < steps.length && common < baseline.length &&
                        PhoneChatConversation.sameStep(steps[common], baseline[common])) common++;
-                return { path, steps, baseline, baselineKey, baselineFirst, choices,
+                return { path, steps, baseline, baselineKey, baselineFirst, baselinePaths, choices,
                          firstPath: pathOf(story.currentChoices?.[0]),
                          replayed: common, fresh: steps.length - common };
             } catch (e) {
@@ -713,6 +715,29 @@ export default class PhoneChatConversation {
         if (stitchEntry && stitchEntry !== knot) entries.push(stitchEntry);
         const runs = entries.map(dryRun).filter(Boolean);
         let chosen = runs.find(r => r.baselineKey === savedKey && r.baselineFirst === sourcePath) || null;
+        // A save taken against an older layout of the same knot (choices once in the knot
+        // itself, now in a `menu` stitch behind a guard that sends a fresh entry to the hub)
+        // has a sourcePath the new story does not contain, so no entry matches it exactly.
+        // Fall back to the knot's own `menu` stitch when it reproduces the same visible menu
+        // under the old globals. The re-run still drops what the baseline already showed, so
+        // no line replays and no tag fires twice.
+        // Safety conditions: no entry matched and the saved choice is not in a stitch (a saved
+        // stitch whose re-run drifted must keep its choices); the same visible texts; and EVERY
+        // choice of that run sits in this knot (a menu that diverts or threads in another knot's
+        // choices is not the thread the player sat on).
+        // Known limit: a statement before the choices in the `menu` stitch (`~ x++`) runs on
+        // this reopen, because the re-run starts at the stitch, not past its prelude; its lines
+        // and tags are dropped as already seen. This is how any re-run from a stitch behaves,
+        // fallback or not: the prelude runs again on every later reopen that re-runs it (a
+        // changed global), so keep counters and other side effects out of a menu stitch's prelude.
+        if (!chosen && !stitchEntry) {
+            const menuEntry = this._reopenEntryPath(story, `${knot}.menu`);
+            const viaMenu = menuEntry ? dryRun(menuEntry) : null;
+            if (viaMenu && viaMenu.baselineKey === savedKey && viaMenu.baselinePaths.length > 0 &&
+                viaMenu.baselinePaths.every(pt => String(pt || '').split('.')[0] === knot)) {
+                chosen = viaMenu;
+            }
+        }
         // A guard at the knot top that today's globals have just made fire wins over the
         // saved choices and over a stitch entry (m10 "already dead", a recruiter call ended
         // once the deck is chosen). "Just made fire" means

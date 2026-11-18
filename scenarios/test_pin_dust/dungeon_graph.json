@@ -1,0 +1,53 @@
+{
+  "scenario": "test_pin_dust",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_vault",
+      "label": "Vault<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vault",
+      "label": "Vault",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_wall_safe",
+      "label": "Wall safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_clean_safe",
+      "label": "Clean safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_vault",
+      "to": "vault",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "lock_wall_safe",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "lock_clean_safe",
+      "soft": false
+    }
+  ]
+}

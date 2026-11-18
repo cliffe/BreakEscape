@@ -1,0 +1,10 @@
+OFFICE-LIFE SUMMARY (V1): 8 NPC(s)
+  agent_0x99 (security_checkpoint) class=task,task-mapping post=security_checkpoint leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  closing_debrief (security_checkpoint) class=task,conv,attackable post=security_checkpoint leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  elena_rodriguez (server_room) class=task,attackable post=server_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  james_mercer (scada_control) class=task,fights,attackable post=scada_control leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  opening_briefing_cutscene (security_checkpoint) class=task,attackable post=security_checkpoint leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  ray_hollis (security_checkpoint) class=task,conv,key,fights,patrol,attackable post=security_checkpoint leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  the_architect (security_checkpoint) class=conv post=security_checkpoint leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  thomas_park (cable_vault) class=task,conv,fights,attackable post=cable_vault leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+

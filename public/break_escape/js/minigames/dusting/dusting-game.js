@@ -542,13 +542,13 @@ export class DustingMinigame extends MinigameScene {
         if (this.identified) {
             return `${head}<p class="dusting-feedback good">Match: ridge detail agrees at the ${this.print.pattern === 'arch' ? 'ridge flow' : this.print.deltas.length > 1 ? 'core and both deltas' : 'core and the delta'}. The numbered tags mark the same ridge detail on both cards.</p>
                 <p>This is ${escapeHtml(this.ownerName)}'s print.</p>
-                <div class="dusting-refs">${this._refButtons(true)}</div>
+                <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(true)}</div>
                 <div class="dusting-buttons"><button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
         }
         const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
             ? ` It opens to the ${this.print.canonical.opens}.` : '';
         return `${head}<p>That is ${/^[aeiou]/i.test(this.print.pattern) ? 'an' : 'a'} ${PATTERN_INFO[this.print.pattern].label.toLowerCase()}, marked on the card.${opens} Check the class first: rule out any card with a different pattern${this.print.pattern === 'loop' ? ' or a loop that opens the other way' : ''}.</p>
-            <div class="dusting-refs">${this._refButtons(false)}</div>
+            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons"><button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
     }
@@ -756,7 +756,9 @@ export class DustingMinigame extends MinigameScene {
 
     _buildCandidates() {
         const lp = this.print.pattern;
-        const n = this.diff.candidates;
+        // An object may ask for more (or fewer) reference cards than its difficulty gives: fingerprintCandidateCount, 2 to 4.
+        const asked = Number(this.data.fingerprintCandidateCount);
+        const n = Number.isInteger(asked) && asked >= 2 && asked <= 4 ? asked : this.diff.candidates;
         const names = [];
         const cand = Array.isArray(this.data.fingerprintCandidates) ? this.data.fingerprintCandidates : null;
         const ownerLc = String(this.ownerName).toLowerCase(), ownerRaw = String(this.owner).toLowerCase();
@@ -794,10 +796,23 @@ export class DustingMinigame extends MinigameScene {
             // on every surface in the mission (stable sort keeps the seeded order otherwise)
             pool.sort((a, b) => (patternForOwner(a) === lp) - (patternForOwner(b) === lp));
         }
+        // A card the scenario fixed to a pattern class is always dealt, whatever the shuffle or sort above did.
+        if (forced.size) {
+            const keep = pool.filter(nm => forced.has(String(nm)));
+            pool.splice(0, pool.length, ...keep, ...pool.filter(nm => !forced.has(String(nm))));
+        }
         const decoyNames = [];
         for (let k = 0; k < n - 1; k++) decoyNames.push(pool[k] || fallback[k]);
 
-        const decoyClasses = decoyPatterns(lp, decoyNames.length, this.diff.decoySamePattern, seed, decoyNames.map(nm => patternForOwner(nm)));
+        // A forced card fills its own slot and keeps its class. The rest are dealt by the difficulty rule,
+        // so on medium a forced non-lift card cannot displace the same-class decoy (a forced lift-class
+        // card already is that decoy, so the others then differ).
+        const free = decoyNames.map((nm, k) => k).filter(k => !forced.has(String(decoyNames[k])));
+        const forcedSame = decoyNames.some(nm => forced.get(String(nm)) === lp);
+        const rule = this.diff.decoySamePattern === 'one' && forcedSame ? 'never' : this.diff.decoySamePattern;
+        const freeClasses = decoyPatterns(lp, free.length, rule, seed, free.map(k => patternForOwner(decoyNames[k])));
+        const decoyClasses = decoyNames.map(() => null);
+        free.forEach((k, j) => { decoyClasses[k] = freeClasses[j]; });
         const decoys = decoyNames.map((nm, k) => {
             const pattern = forced.get(String(nm)) || decoyClasses[k];
             return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern }), correct: false };
@@ -939,7 +954,7 @@ export class DustingMinigame extends MinigameScene {
         if (tag === 'INPUT' && t.type === 'text') return;
         const lower = k.length === 1 ? k.toLowerCase() : k;
         if (this.step === 'powder' && ['1', '2', '3'].includes(lower)) { this._choosePowder(Object.keys(POWDERS)[Number(lower) - 1]); return; }
-        if (this.step === 'compare' && this.patternOk && !this.identified && ['1', '2', '3'].includes(lower)) {
+        if (this.step === 'compare' && this.patternOk && !this.identified && /^[1-9]$/.test(lower) && Number(lower) <= this.candidates.length) {
             e.preventDefault();
             this._chooseRef(Number(lower) - 1);
             return;
