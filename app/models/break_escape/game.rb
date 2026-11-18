@@ -1922,6 +1922,21 @@ module BreakEscape
       end
     end
 
+    # True when the set is the player's own, or their team's. An unknown shape counts as not
+    # held, so a released game fails closed.
+    def vm_set_held_by_player?(record)
+      return false unless record.respond_to?(:user_id)
+
+      # The host's account class is User; the standalone demo account is DemoUser.
+      return false unless player_type.to_s.split('::').last.to_s.end_with?('User')
+      return true if record.user_id.present? && record.user_id == player_id
+
+      team = record.respond_to?(:team) ? record.team : nil
+      return false unless team.respond_to?(:users)
+
+      team.users.exists?(player_id)
+    end
+
     def sync_vm_set_id_column
       state = player_state.is_a?(String) ? JSON.parse(player_state) : player_state
       self.vm_set_id ||= state&.dig('vm_set_id')&.to_i
@@ -7667,6 +7682,75 @@ module BreakEscape
     # Flag Submission System
     # ==========================================
 
+    # ==========================================
+    # VM set state (D144)
+    # ==========================================
+
+    # The sentence a player sees when a released session refuses a new flag. Fixed text:
+    # nothing a user or organisation supplies is ever put into it.
+    VM_RELEASED_MESSAGE = "This session's VMs have been released, so new flags can't be scored here. " \
+                          "Start the mission again to get fresh VMs."
+
+    # The sentence a player sees when New Session is refused on a released game.
+    VM_RELEASED_NEW_SESSION_MESSAGE = "This session's VMs have been released. Start the mission from the " \
+                                      "mission page to get fresh VMs."
+
+    # Build states that never count as a set the player holds. 'pending' is not in the list:
+    # a set still building is the player's and is not released. This is wider than
+    # Hacktivity's GameSlot#active_game_for, which still treats deleted (VMs archived),
+    # removed (gone from the cluster) and build_stopped as active: those VMs cannot be used,
+    # so the launcher must not offer them and new flags must not score. Hacktivity also tests
+    # failed_to_revert by substring, so it is matched the same way (see below).
+    VM_SET_RELEASED_BUILD_STATUSES = %w[error relinquished deleted removed build_stopped marked_broken
+                                        failed_to_revert].freeze
+
+    # The one place the host's VmSet is looked up for the state check, so tests can stub it
+    # (the dummy app must keep ::VmSet undefined).
+    def self.find_vm_set_record(id)
+      return nil unless defined?(::VmSet)
+
+      ::VmSet.find_by(id: id)
+    end
+
+    # The one source for this game's VM set id: the column first, then player_state. 0 = none.
+    def vm_set_id_for_state
+      raw_id = self[:vm_set_id].presence
+      raw_id ||= player_state['vm_set_id'] if player_state.is_a?(Hash)
+      raw_id.to_i
+    end
+
+    # Where this game stands with its VM set, worked out from the host's VmSet row on each
+    # call (no column, no migration):
+    #   :none     standalone mode, a VM-free mission, or no VM set on the game. Unchanged.
+    #   :live     the set exists, belongs to the player (or their team) and is not released.
+    #   :released anything else: relinquished, errored, gone, or held by someone else.
+    def vm_set_state
+      return :none unless BreakEscape::Mission.hacktivity_mode?
+
+      id = vm_set_id_for_state
+      return :none unless id.positive?
+
+      record = self.class.find_vm_set_record(id)
+      return :released unless record
+      return :released if record.respond_to?(:relinquished) && record.relinquished
+      status = record.try(:build_status).to_s
+      return :released if VM_SET_RELEASED_BUILD_STATUSES.include?(status) || status.include?('failed_to_revert')
+      return :released unless vm_set_held_by_player?(record)
+
+      :live
+    end
+
+    # What a released session says to a new flag, or nil when the flag may go on (any state
+    # other than :released; a flag this game already holds; a flag already solved on its old
+    # set, which creates no new score).
+    def released_flag_refusal(flag_key)
+      return nil unless vm_set_state == :released
+      return nil if flag_submitted?(flag_key)
+      return nil if hacktivity_flag_solved?(flag_key)
+
+      { success: false, message: VM_RELEASED_MESSAGE, reason: 'vm_released' }
+    end
+
     # Submit a CTF flag
     def submit_flag(flag_key)
       # Check if already submitted
@@ -7686,6 +7770,18 @@ module BreakEscape
       valid_flags = extract_valid_flags_from_scenario
       unless valid_flags.any? { |f| f.downcase == flag_key.downcase }
         return { success: false, message: 'Invalid flag', reason: 'invalid' }
+      end
+
+      # A released set: a flag already solved on it is recorded here with no new score
+      # (the caller skips the host's scoring); any other flag is refused (D144).
+      if vm_set_state == :released
+        refusal = released_flag_refusal(flag_key)
+        return refusal if refusal
+
+        player_state['submitted_flags'] ||= []
+        player_state['submitted_flags'] << flag_key
+        save!
+        return { success: true, message: 'Flag accepted!', already_in_hacktivity: true }
       end
 
       # Submit to Hacktivity if in Hacktivity mode
@@ -7829,9 +7925,9 @@ module BreakEscape
     # Used for backward compat when a flag was previously consumed by the wrong
     # station but already counted in Hacktivity.
     def hacktivity_flag_solved?(flag_key)
-      return false unless defined?(::Flag) && player_state['vm_set_id'].present?
+      return false unless defined?(::Flag) && vm_set_id_for_state.positive?
 
-      vm_set = ::VmSet.find_by(id: player_state['vm_set_id'])
+      vm_set = self.class.find_vm_set_record(vm_set_id_for_state)
       return false unless vm_set
 
       ::Flag.joins(:vm)
@@ -7844,9 +7940,9 @@ module BreakEscape
     # Submit flag to Hacktivity's FlagService
     def submit_to_hacktivity(flag_key)
       return { success: false, message: 'FlagService not available' } unless defined?(::FlagService)
-      return { success: false, message: 'No VM set associated' } unless player_state['vm_set_id'].present?
+      return { success: false, message: 'No VM set associated' } unless vm_set_id_for_state.positive?
 
-      vm_set = ::VmSet.find_by(id: player_state['vm_set_id'])
+      vm_set = ::VmSet.find_by(id: vm_set_id_for_state)
       return { success: false, message: 'VM set not found' } unless vm_set
 
       # Find the specific VM that owns this flag — FlagService.process_flag takes a VM, not a user

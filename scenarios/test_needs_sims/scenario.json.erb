@@ -1199,7 +1199,7 @@
           "currentKnot": "start",
           "voice": { "name": "Algenib", "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
-          "needsHome": { "room": "staff_room", "x": 6.97, "y": 4.85 },
+          "needsHome": { "room": "staff_room", "x": 6.97, "y": 4.85, "facing": "south" },
           "needsRooms": ["staff_room"],
           "needsSpeed": 80,
           "chatterCooldownMin": 0.25,
@@ -1213,7 +1213,7 @@
             "staff_tea": ["Proper brew, this.", "Nothing like a night cuppa.", "Boiler's on form tonight.", "Two sugars for me.", "Quiet on the radio still.", "Dull shift, touch wood."],
             "staff_water": ["Cold one before the round.", "Keeps you sharp, water.", "Long night ahead yet.", "Anything on the cameras?", "Radio's gone quiet again.", "Stretch the legs, this."]
           },
-          "_comment": "SIMS-4 (m02 night-porter pattern): tile home on the cell north of hospital_chair_south; seating sits him on it facing south. Coupled breaks on Jodie's cooler use; first-visit, Neil-close and his own needs start his tea. chatterCooldownMin 0.25 with 6-line pools (E7 workaround).",
+          "_comment": "SIMS-4 (m02 night-porter pattern): tile home on the cell north of hospital_chair_south; seating sits him on it facing south (needsHome.facing south: the engine feature for a coordinate home with no object to face; static chair, so it agrees with the chair). Coupled breaks on Jodie's cooler use; first-visit, Neil-close and his own needs start his tea. chatterCooldownMin 0.25 with 6-line pools (E7 workaround).",
           "eventMappings": [
             { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'jodie'", "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "room_entered:staff_room", "condition": "data.firstVisit === true", "delayMs": 2000, "needs": { "set": { "caffeine": 20 } } },
