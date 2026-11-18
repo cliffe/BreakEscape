@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { mergeDraft } from './sidecar.mjs';
 
 const av = process.argv.slice(2);
 const file = av.find(x => !x.startsWith('--') && fs.existsSync(x));
@@ -118,6 +119,18 @@ if (res.trimmed && res.trimmed.out) {
   const sheet = base + '.contact.jpg';
   const r = run('ffmpeg', ['-y', '-v', 'error', '-i', res.trimmed.out, '-an', '-vf', `fps=1,scale=320:-1,${label}tile=${cols}x${rows}`, '-frames:v', '1', '-q:v', '3', sheet]);
   res.contactSheet = r.status === 0 ? { file: sheet, tiles: n, cols, rows } : { error: r.stderr.toString().slice(-300) };
+}
+// ---- draft footage sidecar beside the trimmed take (technical fields + marks; never fails the check) ----
+if (res.trimmed && res.trimmed.out) {
+  try {
+    const p = res.trimmed.out;
+    const mMission = p.match(/\/footage\/(m\d\d)\//) || p.match(/\/video_out\/([a-z0-9_]+)\/takes\//) || p.match(/\/film\/([a-z0-9]+)_trailer\//);
+    const mission = mMission ? mMission[1].replace(/_trailer$/, '') : null;
+    const b = path.basename(p).toLowerCase();
+    const kind = /\/solution\//.test(p) ? 'solution' : (/console|recon/.test(b) ? 'console' : 'ingame');
+    const r = mergeDraft(p, { mission, kind, withLoudness: !opt['no-loudness'] });
+    res.sidecar = r.error ? { error: r.error } : { file: r.path, created: r.created };
+  } catch (e) { res.sidecar = { error: String(e && e.message || e) }; }
 }
 console.log(JSON.stringify(res, null, 2));
 process.exit(res.pass ? 0 : 1);

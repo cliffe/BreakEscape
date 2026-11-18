@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const cap = join(dirname(fileURLToPath(import.meta.url)), '../../tools/video/capture');
-const { parseCliArgs, recordOptionsFromArgs, recordFfmpegArgs } = await import(join(cap, 'record-take.mjs'));
+const { parseCliArgs, recordOptionsFromArgs, recordFfmpegArgs, isFullFrame } = await import(join(cap, 'record-take.mjs'));
 const vc = await import(join(cap, 'takes/vm_console.mjs'));
 const vcb = await import(join(cap, 'takes/vm_console_beats.mjs'));
 
@@ -34,6 +34,32 @@ test('record-take: --no-game needs no url, switches the bridge off and takes the
   assert.equal(r.opts.ignoreHttpsErrors, true);
   assert.match(recordOptionsFromArgs(parseCliArgs(['--no-game', '--display', '97', '--out', '/o/c'])).error, /--take/);
   assert.match(recordOptionsFromArgs(parseCliArgs(['--no-game', '--title-take', '--display', '97', '--out', '/o/c', '--take', 't'])).error, /title-take/);
+});
+
+test('record-take: --live is a game take on the keyed server: needs the storage state, implies https errors ok and a long tail', () => {
+  const r = recordOptionsFromArgs(parseCliArgs(['--live', '--display', '97', '--url', 'https://localhost:3000/hacktivities/61/play/mission/82', '--storage-state', '/s.json', '--out', '/o/t', '--take', 't.mjs', '--hide-hud']));
+  assert.equal(r.opts.live, true);
+  assert.equal(r.opts.bridge, true);
+  assert.equal(r.opts.noGame, false);
+  assert.equal(r.opts.storageState, '/s.json');
+  assert.equal(r.opts.ignoreHttpsErrors, true);
+  assert.equal(r.opts.tailMs, 2500);
+  assert.equal(r.opts.hideHud, true);
+  assert.match(recordOptionsFromArgs(parseCliArgs(['--live', '--display', '97', '--url', 'https://x/g', '--out', '/o/t'])).error, /storage-state/);
+  assert.match(recordOptionsFromArgs(parseCliArgs(['--live', '--no-game', '--display', '97', '--out', '/o/t', '--take', 't', '--storage-state', '/s.json'])).error, /no-game/);
+  const plain = recordOptionsFromArgs(parseCliArgs(['--display', '97', '--url', 'http://x/g/1', '--out', '/o/t']));
+  assert.equal(plain.opts.live, false);
+  assert.equal(plain.opts.tailMs, 700);
+  assert.equal(recordOptionsFromArgs(parseCliArgs(['--display', '97', '--url', 'http://x/g/1', '--out', '/o/t', '--tail-ms', '1500'])).opts.tailMs, 1500);
+});
+
+test('record-take: isFullFrame needs a 1x viewport of the capture size with the canvas edge to edge', () => {
+  const ok = { iw: 1920, ih: 1080, dpr: 1, canvas: { x: 0, y: 0, w: 1920, h: 1080 } };
+  assert.equal(isFullFrame(ok, 1920, 1080), true);
+  assert.equal(isFullFrame({ ...ok, canvas: { x: 240, y: 0, w: 1440, h: 1080 } }, 1920, 1080), false);   // pillarboxed
+  assert.equal(isFullFrame({ ...ok, ih: 1000 }, 1920, 1080), false);                                     // browser chrome
+  assert.equal(isFullFrame({ ...ok, dpr: 2 }, 1920, 1080), false);
+  assert.equal(isFullFrame({ ...ok, canvas: null }, 1920, 1080), false);
 });
 
 test('record-take: ffmpeg args force CFR with -vsync, never -fps_mode (ffmpeg 4.2 compatibility)', () => {
