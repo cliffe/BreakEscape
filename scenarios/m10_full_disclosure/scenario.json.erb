@@ -2673,6 +2673,9 @@ end
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           <%# VM-WIRE: the attack box; title and fallback ip are placeholders (header). %>
           "vm": <%= vm_object(m10_attack_vm, m10_attack_fallback) %>,
+          <%# VM-WIRE: the console login for the racked attack box, so the player can sign in to the desktop (as m01). Matches the base VM's kali account. %>
+          "showPostit": true,
+          "postitNote": "HaX: field console login\nuser: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
@@ -3725,6 +3728,9 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "The field console, racked between two of the old map tables.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object(m10_attack_vm, m10_attack_fallback) %>,
+          <%# VM-WIRE: the console login for the racked attack box, so the player can sign in to the desktop (as m01). Matches the base VM's kali account. %>
+          "showPostit": true,
+          "postitNote": "HaX: field console login\nuser: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
@@ -4374,6 +4380,9 @@ not_tethered = '!globalVars.nightshade_tethered'
           "observations": "The field console, racked by the host terminal. The last one.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object(m10_attack_vm, m10_attack_fallback) %>,
+          <%# VM-WIRE: the console login for the racked attack box, so the player can sign in to the desktop (as m01). Matches the base VM's kali account. %>
+          "showPostit": true,
+          "postitNote": "HaX: field console login\nuser: kali\npassword: kali",
           "puzzle_graph_role": "vm"
         },
         {
