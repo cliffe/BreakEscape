@@ -1,6 +1,6 @@
 # m07 office life: spoken lines
 
-All new lines for `adaeze_okafor` and `gwen_pritchard`. Nothing is voiced yet; no audio has been generated.
+All new lines for `adaeze_okafor` and `gwen_pritchard`. All 28 voiced on 18 Nov 2026 (tts_cache/m07_architects_gambit, batch with `ttsPregenerateChatter`); see LOG.md "Voicing".
 
 | Speaker | Pool or knot | Line | Characters |
 |---|---|---|---|

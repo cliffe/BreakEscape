@@ -53,3 +53,14 @@ R4 m1 and m2 confirmed closed. Validator 0 errors, 31 warnings; lock/key diff em
 | m1 model names in LOG.md and HANDOVER.md | m | Fixed: "cheaper tier". |
 
 Build review closed after R5: no blockers or majors since R1.
+
+## Voicing (18 Nov 2026)
+
+Approval for the 28 new lines relayed by the coordinator (the user delegated m07 office-life voicing). The dialogue review (`DIALOGUE_REVIEW_OL.md`, with its R1 follow-up for "acting up") covers the final text, so it was not rerun.
+
+- `"ttsPregenerateChatter": true` added to scenario.json.erb so the batch lists the cooler pool lines. A dry run before the batch listed exactly the 28 lines as uncached (655 lines in the mission).
+- Batch: 28 generated, 28 requests, 0 errors. Durations 1.7 to 4.5 s. No temp files left.
+- Spot check by transcription, five clips: words match on all five ("Plan's" heard as "Plan").
+- Accent check (the transcriber asked "American or British?" on all 28): Gwen 10 of 14 American; Adaeze 12 of 14 British (non-rhotic, "shedule" for "scheduler", two runs agree on her hub openers). Likely cause: the "light Nigerian inflection" in her en-US style. The transcriber's accent calls are not reliable (it called her "he" twice), so this goes to the user to listen: `tmp/tts_comparison/m07_architects_gambit_new/`. A fix would be a style-wording sample round, then re-voicing her 14 lines, which needs its own yes.
+- `tts:wasted`: 2 of 657 clips not requested, both from main (00110584c), old lines with inline stage directions for elena_rodriguez and james_mercer. Not this build's lines; left in place.
+- Validator after the flag: 0 errors, 31 warnings with `--skip-ink` (32 with the ink phase, the same as before the flag). Lock and key diff: empty.
