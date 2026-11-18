@@ -98,3 +98,81 @@ test('Nightshade scene resumes in the hub on a reload once the scene has opened'
     while (f.canContinue) t.push(f.Continue().trim());
     assert.match(t.join('\n'), /police come|expecting you upstairs|Leave him|^$/);
 });
+
+// ---- part 2 ----
+const NS = read('ink/m08_nightshade_confrontation.json');
+
+function runAuditRight(vars) {
+    const s = new Story(DIR);
+    Object.assign(s.variablesState, { suite_code: '5386', ...vars });
+    s.ChoosePathString('audit_right');
+    const out = [];
+    while (s.canContinue) out.push(s.Continue().trim());
+    return out.join('\n');
+}
+
+test('Director does not repeat the suite code or the Okafor evaluation once the player has them', () => {
+    const none = runAuditRight({ all_flags_submitted: true });
+    assert.match(none, /The code is 5386/);
+    assert.match(none, /code card is in my safe as well, with Dr Okafor's evaluation/);
+
+    const both = runAuditRight({ all_flags_submitted: true, suite_code_found: true, found_nightshade_profile: true });
+    assert.doesNotMatch(both, /5386|Okafor|code card/);
+    assert.match(both, /The chain is in\. He goes down to the suite now\./);
+
+    const codeOnly = runAuditRight({ suite_code_found: true });
+    assert.doesNotMatch(codeOnly, /5386/);
+    assert.match(codeOnly, /Okafor's evaluation is in that safe as well/);
+    assert.doesNotMatch(codeOnly, /code card/);
+
+    const evalOnly = runAuditRight({ found_nightshade_profile: true });
+    assert.match(evalOnly, /The code is 5386/);
+    assert.doesNotMatch(evalOnly, /Okafor/);
+});
+
+test('Director reads-it-himself branch gates the same repeats', () => {
+    const run = (vars) => {
+        const s = new Story(DIR);
+        Object.assign(s.variablesState, { suite_code: '5386', found_access_logs: true, audit_misreads: 2, audit_reply: 3, ...vars });
+        s.ChoosePathString('audit_wrong');
+        const out = [];
+        while (s.canContinue) out.push(s.Continue().trim());
+        return out.join('\n');
+    };
+    assert.match(run({}), /suite code is in my safe, with Dr Okafor's evaluation/);
+    assert.doesNotMatch(run({ suite_code_found: true, found_nightshade_profile: true }), /safe|Okafor/);
+});
+
+test('"Not yet" at the disposition returns to the disposition, not the top of the scene', () => {
+    const s = new Story(NS);
+    s.variablesState.fate_decided = false;
+    s.ChoosePathString('the_choice');
+    while (s.canContinue) s.Continue();
+    const notYet = s.currentChoices.findIndex(c => /^Not yet/.test(c.text));
+    assert.ok(notYet >= 0);
+    s.ChooseChoiceIndex(notYet);
+    // the engine reads on past the exit tag, so run the story to its next stop
+    while (s.canContinue) s.Continue();
+    assert.equal(s.variablesState.held_at_choice, true);
+    // next visit: start knot, like the room-entry mapping
+    s.ChoosePathString('start');
+    const first = s.Continue().trim();
+    assert.match(first, /disposition screen behind you/);
+    assert.ok(!/interrogation room records everything/.test(first));
+    // a real choice clears the hold
+    while (s.canContinue) s.Continue();
+    const deal = s.currentChoices.findIndex(c => /^No deals/.test(c.text));
+    s.ChooseChoiceIndex(deal);
+    while (s.canContinue) s.Continue();
+    assert.equal(s.variablesState.held_at_choice, false);
+    assert.equal(s.variablesState.nightshade_arrested, true);
+});
+
+test('debrief "picked a locker" line only follows a seen lockpick, never a key', () => {
+    const bg = read('ink/m08_background_agent.ink');
+    assert.match(bg, /~ locker_seen_picked = true/);
+    // the only trigger is the lockpick-in-view mapping; keys go to the key minigame, which never runs it
+    const m = ERB.match(/"eventPattern": "lockpick_used_in_view",\s*"targetKnot": "on_locker_picked"/);
+    assert.ok(m);
+    assert.equal((ERB.match(/targetKnot": "on_locker_picked"/g) || []).length, 1);
+});
