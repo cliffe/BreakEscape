@@ -65,19 +65,19 @@ export function flagRefusalLine(serverMessage, opts = {}) {
     const m = String(serverMessage || '').trim();
     const reason = flagRejectReason(m, opts.reason);
     // The session's VMs were handed back (D144): the server's fixed sentence, not "Incorrect flag"
-    if (reason === 'vm_released') return `✗ ${m || "This session's VMs have been released. Start the mission again to get fresh VMs."}`;
+    if (reason === 'vm_released') return `${m || "This session's VMs have been released. Start the mission again to get fresh VMs."}`;
     // Already counted: the server's own line says it best
-    if (reason === 'already_submitted') return `✗ ${m || 'Flag already submitted'}`;
+    if (reason === 'already_submitted') return `${m || 'Flag already submitted'}`;
     // A real flag, but another machine's: not "copied short"
     if (reason === 'wrong_station') {
         const owner = String(opts.ownerName || '').trim().replace(/\.+$/, '');
-        if (owner) return `✗ Flag not accepted here. Take it to: ${owner}.`;
-        return '✗ Flag not accepted here. This station takes flags from a different machine.';
+        if (owner) return `Flag not accepted here. Take it to: ${owner}.`;
+        return 'Flag not accepted here. This station takes flags from a different machine.';
     }
     if (opts.flagValue !== undefined && !looksLikeFlag(opts.flagValue)) {
-        return `✗ Flag not accepted. ${FLAG_FORMAT_HINT}`;
+        return `Flag not accepted. ${FLAG_FORMAT_HINT}`;
     }
-    return `✗ Flag not accepted. ${FLAG_HINT}`;
+    return `Flag not accepted. ${FLAG_HINT}`;
 }
 
 /**
@@ -94,7 +94,7 @@ export function flagHistoryHtml(submitted, recognised, esc) {
     const rows = done.map(flag => `
             <li class="flag-history-item">
                 <span class="flag-value">${esc(flag)}</span>
-                <span class="flag-check">✓</span>
+                <span class="flag-check">DONE</span>
             </li>
         `);
     for (const r of known) {

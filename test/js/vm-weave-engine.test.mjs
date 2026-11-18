@@ -134,13 +134,13 @@ test('R7: a hint-only response is neutral info with a soft sound, never the succ
     await s.submitFlag();
     assert.equal(els['#flag-result'].className, 'flag-result info');
     assert.match(els['#flag-result'].textContent, /^NOTE: Launch code validated/);
-    assert.doesNotMatch(els['#flag-result'].textContent, /✓/);
+    assert.doesNotMatch(els['#flag-result'].textContent, /DONE/);
     assert.deepEqual(sounds, ['notification']);
     assert.ok(!sounds.includes('confirm'));
     assert.deepEqual(s.submittedFlags, [], 'a hint does not consume the flag');
     assert.deepEqual(s.recognisedFlags, [{ flag: 'flag{launch}', note: 'Launch code validated. Enter it into the launch device.' }], 'listed as a key for another device');
     assert.match(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /key: use elsewhere/);
-    assert.doesNotMatch(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /✓/);
+    assert.doesNotMatch(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /DONE/);
     assert.equal(els['#reward-notification'].innerHTML, '', 'no "Rewards Unlocked" box');
     assert.deepEqual(events.map(e => e.name), ['flag_rejected']);
     assert.deepEqual(events[0].data, { stationId: 'front_desk', reason: 'wrong_station', hint: true });
@@ -159,7 +159,7 @@ test('R9: a wrong-station refusal names the owning station and emits flag_reject
     els['#flag-input'].value = 'flag{drop}';
     await s.submitFlag();
     assert.equal(els['#flag-result'].className, 'flag-result error');
-    assert.equal(els['#flag-result'].textContent, '✗ Flag not accepted here. Take it to: Drop Site Terminal.');
+    assert.equal(els['#flag-result'].textContent, 'Flag not accepted here. Take it to: Drop Site Terminal.');
     assert.deepEqual(sounds, ['reject']);
     assert.deepEqual(events, [{ name: 'flag_rejected',
         data: { stationId: 'front_desk', reason: 'wrong_station', ownerStationName: 'Drop Site Terminal' } }]);
@@ -172,7 +172,7 @@ test('R9: an undiscovered owner is not named', async () => {
     els['#flag-input'].value = 'flag{vault}';
     await s.submitFlag();
     assert.equal(els['#flag-result'].textContent,
-        '✗ Flag not accepted here. This station takes flags from a different machine.');
+        'Flag not accepted here. This station takes flags from a different machine.');
     assert.deepEqual(events[0].data, { stationId: 'front_desk', reason: 'wrong_station' });
 });
 
@@ -182,7 +182,7 @@ test('a malformed flag is refused with what a flag looks like', async () => {
     const { s, els } = makeStation();
     els['#flag-input'].value = 'not a flag';
     await s.submitFlag();
-    assert.match(els['#flag-result'].textContent, /^✗ Flag not accepted\. Flags usually look like flag\{\.\.\.\}/);
+    assert.match(els['#flag-result'].textContent, /^Flag not accepted\. Flags usually look like flag\{\.\.\.\}/);
 });
 
 test('R9: invalid and already_submitted reasons', async () => {
@@ -199,7 +199,7 @@ test('R9: invalid and already_submitted reasons', async () => {
     ({ s, els } = makeStation());
     els['#flag-input'].value = 'flag{again}';
     await s.submitFlag();
-    assert.equal(els['#flag-result'].textContent, '✗ Flag already submitted');
+    assert.equal(els['#flag-result'].textContent, 'Flag already submitted');
     assert.equal(w.events[0].data.reason, 'already_submitted');
 });
 
@@ -211,9 +211,9 @@ test('R9: an older server with no reason still gets the right one from its messa
     assert.equal(wording.flagRejectReason('Incorrect flag', 'bogus'), 'wrong_station');
     // the one-argument form keeps its old wording
     assert.equal(wording.flagRefusalLine('Incorrect flag'),
-        '✗ Flag not accepted here. This station takes flags from a different machine.');
+        'Flag not accepted here. This station takes flags from a different machine.');
     assert.equal(wording.flagRefusalLine('Incorrect flag', { ownerName: 'Vault Console.' }),
-        '✗ Flag not accepted here. Take it to: Vault Console.');
+        'Flag not accepted here. Take it to: Vault Console.');
 });
 
 test('R9: a wrong flag at a flag lock (422 thrown by ApiClient) is a refusal, not "Validation failed"', async () => {
