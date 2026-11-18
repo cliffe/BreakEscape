@@ -72,3 +72,9 @@ The cure for this, and for every mission with a walkable bottom row, is in the e
 ## Whole-build pass
 
 Both new ink files are fine on a reread: once-only choices, an exit that stays open, and exchanges with no PLAN 3.3 item. The new globals are all declared. The `floor_staff_ko` mappings are appended after the KO loop, and nothing writes `cover_strained`. Nothing else was found that R1 and R2 missed.
+
+## Fix outcomes (live, LIVE_FIX_R3.md, commit 4ed61aa0d)
+- M1: fixed. Queue cells now (148, -132) and (180, -132), both `trading_floor`; queued and using samples read `trading_floor` in game 8405; game 8406 shows a one-second `security_checkpoint` reading at the step-up only. Exchange 1 heard true.
+- m1: fixed. Merged fridge affordance keeps hunger, capacity 1 and sound; two users one after the other, `trading_floor`.
+- m2: engine note only, recorded in BUILD_LOG.md.
+- Open observation (copier cell blocking the print errand): not exercised, the errand did not fire in the run.
