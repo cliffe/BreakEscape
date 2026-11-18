@@ -138,6 +138,11 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     # A label that only contains the letters is not a capture page
     page = [['dom.jsonl', 1, { 'dom' => "x\n#{CAPTURE_SECRET}", 'label' => 'recaptured' }]]
     assert_equal [[1, 'capture_secret', 'capture:informant']], summary(AccessLeakScanner.new(capture_scenario).scan(page))
+    # Nor is one joined to an accented letter
+    %w[écapture captureé].each do |label|
+      page = [['dom.jsonl', 1, { 'dom' => "x\n#{CAPTURE_SECRET}", 'label' => label }]]
+      assert_equal [[1, 'capture_secret', 'capture:informant']], summary(AccessLeakScanner.new(capture_scenario).scan(page)), label
+    end
   end
 
   test 'an account capture secret stays with the password rule, not the capture_secret rule' do

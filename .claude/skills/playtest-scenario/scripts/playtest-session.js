@@ -45,6 +45,8 @@
  *   {"cmd":"mg","action":"clickText","args":["Continue"]}
  *   {"cmd":"mg","action":"clickCanvas","args":[420,300]}   (nested Phaser canvas)
  *   {"cmd":"mg","action":"type","args":[0,"Hospital1987",{"submit":true}]}
+ *                                   (a flag station or flag{...} value is echoed as "[redacted N chars]";
+ *                                    add "showTyped":true to the command to see it)
  *   {"cmd":"select","field":"template","option":"urgent"}    (set a <select>; also mg action "select")
  *   {"cmd":"waitFor","kind":"global","name":"bernie_gave_key"}
  *   {"cmd":"waitFor","kind":"task","id":"sign_in_at_reception"}
@@ -73,7 +75,8 @@ const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
 const { briefTasks } = require('./brief-tasks');
-const { lockOutcome } = require('./lock-outcome');
+const { lockOutcome, wrongCodeReply, padGone } = require('./lock-outcome');
+const { redactTyped } = require('./typed-redact');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
 const { nextBootstrapTarget, readBootstrapFacts, converseEnding, converseIdleAction } = require('./bootstrap-steps');
@@ -679,11 +682,14 @@ const vmSteps = createVmSteps({
           await page.waitForTimeout(250);
         }
       }
-      const r = await page.evaluate(([action, cargs]) => {
+      // Read the target before a type so the echo of a flag value can be redacted.
+      const typeState = c.action === 'type' ? await page.evaluate(() => window.__test.minigame.getState()) : null;
+      let r = await page.evaluate(([action, cargs]) => {
         const m = window.__test.minigame;
         if (typeof m[action] !== 'function') return { ok: false, reason: `no-such-action:${action}` };
         return m[action](...(cargs || []));
       }, [c.action, c.args || []]);
+      if (c.action === 'type') r = redactTyped(r, { state: typeState, text: (c.args || [])[1], show: c.showTyped === true });
       if (['choose', 'chooseIndex', 'chooseMatching', 'continue', 'continue_',
            'pressKey', 'clickText', 'clickControl'].includes(c.action)) {
         // Deterministic: wait for the typewriter to finish and the dialogue to
@@ -946,8 +952,23 @@ const vmSteps = createVmSteps({
       let lastInsert = null;
       const tried = new Set();
       let st = await read();
-      if (!st) return { ok: false, reason: 'no-active-minigame' };
+      if (padGone(st)) return { ok: false, reason: 'no-active-minigame' };
       const startId = await page.evaluate(() => window.__test.getState().activeMinigame?.id ?? null);
+      // The last state read while the lock itself was the active minigame: the only
+      // place its verdict (result.success) is visible once the screen moves on.
+      let ownSt = st.id === startId ? st : null;
+      const track = (s2) => { if (s2 && s2.available !== false && s2.id === startId) ownSt = s2; return s2; };
+      // One submitted code is one attempt: a wrong one stops the command instead of
+      // being re-tapped until the pad locks out.
+      const wrongCode = async () => {
+        let s3 = null;
+        for (let k = 0; k < 4; k++) {
+          s3 = track(await read());
+          if (!wrongCodeReply(s3, steps)) return null;
+          if (k < 3) await page.waitForTimeout(300);
+        }
+        return wrongCodeReply(s3, steps);
+      };
 
       // The lock renders its controls a beat after opening, so the first read
       // can show nothing to act on. Wait for it to become actionable rather
@@ -958,7 +979,7 @@ const vmSteps = createVmSteps({
           || (st.pinLength !== undefined && c.code) || st.isComplete;
         if (ready) break;
         await page.waitForTimeout(250);
-        st = await read();
+        st = track(await read());
       }
       if (st && !((st.keySelection && st.keySelection.length) || st.keyTarget
                   || ((st.fields || []).length && c.code)
@@ -997,6 +1018,8 @@ const vmSteps = createVmSteps({
         } else if ((st.fields || []).length && c.code) {
           steps.push('type code into field 0');
           await page.evaluate(code => window.__test.minigame.type(0, code, { submit: true }), c.code);
+          const wc = await wrongCode();
+          if (wc) return { ...wc, room: (await page.evaluate(() => window.__test.getState().room)) };
         // Keypad PIN locks have no field at all — they are tapped digit by
         // digit, exactly as a player does it.
         } else if (st.pinLength !== undefined && c.code) {
@@ -1006,24 +1029,26 @@ const vmSteps = createVmSteps({
             await page.waitForTimeout(120);
           }
           // Some keypads submit on the last digit, others want a confirm key.
-          const st2 = await read();
-          if (st2 && !st2.isComplete) {
+          const st2 = track(await read());
+          if (st2 && st2.available !== false && !st2.isComplete) {
             await page.evaluate(() => window.__test.minigame.clickControl('enter'))
               .catch(() => {});
           }
+          const wc = await wrongCode();
+          if (wc) return { ...wc, room: (await page.evaluate(() => window.__test.getState().room)) };
         } else {
           break;
         }
 
         await page.waitForTimeout(400);
-        st = await read();
-        if (!st || st.isComplete || st.result) break;
+        st = track(await read());
+        if (!st || st.available === false || st.isComplete || st.result) break;
       }
 
       // Let any success animation finish and the overlay close itself.
-      for (let i = 0; i < 20 && st && !st.isComplete; i++) {
+      for (let i = 0; i < 20 && st && st.available !== false && !st.isComplete; i++) {
         await page.waitForTimeout(250);
-        st = await read();
+        st = track(await read());
         if (!st) break;
       }
       const after = await page.evaluate(() => {
@@ -1031,9 +1056,9 @@ const vmSteps = createVmSteps({
         return { activeMinigame: s2.activeMinigame, room: s2.room };
       });
       return {
-        ...lockOutcome({ startId, st, after }),
+        ...lockOutcome({ startId, ownSt, after }),
         steps,
-        finalState: st ? { isComplete: st.isComplete, result: st.result, text: st.text } : null,
+        finalState: st && st.available !== false ? { isComplete: st.isComplete, result: st.result, text: st.text } : null,
         activeMinigame: after.activeMinigame,
         room: after.room
       };
