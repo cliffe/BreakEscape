@@ -59,7 +59,8 @@
 }
 
 .lockpicking-item-info p {
-    font-size: 16px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
     margin: 0;
     color: #ecf0f1;
     line-height: 1.4;
@@ -201,7 +202,7 @@
     }
 
     .lockpicking-item-info p {
-        font-size: 16px;
+        font-size: 20px;
         font-family: 'VT323', monospace;
     }
 }

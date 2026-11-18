@@ -1,7 +1,7 @@
 // UI sweep B4/B5: GNF is crisp only at 16, 24, 32 ... px and Press Start 2P only at
 // multiples of 8. Scans the RFID, password, lockpicking, biometrics and PIN stylesheets.
-// A rule's family is its own font-family, else the family another rule on the same final
-// selector token sets in that sheet, else the minigame container default (GNF).
+// A rule's family is its own font-family, else the family the same full selector sets in
+// the same media context, else the base rule for that selector, else the container default (GNF).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
@@ -9,25 +9,47 @@ import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const css = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/css');
-const SHEETS = ['rfid-minigame.css', 'password-minigame.css', 'lockpicking.css', 'biometrics-minigame.css', 'pin.css'];
+const SHEETS = ['rfid-minigame.css', 'password-minigame.css', 'scanner-panel.css', 'lockpicking.css', 'biometrics-minigame.css', 'pin.css'];
 // Emoji/icon glyph boxes, not text
 const ICONS = /icon/;
 // Rules that carry no font-family but sit inside a parent that sets one
-const INHERITED = [[/\.fpr-/, 'VT323'], [/\.pin-minigame-attempt-feedback/, 'Press Start 2P']];
+const INHERITED = [[/\.fpr-/, 'VT323'], [/\.pin-minigame-attempt-feedback/, 'Press Start 2P'],
+    [/signin-title|signin-portrait/, 'Press Start 2P'], [/lockpicking-item-info h4/, 'Press Start 2P']];
 
 function fontRules(file) {
     const text = readFileSync(join(css, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
     const out = [];
-    const re = /([^{}]+)\{([^{}]*)\}/g;
-    let m;
-    while ((m = re.exec(text))) {
-        const size = m[2].match(/font-size:\s*(\d+(?:\.\d+)?)px/);
-        const fam = m[2].match(/font-family:\s*'?([^',;]+)/);
-        if (!size && !fam) continue;
-        const sel = m[1].trim().replace(/\s+/g, ' ');
-        const last = sel.split(',').pop().trim().split(/[\s>+~]+/).pop().replace(/::?[\w-]+(\([^)]*\))?$/, '');
-        const line = text.slice(0, m.index + m[0].indexOf('{')).split('\n').length;
-        out.push({ file, line, sel, last, size: size ? Number(size[1]) : null, fam: fam ? fam[1].trim() : null });
+    const ctx = [];            // enclosing at-rule preludes (@media ...)
+    let buf = '';
+    let line = 1;
+    let startLine = 1;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '\n') line++;
+        if (ch === '{') {
+            const prelude = buf.trim().replace(/\s+/g, ' ');
+            if (/^@(media|supports)/.test(prelude)) ctx.push(prelude); else ctx.push(null);
+            // rule body runs to the next closing brace (no nested rules inside style rules)
+            const end = text.indexOf('}', i);
+            const body = text.slice(i + 1, end);
+            if (!/^@/.test(prelude)) {
+                const size = body.match(/font-size:\s*(\d+(?:\.\d+)?)px/);
+                const fam = body.match(/font-family:\s*'?([^',;]+)/);
+                if (size || fam) {
+                    out.push({
+                        file, line, sel: prelude, media: ctx.filter(Boolean).join(' && '),
+                        size: size ? Number(size[1]) : null, fam: fam ? fam[1].trim() : null,
+                    });
+                }
+            }
+            if (!/^@/.test(prelude)) { line += (body.match(/\n/g) || []).length; i = end; ctx.pop(); }
+            buf = '';
+        } else if (ch === '}') {
+            ctx.pop();
+            buf = '';
+        } else {
+            buf += ch;
+        }
     }
     return out;
 }
@@ -35,14 +57,15 @@ function fontRules(file) {
 for (const file of SHEETS) {
     test(`${file}: GNF sizes are multiples of 8 from 16, Press Start 2P multiples of 8`, () => {
         const rules = fontRules(file);
-        const famByLast = new Map();
-        for (const r of rules) if (r.fam) famByLast.set(r.last, r.fam);
+        // family per full selector within one media context; the base rule is the fallback
+        const famBy = new Map();
+        for (const r of rules) if (r.fam) famBy.set(`${r.media}||${r.sel}`, r.fam);
         const bad = [];
         let checked = 0;
         for (const r of rules) {
             if (r.size === null || ICONS.test(r.sel)) continue;
             const inh = INHERITED.find(([re]) => re.test(r.sel));
-            const fam = r.fam || (inh && inh[1]) || famByLast.get(r.last) || 'GNF';
+            const fam = r.fam || (inh && inh[1]) || famBy.get(`${r.media}||${r.sel}`) || famBy.get(`||${r.sel}`) || 'GNF';
             if (fam === 'VT323') continue;
             checked++;
             if (fam === 'GNF' && !(r.size >= 16 && r.size % 8 === 0)) bad.push(`${r.file}:${r.line} ${r.sel} GNF ${r.size}px`);

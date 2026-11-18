@@ -118,7 +118,7 @@
     flex-wrap: wrap;
     gap: 6px 8px;
     min-width: 0;
-    font-size: 18px;
+    font-size: 16px;
     color: var(--scan-accent);
     text-shadow: none;
 }
@@ -161,7 +161,7 @@
     border: 2px solid var(--scan-accent);
     color: #e0e0e0;
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     box-shadow: none;
     transition: none;
 }
@@ -216,7 +216,7 @@
     padding: 6px 10px;
     background: rgba(0, 0, 0, 0.2);
     border: 2px solid #444;
-    font-size: 18px;
+    font-size: 16px;
     color: var(--scan-accent);
 }
 

@@ -1283,7 +1283,7 @@ export class RFIDUIRenderer {
         const type = document.createElement('div');
         type.className = 'flipper-info';
         type.textContent = `${data.type} Attack`;
-        type.style.fontSize = '18px';
+        type.style.fontSize = '16px';
         type.style.marginBottom = '10px';
         screen.appendChild(type);
 
