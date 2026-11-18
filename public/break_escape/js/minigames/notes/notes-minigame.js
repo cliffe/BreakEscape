@@ -20,6 +20,11 @@ function setObservationText(div, text) {
 // Pixelify Sans and VT323 are self-hosted in css/fonts.css (no remote font links).
 
 // Notes Minigame Scene implementation
+// The counter under the notepad counts notes (not pages), so it says so
+export function noteCounterText(index, total) {
+    return `Note ${index + 1} of ${total}`;
+}
+
 export class NotesMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -235,7 +240,7 @@ export class NotesMinigame extends MinigameScene {
                 // Add note counter
                 const noteCounter = document.createElement('div');
                 noteCounter.className = 'notes-minigame-counter';
-                noteCounter.textContent = `${this.currentNoteIndex + 1}/${this.collectedNotes.length}`;
+                noteCounter.textContent = noteCounterText(this.currentNoteIndex, this.collectedNotes.length);
                 navContainer.appendChild(noteCounter);
                 
                 // In the shell's column straight under the notepad, above Continue
@@ -352,7 +357,7 @@ export class NotesMinigame extends MinigameScene {
         // Update the counter
         const noteCounter = this.container.querySelector('.notes-minigame-counter');
         if (noteCounter) {
-            noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
+            noteCounter.textContent = noteCounterText(this.currentNoteIndex, this.collectedNotes.length);
         }
     }
     
@@ -473,7 +478,7 @@ export class NotesMinigame extends MinigameScene {
     updateCounter() {
         const noteCounter = this.container.querySelector('.notes-minigame-counter');
         if (noteCounter) {
-            noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
+            noteCounter.textContent = noteCounterText(this.currentNoteIndex, this.collectedNotes.length);
         }
     }
     
@@ -516,7 +521,7 @@ export class NotesMinigame extends MinigameScene {
             
             const noteCounter = document.createElement('div');
             noteCounter.className = 'notes-minigame-counter';
-            noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
+            noteCounter.textContent = noteCounterText(this.currentNoteIndex, this.collectedNotes.length);
             navContainer.appendChild(noteCounter);
             
             this.container.appendChild(navContainer);
@@ -526,7 +531,7 @@ export class NotesMinigame extends MinigameScene {
         if (navContainer) {
             const noteCounter = navContainer.querySelector('.notes-minigame-counter');
             if (noteCounter) {
-                noteCounter.textContent = `${this.currentNoteIndex + 1} / ${this.collectedNotes.length}`;
+                noteCounter.textContent = noteCounterText(this.currentNoteIndex, this.collectedNotes.length);
             }
         }
     }

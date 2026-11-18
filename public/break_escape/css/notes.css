@@ -300,7 +300,8 @@
 /* Note counter */
 .notes-minigame-counter {
     color: white;
-    font-size: 18px;
+    font-size: 16px;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     padding: 8px 15px;
