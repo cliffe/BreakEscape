@@ -192,8 +192,9 @@
    instead of widening it and pushing the row onto a second line. The four-card grid sizes its own columns. */
 .dusting-refs:not([data-count="4"]) .dusting-ref-wrap { flex: 0 0 144px; max-width: 144px; min-width: 0; }
 .dusting-ref > span { overflow-wrap: anywhere; min-width: 0; }
-.dusting-view { overflow-wrap: anywhere; }
-.dusting-view { font-size: 0.85em; padding: 3px 8px; }
+/* Cards in one row share the tallest card's height, so a wrapped label never leaves its View button lower than the rest */
+.dusting-refs:not([data-count="4"]) .dusting-ref { flex: 1 1 auto; }
+.dusting-view { font-size: 0.85em; padding: 3px 8px; overflow-wrap: anywhere; }
 .dusting-view[aria-pressed="true"] { border-color: var(--d-accent); }
 .dusting-ref[data-viewing] { border-color: var(--d-accent); outline: 2px solid var(--d-accent); }
 .dusting-canvas[hidden] { display: none; }
@@ -264,6 +265,8 @@
 .dusting-short .dusting-ref { padding: 4px; }
 .dusting-short .dusting-stage-note { font-size: 16px; }
 .dusting-short .dusting-btn, .dusting-short .dusting-jar, .dusting-short .dusting-pattern, .dusting-short .dusting-ref { min-height: 36px; padding: 4px 8px; }
+/* A capped 144px card holds its 128px canvas with even 4px padding (8px sides would leave 4px on the right only) */
+.dusting-short .dusting-refs:not([data-count="4"]) .dusting-ref { padding: 4px; }
 
 /* Compare: the lift and one card magnified side by side (whole-number scale, no smoothing). Tags are text with a 2px box. */
 .dusting-zoom { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
