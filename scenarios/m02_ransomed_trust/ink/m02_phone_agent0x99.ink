@@ -763,6 +763,7 @@ Nobody can tell you how many a six-hour delay kills on a specific ward on a spec
 The person offering to is selling something.
 
 What's true is smaller and harder. Paying is faster, and it pays them. Doing it yourself is slower, and it doesn't.
+Everything past that is a guess wearing a decimal point.
 -> hint_ransom_decision_choices
 
 === hint_ransom_decision_choices ===

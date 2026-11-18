@@ -257,7 +257,7 @@ Gary Whitlock: This one. The server room reader's on its own controller, off the
 
 Gary Whitlock: Turns out being right about one thing buys you exactly one working door.
 
-Gary Whitlock: And nobody can cut you your own. The issuing machine went with the rest.
+Gary Whitlock: Nobody can cut you a card of your own, either. The issuing machine went with the rest.
 
 {gary_influence >= 25 and not cost_checked:
     -> cost_check

@@ -140,6 +140,7 @@ Agent HaX: {&What do you want to know?|What else?|Anything more before we get to
 Agent HaX: Funny you ask -- I had our hardware man look at it the second it came in. He's still grinning about it. Nightshade, say hello.
 Narrator: A wiry man in a lab coat leans into frame, turning the device over in gloved hands like it is a small, fascinating animal.
 Agent 0x47 'Nightshade': Agent 0x00. Lovely piece of kit you brought me. It's a keypad oracle -- brute-force with a brain. It doesn't guess the PIN blind.
+Agent 0x47 'Nightshade': Every wrong try, it tells you how many digits were right and in place, and how many in the wrong slot.
 
 Agent 0x47 'Nightshade': Each answer narrows the field. Mastermind, in silicon.
 {reeves_safe_opened:
@@ -258,6 +259,7 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
 // Round 1 (VM alignment): the projections are in the manifesto, not the flag-4 log.
 {lore_ghosts_manifesto_found:
     Agent HaX: You found Ghost's manifesto. The mortality calculations.
+    Agent HaX: Pre-planned. Spreadsheet-precise. They knew what the statistics meant before the operation started and ran it anyway.
 }
 
 // R6: the technical-arc recap is unconditional now. It used to be gated to
@@ -336,6 +338,7 @@ Agent HaX: One died in the night, and she was critical before any of this starte
 
 Agent HaX: And Ghost is still in that network. The keys were Ghost's, so every host they decrypted is a host Ghost can reach again.
 Agent HaX: The trust's incident team has found three ways back in so far, and they don't think that's all of them.
+Agent HaX: Remember that the next time anybody offers you something for free.
 
 -> entropy_funding_discussion
 
@@ -592,7 +595,7 @@ Agent HaX: He was fired quietly. No public scapegoat narrative -- but the career
 
 Agent HaX: Blacklisted in healthcare IT. "Failed to prevent catastrophic breach."
 
-Agent HaX: He did everything right. Seven written warnings.
+Agent HaX: He did everything right. Warned them. Documented the risk. Seven times.
 
 Agent HaX: Last I heard, he's working help desk at a further education college. £26,000 a year.
 
@@ -809,7 +812,7 @@ Agent HaX: One last section, and then I'll let you go. The people.
 }
 
 {cover_burned and not cover_restored:
-    Agent HaX: Nobody vouched for you. You finished that job as an unidentified stranger in a hospital corridor.
+    Agent HaX: Nobody vouched for you. You finished that job as an unidentified stranger in a hospital corridor, which is a thing I would rather you never had to do twice.
 }
 
 {raval_ko:
@@ -917,14 +920,14 @@ Agent HaX: You made it anyway, at four in the morning, with half the facts and f
 * [I'm still not sure it was the right call.]
     {paid_ransom:
         Agent HaX: 45 people are alive today. That's real. Those are real families not burying someone.
-        Agent HaX: ENTROPY has funding. That's also real.
+        Agent HaX: ENTROPY has funding. That's also real. Both things are true simultaneously.
     - else:
         {ghost_keys_used:
             {exposed_hospital:
-                Agent HaX: You paid ENTROPY nothing, had the wards back inside the hour, and kept your promise to Ghost. Ghost is still in that network.
+                Agent HaX: You paid ENTROPY nothing, had the wards back inside the hour, and kept your promise to Ghost. Ghost is still in that network. All of those are true at once.
             - else:
                 Agent HaX: You paid ENTROPY nothing and had the wards back inside the hour, then broke your word to Ghost.
-                Agent HaX: Ghost is still in that network, and now Ghost has a grievance.
+                Agent HaX: Ghost is still in that network, and now Ghost has a grievance. Both of those are true at once.
             }
         - else:
             {ward_recovering:

@@ -156,7 +156,7 @@ Val Okonkwo: So. Who are you and who says you're allowed?
         Val Okonkwo: Get yourself signed in properly at reception and have a word with Dr Kim.
     }
 }
-Val Okonkwo: Server room's through my office, and only Gary's card opens it.
+Val Okonkwo: Server room's through my office, and only one card opens it: Gary's, in IT.
 Val Okonkwo: Come back with it and I'll open the office for you.
 ~ hub_quiet = true
 -> hub
