@@ -219,8 +219,8 @@
       "optional": false
     },
     {
-      "id": "gitlist_repository_server",
-      "label": "GitList Repository Server",
+      "id": "field_console_kali",
+      "label": "Field Console (Kali)",
       "kind": "vm",
       "optional": false
     },
@@ -570,7 +570,7 @@
     },
     {
       "from": "server_room",
-      "to": "gitlist_repository_server",
+      "to": "field_console_kali",
       "soft": false
     },
     {
@@ -724,7 +724,7 @@
       "soft": true
     },
     {
-      "from": "gitlist_repository_server",
+      "from": "field_console_kali",
       "to": "vmch_recover_gitlist_exposure",
       "soft": false
     },

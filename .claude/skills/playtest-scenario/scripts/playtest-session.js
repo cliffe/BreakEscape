@@ -18,7 +18,7 @@
  *                                                         for tools/playtest/access-leak-check.rb; see response-capture.js)
  *
  * Commands (one JSON object per line):
- *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}   (stops at an open briefing: briefingPending:true,
+ *   {"cmd":"bootstrap","tutorial":"decline","resume":"resume"}   (stops at an open briefing: briefingPending:true,
  *                                            settled:false; add "autoBrief":true to auto-drive it)
  *   {"cmd":"converse","id":"npc","choices":["^Yes"]}   (takes only named options; stops at an unnamed
  *                                            choice with ok:false stopped-at-choice; "explore":true takes
@@ -358,7 +358,7 @@ const vmSteps = createVmSteps({
    * until the briefing is done; call bootstrap again afterwards). `autoBrief:true` opts in to the old
    * behaviour (choice 1 at each menu, hubs exit on a repeat).
    */
-  async function bootstrap({ tutorial = 'decline', resume = 'new', maxSteps = 400,
+  async function bootstrap({ tutorial = 'decline', resume = 'resume', maxSteps = 400,
                              settleChecks = 4, settleMs = 900, autoBrief = false, timeoutMs = 90000 } = {}) {
     const trace = [];
     const deadline = Date.now() + timeoutMs;

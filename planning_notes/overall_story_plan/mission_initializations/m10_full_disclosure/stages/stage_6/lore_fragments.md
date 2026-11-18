@@ -649,9 +649,9 @@ Each station's `hintOnlyFlags` is a Hash keyed by the other three `"<vm>:flag_N"
 | Flag | Message |
 |---|---|
 | flag 1 | "That one goes in at the gate terminal, up at the forward post." |
-| flag 2 | "That one goes in at the release console in the server hall." |
-| flag 3 | "That one goes in at the sealed section's hatch, at the east end of the server hall." |
-| flag 4 | "That one goes in at the core host terminal." |
+| flag 2 | "That's their staging schedule, not the foothold. It goes where they stage the release." (blind fix pass; the layout-naming hint is gone) |
+| flag 3 | "That's off the release host. Find the station that takes the release host." (blind fix pass) |
+| flag 4 | "That's the core host's. Its terminal is further in." (blind fix pass) |
 
 ## 2. Codes, notes items, item ids, names and the incident file
 

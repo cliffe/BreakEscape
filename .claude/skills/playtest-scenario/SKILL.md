@@ -219,7 +219,8 @@ The TTS cache is keyed on line text, voice, style, language and model (see the t
 ```bash
 ss -ltn | grep -E ':300[01]'                  # which are up
 tools/playtest/start-keyless-server.sh        # idempotent: reports and exits 0 if :3001 is already up
-tools/playtest/start-keyless-server.sh 3136   # optional port argument (default 3001, never 3000); log tmp/keyless-3136.log
+tools/playtest/start-keyless-server.sh 3136   # optional port argument, or PLAYTEST_PORT (default 3001, never 3000); log tmp/keyless-3136.log
+                                               # works from a worktree: BUNDLE_PATH defaults to the main checkout's vendor/bundle
 tools/playtest/stop-keyless-server.sh [PORT]  # kills only the pid in test/dummy/tmp/pids/server-<PORT>.pid (default 3001)
 ```
 
@@ -485,15 +486,15 @@ On a genuine failure, `interact()` reports `plainDistance` and `engineDistance`.
 
 **A bridge code change never reaches an already-open session.** The page imported the ES module at load; editing anything under `systems/test-bridge/**` has no effect until you quit the harness and start a new one. If a method you just added is missing from `Object.keys`, that is why — restart, do not re-issue the command.
 
-**`resume` can rewind inventory while leaving story globals ahead of it.** After `{"cmd":"bootstrap","resume":"resume"}`, check `inventory` against what you expect: an NPC's `hasTalked` can reset even when the global it set is still true, so you may need to redo the most recent conversation. Prefer `resume:"new"` and a fresh game unless you specifically need to continue one.
+**`resume` can rewind inventory while leaving story globals ahead of it.** After `{"cmd":"bootstrap","resume":"resume"}`, check `inventory` against what you expect: an NPC's `hasTalked` can reset even when the global it set is still true, so you may need to redo the most recent conversation. `resume` now defaults to `"resume"`, which keeps the game you are on; `"new"` clicks New Session and abandons the current game for a fresh one, so pass it only when you want that, and pass `"resume"` explicitly in briefs so the intent is on the page. Prefer a fresh game from `new-game.rb` and `resume:"resume"` over `resume:"new"`.
 
 ### The command loop
 
 Always open with `bootstrap`. It clears the staggered opening overlays — session resume prompt, tutorial prompt, title screen, notes — by clicking real controls, and confirms the overworld is *stably* clear before returning. It does **not** play the opening briefing (a conversation whose choices commit the story). If a dialogue is open it stops with `briefingPending:true, settled:false` and the dialogue in `state`; play it with `converse` / `mg`, then call `bootstrap` again (the tutorial prompt appears once the briefing closes). For regression runs where the briefing choices do not matter, add `"autoBrief":true` and it drives the briefing with choice 1 as before:
 
 ```json
-{"cmd":"bootstrap","tutorial":"decline","resume":"new"}
-{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}
+{"cmd":"bootstrap","tutorial":"decline","resume":"resume"}
+{"cmd":"bootstrap","tutorial":"decline","resume":"resume","autoBrief":true}
 ```
 
 Then, per walkthrough step, the loop is: **read `brief` → act → wait deterministically → assert**.
