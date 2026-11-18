@@ -491,7 +491,11 @@ test('pressKey: keys reach the overlap menu when it is the open blocking UI, and
     globalThis.__menu = { open: true, items: [] };
     document.elementsFromPoint = () => [overlay];
     globalThis.__mg = { id: 'mg' };
-    assert.equal((await bridge.pressKey('1')).reason, 'minigame-active');
+    const mgRefused = await bridge.pressKey('1');
+    assert.equal(mgRefused.reason, 'minigame-active');
+    assert.match(mgRefused.hint, /^mg is open/, 'hint names the open minigame');
+    assert.match(mgRefused.hint, /a player cannot reach this target/);
+    assert.match(mgRefused.hint, /window\.__test\.minigame\.close\(\)/);
     assert.deepEqual(globalThis.__keys, []);
     globalThis.__detect = null;
     document.elementsFromPoint = () => [];

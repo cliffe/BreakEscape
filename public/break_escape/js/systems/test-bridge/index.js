@@ -866,7 +866,9 @@ function blockedByMinigame() {
     if (mg) {
         return fail('minigame-active', {
             activeMinigame: mg,
-            hint: 'Main-world input is disabled. Drive window.__test.minigame instead.'
+            hint: `${mg.id || 'A minigame'} is open and main-world input is disabled, `
+                + 'so a player cannot reach this target either. Close it first '
+                + '(window.__test.minigame.close()) or drive window.__test.minigame.'
         });
     }
     // A modal on top of the canvas swallows pointer input just as effectively,
