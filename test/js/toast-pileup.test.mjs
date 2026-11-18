@@ -322,3 +322,15 @@ test('M4/M5: bark budget counts timed toasts only and keeps at least one text', 
     assert.equal(L.barkMaxVisible(window.shownToastCount()), 3, 'so the phone stack keeps its three');
     reset();
 });
+
+test('R2: batched announcements are cleared after ANNOUNCE_CLEAR_MS, with a token guarding newer writes', async () => {
+    reset();
+    await wait(20);
+    T.showNotification('one', 'info', 'A', 60000);
+    T.showNotification('two', 'info', 'B', 60000);
+    await wait(30);
+    assert.ok(live().includes('one') && live().includes('two'));
+    await wait(T.ANNOUNCE_CLEAR_MS + 200);
+    assert.equal(live(), '', 'the joined text leaves the region');
+    reset();
+});

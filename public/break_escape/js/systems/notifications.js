@@ -525,6 +525,13 @@ function dropWaitingWarnings(container, keep) {
 // collected per region and written once, a tick later, joined: important ones first in the
 // order raised, then low-priority ones, then dropped asides folded into one "Also: ..." line.
 // The region is emptied first, so the same text twice is read twice.
+// A screen reader has read the text long before ANNOUNCE_CLEAR_MS. Left in place it stays in
+// the page text for the rest of the game (a "Fingerprint Reader" refusal was found long after
+// its toast closed). Both regions are emptied that long after each write; a token stops an
+// older timer wiping a newer announcement.
+export const ANNOUNCE_CLEAR_MS = 8000;
+let announceSerial = 0;
+const announceSerials = {};   // region id -> token of its latest write
 const pendingAnnouncements = { 'toast-live-alert': [], 'toast-live-polite': [] };
 const sentencePunct = (t) => (/[.!?]$/.test(t) ? t : `${t}.`);
 
@@ -545,6 +552,15 @@ function flushAnnouncements(id) {
         const r = document.getElementById(id);
         if (r) r.textContent = composeAnnouncement(items);
     } catch (e) { /* not announced */ }
+    const token = ++announceSerial;
+    announceSerials[id] = token;
+    setTimeout(() => {
+        try {
+            if (announceSerials[id] !== token) return;
+            const r = document.getElementById(id);
+            if (r) r.textContent = '';
+        } catch (e) { /* nothing to clear */ }
+    }, ANNOUNCE_CLEAR_MS);
 }
 
 function announceToast(type, text, flags = {}) {
@@ -568,10 +584,10 @@ function announceToast(type, text, flags = {}) {
         }
         const queue = pendingAnnouncements[id];
         queue.push({ text: String(text ?? ''), low: flags.low === true, dropped: flags.dropped === true });
-        if (queue.length === 1) {
-            region.textContent = '';
-            setTimeout(() => flushAnnouncements(id), 0);
-        }
+        if (queue.length === 1) region.textContent = '';
+        // one flush per announcement (a later one finds the queue already empty and does nothing),
+        // so a flush timer that never ran cannot leave the queue stuck
+        setTimeout(() => flushAnnouncements(id), 0);
     } catch (e) { /* not announced */ }
 }
 
