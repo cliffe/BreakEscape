@@ -581,7 +581,7 @@ export class VmLauncherMinigame extends MinigameScene {
                     important: true
                 }
             };
-            window.startNotesMinigame(postitItem, notebookContent, 'Postit note found on VM terminal.', null, false, false);
+            window.startNotesMinigame(postitItem, notebookContent, 'Postit note found on VM terminal.', null, false, true);
             this.showSuccess("Added postit note to notepad", false, 2000);
         } else {
             this.showFailure("Notepad not available", false, 2000);

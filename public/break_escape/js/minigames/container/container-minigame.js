@@ -2384,7 +2384,7 @@ export class ContainerMinigame extends MinigameScene {
                 notebookObservations,
                 null,
                 false,
-                false
+                true // add to the Notepad (a filed item passes false)
             );
 
             this.showMessage("Added postit note to notepad", 'success');

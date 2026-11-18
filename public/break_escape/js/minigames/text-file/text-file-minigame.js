@@ -561,8 +561,8 @@ export class TextFileMinigame extends MinigameScene {
                 notebookContent, 
                 notebookObservations, 
                 null, // Let notes minigame auto-navigate to the newly added note
-                false, // Don't auto-add to inventory
-                false // Don't auto-close
+                false, // keep the Previous/Next row
+                true // add to the Notepad
             );
             
             this.showSuccess(doneText, false, 2000);
