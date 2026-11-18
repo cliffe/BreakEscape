@@ -54,7 +54,7 @@ test('the list row shows the new preview, time and badge after refreshContactLis
     assert.equal(ui.refreshContactList(), true);
     assert.equal(row(contactList, 'hax'), hax, 'the row element is kept');
     assert.equal(hax.querySelector('.contact-last-message').textContent, 'two');
-    assert.equal(hax.querySelector('.unread-badge').textContent, '2');
+    assert.equal(hax.querySelector('.unread-badge').textContent, '2 unread');
     assert.equal(hax.querySelector('.contact-time').textContent, 't2');
     assert.equal(row(contactList, 'bob').querySelector('.contact-last-message').textContent, 'No messages yet');
 });
@@ -91,7 +91,7 @@ test('a livePreview row keeps its own preview but takes the new badge', () => {
     ui.refreshContactList();
     const r = row(contactList, 'hax');
     assert.equal(r.querySelector('.contact-last-message').textContent, 'two', 'stale dry-run line replaced by history');
-    assert.equal(r.querySelector('.unread-badge').textContent, '2');
+    assert.equal(r.querySelector('.unread-badge').textContent, '2 unread');
     assert.deepEqual(redone, ['hax'], 'the dry run is asked for again');
     ui.refreshContactList();
     assert.deepEqual(redone, ['hax'], 'not again while the history is unchanged');
@@ -205,7 +205,7 @@ test('a missed call shows "Missed call", the missed class and a badge', async ()
     const last = row(contactList, 'hax').querySelector('.contact-last-message');
     assert.ok(last.classList.contains('missed'));
     assert.equal(last.textContent, 'Missed call');
-    assert.equal(row(contactList, 'hax').querySelector('.unread-badge').textContent, '1');
+    assert.equal(row(contactList, 'hax').querySelector('.unread-badge').textContent, '1 unread');
     delete window.MinigameFramework;
 });
 
@@ -217,6 +217,6 @@ test('a voicemail: the call row then its lines in one tick leave the last line a
     await tick(); await tick();
     const r = row(contactList, 'hax');
     assert.equal(r.querySelector('.contact-last-message').textContent, 'Call me back.');
-    assert.equal(r.querySelector('.unread-badge').textContent, '2', 'the two lines; the Voicemail row itself is read');
+    assert.equal(r.querySelector('.unread-badge').textContent, '2 unread', 'the two lines; the Voicemail row itself is read');
     delete window.MinigameFramework;
 });
