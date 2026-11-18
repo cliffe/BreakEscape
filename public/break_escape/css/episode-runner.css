@@ -147,6 +147,12 @@
     border-bottom: 2px solid var(--aw-line);
 }
 .epr-strip { flex: 1 1 auto; min-width: 0; }
+/* Phones: every step tab stays whole. The shared strip scrolls sideways under 768px (and clipped
+   "4 Yo..." in the kiosk screen with no cue), so here the tabs wrap onto a second row instead:
+   nothing is hidden, nothing needs a scroll cue, and the number badge keeps its place. */
+.minigame-container[data-minigame="episode-runner"] .aw-steps { flex-wrap: wrap; overflow-x: visible; }
+.minigame-container[data-minigame="episode-runner"] .aw-step { flex: 0 1 auto; max-width: 100%; min-width: 0; }
+.minigame-container[data-minigame="episode-runner"] .aw-step-label { overflow-wrap: anywhere; }
 .epr-strip .aw-strip { border-bottom: 0; }
 .epr-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
 

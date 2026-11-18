@@ -605,22 +605,38 @@
   line-height: 1.5;
 }
 
+/* Same look as the pop-up's other confirm: the DLI green-on-dark button (see .dli-restore-btn-active
+   and the log filter's .lf-flag-confirm-btn), 2px border, no blue. */
 .dli-modal-confirm-btn {
   display: block;
   width: 100%;
   margin-top: 14px;
   padding: 9px;
-  background: #1f6feb;
-  color: #fff;
+  background: #0f2d1a;
+  color: #33cc66;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  border: none;
+  border: 2px solid #33cc66;
   border-radius: 0;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.dli-modal-confirm-btn:hover { background: #388bfd; }
+.dli-modal-confirm-btn:hover { background: #122a19; }
+
+/* Phones: the console title wraps to two lines beside the X instead of ending in an ellipsis.
+   The 8px on the right keeps the text clear of the X's 44px hit area (the bar's gap is 8px and
+   the hit area reaches about 10px past the X's edge). Pixel font stays 16px. */
+.minigame-container[data-minigame="drug-library-integrity"] .console-titles {
+  padding-right: 8px;
+}
+.minigame-container[data-minigame="drug-library-integrity"] .console-window .console-title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
 
 /* ── Fleet report tab ──────────────────────────────────────── */
 .dli-fleet-title {
