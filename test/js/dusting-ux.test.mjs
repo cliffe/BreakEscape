@@ -1,6 +1,6 @@
 // Dusting UX: the find-step print patch is findable with High contrast and Hint off (raised sheen
 // plus a dotted floor), High contrast raises it further; closing the compare screen without
-// "Log the print" toasts "Print logged", the button path does not toast twice.
+// "Log the print" gives one toast titled "Print logged"; the button path keeps "Print Lifted".
 // Run with: node --test test/js/dusting-ux.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,16 +21,50 @@ globalThis.document = { getElementById: () => null, createElement: el, head: { a
 globalThis.Image = class {};
 const model = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-model.js')).href);
 const { DustingMinigame } = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-game.js')).href);
-const { DIFFICULTY, findSheen } = model;
+const { DIFFICULTY, SURFACES, findSheen, findGlint, findFloorScale } = model;
+const { foggyCoach } = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-game.js')).href);
+const { startDustingMinigame } = await import(pathToFileURL(join(root, 'js/systems/biometrics.js')).href);
 
 const base = { lit: 0, ridge: 1, mask: 1, res: 1, dotted: true, hc: false };
 
-test('every difficulty shows a dotted floor without the torch, easy strongest', () => {
-    const f = d => findSheen({ ...base, floor: DIFFICULTY[d].findFloor });
-    assert.ok(f('hard') >= 0.1, 'hard floor is above 0.1');
-    assert.ok(f('medium') > f('hard'));
-    assert.ok(f('easy') > f('medium'));
-    assert.ok(f('easy') <= 0.3, 'floor stays a hint, not a giveaway');
+const hex = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16));
+const luma = c => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+
+// Luma change of one floor pixel on an unlit surface (drawn at half brightness), as _drawFind computes it.
+function floorDelta(colourHex, diff, hc) {
+    const base = hex(colourHex), unlit = base.map(v => v * 0.5);
+    const glint = findGlint(luma(base) > 150, hc);
+    const scale = findFloorScale(luma(unlit), glint);
+    const s = findSheen({ ...base0, floor: DIFFICULTY[diff].findFloor, floorScale: scale, hc });
+    const out = unlit.map((v, k) => v + (glint[k] - v) * s);
+    return Math.abs(luma(out) - luma(unlit));
+}
+const base0 = { lit: 0, ridge: 1, mask: 1, res: 1, dotted: true };
+
+test('floor luma change on every surface colour: about 30 at medium, easy more, hard none, High contrast more', () => {
+    for (const surf of Object.values(SURFACES)) for (const c of surf.colours) {
+        const at = (d, hc) => floorDelta(c, d, hc);
+        assert.ok(at('medium', false) >= 25 && at('medium', false) <= 36, `${surf.id} ${c} medium ${at('medium', false)}`);
+        assert.ok(at('easy', false) > at('medium', false), `${surf.id} easy > medium`);
+        assert.equal(at('hard', false), 0, `${surf.id} hard shows no floor without High contrast`);
+        for (const d of ['easy', 'medium', 'hard']) {
+            assert.ok(at(d, true) > at(d, false), `${surf.id} ${c} ${d}: High contrast must exceed default`);
+            assert.ok(at(d, true) >= 20, `${surf.id} ${c} ${d} HC change ${at(d, true)} is visible`);
+        }
+    }
+});
+
+test('floor blend stays a hint: capped below full strength', () => {
+    for (const d of ['easy', 'medium', 'hard']) {
+        const s = findSheen({ ...base0, floor: DIFFICULTY[d].findFloor, floorScale: 8, hc: true });
+        assert.ok(s <= 0.9);
+    }
+});
+
+test('hard floor is 0 so hard needs the torch with High contrast off', () => {
+    assert.equal(DIFFICULTY.hard.findFloor, 0);
+    assert.equal(findSheen({ ...base0, floor: 0, hc: false }), 0);
+    assert.ok(findSheen({ ...base0, floor: 0, hc: true }) > 0);
 });
 
 test('the floor is dotted: off-pattern pixels show nothing without the torch', () => {
@@ -54,8 +88,10 @@ test('high contrast raises both the floor and the sheen', () => {
     assert.ok(findSheen({ ...weak, hc: true }) > findSheen(weak));
 });
 
-// ---- close toast
+// ---- close toast: every toast counted through startDustingMinigame -> recordLift
 
+const { MinigameScene } = await import(pathToFileURL(join(root, 'js/minigames/framework/base-minigame.js')).href);
+let onComplete, toasts;
 function compareGame({ identified }) {
     const g = Object.create(DustingMinigame.prototype);
     Object.assign(g, {
@@ -63,39 +99,76 @@ function compareGame({ identified }) {
         print: { pattern: 'loop' }, surfaceId: 'glass', powder: 'black', objectId: 'o1', ownerName: 'X',
         gameResult: null
     });
-    g._buildResult = () => ({ identified: g.identified === true });
+    g._buildResult = () => ({ quality: 0.64, rating: 'Fair', pattern: 'loop', identified: g.identified === true, surface: 'glossy_light', objectId: 'o1' });
+    // the framework hands gameResult to the opener's onComplete
+    MinigameScene.prototype.complete = function (success) { onComplete(success, this.gameResult); };
     return g;
 }
-let toasts;
-const calls = [];
-const { MinigameScene } = await import(pathToFileURL(join(root, 'js/minigames/framework/base-minigame.js')).href);
-MinigameScene.prototype.complete = function (s) { calls.push(s); };
+function setup() {
+    toasts = [];
+    globalThis.window.showNotification = (...a) => toasts.push(['showNotification', ...a]);
+    globalThis.window.gameAlert = (...a) => toasts.push(['gameAlert', ...a]);
+    globalThis.window.gameState = { biometricSamples: [], globalVariables: {} };
+    globalThis.window.eventDispatcher = { emit() {} };
+    globalThis.window.game = {};
+    globalThis.window.MinigameFramework = {
+        mainGameScene: {},
+        startMinigame(_n, _c, opts) { onComplete = opts.onComplete; }
+    };
+    startDustingMinigame({ scenarioData: { id: 'o1', name: 'Mug', fingerprintOwner: 'Robert Vance' } });
+}
 
-test('closing without Log the print toasts "Print logged" once and still records the print', () => {
-    toasts = []; calls.length = 0; globalThis.window.showNotification = (...a) => toasts.push(a);
-    const g = compareGame({ identified: true });
+test('close after the peel gives exactly one toast, titled Print logged, and still records', () => {
+    setup();
+    const g = compareGame({ identified: false });
     g.complete(false);
-    assert.equal(toasts.length, 1);
-    assert.equal(toasts[0][0], 'Print logged');
-    assert.equal(toasts[0][1], 'success');
-    assert.deepEqual(calls, [true]);
-    assert.equal(g.gameResult.identified, true);
+    assert.equal(toasts.length, 1, JSON.stringify(toasts));
+    assert.equal(toasts[0][0], 'gameAlert');
+    assert.match(toasts[0][1], /Lifted a print from Mug \(Fair, 64%\)/);
+    assert.equal(toasts[0][3], 'Print logged');
+    assert.equal(window.gameState.biometricSamples.length, 1);
     g.complete(false); // a second close call must not toast again
     assert.equal(toasts.length, 1);
 });
 
-test('the Log the print button path does not toast on the close that follows', () => {
-    toasts = []; calls.length = 0; globalThis.window.showNotification = (...a) => toasts.push(a);
+test('Log the print then close gives one toast, titled Print Lifted as today', () => {
+    setup();
     const g = compareGame({ identified: true });
     g._finish();
     g.complete(false);
-    assert.equal(toasts.length, 0);
+    assert.equal(toasts.length, 1, JSON.stringify(toasts));
+    assert.equal(toasts[0][3], 'Print Lifted');
 });
 
 test('closing before the peel is a plain cancel with no toast', () => {
-    toasts = []; calls.length = 0; globalThis.window.showNotification = (...a) => toasts.push(a);
+    setup();
     const g = compareGame({ identified: true });
     g.mounted = false;
+    g.final = null;
     g.complete(false);
     assert.equal(toasts.length, 0);
+    assert.equal(window.gameState.biometricSamples.length, 0);
+});
+
+// ---- brushing coach
+
+test('foggy warning agrees with the Lift threshold', () => {
+    const min = DIFFICULTY.medium.minCoverage;
+    const below = foggyCoach(0.34, min), above = foggyCoach(min, min);
+    assert.doesNotMatch(below, /lift now/i, 'below the threshold the player cannot lift now');
+    assert.match(below, /Puff/);
+    assert.match(below, /Lift unlocks at 45%/);
+    assert.match(above, /or lift now/);
+    for (const d of Object.values(DIFFICULTY)) {
+        assert.doesNotMatch(foggyCoach(d.minCoverage - 0.01, d.minCoverage), /lift now/i);
+        assert.match(foggyCoach(d.minCoverage, d.minCoverage), /lift now/i);
+    }
+});
+
+test('the coach shows the below-threshold line at 34% coverage with heavy powder', () => {
+    const g = Object.create(DustingMinigame.prototype);
+    Object.assign(g, { metrics: { coverage: 0.34, clarity: 0.4, foggy: 0.2 }, powder: 'black', surfaceId: 'glossy_light', diff: DIFFICULTY.medium });
+    assert.match(g._coach(), /Lift unlocks at 45%/);
+    g.metrics.coverage = 0.5;
+    assert.match(g._coach(), /or lift now/);
 });

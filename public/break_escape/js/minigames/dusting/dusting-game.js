@@ -13,7 +13,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
 import {
-    SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen,
+    SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
     liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns
 } from './dusting-model.js';
 import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS } from './print-features.js';
@@ -61,6 +61,17 @@ const FOG_HAZE = 1.4;
 // default tool for black and silver. After this many fine strokes below the lift threshold the
 // coach suggests the feather brush.
 export const FINE_SWITCH_AFTER_STROKES = 6;
+
+/**
+ * Coach line for heavy powder. Lift only unlocks at minCoverage, so "or lift now" is offered only once
+ * it has; below that the line says what to do (Puff the heavy spots, keep brushing lightly) and when Lift unlocks.
+ */
+export function foggyCoach(coverage, minCoverage) {
+    if (coverage >= minCoverage) {
+        return 'Powder is filling the furrows between ridges in places and the lines are blurring. Use Puff to clear it, or lift now.';
+    }
+    return `Powder is building up in places and starting to blur the lines. Use Puff to clear the heavy spots, then keep brushing lightly until Lift unlocks at ${Math.round(minCoverage * 100)}%.`;
+}
 
 /** True when the coach should suggest swapping the fine brush for the feather brush. */
 export function shouldSuggestFeather({ tool, strokes, coverage, minCoverage, tools }) {
@@ -376,6 +387,9 @@ export class DustingMinigame extends MinigameScene {
         this.surfacePixels = c.getImageData(0, 0, N, N).data;
         const luma = (0.3 * this.surfacePixels[0] + 0.59 * this.surfacePixels[1] + 0.11 * this.surfacePixels[2]);
         this.surfaceLight = luma > 150;
+        let sum = 0;
+        for (let k = 0; k < N * N; k++) sum += 0.3 * this.surfacePixels[k * 4] + 0.59 * this.surfacePixels[k * 4 + 1] + 0.11 * this.surfacePixels[k * 4 + 2];
+        this.surfaceMeanLuma = sum / (N * N);
         // flat backgrounds for the high-contrast view
         this.hcPixels = new Uint8ClampedArray(N * N * 4);
     }
@@ -745,8 +759,8 @@ export class DustingMinigame extends MinigameScene {
         if (!success && this.mounted && this.final) {
             this.gameResult = this._buildResult();
             this._resultSent = true;
-            // The close path records the print; say so (the Log the print button already did, so no toast then)
-            if (typeof window !== 'undefined' && window.showNotification) window.showNotification('Print logged', 'success');
+            // viaClose: recordLift titles its one toast "Print logged" (the Log the print button path keeps "Print Lifted")
+            this.gameResult.viaClose = true;
             return super.complete(true);
         }
         if (!success && !this.gameResult) this.gameResult = { cancelled: true };
@@ -1086,7 +1100,7 @@ export class DustingMinigame extends MinigameScene {
         const m = this.metrics;
         const why = wrongPowderReason(this.powder, this.surfaceId);
         if (why && m.coverage > 0.03) return `${why} Change powder to see the difference.`;
-        if (m.foggy > 0.08) return 'Powder is filling the furrows between ridges in places and the lines are blurring. Use Puff to clear it, or lift now.';
+        if (m.foggy > 0.08) return foggyCoach(m.coverage, this.diff.minCoverage);
         if (m.coverage < 0.03) return 'Brush over the print. Ridges appear where the powder clings.';
         if (this._suggestFeather()) return FEATHER_SUGGESTION;
         if (m.coverage < this.diff.minCoverage) return 'Ridges are coming up. Keep sweeping across the print.';
@@ -1140,7 +1154,10 @@ export class DustingMinigame extends MinigameScene {
         const R = 24 * this.diff.sheenScale;
         const res = this.diff.residueStrength;
         const hcGlint = this.highContrast;
-        const glint = this.surfaceLight ? (hcGlint ? [0, 0, 0] : [70, 95, 130]) : [255, 255, 255];
+        const glint = findGlint(this.surfaceLight, hcGlint);
+        // the unlit surface is drawn at half brightness, so the floor is scaled against that
+        const floorScale = findFloorScale(0.5 * (this.surfaceMeanLuma || 0), glint);
+        const sp2 = { lit: 0, ridge: 0, mask: 0, res, floor: this.diff.findFloor, floorScale, dotted: false, hc: this.highContrast };
         for (let y = 0; y < N; y++) {
             for (let x = 0; x < N; x++) {
                 const i = y * N + x, j = i * 4;
@@ -1151,7 +1168,8 @@ export class DustingMinigame extends MinigameScene {
                 r *= dim; g *= dim; b *= dim;
                 // The dotted floor shows on every level, fainter as it gets harder (m04 blind run: the
                 // patch was nearly invisible with the options off; m05 blind A m8, m06 A-R10 on easy)
-                const s = findSheen({ lit, ridge: p.ridges[i], mask: p.mask[i], res, floor: this.diff.findFloor, dotted: ((x + y) & 1) === 0, hc: this.highContrast });
+                sp2.lit = lit; sp2.ridge = p.ridges[i]; sp2.mask = p.mask[i]; sp2.dotted = ((x + y) & 1) === 0;
+                const s = findSheen(sp2);
                 if (s > 0) {
                     r += (glint[0] - r) * s; g += (glint[1] - g) * s; b += (glint[2] - b) * s;
                 }

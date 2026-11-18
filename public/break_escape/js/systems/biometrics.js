@@ -101,7 +101,8 @@ function recordLift(item, result) {
     const message = stored.sample.identified
         ? `Lifted ${ownerName}'s print (${rating}, ${pct}%).`
         : `Lifted a print${sourceName ? ` from ${sourceName}` : ''} (${rating}, ${pct}%).`;
-    window.gameAlert(message, 'success', 'Print Lifted', 4000);
+    // Closing the compare screen records the print too; its one toast says so (the Log the print button keeps "Print Lifted")
+    window.gameAlert(message, 'success', result.viaClose ? 'Print logged' : 'Print Lifted', 4000);
 }
 
 // Start fingerprint dusting minigame
