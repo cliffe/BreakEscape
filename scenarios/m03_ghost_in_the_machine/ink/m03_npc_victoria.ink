@@ -688,7 +688,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
 * [St. Catherine's Hospital. Your ProFTPD exploit. People died on that ward.]
     ~ came_via_hospital = true
     Victoria Sterling: I sold a vulnerability. What a buyer builds with it is a buyer's problem.
-    Victoria Sterling: Your Ghost liked to tell people they wrote that exploit themselves. They didn't. They bought it from me, twenty-five thousand, hospital premium and all.
+    Victoria Sterling: Your Ghost liked to tell people they wrote that exploit themselves. They bought it from me, hospital premium and all.
     ++ [Forty per cent extra for a hospital. You priced the bodies in.]
         Victoria Sterling: I priced the urgency in. Hospitals pay fast, and they pay quietly. That isn't cruelty. It's arithmetic.
         -> the_reckoning
@@ -702,7 +702,7 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
 === the_reckoning ===
 #speaker:victoria_sterling
 #display:victoria-neutral
-Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
+Victoria Sterling: You want the confession. The tears for the ward.
 Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
 // D4-14: on the St. Catherine's route she has just made this defence.
 { not came_via_hospital:
@@ -777,12 +777,12 @@ Victoria Sterling: Still one move. Choose it.
 
 === confrontation_recruit ===
 #speaker:victoria_sterling
-Victoria Sterling: Not immunity. At least you're honest. Most of your people lead with a promise they can't keep.
+Victoria Sterling: Not immunity. At least you're honest.
 Victoria Sterling: Then you already have the what. I'm the when.
 Narrator: She lets the bag slide off her shoulder onto the desk.
 Victoria Sterling: I don't have the Architect's name. Nobody does. But I have the comms protocol, the rails the money moves on, and the Phase 2 window.
 Victoria Sterling: The window opens in weeks. Some of what they bought from me is already installed.
-Victoria Sterling: Understand what this is. You didn't move me. You're simply a better bet than a shallow grave.
+Victoria Sterling: You didn't move me. You're simply a better bet than a shallow grave.
 ~ victoria_fate = "recruited"
 #set_global:victoria_fate:recruited
 #complete_task:victoria_choice_made
