@@ -186,6 +186,9 @@ end
 # with re-rings that repeat on purpose. The legacy-box arms are made disjoint
 # (m05_found_pipeline_list) rather than declared. No boolean import pair is
 # exclusive by construction, so there is no mutuallyExclusiveGlobals entry.
+# The sleeper_named pair (the shortlist-or-name complete and the buy text), the
+# tesseract_call_done pair (task and debrief text) and the salvage_keypad_seen
+# pair (the latch and the hint text) are likewise separate effects of one moment.
 # The two card_cloned latches (Sorensen's and Noor's cards, alignment R7) key
 # on different card names, so they never fire for the same read.
 hax_maps = []
@@ -339,7 +342,7 @@ hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => tr
 hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
 # Blind m09 M2: buying the name skips the Harwick & Lowe box, and the objective says what that cost.
 hax_maps << text_map("global_variable_changed:sleeper_named", "value === true && !globalVars.hl_box_opened",
-                     "Bought, not found. The box in the open stacks would have narrowed it to two names, free. This one is a sale in her ledger now.", delay: 9000)
+                     "Bought, not found. The box in the open stacks would have narrowed it to two names, for nothing. We're in an ENTROPY ledger now, next to his orders.", delay: 9000)
 # Educational R1 E-m9: credit the lease-date deduction when the ledger was read.
 hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && !globalVars.rent_ledger_read", "Safe's open. Kowalczyk will want to hear about her toy.")
 hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && globalVars.rent_ledger_read", "Lease date. She picked a number she'd never forget, then printed it at the top of every page.")
@@ -360,11 +363,13 @@ hax_maps << { "eventPattern" => "door_unlock_attempt", "condition" => "data.conn
 hax_maps << { "eventPattern" => "door_unlocked", "condition" => "data.connectedRoom === 'salvage_cage'", "onceOnly" => true, "setGlobal" => { "salvage_opened" => true } }
 # Educational R1 E-M2: the Kerckhoffs point the chart makes (A3-37).
 hax_maps << text_map("global_variable_changed:salvage_opened", "value === true", "She never wrote a code down. She hung the key beside the lock. A cipher is only as safe as its key.", delay: 2000, msg_delay: 6000)
-hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && !globalVars.m02_gary_protected",
-                     "The code is a Vigenere cipher keyed with bay twelve's word from her shelf marks. Typing the word won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
+# Gated on the coded line: flag1_read_heard is set as the read-out gives it. Tried first, the
+# hint waits for the line (second arm); tried after, it goes at once (first arm). Never both.
+hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && !globalVars.m02_gary_protected && globalVars.flag1_read_heard",
+                     "The catalogue line is Vigenère. The key is this bay's word on her shelf-mark chart. The word itself won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
+hax_maps << text_map("global_variable_changed:flag1_read_heard", "value === true && !globalVars.m02_gary_protected && globalVars.salvage_keypad_seen",
+                     "The catalogue line is Vigenère. The key is this bay's word on her shelf-mark chart. The word itself won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
 hax_maps << { "eventPattern" => "global_variable_changed:salvage_keypad_seen", "condition" => "value === true && globalVars.m02_gary_protected", "onceOnly" => true, "setGlobal" => { "archive_code_guide_offered" => true } }
-hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && globalVars.m02_gary_protected",
-                     "The code is a Vigenere cipher keyed with bay twelve's word from her shelf marks. Typing the word won't open it.")
 hax_maps << text_map("room_entered:salvage_cage", nil, "Field guide for his box is ready. Say the word.", set: { "tomb_beta_guide_offered" => true })
 
 # Flag 3 and the identity scene (S4 §4 row 9, §6.2). Voiced (F17/F20).
@@ -1453,12 +1458,14 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             "challengeOnSight": {
               "cooldown": 20000,
               "rooms": ["open_stacks"],
-              "skipIfGlobal": "old_coyote_told"
+              "skipIfGlobal": ["old_coyote_told", "old_coyote_quiet"]
             }
           },
           "eventMappings": [
             { "eventPattern": "player_spotted:old_coyote", "condition": "!globalVars.old_coyote_cover_given", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
             { "eventPattern": "player_spotted:old_coyote", "condition": "globalVars.old_coyote_cover_given", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 240000 },
+            { "eventPattern": "global_variable_changed:old_coyote_cover_given", "condition": "value === true", "setGlobal": { "old_coyote_quiet": true } },
+            { "eventPattern": "global_variable_changed:old_coyote_quiet", "condition": "value === true", "delayMs": 240000, "setGlobal": { "old_coyote_quiet": false } },
             { "eventPattern": "global_variable_changed:old_coyote_told", "condition": "value === true", "setVisible": false },
             { "eventPattern": "room_entered:open_stacks", "condition": "globalVars.old_coyote_told", "setVisible": false },
             {
@@ -1889,9 +1896,9 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "name": "Rubber Stamp",
           "position": "as-type:m09_rubber_stamp",
           "takeable": false,
-          "observations": "A rubber stamp: DESTROYED, in red. She stamps everything, so the handle will hold her prints. The plan cabinet reads a print.",
+          "observations": "A rubber stamp: DESTROYED, in red. She stamps everything, so the handle will hold her prints.",
           "observationVariants": [
-            { "condition": "globalVars.flag2_submitted && !globalVars.cage_opened", "value": "DESTROYED, in red. The stamp is still warm. Three boxes left on her side of the counter." }
+            { "condition": "globalVars.flag2_submitted && !globalVars.cage_opened", "value": "DESTROYED, in red. The stamp is still warm. Three boxes left on her side of the counter. She stamps everything, so the handle will hold her prints." }
           ],
           "hasFingerprint": true,
           "fingerprintOwner": "Margaret Sorensen",
@@ -2560,7 +2567,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "onRead": { "setVariable": { "albion_folder_opened": true } },
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "Printer tray, empty. It prints what the drop link takes: submit the next flag and come back.",
+          "observations": "Printer tray, empty. It prints what the drop link takes: submit the owner flag and come back.",
           "observationVariants": [
             { "condition": "globalVars.flag3_submitted", "value": "Three documents printed off the box, stapled together." }
           ],
@@ -2578,7 +2585,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "Printer tray, empty. It prints what the drop link takes: submit the next flag and come back.",
+          "observations": "Printer tray, empty. It prints what the drop link takes: take full control and submit it, then come back.",
           "observationVariants": [
             { "condition": "globalVars.flag4_submitted", "value": "Two pages in the printer tray. The first is signed." }
           ],
@@ -2687,6 +2694,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "old_coyote_ko": false,
     "old_coyote_told": false,
     "old_coyote_cover_given": false,
+    "old_coyote_quiet": false,
     "sorensen_fate": "left",
     "tran_outcome": "left",
     "reading_told_hax": false,
