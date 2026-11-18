@@ -1308,6 +1308,47 @@ def scenario_npc_records(json_data)
   records + headless_npc_records(json_data)
 end
 
+# Item types whose has_<type> ink variable the engine can set from something other than the NPC's
+# itemsHeld: syncInventoryVariablesToStory (npc-conversation-state.js) sets has_keycard to "the
+# player holds anything" and has_rfid_cloner to "the player holds a cloner" in person-chat, after
+# the itemsHeld sync. A #give_item inside {has_keycard: ...} can therefore render for an NPC that
+# holds none, so it is still checked. Every other has_<type> comes only from itemsHeld
+# (person-chat-conversation.js syncItemsToInk), so its branch cannot render for an NPC without
+# the item.
+GIVE_ITEM_PLAYER_SYNCED_HAS_VARS = %w[keycard rfid_cloner].freeze
+
+# For each line of an ink file, the has_<type> item types whose `{has_<type>:` branch encloses it.
+# Brace-depth tracking over the file; only plain `{has_x:` or `{has_x and ...:` conditions count
+# (a condition with `or` or `not has_x` does not prove the NPC holds x).
+def ink_has_item_branches(ink_lines)
+  stack = []
+  ink_lines.map do |line|
+    types_at_start = stack.flat_map(&:itself).compact
+    here = types_at_start.dup
+    i = 0
+    text = line.sub(%r{//.*}, '')
+    while i < text.length
+      ch = text[i]
+      if ch == '{'
+        cond = text[i + 1..].to_s[/\A([^:{}|]*):/, 1].to_s.strip
+        terms = cond.split(/\s+and\s+/).map(&:strip)
+        types = cond.match?(/\bor\b|\bnot\b|!/) ? [] : terms.filter_map { |t| t[/\Ahas_(\w+)\z/, 1] }
+        stack << types
+        here.concat(types)
+      elsif ch == '}'
+        stack.pop
+      end
+      i += 1
+    end
+    here
+  end
+end
+
+# True when a #give_item:<type> sits in a {has_<type>: ...} branch that only the NPC's itemsHeld can open.
+def give_item_guarded_by_has_branch?(branch_types, item_type)
+  branch_types.include?(item_type) && !GIVE_ITEM_PLAYER_SYNCED_HAS_VARS.include?(item_type)
+end
+
 # Check for #give_item tags left after the last line of text they belong to.
 # A tag on its own line attaches to the next line of text below it (inkjs gives it
 # with that line's Continue(), and every chat reads tags line by line), so a tag
@@ -1454,12 +1495,15 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
         # in the NPC's itemsHeld array. If not, the give will silently fail at runtime.
         items_held_types = entry[:items_held_types] || []
         items_held = entry[:items_held] || []
+        has_branches = ink_has_item_branches(ink_lines)
         ink_lines.each_with_index do |line, i|
           stripped = line.strip
           next unless stripped.start_with?('#give_item:')
 
           item_spec = stripped.sub(/^#give_item:/, '').strip
           item_type, item_selector = item_spec.split(/[|:]/, 2).map(&:strip)
+          # Inside {has_<type>: ...} the choice only renders when the NPC holds the type.
+          next if give_item_guarded_by_has_branch?(has_branches[i], item_type)
 
           if item_selector.nil? || item_selector.empty?
             unless items_held_types.include?(item_type)
@@ -6148,6 +6192,58 @@ def desk_box_maps(json_data, repo_root)
   out
 end
 
+COMPASS8_ANGLE = %w[south south-east east north-east north north-west west south-west].each_with_index.to_h { |n, i| [n, i * 45] }.freeze
+
+# Static chairs' fixed facings, read from seating.js (STATIC_SEATS, HOSPITAL_S/N), by texture name.
+def static_seat_facings(repo_root)
+  js = File.join(repo_root, 'public/break_escape/js/systems/seating.js')
+  return {} unless File.exist?(js)
+  src = File.read(js)
+  alias_facing = {}
+  src.scan(/const (HOSPITAL_[SN]) = \{ facing: '([\w-]+)'/) { |n, f| alias_facing[n] = f }
+  body = src[/const STATIC_SEATS = \{(.*?)^\};/m, 1].to_s
+  out = {}
+  body.scan(/['"]?([\w-]+)['"]?: (?:\{ facing: '([\w-]+)'|(HOSPITAL_[SN]))/) { |k, f, a| out[k] = f || alias_facing[a] }
+  out
+end
+
+# Warnings for a coordinate needsHome whose `facing` is more than 67 degrees off a static chair within
+# 36 px of the home: seating.js refuses such a chair (it cannot turn), so the NPC stands or fetches a swivel.
+def home_facing_static_chair_conflicts(json_data, repo_root, room_npcs)
+  facings = static_seat_facings(repo_root)
+  return [] if facings.empty?
+  type_map = geom_type_to_tilemap(repo_root)
+  out = []
+  room_npcs.each do |e|
+    h = e[:npc]['needsHome']
+    next unless h.is_a?(Hash) && COMPASS8_ANGLE.key?(h['facing']) && h['room']
+    type = (json_data['rooms'] || {}).dig(h['room'], 'type')
+    file = type && type_map[type]
+    path = file && File.join(repo_root, 'public/break_escape/assets/rooms', file)
+    next unless path && File.exist?(path)
+    map = JSON.parse(File.read(path)) rescue next
+    hx = h['x'].to_f * GEOM_TILE_SIZE
+    hy = h['y'].to_f * GEOM_TILE_SIZE
+    sets = (map['tilesets'] || []).select { |t| t['firstgid'] }.sort_by { |t| -t['firstgid'] }
+    (map['layers'] || []).each do |layer|
+      (layer['objects'] || []).each do |o|
+        next unless o['gid']
+        ts = sets.find { |t| t['firstgid'] <= o['gid'] }
+        img = ts && (ts['tiles'] || []).find { |t| t['id'] == o['gid'] - ts['firstgid'] }&.fetch('image', nil)
+        facing = img && facings[File.basename(img, '.png')]
+        next unless facing
+        next if Math.hypot(o['x'].to_f + o['width'].to_f / 2 - hx, o['y'].to_f - 4 - hy) > 36
+        d = (COMPASS8_ANGLE[h['facing']] - COMPASS8_ANGLE[facing]).abs % 360
+        d = 360 - d if d > 180
+        next if d <= 67
+        out << "NPC '#{e[:npc]['id']}' needsHome facing '#{h['facing']}' contradicts the static chair '#{File.basename(img, '.png')}' " \
+               "(faces #{facing}) at its home: a static chair more than 67 degrees off the facing is refused, so the NPC stands or fetches a loose swivel chair."
+      end
+    end
+  end
+  out
+end
+
 # Build the room-type -> tilemap-file map from the engine's loader.
 def geom_type_to_tilemap(repo_root)
   game_js = File.join(repo_root, 'public/break_escape/js/core/game.js')
@@ -8083,6 +8179,10 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     warn.call("account '#{e[:npc]['id']}' has needsHome '#{home}', a sign-in PC whose access list does not admit it.")
   end
 
+  if repo_root
+    home_facing_static_chair_conflicts(json_data, repo_root, room_npcs).each { |m| warn.call(m) }
+  end
+
   # Owners placed in a different room from their workstation (section 5.4)
   workstations = objects.select { |e| ai.workstation?(e[:object]) }
   ws_room = {}
@@ -8196,6 +8296,35 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
       opens = a[:opens].empty? ? 'no sign-in PC' : a[:opens].map { |l| "'#{l[:id]}'" }.join(', ')
       issues << "ℹ️ Identity reach: account '#{a[:npc]['creds']['username']}' (#{a[:npc]['id']}) signs in at #{opens}"
     end
+  end
+
+  # closeDoor names a room with no gate (scenario-schema.json closeDoor: "Warns if the door is
+  # not a gate"). door-gates.js closeNow matches a gate whose own room or connectedRoom is the
+  # id, among the gates it registers: enabled, on a north or south door, on an entry doors.js
+  # reads. Anything else only logs a console warning in play. Unknown room ids are reported by
+  # the schema's room reference check, so they are skipped here.
+  if rooms.any?
+    gated = BreakEscape::NpcHabits.gate_entries(json_data)
+                                  .reject { |g| %w[east west].include?(g[:direction].to_s) || g[:doorway] }
+                                  .flat_map { |g| [g[:room], g[:connected_room]] }.grep(String).to_set
+    walk_close = lambda do |node, path|
+      case node
+      when Hash
+        if node.key?('closeDoor')
+          Array(node['closeDoor']).grep(String).each do |rid|
+            next unless rooms.key?(rid) && !gated.include?(rid)
+
+            warn.call("'#{path}' closeDoor '#{rid}': no gate door leads into or out of that room, so " \
+                      'nothing shuts in play. Add a gate on a north or south door of that room, or name ' \
+                      'the room the gate is on.')
+          end
+        end
+        node.each { |k, v| walk_close.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+      when Array
+        node.each_with_index { |v, i| walk_close.call(v, "#{path}/#{i}") }
+      end
+    end
+    walk_close.call(json_data, '')
   end
 
   issues

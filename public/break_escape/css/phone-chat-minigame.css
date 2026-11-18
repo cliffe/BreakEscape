@@ -74,6 +74,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;   /* clear space between the battery reading and the Notepad button */
     padding: 10px 15px;
     background: rgba(0, 0, 0, 0.1);
     border-bottom: 2px solid #333;
@@ -661,6 +662,11 @@
 .phone-terminal-theme .phone-header {
     background: #000;
     border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+    /* Notepad (GNF 16px) plus the status line must fit the 350px content box of a 400px phone
+       without wrapping: a 4px gap and 12px side padding give the line room to spare. */
+    gap: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 .phone-terminal-theme .phone-header .signal-bars,
@@ -1612,12 +1618,12 @@
     color: #000;
     border: 2px solid #333;
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
     position: relative;
 }
-.phone-notepad-btn .notepad-btn-icon { width: 14px; height: 14px; image-rendering: pixelated; }
+.phone-notepad-btn .notepad-btn-icon { width: 16px; height: 16px; image-rendering: pixelated; }
 .phone-notepad-btn:hover { background: rgba(0, 0, 0, 0.16); }
 /* 44px touch target without changing the drawn size (as the close button does) */
 @media (max-width: 600px), (pointer: coarse) {

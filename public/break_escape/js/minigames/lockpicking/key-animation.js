@@ -590,6 +590,9 @@ export class KeyAnimation {
         `;
         // this.showSuccess(successHTML, false, 2000);
         
+        // The pick is decided: a close during the animation still unlocks the lock
+        this.parent.markSuccessPending();
+        this.parent.gameResult = { lockable: this.parent.lockable };
         // Delay the actual game completion until animation finishes
         setTimeout(() => {
             // Now trigger the success callback that unlocks the game

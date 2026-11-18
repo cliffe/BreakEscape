@@ -553,7 +553,7 @@ test('C-X7 golden: the step strip outerHTML is unchanged (done, current, future)
     const s = open(makeSet());
     s._showStep('sort');
     assert.equal(s.stepsEl.outerHTML,
-        '<ol class="tri-steps" aria-label="Steps"><li class="tri-step done" data-step="brief">1 Brief</li>'
+        '<ol class="tri-steps" aria-label="Steps"><li class="tri-step done" data-step="brief">1 Brief<span class="tri-step-sr"> (done)</span></li>'
         + '<li class="tri-step current" data-step="sort" aria-current="step">2 Sort</li>'
         + '<li class="tri-step" data-step="review">3 Review</li>'
         + '<li class="tri-step" data-step="result">4 Result</li></ol>');

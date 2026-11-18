@@ -11,7 +11,7 @@ TESTING_WALKTHROUGH.md. Finish with `tools/playtest/verify-run.rb`.
 
 1. **Briefing.** Let the opening play. Pick "Which exchange?" then "How do I get in?" then "I'm ready."
    Expect: about 10 lines, the FCA cover heard, the kit line, the "two calls" close. Replay in a
-   second game picking "Which payments?" / "Why would Volkova help us?" / "What am I looking for?":
+   second game picking "Which payments?" / "Why would Volkova help us?" / "How do I get in?" / "What am I looking for?" (How do I get in? stays on offer after the Volkova question):
    the cover is heard on that route too.
 2. **Guard and Irina.** Through the checkpoint by any route; talk to Irina, get the wordlist.
    Expect: HaX's text after Irina's first close points east to the analysts. Picking up the

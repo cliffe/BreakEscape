@@ -214,9 +214,19 @@
   flex-direction: column;
   gap: 10px;
   font-size: 6px;
-  overflow: hidden;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* a short window scrolls the panel instead of cutting the last VIS MODE button */
   box-shadow: 0 0 8px rgba(0,255,65,0.08);
+  scrollbar-width: thin;
+  /* Chrome 121+ uses these and ignores the webkit rules below, so the thumb is the bright green */
+  scrollbar-color: var(--bv-green) var(--bv-green-dim);
 }
+
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar { width: 8px; height: 8px; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-track { background: transparent; border-left: 2px solid var(--bv-green-dim); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-thumb { background: var(--bv-green-dim); border: 2px solid var(--bv-green); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 
 @media (max-width: 700px) {
   #bond-vis-overlay .bv-header { flex-wrap: wrap; gap: 8px 12px; }
@@ -382,9 +392,15 @@
 /* ── Mode selector in right panel ──────────────────────────────────────── */
 
 #bond-vis-overlay .bv-mode-group-panel {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
-  flex-wrap: wrap;
+}
+
+/* three to a row in the 160px panel: 11 buttons take four short rows */
+#bond-vis-overlay .bv-mode-group-panel .bv-btn {
+  padding: 6px 2px;
+  text-align: center;
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */

@@ -195,33 +195,33 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "GHOST IN THE MACHINE", "style": "subtitle" },
           { "text": "" },
           { "text": "ZERO DAY SYNDICATE: EXPOSED", "style": "entry", "condition": "globalVars.victoria_fate !== 'recruited'" },
-          { "text": "ZERO DAY SYNDICATE: COMPROMISED — from the inside", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
-          { "text": "ST. CATHERINE'S LINK: PROVEN — ProFTPD exploit traced to GHOST", "style": "entry" },
-          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS — vendors warned, buyers on notice, Phase 2 stock flagged", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
+          { "text": "ZERO DAY SYNDICATE: COMPROMISED, from the inside", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
+          { "text": "ST. CATHERINE'S LINK: PROVEN, ProFTPD exploit traced to GHOST", "style": "entry" },
+          { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS, vendors warned, buyers on notice, Phase 2 stock flagged", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate !== 'recruited'" },
           { "text": "ZERO DAY CATALOGUE: IN SAFETYNET HANDS, folded into routine advisories over the coming months", "style": "entry", "condition": "(globalVars.catalogue_seen === true || globalVars.lore_catalogue_found === true) && globalVars.victoria_fate === 'recruited'" },
-          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED — the sales ledger and the reserved stock are still in the safe", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
-          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE — but its sales ledger isn't in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: NOT RECOVERED, the sales ledger and the reserved stock are still in the safe", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate !== 'arrested'" },
+          { "text": "ZERO DAY CATALOGUE: SEIZED WITH THE MARKETPLACE, but its sales ledger isn't in our hands", "style": "warning", "condition": "globalVars.catalogue_seen !== true && globalVars.lore_catalogue_found !== true && globalVars.victoria_fate === 'arrested'" },
           { "text": "PHASE 2 DIRECTIVE: DECODED BY THE AGENT. Grid and hospitals, this winter", "style": "entry", "condition": "globalVars.directive_decoded === true && globalVars.directive_guessed !== true" },
           { "text": "PHASE 2 DIRECTIVE: RECOVERED BY THE AGENT, decoded at HQ", "style": "entry", "condition": "(globalVars.directive_decoded !== true || globalVars.directive_guessed === true) && (globalVars.usb_seen === true || globalVars.lore_directive_found === true)" },
           { "text": "PHASE 2 DIRECTIVE: FOUND IN STERLING'S DESK BY THE SEARCH TEAM", "style": "entry", "condition": "globalVars.directive_decoded !== true && globalVars.usb_seen !== true && globalVars.lore_directive_found !== true" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
-          { "text": "APPROACH: THOROUGH — document everything", "style": "entry", "condition": "globalVars.player_approach === 'cautious'" },
-          { "text": "APPROACH: FAST — grab the objectives, get out", "style": "entry", "condition": "globalVars.player_approach === 'aggressive'" },
-          { "text": "APPROACH: FLEXIBLE — read the situation", "style": "entry", "condition": "globalVars.player_approach === 'diplomatic'" },
-          { "text": "STERLING'S NHS QUESTION: TAKE THE FORTY — said too quickly to be believed", "style": "entry", "condition": "globalVars.victoria_test_answer === 'sold'" },
-          { "text": "STERLING'S NHS QUESTION: REPORT IT, THEN INVOICE — a conscience keeping its options open", "style": "entry", "condition": "globalVars.victoria_test_answer === 'hedged'" },
-          { "text": "STERLING'S NHS QUESTION: ASKED WHAT THE BUYER WANTED IT FOR — she should have ended the interview there", "style": "entry", "condition": "globalVars.victoria_test_answer === 'asked'" },
-          { "text": "VICTORIA STERLING: TURNED — a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
-          { "text": "VICTORIA STERLING: ARRESTED — marketplace seized, the name kept from The Architect", "style": "entry", "condition": "globalVars.victoria_fate === 'arrested'" },
-          { "text": "VICTORIA STERLING: ESCAPED — the evidence stayed, she didn't", "style": "entry", "condition": "globalVars.victoria_fate === 'escaped'" },
-          { "text": "VICTORIA STERLING: NEUTRALISED — taken down on site", "style": "entry", "condition": "globalVars.victoria_fate === 'ko'" },
-          { "text": "DANNY FOSTER: PROTECTED — came in on his own, not charged", "style": "entry", "condition": "globalVars.danny_fate === 'protected' && globalVars.danny_ko !== true" },
-          { "text": "DANNY FOSTER: EXPOSED — named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.danny_fate === 'exposed' && globalVars.danny_ko !== true" },
-          { "text": "DANNY FOSTER: LEFT TO CHOOSE — phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left' && globalVars.danny_ko !== true" },
+          { "text": "APPROACH: THOROUGH, document everything", "style": "entry", "condition": "globalVars.player_approach === 'cautious'" },
+          { "text": "APPROACH: FAST, grab the objectives, get out", "style": "entry", "condition": "globalVars.player_approach === 'aggressive'" },
+          { "text": "APPROACH: FLEXIBLE, read the situation", "style": "entry", "condition": "globalVars.player_approach === 'diplomatic'" },
+          { "text": "STERLING'S NHS QUESTION: TAKE THE FORTY, said too quickly to be believed", "style": "entry", "condition": "globalVars.victoria_test_answer === 'sold'" },
+          { "text": "STERLING'S NHS QUESTION: REPORT IT, THEN INVOICE, a conscience keeping its options open", "style": "entry", "condition": "globalVars.victoria_test_answer === 'hedged'" },
+          { "text": "STERLING'S NHS QUESTION: ASKED WHAT THE BUYER WANTED IT FOR, she should have ended the interview there", "style": "entry", "condition": "globalVars.victoria_test_answer === 'asked'" },
+          { "text": "VICTORIA STERLING: TURNED, a cold asset now, not a convert", "style": "entry", "condition": "globalVars.victoria_fate === 'recruited'" },
+          { "text": "VICTORIA STERLING: ARRESTED, marketplace seized, the name kept from The Architect", "style": "entry", "condition": "globalVars.victoria_fate === 'arrested'" },
+          { "text": "VICTORIA STERLING: ESCAPED, the evidence stayed, she didn't", "style": "entry", "condition": "globalVars.victoria_fate === 'escaped'" },
+          { "text": "VICTORIA STERLING: NEUTRALISED, taken down on site", "style": "entry", "condition": "globalVars.victoria_fate === 'ko'" },
+          { "text": "DANNY FOSTER: PROTECTED, came in on his own, not charged", "style": "entry", "condition": "globalVars.danny_fate === 'protected' && globalVars.danny_ko !== true" },
+          { "text": "DANNY FOSTER: EXPOSED, named in full, charged alongside Zero Day", "style": "entry", "condition": "globalVars.danny_fate === 'exposed' && globalVars.danny_ko !== true" },
+          { "text": "DANNY FOSTER: LEFT TO CHOOSE, phone off, whereabouts unknown", "style": "warning", "condition": "globalVars.danny_fate === 'left' && globalVars.danny_ko !== true" },
           { "text": "DANNY FOSTER: TAKEN DOWN IN HIS OWN OFFICE", "style": "warning", "condition": "globalVars.danny_fate === 'ko'" },
           { "text": "DANNY FOSTER: KNOCKED OUT AFTER YOU'D SPOKEN, picked up in his office", "style": "warning", "condition": "globalVars.danny_ko === true && globalVars.danny_fate !== 'ko' && !!globalVars.danny_fate" },
-          { "text": "DANNY FOSTER: NEVER FOUND — his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
+          { "text": "DANNY FOSTER: NEVER FOUND, his name is still in the recon files", "style": "warning", "condition": "!globalVars.danny_fate" },
           { "text": "NINE MORE HOSPITALS ON THE SAME FTP BUILD: named by Foster, patched before the next job", "style": "entry", "condition": "globalVars.danny_named_sites === true" },
           { "text": "THE NEXT HOSPITAL: somewhere on the 214-site survey, still running St. Catherine's build", "style": "warning", "condition": "globalVars.danny_named_sites !== true" },
           { "text": "TERRY MOTT, NIGHT GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
@@ -580,7 +580,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "type": "rfid_cloner",
       "name": "RFID Cloner",
       "takeable": true,
-      "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
+      "observations": "Concealed RFID cloning device: get close to a keycard to copy it",
       "puzzle_graph_role": "tool"
     },
     {
@@ -724,10 +724,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "npcType": "person",
           "gender": "male",
           "position": {"x": 480, "y": 500},
-          "spriteSheet": "male_spy_v2",
-          "spriteTalk": "assets/characters/male_spy_talk.png",
-          "spriteVisemes": "assets/characters/male_spy_visemes.png",
-          "avatar": "assets/characters/male_spy_headshot.png",
+          "spriteSheet": "netherton",
+          "spriteTalk": "assets/characters/netherton_talk.png",
+          "spriteVisemes": "assets/characters/netherton_visemes.png",
+          "avatar": "assets/characters/netherton_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "behavior": { "initiallyHidden": true },
           "voice": {
@@ -804,7 +804,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "id": "visitor_badge",
               "name": "Visitor Badge",
               "takeable": true,
-              "observations": "WhiteHat Security visitor badge — keep it visible inside the building"
+              "observations": "WhiteHat Security visitor badge: keep it visible inside the building"
             },
             {
               "type": "keycard",
@@ -812,7 +812,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "rfid_protocol": "MIFARE_Classic_Weak_Defaults",
               "name": "Staff Access Badge",
               "takeable": true,
-              "observations": "The receptionist's physical staff badge — opens the conference area. If you took it the hard way, you skipped cloning it.",
+              "observations": "The receptionist's physical staff badge: opens the conference area. If you took it the hard way, you skipped cloning it.",
               "puzzle_graph_note": "Cloned from her lanyard with the RFID cloner (or dropped on a KO)",
               "puzzle_graph_unlocks": ["conference_room_01"],
               "puzzle_graph_and_with": "rfid_cloner"
@@ -946,7 +946,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "SAFETYNET Field Guide: RFID Cloning",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/rfid-cloning/",
-              "observations": "Read, crack, emulate: cloning MIFARE badges — weak-default cards in seconds, custom-key cards with a recovery attack"
+              "observations": "Read, crack, emulate: cloning MIFARE badges (weak-default cards in seconds, custom-key cards with a recovery attack)"
             },
             {
               "type": "lab-workstation",
@@ -962,7 +962,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
-              "observations": "nmap host and service discovery — map the training network before you touch it"
+              "observations": "nmap host and service discovery: map the training network before you touch it"
             },
             {
               "type": "lab-workstation",
@@ -978,7 +978,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "SAFETYNET Field Guide: Encoding and Decoding with CyberChef",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/encoding-and-decoding-with-cyberchef/",
-              "observations": "ROT13, Base64, hex and multi-layer decoding — encoding is not encryption"
+              "observations": "ROT13, Base64, hex and multi-layer decoding: encoding is not encryption"
             },
             {
               "type": "lab-workstation",
@@ -1532,6 +1532,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "position": {"x": 500, "y": 500},
           "spriteSheet": "male_hacker_hood_down_v2",
           "spriteTalk": "assets/characters/male_hacker_hood_down_talk.png",
+          "spriteVisemes": "assets/characters/male_hacker_hood_down_v2_visemes.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_night_transition.json",
           "currentKnot": "start",
@@ -1699,7 +1700,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "rfid_protocol": "MIFARE_Classic_Custom_Keys",
               "name": "Executive Keycard",
               "takeable": true,
-              "observations": "Victoria's physical executive keycard — opens the server room. Taking it off her means you never needed to clone it.",
+              "observations": "Victoria's physical executive keycard: opens the server room. Taking it off her means you never needed to clone it.",
               "puzzle_graph_note": "Cloned at the whiteboard during the interview with the RFID cloner (or dropped on a KO)",
               "puzzle_graph_unlocks": ["server_room"],
               "puzzle_graph_and_with": "rfid_cloner"
@@ -1835,10 +1836,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               keys on objective_task_completed:submit_*_flag, so none of this gates the
               ending. %>
           "flagRewards": [
-            { "type": "give_item", "item_name": "Training Network Map", "label": "Training network mapped — their service list is in hand.", "description": "network-scan flag submitted - the drop-site prints the scan's service map" },
+            { "type": "give_item", "item_name": "Training Network Map", "label": "Training network mapped: their service list is in hand.", "description": "network-scan flag submitted - the drop-site prints the scan's service map" },
             { "type": "give_item", "item_name": "FTP Rehearsal Note", "label": "FTP box rooted. Its operator note says there's a next hospital.", "description": "FTP flag submitted - the drop-site prints the operator note off the FTP box" },
             { "type": "give_item", "item_name": "Zero Day Price List", "label": "Pricing intelligence decoded.", "description": "pricing flag submitted - the drop-site prints the decoded price list" },
-            { "type": "give_item", "item_name": "Zero Day Transaction Log", "label": "distcc box compromised — the transaction log prints out.", "description": "distcc flag submitted - the drop-site prints the recovered transaction log" }
+            { "type": "give_item", "item_name": "Zero Day Transaction Log", "label": "distcc box compromised: the transaction log prints out.", "description": "distcc flag submitted - the drop-site prints the recovered transaction log" }
           ],
           "itemsHeld": [
             {
