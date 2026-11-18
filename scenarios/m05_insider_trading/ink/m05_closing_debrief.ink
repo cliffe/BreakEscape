@@ -315,13 +315,23 @@ Agent HaX: Let's go through it.
 === the_night ===
 #speaker:agent_0x99
 
-// Blind m05 #3: the recap lines about the badge-log reading are cut (the player has just done it).
+// Blind m05 #3 cut four plain recap lines here (front-door times in the end, read past the
+// obvious line, Halloran told you whose spare, badge log in your kit): the player has just
+// done that reading, so they only repeated it. Do not reinstate them. The D1 early-naming
+// credit below is a choice-dependent payoff, so it stays (restored after review R1, M3).
+
+// PASS 5 (D1): the deduction paid off before the server confirmed it.
+// R2 (B1, B2), R3-1: only when it came from reading the log, first time
+// (a reason-menu answer before the naming, not the post-naming disclosure).
+{named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused and not door_log_hinted:
+    Agent HaX: You had him before the server did. The research portal only showed a badge; you'd already put his name to it.
+}
 
 // PASS 4 (whodunnit): how the player read the badge log.
 {
 - halloran_accused:
     Agent HaX: Dr Halloran spent hours suspended because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
-// Struggling run A (D3): a wrong name or reason, without the log reasoning.
+// Struggling run A (D3): a wrong name or reason (with or without the log reasoning).
 - torres_reason_guessed:
     Agent HaX: You gave a wrong name or a wrong reason before the right one. Patricia's report says so, and so does mine.
 }
@@ -375,7 +385,7 @@ Agent HaX: Once you were in, one account was allowed to run far more than its jo
     }
     {found_door_log or found_incident_log:
         {header_said:
-            // C2 (D5C2-2): the_night has already given the badge log's facts.
+            // C2 (D5C2-2): the_night no longer recaps the log, so this is the first mention of it.
             {found_door_log:
                 Agent HaX: Hours. Two in the morning, week after week, and nobody asked why.
             - else:

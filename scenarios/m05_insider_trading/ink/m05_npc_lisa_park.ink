@@ -91,7 +91,7 @@ Lisa Park: His wife's got cancer. Stage 3. The treatment that might work is a tr
 Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks like he hasn't slept in months.
 
 // Blind m05 #6: this choice closes the question of who, so the button says so. All inside the brackets: text outside them would print as a new Lisa line.
-+ [That's rough. Thanks for telling me. (Let it lie. You won't ask who.)]
++ [That's rough. I won't ask who. Thanks for telling me.]
     ~ lisa_influence += 10
     #influence_increased
     Lisa Park: He'd hate that I told you even that much. He can't stand a fuss.

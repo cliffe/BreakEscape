@@ -3,7 +3,7 @@
 // Run with: node test/js/dusting-candidate-count.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -20,6 +20,7 @@ globalThis.document = { getElementById: () => null, createElement: el, head: { a
 globalThis.Image = class {};
 const mod = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-game.js')).href);
 const { generatePrint } = await import(pathToFileURL(join(root, 'js/minigames/dusting/fingerprint-generator.js')).href);
+const { patternForOwner } = await import(pathToFileURL(join(root, 'js/minigames/dusting/fingerprint-generator.js')).href);
 const { DIFFICULTY } = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-model.js')).href);
 const Game = mod.DustingMinigame;
 
@@ -51,4 +52,64 @@ test('fingerprintCandidateCount 4 gives four cards, one correct, owner among the
 test('out-of-range counts are ignored', () => {
     assert.equal(build({ fingerprintCandidates: names, fingerprintCandidateCount: 9 }).candidates.length, 2);
     assert.equal(build({ fingerprintCandidates: names, fingerprintCandidateCount: 1 }).candidates.length, 2);
+});
+
+// The real m05 mug data, read from the scenario file (ERB tags stripped; the field sits in plain JSON).
+const mug = (() => {
+    const src = readFileSync(join(here, '../../scenarios/m05_insider_trading/scenario.json.erb'), 'utf8');
+    const at = src.indexOf('"id": "torres_mug"');
+    const from = src.lastIndexOf('{', at);
+    let depth = 0, end = from;
+    for (let i = from; i < src.length; i++) { if (src[i] === '{') depth++; if (src[i] === '}' && --depth === 0) { end = i; break; } }
+    return JSON.parse(src.slice(from, end + 1));
+})();
+const buildMug = () => {
+    const g = Object.create(Game.prototype);
+    Object.assign(g, {
+        data: mug, objectId: mug.id, owner: mug.fingerprintOwner, ownerName: mug.fingerprintOwner, diff: DIFFICULTY[mug.fingerprintDifficulty],
+        print: generatePrint({ owner: mug.fingerprintOwner, pattern: patternForOwner(mug.fingerprintOwner), variant: 'panel' })
+    });
+    g._buildCandidates();
+    return g;
+};
+
+test('the real mug builds the same four cards every time, with the owner correct', () => {
+    const a = buildMug(), b = buildMug();
+    assert.equal(a.candidates.length, 4);
+    assert.deepEqual(a.candidates.map(c => [c.label, c.pattern, c.correct]), b.candidates.map(c => [c.label, c.pattern, c.correct]));
+    assert.equal(a.candidates.filter(c => c.correct).length, 1);
+    assert.equal(a.candidates[a.correctIndex].label, 'David Torres');
+});
+
+test('the real mug has a forced decoy in the lift class, so class alone is not enough', () => {
+    const g = buildMug();
+    const lift = g.print.pattern;
+    const same = g.candidates.filter(c => !c.correct && c.pattern === lift);
+    assert.equal(same.length, 1);
+    assert.equal(same[0].label, 'Owen Gallagher');
+    // fair: it still differs from the lift in a feature, so the minutiae step rejects it with a reason
+    const g2 = buildMug();
+    g2._renderPanel = () => {}; g2._drawCard = () => {}; g2.announce = () => {}; g2.viewing = null;
+    const i = g2.candidates.findIndex(c => c.label === 'Owen Gallagher');
+    g2._chooseRef(i);
+    assert.equal(g2.candidates[i].rejected, true);
+    assert.ok(g2.message && g2.message.length > 0);
+    assert.notEqual(g2.identified, true);
+});
+
+test('key 4 picks the fourth card in the Compare step', () => {
+    const g = buildMug();
+    const picked = [];
+    g._chooseRef = i => picked.push(i);
+    Object.assign(g, { gameState: { isActive: true }, step: 'compare', patternOk: true, identified: false });
+    const press = key => g._onKeyDown({ key, target: { tagName: 'DIV' }, preventDefault() {} });
+    press('4'); press('5'); press('1');
+    assert.deepEqual(picked, [3, 0]);
+    // with two cards, 3 is out of range
+    const h = build({ fingerprintCandidates: names });
+    const got = [];
+    h._chooseRef = i => got.push(i);
+    Object.assign(h, { gameState: { isActive: true }, step: 'compare', patternOk: true, identified: false });
+    h._onKeyDown({ key: '3', target: { tagName: 'DIV' }, preventDefault() {} });
+    assert.deepEqual(got, []);
 });

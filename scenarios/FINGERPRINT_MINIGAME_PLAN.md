@@ -314,6 +314,7 @@ Every existing field keeps its meaning, so m04, m05, `biometric_breach`, `ceo_ex
 | `fingerprintPattern` | object | new, optional | Force `loop` / `whorl` / `arch` (for a story that names the pattern). |
 | `fingerprintSurface` | object | new, optional | `glossy_light` / `glossy_dark` / `textured`. Default from the object type: `pc`, screens, terminals and phones are `glossy_dark`; cups and mugs `glossy_light`; keyboards and keypads `textured`; anything else `glossy_light`. |
 | `fingerprintCandidates` | object | new, optional | Array of names to use as compare references in place of NPC names. |
+| `fingerprintCandidateCount` | object | optional | Integer 2 to 4: how many reference cards the Compare step shows, instead of the difficulty's default (easy 2). Other values are ignored. Keys `1` to `n` pick a card. m05's Torres mug asks for 4. Pair it with a `{ name, pattern }` entry in `fingerprintCandidates` that matches the lift's class, so ridge comparison is needed on easy. |
 
 What this means for the two live missions, with no scenario edits:
 

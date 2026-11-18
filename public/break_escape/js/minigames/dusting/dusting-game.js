@@ -796,6 +796,11 @@ export class DustingMinigame extends MinigameScene {
             // on every surface in the mission (stable sort keeps the seeded order otherwise)
             pool.sort((a, b) => (patternForOwner(a) === lp) - (patternForOwner(b) === lp));
         }
+        // A card the scenario fixed to a pattern class is always dealt, whatever the shuffle or sort above did.
+        if (forced.size) {
+            const keep = pool.filter(nm => forced.has(String(nm)));
+            pool.splice(0, pool.length, ...keep, ...pool.filter(nm => !forced.has(String(nm))));
+        }
         const decoyNames = [];
         for (let k = 0; k < n - 1; k++) decoyNames.push(pool[k] || fallback[k]);
 
@@ -941,7 +946,7 @@ export class DustingMinigame extends MinigameScene {
         if (tag === 'INPUT' && t.type === 'text') return;
         const lower = k.length === 1 ? k.toLowerCase() : k;
         if (this.step === 'powder' && ['1', '2', '3'].includes(lower)) { this._choosePowder(Object.keys(POWDERS)[Number(lower) - 1]); return; }
-        if (this.step === 'compare' && this.patternOk && !this.identified && ['1', '2', '3'].includes(lower)) {
+        if (this.step === 'compare' && this.patternOk && !this.identified && /^[1-9]$/.test(lower) && Number(lower) <= this.candidates.length) {
             e.preventDefault();
             this._chooseRef(Number(lower) - 1);
             return;
