@@ -1409,7 +1409,7 @@ export class NPCBehavior {
         // (a leg longer than the interval used to be cut short, so the NPC never
         // arrived or dwelt: m02 Val, 3.6 s legs against the 3 s default) and only
         // re-targets if it has stopped making progress for that long.
-        if (this._playerPass?.active && this._tickPlayerPass(this.npcBodyPos())) return;
+        if (this._playerPass?.active && this._tickPlayerPass(this.npcBodyPos(), time)) return;
         const intervalElapsed = time - this.lastPatrolChange > this.config.patrol.changeDirectionInterval;
         if (!this.patrolTarget ||
             this.currentPath.length === 0 ||
@@ -1964,9 +1964,15 @@ export class NPCBehavior {
      * or pickup cell inside the player's body and leave the next walk starting there (code review
      * R1 M1, m1). Returns true when it arrived the walk.
      */
-    _tickPlayerPass(pos) {
+    _tickPlayerPass(pos, time = this.scene?.time?.now ?? 0) {
         const p = this._playerPass;
         if (!p?.active) return false;
+        // The re-issue skip below lasts one AVOID_PLAYER_BLOCK_GAP_MS at most, so a path that never
+        // comes back cannot hold the player's collider off (code review R3 m2).
+        if (p.reissued) {
+            p.reissuedAt ??= time;
+            if (time - p.reissuedAt > AVOID_PLAYER_BLOCK_GAP_MS) p.reissued = false;
+        }
         if (!this._mayPassPlayer()) { this._playerPass = null; return false; }
         const d = this._goToStayDest;
         // Arrive early only when the player is also at the target: that is the case the old collision
@@ -3444,7 +3450,7 @@ export class NPCBehavior {
         const od = this._goToStayDest;
         const sameDest = !!od && Math.hypot(od.x - worldX, od.y - worldY) < 1;
         if (opts?.owner !== 'needs' || !sameDest) this._playerPass = null;
-        else if (this._playerPass) this._playerPass.reissued = true;
+        else if (this._playerPass) { this._playerPass.reissued = true; this._playerPass.reissuedAt = null; }
         this._moveOwner = opts?.owner;
         // Room leash for a needs move: rooms the walk must not enter. A needs move without
         // avoidRooms (seating's chair fetch, in the NPC's own room) keeps the current value;

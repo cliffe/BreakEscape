@@ -1175,3 +1175,21 @@ test('R2 m3: a hostile needs walk gets the near-target squeeze, not a hold', () 
         assert.ok(b._vel.x > 0 && Math.hypot(b._vel.x, b._vel.y) < 90, 'a bounded squeeze toward the item');
     } finally { delete window.npcHostileSystem; }
 });
+
+// ── Code review R3 (docs/agents/REVIEW_npc_squeeze_past_R3.md) ─────────────────────────────────
+
+test('R3 m2: a re-issued pass with no path comes back after one block gap', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    b.sprite.body.center = { x: 0, y: 0 };
+    window.player.body.center = { x: 200, y: 0 };            // clear of the NPC
+    goTo(b, 400, 0);                                         // re-issue: path emptied, pass marked
+    assert.equal(b._playerPass?.reissued, true);
+    b._tickPlayerPass(b.npcBodyPos(), 5000);
+    assert.equal(b._playerPass?.active, true, 'kept inside the gap');
+    b._tickPlayerPass(b.npcBodyPos(), 5000 + AVOID_PLAYER_BLOCK_GAP_MS - 1);
+    assert.equal(b._playerPass?.active, true, 'still inside the gap');
+    b._tickPlayerPass(b.npcBodyPos(), 5000 + AVOID_PLAYER_BLOCK_GAP_MS + 1);
+    assert.equal(b._playerPass, null, 'the path never came back: ended by distance');
+});
