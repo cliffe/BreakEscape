@@ -233,7 +233,7 @@ test('notes: the notepad fits a phone and the nav row is in the flow under it (A
     assert.equal(tape.border, undefined, 'no grey box that reads as an empty field');
     const js = src('minigames/notes/notes-minigame.js');
     assert.match(js, /this\.gameContainer\.after\(navContainer\)/);
-    assert.match(js, /closeAnchor\(\) \{\s*return this\.gameContainer\?\.querySelector\?\.\('\.notes-minigame-notepad'\)/);
+    assert.match(js, /closeAnchor\(\) \{\s*return this\.gameContainer\?\.querySelector\?\.\('\.notes-minigame-page-edge'\)\s*\|\| this\.gameContainer\?\.querySelector\?\.\('\.notes-minigame-notepad'\)/);
     assert.match(js, /notes-minigame-content-area pixel-scroll/);
 });
 

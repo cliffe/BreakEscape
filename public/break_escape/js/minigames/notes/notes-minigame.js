@@ -17,6 +17,11 @@ function setObservationText(div, text) {
 }
 
 
+// Whether a page has text below its visible part (the MORE cue). Pure.
+export function moreBelow(scrollHeight, clientHeight, scrollTop) {
+    return scrollHeight - clientHeight - scrollTop > 4;
+}
+
 // Pixelify Sans and VT323 are self-hosted in css/fonts.css (no remote font links).
 
 // Notes Minigame Scene implementation
@@ -27,9 +32,12 @@ export class NotesMinigame extends MinigameScene {
     // Continue (A05). Every other note closes with the X or Esc alone.
     static keepsCancelButton = true;
 
-    // The X sits in the notepad's top-right corner, not out at the window's edge
+    // The X sits in the paper's top-right corner, not out at the window's edge. The art's paper
+    // ends at column 154 of 165 (the rest is shadow and transparent), so the anchor is an empty
+    // box over the paper only (.notes-minigame-page-edge)
     closeAnchor() {
-        return this.gameContainer?.querySelector?.('.notes-minigame-notepad') || this.gameContainer;
+        return this.gameContainer?.querySelector?.('.notes-minigame-page-edge')
+            || this.gameContainer?.querySelector?.('.notes-minigame-notepad') || this.gameContainer;
     }
 
     constructor(container, params) {
@@ -206,20 +214,31 @@ export class NotesMinigame extends MinigameScene {
         notepadContainer.appendChild(contentArea);
         this.gameContainer.appendChild(notepadContainer);
 
+        // The paper's edge, for the X (closeAnchor): invisible, over the paper only
+        const pageEdge = document.createElement('div');
+        pageEdge.className = 'notes-minigame-page-edge';
+        notepadContainer.appendChild(pageEdge);
+
         // A page longer than the notepad scrolls inside it: a flat "more" cue at its foot says
-        // so while there is text below (the scrollbar alone is easy to miss on a phone)
+        // so while there is text below (the scrollbar alone is easy to miss on a phone). It is
+        // re-checked on a scroll, on a change of size of the page, the slip or the observation
+        // box (an edit that grows), and by updateDisplayedNote (Next, Previous, search).
         const moreCue = document.createElement('div');
         moreCue.className = 'notes-minigame-more';
         moreCue.textContent = 'MORE \u25BC';
         moreCue.hidden = true;
         notepadContainer.appendChild(moreCue);
-        const syncMore = () => {
-            moreCue.hidden = !(contentArea.scrollHeight - contentArea.clientHeight - contentArea.scrollTop > 4);
-        };
-        contentArea.addEventListener('scroll', syncMore, { passive: true });
-        if (typeof window.ResizeObserver === 'function') new window.ResizeObserver(syncMore).observe(contentArea);
-        (window.requestAnimationFrame || setTimeout)(syncMore);
-        
+        this._moreCue = moreCue;
+        this._contentArea = contentArea;
+        this.addEventListener(contentArea, 'scroll', () => this._syncMore(), { passive: true });
+        if (typeof window.ResizeObserver === 'function') {
+            this._moreObserver = new window.ResizeObserver(() => this._syncMore());
+            for (const el of [contentArea, textBox, contentArea.querySelector('.notes-minigame-observation-container')]) {
+                if (el) this._moreObserver.observe(el);
+            }
+        }
+        (window.requestAnimationFrame || setTimeout)(() => this._syncMore());
+
         // Create navigation buttons container (only if navigation is not hidden)
         if (!this.params.hideNavigation) {
             const navContainer = document.createElement('div');
@@ -370,6 +389,12 @@ export class NotesMinigame extends MinigameScene {
         }
     }
     
+    _syncMore() {
+        const area = this._contentArea;
+        if (!this._moreCue || !area) return;
+        this._moreCue.hidden = !moreBelow(area.scrollHeight, area.clientHeight, area.scrollTop);
+    }
+
     updateDisplayedNote() {
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (!currentNote) return;
@@ -446,6 +471,9 @@ export class NotesMinigame extends MinigameScene {
             newObservationDiv.addEventListener('click', () => this.editObservations(newObservationDiv));
             observationDiv.parentNode.replaceChild(newObservationDiv, observationDiv);
         }
+        // A new page opens at its top, and the MORE cue follows what is now on it
+        if (this._contentArea) this._contentArea.scrollTop = 0;
+        this._syncMore();
     }
     
     parseNoteText(text) {
@@ -754,6 +782,8 @@ export class NotesMinigame extends MinigameScene {
     }
     
     cleanup() {
+        this._moreObserver?.disconnect?.();
+        this._moreObserver = null;
         super.cleanup();
         // Read by the viewer's onComplete, which runs just after: a close by the framework
         // alone (a hit's fallback, a conversation starting) never set closedByPlayer

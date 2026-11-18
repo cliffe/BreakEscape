@@ -64,12 +64,14 @@ test('portrait phones: the notepad keeps the image shape and the container wraps
     const r = rule(notes, '.notes-minigame-notepad', PORTRAIT);
     assert.equal(r['aspect-ratio'], '165 / 205', 'true image shape, no non-uniform stretch');
     assert.equal(r['background-size'], undefined, 'no 100% 100% stretch in portrait');
-    assert.ok(has(r.width, '88vw'), 'narrower than 92vw so the X stays inside the notepad');
+    assert.ok(has(r.width, '92vw'), 'the larger page; the X is anchored to the paper edge, so it fits');
     assert.ok(has(r.width, '165 / 205'), 'the height budget turns into a width at the image shape');
     assert.ok(has(r.width, '100dvh - 176px'), 'dynamic viewport height on phones');
     const g = rule(notes, '.minigame-container .notes-minigame-game-container', PORTRAIT);
     assert.equal(g.height, 'auto', 'beats the framework height: 100% (linked after notes.css) so no empty band');
     assert.equal(rules(notes, '.notes-minigame-notepad', PORTRAIT).some(x => x.height), false, 'no portrait height, so no stretch');
+    assert.equal(g.padding, '8px 0', 'no side padding: the notepad sits centred');
+    assert.equal(g.background, 'transparent', 'no #1a1a1a band from the framework');
 });
 
 test('no rule slices or stretches the notepad non-uniformly (the art has per-ring detail, so no 3-slice)', () => {
@@ -88,14 +90,44 @@ test('portrait: the page body scrolls inside the notepad with a scrollbar and a 
     const area = rule(notes, '.notes-minigame-content-area');
     assert.equal(area.overflow, 'auto');
     assert.match(area.height, /calc\(90% - 48px\)/);
+    const p = rule(notes, '.notes-minigame-notepad .notes-minigame-content-area', PORTRAIT);
+    assert.match(p.height, /calc\(86% - 48px\)/, 'the body stops above the cue');
     const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
     assert.match(js, /notes-minigame-content-area pixel-scroll/, 'visible pixel scrollbar');
     assert.match(js, /moreCue\.className = 'notes-minigame-more'/);
     assert.match(js, /moreCue\.textContent = 'MORE /, 'text via textContent');
     const cue = rule(notes, '.notes-minigame-more');
-    assert.equal(cue['font-size'], '8px');
+    assert.equal(cue['font-size'], '16px');
+    assert.equal(cue['line-height'], '24px');
     assert.equal(cue['pointer-events'], 'none');
-    assert.match(cue['font-family'], /Press Start 2P/);
+    assert.match(cue['font-family'], /Press Start 2P/, 'has U+25BC; GNF does not');
+    assert.equal(cue.bottom, 'calc(100% * 14 / 205)', 'in the paper-foot margin (paper ends at art row 190)');
+});
+
+test('the MORE cue is kept in sync: pure moreBelow, scroll and observers, new pages at the top', async () => {
+    const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
+    const fn = js.match(/export function moreBelow[\s\S]*?\n\}\n/)[0];
+    const { moreBelow } = await import('data:text/javascript,' + encodeURIComponent(fn));
+    assert.equal(moreBelow(400, 400, 0), false, 'fits');
+    assert.equal(moreBelow(404, 400, 0), false, 'within 4px of the end');
+    assert.equal(moreBelow(900, 400, 0), true, 'text below');
+    assert.equal(moreBelow(900, 400, 500), false, 'scrolled to the end');
+    const upd = js.slice(js.indexOf('    updateDisplayedNote() {'), js.indexOf('    parseNoteText('));
+    assert.match(upd, /this\._contentArea\.scrollTop = 0;\s*this\._syncMore\(\);\s*\}\s*$/, 'a new page opens at the top and syncs the cue');
+    assert.match(js, /this\.addEventListener\(contentArea, 'scroll', \(\) => this\._syncMore\(\)/);
+    assert.match(js, /this\._moreObserver = new window\.ResizeObserver/);
+    assert.match(js, /\[contentArea, textBox, contentArea\.querySelector\('\.notes-minigame-observation-container'\)\]/);
+    assert.match(js, /cleanup\(\) \{\s*this\._moreObserver\?\.disconnect\?\.\(\);/);
+    const search = js.slice(js.indexOf('    searchNotes('), js.indexOf('    updateCounter('));
+    assert.equal((search.match(/this\.updateDisplayedNote\(\)/g) || []).length, 2, 'search goes through updateDisplayedNote');
+});
+
+test('the X is anchored to the paper edge (art paper ends at column 154 of 165)', () => {
+    const e = rule(notes, '.notes-minigame-page-edge');
+    assert.equal(e.right, 'calc(100% * 10 / 165)');
+    assert.equal(e['pointer-events'], 'none');
+    const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
+    assert.match(js, /pageEdge\.className = 'notes-minigame-page-edge'/);
 });
 
 test('short landscape (phone on its side) keeps its own sizing at the true 165:205 shape', () => {
@@ -108,6 +140,7 @@ test('short landscape (phone on its side) keeps its own sizing at the true 165:2
 test('the edit pencil has room: the observation box reserves its right side', () => {
     const base = rule(notes, '.notes-minigame-observation');
     assert.equal(base['padding-right'], '28px');
+    assert.equal(base['overflow-wrap'], 'anywhere');
     const land = rule(notes, '.notes-minigame-observation', 'orientation: landscape) and (max-height: 640px)');
     assert.match(land.padding, /^6px 28px 6px 6px$/);
     const btn = rule(notes, '.notes-minigame-edit-btn');

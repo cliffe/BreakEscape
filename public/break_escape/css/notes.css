@@ -41,7 +41,8 @@
 }
 
 /* Game container: as tall as the notepad, so the navigation row and Continue sit under it in
-   the shell's column (critique A04) */
+   the shell's column (critique A04). Where the framework's `height: 100%` wins (it is linked
+   after this file) the portrait rule above and the landscape rule below set it with more weight. */
 .notes-minigame-game-container {
     width: 100%;
     height: auto;
@@ -75,36 +76,54 @@
 
 /* Portrait phones: the page was sized from the width alone, and the game container filled the
    shell (minigames-framework.css is linked again after this file, so its `height: 100%` beat
-   the `height: auto` above), so a 390x844 screen got a 358x445 notepad at the top, the
-   navigation row at the bottom and 230px of dark band between. Here the container wraps the
-   notepad (a selector with more weight than the framework's), the shell centres notepad and
-   navigation row together, and the notepad keeps the image's true 165:205 shape: the art is
-   rings and shaded shadow rows that differ from ring to ring, so it cannot be stretched or
-   sliced and repeated without distorting it. Width 88vw keeps the X inside the notepad. A page
-   longer than the notepad scrolls in its body, with the scrollbar and a "MORE" cue. */
+   the `height: auto` below), so a 390x844 screen got a 358x445 notepad at the top, the
+   navigation row at the bottom and about 230px of dark band between. Here the container wraps
+   the notepad (a selector with more weight than the framework's), has no side padding (the
+   notepad sits centred) and no #1a1a1a fill, and the shell centres notepad and navigation row
+   together. The notepad keeps the image's true 165:205 shape: the art is rings and shaded
+   shadow rows that differ from ring to ring, so it cannot be stretched or sliced and
+   repeated without distorting it. The X sits inside the paper (.notes-minigame-page-edge, the
+   art's paper ends at column 154 of 165). A page longer than the notepad scrolls in its body,
+   with the scrollbar and a "MORE" cue under its last line (the body stops at 86% to leave
+   the cue the margin). */
 @media (orientation: portrait) and (max-width: 768px) {
     .minigame-container .notes-minigame-game-container {
         height: auto;
-        margin: 8px auto;
+        margin: 0 auto;
+        padding: 8px 0;
+        background: transparent;
     }
     .notes-minigame-notepad {
-        width: min(88vw, calc((100vh - 176px) * 165 / 205));
-        width: min(88vw, calc((100dvh - 176px) * 165 / 205));
+        width: min(92vw, calc((100vh - 176px) * 165 / 205));
+        width: min(92vw, calc((100dvh - 176px) * 165 / 205));
         aspect-ratio: 165 / 205;
         flex: none;
     }
+    .notes-minigame-notepad .notes-minigame-content-area { height: calc(86% - 48px); }
 }
 
-/* The "more below" cue at the foot of the page */
+/* The paper's edge: an empty box over the paper only (the art's paper ends at column 154 of
+   165, the last 10 columns are shadow and transparent), the anchor of the X */
+.notes-minigame-page-edge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: calc(100% * 10 / 165);
+    pointer-events: none;
+}
+
+/* The "more below" cue, in the page's bottom margin (the paper ends at art row 190 of 205, so
+   its foot is 14/205 of the height up from the bottom of the box) */
 .notes-minigame-more {
     position: absolute;
     right: 12%;
-    bottom: 9%;
+    bottom: calc(100% * 14 / 205);
     z-index: 2;
-    padding: 2px 8px;
+    padding: 0 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
+    font-size: 16px;
+    line-height: 24px;
     color: #fefefe;
     background: #2c3e50;
     border: 2px solid #5c5446;
@@ -251,6 +270,7 @@
     border: 4px dashed #ccc;
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
+    overflow-wrap: anywhere;
     transition: background-color 0.2s ease;
 }
 
@@ -469,6 +489,7 @@
     /* 16px on short screens too, one line, cut with an ellipsis when long (S7-notes) */
     .notes-minigame-title { font-size: 16px; line-height: 24px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
+    .notes-minigame-more { font-size: 8px; line-height: 16px; padding: 0 6px; }
     .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px 28px 6px 6px; }
     /* Continue stays beside the notepad here, out of the flow (the framework
        otherwise puts the Cancel row under the game area, which would shorten the
