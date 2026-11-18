@@ -11,6 +11,7 @@
 #   V7  chatter line repeating a pool line, a bark or the opener   warning
 #   V8  sync budget (section 7)          sync_budget_lines(json) info; warning above a cap
 #   V11 chatter pool line that names a credential              warning (secrets belong in priority mutters only)
+#   V12 chatter pool requireGlobal naming a global not in globalVariables, a gate value of the wrong type, or a gate on a security pool   warning
 #   V10 pools, exchanges and calls nothing can trigger (check_v10, below V8; warnings only)
 #
 # V6 is the rake task app:break_escape:tts:office_lines (BreakEscape::TtsOfficeLines) and V9 is
@@ -98,6 +99,7 @@ module ValidateOfficeLife
     check_npc_arrived(w, issues)                         # V3
     check_chatter_repeats(w, issues)                     # V7
     check_pool_credentials(w, issues)                    # V11
+    check_pool_gates(w, issues)                          # V12
     check_sync_budget(w, issues)                         # V8 (warnings above a cap)
     if campaign?(scenario_id, campaign)
       check_story_npcs_leave(w, issues)                  # V2
@@ -758,6 +760,76 @@ module ValidateOfficeLife
 
       issues << "⚠️ WARNING: office life V11: #{who == 'scenario' ? 'scenario' : "NPC '#{who}'"} chatter '#{topic}' line \"#{line}\" names a credential. " \
                 'Credentials and secrets go only in priority mutters (login_aloud), never in pool or exchange lines.'
+    end
+  end
+
+  # ── V12: a pool's requireGlobal names a declared global (warning only) ──────────────────────
+  # The gate is read live by the engine. A name nothing declares can never open (or, for a
+  # { name: value } form, never match), so the pool would be silent for the whole game. V10 is
+  # unaffected: whether a pool can be triggered does not depend on its gate.
+  def self.gate_names(gate)
+    case gate
+    when String then [gate]
+    when Hash then gate.keys.map(&:to_s)
+    else []
+    end
+  end
+
+  SECURITY_POOLS = %w[login_aloud usb_refused work_fail station_fail social_blocked].freeze
+
+  # Pools whose spoken line opens a security window (access/workaround levers).
+  def self.security_pool?(topic)
+    t = topic.to_s
+    SECURITY_POOLS.include?(t) || t.start_with?('work_fail_') || t.start_with?('wk_')
+  end
+
+  def self.json_type(v)
+    case v
+    when true, false then 'boolean'
+    when Numeric then 'number'
+    when String then 'string'
+    end
+  end
+
+  # requireGlobal compares by strict equality: a { name: value } entry whose JSON type differs from
+  # the declared global's never matches ("2" against 2, "false" against false).
+  def self.check_gate_types(w, who, topic, gate, issues)
+    return unless gate.is_a?(Hash)
+
+    vars = w.json['globalVariables']
+    return unless vars.is_a?(Hash)
+
+    gate.each do |name, value|
+      want = json_type(vars[name.to_s])
+      got = json_type(value)
+      next if want.nil? || got.nil? || want == got
+
+      issues << "⚠️ WARNING: office life V12: #{who} chatter '#{topic}' requireGlobal compares by strict equality; '#{name}' is declared " \
+                "as #{want} but the gate gives #{got}, so the pool never opens."
+    end
+  end
+
+  def self.check_pool_gates(w, issues)
+    declared = w.json['globalVariables']
+    declared = declared.is_a?(Hash) ? declared.keys.map(&:to_s) : []
+    sources = [['scenario', w.json['chatter']]] + w.npcs.map { |_r, n| ["NPC '#{n['id']}'", n['chatter']] }
+    sources.each do |who, chatter|
+      next unless chatter.is_a?(Hash)
+
+      chatter.each do |topic, pool|
+        next unless pool.is_a?(Hash) && pool.key?('requireGlobal')
+
+        gate_names(pool['requireGlobal']).reject { |g| declared.include?(g) }.each do |g|
+          issues << "⚠️ WARNING: office life V12: #{who} chatter '#{topic}' requireGlobal names '#{g}', which is not in globalVariables. " \
+                    'Declare it, or the pool never opens.'
+        end
+        check_gate_types(w, who, topic, pool['requireGlobal'], issues)
+        next unless security_pool?(topic)
+
+        issues << "⚠️ WARNING: office life V12: #{who} chatter '#{topic}' is gated by requireGlobal, but '#{topic}' carries a security window " \
+                  '(a spoken login, a refused USB, a work failure or a workaround start). While the gate is closed the line is not said, ' \
+                  'the student never hears it, and the window can close silently. Leave this pool ungated.'
+      end
     end
   end
 

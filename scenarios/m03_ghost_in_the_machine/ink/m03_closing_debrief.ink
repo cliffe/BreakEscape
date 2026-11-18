@@ -109,7 +109,7 @@ Agent HaX: There you are. Sit down before you fall down.
     Agent HaX: And there's five hundred pounds of ours in a security guard's pocket. Finance will want a receipt.
 }
 { receptionist_ko:
-    Agent HaX: The receptionist, Ffion Rees, is fine, before you ask. Concussed, and still trying to work out what she did to deserve it.
+    Agent HaX: The receptionist, Ffion Rees, is fine. Concussed, and still working out what she did to deserve it.
 }
 
 // D4-4: "Let's go through it." cut; mission_impact does that.
@@ -117,8 +117,7 @@ Agent HaX: There you are. Sit down before you fall down.
 
 === mission_impact ===
 #speaker:agent_0x99
-Agent HaX: The network first. All four flags, and the distcc logs are the case.
-Agent HaX: The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
+Agent HaX: The network first. All four flags, and the distcc logs are the case: the ProFTPD backdoor sold to Ghost, St. Catherine's on the target line, Sable's sign-off.
 // D2-20 / D4-4: the paperwork point belongs to the revelation call; cut here.
 { called_it_murder:
     // A4 fix pass: quotes the reworded briefing option.
@@ -169,7 +168,7 @@ Agent HaX: Counter-intelligence is running her now. She stays at Zero Day, and t
 // A4 fix pass: the approach line moved to final_assessment, where it names the pick.
 // Scenes #7 (orchestrator: HaX, not Netherton): his opening line pays off, shown, not summed up.
 Agent HaX: Netherton signed off at six this morning. He had me write "she priced a hospital" on the cover sheet.
-Agent HaX: Whether she stays turned is anyone's guess. Today, it's a win with its teeth showing.
+Agent HaX: Whether she stays turned is anyone's guess.
 -> phase_2_discussion
 
 === victoria_arrested ===
@@ -249,7 +248,7 @@ Agent HaX: Netherton put her on every watch list we can reach. Did it himself, b
 
 === directive_substance ===
 #speaker:agent_0x99
-Agent HaX: Grid storage. Substation control. Hospitals on generator for when the grid drops out from under them. Zero Day supplies, Critical Mass executes. Winter, within weeks.
+Agent HaX: Grid storage. Substation control. Hospitals on generator for when the grid drops out from under them. Winter, within weeks.
 // D2-8: on the escape route the player heard Victoria say "proof of concept".
 { victoria_fate == "escaped":
     Agent HaX: She told you St. Catherine's was a proof of concept. She wasn't showing off.
@@ -475,7 +474,7 @@ Agent HaX: {reception_badge_cloned or victoria_card_cloned or draft_seen or rost
 === final_assessment ===
 #speaker:agent_0x99
 { lore_history_found and (catalogue_seen or lore_catalogue_found) and (usb_seen or lore_directive_found):
-    Agent HaX: And you brought the whole paper trail out -- the history, the catalogue, the directive. Their case and their plan, in their own words.
+    Agent HaX: And you brought the whole paper trail out. Their case and their plan, in their own words.
 }
 // Pass 5 (P4-48): only when the history or the catalogue is missing; a drive-only miss is
 // covered in phase_2_discussion, and this block no longer names the drive.
@@ -492,7 +491,7 @@ Agent HaX: {reception_badge_cloned or victoria_card_cloned or draft_seen or rost
     { not (catalogue_seen or lore_catalogue_found):
         Agent HaX: The exploit catalogue stayed in the wall safe.
     }
-    Agent HaX: Enough to charge and enough to warn. Not everything. It never is.
+    Agent HaX: Enough to charge and enough to warn. Not everything.
 }
 // A4 fix pass (S3): the briefing approach, named back in the player's own words.
 // One line for each value mission_approach writes: "I'll be thorough" = cautious,

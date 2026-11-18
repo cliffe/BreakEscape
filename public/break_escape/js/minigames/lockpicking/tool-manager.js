@@ -12,10 +12,98 @@
  * - this.parent.lockState (lock state object)
  * etc.
  */
+/**
+ * Caption for the "Switch to Lockpicking" button in key mode: a player who holds a
+ * lockpick should see at once that picking the lock is an option. Text via
+ * textContent; styled by .lockpicking-or-caption in lockpicking.css.
+ */
+export function createPickCaption(doc = document) {
+    const caption = doc.createElement('span');
+    caption.className = 'lockpicking-or-caption';
+    caption.id = 'lockpicking-or-caption';
+    caption.textContent = 'Or pick the lock:';
+    return caption;
+}
+
 export class ToolManager {
     
     constructor(parent) {
         this.parent = parent;
+    }
+
+    // The mode-switch rows sit on their own line under the item image and name
+    // (.lockpicking-mode-row in lockpicking.css). Built here so the first build and a
+    // rebuild after a switch are the same markup.
+    buildPickButtonRow() {
+        const row = document.createElement('div');
+        row.className = 'lockpicking-mode-row';
+        const btn = document.createElement('button');
+        btn.className = 'minigame-button';
+        btn.id = 'lockpicking-switch-mode-btn';
+        btn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
+        btn.onclick = () => this.switchToPickMode();
+        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween || this.parent.keyUnlocked));
+        row.appendChild(createPickCaption());
+        row.appendChild(btn);
+        return row;
+    }
+
+    buildKeyButtonRow() {
+        const row = document.createElement('div');
+        row.className = 'lockpicking-mode-row';
+        const btn = document.createElement('button');
+        btn.className = 'minigame-button';
+        btn.id = 'lockpicking-switch-to-keys-btn';
+        btn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="Key" class="icon-large"> Switch to Key Mode';
+        btn.onclick = () => this.switchToKeyMode();
+        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween || this.parent.keyUnlocked));
+        row.appendChild(btn);
+        return row;
+    }
+
+    // Replace whatever mode row the strip holds with the given one (or none)
+    replaceModeRow(build) {
+        if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
+        const strip = document.querySelector('.lockpicking-item-section');
+        if (!strip) return;
+        strip.querySelectorAll('.lockpicking-mode-row').forEach((el) => el.remove());
+        if (build) strip.appendChild(build());
+    }
+
+    // Disable (or re-enable) the mode-switch buttons. The real disabled attribute stops
+    // clicks; lockpicking.css dims the label and changes the cursor so it is not only colour.
+    setModeButtonsDisabled(disabled) {
+        if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
+        const strip = document.querySelector('.lockpicking-item-section');
+        if (!strip) return;
+        let buttons;
+        if (typeof strip.querySelectorAll === 'function') {
+            const found = strip.querySelectorAll('.lockpicking-mode-row button');
+            // Real DOM returns a NodeList; the test mock returns something else
+            if (found && typeof found.length === 'number') buttons = Array.from(found);
+        }
+        if (!buttons) {
+            buttons = [];
+            for (const row of Array.from(strip.children || [])) {
+                if (row.className !== 'lockpicking-mode-row') continue;
+                for (const btn of Array.from(row.children || [])) {
+                    if ((btn.tagName || btn.tag || '').toLowerCase() === 'button') buttons.push(btn);
+                }
+            }
+        }
+        buttons.forEach((btn) => this.applyDisabled(btn, disabled));
+    }
+
+    // The real disabled attribute plus a tooltip that says why (cleared again on re-enable)
+    applyDisabled(btn, disabled) {
+        btn.disabled = !!disabled;
+        if (disabled) {
+            btn.title = this.parent.keyUnlocked ? 'The lock is opening' : 'Not while a key is going in';
+        } else if (typeof btn.removeAttribute === 'function') {
+            btn.removeAttribute('title');
+        } else {
+            btn.title = '';
+        }
     }
 
     hideLockpickingTools() {
@@ -120,6 +208,17 @@ export class ToolManager {
         // Switch from key selection mode to lockpicking mode
         console.log('Switching from key mode to lockpicking mode');
 
+        // A key is still going in (the buttons are disabled, this is the defensive guard):
+        // stop the insertion so no wrong-key or unlock result lands in pick mode
+        if (this.parent.keyInserting || this.parent.keyInsertTween) {
+            this.parent.scene?.tweens?.killTweensOf(this.parent.keyGroup);
+            this.parent.keyInsertTween = null;
+            this.parent.keyInserting = false;
+        }
+
+        // A correct key is already turning: the unlock is a key unlock
+        if (this.parent.keyUnlocked) return;
+
         // An NPC watching catches the pick (same gate as the direct pick path);
         // the gate closes this minigame and opens the conversation.
         const gate = this.parent.params?.beforeSwitchToPickMode;
@@ -127,12 +226,14 @@ export class ToolManager {
             return;
         }
         
-        // Hide the mode switch button
-        const switchBtn = document.getElementById('lockpicking-switch-mode-btn');
-        if (switchBtn) {
-            switchBtn.style.display = 'none';
-        }
+        // Remove the pick button row (no empty flex gap left behind); offer the way back
+        // to key mode when the player holds a key
+        this.replaceModeRow(this.parent.canSwitchToKeyMode ? () => this.buildKeyButtonRow() : null);
         
+        // Cancel a pending wrong-key retry so it cannot rebuild the key panel
+        clearTimeout(this.parent.keyRetryTimer);
+        this.parent.keyRetryTimer = null;
+
         // Exit key mode
         this.parent.keyMode = false;
         this.parent.keySelectionMode = false;
@@ -217,12 +318,8 @@ export class ToolManager {
         // Switch from lockpicking mode to key selection mode
         console.log('Switching from lockpicking mode to key mode');
         
-        // Hide the mode switch button
-        const switchBtn = document.getElementById('lockpicking-switch-to-keys-btn');
-        if (switchBtn) {
-            switchBtn.style.display = 'none';
-        }
-        
+        if (this.parent.keyUnlocked) return;
+
         // Enter key mode
         this.parent.keyMode = true;
         this.parent.keySelectionMode = true;
@@ -244,39 +341,24 @@ export class ToolManager {
         // Reset pins to original positions
         this.parent.lockConfig.resetPinsToOriginalPositions();
         
-        // Add mode switch back button (can switch back to lockpicking if available)
-        if (this.parent.canSwitchToPickMode) {
-            const itemDisplayDiv = document.querySelector('.lockpicking-item-section');
-            if (itemDisplayDiv) {
-                // Remove any existing button container
-                const existingButtonContainer = itemDisplayDiv.querySelector('div[style*="margin-top"]');
-                if (existingButtonContainer) {
-                    existingButtonContainer.remove();
-                }
-                
-                // Add new button container
-                const buttonContainer = document.createElement('div');
-                buttonContainer.style.cssText = `
-                    display: flex;
-                    gap: 10px;
-                    margin-top: 10px;
-                    justify-content: center;
-                `;
-                
-                const switchModeBtn = document.createElement('button');
-                switchModeBtn.className = 'minigame-button';
-                switchModeBtn.id = 'lockpicking-switch-mode-btn';
-                switchModeBtn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
-                switchModeBtn.onclick = () => this.switchToPickMode();
-                
-                buttonContainer.appendChild(switchModeBtn);
-                itemDisplayDiv.appendChild(buttonContainer);
-            }
-        }
+        // Swap the key row for the pick row (can switch back to lockpicking if available)
+        this.replaceModeRow(this.parent.canSwitchToPickMode ? () => this.buildPickButtonRow() : null);
         
-        // Show key selection UI with available keys
-        if (this.parent.availableKeys && this.parent.availableKeys.length > 0) {
-            this.parent.createKeySelectionUI(this.parent.availableKeys, this.parent.requiredKeyId);
+        // Show key selection UI with available keys. createKeySelectionUI lives on the
+        // KeySelection helper (parent.keySelection), not on the minigame. Pick-first
+        // locks pass availableKeys; key-first locks store the converted list as
+        // originalInventoryKeys (parent.inventoryKeys holds raw items, so it is not used).
+        // requiredKeyId is null in production (the server filters it); it only picks the
+        // highlighted entry and the log line, never the correctness gate.
+        const keys = this.parent.availableKeys || this.parent.originalInventoryKeys;
+        const requiredId = this.parent.requiredKeyId ?? this.parent.originalCorrectKeyId ?? null;
+        if (keys && keys.length > 0 && this.parent.keySelection) {
+            // Pick-first locks arrive with no key data and keys without a pinCount
+            if (!this.parent.keyData) this.parent.keyDataGen.generateKeyDataFromPins();
+            const normalised = keys.map(k => ({ ...k, pinCount: k.pinCount || k.cuts?.length || this.parent.pinCount }));
+            this.parent.originalInventoryKeys ??= normalised;
+            this.parent.originalCorrectKeyId ??= requiredId;
+            this.parent.keySelection.createKeySelectionUI(normalised, requiredId);
             this.parent.keyInsertion.updateFeedback("Select a key to use");
         } else {
             this.parent.keyInsertion.updateFeedback("No keys available");

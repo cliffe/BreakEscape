@@ -1,0 +1,13 @@
+{
+  "key": "7a25e49bac74af403206798e053e5996",
+  "npc": "agnieszka_duda",
+  "text": "Who came, who went, who asked for what. The Director reads it in the morning.",
+  "voice": "Callirrhoe",
+  "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:49Z"
+}

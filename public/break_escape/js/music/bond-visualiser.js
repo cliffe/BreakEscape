@@ -209,7 +209,7 @@ function _buildOverlay() {
       <div class="bv-stat-row"><span class="sk">FREQ</span><span id="bv-freq-disp">---.--</span></div>
 
       <div class="bv-panel-title" style="margin-top:4px">▸ ENCRYPTION</div>
-      <div style="font-family:'VT323',monospace;font-size:11px;color:var(--bv-green);line-height:1.8">
+      <div style="font-family:'VT323',monospace;font-size:16px;color:var(--bv-green);line-height:1.25">
         AES-256-GCM<br>SHA-3/512<br>ECDHE-P384<br>TLS 1.3 ▸ OK<br>PGP 4096b ▸ OK
       </div>
 
@@ -1441,16 +1441,16 @@ function draw007Stamp(x, y, energy) {
  * Build and animate the credits scroll.
  * @param {Array<{text:string, style:string}>} lines
  */
-const _GLOW_DARK = '0 0 6px #000,0 0 12px #000,0 0 18px #000'; // dark halo for legibility
+const _GLOW_DARK = '2px 0 0 #000,-2px 0 0 #000,0 2px 0 #000,0 -2px 0 #000,2px 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000'; // hard 2px outline (0 blur) for legibility
 const STYLE_MAP = {
-    'title':          `font-family:VT323,monospace;font-size:52px;color:#FFD700;letter-spacing:0.12em;text-shadow:${_GLOW_DARK},0 0 30px rgba(255,215,0,0.9),0 0 60px rgba(255,215,0,0.4);`,
-    'subtitle':       `font-family:VT323,monospace;font-size:26px;color:#00FFFF;letter-spacing:0.3em;text-shadow:${_GLOW_DARK},0 0 20px rgba(0,255,255,0.8);`,
-    'section-header': `font-family:VT323,monospace;font-size:18px;color:#FFD700;opacity:0.8;letter-spacing:0.3em;text-shadow:${_GLOW_DARK},0 0 16px rgba(255,215,0,0.6);`,
-    'entry':          `font-family:VT323,monospace;font-size:28px;color:#00FF41;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(0,255,65,0.8);`,
-    'warning':        `font-family:VT323,monospace;font-size:28px;color:#FF6600;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(255,100,0,0.9),0 0 40px rgba(255,100,0,0.4);`,
+    'title':          `font-family:VT323,monospace;font-size:52px;color:#FFD700;letter-spacing:0.12em;text-shadow:${_GLOW_DARK},4px 4px 0 rgba(255,215,0,0.5);`,
+    'subtitle':       `font-family:VT323,monospace;font-size:26px;color:#00FFFF;letter-spacing:0.3em;text-shadow:${_GLOW_DARK};`,
+    'section-header': `font-family:VT323,monospace;font-size:18px;color:#FFD700;opacity:0.8;letter-spacing:0.3em;text-shadow:${_GLOW_DARK};`,
+    'entry':          `font-family:VT323,monospace;font-size:28px;color:#00FF41;letter-spacing:0.1em;text-shadow:${_GLOW_DARK};`,
+    'warning':        `font-family:VT323,monospace;font-size:28px;color:#FF6600;letter-spacing:0.1em;text-shadow:${_GLOW_DARK};`,
     // closingCard (closing-sequence.js): several lines shown together, then the teaser
-    'card':           `font-family:VT323,monospace;font-size:30px;line-height:1.35;color:#E8F4FF;letter-spacing:0.06em;text-shadow:${_GLOW_DARK},0 0 16px rgba(160,210,255,0.6);`,
-    'teaser':         `font-family:VT323,monospace;font-size:26px;line-height:1.35;color:#C77DFF;font-style:italic;letter-spacing:0.08em;text-shadow:${_GLOW_DARK},0 0 18px rgba(199,125,255,0.7);`,
+    'card':           `font-family:VT323,monospace;font-size:30px;line-height:1.35;color:#E8F4FF;letter-spacing:0.06em;text-shadow:${_GLOW_DARK};`,
+    'teaser':         `font-family:VT323,monospace;font-size:26px;line-height:1.35;color:#C77DFF;font-style:italic;letter-spacing:0.08em;text-shadow:${_GLOW_DARK};`,
 };
 
 /** The STATUS row's value element, by id: rows may be reordered by a theme overlay. */
@@ -1467,6 +1467,64 @@ function _writeEndNote() {
     if (!el || !_endNote) return;
     el.textContent = _statusText ? `${_statusText} // ${_endNote}` : _endNote;
     el.classList.remove('bv-blink');
+}
+
+/**
+ * Keep the credits label in the real gap between the header band and the controls bar.
+ * Sets --bv-cr-top (header bottom + 8px) and --bv-cr-bottom (space under the controls
+ * top + 8px) on the overlay; CSS pads the full-window flex overlay by them, so the label
+ * is centred in that gap and capped to it. A band that is missing, hidden or not laid
+ * out (zero height) counts as 0 plus the 8px margin. A label taller than the gap scrolls
+ * inside itself and gets .bv-cr-scrolls (visible pixel scrollbar, takes the pointer).
+ */
+function _fitCreditsBand(overlay) {
+    if (!overlay) return;
+    const app = document.getElementById('bond-vis-overlay');
+    const hd = app && app.querySelector('.bv-header');
+    const ct = app && app.querySelector('.bv-controls');
+    let top = 0;
+    let bottom = 0;
+    if (hd) {
+        const r = hd.getBoundingClientRect();
+        if (r.height > 0) top = Math.max(0, r.bottom);
+    }
+    if (ct) {
+        const r = ct.getBoundingClientRect();
+        if (r.height > 0) bottom = Math.max(0, window.innerHeight - r.top);
+    }
+    overlay.style.setProperty('--bv-cr-top', `${Math.ceil(top) + 8}px`);
+    overlay.style.setProperty('--bv-cr-bottom', `${Math.ceil(bottom) + 8}px`);
+    const label = overlay.querySelector('#bv-cr-label');
+    if (label) _syncCreditsScroll(label);
+}
+
+/** Show the pixel scrollbar (and take the pointer) only when the label overflows. */
+function _syncCreditsScroll(label) {
+    label.classList.toggle('bv-cr-scrolls', label.scrollHeight > label.clientHeight + 1);
+}
+
+let _creditsResizeRaf = 0;
+let _creditsResizeBound = false;
+function _onCreditsResize() {
+    if (_creditsResizeRaf) return;
+    _creditsResizeRaf = requestAnimationFrame(() => {
+        _creditsResizeRaf = 0;
+        _fitCreditsBand(document.getElementById('bv-credits-overlay'));
+    });
+}
+/** Re-measure on resize and rotation while the credits (or the hold line) are showing. */
+function _watchCreditsBand() {
+    if (_creditsResizeBound) return;
+    _creditsResizeBound = true;
+    window.addEventListener('resize', _onCreditsResize);
+    window.addEventListener('orientationchange', _onCreditsResize);
+}
+function _unwatchCreditsBand() {
+    if (!_creditsResizeBound) return;
+    _creditsResizeBound = false;
+    window.removeEventListener('resize', _onCreditsResize);
+    window.removeEventListener('orientationchange', _onCreditsResize);
+    if (_creditsResizeRaf) { cancelAnimationFrame(_creditsResizeRaf); _creditsResizeRaf = 0; }
 }
 
 function _startCredits(lines) {
@@ -1499,7 +1557,10 @@ function _startCredits(lines) {
         label.id = 'bv-cr-label';
         overlay.appendChild(label);
     }
-    label.style.cssText = 'text-align:center;padding:0 10%;transition:opacity 0.4s ease;';
+    label.className = 'bv-cr-label';
+    label.style.cssText = 'text-align:center;transition:opacity 0.4s ease;';
+    _fitCreditsBand(overlay);
+    _watchCreditsBand();
 
     // Filter to non-empty lines only (a card carries its own lines)
     const items = lines.filter(l => (Array.isArray(l.lines) && l.lines.length) || (l.text && l.text.trim()));
@@ -1528,7 +1589,10 @@ function _startCredits(lines) {
 
         label.style.opacity = '0';
         _creditsTimerId = setTimeout(() => {
-            label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${baseStyle}`;
+            label.className = 'bv-cr-label';
+            label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${baseStyle}`;
+            _fitCreditsBand(overlay);
+            label.scrollTop = 0;
             let holdMs = 3000;
             if (Array.isArray(item.lines) && item.lines.length) {
                 // A closing card or teaser: its lines together, one per row
@@ -1548,6 +1612,7 @@ function _startCredits(lines) {
                 if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
             }
             label.style.opacity = '1';
+            _syncCreditsScroll(label);
             _creditsTimerId = setTimeout(showNext, holdMs);
         }, 450); // brief fade-out gap before switching text
     }
@@ -1570,13 +1635,18 @@ function _showCreditsHold(text) {
         label.id = 'bv-cr-label';
         overlay.appendChild(label);
     }
-    label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    label.className = 'bv-cr-label';
+    label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    _fitCreditsBand(overlay);
     label.textContent = text;
     label.style.opacity = '1';
+    _syncCreditsScroll(label);
+    _watchCreditsBand();
 }
 
 function _stopCredits() {
     _creditsActive = false;
+    _unwatchCreditsBand();
     clearTimeout(_creditsTimerId);
     _creditsTimerId = null;
 
@@ -1717,6 +1787,7 @@ function _updateTrackInfo(state) {
     info.innerHTML = '';
     const span = document.createElement('span');
     span.textContent = label;
+    info.setAttribute('title', detail ? label + ' ' + detail : label); // the ellipsis clips this element, so the full text goes here
     info.appendChild(span);
     if (detail) info.appendChild(document.createTextNode(' ' + detail));
     const pauseBtn = document.getElementById('bv-pause-btn');
@@ -1946,6 +2017,7 @@ function _close_overlay() {
     // Stop any credits immediately (no fade — overlay is closing anyway)
     _creditsHoldToken++;
     _creditsActive = false;
+    _unwatchCreditsBand();
     clearTimeout(_creditsTimerId);  _creditsTimerId  = null;
     clearTimeout(_creditsHideTimer); _creditsHideTimer = null;
     const creditsOverlay = document.getElementById('bv-credits-overlay');

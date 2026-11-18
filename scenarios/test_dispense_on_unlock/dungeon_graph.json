@@ -1,0 +1,47 @@
+{
+  "scenario": "test_dispense_on_unlock",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_pin_dispenser",
+      "label": "PIN Dispenser<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_password_dispenser",
+      "label": "Password Dispenser<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_jammed_dispenser",
+      "label": "Jammed Dispenser<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "lobby",
+      "to": "lock_pin_dispenser",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "lock_password_dispenser",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "lock_jammed_dispenser",
+      "soft": false
+    }
+  ]
+}

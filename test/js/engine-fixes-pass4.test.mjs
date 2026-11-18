@@ -26,7 +26,8 @@ const npcManagerUrl = copy('systems/npc-manager.js', 'npc-manager.mjs', [
     ["'./npc-los.js'", "'./npc-los.mjs'"],
     ["'../minigames/phone-chat/phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"],
 ]);
-const catchUrl = copy('systems/lockpick-catch.js', 'lockpick-catch.mjs');
+copy('utils/key-cut-calculator.js', 'key-cut-calculator.mjs');
+const catchUrl = copy('systems/lockpick-catch.js', 'lockpick-catch.mjs', [["'../utils/key-cut-calculator.js'", "'./key-cut-calculator.mjs'"]]);
 
 stub('rooms-stub.mjs', 'export const rooms = {};');
 stub('ink-stub.mjs', 'export default class InkEngine {}');

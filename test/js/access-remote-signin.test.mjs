@@ -33,11 +33,12 @@ put('systems/minigame-starters.js', ['startLockpickingMinigame', 'startKeySelect
     'startRansomwareDisplayMinigame', 'startBackupRecoveryMinigame', 'startInfusionPumpMinigame'].map(n => `export function ${n}() {}`).join('\n'));
 put('systems/ui-sounds.js', 'export function playUISound() {}\n');
 put('minigames/biometrics/fingerprint-reader-minigame.js', 'export function startFingerprintReader() {}\n');
-put('systems/lockpick-catch.js', 'export function catchLockpickInView() { return false; }\n');
+put('systems/lockpick-catch.js', 'export function catchLockpickInView() { return false; } export function anyKeyMightFitLock() { return true; } export function lockKeyPinsOf() { return undefined; }\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
 copy('utils/lock-scope-refusal.js'); // unlock-system.js now imports unlockWithRouteRoomRetry from here (GATED_DOOR §3.6)
+copy('utils/dispense-on-unlock.js'); // unlock-system.js imports it (dispenses containers)
 copy('utils/more-below.js');
 copy('utils/computer-keywords.js');
 copy('utils/pc-monitor.js');

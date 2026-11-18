@@ -1355,6 +1355,7 @@ end
   "npcThoughts": false,
   "ttsPregenerateChatter": true,
   "startRoom": "forward_post",
+  "officePresets": true,
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
   <%# VM-WIRE: one entry per target machine; system_names are placeholders (header). %>
@@ -2032,7 +2033,7 @@ end
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Tunnel Post Rota' && data.roomId === 'blast_tunnel' && globalVars.m02_completed === true && globalVars.m02_reeves_fate === '' && globalVars.m02_insider_asset_escaped === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Reeves. From the hospital. He's theirs full time now." } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Tunnel Post Rota' && data.roomId === 'blast_tunnel' && globalVars.m02_completed === true && globalVars.m02_reeves_fate === 'unnoticed' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "G. Reeves. St. Catherine's night security. We never knew." } },
             { "eventPattern": "room_entered:blast_tunnel", "condition": "globalVars.m08_nightshade_triple_agent === true && !globalVars.m09_nightshade_shown_file && !globalVars.nightshade_map_used && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Helena's plans didn't have him. Nightshade's would have." } },
-            { "eventPattern": "room_entered:blast_tunnel", "condition": "globalVars.m08_nightshade_arrested === true && !globalVars.m08_nightshade_ko_before_fate && !globalVars.nightshade_map_used && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Helena's plans didn't have him. Nightshade's would have." } },
+            { "eventPattern": "room_entered:blast_tunnel", "condition": "globalVars.m08_nightshade_arrested === true && !globalVars.m08_nightshade_triple_agent && !globalVars.m08_nightshade_ko_before_fate && !globalVars.nightshade_map_used && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 2000, "message": "Helena's plans didn't have him. Nightshade's would have." } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Duty Board' && data.roomId === 'security_office' && globalVars.m07_hollis_resolved === 'evaded' && !globalVars.m06_assets_seized && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Still on their payroll. Two kids. I hope he stays in the hut." } },
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Duty Board' && data.roomId === 'security_office' && globalVars.m07_hollis_resolved === 'evaded' && globalVars.m06_assets_seized === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Stood down for the budget. Your freeze kept him home tonight." } },
             { "eventPattern": "global_variable_changed:arakawa_call_done", "condition": "value === true && globalVars.m03_guard_bribed === true && !globalVars.breach_open && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 4000, "message": "Finance want to know about five hundred pounds and a security guard in Cardiff. I've never been so pleased to fill in a form." } },
@@ -2881,7 +2882,7 @@ end
           "puzzle_graph_unlocks": "gate_terminal"
         },
         {
-          "_comment": "Office life (office_life/PLAN.md 3): the support staff's kettle, on the third kit crate south of the table. as-type:kettle claims the Tiled kettle1 placeholder on that crate. The whole affordance is by hand (no officePresets). useFrom dy -0.1 puts the use cells at (276,268) and (308,268) px, measured live; two users, one per cell.",
+          "_comment": "Office life (office_life/PLAN.md 3): the support staff's kettle, on the third kit crate south of the table. as-type:kettle claims the Tiled kettle1 placeholder on that crate. The affordance is authored by hand; with officePresets on, the kettle preset adds only its kettle_boil start sound (the only preset field not authored here), and it is the mission's one preset object. useFrom dy -0.1 puts the use cells at (276,268) and (308,268) px, measured live; two users, one per cell.",
           "type": "kettle",
           "officeType": "kettle",
           "id": "fp_kettle",
@@ -3096,7 +3097,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             <%= after_end_json.('security_office') %>
             { "eventPattern": "room_entered:security_office", "condition": "globalVars.security_alerted === true", "setPatrolSpeed": 95 },
             <%# RL 3: picking the fitter's locker under his eye is the quiet route's intended risk (systems/lockpick-catch.js). %>
-            { "eventPattern": "lockpick_used_in_view", "conversationMode": "person-chat", "targetKnot": "duty", "cooldown": 250 }
+            { "eventPattern": "lockpick_used_in_view", "conversationMode": "person-chat", "targetKnot": "duty_caught", "cooldown": 250 }
           ],
           "observations": "The duty guard walking the office floor between the monitors and the stair."
         },
@@ -4712,6 +4713,7 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "hall_a_engaged": false,
     "hall_b_warnings": 0,
     "hall_b_engaged": false,
+    "duty_warnings": 0,
     "gallery_call_deferred": false,
     "static_power_ko": false,
     "power_fight_over": false,

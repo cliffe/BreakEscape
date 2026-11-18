@@ -1,0 +1,13 @@
+{
+  "key": "036ac7a37e8c200df9ea052859acd5c1",
+  "npc": "julian_sallow",
+  "text": "The day watch left without a word.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:49:17Z"
+}

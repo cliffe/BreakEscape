@@ -1,0 +1,13 @@
+{
+  "key": "4735ea69399dc0be6c20ae6bd511c77f",
+  "npc": "agnieszka_duda",
+  "text": "Duda, watch log. If you need something entered, say it slowly. Tonight, every line gets read twice.",
+  "voice": "Callirrhoe",
+  "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:35Z"
+}

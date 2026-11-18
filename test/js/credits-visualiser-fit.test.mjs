@@ -35,8 +35,9 @@ test('the close control comes back once the last credits line has shown', () => 
 // map panel, with a lone last word ("out.") on its own row.
 test('closing-card lines are capped to the centre panel and balance-wrapped', () => {
     const r = rule('.bv-cr-card-line');
-    // window - 2*16 padding - 2*180 side panels - 2*12 gaps = 100vw - 416px; 440 leaves air
-    assert.match(r, /max-width: calc\(100vw - 440px\)/);
+    // the row sits in the label, which is capped to the centre panel (calc(100% - 440px));
+    // the row takes the label's width
+    assert.match(r, /max-width: 100%/);
     assert.match(r, /margin-left: auto/);
     assert.match(r, /margin-right: auto/);
     // pretty first, balance second: a browser without balance keeps pretty
