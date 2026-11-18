@@ -889,10 +889,11 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
+              "_comment": "Release fix: this slot used to complete decode_derek_notes on reading the note. It now only records the read; the tick moved to the end of this list (saved games key onceOnly triggers by index).",
               "eventPattern": "global_variable_changed:whiteboard_cipher_seen",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "decode_derek_notes"
+              "setGlobal": { "derek_notes_read": true }
             },
             {
               "eventPattern": "global_variable_changed:derek_personal_safe_opened",
@@ -1217,6 +1218,13 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "ring": { "onMissed": "callback", "callbackWhen": "globalVars.start_debrief_cutscene !== true && globalVars.m01_debrief_offered !== true", "ringWhile": "globalVars.start_debrief_cutscene !== true && globalVars.m01_debrief_offered !== true" },
               "callLabel": "SAFETYNET secure line",
               "setGlobal": { "m01_abort_call_rung": true }
+            },
+            {
+              "_comment": "Release fix, appended so saved-game indices hold: the decode tick fires when the Base64 note's combination has opened the storage safe, the first event that cannot happen without the decode (it used to fire when the note was only read).",
+              "eventPattern": "global_variable_changed:derek_storage_safe_opened",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "decode_derek_notes"
             }
           ]
         },
@@ -2477,6 +2485,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "derek_personal_safe_opened": false,
     "derek_storage_safe_opened": false,
     "whiteboard_cipher_seen": false,
+    "derek_notes_read": false,
     "decoded_whiteboard": false,
 
     "talked_to_maya": false,
