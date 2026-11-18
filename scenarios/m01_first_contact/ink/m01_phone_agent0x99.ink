@@ -131,6 +131,25 @@ So: quiet, deniable. Message me the moment you're stuck and I'll walk you throug
     -> DONE
 
 // ================================================
+// AFTER THE ABORT (incoming call, a few seconds after OPERATION SHATTER: ABORTED)
+// A short call before the debrief, so the abort does not just end in silence.
+// Reached only by the attack_aborted ring mapping on agent_0x99.
+// ================================================
+
+=== after_abort ===
+// lint: call-knot
+#speaker:agent_0x99
+
+Stay put. I'm sending a team to collect Derek and the servers.
+
+They'll be a while, so finish up in there. Call me when you want the debrief.
+
++ [Understood. I'll be here.]
+    Good. Well done.
+    #exit_conversation
+    -> DONE
+
+// ================================================
 // SUPPORT HUB (General Help)
 // ================================================
 
