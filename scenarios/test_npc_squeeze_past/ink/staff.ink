@@ -1,6 +1,6 @@
 === start ===
 # speaker:npc
-Mind yourself — coming through.
+Mind yourself, coming through.
 -> hub
 
 === hub ===
