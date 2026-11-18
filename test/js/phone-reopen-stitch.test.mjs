@@ -359,3 +359,20 @@ test('R3 M1: a submenu whose top guard clears itself re-runs its menu stitch und
     assert.equal(out.knot, 'subs.menu');
     assert.deepEqual(texts(conv), ['Never mind.']);
 });
+
+test('R4 m1: a home path that is only #exit_conversation still runs and closes the phone', async () => {
+    setGlobals({ tgx: false });
+    const saved = await openAtPath('tghint');
+    setGlobals({ tgx: true });
+    const { out } = await reopen(saved, { homeKnot: 'tgxhome' });
+    assert.equal(out.renavigated, true);
+    assert.equal(out.knot, 'tgxhome', 'the close path wins over the kept menu');
+    assert.ok(out.tags.some(t => /exit_conversation/.test(t)), `got ${JSON.stringify(out.tags)}`);
+});
+
+test('R4 m1: with the global unchanged the kept menu stays (the close path is not taken)', async () => {
+    setGlobals({ tgx: false });
+    const saved = await openAtPath('tghint');
+    const { out } = await reopen(saved, { homeKnot: 'tgxhome' });
+    assert.equal(out.renavigated, false);
+});

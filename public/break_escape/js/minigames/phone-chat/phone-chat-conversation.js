@@ -743,9 +743,13 @@ export default class PhoneChatConversation {
         if ((!chosen || chosen.fresh === 0) && sameChoices && knot !== home && this._hasKnot(story, home)) {
             const viaHome = dryRun(home);
             // Visible output only: a tag-only step (m02 support_hub opens with one) is a
-            // change the player cannot see, and would drop a kept follow-up menu.
+            // change the player cannot see, and would drop a kept follow-up menu. A tag that
+            // closes the phone (#exit_conversation, #end_conversation) is visible, so a home
+            // path that is only that close still runs and closes it instead of leaving a stale menu.
+            const closesPhone = tags => (tags || []).some(t =>
+                /^(exit_conversation|end_conversation)$/i.test(String(t).split(':')[0].trim()));
             const showsSomething = viaHome && viaHome.steps.slice(viaHome.replayed)
-                .some(st => phoneStepLines(st.text, st.tags).length > 0);
+                .some(st => phoneStepLines(st.text, st.tags).length > 0 || closesPhone(st.tags));
             if (showsSomething) chosen = viaHome;
         }
         if (!chosen) return { renavigated: false };

@@ -231,6 +231,7 @@ Done deal.
 // ---- R3 fixtures ----
 VAR tg = false
 VAR tg2 = false
+VAR tgx = false
 VAR pf = false
 VAR nf = false
 
@@ -312,3 +313,12 @@ Agent: Sub hub.
     -> DONE
 + [Never mind.]
     -> subhub
+
+// R4 m1: a home knot whose new-globals path is only a close tag.
+=== tgxhome ===
+{tgx: -> tgxclose}
+-> hub
+
+=== tgxclose ===
+# exit_conversation
+-> DONE
