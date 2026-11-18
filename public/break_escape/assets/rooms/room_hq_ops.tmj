@@ -486,26 +486,26 @@
      "y": 166.0
     },
     {
-     "gid": 1130,
-     "height": 54,
+     "gid": 445,
+     "height": 64,
      "id": 20,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 33,
+     "width": 38,
      "x": 88.0,
      "y": 252.0
     },
     {
-     "gid": 1130,
-     "height": 54,
+     "gid": 445,
+     "height": 64,
      "id": 21,
      "name": "",
      "rotation": 0,
      "type": "",
      "visible": true,
-     "width": 33,
+     "width": 38,
      "x": 88.0,
      "y": 220.0
     },
