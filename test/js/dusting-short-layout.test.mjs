@@ -483,6 +483,11 @@ test('r7 (c): the dust step tightens the options rows, tools margin and powder l
 test('m2: _choosePowder resets the brushed flag, so a new powder shows the instruction again', () => {
     const body = src.match(/_choosePowder\(id\) \{[\s\S]*?\n    \}/)[0];
     assert.match(body, /this\._setBrushed\(false\)/);
+    // R8 m: _setStep and _refreshMetrics both run _refreshDynamic with the old powder's coverage,
+    // which would set brushed again; the reset must come after both
+    const reset = body.indexOf('this._setBrushed(false)');
+    assert.ok(reset > body.indexOf("this._setStep('dust')"), 'reset after the step render');
+    assert.ok(reset > body.indexOf('this._refreshMetrics(true)'), 'reset after the metric refresh');
 });
 
 function brushedGame(coverage, { short = true, sticky = false } = {}) {

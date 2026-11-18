@@ -677,10 +677,12 @@ export class DustingMinigame extends MinigameScene {
         this.powder = id;
         this.tool = POWDERS[id].tools[0];
         this.toolStrokes = 0;
-        this._setBrushed(false);
         this.puffMode = false;
         this._setStep('dust');
         this._refreshMetrics(true);
+        // after the step render and the metric refresh: both run _refreshDynamic, which would
+        // otherwise set brushed again from the previous powder's coverage
+        this._setBrushed(false);
         // short landscape drops the trailing sentence: the Powder (C) button sits right below the feedback line
         const short = !!(this.root && this.root.classList.contains('dusting-short'));
         const why = wrongPowderReason(this.powder, this.surfaceId, short);
