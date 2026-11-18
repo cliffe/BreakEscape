@@ -92,3 +92,13 @@ test('buildUI triggers the unlock in Hacktivity mode only (source contract)', ()
     // buildUI gates the call on hacktivityMode; standalone falls through untouched.
     assert.match(src, /buildUI\(\)\s*\{[\s\S]*?if \(this\.hacktivityMode\) \{\s*this\.requestConsoleUnlock\(\);/);
 });
+
+test('flagNote shows under the VM steps, escaped, and only when set (blind m03 m5)', () => {
+    const vm = { title: 'kali', ip: '10.0.0.2' };
+    const withNote = launcher({ hacktivityMode: false, vm, vmPanelRefused: false, flagNote: 'Flags go back to <b>the Drop-Site</b>.' }).buildVmDisplay();
+    assert.match(withNote, /vm-flag-note/);
+    assert.match(withNote, /&lt;b&gt;the Drop-Site&lt;\/b&gt;/);
+    assert.doesNotMatch(withNote, /<b>the Drop-Site/);
+    const without = launcher({ hacktivityMode: false, vm, vmPanelRefused: false, flagNote: '' }).buildVmDisplay();
+    assert.doesNotMatch(without, /vm-flag-note/);
+});

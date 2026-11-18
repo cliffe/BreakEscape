@@ -1353,7 +1353,8 @@ export function handleObjectInteraction(sprite) {
                 hacktivityMode: hacktivityMode,
                 stationId: sprite.scenarioData.id || sprite.objectId,
                 showPostit: sprite.scenarioData.showPostit || false,
-                postitNote: sprite.scenarioData.postitNote || ''
+                postitNote: sprite.scenarioData.postitNote || '',
+                flagNote: sprite.scenarioData.flagNote || ''
             });
             return;
         }
