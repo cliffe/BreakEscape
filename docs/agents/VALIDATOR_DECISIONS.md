@@ -176,11 +176,11 @@ Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (me
   "scenario": "scenarios/ceo_exfil/scenario.json.erb",
   "stage": "ink",
   "match": "in itemsHeld. Add {",
-  "count": 4
+  "count": 1
 }
 ```
 
-Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). The shared helper-npc.ink gives keycard, lockpick, phone and workstation; the reception NPC holds none of them. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario.
+Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (merge batch 13); count lowered from 4 to 1 on 2026-11-18, when the validator began skipping give_item tags inside {has_<type>: branches. Only #give_item:keycard is left. The shared helper-npc.ink gives keycard, lockpick, phone and workstation; the reception NPC holds none of them. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario.
 
 ## 2026-11-12: ceo_exfil phone targetKnot
 
