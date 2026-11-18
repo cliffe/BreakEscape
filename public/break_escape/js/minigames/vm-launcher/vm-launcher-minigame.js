@@ -62,6 +62,8 @@ export class VmLauncherMinigame extends MinigameScene {
             console.warn(`VM launcher: refused the server's VM panel URL (${rawPanelUrl.length} characters)`);
         }
         this.postitNote = params.postitNote || '';
+        // Optional one-line scenario note shown under the VM steps (where the flags go back to).
+        this.flagNote = typeof params.flagNote === 'string' ? params.flagNote : '';
         this.showPostit = params.showPostit || false;
     }
 
@@ -499,6 +501,10 @@ export class VmLauncherMinigame extends MinigameScene {
                     <p>3. Complete the challenges and capture flags</p>
                 </div>
             `;
+        }
+
+        if (this.flagNote.trim() !== '') {
+            html += `<div class="vm-flag-note"><p>${this.escapeHtml(this.flagNote)}</p></div>`;
         }
         
         return html;

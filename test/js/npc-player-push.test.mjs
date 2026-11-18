@@ -207,3 +207,15 @@ test('clearPlayerOfNpc: the player is moved clear of the NPC by the shortest way
     assert.equal(clearPlayerOfNpc(boxed, npc, box), false, 'no free way out: nothing moves');
     assert.equal(boxed.position.y, 12);
 });
+
+// USB foothold fix (lab_physical_pentest games 8412 to 8420): an NPC squeezing past the player
+// (npc-behavior.js isPassingPlayer) neither separates from the player nor settles on the contact.
+test('collider: an NPC squeezing past the player does not collide with the player at all', () => {
+    const passing = { roomId: 'r', config: { patrol: { enabled: true } }, isPassingPlayer: () => true };
+    const h = harness({ playerY: 100, behavior: passing });
+    assert.equal(h.process(), false, 'no separation while passing');
+    assert.equal(h.npc.body.pushable, true, 'not pinned either');
+    const done = { roomId: 'r', config: { patrol: { enabled: true } }, isPassingPlayer: () => false };
+    const after = harness({ playerY: 100, behavior: done });
+    assert.equal(after.process(), true, 'clear of the player: the body block is back');
+});

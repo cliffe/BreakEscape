@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: NPC squeezes past the player",
+  "description": "Engine test: a needs walk held by the player standing in a one-tile aisle walks on through the player after about 2.5 s, instead of holding or detouring until the job times out. An NPC with squeezePastPlayer false keeps the old body block.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "engine_npc_avoidance",
+  "test_objective": "Verify a needs walk squeezes past a player parked in a one-tile aisle after about 2.5 s, a brief pass changes nothing, and an opted-out NPC still holds."
+}

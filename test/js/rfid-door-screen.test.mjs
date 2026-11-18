@@ -574,6 +574,19 @@ test('the emulating and reading screens show their status first', () => {
     } finally { restore(); }
 });
 
+test('the first crack is a choice: weak and custom cards both offer both attacks and say when each works', () => {
+    const { g, footer, restore } = withFooter({ mode: 'clone', cardToClone: mifare() });
+    try {
+        const weak = { card_id: 'w', rfid_protocol: 'MIFARE_Classic_Weak_Defaults', name: 'Staff badge' };
+        for (const card of [weak, mifare()]) {
+            g.ui.showProtocolInfo(card);
+            const labels = footer.children[0].children.map(b => b.textContent.trim());
+            assert.ok(labels.some(l => /^> ?(Dictionary|Darkside)/.test(l)) && labels.some(l => /Dictionary/.test(l)) && labels.some(l => /Darkside/.test(l)), card.rfid_protocol);
+            assert.ok(flat(screen).some(e => /crack-choice/.test(e.className || '') && /default keys/.test(e.textContent) && /Darkside/.test(e.textContent)), 'one-line explanation');
+        }
+    } finally { restore(); }
+});
+
 test('the protocol screen puts its action, then Back and Abandon, in the footer (R5 m1)', () => {
     const { g, footer, restore } = withFooter({ mode: 'clone', cardToClone: mifare() });
     try {
@@ -581,7 +594,7 @@ test('the protocol screen puts its action, then Back and Abandon, in the footer 
         const desfire = { card_id: 'd', rfid_protocol: 'MIFARE_DESFire', name: 'Exec badge' };
         const cases = [
             [mifare(), ['> Darkside Attack (~30 sec)', '  Dictionary Attack (unlikely)']],
-            [weak, ['> Dictionary Attack (instant)']],
+            [weak, ['> Dictionary Attack (instant)', '  Darkside Attack (~10 sec)']],
             [desfire, ['> Save UID Only']],
             [em(), ['> Read & Clone']],
         ];

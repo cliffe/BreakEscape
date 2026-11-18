@@ -925,9 +925,12 @@ export function createNPCCollision(scene, npcSprite, player) {
                 handleNPCPlayerCollision(npcSprite, player);
             },
             (npc, plyr) => {
+                const behavior = window.npcBehaviorManager?.getBehavior(npc.npcId);
+                // Squeezing past the player (npc-behavior.js _notePlayerBlock): no separation
+                // and no settle until the two are clear
+                if (behavior?.isPassingPlayer?.()) return false;
                 if (!shouldAllowNPCPush(npc, plyr)) return false;
                 // q53 g: a routed or patrolling NPC is not shoved off its route
-                const behavior = window.npcBehaviorManager?.getBehavior(npc.npcId);
                 const routed = keepsRouteAgainstPlayer(behavior, npc.npcId);
                 if (!routed) return true;
                 const walls = wallRectsFor([plyr.currentRoom || window.player?.currentRoom, behavior?.roomId])
