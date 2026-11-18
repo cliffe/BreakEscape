@@ -224,8 +224,6 @@ Narrator: She writes you into the log by hand, pressing hard.
 
 Bernie Nwosu: You're in the book. And no, I can't give you a badge that does anything.
 
-Bernie Nwosu: The readers are down, and the permissions system's behind that ransom screen with everything else.
-
 Bernie Nwosu: So Estates dumped every mechanical override on my hook and made it my problem.
 
 {bernie_influence <= 0 and not met_after_burn:
@@ -487,7 +485,7 @@ Bernie Nwosu: I'd never once clapped eyes on that man before this started.
 === reeves_confirmed ===
 Bernie Nwosu: Reeves. #delivery: very still
 
-Bernie Nwosu: Six weeks ago there was a fire drill. Half two in the morning, nothing on the board. Estates were livid. They hadn't scheduled it.
+Bernie Nwosu: Six weeks ago there was a fire drill. Half two in the morning, nothing on the board.
 
 Bernie Nwosu: He walked two men in high-vis through this lobby and said they were with facilities. I asked for names for the book.
 

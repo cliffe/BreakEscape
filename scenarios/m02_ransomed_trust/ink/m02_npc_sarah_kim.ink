@@ -165,8 +165,6 @@ Dr. Sarah Kim: I am the Chief Technology Officer of this hospital, and I cannot 
 === access_because ===
 Dr. Sarah Kim: Access control runs on the same estate as everything else. Every permission, every card, every door group, behind that ransom screen.
 
-Dr. Sarah Kim: I can authorise you until I lose my voice. It won't open one door.
-
 Narrator: She signs your paper badge, writes an extension on it, and hands it back.
 
 Dr. Sarah Kim: That's the extent of my power tonight. A signature on a piece of card.
@@ -343,11 +341,7 @@ Dr. Sarah Kim: You have my statement and his emails. If it comes to it, you have
 === fire_drill ===
 ~ topic_fire_drill = true
 
-Dr. Sarah Kim: Six weeks ago.
-
-Dr. Sarah Kim: There was a drill. Half past two, no notice. I was rung at home about it, and Estates spent the next week furious.
-
-Dr. Sarah Kim: Nobody had scheduled it. It isn't on the annual plan, and there's no record of anyone requesting it.
+Dr. Sarah Kim: Six weeks ago there was a drill. Half past two, no notice, and nobody had scheduled it. I was rung at home, and Estates spent the next week furious.
 
 Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a scanner to install.
 
