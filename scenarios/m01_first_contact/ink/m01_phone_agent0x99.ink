@@ -380,7 +380,6 @@ Most people at Viral Dynamics are legitimate employees. We want ENTROPY, not col
 // ================================================
 
 === report_operation_shatter ===
-~ operation_shatter_reported = true
 #unlock_task:inform_safetynet_operation_shatter
 
 ...Say that again.
@@ -446,6 +445,7 @@ Every piece of evidence you find brings us closer to stopping this.
 -> mission_commitment
 
 === mission_commitment ===
+~ operation_shatter_reported = true
 #complete_task:inform_safetynet_operation_shatter
 
 Good work discovering this. Now we know what we're dealing with.
@@ -996,7 +996,7 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
 // "Keep going" on the choice above leaves the call on these choices, so there is a way to carry on.
 // The hub's "ready for debrief" choice rings this call again later.
 + [Not yet. I want to finish up first.]
-    Copy that. I'm a message away.
+    Good. Off you go.
     #exit_conversation
     -> END
 

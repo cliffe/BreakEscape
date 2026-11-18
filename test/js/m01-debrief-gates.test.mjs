@@ -81,3 +81,44 @@ test('F6: the ending-check choice still starts the debrief', () => {
     while (s.canContinue) { s.Continue(); tags.push(...(s.currentTags || [])); }
     assert.ok(tags.includes('set_global:start_debrief_cutscene:true'));
 });
+
+test('F5: a report left half-way (position lost) keeps the report offered and the debrief hidden', () => {
+    const resolved = { entropy_reveal_read: true, player_aborted_attack: true, operation_shatter_reported: false };
+    const s = hub(resolved);
+    s.ChooseChoiceIndex(labels(s).findIndex((l) => /I discovered what ENTROPY is planning/.test(l)));
+    while (s.canContinue) s.Continue();
+    assert.ok(s.currentChoices.length > 0, 'report stops at its first choice');
+    assert.equal(s.variablesState['operation_shatter_reported'], false, 'not reported until the report completes');
+    // The saved position is replaced by a ring (callback) that ends in support_hub.
+    s.ChoosePathString('support_hub');
+    while (s.canContinue) s.Continue();
+    const mid = labels(s);
+    assert.ok(!mid.some((l) => DEBRIEF.test(l)), 'debrief offered mid-report');
+    assert.ok(mid.some((l) => /I discovered what ENTROPY is planning/.test(l)), 'report not offered again');
+});
+
+test('F5: finishing the report sets the flag, completes the task and opens the debrief', () => {
+    const s = hub({ entropy_reveal_read: true, player_aborted_attack: true, operation_shatter_reported: false });
+    s.ChooseChoiceIndex(labels(s).findIndex((l) => /I discovered what ENTROPY is planning/.test(l)));
+    const tags = [];
+    for (let i = 0; i < 20; i++) {
+        while (s.canContinue) { s.Continue(); tags.push(...(s.currentTags || [])); }
+        if (!s.currentChoices.length || DEBRIEF.test(labels(s).join('|'))) break;
+        s.ChooseChoiceIndex(0);
+    }
+    assert.ok(tags.includes('complete_task:inform_safetynet_operation_shatter'));
+    assert.equal(s.variablesState['operation_shatter_reported'], true);
+    s.ChoosePathString('support_hub');
+    while (s.canContinue) s.Continue();
+    assert.ok(labels(s).some((l) => DEBRIEF.test(l)), 'debrief offered after the report');
+});
+
+test('F6: the Not yet reply is a line with a cached clip (reuses "Good. Off you go.")', () => {
+    const s = story({});
+    s.ChoosePathString('closing_debrief');
+    while (s.canContinue) s.Continue();
+    s.ChooseChoiceIndex(1);
+    const out = [];
+    while (s.canContinue) out.push(s.Continue().trim());
+    assert.ok(out.includes('Good. Off you go.'));
+});
