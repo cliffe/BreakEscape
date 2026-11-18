@@ -1,0 +1,13 @@
+{
+  "key": "76cddd2d4750cf6eadf10e7d65f23a9a",
+  "npc": "receptionist",
+  "text": "That's all you get from me.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:52:58Z"
+}

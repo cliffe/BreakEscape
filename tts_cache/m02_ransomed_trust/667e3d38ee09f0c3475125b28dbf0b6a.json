@@ -1,0 +1,13 @@
+{
+  "key": "667e3d38ee09f0c3475125b28dbf0b6a",
+  "npc": "ward_nurse",
+  "text": "Monitors are back. I can see the whole row again. Thank God.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:57:06Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "fa7cecb75128bf645599a09b679f2887",
+  "npc": "patient_bed5",
+  "text": "The monitors are coming up. All down the row. Thank God.",
+  "voice": "Autonoe",
+  "style": "Retired schoolteacher, seventy-one, post-operative and fully alert. British-Chinese, raised in Edinburgh -- a clear, precise Scottish accent. Calm, observant, quietly furious on behalf of the sicker patients around her. Speaks in complete sentences because she has always spoken in complete sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:57:41Z"
+}
