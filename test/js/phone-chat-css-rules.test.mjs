@@ -89,23 +89,19 @@ check('only hard-stop repeating-linear-gradient scanlines remain', () => {
 // A2: phone landscape (max-height 500px).
 const land = all.filter(r => /max-height:\s*500px/.test(r.media));
 const L = sel => land.find(r => r.selector.replace(/\s+/g, ' ') === sel);
-check('landscape: thread keeps at least 72px and scrolls', () => {
+check('landscape: thread keeps at least 56px and scrolls', () => {
     const r = L('.conversation-view .messages-container');
     assert.ok(r, 'rule present');
-    assert.ok(parseInt(r.body.match(/min-height:\s*(\d+)px/)[1], 10) >= 72);
+    assert.ok(parseInt(r.body.match(/min-height:\s*(\d+)px/)[1], 10) >= 56);
     assert.match(r.body, /overflow-y:\s*auto/);
 });
 check('landscape: replies scroll, shrink and are capped', () => {
     const r = L('.conversation-view .choices-container');
     assert.match(r.body, /overflow-y:\s*auto/);
     assert.match(r.body, /flex-shrink:\s*1/);
-    assert.match(r.body, /min-height:\s*0/);
+    assert.ok(parseInt(r.body.match(/min-height:\s*(\d+)px/)[1], 10) >= 110);
     assert.match(r.body, /max-height:\s*(\d+)vh/);
     assert.ok(parseInt(r.body.match(/max-height:\s*(\d+)vh/)[1], 10) <= 40);
-});
-check('landscape: avatar hidden to save header height', () => {
-    const r = land.find(x => /conversation-avatar-placeholder/.test(x.selector));
-    assert.match(r.body, /display:\s*none/);
 });
 check('landscape: reply buttons stay 16px GNF with tight padding', () => {
     const r = L('.conversation-view .choice-button');
@@ -148,7 +144,6 @@ check('landscape: headshot shrinks to 32px outside call mode; call mode keeps it
     const r = land.find(x => /:not\(\.phone-call-mode\) \.conversation-header \.conversation-avatar,/.test(x.selector));
     assert.ok(r, 'scoped rule');
     assert.match(r.body, /width:\s*32px/);
-    assert.doesNotMatch(land.map(x => x.selector + '{' + x.body).join('\n'), /\.phone-call-mode[^{]*\{[^}]*display:\s*none/);
     assert.ok(!land.some(x => /display:\s*none/.test(x.body) && /conversation-avatar/.test(x.selector)), 'avatar never hidden');
     const call = all.find(x => x.media === '' && x.selector.startsWith('.phone-call-mode .conversation-avatar'));
     assert.match(call.body, /width:\s*128px/);
