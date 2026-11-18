@@ -481,7 +481,7 @@ Client roster, transaction records, anything to the Architect.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
-St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name.
+St. Catherine's gave us the buyer's invoice. This is the seller's own ledger. A case with a name.
 -> m2_revelation_choices
 
 // Pass 3c: choices live in text-free knots. When the phone reopens with changed
@@ -505,7 +505,7 @@ St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, sa
 #speaker:agent_0x99
 { not (usb_seen or lore_directive_found):
     Pull the rest while you're standing in it. The catalogue, the roster, the drive in her desk.
-    And listen -- the logs point at a Phase 2. Find the directive and we get ahead of it for once.
+    The logs point at a Phase 2. Find the directive and we get ahead of it for once.
 - else:
     { directive_decoded:
         And it lines up with the directive you read me. Phase 2 has a supplier, and now a ledger.

@@ -1055,7 +1055,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:reception_badge_cloned",
               "condition": "value === true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader. Read, crack, emulate -- same order every time." }
+              "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader." }
             },
             {
               "eventPattern": "npc_ko:ffion_rees",
