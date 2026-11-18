@@ -195,6 +195,7 @@ VAR hall_a_warnings = 0            // times the player has backed off hall_guard
 VAR hall_a_engaged = false        // hall_guard_a has turned hostile; stops the repeat challenge
 VAR hall_b_warnings = 0            // as hall_a_warnings, for hall_guard_b (one Back off)
 VAR hall_b_engaged = false         // hall_guard_b has turned hostile; stops the repeat challenge
+VAR duty_warnings = 0              // times the player has backed off the duty guard at the fitter's locker; a second catch turns him
 VAR breach_call_done = false       // set by HaX's breach_call, so a call held back by the tunnel fight rings only once
 VAR hax_rest_promised = false      // dialogue R1 m14: HaX promised the rest at six (hax_post), so 06:00 and the hearing offer the question
 VAR plans_read = false
