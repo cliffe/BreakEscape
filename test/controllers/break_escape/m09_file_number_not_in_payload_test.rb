@@ -4,8 +4,10 @@ require 'break_escape/scenario_binding'
 
 module BreakEscape
   # Release audit m09 #2: the H&L file number (the hl_box password) sat in the drop screen's
-  # textVariants, which ship with the room at load. It is now handed over by HaX server-side
-  # (#give_item:notes:ledger_source_entry), so no browser-bound payload carries it before it is earned.
+  # textVariants, which ship with the room at load. It is now spoken by HaX in the ledger_read
+  # knot of m09_phone_agent0x99.ink, so no scenario or room payload carries it. The compiled ink
+  # (GET /games/:id/ink) still holds it from game start: ink text is best effort under the cheat
+  # policy (SCENARIO_FORMAT_HARDENING_PLAN.md, GET ink; server-held globals were dropped at q85).
   class M09FileNumberNotInPayloadTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
