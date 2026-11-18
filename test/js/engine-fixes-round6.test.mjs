@@ -214,6 +214,13 @@ test('m08: Add to Notepad uses the 16 px notes icon, drawn at its own size', () 
         const src = read(rel);
         assert.ok(!src.includes('notes-sm.png'), `${rel}: no 9 px icon blown up to a white square`);
         // alt is "Notepad", or empty where the button carries the word and an aria-label (phone status bar)
+        if (rel.includes('vm-launcher')) {
+            // built with DOM calls (no innerHTML): same icon, alt and class set as attributes
+            assert.match(src, /setAttribute\('src', '\/break_escape\/assets\/icons\/notes\.png'\)/);
+            assert.match(src, /setAttribute\('alt', 'Notepad'\)/);
+            assert.match(src, /className = 'icon-small notepad-btn-icon'/);
+            continue;
+        }
         assert.match(src, /icons\/notes\.png" alt="(?:Notepad)?" class="icon-small/);
     }
     // notes.png is 16x16, and .icon-small draws at 16x16
