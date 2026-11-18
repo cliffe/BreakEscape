@@ -159,7 +159,7 @@ test('a link item whose storeIn names a held holder is filed, and announced as a
     toasts.length = 0;
     showServerItem({ ...link, storeIn: 'capture_log' });
     assert.equal(hidden(held(link.id)), true, 'filed in the capture log');
-    assert.deepEqual(toasts, [['Added to Capture log: Drop box: comms room', 'info', '', 3000]]);
+    assert.deepEqual(toasts, [['Added to Capture log: Drop box: comms room', 'info', '', 3000, { low: true }]]);
 });
 
 test('a link item with storeIn and no holder held stays in the tray', async () => {

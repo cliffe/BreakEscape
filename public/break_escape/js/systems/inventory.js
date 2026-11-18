@@ -152,7 +152,7 @@ export function refreshInventoryTray() {
     }
     for (const { item, holderId } of filedArrivals) {
         const name = item.scenarioData?.name || item.scenarioData?.type || 'item';
-        window.gameAlert?.(`Added to ${holderName(items, holderId)}: ${name}`, 'info', '', 3000);
+        window.gameAlert?.(`Added to ${holderName(items, holderId)}: ${name}`, 'info', '', 3000, { low: true });
     }
     refreshHoveredLabel(items);
     window.eventDispatcher?.emit('inventory_changed', { items });
