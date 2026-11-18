@@ -11,6 +11,10 @@
     font-size: 20px;
     text-align: center;
     min-height: 20px;
+    /* The box grows with its text: in the flex column that holds the lock it must not shrink
+       below its content (a wrapped line spilled out of a 20px box at 1280) */
+    flex: 0 0 auto;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -247,6 +251,10 @@
         width: auto;
         flex: 0 0 auto;
         margin-top: 0;
+        /* The shell's X is fixed in the top-right corner (15px in, 30px wide, plus a 14px hit
+           area), level with this row here: keep the row clear of it, and of the shell's own
+           scrollbar when it shows */
+        margin-right: calc(44px + var(--minigame-shell-bar, 0px));
     }
 }
 
@@ -267,17 +275,34 @@
 
 /* Mode-switch buttons while a key goes in or after a correct key: the real disabled attribute
    blocks clicks; the fill goes flat, the border dashed and the cursor not-allowed, so the state
-   is not only colour. */
-/* Disabled look that also beats the themed 9-slice button (ui-themes.css sets border-image,
-   filter and transform on [data-ui-theme] .minigame-button and its hover). Plain text on a flat
-   dark fill with a dashed 2px border: no opacity, so the pixel text stays readable. */
+   is not only colour. Plain text on a flat dark fill, no opacity, so the pixel text stays readable.
+   The disabled button keeps exactly the outer box of the enabled one (nothing in the strip
+   shifts): the border keeps the enabled width (4px unthemed, the 9-slice width --ui-button-px
+   themed) in the fill colour, and the 2px dashed line is an outline drawn inside that band. The
+   padding is not overridden. Beats the themed 9-slice (border-image, filter, transform) and the
+   hover ring (utilities.css box-shadow) so a hovered disabled button looks the same. */
 .lockpicking-mode-row .minigame-button:disabled,
-.lockpicking-mode-row .minigame-button:disabled:hover,
+.lockpicking-mode-row .minigame-button:disabled:hover {
+    border-image: none;
+    border: 4px solid #34495e;
+    outline: 2px dashed #bdc3c7;
+    outline-offset: -4px;
+    background: #34495e;
+    box-shadow: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+    cursor: not-allowed;
+}
+
 [data-ui-theme] .lockpicking-mode-row .minigame-button:disabled,
 [data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover {
     border-image: none;
-    border: 2px dashed #bdc3c7;
+    border: var(--ui-button-px) solid #34495e;
+    outline: 2px dashed #bdc3c7;
+    outline-offset: -6px;
     background: #34495e;
+    box-shadow: none;
     opacity: 1;
     filter: none;
     transform: none;

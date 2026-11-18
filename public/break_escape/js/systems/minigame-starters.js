@@ -489,9 +489,11 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 console.log('KEY SELECTION CLOSED: caught switching to lockpicking');
             } else {
                 console.log('KEY SELECTION FAILED');
-                // Closed because the player was hit: no "wrong key" on top of it (F2).
-                // A door with a lockedHint adds where the key comes from; others are unchanged.
-                if (!window.minigameClosedByDamage?.()) {
+                // A wrong key never ends this minigame: it shows "Wrong key!" in the lock and
+                // offers the keys again. So a failed completion here is a close (X, Esc, a
+                // hit, a conversation starting), never a wrong key: no toast unless the result
+                // says wrongKey. A door with a lockedHint adds where the key comes from.
+                if (result?.wrongKey === true && !window.minigameClosedByDamage?.()) {
                     window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', lockedHintDuration(lockable, 4000, 'The selected key doesn\'t work with this lock.'));
                 }
             }

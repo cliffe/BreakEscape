@@ -370,8 +370,8 @@ export class PinManagement {
             }
             
             // Stop key insertion if in key mode
-            // (not while the insertion tween is alive: the flag guards double starts)
-            if (this.parent.keyMode && !this.parent.keyInsertTween?.isPlaying?.()) {
+            // (not while the insertion tween field is set: it is set right after add() and nulled on complete or kill; isPlaying() can read false before the first update and while paused)
+            if (this.parent.keyMode && !this.parent.keyInsertTween) {
                 this.parent.keyInserting = false;
             }
         });
@@ -572,7 +572,7 @@ export class PinManagement {
                 // Prevent this event from bubbling up to global handlers
                 pointer.event.stopPropagation();
                 
-                if (!this.parent.keyInserting && !this.parent.keyInsertTween?.isPlaying?.()) {
+                if (!this.parent.keyInserting && !this.parent.keyInsertTween) {
                     console.log('Starting key insertion animation...');
                     this.parent.keyOps.startKeyInsertion();
                 } else {

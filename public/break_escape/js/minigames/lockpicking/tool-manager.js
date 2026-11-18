@@ -42,7 +42,7 @@ export class ToolManager {
         btn.id = 'lockpicking-switch-mode-btn';
         btn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
         btn.onclick = () => this.switchToPickMode();
-        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.() || this.parent.keyUnlocked));
+        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween || this.parent.keyUnlocked));
         row.appendChild(createPickCaption());
         row.appendChild(btn);
         return row;
@@ -56,7 +56,7 @@ export class ToolManager {
         btn.id = 'lockpicking-switch-to-keys-btn';
         btn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="Key" class="icon-large"> Switch to Key Mode';
         btn.onclick = () => this.switchToKeyMode();
-        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.() || this.parent.keyUnlocked));
+        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween || this.parent.keyUnlocked));
         row.appendChild(btn);
         return row;
     }
@@ -210,7 +210,7 @@ export class ToolManager {
 
         // A key is still going in (the buttons are disabled, this is the defensive guard):
         // stop the insertion so no wrong-key or unlock result lands in pick mode
-        if (this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.()) {
+        if (this.parent.keyInserting || this.parent.keyInsertTween) {
             this.parent.scene?.tweens?.killTweensOf(this.parent.keyGroup);
             this.parent.keyInsertTween = null;
             this.parent.keyInserting = false;

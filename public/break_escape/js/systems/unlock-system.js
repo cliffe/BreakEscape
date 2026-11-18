@@ -1156,10 +1156,9 @@ export function handleUnlock(lockable, type) {
                         const method = outcome?.method === 'key' ? 'key' : 'lockpick';
                         const serverResponse = await notifyServerUnlock(lockable, type, method);
                         setTimeout(() => {
+                            // No toast here: minigame-starters.js already showed the pick or
+                            // key success the moment the minigame completed (two toasts before)
                             unlockTarget(lockable, type, lockable.layer, serverResponse);
-                            if (method === 'lockpick') {
-                                window.gameAlert(`Successfully picked the lock!`, 'success', 'Lock Picked', 4000);
-                            }
                         }, 100);
                     } else {
                         console.log('LOCKPICK FAILED');

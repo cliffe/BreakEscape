@@ -78,7 +78,7 @@ export class KeyOperations {
         
         // Add click handler for key insertion
         clickZone.on('pointerdown', () => {
-            if (!this.parent.keyInserting && !this.parent.keyInsertTween?.isPlaying?.()) {
+            if (!this.parent.keyInserting && !this.parent.keyInsertTween) {
                 // Hide labels on first key click (similar to pin clicks)
                 if (!this.parent.pinClicked) {
                     this.parent.pinClicked = true;
@@ -121,7 +121,7 @@ export class KeyOperations {
             keyInserting: this.parent.keyInserting 
         });
         
-        if (!this.parent.keyGroup || !this.parent.keyConfig || this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.()) {
+        if (!this.parent.keyGroup || !this.parent.keyConfig || this.parent.keyInserting || this.parent.keyInsertTween) {
             console.log('startKeyInsertion early return - missing requirements');
             return;
         }

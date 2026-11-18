@@ -196,7 +196,7 @@ test('the helper the tool manager calls really exists on KeySelection', () => {
 
 // A pick-first parent: no keyData, keys with no pinCount, real ToolManager + KeyOperations
 function pickFirstParent() {
-    const log = { feedback: [], panels: [], retries: [], timers: [] };
+    const log = { feedback: [], panels: [], retries: [], timers: [], holds: [] };
     const parent = {
         keyMode: false, keySelectionMode: false, pinCount: 4, params: {},
         canSwitchToPickMode: true, canSwitchToKeyMode: true,
@@ -213,6 +213,9 @@ function pickFirstParent() {
         scene: { time: { delayedCall() {} } },
         keyAnim: { startKeyRotationAnimationWithChamberHoles() {} },
         complete() {},
+        // Same signature as framework/base-minigame.js: mark the success, complete after ms
+        // (an early close commits it); the mock records the hold instead of starting a timer
+        holdSuccess(ms, afterComplete) { log.holds.push({ ms, afterComplete }); },
     };
     parent.toolMgr = new ToolManager(parent);
     parent.keyOps = new KeyOperations(parent);
@@ -292,6 +295,12 @@ test('m3/n2: once a correct key is turning, "Switch to Lockpicking" does nothing
         const rows = strip.children.filter(c => c.className === 'lockpicking-mode-row');
         assert.equal(rows.length, 1, 'row kept so the strip does not jump');
         assert.equal(rowButton(rows[0]).disabled, true, 'its button is disabled');
+        assert.equal(rowButton(rows[0]).title, 'The lock is opening', 'and says why');
+        assert.deepEqual(log.holds.map(h => h.ms), [3000], 'the success is held, then the minigame closes itself');
+        // a row rebuilt while the key turns (the guard path) is disabled with the same title
+        const rebuilt = rowButton(parent.toolMgr.buildKeyButtonRow());
+        assert.equal(rebuilt.disabled, true);
+        assert.equal(rebuilt.title, 'The lock is opening');
         parent.toolMgr.switchToPickMode();
         assert.equal(parent.keyMode, true, 'still key mode, so the unlock reports key');
         parent.toolMgr.switchToKeyMode();
@@ -502,9 +511,14 @@ test('R3 m1: pointerup clearing the flag mid-insertion, then a second keyway cli
         assert.equal(tweens.length, 1);
         assert.equal(btn.disabled, true);
         assert.equal(btn.title, 'Not while a key is going in');
-        // the pointerup handler itself skips the reset while the tween plays
-        const src = readFileSync(join(js, 'minigames/lockpicking/pin-management.js'), 'utf8');
-        assert.match(src, /this\.parent\.keyMode && !this\.parent\.keyInsertTween\?\.isPlaying\?\.\(\)/);
+        // the real pointerup handler skips the reset while the tween field is set
+        const h = realHandlers(parent);
+        h.pointerup();
+        assert.equal(parent.keyInserting, false, 'flag untouched value: handler ran');
+        parent.keyInserting = true;
+        h.pointerup();
+        assert.equal(parent.keyInserting, true, 'handler leaves the flag while the tween runs');
+        parent.keyInserting = false;
         // switch is still refused-by-guard: it kills the live tween even with the flag cleared
         parent.toolMgr.switchToPickMode();
         assert.equal(tweens[0].playing, false);
@@ -532,7 +546,191 @@ test('R3 m1: a stale onComplete does nothing; the current one re-enables and cle
 });
 test('R3 m2: the disabled CSS beats the themed button and avoids opacity', () => {
     const css = readFileSync(join(js, '../css/lockpicking.css'), 'utf8');
-    const block = css.slice(css.indexOf('[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover'));
-    for (const want of ['border-image: none', 'border: 2px dashed #bdc3c7', 'background: #34495e', 'opacity: 1', 'filter: none', 'transform: none', 'cursor: not-allowed']) assert.ok(block.includes(want), want);
-    assert.ok(css.includes('\n.lockpicking-mode-row .minigame-button:disabled:hover'), 'unthemed hover rule too');
+    for (const sel of ['.lockpicking-mode-row .minigame-button:disabled:hover', '[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover']) {
+        const block = cssRule(css, sel);
+        for (const want of ['border-image: none', 'outline: 2px dashed #bdc3c7', 'background: #34495e', 'opacity: 1', 'filter: none', 'transform: none', 'cursor: not-allowed', 'box-shadow: none']) assert.ok(block.includes(want), `${sel}: ${want}`);
+    }
+});
+
+// The body of the rule whose selector list contains `selector` (the last such rule wins)
+function cssRule(css, selector) {
+    let found = null;
+    for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+        if (m[1].replace(/\/\*[\s\S]*?\*\//g, '').split(',').map(x => x.trim()).includes(selector)) found = m[2];
+    }
+    assert.ok(found !== null, `rule not found: ${selector}`);
+    return found;
+}
+
+// ── R5: the guard is the field, not tween.isPlaying() ─────────────────────────────────
+// Real PinManagement.setupInputHandlers: the handlers it registers are captured and driven
+mkdirSync(join(dir, 'minigames/lockpicking'), { recursive: true });
+writeFileSync(join(dir, 'minigames/lockpicking/pin-management.js'), readFileSync(join(js, 'minigames/lockpicking/pin-management.js'), 'utf8'));
+const { PinManagement } = await import(pathToFileURL(join(dir, 'minigames/lockpicking/pin-management.js')).href);
+function realHandlers(parent) {
+    const handlers = {};
+    const zoneHandlers = {};
+    parent.scene.input = { on: (ev, fn) => { handlers[ev] = fn; }, keyboard: { on() {} } };
+    parent.lockState = { currentPin: null };
+    parent.gameState = { mouseDown: false };
+    parent.keyClickZone = { on: (ev, fn) => { zoneHandlers[ev] = fn; }, destroy() {} };
+    new PinManagement(parent).setupInputHandlers();
+    return { pointerup: handlers.pointerup, zoneDown: () => zoneHandlers.pointerdown({ event: { stopPropagation() {} } }) };
+}
+// Phaser 3.60 can report isPlaying() false before the manager's first update, and while paused
+function idleReportingRig() {
+    const rig = insertionRig();
+    rig.parent.scene.tweens.add = (cfg) => { const tw = { cfg, isPlaying: () => false }; rig.tweens.push(tw); return tw; };
+    return rig;
+}
+test('R5: a tween that reports isPlaying() false still holds the guard (field set right after add)', () => {
+    const t = captureTimers();
+    try {
+        const { parent, tweens, btn } = idleReportingRig();
+        parent.keyOps.startKeyInsertion();
+        assert.equal(tweens.length, 1);
+        assert.equal(tweens[0].isPlaying(), false);
+        assert.equal(parent.keyInsertTween, tweens[0]);
+        parent.keyInserting = false; // what an unguarded pointerup would do
+        parent.keyOps.startKeyInsertion(); // second keyway click
+        assert.equal(tweens.length, 1, 'no second tween');
+        assert.equal(btn.disabled, true);
+        // rows rebuilt mid-insertion are disabled too
+        assert.equal(rowButton(parent.toolMgr.buildKeyButtonRow()).disabled, true);
+        assert.equal(rowButton(parent.toolMgr.buildPickButtonRow()).disabled, true);
+        // the real handlers: pointerup leaves the flag, the keyway zone ignores the click
+        const h = realHandlers(parent);
+        parent.keyInserting = true;
+        h.pointerup();
+        assert.equal(parent.keyInserting, true);
+        h.zoneDown();
+        assert.equal(tweens.length, 1);
+        // the defensive switch still stops it
+        parent.keyInserting = false;
+        parent.toolMgr.switchToPickMode();
+        assert.equal(parent.keyInsertTween, null);
+        assert.equal(parent.keyMode, false);
+    } finally { t.restore(); }
+});
+test('R5: once the tween completes the field is null and the guard opens (pointerup resets the flag)', () => {
+    const t = captureTimers();
+    try {
+        const { parent, tweens, btn } = idleReportingRig();
+        parent.keyOps.startKeyInsertion();
+        tweens[0].cfg.onComplete();
+        assert.equal(parent.keyInsertTween, null);
+        assert.equal(btn.disabled, false);
+        parent.keyInserting = true;
+        realHandlers(parent).pointerup();
+        assert.equal(parent.keyInserting, false);
+    } finally { t.restore(); }
+});
+
+// The real querySelectorAll branch of setModeButtonsDisabled: an array-like, no children walk
+test('R5: setModeButtonsDisabled uses querySelectorAll when the strip has it (array-like result)', () => {
+    const mkBtn = () => ({ disabled: false, title: '', removeAttribute(n) { if (n === 'title') this.title = ''; } });
+    const b1 = mkBtn(), b2 = mkBtn();
+    const asked = [];
+    const strip = {
+        children: [], // a children walk would find nothing
+        querySelectorAll: (sel) => { asked.push(sel); return { length: 2, 0: b1, 1: b2 }; },
+    };
+    globalThis.document = { querySelector: (sel) => (sel === '.lockpicking-item-section' ? strip : null) };
+    const mg = { keyInserting: true };
+    const tm = new ToolManager(mg);
+    tm.setModeButtonsDisabled(true);
+    assert.deepEqual(asked, ['.lockpicking-mode-row button']);
+    for (const b of [b1, b2]) { assert.equal(b.disabled, true); assert.equal(b.title, 'Not while a key is going in'); }
+    mg.keyUnlocked = true;
+    tm.setModeButtonsDisabled(true);
+    assert.equal(b1.title, 'The lock is opening');
+    tm.setModeButtonsDisabled(false);
+    for (const b of [b1, b2]) { assert.equal(b.disabled, false); assert.equal(b.title, ''); }
+    // a result with no length falls back to the children walk
+    const b3 = Object.assign(mkBtn(), { tagName: 'BUTTON' });
+    const row = { className: 'lockpicking-mode-row', children: [b3] };
+    const strip2 = { children: [row], querySelectorAll: () => null };
+    globalThis.document = { querySelector: () => strip2 };
+    new ToolManager({}).setModeButtonsDisabled(true);
+    assert.equal(b3.disabled, true);
+});
+
+// ── R5: the pick success toast shows once, however many switches came first ─────────────
+function sliceArrow(src, marker, anchor) {
+    const start = src.indexOf(marker, src.indexOf(anchor));
+    assert.ok(start >= 0, marker);
+    const open = src.indexOf('{', src.indexOf('=>', start));
+    let depth = 0;
+    for (let i = open; i < src.length; i++) {
+        if (src[i] === '{') depth++;
+        else if (src[i] === '}' && --depth === 0) return src.slice(start, i + 1);
+    }
+    throw new Error('unbalanced');
+}
+test('R5: N mode switches, then a pick success: one "Successfully picked the lock!" toast', async () => {
+    const unlockSrc = readFileSync(join(js, 'systems/unlock-system.js'), 'utf8');
+    const pickOnComplete = sliceArrow(src, 'onComplete: (success, result) =>', 'export function startLockpickingMinigame').replace(/^onComplete: /, '');
+    const pickCb = sliceArrow(unlockSrc, 'async (success, outcome) =>', "startLockpickingMinigame(lockable, window.game, difficulty");
+    for (const switches of [0, 1, 3, 6]) {
+        const strip = installDom();
+        const { mg } = minigame({ originalInventoryKeys: KEYS, originalCorrectKeyId: 'office_key', keyMode: false, keySelectionMode: false });
+        strip.appendChild(mg.toolMgr.buildKeyButtonRow());
+        for (let i = 0; i < switches; i++) { mg.toolMgr.switchToKeyMode(); mg.toolMgr.switchToPickMode(); }
+        assert.equal(mg.keyMode, false);
+        const toasts = [];
+        const win = { gameAlert: (m) => toasts.push(m), expectContainerAfterUnlock() {}, minigameClosedByDamage: () => false };
+        const quiet = { log() {}, warn() {}, error() {} };
+        const timers = [];
+        const cb = new Function('window', 'console', 'notifyServerUnlock', 'unlockTarget', 'lockable', 'type', 'setTimeout',
+            `return (${pickCb});`)(win, quiet, async () => ({}), () => {}, {}, 'door', (f) => { timers.push(f); });
+        const onComplete = new Function('window', 'console', 'callback', 'lockable', `return (${pickOnComplete});`)(win, quiet, cb, {});
+        // what LockpickingMinigame.complete(true) reports for a pick in pick mode
+        onComplete(true, { method: mg.keyMode ? 'key' : 'lockpick' });
+        await new Promise(r => setImmediate(r));
+        timers.forEach(f => f());
+        assert.deepEqual(toasts.filter(m => /picked the lock/.test(m)), ['Successfully picked the lock!'], `after ${switches} switches`);
+    }
+});
+
+// ── R5: the disabled button keeps the enabled button's outer box ─────────────────────────
+test('R5: disabled mode button: border width and padding match the enabled button (themed and unthemed)', () => {
+    const lock = readFileSync(join(js, '../css/lockpicking.css'), 'utf8');
+    const themes = readFileSync(join(js, '../css/ui-themes.css'), 'utf8');
+    const framework = readFileSync(join(js, '../css/minigames-framework.css'), 'utf8');
+    const decl = (css, selector, prop) => {
+        const body = cssRule(css, selector);
+        const m = body.match(new RegExp(`(?:^|[;\\s])${prop}:\\s*([^;]+);`));
+        return m ? m[1].trim() : null;
+    };
+    const px = (v) => Number(String(v).replace('px', ''));
+    // enabled, unthemed: .minigame-button { border: 4px solid ...; padding: 10px 20px }
+    const baseBorder = px(decl(framework, '.minigame-button', 'border').split(' ')[0]);
+    const basePadding = decl(framework, '.minigame-button', 'padding');
+    const disabledBorder = px(decl(lock, '.lockpicking-mode-row .minigame-button:disabled:hover', 'border').split(' ')[0]);
+    assert.equal(disabledBorder, baseBorder, 'unthemed border width');
+    assert.equal(decl(lock, '.lockpicking-mode-row .minigame-button:disabled:hover', 'padding'), null, 'padding not overridden');
+    assert.ok(baseBorder + px(basePadding.split(' ')[0]) === disabledBorder + px(basePadding.split(' ')[0]));
+    // enabled, themed: border-width and border-image-width are var(--ui-button-px), padding from the base
+    const themedBorder = decl(themes, '[data-ui-theme] .minigame-button', 'border-width');
+    assert.equal(themedBorder, 'var(--ui-button-px)');
+    for (const sel of ['[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled', '[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover']) {
+        assert.equal(decl(lock, sel, 'border').split(' ')[0], 'var(--ui-button-px)', `${sel} border width`);
+        assert.equal(decl(lock, sel, 'padding'), null);
+    }
+    // the dashed look is an outline inside the band, never a border style, and no hover ring
+    const block = lock.slice(lock.indexOf('.lockpicking-mode-row .minigame-button:disabled,'));
+    assert.ok(!/border:[^;]*dashed/.test(block), 'no dashed border (it would change the box)');
+    assert.equal((block.match(/outline: 2px dashed/g) || []).length, 2, 'one rule each, themed and unthemed');
+    assert.equal((block.match(/box-shadow: none/g) || []).length, 2, 'the hover ring is off for :disabled');
+});
+
+// ── R5: nits: the feedback box grows, the row clears the X ─────────────────────────────────
+test('R5: the feedback box cannot shrink below its text; the short-landscape row clears the X', () => {
+    const lock = readFileSync(join(js, '../css/lockpicking.css'), 'utf8');
+    const fb = lock.slice(lock.indexOf('.lockpick-feedback {'), lock.indexOf('}', lock.indexOf('.lockpick-feedback {')));
+    assert.match(fb, /flex: 0 0 auto/);
+    assert.match(fb, /height: auto/);
+    assert.doesNotMatch(fb, /(^|\s)height: \d/m);
+    const mq = lock.slice(lock.indexOf('@media (max-height: 560px) and (min-width: 769px) {\n    .lockpicking-item-section {\n        flex-wrap: nowrap'));
+    assert.match(mq.slice(0, mq.indexOf('.lockpicking-or-caption')), /margin-right: calc\(44px \+ var\(--minigame-shell-bar, 0px\)\)/);
 });
