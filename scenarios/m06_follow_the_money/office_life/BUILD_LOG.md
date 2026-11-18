@@ -34,3 +34,4 @@ Checks: ink compile 11 of 11 (existing json unchanged); dialoguelint on both .in
 - Coupled breaks added (PLAN 2.6, 2.9): on Lerato, `npc_use_started:floor_coffee` by Tomasz sets her caffeine to 20 (delay 2000, cooldown 150000); on Tomasz, the same event by Dani sets his caffeine to 20 (cooldown 120000). One way each; both gated `!globalVars.floor_staff_ko`; no npc_arrived mapping.
 - Lerato `seated` is now `{ "facing": "south" }` (schema: sets a swivel chair's starting direction); live result in LIVE_FIX1.md.
 - Static: validator 0 errors, 44 warnings; lock diff empty.
+- Fix round 1 live (LIVE_FIX1.md, 12abb95dc): Dani talk then wait 5 of 5, exchange 1 plays at about 10 s, heard true at 40 s; natural Tomasz coffee with Lerato joining 5 of 5; coupling blocked by floor_staff_ko (debugKO). Lerato facing change has no visible effect and is unresolved (see LIVE_FIX1.md part 4).
