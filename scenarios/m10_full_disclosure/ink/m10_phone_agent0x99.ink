@@ -78,7 +78,7 @@ VAR hax_suspect = ""
 === support_hub ===
 + {flag4_submitted and not flag4_heard and not hax_console_asked} [The console.] -> console_fact
 + {flag4_submitted and not flag4_heard and not hax_vault_asked} [The vault line.] -> vault_line
-+ {outer_lock_open and not hax_jammed and not what_went_out_given} [What went out?] -> what_went_out
++ {outer_lock_open and not hax_jammed and not what_went_out_given and not core_greeted} [What went out?] -> what_went_out
 + {flag2_submitted and not hax_jammed and not outer_lock_open} [What's still live?] -> whats_live
 // Stage 8 (ruling 3, m-1): while "[What's still live?]" shows, it carries the
 // backdoor too, so the hub stays at ten on the busiest save.
