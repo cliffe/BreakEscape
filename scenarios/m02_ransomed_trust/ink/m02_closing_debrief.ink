@@ -143,15 +143,15 @@ Agent 0x47 'Nightshade': Agent 0x00. Lovely piece of kit you brought me. It's a 
 Agent 0x47 'Nightshade': Every wrong try, it tells you how many digits were right and in place, and how many in the wrong slot.
 
 Agent 0x47 'Nightshade': Each answer narrows the field. Mastermind, in silicon.
+{reeves_safe_opened:
+    Agent 0x47 'Nightshade': You turned it on their own man's wall safe, I hear. Any keypad that tells you how close you are has already given the code away.
+}
 Agent 0x47 'Nightshade': The firmware is how I know it's ENTROPY, not some catalogue burglar. Signed, versioned, built to be handed out, logged out, handed back.
 
 Agent 0x47 'Nightshade': Somebody manufactures these at scale, for people they trust with buildings.
 Agent 0x47 'Nightshade': I'll write it up properly. Short version: the people you're chasing have a supply chain.
 
 Agent 0x47 'Nightshade': That should worry you more than the one device.
-{reeves_safe_opened:
-    Agent 0x47 'Nightshade': And you turned it on their own man's wall safe. That's the lesson. A keypad that tells you how close you are has already given the code away.
-}
 Agent HaX: He's not wrong. He usually isn't. #delivery: quietly
 -> debrief_hub
 

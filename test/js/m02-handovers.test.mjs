@@ -156,14 +156,15 @@ test('Bernie key_on_badge: a reload mid-choice resumes with the option, and pick
 const COVER_BURNED = { cover_burned: true, cover_restored: false, staff_lanyard_obtained: true, val_challenged: true, val_met: true };
 const SHOW = 'Show her the lanyard';
 
-test('Val found_pass_pretext: a found contractor pass asks for a pretext, right answer is not first', () => {
+test('Val found_pass_pretext: a found contractor pass asks for a pretext, right answer is last', () => {
     const s = open(JSONS.val, { globals: { ...COVER_BURNED, holds_contractor_pass: true } });
     run(s);
     const r = pick(s, SHOW);
     assert.ok(r.text.some(l => /Blank IT pass/.test(l)));
     assert.equal(r.choices.length, 3);
-    assert.ok(!/IT sent me/.test(r.choices[0]), 'the right answer is not the top option');
-    assert.ok(r.choices.some(c => /IT sent me/.test(c)));
+    assert.ok(/server room reader/.test(r.choices[2]), 'the right answer is third');
+    assert.ok(!/server room reader/.test(r.choices[0] + r.choices[1]));
+    assert.ok(/IT\. I'm resetting/.test(r.choices[0]), 'the first option is a wrong IT story');
 });
 
 test('Val found_pass_pretext: reload mid-choice resumes; a wrong answer sends her away, a re-talk allows the right one', () => {
@@ -184,7 +185,7 @@ test('Val found_pass_pretext: reload mid-choice resumes; a wrong answer sends he
     run(s3);
     const again = pick(s3, SHOW);
     assert.equal(again.choices.length, 3, 'the question comes back on the next talk');
-    const right = pick(s3, 'IT sent me');
+    const right = pick(s3, 'server room reader');
     assert.ok(right.tags.includes('set_global:cover_restored:true'));
     assert.equal(v(s3, 'cover_restored'), true);
     assert.equal(v(s3, 'cleared_after_burn'), true);

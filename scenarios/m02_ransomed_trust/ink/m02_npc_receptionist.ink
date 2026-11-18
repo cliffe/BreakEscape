@@ -265,7 +265,7 @@ Bernie Nwosu: Gary's in there. He's not come out since half ten, so knock proper
 
 === key_on_badge ===
 Narrator: She reads the signature twice, then the extension, then looks at you over it.
-Bernie Nwosu: That's her hand. I'd know it anywhere, she signs my rota.
+Bernie Nwosu: That's her hand. I'd know it anywhere. Every memo on this desk this week has it on.
 #set_global:bernie_gave_key:true
 ~ bernie_gave_key = true
 #give_item:key:it_override_key

@@ -279,22 +279,22 @@ Val Okonkwo: Go on. But you come past me on the way out and tell me what you fou
 Narrator: She turns the lanyard over. Contractor, issued by IT, no name.
 Val Okonkwo: Blank IT pass. So what are you here for, on an IT pass?
 
-+ [Agency nursing. They've sent me up from the ward.]
-    Val Okonkwo: Agency are on green. That's not green.
++ [IT. I'm resetting the door readers on this floor.]
+    Val Okonkwo: Every reader on this floor's dead, and Gary's not let anyone touch them.
+    -> pretext_failed
++ [Estates. I'm checking the doors after the drill.]
+    Val Okonkwo: Estates don't come out at night. Even the drill had two on the form and none turned up.
     -> pretext_failed
 + [IT sent me for the server room reader. It's on its own controller.]
     Val Okonkwo: The one reader in the building that still works. Gary's baby.
     Val Okonkwo: That's the first thing anyone's said tonight that matches what they're holding.
     -> show_lanyard_cleared
-+ [Estates. I'm checking the doors after the drill.]
-    Val Okonkwo: Estates don't come out at night. They didn't even come out on Wednesday.
-    -> pretext_failed
 
 === pretext_failed ===
 ~ pretext_story_told = true
 ~ influence -= 10
 # influence_decreased
-Val Okonkwo: Go away and come back with a story that matches your pass.
+Val Okonkwo: Wrong story for that pass, and you don't get another. If somebody here vouches for you, I'll listen to them.
 #exit_conversation
 -> DONE
 
@@ -302,7 +302,7 @@ Val Okonkwo: Go away and come back with a story that matches your pass.
 Narrator: She turns it over, green ribbon, and thumbs her radio.
 Val Okonkwo: Ward Three. Sister Doyle. You give out an agency lanyard tonight?
 Narrator: {ward_nurse_ko: Static. Nobody answers.|A short answer crackles back. It isn't yes.}
-Val Okonkwo: That's Doyle's drawer, and Doyle didn't open it for you.
+Val Okonkwo: {ward_nurse_ko: Nobody's answering for that pass, so neither am I.|That's Doyle's drawer, and Doyle didn't open it for you.}
 Val Okonkwo: Away from my door.
 ~ agency_pass_refused = true
 #exit_conversation

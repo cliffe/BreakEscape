@@ -284,7 +284,7 @@ Gary Whitlock: There. It's got my name on it, so don't make me look daft.
 
 Narrator: {password_hints_found: He glances at the bare patch on the bezel where the note was.|He taps the sticky note on the monitor bezel without peeling it off.}
 
-Gary Whitlock: Shared admin credential on the backup box. Never rotated. It's on that note. Don't make me say them out loud.
+Gary Whitlock: Shared admin credential on the backup box. Never rotated. Three candidates on that note. Don't make me read them out.
 
 Gary Whitlock: It's on the list. The list is four years long, and the list is why we're here.
 
@@ -300,7 +300,7 @@ Gary Whitlock: Go on then. What did I cost it at?
 * [Eighty-five thousand.]
     ~ cost_checked = true
     Gary Whitlock: Eighty-five. Yeah.
-    Gary Whitlock: You actually read them.
+    Gary Whitlock: Somebody was paying attention, then.
     -> keycard_trusted
 * [I don't know the figure. I'd rather not guess.]
     ~ cost_checked = true
@@ -311,7 +311,7 @@ Gary Whitlock: Go on then. What did I cost it at?
 
 === cost_unknown ===
 Gary Whitlock: Eighty-five. It's in every one of them.
-Gary Whitlock: Read one before you quote me.
+Gary Whitlock: Better than making one up.
 -> keycard_conditional
 
 === cost_wrong ===

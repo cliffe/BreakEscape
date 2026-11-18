@@ -718,8 +718,12 @@ ENTROPY uses encoding for obfuscation and encryption for actual security. When y
 === hint_wall_safe ===
 #speaker:agent_0x99
 ~ hint_wall_safe_given = true
-No code for that one anywhere, and nobody to ask. That's what the sealed case behind the rack is for.
-Clamp it on, read the lights, close in.
+{pin_cracker_found:
+    You're already carrying the answer. Clamp the cracker on, read the lights, close in.
+- else:
+    Nobody to ask, so don't. That's what the sealed case behind the rack is for.
+    Clamp it on, read the lights, close in.
+}
 -> support_hub
 
 === hint_pin_safe ===
