@@ -1,4 +1,5 @@
 require 'test_helper'
+require_relative '../../support/fake_hacktivity_vm'
 
 module BreakEscape
   # complete_task for a submit_flags task decides from the server's own record of
@@ -14,6 +15,22 @@ module BreakEscape
       @mission = break_escape_missions(:ceo_exfil)
       @owner   = break_escape_demo_users(:test_user) # current_player in standalone
       @other   = break_escape_demo_users(:other_user)
+    end
+
+    teardown do
+      FakeHacktivityVm.uninstall!
+    end
+
+    # The Hacktivity-mode tests need a live VM set behind vm_set_id, or the D144 gate reads
+    # the game as released before the flag ever reaches the host.
+    def install_live_vm_set(game, id: 1)
+      game.player_state['vm_set_id'] = id
+      game.save!
+      set = FakeHacktivityVm::FakeSet.new(id: id, user_id: @owner.id)
+      set.vms = FakeHacktivityVm::FlagVms.new([FakeHacktivityVm::FlagVm.new([FLAG_ONE, FLAG_TWO], 'target_vm')])
+      set.define_singleton_method(:user) { nil }
+      FakeHacktivityVm.install!(sets: [set])
+      set
     end
 
     def scenario(target_flags)
@@ -200,6 +217,20 @@ module BreakEscape
       post unlock_game_url(game), params: { targetType: 'object', targetId: 'flag_safe', attempt: flag, method: 'flag' }, as: :json
     end
 
+    # Hacktivity mode for the block only.
+    def in_hacktivity_mode
+      Mission.singleton_class.class_eval do
+        alias_method :__orig_hacktivity_mode?, :hacktivity_mode?
+        define_method(:hacktivity_mode?) { true }
+      end
+      yield
+    ensure
+      Mission.singleton_class.class_eval do
+        alias_method :hacktivity_mode?, :__orig_hacktivity_mode?
+        remove_method :__orig_hacktivity_mode?
+      end
+    end
+
     # Makes the Hacktivity submit fail the way a FlagService error does.
     def with_flagservice_error(failure = { success: false, message: 'Error submitting flag to Hacktivity', retryable: true })
       Game.class_eval do
@@ -245,8 +276,7 @@ module BreakEscape
 
     test 'flag-locked object: a FlagService error is refused so the player can retry' do
       game = Game.create!(mission: @mission, player: @owner, scenario_data: lock_scenario)
-      game.player_state['vm_set_id'] = 1
-      game.save!
+      install_live_vm_set(game)
 
       with_flagservice_error { unlock_safe(game, FLAG_ONE) }
 
@@ -268,10 +298,9 @@ module BreakEscape
 
     test 'flag-locked object: a permanent Hacktivity failure keeps the old behaviour and opens the object' do
       game = Game.create!(mission: @mission, player: @owner, scenario_data: lock_scenario)
-      game.player_state['vm_set_id'] = 1
-      game.save!
+      install_live_vm_set(game)
 
-      with_flagservice_error({ success: false, message: 'VM set not found' }) { unlock_safe(game, FLAG_ONE) }
+      with_flagservice_error({ success: false, message: 'Flag not found in VM set' }) { unlock_safe(game, FLAG_ONE) }
 
       assert_response :success
       assert_equal true, JSON.parse(response.body)['success']
@@ -280,8 +309,7 @@ module BreakEscape
 
     test 'flag station: an unrecorded flag is reported as flag_not_recorded, not invalid' do
       game = build_game(['target_vm-flag1'])
-      game.player_state['vm_set_id'] = 1
-      game.save!
+      install_live_vm_set(game)
 
       with_flagservice_error do
         post flags_game_url(game), params: { flag: FLAG_ONE, stationId: 'station_a' }, as: :json
@@ -289,6 +317,25 @@ module BreakEscape
 
       assert_response :unprocessable_entity
       assert_equal 'flag_not_recorded', JSON.parse(response.body)['reason']
+    end
+
+    # A Hacktivity outage must never tell the student their VMs were released: the real
+    # submit path, a live set, and a FlagService that raises.
+    test 'a FlagService outage on a live VM set is flag_not_recorded, never vm_released' do
+      game = build_game(['target_vm-flag1'])
+      install_live_vm_set(game)
+      ::FlagService.define_singleton_method(:process_flag) { |*| raise StandardError, 'connection refused' }
+
+      in_hacktivity_mode do
+        assert_equal :live, game.reload.vm_set_state
+        post flags_game_url(game), params: { flag: FLAG_ONE, stationId: 'station_a' }, as: :json
+      end
+
+      assert_response :unprocessable_entity
+      body = JSON.parse(response.body)
+      assert_equal 'flag_not_recorded', body['reason'], body.inspect
+      assert_not_equal Game::VM_RELEASED_MESSAGE, body['message']
+      assert_empty Array(game.reload.player_state['submitted_flags'])
     end
   end
 end
