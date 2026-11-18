@@ -173,11 +173,20 @@ test('R9: an undiscovered owner is not named', async () => {
     assert.deepEqual(events[0].data, { stationId: 'front_desk', reason: 'wrong_station' });
 });
 
+test('a malformed flag is refused with what a flag looks like', async () => {
+    world();
+    respond(422, { success: false, message: 'Invalid flag', reason: 'invalid' });
+    const { s, els } = makeStation();
+    els['#flag-input'].value = 'not a flag';
+    await s.submitFlag();
+    assert.match(els['#flag-result'].textContent, /^✗ Flag not accepted\. A flag looks like flag\{\.\.\.\}/);
+});
+
 test('R9: invalid and already_submitted reasons', async () => {
     let w = world();
     respond(422, { success: false, message: 'Invalid flag', reason: 'invalid' });
     let { s, els } = makeStation();
-    els['#flag-input'].value = 'flag{typo';
+    els['#flag-input'].value = 'flag{typo}';
     await s.submitFlag();
     assert.match(els['#flag-result'].textContent, /copied in full/);
     assert.deepEqual(w.events[0].data, { stationId: 'front_desk', reason: 'invalid' });
