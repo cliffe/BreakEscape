@@ -1227,7 +1227,7 @@ wall_safe_pin = "5829"
               "setGlobal": { "insider_badge_id_found": true },
               "unlockAim": "identify_inside_asset",
               "completeTask": "unmask_ghost_badge",
-              "sendTimedMessage": { "delay": 9000, "message": "Ghost's log names the badge that held the doors: SC-4471. 'A post, not a payroll,' it says. Find out whose before you name anybody." }
+              "sendTimedMessage": { "delay": 9000, "message": "Ghost's operational log names the badge that held the doors: SC-4471. 'A post, not a payroll,' it says. Find out whose before you name anybody." }
             },
 <%# Playtest loop round 1 (A10): the player makes the deduction and HaX confirms
     nothing. The three texts that fired on the post log / badge / later evidence are
@@ -2345,7 +2345,7 @@ wall_safe_pin = "5829"
           "lockType": "key",
           "keyPins": [30, 40, 50, 60],
           "difficulty": "easy",
-          "observations": "4-drawer filing cabinet with a key lock",
+          "observations": "4-drawer filing cabinet with a key lock. The override key on your ring is cut for the IT door, not this one; Gary keeps its key close, or you pick it.",
           "contents": [
             {
               "type": "notes",
@@ -2542,8 +2542,8 @@ wall_safe_pin = "5829"
               "name": "Equipment Deployment Log",
               "takeable": true,
               "readable": true,
-              "text": "EQUIPMENT DEPLOYMENT LOG // RESTRICTED\nRecovered from root on the backup server after the ProFTPD backdoor gave way.\n\nInside contact: unpaid contractor, standing grievance over a withheld invoice.\nOverride badge ran the evacuation drill six weeks ago.\nSame badge held the server-room doors open again on Friday night.\nBadge number: withheld in this log.\n\nWhoever propped ENTROPY's door is on the staff list, not the payroll.",
-              "observations": "Pulled from root once the ProFTPD backdoor gave way -- Ghost's own deployment log. It describes the insider exactly, but stops short of a badge number.",
+              "text": "EQUIPMENT DEPLOYMENT LOG // RESTRICTED\nRecovered from root on the backup server after the ProFTPD backdoor gave way.\n\nInside contact: unpaid contractor, standing grievance over a withheld invoice.\nOverride badge ran the evacuation drill six weeks ago.\nSame badge held the server-room doors open again on Friday night.\nBadge number: not recorded here. Ghost's operational log has it.\n\nWhoever propped ENTROPY's door is on the staff list, not the payroll.",
+              "observations": "Pulled from root once the ProFTPD backdoor gave way -- Ghost's own deployment log. It describes the insider exactly, but the badge number is in Ghost's operational log, not this one.",
               "puzzle_graph_role": "reward"
             },
             {
@@ -2906,6 +2906,7 @@ wall_safe_pin = "5829"
           "lockType": "pin",
           "requires": "1987",
           "observations": "4-digit electronic safe -- requires PIN code",
+          "emptyText": "Empty. The escrow keys you took are in your notepad.",
           "puzzle_graph_role": "lock",
           "puzzle_graph_aim": "recover_offline_keys",
           "contents": [
@@ -3997,6 +3998,9 @@ wall_safe_pin = "5829"
 
     "advised_board_pay": false,
     "advised_board_refuse": false,
+    "advised_board_time": false,
+    "reeves_stance": "",
+    "kim_has_escrow_keys": false,
 
     "offline_keys_recovered": false,
     "escrow_safe_opened": false,
