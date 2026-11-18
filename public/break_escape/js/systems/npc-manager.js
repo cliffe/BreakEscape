@@ -147,8 +147,9 @@ export default class NPCManager {
   static SCRIPTED_CALL_START_MS = 500;
   static SCRIPTED_CALL_RETRY_MS = 500;
   static HELD_SAVE_MAX = 8;   // saved fight holds (saveHeldConversations)
-  // A saved hold older than this is dropped on resume: a reload long after the fight should not
-  // open a conversation out of nowhere (its condition is not re-read on resume)
+  // A saved hold of a repeatable mapping older than this is dropped on resume: a reload long after
+  // the fight should not open a conversation out of nowhere, and the beat will come round again.
+  // A onceOnly hold has no later chance, so it is kept and its condition is re-read on resume instead.
   static HELD_SAVE_MAX_AGE_MS = 10 * 60 * 1000;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_DELIVERY_TAG_MAX_CHARS = 300; // a #delivery: tag (game.rb PHONE_DELIVERY_TAG_MAX)
@@ -1259,21 +1260,30 @@ export default class NPCManager {
     this.saveHeldConversations();
   }
 
-  _heldRecordTooOld(rec) {
-    return Number.isFinite(rec.at) && Date.now() - rec.at > NPCManager.HELD_SAVE_MAX_AGE_MS;
+  // `once` is whether the record's mapping is onceOnly: as saved by this build, or from the mapping
+  // when it is known (an older record has neither, and counts as repeatable)
+  _heldRecordTooOld(rec, once = rec.once === true) {
+    return !once && Number.isFinite(rec.at) && Date.now() - rec.at > NPCManager.HELD_SAVE_MAX_AGE_MS;
   }
 
   /** True when the record was handled (queued, or dropped as no longer rebuildable). */
   _resumeHeldRecord(rec) {
-    if (this._heldRecordTooOld(rec)) {
-      console.log(`📵 saved hold for ${rec.npcId} (${rec.eventPattern}) dropped: too old`);
-      return true;
-    }
     const npc = this.npcs.get(rec.npcId);
-    if (!npc) return false;   // not registered yet (its room has not loaded): kept, tried when it registers
+    if (!npc) return this._heldRecordTooOld(rec);   // true: too old, handled (dropped); not registered yet (its room has not loaded): kept, tried when it registers
     const mapping = this._normalizeEventMappings(npc.eventMappings)[rec.handlerIndex];
     if (!mapping || mapping.eventPattern !== rec.eventPattern) return true;
     const config = this._buildMappingConfig(mapping, rec.handlerIndex);
+    if (this._heldRecordTooOld(rec, !!config.once)) {
+      console.log(`📵 saved hold for ${rec.npcId} (${rec.eventPattern}) dropped: too old`);
+      return true;
+    }
+    // R3 m3: the mapping's condition is read again now, less the terms on its own setGlobal keys (it
+    // wrote those before the reload). A story hold whose condition still holds survives a long break.
+    const rw = this._heldCallRingWhile(config);
+    if (rw && !this.ringConditionHolds(rw)) {
+      console.log(`📵 saved hold for ${rec.npcId} (${rec.eventPattern}) dropped on resume: its condition no longer holds`);
+      return true;
+    }
     const eventKey = `${rec.npcId}:${rec.eventPattern}:${rec.handlerIndex}`;
     const triggered = this.triggeredEvents.get(eventKey) || { count: 0, lastTime: 0 };
     triggered.count++;
@@ -1291,13 +1301,16 @@ export default class NPCManager {
   /**
    * The `ringWhile` for a voiced call held by a fight: the mapping's condition (a string of
    * `globalVars.*` terms joined by &&), less any term that reads a key the mapping itself wrote.
+   * The queue path (_heldMappingStillValid) does the same job another way, by putting the mapping's
+   * own writes back to their previous values while it reads the condition. Neither follows a cascade
+   * (the mapping sets X, another mapping sets Y from X, the condition reads Y).
    */
   _heldCallRingWhile(config) {
     if (typeof config.condition !== 'string' || !config.condition.trim() || config.condition.includes('||')) return null;
     const own = Object.keys(config.setGlobal || {});
     // Terms that read a key the mapping itself wrote are left out: its latch is not a reason to drop it
     const terms = config.condition.split('&&').map(t => t.trim()).filter(Boolean)
-      .filter(t => !own.some(k => new RegExp(`globalVars\\.${k}(?![\\w$])`).test(t)));
+      .filter(t => !own.some(k => new RegExp(`globalVars\\.${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w$])`).test(t)));
     return terms.length ? terms.join(' && ') : null;
   }
 
@@ -2097,7 +2110,9 @@ export default class NPCManager {
   _openMappingConversation(npcId, npc, eventPattern, config, eventData, ctx) {
     const { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey, heldAsCall } = ctx;
     // A challenge dropped by a fight never happened: give back the trigger count the event took, so
-    // an onceOnly or maxTriggers mapping can fire when the sighting is re-armed (R2 m2)
+    // an onceOnly or maxTriggers mapping can fire when the sighting is re-armed (R2 m2). Only the
+    // trigger count is given back, not the mapping's setGlobal: a challenge mapping must not latch
+    // itself in setGlobal and read that latch in its condition, or it would not fire again.
     const undoTrigger = () => {
       const t = this.triggeredEvents.get(eventKey);
       if (!t || !(t.count > 0)) return;
@@ -2114,7 +2129,7 @@ export default class NPCManager {
       combatExempt: ownKOEvent,
       // Names the mapping, so a reload can rebuild this conversation (saveHeldConversations)
       // `at` is when it was first held: a record this old after a reload is dropped (R2 m3)
-      heldKey: isRing ? null : { npcId, eventPattern, handlerIndex: config.handlerIndex, at: ctx.heldAt || Date.now() },
+      heldKey: isRing ? null : { npcId, eventPattern, handlerIndex: config.handlerIndex, at: ctx.heldAt || Date.now(), once: !!config.once },
       undoTrigger,
       recheck: () => this._heldMappingStillValid(npcId, eventPattern, config, eventData,
         { ownKO: ownKOEvent, wasHostile, ownWrites, skipCondition: ctx.resumed === true })
@@ -2337,10 +2352,12 @@ export default class NPCManager {
             // A voiced call held by a fight rings with the mapping's condition as its ringWhile (R2-M1),
             // so a condition that turned false during the fight drops it quietly; an unforced one
             // rings until answered, as the direct call it replaces never timed out to a missed call.
-            // A forced one stays forced (disableClose below) and answers itself.
+            // A forced one stays forced (disableClose below) and answers itself; its condition is read
+            // once, as it leaves the hold queue to ring (recheckOnStart), and is exempt after that.
             ring: heldAsCall
               ? { ringWhile: this._heldCallRingWhile(config), ...(config.disableClose ? {} : { untilAnswered: true }) }
               : (config.ring || true),
+            recheckOnStart: !!(heldAsCall && config.disableClose),
             disableClose: config.disableClose || false,
             resume: config.resume === true,
             callLabel: config.callLabel || null,

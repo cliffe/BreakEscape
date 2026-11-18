@@ -7,7 +7,9 @@
   "globalVariables": {
     "night": false,
     "dawn": false,
-    "reserve": false
+    "reserve": false,
+    "proof_voice_off": false,
+    "proof_forced_off": false
   },
   "music": {
     "events": [
@@ -155,7 +157,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "_comment": "Combat-hold check: a voiced call goes to the ringer, held while a fight is on; its condition is re-checked when the fight ends (set proof_voice_off during the fight and it never rings).",
+              "_comment": "Combat-hold check: a voiced call goes to the ringer, held while a fight is on; its condition is re-checked all the while it is queued (set proof_voice_off during the fight and it never rings).",
               "eventPattern": "proof_voice",
               "condition": "!globalVars.proof_voice_off",
               "conversationMode": "phone-chat",
@@ -175,8 +177,9 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "_comment": "Combat-hold check: a forced voiced call is held while a fight is on and rings again after a reload (an ordinary call would count as missed).",
+              "_comment": "Combat-hold check: a forced voiced call is held while a fight is on and rings again after a reload (an ordinary call would count as missed); its condition is read once as it leaves the hold (set proof_forced_off during the fight and it never rings).",
               "eventPattern": "proof_forced",
+              "condition": "!globalVars.proof_forced_off",
               "conversationMode": "phone-chat",
               "targetKnot": "start",
               "voiced": true,

@@ -1,12 +1,12 @@
 // R2: a phone-chat or person-chat EVENT MAPPING held by a fight is re-checked before it is
 // delivered (a voiced call through its ringWhile, a text thread through the queue's re-check),
 // a held forced call stays forced, a dropped onceOnly challenge gets its trigger back, and an
-// old saved hold is dropped on resume. The m10 breach call is the model: a voiced onceOnly
+// old saved repeatable hold is dropped on resume (a onceOnly one is kept and its condition re-read). The m10 breach call is the model: a voiced onceOnly
 // mapping guarded by `!globalVars.hax_jammed`, whose knot sets breach_call_done.
 // Run with: node test/js/phone-defer-combat-mapping.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeWorld } from './phone-ring-harness.mjs';
+import { makeWorld, endCall } from './phone-ring-harness.mjs';
 
 const phoneNpc = { id: 'hax', displayName: 'Agent HaX', npcType: 'phone' };
 const guardNpc = { id: 'guard', displayName: 'Guard', npcType: 'person' };
@@ -186,4 +186,106 @@ test('a saved hold older than the age cap is dropped on resume; a fresh one is r
             assert.equal(w.calls.started.length, expected, `age ${age}`);
         } finally { w.restore(); }
     }
+});
+
+// ---- R3 ----
+
+test('R3 m1: a held FORCED voiced call whose condition went false in the fight does not ring', async () => {
+    const w = world([phoneNpc]);
+    try {
+        register(w, 'hax', [breach({ disableClose: true })]);
+        breachOpens(w);
+        await w.advance(1500);
+        w.win.gameState.globalVariables.hax_jammed = true;
+        w.fight.on = false;
+        await w.advance(30000);
+        assert.equal(rings(w), 0, 'no ring');
+        assert.equal(w.calls.started.length, 0, 'no call opened');
+    } finally { w.restore(); }
+});
+
+test('R3 m1: a held forced call is read once; once it rings, a later change does not drop it', async () => {
+    const w = world([phoneNpc]);
+    try {
+        register(w, 'hax', [breach({ disableClose: true })]);
+        breachOpens(w);
+        await w.advance(1500);
+        w.fight.on = false;
+        await w.advance(1200);
+        w.win.gameState.globalVariables.hax_jammed = true;
+        await w.advance(30000);
+        assert.equal(w.calls.started.length, 1, 'still answers itself');
+    } finally { w.restore(); }
+});
+
+test('R3 m2: a forced call pre-empts a ringing unforced held call, which goes back behind it', async () => {
+    const other = { id: 'boss', displayName: 'Boss', npcType: 'phone' };
+    const w = world([phoneNpc, other]);
+    try {
+        register(w, 'hax', [breach()]);
+        breachOpens(w);
+        await w.advance(1500);
+        w.fight.on = false;
+        await w.advance(3000);
+        assert.equal(rings(w), 1, 'the unforced held call rings');
+        assert.equal(w.win.phoneRinger.offer({ npcId: 'boss', knot: 'finale', disableClose: true }) !== 'refused', true);
+        await w.advance(30000);
+        assert.equal(w.calls.started.length, 1);
+        assert.equal(w.calls.started[0].params.npcId, 'boss', 'the forced call took the slot');
+        endCall(w);
+        await w.advance(4000);
+        assert.equal(rings(w), 1, 'the unforced call is back, not lost');
+    } finally { w.restore(); }
+});
+
+test('R3 m2: a same-contact forced offer still replaces the ringing unforced one', async () => {
+    const w = world([phoneNpc]);
+    try {
+        register(w, 'hax', [breach()]);
+        breachOpens(w);
+        await w.advance(1500);
+        w.fight.on = false;
+        await w.advance(3000);
+        assert.equal(w.win.phoneRinger.offer({ npcId: 'hax', knot: 'finale', disableClose: true }), 'replaced');
+    } finally { w.restore(); }
+});
+
+test('R3 m3: a onceOnly hold older than the cap survives a reload when its condition still holds, and is dropped when it does not', async () => {
+    const m = { eventPattern: 'room_entered', onceOnly: true, cooldown: 0, conversationMode: 'person-chat', targetKnot: 'talk', condition: '!globalVars.hax_jammed' };
+    for (const [jammed, expected] of [[false, 1], [true, 0]]) {
+        const w = world([guardNpc], { fighting: false });
+        try {
+            store.set(heldKey, JSON.stringify([{ npcId: 'guard', eventPattern: 'room_entered', handlerIndex: 0, sceneType: 'person-chat', at: Date.now() - 3 * 60 * 60 * 1000, once: true }]));
+            w.nm._heldRecordsPending = true;
+            w.win.gameState.globalVariables.hax_jammed = jammed;
+            register(w, 'guard', [m]);
+            w.dispatcher.emit('game_loaded', {});
+            w.nm.resumeHeldConversations();
+            await w.advance(3000);
+            assert.equal(w.calls.started.length, expected, `jammed ${jammed}`);
+        } finally { w.restore(); }
+    }
+});
+
+test('R3 m3: a held record\'s condition ignores a latch the mapping wrote itself', async () => {
+    const m = { eventPattern: 'room_entered', onceOnly: true, cooldown: 0, conversationMode: 'person-chat', targetKnot: 'talk', condition: '!globalVars.talk_done', setGlobal: { talk_done: true } };
+    const w = world([guardNpc], { fighting: false });
+    try {
+        store.set(heldKey, JSON.stringify([{ npcId: 'guard', eventPattern: 'room_entered', handlerIndex: 0, sceneType: 'person-chat', at: Date.now() - 3600000, once: true }]));
+        w.nm._heldRecordsPending = true;
+        w.win.gameState.globalVariables.talk_done = true;
+        register(w, 'guard', [m]);
+        w.dispatcher.emit('game_loaded', {});
+        w.nm.resumeHeldConversations();
+        await w.advance(3000);
+        assert.equal(w.calls.started.length, 1);
+    } finally { w.restore(); }
+});
+
+test('R3 n1: a setGlobal key with regex characters is escaped when subtracting its terms', () => {
+    const w = world([phoneNpc]);
+    try {
+        const rw = w.nm._heldCallRingWhile({ condition: '!globalVars.a$b && !globalVars.axb && !globalVars.other', setGlobal: { 'a$b': true } });
+        assert.equal(rw, '!globalVars.axb && !globalVars.other');
+    } finally { w.restore(); }
 });

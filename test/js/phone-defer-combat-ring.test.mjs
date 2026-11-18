@@ -108,8 +108,8 @@ test('text phone-chat held in a fight is saved as a small record, cleared on del
         assert.equal(w.calls.started.length, 0, 'held');
         const rec = JSON.parse(store.get(heldKey));
         assert.ok(Number.isFinite(rec[0].at), 'stamped with when it was held');
-        delete rec[0].at;
-        assert.deepEqual(rec, [{ npcId: 'caller', eventPattern: 'room_entered', handlerIndex: 0, sceneType: 'phone-chat' }]);
+        delete rec[0].at;   // once: the mapping is onceOnly, so the hold is kept across a long break (R3 m3)
+        assert.deepEqual(rec, [{ npcId: 'caller', eventPattern: 'room_entered', handlerIndex: 0, once: true, sceneType: 'phone-chat' }]);
         assert.equal(JSON.stringify(saveOf(w)).includes('room_entered'), false, 'nothing added to the synced phone state');
         w.fight.on = false;
         await w.advance(2500);

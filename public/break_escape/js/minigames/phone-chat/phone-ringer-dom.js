@@ -555,7 +555,7 @@ export function installPhoneRinger(win = window) {
                 untilAnswered: ring ? ring.untilAnswered : raw?.untilAnswered,
                 callbackWhen: ring ? ring.callbackWhen : raw?.callbackWhen,
                 // The opt-in `ring.ringWhile` is the ringer's re-check condition while queued or ringing.
-                ringCondition: ring ? ring.ringWhile : (raw?.ringWhile ?? raw?.ringCondition ?? null),
+                ringCondition: ring ? (ring.ringWhile ?? raw?.ringCondition ?? null) : (raw?.ringWhile ?? raw?.ringCondition ?? null),
             });
         },
         /**
