@@ -564,6 +564,16 @@
     .pin-minigame-attempt-empty { padding: 6px; }
 }
 
+/* 720-high windows with the PIN cracker row (sweep B6 r2): the cracker row (52px icon), the
+   2-row log and a two-line message ran 30px over the frame after 3 wrong codes. Slimmer key
+   padding (4 rows x 8px = 32px) and keypad padding (14 to 10px, 8px) win 40px back. Keys stay
+   36px or more, so the 32px touch target holds. The landscape-phone block (520px high and
+   below) is excluded so it keeps its own sizes. */
+@media (max-height: 760px) and (min-height: 521px) and (min-width: 700px) {
+    .pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-keypad { padding: 10px; }
+    .pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-key { padding: 4px; }
+}
+
 /* A short narrow phone keeps the 400px display size, so its digits are never larger than
    those on a taller phone of the same width */
 @media (max-height: 840px) and (max-width: 400px) {

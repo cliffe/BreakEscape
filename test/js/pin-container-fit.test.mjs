@@ -205,3 +205,20 @@ test('B6: a short narrow phone keeps the 400px display size (digits never grow o
     // the combined block must come after the plain 840 block to win
     assert.ok(pin.indexOf('(max-height: 840px) and (max-width: 400px)') > pin.indexOf('@media (max-height: 840px) {'));
 });
+
+test('B6 r2: 720-high pad with the cracker row wins 40px back and keeps 32px keys', () => {
+    const media = '(max-height: 760px)';
+    const kp = rule(pin, '.pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-keypad', media);
+    const key = rule(pin, '.pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-key', media);
+    const baseKp = rule(pin, '.pin-minigame-keypad', '(max-height: 840px)');
+    const baseKey = rule(pin, '.pin-minigame-key', '(max-height: 840px)');
+    const saved = 2 * (px(baseKp.padding) - px(kp.padding)) + 4 * 2 * (px(baseKey.padding) - px(key.padding));
+    assert.ok(saved >= 40, `saves ${saved}px (needs 30px plus margin)`);
+    // key height: 24px glyph line + padding + 2px borders must stay at least a 32px target
+    assert.ok(24 + 2 * px(key.padding) + 4 >= 32);
+    // only the cracker pad, only 521..760px high and wide windows: 1280x800 and the phone landscape block are untouched
+    assert.ok(pin.includes('@media (max-height: 760px) and (min-height: 521px) and (min-width: 700px)'));
+    // the base keypad padding is 14px each side, so the saving above is 2 x 4px (top and bottom)
+    assert.equal(px(baseKp.padding), 14);
+    assert.equal(px(baseKey.padding), 8);
+});
