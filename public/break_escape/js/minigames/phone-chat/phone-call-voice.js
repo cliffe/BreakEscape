@@ -210,6 +210,9 @@ export class PhoneCallVoice {
     }
 
     /** The player clicked the thread: stop this line and let the next one come. */
+    /** True while a clip is playing. */
+    get active() { return !!this._token; }
+
     skip() {
         if (!this._token) return;
         this._token = null;

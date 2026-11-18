@@ -92,6 +92,7 @@ async function openWith(history) {
     class Hist { loadHistory() { return history; } markAllRead() {} }
     const npc = { id: 'caller', displayName: 'Caller', storyPath: 'x.json', currentKnot: 'start', storyState: 'saved-state' };
     const mg = {
+        _resetSkip() {},
         params: {}, gameState: { isActive: true }, phoneId: 'player_phone',
         npcManager: { getNPC: () => npc }, inkEngine: {},
         ui: { showConversation() {}, addMessages() {}, showNotification() {} },
