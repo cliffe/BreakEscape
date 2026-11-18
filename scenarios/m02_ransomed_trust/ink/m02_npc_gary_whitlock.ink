@@ -47,6 +47,7 @@ VAR hub_quiet = false                // pass 4 dialogue: re-entry line on a re-t
 
 // Synced from globalVars by engine at call-open
 VAR gary_evidence_recovered = false
+VAR gary_cabinet_permission = false  // Gary said "take the lot": the cabinet catch no longer fires. Synced scenario global, set here
 VAR board_coverup_email_found = false
 VAR cover_burned = false // Synced scenario global: the player's booking has been pulled; also set by the talk_to_gary task mapping
 VAR cover_restored = false
@@ -403,6 +404,9 @@ Gary Whitlock: I know how that looks. Put it in the report. Put all of it in.
     ~ hub_quiet = true
     -> hub
 }
+
+// Set before any line of the offer is shown: closing the chat on "take the lot" must keep it.
+~ gary_cabinet_permission = true
 
 Gary Whitlock: One more thing. Filing cabinet, behind you.
 
