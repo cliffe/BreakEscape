@@ -109,3 +109,106 @@ tasks_completed 6
 score           37
 VERDICT: progress recorded - 5 rooms beyond the first, 1 objects unlocked, 0 flags submitted.
 ```
+
+## Retry 3 (game 8133, INCOMPLETE: stopped at the call-in, before the debrief)
+
+HEAD at start: 7c512b898 (build/ol-m04). Game 8133 on keyless :3097 (puma pid 2162290, left running, untouched). Headless, `--speed fast`. Host load about 172 at start, so headless was required. Session log `tools/playtest/m04_critical_failure-session-g8133c.jsonl` (213 commands; the earlier 8133 logs are `...g8133.jsonl` and `...g8133b.jsonl`). Session stopped with `session-stop.sh 8133` after a `sync`; no pid file or pipes left. Flags: `tools/playtest/m04_critical_failure-flags-game8133.xml`, four configured, referred to only as `<flag:N>`.
+
+Which questions this run answers: plumbing (the route and the flag, print, plant door, Static, Voltage and ESD interactions) and a mid-run reload, not solvability. The VM prerequisites were not reachable.
+
+Note on the handover: it says the game sits in the workshop. The `bootstrap` resume put the player in `main_entrance` (160,144, HP 92). That is the start-room spawn on reload, which is intended, so I walked back (five `enter` commands).
+
+### Step table
+
+| # | Step | Result |
+|---|---|---|
+| 0 | Start session on the plain URL, `bootstrap` with `resume:"resume"` | PASS. Title "Continue?" closed. `joanne_ko` and `robert_vance_ko` survived the reload (globals in verify) |
+| 1 | Walk back to the workshop: `enter` operations_office, scada_control_room, battery_hall_1, then engineering_workshop | PASS. Each `enter` opened or crossed its doorway first time |
+| 2 | Flags: `flags` (configured 4, used none), `moveToNear`/`interact` the drop-site station, `type` `<flag:1>` to `<flag:4>` with submit | PASS. Station showed 0 of 4, then "Flag accepted!" four times and "Rewards Unlocked: Foothold on the BMS jump server". Flag rows are "handed over", not earned (VM work not possible in standalone) |
+| 3 | Round panel print (Hall 1): Dust, Silver powder, Feather, three sweeps, Lift, Peel, Loop, "1. Robert Vance (match)", Log the print | PASS. Match text "This is Robert Vance's print". Panel closed on "Log the print". `vance_print_lifted` set (verify globals) |
+| 4 | Plant door: `enter` battery_hall_2 through the Hall 1 east door, `moveToNear` and `interact` door:battery_hall_2->plant_room, present the lift | PASS. Reader listed "Robert Vance, Quality 78%, Identified". Click on the card presented it. Toast "Biometric Unlock Successful". `enter` plant_room worked |
+| 5 | Static (quiet option): `converse` "not here for you" | PASS. Walking up opened Static's chat ("Voltage. Company."). He "takes one step to the side". `static_stood_aside` and `static_left` set. No fight |
+| 6 | Voltage: `converse` with the six choices from the clone run (Stand down, Make me understand, Why infrastructure, How many, And you came anyway, Go for the button) | PASS. 44 turns, no unnamed choice, `confront_voltage` completed, `voltage_escaped` and `voltage_neutralised` set. Says "Eleven on site tonight" (finding 4) |
+| 7 | ESD: DOM click `#esd-guard` (the guard is not in the `mg` controls), DOM click `#esd-button`, then "CONFIRM - INITIATE SHUTDOWN" | PASS. Toast "Force the shutdown before the racks go", `esd_authorized` and `attack_prevented` set, `disable_attack_vectors` completed. Needed the DOM (finding 2) |
+| 8 | Call-in: `openInventoryItem phone`, `mg clickText "Agent HaX"`, read the thread | PARTIAL. Thread read (the "Can we get the night crew out of Hall 2?" line and the "Nothing right now." reply are there). The reply "I'm done here. Bring me in." was NOT sent: stopped at the context limit (150k) |
+| 9 | Debrief, disclosure pick | NOT REACHED |
+| 10 | Credits | NOT REACHED |
+| 11 | Sync, verify-run 8133 | sync done, verify run below. It is taken before the debrief, so it is a progress check only, not the end-of-run check |
+
+### Earned-secrets table
+
+| Secret | Value used | In-game source | Obtained at | Earned? |
+|---|---|---|---|---|
+| BMS jump server flags 1 to 4 | `<flag:1>` to `<flag:4>` | VM work on the BMS jump server (the open tasks `submit_*_flag` are VM tasks) | step 2 | **no**: flags handed over, VM prerequisite not reachable standalone |
+| Vance print lift | (item) | Duty Round Panel, Hall 1 dusting | step 3 | yes |
+| Plant reader lift | Vance print | Same print, presented at the plant door | step 4 | yes |
+| Workshop Level 2 card | RFID clone | Relay, clone run in the earlier 8133 session (`relay_card_cloned`) | before the reload | yes (earlier session) |
+
+Rows marked **no** are the boundary of this run. The flag stations were exercised, not tested, and every step after them (the VM-earned part of the chain) is unproven.
+
+### Findings (this run)
+
+| # | Severity | Finding | Repro |
+|---|---|---|---|
+| 1 | minor (harness) | `moveToNear` to Voltage replied `arrivedAt` (1374,593) with `moveShortfall` 152, but the player stood at (1489,694) on the next `brief`, and `interact` opened his chat. The reply reads stale | session log, `moveToNear` voltage |
+| 2 | minor (harness) | ESD guard and button are reachable only through the DOM (`#esd-guard`, `#esd-button`). `mg clickControl("ESD Button")` refuses while the guard is shut, and the refusal lists one control with an empty label. Same gap as the clone run | session log, `mg clickControl` "ESD Button" |
+| 3 | minor (harness) | The flag submit reply puts the substituted flag value in `typed`, so the session log holds the flag strings. Check before any log is shared | session log, `mg type` lines |
+| 4 | minor (repeat, still open) | Voltage says "Eleven on site tonight. Nine on the night crew..." while the debrief and credits say thirteen. Same as the clone run's finding | `converse` transcript, Voltage "How many does the hall take" branch |
+| 5 | minor (harness) | Clicking a lift card at the plant reader presents it and closes the reader, but a `getState` straight after still showed the reader. Read the toast or `brief` before retrying | session log, `mg clickControl` "Robert Vance" |
+
+Counts: 0 blockers, 0 majors, 4 minors new (findings 1, 2, 3, 5), 1 repeat minor (finding 4).
+
+Not run in this retry: the debrief, the credits, the Ibrahim curt-line check, the reload after the workshop with a Resume click, and the "Not yet" branch of the call-in. Open items from the handover (`reply to the new Ibrahim normal line`, the Joanne bark) are still unread.
+
+### verify-run.rb 8133 (taken at the call-in step, after sync; flag strings masked here, full text in the saved file)
+
+```
+game            8133  (mission 109)
+created         2026-11-18 00:35:28 UTC
+last write      2026-11-18 00:54:14 UTC
+played for      1125s of wall clock
+current room    "plant_room"
+unlocked rooms  7: main_entrance, operations_office, scada_control_room, battery_hall_1, battery_hall_2, engineering_workshop, plant_room
+unlocked objs   1: optigrid_tool_case
+inventory       10: Your Phone, RFID Cloner, Lock Pick Kit, Grid Regulator Credentials, CyberChef Workstation, Notepad, Maintenance Work Orders, Cup of coffee, Fingerprint Kit, OptiGrid Job Card #4782 (back page)
+NPCs met        14: opening_briefing_cutscene, director_netherton, agent_nightshade, security_guard, agent_0x99, robert_vance_phone, agent_0x99_debrief, ibrahim_diallo, joanne_pell, robert_vance, operative_cipher, operative_relay, voltage, operative_static
+flags submitted 4: flag{…}, flag{…}, flag{…}, flag{…}
+globals set     49: aes_staff_off, all_flags_in, anomaly_detected, asked_the_number, attack_mechanism_known, attack_prevented, blackout_named, briefing_played, checkpoint_passed, clock_started, disclosure_choice, engine_tutorial_declined, erlang_guide_offered, esd_authorized, evidence_maintenance_logs_found, fingerprint_kit_found, flag_erlang_rce_submitted, flag_ftp_intel_submitted, flag_network_scan_submitted, flag_privesc_submitted, guard_admitted, joanne_ko, lockpicking_guide_offered, m03_danny_fate, m03_victoria_fate, ops_kettle_off, plant_reader_seen, plant_room_entered, player_name, privesc_guide_offered, proftpd_guide_offered, recon_guide_offered, relay_card_cloned, rfid_guide_offered, robert_vance_ko, server_room_reached, static_left, static_stood_aside, vance_card_cloned, vance_is_ally, vance_met, vance_phone_available, vance_print_lifted, vance_provided_keycard, vance_spoken, voltage_escaped, voltage_neutralised, voltage_six_cities, vuln_guide_offered
+access model
+  sessions        0
+  signedInPcs     0
+  serverClones    2: server_room_keycard from npc operative_relay; facility_keycard_level1 from npc robert_vance
+  copiedItems     0
+  loginFailures   0
+  loginLockouts   0
+  footholds       0
+  gainedFootholds 0
+  npcFrustration  0
+  guestSessions   0
+  sharedLogins    0
+  feedRevealed    0
+tasks           17 in objectivesState, 16 completed
+  enter_facility                     "completed"  at 2026-11-18T00:38:16Z
+  confront_voltage                   "completed"  at 2026-11-18T00:53:19Z
+  meet_robert_vance                  "completed"  at 2026-11-18T00:38:19Z
+  scan_scada_network                 "completed"  at 2026-11-18T00:48:37Z
+  call_in_after_sweep                "active"
+  submit_privesc_flag                "completed"  at 2026-11-18T00:48:57Z
+  get_past_plant_reader              "completed"  at 2026-11-18T00:51:52Z
+  submit_ftp_intel_flag              "completed"  at 2026-11-18T00:48:50Z
+  disable_attack_vectors             "completed"  at 2026-11-18T00:54:02Z
+  submit_erlang_rce_flag             "completed"  at 2026-11-18T00:49:09Z
+  identify_scada_anomalies           "completed"  at 2026-11-18T00:39:34Z
+  submit_network_scan_flag           "completed"  at 2026-11-18T00:48:36Z
+  find_infiltration_evidence         "completed"  at 2026-11-18T00:39:09Z
+  locate_compromised_systems         "completed"  at 2026-11-18T00:44:53Z
+  neutralize_operative_relay         "completed"  at 2026-11-18T00:41:59Z
+  exploit_erlang_ssh_vulnerability   "completed"  at 2026-11-18T00:49:10Z
+  investigate_compromised_services   "completed"  at 2026-11-18T00:48:50Z
+tasks_completed 16
+score           84
+social scenario false (completed tasks do not count; pass --tasks to count them)
+
+VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
