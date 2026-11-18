@@ -101,7 +101,7 @@ Director Magnus Netherton: Agent. Sit down. You have earned that much.
     Director Magnus Netherton: The sequence is terminated. All twenty-three transformers held. One hundred and forty-seven substations are carrying load.
     Director Magnus Netherton: Eight point four million people have power tonight.
     Director Magnus Netherton: The projection on my desk said two hundred and forty to three hundred and eighty-five dead. That number is now zero.
-    Director Magnus Netherton: I am not going to qualify that. You did the thing.
+    Director Magnus Netherton: I am not going to qualify that. You did the thing. It is done.
 - else:
     Director Magnus Netherton: The sequence was stopped. Late, and not tidily, but stopped.
 }
@@ -561,7 +561,7 @@ Agent HaX: He had the assignment before we gave it.
 Director Magnus Netherton: Then the leak was not the timing.
 Agent HaX: No, sir. The leak was the agent.
 // Phase 4 dialogue C1 (D7-1): merged; the list line cut.
-Agent HaX: He built a problem with no right answer and pointed one agent at it.
+Agent HaX: He built a problem with no right answer, pointed one agent at it, and watched what we protect when we can only protect one thing.
 Agent HaX: He was measuring you tonight. You gave him a clean reading.
 -> coda_close
 

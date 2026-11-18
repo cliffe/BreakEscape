@@ -610,7 +610,7 @@ One authority signing for all four. One operation wearing four coats.
         The window's shut. It goes in the report as found, not as ignored.
     - else:
         {team_assigned:
-            That's grounds to move the team, while the window's open.
+            That's grounds to move the team while the window's open.
         - else:
             The team's still waiting on your call. If you're making it now, that's where it goes.
         }
@@ -689,7 +689,7 @@ No. I'm sorry. That window's shut.
 ~ moral_discussed = true
 Yeah. I've been sitting with that since you made the call.
 
-Whichever way you turned it, two went unanswered. ENTROPY built that arithmetic on purpose.
+Whichever way you turned it, two went unanswered. One team, three fires. ENTROPY built that arithmetic on purpose.
 
 -> moral_soundingboard_choices
 
