@@ -1389,6 +1389,20 @@ const bridge = {
      * the interaction actually fires from the new position.
      */
     async interact(id, { approach = true, timeoutMs = 20000 } = {}) {
+        // An NPC with a screen open (a phone chat): the game's own answer is the point (it closes
+        // a text phone and opens the chat, or toasts why not), so the click guard steps aside
+        if (activeMinigameSummary()) {
+            const npcEntity = findEntity(id);
+            const npcSprite = npcEntity?.kind === 'npc' ? liveSpriteFor(npcEntity) : null;
+            if (npcSprite && typeof window.tryInteractWithNPC === 'function') {
+                const reached = window.tryInteractWithNPC(npcSprite);
+                await sleepFrames(30);
+                const r = reached ? { ok: true, id, mode: 'npc-with-screen-open', entity: npcEntity }
+                    : fail('out-of-range', { id, entity: npcEntity });
+                logAction('interact', { id }, r);
+                return r;
+            }
+        }
         const blocked = blockedByMinigame();
         if (blocked) return blocked;
 
