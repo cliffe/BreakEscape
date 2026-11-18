@@ -491,7 +491,7 @@ Val Okonkwo: I'm going to ask you once more, properly, and then I'm going to sto
 + {talked_about_reeves and insider_identified} [Graham Reeves is ENTROPY's man inside. You were right.]
     -> reeves_vindicated
 
-+ {cleared_after_burn and not val_reported_back and (backdoor_fully_exploited or insider_identified)} [I said I'd tell you what I found.]
++ {cover_restored and not val_reported_back and (backdoor_fully_exploited or insider_identified)} [I said I'd tell you what I found.]
     -> report_back
 
 + {cover_burned and read_handover_board and not insider_identified and not val_accused and not accuse_val and (val_opened_office or reached_security_office)} [That drill ran on a security override. You're security. Was it you?]
