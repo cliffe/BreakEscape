@@ -528,16 +528,14 @@ HaX here, Agent. I've got your channel and the board.
 === bring_me_in ===
 // lint: call-knot
 #speaker:agent_0x99
-{flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
-    Netherton's on the link. Once he's on, tonight's finished.
-- else:
+{not (flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted):
     Not yet. Put the rest of the flags through the relay and he's on straight after.
 }
 -> bring_choices
 
 === bring_choices ===
 // lint: call-knot
-+ {flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted} [Put him through. #ending_check]
++ {flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted} [Put him through. That ends tonight. #ending_check]
     ~ debrief_requested = true
     Putting you through. He's waiting.
     #exit_conversation

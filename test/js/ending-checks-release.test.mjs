@@ -17,6 +17,7 @@ const Story = inkjs.Story || (inkjs.default && inkjs.default.Story);
 const load = (p) => readFileSync(join(root, p), 'utf8').replace(/^﻿/, '');
 const M03 = load('scenarios/m03_ghost_in_the_machine/ink/m03_npc_victoria.json');
 const M07 = load('scenarios/m07_architects_gambit/ink/m07_phone_agent_0x99.json');
+const M10 = load('scenarios/m10_full_disclosure/ink/m10_tesseract.json');
 const M08 = load('scenarios/m08_the_mole/ink/m08_nightshade_confrontation.json');
 
 function at(json, knot, vars = {}) {
@@ -76,10 +77,12 @@ const ALL = { flag1_submitted: true, flag2_submitted: true, flag3_submitted: tru
 
 test('m07: bring_me_in asks first and does not request the debrief yet', () => {
     const s = at(M07, 'bring_me_in', ALL);
-    drain(s);
+    const { lines } = drain(s);
+    assert.deepEqual(lines.filter(Boolean), [], 'no opener when every flag is in');
     assert.equal(s.variablesState.debrief_requested, false);
-    const go = s.currentChoices[find(s, /Put him through/)];
+    const go = s.currentChoices[find(s, /Put him through\. That ends tonight/)];
     assert.ok(go.tags.includes('ending_check'));
+    assert.ok(!(s.currentChoices[find(s, /Not yet/)].tags || []).includes('ending_check'));
     assert.ok(find(s, /Not yet/) >= 0);
 });
 
@@ -140,4 +143,62 @@ test('m08: a fate choice still completes the task', () => {
     const { tags } = drain(s);
     assert.ok(tags.includes('complete_task:decide_the_fate'));
     assert.equal(s.variablesState.fate_decided, true);
+});
+
+// m10: the tagged choices are the irreversible ones; back-outs stay untagged.
+function menu(knot, vars = {}) {
+    const s = at(M10, knot, { tess_menu: true, ...vars });
+    drain(s);
+    return s;
+}
+const tagged = (s, re) => {
+    const i = find(s, re);
+    assert.ok(i >= 0, `choice ${re} offered`);
+    return (s.currentChoices[i].tags || []).includes('ending_check');
+};
+
+test('m10: standing end menu tags cooperate and arrest, not the shoot warning', () => {
+    const s = menu('end_menu_standing');
+    assert.ok(tagged(s, /cooperate/));
+    assert.ok(tagged(s, /under arrest/));
+    assert.ok(!tagged(s, /Shoot him/));
+});
+
+test('m10: seated end menu leads to reach untagged; Fire and Hold fire are tagged', () => {
+    const s = menu('end_menu_seated');
+    assert.ok(!tagged(s, /under arrest/));
+    assert.ok(!tagged(s, /Shoot him/));
+    const r = at(M10, 'reach');
+    drain(r);
+    assert.ok(tagged(r, /^Fire/));
+    assert.ok(tagged(r, /Hold fire/));
+});
+
+test('m10: cold_warning tags Do it and leaves Lower the weapon alone', () => {
+    const s = at(M10, 'cold_warning', { points_landed: 2 });
+    drain(s);
+    assert.ok(tagged(s, /Do it/));
+    assert.ok(!tagged(s, /Lower the weapon/));
+});
+
+test('m10: join_3 tags Publish it and leaves No alone', () => {
+    const s = at(M10, 'join_3');
+    drain(s);
+    assert.ok(tagged(s, /Publish it/));
+    assert.ok(!tagged(s, /^No\./));
+});
+
+test('m10: the back-outs on the join path are untagged', () => {
+    for (const [knot, re] of [['join_1_menu', /Step back/], ['join_2_menu', /Step away/], ['join_2_menu', /Stop it/]]) {
+        const s = menu(knot);
+        assert.ok(!tagged(s, re), `${knot} ${re}`);
+    }
+});
+
+test('m10: a tagged choice still sets the ending', () => {
+    const s = at(M10, 'reach');
+    drain(s);
+    s.ChooseChoiceIndex(find(s, /Hold fire/));
+    drain(s);
+    assert.equal(s.variablesState.ending, 'arrest');
 });

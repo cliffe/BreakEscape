@@ -2619,8 +2619,8 @@ end
           "koImmune": true,
           "behavior": { "initiallyHidden": true },
           "eventMappings": [
-            { "eventPattern": "conversation_closed:tesseract", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "onceOnly": true, "endingCheck": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 1500 },
-            { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "endingCheck": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 2500 }
+            { "eventPattern": "conversation_closed:tesseract", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 1500 },
+            { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 2500 }
           ]
         },
 <%# Office life (office_life/PLAN.md 2.7): forward post support staff, ambient only. Keys are literal JSON, outside any ERB loop; only the voice and the hide helper are expressions. %>

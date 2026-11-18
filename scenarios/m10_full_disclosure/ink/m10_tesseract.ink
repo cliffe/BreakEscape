@@ -1040,7 +1040,7 @@ Narrator: If you take it, the mission ends here, and you work for ENTROPY.
 === join_3 ===
 ~ join_step = 3
 Narrator: The key console asks once. Publish the database to everyone, now?
-+ [Yes. Publish it.]
++ [Yes. Publish it. #ending_check]
     ~ console_choice = "joined"
     ~ database_outcome = "published"
     ~ partial_release = "published"
@@ -1271,11 +1271,11 @@ Director Magnus Netherton: Send ours to the vendors, and two operations go dark.
 - else:
     -> core_router
 }
-+ [Then cooperate. All of it.]
++ [Then cooperate. All of it. #ending_check]
     ~ media_story_ran = m07_completed and m07_team_assignment != "fracture"
     ~ ending = "surrender"
     -> ending_surrender
-+ [No deal. You're under arrest.]
++ [No deal. You're under arrest. #ending_check]
     ~ media_story_ran = m07_completed and m07_team_assignment != "fracture"
     ~ ending = "arrest"
     -> ending_arrest
@@ -1296,11 +1296,11 @@ Director Magnus Netherton: Send ours to the vendors, and two operations go dark.
 // Fewer than two points: the dangerous moment. No timer.
 === reach ===
 Narrator: His hand goes to the console. One key, and the first city's list goes out anyway.
-+ [Fire.]
++ [Fire. #ending_check]
     ~ media_story_ran = m07_completed and m07_team_assignment != "fracture"
     ~ ending = "lethal"
     -> ending_lethal
-+ [Hold fire.]
++ [Hold fire. #ending_check]
     ~ fire_held = true
     ~ media_story_ran = m07_completed and m07_team_assignment != "fracture"
     ~ ending = "arrest"
@@ -1309,7 +1309,7 @@ Narrator: His hand goes to the console. One key, and the first city's list goes 
 // MC §6.6 steps 2-4, word for word.
 === cold_warning ===
 Narrator: His hands are empty and in plain sight. He isn't moving. If you fire now, it's an execution, and HaX is on the line.
-+ [Do it.]
++ [Do it. #ending_check]
     ~ media_story_ran = true
     ~ ending = "executed"
     -> ending_executed
