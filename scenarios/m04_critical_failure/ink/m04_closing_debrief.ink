@@ -260,7 +260,7 @@ Keep the OptiGrid print kit. Forensics can have the case it came in.
 === debrief_what_failed ===
 #speaker:agent_0x99
 
-Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+Agent HaX: Before you write it up: nearly everything that let them in let you in too.
 {vance_card_cloned:
     Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
 - else:
@@ -409,7 +409,7 @@ He'll call when he's ready. Not tonight.
     {
     - crew_lost:
         // C2 (D6-1): a recap now; the nine were named at the top.
-        Agent HaX: Nine in Hall 2. Two more on the feed before the grid caught up.
+        Agent HaX: Nine in Hall 2, and two more on the feed before the grid caught up.
         // Phase 4 dialogue C1 (D5-3, user decision): the alarm that wasn't sounded,
         // stated once and left. crew_lost means it never went.
         {
@@ -428,7 +428,7 @@ He'll call when he's ready. Not tonight.
         Agent HaX: Nine people in Hall 2 are what it bought. Hall 2 was empty when it went.
     - else:
         Agent HaX: Hall 2 was empty when it went. Vance's alarm had the night crew out through the fire doors.
-        Agent HaX: Two on the feed before the grid caught up. The number tomorrow won't be zero. It could have been fifty.
+        Agent HaX: Two on the feed before the grid caught up. It could have been fifty.
     }
 - else:
     // Thirteen on site: the nine night crew, Vance, the gate guard and the two office staff off the rota.
