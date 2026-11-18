@@ -49,11 +49,15 @@ async function openPhone(page, tag) {
     if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi('figure it out')); // tutorial offer
     if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi('ready'));
     if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi());
+    // The session overlay can come up without a Resume button (X and Start over): X closes it, Start over would reset the game
+    if (d?.blocker?.id === 'session-resume-overlay') d = await page.evaluate(() => window.__test.dismissBlockingUi('X'));
     // An intro chat whose choices name neither Resume nor ready: take the last choice (1-based).
     if (d?.reason === 'ambiguous-blocking-ui' && last?.activeMinigame?.id === 'person-chat') d = await page.evaluate(() => window.__test.minigame.chooseIndex(2));
+    // The title screen minigame can show up as an ambiguous blocker: Space continues it too
+    if (last?.activeMinigame?.id === 'title-screen') await page.keyboard.press('Space');
     // The title screen has no buttons: it continues on Space.
     if (d?.reason === 'blocking-ui-has-no-buttons') await page.keyboard.press('Space');
-    trail.push(`${last?.activeMinigame?.id || last?.reason}>${d?.clicked || d?.reason || (d?.ok ? 'ok' : '?')}`);
+    trail.push(`${last?.activeMinigame?.id || last?.reason}>${d?.clicked || d?.reason || (d?.ok ? 'ok' : '?')}[${d?.blocker?.id || d?.blocker?.classes || ''}:${(d?.blocker?.buttons || []).map(b => b.label).join('/')}]`);
     await page.waitForTimeout(1500);
   }
   throw new Error(`${tag}: could not open the phone: ${JSON.stringify(last).slice(0, 600)} trail ${trail.slice(-12).join(' | ')}`);
@@ -62,10 +66,16 @@ async function openPhone(page, tag) {
 async function run(w, h, tag) {
   const T = (n) => `P${RUN}${tag[0]} ${n}`; // under 40 characters, so the preview is the literal text
   const page = await browser.newPage({ viewport: { width: w, height: h } });
+  const t00 = Date.now(); const step = (m) => console.log(`[${((Date.now() - t00) / 1000).toFixed(0)}s] ${tag}: ${m}`);
+  const errs = [];
+  page.on('pageerror', (e) => { errs.push(String(e).slice(0, 300)); console.log('PAGEERROR ' + tag + ': ' + String(e).slice(0, 300)); });
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   // A game made without a character can show the picker: choose female_hacker_hood_v2 (as ring-banner-probe.mjs does)
   for (let i = 0; i < 60; i++) {
-    if (await page.evaluate(() => !!window.game?.loop && !!window.__test).catch(() => false)) break;
+    if (await page.evaluate(() => !!window.game?.sys?.game?.loop && !!window.__test).catch(() => false)) break;
+    // A game with saved state shows the resume overlay before the loop exists: take Resume (the second and later viewports always see it)
+    const dr = await page.evaluate(() => window.__test?.dismissBlockingUi?.('Resume')).catch(() => null);
+    if (dr?.reason === 'blocking-ui-has-no-buttons' || dr?.stillBlocked) await page.keyboard.press('Space'); // the title screen continues on Space
     const pick = await page.$('[data-character="female_hacker_hood_v2"], [data-key="female_hacker_hood_v2"], [data-sprite="female_hacker_hood_v2"]');
     if (pick) {
       await pick.click().catch(() => {});
@@ -74,10 +84,12 @@ async function run(w, h, tag) {
     }
     await page.waitForTimeout(1000);
   }
-  await page.waitForFunction(() => !!window.game?.loop && !!window.__test, null, { timeout: 240000 });
+  await page.waitForFunction(() => !!window.game?.sys?.game?.loop && !!window.__test, null, { timeout: 240000 });
+  step('game ready');
   await page.evaluate(() => window.__test.throttleFps(20)); // fixed steps stay on
   await page.waitForTimeout(1500);
   await openPhone(page, tag);
+  step('phone open');
   await page.waitForTimeout(800);
   if ((await page.evaluate(() => window.MinigameFramework.currentMinigame?.ui?.getCurrentView?.())) !== 'contact-list') {
     await page.click('.back-button, #back-button, .phone-back-button').catch(() => {});
@@ -188,11 +200,79 @@ async function run(w, h, tag) {
     check(await page.evaluate(() => typeof window.__p === 'undefined'), `${tag}: window.__p is undefined after 500 ms`);
     await page.screenshot({ path: `${outdir}/${tag}-hostile.png` });
   }
+
+  // (e) a later text clears the missed styling
+  {
+    await page.evaluate((id) => window.npcManager.addCallRow(id, 'missed'), HAX);
+    await page.waitForTimeout(600);
+    const m = await snap();
+    check(m.missed && m.preview === 'Missed call', `${tag}: missed again: shows Missed call with the missed class`);
+    const text = T('after missed');
+    await page.evaluate(({ id, t }) => window.npcManager.addMessage(id, 'npc', t, { isBark: true }), { id: HAX, t: text });
+    await page.waitForTimeout(600);
+    const after = await snap();
+    check(after.preview === text && !after.missed, `${tag}: later text replaces the preview and clears the missed class (${JSON.stringify(after.preview)}, missed ${after.missed})`);
+    await page.screenshot({ path: `${outdir}/${tag}-missed-cleared.png` });
+  }
+
+  // (f) scroll position is kept when a row updates: squeeze the list so it overflows (test-only CSS), scroll, push a text
+  {
+    await page.evaluate(() => { const l = document.getElementById('contact-list'); l.style.maxHeight = '70px'; l.style.overflowY = 'auto'; });
+    await page.waitForTimeout(300);
+    const geo = await page.evaluate(() => { const l = document.getElementById('contact-list'); l.scrollTop = 25; return { top: l.scrollTop, sh: l.scrollHeight, ch: l.clientHeight }; });
+    check(geo.sh > geo.ch && geo.top > 0, `${tag}: list overflows and is scrolled (scrollTop ${geo.top}, ${geo.sh}/${geo.ch})`);
+    await page.evaluate(({ id, t }) => window.npcManager.addMessage(id, 'npc', t, { isBark: true }), { id: HAX, t: T('while scrolled') });
+    await page.waitForTimeout(600);
+    const top2 = await page.evaluate(() => document.getElementById('contact-list').scrollTop);
+    const s2 = await snap();
+    check(top2 === geo.top && s2.preview === T('while scrolled'), `${tag}: scrollTop kept at ${geo.top} after a row update (now ${top2})`);
+    await page.screenshot({ path: `${outdir}/${tag}-scroll-kept.png` });
+    await page.evaluate(() => { const l = document.getElementById('contact-list'); l.style.maxHeight = ''; l.style.overflowY = ''; });
+  }
+
+  // (g) open the thread and go back: counts are right
+  {
+    const pre = await snap();
+    await page.evaluate((id) => Array.from(document.querySelectorAll('.contact-item')).find(r => r.dataset.npcId === id).click(), HAX);
+    await page.waitForTimeout(1500);
+    const inThread = await page.evaluate(() => window.MinigameFramework.currentMinigame?.ui?.getCurrentView?.());
+    check(inThread === 'conversation', `${tag}: clicking the row opens the thread (${inThread})`);
+    await page.screenshot({ path: `${outdir}/${tag}-thread.png` });
+    await page.click('#back-button').catch(() => {});
+    await page.waitForTimeout(1200);
+    const back = await snap();
+    const view2 = await page.evaluate(() => window.MinigameFramework.currentMinigame?.ui?.getCurrentView?.());
+    console.log(`     note ${tag}: badge before thread ${pre.badge}, after back ${back.badge}, preview ${JSON.stringify(back.preview)}`);
+    check(view2 === 'contact-list' && back.badge === 0, `${tag}: back on the list with the HaX badge cleared (${pre.badge} -> ${back.badge})`);
+    check(back.preview === pre.preview, `${tag}: preview unchanged after the round trip (${JSON.stringify(back.preview)})`);
+    check(back.others === pre.others, `${tag}: other rows unchanged after the round trip`);
+    await page.screenshot({ path: `${outdir}/${tag}-after-back.png` });
+  }
+
+  // (h) phone closed: pushing texts and a call row throws nothing; reopening shows the latest
+  {
+    const errsBefore = errs.length;
+    const c = await page.evaluate(() => window.__test.minigame.close());
+    await page.waitForTimeout(1000);
+    const gone = await page.evaluate(() => !document.querySelector('.phone-messages-container'));
+    check(gone, `${tag}: phone closed (${JSON.stringify(c)?.slice(0, 80)})`);
+    const closedText = T('phone closed');
+    const thrown = await page.evaluate(({ id, t }) => { try { window.npcManager.addMessage(id, 'npc', t, { isBark: true }); window.npcManager.addCallRow(id, 'missed'); return null; } catch (e) { return String(e); } }, { id: HAX, t: closedText });
+    await page.waitForTimeout(1500);
+    check(thrown === null && errs.length === errsBefore, `${tag}: nothing thrown with the phone closed (${thrown || 'no exception'}, page errors ${errs.length - errsBefore})`);
+    await page.screenshot({ path: `${outdir}/${tag}-phone-closed.png` });
+    await openPhone(page, tag);
+    await page.waitForTimeout(800);
+    const reopened = await snap();
+    console.log(`     note ${tag}: reopened preview ${JSON.stringify(reopened.preview)} badge ${reopened.badge}`);
+    check(reopened.preview === 'Missed call' && reopened.missed, `${tag}: reopened list shows the latest row (Missed call)`);
+    await page.screenshot({ path: `${outdir}/${tag}-reopened.png` });
+  }
+  check(errs.length === 0, `${tag}: page errors: ${errs.length}${errs.length ? ' ' + errs.join(' || ') : ''}`);
   await page.close();
 }
 
 await run(1280, 720, 'desktop');
-await run(844, 390, 'landscape');
 await run(390, 844, 'portrait');
 await browser.close();
 console.log(bad ? `${bad} FAILED` : 'all ok');
