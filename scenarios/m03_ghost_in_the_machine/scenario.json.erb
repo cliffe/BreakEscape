@@ -262,7 +262,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "taskId": "clone_reception_badge",
           "title": "Find a way past the conference room's card reader",
           "description": "Staff badges only beyond reception. Find a way through.",
-          "_comment": "Gate minor m1: completes when the conference door actually opens (unlock_room, so the emulate at the reader), not when the clone is saved. A receptionist KO still completes it at once (taskOnKO). The clone Save keeps its own feedback: reception_badge_cloned drives HaX's emulate hint and ticks copy_staff_badge.",
+          "_comment": "Gate minor m1: completes when the conference door actually opens (unlock_room, so the emulate at the reader), not when the clone is saved. A receptionist KO does not complete it by itself (the room is still locked, so the server would refuse); the player picks up the dropped badge and opens the door, which completes it. The clone Save keeps its own feedback: reception_badge_cloned drives HaX's emulate hint and ticks copy_staff_badge.",
           "type": "unlock_room",
           "targetRoom": "conference_room_01",
           "status": "active"
@@ -766,7 +766,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "puzzle_graph_actions": [
             { "id": "clone_reception_badge_talk", "label": "Talk to her and clone her staff badge", "unlocks_aim": "act1_gain_access" }
           ],
-          "taskOnKO": "clone_reception_badge",
           "spriteSheet": "ffion_rees",
           "spriteTalk": "assets/characters/ffion_rees_talk.png",
           "spriteVisemes": "assets/characters/ffion_rees_visemes.png",
@@ -1052,7 +1051,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "sendTimedMessage": { "delay": 1500, "message": "That's the reception badge. The server room reader wants Sterling's executive card." }
             },
             {
-              "_comment": "Pass 4: a receptionist KO also completes this task (taskOnKO), but then the badge is on the floor, not in the cloner. globalVarOnKO is written before taskOnKO fires (npc-hostile.js), so the condition holds.",
+              "_comment": "Pass 4: a receptionist KO leaves the badge on the floor, not in the cloner (the task completes later, when the door opens).",
               "eventPattern": "global_variable_changed:reception_badge_cloned",
               "condition": "value === true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
@@ -1422,7 +1421,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "eventMappings": [
             {
-              "_comment": "Pass 5 blind (B-2): ticks the reader pointer task once the staff badge is had (clone or receptionist KO). Only if the pointer was shown (staff_badge_task_shown, set by both unlock mappings), so a locked task never completes out of nowhere.",
+              "_comment": "Pass 5 blind (B-2): ticks the reader pointer task when clone_reception_badge completes (the door opened) after a receptionist KO. Only if the pointer was shown (staff_badge_task_shown, set by both unlock mappings), so a locked task never completes out of nowhere.",
               "eventPattern": "objective_task_completed:clone_reception_badge",
               "condition": "globalVars.staff_badge_task_shown === true && globalVars.receptionist_ko === true",
               "onceOnly": true,
