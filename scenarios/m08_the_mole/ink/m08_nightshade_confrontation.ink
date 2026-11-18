@@ -69,15 +69,24 @@ VAR after_quiet = false
 // (2026-10-16) the scene opens 6 s after entry (delayMs), and this beat stays
 // as the case recap. Synced scenario global, the wall's own condition.
 VAR found_nightshade_profile = false
+// Reload resume: synced scenario global, set at the scene's first choice. A
+// person-chat's story position is not kept across a reload, so start diverts a
+// mid-scene reload into the topic hub instead of replaying the opening.
+VAR nightshade_scene_opened = false
 
 === start ===
 { fate_decided: -> after_choice }
 { held_at_choice: -> the_choice }
+{ nightshade_scene_opened: -> hub }
 #complete_task:confront_nightshade
 Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
 Narrator: Behind him the evidence wall is lit. He follows your eyes to it and waits.
-+ [(Read the wall first.)] -> wall
-+ [(Face him.)] -> opening
++ [(Read the wall first.)]
+    ~ nightshade_scene_opened = true
+    -> wall
++ [(Face him.)]
+    ~ nightshade_scene_opened = true
+    -> opening
 
 === wall ===
 Narrator: The case runs down the wall in order. The repository, open to anyone with no password. The break-in, and the credentials left in its history. Mail to the Architect.
