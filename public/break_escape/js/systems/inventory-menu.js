@@ -7,6 +7,8 @@
  *
  *   droppable wearable                 "Put on" or "Take off", "Drop here", "Examine"
  *   droppable, no triggerOnInteract    "Drop here", "Examine"
+ *   droppable consumable (coffee, kit) "Eat" (or "Drink", "Use"), "Drop here", "Examine"
+ *   droppable consumable that is an NPC magnet (pizza, cake): "Drop here", "Eat", "Examine"
  *   droppable with triggerOnInteract   "Use" (useLabel overrides the word), "Drop here", "Examine"
  *   wearable, not droppable, with text "Put on" or "Take off", "Examine"
  *   saved connection (keyring K3b)     "Connect", "Drop here" when droppable, "Examine";
@@ -31,9 +33,10 @@
  * Only pure helpers and the menu overlay are imported, so this file can be
  * tested in node.
  */
-import { isDroppableInventoryItem, dropInventoryItem } from './item-drop.js';
+import { isDroppableInventoryItem, dropInventoryItem, isMagnet } from './item-drop.js';
 import { showInteractionMenu, menuIconsBase, openHandIcon } from '../ui/interaction-menu.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { consumableHealAmount, consumableKind } from './consumables.js';
 
 // interactions.js takes the chain's drop test and the drop itself from here, so the
 // menu and the chain read the same functions.
@@ -121,6 +124,16 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     } else if (hasTriggerOnInteract(data)) {
         const useLabel = typeof data.useLabel === 'string' && data.useLabel.trim() ? data.useLabel.trim() : 'Use';
         entries.push({ id: 'use', label: useLabel });
+    } else if (consumableHealAmount(data, { inInventory: true }) > 0) {
+        // A droppable consumable gets the menu too, so eating it needs its own entry: "use"
+        // reaches the consume branch of handleObjectInteraction (consumables.js)
+        const kind = consumableKind(data);
+        const eat = { id: 'use', label: kind === 'drink' ? 'Drink' : kind === 'food' ? 'Eat' : 'Use' };
+        // A magnet (pizza, cake) lures NPCs when put down, so "Drop here" leads and a habitual
+        // first-entry click does not spend it; the player can still eat it second.
+        if (isMagnet(data)) entries.push(drop, eat, { id: 'examine', label: 'Examine' });
+        else entries.push(eat, drop, { id: 'examine', label: 'Examine' });
+        return entries;
     }
     entries.push(drop, { id: 'examine', label: 'Examine' });
     return entries;

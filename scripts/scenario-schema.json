@@ -4220,6 +4220,8 @@
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
+        "maxAttempts": { "type": "integer", "minimum": 1, "description": "Password locks: wrong guesses allowed before the pad locks out (client-side). Not secret: it survives the bootstrap filter." },
+        "lockoutSeconds": { "type": "integer", "minimum": 1, "description": "Password locks only, opt-in: after maxAttempts wrong guesses the door pad stays shut for this many seconds, and the count survives closing and reopening the window (client-side; a page reload resets it). Not secret: it survives the bootstrap filter." },
         "network": { "x-serverOnly": true, "type": "string", "x-ref": "network", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser (deleted from every room payload)." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {

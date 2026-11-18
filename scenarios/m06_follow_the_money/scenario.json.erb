@@ -271,6 +271,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "DANI OKONKWO (TRADER): Flagged the wallets first — left alone", "style": "entry",   "condition": "globalVars.trader_heard_out && !globalVars.trader_ko" },
           { "text": "DANI OKONKWO (TRADER): Kept his head down — left alone", "style": "entry",   "condition": "globalVars.trader_spoken && !globalVars.trader_heard_out && !globalVars.trader_ko" },
           { "text": "DANI OKONKWO (TRADER): Knocked out — had done nothing wrong", "style": "entry",   "condition": "globalVars.trader_ko" },
+          <%# Office life (PLAN 2.8): the two late-desk extras, same shape as the trader and analyst lines. %>
+          { "text": "LERATO DLAMINI (FLOOR COORDINATOR): Knocked out, had done nothing wrong", "style": "entry", "condition": "globalVars.lerato_ko" },
+          { "text": "TOMASZ WISNIEWSKI (APP SUPPORT): Knocked out, had done nothing wrong", "style": "entry", "condition": "globalVars.tomasz_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph — left alone",       "style": "entry",   "condition": "globalVars.analyst_walked_through && !globalVars.analyst_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Never knew what her graph proved — left alone", "style": "entry", "condition": "globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko" },
           { "text": "PRIYA RAGHAVAN (ANALYST): Knocked out — had done nothing wrong", "style": "entry", "condition": "globalVars.analyst_ko" },
@@ -668,6 +671,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
                     "satoshi_stance", "minder_walked", "guard_ko", "trader_ko", "analyst_ko"],
 
   "npcThoughts": false,
+  <%# Office life (office_life/PLAN.md section 3): presets for the trading floor machines. %>
+  "officePresets": true,
+  "ttsPregenerateChatter": true,
   "startRoom": "reception_lobby",
 
   "acknowledgedClues": [
@@ -784,6 +790,17 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "guard_caught": false,
     "guard_ko": false,
     "trader_ko": false,
+    "lerato_ko": false,
+    "tomasz_ko": false,
+    "floor_staff_ko": false,
+    "tomasz_laptop_owner_away": false,
+    "tomasz_laptop_screen_locked": false,
+    "tomasz_laptop_accessed": false,
+    "tomasz_handover_sheet_shown": false,
+    "pizza_servings": 2,
+    "heard_ex_dani_tomasz_late_shift": false,
+    "heard_ex_floor_after_irina": false,
+    "heard_ex_floor_after_seizure": false,
     "trader_spoken": false,
     "trader_heard_out": false,
     "analyst_spoken": false,
@@ -1675,8 +1692,15 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "unlockTask": "call_in_after_sweep",
               "sendTimedMessage": { "delay": 13500, "message": "<%= msg %>" },
               "onceOnly": true
-            }<%= i < pairs.size - 1 ? ',' : '' %>
+            },
 <% end %>
+<%# Office life (PLAN 2.8, 2.9): the trouble global, appended after the loop so no saved once index moves.
+    Cooldown only, never onceOnly. Nothing here writes cover_strained: the KO loop above still does that for
+    Dani and Irina. %>
+            { "eventPattern": "npc_ko:trader_npc", "setGlobal": { "floor_staff_ko": true } },
+            { "eventPattern": "npc_ko:irina_volkova", "setGlobal": { "floor_staff_ko": true } },
+            { "eventPattern": "npc_ko:lerato_dlamini", "setGlobal": { "floor_staff_ko": true } },
+            { "eventPattern": "npc_ko:tomasz_wisniewski", "setGlobal": { "floor_staff_ko": true } }
           ]
         },
         {
@@ -1968,8 +1992,116 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           },
           "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_trader.json",
           "currentKnot": "start",
+<%# Office life (PLAN 6): Dani's coffee and grumble pools. Lines in office_life/SPOKEN_LINES.md. %>
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": { "lines": ["Another one. Don't tell my mum.", "Charts won't watch themselves.", "Is it decaf? Tell me it's not decaf.", "Asia's about to open. Need this.", "I can see in colour again."], "overhearRadius": 360 },
+            "grumble": ["Seriously? Not tonight.", "I'll sulk at my desk, then."]
+          },
           "globalVarOnKO": "trader_ko",
-          "taskOnKO": "question_the_trader"
+          "behavior": { "hostile": { "leash": true } },
+          "taskOnKO": "question_the_trader",
+<%# Office life (PLAN 2.5): Dani is free (no itemsHeld, no beat needs him at post). Post is his first-meeting
+    tile. caffeine starts at 100 and decays slowly, so he is at post when first met; the two mapped breaks
+    send him for coffee after the first talk and then at most once per 240000 ms when the player walks
+    onto the floor. Both are gated on the trouble global. %>
+          "needsHome": { "room": "trading_floor", "x": 5, "y": 7 },
+          "needsRooms": ["trading_floor"],
+          "needsCompany": { "groups": ["late_floor"] },
+          "needs": { "caffeine": { "initial": 100, "decayPerMin": 0.2, "urgentAt": 30, "jitterPct": 20 } },
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:trader_npc", "onceOnly": true, "delayMs": 2000, "condition": "!globalVars.floor_staff_ko", "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:trading_floor", "delayMs": 2000, "cooldown": 240000, "condition": "globalVars.trader_spoken && !globalVars.floor_staff_ko", "needs": { "set": { "caffeine": 20 } } }
+          ]
+        },
+<%# Office life (PLAN 2.3, 2.4): two late-desk extras from the awareness cast. Posts are the pc6 desk and the
+    laptop. No story duty, key, task or itemsHeld; each has globalVarOnKO. Conversations, chatter and
+    exchanges are slice 5. %>
+        {
+          "id": "lerato_dlamini",
+          "displayName": "Lerato Dlamini",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 7.4, "y": 5.16 },
+          "spriteSheet": "lerato_dlamini",
+          "spriteTalk": "assets/characters/lerato_dlamini_talk.png",
+          "spriteVisemes": "assets/characters/lerato_dlamini_visemes.png",
+          "avatar": "assets/characters/lerato_dlamini_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": { "name": "Gacrux", "style": "Night floor coordinator at a cryptocurrency exchange, in her 30s, confident and direct. Speak with a consistent South African accent from Durban throughout, and do not shift to any other accent.", "language": "en-GB" },
+          "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_lerato.json",
+          "currentKnot": "start",
+<%# Slice 5 (PLAN 6): pools and two exchanges on Lerato (the lower id). Lines in office_life/SPOKEN_LINES.md. %>
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": { "lines": ["Rota says I'm on until the sun's up.", "Somebody has to answer the phones.", "Black, strong, no conversation.", "Who keeps taking my blue mug?", "If the phones go, I run."], "overhearRadius": 360 },
+            "grumble": ["Well, that's no use to anyone.", "Brilliant. Just brilliant."],
+            "phone": ["Trading floor, Lerato speaking.", "Yes, I can see the problem. One moment.", "Thank you for calling. Goodnight."]
+          },
+          "exchanges": [
+            { "with": "tomasz_wisniewski", "knot": "ex_floor_after_irina", "requireGlobal": { "irina_taken": true, "floor_staff_ko": false } },
+            { "with": "tomasz_wisniewski", "knot": "ex_floor_after_seizure", "requireGlobal": { "assets_seized": true, "floor_staff_ko": false } }
+          ],
+          "globalVarOnKO": "lerato_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "seated": true,
+          "needsHome": "lerato_desk",
+          "needsRooms": ["trading_floor"],
+          "needsCompany": { "groups": ["late_floor"] },
+          "needs": {
+            "caffeine": { "initial": 70, "decayPerMin": 8, "urgentAt": 40, "jitterPct": 20 },
+            "hunger": { "initial": 75, "decayPerMin": 6, "urgentAt": 40, "jitterPct": 20 }
+          },
+<%# PLAN 2.6: one-way coupled break. Tomasz starting the floor coffee brings Lerato (never the other way round). %>
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:floor_coffee", "condition": "data.npcId === 'tomasz_wisniewski' && !globalVars.floor_staff_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
+          ],
+          "observations": "A night floor coordinator at the end of the front row of desks, a desk phone at her elbow."
+        },
+        {
+          "id": "tomasz_wisniewski",
+          "displayName": "Tomasz Wisniewski",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 3.1, "y": 4.4 },
+          "spriteSheet": "tomasz_wisniewski",
+          "spriteTalk": "assets/characters/tomasz_wisniewski_talk.png",
+          "spriteVisemes": "assets/characters/tomasz_wisniewski_visemes.png",
+          "avatar": "assets/characters/tomasz_wisniewski_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "voice": { "name": "Algieba", "style": "Evening app-support lead at a cryptocurrency exchange, in his 50s, careful and reassuring. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout, and do not shift to any other accent.", "language": "en-GB" },
+          "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_tomasz.json",
+          "currentKnot": "start",
+<%# Slice 5 (PLAN 6): pools and exchange 1 (with Dani; the knot is in Tomasz's ink). %>
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": { "lines": ["Tea would be kinder, but coffee works.", "Many years of nights. Still tired.", "One more ticket, then I sit down.", "Someone left a mug. Mine, I think.", "The app crashes, I drink. Simple."], "overhearRadius": 360 },
+            "grumble": ["Not to worry. Later, perhaps.", "A pity. I will try again."],
+            "phone_message": ["Lerato is away. May I take a message?", "I will tell her you called.", "She will ring you back shortly."]
+          },
+          "exchanges": [
+            { "with": "trader_npc", "knot": "ex_dani_tomasz_late_shift", "requireGlobal": { "irina_arrested": false, "floor_staff_ko": false } }
+          ],
+          "globalVarOnKO": "tomasz_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "seated": true,
+          "needsHome": "tomasz_laptop",
+          "needsRooms": ["trading_floor"],
+          "needsCompany": { "groups": ["late_floor"] },
+          "needs": {
+            "caffeine": { "initial": 65, "decayPerMin": 8, "urgentAt": 40, "jitterPct": 20 },
+            "hunger": { "initial": 80, "decayPerMin": 6, "urgentAt": 40, "jitterPct": 20 }
+          },
+<%# Slice 4 (PLAN 2.4, 2.9): owner of tomasz_laptop; screen habit (threshold measured at build); covers the phones;
+    one handover sheet printed by this command only, after the first talk with Irina. %>
+          "answersPhones": true,
+          "habits": { "screen": { "lockChance": 0.2, "lockIfAwayOverSeconds": 22 } },
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:irina_volkova", "onceOnly": true, "condition": "!globalVars.floor_staff_ko", "needs": { "print": { "producer": "floor_copier", "forget": true } } },
+<%# PLAN 2.6: one-way coupled break. Dani starting the floor coffee brings Tomasz (never the other way round). %>
+            { "eventPattern": "npc_use_started:floor_coffee", "condition": "data.npcId === 'trader_npc' && !globalVars.floor_staff_ko", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } }
+          ],
+          "observations": "An evening app-support lead working a ticket queue on his laptop."
         }
       ],
       "objects": [
@@ -1981,6 +2113,97 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "takeable": false,
           "observations": "Real-time cryptocurrency trading terminal — the transaction volumes on it are absurd for a firm this size"
         },
+<%# Office life (PLAN 3.1). Order matters: every pc sprite shares the base type pc, claimed in Tiled order
+    (pc10, pc6, pc8, pc11, pc6, pc8, pc11, pc6). lerato_desk takes the second (pc6 at 7.0,3.5); a claim hides
+    every unclaimed same-image sprite, so six decor twins claim and draw the rest. They keep the plain
+    unclaimed-pc look (name and observations) and take no preset. All declared before daily_trading_report. %>
+        {
+          "type": "pc",
+          "id": "lerato_desk",
+          "name": "Lerato's Desk",
+          "takeable": false,
+          "affordance": { "useFrom": { "dx": 0, "dy": 2 } },
+          "observations": "A trading-floor desk with a desk phone and a mug ring on the blotter."
+        },
+<% 6.times do |n| %>
+        {
+          "type": "pc",
+          "id": "floor_pc_decor_<%= n + 1 %>",
+          "name": "pc",
+          "decor": true,
+          "takeable": false,
+          "observations": "A pc."
+        },
+<% end %>
+        {
+          "type": "coffee_station",
+          "id": "floor_coffee",
+          "name": "Floor Coffee Machine",
+          "takeable": false,
+          "offWhen": "floor_staff_ko",
+          "observations": "A pod coffee machine, the mugs beside it still wet.",
+          "affordance": { "capacity": 2, "chatter": "coffee", "overhearRadius": 360, "queue": { "cells": [ { "dx": 2, "dy": 0 }, { "dx": 3, "dy": 0 } ] } }
+        },
+        {
+          "type": "photocopier",
+          "id": "floor_copier",
+          "name": "Floor Photocopier",
+          "takeable": false,
+          "observations": "A busy photocopier, the tray warm.",
+          "offWhen": "floor_staff_ko"
+        },
+        {
+          "type": "mini_fridge",
+          "officeType": "fridge",
+          "id": "floor_fridge",
+          "name": "Floor Mini Fridge",
+          "takeable": false,
+          "observations": "A small fridge with a shelf of lunch boxes.",
+          "offWhen": "floor_staff_ko",
+          "affordance": { "useFrom": { "dx": 1, "dy": 0 } }
+        },
+        {
+          "type": "laptop1",
+          "id": "tomasz_laptop",
+          "name": "Tomasz's Laptop",
+          "takeable": false,
+          "position": "as-type:laptop",
+          "workstation": true,
+          "owner": "tomasz_wisniewski",
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Tomasz's laptop. He keeps the screen tipped away from you.",
+          "textVariants": [
+            { "condition": "globalVars.tomasz_laptop_screen_locked", "value": "The screen is locked." },
+            { "condition": "globalVars.tomasz_laptop_owner_away", "value": "OVERNIGHT APP SUPPORT QUEUE\n\nQueue: quiet. Two tickets open.\n\n1. App crashes on launch after the last update. Waiting on the app engineer.\n2. Notification arrives twice. Low priority.\n\nCaller waiting on line two. Marked: call back." }
+          ],
+          "observations": "A laptop open on a support ticket queue.",
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } }
+        },
+<%# Slice 4: Lerato's desk phone and the spare phone that rings it (PLAN 3.1, 4 L2). Both base type phone, no
+    position, so they claim the Tiled phones in order (phone1 at 7.6,3.6 then phone3 at 7.6,5.2). %>
+        {
+          "type": "phone",
+          "id": "lerato_phone",
+          "name": "Lerato's Desk Phone",
+          "deskPhone": true,
+          "officeType": "desk_phone",
+          "owner": "lerato_dlamini",
+          "takeable": false,
+          "observations": "A desk phone with a handset worn smooth.",
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } }
+        },
+        {
+          "type": "phone",
+          "id": "floor_spare_phone",
+          "name": "Spare Desk Phone",
+          "takeable": false,
+          "observations": "A spare phone on an empty desk.",
+          "triggerOnInteract": [
+            { "type": "emit_event", "event_name": "desk_phone_ring:lerato_phone" }
+          ]
+        },
         {
           "type": "notes",
           "id": "daily_trading_report",
@@ -1991,6 +2214,21 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "observations": "The trader's own flagged-transactions report — ENTROPY wallet names in plain text",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "entropy_wallets_known"
+        },
+<%# Slice 4: the one handover sheet (PLAN 3.1, 2.9). Declared after daily_trading_report, which claims the
+    floor's only Tiled notes sprite; this one has an explicit position. %>
+        {
+          "type": "notes",
+          "id": "tomasz_handover_sheet",
+          "name": "Shift Handover Sheet",
+          "takeable": true,
+          "readable": true,
+          "addToNotes": false,
+          "position": { "x": 1.1, "y": 7.0 },
+          "text": "SHIFT HANDOVER\n\nOn call tonight: Lerato, Tomasz, Dani, and the app engineer on the end of the phone.\n\nThe queue was quiet.\n\nThe coffee machine needs descaling. Whoever is in first, please run it.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "floor_copier",
+          "revealOnGlobal": "tomasz_handover_sheet_shown"
         }
       ]
     },
@@ -2346,6 +2584,21 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "puzzle_graph_reveals": "executive_safe_pin",
           "puzzle_graph_unlocks": "executive_safe",
           "puzzle_graph_optional": true
+        },
+<%# Slice 4 lever L1 (PLAN 3.2, 4): the lab's leftover pizza. Takeable, droppable magnet, seen only (no announce).
+    Only NPCs with a hunger need are tempted: the two extras. %>
+        {
+          "type": "pizza_boxes",
+          "id": "pizza",
+          "name": "Leftover Pizza",
+          "sprite": "pizza_boxes1",
+          "takeable": true,
+          "droppable": true,
+          "observations": "A box of cold pizza, a few slices left.",
+          "affordance": {
+            "satisfies": ["hunger"], "restores": 60, "useSeconds": 12,
+            "magnet": { "tempt": 60, "servings": 2, "perPerson": 1 }
+          }
         }
       ]
     },

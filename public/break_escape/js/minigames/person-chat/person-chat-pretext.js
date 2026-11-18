@@ -699,10 +699,16 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
             }
             const container = minigame.container || minigame.messageContainer || null;
             debriefUp = true;
+            // The phone's skip hint must not sit over the debrief while a voiced clip plays
+            try { minigame.ui?.setOverlayOpen?.(true); } catch (e) { /* not a phone */ }
             renderDebrief(container, {
                 session, spec,
                 theme: minigame.appTheme || minigame.params?.theme || null,
-                onDone: () => { debriefUp = false; originalComplete(true); }
+                onDone: () => {
+                    debriefUp = false;
+                    try { minigame.ui?.setOverlayOpen?.(false); } catch (e) { /* not a phone */ }
+                    originalComplete(true);
+                }
             });
         }
     };

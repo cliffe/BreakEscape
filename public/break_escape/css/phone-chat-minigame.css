@@ -676,6 +676,29 @@
     letter-spacing: 0.1em;
 }
 
+/* Visible skip hint: a line is typing or a pause is running (hidden at choices). Pixel font, no radius. */
+.phone-terminal-theme .phone-skip-hint {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    z-index: 101;
+    padding: 2px 8px;
+    background: #000;
+    border: 2px solid rgba(0, 255, 65, 0.6);
+    color: #00ff41;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    line-height: 1.2;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+}
+
+.phone-terminal-theme .phone-skip-hint[hidden] {
+    display: none;
+}
+
 /* Messages: strip bubbles, left-aligned text */
 .phone-terminal-theme .messages-container {
     background: #000;
@@ -1004,6 +1027,8 @@
         gap: 4px;
     }
     .conversation-view .choice-button { padding: 4px 10px; font-size: 14px; line-height: 1.2; }
+    /* Terminal theme: the empty strip keeps room for the skip hint so it never covers the typing line */
+    .phone-terminal-theme .conversation-view .choices-container:empty { min-height: 36px; }
 }
 
 /* Render-only tell. Not part of the contact's saved history. */
