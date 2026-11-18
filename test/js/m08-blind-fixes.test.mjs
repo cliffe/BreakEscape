@@ -64,3 +64,37 @@ test('every PIN is found away from its door', () => {
     assert.equal(roomOf(/"id": "nightshade_personnel_record"/), 'operations_floor');
     assert.equal(roomOf(/"id": "interrogation_suite_code"/), 'director_office');
 });
+
+test('Nightshade scene resumes in the hub on a reload once the scene has opened', () => {
+    const J = read('ink/m08_nightshade_confrontation.json');
+    const run = (opened) => {
+        const s = new Story(J);
+        s.variablesState.nightshade_scene_opened = opened;
+        s.ChoosePathString('start');
+        const out = [];
+        while (s.canContinue) out.push(s.Continue().trim());
+        return { out: out.join('\n'), choices: s.currentChoices.map((c) => c.text) };
+    };
+    const fresh = run(false);
+    assert.match(fresh.out, /interrogation room records everything/);
+    const resumed = run(true);
+    assert.doesNotMatch(resumed.out, /interrogation room records everything/);
+    assert.ok(resumed.choices.some((c) => /Two people are dead/.test(c)), 'hub topics offered');
+    // first choice sets the latch
+    const s = new Story(J);
+    s.ChoosePathString('start');
+    while (s.canContinue) s.Continue();
+    s.ChooseChoiceIndex(1);
+    s.Continue();
+    assert.equal(s.variablesState.nightshade_scene_opened, true);
+    // declared as a synced global in the scenario
+    assert.match(ERB, /"nightshade_scene_opened": false/);
+    // the fate latches still win over the resume divert
+    const f = new Story(J);
+    f.variablesState.nightshade_scene_opened = true;
+    f.variablesState.fate_decided = true;
+    f.ChoosePathString('start');
+    const t = [];
+    while (f.canContinue) t.push(f.Continue().trim());
+    assert.match(t.join('\n'), /police come|expecting you upstairs|Leave him|^$/);
+});
