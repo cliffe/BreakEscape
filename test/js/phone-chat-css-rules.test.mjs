@@ -118,4 +118,51 @@ check('portrait and desktop thread/reply base rules unchanged', () => {
     assert.match(base.find(r => r.selector === '.choices-container').body, /max-height:\s*200px/);
 });
 
+
+// Review R1 (M1, M2, M3, m1, n1)
+const num = (body, re) => parseInt(body.match(re)[1], 10);
+const phoneHeaderPad = 4 * 2 + 30;       // 4px padding top and bottom around a 30px row = 38
+const chatHeaderRow = 36;                 // back button row with a 32px headshot
+const cueH = 29;
+check('landscape budget: two two-line replies fit, with and without the more cue', () => {
+    const th = num(L('.conversation-view .messages-container').body, /min-height:\s*(\d+)px/);
+    const re = num(L('.conversation-view .choices-container').body, /min-height:\s*(\d+)px/);
+    const thCue = num(land.find(r => /^\.conversation-view:has\(\.choices-more-cue\.visible\) \.messages-container$/.test(r.selector)).body, /min-height:\s*(\d+)px/);
+    assert.ok(re >= 110, 'replies minimum shows two two-line replies');
+    assert.ok(phoneHeaderPad + chatHeaderRow + th + re <= 253, 'without cue');
+    assert.ok(phoneHeaderPad + chatHeaderRow + thCue + re + cueH <= 253, 'with cue');
+});
+check('landscape: phone status header padding trimmed', () => {
+    assert.match(L('.phone-header').body, /padding-top:\s*4px/);
+});
+check('landscape SE chats: legend hidden, budget with and without the cue', () => {
+    assert.match(L('.conversation-header .ib-infl-legend').body, /display:\s*none/);
+    const seHeader = 90;
+    const th = num(L('.conversation-view:has(.se-chat-header) .messages-container').body, /min-height:\s*(\d+)px/);
+    const re = num(L('.conversation-view:has(.se-chat-header) .choices-container').body, /min-height:\s*(\d+)px/);
+    const thCue = num(L('.conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .messages-container').body, /min-height:\s*(\d+)px/);
+    assert.ok(phoneHeaderPad + seHeader + th + re <= 253);
+    assert.ok(phoneHeaderPad + seHeader + thCue + re + cueH <= 253);
+});
+check('landscape: headshot shrinks to 32px outside call mode; call mode keeps its portrait', () => {
+    const r = land.find(x => /:not\(\.phone-call-mode\) \.conversation-header \.conversation-avatar,/.test(x.selector));
+    assert.ok(r, 'scoped rule');
+    assert.match(r.body, /width:\s*32px/);
+    assert.doesNotMatch(land.map(x => x.selector + '{' + x.body).join('\n'), /\.phone-call-mode[^{]*\{[^}]*display:\s*none/);
+    assert.ok(!land.some(x => /display:\s*none/.test(x.body) && /conversation-avatar/.test(x.selector)), 'avatar never hidden');
+    const call = all.find(x => x.media === '' && x.selector.startsWith('.phone-call-mode .conversation-avatar'));
+    assert.match(call.body, /width:\s*128px/);
+});
+check('terminal status line fits 246px (26 chars of VT323 18px plus spacing)', () => {
+    const r = all.find(x => x.selector === '.phone-terminal-theme .phone-header::after');
+    const em = parseFloat(r.body.match(/letter-spacing:\s*([\d.]+)em/)[1]);
+    assert.ok(26 * (18 * 0.5 + 18 * em) <= 246);
+});
+check('no box-shadow ring on the clipped phone shell', () => {
+    for (const sel of ['.phone-terminal-theme', '.phone-social-theme']) {
+        const r = all.find(x => x.selector === sel);
+        assert.doesNotMatch(r.body, /box-shadow/, sel);
+    }
+});
+
 console.log(`${pass} checks passed`);

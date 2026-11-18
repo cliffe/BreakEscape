@@ -624,8 +624,6 @@
 
 .phone-terminal-theme {
     background: #000;
-    /* hard ring, no glow */
-    box-shadow: 0 0 0 4px rgba(0, 255, 65, 0.4);
 }
 
 .phone-terminal-theme .phone-screen {
@@ -684,7 +682,300 @@
     font-family: 'VT323', monospace;
     font-size: 18px;
     color: rgba(0, 255, 65, 0.7);
-    letter-spacing: 0.1em;
+    /* VT323 is about 0.5em a character (9px at 18px). The row has 350px less Notepad (about 100px)
+       and the 4px gap: 246px. 26 characters at 0.1em spacing is 26 x 10.8 = 281px, too wide; at
+       0.02em it is 26 x 9.36 = 243px, which fits. */
+    letter-spacing: 0.02em;
+    color: rgba(0, 0, 0, 0.65);
+    margin-bottom: 2px;
+}
+
+.message-bubble.player {
+    align-self: flex-end;
+    background: rgba(0, 0, 0, 0.3);
+    color: #000;
+    font-weight: bold;
+}
+
+.message-narration {
+    align-self: center;
+    max-width: 85%;
+    text-align: center;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    font-style: italic;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.68);
+    padding: 2px 6px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.message-time {
+    font-size: 18px;
+    color: rgba(0, 0, 0, 0.5);
+    margin-top: 4px;
+    font-family: 'VT323', monospace;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 10px 14px;
+    align-self: flex-start;
+    max-width: 60px;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #000;
+    animation: typingBounce 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-8px);
+    }
+}
+
+/* Choices Container */
+.choices-container {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-top: 2px solid rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #000 rgba(0, 0, 0, 0.1);
+}
+
+.choices-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.choices-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-left: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.choices-container::-webkit-scrollbar-thumb {
+    background: #000;
+    border: 2px solid #5fcf69;
+}
+
+.choices-container::-webkit-scrollbar-thumb:hover {
+    background: #333;
+}
+
+.choice-button {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000;
+    border: 2px solid #000;
+    padding: 10px 14px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.1s;
+    line-height: 1.4;
+}
+
+.choice-button:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: translateX(2px);
+}
+
+.choice-button:active {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* "More choices" cue: pinned to the bottom of the list while choices are hidden below */
+/* A row of its own below the choice list, so it never covers a choice (m08 R4) */
+.choices-more-cue {
+    display: none;
+    flex-shrink: 0;
+    padding: 4px 12px;
+    background: #5fcf69;
+    border-top: 2px solid #000;
+    color: #000;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    text-align: center;
+    cursor: pointer;
+    animation: choicesCuePulse 1.2s ease-in-out infinite;
+}
+
+.choices-more-cue.visible {
+    display: block;
+}
+
+@keyframes choicesCuePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.phone-terminal-theme .choices-more-cue {
+    background: #000;
+    color: #00ff41;
+    border-top: 1px solid rgba(0, 255, 65, 0.5);
+}
+
+/* Voice Message Styles */
+.voice-message-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    padding: 5px;
+}
+
+.audio-controls:hover {
+    /* transform: scale(1.5); */
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.audio-sprite {
+    height: 32px;
+    width: auto;
+    flex-shrink: 0;
+    image-rendering: pixelated !important;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.play-button {
+    color: #000;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-family: 'GNF', monospace;
+    flex-shrink: 0;
+}
+
+.play-button img {
+    height: 32px;
+    width: auto;
+    display: block;
+    image-rendering: pixelated !important;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.transcript {
+    /* text-align: center; */
+    padding: 10px;
+    width: 100%;
+    font-family: 'GNF', monospace;
+    line-height: 1.4;
+}
+
+.transcript .mg-field-label {
+    color: #000;
+}
+
+/* ── Terminal Theme ───────────────────────────────────────────────────────────
+   Applied when params.theme === 'terminal'. Scoped entirely under
+   .phone-terminal-theme — zero impact on the default green LCD variant.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.phone-terminal-theme {
+    background: #000;
+}
+
+.phone-terminal-theme .phone-screen {
+    background: #000;
+    color: #00ff41;
+}
+
+/* CRT scanlines — same technique as bond-visualiser.css */
+.phone-terminal-theme .phone-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.18) 2px,
+        rgba(0, 0, 0, 0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* CRT vignette */
+.phone-terminal-theme .phone-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* Stepped hard-edged corner shading in place of a smooth radial vignette (pixel UI: no gradients) */
+    box-shadow:
+        inset 0 0 0 4px rgba(0, 0, 0, 0.75),
+        inset 0 0 0 8px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 12px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    z-index: 99;
+}
+
+/* Header: replace signal/battery chrome with a status line */
+.phone-terminal-theme .phone-header {
+    background: #000;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+    /* Notepad (GNF 16px) plus the status line must fit the 350px content box of a 400px phone
+       without wrapping: a 4px gap and 12px side padding give the line room to spare. */
+    gap: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.phone-terminal-theme .phone-header .signal-bars,
+.phone-terminal-theme .phone-header .battery {
+    display: none;
+}
+
+.phone-terminal-theme .phone-header::after {
+    content: 'SECURE CHANNEL ESTABLISHED';
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: rgba(0, 255, 65, 0.7);
+    /* VT323 is about 0.5em a character: 26 chars x (9px + 0.72px) = 253px, against 350px less
+       Notepad (about 100px) and the gap: 250px. Tight, so the spacing is 0.04em (26 x 9.72 = 253
+       becomes 26 x 9.36 = 243px). */
+    letter-spacing: 0.04em;
 }
 
 /* Visible skip hint: a line is typing or a pause is running (hidden at choices). Pixel font, no radius. */
@@ -1029,15 +1320,29 @@
    tap there reached Add to Notepad. The thread gives way first and the replies take what is
    left and scroll inside the frame. */
 @media (max-height: 500px) {
-    /* Conversation header on one row: the avatar goes (the name is the cue) so the thread keeps the
-       room. The thread keeps 72px, enough for the newest message, and scrolls; the replies shrink to
-       what is left (never past 40vh) and scroll inside their own box, so at least two choices show. */
+    /* Height budget at 844x390: the phone screen is about 253px.
+         phone status header   38  (padding trimmed to 4px; was about 50)
+         one-row chat header   36  (back button, name, 32px headshot)
+         thread                56  minimum (grows into any spare room)
+         replies              110  minimum: two two-line replies (2 x 50 + 6 gap + 4 padding)
+         total                240  of 253, 13px spare
+       With the "more choices" cue (29px) the thread gives way to 40px: 38+36+40+110+29 = 253.
+       SE chats add the influence bar (legend hidden, about 54px, header about 90px), so the replies
+       minimum drops to 64px (one two-line reply plus the next one scrolling) and the thread to 48px:
+       38+90+48+64 = 240; with the cue the thread is 32px: 38+90+32+64+29 = 253. */
+    .phone-header { padding-top: 4px; padding-bottom: 4px; }
     .conversation-header { flex-wrap: wrap; padding: 4px 10px; row-gap: 4px; gap: 8px; }
-    .conversation-header .conversation-avatar,
-    .conversation-header .conversation-avatar-placeholder { display: none; }
-    .conversation-view .messages-container { min-height: 72px; overflow-y: auto; }
+    /* The headshot shrinks to the native 32px; call mode keeps its large portrait */
+    .phone-messages-container:not(.phone-call-mode) .conversation-header .conversation-avatar,
+    .phone-messages-container:not(.phone-call-mode) .conversation-header .conversation-avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    .conversation-view .messages-container { min-height: 56px; overflow-y: auto; }
+    .conversation-view:has(.choices-more-cue.visible) .messages-container { min-height: 40px; }
     .conversation-view .choices-container {
-        min-height: 0;
+        min-height: 110px;
         flex-shrink: 1;
         overflow-y: auto;
         max-height: 40vh;
@@ -1045,6 +1350,13 @@
         gap: 4px;
     }
     .conversation-view .choice-button { padding: 4px 10px; font-size: 16px; line-height: 1.2; }
+    /* Influence bar: the legend row goes, the track and the change line stay, tightened */
+    .conversation-header .se-chat-header .influence-bar { padding: 2px 8px; }
+    .conversation-header .ib-infl-legend { display: none; }
+    .conversation-header .ib-infl-track { margin: 8px 8px 2px; }
+    .conversation-view:has(.se-chat-header) .messages-container { min-height: 48px; }
+    .conversation-view:has(.se-chat-header) .choices-container { min-height: 64px; }
+    .conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .messages-container { min-height: 32px; }
     /* Terminal theme: the empty strip keeps room for the skip hint so it never covers the typing line */
     .phone-terminal-theme .conversation-view .choices-container:empty { min-height: 36px; }
 }
@@ -1086,7 +1398,6 @@
     --dm-paper: #ffffff;
     --dm-wall: #eef0f3;
     background: #2b2f36;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--dm-accent) 45%, transparent);
 }
 
 .phone-social-theme .phone-screen {
