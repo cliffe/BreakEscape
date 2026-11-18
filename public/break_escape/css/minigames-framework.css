@@ -560,6 +560,15 @@
     inset: -14px;
 }
 
+/* The title-bar X (Crypto Workstation, Lab Sheet) sits beside the 30 px "Open in new tab" button
+   (5 px to its left) in a 46 px bar. The X is a border-box button: 30 px outer, padding box 22 px
+   (4 px border) or 18 px (6 px themed border). Vertical inset -13 gives 48 / 44 px, so the target
+   fills the bar without hanging into the iframe. Left inset -2 starts inside the X's own edge, so
+   it never reaches the new-tab button; right -14 is the usual reach. Live proof measures it. */
+.title-bar .minigame-close-button::after {
+    inset: -13px -14px -13px -2px;
+}
+
 .minigame-close-button:hover {
     background: #c0392b;
 }
@@ -614,7 +623,7 @@
 /* A 44 px touch target on small or touch screens, without changing the drawn 30 px square. */
 @media (max-width: 600px), (pointer: coarse) {
     .se-overlay-close { position: relative; }
-    .se-overlay-close::after { content: ''; position: absolute; inset: -7px; }
+    .se-overlay-close::after { content: ''; position: absolute; inset: -11px; }
 }
 
 /* Open in new tab button for workstations */

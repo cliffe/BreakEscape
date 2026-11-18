@@ -308,6 +308,11 @@
     z-index: 5;
 }
 
+/* No spill downward: the in-screen window X sits just below the strip */
+.pc-monitor-bezel > .pc-monitor-close::after {
+    inset: -14px -14px -4px -14px;
+}
+
 /* The post-it, stuck on the chin: its top just under the screen's bottom edge, in from the
    left past the side bezel. pcMonitorMetrics sets left, top and max-width from the frame. */
 .pc-monitor > .postit-note.pc-monitor-postit {
