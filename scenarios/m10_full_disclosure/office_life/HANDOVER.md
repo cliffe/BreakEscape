@@ -26,6 +26,7 @@ Branch `build/ol-m10`, worktree `.claude/worktrees/p-ol-m10`. The plan closed at
 | Build R4 (delta) | Sonnet | 0 | 0 | 0 |
 | Dialogue R2 (changed lines) | Sonnet | 0 | 0 | 1 |
 | Build R5 (delta) | Sonnet | 0 | 0 | 3 |
+| Build R6 (delta, two lines) | Sonnet-tier judgement | 0 | 0 | 0 |
 
 All findings fixed. R5's fixes changed two ink lines, so one more Sonnet delta (R6, minors only) on `2c07133d6` is due before voicing: check ink:45 and :54 in their knot, the compile, and SPOKEN_LINES lengths (40, 29).
 
@@ -42,9 +43,9 @@ All findings fixed. R5's fixes changed two ink lines, so one more Sonnet delta (
 
 ## Open (resume here)
 
-1. R6 Sonnet delta on `2c07133d6` (above).
-2. **Voicing: AC0 relayed the user's "Implement these using your best judgement" for m10.** Once R6 is clean: voice the new lines with the tts-audio skill (Sofia under Despina, Darren under Orus, the m10_fp_support conversation and exchange lines, the eight kettle_fp pool lines; check `ttsPregenerateChatter` for the pools), 0 wasted clips (`tts:wasted`), listen-check by transcript, then strip model names from repo files, commit, and report the train hash to AC0. No separate card. Not started.
-3. Uncommitted, not ours: `dungeon_graph.*`, `node_modules`.
+Done in session 3 (2026-11-18): R6 delta on ink:45 and :54 clean (0/0/0): both plain, voiceable, in character (40 and 29 characters), no spoilers. Voiced under the user's "implement these using your best judgement": 24 clips (Orus 11, Despina 13), 0 wasted (`tts:wasted` reports 0 of 1242), 24 requests for 24 unique lines, durations 1.7 to 5.9 s, five transcripts match. `"ttsPregenerateChatter": true` added to the m10 scenario so the batch lists the kettle_fp pools (the other m10 chatter was already cached). `main` merged in cleanly, no m10 conflicts.
+
+Remaining: only the uncommitted `dungeon_graph.*` (not ours) and `node_modules`.
 
 ## Wording sign-off (AC0 says it counts as signed off once the loops are clean)
 
