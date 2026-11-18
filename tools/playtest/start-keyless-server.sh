@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start the keyless Break Escape server (no GEMINI_API_KEY, so no TTS requests are
-# generated or billed). Usage: start-keyless-server.sh [PORT]   (default 3001; never 3000).
+# generated or billed). Usage: start-keyless-server.sh [PORT]   (default $PLAYTEST_PORT, else 3001; never 3000).
 # Idempotent: exits 0 if the port is already up.
 # Agents may start and stop this server. Never touch the :3000 server.
 #
@@ -8,7 +8,7 @@
 # Re-run this script afterwards.
 set -euo pipefail
 
-PORT="${1:-3001}"
+PORT="${1:-${PLAYTEST_PORT:-3001}}"
 case "$PORT" in
   ""|*[!0-9]*) echo "FAIL: port must be a number, got '$PORT'" >&2; exit 2 ;;
 esac
@@ -18,6 +18,13 @@ if [ "$PORT" -eq 3000 ] || [ "$PORT" -lt 1024 ] || [ "$PORT" -gt 65535 ]; then
   echo "FAIL: pick a port from 1024 to 65535 other than 3000 (:3000 is the user's server)" >&2; exit 2
 fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# A fresh worktree has no .bundle/config, so bundler would look for gems in the worktree's own
+# vendor/bundle and the server would not start. Default to the main checkout's gems.
+if [ -z "${BUNDLE_PATH:-}" ] && [ ! -f "$ROOT/.bundle/config" ]; then
+  COMMON="$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  [ -n "$COMMON" ] && [ -d "$(dirname "$COMMON")/vendor/bundle" ] && export BUNDLE_PATH="$(dirname "$COMMON")/vendor/bundle"
+fi
+[ -z "${RBENV_VERSION:-}" ] && [ -f "$ROOT/.ruby-version" ] && export RBENV_VERSION="$(cat "$ROOT/.ruby-version")"
 LOG="$ROOT/tmp/keyless-${PORT}.log"
 PIDFILE="tmp/pids/server-${PORT}.pid"   # relative to the dummy app, as rails resolves it
 
