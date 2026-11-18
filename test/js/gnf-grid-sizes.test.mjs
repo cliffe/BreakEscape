@@ -75,3 +75,8 @@ for (const file of SHEETS) {
         assert.deepEqual(bad, []);
     });
 }
+
+test('a compact PC monitor hides the 16px username line, which no longer fits its 76px tile (R2 M1)', () => {
+    const css = readFileSync(new URL('../../public/break_escape/css/password-minigame.css', import.meta.url), 'utf8');
+    assert.match(css, /\.pc-monitor\[data-compact\] \.signin-username\s*\{\s*display: none;/);
+});
