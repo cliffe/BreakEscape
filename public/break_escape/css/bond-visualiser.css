@@ -453,14 +453,13 @@
   inset: 0;
   z-index: 100000;
   overflow: hidden;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.95) 0%,
-    rgba(0,0,0,0.80) 8%,
-    rgba(0,0,0,0.80) 92%,
-    rgba(0,0,0,0.95) 100%
-  );
+  background: transparent;  /* the credits run over the visualiser; JS also sets this inline */
   pointer-events: none;
+  /* Credits sit in the gap between the header band and the controls bar (set by
+     bond-visualiser.js _fitCreditsBand; unset they are 0 and the overlay is the window) */
+  box-sizing: border-box;
+  padding-top: var(--bv-cr-top, 0px);
+  padding-bottom: var(--bv-cr-bottom, 0px);
 }
 
 #bv-credits-overlay.bv-cr-active {
@@ -521,6 +520,51 @@
   height: 22px;
 }
 
+/* The centred credits label (every single line and the hold line, plus the
+   closing-card block): no wider than the central map panel, so a long line such
+   as m03's "ZERO DAY CATALOGUE: IN SAFETYNET HANDS ..." wraps inside it instead of
+   running over the COMMS INTEL panel. With the side panels hidden (900px and
+   under) it takes the window less a margin. */
+#bv-credits-overlay #bv-cr-label.bv-cr-label {
+  box-sizing: border-box;
+  /* % of the fixed overlay (the label's containing block), not 100vw, which
+     counts a page scrollbar */
+  max-width: calc(100% - 440px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+  text-wrap: balance;
+  /* the overlay is padded to the gap between the header band and the controls bar, so
+     100% is that gap; a taller card scrolls inside itself instead of covering a bar */
+  max-height: 100%;
+  overflow-y: auto;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+/* Only when the label overflows (bond-visualiser.js adds the class): a square pixel
+   scrollbar with 2px borders, and the label takes the pointer so it can be scrolled. */
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+  pointer-events: auto;
+  scrollbar-width: auto;   /* auto keeps the ::-webkit-scrollbar rules below in force */
+}
+/* Browsers without ::-webkit-scrollbar (Firefox) get the standard colours instead. Chrome
+   121+ ignores the webkit rules once scrollbar-color is set, so it stays out of their way. */
+@supports not selector(::-webkit-scrollbar) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+    scrollbar-color: var(--bv-gold, #FFD700) #000;
+  }
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar { width: 12px; }
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-track {
+  background: #000;
+  border: 2px solid var(--bv-gold-dim, #7a6500);
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-thumb {
+  background: var(--bv-gold, #FFD700);
+  border: 2px solid #000;
+}
+
 /* Closing-card lines (bond-visualiser.js _startCredits): no wider than the
    central map panel (window minus 16px padding, two 180px side panels and two
    12px gaps, plus a little air), and balanced so a short last word ("out.")
@@ -528,7 +572,8 @@
    then to normal wrapping inside the same width. A line that already fits is
    left on one row. */
 .bv-cr-card-line {
-  max-width: calc(100vw - 440px);
+  /* the row's parent is the label, already capped to the centre panel */
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
   text-wrap: pretty;
@@ -538,4 +583,16 @@
 @media (max-width: 900px) {
   /* side panels are hidden here, so the centre is the whole width */
   .bv-cr-card-line { max-width: none; }
+  #bv-credits-overlay #bv-cr-label.bv-cr-label { max-width: 100%; padding: 0 10%; }
+}
+
+/* Short windows (phone landscape) and narrow ones (phone portrait): the closing card
+   uses the 16px pixel font size so its box fits between the header and the controls bar
+   (844x390 and 390x844 overlapped both at 30px). Larger windows keep the 30px card. */
+@media (max-height: 500px), (max-width: 600px) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label .bv-cr-card-line {
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+  }
 }
