@@ -1541,6 +1541,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             { "eventPattern": "global_variable_changed:vance_met", "condition": "value === true && globalVars.vance_provided_keycard === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
             { "eventPattern": "global_variable_changed:vance_provided_keycard", "condition": "value === true && globalVars.vance_met === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
             { "eventPattern": "global_variable_changed:aes_staff_off", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_kettle_off": true } },
+            { "eventPattern": "global_variable_changed:guard_admitted", "condition": "value === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
             { "eventPattern": "npc_attacked:ibrahim_diallo", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "npc_attacked:joanne_pell", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "npc_attacked:robert_vance", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
@@ -1674,7 +1675,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "needsCompany": { "groups": ["aes_office"] },
           "chatterCooldownMin": 2,
           "chatter": {
-            "coffee": ["Two sugars, and don't tell anyone.", "This kettle is older than my car.", "Is there any milk that isn't sour?", "These desktops take an age to image.", "Milk first, never after."]
+            "coffee": ["Two sugars, and don't tell anyone.", "This kettle is older than my car.", "Is there any milk that isn't sour?", "These desktops take an age to image.", "Third cup, imaging's at forty per cent."]
           },
 <%# Exchanges (office_life/SPOKEN_LINES.md): read in order, the first unheard one whose gates hold plays when the pair
     meet at the kettle with the first line's speaker in earshot. The knots are in his ink; his storyPath is required. %>
@@ -1688,6 +1689,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             "caffeine": { "initial": 85, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 }
           },
           "eventMappings": [
+            { "eventPattern": "global_variable_changed:guard_admitted", "condition": "value === true && !globalVars.aes_staff_off && !globalVars.ibrahim_ko", "delayMs": 12000, "onceOnly": true, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "room_entered:operations_office", "condition": "data.previousRoom !== 'main_entrance' && !globalVars.ops_kettle_off", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true && !globalVars.ibrahim_ko", "onceOnly": true, "bark": "Alarm. Right, leave the desktops, we're going." },
             { "eventPattern": "global_variable_changed:aes_staff_off", "condition": "value === true && !globalVars.crew_warned && !globalVars.ibrahim_ko", "onceOnly": true, "bark": "Right. I'm touching nothing till somebody tells me what that was." },
