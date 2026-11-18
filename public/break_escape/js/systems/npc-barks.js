@@ -8,7 +8,7 @@ import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks, HELD_BARK_VOICE_CAP_MS } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
-import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
+import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS, MAX_VISIBLE_BARKS } from './bark-lifetime.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 import { barkSource, arrowDirection, startHudLanes, dialogLayerOpen } from '../ui/hud-lanes.js';
 import { applyHeadshotBox } from '../utils/npc-headshot.js';
@@ -824,7 +824,13 @@ export default class NPCBarkSystem {
       // Phone texts placed by the lanes are not closed for want of room: the lanes step the
       // oldest aside, paused, until there is room (review R1 m1); only the count limit applies
       if (host === this.container && host.dataset.lane === 'notify') available = Infinity;
-      const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available);
+      // The two lanes share a budget of four: with toasts on screen the phone stack keeps to
+      // what is left, at least one text (older ones stay in the phone thread), so the lanes
+      // together do not pile up (m09 blind run)
+      const shownToasts = host === this.container
+        ? document.querySelectorAll('#notification-container .notification.show:not(.closing)').length : 0;
+      const maxVisible = Math.max(1, Math.min(MAX_VISIBLE_BARKS, 4 - shownToasts));
+      const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available, { maxVisible });
       barks.slice(0, drop).forEach(el => this._removeBark(el));
     });
   }

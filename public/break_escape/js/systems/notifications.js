@@ -487,6 +487,9 @@ export function shownToasts(container) {
     return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing && !el._toast.pending && el._toast.duration > 0);
 }
 
+/** Forget every toast waiting for a place (scenario reset, tests). */
+export function clearWaitingToasts() { takeWaiting(); }
+
 /** Number of info and success toasts waiting for a free place. */
 export function waitingToastCount() { return waitingToasts.length; }
 
@@ -500,7 +503,97 @@ let lastOverLimitAt = 0;
 function addWaiting(args) {
     args.waitingSince = Date.now();
     waitingToasts.push(args);
+    dropLowPriorityWaiting();
+    speedUpShown();
     armHead();
+}
+
+// ---- Pile-up control (m09 blind run: four or five toasts stacked over the view) ----
+// A hard ceiling on timed toasts on screen, counting the ones that skip the waiting line
+// (brief task lines, immediate feedback). The waiting line limit above is MAX_SHOWN_TOASTS;
+// a toast that skips it may take the count to this, and no further: the oldest info or
+// success toast that has had time to be read goes first. Errors, warnings and toasts that
+// stay until closed are never evicted.
+export const HARD_MAX_SHOWN_TOASTS = 3;
+// A toast is not evicted before it has been on screen this long.
+export const TOAST_MIN_READ_MS = 1500;
+// With this many toasts waiting, the ones on screen and the ones raised now get a shorter dwell.
+export const BACKLOG_SHORT = 2;
+export const BACKLOG_LONG = 4;
+export const SHORT_DWELL_MS = 2500;
+export const SHORTEST_DWELL_MS = 2000;
+// More than this many waiting: the oldest low-priority ones are dropped.
+export const MAX_WAITING_TOASTS = 4;
+
+/**
+ * Dwell for a timed info or success toast given how many are waiting for a place. Errors,
+ * warnings, toasts that stay until closed and ones already shorter than the floor are unchanged.
+ */
+export function dwellForBacklog(type, duration, backlog) {
+    const d = Number(duration);
+    if (!HOLDABLE_TYPES.has(type) || !(d > 0) || !(backlog >= BACKLOG_SHORT)) return duration;
+    if (backlog >= BACKLOG_LONG) return Math.min(d, SHORTEST_DWELL_MS);
+    return Math.min(d, SHORT_DWELL_MS);
+}
+
+/**
+ * Low priority: raised with options.low, or a plain info line with no title (a hint or aside).
+ * Titled toasts (Task Complete, Objective Updated, Item Acquired), successes, brief and
+ * immediate ones are never low priority.
+ */
+export function isLowPriorityToast(type, title, options = {}) {
+    if (options?.brief === true || options?.immediate === true) return false;
+    if (options?.low === true) return true;
+    return type === 'info' && !title;
+}
+
+/** Indexes (in a waiting line of toast args) to drop so at most `max` wait: oldest low-priority first. */
+export function pickLowPriorityDrops(queue, max = MAX_WAITING_TOASTS) {
+    const drops = [];
+    for (let i = 0; i < queue.length && queue.length - drops.length > max; i++) {
+        const q = queue[i];
+        if (isLowPriorityToast(q[1], q[2], q[5])) drops.push(i);
+    }
+    return drops;
+}
+
+/**
+ * The shown toast to close so one more fits under `cap`, or null. entries: [{ el?, type, shownAt, duration }]
+ * oldest first. Only timed info and success toasts that have been up TOAST_MIN_READ_MS go.
+ */
+export function pickEvictable(entries, now, cap = HARD_MAX_SHOWN_TOASTS) {
+    if (entries.length < cap) return null;
+    return entries.find((e) => HOLDABLE_TYPES.has(e.type) && e.duration > 0
+        && typeof e.shownAt === 'number' && now - e.shownAt >= TOAST_MIN_READ_MS) || null;
+}
+
+function dropLowPriorityWaiting() {
+    const drops = pickLowPriorityDrops(waitingToasts);
+    for (let k = drops.length - 1; k >= 0; k--) {
+        const [gone] = waitingToasts.splice(drops[k], 1);
+        clearTimeout(gone.waitTimer);
+        console.debug('[toasts] dropped, low priority and the line is long:', gone[0]);
+    }
+}
+
+// With a backlog, shown info and success toasts that would outstay SHORT_DWELL_MS close sooner.
+function speedUpShown() {
+    if (typeof document === 'undefined' || waitingToasts.length < BACKLOG_SHORT) return;
+    const container = document.getElementById('notification-container');
+    const target = waitingToasts.length >= BACKLOG_LONG ? SHORTEST_DWELL_MS : SHORT_DWELL_MS;
+    shownToasts(container).forEach((el) => {
+        const t = el._toast;
+        if (!HOLDABLE_TYPES.has(t.type) || el._yieldLeft != null || !el._countdownAt) return;
+        const left = (el._countdownMs || t.duration) - (Date.now() - el._countdownAt);
+        if (left > target) startCountdown(el, target);
+    });
+}
+
+// Close the oldest readable info or success toast so a toast that skips the waiting line fits.
+function makeRoomForImmediate(container) {
+    const shown = shownToasts(container);
+    const pick = pickEvictable(shown.map((el) => ({ el, ...el._toast })), Date.now());
+    if (pick) removeNotification(pick.el);
 }
 
 // Arm the wait limit on the head of the line: due MAX_TOAST_WAIT_MS after it joined, and no
@@ -604,6 +697,9 @@ function renderNotification(message, type, title, duration, seen = false, option
         return same;
     }
 
+    // A long line shortens the dwell of a toast raised now
+    duration = dwellForBacklog(type, duration, waitingToasts.length);
+
     // UX access R2 (finding 12): at most MAX_SHOWN_TOASTS on screen. A further info or
     // success toast waits its turn and shows as one goes; warnings and errors answer
     // what the player just did, so they still show at once.
@@ -618,6 +714,11 @@ function renderNotification(message, type, title, duration, seen = false, option
             addWaiting([message, type, title, duration, seen, options]);
         }
         return null;
+    }
+
+    // Skipping the waiting line (brief, immediate) still keeps to the hard ceiling
+    if (HOLDABLE_TYPES.has(type) && duration > 0 && (options?.brief === true || options?.immediate === true)) {
+        makeRoomForImmediate(notificationContainer);
     }
 
     // A warning or error over an open panel waits, unshown, until hud-lanes has a place for it
