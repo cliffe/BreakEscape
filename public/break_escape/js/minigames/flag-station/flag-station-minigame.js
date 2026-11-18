@@ -760,8 +760,8 @@ export class FlagStationMinigame extends MinigameScene {
         }
     }
 
-    /** Write a state's header (textContent: scenario text stays plain text). The warning
-     *  icon shows only while the device is armed (prompt and armed states). Colour is set
+    /** Write a state's header (textContent: scenario text stays plain text). The LAUNCH
+     *  tag shows only while the device is armed (prompt and armed states). Colour is set
      *  every time, so the helper can move between any two states. */
     setLaunchHeader(state) {
         const { heading, status } = this.launchHeader(state);
