@@ -22,7 +22,7 @@ import MusicController from './music-controller.js';
 import { buildEndSequence, replayEndingEntry } from './closing-sequence.js';
 import { playEndingMusic, whenEndingAudible } from './ending-audio.js';
 import { MUSIC_CONFIG } from './music-config.js';
-import { concludeWithRetry, offlineEndingOptions, queueConcludeRetry } from './conclude-mission.js';
+import { concludeWithRetry, offlineEndingOptions, queueConcludeRetry, withScoreLine, scoreStatusNote } from './conclude-mission.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -63,15 +63,23 @@ function evaluateCondition(condition, data) {
  * forced-close options, since nothing is playing. Null when the scenario has none.
  * @param {object} scenario - window.gameScenario
  * @param {object} [globals] - defaults to window.gameState.globalVariables
+ * @param {number|null} [score] - defaults to breakEscapeConfig.missionScore (null when a host owns scoring)
  */
-export function endingReplayOptions(scenario, globals) {
+export function endingReplayOptions(scenario, globals, score) {
     const found = replayEndingEntry(
         scenario?.music?.events,
         globals || window.gameState?.globalVariables || {},
         (cond, data) => evaluateCondition(cond, data)
     );
     if (!found) return null;
-    return { credits: found.sequence, headerText: found.entry.headerText, statusText: found.entry.statusText };
+    const shown = score !== undefined ? score : (typeof window !== 'undefined' ? window.breakEscapeConfig?.missionScore : null);
+    const num = Number.isFinite(shown) ? shown : null;
+    return {
+        credits: withScoreLine(found.sequence, num),
+        endNote: scoreStatusNote(num),
+        headerText: found.entry.headerText,
+        statusText: found.entry.statusText,
+    };
 }
 if (typeof window !== 'undefined') window.endingReplayOptions = endingReplayOptions;
 
@@ -305,8 +313,9 @@ function playEntry(entry, data) {
         // has agreed, so MISSION COMPLETE can no longer print over a game the
         // server still calls in_progress -- which is exactly what used to
         // happen here, because this path opened the visualiser and never asked.
-        const openCredits = (adjust = (o) => o) => window.BondVisualiser.open(adjust({
-            credits:      filteredLines,
+        const openCredits = (adjust = (o) => o, score = null) => window.BondVisualiser.open(adjust({
+            credits:      withScoreLine(filteredLines, score),
+            endNote:      scoreStatusNote(score),                 // stays in the STATUS row after the credits fade
             autoClose:    !!entry.stopAfterTrack,  // legacy: close when track ends
             autoStop:     !!entry.autoStop,         // new: stop music, keep vis open
             disableClose: !!entry.disableClose,
@@ -333,8 +342,9 @@ function playEntry(entry, data) {
             }
             if (result.concluded) {
                 _endingOwnsMusic = true;
+                // The score the server holds goes on the screen as the last credit line.
                 closeRinger();
-                openCredits();
+                openCredits(undefined, result.score);
                 return;
             }
             // Refused: the scenario declared technical work that is not done.
