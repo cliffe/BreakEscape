@@ -1463,6 +1463,16 @@ wall_safe_pin = "5829"
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 5000, "message": "Reeves requested both drills on his own signature, then locked the forms where only he'd look." }
+            },
+<%# Double toast fix: with the aim still story-gated, opening the safe unlocked "The Emergency Store Safe"
+    ("New Objective") and, 200 ms later, completed it ("Objective Complete") under the same name.
+    Looking at the keypad safe is already learning of it, so the aim now unlocks on the first
+    interaction and the open itself only completes it. Appended last: eventMappings are indexed. %>
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectType === 'safe' && data.roomId === 'emergency_equipment_storage'",
+              "onceOnly": true,
+              "setGlobal": { "escrow_safe_known": true }
             }
           ]
         },
