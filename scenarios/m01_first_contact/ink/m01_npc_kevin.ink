@@ -12,6 +12,7 @@ VAR asked_about_passwords = false
 VAR given_lockpick = false
 VAR given_keycard = false
 VAR given_password_hints = false
+VAR kevin_gear_all = false      // synced scenario global: took the lockpicks and keycard together; echoed in the debrief
 VAR warned_about_derek = false
 
 // Global variables synced from scenario
@@ -163,6 +164,7 @@ Kevin Park: Also, here's my server room keycard. You'll need it to access the ma
 Kevin Park: I've set up a Kali Linux workstation in there for you—use it for the technical side of the audit.
 
 + [I'll take all of it]
+    ~ kevin_gear_all = true
     ~ given_lockpick = true
     ~ given_keycard = true
     ~ given_password_hints = true

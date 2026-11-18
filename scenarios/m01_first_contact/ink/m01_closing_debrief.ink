@@ -17,6 +17,8 @@ VAR maya_identity_protected = true      // Did player protect Maya's identity
 
 // Moral choice: Kevin's frame-up
 VAR kevin_choice = ""             // warn, evidence, ignore, wrongly_accused
+VAR kevin_gear_all = false        // Took Kevin's lockpicks and keycard together
+VAR confrontation_approach = ""   // From Derek confrontation (aggressive, evidence_based)
 VAR kevin_protected = false       // Did player help Kevin?
 VAR kevin_accused = false         // Did player accuse Kevin of being ENTROPY?
 VAR contingency_file_read = false // Did player pick up the CONTINGENCY file?
@@ -532,6 +534,9 @@ Agent HaX: And you built a case on evidence Derek manufactured specifically to d
 // ================================================
 
 === security_audit_review ===
+{kevin_gear_all and not kevin_ko:
+    Agent HaX: You took the lockpicks and the keycard in one go. That keycard has Kevin's name on its log. Next time, borrow only what the job needs.
+}
 {security_audit_completed:
     -> audit_feedback
 }
@@ -610,6 +615,10 @@ Agent HaX: It builds trust. And trust gives you access.
 
 === derek_discussion ===
 Agent HaX: Now, about Derek Lawson...
+
+{confrontation_approach == "evidence_based":
+    Agent HaX: You put the evidence in front of him before anything else. That order matters in court.
+}
 
 {final_choice == "fight":
     -> consequence_fight
