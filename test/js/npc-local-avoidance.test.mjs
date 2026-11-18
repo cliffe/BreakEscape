@@ -1131,3 +1131,47 @@ test('m5: a real lapse (no re-issue) still restarts the timer', () => {
     b._handleBlockerAhead(103500, wp);                       // 1.5 s since the last frame, no re-issue
     assert.equal(b._playerPass.since, 103500);
 });
+
+// ── Code review R2 (docs/agents/REVIEW_npc_squeeze_past_R2.md) ─────────────────────────────────
+
+test('R2 m1: a same-destination needs re-issue in the approach phase keeps the pass', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    b.sprite.body.center = { x: 0, y: 0 };
+    window.player.body.center = { x: 35, y: 0 };             // ahead, not yet touching
+    goTo(b, 400, 0);                                         // the 3 s re-issue: path emptied, pass marked
+    assert.equal(b._playerPass?.reissued, true);
+    b._tickPlayerPass(b.npcBodyPos());
+    assert.equal(b._playerPass?.active, true, 'the pass survives the re-issue gap');
+});
+
+test('R2 m2: the pass arrives early only when the player is also at the destination', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    b.currentPath = [{ x: 400, y: 0 }]; b.pathIndex = 0;
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    b.sprite.body.center = { x: 400 - AVOID_PLAYER_ARRIVE_PX + 2, y: 0 };
+    window.player.body.center = { x: 400 - 200, y: 0 };      // the player is in the aisle, not at the cell
+    assert.equal(b._tickPlayerPass(b.npcBodyPos()), false, 'walks on to the cell');
+    assert.equal(b._playerPass?.active, true);
+    window.player.body.center = { x: 400, y: 0 };            // the player stands on the cell
+    assert.equal(b._tickPlayerPass(b.npcBodyPos()), true, 'arrives as the old collision did');
+});
+
+test('R2 m3: a hostile needs walk gets the near-target squeeze, not a hold', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    window.npcHostileSystem = { isNPCHostile: () => true, isNPCKO: () => false };
+    try {
+        const b = walker({ target: { x: 30, y: 0 }, busy: true });
+        b._moveOwner = 'needs';
+        b._stopOnArrival = true;
+        let t = 100000;
+        b._handleBlockerAhead(t, { x: 30, y: 0 });
+        t += 700;
+        assert.equal(b._handleBlockerAhead(t, { x: 30, y: 0 }), true);
+        assert.ok(b._vel.x > 0 && Math.hypot(b._vel.x, b._vel.y) < 90, 'a bounded squeeze toward the item');
+    } finally { delete window.npcHostileSystem; }
+});

@@ -35,3 +35,12 @@ Before d35f8eae0 the near-target `mustReach` squeeze applied to every needs-owne
 
 - **m6 live half**: no headless Phaser proof of `test_npc_squeeze_past` is recorded in the tree (Sam reaches the coffee with the player parked in the west gap, Opal does not). The unit tests drive the behaviour object with a fake pathfinder, so the real collider (`isPassingPlayer` returning false plus velocity) is still unproven. Per the live-proof rule, hold the merge claim until that run is attached.
 - **m4** (README wording) and **m9** (client event sets a debrief global) stand as R1 left them. The `fresh` flag for a restore request that fails on the network is also still open.
+
+## Outcomes
+
+- **m1**: `_tickPlayerPass` skips the distance clear while `p.reissued`. Test: an active pass with the player 35 px ahead survives a same-destination needs re-issue.
+- **m2**: the early arrival at 48 px now also needs the player within 48 px of the destination (`_dynamicBlockers`). Test: player in the aisle, the NPC walks on; player on the cell, it arrives.
+- **m3**: the near-target `mustReach` squeeze applies whenever `!_mayPassPlayer()` on a needs walk (opt-out, hostile, KO). Test: a hostile needs walk squeezes up to a player on its cell.
+- **R1 m4**: `README_scenario_design.md` now says every needs-owned walk passes, including the walk home and the chair fetch.
+- All three new tests fail on the pre-fix source (63 to 65 of `npc-local-avoidance.test.mjs`); the file passes 65/65 with the fix.
+- Still open: m6 live half (needs the headless Phaser proof), m9, and the `fresh` flag.

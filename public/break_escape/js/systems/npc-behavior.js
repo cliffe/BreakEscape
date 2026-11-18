@@ -1797,10 +1797,10 @@ export class NPCBehavior {
         }
         if (!hit) { this._avoid = null; this._notePlayerBlock(time, false); return false; }
 
-        // An NPC opted out of the pass (squeezePastPlayer: false) keeps the older bounded squeeze for
+        // A needs walk that may not pass (opted out with squeezePastPlayer: false, hostile or KO'd) keeps the older bounded squeeze for
         // a player at its pickup or use cell (games 1099 to 1124): the errand only fires there, so a
         // time-boxed wait and a squeeze up to the cell, not a hold or a detour until the job times out.
-        if (!mustReach && hit.isPlayer && this._moveOwner === 'needs' && this.config?.squeezePastPlayer === false && this.patrolTarget) {
+        if (!mustReach && hit.isPlayer && this._moveOwner === 'needs' && !this._mayPassPlayer() && this.patrolTarget) {
             const dxt = this.patrolTarget.x - hit.x, dyt = this.patrolTarget.y - hit.y;
             if (dxt * dxt + dyt * dyt <= AVOID_LOOKAHEAD_PX * AVOID_LOOKAHEAD_PX) mustReach = true;
         }
@@ -1969,11 +1969,14 @@ export class NPCBehavior {
         if (!p?.active) return false;
         if (!this._mayPassPlayer()) { this._playerPass = null; return false; }
         const d = this._goToStayDest;
-        if (d && Math.hypot(d.x - pos.x, d.y - pos.y) <= AVOID_PLAYER_ARRIVE_PX) {
+        // Arrive early only when the player is also at the target: that is the case the old collision
+        // covered. Otherwise a use or queue cell is walked onto (code review R2 m2).
+        if (d && Math.hypot(d.x - pos.x, d.y - pos.y) <= AVOID_PLAYER_ARRIVE_PX &&
+            this._dynamicBlockers().some(b => b.isPlayer && Math.hypot(b.x - d.x, b.y - d.y) <= AVOID_PLAYER_ARRIVE_PX)) {
             this._triggerGoToStayArrival();   // clears the pass
             return true;
         }
-        if (!(this.currentPath?.length > 0)) {
+        if (!(this.currentPath?.length > 0) && !p.reissued) {   // a re-issue empties the path for a frame (R2 m1)
             const touching = this._dynamicBlockers().some(b => b.isPlayer && Math.hypot(b.x - pos.x, b.y - pos.y) < AVOID_PLAYER_CLEAR_PX);
             if (!touching) this._playerPass = null;
         }
