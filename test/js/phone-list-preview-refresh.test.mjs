@@ -4,7 +4,6 @@
 // Run with: node --max-old-space-size=2048 test/js/phone-list-preview-refresh.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
@@ -22,6 +21,8 @@ const anything = () => new Proxy(function () {}, {
 });
 globalThis.AudioContext = window.AudioContext = function () { return anything(); };
 globalThis.Audio = window.Audio = function () { return anything(); };
+const { default: NPCManager } = await import(pathToFileURL(join(js, 'systems/npc-manager.js')).href);
+const { default: NPCBarkSystem } = await import(pathToFileURL(join(js, 'systems/npc-barks.js')).href);
 const { default: PhoneChatUI } = await import(pathToFileURL(join(js, 'minigames/phone-chat/phone-chat-ui.js')).href);
 
 const HAX = { id: 'hax', displayName: 'Agent HaX', phoneId: 'p1' };
@@ -77,13 +78,23 @@ test('a contact new to the list rebuilds the list', () => {
 
 test('a livePreview row keeps its own preview but takes the new badge', () => {
     const { ui, histories, contactList } = setup();
-    HAX.livePreview = true;
+    const live = { ...HAX, livePreview: true };
+    ui.npcManager.getNPCsByPhone = () => [live, BOB];
+    ui.refreshLivePreview = async () => null; // the dry run is not under test here
+    ui.populateContactList('p1');
     row(contactList, 'hax').querySelector('.contact-last-message').textContent = 'dry run line';
-    histories.hax.push({ type: 'npc', text: 'two', read: false, timestamp: 2 });
     ui.refreshContactList();
-    assert.equal(row(contactList, 'hax').querySelector('.contact-last-message').textContent, 'dry run line');
-    assert.equal(row(contactList, 'hax').querySelector('.unread-badge').textContent, '2');
-    delete HAX.livePreview;
+    assert.equal(row(contactList, 'hax').querySelector('.contact-last-message').textContent, 'dry run line', 'no new text: kept');
+    histories.hax.push({ type: 'npc', text: 'two', read: false, timestamp: 2 });
+    const redone = [];
+    ui.refreshLivePreview = async (npc, r) => { redone.push(npc.id); return null; };
+    ui.refreshContactList();
+    const r = row(contactList, 'hax');
+    assert.equal(r.querySelector('.contact-last-message').textContent, 'two', 'stale dry-run line replaced by history');
+    assert.equal(r.querySelector('.unread-badge').textContent, '2');
+    assert.deepEqual(redone, ['hax'], 'the dry run is asked for again');
+    ui.refreshContactList();
+    assert.deepEqual(redone, ['hax'], 'not again while the history is unchanged');
 });
 
 test('in a thread, or detached, nothing is touched', () => {
@@ -96,9 +107,93 @@ test('in a thread, or detached, nothing is touched', () => {
     assert.equal(ui.refreshContactList(), false);
 });
 
-test('wiring: a bark and a call row both ask the open phone to refresh its list', () => {
-    const barks = readFileSync(join(js, 'systems/npc-barks.js'), 'utf8');
-    assert.match(barks, /m\.ui\?\.refreshBackUnread\?\.\(\);\s*\n[^\n]*\n\s*m\.ui\?\.refreshContactList\?\.\(\);/);
-    const mgr = readFileSync(join(js, 'systems/npc-manager.js'), 'utf8');
-    assert.match(mgr, /open\.ui\?\.refreshContactList\?\.\(\)/);
+test('a removed contact rebuilds the list and the scroll position is kept', () => {
+    const { ui, npcs, contactList } = setup();
+    contactList.scrollTop = 0;
+    let top = 37;
+    Object.defineProperty(contactList, 'scrollTop', { get: () => top, set: (v) => { top = v; }, configurable: true });
+    const origPopulate = ui.populateContactList.bind(ui);
+    ui.populateContactList = (id) => { origPopulate(id); top = 0; }; // a rebuild resets scroll
+    npcs.splice(1, 1);
+    assert.equal(ui.refreshContactList(), true);
+    assert.equal(contactList.querySelectorAll('.contact-item').length, 1);
+    assert.equal(top, 37);
+});
+
+function phoneStub() {
+    const calls = { n: 0 };
+    window.MinigameFramework = { currentMinigame: { _sceneType: 'phone-chat', _ending: false, ui: { refreshContactList: () => { calls.n++; } } } };
+    return calls;
+}
+const tick = () => new Promise(r => queueMicrotask(r));
+
+test('wiring: several addMessage calls in one tick give one refresh', async () => {
+    const calls = phoneStub();
+    const mgr = Object.create(NPCManager.prototype);
+    Object.assign(mgr, { conversationHistory: new Map(), _log() {}, _gameTimeAt: () => ({}) });
+    mgr.addMessage('hax', 'npc', 'a');
+    mgr.addMessage('hax', 'npc', 'b');
+    mgr.addMessage('bob', 'npc', 'c');
+    assert.equal(calls.n, 0, 'deferred to the microtask');
+    await tick(); await tick();
+    assert.equal(calls.n, 1);
+    mgr.addMessage('hax', 'npc', 'd');
+    await tick(); await tick();
+    assert.equal(calls.n, 2, 'the next tick refreshes again');
+    window.MinigameFramework.currentMinigame._ending = true;
+    mgr.addMessage('hax', 'npc', 'e');
+    await tick(); await tick();
+    assert.equal(calls.n, 2, 'a closing phone is left alone');
+    delete window.MinigameFramework;
+});
+
+test('wiring: a bark asks the open phone to refresh its list (idempotent)', () => {
+    const calls = phoneStub();
+    const m = window.MinigameFramework.currentMinigame;
+    m.ui.refreshBackUnread = () => {};
+    NPCBarkSystem.prototype._refreshPhoneUnread.call({});
+    assert.equal(calls.n, 1);
+    m._ending = true;
+    NPCBarkSystem.prototype._refreshPhoneUnread.call({});
+    assert.equal(calls.n, 1);
+    delete window.MinigameFramework;
+});
+
+function realManagerWithUi() {
+    const mgr = Object.create(NPCManager.prototype);
+    Object.assign(mgr, { conversationHistory: new Map(), npcs: new Map([['hax', HAX], ['bob', BOB]]), _log() {}, _gameTimeAt: () => ({}) });
+    const contactList = document.createElement('div');
+    document.body.appendChild(contactList);
+    const ui = Object.create(PhoneChatUI.prototype);
+    Object.assign(ui, {
+        container: document.body, params: { phoneId: 'p1' }, currentView: 'contact-list', elements: { contactList },
+        npcManager: { getConversationHistory: (id) => mgr.conversationHistory.get(id) || [], getNPCsByPhone: () => [HAX, BOB], npcs: mgr.npcs },
+        formatTimestamp: (t) => `t${t}`
+    });
+    ui.populateContactList('p1');
+    window.MinigameFramework = { currentMinigame: { _sceneType: 'phone-chat', _ending: false, ui } };
+    return { mgr, contactList };
+}
+
+test('a missed call shows "Missed call", the missed class and a badge', async () => {
+    const { mgr, contactList } = realManagerWithUi();
+    mgr.addCallRow('hax', 'missed');
+    await tick(); await tick();
+    const last = row(contactList, 'hax').querySelector('.contact-last-message');
+    assert.ok(last.classList.contains('missed'));
+    assert.equal(last.textContent, 'Missed call');
+    assert.equal(row(contactList, 'hax').querySelector('.unread-badge').textContent, '1');
+    delete window.MinigameFramework;
+});
+
+test('a voicemail: the call row then its lines in one tick leave the last line and a badge counting the lines', async () => {
+    const { mgr, contactList } = realManagerWithUi();
+    mgr.addCallRow('hax', 'voicemail');
+    mgr.addMessage('hax', 'npc', 'Hi, it is HaX.');
+    mgr.addMessage('hax', 'npc', 'Call me back.');
+    await tick(); await tick();
+    const r = row(contactList, 'hax');
+    assert.equal(r.querySelector('.contact-last-message').textContent, 'Call me back.');
+    assert.equal(r.querySelector('.unread-badge').textContent, '2', 'the two lines; the Voicemail row itself is read');
+    delete window.MinigameFramework;
 });

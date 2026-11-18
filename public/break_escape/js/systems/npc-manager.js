@@ -131,6 +131,24 @@ function safeEvaluateCondition(conditionStr, eventData) {
   return evaluateSingle(s);
 }
 
+let contactListRefreshQueued = false;
+/**
+ * A text or call row was added to a thread: if the phone is showing its contact list, redraw
+ * the rows once the current tick's rows (a voicemail's lines, a burst of texts) are all in.
+ * One refresh per tick; does nothing unless the open minigame is a phone-chat that is not closing.
+ */
+function scheduleContactListRefresh() {
+  if (contactListRefreshQueued || typeof window === 'undefined') return;
+  contactListRefreshQueued = true;
+  queueMicrotask(() => {
+    contactListRefreshQueued = false;
+    try {
+      const open = window.MinigameFramework?.currentMinigame;
+      if (open && open._sceneType === 'phone-chat' && !open._ending) open.ui?.refreshContactList?.();
+    } catch (e) { /* the list redraws on its next open */ }
+  });
+}
+
 export default class NPCManager {
   // Fields the chat minigames write onto an NPC entry at runtime (phone-chat keeps
   // its story position in storyState). Carried over a re-registration, and the
@@ -598,6 +616,7 @@ export default class NPCManager {
     if (type === 'player' || type === 'narrator') message.read = true;
     this.conversationHistory.get(npcId).push(message);
     this._log('debug', `Added ${type} message to ${npcId}:`, text);
+    scheduleContactListRefresh();
   }
 
   /**
@@ -673,8 +692,8 @@ export default class NPCManager {
     if (open && open._sceneType === 'phone-chat' && open.currentNPCId === npcId && typeof open.ui?.addMessage === 'function') {
       try { open.ui.addMessage('call', text, true, row); row.read = true; } catch (e) { /* the row stays in the thread */ }
     }
-    // The contact list is showing: its row takes the new call line
-    if (open && open._sceneType === 'phone-chat' && !open._ending) { try { open.ui?.refreshContactList?.(); } catch (e) { /* the list redraws on its next open */ } }
+    // The contact list is showing: its row takes the new call line (coalesced with other rows this tick)
+    scheduleContactListRefresh();
     const phoneId = this.npcs.get(npcId)?.phoneId;
     if (typeof window !== 'undefined' && window.updatePhoneBadge && phoneId) {
       try { window.updatePhoneBadge(phoneId); } catch (e) { /* inventory not ready yet */ }

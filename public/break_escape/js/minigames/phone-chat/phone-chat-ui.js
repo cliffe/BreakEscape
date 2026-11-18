@@ -700,9 +700,13 @@ export default class PhoneChatUI {
             const list = this.elements?.contactList;
             if (this.currentView !== 'contact-list' || !list || !list.isConnected) return false;
             const npcs = this.listContacts(this._listPhoneId ?? this.params.phoneId ?? 'player_phone', true);
-            const rowFor = (id) => Array.from(list.querySelectorAll('.contact-item')).find(r => r.dataset.npcId === id);
-            if (npcs.some(npc => !rowFor(npc.id))) {
+            const rows = Array.from(list.querySelectorAll('.contact-item'));
+            const rowFor = (id) => rows.find(r => r.dataset.npcId === id);
+            if (rows.length !== npcs.length || npcs.some(npc => !rowFor(npc.id))) {
+                // A contact came or went: rebuild, keeping the scroll position
+                const top = list.scrollTop;
                 this.populateContactList(this._listPhoneId);
+                list.scrollTop = top;
                 return true;
             }
             for (const npc of npcs) {
@@ -711,12 +715,22 @@ export default class PhoneChatUI {
                 const meta = row.querySelector('.contact-meta');
                 const freshMeta = fresh.querySelector('.contact-meta');
                 if (meta && freshMeta) meta.replaceWith(freshMeta);
-                // A livePreview row shows its own dry-run line: left as it is
                 const last = row.querySelector('.contact-last-message');
                 const freshLast = fresh.querySelector('.contact-last-message');
-                if (npc.livePreview !== true && last && freshLast) {
+                if (!last || !freshLast) continue;
+                if (npc.livePreview !== true) {
                     last.className = freshLast.className;
                     last.textContent = freshLast.textContent;
+                } else {
+                    // A livePreview row shows its own dry-run line; a new text in its thread
+                    // makes that stale, so show the history line and run the dry run again
+                    const length = String(this.npcManager.getConversationHistory(npc.id).length);
+                    if (row.dataset.historyLength !== length) {
+                        last.className = freshLast.className;
+                        last.textContent = freshLast.textContent;
+                        row.dataset.historyLength = length;
+                        this.refreshLivePreview(npc, row).catch(() => {});
+                    }
                 }
             }
             return true;
@@ -747,7 +761,10 @@ export default class PhoneChatUI {
             contactList.appendChild(contactItem);
             // Opt-in (NPC "livePreview": true, lab R5 F4): a looping hint contact
             // previews the line opening its thread would add now
-            if (npc.livePreview === true) this.refreshLivePreview(npc, contactItem);
+            if (npc.livePreview === true) {
+                contactItem.dataset.historyLength = String(this.npcManager.getConversationHistory(npc.id).length);
+                this.refreshLivePreview(npc, contactItem);
+            }
         });
 
         console.log(`📋 Populated ${npcs.length} contacts`);
