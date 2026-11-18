@@ -79,9 +79,11 @@ export function resetCombatState() {
  * Is a live hostile NPC chasing the player in a way the player can see? It has to be in the
  * player's room, awake, not hidden by a mapping and not cowering (a cower hostile keeps its
  * distance in chase state without attacking; its hits count through the hit window instead). A
- * hostile behind a closed door in another room does not count. Shared with the fighting pose
- * (player-poses.js) so the pose and the hold agree.
- * @param {object} [deps] - overridable for tests: behaviors, hostileSystem, npcManager, playerRoom
+ * hostile behind a closed door in another room does not count, unless deps.anyRoom is set: the
+ * combat hold sets it, so a call never starts and is then pulled back when the player leaves the
+ * room with the chaser still after them. The fighting pose (player-poses.js) keeps the room test.
+ * @param {object} [deps] - overridable for tests: behaviors, hostileSystem, npcManager, playerRoom,
+ *   anyRoom (count a chaser in any room)
  */
 export function playerHasChaser(deps = {}) {
   const w = typeof window !== 'undefined' ? window : {};
@@ -96,7 +98,7 @@ export function playerHasChaser(deps = {}) {
     const id = behavior.npcId;
     try {
       if (behavior.config?.hostile?.fightStyle === 'cower') continue;
-      if (typeof playerRoom === 'string' && behavior.roomId && behavior.roomId !== playerRoom) continue;
+      if (!deps.anyRoom && typeof playerRoom === 'string' && behavior.roomId && behavior.roomId !== playerRoom) continue;
       if (!hostile.isNPCHostile?.(id) || hostile.isNPCKO?.(id)) continue;
       if (manager?.isHiddenByMapping?.(id)) continue;
     } catch (err) { continue; }
@@ -106,12 +108,12 @@ export function playerHasChaser(deps = {}) {
 }
 
 /**
- * True while the player is in a fight: a live hostile NPC is chasing in the player's room (its
+ * True while the player is in a fight: a live hostile NPC is chasing the player, in any room (its
  * chase state covers the attack swing) or the player took a hit in the last COMBAT_QUIET_MS.
  * Scripted phone chats and calls wait on this (npc-manager.js _queueScriptedConversation,
  * phone-ringer-dom.js ringBlocked): a popup that locks the world mid-fight leaves the player
  * unable to fight or flee (m04 playtest). Three limits keep a hold from outlasting the fight:
- * a chaser has to be where the player is (no hold for a guard behind a door), the chase term
+ * a chaser has to be hostile, awake and in chase state (a hostile that gave up stops counting), the chase term
  * lingers COMBAT_LINGER_MS after the last sighting so a leashed guard flipping at its edge does
  * not stutter the hold, and an unbroken chase with no hit stops counting after
  * COMBAT_CHASE_CAP_MS, leaving only the hit window. The player opening their own phone is never
@@ -123,7 +125,7 @@ export function playerInCombat(deps = {}) {
   const t = typeof deps.now === 'number' ? deps.now
     : (typeof performance !== 'undefined' ? performance.now() : Date.now());
   // Sample the chase first, so a run keeps being tracked while a hit holds the fight on
-  if (playerHasChaser(deps)) {
+  if (playerHasChaser({ ...deps, anyRoom: true })) {
     if (!chaseRunStart || t - lastChaserAt > COMBAT_LINGER_MS) chaseRunStart = t;
     lastChaserAt = t;
   } else if (chaseRunStart && t - lastChaserAt > COMBAT_LINGER_MS) {

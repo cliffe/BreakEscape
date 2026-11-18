@@ -141,10 +141,30 @@ test('the player opening their own phone is not gated', () => {
 const chaser = (extra = {}) => ({ npcId: 'guard', currentState: 'chase', roomId: 'hall', ...extra });
 const deps = (b, extra = {}) => ({ behaviors: new Map([['guard', b]]), hostileSystem: hostileSystem(['guard']), playerRoom: 'hall', ...extra });
 
-test('M1: a chaser in another room (behind a closed door) does not hold', () => {
+test('M1: a chaser in another room still holds (a call never starts and is pulled back)', () => {
     I.resetCombatState();
-    assert.equal(I.playerInCombat(deps(chaser({ roomId: 'vault' }), { now: 100 })), false);
-    assert.equal(I.playerInCombat(deps(chaser(), { now: 200 })), true, 'the same guard in the player room does');
+    assert.equal(I.playerInCombat(deps(chaser({ roomId: 'vault' }), { now: 100 })), true, 'the player left the room, the chase goes on');
+    assert.equal(I.playerInCombat(deps(chaser(), { now: 200 })), true, 'the same guard in the player room does too');
+});
+
+test('M1: the fighting pose keeps the room test; the hold does not', () => {
+    const d = deps(chaser({ roomId: 'vault' }));
+    assert.equal(I.playerHasChaser(d), false, 'pose: a guard in another room is not a fight the player sees');
+    assert.equal(I.playerHasChaser({ ...d, anyRoom: true }), true);
+});
+
+test('M1: a hostile in another room that stood down, was KO\'d or gave up stops the hold (after the linger)', () => {
+    I.resetCombatState();
+    const far = chaser({ roomId: 'vault' });
+    assert.equal(I.playerInCombat(deps(far, { now: 1000 })), true);
+    far.currentState = 'patrol';   // gave up
+    assert.equal(I.playerInCombat(deps(far, { now: 1100 })), true, 'inside the linger');
+    assert.equal(I.playerInCombat(deps(far, { now: 1000 + I.COMBAT_LINGER_MS + 10 })), false);
+    I.resetCombatState();
+    const ko = { ...deps(chaser({ roomId: 'vault' }), { now: 5000 }), hostileSystem: { isNPCHostile: () => true, isNPCKO: () => true } };
+    assert.equal(I.playerInCombat(ko), false, 'KO');
+    const calm = { ...deps(chaser({ roomId: 'vault' }), { now: 6000 }), hostileSystem: { isNPCHostile: () => false, isNPCKO: () => false } };
+    assert.equal(I.playerInCombat(calm), false, 'stood down');
 });
 
 test('M1: a cowering hostile (jab-free, keeps its distance) does not hold; a hit from it does', () => {
