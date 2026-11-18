@@ -1256,6 +1256,14 @@ scada_password = "CascadeWindow19"
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: F to punch, hold Q to block, face them squarely." }
             },
+<% %w[ray_hollis thomas_park james_mercer].each do |ko_id| %>
+            {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "npc_ko:<%= ko_id %>",
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
+            },
+<% end %>
             <%# Blind run A fixes (m7) added a case hint as the keypad opened. Since
                 engine 7.4b the keypad itself says passwords are case-sensitive on a
                 near miss, and the door emits door_unlock_failed with reason
@@ -1423,7 +1431,19 @@ scada_password = "CascadeWindow19"
             },
 <%# Office life: operations staff trouble (office_life/PLAN.md 2.7), appended after every existing mapping, outside every loop. %>
             { "eventPattern": "npc_attacked:adaeze_okafor", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
-            { "eventPattern": "npc_attacked:gwen_pritchard", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } }
+            { "eventPattern": "npc_attacked:gwen_pritchard", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
+            {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "npc_ko:adaeze_okafor",
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
+            },
+            {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "npc_ko:gwen_pritchard",
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
+            }
           ],
           "itemsHeld": [
             {

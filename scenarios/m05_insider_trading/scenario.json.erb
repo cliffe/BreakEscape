@@ -1467,6 +1467,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 2000, "message": "Upload's dead. If you're leaving him there, take what's on that desk and go. Call me." }
             },
             {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "conversation_closed:david_torres",
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
+            },
+            {
               "_comment": "Pass 5 A2: any fate (in person, after the knockout, or by phone) opens the call-in task.",
               "eventPattern": "global_variable_changed:final_choice",
               "condition": "value !== ''",
