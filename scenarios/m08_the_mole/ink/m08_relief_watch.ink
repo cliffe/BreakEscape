@@ -63,8 +63,8 @@ Julian Sallow: Relief watch, Agent. We've the duty desk for the night: the doors
     -> julian_back
 + { julian_asked_watch and not julian_asked_rules } [Is there anything the watch wants from me?]
     ~ julian_asked_rules = true
-    Julian Sallow: Carry your ID where it can be seen. If something looks wrong, tell the Director and nobody else.
-    Julian Sallow: Most people read the first line of a notice and the last. The rule is in the middle.
+    Julian Sallow: Carry your ID where it can be seen. Every classified system wants re-authentication tonight, so don't take it personally when a reader asks twice.
+    Julian Sallow: Most people read a notice once, at the door. Tonight it's worth a second look.
     -> julian_back
 + { not julian_asked_nights } [How long have you done nights?]
     ~ julian_asked_nights = true

@@ -131,9 +131,9 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 // condition on the opening line followed by a second.
 {
 - julian_ko and agnieszka_ko:
-    Director Magnus Netherton: You knocked down both of the night watch at their own desk. They were keeping the log, not hiding anything in it.
+    Director Magnus Netherton: You knocked down both of the night watch while they were on duty. They were keeping the log, not hiding anything in it.
 - julian_ko or agnieszka_ko:
-    Director Magnus Netherton: You knocked down one of the night watch at their own desk. They were keeping the log, not hiding anything in it.
+    Director Magnus Netherton: You knocked down one of the night watch while they were on duty. They were keeping the log, not hiding anything in it.
 }
 // Phase 4 dialogue C1 (D8-18): a player beat after the charge sheet, so the
 // conduct lines and the case don't run on as one speech.
