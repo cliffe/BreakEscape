@@ -37,7 +37,7 @@ ATHENA: Reception. How may I help you tonight, Agent? Discreetly, of course. Eve
     -> back
 + [What have you seen tonight, ATHENA?]
     ATHENA: I see everything and I judge nothing, Agent.
-    ATHENA: I will say only this. The calmest person in a frightened building is not always the bravest. Sometimes they are simply the one who is not surprised.
+    ATHENA: The calmest person in a frightened building is not always the bravest. Sometimes they are simply the one who is not surprised.
     -> back
 + [That's all, thank you.]
     ATHENA: Of course. I'll log that you were here. I log everything now.

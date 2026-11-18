@@ -127,7 +127,7 @@ So I'm going to be very professional tonight. Bear with me.
         You've got the door. Now you need the clock: when was the plan opened? Somebody in this building wrote it down.
     // Design C1 (D1): both lab-door men down or hostile skips the confirmation, as in his audit_case.
     - not (vector_audit_confirmed or nightshade_audit_confirmed or ((vector_ko or vector_hostile) and (nightshade_ko or nightshade_hostile))):
-        Door and clock. He'll want someone on that audit to stand behind their own row. Ask the men who badge through the lab door.
+        Door and clock. Now one of the men on the lab door has to stand behind his own row.
     - audit_warned:
         He's warned you. One more miss and {found_access_logs:he reads it himself|he takes it off you, and the floor will know}. Every row against the minute. Who stayed inside?
     - audit_misread:
@@ -149,8 +149,7 @@ So I'm going to be very professional tonight. Bear with me.
 // Phase 4 dialogue C1 (D8-22): retires once the fate is entered.
 + { mole_identified and not fate_decided } [How do I get into the interrogation suite?]
     Keypad, south of the Crypto Lab. The code's in the Director's office safe.
-    The safe combination is his service number. Everyone in this building uses their own.
-    He signs it on anything he pulls from personnel. There's one of those printouts in the ops-floor tray.
+    His safe opens on his service number. He signs it on every personnel printout, and there's one in the ops-floor tray.
     -> hub
 // PASS 3 (P5): the door audit and the lab's single door.
 + { not found_badge_audit } [Where would the door logs be?]
