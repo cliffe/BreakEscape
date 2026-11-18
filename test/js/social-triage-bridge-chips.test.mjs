@@ -52,8 +52,8 @@ const selectorIn = (src, anchor) => {
 };
 
 test('clickControl and getTestState controls use the same selector, with .tri-chip', () => {
-    const bridge = selectorIn(bridgeSrc, 'async clickControl(');
-    const base = selectorIn(baseSrc, 'const controls = Array.from(');
+    const bridge = selectorIn(bridgeSrc, 'function controlElements(');
+    const base = selectorIn(baseSrc, 'getTestControlElements() {');
     assert.equal(bridge, base);
     assert.ok(bridge.split(',').map(s => s.trim()).includes('.tri-chip'));
 });
