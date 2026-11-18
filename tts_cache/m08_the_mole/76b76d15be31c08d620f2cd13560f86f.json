@@ -1,0 +1,13 @@
+{
+  "key": "76b76d15be31c08d620f2cd13560f86f",
+  "npc": "narrator",
+  "text": "Once it is entered, the case closes. Anything else in the building, finish it first.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:16:02Z"
+}
