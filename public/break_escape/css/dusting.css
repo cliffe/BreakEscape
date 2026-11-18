@@ -223,11 +223,17 @@
 .dusting-short .dusting-main { display: contents; }
 .dusting-short .dusting-stage { grid-column: 1; grid-row: 2 / 6; align-self: start; max-height: 100%; overflow-y: auto; }
 .dusting-short .dusting-panel { grid-column: 2; grid-row: 2; min-width: 0; width: auto; overflow-y: auto; align-self: stretch;
-    --d-pin-h: 44px; --d-strip-h: 80px; scroll-padding-bottom: var(--d-strip-h); display: flex; flex-direction: column; }
+    --d-pin-h: 44px; --d-strip-h: calc(var(--d-pin-h) + 36px); scroll-padding-bottom: var(--d-strip-h); display: flex; flex-direction: column; }
 /* Strip height 80 = buttons 44 + Coverage meter 36 (16 label + 16 bar + 2 rule + 2 padding). Tighter text rows
    and compact one-line tool cards (no icon, 28 px) keep the tool row in the room above the strip. */
 .dusting-short .dusting-panel h3 { margin: 0 0 4px; }
 .dusting-short .dusting-panel p { margin: 0 0 4px; }
+/* Instruction text only (direct children of the panel on the dust and lift steps): GNF-crisp 16 px, one line = 16 px */
+.dusting-short[data-step="dust"] .dusting-panel > p, .dusting-short[data-step="lift"] .dusting-panel > p { font-size: 16px; line-height: 16px; }
+.dusting-short .dusting-lo, .dusting-root:not(.dusting-short) .dusting-so { display: none; }
+/* Hidden in short landscape, still in the accessible name (the visible text is always inside it) */
+.dusting-short .dusting-btn { position: relative; }
+.dusting-short .dusting-lx { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .dusting-short .dusting-tools { flex-wrap: nowrap; gap: 4px; margin-bottom: 4px; }
 .dusting-short .dusting-tools .dusting-tool { flex: 1 1 auto; min-width: 0; min-height: 28px; padding: 2px 4px; line-height: 16px; font-size: 16px; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: clip; }
 .dusting-short .dusting-tools .dusting-tool [data-slot], .dusting-short .dusting-actions .dusting-btn [data-slot] { display: none; }
@@ -235,7 +241,7 @@
 .dusting-short .dusting-status { grid-column: 2; grid-row: 4; font-size: 16px; }
 .dusting-short .dusting-options { grid-column: 2; grid-row: 5; gap: 4px 12px; font-size: 16px; }
 .dusting-short .dusting-options label { min-height: 28px; }
-/* Only the Coverage (or Tape pressed) bar and the button row are pinned, one 84 px strip at the foot of the
+/* Only the Coverage (or Tape pressed) bar and the button row are pinned, one 80 px strip (44 buttons + 36 Coverage) at the foot of the
    panel; the tools, powder line, Clarity, estimate and feedback scroll above it. The panel is a flex column
    here so the pinned bar sits directly above the buttons whatever the markup order is. */
 .dusting-short .dusting-panel > *, .dusting-short .dusting-actions .dusting-meter { flex: 0 0 auto; }

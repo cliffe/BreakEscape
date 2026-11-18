@@ -220,8 +220,9 @@ test('the find floor scale never drops below 1: no surface goes under the tuned 
 test('the coverage text rounds down so 45% is never shown while Lift is locked', () => {
     const g = Object.create(DustingMinigame.prototype);
     const texts = {};
-    Object.assign(g, { step: 'dust', metrics: { coverage: 0.4496, clarity: 0.1, foggy: 0 }, diff: DIFFICULTY.medium, powder: 'black', surfaceId: 'glossy_light', tape: { coverage: () => 0 } });
-    g._setDyn = (k, fn) => { const el = { style: {}, textContent: '' }; fn(el); texts[k] = el.textContent; };
+    Object.assign(g, { step: 'dust', metrics: { coverage: 0.4496, clarity: 0.1, foggy: 0 }, diff: DIFFICULTY.medium, powder: 'black', surfaceId: 'glossy_light', tape: { coverage: () => 0 },
+        root: { classList: { contains: () => false } }, panel: { querySelectorAll: () => [] } });
+    g._setDyn = (k, fn) => { const el = { style: {}, textContent: '', dataset: {}, querySelector: () => ({}) }; fn(el); texts[k] = el.textContent; };
     g._currentQuality = () => 0.5;
     g._refreshDynamic();
     assert.match(texts['cov-text'], /^44%/);

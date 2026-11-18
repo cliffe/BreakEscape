@@ -34,7 +34,8 @@ function layoutAt(w, h, step = 'dust') {
     const g = Object.create(DustingMinigame.prototype);
     Object.assign(g, {
         step, canvas: { style: {} }, stageNote: null,
-        root: { classList: { toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)) } }
+        panel: { querySelectorAll: () => [] },
+        root: { classList: { contains: c => classes.has(c), toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)) } }
     });
     g._layout();
     return { scale: g.scale, px: parseInt(g.canvas.style.width, 10), short: classes.has('dusting-short') };
@@ -129,89 +130,94 @@ test('1280x720 desktop and 390x844 portrait keep the single-column layout and th
     assert.equal(p.scale, 2);
 });
 
-// ---- live-proof r2: short-mode labels, compact tool cards, strip scroll padding ----
+// ---- live-proof r2: short-mode labels, compact tools, strip scroll padding ----
 
-function panelWithLabels(html) {
-    // minimal DOM: spans parsed from the generated markup
-    const spans = [...html.matchAll(/<span class="dusting-lbl" data-long="([^"]*)" data-short="([^"]*)">/g)].map(m => {
-        const btn = { attrs: {}, title: '', setAttribute(k, v) { this.attrs[k] = v; } };
-        return { dataset: { long: m[1], short: m[2] }, textContent: m[1], closest: () => btn, btn };
+const textOf = html => html.replace(/<[^>]+>/g, '');
+
+function fakeSpans(html) {
+    // the swapped (.dusting-lv) spans in generated markup, as minimal DOM nodes with a write counter
+    return [...html.matchAll(/<span class="dusting-lv" data-long="([^"]*)" data-short="([^"]*)">/g)].map(m => {
+        const o = { dataset: { long: m[1], short: m[2] }, writes: 0, _t: m[1] };
+        Object.defineProperty(o, 'textContent', { get() { return this._t; }, set(v) { this._t = v; this.writes++; } });
+        return o;
     });
-    return { spans, panel: { querySelectorAll: () => spans } };
 }
 
-test('short/long label pairs: brush step and lift step', () => {
+test('short/long labels: visible short text sits inside the accessible name (hidden words, no aria-label)', () => {
     const g = Object.create(DustingMinigame.prototype);
     Object.assign(g, { powder: 'black', tool: 'fine', puffMode: false });
     const dust = g._htmlDust();
-    const pairs = [...dust.matchAll(/data-long="([^"]*)" data-short="([^"]*)"/g)].map(m => [m[1], m[2]]);
-    assert.ok(pairs.some(p => p[0] === 'Puff off excess (T)' && p[1] === 'Puff (T)'));
-    assert.ok(pairs.some(p => p[0] === 'Change powder (C)' && p[1] === 'Powder (C)'));
-    assert.ok(pairs.some(p => p[0] === 'Fine brush (F)' && p[1] === 'Fine (F)'));
-    assert.ok(pairs.some(p => p[0] === 'Lift (L)' && p[1] === 'Lift (L)'));
     const lift = g._htmlLift();
-    const lp = [...lift.matchAll(/data-long="([^"]*)" data-short="([^"]*)"/g)].map(m => [m[1], m[2]]);
-    assert.deepEqual(lp, [['Peel and mount (P)', 'Mount (P)'], ['Back to dusting', 'Re-dust']]);
-    // keyboard hints survive in every short label that had one
-    for (const [long, short] of [...pairs, ...lp]) {
-        const k = long.match(/\(([A-Z])\)$/);
-        if (k) assert.ok(short.endsWith(`(${k[1]})`), `${short} keeps its key hint`);
-    }
+    assert.doesNotMatch(dust + lift, /dusting-btn[^>]*aria-label/);
+    // hidden words are real text inside the button, so the accessible name is the full label
+    assert.match(dust, /Puff<span class="dusting-lx"> off excess<\/span> \(T\)/);
+    assert.match(dust, /Fine<span class="dusting-lx"> brush<\/span> \(F\)/);
+    assert.match(dust, /<span class="dusting-lx">Change <\/span><span class="dusting-lv" data-long="powder" data-short="Powder">powder<\/span> \(C\)/);
+    assert.match(lift, /<span class="dusting-lx">Peel and <\/span><span class="dusting-lv" data-long="mount" data-short="Mount">mount<\/span> \(P\)/);
+    assert.match(lift, /Back<span class="dusting-lx"> to dusting<\/span>/);
+    // full text as the title
+    assert.match(dust, /title="Puff off excess \(T\)"/);
+    assert.match(dust, /title="Change powder \(C\)"/);
+    assert.match(lift, /title="Back to dusting"/);
+    assert.match(css, /\.dusting-short \.dusting-lx \{[^}]*overflow: hidden[^}]*clip: rect/);
+    // long mode shows the whole text: the hidden-word rule is scoped to .dusting-short
+    assert.doesNotMatch(css.replace(/\.dusting-short \.dusting-lx[^{]*\{[^}]*\}/, ''), /\.dusting-lx/);
 });
 
-test('_applyLabels swaps the text in short mode and keeps the full text as aria-label and title', () => {
+test('_applyLabels swaps the {v} parts by mode and writes only what changed', () => {
     const g = Object.create(DustingMinigame.prototype);
     Object.assign(g, { powder: 'black', tool: 'fine', puffMode: false });
-    const { spans, panel } = panelWithLabels(g._htmlDust() + g._htmlLift());
+    const spans = fakeSpans(g._htmlDust() + g._htmlLift());
+    assert.ok(spans.length >= 2);
     let isShort = true;
-    g.panel = panel;
+    g.panel = { querySelectorAll: () => spans };
     g.root = { classList: { contains: c => c === 'dusting-short' && isShort } };
     g._applyLabels();
-    const puff = spans.find(s => s.dataset.long === 'Puff off excess (T)');
-    assert.equal(puff.textContent, 'Puff (T)');
-    assert.equal(puff.btn.attrs['aria-label'], 'Puff off excess (T)');
-    assert.equal(puff.btn.title, 'Puff off excess (T)');
+    assert.deepEqual(spans.map(s => s.textContent), spans.map(s => s.dataset.short));
+    const w = spans.map(s => s.writes);
+    g._applyLabels(); g._applyLabels();
+    assert.deepEqual(spans.map(s => s.writes), w, 'no rewrite when nothing changed');
     isShort = false;
     g._applyLabels();
-    assert.equal(puff.textContent, 'Puff off excess (T)');
-    assert.equal(puff.btn.attrs['aria-label'], 'Puff off excess (T)');
+    assert.deepEqual(spans.map(s => s.textContent), spans.map(s => s.dataset.long));
 });
 
-test('every short label fits 667x375: measured 8 px a character plus 8 px padding in the 279 px of the button row', () => {
-    const shortBrush = ['Lift (45%)', '● Puff (T)', 'Powder (C)'];
+test('the visible short labels fit 667x375: 8 px a character plus 8 px padding in the 303 px button row', () => {
     const w = t => t.length * 8 + 8;
-    const total = shortBrush.reduce((a, t) => a + w(t), 0);
-    assert.ok(total + 12 /* borders */ + 8 /* gaps */ <= 303, `brush row ${total}`);
-    for (const t of ['Mount (P)', 'Re-dust']) assert.ok(w(t) + 4 <= 303 / 2 - 4);
-    // the tool row: one line, no icons
+    const brush = ['Lift (45%)', '\u25CF Puff (T)', 'Powder (C)'];
+    const total = brush.reduce((a, t) => a + w(t), 0);
+    assert.ok(total + 12 + 8 <= 303, `brush row ${total}`);
+    assert.ok(['Mount (P)', 'Back'].reduce((a, t) => a + w(t), 0) + 12 + 4 <= 303);
     assert.ok(['Fine (F)', 'Feather (B)', 'Wand (W)'].reduce((a, t) => a + w(t) + 4 + 4, 0) <= 303);
 });
 
-test('the 45% hint rides on the Coverage line in short mode and the disabled Lift has a text cue', () => {
+test('the locked Lift label reads "Lift (45%)" visibly and "Lift (needs 45% coverage)" in full', () => {
     const g = Object.create(DustingMinigame.prototype);
     const els = {};
-    const mk = n => (els[n] = { dataset: {}, style: {}, textContent: '', querySelector: () => els.lbl });
-    els.lbl = { dataset: {}, textContent: '' };
+    els.lbl = { innerHTML: '' };
+    const mk = n => (els[n] = { dataset: {}, style: {}, textContent: '', title: '', querySelector: () => els.lbl });
     let isShort = true;
     Object.assign(g, {
-        step: 'dust', metrics: { coverage: 0.3, clarity: 0.5 }, diff: { minCoverage: 0.45 }, message: '',
+        step: 'dust', metrics: { coverage: 0.44, clarity: 0.5 }, diff: { minCoverage: 0.45 }, message: '',
         root: { classList: { contains: c => c === 'dusting-short' && isShort } },
         panel: { querySelectorAll: () => [] },
         _currentQuality: () => 0.5, _coach: () => ''
     });
     g._setDyn = (name, fn) => fn(els[name] || mk(name));
     g._refreshDynamic();
-    assert.equal(els['cov-text'].textContent, '30% / 45% to lift');
+    assert.equal(els['cov-text'].textContent, '44% (faint) / 45% to lift');
     assert.equal(els['lift-btn'].disabled, true);
-    assert.equal(els.lbl.dataset.short, 'Lift (45%)');
-    assert.equal(els.lbl.dataset.long, 'Lift (needs 45% coverage)');
+    assert.equal(textOf(els.lbl.innerHTML), 'Lift (needs 45% coverage)');
+    assert.match(els.lbl.innerHTML, /Lift \(<span class="dusting-lx">needs <\/span>45%<span class="dusting-lx"> coverage<\/span>\)/);
+    assert.equal(els['lift-btn'].title, 'Lift (needs 45% coverage)');
     isShort = false;
     g._refreshDynamic();
-    assert.equal(els['cov-text'].textContent, '30% (faint)');
+    assert.equal(els['cov-text'].textContent, '44% (faint)');
     g.metrics.coverage = 0.6; isShort = true;
     g._refreshDynamic();
     assert.equal(els['cov-text'].textContent, '60% (fair)');
-    assert.equal(els.lbl.dataset.short, 'Lift (L)');
+    assert.equal(els['lift-btn'].disabled, false);
+    assert.equal(textOf(els.lbl.innerHTML), 'Lift (L)');
 });
 
 test('compact tool cards: one line, no icon, 28 px against the room above the strip at 667x375', () => {
@@ -220,13 +226,26 @@ test('compact tool cards: one line, no icon, 28 px against the room above the st
     assert.match(tool, /white-space: nowrap/);
     assert.match(rule('.dusting-short .dusting-tools'), /flex-wrap: nowrap/);
     assert.match(css, /\.dusting-short \.dusting-tools \.dusting-tool \[data-slot\][^{]*\{ display: none/);
-    // arithmetic: panel 114 px high at 667x375, strip 44 + 36 = 80, so 34 px of room; the card is 28
     assert.match(rule('.dusting-short .dusting-panel'), /--d-pin-h: 44px/);
-    assert.match(rule('.dusting-short .dusting-panel'), /--d-strip-h: 80px/);
-    const room = 114 - (44 + 36);
-    assert.ok(28 <= room, `card 28 fits ${room}`);
-    // the old 76 px card (64 px icon + padding) never did
-    assert.ok(76 > room);
+    assert.match(rule('.dusting-short .dusting-panel'), /--d-strip-h: calc\(var\(--d-pin-h\) \+ 36px\)/);
+    const strip = 44 + 36;
+    assert.ok(28 <= 114 - strip, 'card fits the 34 px of room at 667x375');
+    assert.ok(76 > 114 - strip);
+});
+
+test('844x390: tools end above the strip for a two-line instruction (20 + 16n + 4 + 28 <= 174 - 80)', () => {
+    const P = 174, strip = 80;
+    const bottom = n => 20 + 16 * n + 4 + 28;
+    assert.ok(bottom(2) <= P - strip, `two lines ${bottom(2)}`);
+    assert.ok(bottom(3) > P - strip, 'three lines would still overlap, hence the shorter short-mode text');
+    const r = css.slice(css.indexOf('.dusting-short[data-step="dust"] .dusting-panel > p'));
+    assert.match(r.slice(0, r.indexOf('}')), /font-size: 16px; line-height: 16px/);
+    assert.match(css, /\.dusting-short \.dusting-lo, \.dusting-root:not\(\.dusting-short\) \.dusting-so \{ display: none/);
+    const g = Object.create(DustingMinigame.prototype);
+    Object.assign(g, { powder: 'black', tool: 'fine', puffMode: false });
+    const d = g._htmlDust();
+    const so = d.match(/<span class="dusting-so">([^<]*)<\/span>/)[1];
+    assert.ok(so.length * 8 <= 2 * 473, `short text ${so.length} chars wraps to two lines at 473 px`);
 });
 
 test('the panel scrolls with scroll-padding-bottom equal to the strip height', () => {
