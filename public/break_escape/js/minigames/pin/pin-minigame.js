@@ -377,6 +377,14 @@ export class PinMinigame extends MinigameScene {
             if (!this.gameState.isActive || this.isLocked) return;
             
             const key = e.key;
+
+            // A focused control that is not part of the pad keeps its own keys: Enter on the
+            // ring banner's Answer, Hang up or the minigame X presses that control, and typing
+            // in a text field is not PIN entry. Pad keys, the display and the body stay ours.
+            const target = e.target;
+            const tag = target && target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return;
+            if (key === 'Enter' && (tag === 'BUTTON' || tag === 'A') && !target.classList?.contains('pin-minigame-key')) return;
             
             // Handle number keys
             if (key >= '0' && key <= '9') {

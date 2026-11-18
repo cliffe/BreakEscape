@@ -812,6 +812,16 @@ export default class PhoneChatUI {
         const contactItem = document.createElement('div');
         contactItem.className = 'contact-item';
         contactItem.dataset.npcId = npc.id;
+        // Keyboard-operable row: Tab reaches it, Enter or Space opens the thread through the
+        // same click path as the mouse. Its name is its text, which starts with the contact name.
+        contactItem.setAttribute('role', 'button');
+        contactItem.tabIndex = 0;
+        contactItem.addEventListener('keydown', (e) => {
+            if (e.target !== contactItem || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            contactItem.click();
+        });
         
         // Format last message preview
         let lastMessagePreview = 'No messages yet';
@@ -840,7 +850,7 @@ export default class PhoneChatUI {
 
         contactItem.innerHTML = `
             <div class="contact-avatar">
-                ${avatar ? `<img src="${escHtml(avatarSrc)}" alt="${escHtml(npc.displayName)}">` : '👤'}
+                ${avatar ? `<img src="${escHtml(avatarSrc)}" alt="">` : '👤'}
             </div>
             <div class="contact-info">
                 <div class="contact-name">${escHtml(npc.displayName || npc.id)}</div>

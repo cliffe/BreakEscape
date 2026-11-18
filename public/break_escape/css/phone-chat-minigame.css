@@ -169,6 +169,22 @@
     background: rgba(0, 0, 0, 0.1);
 }
 
+/* Keyboard focus: the framework's 2px square ring, drawn inside the row so the list's
+   overflow does not clip it */
+.contact-item:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: -2px;
+    border-radius: 0;
+}
+
+.phone-terminal-theme .contact-item:focus-visible {
+    outline-color: #00ff41;
+}
+
+.phone-social-theme .contact-item:focus-visible {
+    outline-color: var(--dm-accent);
+}
+
 .contact-avatar {
     width: 64px;
     height: 64px;
