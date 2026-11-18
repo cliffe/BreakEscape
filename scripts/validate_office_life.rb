@@ -11,6 +11,7 @@
 #   V7  chatter line repeating a pool line, a bark or the opener   warning
 #   V8  sync budget (section 7)          sync_budget_lines(json) info; warning above a cap
 #   V11 chatter pool line that names a credential              warning (secrets belong in priority mutters only)
+#   V12 chatter pool requireGlobal naming a global not in globalVariables   warning
 #   V10 pools, exchanges and calls nothing can trigger (check_v10, below V8; warnings only)
 #
 # V6 is the rake task app:break_escape:tts:office_lines (BreakEscape::TtsOfficeLines) and V9 is
@@ -98,6 +99,7 @@ module ValidateOfficeLife
     check_npc_arrived(w, issues)                         # V3
     check_chatter_repeats(w, issues)                     # V7
     check_pool_credentials(w, issues)                    # V11
+    check_pool_gates(w, issues)                          # V12
     check_sync_budget(w, issues)                         # V8 (warnings above a cap)
     if campaign?(scenario_id, campaign)
       check_story_npcs_leave(w, issues)                  # V2
@@ -758,6 +760,36 @@ module ValidateOfficeLife
 
       issues << "⚠️ WARNING: office life V11: #{who == 'scenario' ? 'scenario' : "NPC '#{who}'"} chatter '#{topic}' line \"#{line}\" names a credential. " \
                 'Credentials and secrets go only in priority mutters (login_aloud), never in pool or exchange lines.'
+    end
+  end
+
+  # ── V12: a pool's requireGlobal names a declared global (warning only) ──────────────────────
+  # The gate is read live by the engine. A name nothing declares can never open (or, for a
+  # { name: value } form, never match), so the pool would be silent for the whole game. V10 is
+  # unaffected: whether a pool can be triggered does not depend on its gate.
+  def self.gate_names(gate)
+    case gate
+    when String then [gate]
+    when Hash then gate.keys.map(&:to_s)
+    else []
+    end
+  end
+
+  def self.check_pool_gates(w, issues)
+    declared = w.json['globalVariables']
+    declared = declared.is_a?(Hash) ? declared.keys.map(&:to_s) : []
+    sources = [['scenario', w.json['chatter']]] + w.npcs.map { |_r, n| ["NPC '#{n['id']}'", n['chatter']] }
+    sources.each do |who, chatter|
+      next unless chatter.is_a?(Hash)
+
+      chatter.each do |topic, pool|
+        next unless pool.is_a?(Hash) && pool.key?('requireGlobal')
+
+        gate_names(pool['requireGlobal']).reject { |g| declared.include?(g) }.each do |g|
+          issues << "⚠️ WARNING: office life V12: #{who} chatter '#{topic}' requireGlobal names '#{g}', which is not in globalVariables. " \
+                    'Declare it, or the pool never opens.'
+        end
+      end
     end
   end
 

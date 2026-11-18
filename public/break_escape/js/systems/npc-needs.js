@@ -272,12 +272,15 @@ export function bagOrder(n, rng, avoidFirst = -1) {
     return order;
 }
 
-/** Pure: a pool as { lines, hush, overhearRadius } from an array or { lines, hush, overhearRadius }. */
+/**
+ * Pure: a pool as { lines, hush, overhearRadius, requireGlobal } from an array or the object form
+ * { lines, hush, overhearRadius, requireGlobal }. A plain array has no gate.
+ */
 export function normalisePool(p) {
     if (Array.isArray(p)) return { lines: p.filter(l => typeof l === 'string' && l.trim()), hush: false, overhearRadius: null };
     if (p && typeof p === 'object') {
         const r = Number(p.overhearRadius);
-        return { lines: (Array.isArray(p.lines) ? p.lines : []).filter(l => typeof l === 'string' && l.trim()), hush: p.hush === true, overhearRadius: r > 0 ? r : null };
+        return { lines: (Array.isArray(p.lines) ? p.lines : []).filter(l => typeof l === 'string' && l.trim()), hush: p.hush === true, overhearRadius: r > 0 ? r : null, requireGlobal: p.requireGlobal };
     }
     return null;
 }
@@ -288,11 +291,19 @@ export function normalisePool(p) {
  * `pictures` is false when the scenario sets `"chatter": false` (no picture chat either) or
  * `"npcThoughts": false` (`thoughtsOn` false, D77): an icon-only bubble shows what an NPC wants, so it
  * is a thought, not speech. Spoken lines are unaffected.
+ *
+ * `holds` (optional) reads a pool's `requireGlobal` gate: `holds(requireGlobal)` is true when the
+ * gate is open. A pool whose gate is closed contributes nothing (no lines, no hush, no radius), and
+ * the other pool under the same key still counts. Without `holds` a gate is ignored, as an array
+ * pool or an ungated pool always is. Called afresh at each draw, so the gate reacts live.
  */
-export function chatterPool(topic, scenarioChatter, npcChatter, thoughtsOn = true) {
+export function chatterPool(topic, scenarioChatter, npcChatter, thoughtsOn = true, holds = null) {
     let base = null;
     if (scenarioChatter && typeof scenarioChatter === 'object' && scenarioChatter[topic] !== undefined) base = normalisePool(scenarioChatter[topic]);
-    const own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
+    let own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
+    const open = pool => !pool || pool.requireGlobal === undefined || typeof holds !== 'function' || !!holds(pool.requireGlobal);
+    if (!open(base)) base = null;
+    if (!open(own)) own = null;
     return {
         lines: [...(base?.lines || []), ...(own?.lines || [])],
         hush: !!(base?.hush || own?.hush),
@@ -1004,7 +1015,7 @@ export class NPCNeedsSystem {
             const first = m.satisfies.find(n => NEED_ICONS.includes(n));
             // SIMS-5 design R2 m7 (E7 for announces): with the player out of earshot of the teller the
             // telling still happens, as a picture; no line is taken from the bag, so none is voiced unheard
-            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), c => this._globalHolds(c)).overhearRadius || OVERHEAR_RADIUS;
             const unheard = typeof this.world.playerHears === 'function' && !(this.world.playerHears(s.npcId, radius) || {}).overheard;
             const pick = this._pickBark(s, topic, { waitForLock: waited < NEWS_WAIT_MS, ignoreCooldown: true, unheard, icons: [first || 'social'] });
             if (pick?.wait) {
@@ -2146,7 +2157,7 @@ export class NPCNeedsSystem {
         // falloff range is a faint line too, on the faint throttle; it never counts as heard
         let faint = false;
         if (unheard && typeof this.world.faintVolume === 'function') {
-            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), c => this._globalHolds(c)).overhearRadius || OVERHEAR_RADIUS;
             try { faint = this.world.faintVolume(s.npcId, radius) > 0; } catch (e) { faint = false; }
             if (faint) unheard = false;
         }
@@ -2158,7 +2169,7 @@ export class NPCNeedsSystem {
     /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
     _unheard(s, topic) {
         if (typeof this.world.playerHears !== 'function') return false;
-        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
+        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), c => this._globalHolds(c)).overhearRadius || OVERHEAR_RADIUS;
         return !(this.world.playerHears(s.npcId, radius) || {}).overheard;
     }
 
@@ -2206,7 +2217,7 @@ export class NPCNeedsSystem {
         // the same rule as one waiting for the lock
         // A priority topic (PRIORITY_MUTTERS) waits only for the lock and for other priority
         // lines, and is queued ahead of every other mutter
-        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
+        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), c => this._globalHolds(c)).lines.length > 0;
         const priority = PRIORITY_MUTTERS.has(topic);
         const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
         // R1 M3: a mutter the player hears in full takes the lock from a faint ambient line (the
@@ -2280,7 +2291,7 @@ export class NPCNeedsSystem {
         const said = s.saying !== before ? s.saying : null;
         if (said) {
             this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: said.line || null, picture: said.picture || null });
-        } else if (!this._thoughtsOn()) {
+        } else if (!this._thoughtsOn(), c => this._globalHolds(c)) {
             // Picture chat is off (npcThoughts false): a mutter with no line shows nothing, but say so, so a
             // share_login visit waiting on its login_aloud line ends at once as it did with a picture
             this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: null, picture: null });
@@ -2308,7 +2319,7 @@ export class NPCNeedsSystem {
     /** The grumble topic for a turn-back reason (slice 18a): chosen by which pools have lines. */
     _grumbleTopic(s, reason) {
         const own = `grumble_${reason}`;
-        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
+        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), c => this._globalHolds(c)).lines.length > 0;
         if (reason !== 'avoid' && lines(own)) return own;
         if (lines('grumble')) return 'grumble';
         return PICTURE_CHATTER[own] ? own : 'grumble';
@@ -2407,7 +2418,7 @@ export class NPCNeedsSystem {
     }
 
     _hasLines(s, topic) {
-        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
+        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), c => this._globalHolds(c)).lines.length > 0;
     }
 
     /**
@@ -2941,7 +2952,7 @@ export class NPCNeedsSystem {
      * line would outlast it, so a line taken is always a line said.
      */
     _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, faint = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
-        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn());
+        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), c => this._globalHolds(c));
         // M4: the next line passes over one said lately nearby (an echo), for the fit check and the draw
         const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
             && !(faint && s.faintQuietUntil > this.clockMs)
@@ -3038,7 +3049,7 @@ export class NPCNeedsSystem {
     _chatRadius(c, speakerId) {
         if (c.overhearRadius) return c.overhearRadius;
         const st = this.states.get(speakerId);
-        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null, this._thoughtsOn());
+        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null, this._thoughtsOn(), c => this._globalHolds(c));
         return pool.overhearRadius || OVERHEAR_RADIUS;
     }
 
@@ -4787,7 +4798,7 @@ export class NPCNeedsSystem {
             texts = lines.map(l => l.text);
             break;
         }
-        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter, this._thoughtsOn());
+        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter, this._thoughtsOn(), c => this._globalHolds(c));
         if (!texts && pool.lines.length) {
             texts = [];
             for (let k = 0; k < Math.min(CALL_POOL_LINES, pool.lines.length); k++) texts.push(pool.lines[this._bagNext(s.npcId, topic, pool.lines)]);

@@ -468,3 +468,19 @@ test('V11: a chatter pool line that names a credential warns; an ordinary line d
     assertHas(out, `V11: scenario chatter 'cooler' line "Passcode is 4411, ha." names a credential`);
     assertNot(out, 'Fresh pot.');
 });
+
+// ── V12 ────────────────────────────────────────────────────────────────────────────────────
+
+test('V12: a pool requireGlobal naming an undeclared global warns; a declared one, an array pool and the object form without a gate do not', { skip }, () => {
+    const s = scenario({ npcs: [
+        worker({ chatter: { coffee: { lines: ['Fresh pot.'], requireGlobal: { calm: true, day: 2 } } } })
+    ], extra: {
+        globalVariables: { calm: true },
+        chatter: { cooler: { lines: ['Hello.'], requireGlobal: 'missing_flag' }, grumble: { lines: ['Hm.'] }, coffee: ['Mugs.'] }
+    } });
+    const out = check(s);
+    assertHas(out, "V12: scenario chatter 'cooler' requireGlobal names 'missing_flag'");
+    assertHas(out, "V12: NPC 'gary' chatter 'coffee' requireGlobal names 'day'");
+    assertNot(out, "requireGlobal names 'calm'");
+    assertNot(out, "chatter 'grumble' requireGlobal");
+});
