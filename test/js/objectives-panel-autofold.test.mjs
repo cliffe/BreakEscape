@@ -72,7 +72,9 @@ test('a player toggle before the fold cancels it; hover postpones it', () => {
   assert.equal(p.isCollapsed, false, 'hovered: held open');
   p.container.dispatchEvent(new window.MouseEvent('mouseleave'));
   adv(ObjectivesPanel.AUTO_COLLAPSE_STEP_MS);
-  assert.equal(p.isCollapsed, true, 'hover ended: folds at the next look');
+  assert.equal(p.isCollapsed, false, 'hover ended: a grace before it folds (R2 n3)');
+  adv(ObjectivesPanel.AUTO_COLLAPSE_STEP_MS * ObjectivesPanel.HOVER_GRACE_STEPS);
+  assert.equal(p.isCollapsed, true, 'folds once the grace has passed');
   p.destroy();
   mock.timers.reset();
 });
@@ -183,6 +185,45 @@ test('a held ending opens the panel and keeps it open; a player-folded panel pul
   q.destroy();
   delete window.endingCheck;
   mock.timers.reset();
+});
+
+test('a held ending: the button is in a footer outside the scrolling list, even with a long list (R2 m1); the clock stops (R2 n2)', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  let listener, held = false;
+  window.endingCheck = { hasHeld: () => held, endHeld: () => { held = false; window.__ended = true; } };
+  const many = Array.from({ length: 14 }, (_, i) => ({ aimId: 'x' + i, title: 'Aim ' + i, status: 'active',
+    tasks: [{ taskId: 'x' + i + 'a', title: 'Task A' + i, status: 'active' }, { taskId: 'x' + i + 'b', title: 'Task B' + i, status: 'active' }] }));
+  document.body.innerHTML = '';
+  const p = new ObjectivesPanel({ addListener(f) { listener = f; }, removeListener() {}, getActiveAims: () => many });
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  assert.equal(p.isCollapsed, true);
+  held = true;
+  listener(many);
+  const btn = p.container.querySelector('.objectives-end-button');
+  assert.ok(btn, 'button rendered');
+  assert.equal(p.content.contains(btn), false, 'not inside the scrolling list');
+  assert.equal(p.footer.contains(btn), true, 'in the footer');
+  assert.equal(p.footer.hidden, false);
+  assert.equal(p.container.lastElementChild, p.footer, 'footer is the panel\'s last child, under the list');
+  assert.ok(p.content.querySelectorAll('.objective-aim').length > 10, 'a list taller than any cap');
+  assert.equal(p._autoCollapseDone, true, 'fold clock stopped when the hold opened the panel');
+  btn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert.equal(window.__ended, true, 'the footer button ends the mission');
+  delete window.__ended;
+  listener(many);   // hold released: footer goes
+  assert.equal(p.footer.hidden, true);
+  assert.equal(p.footer.children.length, 0);
+  p.destroy();
+  delete window.endingCheck;
+  mock.timers.reset();
+});
+
+test('the folded line names the first open required task, an optional one only as a fallback (R2 m3)', () => {
+  const mk = (tasks) => [{ aimId: 'a', title: 'Aim', status: 'active', tasks }];
+  const t = (id, status, optional) => ({ taskId: id, title: id, status, optional });
+  assert.equal(ObjectivesPanel.nextTaskTitle(mk([t('opt', 'active', true), t('req', 'active')])), 'req');
+  assert.equal(ObjectivesPanel.nextTaskTitle(mk([t('opt', 'active', true), t('req', 'completed')])), 'opt');
+  assert.equal(ObjectivesPanel.nextTaskTitle(mk([t('a', 'active'), t('b', 'active')])), 'a');
 });
 
 test('destroy removes the very listener it added', () => {

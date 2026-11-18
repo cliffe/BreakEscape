@@ -66,8 +66,12 @@ export class ObjectivesPanel {
     this._hadHeld = false;
     this._userTouched = false;
     this._hovering = false;
-    this.container.addEventListener?.('mouseenter', () => { this._hovering = true; });
-    this.container.addEventListener?.('mouseleave', () => { this._hovering = false; });
+    this.container.addEventListener?.('mouseenter', () => { this._hovering = true; this._graceSteps = 0; });
+    this._graceSteps = 0;          // fold steps to wait after the pointer leaves (review R2 n3)
+    this.container.addEventListener?.('mouseleave', () => {
+      this._hovering = false;
+      this._graceSteps = ObjectivesPanel.HOVER_GRACE_STEPS;
+    });
 
     // Initial render
     this.render(this.manager.getActiveAims());
@@ -106,13 +110,18 @@ export class ObjectivesPanel {
     this.content.className = 'objectives-content';
     this.content.id = 'objectives-content';
     
+    // A postponed ending's button sits in a footer under the list, so a long list never scrolls it
+    // out of sight (review R2 m1)
+    this.footer = document.createElement('div');
+    this.footer.className = 'objectives-footer';
+    this.footer.hidden = true;
+    this.footer.addEventListener('click', (e) => {
+      // A postponed ending (systems/ending-check.js): "End the mission" finishes it
+      if (e.target.closest('.objectives-end-button')) window.endingCheck?.endHeld?.();
+    });
+
     // Delegate aim header clicks to toggle individual aim collapse
     this.content.addEventListener('click', (e) => {
-      // A postponed ending (systems/ending-check.js): "End the mission" finishes it
-      if (e.target.closest('.objectives-end-button')) {
-        window.endingCheck?.endHeld?.();
-        return;
-      }
       const aimHeader = e.target.closest('.aim-header');
       if (!aimHeader) return;
       const aimEl = aimHeader.closest('.objective-aim');
@@ -126,6 +135,7 @@ export class ObjectivesPanel {
 
     this.container.appendChild(header);
     this.container.appendChild(this.content);
+    this.container.appendChild(this.footer);
     document.body.appendChild(this.container);
 
     // The "more below" cue follows the list as it scrolls, folds and resizes
@@ -199,7 +209,8 @@ export class ObjectivesPanel {
     if (this._autoCollapseDone || this._autoCollapseTimer || this._userTouched) return;
     const step = () => {
       this._autoCollapseTimer = null;
-      if (!this.container?.classList) return;   // torn down, or a test's stand-in panel
+      if (!this.container?.classList) return;
+      if (this._autoCollapseDone) return;   // a held ending opened it for good   // torn down, or a test's stand-in panel
       if (this._onScreen()) {
         this._visibleMs += ObjectivesPanel.AUTO_COLLAPSE_STEP_MS;
       } else {
@@ -207,7 +218,9 @@ export class ObjectivesPanel {
       }
       const focusInside = !!this.container?.contains?.(document.activeElement);
       const held = !!window.endingCheck?.hasHeld?.();
-      if (this._visibleMs >= ObjectivesPanel.AUTO_COLLAPSE_MS && this._onScreen() && !this._hovering && !focusInside && !held) {
+      const grace = !this._hovering && this._graceSteps > 0;
+      if (grace) this._graceSteps -= 1;   // the pointer just left: a moment before it folds
+      if (this._visibleMs >= ObjectivesPanel.AUTO_COLLAPSE_MS && this._onScreen() && !this._hovering && !grace && !focusInside && !held) {
         if (ObjectivesPanel.shouldAutoCollapse({
           compact: ObjectivesPanel.compactNow(), collapsed: this.isCollapsed,
           userTouched: this._userTouched, hovering: false, focusInside: false, done: this._autoCollapseDone
@@ -272,7 +285,9 @@ export class ObjectivesPanel {
   /** Title of the first open task of the pill's aim, or ''. Pure; tested. */
   static nextTaskTitle(aims) {
     const aim = (aims || []).find(a => a && a.status !== 'completed' && a.status !== 'locked');
-    const t = (aim?.tasks || []).find(x => x.status !== 'locked' && x.status !== 'completed' && x.status !== 'skipped');
+    const open = (aim?.tasks || []).filter(x => x.status !== 'locked' && x.status !== 'completed' && x.status !== 'skipped');
+    // A required task first; an optional one only when nothing required is open (review R2 m3)
+    const t = open.find(x => x.optional !== true) || open[0];
     return t?.title || '';
   }
 
@@ -454,10 +469,13 @@ export class ObjectivesPanel {
       `;
     });
     
-    if (window.endingCheck?.hasHeld?.()) {
-      html += '<div class="objectives-end-held"><button type="button" class="objectives-end-button" '
-        + 'title="Some optional objectives are still open">End the mission</button></div>';
-    }
+    const heldNow = !!window.endingCheck?.hasHeld?.();
+    this.footer.innerHTML = heldNow
+      ? '<div class="objectives-end-held"><button type="button" class="objectives-end-button" '
+        + 'title="Some optional objectives are still open">End the mission</button></div>'
+      : '';
+    this.footer.hidden = !heldNow;
+    this.container.classList.toggle('has-end-footer', heldNow);
     this.content.innerHTML = html;
     // A new aim lengthens the list: if the player has not taken the panel over, it gets another
     // AUTO_COLLAPSE_MS of visible time to be read before it folds again (m08 part 2: three aims, a
@@ -477,6 +495,7 @@ export class ObjectivesPanel {
       if (!this._userTouched && !ObjectivesPanel.compactNow()) {
         this.setCollapsed(false);
         this._autoFolded = false;
+        this._autoCollapseDone = true;   // it stays open while held: stop the clock (review R2 n2)
       } else if (this.isCollapsed) {
         this._pulse();
       }
@@ -609,5 +628,6 @@ ObjectivesPanel.PILL_FLASH_MS = 4000;
 ObjectivesPanel.AUTO_COLLAPSE_MS = 25000;
 /** The fold clock steps this often, counting only the steps taken with the panel on screen. */
 ObjectivesPanel.AUTO_COLLAPSE_STEP_MS = 1000;
+ObjectivesPanel.HOVER_GRACE_STEPS = 2;   // 2 s after the pointer leaves
 
 export default ObjectivesPanel;
