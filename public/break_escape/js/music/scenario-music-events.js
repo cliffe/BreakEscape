@@ -333,8 +333,8 @@ function playEntry(entry, data) {
             }
             if (result.concluded) {
                 _endingOwnsMusic = true;
-                closeRinger();
                 // The score the server holds goes on the screen as the last credit line.
+                closeRinger();
                 openCredits(undefined, result.score);
                 return;
             }
