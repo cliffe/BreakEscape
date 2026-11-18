@@ -218,8 +218,9 @@ export class MinigameScene {
         if (sub.clientWidth < 48) sub.classList.add('console-subtitle-nowidth');
     }
 
-    // The title is one line with an ellipsis, and on short or narrow windows the subtitle
-    // shares that line or is hidden, so the bar's title attribute carries the full text
+    // One line with an ellipsis above 600px, up to three wrapped lines at 600px and below. The
+    // subtitle can share the line or be hidden, so the bar's title attribute always carries the
+    // full text (set whenever there is any, whichever axis the title is cut on).
     syncConsoleTitleTip() {
         const holder = this.consoleTitleEl?.parentElement;
         if (!holder) return;
@@ -339,7 +340,32 @@ export class MinigameScene {
         this.complete(false);
     }
 
+    /**
+     * Success has been decided and shown, and the minigame closes itself after a hold. From
+     * here any close (X, Esc, a click outside, a hit, another minigame displacing this one)
+     * commits the success instead of dropping it, so the onComplete that sends the unlock
+     * runs exactly once. Call it at the moment of success, before the hold starts.
+     */
+    markSuccessPending() {
+        this._successPending = true;
+    }
+
+    /** A close that arrives while a decided success is held counts as that success. */
+    resolveEarlyClose(success) {
+        return success || this._successPending === true;
+    }
+
+    /** Mark the success as decided and complete after ms; an earlier close commits it first. */
+    holdSuccess(ms, afterComplete) {
+        this.markSuccessPending();
+        setTimeout(() => {
+            this.complete(true);
+            if (typeof afterComplete === 'function') afterComplete();
+        }, ms);
+    }
+
     complete(success) {
+        success = this.resolveEarlyClose(success);
         console.log('Minigame complete called with success:', success);
 
         // Guard against stale minigame instances (e.g. a deferred showSuccess timer
@@ -385,9 +411,7 @@ export class MinigameScene {
         this.messageContainer.appendChild(messageElement);
         
         if (autoClose) {
-            setTimeout(() => {
-                this.complete(true);
-            }, duration);
+            this.holdSuccess(duration);
         }
     }
     

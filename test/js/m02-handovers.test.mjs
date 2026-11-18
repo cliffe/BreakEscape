@@ -302,8 +302,9 @@ test('save from before the build: the once-only HaX mappings stay spent, the app
     const save = {};
     before.mappings.forEach((b, i) => { if (b.onceOnly) save[`${before.npc}:${b.eventPattern}:${i}`] = 1; });
     m.restoreTriggeredEvents(save);
-    // data that satisfies the appended mappings' conditions (item id for the badge pickup, value for the global change)
-    const EVENT = { itemId: 'kim_countersigned_badge', value: true };
+    // data that satisfies the appended mappings' conditions (item id for the badge pickup, value for the global change,
+    // the keypad safe and its room for the first-look aim unlock)
+    const EVENT = { itemId: 'kim_countersigned_badge', value: true, objectType: 'safe', roomId: 'emergency_equipment_storage' };
     const norm = m._normalizeEventMappings(hax.eventMappings);
     const wouldFire = i => m._mappingWouldFire(before.npc, norm[i].eventPattern, m._buildMappingConfig(norm[i], i), EVENT).fire;
     const old = before.mappings.map((b, i) => ({ b, i, pattern: norm[i].eventPattern, fires: wouldFire(i) }));
