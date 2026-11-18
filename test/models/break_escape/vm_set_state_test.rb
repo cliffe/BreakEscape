@@ -99,10 +99,8 @@ module BreakEscape
     test 'a lookup error propagates (it is not read as released)' do
       game = make_game
       install(set_for_owner)
-      boom = ->(_id) { raise ActiveRecord::ConnectionNotEstablished, 'db down' }
-      Game.stub(:find_vm_set_record, boom) do
-        assert_raises(ActiveRecord::ConnectionNotEstablished) { game.vm_set_state }
-      end
+      ::VmSet.define_singleton_method(:find_by) { |**| raise ActiveRecord::ConnectionNotEstablished, 'db down' }
+      assert_raises(ActiveRecord::ConnectionNotEstablished) { game.vm_set_state }
     end
 
     test 'the set id comes from the column first, then player_state, for state and flag lookups alike' do
