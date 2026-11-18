@@ -73,6 +73,24 @@
     image-rendering: crisp-edges;
 }
 
+/* Portrait phones: the page was sized from the width alone (92vw, aspect-ratio locked to the
+   165x205 image), so a 390x844 screen got a 358x445 notepad with 400px of empty shell under
+   it and the page body cut off. Here the page takes the height the shell leaves (the same 176px
+   for the navigation row and Continue), stretched on the image the way the short-landscape
+   rule does, capped at 1.6x its natural shape so a squat portrait window is not over-stretched.
+   Long notes scroll inside the page body (.notes-minigame-content-area, pixel scrollbar). The
+   width is 88vw so the X, placed inside the frame's top-right corner, stays within the notepad. */
+@media (orientation: portrait) and (max-width: 768px) {
+    .notes-minigame-notepad {
+        width: 88vw;
+        height: min(calc(100vh - 176px), calc(88vw * 205 / 165 * 1.6));
+        height: min(calc(100dvh - 176px), calc(88vw * 205 / 165 * 1.6));
+        aspect-ratio: auto;
+        background-size: 100% 100%;
+        flex: none;
+    }
+}
+
 /* Content area */
 .notes-minigame-content-area {
     position: absolute;
@@ -206,6 +224,8 @@
     text-align: left;
     min-height: 30px;
     padding: 10px;
+    /* room on the right for the edit pencil, which sits over the box's top-right corner */
+    padding-right: 28px;
     border: 4px dashed #ccc;
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
@@ -427,7 +447,7 @@
     /* 16px on short screens too, one line, cut with an ellipsis when long (S7-notes) */
     .notes-minigame-title { font-size: 16px; line-height: 24px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
-    .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px; }
+    .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px 28px 6px 6px; }
     /* Continue stays beside the notepad here, out of the flow (the framework
        otherwise puts the Cancel row under the game area, which would shorten the
        notepad and cover its foot; minigame sweep, 2026-11-12) */
