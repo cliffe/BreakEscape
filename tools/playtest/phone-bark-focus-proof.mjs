@@ -17,22 +17,38 @@ const browser = await chromium.launch();
 // open the phone and fail with the bridge's reason if it never opens.
 async function openPhone(page, tag) {
   let last = null;
+  const trail = [];
   for (let i = 0; i < 40; i++) {
     last = await page.evaluate(() => window.__test.openInventoryItem('phone'));
     if (last?.ok) {
-      await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
+      try {
+        await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
+      } catch (e) {
+        const seen = await page.evaluate(() => ({ mg: window.MinigameFramework?.currentMinigame?.constructor?.name || null, dm: document.querySelector('[data-minigame]')?.getAttribute('data-minigame') || null }));
+        throw new Error(`${tag}: openInventoryItem said ok but no phone UI: ${JSON.stringify(last).slice(0, 500)} seen ${JSON.stringify(seen)} trail ${trail.slice(-8).join(' | ')}`);
+      }
       return;
     }
-    const blocked = last?.reason === 'minigame-active' || last?.reason === 'item-obscured' || last?.reason === 'no-inventory-item-matching';
+    const blocked = last?.reason === 'blocking-ui' || last?.reason === 'minigame-active' || last?.reason === 'item-obscured' || last?.reason === 'no-inventory-item-matching';
     if (!blocked) break;
     // Pick the intro choice that ends HaX's chat; otherwise the plain dismiss; the session overlay wants "Resume".
+    if (last?.activeMinigame?.id === 'notes') { // the Mission Brief closes through the minigame handle
+      const c = await page.evaluate(() => window.__test.minigame.close());
+      trail.push(`notes>close:${c?.ok ?? c?.reason ?? '?'}`);
+      await page.waitForTimeout(1500);
+      continue;
+    }
     const miss = (d) => !d || String(d.reason || '').startsWith('no-button-matching');
     let d = await page.evaluate(() => window.__test.dismissBlockingUi('Resume'));
+    if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi('figure it out')); // tutorial offer
     if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi('ready'));
-    if (miss(d)) await page.evaluate(() => window.__test.dismissBlockingUi());
+    if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi());
+    // The title screen has no buttons: it continues on Space.
+    if (d?.reason === 'blocking-ui-has-no-buttons') await page.keyboard.press('Space');
+    trail.push(`${last?.activeMinigame?.id || last?.reason}>${d?.clicked || d?.reason || (d?.ok ? 'ok' : '?')}`);
     await page.waitForTimeout(1500);
   }
-  throw new Error(`${tag}: could not open the phone: ${JSON.stringify(last).slice(0, 600)}`);
+  throw new Error(`${tag}: could not open the phone: ${JSON.stringify(last).slice(0, 600)} trail ${trail.slice(-12).join(' | ')}`);
 }
 
 async function run(w, h, tag) {
