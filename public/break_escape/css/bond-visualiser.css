@@ -120,7 +120,7 @@
 }
 
 #bond-vis-overlay .bv-title-block h1 {
-  font-size: 10px;
+  font-size: 8px;
   color: var(--bv-gold);
   text-shadow: 2px 2px 0 var(--bv-gold-dim);
   letter-spacing: 2px;
@@ -160,7 +160,7 @@
 #bond-vis-overlay .bv-badge {
   font-size: 8px;
   padding: 3px 6px;
-  border: 1px solid currentColor;
+  border: 2px solid currentColor;
   display: inline-block;
   white-space: nowrap; /* "● REVIEW" split over two lines at 900 px (lab R15 T4) */
   line-height: 1.6;
@@ -247,7 +247,7 @@
 #bond-vis-overlay .bv-panel-title {
   font-size: 8px;
   color: var(--bv-gold);
-  border-bottom: 1px solid var(--bv-gold-dim);
+  border-bottom: 2px solid var(--bv-gold-dim);
   padding-bottom: 4px;
   letter-spacing: 1px;
 }
@@ -368,7 +368,7 @@
   white-space: nowrap;
 }
 #bond-vis-overlay .bv-btn:hover  { background: var(--bv-green); color: #000; box-shadow: 2px 2px 0 var(--bv-green); }
-#bond-vis-overlay .bv-btn:active { transform: scale(0.96); }
+#bond-vis-overlay .bv-btn:active { transform: translate(2px, 2px); }
 #bond-vis-overlay .bv-btn.gold   { border-color: var(--bv-gold); color: var(--bv-gold); }
 #bond-vis-overlay .bv-btn.gold:hover { background: var(--bv-gold); color: #000; box-shadow: 2px 2px 0 var(--bv-gold); }
 #bond-vis-overlay .bv-btn.active { background: var(--bv-gold); color: #000; border-color: var(--bv-gold); }
@@ -482,40 +482,8 @@
   line-height: 1;
 }
 
-.bv-cr-title {
-  font-size: 48px;
-  color: #FFD700;
-  padding: 20px 0 10px;
-  text-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 4px 4px 0 rgba(255,215,0,0.35);
-}
-
-.bv-cr-subtitle {
-  font-size: 16px;
-  color: #00FFFF;
-  padding: 4px 0 20px;
-  letter-spacing: 0.3em;
-}
-
-.bv-cr-section-header {
-  font-size: 16px;
-  color: #FFD700;
-  padding: 14px 0 6px;
-  letter-spacing: 0.3em;
-  opacity: 0.65;
-}
-
-.bv-cr-entry {
-  font-size: 24px;
-  color: #00FF41;
-  padding: 6px 0;
-}
-
-.bv-cr-warning {
-  font-size: 24px;
-  color: #FF6600;
-  padding: 10px 0;
-  text-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
-}
+/* The title, subtitle, section-header, entry and warning looks are inline styles (STYLE_MAP in
+   bond-visualiser.js); those govern, so there are no .bv-cr-title and similar rules here. */
 
 .bv-cr-gap {
   height: 22px;

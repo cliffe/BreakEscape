@@ -56,13 +56,29 @@ while ((m = gradRe.exec(css))) {
 }
 check('scanline and meter stripes still present', gradients >= 3, `found ${gradients}`);
 
-// 2. blur radius in shadows
+const js = readFileSync(join(here, '../../public/break_escape/js/music/bond-visualiser.js'), 'utf8');
+const glow = (js.match(/const _GLOW_DARK\s*=\s*'([^']*)'/) || [])[1] || '';
+const jsInline = js.replace(/\$\{_GLOW_DARK\}/g, glow);
+
+// parser self-check: a hex colour is not a blur value
+{
+  const probe = '2px 2px #997a00';
+  const l = probe.replace(/#[0-9a-fA-F]{3,8}\b/g, ' ').match(/-?[\d.]+(px|em|rem)?/g);
+  check('shadow parser ignores hex colours', l.length === 2);
+}
+
+// 2. blur radius in shadows (CSS file, then inline styles in the JS)
 let shadows = 0, blurry = [];
-for (const dm of css.matchAll(/(text-shadow|box-shadow)\s*:\s*([^;}]+)/g)) {
+const shadowDecls = [
+  ...[...css.matchAll(/(text-shadow|box-shadow)\s*:\s*([^;}]+)/g)].map(x => [x[1], x[2]]),
+  ...[...jsInline.matchAll(/(text-shadow|box-shadow)\s*:\s*([^;`'"]+)/g)].map(x => [x[1], x[2]]),
+  ...[...jsInline.matchAll(/(?:textShadow|boxShadow)\s*=\s*(['"`])(.*?)\1/g)].map(x => ['js-style', x[2]]),
+];
+for (const dm of shadowDecls.map(([a, b]) => [null, a, b])) {
   if (/^(none|inherit|initial|unset)$/.test(dm[2].trim())) continue;
   for (const sh of splitTop(dm[2])) {
     shadows++;
-    const lengths = sh.replace(/rgba?\([^)]*\)|var\([^)]*\)|inset/g, ' ').match(/-?[\d.]+(px|em|rem)?/g) || [];
+    const lengths = sh.replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8}\b|\binset\b|\b[a-z]+\b/g, ' ').match(/-?[\d.]+(px|em|rem)?/g) || [];
     if (lengths.length >= 3 && parseFloat(lengths[2]) !== 0) blurry.push(`${dm[1]}: ${sh}`);
   }
 }
@@ -71,6 +87,8 @@ check('shadows were parsed', shadows > 5, `parsed ${shadows}`);
 
 // 3. filters
 check('no filter blur or drop-shadow', !/filter\s*:[^;}]*(blur|drop-shadow)/.test(css) && !/backdrop-filter/.test(css));
+check('no inline filter blur or drop-shadow in the JS', !/filter\s*:[^;`'"]*(blur|drop-shadow)/.test(js) && !/\.style\.filter\s*=/.test(js) && !/backdrop-filter/.test(js));
+check('no non-zero border-radius in the CSS', !/border-radius\s*:\s*(?!0(px)?\s*(;|\}|$))/.test(css));
 
 // 4. font sizes
 const small = [...css.matchAll(/font-size\s*:\s*([\d.]+)px/g)].filter(x => parseFloat(x[1]) < 8).map(x => x[0]);
@@ -110,5 +128,19 @@ for (const r of rules) {
 check('every GNF font-size is a multiple of 8 from 16px', badGnf.length === 0, badGnf.join(', '));
 if (unresolved.length) console.log(`NOTE font-family not resolved from CSS for: ${unresolved.join(' | ')}`);
 
+// 6. inline font sizes in the JS: the family and size sit in the same style string (one line)
+const badInline = [], unresolvedInline = [];
+for (const m2 of js.matchAll(/font-size\s*:\s*([\d.]+)px/g)) {
+  const a = js.lastIndexOf('\n', m2.index) + 1, z = js.indexOf('\n', m2.index);
+  const line = js.slice(a, z < 0 ? undefined : z);
+  const fam = (line.match(/font-family\s*:\s*['"]?([A-Za-z0-9 ]+)/) || [])[1];
+  const px = parseFloat(m2[1]);
+  if (!fam) { unresolvedInline.push(`${m2[0]} (line ${js.slice(0, m2.index).split('\n').length})`); continue; }
+  if (/VT323/.test(fam) && px < 16) badInline.push(`VT323 ${px}px`);
+  else if (/Press Start/.test(fam) && (px < 8 || px % 8)) badInline.push(`PS2P ${px}px`);
+  else if (/GNF/.test(fam) && (px < 16 || px % 8)) badInline.push(`GNF ${px}px`);
+}
+check('inline font sizes in the JS follow the grid', badInline.length === 0, badInline.join(', '));
+if (unresolvedInline.length) console.log(`NOTE inline font-family not found on the same line for: ${unresolvedInline.join(' | ')}`);
 console.log(failed ? `${failed} FAILED` : 'ALL PASSED');
 process.exit(failed ? 1 : 0);

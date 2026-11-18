@@ -209,7 +209,7 @@ function _buildOverlay() {
       <div class="bv-stat-row"><span class="sk">FREQ</span><span id="bv-freq-disp">---.--</span></div>
 
       <div class="bv-panel-title" style="margin-top:4px">▸ ENCRYPTION</div>
-      <div style="font-family:'VT323',monospace;font-size:11px;color:var(--bv-green);line-height:1.8">
+      <div style="font-family:'VT323',monospace;font-size:16px;color:var(--bv-green);line-height:1.25">
         AES-256-GCM<br>SHA-3/512<br>ECDHE-P384<br>TLS 1.3 ▸ OK<br>PGP 4096b ▸ OK
       </div>
 
@@ -1441,16 +1441,16 @@ function draw007Stamp(x, y, energy) {
  * Build and animate the credits scroll.
  * @param {Array<{text:string, style:string}>} lines
  */
-const _GLOW_DARK = '0 0 6px #000,0 0 12px #000,0 0 18px #000'; // dark halo for legibility
+const _GLOW_DARK = '2px 0 0 #000,-2px 0 0 #000,0 2px 0 #000,0 -2px 0 #000,2px 2px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000'; // hard 2px outline (0 blur) for legibility
 const STYLE_MAP = {
-    'title':          `font-family:VT323,monospace;font-size:52px;color:#FFD700;letter-spacing:0.12em;text-shadow:${_GLOW_DARK},0 0 30px rgba(255,215,0,0.9),0 0 60px rgba(255,215,0,0.4);`,
-    'subtitle':       `font-family:VT323,monospace;font-size:26px;color:#00FFFF;letter-spacing:0.3em;text-shadow:${_GLOW_DARK},0 0 20px rgba(0,255,255,0.8);`,
-    'section-header': `font-family:VT323,monospace;font-size:18px;color:#FFD700;opacity:0.8;letter-spacing:0.3em;text-shadow:${_GLOW_DARK},0 0 16px rgba(255,215,0,0.6);`,
-    'entry':          `font-family:VT323,monospace;font-size:28px;color:#00FF41;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(0,255,65,0.8);`,
-    'warning':        `font-family:VT323,monospace;font-size:28px;color:#FF6600;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(255,100,0,0.9),0 0 40px rgba(255,100,0,0.4);`,
+    'title':          `font-family:VT323,monospace;font-size:52px;color:#FFD700;letter-spacing:0.12em;text-shadow:${_GLOW_DARK},4px 4px 0 rgba(255,215,0,0.5);`,
+    'subtitle':       `font-family:VT323,monospace;font-size:26px;color:#00FFFF;letter-spacing:0.3em;text-shadow:${_GLOW_DARK};`,
+    'section-header': `font-family:VT323,monospace;font-size:18px;color:#FFD700;opacity:0.8;letter-spacing:0.3em;text-shadow:${_GLOW_DARK};`,
+    'entry':          `font-family:VT323,monospace;font-size:28px;color:#00FF41;letter-spacing:0.1em;text-shadow:${_GLOW_DARK};`,
+    'warning':        `font-family:VT323,monospace;font-size:28px;color:#FF6600;letter-spacing:0.1em;text-shadow:${_GLOW_DARK};`,
     // closingCard (closing-sequence.js): several lines shown together, then the teaser
-    'card':           `font-family:VT323,monospace;font-size:30px;line-height:1.35;color:#E8F4FF;letter-spacing:0.06em;text-shadow:${_GLOW_DARK},0 0 16px rgba(160,210,255,0.6);`,
-    'teaser':         `font-family:VT323,monospace;font-size:26px;line-height:1.35;color:#C77DFF;font-style:italic;letter-spacing:0.08em;text-shadow:${_GLOW_DARK},0 0 18px rgba(199,125,255,0.7);`,
+    'card':           `font-family:VT323,monospace;font-size:30px;line-height:1.35;color:#E8F4FF;letter-spacing:0.06em;text-shadow:${_GLOW_DARK};`,
+    'teaser':         `font-family:VT323,monospace;font-size:26px;line-height:1.35;color:#C77DFF;font-style:italic;letter-spacing:0.08em;text-shadow:${_GLOW_DARK};`,
 };
 
 /** The STATUS row's value element, by id: rows may be reordered by a theme overlay. */
@@ -1787,6 +1787,7 @@ function _updateTrackInfo(state) {
     info.innerHTML = '';
     const span = document.createElement('span');
     span.textContent = label;
+    span.setAttribute('title', detail ? label + ' ' + detail : label); // full text on hover when the row is cut off
     info.appendChild(span);
     if (detail) info.appendChild(document.createTextNode(' ' + detail));
     const pauseBtn = document.getElementById('bv-pause-btn');
