@@ -5,7 +5,9 @@ const h = await open(gid, port, { skipResume: true });
 await ev(h, () => window.__test.throttleFps(20));
 const OPS = ['adaeze_okafor','gwen_pritchard'];
 const vis = () => ev(h, (ids) => ({ ...Object.fromEntries(ids.map(i => [i, window.npcBehaviorManager.getBehavior(i)?.sprite?.visible ?? null])), gone: window.gameState?.globalVariables?.ops_staff_gone, hall: window.gameState?.globalVariables?.server_hall_reached, room: window.currentPlayerRoom }), OPS);
-const go = async (room) => { for (let i=0;i<8;i++){ const r = await ev(h,(r)=>window.__test.enterRoom(r,{timeoutMs:20000}),room); if (r.ok) return r; console.log('go-fail', room, JSON.stringify(r).slice(0,300)); await h.t(2500); await dismiss(h);} return null; };
+// Escape would open the pause menu, so close it via Resume and wait out HaX phone barks instead of using dismiss().
+const unblock = async () => { await h.page.evaluate(() => { const b=[...document.querySelectorAll('#game-menu-overlay button, #game-menu-overlay .menu-item, #game-menu-overlay *')].find(e=>e.children.length===0 && e.textContent.trim()==='Resume'); if (b) b.click(); document.querySelectorAll('.npc-bark').forEach(e=>e.click()); }).catch(()=>{}); await h.t(1500); };
+const go = async (room) => { for (let i=0;i<8;i++){ const r = await ev(h,(r)=>window.__test.enterRoom(r,{timeoutMs:20000}),room); if (r.ok) return r; console.log('go-fail', room, JSON.stringify(r).slice(0,300)); await h.t(2500); await unblock();} return null; };
 const shot = n => h.page.screenshot({ path: `${out}/${n}.png` });
 const log = (k,v)=>console.log(k, JSON.stringify(v));
 await h.t(3000);
