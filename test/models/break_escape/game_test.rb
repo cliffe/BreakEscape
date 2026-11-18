@@ -940,7 +940,7 @@ module BreakEscape
       assert_nil @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'status')
     end
 
-    test "a multi-flag task does not count a stored task submittedFlags, only the server record" do
+    test "a multi-flag task counts earlier flags from server-validated prior ids, not task submittedFlags" do
       @game.scenario_data = @game.scenario_data.merge(
         'objectives' => [{
           'aimId' => 'aim_flags',
@@ -951,23 +951,24 @@ module BreakEscape
           }]
         }]
       )
-      # A stored submittedFlags is client-visible (once client-writable), so it is not trusted.
-      # No backfill: no current mission has a multi-flag submit_flags task.
       @game.send(:initialize_objectives)
+      # A stored submittedFlags is client-visible, so it is not trusted on its own.
       @game.player_state['objectivesState']['tasks']['submit_ssh_flag'] = {
         'submittedFlags' => ['hospital_backup_server-flag1']
       }
       @game.save!
 
-      result = @game.process_flag_task_completions!(
-        ['flag_station_dropsite:hospital_backup_server-flag2', 'hospital_backup_server-flag2']
-      )
-
+      result = @game.process_flag_task_completions!(['hospital_backup_server-flag2'])
       assert_empty result[:completed_tasks]
       assert_equal ['submit_ssh_flag'], result[:updated_tasks]
-      assert_nil @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'status')
       assert_equal ['hospital_backup_server-flag2'],
                    @game.player_state.dig('objectivesState', 'tasks', 'submit_ssh_flag', 'submittedFlags')
+
+      # With the earlier flag rebuilt from player_state['submitted_flags'] (server-written), it completes.
+      result = @game.process_flag_task_completions!(
+        ['hospital_backup_server-flag2'], prior_flag_ids: ['hospital_backup_server-flag1']
+      )
+      assert_equal ['submit_ssh_flag'], result[:completed_tasks]
     end
 
     private

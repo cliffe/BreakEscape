@@ -280,7 +280,7 @@ module BreakEscape
       # Step 1: Attacker pre-injects correct flags via update_task_progress
       put update_task_progress_game_url(flagged_game, task_id: 'submit_flag_1'),
           params: { progress: 1, submittedFlags: target_flags }
-      assert_response :success
+      assert_response :not_found # submit_flags tasks take no client progress
 
       # The endpoint no longer stores a client-supplied list at all
       flagged_game.reload

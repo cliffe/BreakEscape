@@ -74,7 +74,8 @@ module BreakEscape
       game = build_game(['target_vm-flag1', 'target_vm-flag2'])
       put update_task_progress_game_url(game, task_id: 'task_flags'),
           params: { progress: 2, submittedFlags: ['target_vm-flag1', 'target_vm-flag2'] }
-      assert_response :success
+      assert_response :not_found # submit_flags progress is server-written
+      assert_nil game.reload.player_state.dig('objectivesState', 'tasks', 'task_flags', 'progress')
       score_before = game.reload.score
 
       post flags_game_url(game), params: { flag: FLAG_ONE, stationId: 'station_a' }, as: :json
@@ -96,12 +97,28 @@ module BreakEscape
       assert_response :not_found
       assert_nil game.reload.player_state.dig('objectivesState', 'tasks', 'made_up_task')
 
-      put update_task_progress_game_url(game, task_id: 'task_flags'),
-          params: { progress: 999_999, submittedFlags: ['a'] }
+      # Forged "(1/1)" progress cannot land on a submit_flags task.
+      put update_task_progress_game_url(game, task_id: 'task_flags'), params: { progress: 1 }
+      assert_response :not_found
+      assert_nil game.reload.player_state.dig('objectivesState', 'tasks', 'task_flags')
+
+      data = scenario(['target_vm-flag1'])
+      data['objectives'][0]['tasks'] << { 'taskId' => 'task_collect', 'type' => 'collect_items', 'targetCount' => 3 }
+      collect = Game.create!(mission: @mission, player: @owner, scenario_data: data)
+      put update_task_progress_game_url(collect, task_id: 'task_collect'), params: { progress: 999_999 }
       assert_response :success
-      stored = game.reload.player_state.dig('objectivesState', 'tasks', 'task_flags')
-      assert_equal 2, stored['progress']
-      assert_nil stored['submittedFlags']
+      assert_equal 3, collect.reload.player_state.dig('objectivesState', 'tasks', 'task_collect', 'progress')
+    end
+
+    test 'a multi-flag task part-way through before flag_task_matches existed still completes via /flags' do
+      game = build_game(['target_vm-flag1', 'target_vm-flag2'])
+      # Flag 1 was validated and recorded by an older build: it is in submitted_flags only.
+      game.player_state['submitted_flags'] = [FLAG_ONE]
+      game.save!
+
+      post flags_game_url(game), params: { flag: FLAG_TWO, stationId: 'station_a' }, as: :json
+      assert_response :success
+      assert_equal 'completed', status(game)
     end
 
     test 'genuine path: flags accepted by /flags complete a multi-flag task' do
@@ -184,10 +201,10 @@ module BreakEscape
     end
 
     # Makes the Hacktivity submit fail the way a FlagService error does.
-    def with_flagservice_error
+    def with_flagservice_error(failure = { success: false, message: 'Error submitting flag to Hacktivity', retryable: true })
       Game.class_eval do
         alias_method :__orig_submit_to_hacktivity, :submit_to_hacktivity
-        define_method(:submit_to_hacktivity) { |_flag| { success: false, message: 'Error submitting flag to Hacktivity' } }
+        define_method(:submit_to_hacktivity) { |_flag| failure }
       end
       Mission.singleton_class.class_eval do
         alias_method :__orig_hacktivity_mode?, :hacktivity_mode?
@@ -247,6 +264,31 @@ module BreakEscape
       unlock_safe(game, FLAG_ONE)
       assert_response :success
       assert_equal 'completed', status(game)
+    end
+
+    test 'flag-locked object: a permanent Hacktivity failure keeps the old behaviour and opens the object' do
+      game = Game.create!(mission: @mission, player: @owner, scenario_data: lock_scenario)
+      game.player_state['vm_set_id'] = 1
+      game.save!
+
+      with_flagservice_error({ success: false, message: 'VM set not found' }) { unlock_safe(game, FLAG_ONE) }
+
+      assert_response :success
+      assert_equal true, JSON.parse(response.body)['success']
+      assert game.reload.object_unlocked?('flag_safe')
+    end
+
+    test 'flag station: an unrecorded flag is reported as flag_not_recorded, not invalid' do
+      game = build_game(['target_vm-flag1'])
+      game.player_state['vm_set_id'] = 1
+      game.save!
+
+      with_flagservice_error do
+        post flags_game_url(game), params: { flag: FLAG_ONE, stationId: 'station_a' }, as: :json
+      end
+
+      assert_response :unprocessable_entity
+      assert_equal 'flag_not_recorded', JSON.parse(response.body)['reason']
     end
   end
 end

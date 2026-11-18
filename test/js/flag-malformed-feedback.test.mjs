@@ -37,3 +37,11 @@ test('wrong-station and already-submitted lines are unchanged by the typed value
     assert.match(F.flagRefusalLine('Incorrect flag', { reason: 'wrong_station', flagValue: 'oops' }), /different machine/);
     assert.equal(F.flagRefusalLine('Flag already submitted', { flagValue: 'oops' }), '✗ Flag already submitted');
 });
+
+test('a flag the server could not record is not shown as a wrong flag', () => {
+    assert.equal(F.flagRejectReason('The flag could not be recorded. Try again.', 'flag_not_recorded'), 'flag_not_recorded');
+    const line = F.flagRefusalLine('The flag could not be recorded. Try again.', { reason: 'flag_not_recorded', flagValue: 'flag{x}' });
+    assert.match(line, /could not be recorded/);
+    assert.doesNotMatch(line, /not accepted/i);
+    assert.match(F.flagRefusalLine('', { reason: 'flag_not_recorded' }), /Try again/);
+});

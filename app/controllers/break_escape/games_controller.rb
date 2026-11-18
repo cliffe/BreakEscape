@@ -1321,11 +1321,16 @@ module BreakEscape
             # Submit flag to Hacktivity and mark in submitted_flags (ignore if already submitted)
             submit_result = @game.submit_flag(attempt)
             if !submit_result[:success] && submit_result[:reason].nil?
-              # Hacktivity could not record the flag (FlagService error, no VM set). Undo the
-              # unlock so the player sees a refusal and can try again, rather than opening the
-              # object with its task silently left incomplete. already_submitted is not an error.
-              flag_not_recorded = true
-              raise ActiveRecord::Rollback
+              if submit_result[:retryable]
+                # A transient Hacktivity error (FlagService raised). Undo the unlock so the
+                # player sees a refusal and can try again, rather than opening the object with
+                # its task silently left incomplete. already_submitted is not an error.
+                flag_not_recorded = true
+                raise ActiveRecord::Rollback
+              end
+              # Permanent (no VM set, flag not in the set, FlagService missing): retrying
+              # cannot help, so keep the long-standing behaviour and open the object.
+              Rails.logger.warn "[BreakEscape] Flag-lock unlock without Hacktivity record: #{submit_result[:message]}"
             end
 
             rewards = find_flag_rewards(attempt)
@@ -2010,11 +2015,11 @@ module BreakEscape
     end
 
     # PUT /games/:id/objectives/tasks/:task_id
-    # Update task progress (for collect_items and submit_flags tasks)
+    # Update task progress (collect_items tasks only; other types are refused)
     #
     # Wrapped in with_game_lock (see around_action above): unlike complete_task
     # right above it, update_task_progress! only writes this one task's own
-    # progress/submittedFlags — it never calls check_aim_completion, so it's a
+    # progress — it never calls check_aim_completion, so it's a
     # candidate to drop the lock if this ever moves to atomic per-path writes
     # — see the FUTURE IMPROVEMENT note above. Don't confuse this with
     # complete_task's lock requirement; they look similar but touch very
@@ -2024,13 +2029,12 @@ module BreakEscape
 
       task_id = params[:task_id]
       progress = params[:progress].to_i
-      submitted_flags = params[:submittedFlags]
 
       unless task_id.present?
         return render json: { success: false, error: 'Missing task_id' }, status: :bad_request
       end
 
-      result = @game.update_task_progress!(task_id, progress, submitted_flags)
+      result = @game.update_task_progress!(task_id, progress)
 
       Rails.logger.debug "[BreakEscape] Task progress updated: #{task_id} = #{progress}"
       render json: result, status: result[:success] ? :ok : :not_found
@@ -2164,8 +2168,13 @@ module BreakEscape
 
         # Server-side task/aim completion — runs after rewards so the final save!
         # captures all accumulated in-memory state changes
+        # prior_flag_ids: flags this game already had validated (submit_flags tasks part-way
+        # through when this record was introduced still complete).
+        prior_flag_ids = Array(@game.player_state['submitted_flags']).flat_map do |value|
+          generate_flag_identifiers(value, find_flag_station_for_flag(value))
+        end
         task_outcomes = flag_ids.any? \
-          ? @game.process_flag_task_completions!(flag_ids)
+          ? @game.process_flag_task_completions!(flag_ids, prior_flag_ids: prior_flag_ids)
           : { completed_tasks: [], updated_tasks: [] }
 
         # Notify the host app so it can route this through its own flag-scoring pipeline
@@ -2199,7 +2208,8 @@ module BreakEscape
           updatedTasks:   task_outcomes[:updated_tasks]
         }
       else
-        render json: result.merge(reason: result[:reason] || 'invalid'), status: :unprocessable_entity
+        # No reason means Hacktivity could not record a flag the scenario accepts: not a wrong flag.
+        render json: result.merge(reason: result[:reason] || 'flag_not_recorded'), status: :unprocessable_entity
       end
     end
 

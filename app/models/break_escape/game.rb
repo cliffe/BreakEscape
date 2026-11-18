@@ -5369,16 +5369,18 @@ module BreakEscape
     #
     # Only tasks the scenario defines are accepted, and progress is capped, so a client cannot
     # grow player_state (it ships back on bootstrap) with made-up task ids or large values.
-    # submitted_flags is accepted for old clients and ignored: submit_flags completion is decided
-    # from the server-only flag_task_matches record (process_flag_task_completions!).
-    def update_task_progress!(task_id, progress, _submitted_flags = nil)
+    # Tasks of any other type are refused: submit_flags completion is decided from the
+    # server-only flag_task_matches record (process_flag_task_completions!).
+    def update_task_progress!(task_id, progress)
       initialize_objectives
 
       task = find_task_in_scenario(task_id.to_s)
       return { success: false, error: 'Unknown task' } unless task
+      # Only collect_items progress comes from the client; every other type is server-written.
+      return { success: false, error: 'Unknown task' } unless task['type'] == 'collect_items'
 
       progress = [progress.to_i, 0].max
-      cap = task['maxProgress'] || task['targetCount'] || Array(task['targetFlags']).size
+      cap = task['maxProgress'] || task['targetCount']
       progress = [progress, cap].min if cap.to_i.positive?
 
       player_state['objectivesState']['tasks'][task['taskId']] ||= {}
@@ -6780,7 +6782,7 @@ module BreakEscape
     # completes when its remaining flag arrives.
     #
     # Returns { completed_tasks: [...taskIds], updated_tasks: [...taskIds] }
-    def process_flag_task_completions!(flag_ids)
+    def process_flag_task_completions!(flag_ids, prior_flag_ids: [])
       initialize_objectives
       candidate_ids   = Array(flag_ids)
       completed_tasks = []
@@ -6803,11 +6805,14 @@ module BreakEscape
 
           # Server-only record of the matches. task_state['submittedFlags'] is client-visible
           # and was once client-writable, so completion is decided from this record alone.
-          # No backfill for games part-way through a multi-flag task: no current mission
-          # (m01-m10) has a submit_flags task with more than one targetFlag.
+          # prior_flag_ids are rebuilt by the caller from player_state['submitted_flags'], which holds
+          # only values submit_flag validated, so games part-way through a multi-flag task (labs)
+          # keep their earlier flags. A client-written list is never read.
           player_state['flag_task_matches'] ||= {}
           recorded = (player_state['flag_task_matches'][task_id] ||= [])
-          matched.each { |entry| recorded << entry unless recorded.include?(entry) }
+          (matched | (Array(task['targetFlags']) & Array(prior_flag_ids))).each do |entry|
+            recorded << entry unless recorded.include?(entry)
+          end
 
           # Mirror the record into submittedFlags for the client's progress display. This
           # replaces whatever was stored, so a forged list left by an older build is wiped.
@@ -7857,7 +7862,7 @@ module BreakEscape
         { success: true, message: mock_flash[:notice] || 'Flag submitted to Hacktivity' }
       rescue StandardError => e
         Rails.logger.error "[BreakEscape] FlagService error: #{e.message}"
-        { success: false, message: 'Error submitting flag to Hacktivity' }
+        { success: false, message: 'Error submitting flag to Hacktivity', retryable: true }
       end
     end
   end
