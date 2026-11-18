@@ -68,3 +68,26 @@ export function lockpickWatchRooms(lockable) {
     ].filter(r => typeof r === 'string' && r.length > 0);
     return [...new Set(rooms)];
 }
+
+/**
+ * Could any key the player holds open a lock with these pin heights? A key that
+ * carries no pin or cut data is treated as "might fit" (we cannot tell), so only
+ * a hand that is provably all wrong keys returns false. Same tolerance (5px) as
+ * the key minigame's correctness check; cut = pin height - 20.
+ * Used to open a key-holding player straight in lockpicking mode when no held
+ * key matches (m01 blind playtest, item 4).
+ */
+export function anyKeyMightFitLock(playerKeys, lockKeyPins) {
+    if (!Array.isArray(lockKeyPins) || lockKeyPins.length === 0) return true;
+    if (!Array.isArray(playerKeys) || playerKeys.length === 0) return false;
+    const GAP = 20, TOL = 5;
+    const close = (a, b) => Array.isArray(a) && a.length === b.length &&
+        a.every((v, i) => Math.abs(v - b[i]) <= TOL);
+    return playerKeys.some(key => {
+        const d = key?.scenarioData || {};
+        const pins = d.keyPins || d.key_pins || key?.keyPins;
+        if (Array.isArray(pins)) return close(pins, lockKeyPins);
+        if (Array.isArray(d.cuts)) return close(d.cuts, lockKeyPins.map(p => Math.max(0, Math.min(110, p - GAP))));
+        return true;
+    });
+}

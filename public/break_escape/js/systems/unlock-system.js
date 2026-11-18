@@ -16,7 +16,7 @@ import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, 
 import { playUISound } from './ui-sounds.js';
 import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
-import { catchLockpickInView } from './lockpick-catch.js';
+import { catchLockpickInView, anyKeyMightFitLock } from './lockpick-catch.js';
 import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
 import { remoteOffMessage, notRespondingMessage, unreachableMessage } from '../utils/remote-host-text.js';
 
@@ -1100,7 +1100,18 @@ export function handleUnlock(lockable, type) {
                 item.scenarioData.type === 'lockpick'
             );
             
-            if (playerKeys.length > 0) {
+            // Keys take priority, unless the player holds a lockpick and none of the
+            // keys they hold can fit this lock: then open in lockpicking mode (the
+            // pick UI still offers "Switch to Key Mode"). m01 Derek's door: the only
+            // key that fits is inside a locked briefcase.
+            const lockKeyPinsForFit = lockable.doorProperties?.keyPins || lockable.doorProperties?.key_pins ||
+                lockable.scenarioData?.keyPins || lockable.scenarioData?.key_pins ||
+                lockable.properties?.keyPins || lockable.properties?.key_pins ||
+                lockRequirements.keyPins || lockRequirements.key_pins;
+            const noHeldKeyFits = hasLockpick && playerKeys.length > 0 &&
+                !anyKeyMightFitLock(playerKeys, lockKeyPinsForFit);
+
+            if (playerKeys.length > 0 && !noHeldKeyFits) {
                 // Keys take priority - go straight to key selection
                 console.log('KEYS AVAILABLE - STARTING KEY SELECTION');
                 // Wrap unlockTarget to notify server first.
@@ -1113,7 +1124,7 @@ export function handleUnlock(lockable, type) {
                 };
                 startKeySelectionMinigame(lockable, type, playerKeys, requiredKey, unlockWithServerNotification);
             } else if (hasLockpick) {
-                // Only lockpick available - launch lockpicking minigame directly
+                // Only lockpick available (or no held key fits) - launch lockpicking minigame directly
                 console.log('LOCKPICK AVAILABLE - STARTING LOCKPICKING MINIGAME');
                 
                 // CHECK: Should any NPC interrupt with person-chat instead?
