@@ -135,7 +135,7 @@ drop_seal = "candle-in-a-hurricane"
 backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Package delivered: deployment, timeline, agent ID, all confirmed. Your coordination held. They spent the night choosing which fire to fight and never saw the vault open behind them. I know what the unanswered sites cost. You do not need to tell me the number. I made the trade with my eyes open. Order is a candle in a hurricane; I would rather help the wind than keep relighting the wick. Awaiting next tasking. -- N"
 %>
 {
-  "scenario_brief": "Nine days ago four ENTROPY operations went live inside the same minute, and the ones nobody could reach cost lives. Since that night you have known why. An intercept pulled off the wire was timestamped before the deployment order was ever written -- which means ENTROPY did not guess where SAFETYNET would send you. Somebody told them. The leak was not the operation. The leak was the agent. Director Netherton has pulled you back to the Citadel, SAFETYNET's own headquarters, and handed you three names. One of them has been feeding the people who got your colleagues killed. Find the mole. Do it quietly -- the moment they know you are looking, they are gone.",
+  "scenario_brief": "Nine days ago four ENTROPY operations went live inside the same minute, and the ones nobody could reach cost lives. Since that night you have known why. An intercept pulled off the wire was timestamped before the deployment order was ever written, which means ENTROPY did not guess where SAFETYNET would send you. Somebody told them. The leak was not the operation. The leak was the agent. Director Netherton has pulled you back to the Citadel, SAFETYNET's own headquarters, and handed you three names. One of them has been feeding the people who got your colleagues killed. Find the mole. Do it quietly: the moment they know you are looking, they are gone.",
 
   "show_scenario_brief": "on_resume",
 
@@ -245,6 +245,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "HIS FIRST PAYMENT: which of our own catalogued weaknesses guard Tomb Gamma, owed on arrival", "style": "entry", "condition": "globalVars.nightshade_triple_agent && globalVars.triple_agent_first_payment" },
           { "text": "TOMB GAMMA: Coordinates given up in the interrogation room -- Montana", "style": "entry", "condition": "globalVars.tomb_gamma_location_known" },
           { "text": "TOMB GAMMA: Named, not located -- the coordinate is still in Nightshade's head", "style": "warning", "condition": "!globalVars.tomb_gamma_location_known" },
+          { "text": "THE CASE FILE: Closed, with Agent 0x47's name on it.", "style": "entry" },
           { "text": "" },
           { "text": "── THE SUSPECTS ──", "style": "section-header" },
           { "text": "VECTOR: Accused to his face, then cleared by the logs", "style": "warning", "condition": "globalVars.accused_vector && !globalVars.vector_apologised && !globalVars.vector_ko" },
@@ -269,6 +270,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "NIGHTSHADE: Tipped off before he was named", "style": "warning", "condition": "globalVars.nightshade_tipped_off" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Vector -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'vector'" },
           { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
+          { "text": "THE SUSPECTS: Vector, Phantom and Nightshade, the three names you were given.", "style": "entry" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
           { "text": "SEALED PSYCH EVALUATION: Read. The warning was in writing a year ago.", "style": "entry", "condition": "globalVars.found_nightshade_profile" },
@@ -281,6 +283,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "THE SERVER ROOM: A badge off SAFETYNET's own visitor printer", "style": "entry", "condition": "globalVars.badge_cloned" },
           { "text": "THE SERVER ROOM: The Director's own card, picked up off his office floor", "style": "warning", "condition": "globalVars.netherton_card_taken && !globalVars.netherton_card_cloned" },
           { "text": "GLOBAL THREAT DATABASE: Confirmed stolen during the four-site night", "style": "warning", "condition": "globalVars.database_theft_understood" },
+          { "text": "THE ARCHIVE: Whatever you brought out of the Citadel is in the case file.", "style": "entry" },
           { "text": "" },
           { "text": "── THE BOX ──", "style": "section-header" },
           { "text": "THE REPOSITORY BROWSER: Ours, never patched, open without a password", "style": "entry" },
@@ -380,7 +383,7 @@ CREDITS
     {
       "aimId": "take_the_brief",
       "title": "Report In And Take The Brief",
-      "description": "Director Netherton wants you in his office before you talk to a soul on this floor. Everyone in the Citadel is a suspect until he says otherwise -- including the three names he is about to give you.",
+      "description": "Director Netherton wants you in his office before you talk to a soul on this floor. Everyone in the Citadel is a suspect until he says otherwise, including the three names he is about to give you.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -781,6 +784,8 @@ CREDITS
           "callLabel": "SAFETYNET secure line",
           "npcType": "phone",
           "phoneId": "player_phone",
+          "spriteTalk": "assets/characters/agent_hax_talk.png",
+          "spriteVisemes": "assets/characters/agent_hax_visemes.png",
           "avatar": "assets/characters/agent_hax_v2_headshot.png",
           "storyPath": "scenarios/m08_the_mole/ink/m08_phone_agent_0x99.json",
           "voice": {
@@ -1572,7 +1577,7 @@ CREDITS
           "lockType": "pin",
           "requires": "<%= safe_pin %>",
           "difficulty": "medium",
-          "observations": "A biometric safe under the desk with a keypad fallback. The keypad is the way in tonight -- biometrics are logged, and the Director would rather this particular errand were not.",
+          "observations": "A biometric safe under the desk with a keypad fallback. The keypad is the way in tonight: biometrics are logged, and the Director would rather this particular errand were not.",
           <%# PASS 4 (fix 20): keeps its graph role. Without puzzle_graph_unlocks
               here the validator doesn't read the code card inside, and the suite
               door shows as unmapped; the printer's duplicate node was removed. %>
@@ -2217,6 +2222,7 @@ CREDITS
           "spriteSheet": "nightshade",
           "spriteTalk": "assets/characters/nightshade_talk.png",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
+          "avatar": "assets/characters/nightshade_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_nightshade.json",
           "voice": {
@@ -2356,6 +2362,7 @@ CREDITS
           "spriteSheet": "nightshade",
           "spriteTalk": "assets/characters/nightshade_talk.png",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
+          "avatar": "assets/characters/nightshade_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_nightshade_confrontation.json",
           "voice": {
