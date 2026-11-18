@@ -24,6 +24,8 @@ async function openPhone(page, tag) {
     last = await page.evaluate(() => window.__test.openInventoryItem('phone'));
     // On a fresh load the Mission Brief opens over the phone click: it counts as a miss.
     if (last?.ok && last?.opened?.id === 'notes') last = { ok: false, reason: 'minigame-active', activeMinigame: { id: 'notes' } };
+    // ok:false with a minigame up (or the Mission Brief) is a blocker to clear, whatever the reason
+    const blocker = last && !last.ok && (last.activeMinigame || last.opened?.id === 'notes');
     if (last?.ok) {
       try {
         await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
@@ -33,10 +35,10 @@ async function openPhone(page, tag) {
       }
       return;
     }
-    const blocked = last?.reason === 'blocking-ui' || last?.reason === 'minigame-active' || last?.reason === 'item-obscured' || last?.reason === 'no-inventory-item-matching';
-    if (!blocked) break;
+    const blocked = last?.reason === 'blocking-ui' || last?.reason === 'minigame-active' || last?.reason === 'item-obscured' || last?.reason === 'no-inventory-item-matching' || last?.reason === 'wrong-target-opened' || last?.reason === 'unrelated-overlay';
+    if (!blocked && !blocker) break;
     // Pick the intro choice that ends HaX's chat; otherwise the plain dismiss; the session overlay wants "Resume".
-    if (last?.activeMinigame?.id === 'notes') { // the Mission Brief closes through the minigame handle
+    if (last?.activeMinigame?.id === 'notes' || last?.opened?.id === 'notes') { // the Mission Brief closes through the minigame handle
       const c = await page.evaluate(() => window.__test.minigame.close());
       trail.push(`notes>close:${c?.ok ?? c?.reason ?? '?'}`);
       await page.waitForTimeout(1500);
@@ -61,7 +63,18 @@ async function run(w, h, tag) {
   const T = (n) => `P${RUN}${tag[0]} ${n}`; // under 40 characters, so the preview is the literal text
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => !!window.game?.loop && !!window.__test, null, { timeout: 90000 });
+  // A game made without a character can show the picker: choose female_hacker_hood_v2 (as ring-banner-probe.mjs does)
+  for (let i = 0; i < 60; i++) {
+    if (await page.evaluate(() => !!window.game?.loop && !!window.__test).catch(() => false)) break;
+    const pick = await page.$('[data-character="female_hacker_hood_v2"], [data-key="female_hacker_hood_v2"], [data-sprite="female_hacker_hood_v2"]');
+    if (pick) {
+      await pick.click().catch(() => {});
+      const go = await page.$('button:has-text("Start"), button:has-text("Confirm"), button:has-text("Play")');
+      if (go) await go.click().catch(() => {});
+    }
+    await page.waitForTimeout(1000);
+  }
+  await page.waitForFunction(() => !!window.game?.loop && !!window.__test, null, { timeout: 240000 });
   await page.evaluate(() => window.__test.throttleFps(20)); // fixed steps stay on
   await page.waitForTimeout(1500);
   await openPhone(page, tag);
@@ -85,7 +98,8 @@ async function run(w, h, tag) {
       missed: !!q(hax, '.contact-last-message.missed'),
       time: q(hax, '.contact-time')?.textContent ?? null,
       badge: parseInt(q(hax, '.unread-badge')?.textContent || '0', 10) || 0,
-      others: rows.filter(r => r !== hax).map(r => r.dataset.npcId + '|' + r.innerText).join('\n')
+      // name and preview only: the time text is wall-clock relative ("Just now", "1m") and drifts
+      others: rows.filter(r => r !== hax).map(r => r.dataset.npcId + '|' + (q(r, '.contact-name')?.textContent ?? '') + '|' + (q(r, '.contact-last-message')?.textContent ?? '')).join('\n')
     };
   }, HAX);
   const tagRow = () => page.evaluate((id) => {
@@ -100,6 +114,14 @@ async function run(w, h, tag) {
     return h.length ? ui.formatTimestamp(h[h.length - 1].timestamp) : '';
   }, HAX);
   check(await tagRow(), `${tag}: HaX has a row in the list`);
+  // m01 has timed HaX texts that would move the badge and preview mid-case: wait until every
+  // time-triggered one is delivered (event-triggered ones, triggerTime null, do not fire by themselves)
+  const pending = () => page.evaluate((id) => window.npcManager.timedMessages.filter(m => m.npcId === id && m.triggerTime !== null && !m.delivered).length, HAX);
+  const t0 = Date.now();
+  while ((await pending()) > 0 && Date.now() - t0 < 180000) await page.waitForTimeout(1000);
+  const left = await pending();
+  check(left === 0, `${tag}: HaX timed messages all delivered before the cases (${left} left)`);
+  await page.waitForTimeout(1000);
 
   // (a) a text through addMessage + showBark, then one through _deliverTimedMessage
   const viaBark = (text) => page.evaluate(({ id, text }) => {

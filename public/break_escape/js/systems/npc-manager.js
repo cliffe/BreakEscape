@@ -140,7 +140,7 @@ let contactListRefreshQueued = false;
 function scheduleContactListRefresh() {
   if (contactListRefreshQueued || typeof window === 'undefined') return;
   contactListRefreshQueued = true;
-  queueMicrotask(() => {
+  (globalThis.queueMicrotask || (f => Promise.resolve().then(f)))(() => {
     contactListRefreshQueued = false;
     try {
       const open = window.MinigameFramework?.currentMinigame;

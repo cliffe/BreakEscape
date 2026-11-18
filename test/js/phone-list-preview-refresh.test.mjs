@@ -97,6 +97,29 @@ test('a livePreview row keeps its own preview but takes the new badge', () => {
     assert.deepEqual(redone, ['hax'], 'not again while the history is unchanged');
 });
 
+test('a dry-run line replacing a missed-call row drops the missed styling', async () => {
+    const { ui, contactList } = setup();
+    const live = { ...HAX, livePreview: true };
+    ui.refreshLivePreview = async () => null;
+    ui.npcManager.getNPCsByPhone = () => [live, BOB];
+    ui.populateContactList('p1');
+    const r = row(contactList, 'hax');
+    const el = r.querySelector('.contact-last-message');
+    el.classList.add('missed');
+    // The real refreshLivePreview, with the dry run stubbed to return a line
+    const { default: PhoneChatConversation } = await import(pathToFileURL(join(js, 'minigames/phone-chat/phone-chat-conversation.js')).href);
+    const orig = PhoneChatConversation.previewReopen;
+    PhoneChatConversation.previewReopen = async () => 'Agent HaX: Call me back.';
+    ui.npcManager.getNPC = () => live;
+    try {
+        const proto = PhoneChatUI.prototype.refreshLivePreview.bind(ui);
+        const shown = await proto(live, r);
+        assert.ok(shown, 'a preview was shown');
+        assert.ok(!el.classList.contains('missed'), 'missed class removed');
+        assert.notEqual(el.textContent, 'one');
+    } finally { PhoneChatConversation.previewReopen = orig; }
+});
+
 test('in a thread, or detached, nothing is touched', () => {
     const { ui, histories, contactList } = setup({ view: 'conversation' });
     histories.hax.push({ type: 'npc', text: 'two', read: false, timestamp: 2 });
