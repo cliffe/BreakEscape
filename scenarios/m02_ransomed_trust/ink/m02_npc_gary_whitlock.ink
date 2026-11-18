@@ -465,6 +465,11 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 // ===========================================
 
 === hub ===
+// A resume replays the knot the pending choices belong to. lanyard_refused_out ends here while he
+// is still defensive, so send him to the defensive hub (where the apology lives) instead.
+{gary_defensive:
+    -> defensive_hub
+}
 {hub_quiet:
     ~ hub_quiet = false
 - else:

@@ -28,7 +28,9 @@ const JSONS = {
     gary: load('m02_npc_gary_whitlock'),
     bernie: load('m02_npc_receptionist'),
     val: load('m02_npc_security_guard'),
-    kim: load('m02_npc_sarah_kim')
+    kim: load('m02_npc_sarah_kim'),
+    hax: load('m02_phone_agent0x99'),
+    debrief: load('m02_closing_debrief')
 };
 
 // A story as the engine opens it: the synced globals written in (only the keys the save holds,
@@ -445,4 +447,72 @@ test('Bernie offer_key: after a burn she is not withholding (met_after_burn)', (
     const s = open(JSONS.bernie, { locals: { bernie_influence: 0, met_after_burn: true }, path: 'offer_key' });
     const r = run(s);
     assert.ok(r.tags.includes('give_item:key:it_override_key'));
+});
+
+// ---------------------------------------------------------------- HaX wall-safe hint, debrief Nightshade line
+
+test('HaX hint_wall_safe: with the cracker it says the answer is already in hand', () => {
+    const s = open(JSONS.hax, { locals: { pin_cracker_found: true }, path: 'hint_wall_safe' });
+    const r = run(s);
+    assert.ok(r.text.some(l => /You're already carrying the answer/.test(l)));
+    assert.ok(!r.text.some(l => /Nobody to ask, so don't/.test(l)));
+});
+
+test('HaX hint_wall_safe: without the cracker it points at the sealed case', () => {
+    const s = open(JSONS.hax, { locals: { pin_cracker_found: false }, path: 'hint_wall_safe' });
+    const r = run(s);
+    assert.ok(r.text.some(l => /Nobody to ask, so don't/.test(l)));
+    assert.ok(!r.text.some(l => /You're already carrying the answer/.test(l)));
+});
+
+test('HaX support hub: the wall-safe option is offered only while the safe is unopened', () => {
+    const base = { seen_wall_safe: true, reeves_safe_opened: false };
+    const open1 = open(JSONS.hax, { locals: base, path: 'support_hub' });
+    assert.ok(run(open1).choices.some(c => /keypad safe in Val's office/.test(c)));
+    const open2 = open(JSONS.hax, { locals: { ...base, reeves_safe_opened: true }, path: 'support_hub' });
+    assert.ok(!run(open2).choices.some(c => /keypad safe in Val's office/.test(c)));
+});
+
+const NIGHT = /You turned it on their own man's wall safe, I hear/;
+test('debrief q_pin_cracker: Nightshade mentions the wall safe right after "Mastermind, in silicon" when it was opened', () => {
+    const s = open(JSONS.debrief, { locals: { pin_cracker_found: true, reeves_safe_opened: true }, path: 'q_pin_cracker' });
+    const r = run(s);
+    const i = r.text.findIndex(l => /Mastermind, in silicon/.test(l));
+    assert.notEqual(i, -1);
+    assert.match(r.text[i + 1], NIGHT);
+    assert.equal(r.text.filter(l => NIGHT.test(l)).length, 1);
+});
+
+test('debrief q_pin_cracker: the wall-safe line is skipped when the safe was never opened', () => {
+    const s = open(JSONS.debrief, { locals: { pin_cracker_found: true, reeves_safe_opened: false }, path: 'q_pin_cracker' });
+    const r = run(s);
+    const i = r.text.findIndex(l => /Mastermind, in silicon/.test(l));
+    assert.notEqual(i, -1);
+    assert.ok(!r.text.some(l => NIGHT.test(l)));
+    assert.match(r.text[i + 1], /The firmware is how I know/);
+});
+
+// ---------------------------------------------------------------- Gary: apology route after the lanyard refusal
+
+const WRONG = 'I was wrong';
+test('Gary defensive: after the blame opener and a refused lanyard, a resume at the hub still offers the apology', () => {
+    const s = open(JSONS.gary, { path: 'open_blame' });
+    run(s);
+    pick(s, 'Take the card back');
+    pick(s, 'pulled my booking');
+    const out = pick(s, 'Fair');
+    assert.ok(out.tags.includes('exit_conversation'));
+    assert.equal(v(s, 'gary_defensive'), true);
+    // The engine reopens the knot the pending choices belong to and replays it from the top.
+    const resumed = open(JSONS.gary, { locals: { gary_defensive: true, gave_keycard: true, cover_burned: true, lanyard_refused: true, gary_influence: -8 }, path: 'hub' });
+    const r = run(resumed);
+    assert.ok(r.choices.some(c => c.includes(WRONG)), `apology offered (got ${JSON.stringify(r.choices)})`);
+    const thaw = pick(resumed, WRONG);
+    assert.equal(v(resumed, 'gary_defensive'), false);
+    assert.ok(thaw.text.some(l => /call it square/.test(l)));
+});
+
+test('Gary not defensive: the hub does not offer the apology', () => {
+    const s = open(JSONS.gary, { locals: { gave_keycard: true, met_gary: true, gary_influence: 10 }, path: 'hub' });
+    assert.ok(!run(s).choices.some(c => c.includes(WRONG)));
 });
