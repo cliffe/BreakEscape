@@ -20,6 +20,8 @@ VAR ghost_deal_accepted = false
 VAR ghost_keys_used = false
 VAR advised_board_pay = false
 VAR advised_board_refuse = false
+VAR advised_board_time = false // Synced: told Kim "buy me time, I'll change the options"
+VAR reeves_stance = ""       // Synced: how the player closed the Reeves scene (quiet / public / handover / hostile)
 VAR flag_ghost_log_submitted = false
 VAR lore_ghosts_manifesto_found = false
 VAR lore_cryptosecure_found = false
@@ -673,6 +675,10 @@ Agent HaX: He authorised the fire drill that put ENTROPY's device on the LAN, si
     Agent HaX: And he made the phone call. Which means the man slowing you down all night was standing four feet from the evidence, being helpful.
 }
 
+{reeves_stance == "quiet":
+    Agent HaX: You took him quietly. No scene in the boardroom, and he gave us the cell without being asked twice.
+}
+
 {insider_asset_exposed:
     Agent HaX: You named him publicly alongside the board. He'll stand next to their negligence in every story that runs.
 }
@@ -899,6 +905,9 @@ Agent HaX: Here's what I'll say, Agent.
 {advised_board_refuse and not paid_ransom:
     Agent HaX: And you kept your word to Kim. You said you'd get the keys without paying, and you did.
     Agent HaX: In this work that's rarer than it should be. She knows what you spent to make good on it.
+}
+{advised_board_time:
+    Agent HaX: You told Kim the decision wasn't yours to make and asked her for time instead. She went into that room and bought it.
 }
 {advised_board_pay and paid_ransom:
     Agent HaX: You told Kim to pay, and that's how it ended. No surprises for her.
