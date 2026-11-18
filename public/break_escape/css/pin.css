@@ -599,3 +599,80 @@
 .pin-minigame-message.wrong {
     color: #ff8a8a;
 }
+
+/* Dusting the pad with the fingerprint kit. The action sits above the keys; once used,
+   keys that are not in the PIN go dull and worn (a 2px dither, no blur) but stay readable,
+   and the keys that are in it carry a pale smudge of greasy dust. Hard 2px edges only. */
+.pin-minigame-dust-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.pin-minigame-dust-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #2c3e50;
+    color: #e8dcae;
+    border: 2px solid #b8a66a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    line-height: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.pin-minigame-dust-button:hover:not(:disabled) {
+    background: #34495e;
+    border-color: #e8dcae;
+}
+
+.pin-minigame-dust-button:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.pin-minigame-dust-icon {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+}
+
+.pin-minigame-dust-note {
+    min-height: 14px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 20px;
+    text-align: center;
+    color: #e8dcae;
+}
+
+.pin-minigame-dust-note:empty {
+    display: none;
+}
+
+.pin-minigame-key.pin-minigame-key-greyed,
+.pin-minigame-key.pin-minigame-key-greyed:hover,
+.pin-minigame-key.pin-minigame-key-greyed:active {
+    background-color: #1c232b;
+    background-image:
+        linear-gradient(45deg, #232b34 25%, transparent 25%, transparent 75%, #232b34 75%),
+        linear-gradient(45deg, #232b34 25%, transparent 25%, transparent 75%, #232b34 75%);
+    background-size: 4px 4px;
+    background-position: 0 0, 2px 2px;
+    color: #8c98a4;
+    border-color: #2a3440;
+    box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.35);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pin-minigame-key.pin-minigame-key-dusted {
+    border-color: #b8a66a;
+    color: #f4ecc8;
+}

@@ -119,6 +119,13 @@ export class ApiClient {
     return answer;
   }
 
+  // Dust a PIN pad with the fingerprint kit (server: PinDust). apply true dusts it now; false
+  // only asks what the pad already learnt. Answers { dusted, digits: ['1','7'], hint? }, the
+  // PIN's distinct digits sorted, never their order. A refusal throws with err.body.reason.
+  static async pinDust(targetType, targetId, apply = true) {
+    return this.post('/pin_dust', { targetType, targetId, apply });
+  }
+
   // Record a card the card copier saved (access model 4.2). `source` is
   // { npc_id } (copied in a conversation), { object_id } (a held keycard) or
   // { held_card: true } (a held keycard with no id, named by cardId). `card` is the
