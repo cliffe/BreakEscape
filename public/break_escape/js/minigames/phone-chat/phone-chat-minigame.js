@@ -690,7 +690,7 @@ export class PhoneChatMinigame extends MinigameScene {
                 // Re-assert the pretext card VARs: the restore (LoadJson) above replaced
                 // the story-local VARs, so set them before the re-run reads a choice.
                 this._pretext?.fillVars?.();
-            }, { force: forcePretextRebake });
+            }, { force: forcePretextRebake, homeKnot: String(npc.homeKnot || 'start').split('.')[0] });
 
             this._showRestoredThread(npc, npcId, conversationHistory, reopen);
 

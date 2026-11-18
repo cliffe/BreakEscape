@@ -45,7 +45,9 @@ export function parseArgs(argv) {
 const onSignInPage = (page) => /\/users\/sign_in(\?|$)/.test(new URL(page.url()).pathname + new URL(page.url()).search);
 
 async function isSignedIn(page, baseUrl) {
-  await page.goto(baseUrl + '/', { waitUntil: 'domcontentloaded' });
+  // '/' renders the public landing page for a signed-out visitor, so an expired session looked
+  // signed in. /users/edit needs a session and redirects to the sign-in page without one.
+  await page.goto(baseUrl + '/users/edit', { waitUntil: 'domcontentloaded' });
   return !onSignInPage(page) && (await page.locator('form#new_user').count()) === 0;
 }
 

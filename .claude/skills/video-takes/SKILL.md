@@ -11,7 +11,9 @@ Needs the scout report and the picks file (`docs/video/scout/<mission>_scout.md`
 
 ## Who does this
 
-**Sonnet** writes and runs the take scripts, one agent per batch of takes, resumed between batches until it passes about 300k tokens. The **orchestrator (Opus)** reviews the takes table and the contact sheets and does the selects (`video-edit`). Captures are **serial**: one display, one take at a time. Do not parallelise.
+Model routing (user, 2026-11-17): writing a video's script (story, beat sheet, card text, shot list) is Opus 5.5 work; gathering the shots is Sonnet or Haiku work.
+
+**Sonnet** writes and runs the take scripts, one agent per batch of takes, resumed between batches until it passes about 300k tokens. **Haiku** may replay a take script that has already recorded cleanly (same entry state, no edits needed): it runs the script, checks the first frame and the take check, and reports. It stops on any surprise rather than improvising. One-shot beats (calls, endings) stay with Sonnet unless the script has been proven on a throwaway game. The **orchestrator (Opus)** reviews the takes table and the contact sheets and does the selects (`video-edit`). Captures are **serial**: one display, one take at a time. Do not parallelise.
 
 Brief the agent with: this skill, the picks file, the take ids and entry states to record, its own scratch subfolder as a full path (`<scratchpad>/video-takes-<mission>/`), "don't commit, don't edit the tooling", and "report as the final message; save the table as `docs/video/takes_<mission>.md`".
 
@@ -20,7 +22,7 @@ Brief the agent with: this skill, the picks file, the take ids and entry states 
 | Path | What |
 |---|---|
 | `tools/video/takes/<mission>/<id>.mjs` | the take script (checked in) |
-| `video_out/<mission>/takes/<id>.trimmed.mkv` | trimmed take with audio (git-ignored) |
+| `$FOOTAGE_ROOT/<mission>/takes/<id>.trimmed.mkv` | trimmed take with audio, in the catalogue library (FOOTAGE_ROOT, default `/data/footage`) |
 | `.../<id>.trimmed.markers.json`, `<id>.check.json`, `<id>.contact.jpg` | marks in the trimmed file's clock, check result, contact sheet (1 frame per second) |
 | `docs/video/takes_<mission>.md` | the table: id, entry state flags, length, drop %, A/V offset, key marks checked against frames, problems |
 
@@ -34,7 +36,7 @@ The tooling is mission-aware. A mission is named by its short key (`m02`, `sis01
 | Take scripts | `tools/video/takes/<mission>/<take id>.mjs`; make the folder for a new mission |
 | Shared helpers | `tools/video/takes/lib/`: `lib.mjs`, `dlg.mjs`, `walklib.mjs`. Import them as `../lib/lib.mjs` and so on. Do not copy them: a fix lands once |
 | Mission-specific bits | in the mission's own folder: the opening-cutscene gate (m01's `briefing_played`), room names, coordinates, a shared `setup()` such as `t04_lockpick.mjs` exports |
-| Outputs | `video_out/<mission>/takes/` |
+| Outputs | `$FOOTAGE_ROOT/<mission>/takes/` (default `/data/footage`, the catalogue library; the old `video_out/<mission>` is now a symlink to the archive) |
 
 Take ids need no mission prefix: the folder separates missions (`m02` and `m01` can both have a `t01_title`). The edit list's `"mission"` field points lint, mix, `.srt` and render at the same folder.
 
@@ -50,6 +52,29 @@ tools/video/capture/env-up.sh 97        # Xvfb :97 (1928x1088) + PulseAudio null
 The X screen is 1928x1088 so a 1920x1080 window is not shrunk by 1 px (Chromium without a window manager shrinks a screen-sized window). The recorder grabs 1920x1080 at 0,0. Chromium as root needs `--no-sandbox` (the tooling passes it). Stop later with `tools/video/capture/env-down.sh 97` (it stops only recorded PIDs; never `pkill -f`). `NODE_PATH=/opt/node-tools/node_modules` is exported by `run-take.sh`.
 
 **Before every capture, check nothing is rendering:** `pgrep -af 'remotion|render.mjs|render.sh'` must be empty (and `uptime` load not high). A capture during a Remotion render drops frames: the m01 t10 take recorded during a render dropped 4.1% and had to be redone. If a render runs, wait (poll every 60 s); do not start the capture. Kill strays by PID only.
+
+### Live mode: the keyed dev Hacktivity server (voiced takes)
+
+The standalone server on :3001 has no TTS key, so any line not in `tts_cache/` is silent there. On the dev Hacktivity box, record against a **live game on the keyed server** instead (`https://localhost:3000`): every line plays, and the game is the real Hacktivity-hosted one (VM panel, embedded console, submitted flags). No new game is made; the take drives the game as it stands.
+
+```bash
+set -a; . ~/.config/hacktivity-playtest/env; set +a          # PLAYTEST_PASSWORD for login.mjs; never printed
+export PATH="$HOME/.local/node/bin:$PATH" VIDEO_STATE_DIR=<scratchpad>/video-takes-<mission>
+export BE_CHROMIUM="$HOME/.cache/ms-playwright/chromium-1148/chrome-linux/chrome"   # the dev box has no /opt/pw-browsers
+node tools/video/capture/login.mjs --email <playtest account>   # storage state, mode 0600 (delete a stale one first: see RUNBOOK)
+tools/video/capture/env-up.sh 97
+LIVE_URL=https://localhost:3000/hacktivities/<event>/play/mission/<game> STORAGE_STATE=<state file> \
+  tools/video/takes/run-take.sh <mission> <take id> "" "<record-take flags>"
+```
+
+- The new-game flags must be empty (`""`): the entry state is whatever the live game holds. Write the take's `setup()` to get there itself (walk rooms with `enterRoom`, see `takes/m03/_live.mjs` `goRoom`) and to **refuse** when the state is wrong, instead of setting globals.
+- `run-take.sh` passes `record-take.mjs --live`: https with the dev certificate accepted, Hacktivity's notifyjs toasts ("Shutdown timer extended ...") hidden in every frame including the VM panel iframes, a 2.5 s tail after the end slate (on a loaded box the audio input lags; a short tail cut the end tone), and a fast failure if the storage state lands on the sign-in page. `BE_SWIFTSHADER` defaults to 1.
+- **Full frame.** Every game take now reports `frame` (window and game-canvas size) and `fullFrame` in `.record.json`, and `run-take.sh` prints `fullFrame` in its summary line: true means a 1x 1920x1080 viewport with the game canvas edge to edge (kiosk window, no browser chrome, no letterbox). Check it and the first frame (`ffmpeg -i <take>.trimmed.mkv -frames:v 1 first.png`).
+- **Proving a line was voiced.** `takes/m03/_live.mjs` `watchTts(page, mark)` marks every `POST /break_escape/games/:id/tts` answer (`tts-response` with status, type, bytes, text): 200 `audio/mpeg` is voiced. `playThrough()` plays a conversation with every voiced line heard in full (unlike `runDialogue`, which skips non-target lines after a dwell).
+- **Cost.** The keyed server generates any uncached line it is asked for. Prefer lines in `tts_cache/<scenario>/` (grep the `.json` sidecars for the text) and say so in the take header; a take that needs new audio is the orchestrator's call, with a line count.
+- **Never finish the mission.** A live playtest game must stay live until the playtest's `--finish`: no conclusion, no ending conversation, no "bring me in". One-shot beats (a call that retires a hub topic once heard) get one careful take: check the state in `setup()` first.
+- Rules unchanged: one display, serial captures; `pgrep -af 'remotion|render'` empty first; the dev box also runs other agents' headless playtest browsers (load 20 to 30 on 16 cores), which the m03 takes survived at 0 to 0.16% dropped frames.
+- m03 is the worked example: `tools/video/takes/m03/` (game 82): `t01_ffion_night` (voiced NPC beat and TTS proof), `t02_vm_approach` (walk up, post-it, VM panel, embedded monitor drawing the Kali login), `t03_revelation_call` (flag-4 payoff phone call, one-shot), `t04_printouts` (the drop-site's printed flag rewards).
 
 ## Step 2: write the take script
 
@@ -112,7 +137,7 @@ tools/video/takes/run-take.sh <mission> <take_id> "<new-game flags>" "<record-ta
 tools/video/takes/run-take.sh m02 t06_keypad_v3 "--start-room main_office_area --set <gate>=true" "--hide-hud --zoom-step 1"
 ```
 
-`run-take.sh` makes a fresh game of the mission (`new-game.rb`, port 3001), runs `record-take.mjs --display 97 ... --fps 30 --preset ultrafast --crf 14 --music 0`, runs `check-take.mjs`, prints one JSON line (pass, dropPct, offsets, problems, trimmed length) and deletes the raw `.mkv` on pass. `record-take.mjs` also takes `--sfx --voice --master` volumes, `--size`, `--no-bridge`, `--audio-delay-ms` (do not use: a fixed delay is not stable).
+`run-take.sh` makes a fresh game of the mission (`new-game.rb`, port 3001; in live mode it uses `LIVE_URL` instead), runs `record-take.mjs --display 97 ... --fps 30 --preset ultrafast --crf 14 --music 0`, runs `check-take.mjs`, prints one JSON line (pass, dropPct, offsets, problems, trimmed length) and deletes the raw `.mkv` on pass. `record-take.mjs` also takes `--sfx --voice --master` volumes, `--size`, `--no-bridge`, `--live --storage-state FILE`, `--tail-ms N`, `--audio-delay-ms` (do not use: a fixed delay is not stable).
 
 **30 fps only.** 60 fps fails on 4 cores at either preset; 30 fps `veryfast` is marginal; 30 fps `ultrafast` passed in m01 (0.06 to 1.2% dropped, CPU about 85%).
 
@@ -132,7 +157,7 @@ Expect to re-record about one take in three. Do not tune a failing take; re-run 
 The orchestrator's selects depend on this, so the takes agent does it first and records it in the table. **Marks are not the picture.** Dialogue marks come from real TTS playback edges and are safe to cut on (the game's subtitle appears 0.1 to 0.2 s before the line-start mark and stays until the next line). **Minigame marks can drift from the picture by seconds** (m01 t04: lock-open marked 14.36 s, visible at about 10.8 s; t14: output marks lag by 0.5 s). Extract frames at each mark and a little either side:
 
 ```bash
-tools/video/scout/extract-frames.sh video_out/<mission>/takes/<id>.trimmed.mkv <scratch>/marks-<id> 5.2 5.6 6.0   # PNGs plus sheet.png; SCALE=960x540 shrinks them
+tools/video/scout/extract-frames.sh $FOOTAGE_ROOT/<mission>/takes/<id>.trimmed.mkv <scratch>/marks-<id> 5.2 5.6 6.0   # PNGs plus sheet.png; SCALE=960x540 shrinks them
 ```
 
 For each key mark, say in the table "frame at T shows X". Check digits on keypad frames against the code. Look for toasts ("Influence: Kevin Park"), objectives panels and text boxes in frame.
@@ -140,6 +165,10 @@ For each key mark, say in the table "frame at T shows X". Check digits on keypad
 ## Step 5: the takes table
 
 `docs/video/takes_<mission>.md`, columns as `takes_v2.md`: id, entry state flags, trimmed length, drop %, A/V offset start/end (ms, corrected), key marks (trimmed seconds, checked against frames), problems. Add "Things to look at first": marks versus picture, spoiler content in the pre-target part of dialogue takes, short walking shots, and what is left running.
+
+## Step 6: finish the take's sidecar
+
+`check-take.mjs` writes a draft **`<take>.take.json`** beside each trimmed take (technical fields and a marks pointer; from `tools/video/capture/sidecar.mjs`). **Every take needs a finished sidecar** before it is catalogued: add `title`, one-line `description`, `characters`, `shot_type`, `spoiler` level, `quality.status`, and the `highlights` (timestamped moments with a 1-5 `trailer_score` - the key field for trailers), then set `_draft:false`. Pick highlight times from the frames you already checked. Keep it secret-free: no code, password, flag or PIN in any field. The footage catalogue is built from these (hacktivity-videos `catalogue/`, see its README).
 
 ## Traps
 
@@ -151,7 +180,7 @@ For each key mark, say in the table "frame at T shows X". Check digits on keypad
 - Leave display 97 and the sink up between batches; stop them at the end of the stage with `env-down.sh 97` unless the next stage is another batch.
 - Headless browsers and ffmpeg processes left by a crashed take: list with `ps`, kill by PID.
 - **Never `pkill -f <pattern>`** when the pattern appears in your own command line: it kills your own shell (exit 144) and whatever you queued after it. Find PIDs with `ps -eo pid,args | grep` and `kill` those.
-- **The container can restart between turns.** Postgres, the keyless server, Xvfb and PulseAudio are then all down while `video_out/` survives. Restart them (Step 1, and `video-scout` Step 1); a stale `/tmp/.X97-lock` makes `env-up.sh` say the display is in use, and an old `env-97.pids` in `VIDEO_STATE_DIR` must go too.
+- **The container can restart between turns.** Postgres, the keyless server, Xvfb and PulseAudio are then all down while the footage library (`$FOOTAGE_ROOT`, on `/data`) survives. Restart them (Step 1, and `video-scout` Step 1); a stale `/tmp/.X97-lock` makes `env-up.sh` say the display is in use, and an old `env-97.pids` in `VIDEO_STATE_DIR` must go too.
 - **A take that looks wrong may be a game bug.** m01's key insertion lagged and jumped because the minigame stepped pins per frame and sampled the key 14 px off; re-recording would not have helped. Look at the minigame frame by frame (ffmpeg `fps=5` contact strip) and read its code before re-recording; fix the game where the bug is (it helps players too) and say so.
 
 ## Related

@@ -592,6 +592,9 @@ export class NPCBehavior {
         // stays down without a health bar. Otherwise apply the configured state.
         const restored = window.npcHostileSystem?.takeRestoredHostility?.(npcId);
         if (restored) {
+            // The restore built this state before any config existed: apply the NPC's own
+            // combat numbers whatever its state (a KO or calm NPC is never announced)
+            window.npcHostileSystem?.applyRestoredStats?.(npcId, this.config.hostile);
             if (restored.hostile) {
                 this.hostile = true;
                 if (!restored.ko) {

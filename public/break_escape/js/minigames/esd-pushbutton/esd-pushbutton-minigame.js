@@ -108,7 +108,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
                     <button class="esd-button" id="esd-button" aria-label="ESD Button" disabled></button>
                     <div class="esd-led" id="esd-led" aria-label="Status LED"></div>
                 </div>
-                <div class="esd-status" id="esd-status">Flip guard to arm ESD control.</div>
+                <div class="esd-status" id="esd-status">Click the flap to lift it, then press the button.</div>
             </div>
             <div class="esd-confirm-modal" id="esd-confirm-modal" aria-hidden="true">
                 <div class="esd-confirm-card">
@@ -169,7 +169,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
             this.state = 'ARMED_GUARD_DOWN';
             this.guardElement.classList.remove('open');
             this.buttonElement.setAttribute('disabled', 'true');
-            this.statusElement.textContent = 'Guard closed. Flip guard to arm ESD control.';
+            this.statusElement.textContent = 'Guard closed. Click the flap to lift it, then press the button.';
         }
 
         if (window.playUISound) window.playUISound('lock');
