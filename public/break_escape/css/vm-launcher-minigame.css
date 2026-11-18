@@ -115,6 +115,11 @@
     transition: background 0.2s;
 }
 
+a.vm-action-btn {
+    display: inline-block;
+    text-decoration: none;
+}
+
 .vm-action-btn:hover:not(:disabled) {
     background: #00cc00;
 }

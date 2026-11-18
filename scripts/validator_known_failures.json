@@ -1,93 +1,5 @@
 [
   {
-    "scenario": "scenarios/lab_exploitation/scenario.json.erb",
-    "stage": "ink",
-    "match": "is a standalone emote starting with '*'",
-    "count": 13,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_exploitation ink headings",
-    "note": "**Heading:** lines in instructor.ink parse as standalone emotes; attach each to a spoken line."
-  },
-  {
-    "scenario": "scenarios/lab_post_exploitation/scenario.json.erb",
-    "stage": "ink",
-    "match": "is a standalone emote starting with '*'",
-    "count": 12,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_post_exploitation ink headings",
-    "note": "As lab_exploitation."
-  },
-  {
-    "scenario": "scenarios/lab_vulnerability_analysis/scenario.json.erb",
-    "stage": "ink",
-    "match": "is a standalone emote starting with '*'",
-    "count": 7,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_vulnerability_analysis ink headings",
-    "note": "As lab_exploitation."
-  },
-  {
-    "scenario": "scenarios/lab_vulnerability_analysis/scenario.json.erb",
-    "stage": "ink",
-    "match": "contains '//', which ink treats as a comment",
-    "count": 2,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_vulnerability_analysis ink slashes",
-    "note": "Reword each // (ink cuts the rest of the line)."
-  },
-  {
-    "scenario": "scenarios/lab_feeling_blu/scenario.json.erb",
-    "stage": "ink",
-    "match": "contains '//', which ink treats as a comment",
-    "count": 10,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_feeling_blu ink slashes",
-    "note": "Reword each // (ink cuts the rest of the line)."
-  },
-  {
-    "scenario": "scenarios/lab_vulnerabilities/scenario.json.erb",
-    "stage": "ink",
-    "match": "contains '//', which ink treats as a comment",
-    "count": 3,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_vulnerabilities ink slashes",
-    "note": "Reword each // (ink cuts the rest of the line)."
-  },
-  {
-    "scenario": "scenarios/lab_malware_metasploit/scenario.json.erb",
-    "stage": "ink",
-    "match": "contains '//', which ink treats as a comment",
-    "count": 1,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_malware_metasploit ink slashes",
-    "note": "Reword the // in instructor.ink."
-  },
-  {
-    "scenario": "scenarios/lab_malware_metasploit/scenario.json.erb",
-    "stage": "common",
-    "match": "'#complete_task:complete_instruction_task' was not found",
-    "count": 1,
-    "owner": "labs track",
-    "added": "2026-11-12",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-12: lab_malware_metasploit instruction task tag",
-    "note": "objectives[0].tasks[0] waits for a tag the instructor ink never emits; add the tag or change the task type."
-  },
-  {
     "scenario": "scenarios/biometric_breach/scenario.json.erb",
     "stage": "common",
     "match": "missing required 'keyPins' array",
@@ -135,12 +47,12 @@
     "scenario": "scenarios/ceo_exfil/scenario.json.erb",
     "stage": "ink",
     "match": "in itemsHeld. Add {",
-    "count": 4,
+    "count": 1,
     "owner": "escape-room track",
     "added": "2026-11-12",
     "reviewBy": "2026-12-10",
     "approved": "2026-11-12: ceo_exfil helper-npc give_item",
-    "note": "The shared helper-npc.ink gives keycard, lockpick, phone and workstation; the reception NPC holds none of them. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario."
+    "note": "Left: #give_item:keycard in helper-npc.ink. The validator now skips the other three, which sit in a {has_<type>: branch only itemsHeld can set. has_keycard is also set from the player holding any item (syncInventoryVariablesToStory), so the keycard choice can render for an NPC that holds none. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario."
   },
   {
     "scenario": "scenarios/ceo_exfil/scenario.json.erb",
@@ -152,16 +64,5 @@
     "reviewBy": "2026-12-10",
     "approved": "2026-11-12: ceo_exfil phone targetKnot",
     "note": "Design edit: each mapping sets a global and the ink hub gets a conditional option for it."
-  },
-  {
-    "scenario": "scenarios/lab_physical_pentest/scenario.json.erb",
-    "stage": "common",
-    "match": "two capture routes write targetId \"door_admin\"",
-    "count": 1,
-    "owner": "devices track",
-    "added": "2026-11-16",
-    "reviewBy": "2026-12-10",
-    "approved": "2026-11-16: A2 R1 decision, shared door_admin target",
-    "note": "The drop box route and the Wi-Fi route each file door_admin from a pc_signed_in mapping split on footholdId, so only one ever fires per game. The validator cannot see the split."
   }
 ]

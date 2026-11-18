@@ -54,7 +54,8 @@ module BreakEscape
     # Yields (capture_hash, kind, path, owner) for every capture writer in the scenario:
     # kind :action for an add_capture action (capture_hash is its `capture`), :mapping for a
     # mapping's addCapture. owner is the nearest enclosing hash that carries eventMappings (an
-    # NPC), or nil.
+    # NPC), or nil. A fifth value is the hash that holds the writer (the mapping or the action),
+    # for callers that need its `condition`; blocks that take four ignore it.
     # Step 2b: notes: :skip (the default) skips a writer an author parked in a "_" note, so such
     # a writer never widens the target ids the server accepts, never serves or shadows a secret,
     # and never turns proof-gating on or satisfies it. notes: :visit visits notes too, which the
@@ -67,9 +68,9 @@ module BreakEscape
         when Hash
           here_owner = node['eventMappings'].is_a?(Array) ? node : owner
           if node['type'] == 'add_capture' && node['capture'].is_a?(Hash)
-            yield node['capture'], :action, path, here_owner
+            yield node['capture'], :action, path, here_owner, node
           end
-          yield node['addCapture'], :mapping, "#{path}/addCapture", here_owner if node['addCapture'].is_a?(Hash)
+          yield node['addCapture'], :mapping, "#{path}/addCapture", here_owner, node if node['addCapture'].is_a?(Hash)
           node.each do |key, value|
             ks = key.to_s
             next if notes == :skip && AuthorNotes.note?(snode, ks)
@@ -86,9 +87,10 @@ module BreakEscape
 
     # [{ target_id:, kind:, path: }] for each capture writer with a target id.
     def capture_writers(data)
-      each_capture_writer(data).filter_map do |capture, kind, path, _owner|
+      each_capture_writer(data).filter_map do |capture, kind, path, _owner, holder|
         id = capture['targetId']
-        { target_id: id, kind: kind, path: path } if present_string?(id)
+        cond = holder.is_a?(Hash) ? holder['condition'] : nil
+        { target_id: id, kind: kind, path: path, condition: (cond if cond.is_a?(String)) } if present_string?(id)
       end
     end
 

@@ -34,14 +34,14 @@ export function rejectionAlert(lockable, type, fallback) {
 }
 
 /** Why a flag was refused, as the flag_rejected event reports it (R9). */
-export const REJECT_REASONS = ['invalid', 'wrong_station', 'already_submitted'];
+export const REJECT_REASONS = ['invalid', 'wrong_station', 'already_submitted', 'vm_released'];
 
 /**
  * The refusal reason: the server's own `reason` when it sent a known one, else
  * read from its message (an older server, or the flag-lock path).
  * @param {string} [serverMessage]
  * @param {string} [reason]
- * @returns {'invalid'|'wrong_station'|'already_submitted'}
+ * @returns {'invalid'|'wrong_station'|'already_submitted'|'vm_released'}
  */
 export function flagRejectReason(serverMessage, reason) {
     if (REJECT_REASONS.includes(reason)) return reason;
@@ -64,6 +64,8 @@ export function flagRejectReason(serverMessage, reason) {
 export function flagRefusalLine(serverMessage, opts = {}) {
     const m = String(serverMessage || '').trim();
     const reason = flagRejectReason(m, opts.reason);
+    // The session's VMs were handed back (D144): the server's fixed sentence, not "Incorrect flag"
+    if (reason === 'vm_released') return `✗ ${m || "This session's VMs have been released. Start the mission again to get fresh VMs."}`;
     // Already counted: the server's own line says it best
     if (reason === 'already_submitted') return `✗ ${m || 'Flag already submitted'}`;
     // A real flag, but another machine's: not "copied short"
