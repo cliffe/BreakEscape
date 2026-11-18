@@ -34,3 +34,12 @@
 | m4 R2 trip timings mislabelled and not like for like | m | Fixed: `BUILD_LOG.md` relabelled as wall seconds, notes the load slowed the simulation (use 34 to 36 s against 22 s), compares against game 8239 only, says Adaeze's walk home is not shorter than before, and that Gwen's stalls were not seen in three trips. |
 | m5 frame-time conclusion unsupported | m | Fixed: `LIVE_SLICE3.md` "R2 m1" and the R2 m1 row above now state only what was measured (`requestAnimationFrame` interval and `loop.delta`, means and p95 per game; ops floor 1.4 to 1.6 times the checkpoint within each game); no reading without the operators exists, so no claim about their cost; physics steps were not recorded. |
 | m6 stale statements | m | Fixed: one "resolved, see ..." line each at `BUILD_LOG.md:3` and `HANDOVER.md` (mount_stuck note, "Not done: m5"). |
+
+## Build review R4 (delta on Sonnet, counts at review: B0 M0 m2)
+
+Covers `227a6710e..b6954fc26` and the main merge a43fce0b5 (main 7ca2df60d). R3 m1 to m6 confirmed closed. Merge check: main's phone ink change adds `= menu` stitches only; the operators' `npc_attacked` and `npc_ko` rows are unaffected; recompiled ink equals the committed JSON. Validator 0 errors, 31 warnings; lock/key diff empty.
+
+| Finding | Class | Outcome |
+|---|---|---|
+| m1 HANDOVER.md:57 `~:1141` wrong line for `server_hall_reached` | m | Fixed: `~:1136` (the `setGlobal` in the `room_entered:server_room` mapping). |
+| m2 HANDOVER.md orchestrator state stale after the merge | m | Fixed: records the a43fce0b5 merge, R4 and the next step. |

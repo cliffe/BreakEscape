@@ -54,7 +54,7 @@ Branch build/ol-m07. Commit e1bccce0e (step 1) plus the commit that adds this no
 
 ## Step 1 done (e1bccce0e)
 - Four exchange lines shortened in ink, SPOKEN_LINES.md (counts 38, 31, 39, 39) and DIALOGUE_SAMPLE.md; ink recompiled; exchanges block wired in adaeze_okafor (ERB comment removed).
-- `server_hall_reached` confirmed: set by HaX's `room_entered:server_room` mapping (scenario.json.erb ~:1141), declared false at :2692, so the exchanges' `server_hall_reached: false` gate holds until the first server-room entry.
+- `server_hall_reached` confirmed: set by HaX's `room_entered:server_room` mapping (scenario.json.erb ~:1136), declared false at :2692, so the exchanges' `server_hall_reached: false` gate holds until the first server-room entry.
 - Validator 0 errors, 31 warnings (baseline 30 plus the two V4 attack-mid-walk notes already justified). Lock/key diff empty.
 - dialoguelint shows one L1 delivery-note on both operator files (control tag `#exit_conversation` inside the hub's conditional). Same finding on m05's Thandiwe file, which is the model; not a voiced-line problem.
 
@@ -110,8 +110,9 @@ Done: M1, m1, m2, m3, m4, m6, m7, m8 (see LOG.md and LIVE_SLICE3.md "R1 fixes").
 
 ## Orchestrator state, 18 Nov 2026 (tip 4b3ae5a11 plus this note)
 
-- Done: lines and ink (99f3ad4b4), slice 3 build, measurements and live checks (all pass; LIVE_SLICE3.md), D113 American voice styles and wording (de554bc96), dialogue review of the new lines (785287e2d, B0 M0 m4, fixed), slice 6 lighting (323b5e234, no emitter needed). Main merged at 56930fb23 (main dae6589ee).
+- Done: lines and ink (99f3ad4b4), slice 3 build, measurements and live checks (all pass; LIVE_SLICE3.md), D113 American voice styles and wording (de554bc96), dialogue review of the new lines (785287e2d, B0 M0 m4, fixed), slice 6 lighting (323b5e234, no emitter needed). Main merged at 56930fb23 (main dae6589ee) and again at a43fce0b5 (main 7ca2df60d).
 - Build review: R1 B0 M1 m8 (fixed f0440a469, 9a2bde232, 5b4c6fc9d), R2 B0 M0 m5 (fixed 6f356a2cf), R3 B0 M0 m6 (document fixes 4b3ae5a11). Outcomes in LOG.md.
-- Next: merge main again; R4 and R5 as delta reviews on the cheaper tier (diff since 227a6710e plus REVIEW_BUILD_R3.md); fix; after R5 minors only. Then, per the coordinator's relay of the user's "Implement these using your best judgement" (18 Nov): wording is signed off once reviews are clean; voice all 28 new lines (adaeze_okafor, gwen_pritchard; SPOKEN_LINES.md) with the tts-audio skill, 0 wasted clips, listen-check by transcript; strip model names; commit; send the hash to AC0 for a train.
+- Build review R4 (delta, Sonnet): B0 M0 m2, both fixed (LOG.md).
+- Next: R5 as a delta review on the cheaper tier (diff since the R4 commit plus REVIEW_BUILD_R4.md); fix; after R5 minors only. Then, per the coordinator's relay of the user's "Implement these using your best judgement" (18 Nov): wording is signed off once reviews are clean; voice all 28 new lines (adaeze_okafor, gwen_pritchard; SPOKEN_LINES.md) with the tts-audio skill, 0 wasted clips, listen-check by transcript; strip model names; commit; send the hash to AC0 for a train.
 - Open for the user: engine follow-up, clicking a seated NPC's sprite centre hits the chair's hit box ("A chair.") instead of opening the chat (games 7779, 7789, 7793). Accepted: a punch from between the two seats can hit both operators.
 - Gotchas: dismiss popups with window.__test.dismissBlockingUi() only (Escape opens the pause menu); click 12 px right of a seated operator's centre to talk; the RFID door opens by interaction with the badge, not enterRoom; dungeon_graph.* stays modified and unstaged.
