@@ -10,6 +10,24 @@ import { setHudLabel, clearHudLabel } from '../ui/info-label.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 import { markObjectConsumed } from './consumables.js';
 
+// The img is only as big as its sprite (the phone is 22x44 px), but the slot is 64px: a click
+// on the slot beside the img is forwarded to the img's own click handler, with the pointer
+// position, so the whole slot is the click target (touch minimum 32 px). A click on the img
+// itself, or on anything inside it, is left alone.
+export function forwardSlotPointer(slot, img) {
+    slot.addEventListener('click', (e) => {
+        if (e.target === img || img.contains(e.target)) return;
+        img.dispatchEvent(new MouseEvent('click', { clientX: e.clientX, clientY: e.clientY, bubbles: false }));
+    });
+}
+
+// The hover label belongs to the whole slot, so moving between the img and the slot margin
+// neither clears nor re-sets it: it is set once on entering the slot, cleared once on leaving.
+export function bindSlotHover(slot, getLabel) {
+    slot.addEventListener('mouseenter', () => setHudLabel(getLabel()));
+    slot.addEventListener('mouseleave', () => clearHudLabel());
+}
+
 // Helper function to create a unique identifier for an item
 export function createItemIdentifier(scenarioData) {
     if (!scenarioData) return 'unknown';
@@ -177,7 +195,7 @@ function screenCannotHover() {
 function refreshHoveredLabel(items) {
     if (screenCannotHover()) return;
     const hovered = items.find(item => {
-        try { return item?.matches?.(':hover') === true; } catch { return false; }
+        try { return item?.matches?.(':hover') === true || item?.parentElement?.matches?.(':hover') === true; } catch { return false; }
     });
     if (hovered?.scenarioData) setHudLabel(inventoryHoverLabel(hovered.scenarioData));
 }
@@ -1037,11 +1055,11 @@ export async function addToInventory(sprite) {
                 window.handleObjectInteraction(this);
             }
         });
-        itemImg.addEventListener('mouseenter', () => setHudLabel(inventoryHoverLabel(sprite.scenarioData)));
-        itemImg.addEventListener('mouseleave', () => clearHudLabel());
 
         // Add to slot
         slot.appendChild(itemImg);
+        forwardSlotPointer(slot, itemImg);
+        bindSlotHover(slot, () => inventoryHoverLabel(sprite.scenarioData));
         
         // Add to inventory array
         window.inventory.items.push(itemImg);
@@ -1183,6 +1201,7 @@ function updateKeyRingDisplay() {
     if (!keyRing || keyRing.keys.length === 0) {
         // Remove key ring display if no keys
         if (keyRing && keyRing.slot) {
+            if (keyRing.slot.matches(':hover')) clearHudLabel();
             keyRing.slot.remove();
             keyRing.slot = null;
             keyRing.itemImg = null;
@@ -1198,6 +1217,7 @@ function updateKeyRingDisplay() {
     
     // Remove existing key ring slot if it exists
     if (keyRing.slot) {
+        if (keyRing.slot.matches(':hover')) clearHudLabel();
         keyRing.slot.remove();
     }
     
@@ -1241,11 +1261,11 @@ function updateKeyRingDisplay() {
         }
     });
     const keyRingLabel = keyRing.keys.length === 1 ? keyRing.keys[0].scenarioData.name : 'Key Ring';
-    itemImg.addEventListener('mouseenter', () => setHudLabel(keyRingLabel));
-    itemImg.addEventListener('mouseleave', () => clearHudLabel());
 
     // Add to slot
     slot.appendChild(itemImg);
+    forwardSlotPointer(slot, itemImg);
+    bindSlotHover(slot, () => keyRingLabel);
     
     // Store references
     keyRing.slot = slot;

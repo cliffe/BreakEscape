@@ -301,46 +301,57 @@ function openModal(open, done) {
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'ending-check-title');
-    overlay.style.cssText = [
-        'position:fixed', 'top:0', 'left:0', 'width:100%', 'height:100%',
-        'background:rgba(0,0,0,0.88)',
-        'display:flex', 'justify-content:center', 'align-items:center',
-        'z-index:10001', 'flex-direction:column', 'gap:18px',
-        'padding:16px', 'box-sizing:border-box',
-        'font-family:"Press Start 2P",monospace'
-    ].join(';');
+    // The same frame as the confirm and display dialogs (notifications.css, ui-themes.css 9-slice
+    // skin); the ending rules at the end of notifications.css lift it above the phone and minigames.
+    overlay.classList.add('game-confirm-overlay');
+    const dialog = doc.createElement('div');
+    dialog.className = 'game-confirm-dialog game-display-dialog ending-check-dialog';
+    overlay.appendChild(dialog);
+
+    // The X means "Keep going", the same answer as the first button.
+    const closeBtn = doc.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.id = 'ending-check-close';
+    closeBtn.className = 'game-modal-close';
+    closeBtn.setAttribute('aria-label', KEEP_LABEL);
+    closeBtn.textContent = '\u00d7';
+    dialog.appendChild(closeBtn);
 
     const title = doc.createElement('h1');
     title.id = 'ending-check-title';
+    title.className = 'game-display-title ending-check-heading';
     title.textContent = displayDashes(HEADING);
-    title.style.cssText = 'color:#ffcc33;font-size:20px;font-weight:normal;margin:0;text-align:center;max-width:820px;line-height:1.6';
-    overlay.appendChild(title);
+    dialog.appendChild(title);
+
+    // Everything between the title and the buttons scrolls inside the frame.
+    const content = doc.createElement('div');
+    content.className = 'ending-check-content pixel-scroll';
+    dialog.appendChild(content);
 
     const intro = doc.createElement('p');
-    intro.className = 'ending-check-intro';
+    intro.className = 'ending-check-intro game-confirm-message';
     intro.textContent = displayDashes(introText(open.length));
-    intro.style.cssText = 'color:#cccccc;font-size:20px;font-family:"VT323",monospace;margin:0;text-align:center;max-width:680px;line-height:1.5';
-    overlay.appendChild(intro);
+    content.appendChild(intro);
 
     const list = doc.createElement('ul');
     list.className = 'ending-check-list';
-    list.style.cssText = 'color:#ffffff;font-size:20px;font-family:"VT323",monospace;margin:0;padding:0 0 0 24px;max-width:680px;line-height:1.5;max-height:35vh;overflow:auto';
     open.forEach((o) => {
         const li = doc.createElement('li');
         li.textContent = displayDashes(o.title);
         list.appendChild(li);
     });
-    overlay.appendChild(list);
+    content.appendChild(list);
 
     const ask = doc.createElement('p');
+    ask.className = 'ending-check-ask game-confirm-message';
     ask.textContent = 'End the mission now, or keep going?';
-    ask.style.cssText = 'color:#cccccc;font-size:20px;font-family:"VT323",monospace;margin:0;text-align:center;max-width:680px';
-    overlay.appendChild(ask);
+    content.appendChild(ask);
 
     const row = doc.createElement('div');
-    row.style.cssText = 'display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:8px';
+    row.className = 'game-confirm-buttons ending-check-buttons';
     const w = win();
     const movementBefore = w?.player ? !!w.player.disableMovement : null;
+    const previousFocus = doc.activeElement;
     let finished = false;
     let keyHandler = null;
     const finish = (endNow) => {
@@ -348,6 +359,7 @@ function openModal(open, done) {
         finished = true;
         overlay.remove();
         if (keyHandler) w?.removeEventListener('keydown', keyHandler, true);
+        try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
         if (w?.player && movementBefore !== null) w.player.disableMovement = movementBefore;
         done(endNow);
     };
@@ -356,27 +368,38 @@ function openModal(open, done) {
         b.id = id;
         b.type = 'button';
         b.textContent = label;
-        b.style.cssText = [
-            'padding:12px 20px', 'font-size:13px', 'font-family:"Press Start 2P",monospace',
-            `background:${primary ? '#1d4d33' : '#333'}`, 'color:#dddddd',
-            `border:2px solid ${primary ? '#22ff88' : '#666'}`, 'cursor:pointer'
-        ].join(';');
+        b.className = `game-confirm-btn ${primary ? 'game-confirm-ok' : 'game-confirm-cancel'}`;
         b.addEventListener('click', () => finish(endNow));
         row.appendChild(b);
         return b;
     };
     // Keep going is first and has the focus: Enter or Esc never ends the mission by accident.
     const keep = button('ending-check-keep', KEEP_LABEL, true, false);
-    button('ending-check-end', END_LABEL, false, true);
-    overlay.appendChild(row);
+    const endBtn = button('ending-check-end', END_LABEL, false, true);
+    closeBtn.addEventListener('click', () => finish(false));
+    dialog.appendChild(row);
     doc.body.appendChild(overlay);
 
     if (w?.player) w.player.disableMovement = true;
     keyHandler = (e) => {
         if (finished) return;
-        if (e.key === 'Escape') {
+        const key = e.key;
+        if (key === 'Escape') {
             e.preventDefault();
             finish(false);
+        } else if (key === 'Tab' || key === 'ArrowLeft' || key === 'ArrowRight' ||
+                   key === 'ArrowUp' || key === 'ArrowDown') {
+            // Focus cycles over X, Keep going and End; Tab and the arrows never reach the page behind.
+            e.preventDefault();
+            const order = [closeBtn, keep, endBtn];
+            const at = order.indexOf(doc.activeElement);
+            const back = (key === 'Tab' && e.shiftKey) || key === 'ArrowLeft' || key === 'ArrowUp';
+            const next = at < 0 ? (back ? order.length - 1 : 0)
+                : (at + (back ? order.length - 1 : 1)) % order.length;
+            try { order[next].focus(); } catch (err) { /* jsdom without focus */ }
+        } else if ((key === 'Enter' || key === ' ') && !(e.target && overlay.contains(e.target))) {
+            // Focus has drifted outside the dialog: do not let Enter or Space press the page behind.
+            e.preventDefault();
         }
         e.stopPropagation();
     };

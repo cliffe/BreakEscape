@@ -16,8 +16,8 @@ export class FlagStationMinigame extends MinigameScene {
     // The X sits inside the themed frame, not on its border (critique A26, A30)
     static closeInsideFrame = true;
     static REWARD_ICONS = {
-        give_item: '📦', unlock_door: '🔓', unlock_object: '🔓',
-        emit_event: '⚡', hint: '💡', set_global: '✦'
+        give_item: '[ITEM]', unlock_door: '[DOOR]', unlock_object: '[OPEN]',
+        emit_event: '[EVENT]', hint: '[HINT]', set_global: '[+]'
     };
     // Launch device (launch-abort mode): header colour per state. The words come from
     // launchHeader(), built from the item's operationName and outcome texts.
@@ -119,13 +119,18 @@ export class FlagStationMinigame extends MinigameScene {
             }
             
             .flag-station-icon {
-                font-size: 48px;
+                display: inline-block;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 24px;
+                color: #00ff00;
+                border: 2px solid #00aa00;
+                padding: 8px 16px;
                 margin-bottom: 10px;
             }
             
             .flag-station-description {
                 color: #888;
-                font-size: 14px;
+                font-size: 20px;
                 line-height: 1.4;
             }
             
@@ -137,22 +142,24 @@ export class FlagStationMinigame extends MinigameScene {
                 display: block;
                 color: #00ff00;
                 margin-bottom: 8px;
-                font-size: 14px;
+                font-size: 20px;
             }
             
             .flag-input-wrapper {
                 display: flex;
+                flex-wrap: wrap;
                 gap: 10px;
             }
             
             .flag-input {
                 flex: 1;
+                min-width: 0;
                 background: #000;
                 border: 2px solid #333;
                 color: #00ff00;
                 padding: 12px 15px;
                 font-family: 'VT323', monospace;
-                font-size: 16px;
+                font-size: 24px;
                 outline: none;
             }
             
@@ -189,7 +196,8 @@ export class FlagStationMinigame extends MinigameScene {
                 margin-top: 15px;
                 padding: 15px;
                 text-align: center;
-                font-size: 14px;
+                font-size: 20px;
+                overflow-wrap: anywhere;
                 display: none;
             }
             
@@ -230,7 +238,7 @@ export class FlagStationMinigame extends MinigameScene {
             
             .flag-history-title {
                 color: #888;
-                font-size: 12px;
+                font-size: 20px;
                 margin-bottom: 10px;
                 text-transform: uppercase;
             }
@@ -247,6 +255,7 @@ export class FlagStationMinigame extends MinigameScene {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                gap: 12px;
                 padding: 8px 12px;
                 margin: 5px 0;
                 background: rgba(0, 255, 0, 0.05);
@@ -257,10 +266,13 @@ export class FlagStationMinigame extends MinigameScene {
                 font-family: 'VT323', monospace;
                 color: #00ff00;
                 font-size: 20px;
+                min-width: 0;
+                overflow-wrap: anywhere;
             }
             
             .flag-check {
                 color: #00aa00;
+                flex-shrink: 0;
             }
             
             .reward-notification {
@@ -274,7 +286,7 @@ export class FlagStationMinigame extends MinigameScene {
             .reward-notification h4 {
                 color: #0088ff;
                 margin: 0 0 10px 0;
-                font-size: 14px;
+                font-size: 20px;
             }
             
             .reward-item {
@@ -282,18 +294,18 @@ export class FlagStationMinigame extends MinigameScene {
                 align-items: center;
                 gap: 10px;
                 color: #ccc;
-                font-size: 13px;
+                font-size: 20px;
                 margin: 5px 0;
             }
             
             .reward-icon {
-                font-size: 18px;
+                font-size: 20px;
             }
             
             .no-flags-yet {
                 color: #666;
                 font-style: italic;
-                font-size: 13px;
+                font-size: 20px;
             }
             
             .accepts-vms {
@@ -307,7 +319,7 @@ export class FlagStationMinigame extends MinigameScene {
             
             .accepts-label {
                 color: #888;
-                font-size: 12px;
+                font-size: 20px;
             }
             
             .vm-badge {
@@ -317,6 +329,23 @@ export class FlagStationMinigame extends MinigameScene {
                 font-size: 20px;
                 font-weight: bold;
                 font-family: 'VT323', monospace;
+            }
+
+            .flag-recognised-tag {
+                font-size: 20px;
+            }
+
+            /* Short landscape screens: compact header and spacing so the input and
+               the result fit without scrolling the panel */
+            @media (max-height: 450px) {
+                .flag-station { padding: 8px 12px; }
+                .flag-station-header { margin-bottom: 8px; }
+                .flag-station-icon { font-size: 16px; padding: 4px 8px; margin-bottom: 4px; }
+                .flag-station-description { margin: 4px 0; }
+                .flag-input-container { margin: 8px 0; }
+                .flag-result { margin-top: 8px; padding: 8px; }
+                .flag-history { margin-top: 12px; padding-top: 8px; }
+                .flag-history-list { max-height: 96px; }
             }
         `;
         this.gameContainer.appendChild(style);
@@ -341,7 +370,7 @@ export class FlagStationMinigame extends MinigameScene {
         
         return `
             <div class="flag-station-header">
-                <div class="flag-station-icon">🏁</div>
+                <div class="flag-station-icon">FLAG</div>
                 <p class="flag-station-description">
                     Enter captured CTF flags below to validate your findings.
                 </p>
@@ -401,10 +430,14 @@ export class FlagStationMinigame extends MinigameScene {
         const style = document.createElement('style');
         style.textContent = `
             .flag-station { padding: 20px; font-family: 'VT323', monospace; }
-            .flag-input-label { display: block; color: #ff4444; margin-bottom: 8px; font-size: 14px; }
+            .flag-station-icon { display: inline-block; font-family: 'Press Start 2P', monospace; font-size: 24px;
+                color: #ff4444; border: 2px solid #880000; padding: 8px 16px; margin-bottom: 10px; }
+            .flag-station-heading { font-size: 24px; margin-bottom: 6px; }
+            .flag-station-sub { color: #888; font-size: 20px; }
+            .flag-input-label { display: block; color: #ff4444; margin-bottom: 8px; font-size: 20px; }
             .flag-input-wrapper { display: flex; gap: 10px; }
             .flag-input { flex: 1; background: #000; border: 2px solid #440000; color: #ff4444;
-                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 16px; outline: none; }
+                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 20px; outline: none; }
             .flag-input:focus { border-color: #ff4444; }
             .flag-input::placeholder { color: #444; }
             .flag-submit-btn { background: #440000; color: #ff4444; border: 2px solid #ff4444;
@@ -426,9 +459,9 @@ export class FlagStationMinigame extends MinigameScene {
         station.className = 'flag-station';
         station.innerHTML = `
             <div class="launch-abort-header" style="text-align:center; margin-bottom:20px;">
-                <div class="launch-abort-icon" style="font-size:48px; margin-bottom:10px;">⚠️</div>
-                <div class="launch-abort-heading" style="color:#ff4444; font-size:16px; margin-bottom:6px;"></div>
-                <div class="launch-abort-status" style="color:#888; font-size:13px;"></div>
+                <div class="flag-station-icon launch-abort-icon">LAUNCH</div>
+                <div class="flag-station-heading launch-abort-heading" style="color:#ff4444;"></div>
+                <div class="flag-station-sub launch-abort-status"></div>
             </div>
 
             <div class="flag-input-container">
@@ -493,10 +526,14 @@ export class FlagStationMinigame extends MinigameScene {
         const style = document.createElement('style');
         style.textContent = `
             .flag-station { padding: 20px; font-family: 'VT323', monospace; }
-            .flag-input-label { display: block; color: #00ff00; margin-bottom: 8px; font-size: 14px; }
+            .flag-station-icon { display: inline-block; font-family: 'Press Start 2P', monospace; font-size: 24px;
+                color: #00ff00; border: 2px solid #00aa00; padding: 8px 16px; margin-bottom: 10px; }
+            .flag-station-heading { font-size: 24px; margin-bottom: 6px; }
+            .flag-station-sub { color: #888; font-size: 20px; }
+            .flag-input-label { display: block; color: #00ff00; margin-bottom: 8px; font-size: 20px; }
             .flag-input-wrapper { display: flex; gap: 10px; }
             .flag-input { flex: 1; background: #000; border: 2px solid #004400; color: #00ff00;
-                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 16px; outline: none; }
+                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 20px; outline: none; }
             .flag-input:focus { border-color: #00ff00; }
             .flag-input::placeholder { color: #444; }
             .flag-submit-btn { background: #002200; color: #00ff00; border: 2px solid #00ff00;
@@ -516,9 +553,9 @@ export class FlagStationMinigame extends MinigameScene {
         station.className = 'flag-station';
         station.innerHTML = `
             <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:48px; margin-bottom:10px;">🔒</div>
-                <div style="color:#00ff00; font-size:15px; margin-bottom:6px;">ENCRYPTED — SUBMIT DECRYPTION KEY</div>
-                <div style="color:#888; font-size:13px;">Enter the correct flag to unlock this item.</div>
+                <div class="flag-station-icon">LOCKED</div>
+                <div class="flag-station-heading" style="color:#00ff00;">ENCRYPTED: SUBMIT DECRYPTION KEY</div>
+                <div class="flag-station-sub">Enter the correct flag to unlock this item.</div>
             </div>
 
             <div class="flag-input-container">
@@ -566,7 +603,7 @@ export class FlagStationMinigame extends MinigameScene {
         const targetId = this.lockObjectId || lockable?.scenarioData?.id || lockable?.objectId;
 
         if (!apiClient || !targetId) {
-            this.showResult(resultEl, 'error', '✗ Cannot validate — missing configuration');
+            this.showResult(resultEl, 'error', 'Cannot validate: missing configuration');
             return;
         }
 
@@ -595,7 +632,7 @@ export class FlagStationMinigame extends MinigameScene {
                         updatedTasks:   response.updatedTasks   || []
                     });
                 }
-                this.showResult(resultEl, 'success', '✓ Access granted. Unlocking...');
+                this.showResult(resultEl, 'success', 'Access granted. Unlocking...');
                 setTimeout(() => {
                     this.gameResult = { serverResponse: response };
                     this.complete(true);
@@ -619,10 +656,11 @@ export class FlagStationMinigame extends MinigameScene {
                 const reason = flagRejectReason(body.message || body.error, body.reason);
                 if (window.playUISound) window.playUISound('reject');
                 this.showResult(resultEl, 'error', flagRefusalLine(body.message || body.error, { reason, flagValue }));
-                this.emitFlagRejected(reason, { objectId: targetId });
+                // The flag was right but unrecorded: not a wrong flag, so no rejection event
+                if (reason !== 'flag_not_recorded') this.emitFlagRejected(reason, { objectId: targetId });
             } else {
                 console.error('[FlagLock] Unlock error:', error);
-                this.showResult(resultEl, 'error', '✗ Validation failed. Try again.');
+                this.showResult(resultEl, 'error', 'Validation failed. Try again.');
             }
         } finally {
             this.isSubmitting = false;
@@ -639,20 +677,20 @@ export class FlagStationMinigame extends MinigameScene {
 
         inputContainer.innerHTML = `
             <div class="launch-abort-armed" style="text-align:center; margin: 20px 0;">
-                <div style="color:#ff4444; font-size:16px; margin-bottom:8px; animation: blink 1s infinite;">
-                    ⚠ ARMED: LAUNCH WINDOW SUNDAY 06:00 UTC
+                <div style="color:#ff4444; font-size:20px; margin-bottom:8px; animation: blink 1s infinite;">
+                    ARMED: LAUNCH WINDOW SUNDAY 06:00 UTC
                 </div>
                 <div style="display:flex; gap:20px; justify-content:center; margin-top:20px;">
                     <button id="abort-btn" style="
                         background:#004400; border:2px solid #00ff00; color:#00ff00;
                         padding:15px 30px; font-family:'Press Start 2P',monospace;
-                        font-size:11px; cursor:pointer; min-width:160px;">
+                        font-size:16px; cursor:pointer; min-width:160px;">
                         ABORT OPERATION
                     </button>
                     <button id="launch-btn" style="
                         background:#440000; border:2px solid #ff4444; color:#ff4444;
                         padding:15px 30px; font-family:'Press Start 2P',monospace;
-                        font-size:11px; cursor:pointer; min-width:160px;
+                        font-size:16px; cursor:pointer; min-width:160px;
                         animation: pulse-border 1.5s infinite;">
                         EXECUTE LAUNCH
                     </button>
@@ -723,8 +761,8 @@ export class FlagStationMinigame extends MinigameScene {
         }
     }
 
-    /** Write a state's header (textContent: scenario text stays plain text). The warning
-     *  icon shows only while the device is armed (prompt and armed states). Colour is set
+    /** Write a state's header (textContent: scenario text stays plain text). The LAUNCH
+     *  tag shows only while the device is armed (prompt and armed states). Colour is set
      *  every time, so the helper can move between any two states. */
     setLaunchHeader(state) {
         const { heading, status } = this.launchHeader(state);
@@ -821,7 +859,7 @@ export class FlagStationMinigame extends MinigameScene {
                 // a soft sound, saying where it goes.
                 if (window.playUISound) window.playUISound('notification');
                 const note = (data.rewards || []).find(r => r?.type === 'hint' && r.message)?.message;
-                this.showResult(resultEl, 'info', `ℹ ${note || 'Flag recognised, but this station does not take it.'}`);
+                this.showResult(resultEl, 'info', `NOTE: ${note || 'Flag recognised, but this station does not take it.'}`);
                 // Keep it in the list, marked as a key for another device, and for reopening
                 if (!this.recognisedFlags.some(r => r.flag === flagValue) && !this.submittedFlags.includes(flagValue)) {
                     this.recognisedFlags.push({ flag: flagValue, note: note || '' });
@@ -835,7 +873,7 @@ export class FlagStationMinigame extends MinigameScene {
             } else if (response.ok && data.success) {
                 // Success!
                 if (window.playUISound) window.playUISound('confirm');
-                this.showResult(resultEl, 'success', `✓ ${data.message || 'Flag accepted!'}`);
+                this.showResult(resultEl, 'success', `${data.message || 'Flag accepted!'}`);
                 
                 // Add to history only for real submissions, not hint-only responses.
                 // Hints return success:true so the player sees the message, but the flag
@@ -912,7 +950,7 @@ export class FlagStationMinigame extends MinigameScene {
             
         } catch (error) {
             console.error('[FlagStation] Submit error:', error);
-            this.showResult(resultEl, 'error', '✗ Failed to submit flag. Please try again.');
+            this.showResult(resultEl, 'error', 'Failed to submit flag. Please try again.');
         } finally {
             this.isSubmitting = false;
             submitBtn.disabled = false;
@@ -924,6 +962,8 @@ export class FlagStationMinigame extends MinigameScene {
         element.className = `flag-result ${type}`;
         element.textContent = displayDashes(message);
         element.style.display = 'block';
+        // On a short screen the result can land below the fold of the scrolling panel
+        if (typeof element.scrollIntoView === 'function') element.scrollIntoView({ block: 'nearest' });
     }
     
     showRewards(element, rewards) {
@@ -934,7 +974,7 @@ export class FlagStationMinigame extends MinigameScene {
             if (label) {
                 return `
                         <div class="reward-item">
-                            <span class="reward-icon">${FlagStationMinigame.REWARD_ICONS[reward.type] || '✦'}</span>
+                            <span class="reward-icon">${FlagStationMinigame.REWARD_ICONS[reward.type] || '[+]'}</span>
                             <span>${this.escapeHtml(displayDashes(label))}</span>
                         </div>
                     `;
@@ -943,28 +983,28 @@ export class FlagStationMinigame extends MinigameScene {
                 case 'give_item':
                     return `
                         <div class="reward-item">
-                            <span class="reward-icon">📦</span>
+                            <span class="reward-icon">[ITEM]</span>
                             <span>Received: ${this.escapeHtml(displayDashes(reward.item?.name || 'Item'))}</span>
                         </div>
                     `;
                 case 'unlock_door':
                     return `
                         <div class="reward-item">
-                            <span class="reward-icon">🔓</span>
+                            <span class="reward-icon">[DOOR]</span>
                             <span>Door unlocked: ${this.escapeHtml(reward.room_id)}</span>
                         </div>
                     `;
                 case 'emit_event':
                     return `
                         <div class="reward-item">
-                            <span class="reward-icon">⚡</span>
+                            <span class="reward-icon">[EVENT]</span>
                             <span>Event triggered</span>
                         </div>
                     `;
                 case 'hint':
                     return reward.message ? `
                         <div class="reward-item">
-                            <span class="reward-icon">💡</span>
+                            <span class="reward-icon">[HINT]</span>
                             <span>${this.escapeHtml(displayDashes(reward.message))}</span>
                         </div>
                     ` : '';
@@ -974,8 +1014,9 @@ export class FlagStationMinigame extends MinigameScene {
         }).filter(h => h).join('');
         
         if (rewardHtml) {
-            element.innerHTML = `<h4>🎁 Rewards Unlocked!</h4>${rewardHtml}`;
+            element.innerHTML = `<h4>Rewards Unlocked!</h4>${rewardHtml}`;
             element.style.display = 'block';
+            if (typeof element.scrollIntoView === 'function') element.scrollIntoView({ block: 'nearest' });
         }
     }
     
