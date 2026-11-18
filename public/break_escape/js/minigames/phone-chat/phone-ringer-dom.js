@@ -97,15 +97,39 @@ export function installPhoneRinger(win = window) {
         while (layer.firstChild) layer.removeChild(layer.firstChild);
     }
 
-    /** True when keyboard focus sits on something inside the ring layer (about to be removed). */
-    function layerHasFocus() {
+    /** What the ring layer's focused control was, or null when focus is not inside the layer. */
+    function captureLayerFocus() {
         const a = doc.activeElement;
-        return !!a && a !== doc.body && layer.contains(a);
+        if (!a || a === doc.body || !layer.contains(a)) return null;
+        // Same rule as the minigame manager's opener restore: only keyboard focus is carried over,
+        // because a button focused by a mouse click makes Space and Enter count as a press on it.
+        let kb = false;
+        try { kb = !!a.matches?.(':focus-visible'); } catch (e) { /* selector unsupported */ }
+        const box = a.closest?.('.incoming-call');
+        return {
+            kb,
+            which: a.classList?.contains('incoming-call-decline') ? 'decline' : 'answer',
+            npcId: box?.dataset?.npcId ?? null,
+        };
     }
 
     // The ringer takes the banner down and then shows the pill (or the reverse) in one render, so
-    // a removal that held focus is remembered for the show that follows it in the same tick.
-    let focusLost = false;
+    // a removal that held keyboard focus is remembered for the show that follows it in the same tick.
+    let focusLost = null;
+
+    /** The focus record for a show: the layer's own focus now, else a pending loss while nothing else has focus. */
+    function takeLostFocus() {
+        const now = captureLayerFocus();
+        const a = doc.activeElement;
+        const pending = (!a || a === doc.body) ? focusLost : null;
+        focusLost = null;
+        return now || pending;
+    }
+
+    /** A held Enter would fire the button again on every repeat: ignore repeats. */
+    function guardRepeat(btn) {
+        btn.addEventListener('keydown', (e) => { if (e.repeat) e.preventDefault(); });
+    }
 
     /** The layer lost its focused control with no pill to take over: hand focus to the open minigame, if any. */
     function focusOpenMinigame() {
@@ -116,7 +140,8 @@ export function installPhoneRinger(win = window) {
             const items = fw()?._trapFocusables?.(root, false)
                 || Array.from(root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
                     .filter((n) => !n.disabled);
-            items[0]?.focus?.();
+            // The X is the last thing to land on: Enter there would close the panel
+            (items.find((n) => n.id !== 'minigame-close') || items[0])?.focus?.();
         } catch (e) { /* no focus in this environment */ }
     }
 
@@ -172,8 +197,7 @@ export function installPhoneRinger(win = window) {
             if (showPhonePanel(view, npc, phoneName)) return;
         }
         hidePhonePanel();
-        const hadFocus = layerHasFocus() || focusLost;
-        focusLost = false;
+        const lost = takeLostFocus();
         clearLayer();
         // Sweep item 9: when the banner rings while a tutorial step panel is up, drop it clear of
         // SKIP TUTORIAL and the step counter (CSS moves the top-centre layer to the bottom).
@@ -203,23 +227,30 @@ export function installPhoneRinger(win = window) {
         answer.type = 'button';
         answer.setAttribute('aria-label', `Answer call from ${name}`);
         answer.addEventListener('click', () => win.phoneRinger?.answer(view.npcId));
+        guardRepeat(answer);
         buttons.appendChild(answer);
         if (!view.forced) {
             const decline = el('button', 'incoming-call-decline', 'Decline');
             decline.type = 'button';
             decline.setAttribute('aria-label', 'Decline call');
             decline.addEventListener('click', () => win.phoneRinger?.decline(view.npcId));
+            guardRepeat(decline);
             buttons.appendChild(decline);
         }
         box.appendChild(buttons);
         layer.appendChild(box);
-        if (hadFocus) { try { answer.focus(); } catch (e) { /* no focus in this environment */ } }
+        if (lost?.kb) {
+            // The same control again for the same caller; a different caller gets the safe one, Decline
+            const target = (lost.npcId === view.npcId && lost.which === 'answer') ? answer : (buttons.querySelector('.incoming-call-decline') || answer);
+            try { target.focus(); } catch (e) { /* no focus in this environment */ }
+        } else if (lost) {
+            try { doc.activeElement?.blur?.(); } catch (e) { /* ignore */ }
+        }
     }
 
     function showPill(view) {
         hidePhonePanel();
-        const hadFocus = layerHasFocus() || focusLost;
-        focusLost = false;
+        const lost = takeLostFocus();
         clearLayer();
         const npc = nm()?.getNPC?.(view.npcId);
         const name = view.withheld ? 'Caller' : (npc?.displayName || view.npcId);
@@ -231,11 +262,12 @@ export function installPhoneRinger(win = window) {
             hang.type = 'button';
             hang.setAttribute('aria-label', 'Hang up');
             hang.addEventListener('click', () => win.phoneRinger?.hangUp(view.npcId));
+            guardRepeat(hang);
             box.appendChild(hang);
         }
         layer.appendChild(box);
         // The focused Answer or Hang up button was just removed: keep keyboard focus in the ring
-        if (hadFocus) {
+        if (lost?.kb) {
             const hang = box.querySelector('button');
             if (hang) { try { hang.focus(); } catch (e) { /* no focus in this environment */ } }
             else focusOpenMinigame();
@@ -244,15 +276,21 @@ export function installPhoneRinger(win = window) {
 
     /** Take the ring down (banner or pill); focus moves on if the removed control had it. */
     function hideLayer() {
-        if (layerHasFocus()) {
-            focusLost = true;
-            // Nothing took the ring's place: give focus to the open minigame, unless it went elsewhere
-            Promise.resolve().then(() => {
-                if (!focusLost) return;
-                focusLost = false;
-                const a = doc.activeElement;
-                if (!a || a === doc.body) focusOpenMinigame();
-            });
+        const lost = captureLayerFocus();
+        if (lost) {
+            // A mouse-focused button just drops to the body; only keyboard focus is carried on
+            if (lost.kb) {
+                focusLost = lost;
+                // Nothing took the ring's place: give focus to the open minigame, unless it went elsewhere
+                Promise.resolve().then(() => {
+                    if (focusLost !== lost) return;
+                    focusLost = null;
+                    const a = doc.activeElement;
+                    if (!a || a === doc.body) focusOpenMinigame();
+                });
+            } else {
+                try { doc.activeElement?.blur?.(); } catch (e) { /* ignore */ }
+            }
         }
         clearLayer();
     }

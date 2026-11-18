@@ -440,3 +440,37 @@ test('m4: a mouse-focused button opener is not refocused; a non-button opener is
     hud.style.display = '';
     delete hud.matches;
 });
+
+test('R3: _innerDialog scene-root branches (parentElement === root, only child of the game container)', () => {
+    MF.startMinigame('demo', null, {});
+    const m = MF.currentMinigame;
+    // a dialog that is a direct child of the minigame container is the scene, not an inner panel
+    m.container.insertAdjacentHTML('beforeend', '<div role="dialog" id="top-dlg"><button id="td">x</button></div>');
+    assert.equal(MF._innerDialog(m.container), null);
+    document.getElementById('top-dlg').remove();
+    // the only child of the game container counts as the scene root ...
+    m.gameContainer.innerHTML = '<div role="dialog" id="only-dlg"><button id="od">x</button></div>';
+    assert.equal(MF._innerDialog(m.container), null);
+    // ... but with a sibling beside it, it is an inner dialog
+    m.gameContainer.insertAdjacentHTML('beforeend', '<button id="sib">s</button>');
+    assert.equal(MF._innerDialog(m.container).id, 'only-dlg');
+    close();
+});
+
+test('R3 n1: a constructor that throws in a chained start keeps the first opener', () => {
+    class Boom2 extends MinigameScene { constructor() { super(...arguments); throw new Error('boom2'); } }
+    MF.registerScene('boom2', Boom2);
+    const btn = document.createElement('div');
+    btn.tabIndex = 0;
+    document.body.appendChild(btn);
+    btn.focus();
+    MF.startMinigame('demo', null, {});
+    assert.equal(MF._focusOpener, btn);
+    document.getElementById('a').focus();
+    // the displaced demo ends first, so currentMinigame is null again when Boom2 constructs;
+    // the opener was noted by the first start, and this start (chained) did not note a new one
+    assert.throws(() => MF.startMinigame('boom2', null, {}), /boom2/);
+    assert.equal(MF._focusOpener, btn, 'the chain owner still holds the opener');
+    btn.remove();
+    close();
+});

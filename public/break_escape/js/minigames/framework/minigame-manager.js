@@ -60,7 +60,8 @@ export const MinigameFramework = {
         // Where focus was before any minigame took it, so the close can give it back.
         // Only the first minigame of a chain notes it: a chained one opens while focus is
         // already inside the previous panel (or on a stale element).
-        if (!this.currentMinigame) this._noteFocusOpener();
+        const notedOpener = !this.currentMinigame;
+        if (notedOpener) this._noteFocusOpener();
 
         // If there's already a minigame running, end it first
         // (a minigame already mid-end, i.e. we were called from its onComplete, is
@@ -181,9 +182,12 @@ export const MinigameFramework = {
         try {
             this.currentMinigame = new MinigameClass(container, params);
         } catch (err) {
-            // Nothing opened, so nothing will close and hand focus back: drop the noted opener
-            this._focusOpener = null;
-            this._focusOpenerKeyboard = false;
+            // Nothing opened, so nothing will close and hand focus back: drop the opener this call
+            // noted (a chained start keeps the first one, which the running chain still owns)
+            if (notedOpener) {
+                this._focusOpener = null;
+                this._focusOpenerKeyboard = false;
+            }
             throw err;
         }
         this.currentMinigame._sceneType = sceneType;
@@ -241,6 +245,10 @@ export const MinigameFramework = {
     // the trap's scope (_innerDialog). Limit: Tab pressed inside an iframe (the VM console) is
     // delivered to the iframe's document, so this listener never sees it; focus stays in the
     // frame until the browser's Tab leaves it, and the next Tab out here lands back in the trap.
+    // The ring banner joins the cycle only while no inner dialog is open: an open inner dialog
+    // is modal and holds Tab to itself, so a call waits behind it (intended).
+    // Gap: role="alertdialog" is not treated as a dialog here. Nothing in the game uses one today;
+    // the phone-chat-ui ring panel would be the first to be caught by adding it.
 
     FOCUSABLE_SELECTOR: 'a[href], button, input, select, textarea, summary, iframe, object, embed, audio[controls], video[controls], [tabindex], [contenteditable]:not([contenteditable="false"])',
 
