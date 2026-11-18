@@ -359,12 +359,17 @@
     }
 
     .lockpicking-item-image {
-        width: auto;
+        /* A 48px box at the picture's native pixels (no scaling): a larger image is cropped
+           to its top 48px, a smaller one sits at the top centre */
+        width: 48px;
         height: 48px;
         min-width: 0;
         min-height: 0;
-        max-width: 64px;
-        max-height: 48px;
+        max-width: none;
+        max-height: none;
+        object-fit: none;
+        object-position: center top;
+        image-rendering: pixelated;
     }
 
     .lockpicking-item-info {

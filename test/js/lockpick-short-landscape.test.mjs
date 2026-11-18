@@ -47,7 +47,14 @@ test('the info strip is one nowrap row, 48px picture, clear of the X', () => {
     assert.match(strip, /flex-direction\s*:\s*row/);
     assert.match(strip, /flex-wrap\s*:\s*nowrap/);
     assert.match(strip, /padding\s*:[^;]*52px/, 'right padding clears the fixed X');
-    assert.match(rule(short.body, '.lockpicking-item-image'), /height\s*:\s*48px/);
+    const img = rule(short.body, '.lockpicking-item-image');
+    assert.match(img, /(^|[;\s])height\s*:\s*48px/);
+    assert.match(img, /(^|[;\s])width\s*:\s*48px/);
+    // no scaling: native pixels, cropped to the box from the top
+    assert.match(img, /object-fit\s*:\s*none/);
+    assert.match(img, /object-position\s*:\s*center top/);
+    assert.match(img, /image-rendering\s*:\s*pixelated/);
+    assert.doesNotMatch(img, /transform|zoom|scale/);
 });
 
 test('text stays on its pixel-font grid, one line of observations, no radius or gradient', () => {
