@@ -46,6 +46,9 @@ VAR offduty_agent_ko = false // Puzzle chains C2 (N2): the off-duty agent knocke
 // ATHENA's avatar knocked out. Synced scenario globals.
 VAR netherton_hostile = false
 VAR analyst_ko = false
+// Relief watch (office life, slice 5): the night-duty officers knocked out. Synced scenario globals.
+VAR julian_ko = false
+VAR agnieszka_ko = false
 VAR athena_ko = false
 // Design C2 (N3): an innocent suspect punched (knocked out or left standing:
 // a KO latches the hostile global too). Synced scenario globals.
@@ -123,9 +126,18 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 { athena_ko:
     Director Magnus Netherton: ATHENA logged you putting her reception avatar on the floor. Facilities would like a word.
 }
+// Relief watch (office life, slice 5): one line for one officer, another for both.
+// Multi-condition form (a bare brace, then one branch each): inklecate rejects a first
+// condition on the opening line followed by a second.
+{
+- julian_ko and agnieszka_ko:
+    Director Magnus Netherton: You knocked down both of the night watch at their own desk. They were keeping the log, not hiding anything in it.
+- julian_ko or agnieszka_ko:
+    Director Magnus Netherton: You knocked down one of the night watch at their own desk. They were keeping the log, not hiding anything in it.
+}
 // Phase 4 dialogue C1 (D8-18): a player beat after the charge sheet, so the
 // conduct lines and the case don't run on as one speech.
-{ accused_vector or accused_phantom or vector_hostile or phantom_hostile or locker_seen_picked or offduty_agent_ko or analyst_ko or athena_ko:
+{ accused_vector or accused_phantom or vector_hostile or phantom_hostile or locker_seen_picked or offduty_agent_ko or analyst_ko or athena_ko or julian_ko or agnieszka_ko:
     -> conduct_beat ->
 }
 { named_on_evidence:
