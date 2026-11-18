@@ -115,9 +115,9 @@ module BreakEscape
       take_kit
       body = dust('item', 'wall_safe')
       assert_response :ok
-      assert_equal %w[3 8], body['digits']
+      assert_equal %w[4 7], body['digits']
       peek = dust('object', 'wall_safe', false)
-      assert_equal %w[3 8], peek['digits']
+      assert_equal %w[4 7], peek['digits']
     end
 
     test 'it is one time per lock and persists: a second ask and a peek give the same record' do
