@@ -557,7 +557,7 @@ export class DustingMinigame extends MinigameScene {
         const pw = POWDERS[this.powder];
         return `
             <h3>Dust the print</h3>
-            <p><span class="dusting-lo">Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</span><span class="dusting-so">Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'}, or hold Space and use the arrows. Enter keeps brushing.</span></p>
+            <p class="dusting-instr"><span class="dusting-lo">Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</span><span class="dusting-so">Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'}, or hold Space and use the arrows. Enter keeps brushing.</span></p>
             <div class="dusting-tools">${this._brushButtons()}</div>
             <p class="dusting-powder-line"><span class="mg-field-label">Powder:</span> ${escapeHtml(pw.label)}</p>
             <div class="dusting-actions">
@@ -677,6 +677,7 @@ export class DustingMinigame extends MinigameScene {
         this.powder = id;
         this.tool = POWDERS[id].tools[0];
         this.toolStrokes = 0;
+        this._setBrushed(false);
         this.puffMode = false;
         this._setStep('dust');
         this._refreshMetrics(true);
@@ -952,10 +953,18 @@ export class DustingMinigame extends MinigameScene {
         this.lastPt = null;
     }
 
+    /** First stroke on this powder: short landscape then hides the instruction paragraph (CSS, [data-brushed]) to make room
+     *  for the feedback line. The paragraph stays in the tree for screen readers. */
+    _setBrushed(on) {
+        this.brushed = !!on;
+        if (this.root && this.root.setAttribute) { if (on) this.root.setAttribute('data-brushed', '1'); else if (this.root.removeAttribute) this.root.removeAttribute('data-brushed'); }
+    }
+
     /** A brush stroke starts (pointer down, Space held, Enter brushing on): feeds the feather suggestion. */
     _countStroke() {
         if (this.step !== 'dust' || this.puffMode) return;
         this.toolStrokes = (this.toolStrokes || 0) + 1;
+        if (!this.brushed) this._setBrushed(true);
         if (this.toolStrokes === FINE_SWITCH_AFTER_STROKES && this._suggestFeather()) this.announce(FEATHER_SUGGESTION);
     }
 

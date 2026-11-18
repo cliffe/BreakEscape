@@ -269,7 +269,14 @@
 /* On the dust and lift steps the feedback line shows the same text in full, so a sighted player would see it twice (the second copy
    cut off). The status line stays in the tree as the live region for screen readers (visually hidden, never display: none). */
 .dusting-short[data-step="dust"] .dusting-status, .dusting-short[data-step="lift"] .dusting-status {
-    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    position: absolute; width: 1px; height: 1px; min-height: 0; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+/* Room for the feedback line above the pinned strip (the over-brush warning runs to three lines): once the first stroke is made
+   the instruction paragraph is visually hidden, and the "Lift would score" estimate is hidden on the dust step (the Lift button and
+   the meters carry the state; a screen reader still finds both when browsing, neither is a live region). */
+.dusting-short[data-step="dust"][data-brushed] .dusting-panel > .dusting-instr,
+.dusting-short[data-step="dust"] .dusting-actions .dusting-estimate {
+    position: absolute; width: 1px; height: 1px; min-height: 0; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
 .dusting-short .dusting-tools { flex-wrap: nowrap; gap: 4px; margin-bottom: 4px; }
 .dusting-short .dusting-tools .dusting-tool { flex: 1 1 auto; min-width: 0; min-height: 28px; padding: 2px 4px; line-height: 16px; font-size: 16px; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: clip; }

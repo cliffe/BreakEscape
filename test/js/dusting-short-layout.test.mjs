@@ -433,3 +433,37 @@ test('r6 m1: sticky keyboard brushing shows on the short-mode feedback line (sta
     l.g._refreshDynamic();
     assert.doesNotMatch(l.fb.textContent, /Brushing on/, 'long mode keeps its visible Keys line instead');
 });
+
+const VISHIDE = /position: absolute; width: 1px; height: 1px;(?: min-height: 0;)? margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect\(0 0 0 0\); white-space: nowrap;/;
+
+test('r7: the short dust and lift status line uses the standard visually-hidden pattern, 1px by 1px (min-height 0)', () => {
+    const r = css.match(/\.dusting-short\[data-step="dust"\] \.dusting-status[^{]*\{[^}]*\}/)[0];
+    assert.match(r, VISHIDE);
+    assert.match(r, /min-height: 0/);
+    assert.match(css, /\.dusting-short \.dusting-ls \{[^}]*width: 1px; height: 1px; margin: -1px;/);
+});
+
+test('r7 (a): after the first stroke the dust instruction paragraph is visually hidden in short mode, kept for screen readers', () => {
+    const r = css.match(/\.dusting-short\[data-step="dust"\]\[data-brushed\] \.dusting-panel > \.dusting-instr[^{]*\{[^}]*\}/)[0];
+    assert.match(r, VISHIDE);
+    assert.doesNotMatch(r, /display: none/);
+    assert.match(src, /<p class="dusting-instr">/);
+    const attrs = new Map();
+    const g = Object.create(DustingMinigame.prototype);
+    Object.assign(g, { step: 'dust', puffMode: false, toolStrokes: 0, root: { setAttribute: (k, v) => attrs.set(k, v), removeAttribute: k => attrs.delete(k) },
+        _suggestFeather: () => false, announce() {} });
+    assert.equal(attrs.has('data-brushed'), false, 'shows before the first stroke');
+    g._countStroke();
+    assert.equal(attrs.get('data-brushed'), '1');
+    g._setBrushed(false);
+    assert.equal(attrs.has('data-brushed'), false, 'a new powder shows the instruction again');
+    g.puffMode = true; g._countStroke();
+    assert.equal(attrs.has('data-brushed'), false, 'puffing is not brushing');
+});
+
+test('r7 (b): short mode hides the Lift estimate on the dust step only, visually (not display: none), and it is not a live region', () => {
+    const m = css.match(/\.dusting-short\[data-step="dust"\] \.dusting-actions \.dusting-estimate[^{]*\{[^}]*\}/)[0];
+    assert.match(m, VISHIDE);
+    assert.doesNotMatch(css, /\.dusting-short\[data-step="lift"\][^{]*\.dusting-estimate/);
+    assert.doesNotMatch(src, /dusting-estimate"[^>]*aria-live/);
+});
