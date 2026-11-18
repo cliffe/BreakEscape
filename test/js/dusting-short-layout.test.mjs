@@ -41,8 +41,12 @@ function layoutAt(w, h, step = 'dust') {
     return { scale: g.scale, px: parseInt(g.canvas.style.width, 10), short: classes.has('dusting-short') };
 }
 
-test('the action row (meters and buttons) is sticky to the bottom at phone width', () => {
-    assert.match(css, /@media \(max-width: 760px\) \{[^@]*\.dusting-actions \{[^}]*position: sticky;[^}]*bottom: 0/);
+test('the action row (meters and buttons) is in normal flow at phone portrait width, so no control sits under a strip at scroll 0', () => {
+    // live r3: the pinned strip was 130 to 280 px of an 844 px frame and covered the tool buttons
+    const media = css.match(/@media \(max-width: 760px\) \{\s*\.dusting-actions \{[^}]*\}/);
+    assert.ok(media, 'phone-width .dusting-actions rule exists');
+    assert.match(media[0], /position: static/);
+    assert.doesNotMatch(media[0], /position: sticky/);
     assert.doesNotMatch(rule('.dusting-short .dusting-actions'), /position: sticky/);
     assert.match(rule('.dusting-actions'), /background: var\(--d-bg\)/);
 });
@@ -133,6 +137,14 @@ test('1280x720 desktop and 390x844 portrait keep the single-column layout and th
 // ---- live-proof r2: short-mode labels, compact tools, strip scroll padding ----
 
 const textOf = html => html.replace(/<[^>]+>/g, '');
+// What a browser draws and what the accessibility tree names, from generated label markup. Short mode: .dusting-lx is
+// display:none, .dusting-ls is visually hidden but named. Long mode: .dusting-ls is display:none. {v} spans swap to data-short.
+const names = (html, short) => {
+    const swap = html.replace(/<span class="dusting-lv" data-long="([^"]*)" data-short="([^"]*)">[^<]*<\/span>/g, (_, l, s) => (short ? s : l));
+    const gone = swap.replace(short ? /<span class="dusting-lx">[^<]*<\/span>/g : /<span class="dusting-ls">[^<]*<\/span>/g, '');
+    const visible = textOf(gone.replace(/<span class="dusting-ls">[^<]*<\/span>/g, '')).replace(/\s+/g, ' ').trim();
+    return { visible, accessible: textOf(gone).replace(/\s+/g, ' ').trim() };
+};
 
 function fakeSpans(html) {
     // the swapped (.dusting-lv) spans in generated markup, as minimal DOM nodes with a write counter
@@ -149,19 +161,23 @@ test('short/long labels: visible short text sits inside the accessible name (hid
     const dust = g._htmlDust();
     const lift = g._htmlLift();
     assert.doesNotMatch(dust + lift, /dusting-btn[^>]*aria-label/);
-    // hidden words are real text inside the button, so the accessible name is the full label
-    assert.match(dust, /Puff<span class="dusting-lx"> off excess<\/span> \(T\)/);
-    assert.match(dust, /Fine<span class="dusting-lx"> brush<\/span> \(F\)/);
+    // long words (.dusting-lx) show in long mode only; short mode appends the detail (.dusting-ls) after the visible text
+    assert.match(dust, /Puff<span class="dusting-lx"> off excess<\/span> \(T\)<span class="dusting-ls">, puff off excess<\/span>/);
+    assert.match(dust, /Fine<span class="dusting-lx"> brush<\/span> \(F\)<span class="dusting-ls">, fine brush<\/span>/);
     assert.match(dust, /<span class="dusting-lx">Change <\/span><span class="dusting-lv" data-long="powder" data-short="Powder">powder<\/span> \(C\)/);
     assert.match(lift, /<span class="dusting-lx">Peel and <\/span><span class="dusting-lv" data-long="mount" data-short="Mount">mount<\/span> \(P\)/);
-    assert.match(lift, /Back<span class="dusting-lx"> to dusting<\/span>/);
+    assert.match(lift, /Back<span class="dusting-lx"> to dusting<\/span><span class="dusting-ls">, back to dusting<\/span>/);
     // full text as the title
     assert.match(dust, /title="Puff off excess \(T\)"/);
     assert.match(dust, /title="Change powder \(C\)"/);
     assert.match(lift, /title="Back to dusting"/);
-    assert.match(css, /\.dusting-short \.dusting-lx \{[^}]*overflow: hidden[^}]*clip: rect/);
-    // long mode shows the whole text: the hidden-word rule is scoped to .dusting-short
-    assert.doesNotMatch(css.replace(/\.dusting-short \.dusting-lx[^{]*\{[^}]*\}/, ''), /\.dusting-lx/);
+    assert.match(css, /\.dusting-short \.dusting-lx \{ display: none; \}/);
+    assert.match(css, /\.dusting-short \.dusting-ls \{[^}]*overflow: hidden[^}]*clip: rect/);
+    assert.match(css, /\.dusting-root:not\(\.dusting-short\) \.dusting-ls \{ display: none; \}/);
+    // long mode shows the whole text: every rule that touches these spans is scoped to short mode, bar the one that hides the detail
+    const sels = [...css.matchAll(/(^|\n)([^\n{}*/]*\.dusting-l[xs][^\n{]*)\{/g)].map(m => m[2].trim());
+    assert.ok(sels.length >= 3);
+    for (const s of sels) assert.match(s, /^\.dusting-short |^\.dusting-root:not\(\.dusting-short\) /, s);
 });
 
 test('_applyLabels swaps the {v} parts by mode and writes only what changed', () => {
@@ -207,8 +223,10 @@ test('the locked Lift label reads "Lift (45%)" visibly and "Lift (needs 45% cove
     g._refreshDynamic();
     assert.equal(els['cov-text'].textContent, '44% (faint) / 45% to lift');
     assert.equal(els['lift-btn'].disabled, true);
-    assert.equal(textOf(els.lbl.innerHTML), 'Lift (needs 45% coverage)');
-    assert.match(els.lbl.innerHTML, /Lift \(<span class="dusting-lx">needs <\/span>45%<span class="dusting-lx"> coverage<\/span>\)/);
+    assert.equal(names(els.lbl.innerHTML, true).visible, 'Lift (45%)');
+    assert.equal(names(els.lbl.innerHTML, true).accessible, 'Lift (45%), needs 45% coverage');
+    assert.equal(names(els.lbl.innerHTML, false).accessible, 'Lift (needs 45% coverage)');
+    assert.match(els.lbl.innerHTML, /Lift \(<span class="dusting-lx">needs <\/span>45%<span class="dusting-lx"> coverage<\/span>\)<span class="dusting-ls">, needs 45% coverage<\/span>/);
     assert.equal(els['lift-btn'].title, 'Lift (needs 45% coverage)');
     isShort = false;
     g._refreshDynamic();
@@ -217,7 +235,7 @@ test('the locked Lift label reads "Lift (45%)" visibly and "Lift (needs 45% cove
     g._refreshDynamic();
     assert.equal(els['cov-text'].textContent, '60% (fair)');
     assert.equal(els['lift-btn'].disabled, false);
-    assert.equal(textOf(els.lbl.innerHTML), 'Lift (L)');
+    assert.equal(names(els.lbl.innerHTML, true).accessible, 'Lift (L)');
 });
 
 test('compact tool cards: one line, no icon, 28 px against the room above the strip at 667x375', () => {
@@ -256,4 +274,36 @@ test('short buttons clip as a guard only', () => {
     const b = rule('.dusting-short .dusting-actions .dusting-btn');
     assert.match(b, /overflow: hidden/);
     assert.match(b, /text-overflow: clip/);
+});
+
+test('every short-mode button name begins with its exact visible text, and long mode names equal visible text', () => {
+    const g = Object.create(DustingMinigame.prototype);
+    for (const [powder, tool] of [['black', 'fine'], ['black', 'broad'], ['magnetic', 'wand']]) {
+        Object.assign(g, { powder, tool, puffMode: false });
+        const html = g._htmlDust() + g._htmlLift();
+        const btns = [...html.matchAll(/<button class="dusting-btn[^>]*>([\s\S]*?)<\/button>/g)].map(m => m[1].replace(/<span data-slot[^>]*><\/span>/g, ''));
+        assert.ok(btns.length >= 6, 'found the dust and lift buttons');
+        for (const b of btns) {
+            const s = names(b, true), l = names(b, false);
+            assert.ok(s.accessible.startsWith(s.visible), `short: "${s.accessible}" starts with "${s.visible}"`);
+            assert.equal(l.accessible, l.visible, 'long: name equals visible text');
+        }
+    }
+    Object.assign(g, { powder: 'black', tool: 'fine' });
+    const fine = names(g._htmlDust().match(/data-tool="fine"[^>]*>([\s\S]*?)<\/button>/)[1].replace(/<span data-slot[^>]*><\/span>/g, ''), true);
+    assert.deepEqual(fine, { visible: 'Fine (F)', accessible: 'Fine (F), fine brush' });
+});
+
+test('short dust and lift: the panel keeps room above the 80 px strip (no heading, forensic note or Keys line drawn)', () => {
+    for (const step of ['dust', 'lift']) {
+        assert.match(css, new RegExp(`\\.dusting-short\\[data-step="${step}"\\] \\.dusting-panel > h3`));
+        assert.match(css, new RegExp(`\\.dusting-short\\[data-step="${step}"\\] \\.dusting-forensic`));
+        assert.match(css, new RegExp(`\\.dusting-short\\[data-step="${step}"\\] \\.dusting-keys`));
+    }
+    const hide = css.match(/\.dusting-short\[data-step="dust"\] \.dusting-panel > h3[^{]*\{[^}]*\}/)[0];
+    assert.match(hide, /clip: rect\(0 0 0 0\)/);   // still in the accessibility tree
+    assert.doesNotMatch(hide, /display: none/);
+    assert.match(css, /\.dusting-keys \{ display: none; \}/);
+    // the other steps keep their heading and note
+    assert.doesNotMatch(css, /dusting-short\[data-step="compare"\] \.dusting-forensic/);
 });

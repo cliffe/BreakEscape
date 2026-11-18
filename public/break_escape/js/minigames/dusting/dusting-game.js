@@ -33,16 +33,17 @@ if (!document.getElementById('dusting-css')) {
 
 const N = 128;
 
-// Button labels with a long and a short form. Parts: a plain string (always shown), {x} (shown in full mode,
-// visually hidden in short landscape but still in the accessible name) or {v:[long, short]} (swapped by
-// _applyLabels). The visible short text is therefore always inside the accessible name (WCAG 2.5.3).
-// Parts are fixed strings and numbers only.
+// Button labels with a long and a short form. Parts: a plain string (always shown), {x} (long mode only: display:none
+// in short landscape), {s} (short landscape only: visually hidden detail read after the visible text) or {v:[long, short]}
+// (swapped by _applyLabels). The accessible name therefore begins with the exact visible text and may add detail
+// after it (WCAG 2.5.3): "Fine (F), fine brush". Long mode shows and reads the same words. Parts are fixed strings and numbers only.
 const lblHtml = parts => parts.map(q => (typeof q === 'string' ? q
     : q.x !== undefined ? `<span class="dusting-lx">${q.x}</span>`
+    : q.s !== undefined ? `<span class="dusting-ls">${q.s}</span>`
     : `<span class="dusting-lv" data-long="${q.v[0]}" data-short="${q.v[1]}">${q.v[0]}</span>`)).join('');
-const lblPlain = parts => parts.map(q => (typeof q === 'string' ? q : q.x !== undefined ? q.x : q.v[0])).join('');
+const lblPlain = parts => parts.map(q => (typeof q === 'string' ? q : q.x !== undefined ? q.x : q.s !== undefined ? '' : q.v[0])).join('');
 const lblSpan = parts => `<span class="dusting-lbl">${lblHtml(parts)}</span>`;
-const LIFT_LOCKED = pct => ['Lift (', { x: 'needs ' }, pct, { x: ' coverage' }, ')'];
+const LIFT_LOCKED = pct => ['Lift (', { x: 'needs ' }, pct, { x: ' coverage' }, ')', { s: `, needs ${pct} coverage` }];
 const LIFT_READY = ['Lift (L)'];
 
 /** Phone on its side: at or under this height the kit uses two columns (see dusting.css). */
@@ -543,9 +544,9 @@ export class DustingMinigame extends MinigameScene {
         return pw.tools.map(t => {
             const key = t === 'fine' ? 'F' : t === 'broad' ? 'B' : 'W';
             const slot = t === 'fine' ? 'brush-fine' : t === 'broad' ? 'brush-feather' : 'wand';
-            const parts = t === 'fine' ? ['Fine', { x: ' brush' }, ` (${key})`]
-                : t === 'broad' ? ['Feather', { x: ' brush' }, ` (${key})`]
-                : [{ x: 'Magnetic ' }, { v: ['wand', 'Wand'] }, ` (${key})`];
+            const parts = t === 'fine' ? ['Fine', { x: ' brush' }, ` (${key})`, { s: ', fine brush' }]
+                : t === 'broad' ? ['Feather', { x: ' brush' }, ` (${key})`, { s: ', feather brush' }]
+                : [{ x: 'Magnetic ' }, { v: ['wand', 'Wand'] }, ` (${key})`, { s: ', magnetic wand' }];
             return `<button class="dusting-btn dusting-tool" data-action="tool" data-tool="${t}" aria-pressed="${this.tool === t}" title="${lblPlain(parts)}">
                 <span data-slot="${slot}" data-scale="1"></span> ${lblSpan(parts)}</button>`;
         }).join('');
@@ -567,8 +568,8 @@ export class DustingMinigame extends MinigameScene {
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn" title="Lift (L)">${lblSpan(LIFT_READY)}</button>
-                <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Puff off excess (T)">${lblSpan(['Puff', { x: ' off excess' }, ' (T)'])}</button>
-                <button class="dusting-btn" data-action="change-powder" title="Change powder (C)">${lblSpan([{ x: 'Change ' }, { v: ['powder', 'Powder'] }, ' (C)'])}</button>
+                <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Puff off excess (T)">${lblSpan(['Puff', { x: ' off excess' }, ' (T)', { s: ', puff off excess' }])}</button>
+                <button class="dusting-btn" data-action="change-powder" title="Change powder (C)">${lblSpan([{ x: 'Change ' }, { v: ['powder', 'Powder'] }, ' (C)', { s: ', change powder' }])}</button>
             </div>
             </div>`;
     }
@@ -584,8 +585,8 @@ export class DustingMinigame extends MinigameScene {
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-primary" data-action="peel" title="Peel and mount (P)"><span data-slot="tape-roll" data-scale="1"></span> ${lblSpan([{ x: 'Peel and ' }, { v: ['mount', 'Mount'] }, ' (P)'])}</button>
-                <button class="dusting-btn" data-action="back-dust" title="Back to dusting">${lblSpan(['Back', { x: ' to dusting' }])}</button>
+                <button class="dusting-btn dusting-primary" data-action="peel" title="Peel and mount (P)"><span data-slot="tape-roll" data-scale="1"></span> ${lblSpan([{ x: 'Peel and ' }, { v: ['mount', 'Mount'] }, ' (P)', { s: ', peel and mount' }])}</button>
+                <button class="dusting-btn" data-action="back-dust" title="Back to dusting">${lblSpan(['Back', { x: ' to dusting' }, { s: ', back to dusting' }])}</button>
             </div>
             </div>`;
     }
