@@ -192,6 +192,26 @@ module BreakEscape
       end
     end
 
+    test 'hosted without a slot (not standalone): no score in the conclude response or the page config' do
+      game = create_game(ungated_scenario)
+      with_standalone_mode(false) do
+        first = JSON.parse((post conclude_game_url(game); response.body))
+        assert_nil first['score'], 'running under Hacktivity, the host owns the number even with no slot'
+        again = JSON.parse((post conclude_game_url(game); response.body))
+        assert_nil again['score']
+        get game_url(game)
+        assert_match(/missionScore: null,/, response.body)
+      end
+    end
+
+    test 'standalone without a slot: the engine score is shown in the response and the page config' do
+      game = create_game(ungated_scenario)
+      post conclude_game_url(game)
+      assert_kind_of Integer, JSON.parse(response.body)['score']
+      get game_url(game)
+      assert_match(/missionScore: \d+,/, response.body)
+    end
+
     test 'the page config carries the score only for a concluded standalone game' do
       game = create_game(ungated_scenario)
       get game_url(game)
@@ -207,7 +227,7 @@ module BreakEscape
       end
     end
 
-        # Carry-over (docs/agents/CARRY_OVER_PLAN.md 2.4): the credits of a Restart
+    # Carry-over (docs/agents/CARRY_OVER_PLAN.md 2.4): the credits of a Restart
     # replay refresh the story snapshot later missions import, and still roll.
     test 'a repeat conclude after a Restart refreshes the story snapshot and still answers alreadyConcluded' do
       game = create_game(gated_scenario, tasks: { 'submit_ssh_flag' => 'completed', 'submit_sudo_flag' => 'completed' })
@@ -247,6 +267,14 @@ module BreakEscape
       yield
     ensure
       Game.send(:remove_method, :game_slot) if Game.method_defined?(:game_slot, false)
+    end
+
+    def with_standalone_mode(value)
+      was = BreakEscape.configuration.standalone_mode
+      BreakEscape.configuration.standalone_mode = value
+      yield
+    ensure
+      BreakEscape.configuration.standalone_mode = was
     end
 
     def create_game(scenario, tasks: {})

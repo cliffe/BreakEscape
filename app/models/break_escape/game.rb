@@ -77,9 +77,12 @@ module BreakEscape
     # True when a host (Hacktivity) owns this game's score: its GameScoringJob
     # writes games.score from the listing's policy, so the engine's own number
     # may differ and must not be shown to the player as the mission score.
+    # That holds for a game with a slot, and for any game run inside Hacktivity
+    # (not standalone) even without one: an unlinked game there (admin-created,
+    # legacy, or a "New session" after the event closed) is not counted by the host.
     def host_owns_score?
       slot = respond_to?(:game_slot) ? game_slot : nil
-      slot.present?
+      slot.present? || !BreakEscape.standalone_mode?
     end
 
     # The score the client may display, or nil when a host owns scoring.

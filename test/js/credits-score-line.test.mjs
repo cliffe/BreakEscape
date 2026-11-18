@@ -142,9 +142,8 @@ test('the offline path shows no score and no note', async () => {
 test('the end note does not leak into the next open', async () => {
     await rollCredits({ credits: [{ text: 'ONE' }], missionOver: true, endNote: 'SCORE 10 / 100' });
     assert.equal(statusText(), 'SCORE 10 / 100');
-    // a second set of credits with no score: the old note must not come back
-    const el = document.querySelector('#bv-status-val');
-    el.textContent = 'MONITORING';
+    // a second set of credits with no score: the old note must not come back.
+    // The STATUS row is deliberately not reset by hand, so a stale note would show.
     await rollCredits({ credits: [{ text: 'TWO' }], missionOver: true });
     assert.notEqual(statusText(), 'SCORE 10 / 100');
 });
