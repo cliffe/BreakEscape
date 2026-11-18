@@ -2035,12 +2035,14 @@ export class NPCBehavior {
         a.pending = true;
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
         // A needs walk first routes round held bodies too (chairs, seated staff); when their
-        // clearance rings close the only aisle that search finds nothing, so it tries the plain
-        // detour round the moving bodies before giving up (code review R1, M1)
+        // clearance rings close the only aisle that search finds nothing, so it tries the tight
+        // search (exact body reach, a standing NPC in a narrow aisle), then the plain detour round
+        // the moving bodies, before giving up (code review R1, M1; return stall R1, m3)
         const held = this._moveOwner === 'needs';
-        const search = (includeHeld) => {
-            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld } };
-            if (rooms?.length) opts.avoidRooms = rooms;
+        const search = (tier) => {
+            const includeHeld = tier !== 'plain';
+            const opts = tier === 'tight' ? this._tightOpts(rooms) : { avoidDynamic: { exceptSprite: this.sprite, includeHeld } };
+            if (tier !== 'tight' && rooms?.length) opts.avoidRooms = rooms;
             pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
                 if (this.patrolTarget !== target) { a.pending = false; this._avoid = null; return; }  // re-targeted meanwhile
                 if (this._avoid !== a) { a.pending = false; return; }   // avoidance cleared or replaced meanwhile (R2 m4)
@@ -2050,38 +2052,50 @@ export class NPCBehavior {
                     this.pathIndex = 0;
                     this.pathFollowingActive = true;
                     this._avoid = null;        // detour adopted — resume normal following
-                    console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints${includeHeld ? '' : ', plain'})`);
-                } else if (includeHeld) {
-                    search(false);             // held-aware found nothing: the plain detour
+                    this._detourTier = tier;
+                    console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints, ${tier})`);
+                } else if (tier === 'held') {
+                    search('tight');           // the clearance rings close the way: the exact reach
+                } else if (tier === 'tight') {
+                    search('plain');           // nothing held-aware: the plain detour
                 } else {
                     a.pending = false;
                     a.gaveUp = true;           // nothing routes round the blocker
                 }
             }, false, opts);
         };
-        search(held);
+        search(held ? 'held' : 'plain');
+    }
+
+    /** Options for the tight held-aware search (npc-pathfinding.js), with the needs room leash. */
+    _tightOpts(rooms) {
+        const o = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, tight: true } };
+        if (rooms?.length) o.avoidRooms = rooms;
+        return o;
     }
 
     _planMovePath(pfm, sx, sy, ex, ey, callback) {
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
-        // A stalled needs walk (OFFICE_LIFE_STUCK_RETURN.md) plans round every other body,
-        // seated and held ones included; with no such path it takes the plain one.
+        // A rerouted needs walk (OFFICE_LIFE_STUCK_RETURN.md) plans round every other body,
+        // seated and held ones included; with no such path it takes the plain one. _moveReroute is
+        // set by the return stall watch, by an outbound walk_rerouted, by the wedge recovery of any
+        // needs goToAndStay, and stays set for collision re-plans of that move (code review R1, m5).
         if (this._moveOwner === 'needs' && this._moveReroute) {
             const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true } };
             if (rooms?.length) opts.avoidRooms = rooms;
             // Three tiers: round every body with a clearance ring; else round their exact reach (a
-            // standing NPC in an aisle the ring closes); else the plain path.
+            // standing NPC in an aisle the ring closes); else the plain path. _planTier records the
+            // tier that gave the path, for live checks (code review R1, m2).
             const plain = () => {
+                this._planTier = 'plain';
                 if (rooms?.length) pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
                 else pfm.findWorldPath(sx, sy, ex, ey, callback);
             };
             return pfm.findWorldPath(sx, sy, ex, ey, (path) => {
-                if (path && path.length > 0) { callback(path); return; }
-                const tight = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, tight: true } };
-                if (rooms?.length) tight.avoidRooms = rooms;
+                if (path && path.length > 0) { this._planTier = 'ring'; callback(path); return; }
                 pfm.findWorldPath(sx, sy, ex, ey, (p2) => {
-                    if (p2 && p2.length > 0) callback(p2); else plain();
-                }, false, tight);
+                    if (p2 && p2.length > 0) { this._planTier = 'tight'; callback(p2); } else plain();
+                }, false, this._tightOpts(rooms));
             }, false, opts);
         }
         if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });

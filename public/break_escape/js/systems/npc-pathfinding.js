@@ -521,13 +521,20 @@ export class NPCPathfindingManager {
         // neighbour) beside it, and their rings closed every cell round the goal, so the search found
         // nothing, fell back to the plain path, and that ran Marek into a player standing on it. A
         // body's own cells stay avoided; only ring cells within END_RING_CELLS of an end are kept open.
+        // That softening is for held bodies (chairs, seated or held NPCs) and the player only. A
+        // standing NPC keeps its whole ring: local avoidance (_handleBlockerAhead) stops for any
+        // movable NPC within AVOID_LANE_HALF_PX (13) of the path, and a ring opened beside one put
+        // the path 11 px from Vector, so every re-plan and detour gave the walker the same path it
+        // stopped on (m08, DIAGNOSIS_M08: return_stuck at (506,164)).
         const END_RING_CELLS = 2;
         const nearEnd = (cx, cy) => includeHeld && (
             (Math.abs(cx - skipCX) <= END_RING_CELLS && Math.abs(cy - skipCY) <= END_RING_CELLS) ||
             (endCX >= 0 && Math.abs(cx - endCX) <= END_RING_CELLS && Math.abs(cy - endCY) <= END_RING_CELLS));
-        const avoidBody = (body, npc = false) => {
+        // soft: the body's ring (or tight reach) may open near the start and goal. keepRing: the
+        // tight tier still rings this body.
+        const avoidBody = (body, npc = false, soft = true, keepRing = false) => {
             if (!body || !body.enable || (body.immovable && !(includeHeld && npc))) return;
-            if (tight) { avoidTight(body); return; }
+            if (tight && !keepRing) { avoidTight(body, soft); return; }
             // One cell of clearance either side, as _avoidNPCPositions uses.
             const bx1 = Math.floor((body.left - minX) / step), bx2 = Math.floor((body.right - minX - 1) / step);
             const by1 = Math.floor((body.top - minY) / step), by2 = Math.floor((body.bottom - minY - 1) / step);
@@ -539,7 +546,7 @@ export class NPCPathfindingManager {
                 for (let cx = cx1; cx <= cx2; cx++) {
                     if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
                     const ring = cx < bx1 || cx > bx2 || cy < by1 || cy > by2;
-                    if (ring && nearEnd(cx, cy)) continue;
+                    if (ring && soft && nearEnd(cx, cy)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }
@@ -551,8 +558,14 @@ export class NPCPathfindingManager {
         // to the plain path, and the walker bumped the standing body for ever (m08, game 9155).
         const mine = exceptSprite?.body;
         const halfW = (mine?.width || 20) / 2, halfH = (mine?.height || 10) / 2;
-        const avoidTight = (body) => {
+        // Near the start and goal a soft body (a chair, a seated colleague) avoids only the cells its
+        // own box covers, as the ring tier does: a home between two chairs is not sealed (code
+        // review R1, M1). A standing NPC keeps its whole reach there: it is wider than the
+        // avoidance lane, so the walker is never routed where local avoidance stops it.
+        const avoidTight = (body, soft) => {
             const cxMid = (body.left + body.right) / 2, cyMid = (body.top + body.bottom) / 2;
+            const bx1 = Math.floor((body.left - minX) / step), bx2 = Math.floor((body.right - minX - 1) / step);
+            const by1 = Math.floor((body.top - minY) / step), by2 = Math.floor((body.bottom - minY - 1) / step);
             // Half a cell more than the bodies' reach: a step between two cell centres cuts across the
             // cell between them, so a cell at exactly the reach would clip the body on the way.
             const reachX = (body.right - body.left) / 2 + halfW + step / 2, reachY = (body.bottom - body.top) / 2 + halfH + step / 2;
@@ -563,19 +576,22 @@ export class NPCPathfindingManager {
                     if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
                     const wx = minX + cx * step + step / 2, wy = minY + cy * step + step / 2;
                     if (Math.abs(wx - cxMid) >= reachX || Math.abs(wy - cyMid) >= reachY) continue;
+                    if (soft && (cx < bx1 || cx > bx2 || cy < by1 || cy > by2) && nearEnd(cx, cy)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }
         };
-        // The player is a blocker too (a needs NPC routes round them).
+        // The player is a blocker too (a needs NPC routes round them). The tight tier keeps the
+        // player's ring: a player standing in an aisle still holds the walk up and is passed by the
+        // body-block rules (_notePlayerBlock), not stepped round 4 px away (code review R1, m4).
         const pb = window.player?.body;
-        if (pb && exceptSprite !== window.player) avoidBody(pb);
+        if (pb && exceptSprite !== window.player) avoidBody(pb, false, true, true);
         for (const roomId in (window.rooms || {})) {
             const sprites = window.rooms[roomId]?.npcSprites;
             if (!sprites) continue;
             for (const sprite of sprites) {
                 if (sprite === exceptSprite) continue;
-                avoidBody(sprite.body, true);
+                avoidBody(sprite.body, true, !!sprite.body?.immovable);
             }
         }
         // A stalled needs walk also routes round chairs. A loose chair is a dynamic body, so the
@@ -600,7 +616,8 @@ export class NPCPathfindingManager {
      * body (npc-behavior.js local detour); exceptSprite is the walking NPC's own sprite.
      * includeHeld: true also avoids seated and held (immovable) NPC bodies and every chair,
      * and never avoids the goal cell. tight: true (with includeHeld) swaps the one-cell clearance
-     * ring for the walker's exact body reach, so a gap two bodies can pass is not closed.
+     * ring round NPCs and chairs for the walker's exact body reach plus half a cell, so a gap two
+     * bodies can pass is not closed; the player keeps the ring.
      */
     findWorldPath(startX, startY, endX, endY, callback, avoidNPCs = false, opts = null) {
         if (!this.worldPathfinder || !this.worldGridBounds) {
