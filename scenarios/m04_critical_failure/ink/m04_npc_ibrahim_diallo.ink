@@ -20,14 +20,14 @@ VAR heard_ex_stay_out_of_the_halls = false
 
 === start ===
 {aes_staff_off:
-    Ibrahim Diallo: I'll keep to my work, if it's all the same to you.
+    Ibrahim Diallo: I'll keep to my work, if it's all the same to you. #exit_conversation
 - else:
-    Ibrahim Diallo: Morning. I'm swapping the office desktops while nobody needs them. It was booked late, so I won't be on tonight's list.
+    Ibrahim Diallo: Morning. I'm swapping the office desktops while nobody needs them. It was booked late, so I won't be on tonight's list. #exit_conversation
 }
-#exit_conversation
 // Loop to the knot, not DONE: the chat closes on the tag with the divert still unread, so the
 // saved story is mid-knot and a plain DONE here made every later talk show only "(End of
 // conversation)". Looping replays the line each talk (the house pattern, as m03 hub exits).
+// The tag sits on the spoken line itself, so each talk returns one line with the tag in one read.
 -> start
 
 === ex_six_oclock ===
