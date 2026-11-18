@@ -470,12 +470,14 @@ export class ObjectivesPanel {
     });
     
     const heldNow = !!window.endingCheck?.hasHeld?.();
-    this.footer.innerHTML = heldNow
-      ? '<div class="objectives-end-held"><button type="button" class="objectives-end-button" '
-        + 'title="Some optional objectives are still open">End the mission</button></div>'
-      : '';
-    this.footer.hidden = !heldNow;
-    this.container.classList.toggle('has-end-footer', heldNow);
+    if (this.footer) {   // (a test's stand-in panel has none)
+      this.footer.innerHTML = heldNow
+        ? '<div class="objectives-end-held"><button type="button" class="objectives-end-button" '
+          + 'title="Some optional objectives are still open">End the mission</button></div>'
+        : '';
+      this.footer.hidden = !heldNow;
+    }
+    this.container?.classList?.toggle?.('has-end-footer', heldNow);
     this.content.innerHTML = html;
     // A new aim lengthens the list: if the player has not taken the panel over, it gets another
     // AUTO_COLLAPSE_MS of visible time to be read before it folds again (m08 part 2: three aims, a
