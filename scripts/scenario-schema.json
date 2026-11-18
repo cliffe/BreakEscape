@@ -4549,6 +4549,10 @@
                 }
               ]
             },
+            "squeezePastPlayer": {
+              "type": "boolean",
+              "description": "Default true: a needs walk (job, need or interest) held by the player's body for about 2.5 s walks on through the player. false keeps the player's body block on every walk."
+            },
             "facePlayerDistance": {
               "type": "number",
               "exclusiveMinimum": 0,

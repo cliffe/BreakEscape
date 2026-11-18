@@ -1153,6 +1153,8 @@ WALL_MOUNTED_EXTRAS = {
     "lw_staff_ap",
     "lw_guest_ap",
     "lw_guest_card",
+    "lw_sign_archive",
+    "lw_framed_notice",
 }
 
 
