@@ -63,61 +63,77 @@ export function lastPlayerHitAtWall() {
 export const COMBAT_QUIET_MS = 4000;
 /** A chaser that stops chasing keeps the fight on this long (no flicker at the aggro edge). */
 export const COMBAT_LINGER_MS = 1500;
-/** A fight held only by a chaser that makes no progress (not in the player's room, not closing in) stops counting after this long: the hit window then rules. */
+/** A fight held only by a chaser that is getting nowhere (not reaching the player's room, not moving) stops counting after this long, and stays stopped for the rest of that run: the hit window then rules. */
 export const COMBAT_CHASE_CAP_MS = 20000;
+/** A chaser counts as moving once its sprite is this far (px) from where it was last anchored. */
+export const COMBAT_CHASE_MOVE_PX = 8;
 
-let chaseRunStart = 0;     // when the current unbroken run of chaser sightings began (0: none)
+let chaseRunStart = 0;     // when the current stretch without chaser progress began (0: none)
 let lastChaserAt = -Infinity;   // the last sample that saw a chaser
-let bestDist = Infinity;        // the closest an other-room chaser has been in this run
+let cappedRun = false;     // the cap has fired in this run; only a new run (a gap over the linger) clears it
+const chaserAnchors = new Map();   // npcId -> { x, y } where that chaser's sprite was last anchored
 
 /** Forget the chase run and the linger (a new game, or a test). */
 export function resetCombatState() {
   chaseRunStart = 0;
   lastChaserAt = -Infinity;
-  bestDist = Infinity;
+  cappedRun = false;
+  chaserAnchors.clear();
 }
 
 /**
- * Finds a live hostile NPC chasing the player in a way that counts as a fight. It has to be awake,
+ * Every live hostile NPC chasing the player in a way that counts as a fight. Each has to be awake,
  * not hidden by a mapping and not cowering (a cower hostile keeps its distance in chase state
- * without attacking; its hits count through the hit window instead). Returns
- * { kind: 'room' | 'reach', behavior } or null. 'room' is a chaser in the player's room. With
- * deps.anyRoom a chaser in another room also counts, but only as 'reach' and only if it can get to
- * the player (npcCombat.canReachPlayer, or a non-empty chasePath): a hostile held behind a locked
- * door never holds a call. Room-less (no deps.anyRoom) the other-room chaser is skipped.
+ * without attacking; its hits count through the hit window instead). Returns a list of
+ * { kind: 'room' | 'stuck' | 'reach', behavior }. 'room' is a chaser in the player's room that can
+ * get to the player; 'stuck' is one in the player's room that cannot (across a partition, wedged),
+ * so it is timed like a 'reach'. With deps.anyRoom a chaser in another room also counts, as
+ * 'reach', but only if it can get to the player (npcCombat.canReachPlayer, or a non-empty
+ * chasePath): a hostile held behind a locked door never holds a call. Room-less (no deps.anyRoom)
+ * the other-room chaser is skipped. In the player's room, a reach test that cannot be run (no
+ * canReach and no npcCombat) counts as reachable.
  * @param {object} [deps] - overridable for tests: behaviors, hostileSystem, npcManager, playerRoom,
  *   anyRoom, canReach(behavior)
  */
-function findChaser(deps = {}) {
+function collectChasers(deps = {}) {
   const w = typeof window !== 'undefined' ? window : {};
   const hostile = deps.hostileSystem ?? w.npcHostileSystem;
   const behaviors = deps.behaviors ?? w.npcBehaviorManager?.behaviors;
-  if (!hostile || !behaviors) return null;
+  if (!hostile || !behaviors) return [];
   const manager = deps.npcManager ?? w.npcManager;
   const playerRoom = deps.playerRoom ?? w.currentPlayerRoom;
   const list = typeof behaviors.values === 'function' ? behaviors.values() : behaviors;
-  let found = null;
+  const out = [];
   for (const behavior of list) {
     if (!behavior || behavior.currentState !== 'chase') continue;
     const id = behavior.npcId;
-    let kind = 'room';
     try {
       if (behavior.config?.hostile?.fightStyle === 'cower') continue;
-      if (typeof playerRoom === 'string' && behavior.roomId && behavior.roomId !== playerRoom) {
-        if (!deps.anyRoom) continue;
-        kind = 'reach';
-        let reach = Array.isArray(behavior.chasePath) && behavior.chasePath.length > 0;
-        if (typeof deps.canReach === 'function') reach = reach || !!deps.canReach(behavior);
-        else if (w.npcCombat?.canReachPlayer && behavior.sprite) reach = reach || !!w.npcCombat.canReachPlayer(behavior.sprite);
-        if (!reach) continue;
-      }
       if (!hostile.isNPCHostile?.(id) || hostile.isNPCKO?.(id)) continue;
       if (manager?.isHiddenByMapping?.(id)) continue;
+      const otherRoom = typeof playerRoom === 'string' && behavior.roomId && behavior.roomId !== playerRoom;
+      if (otherRoom && !deps.anyRoom) continue;
+      // null: the test cannot be run
+      let reach = Array.isArray(behavior.chasePath) && behavior.chasePath.length > 0 ? true : null;
+      if (reach === null) {
+        if (typeof deps.canReach === 'function') reach = !!deps.canReach(behavior);
+        else if (w.npcCombat?.canReachPlayer && behavior.sprite) reach = !!w.npcCombat.canReachPlayer(behavior.sprite);
+      }
+      if (otherRoom) {
+        if (!reach) continue;
+        out.push({ kind: 'reach', behavior });
+      } else {
+        out.push({ kind: reach === false ? 'stuck' : 'room', behavior });
+      }
     } catch (err) { continue; }
-    if (kind === 'room') return { kind, behavior };
-    found = found || { kind, behavior };
   }
-  return found;
+  return out;
+}
+
+/** The chaser that matters most: one in the player's room first, then any other. */
+function findChaser(deps = {}) {
+  const all = collectChasers(deps);
+  return all.find(c => c.kind === 'room') || all[0] || null;
 }
 
 /**
@@ -125,19 +141,18 @@ function findChaser(deps = {}) {
  * With deps.anyRoom it also counts a chaser in another room that can reach the player (the combat
  * hold sets it, so a call never starts and is then pulled back when the player leaves the room
  * with the chaser still after them).
- * @param {object} [deps] - see findChaser
+ * @param {object} [deps] - see collectChasers
  */
 export function playerHasChaser(deps = {}) {
   return !!findChaser(deps);
 }
 
-/** Straight-line distance from a chaser to the player, or null when positions are unknown. */
-function chaserDistance(behavior, deps) {
-  if (typeof deps.distanceOf === 'function') return deps.distanceOf(behavior);
-  const w = typeof window !== 'undefined' ? window : {};
-  const s = behavior?.sprite, p = deps.player ?? w.player;
-  if (!s || !p || typeof s.x !== 'number' || typeof p.x !== 'number') return null;
-  return Math.hypot(s.x - p.x, s.y - p.y);
+/** Where a chaser's sprite is, or null when unknown. */
+function chaserPosition(behavior, deps) {
+  if (typeof deps.positionOf === 'function') return deps.positionOf(behavior);
+  const s = behavior?.sprite;
+  if (!s || typeof s.x !== 'number' || typeof s.y !== 'number') return null;
+  return { x: s.x, y: s.y };
 }
 
 /**
@@ -148,25 +163,42 @@ function chaserDistance(behavior, deps) {
  * unable to fight or flee (m04 playtest). Three limits keep a hold from outlasting the fight:
  * a chaser has to be hostile, awake and in chase state (a hostile that gave up stops counting), the chase term
  * lingers COMBAT_LINGER_MS after the last sighting so a leashed guard flipping at its edge does
- * not stutter the hold, and an unbroken chase with no hit stops counting after
- * COMBAT_CHASE_CAP_MS, leaving only the hit window. The player opening their own phone is never
- * asked about this.
+ * not stutter the hold, and a chase that reaches the player (a chaser in the player's room that
+ * can get to them) never ends. Any other chase (a reachable chaser in another room, or one that
+ * cannot get to the player) stops counting after COMBAT_CHASE_CAP_MS without any of those chasers
+ * moving (their own sprite more than COMBAT_CHASE_MOVE_PX from its anchor), and stays stopped until
+ * a new run, so a held call that has rung is not pulled back by the chaser's later progress. Then
+ * only the hit window holds. The player opening their own phone is never asked about this.
  * @param {object} [deps] - overridable for tests: behaviors, hostileSystem, npcManager,
- *   playerRoom, now (performance clock ms)
+ *   playerRoom, now (performance clock ms), canReach(behavior), positionOf(behavior)
  */
 export function playerInCombat(deps = {}) {
   const t = typeof deps.now === 'number' ? deps.now
     : (typeof performance !== 'undefined' ? performance.now() : Date.now());
   // Sample the chase first, so a run keeps being tracked while a hit holds the fight on
-  const chaser = findChaser({ ...deps, anyRoom: true });
-  if (chaser) {
-    if (!chaseRunStart || t - lastChaserAt > COMBAT_LINGER_MS) { chaseRunStart = t; bestDist = Infinity; }
-    // The cap only times a chaser that is getting nowhere. One in the player's room, or one in
-    // another room that is closing in, restarts it: kiting a chaser never ends the hold, so a call
-    // cannot ring mid-chase and then be pulled back by the next hit.
-    const d = chaser.kind === 'room' ? null : chaserDistance(chaser.behavior, deps);
-    if (chaser.kind === 'room') chaseRunStart = t;
-    else if (typeof d === 'number' && d < bestDist - 4) { if (bestDist !== Infinity) chaseRunStart = t; bestDist = d; }
+  const chasers = collectChasers({ ...deps, anyRoom: true });
+  if (chasers.length) {
+    if (!chaseRunStart || t - lastChaserAt > COMBAT_LINGER_MS) {
+      chaseRunStart = t; cappedRun = false; chaserAnchors.clear();
+    }
+    if (chasers.some(c => c.kind === 'room')) {
+      // A real fight in the player's room: never capped, and it clears a latch from earlier
+      chaseRunStart = t; cappedRun = false;
+    } else {
+      let moved = false;
+      for (const { behavior } of chasers) {
+        const pos = chaserPosition(behavior, deps);
+        if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') continue;
+        const a = chaserAnchors.get(behavior.npcId);
+        if (!a) chaserAnchors.set(behavior.npcId, { x: pos.x, y: pos.y });
+        else if (Math.hypot(pos.x - a.x, pos.y - a.y) > COMBAT_CHASE_MOVE_PX) {
+          chaserAnchors.set(behavior.npcId, { x: pos.x, y: pos.y });
+          moved = true;
+        }
+      }
+      if (moved && !cappedRun) chaseRunStart = t;
+      if (t - chaseRunStart >= COMBAT_CHASE_CAP_MS) cappedRun = true;
+    }
     lastChaserAt = t;
   } else if (chaseRunStart && t - lastChaserAt > COMBAT_LINGER_MS) {
     chaseRunStart = 0;
@@ -174,8 +206,8 @@ export function playerInCombat(deps = {}) {
   if (playerHitWithin(COMBAT_QUIET_MS, deps.now)) return true;
   if (!chaseRunStart) return false;
   if (t - lastChaserAt > COMBAT_LINGER_MS) return false;
-  // Capped: a chaser that has made no progress this long (behind a door it cannot open) is not a fight
-  return t - chaseRunStart < COMBAT_CHASE_CAP_MS;
+  // Capped: a chaser that has made no progress this long is not a fight, and stays not one
+  return !cappedRun;
 }
 
 /**

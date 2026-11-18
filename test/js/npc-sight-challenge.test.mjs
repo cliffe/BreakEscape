@@ -296,3 +296,45 @@ test('access 9.2 C (8.2): no challenge while the NPC is distracted on its phone;
         assert.equal(emitted[0].name, 'player_in_view_near:guard');
     } finally { delete window.npcNeedsSystem; }
 });
+
+// ---- R2 m4: a challenge skipped for a fight is owed, and fires after it only if the player is still in the cone ----
+test('owed sighting: skipped in a fight, fires when it ends if still in the cone; not if the player left', () => {
+    const { emitted, watcher } = setup({ enabled: true });
+    inView();
+    window.playerInCombat = () => true;
+    try {
+        assert.deepEqual(watcher.update(1000, { force: true }), [], 'skipped in the fight');
+        assert.equal(watcher._state.get('guard').owed, true, 'owed');
+        assert.equal(watcher._state.get('guard').firedThisSighting, false, 'not marked fired');
+        window.playerInCombat = () => false;
+        assert.deepEqual(watcher.update(2000, { force: true }), ['guard'], 'fires once the fight is over');
+        assert.equal(watcher._state.get('guard').owed, false);
+        assert.equal(emitted.length, 1);
+        // Second case: leaves the cone during the fight
+        const b = setup({ enabled: true });
+        inView();
+        window.playerInCombat = () => true;
+        b.watcher.update(1000, { force: true });
+        outOfView();
+        b.watcher.update(1500, { force: true });
+        assert.equal(b.watcher._state.get('guard').owed, false, 'no longer owed');
+        window.playerInCombat = () => false;
+        assert.deepEqual(b.watcher.update(2000, { force: true }), [], 'out of the cone: nothing fires');
+        inView();
+        assert.deepEqual(b.watcher.update(3000, { force: true }), ['guard'], 'a normal fresh sighting later');
+    } finally { delete window.playerInCombat; }
+});
+
+test('sighting state tracks the cone during a fight: leaving and re-entering counts as a new sighting', () => {
+    const { watcher } = setup({ enabled: true, cooldown: 0 });
+    inView();
+    assert.deepEqual(watcher.update(1000, { force: true }), ['guard']);
+    window.playerInCombat = () => true;
+    try {
+        outOfView();
+        watcher.update(1500, { force: true });
+        inView();
+        watcher.update(2000, { force: true });
+    } finally { delete window.playerInCombat; }
+    assert.deepEqual(watcher.update(3000, { force: true }), ['guard'], 'new sighting after the fight');
+});
