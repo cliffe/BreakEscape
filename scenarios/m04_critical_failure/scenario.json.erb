@@ -1351,7 +1351,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "condition": "data.npcId === '<%= hostile_id %>' && data.isHostile === true && data.restored !== true && globalVars.fight_phone_texted !== true",
               "onceOnly": true,
               "setGlobal": { "fight_phone_texted": true },
-              "sendTimedMessage": { "delay": 5500, "message": "They keep swinging while you're on this phone. Get clear before you read it, or stand and fight: Q for fists, then E or click when they're in front." }
+              "sendTimedMessage": { "delay": 5500, "message": "They keep swinging while you're on this phone. Get clear before you read it, or stand and fight: F to punch, keep pressing for a harder one. Hold Q to block. Face them squarely." }
             },
 <% end %>
             <%# Playtest D7: the three optional methodology tasks never ticked.
