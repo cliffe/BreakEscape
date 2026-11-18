@@ -1,3 +1,27 @@
+# Live contrast on m08, same session: old engine against the branch engine (code review R2, m3)
+
+Added 2026-11-18, branch fix/needs-return-npc-stall at b8a345be7. Keyless server on :3092 from the worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Four fresh games made with new-game.rb, alternating engines (old, new, old, new), the audit read in play, then two trips per game with Vector's body placed through the bridge and Agnieszka's and Julian's thirst set to 5 once she was home and idle plus 3 s. The old engine is npc-pathfinding.js and npc-behavior.js from f48c80af8^ served through the page.route hook (OLD=1 in the playtest session). No globals set, no game row edited. Driver: `docs/achitechture/reviews/return-stall/drivers/trip3.js`, `runtrip3.sh` and `game3.sh` (a copy of diag.js with placement, the tier record and `performance.now()` round every plan from her position; it snapshots every body, blocker and path at any hold of 3 s).
+
+| Game | Engine | Trip | Vector body centre | Return s | return_stuck | return_abandoned | return_resumed | Hold over 3 s | Tier seen |
+|---|---|---|---|---|---|---|---|---|---|
+| 9465 | old | 1 | 486.4, 152.7 | 3.6 | 0 | 0 | 0 | no | n/a |
+| 9465 | old | 2 | 486.4, 157.0 | 3.6 | 0 | 0 | 0 | no | n/a |
+| 9469 | new | 1 | 486.4, 152.7 | 3.5 | 0 | 0 | 0 | no | held detour |
+| 9469 | new | 2 | 486.4, 157.0 | 3.6 | 0 | 0 | 0 | no | held detour |
+| 9472 | old | 1 | 486.4, 152.7 | 3.6 | 0 | 0 | 0 | no | n/a |
+| 9472 | old | 2 | 486.4, 157.0 | 3.6 | 0 | 0 | 0 | no | n/a |
+| 9474 | new | 1 | 486.4, 152.7 | 3.6 | 0 | 0 | 0 | no | held detour |
+| 9474 | new | 2 | 486.4, 157.0 | 3.6 | 0 | 0 | 0 | no | held detour |
+
+Findings.
+- No contrast. 4 of 4 old-engine trips and 4 of 4 new-engine trips went home in 3.5 to 3.6 s with no hold over 3 s, so no hold snapshot was taken on either engine. The old engine did not stall at the stalling height in this session, so these eight trips neither support nor weaken the earlier 4 of 9 stalls. The unit test (`m08: a rerouted walk home...`) remains the proof that the old planner puts the path inside the lane; it fails on f48c80af8.
+- Vector did not move in any trip (body centre after equals before).
+- Why the old engine stayed clear here is not established. Every trip began from the same start and made the same plan sequence (a plain first plan, then at most one ring plan of 0.2 to 0.6 ms), none was held, and no snapshot exists. The earlier stalls may need a different start cell or a wedge before the return; a thirst trip does not reproduce it on demand.
+- The 6 s hold in game 9411 trip 1 (sprite (506,132), two return_resumed) did not recur in any of the eight trips, so there is no snapshot to explain it. It matches the diagnosed mechanism (two re-plans on the same path before the third found the way) and cleared without return_stuck; treat it as unconfirmed.
+- Tier-chain time (`performance.now()` round every `findWorldPath` from her position, including nested callbacks): the first plan of a trip 5.7 to 14 ms (cold, plain, includes the first search on that grid), every later plan 0.1 to 0.6 ms (ring or plain). No failed search occurred in eight trips, so no flood was measured and no held, tight, moving chain ran past its first tier. The reviewer's bench figures for a failed flood (34 ms on 120x120, 190 ms on 300x300) stand; see OFFICE_LIFE_STUCK_RETURN.md.
+
+---
+
 # Live proof on m08: Agnieszka's return trip, new engine (f401b9ee0 and later)
 
 Added 2026-11-18, branch fix/needs-return-npc-stall at 82466fa7d (engine as in f401b9ee0). Keyless server on :3092 from this worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Three fresh games made with new-game.rb, audit read in play (setup2.sh route), then each trip started by setting thirst to 5 on julian_sallow and agnieszka_duda, once she was home and idle plus 3 s. No globals set, no game row edited. Driver: docs/achitechture/reviews/return-stall/drivers/trip2.js and runtrip2.sh (trip.js plus Vector's body centre and the tier record `_planTier/_detourTier` sampled while she returns).
