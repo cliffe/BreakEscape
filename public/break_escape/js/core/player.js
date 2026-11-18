@@ -1008,7 +1008,7 @@ window.updatePlayerDepth = (x, y) => { if (player) updatePlayerDepth(x, y); };
  * Call this before triggering a click-based interaction so the player visually
  * faces the object/NPC they are acting on.
  */
-export function facePlayerToward(targetX, targetY, targetObj = null) {
+export function facePlayerToward(targetX, targetY) {
     if (!player) return;
 
     const dx = targetX - player.x;
@@ -1028,9 +1028,6 @@ export function facePlayerToward(targetX, targetY, targetObj = null) {
 
     player.direction = direction;
     player.lastDirection = direction;
-    // Facing is only one of eight directions, so two neighbouring props can share it. Remember the
-    // thing actually turned to; E prefers it while the player stands here and has not turned (interactions.js)
-    player.faceAim = targetObj ? { obj: targetObj, dir: direction, px: player.x, py: player.y } : null;
 
     // Play idle animation for the new direction (handles atlas vs legacy sprite mapping)
     const animDir = getAnimationKey(direction);
