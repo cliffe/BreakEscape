@@ -734,6 +734,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "final_choice": "",
     "confront_stance": "",
+    "torres_scene_opened": false,
     "torres_turned": false,
     "torres_arrested": false,
     "torres_identified": false,
@@ -1064,7 +1065,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "conversation_closed:opening_briefing",
               "onceOnly": true,
               "completeTask": "receive_mission_briefing",
-              "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're in. Start with Patricia Morgan: her office is off reception, on the east side." }
             },
 <% [["!== true", "Nobody's walking in while we're still guessing. Take Patricia a name, with the motive and how the data's leaving."], ["=== true", "Nobody's walking in while we're still guessing. Call me with a name, the motive and how the data's leaving."]].each do |ko, txt| %>
             {
@@ -1180,7 +1181,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "_comment": "M5: root-flag ring declined. The old text named nothing; this one names the Architect's authorisation so the content isn't lost on a decline (R1 M2). The ring's own callback row lets the player ring topic_architect back.",
               "eventPattern": "phone_call_declined:agent_0x99_handler",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Root flag's in: the Architect's authorisation, the casualty projection, all of it. Ring me back. You need to hear this." }
+              "sendTimedMessage": { "delay": 1500, "message": "Root flag's in: the Architect's authorisation, the casualty projection, all of it. Ring me back." }
             },
             {
               "eventPattern": "global_variable_changed:flag4_submitted",
@@ -1602,7 +1603,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "global_variable_changed:ashworth_lead_texted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That makes him a lead, not a name. Test his times against the badge log before you spend one.", "skipIfGlobal": "torres_identified" }
+              "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That's a lead, not a name: test his times against the badge log before you use one.", "skipIfGlobal": "torres_identified" }
             },
             {
               "_comment": "Blind run (finding 1): the upload terminal's transfer_queue.log states the 20:30 window, so reading it ticks the Find-the-upload-time task (the printed Upload Schedule does the same through found_upload_schedule). found_upload_schedule is left alone: that global also gates the 'he is the operator' evidence lines, and the log names only dtorres.",
