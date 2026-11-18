@@ -149,7 +149,26 @@ test('the Ashworth lines carry no em dash', () => {
     for (const l of block) assert.doesNotMatch(l, /—|–/);
 });
 
+test('debrief: no Ashworth praise for a player who named him, praise for one who held the lead and did not', () => {
+    const praise = /you had Ben Ashworth on paper/;
+    const picks = ['And the research portal?', 'Whose job was it to fix that?'];
+    const base = { found_pamphlet: true, found_door_log: true };
+    const run = v => play('m05_closing_debrief.json', 'the_night', { ...base, ...v }, picks);
+    const named = run({ ashworth_lead_texted: true, ashworth_named: true, torres_reason_guessed: true });
+    assert.ok(has(named.lines, /wrong name or a wrong reason/));
+    assert.ok(!has(named.lines, praise) && !has(named.lines, /Ben Ashworth/));
+    const held = run({ ashworth_lead_texted: true, ashworth_named: false });
+    assert.ok(has(held.lines, praise));
+    assert.ok(!has(run({}).lines, praise));
+});
+
+test('HaX KO route: naming Ben with the log sets ashworth_named', () => {
+    const c = play('m05_phone_agent_0x99.json', 'name_to_hax_who', { ...CAN_NAME, patricia_ko: true, found_door_log: true, found_ashworth_vetting: true }, ['Ben Ashworth']);
+    assert.equal(c.v('ashworth_named'), true);
+});
+
 test('scenario: the Ashworth mappings are the LAST HaX mappings, so no saved once-index moves', { skip }, () => {
+    // Later mappings go AFTER these (append-only keeps saved once-indexes stable); when you add one, extend this list rather than moving Ashworth to the end again.
     const tail = hax.eventMappings.slice(-3).map(m => m.eventPattern);
     assert.deepEqual(tail, ['global_variable_changed:found_ashworth_notice', 'global_variable_changed:found_ashworth_vetting', 'global_variable_changed:ashworth_lead_texted']);
 });

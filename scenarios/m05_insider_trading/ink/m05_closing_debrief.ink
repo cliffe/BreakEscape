@@ -70,6 +70,7 @@ VAR bernadette_ko = false
 // Whodunnit (PASS 4)
 VAR found_door_log = false
 VAR halloran_accused = false
+VAR ashworth_lead_texted = false // Synced scenario global (D136 a): Ben Ashworth's lead was texted to the player; latched by a HaX event mapping when either Ashworth lead is found
 VAR ashworth_named = false // Synced scenario global: Ben Ashworth was named to Patricia and cleared by the badge log
 VAR door_log_reasoned = false
 VAR halloran_questioned = false
@@ -420,8 +421,8 @@ Agent HaX: Once you were in, one account was allowed to run far more than its jo
     {found_halloran_vetting:
         Agent HaX: Halloran had the same recruiter at her table in Zurich. She reported it, late. Torres never reported anything.
     }
-    {ashworth_named:
-        Agent HaX: And you didn't hang Ben Ashworth on a bank statement. You checked the log first. That's the job.
+    {ashworth_lead_texted and not ashworth_named:
+        Agent HaX: And you had Ben Ashworth on paper, broke and on nights, and you didn't spend a name on him. That's the job.
     }
 - else:
     Agent HaX: You found him by what he did. Next time, look for the signs that come before.
