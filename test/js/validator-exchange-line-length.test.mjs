@@ -50,3 +50,39 @@ test('exchange lines of exactly 40 characters and the paper opener pass', { skip
     assert.equal(long(issuesFor([`Ernesto: ${forty}`, 'Hodan: Eleven lab runs tonight. All on paper.'])).length, 0);
     assert.equal(long(issuesFor([`Ernesto: ${forty}x`])).length, 1);
 });
+
+// check_exchanges topic type-check (review R2 m5): a topic present on an exchange pins it to one
+// object's chatter pool, so it must be a non-empty string. A null or empty topic would make the
+// engine skip the entry, so it is an error, not a warning.
+function topicIssues(topic) {
+    const dir = mkdtempSync(join(tmpdir(), 'exch-topic-'));
+    try {
+        const story = join(dir, 'story.json');
+        writeFileSync(story, JSON.stringify({ inkVersion: 21, root: [['done'], 'done', { knot_a: ['^Ernesto: Hi.', '^Hodan: Hi.'] }] }));
+        const voice = { name: 'x' };
+        const npc = (id, name, extra = {}) => ({ id, displayName: name, npcType: 'person', position: { x: 1, y: 1 }, voice, ...extra });
+        const ex = { with: 'ernesto', knot: 'knot_a' };
+        if (topic !== undefined) ex.topic = topic;
+        const json = {
+            startRoom: 'r', globalVariables: { heard_knot_a: false },
+            rooms: { r: { type: 'room_office', connections: {}, objects: [], npcs: [
+                npc('hodan', 'Hodan', { storyPath: relative(root, story), exchanges: [ex] }),
+                npc('ernesto', 'Ernesto')
+            ] } }
+        };
+        const script = `$stdout = File.open(File::NULL, 'w'); require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+          $stdout = STDOUT; json = JSON.parse(STDIN.read); puts JSON.generate(ValidateNpcNeeds.check(json))`;
+        const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(json), encoding: 'utf8', env });
+        assert.equal(r.status, 0, r.stderr);
+        return JSON.parse(r.stdout.trim().split('\n').pop());
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+const topicErr = list => list.filter(s => s.includes('topic must be a non-empty string'));
+
+test('an exchange topic that is not a non-empty string is an error; a string topic or no topic passes', { skip }, () => {
+    assert.equal(topicErr(topicIssues(42)).length, 1, 'a number topic');
+    assert.equal(topicErr(topicIssues('')).length, 1, 'an empty topic');
+    assert.equal(topicErr(topicIssues('   ')).length, 1, 'a blank topic');
+    assert.equal(topicErr(topicIssues('coffee')).length, 0, 'a non-empty string topic passes the type-check');
+    assert.equal(topicErr(topicIssues(undefined)).length, 0, 'no topic key at all');
+});
