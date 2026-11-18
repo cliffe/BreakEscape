@@ -56,6 +56,8 @@ VAR torres_print_collected = false
 VAR torres_suspected = false // Synced scenario global: enough on Torres to search his office; also set by Patricia (m05_phone_patricia, m05_npc_patricia_morgan) and the case_motive/case_exfil mappings
 VAR found_door_log = false
 VAR heard_tin_story = false // Synced scenario global (round 2, 2026-10-17): Lisa told the tin story without a name; set by m05_npc_lisa_park
+VAR found_ashworth_notice = false // Synced scenario global (D136 a): Ben Ashworth's final-demand notice has been read
+VAR found_ashworth_vetting = false // Synced scenario global (D136 a): Ben Ashworth's vetting folder is in the notes
 VAR found_halloran_vetting = false // Synced scenario global (fixes round 3, 2026-10-17): Halloran's vetting file is in the notes; set by its onRead
 VAR files_hint_given = false // Fixes round 3 (2026-10-17): local; the gentle vetting-files rung has been given, so the next ask may give "One file fits"
 VAR hax_proof_given = false // Fixes round 3 (2026-10-17): local; the front-door reason completed the proof in hax_log_reason_right, so hax_case_why's right answer is the naming
@@ -111,6 +113,9 @@ VAR confrontation_advice_given = false
 // Root divert (m03/m04 pattern). When a conversation has ended, the engine
 // restores only its variables on the next talk and continues from the root.
 -> start
+
+=== function ashworth_lead()
+~ return found_ashworth_notice or found_ashworth_vetting
 
 === function has_motive()
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
@@ -463,10 +468,16 @@ Go on. Who?
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> hax_accuse_halloran
 // Struggling run A (D3, M3): a wrong name ends the call.
-+ {found_door_log} [Ben Ashworth.]
-    ~ torres_reason_guessed = true
-    Ben's on that log one evening, at eight. Patricia's transfers run two till four in the morning.
-    Don't guess at me. Come back when you're sure.
+// D136 a: Ben is a live name once the player holds his folder, his notice or the log.
+// With the log it is a guess; without it HaX points at the log, free.
++ {found_door_log or ashworth_lead()} [Ben Ashworth.]
+    {found_door_log:
+        ~ torres_reason_guessed = true
+        Ben's on that log one evening, at eight. Patricia's transfers run two till four in the morning.
+        Don't guess at me. Come back when you're sure.
+    - else:
+        Short of money and on nights. That's a lead, not a case. Check his times on the badge log, then come back.
+    }
     #exit_conversation
     -> support_hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
@@ -1144,7 +1155,7 @@ Thursday, nine o'clock. My office.
         }
     - found_door_log and found_vetting_file and not torres_suspected:
         ~ files_hint_given = true
-        You've got the files. Read both against what the team have told you about each other, then go back to the badge log.
+        You've got the files. Read them against what the team have told you about each other, then go back to the badge log.
     - found_door_log and not torres_suspected:
         {patricia_ko:
             You've got a pattern in the hallway badge log. Give me the name and the reason, or read her files. They're on her office floor.

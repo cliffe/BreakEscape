@@ -57,6 +57,8 @@ VAR found_door_log = false
 VAR found_halloran_alibi = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by HaX (m05_phone_agent_0x99) and Patricia's phone (m05_phone_patricia)
 VAR halloran_questioned = false
+VAR found_ashworth_notice = false // Synced scenario global (D136 a): Ben Ashworth's final-demand notice has been read; set by its onRead
+VAR found_ashworth_vetting = false // Synced scenario global (D136 a): Ben Ashworth's vetting folder is in the notes; set by its onRead and at the hand-over
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia's phone (m05_phone_patricia)
 VAR it_notice_read = false
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
@@ -72,6 +74,9 @@ VAR final_choice = "" // Synced scenario global: Torres' fate; set by m05_torres
 // only badge #4471, so flag 3 counts only once the door log has tied that spare
 // to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
 ~ return found_upload_schedule or ((flag3_submitted or found_manifest) and door_log_reasoned) // E9 (2026-10-17): the printed manifest shows badge #4471, not his name
+
+=== function ashworth_lead()
+~ return found_ashworth_notice or found_ashworth_vetting
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -322,15 +327,17 @@ Patricia Morgan: What do you need?
     #influence_increased
     #give_item:notes:torres_vetting_file
     #give_item:notes:halloran_vetting_file
+    #give_item:notes:ashworth_vetting_file
     // Puzzle browser F2: the hand-over's onRead sets the global, but this
     // conversation's copy stays stale until it reopens; set it here so a
     // naming in the same conversation counts the motive.
     ~ found_vetting_file = true
+    ~ found_ashworth_vetting = true
     // Blind run B (findings 3 and 6): say what she hands over and what comes next.
     #speaker:narrator
-    Narrator: She hands you two folders from the cabinet: vetting aftercare files, one on Ruth Halloran, one on David Torres.
+    Narrator: She hands you three folders from the cabinet: vetting aftercare files, one each on Ruth Halloran, David Torres and Ben Ashworth.
     #speaker:patricia_morgan
-    Patricia Morgan: Those are the two I'd have pulled anyway. That's as far as vetting lets me go.
+    Patricia Morgan: Ruth and David are the two I'd have pulled anyway. Ben's is the third I'd flag: money trouble and the overnight rota. That's as far as vetting lets me go.
     Patricia Morgan: Read them properly. Nobody's file is as tidy as it looks. Then come back with a name and a reason.
     -> hub
 
@@ -378,18 +385,62 @@ Patricia Morgan: Go on, then. Who?
     -> accuse_halloran
 // Struggling run A (D3, M3): a wrong name costs her trust and the conversation,
 // and she gives her own facts rather than ones the player may not have seen.
-+ {found_door_log} [Ben Ashworth.]
-    ~ torres_reason_guessed = true
-    ~ patricia_influence -= 1
-    #influence_decreased
-    Patricia Morgan: Ben's on that log one night, at eight on a Thursday evening. The transfers I flagged run between two and four in the morning.
-    Patricia Morgan: Don't throw names at me. Come back when you're sure.
-    -> reason_wrong
+// D136 a: Ben is a live name once the player holds his folder, his notice or the log.
++ {found_door_log or ashworth_lead()} [Ben Ashworth.]
+    -> accuse_ashworth
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
     -> name_torres
 + [I've got a feeling. Nothing I can show you yet.]
     Patricia Morgan: So have I. That's why you're here. Come back with evidence.
     -> hub
+
+// D136 a: the third suspect. Money and the overnight rota make Ben a lead; the
+// badge log rules him out (once, 20:11, his own #4419; the incident is 23:47 on
+// the spare and 02:00-04:00). Without the log it is a free pointer to it; with
+// the log, naming him is a guess like the Halloran one. Choices-only knots, so
+// a reopened chat replays nothing.
+=== accuse_ashworth ===
+{torres_identified: -> hub}
+#speaker:patricia_morgan
+Patricia Morgan: Ben. Why?
+-> ashworth_why
+
+=== ashworth_why ===
+{torres_identified: -> hub}
++ {ashworth_lead()} [He's broke. His file and the final demand say so.]
+    -> ashworth_money
++ {found_door_log} [His badge is on the server hallway on the log.]
+    -> ashworth_hallway
+
+=== ashworth_money ===
+{torres_identified: -> hub}
+#speaker:patricia_morgan
+{found_door_log:
+    Patricia Morgan: That's why he might. It isn't how. Ben's on that log once, Thursday the 24th, eight in the evening, on his own badge.
+    -> ashworth_cleared
+}
+Patricia Morgan: Skint and on the overnight rota. That's a lead, not a case. Half my caseload is skint.
+Patricia Morgan: Owen keeps the badge readers. See when Ben's really in that hallway, then come back.
+~ hub_quiet = true
+#exit_conversation
+-> hub
+
+=== ashworth_hallway ===
+{torres_identified: -> hub}
+#speaker:patricia_morgan
+Patricia Morgan: Once. Eight on a Thursday evening, six minutes in the hallway, on his own badge, 4419.
+-> ashworth_cleared
+
+=== ashworth_cleared ===
+{torres_identified: -> hub}
+#speaker:patricia_morgan
+~ torres_reason_guessed = true
+~ patricia_influence -= 1
+#influence_decreased
+Patricia Morgan: The transfers I flagged run between two and four in the morning.
+Patricia Morgan: The first night went in on the spare, 4471. Ben isn't either of those.
+Patricia Morgan: Don't throw names at me. Come back when you're sure.
+-> reason_wrong
 
 === accuse_halloran ===
 #speaker:patricia_morgan
