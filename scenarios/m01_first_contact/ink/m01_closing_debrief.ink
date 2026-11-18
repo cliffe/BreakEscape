@@ -63,7 +63,7 @@ VAR audit_wrong_answers = 0             // Number of incorrect assessments
 
 Agent HaX: Agent. I'm going to assume Derek triggered a failsafe before you reached him.
 
-Agent HaX: Because the alternative — that you had the launch device in your hands, and chose not to abort — I'm not prepared to consider that yet.
+Agent HaX: Because the alternative, that you had the launch device in your hands, and chose not to abort, I'm not prepared to consider that yet.
 
 + [The attack went through. It was me.]
     -> launch_confession
@@ -183,7 +183,7 @@ Agent HaX: Thorough work. You didn't rush past the evidence.
     -> npc_interactions
 
 === evidence_partial_projections ===
-Agent HaX: You found the casualty projections—the smoking gun. Derek's death calculations, The Architect's approval.
+Agent HaX: You found the casualty projections, the smoking gun. Derek's death calculations, The Architect's approval.
 
 Agent HaX: We're missing the full target demographics database, but that's recoverable from their servers now that we have access.
 
@@ -192,7 +192,7 @@ Agent HaX: The critical evidence is secured. That's what matters for prosecution
 -> npc_interactions
 
 === evidence_partial_database ===
-Agent HaX: You found the target demographics database—2.3 million people profiled for vulnerability.
+Agent HaX: You found the target demographics database: 2.3 million people profiled for vulnerability.
 
 Agent HaX: We're still missing the casualty projections document, but the database alone proves intent. They were targeting vulnerable populations deliberately.
 
@@ -205,7 +205,7 @@ Agent HaX: The core Operation Shatter documentation is still being recovered by 
 
 Agent HaX: The operation is stopped, but we're relying on digital forensics for the prosecution evidence.
 
-Agent HaX: Next time, prioritize document recovery. Physical evidence is harder to deny in court.
+Agent HaX: Next time, prioritise document recovery. Physical evidence is harder to deny in court.
 
 -> npc_interactions
 
@@ -247,7 +247,7 @@ Agent HaX: Next time, prioritize document recovery. Physical evidence is harder 
 === worked_with_both ===
 Agent HaX: I noticed you worked with both Kevin and Maya.
 
-Agent HaX: Kevin gave you legitimate access—that's the IT contractor cover working as intended.
+Agent HaX: Kevin gave you legitimate access: that's the IT contractor cover working as intended.
 
 {maya_identity_protected:
     Agent HaX: And Maya... you protected her identity. She's safe. She can continue her work without looking over her shoulder.
@@ -283,7 +283,7 @@ Agent HaX: Sometimes that's the right call. Fewer people involved means fewer po
 -> kevin_frame_discussion
 
 === worked_with_maya_kevin_removed ===
-Agent HaX: You used Maya as your primary source. Good call—she knew exactly what was happening at Viral Dynamics.
+Agent HaX: You used Maya as your primary source. Good call. She knew exactly what was happening at Viral Dynamics.
 
 {maya_identity_protected:
     Agent HaX: Her identity stayed protected throughout. She can continue working without looking over her shoulder.
@@ -293,7 +293,7 @@ Agent HaX: You used Maya as your primary source. Good call—she knew exactly wh
 
 Agent HaX: Kevin Park was removed from the picture during the operation.
 
-Agent HaX: I want to be clear about something: we ran Kevin's background after the fact. Nothing connects him to ENTROPY. He was the IT manager—doing his job, flagging concerns, following procedure.
+Agent HaX: I want to be clear about something: we ran Kevin's background after the fact. Nothing connects him to ENTROPY. He was the IT manager, doing his job, flagging concerns, following procedure.
 
 Agent HaX: You had the authority to make that call. I'm noting it as an operational decision, not a failure.
 
@@ -306,7 +306,7 @@ Agent HaX: Kevin Park was removed from the picture during the operation.
 
 Agent HaX: Post-operation check on Kevin's files confirms: no ENTROPY connections. No hidden agenda.
 
-Agent HaX: He was exactly what he appeared to be—an IT manager who'd been raising security concerns nobody would listen to.
+Agent HaX: He was exactly what he appeared to be: an IT manager who'd been raising security concerns nobody would listen to.
 
 Agent HaX: You had the authority. The operation succeeded. I'm logging it as an operational casualty, not a failure of judgment.
 
@@ -317,16 +317,16 @@ Agent HaX: Both Kevin Park and Maya Chen were removed from the picture during th
 
 Agent HaX: I want to be direct with you: neither of them was ENTROPY.
 
-Agent HaX: Kevin was an IT manager flagging concerns. Maya was our own informant—the one who brought us the lead on Operation Shatter in the first place.
+Agent HaX: Kevin was an IT manager flagging concerns. Maya was our own informant, the one who brought us the lead on Operation Shatter in the first place.
 
-Agent HaX: We lost whatever intelligence Maya had still to share. That's a real cost. ENTROPY's internal connections, the names she hadn't written down yet—gone.
+Agent HaX: We lost whatever intelligence Maya had still to share. That's a real cost. ENTROPY's internal connections, the names she hadn't written down yet, gone.
 
 Agent HaX: You had the authority to make those calls. The mission succeeded. But I'm noting it: two civilians removed, one of them our asset.
 
 -> kevin_ko_discussion
 
 === kevin_helped_maya_removed ===
-Agent HaX: Kevin gave you access—the IT contractor cover did its job.
+Agent HaX: Kevin gave you access: the IT contractor cover did its job.
 
 Agent HaX: Maya Chen was removed during the operation.
 
@@ -336,7 +336,7 @@ Agent HaX: She wasn't ENTROPY. She was trying to help. I'm logging it as an oper
 
 + [The mission still succeeded.]
     {player_launched_attack:
-        Agent HaX: The technical work succeeded. Derek's in custody. But the attack went through—that's a cost that sits alongside Maya's.
+        Agent HaX: The technical work succeeded. Derek's in custody. But the attack went through. That's a cost that sits alongside Maya's.
     - else:
         Agent HaX: It did. Derek's in custody. Operation Shatter is stopped.
     }
@@ -353,7 +353,7 @@ Agent HaX: Maya Chen was removed during the operation.
 
 Agent HaX: We may never know what Maya had to tell us. She'd been documenting everything about ENTROPY's operations at Viral Dynamics.
 
-Agent HaX: The parts she hadn't written down yet—names, contacts, methods—that intelligence is gone.
+Agent HaX: The parts she hadn't written down yet (names, contacts, methods), that intelligence is gone.
 
 Agent HaX: Maya wasn't ENTROPY. She was our informant. She trusted SAFETYNET enough to reach out, and that cost her.
 
@@ -363,14 +363,14 @@ Agent HaX: You had the authority. The operation succeeded. I'm noting the loss.
     {player_launched_attack:
         Agent HaX: The attack went through and Maya is gone. That's two losses. Hold both of them.
     - else:
-        Agent HaX: And it did. Keep that in proportion—you stopped 85 people from dying.
+        Agent HaX: And it did. Keep that in proportion: you stopped 85 people from dying.
         Agent HaX: But we lost Maya's intelligence. That gap shows up in the next mission.
     }
     -> kevin_frame_discussion
 + [It wasn't something I'm proud of.]
     Agent HaX: Good. The day you stop caring about that is the day I worry about you.
     {player_launched_attack:
-        Agent HaX: The attack went through. But stopping ENTROPY's next operation—that's still worth fighting for. That's what Maya wanted.
+        Agent HaX: The attack went through. But stopping ENTROPY's next operation: that's still worth fighting for. That's what Maya wanted.
     - else:
         Agent HaX: Focus ahead. Operation Shatter is stopped. That's what Maya wanted.
     }
@@ -383,7 +383,7 @@ Agent HaX: You had the authority. The operation succeeded. I'm noting the loss.
 === kevin_ko_discussion ===
 + [He was in the way. Mission needed to proceed.]
     {player_launched_attack:
-        Agent HaX: Derek is in custody. But the attack went through—the mission only half-succeeded. Kevin's removal is harder to justify against that outcome.
+        Agent HaX: Derek is in custody. But the attack went through: the mission only half-succeeded. Kevin's removal is harder to justify against that outcome.
     - else:
         Agent HaX: And it did. Derek's in custody. Operation Shatter is stopped.
     }
@@ -444,7 +444,7 @@ Agent HaX: That was risky. If he'd panicked, if Derek had noticed...
     -> kevin_outcome_positive
 
 === kevin_evidence ===
-Agent HaX: The contingency files you left for investigators—that was smart.
+Agent HaX: The contingency files you left for investigators: that was smart.
 
 Agent HaX: When the follow-up team found them, they immediately flagged Kevin as a victim, not a suspect.
 
@@ -474,7 +474,7 @@ Agent HaX: Derek's contingency plan activated automatically when Viral Dynamics'
 
 Agent HaX: Kevin spent six hours in interrogation before our team figured out he was being framed.
 
-Agent HaX: He's cleared now. But he's traumatized. His neighbors saw him taken away in handcuffs. His kids watched.
+Agent HaX: He's cleared now. But he's traumatised. His neighbours saw him taken away in handcuffs. His kids watched.
 
 + [I... I saw the files. I knew.]
     Agent HaX: I know. It's in Derek's computer logs.
@@ -498,7 +498,7 @@ Agent HaX: He's cleared now. But he's traumatized. His neighbors saw him taken a
 === kevin_wrongly_accused_outcome ===
 Agent HaX: Kevin Park was reported as an ENTROPY operative. He was taken in for questioning this morning.
 
-Agent HaX: He'll be cleared. The forged email had a "HEADER MISMATCH DETECTED" flag — the mail server's own forensic system flagged it as a forgery.
+Agent HaX: He'll be cleared. The forged email had a "HEADER MISMATCH DETECTED" flag: the mail server's own forensic system flagged it as a forgery.
 
 Agent HaX: The anomaly report showed his workstation running a simultaneous session, which means someone else was using his credentials.
 
@@ -506,7 +506,7 @@ Agent HaX: Any competent investigator will see that in the first hour. Kevin poi
 
 {framing_evidence_seen:
     Agent HaX: He showed you the inconsistencies. In real time. And you still called it in.
-    Agent HaX: That's your call to make — you had the authority. But I want you to sit with that.
+    Agent HaX: That's your call to make. You had the authority. But I want you to sit with that.
 }
 
 Agent HaX: The damage is the process: the questioning, the suspension, neighbours seeing him escorted out. His kids.
@@ -640,8 +640,8 @@ Agent HaX: Walk me through your tactical reasoning.
     Agent HaX: Understandable reaction.
     -> fight_outcome
 + [He reached for something. Threat assessment.]
-    Agent HaX: Field decisions happen fast. I saw the footage—he did move toward his desk.
-    Agent HaX: You neutralized a potential threat. Textbook response.
+    Agent HaX: Field decisions happen fast. I saw the footage: he did move toward his desk.
+    Agent HaX: You neutralised a potential threat. Textbook response.
     -> fight_outcome_justified
 
 === fight_outcome ===
@@ -650,16 +650,16 @@ Agent HaX: Derek's in custody. Mission accomplished.
 Agent HaX: His defence team is spinning the excessive force angle. You have field immunity, but it'll be part of his trial narrative. Worth noting for future ops.
 
 {found_casualty_projections:
-    Agent HaX: The hard evidence you recovered—his casualty projections—that's what convicts him. The confrontation is just noise.
+    Agent HaX: The hard evidence you recovered, his casualty projections, that's what convicts him. The confrontation is just noise.
 - else:
     Agent HaX: Forensics is building the evidence case. The physical confrontation adds complexity to prosecution, but he's not walking free.
 }
 
-Agent HaX: Different approach than a quiet arrest, but the result's the same. He's neutralized.
+Agent HaX: Different approach than a quiet arrest, but the result's the same. He's neutralised.
 
 + [Mission complete. That's what matters.]
     {player_launched_attack:
-        Agent HaX: Derek's neutralized. But the attack went through before we stopped him—that's the part that stays with you.
+        Agent HaX: Derek's neutralised. But the attack went through before we stopped him. That's the part that stays with you.
     - else:
         Agent HaX: Agreed. Operation Shatter stopped, lives saved.
     }
@@ -669,14 +669,14 @@ Agent HaX: Different approach than a quiet arrest, but the result's the same. He
     -> phase_3_discussion
 
 === fight_outcome_justified ===
-Agent HaX: Derek's in custody. You neutralized a potentially armed hostile.
+Agent HaX: Derek's in custody. You neutralised a potentially armed hostile.
 
 Agent HaX: Turned out he was reaching for a phone, not a weapon. But split-second decisions don't have hindsight.
 
 Agent HaX: Response was controlled. Minimal injury.
 
 {found_casualty_projections:
-    Agent HaX: The evidence backs up the arrest—his casualty projections with his signature.
+    Agent HaX: The evidence backs up the arrest: his casualty projections with his signature.
 - else:
     Agent HaX: Forensics is pulling evidence from his systems. Prosecution case is solid.
 }
@@ -687,7 +687,7 @@ Agent HaX: His lawyers will file complaints, but review board will clear it. Sta
     Agent HaX: Agreed. You made the right call in the moment.
     -> phase_3_discussion
 + [I'd make the same call again.]
-    Agent HaX: That's what field agents do. Assess, act, neutralize.
+    Agent HaX: That's what field agents do. Assess, act, neutralise.
     -> phase_3_discussion
 
 // ================================================
@@ -697,7 +697,7 @@ Agent HaX: His lawyers will file complaints, but review board will clear it. Sta
 === consequence_arrest ===
 Agent HaX: You chose arrest. Legal prosecution through proper channels.
 
-Agent HaX: He's not cooperating—fanatics rarely do. But we have the evidence. His signature on the casualty projections.
+Agent HaX: He's not cooperating. Fanatics rarely do. But we have the evidence. His signature on the casualty projections.
 
 {player_launched_attack:
     Agent HaX: He'll spend decades in prison explaining why the people who died were acceptable losses for his ideology.
@@ -714,7 +714,7 @@ Agent HaX: He's not cooperating—fanatics rarely do. But we have the evidence. 
     }
     -> phase_3_discussion
 + [He seemed so certain he was right]
-    Agent HaX: That's what makes fanatics dangerous. They've rationalized everything.
+    Agent HaX: That's what makes fanatics dangerous. They've rationalised everything.
     Agent HaX: Derek doesn't think he's a murderer. He thinks he's an educator.
     Agent HaX: The jury will disagree.
     -> phase_3_discussion
@@ -731,7 +731,7 @@ Agent HaX: I heard his answer. "I will never betray ENTROPY."
 Agent HaX: Fanatics don't turn, Agent. They'd rather go to prison as martyrs.
 
 + [I had to try]
-    Agent HaX: It was worth asking. His refusal tells us something about ENTROPY's organizational culture.
+    Agent HaX: It was worth asking. His refusal tells us something about ENTROPY's organisational culture.
     Agent HaX: These aren't mercenaries. They're ideologues. That's useful intelligence.
     -> recruit_outcome
 + [I thought maybe he'd want to reduce his sentence]
@@ -773,7 +773,7 @@ Agent HaX: Director Netherton is... not happy. We don't usually expose methods.
 
 Agent HaX: But ENTROPY's tactics are now public knowledge. People know to verify. To question.
 
-Agent HaX: In a twisted way, you taught the lesson Derek wanted—just without the deaths.
+Agent HaX: In a twisted way, you taught the lesson Derek wanted, just without the deaths.
 
 {maya_identity_protected:
     Agent HaX: At least Maya's identity stayed protected through all this.
@@ -805,7 +805,7 @@ Agent HaX: You showed him the archive. The Architect's letter. The full picture.
 Agent HaX: Forensics is going through Derek's files now. The Architect's letter alone is worth months of ENTROPY intelligence.
 
 {found_casualty_projections:
-    Agent HaX: His casualty projections—signed, dated, with The Architect's approval—that's what convicts him. The surrender doesn't help him legally.
+    Agent HaX: His casualty projections (signed, dated, with The Architect's approval), that's what convicts him. The surrender doesn't help him legally.
 - else:
     Agent HaX: We're building the prosecution from his files. The surrender doesn't help him legally.
 }
@@ -817,7 +817,7 @@ Agent HaX: That was either the cleanest possible resolution, or he's playing a l
     -> phase_3_discussion
 + [I hope he's not playing us.]
     Agent HaX: If he is, he just handed us everything we needed to prosecute him. Not the smartest long game.
-    Agent HaX: We'll find out. Either way — he's in custody. Operation Shatter is stopped.
+    Agent HaX: We'll find out. Either way, he's in custody. Operation Shatter is stopped.
     -> phase_3_discussion
 
 // ================================================
@@ -856,7 +856,7 @@ Agent HaX: We don't know. ENTROPY's leader, strategist, philosopher.
 
 Agent HaX: Derek quoted The Architect. Believed every word. Got approval to kill 85 people.
 
-Agent HaX: Whoever they are, they've built an organization of fanatics.
+Agent HaX: Whoever they are, they've built an organisation of fanatics.
 
 + [We have to find them]
     Agent HaX: Every cell we disrupt, every operation we stop, brings us closer.
@@ -892,7 +892,7 @@ Agent HaX: Cell by cell. Operation by operation.
 {player_launched_attack:
     Agent HaX: First mission complete. Derek in custody. The evidence is secured.
 
-    Agent HaX: But the attack went through. The people in those casualty projections—they weren't statistics. We failed them.
+    Agent HaX: But the attack went through. The people in those casualty projections: they weren't statistics. We failed them.
 
     Agent HaX: That stays with you. It should.
 - else:

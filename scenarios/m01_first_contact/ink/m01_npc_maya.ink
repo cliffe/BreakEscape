@@ -116,12 +116,12 @@ Maya Chen: From what I've gathered, Operation Shatter is a coordinated disinform
 
 Maya Chen: They've profiled millions of people: who reacts fastest to an alert, who forwards without checking, who trusts which channels.
 
-Maya Chen: The plan is to send fake emergency messages—hospital closures, bank failures, government alerts—tuned per segment where they think it'll spread fastest.
+Maya Chen: The plan is to send fake emergency messages (hospital closures, bank failures, government alerts), tuned per segment where they think it'll spread fastest.
 
-Maya Chen: The panic will swamp real emergency capacity and cause deaths—delayed response, overcrowding, accidents. They've calculated it: 42 to 85 people will die in the first 24 hours.
+Maya Chen: The panic will swamp real emergency capacity and cause deaths: delayed response, overcrowding, accidents. They've calculated it: 42 to 85 people will die in the first 24 hours.
 
 + [And they're okay with that?]
-    Maya Chen: Derek—he's the one running it—I've overheard him call it "education."
+    Maya Chen: Derek (he's the one running it), I've overheard him call it "education."
     Maya Chen: Says the deaths will teach people not to trust digital communications. He's insane. But he believes every word.
     -> hub
 + [When does it launch?]
@@ -146,12 +146,12 @@ Maya Chen: Derek's the operations lead. He built the target lists, wrote the fak
 
 + [Where's the evidence?]
     Maya Chen: I've overheard and glimpsed so much, but haven't dared to gather physical evidence. But I'm sure it's there. Derek's sloppy. He thinks he's untouchable.
-    Maya Chen: If you can get into his office, I'd start there. And the server room—that's where the real infrastructure lives.
+    Maya Chen: If you can get into his office, I'd start there. And the server room: that's where the real infrastructure lives.
     -> hub
 + [What about the others here?]
     Maya Chen: Kevin's innocent. He's suspicious of Derek but doesn't know the full picture.
     Maya Chen: Sarah just works reception. She doesn't know anything.
-    Maya Chen: Patricia—the old manager—she figured it out. That's why they fired her.
+    Maya Chen: Patricia, the old manager, she figured it out. That's why they fired her.
     -> hub
 
 // ================================================
@@ -193,7 +193,7 @@ Maya Chen: They didn't even let her take her briefcase. It's still in her office
 
 + [What's in the briefcase?]
     Maya Chen: Her investigation notes, I think. A timeline of what she found.
-    Maya Chen: I never got a good look. She kept everything locked up tight—smart, given what happened to her.
+    Maya Chen: I never got a good look. She kept everything locked up tight. Smart, given what happened to her.
     -> hub
 + [That's suspicious timing]
     Maya Chen: Derek arranged it. I saw emails between him and HR.
@@ -207,7 +207,7 @@ Maya Chen: They didn't even let her take her briefcase. It's still in her office
 === tactical_advice ===
 {maya_away: -> not_here}
 ~ maya_settled = false
-Maya Chen: Derek's office, the server room—that's where the real answers are. Figure out how to get in.
+Maya Chen: Derek's office, the server room: that's where the real answers are. Figure out how to get in.
 
 Maya Chen: Patricia was piecing this together before they got rid of her. Whatever she found might still be here somewhere.
 

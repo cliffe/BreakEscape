@@ -105,7 +105,7 @@ Sarah O'Brien: Actually, I think there's a maintenance checklist somewhere in th
 
 Sarah O'Brien: Kevin's our IT manager. Really nice guy, kind of overworked.
 
-Sarah O'Brien: He's been worried about security lately. Says someone's been accessing servers without authorization.
+Sarah O'Brien: He's been worried about security lately. Says someone's been accessing servers without authorisation.
 
 + [Who would do that?]
     Sarah O'Brien: I don't know. He mentioned it to management but nothing happened.
@@ -122,7 +122,7 @@ Sarah O'Brien: He's been worried about security lately. Says someone's been acce
 === ask_office_layout ===
 ~ asked_about_office = true
 
-Sarah O'Brien: Main office is through that door—open plan with desks for the team.
+Sarah O'Brien: Main office is through that door: open plan with desks for the team.
 
 Sarah O'Brien: Around the edges you've got: IT room on the east (where Kevin hangs out). Conference room and break room to the west. 
 
@@ -139,7 +139,7 @@ Sarah O'Brien: To the north are the private offices of Derek, Kevin, Maya, and t
 ~ influence += 1
 # influence_increased
 
-Sarah O'Brien: Well, there's Derek Lawson—Senior Marketing Manager. He's... intense.
+Sarah O'Brien: Well, there's Derek Lawson, Senior Marketing Manager. He's... intense.
 
 Sarah O'Brien: Works late a lot. Like, really late. Sometimes I see his access logs from after midnight.
 
