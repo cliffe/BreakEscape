@@ -919,12 +919,20 @@ export function handleObjectInteraction(sprite) {
                 // flow in person-chat, not plain dialogue. The lab needs only the
                 // phone case; a sprite test character exercises this one (P4-G).
                 if (npc.callId) { startPretextCall(npc.callId, { npcId: sprite.npcId, channel: 'person' }); return; }
-                // Start person-chat minigame with this NPC
-                window.MinigameFramework.startMinigame('person-chat', null, {
+                const startChat = () => window.MinigameFramework.startMinigame('person-chat', null, {
                     npcId: sprite.npcId,
                     title: npc.displayName || sprite.npcId,
                     disableClose: npc.disableClose === true
                 });
+                // Another screen is open (a phone chat, say): close the text phone or say why
+                // not, instead of a silent nothing (npc-chat-busy.js)
+                if (window.handleBusyNpcChat?.({
+                    framework: window.MinigameFramework, npcId: sprite.npcId,
+                    displayName: npc.displayName, startChat,
+                    alert: (m) => (window.gameAlert || window.showNotification)?.(m, 'warning', '', 3000)
+                })) return;
+                // Start person-chat minigame with this NPC
+                startChat();
                 return;
             } else {
                 console.warn('NPC not found in manager:', sprite.npcId);
