@@ -568,6 +568,11 @@ export const minigameBridge = {
             keyUp('Escape');
         }
         await sleepFrames(6);
+        // If the close finished on the first Escape and a second one reached the world, the game
+        // menu opens over the canvas: resume it so the next input is not swallowed.
+        const strayMenu = document.querySelector('#game-menu-overlay.visible');
+        const strayResume = strayMenu && strayMenu.querySelector('.game-menu-resume');
+        if (strayResume) { clickElement(strayResume); await sleepFrames(4); }
         if (willReturnToContainer) {
             const deadline = performance.now() + 500;
             while (performance.now() < deadline) {

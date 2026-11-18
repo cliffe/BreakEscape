@@ -167,7 +167,7 @@ Director Magnus Netherton: Already? Say it. Not for the file. For me. Who is you
     Director Magnus Netherton: A man asking too many questions is either the leak or the only other person hunting it.
     Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the door log. #set_global:suspect_theory:phantom
     -> back
-+ [Nightshade. Too calm, and he never gave the PIN device back.]
++ [Nightshade. Too calm, and ATHENA says he never signed the PIN device back in.]
     ~ suspect_theory = "nightshade"
     Director Magnus Netherton: An instinct is not evidence. Calm is a temperament, and half this floor keeps kit it should have returned.
     Director Magnus Netherton: If it is him, he has been careful for years. Careful men leave exactly one mistake. Find it. #set_global:suspect_theory:nightshade
@@ -265,8 +265,12 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
     - else:
         // PASS 5 (puzzle chains C1, m1): "the men who went through that lab door", so
         // Phantom's travel-desk row (circular at step 4) is plainly not the one.
-        Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. If a man's own row is wrong, he will say so.
-        Director Magnus Netherton: Come back when one of them has told you it is right.
+        { stopping:
+        - Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. If a man's own row is wrong, he will say so.
+          Director Magnus Netherton: Come back when one of them has told you it is right.
+        - Director Magnus Netherton: Not yet. A row nobody has owned is only paper. Put the log in front of Vector or Nightshade, and let him tell you whether his line is right.
+        - Director Magnus Netherton: Still nothing from the lab door. Vector or Nightshade, Agent. One of them has to say "that row is mine" before I will weigh it.
+        }
         -> back
     }
 }
@@ -334,7 +338,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
 + [Phantom's own row puts him on a plane.]
     ~ audit_reply = 8
     -> audit_wrong
-+ [It agrees with the auth log Phantom pulled.]
++ [A second printout from Phantom agrees with it.]
     ~ audit_reply = 9
     -> audit_wrong
 + [It looks like a straight badge-system printout.]

@@ -828,6 +828,39 @@ function overlapMenuIsTheBlocker() {
  * (MinigameFramework.startMinigame), so a click would silently do nothing.
  * Better to say so than to look like a flaky failure.
  */
+/**
+ * Close the game menu overlay if it is open (it opens on Escape when no minigame holds the key),
+ * by clicking its real Resume button. Returns true when it was open.
+ */
+async function closeStrayGameMenu() {
+    const menu = document.querySelector('#game-menu-overlay.visible');
+    if (!menu) return false;
+    const resume = menu.querySelector('.game-menu-resume') || menu.querySelector('.game-menu-close');
+    if (resume) clickElementDom(resume);
+    await sleepFrames(4);
+    return true;
+}
+
+/**
+ * Clear the transient UI that is not part of the puzzle and sits over the canvas: NPC bark
+ * toasts (their own X, or Clear all) and a game menu that an Escape opened. Never touches
+ * the session overlay, minigames or the ending overlays.
+ */
+async function clearTransientUi() {
+    const cleared = [];
+    if (await closeStrayGameMenu()) cleared.push('game-menu');
+    for (let i = 0; i < 6; i++) {
+        const clearAll = document.querySelector('.npc-bark-clear-all');
+        const one = document.querySelector('.npc-bark-dismiss');
+        const btn = (clearAll && clearAll.getBoundingClientRect().width > 0) ? clearAll : one;
+        if (!btn || btn.getBoundingClientRect().width <= 0) break;
+        clickElementDom(btn);
+        cleared.push(btn.className);
+        await sleepFrames(3);
+    }
+    return cleared;
+}
+
 function blockedByMinigame() {
     const mg = activeMinigameSummary();
     if (mg) {
@@ -1224,6 +1257,8 @@ const bridge = {
      * so a failure says where the feet were relative to the opening.
      */
     async enterRoom(toRoom, { timeoutMs = 20000, maxAttempts = 3 } = {}) {
+        // Phone barks and a stray game menu block clicks but are not part of the puzzle.
+        await clearTransientUi();
         const blocked = blockedByMinigame();
         if (blocked) return blocked;
         if (!window.player) return fail('no-player');
@@ -1621,6 +1656,10 @@ const bridge = {
         clickElementDom(target);
         await sleepFrames(4);
         const clicked = (target.innerText || '').trim();
+        // If the target was the game menu itself, the caller meant to close it; otherwise an
+        // Escape-driven close can have opened it behind us, so resume rather than leave it up.
+        const menuWasTarget = !!(target.closest && target.closest('#game-menu-overlay'));
+        const menuClosed = menuWasTarget ? false : await closeStrayGameMenu();
         const afterBlocker = detectBlockingUi();
         // The click landed on a real button, but the page can still be blocked: the overlay did
         // not close, or it revealed another (the tutorial prompt sits over the session-resume
@@ -1629,7 +1668,7 @@ const bridge = {
         // stops and dismisses the new blocker; the field stays for callers that still read it.
         const result = afterBlocker
             ? fail('still-blocked-after-dismiss', { clicked, stillBlocked: true, blocker: afterBlocker })
-            : { ok: true, clicked, stillBlocked: false };
+            : { ok: true, clicked, stillBlocked: false, ...(menuClosed ? { closedGameMenu: true } : {}) };
         logAction('dismissBlockingUi', { labelMatch }, result);
         return result;
     },

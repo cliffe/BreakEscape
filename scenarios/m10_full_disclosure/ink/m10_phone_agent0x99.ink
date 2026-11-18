@@ -708,6 +708,7 @@ Close his backdoor channel? One action. It doesn't touch the shares.
 // OT §4.1, SE §3.1. Netherton on the net; Nightshade's second word on the
 // tether. No narrator.
 === breach_call ===
+~ breach_call_done = true
 Director Magnus Netherton: Breach. Go.
 {
 - nightshade_tethered:
