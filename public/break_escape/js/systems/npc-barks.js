@@ -236,6 +236,11 @@ export default class NPCBarkSystem {
       return null;
     }
 
+    // A phone text for the contact whose conversation is open on the player's phone: the
+    // thread takes it (drawn live, marked read) and no toast follows, now or after the phone
+    // closes (A11). Another contact, the list view and a closed phone all keep the bark.
+    if (this._foldIntoOpenThread(payload)) return null;
+
     // HOLD POLICY (code in bark-release-policy.js; README_scenario_design.md "Bark notifications").
     // While a person-chat or another full-screen minigame is open, hold the bark (it covered
     // the panel, D5). On release: first in, first out; each bark's conditions are re-checked
@@ -261,6 +266,36 @@ export default class NPCBarkSystem {
     this._processBarkQueue();
 
     return null; // Return null since we're processing async
+  }
+
+  /**
+   * True when the bark is a phone text for the contact whose conversation is open: the
+   * text goes into that thread (drawn if it isn't already, then marked read) and the
+   * caller shows no toast. Speech lines and continuations are never folded in.
+   */
+  _foldIntoOpenThread(payload = {}) {
+    if (payload.continuation || !payload.npcId) return false;
+    if (!phoneThreadOpenFor(payload.npcId) || this._isSpeech(payload)) return false;
+    try {
+      const raw = String(payload.text || payload.message || '');
+      const contact = this.npcManager?.getNPC?.(payload.npcId) || { id: payload.npcId, displayName: payload.npcName };
+      let text = raw;
+      try { text = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }
+      if (!text.trim()) return false;
+      const m = window.MinigameFramework?.currentMinigame;
+      const key = threadTextKey(text);
+      const drawn = openPhoneThread();
+      if (key && !(drawn && drawn.keys.has(key)) && typeof m?.ui?.addMessage === 'function') {
+        Promise.resolve(m.ui.addMessage('npc', text)).catch(() => {});
+      }
+      const rows = this.npcManager?.conversationHistory?.get?.(payload.npcId) || [];
+      for (let i = rows.length - 1; i >= 0; i--) {
+        if (rows[i] && rows[i].type === 'npc' && !rows[i].read && threadTextKey(rows[i].text) === key) { rows[i].read = true; break; }
+      }
+      if (m?.phoneId && typeof window.updatePhoneBadge === 'function') window.updatePhoneBadge(m.phoneId);
+      console.debug('[barks] folded into the open thread, no toast:', text);
+      return true;
+    } catch (e) { return false; }
   }
 
   _shouldDefer(payload) {

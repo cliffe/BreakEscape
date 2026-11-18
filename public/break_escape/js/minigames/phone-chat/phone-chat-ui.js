@@ -615,7 +615,32 @@ export default class PhoneChatUI {
         // Populate contacts
         this.populateContactList(phoneId);
         
+        this.focusIntoPhone();
         console.log('📋 Showing contact list');
+    }
+
+    /**
+     * Put keyboard focus inside the phone: the visible view itself (tabindex -1), so the
+     * first Tab reaches the view's first control instead of a toast behind the phone (A1).
+     * Left alone when the player is typing in a field outside the phone, or focus is
+     * already on a control inside the phone's visible view.
+     */
+    focusIntoPhone() {
+        try {
+            const view = this.currentView === 'conversation'
+                ? this.elements.conversationView : this.elements.contactListView;
+            const doc = this.container?.ownerDocument;
+            if (!view || !doc || typeof view.focus !== 'function') return false;
+            const active = doc.activeElement;
+            const editable = (el) => !!el && (el.isContentEditable
+                || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName || ''));
+            if (active && active !== doc.body && !this.container.contains(active) && editable(active)) return false;
+            if (active && active !== view && view.contains(active)) return false;
+            if (!view.hasAttribute('tabindex')) view.setAttribute('tabindex', '-1');
+            view.style.outline = 'none';
+            view.focus({ preventScroll: true });
+            return doc.activeElement === view;
+        } catch (e) { return false; }
     }
     
     /**
@@ -875,6 +900,7 @@ export default class PhoneChatUI {
             this.startCallTimer();
         }
         
+        this.focusIntoPhone();
         console.log(`💬 Showing conversation with ${npc.displayName || npcId}`);
     }
     
