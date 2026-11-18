@@ -19,7 +19,7 @@ All new lines for `adaeze_okafor` and `gwen_pritchard`. All 28 voiced on 18 Nov 
 | Adaeze Okafor | ex_last_two 3 | And the coffee machine is still broken. | 39 |
 | Gwen Pritchard | ex_last_two 4 | Still broken, still nobody's job. | 33 |
 | Adaeze Okafor | ex_last_two 5 | At least the water is cold. | 27 |
-| Gwen Pritchard | ex_going_now 1 | Right, I'm logging this and going. | 34 |
+| Gwen Pritchard | ex_going_now 1 | Right, I'll log this and pack up. | 33 |
 | Adaeze Okafor | ex_going_now 2 | Same. Two more minutes and I'm done. | 36 |
 | Gwen Pritchard | ex_going_now 3 | The marshal won't thank us for staying. | 39 |
 | Adaeze Okafor | ex_going_now 4 | Then let's not give him the chance. | 35 |
@@ -35,7 +35,7 @@ All new lines for `adaeze_okafor` and `gwen_pritchard`. All 28 voiced on 18 Nov 
 
 Clip count: 28 (10 conversation, 10 exchange, 8 pool).
 
-Existing lines changed: none. ex_going_now 2 and 5 reworded on 18 Nov 2026 (staff return to their desks, no leaving), re-voiced; old clips pruned.
+Existing lines changed: none. ex_going_now 1, 2 and 5 reworded on 18 Nov 2026 (staff return to their desks, no leaving), re-voiced; old clips pruned.
 
 Voices: Adaeze Okafor Gacrux, Gwen Pritchard Sulafat (course cast, VOICE_CAST.md). D113 (17 Nov 2026): in m07 both use en-US voice styles (General American; Adaeze keeps a light Nigerian inflection, Gwen Pacific Northwest), since they work in a US facility. Style quotes: DIALOGUE_SAMPLE.md. Lines reworded from British idiom under D113 (all unvoiced).
 

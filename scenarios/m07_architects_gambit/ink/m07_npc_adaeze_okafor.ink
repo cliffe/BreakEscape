@@ -63,7 +63,7 @@ Adaeze Okafor: At least the water is cold.
 
 // After ex_last_two: they agree to go.
 === ex_going_now ===
-Gwen Pritchard: Right, I'm logging this and going.
+Gwen Pritchard: Right, I'll log this and pack up.
 Adaeze Okafor: Same. Two more minutes and I'm done.
 Gwen Pritchard: The marshal won't thank us for staying.
 Adaeze Okafor: Then let's not give him the chance.
