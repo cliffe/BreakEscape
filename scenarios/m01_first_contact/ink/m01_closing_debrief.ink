@@ -9,6 +9,7 @@ VAR player_name = "Agent"
 VAR final_choice = ""             // From Derek confrontation (arrest/recruit/expose)
 VAR objectives_completed = 0      // Percentage of objectives done
 VAR lore_collected = 0            // Number of LORE fragments found
+VAR lore_tracked = false          // m01 has no lore fragments and nothing counts them, so the lore lines stay off until it does
 VAR found_casualty_projections = false  // Found the critical evidence
 VAR found_target_database = false       // Found the targeting demographics
 VAR talked_to_maya = false              // Interacted with Maya Chen
@@ -860,7 +861,7 @@ Agent HaX: Whoever they are, they've built an organisation of fanatics.
 
 + [We have to find them]
     Agent HaX: Every cell we disrupt, every operation we stop, brings us closer.
-    {lore_collected >= 3:
+    {lore_tracked && lore_collected >= 3:
         Agent HaX: The intelligence you collected today gives us new leads. The Architect's communication patterns. Their philosophical fingerprints.
     }
     -> mission_end
@@ -899,10 +900,10 @@ Agent HaX: Cell by cell. Operation by operation.
     Agent HaX: First mission complete. Lives saved. Derek in custody.
 }
 
-{lore_collected >= 3:
+{lore_tracked && lore_collected >= 3:
     Agent HaX: And you recovered several intelligence fragments along the way. That's thorough investigative work.
 }
-{lore_collected == 0:
+{lore_tracked && lore_collected == 0:
     Agent HaX: You focused on the primary objectives. Efficient.
     Agent HaX: But next time, look for additional intelligence. Context helps future operations.
 }
