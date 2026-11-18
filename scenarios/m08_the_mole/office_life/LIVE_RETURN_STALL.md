@@ -1,3 +1,31 @@
+# Live proof on m08: Agnieszka's return trip, new engine (f401b9ee0 and later)
+
+Added 2026-11-18, branch fix/needs-return-npc-stall at 82466fa7d (engine as in f401b9ee0). Keyless server on :3092 from this worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Three fresh games made with new-game.rb, audit read in play (setup2.sh route), then each trip started by setting thirst to 5 on julian_sallow and agnieszka_duda, once she was home and idle plus 3 s. No globals set, no game row edited. Driver: tmp/rs/trip2.js and runtrip2.sh (trip.js plus Vector's body centre and the tier record `_planTier/_detourTier` sampled while she returns).
+
+Why Vector's height matters (DIAGNOSIS_M08.md): the old return leg ran along body y 164, so it stalled only when Vector's body centre was at y 151 or more (within the 13 px lane). Body y 140 to 145 never stalled. Vector's body stood at y 153.6 at the start of games 9400 and 9404 with no help, and gets shoved up by her trips, so later trips cover the low-y case too. On game 9411 he was placed through the test bridge (`sprite.body.reset`, body centre x 486.4, y 152.7, 157 and 150) so the stalling height was exercised on purpose; those three rows say "placed".
+
+| Game | Trip | Vector body centre at start | Placed | Return s | return_stuck | return_abandoned | return_resumed | Tier seen |
+|---|---|---|---|---|---|---|---|---|
+| 9400 | 1 | 486.4, 153.6 | no | 3.0 | 0 | 0 | 0 | held detour |
+| 9400 | 2 | 486.4, 153.6 | no | 3.0 | 0 | 0 | 0 | held detour |
+| 9400 | 3 | 486.4, 153.6 | no | 3.0 | 0 | 0 | 0 | held detour |
+| 9400 | 4 | 486.4, 153.6 | no | 3.0 | 0 | 0 | 0 | held detour |
+| 9400 | 5 | 486.3, 153.5 | no | 3.1 | 0 | 0 | 0 | held detour |
+| 9404 | 1 | 486.4, 153.6 | no | 2.2 | 0 | 0 | 0 | none needed |
+| 9404 | 2 | 486.4, 150.9 | no | 5.5 | 0 | 0 | 0 | held detour |
+| 9404 | 3 | 486.4, 144.0 | no | 5.4 | 0 | 0 | 0 | ring, held detour |
+| 9411 | 1 | 486.4, 152.7 | yes | 7.6 | 0 | 0 | 2 | ring, held detour |
+| 9411 | 2 | 486.4, 157.0 | yes | 4.5 | 0 | 0 | 0 | ring |
+| 9411 | 3 | 486.4, 150.0 | yes | 5.8 | 0 | 0 | 0 | ring |
+
+11 trips, 11 home, 0 return_stuck, 0 return_abandoned. Eight trips began with Vector's body at y 151 or more (the case that stalled before: 4 of 9 trips on the earlier fixed engine, all about 30 s); six of them natural, two placed. No tight tier was needed on this layout: the ring tier, with standing NPCs no longer given the near-end softening, plans clear of his lane.
+
+Longest hold while returning: game 9411 trip 1 (Vector at the stalling height 152.7), held about 6 s at sprite (506,132) with two return_resumed, then home at 7.6 s. That is the earlier hold spot (about (506,127) to (510,125)) but it cleared on the next re-plan; the earlier engine held there for 12 s, was flagged return_stuck, backed off 15 s and took 29 to 32 s. No other trip held longer than 3 s. Samples for every trip are in tmp/rs/trips2.jsonl (field `samples`).
+
+Not shown: an unfixed contrast in this session. The earlier rows below are that contrast (1 of 9 unfixed and 4 of 9 stalled on the first fix; the diagnosis explains the spread by Vector's height).
+
+---
+
 # Live proof on m08: Agnieszka's return trip, unfixed against fixed engine
 
 Branch fix/needs-return-npc-stall at e5bbe9694 (fix in f48c80af8). Keyless server on :3092 from this worktree. m08_the_mole, operations floor. Headless, throttleFps(20), TTS aborted by pathname, Mission Brief closed. Six fresh games made with new-game.rb, audit read in play (setup2.sh route), then trips started by setting thirst to 5 on julian_sallow and agnieszka_duda with window.__test.needs.set. Several trips per game, each started once she was home and idle plus 3 s. No globals set.
