@@ -521,7 +521,7 @@
 /* How to read the PIN cracker's lights (shown while the cracker is on) */
 .pin-minigame-cracker-help {
     flex-basis: 100%;
-    font-size: 12px;
+    font-size: 16px;
     line-height: 1.6;
     color: #e0e0e0;
 }
