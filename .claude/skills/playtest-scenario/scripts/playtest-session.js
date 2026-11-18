@@ -916,6 +916,10 @@ const vmSteps = createVmSteps({
             + '{"cmd":"converse","choices":["<regex of the option>"]} (no id continues the open dialogue), '
             + 'or {"cmd":"mg","action":"chooseIndex","args":[n]}. Pass "explore":true to let converse '
             + 'pick unvisited options itself (that commits real choices), or "close":true to leave.'
+          : (turns >= maxTurns && !pendingChoice)
+          ? `Hit maxTurns (${maxTurns}) before the conversation ended, and closed it; nothing was lost, it resumes where it stopped. `
+            + 'A monologue costs one turn per line (the m02 Reeves confrontation is about 25 before its first ending choice), '
+            + 'so this is a turn-cap artefact, not a stuck point: run converse again with a larger "maxTurns".'
           : nothingHappened
           ? 'The target opened no dialogue. Some interactables (phones, terminals) '
             + 'need a selection first — interact, inspect the minigame state, and drive it '
