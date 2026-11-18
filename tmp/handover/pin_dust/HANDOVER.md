@@ -33,3 +33,9 @@ Commits after 5db7881f4: 70e1f4d99 (validator, schema, README, validator test), 
 - M4: cracker+dust JS test runs a real attempt and checks the pips.
 - m1 clear typed digits on dust; m3; m4 use the 8px grid; m5 key the record by canonical lock id; m6 hostile-input, growth and other-user tests; m7 document only.
 - Then rerun tests and redo the live proof (recipe above; fresh game; setFPS(20) with fixed steps on).
+
+## Update (agent 3): R1 fixes done, proofs open
+Commits: opt-in/M1/M2/m1/m3/m5 + validator + README + scenario; JS tests; "apply only on a real true; test fixes".
+Done: B1 (server `dustable == true`, client `=== true`, scenario vault+wall_safe true, clean_safe false, plain_safe in Rails fixture), M1 (bootstrap whitelist dustable/dustHint, room schema), M2 (width auto, 24px tall), M3, M4 (real cracker attempt in pin-dust.test.mjs), m1, m3 (restore without kit, no button), m4 (already 8px), m5 (canonical lock id key), m6 (hostile, growth, other-user; controller apply only on true/'true'), stale message cleared, validator warns (dustHint without dustable; 1 repeated digit). m2/m7 doc only: not yet written into README (dustHint is client-readable; doors have no reach gate).
+Tests: pin_dust_test 22/0 after fixes; earlier run policy_test + games_controller_test had only the 2 pin_dust failures since fixed; pin-dust.test.mjs 20 pass, validator-pin-dust 6 pass. bin/test-js full run was started (log scratchpad/pindust-js.log, 763 files), result not read.
+Open: read pindust-js.log (check minigame-pixel-art); live proof: driver scratchpad/pd_drive.py (needs playtest-session args fixed: it has no --log flag, drop it; use cwd for session.jsonl). Server on :3082 was started and stopped by PID; game 8315 (test_pin_dust) is unused. Save v2_*.png into scratchpad/pin-dust/. Add m2/m7 doc lines to README.
