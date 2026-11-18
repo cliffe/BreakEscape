@@ -19,6 +19,8 @@ const { ObjectivesPanel } = await import(pathToFileURL(join(root, 'js/ui/objecti
 
 const aims = [{ aimId: 'a', title: 'Work the suspects', status: 'active',
   tasks: [{ taskId: 't1', title: 'One', status: 'completed' }, { taskId: 't2', title: 'Two', status: 'active' }] }];
+// Mock timers fire a timer scheduled inside a tick only on a later tick, so advance in 1 s steps
+const adv = (ms) => { for (let t = 0; t < ms; t += 1000) mock.timers.tick(Math.min(1000, ms - t)); };
 const make = () => {
   document.body.innerHTML = '';
   window.getTutorialManager = undefined;
@@ -39,16 +41,18 @@ test('opens expanded, folds once after AUTO_COLLAPSE_MS, and shows the summary t
   assert.equal(p.isCollapsed, false);
   const toggle = p.container.querySelector('.objectives-toggle');
   assert.equal(toggle.getAttribute('aria-expanded'), 'true');
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_MS - 1);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS - 1);
   assert.equal(p.isCollapsed, false);
-  mock.timers.tick(1);
+  adv(1);
   assert.equal(p.isCollapsed, true);
   assert.equal(toggle.getAttribute('aria-expanded'), 'false');
   assert.equal(p.container.querySelector('.objectives-pill-count').textContent, '1/2');
-  assert.equal(p.container.querySelector('.objectives-pill-text').textContent, 'Work the suspects');
+  assert.equal(p.container.querySelector('.objectives-pill-text').textContent, 'Two', 'desktop: names the next task');
+  assert.match(p.container.querySelector('.objectives-header').title, /Work the suspects \(1\/2\): Two/);
+  assert.equal(p.container.querySelector('.objectives-pill-summary').getAttribute('aria-live'), 'off');
   // reopened by the player: it does not fold again
   p.toggleCollapse();
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_MS * 3);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS * 3);
   assert.equal(p.isCollapsed, false);
   p.destroy();
   mock.timers.reset();
@@ -58,16 +62,16 @@ test('a player toggle before the fold cancels it; hover postpones it', () => {
   mock.timers.enable({ apis: ['setTimeout'] });
   let p = make();
   p.toggleCollapse(); p.toggleCollapse();   // closed then open again
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_MS * 2);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS * 2);
   assert.equal(p.isCollapsed, false, 'touched: never auto-folds');
   p.destroy();
 
   p = make();
   p.container.dispatchEvent(new window.MouseEvent('mouseenter'));
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
   assert.equal(p.isCollapsed, false, 'hovered: held open');
   p.container.dispatchEvent(new window.MouseEvent('mouseleave'));
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_RETRY_MS);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_STEP_MS);
   assert.equal(p.isCollapsed, true, 'hover ended: folds at the next look');
   p.destroy();
   mock.timers.reset();
@@ -78,14 +82,116 @@ test('a new aim re-arms the fold for an untouched, open panel', () => {
   let listener;
   document.body.innerHTML = '';
   const p = new ObjectivesPanel({ addListener(f) { listener = f; }, removeListener() {}, getActiveAims: () => aims });
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
   assert.equal(p.isCollapsed, true);
   p.setCollapsed(false);   // opened by code, not by a click: still untouched
   listener([...aims, { aimId: 'b', title: 'Second', status: 'active', tasks: [{ taskId: 'b1', title: 'B', status: 'active' }] }]);
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
   assert.equal(p.isCollapsed, true, 'folded again after the new aim');
   p.destroy();
   mock.timers.reset();
+});
+
+test('the fold counts only time the panel is on screen (minigame, hidden, hidden tab)', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const p = make();
+  window.MinigameFramework = { currentMinigame: { id: 'person-chat' } };   // the opening briefing
+  p._hovering = true;
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS + 5000);
+  assert.equal(p.isCollapsed, false, 'a hidden panel is not folded');
+  assert.equal(p._hovering, false, 'a hover cannot outlive the hiding');
+  delete window.MinigameFramework;
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS - ObjectivesPanel.AUTO_COLLAPSE_STEP_MS);
+  assert.equal(p.isCollapsed, false, 'still open before its own visible time is up');
+  adv(ObjectivesPanel.AUTO_COLLAPSE_STEP_MS);
+  assert.equal(p.isCollapsed, true, 'folds after the full visible time');
+  p.destroy();
+
+  const q = make();
+  q.hide();
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS * 2);
+  assert.equal(q.isCollapsed, false, 'hide() pauses the clock');
+  q.show();
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  assert.equal(q.isCollapsed, true);
+  q.destroy();
+  mock.timers.reset();
+});
+
+test('keyboard focus inside the panel postpones the fold', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const p = make();
+  p.container.querySelector('.objectives-toggle').focus();
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS * 2);
+  assert.equal(p.isCollapsed, false, 'focus inside: held open');
+  document.activeElement.blur();
+  adv(ObjectivesPanel.AUTO_COLLAPSE_STEP_MS);
+  assert.equal(p.isCollapsed, true);
+  p.destroy();
+  mock.timers.reset();
+});
+
+test('a new aim reopens a panel the timer folded and re-arms; a player-folded one stays shut', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  let listener;
+  document.body.innerHTML = '';
+  const more = [...aims, { aimId: 'b', title: 'Second', status: 'active', tasks: [{ taskId: 'b1', title: 'B', status: 'active' }] }];
+  const p = new ObjectivesPanel({ addListener(f) { listener = f; }, removeListener() {}, getActiveAims: () => aims });
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  assert.equal(p.isCollapsed, true);
+  listener(more);
+  assert.equal(p.isCollapsed, false, 'reopened for the new aim');
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  assert.equal(p.isCollapsed, true, 'folded again');
+  p.toggleCollapse();   // the player opens it, then folds it
+  p.toggleCollapse();
+  assert.equal(p.isCollapsed, true);
+  listener([...more, { aimId: 'c', title: 'Third', status: 'active', tasks: [{ taskId: 'c1', title: 'C', status: 'active' }] }]);
+  assert.equal(p.isCollapsed, true, 'the player folded it: not reopened');
+  p.destroy();
+  mock.timers.reset();
+});
+
+test('a held ending opens the panel and keeps it open; a player-folded panel pulses and says so', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  let listener, held = false;
+  window.endingCheck = { hasHeld: () => held, endHeld: () => { held = false; } };
+  document.body.innerHTML = '';
+  const p = new ObjectivesPanel({ addListener(f) { listener = f; }, removeListener() {}, getActiveAims: () => aims });
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS);
+  assert.equal(p.isCollapsed, true);
+  held = true;
+  listener(aims);
+  assert.equal(p.isCollapsed, false, 'opened for the End button');
+  assert.ok(p.container.querySelector('.objectives-end-button'), 'button rendered');
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS * 3);
+  assert.equal(p.isCollapsed, false, 'stays open while the button is there');
+  assert.equal(p.container.querySelector('.objectives-pill-text').textContent, 'Open to end the mission');
+  p.destroy();
+
+  // The player folded it themselves: not reopened, but it blinks and the line says so
+  held = false;
+  document.body.innerHTML = '';
+  const q = new ObjectivesPanel({ addListener(f) { listener = f; }, removeListener() {}, getActiveAims: () => aims });
+  q.toggleCollapse();
+  assert.equal(q.isCollapsed, true);
+  held = true;
+  listener(aims);
+  assert.equal(q.isCollapsed, true);
+  assert.equal(q.container.classList.contains('pill-pulse'), true);
+  assert.equal(q.container.querySelector('.objectives-pill-text').textContent, 'Open to end the mission');
+  q.destroy();
+  delete window.endingCheck;
+  mock.timers.reset();
+});
+
+test('destroy removes the very listener it added', () => {
+  const added = [], removed = [];
+  document.body.innerHTML = '';
+  const p = new ObjectivesPanel({ addListener(f) { added.push(f); }, removeListener(f) { removed.push(f); }, getActiveAims: () => aims });
+  p.destroy();
+  assert.equal(added.length, 1);
+  assert.equal(removed[0], added[0]);
 });
 
 test('phones keep the pill behaviour: no timer-driven change', () => {
@@ -94,7 +200,7 @@ test('phones keep the pill behaviour: no timer-driven change', () => {
   const p = make();
   assert.equal(p.isCollapsed, true, 'starts as a pill');
   p.setCollapsed(false);
-  mock.timers.tick(ObjectivesPanel.AUTO_COLLAPSE_MS * 2);
+  adv(ObjectivesPanel.AUTO_COLLAPSE_MS * 2);
   assert.equal(p.isCollapsed, false, 'an opened sheet is not folded under the player');
   window.innerWidth = 1280;
   p.destroy();
@@ -116,6 +222,13 @@ test('folded desktop panel pulses for news and lets the toast show; open one doe
 test('CSS: pixel rules, desktop height cap, folded summary shown', () => {
   const css = readFileSync(join(root, 'css/objectives.css'), 'utf8');
   assert.match(css, /\.objectives-panel \{[^}]*max-height: 46vh/s);
+  assert.match(css, /max-width: 1100px[^{]*\{\s*\.objectives-panel \{[^}]*max-height: 38vh/s, 'the mid-size cap is the one that applies at 1280x720');
+  assert.match(css, /@media \(min-width: 900px\) and \(min-height: 501px\) \{\s*\.objectives-panel\.collapsed \.objectives-title-text/, 'folded summary scoped to desktop');
+  assert.equal(/pill-summary \{[^}]*color: #ddd/.test(css), false, 'summary inherits the theme colour');
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(css, /objectives-pill-pulse 0\.5s steps\(1, end\)/);
+  assert.match(css, /50%, 100% \{ outline: 2px solid transparent/, 'the pulse turns the outline off');
+  assert.equal(/ease/.test(css.match(/\.objectives-panel \{[^}]*\}/s)[0].match(/transition[^;]*/)[0]), false, 'no smooth ease');
   assert.match(css, /\.objectives-panel\.collapsed \.objectives-pill-summary \{\s*display: flex/);
   assert.equal(/border-radius/.test(css), false, 'no radius');
 });

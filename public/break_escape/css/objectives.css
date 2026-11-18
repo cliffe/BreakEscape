@@ -1,4 +1,4 @@
-/* Objectives Panel - Top Right HUD
+/* Objectives Panel - Top Left HUD
  * Pixel-art aesthetic: sharp corners, 2px borders
  */
 
@@ -13,7 +13,7 @@
   font-family: 'GNF', monospace;
   z-index: 1300;
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: max-height 0.2s steps(4, end);   /* hard steps, no smooth ease */
   /* Header and list share the panel's height. The list used to carry its own
      max-height (panel minus 40px), but a themed header is taller than 40px and the
      list's padding came on top, so its last 19px sat under the panel's edge and the
@@ -389,7 +389,7 @@
 @media (min-width: 769px) and (max-width: 1100px), (min-width: 769px) and (max-height: 820px) {
   .objectives-panel {
     width: 240px;
-    max-height: 42vh;
+    max-height: 38vh;   /* wins over the 46vh base up to 1100 px wide or 820 px tall: 274 px at 1280x720 */
   }
 }
 
@@ -421,38 +421,43 @@
   display: none;
 }
 
-/* Desktop, folded (it folds itself once, 20 s after the first aims show): the title gives way to
+/* Desktop, folded (it folds itself once, 25 s of visible time after the first aims show): the title gives way to
    the same one-line summary the phone pill has, count then current aim, so a folded panel still
    says what to do next. A click, or the toggle, opens it again. */
-.objectives-panel.collapsed .objectives-title-text {
-  display: none;
-}
-.objectives-panel.collapsed .objectives-clipboard {
-  margin-right: 0;
-}
-.objectives-panel.collapsed .objectives-pill-summary {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-  margin: 0 8px;
-  font-family: 'GNF', monospace;
-  font-size: 16px;
-  color: #ddd;
-  white-space: nowrap;
-}
-.objectives-panel.collapsed .objectives-pill-count {
-  flex: 0 0 auto;
-}
-.objectives-panel.collapsed .objectives-pill-text {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.objectives-panel.pill-pulse {
-  animation: objectives-pill-pulse 0.5s steps(2, end) 4;
+@media (min-width: 900px) and (min-height: 501px) {
+  .objectives-panel.collapsed .objectives-title-text {
+    display: none;
+  }
+  .objectives-panel.collapsed .objectives-clipboard {
+    margin-right: 0;
+  }
+  .objectives-panel.collapsed .objectives-pill-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    margin: 0 8px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .objectives-panel.collapsed .objectives-pill-count {
+    flex: 0 0 auto;
+  }
+  .objectives-panel.collapsed .objectives-pill-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Folded, it is wide enough to name the next task (a 16 character cut said nothing) */
+  .objectives-panel.collapsed {
+    width: 360px;
+  }
+  .objectives-panel.pill-pulse {
+    animation: objectives-pill-pulse 0.5s steps(1, end) 4;
+  }
 }
 
 @media (max-width: 899.98px), (max-height: 500px) {
@@ -513,7 +518,7 @@
     line-height: 16px;
   }
   .objectives-panel.pill-pulse {
-    animation: objectives-pill-pulse 0.5s steps(2, end) 4;
+    animation: objectives-pill-pulse 0.5s steps(1, end) 4;
   }
 }
 
@@ -557,5 +562,11 @@
 /* A hard on/off blink in whole steps (no soft glow) */
 @keyframes objectives-pill-pulse {
   0% { outline: 2px solid #ffd23f; outline-offset: 0; }
-  100% { outline: 2px solid transparent; outline-offset: 0; }
+  50%, 100% { outline: 2px solid transparent; outline-offset: 0; }
+}
+
+/* No movement for players who ask for none: no fold animation, and the pulse is a steady outline */
+@media (prefers-reduced-motion: reduce) {
+  .objectives-panel { transition: none; }
+  .objectives-panel.pill-pulse { animation: none; outline: 2px solid #ffd23f; outline-offset: 0; }
 }

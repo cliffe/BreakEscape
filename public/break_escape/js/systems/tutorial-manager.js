@@ -253,7 +253,7 @@ export class TutorialManager {
             if (this.hasObjectives()) {
                 this.steps.push({
                     title: 'Objectives',
-                    instruction: 'The objectives panel in the top-right corner tracks your current tasks. Click the panel header to expand and collapse it.',
+                    instruction: 'The objectives panel in the top-left corner tracks your current tasks. Click the panel header to expand and collapse it.',
                     objective: 'Expand and collapse the objectives panel by clicking it',
                     checkComplete: () => this.playerToggledObjectives
                 });
