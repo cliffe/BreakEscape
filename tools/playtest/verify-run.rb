@@ -7,8 +7,12 @@
 # report is fiction. Run it after every playtest and paste the output into the
 # report.
 #
-#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb [--tasks] [--log SESSION.jsonl] <game_id>
+#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb [--tasks] [--show-flags] [--log SESSION.jsonl] <game_id>
 #   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
+#
+# Submitted flag values are redacted by default (a length and a short hash, so two
+# runs can still be compared without the value appearing in a report). Pass
+# --show-flags to print them in full, for a run you are debugging yourself.
 #
 # With --log (the session log), flags are split by where their value came from:
 # a <vmflag:REF> token has source "vm-step" (the value was produced by a solve
@@ -47,15 +51,17 @@
 # phases, npc_mutter topics, door_propped) found in the session log's drained event logs.
 require 'json'
 require_relative '../../lib/break_escape/access_identities'
+require_relative 'lib/flag_redaction'
 
 count_tasks_flag = !ARGV.delete('--tasks').nil?
+show_flags = !ARGV.delete('--show-flags').nil?
 access_only = !ARGV.delete('--access').nil?
 log_path = nil
 if (i = ARGV.index('--log'))
   ARGV.delete_at(i)
   log_path = ARGV.delete_at(i) or abort 'usage: --log needs a session log path'
 end
-game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--log SESSION.jsonl] [--access] <game_id>'
+game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--show-flags] [--log SESSION.jsonl] [--access] <game_id>'
 g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
@@ -265,7 +271,7 @@ puts "unlocked rooms  #{rooms.length}: #{rooms.join(', ')}"
 puts "unlocked objs   #{objects.length}: #{objects.join(', ')}"
 puts "inventory       #{inv.length}: #{inv.join(', ')}"
 puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
-puts "flags submitted #{flags.length}: #{flags.join(', ')}"
+puts "flags submitted #{flags.length}: #{FlagRedaction.list(flags, show: show_flags)}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
 if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
   puts access_section(ps)
