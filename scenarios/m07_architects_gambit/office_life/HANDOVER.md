@@ -95,3 +95,7 @@ Done: (a) and (b) diagnosed, see LIVE_SLICE3.md "part 3". No scenario change, so
 Server :3098 stopped by PID 2978371, port closed. Probe changes: m07-ol-s3.mjs atk mode logs player feet and the other operator's hostility per punch; new tools/playtest/m07-ol-route.mjs (route(h, log)) goes ops floor, sheet, checkpoint, PIN 0616, badge, back to ops floor, server_room. The last two steps are untested end to end.
 Still to do, each on a fresh game: wire `route` into a mode of m07-ol-s3.mjs (L6, 10.3 b, server-room KO step), make `reload` wait for needs.state before snap(), fix `walk` door ids (door:... ids above), L3 ex_going_now over a third trip.
 Scratch driver for route: scratchpad ex1.mjs (not committed; it only calls route()).
+
+# Slice 3 live checks part 4 (2026-11-18)
+
+All seven checks pass; evidence in LIVE_SLICE3.md "part 4". Server :3098 stopped by PID 3204557. Nothing running. Game ids up to 8089 used. Probe changes: `m07-ol-route.mjs` now interacts with the server door (badge held) before entering; `m07-ol-s3.mjs` gained modes l6, ko, pre, walk2 and PARK/DESK env; `m07-ol-door.mjs` is an exploration script. Open note: Gwen logs `mount_stuck` once per cooler trip but returns to post.

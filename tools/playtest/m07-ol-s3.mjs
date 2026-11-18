@@ -3,6 +3,7 @@
 // Modes: l1 (45 s from entry), trip (natural cooler trip), talk (talk, trip, talk again),
 //        ex (exchange globals over forced trips), walk (west door, desk, east door; arg=post|cool).
 import { open, ev, load, converse, dismiss } from './m01-ol-lib.mjs';
+import { route } from './m07-ol-route.mjs';
 const [mode, gid, port = '3098', npc = 'adaeze_okafor', arg = ''] = process.argv.slice(2);
 const h = await open(gid, port, { skipResume: true });
 const log = (k, v) => console.log(k, JSON.stringify(v));
@@ -12,6 +13,7 @@ const snap = () => ev(h, (ids) => {
   const o = {};
   for (const i of ids) {
     const s = window.__test.needs.state(i);
+    if (!s) { o[i] = { state: null, vis: window.npcBehaviorManager.getBehavior(i)?.sprite?.visible ?? null }; continue; }
     const b = window.npcBehaviorManager.getBehavior(i);
     const sp = b?.sprite;
     o[i] = { m: s.mode, post: s.atPost, seat: !!b?._seat, job: s.job ? [s.job.kind, s.job.objectId, s.job.phase] : null,
@@ -111,6 +113,7 @@ if (mode === 'ex') {
   // Natural trips only (no needs.set: the brief forbids forcing needs). Prints each world bubble once
   // (speaker, event, text) and each change to the ex_/heard_ globals, so a repeat shows up as a second line.
   const endAt = Number(arg) || 420;
+  if (process.env.PARK) { for (let i = 0; i < 12; i++) { const b = await ev(h, () => window.__test.getState().blockingUi || null); if (!b) break; await ev(h, () => window.__test.dismissBlockingUi()); await h.t(800); } const [px, py] = process.env.PARK.split(',').map(Number); log('park', await ev(h, ([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 25000 }).then(r => ({ ok: r?.ok, feetAt: r?.feetAt })), [px, py])); }
   const seen = new Set();
   let prevG = ''; let prevUsing = false; const trips = [];
   while (T() < endAt) {
@@ -208,6 +211,87 @@ if (mode === 'reload') {
   await h.t(15000);
   log('after reload, ops floor', await snap());
   await shot('reload-after-' + gid);
+}
+
+// Part 4 modes. l6: route to server_room, check both hidden, walk back, check none seated. arg 'reload' also reloads after.
+// ko: KO one operator (arg adaeze|gwen) then route. pre: reload on ops floor before the server room.
+const hiddenNow = () => ev(h, (ids) => Object.fromEntries(ids.map(i => { const b = window.npcBehaviorManager.getBehavior(i); const sp = b?.sprite; const st = window.__test.needs.state(i); return [i, { vis: sp?.visible ?? null, active: sp?.active ?? null, hasSprite: !!sp, seat: !!b?._seat, state: st ? st.mode : null, x: sp ? Math.round(sp.x) : null, y: sp ? Math.round(sp.y) : null }]; })), OPS);
+const waitReady = async () => { await h.page.waitForFunction(() => window.gameScenario && window.rooms && window.__test && window.player && window.player.body && window.npcNeedsSystem, null, { timeout: 90000 }); await h.t(2000);
+  // A real reload shows the session-resume overlay over the title screen: pick Resume, as a player would.
+  const rb = await h.page.$('#session-resume-btn'); if (rb) { await rb.click(); log('clicked Resume', true); await h.t(6000); }
+  for (let i = 0; i < 20; i++) { const b = await ev(h, () => window.__test.getState().blockingUi || null); if (!b) break; await ev(h, () => window.__test.dismissBlockingUi()); await h.t(800); } };
+const toOps = async () => { for (let i = 0; i < 4; i++) { const r = await ev(h, () => window.__test.enterRoom('operations_floor', { timeoutMs: 20000 })); log('enter ops try ' + i, { ok: r?.ok, reason: r?.reason }); if (!r?.ok) log('  ui', await ev(h, () => { const g = window.__test.getState(); return { am: g.activeMinigame ? JSON.stringify(g.activeMinigame).slice(0, 200) : null, blk: g.blockingUi || null, which: window.__test.minigame.which() }; })); if (r && r.ok) return true; await h.t(2500); } return false; };
+const clearUi = async () => { for (let i = 0; i < 20; i++) { const mgOpen = await ev(h, () => !!window.__test.minigame.which()); if (mgOpen) { await ev(h, () => window.__test.minigame.close()); await h.t(800); } const b = await ev(h, () => window.__test.getState().blockingUi || null); if (!b && !mgOpen) return; if (!b) continue; await ev(h, () => window.__test.dismissBlockingUi()); await h.t(800); } };
+const opsReady = async () => { await h.t(3000); for (let i = 0; i < 40; i++) { const st = await ev(h, (ids) => ids.every(x => window.__test.needs.state(x) != null), OPS); if (st) return true; await h.t(1000); } return false; };
+
+if (mode === 'ko') {
+  const target = arg === 'gwen' ? 'gwen_pritchard' : 'adaeze_okafor';
+  const other = OPS.find(i => i !== target);
+  await opsReady();
+  log('start', await snap());
+  let ko = false; let n = 0;
+  for (; n < 40 && !ko; n++) {
+    await ev(h, (i) => window.__test.moveToNear(i), target);
+    await ev(h, (i) => { const s = window.npcBehaviorManager.getBehavior(i).sprite; window.playerCombat.attack({ x: s.x, y: s.y }); }, target);
+    await h.t(450);
+    ko = await ev(h, (i) => window.npcHostileSystem.isNPCKO(i), target);
+    const pp = await ev(h, (o) => { const p = window.player; return { px: Math.round(p.x), py: Math.round(p.y + 31), oh: window.npcHostileSystem.isNPCHostile(o) }; }, other);
+    if (n < 3 || pp.oh) log('punch ' + n, pp);
+    if (pp.oh) break;
+  }
+  log('ko result', { n, ko, otherHostile: await ev(h, (i) => window.npcHostileSystem.isNPCHostile(i), other) });
+  await shot('ko-before-route');
+  await h.t(2000);
+}
+if (mode === 'l6' || mode === 'ko' || mode === 'pre2') {
+  if (mode !== 'ko') { await opsReady(); log('ops start', await hiddenNow()); }
+  const mg = await route(h, (k, v) => log(k, v));
+  await clearUi();
+  const room = await ev(h, () => window.currentPlayerRoom);
+  log('in room', room);
+  await h.t(2000);
+  log('server room: operators', await hiddenNow());
+  await shot('server-room');
+  if (room === 'server_room') {
+    await toOps(); await clearUi(); await h.t(4000);
+    log('back on ops floor', await hiddenNow()); log('snap', await snap());
+    await shot('ops-after-server');
+    if (arg === 'reload' || mode === 'pre2') {
+      await h.page.reload({ waitUntil: 'load' }); await waitReady();
+      log('after reload room', await ev(h, () => window.currentPlayerRoom || null));
+      await clearUi(); await toOps(); await clearUi(); await opsReady(); await h.t(8000);
+      log('after reload, ops floor', await hiddenNow()); await shot('ops-after-reload');
+    }
+  }
+}
+if (mode === 'pre') {
+  await opsReady(); await h.t(20000);
+  log('before reload', await snap());
+  await h.page.reload({ waitUntil: 'load' }); await waitReady();
+  log('room after reload', await ev(h, () => window.currentPlayerRoom || null));
+  await clearUi(); await toOps(); await clearUi();
+  log('right after entry', await hiddenNow());
+  const ok = await opsReady();
+  log('needs.state non-null', ok);
+  await h.t(5000);
+  log('after reload snap', await snap()); await shot('reload-pre');
+}
+if (mode === 'walk2') {
+  // west door -> supervisor's desk -> east door. arg post | cool
+  await opsReady(); await clearUi();
+  if (arg === 'cool') await watch(T() + 200, usingCooler, 'walk-wait-cool');
+  log('start', await snap());
+  log('objects', await ev(h, () => Object.values(window.rooms.operations_floor.objects || {}).filter(o => /desk|supervis|chair|cooler/i.test((o.scenarioData?.name || '') + (o.scenarioData?.id || ''))).map(o => [o.scenarioData?.id || o.scenarioData?.name, Math.round(o.x), Math.round(o.y)]).slice(0, 14)));
+  const doors = await ev(h, () => window.__test.doorways('operations_floor'));
+  const list = (Array.isArray(doors) ? doors : Object.values(doors || {})).map(d => d.id);
+  log('doors', list);
+  const west = list.find(id => /operations_floor->security_checkpoint/.test(id));
+  const east = list.find(id => /operations_floor->server_room/.test(id));
+  const r1 = await ev(h, () => window.__test.moveTo(346, 82, { timeoutMs: 25000 })); log('to west door', { ok: r1?.ok, feetAt: r1?.feetAt, reason: r1?.reason });
+  const [dx, dy] = (process.env.DESK || '440,230').split(',').map(Number);
+  const r2 = await ev(h, ([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 25000 }), [dx, dy]); log('to desk ' + dx + ',' + dy, { ok: r2?.ok, feetAt: r2?.feetAt, reason: r2?.reason });
+  const r3 = await ev(h, (id) => window.__test.moveToNear(id), east); log('to east door', { ok: r3?.ok, feetAt: r3?.feetAt, reason: r3?.reason });
+  await shot('walk2-' + arg); log('end', await snap());
 }
 
 log('errs', h.errs.filter(e => !/503/.test(e)).slice(0, 8));

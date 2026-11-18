@@ -146,3 +146,33 @@ Games used: 7909, 7914, 7918, 7921, 7924, 7925, 7926, 7930 (hostile clip reprodu
 ### Not run
 
 L6, the server-room step of 10.4, 10.3 (a) and (b), L3 `ex_going_now`, L5. None needs a scenario change; all wait on the route above, a reload that waits for needs.state before `snap()`, and the L5 door ids (`door:security_checkpoint->operations_floor` east at (304, 80), `door:operations_floor->server_room` east at (624, 80), `door:operations_floor->security_checkpoint` west at (336, 80)).
+
+## Slice 3 live checks, part 4 (18 Nov 2026)
+
+Server: keyless, port 3098, puma PID 3204557, stopped by PID, port confirmed closed. Headless, setFPS(20), fixed steps on, no globals or needs set in the page, no scenario or engine change. Probes: `m07-ol-route.mjs` (route to server_room), `m07-ol-s3.mjs` modes `l6`, `ko`, `pre`, `ex` (env `PARK=x,y`), `walk2` (env `DESK=x,y`).
+
+### Route (check 1): PASS, game 7972 (repeat 7975, 7980, 7990, 7993)
+Cause of the earlier failures: `enterRoom('server_room')` refuses a locked door, and the badge alone does not open it. The RFID door opens when the player interacts with the door (`interact('door:operations_floor->server_room')`) with the Printed Contractor Badge held (events door_unlock_attempt, door_unlocked, door_opened). The route now does that, then enters. The ops-floor return retry loop was not needed (first try each time). `server_hall_reached` becomes true on entry.
+
+### L6, check 2: PASS, game 7972
+In server_room both adaeze_okafor and gwen_pritchard: sprite visible false, not seated. Back on the ops floor: both still visible false (needs state idle, atPost true), screenshot `tmp/m07-s3-ops-after-server-7972.png` shows the two chairs empty, no seated sprite. Repeat in 7975 and 7990 identical.
+
+### 10.3 (b), check 3: PASS, game 7990
+After the server room a reload shows the Resume Session overlay (a real reload needs the Resume click; `skip_resume` is only for the first load); clicked Resume, respawn in security_checkpoint, walked to the ops floor: both vis false, no seated sprite (screenshot `tmp/m07-s3-ops-after-reload-7990.png`, empty chairs). Neither appears 8 s later.
+
+### 10.4 server-room step, check 4: PASS, game 7993
+Gwen KO'd with `playerCombat.attack` from the west side (player feet (342, 80), 14 punches), Adaeze never hostile. Then route: in server_room Gwen visible (stays, KO), Adaeze hidden. Back on the ops floor: Gwen on the floor (`death-right`, (362,205)), Adaeze hidden.
+
+### 10.3 (a), check 5: PASS, game 8002
+Reload on the ops floor before the server room, Resume, walked back. Entering the room, both visible, seated at post (446,134 and 383,134) with needs.state non-null; 5 s later `idle`, atPost, seated, thirst 42.2 and 58.3.
+
+### L3 second half, check 6: PASS, game 8089 (player parked at (520,248))
+Wall seconds from entry: both at the cooler at 90 s, `ex_last_two` started about 1 s later, heard at 118 s. Second trip both at the cooler at 548 s, `ex_going_now` started right after, heard by 571 s. Globals heard_ex_last_two and heard_ex_going_now both true; each exchange_started and exchange_heard appears once through 720 s, no repeat. Second trip is about 458 s after the first (needs clock about 3.9 times wall).
+Notes: in 8004 (first trip only, 330 s) the same exchange played; in 8018 (no park, player at the west door, about 180 px from the cooler) no exchange and no chatter played in either trip, so the earshot gate is real: a player who does not stay within earshot hears neither. Gwen logged `seat_move_end mount_stuck` (stage mount) at the cooler in 8004, 8018 and 8089; she still returned to post each time (needs log `returned_post`), so not a failure, but she logs it once per trip. Not investigated.
+
+### L5, check 7: PASS with a note, games 8055 (seated), 8062 (both at the cooler), 8059, 8066
+Route: west door (342,80), supervisor's desk (desk 3, east of the swivel chair; world about (540,190)), east door. Seated (8055 to a desk point (440,230), 8066 to (540,190)): all legs ok. Both at the cooler (8062, to (540,190)): all legs ok, never blocked.
+Note: the earlier probe's waypoint (440,230) is the cooler approach, not the supervisor's desk. With both at the cooler (8059) `moveTo(440,230)` stopped 47 px short at (487,229) because Adaeze (402,244) and Gwen (445,241) stand there; the east door leg then still succeeded. Not a blocked route, the waypoint was in the pair's cell.
+
+### Games used (do not reuse)
+7959, 7961, 7964, 7968, 7972, 7975, 7980, 7986, 7990, 7993, 8002, 8004, 8018, 8049, 8050, 8055, 8059, 8062, 8066, 8069, 8089. Exploratory or failed: 7959 to 7968 (route and door), 7975 to 7986 (reload without Resume), 8004 and 8018 (L3 first attempts), 8049 and 8050 (walk with bark open, door id), 8059 (desk waypoint), 8069 (probe bug).

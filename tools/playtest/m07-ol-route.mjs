@@ -29,6 +29,18 @@ export async function route(h, log = () => {}) {
   await step('inventory2', () => (window.inventory?.items || []).map(i => i.scenarioData?.id || i.scenarioData?.name));
   for (let i = 0; i < 3; i++) { const r = await step('enter ops again', () => window.__test.enterRoom('operations_floor', { timeoutMs: 20000 })); if (r && r.ok) break; await h.t(2000); }
   await h.t(1500); await clear();
+  // The RFID door unlocks only through the door interaction with the badge held (enterRoom refuses a locked door).
+  const D = 'door:operations_floor->server_room';
+  for (let i = 0; i < 4; i++) {
+    await step('near server door', (d) => window.__test.moveToNear(d), D).catch?.(() => {});
+    await T((d) => window.__test.moveToNear(d), D);
+    const r = await step('interact server door ' + i, (d) => { return window.__test.interact(d).then(x => ({ ok: x?.ok, events: x?.events })); }, D);
+    await h.t(2500); await clear();
+    if (r && r.events && r.events.includes('door_unlocked')) break;
+    const locked = await T((d) => { const e = window.__test.doorways('operations_floor'); const l = Array.isArray(e) ? e : Object.values(e || {}); const x = l.find(q => q.id === d); return x ? (x.locked ?? x.state?.locked ?? null) : 'nodoor'; }, D);
+    log('route door locked after try ' + i, locked);
+    if (locked === false) break;
+  }
   await step('enter server', () => window.__test.enterRoom('server_room', { timeoutMs: 25000 }));
   await h.t(1500); await clear();
   await step('server state', () => { const g = window.__test.getState(); return { room: window.currentPlayerRoom, globals: Object.fromEntries(Object.entries(g.globals || {}).filter(([k]) => /server_hall|badge/.test(k))) }; });
