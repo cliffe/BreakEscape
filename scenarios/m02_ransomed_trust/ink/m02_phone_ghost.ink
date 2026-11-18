@@ -584,7 +584,7 @@ It never did. Force this into daylight, and the people who don't die over the ne
 
 The board ran a calculation too. They chose the scanner.
 
-They simply never had to show their working. That's the whole of it. That's the only thing I've ever wanted out of any of this.
+They simply never had to show their working.
 
 + [I accept. I'll upload the evidence. Give me the keys.]
     -> act3_accept
@@ -603,8 +603,6 @@ They simply never had to show their working. That's the whole of it. That's the 
 #set_global:ghost_deal_accepted:true
 Keys transmitted. They're on your console now, next to everything else it's offering you.
 Conference room. Press terminal. Don't forget what you agreed to.
-Include Gary Whitlock's emails. All six months, in order.
-The lesson requires the complete picture.
 -> act3_deal_accepted
 
 === act3_deal_accepted ===

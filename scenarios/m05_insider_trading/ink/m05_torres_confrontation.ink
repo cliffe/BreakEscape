@@ -21,6 +21,7 @@
 
 VAR final_choice = "" // Synced scenario global: Torres' fate ("turn_double_agent", "arrest", "combat_nonlethal", "combat_lethal", "public_exposure"); also set by HaX's post-KO call (m05_phone_agent_0x99)
 VAR confront_stance = ""  // "sympathetic" or "hardline"
+VAR torres_scene_opened = false // Synced scenario global: set in both opening choices, so a reload mid-scene resumes (start diverts) instead of replaying the opener
 VAR torres_turned = false
 VAR torres_arrested = false // Synced scenario global: Torres is in police custody; also set by HaX's post-KO call (m05_phone_agent_0x99)
 VAR elena_treatment_funded = false
@@ -69,6 +70,14 @@ VAR torres_reason_guessed = false
 {final_choice != "":
     -> after_choice
 }
+// Reload resume: the story position is not saved, so these synced globals
+// are the checkpoints. Newest beat first. Both land on existing knots.
+{confront_stance != "":
+    -> torres_knows_truth
+}
+{torres_scene_opened:
+    -> torres_confrontation
+}
 -> confrontation_scene
 
 === confrontation_scene ===
@@ -111,6 +120,7 @@ David Torres: The vault logged me in twice tonight. One of them was you.
 }
 
 + [It's over, David. Step away from the terminal.]
+    ~ torres_scene_opened = true
     #speaker:narrator
     Narrator: He turns slowly. His hand stays near the keyboard.
     #speaker:david_torres
@@ -118,6 +128,7 @@ David Torres: The vault logged me in twice tonight. One of them was you.
     -> torres_confrontation
 
 + [I've seen what you've been staging, David. All of it.]
+    ~ torres_scene_opened = true
     David Torres: Then you know more than I did when I started.
     -> torres_confrontation
 

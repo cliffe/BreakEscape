@@ -1,0 +1,13 @@
+{
+  "key": "236514990b8561a467a34e906d778fb2",
+  "npc": "maya_chen",
+  "text": "Derek (he's the one running it), I've overheard him call it \"education.\"",
+  "voice": "Leda",
+  "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T17:38:51Z"
+}

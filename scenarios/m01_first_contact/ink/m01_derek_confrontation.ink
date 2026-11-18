@@ -8,6 +8,7 @@
 VAR confrontation_approach = ""    // diplomatic, aggressive, evidence_based
 VAR derek_knows_safetynet = false
 VAR derek_showed_remorse = false   // Spoiler: he won't
+VAR heard_reasoning = false        // true once Derek has given his reasoning (the monologue); gates "You've heard my reasoning"
 VAR final_choice = ""              // arrest, recruit, expose
 VAR derek_confronted = false // Synced scenario global: the confrontation with Derek is over; also set by his globalVarOnKO
 
@@ -54,7 +55,7 @@ You're not an IT contractor. And you've found Operation Shatter.
     ~ confrontation_approach = "aggressive"
     ~ derek_knows_safetynet = true
     -> derek_response_safetynet
-+ {found_casualty_projections} [I have everything. The archive. The network map. The Architect's letter. It's over, Derek — what happens next is up to you.]
++ {found_casualty_projections} [I have everything. The archive. The network map. The Architect's letter. It's over, Derek. What happens next is up to you.]
     ~ confrontation_approach = "evidence_based"
     ~ derek_knows_safetynet = true
     -> confrontation_choice
@@ -80,7 +81,7 @@ I'm kind of busy. Maybe check back later?
     -> start
 + [We should talk about some irregularities I've found]
     Irregularities? Like what exactly?
-    If you don't have specifics, I've got work to do. Come back when you have real evidence — not speculation.
+    If you don't have specifics, I've got work to do. Come back when you have real evidence, not speculation.
     #exit_conversation
     -> start
 + [I'll come back later]
@@ -130,7 +131,7 @@ I was wondering if you'd find those. They're the most honest part of the whole o
 // ================================================
 
 === derek_response_safetynet ===
-SAFETYNET. The organization that thinks surveillance protects people.
+SAFETYNET. The organisation that thinks surveillance protects people.
 
 You found the files. The targeting lists. The message templates.
 
@@ -145,9 +146,9 @@ Good. Then you understand what's coming.
 === derek_admits_casualties ===
 Yes. Between 42 and 85 people will die in the first 24 hours.
 
-It's not random noise. We've segmented the population—demographic cohorts where tailored lies land hardest, multiplied by everyone else caught when the system buckles.
+We've segmented the population: demographic cohorts where tailored lies land hardest, multiplied by everyone else caught when the system buckles.
 
-Hospitals overwhelmed by false closure alerts. Emergency lines jammed with spoofed calls—people who can't reach real help in time. Crowd crush and secondary crashes as everyone reacts at once. Heart attacks from sheer panic. It compounds.
+Hospitals overwhelmed by false closure alerts. Emergency lines jammed with spoofed calls: people who can't reach real help in time. Crowd crush and secondary crashes as everyone reacts at once. Heart attacks from sheer panic. It compounds.
 
 I calculated every one of them.
 
@@ -167,13 +168,14 @@ I calculated every one of them.
 // ================================================
 
 === evil_monologue_part1 ===
+~ heard_reasoning = true
 Murder? No. Think of it as... forced education.
 
 Every security professional in the world says "humans are the weakest link." They write papers about it. Give talks at conferences. Collect consulting fees.
 
 But no one actually DEMONSTRATES it. No one shows what happens when you target human psychology at scale.
 
-We're going to prove—conclusively, undeniably—that digital trust is a lie. That every message you receive could be fake. That nothing is secure.
+We're going to prove, conclusively, undeniably, that digital trust is a lie. That every message you receive could be fake. That nothing is secure.
 
 + [By killing innocent people.]
     -> evil_monologue_part2
@@ -187,17 +189,17 @@ We're going to prove—conclusively, undeniably—that digital trust is a lie. T
 === evil_monologue_part2 ===
 "Innocent." That's an interesting word.
 
-The cohorts we're profiling? Vulnerable demographics—statistical slices where coordinated misinformation moves fastest and verification breaks down first. High leverage. Predictable panic.
+The cohorts we're profiling? Vulnerable demographics: statistical slices where coordinated misinformation moves fastest and verification breaks down first. High leverage. Predictable panic.
 
 And they're not some narrow fringe case. They trust hospital alerts without verification. They forward emergency broadcasts without checking the source.
 
 They're not innocent. They're negligent. They've outsourced their critical thinking to systems that can be manipulated.
 
-We're teaching them—all of them—that trust is dangerous. Verify everything. Question everything. Or die.
+We're teaching them, all of them, that trust is dangerous. Verify everything. Question everything. Or die.
 
 + [Some of them WILL die. That's murder.]
     -> evil_monologue_part3
-+ [You're rationalizing mass murder.]
++ [You're rationalising mass murder.]
     -> evil_monologue_part3
 + [Enough. I've heard enough.]
     -> confrontation_choice
@@ -211,15 +213,13 @@ We're teaching them—all of them—that trust is dangerous. Verify everything. 
 === evil_monologue_part3 ===
 Forty-two to eighty-five deaths. Let's call it sixty.
 
-The model isn't uniform—lies don't land on everyone with the same weight—but once capacity collapses, geography and timing decide who pays. That's engineered, not accidental.
-
 Do you know how many people die every year because they trusted the wrong email? Clicked the wrong link? Gave credentials to the wrong person?
 
 Thousands. Tens of thousands. Deaths from delayed emergency response. Medical errors from compromised records. Violence incited by disinformation.
 
-We're going to end that. One bad weekend. Sixty deaths. And then NO ONE will ever trust a digital message again without verification.
+We're going to end that. One bad weekend, and then NO ONE will ever trust a digital message again without verification.
 
-Sixty deaths to save tens of thousands per year. That's not murder. That's optimization.
+Sixty deaths to save tens of thousands per year. That's not murder. That's optimisation.
 
 + [You're calculating human lives like statistics.]
     -> derek_final_philosophy
@@ -266,13 +266,11 @@ I'm not a villain. I'm a prophet.
 // ================================================
 
 === confrontation_choice ===
-So. Here we are. You've heard my reasoning. You've seen the evidence.
-
-What happens now is up to you.
+So. Here we are. What happens now is up to you.
 
 I have here a launch device to remotely activate Operation Shatter. One confirmation code is all it takes. And I have it memorised.
 
-But know this—even if you stop Operation Shatter here, the idea doesn't die. There are other cells. Other believers. Other architects of the inevitable.
+But know this: even if you stop Operation Shatter here, the idea doesn't die. There are other cells. Other believers. Other architects of the inevitable.
 
 + [I'm taking you down. Now.] #color:red
     ~ final_choice = "fight"
@@ -351,7 +349,7 @@ Player: You'll be a case study in how not to become a terrorist.
 
 Terrorist. That's what they call educators who make people uncomfortable.
 
-Narrator: You call in SAFETYNET backup. Derek doesn't resist—he's too confident that he's already won something.
+Narrator: You call in SAFETYNET backup. Derek doesn't resist. He's too confident that he's already won something.
 
 -> arrest_outcome
 
@@ -375,7 +373,7 @@ Player: Help us stop them. Turn informant. Give us ENTROPY from the inside.
 
 Become a double agent? Betray The Architect?
 
-Derek Lawson: You think I'd sell out the only people who understand the truth? For what—reduced sentence? #delivery: with a scornful laugh
+Derek Lawson: You think I'd sell out the only people who understand the truth? For what? Reduced sentence? #delivery: with a scornful laugh
 
 No. I'm not like you, willing to compromise principles for convenience.
 
@@ -405,7 +403,7 @@ Player: I'm giving it all to the press. Let the world see what ENTROPY really is
 
 You think that hurts me? I WANT people to see this.
 
-Public disclosure means the philosophy spreads. People will read those casualty projections and think—what if it happened? What if next time we're not stopped?
+Public disclosure means the philosophy spreads. People will read those casualty projections and think: what if it happened? What if next time we're not stopped?
 
 Fear is the first step to wisdom. You're doing my work for me.
 
@@ -451,7 +449,7 @@ Narrator: Derek sets down the launch device.
 
 Derek Lawson: Take it. Stop the launch. I won't resist.
 
-But hear me — ENTROPY doesn't end with me. The Architect planned for this.
+But hear me: ENTROPY doesn't end with me. The Architect planned for this.
 
 -> surrender_outcome
 
