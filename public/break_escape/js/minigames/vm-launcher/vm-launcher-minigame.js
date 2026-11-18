@@ -267,11 +267,12 @@ export class VmLauncherMinigame extends MinigameScene {
         if (this.hacktivityMode && this.vmPanelUrl) {
             const consoleSrc = vmPanelUrlWithTitle(this.vmPanelUrl, this.vm?.title);
             frag.appendChild(this.el('div', 'vm-actions', undefined, null, [
-                this.el('a', 'vm-action-btn', 'Open VM Console: ' + this.vm.title,
+                this.el('a', 'vm-action-btn', 'Open VM Console: ' + (this.vm?.title ?? ''),
                     { href: consoleSrc, target: '_blank', rel: 'noopener noreferrer' })
             ]));
             // DISABLED: ActionCable SPICE download approach (a #launch-console-btn button plus a
-            // #launch-status div) was removed with its handler; see attachEventHandlers.
+            // #launch-status div). The markup is gone; the handler and launchConsole() are kept
+            // commented out in attachEventHandlers for re-enablement (rebuild the button with el()).
         } else if (this.hacktivityMode && this.vmPanelRefused) {
             // Not the VirtualBox steps: in Hacktivity the VM runs on the server, not locally
             frag.appendChild(this.el('div', 'vm-actions vm-panel-unavailable', undefined, null, [

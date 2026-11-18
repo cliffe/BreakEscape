@@ -81,6 +81,14 @@ test('hostile title and IP are literal text in the standalone instructions', () 
     assert.equal(box.querySelector('.vm-status').textContent, 'Console');
 });
 
+test('a VM with no title gives a console link with no "undefined" (R1 m1)', () => {
+    window.breakEscapeConfig = { vmPanelUrl: '/break_escape/games/7/vm_panel' };
+    const s = launcher({ vm: { ip: '10.0.0.5' }, vmPanelUrl: 'https://game.example/break_escape/games/7/vm_panel' });
+    const a = render(s).querySelector('a.vm-action-btn');
+    assert.equal(a.textContent, 'Open VM Console: ');
+    delete window.breakEscapeConfig;
+});
+
 test('the no-VM messages keep their classes and text', () => {
     const hack = launcher({ vm: null }).buildNoVmMessage();
     assert.equal(hack.className, 'no-vms-message');
