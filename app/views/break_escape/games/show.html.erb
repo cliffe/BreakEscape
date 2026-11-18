@@ -335,10 +335,20 @@
   <div id="session-resume-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:20000; justify-content:center; align-items:center; flex-direction:column; gap:30px; font-family:'Press Start 2P', monospace;">
     <h1 style="color:#00ff00; font-size:28px; margin:0; text-align:center; line-height:1.5;">RESUME SESSION?</h1>
     <p style="color:#cccccc; font-size:16px; font-family:'GNF', monospace; margin:0;">You have a saved session for this mission.</p>
-    <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
+    <div id="session-main-row" style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
       <button id="session-resume-btn" class="session-overlay-btn" style="padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#4CAF50; color:#fff; border:2px solid #4CAF50;">Resume</button>
-      <button id="session-restart-btn" class="session-overlay-btn" style="padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#555; color:#fff; border:2px solid #777;">Restart</button>
+      <button id="session-restart-btn" class="session-overlay-btn" style="padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#555; color:#fff; border:2px solid #777;">Start over</button>
       <button id="session-new-btn" class="session-overlay-btn" style="padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#1a6fb0; color:#fff; border:2px solid #1a6fb0;">New Session</button>
+    </div>
+    <%# Confirm step for Start over (ui/session-restart-confirm.js): X or Keep my progress closes it. %>
+    <div id="session-restart-confirm" role="dialog" aria-labelledby="session-restart-confirm-title" style="display:none; position:relative; flex-direction:column; align-items:center; gap:16px; max-width:520px; padding:28px 32px 24px; background:#1a1a1a; border:2px solid #ffaa00;">
+      <button id="session-restart-close-btn" class="session-overlay-btn" aria-label="Close" style="position:absolute; top:6px; right:6px; width:32px; height:32px; padding:0; font-size:14px; font-family:'Press Start 2P', monospace; background:#555; color:#fff; border:2px solid #777;">X</button>
+      <h2 id="session-restart-confirm-title" style="color:#ffaa00; font-size:18px; margin:0; text-align:center; line-height:1.5; font-weight:normal;">START OVER?</h2>
+      <p style="color:#cccccc; font-size:16px; font-family:'GNF', monospace; margin:0; text-align:center;">This erases your progress in this game and starts the mission again.</p>
+      <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
+        <button id="session-restart-keep-btn" class="session-overlay-btn" style="padding:12px 28px; font-size:16px; font-family:'GNF', monospace; background:#4CAF50; color:#fff; border:2px solid #4CAF50;">Keep my progress</button>
+        <button id="session-restart-confirm-btn" class="session-overlay-btn" style="padding:12px 28px; font-size:16px; font-family:'GNF', monospace; background:#8a2a2a; color:#fff; border:2px solid #b04040;">Start over</button>
+      </div>
     </div>
     <% other_sessions = @mission_sessions.each_with_index.reject { |sid, _i| sid == @game.id } %>
     <% if other_sessions.any? %>
@@ -363,6 +373,7 @@
   <%# Enter = Resume while the overlay is up; other keys do nothing (decisions form 2026-10-17).
       A module, so it has run before DOMContentLoaded below. %>
   <script type="module" src="<%= be_asset_path('/break_escape/js/ui/session-resume-keys.js') %>" nonce="<%= content_security_policy_nonce %>"></script>
+  <script type="module" src="<%= be_asset_path('/break_escape/js/ui/session-restart-confirm.js') %>" nonce="<%= content_security_policy_nonce %>"></script>
   <script nonce="<%= content_security_policy_nonce %>">
     document.addEventListener('DOMContentLoaded', function() {
       // Strip skip_resume on every load, progress or not. It used to be stripped
@@ -392,7 +403,10 @@
         window.BreakEscapeSessionResumeKeys.installResumeKeyGuard({
           target: window,
           isShowing: function() { return overlay.style.display !== 'none'; },
-          onResume: function() { if (!resumeBtn.disabled) resumeBtn.click(); }
+          onResume: function() {
+            if (restartConfirm && restartConfirm.isConfirming()) { restartConfirm.closeConfirm(); return; }
+            if (!resumeBtn.disabled) resumeBtn.click();
+          }
         });
       }
 
@@ -428,37 +442,11 @@
         window.dispatchEvent(new Event('break-escape:session-overlay-closed'));
       });
 
-      document.getElementById('session-restart-btn').addEventListener('click', function() {
-        var status = document.getElementById('session-restart-status');
-        status.style.display = 'block';
-        document.getElementById('session-resume-btn').disabled = true;
-        document.getElementById('session-restart-btn').disabled = true;
-        newSessionBtn.disabled = true;
-
-        fetch(window.breakEscapeConfig.apiBasePath + '/reset', {
-          method: 'POST',
-          headers: {
-            'X-CSRF-Token': window.breakEscapeConfig.csrfToken,
-            'Content-Type': 'application/json'
-          }
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.success) {
-            window.location.reload();
-          } else {
-            status.textContent = 'Error: ' + (data.error || 'Reset failed');
-            document.getElementById('session-resume-btn').disabled = false;
-            document.getElementById('session-restart-btn').disabled = false;
-            newSessionBtn.disabled = false;
-          }
-        })
-        .catch(function() {
-          status.textContent = 'Network error. Please try again.';
-          document.getElementById('session-resume-btn').disabled = false;
-          document.getElementById('session-restart-btn').disabled = false;
-          newSessionBtn.disabled = false;
-        });
+      // Start over: the button opens a confirm step; only its own Start over POSTs /reset
+      // (ui/session-restart-confirm.js). Enter means Resume, or Keep my progress in the step.
+      var restartConfirm = window.BreakEscapeSessionRestartConfirm.installRestartConfirm({
+        apiBasePath: window.breakEscapeConfig.apiBasePath,
+        csrfToken: window.breakEscapeConfig.csrfToken
       });
 
       newSessionBtn.addEventListener('click', function() {

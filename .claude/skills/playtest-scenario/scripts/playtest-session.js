@@ -546,7 +546,7 @@ const vmSteps = createVmSteps({
         trace.push(`dismiss "${bl.text.split('\n')[0]}" → "${pick}"`);
         await page.evaluate(l => window.__test.dismissBlockingUi(l), pick);
         await pause(900);
-        // A "New Session" or "Restart" click reloads the page.
+        // A "New Session" or "Start over" click reloads the page.
         await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 }).catch(() => {});
         await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 120000 })).catch(() => {});
         continue;

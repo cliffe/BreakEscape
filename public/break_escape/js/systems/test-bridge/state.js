@@ -87,7 +87,7 @@ function currentRoomId() {
 }
 
 
-/** The Resume / Restart / New Session overlay is up (games/show.html.erb). */
+/** The Resume / Start over / New Session overlay is up (games/show.html.erb). */
 export function sessionOverlayShowing() {
     return window.breakEscapeSessionOverlayShowing === true;
 }
@@ -99,7 +99,7 @@ export function sessionOverlayShowing() {
  * the links (bootstrap: 'the resume overlay has no "resume" button').
  */
 export function sessionOverlayButtons() {
-    return ['session-resume-btn', 'session-restart-btn', 'session-new-btn']
+    return ['session-resume-btn', 'session-restart-btn', 'session-new-btn', 'session-restart-keep-btn', 'session-restart-confirm-btn']
         .map(id => document.getElementById(id))
         .filter(el => el && el.getBoundingClientRect().width > 0);
 }
@@ -117,7 +117,7 @@ export function sessionOverlayUi() {
         text: (panel.innerText || 'RESUME SESSION?').trim().slice(0, 500),
         buttons: sessionOverlayButtons().map((el, i) => ({ index: i, id: el.id || null, label: (el.innerText || '').trim().slice(0, 100) })),
         hint: 'The session overlay covers the whole page, a minigame included; the world loads underneath and timed dialogue waits. '
-            + 'Choose with __test.dismissBlockingUi("Resume") (or "Restart" / "New Session"); Enter also resumes.'
+            + 'Choose with __test.dismissBlockingUi("Resume") (or "Start over", then "Start over" again in its confirm step, or "New Session"); Enter also resumes.'
     };
 }
 
