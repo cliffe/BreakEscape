@@ -137,6 +137,38 @@ test('short landscape (phone on its side) keeps its own sizing at the true 165:2
     assert.equal(r['aspect-ratio'], 'auto');
 });
 
+test('short landscape: 16px MORE cue and an 85% body', () => {
+    const L = 'orientation: landscape) and (max-height: 640px)';
+    const cue = rule(notes, '.notes-minigame-more', L);
+    assert.equal(cue['font-size'], '16px');
+    assert.equal(cue['line-height'], '16px');
+    assert.match(rule(notes, '.notes-minigame-content-area', L).height, /calc\(85% - 48px\)/);
+});
+
+test('the body stops above the MORE cue at every notepad height (paper foot at row 191 of 205)', () => {
+    const PORT = '(orientation: portrait) and (max-width: 768px)';
+    const LAND = 'orientation: landscape) and (max-height: 640px)';
+    const cue = (media) => {
+        const c = Object.assign({}, rule(notes, '.notes-minigame-more'), rule(notes, '.notes-minigame-more', media));
+        const px = (v) => parseFloat(v);
+        const border = px((c.border || '0').split(' ')[0]) || 0;
+        return px(c['line-height']) + 2 * border;
+    };
+    const frac = (media, sel) => parseFloat(rule(notes, sel, media).height.match(/calc\((\d+)%/)[1]) / 100;
+    const cases = [
+        ['portrait', PORT, '.notes-minigame-notepad .notes-minigame-content-area', 28],
+        ['landscape', LAND, '.notes-minigame-content-area', 20],
+    ];
+    for (const [name, media, sel, box] of cases) {
+        assert.equal(cue(name === 'portrait' ? null : media) , box, `${name} cue box height`);
+        const f = frac(media, sel);
+        // a portrait notepad is never under about 412px tall (360x640 gives roughly 1.5px of clearance)
+        for (const H of [276, 312, 378, 412, 446, 588].filter(h => name === 'landscape' || h >= 412)) {
+            assert.ok(H * f <= H * 191 / 205 - box, `${name} H=${H}: body bottom ${H * f} vs cue top ${H * 191 / 205 - box}`);
+        }
+    }
+});
+
 test('the edit pencil has room: the observation box reserves its right side', () => {
     const base = rule(notes, '.notes-minigame-observation');
     assert.equal(base['padding-right'], '28px');

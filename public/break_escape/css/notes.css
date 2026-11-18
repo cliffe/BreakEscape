@@ -42,7 +42,7 @@
 
 /* Game container: as tall as the notepad, so the navigation row and Continue sit under it in
    the shell's column (critique A04). Where the framework's `height: 100%` wins (it is linked
-   after this file) the portrait rule above and the landscape rule below set it with more weight. */
+   after this file) the portrait rule below and the landscape rule further down set it with more weight. */
 .notes-minigame-game-container {
     width: 100%;
     height: auto;
@@ -76,7 +76,7 @@
 
 /* Portrait phones: the page was sized from the width alone, and the game container filled the
    shell (minigames-framework.css is linked again after this file, so its `height: 100%` beat
-   the `height: auto` below), so a 390x844 screen got a 358x445 notepad at the top, the
+   the `height: auto` above), so a 390x844 screen got a 358x445 notepad at the top, the
    navigation row at the bottom and about 230px of dark band between. Here the container wraps
    the notepad (a selector with more weight than the framework's), has no side padding (the
    notepad sits centred) and no #1a1a1a fill, and the shell centres notepad and navigation row
@@ -483,13 +483,13 @@
         aspect-ratio: auto;
         background-size: 100% 100%;
     }
-    .notes-minigame-content-area { padding: 0 9% 9% 17%; font-size: 14px; line-height: 1.3; height: calc(90% - 48px); }
+    .notes-minigame-content-area { padding: 0 9% 9% 17%; font-size: 14px; line-height: 1.3; height: calc(85% - 48px); }
     .notes-minigame-text-box { margin: 2% 0 4% 4%; padding: 8px; }
     .notes-minigame-text { margin-left: 0; }
     /* 16px on short screens too, one line, cut with an ellipsis when long (S7-notes) */
     .notes-minigame-title { font-size: 16px; line-height: 24px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
-    .notes-minigame-more { font-size: 8px; line-height: 16px; padding: 0 6px; }
+    .notes-minigame-more { font-size: 16px; line-height: 16px; padding: 0 6px; }
     .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px 28px 6px 6px; }
     /* Continue stays beside the notepad here, out of the flow (the framework
        otherwise puts the Cancel row under the game area, which would shorten the
