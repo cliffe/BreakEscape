@@ -14,10 +14,10 @@ puts BreakEscape::ScenarioBinding.render(File.read(${JSON.stringify(join(root, '
 const skip = r.status !== 0 && 'scenario did not render here';
 const sc = skip ? null : JSON.parse(r.stdout);
 
-test('shredding task title says asking will not work', { skip }, () => {
+test("shredding task title says asking won't work", { skip }, () => {
     const task = sc.objectives.flatMap(a => a.tasks).find(t => t.taskId === 'stop_the_shredding');
     assert.equal(task.optional, true);
-    assert.match(task.title, /asking will not work/);
+    assert.match(task.title, /asking won't work/);
 });
 
 test('ending check lists the shredding task while it is active, not while locked', { skip }, () => {
