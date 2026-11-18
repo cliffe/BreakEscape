@@ -2115,6 +2115,17 @@ function seatPreference(obj, npcRec, stop) {
     return stop?.post || sat.includes('work') ? 'fetch' : 'near';
 }
 
+/**
+ * A coordinate needsHome's `facing` (one of the 8 compass names) as a point 64 px off the feet, so it
+ * works wherever a facePointFor point does. null for a missing or unknown facing.
+ */
+export function homeFacingPoint(feet, facing) {
+    const i = COMPASS.indexOf(facing);
+    if (i < 0 || !feet) return null;
+    const a = (90 - i * 45) * Math.PI / 180;   // 0 = east, +y = south (compassToward's convention)
+    return { x: feet.x + Math.round(Math.cos(a) * 64), y: feet.y + Math.round(Math.sin(a) * 64) };
+}
+
 /** The point an NPC at this object faces: back along useFrom when given (square to the desk). */
 function facePointFor(obj, feet) {
     if (!obj) return null;
@@ -2391,7 +2402,8 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const pref = seatPreference(obj, npcRec, stop);
     if (pref === 'stand') return false;
     const feet = needsSeatRef(bodyFeet(sprite), stop, ns.home);
-    const toward = facePointFor(obj, feet);
+    // No object to face (a coordinate home): the home's own `facing`, when it has one
+    const toward = facePointFor(obj, feet) || (stop.post ? homeFacingPoint(feet, ns?.home?.facing) : null);
     // Chairs at another needs NPC's post are theirs, unless this is that spot too
     const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);
     const free = c => !chairAtOtherPost({ x: c.obj.x + c.obj.width / 2, y: c.obj.y + c.obj.height }, feet, posts);

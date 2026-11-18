@@ -32,6 +32,7 @@ const HOME_EPS = 12;
 // destination (1.5 tiles). A farther arrival is a short path that ended before the cell (an async
 // path answer, a path stopped at a door); it is re-issued, not taken as "arrived".
 const ARRIVAL_NEAR_PX = 48;
+const HOME_FACINGS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
 // The walk home yields to the player (stops and faces them). After this long without moving
@@ -1495,6 +1496,11 @@ export class NPCNeedsSystem {
 
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
+            // A coordinate home with a facing: stand turned that way (a seat takes it from here)
+            if (s.home?.facing && !s.home.objectId) {
+                const d = HOME_FACINGS.indexOf(s.home.facing) * 45, a = (90 - d) * Math.PI / 180;
+                this.world.faceTo(id, pos.x + Math.cos(a) * 64, pos.y + Math.sin(a) * 64);
+            }
             // Only a real trip emits; a session at one's own post object never left it
             s.returnAbandon = null;
             s.returnLate = 0;   // late walks are counted per return (R3 m1)
@@ -4159,7 +4165,11 @@ export class NPCNeedsSystem {
             return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null, provisional: true };
         } else if (h && typeof h === 'object' && h.room) {
             const w = this.world.tileToWorld(h.room, h.x, h.y);
-            if (w) return { x: w.x, y: w.y, roomId: h.room, objectId: null };
+            if (w) {
+                const home = { x: w.x, y: w.y, roomId: h.room, objectId: null };
+                if (HOME_FACINGS.includes(h.facing)) home.facing = h.facing;   // seating.js turns the sitter this way
+                return home;
+            }
         }
         return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null };
     }
