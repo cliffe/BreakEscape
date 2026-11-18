@@ -16,7 +16,7 @@ import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, 
 import { playUISound } from './ui-sounds.js';
 import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
-import { catchLockpickInView } from './lockpick-catch.js';
+import { catchLockpickInView, anyKeyMightFitLock, lockKeyPinsOf } from './lockpick-catch.js';
 import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
 import { afterContainerUnlock } from '../utils/dispense-on-unlock.js';
 import { remoteOffMessage, notRespondingMessage, unreachableMessage } from '../utils/remote-host-text.js';
@@ -1101,7 +1101,15 @@ export function handleUnlock(lockable, type) {
                 item.scenarioData.type === 'lockpick'
             );
             
-            if (playerKeys.length > 0) {
+            // Keys take priority, unless the player holds a lockpick and none of the
+            // keys they hold can fit this lock: then open in lockpicking mode (the
+            // pick UI still offers "Switch to Key Mode"). m01 Derek's door: the only
+            // key that fits is inside a locked briefcase.
+            const lockKeyPinsForFit = lockKeyPinsOf(lockable);
+            const noHeldKeyFits = hasLockpick && playerKeys.length > 0 &&
+                !anyKeyMightFitLock(playerKeys, lockKeyPinsForFit);
+
+            if (playerKeys.length > 0 && !noHeldKeyFits) {
                 // Keys take priority - go straight to key selection
                 console.log('KEYS AVAILABLE - STARTING KEY SELECTION');
                 // Wrap unlockTarget to notify server first.
@@ -1114,7 +1122,7 @@ export function handleUnlock(lockable, type) {
                 };
                 startKeySelectionMinigame(lockable, type, playerKeys, requiredKey, unlockWithServerNotification);
             } else if (hasLockpick) {
-                // Only lockpick available - launch lockpicking minigame directly
+                // Only lockpick available (or no held key fits) - launch lockpicking minigame directly
                 console.log('LOCKPICK AVAILABLE - STARTING LOCKPICKING MINIGAME');
                 
                 // CHECK: Should any NPC interrupt with person-chat instead?
@@ -1145,10 +1153,13 @@ export function handleUnlock(lockable, type) {
                 startLockpickingMinigame(lockable, window.game, difficulty, async (success, outcome) => {
                     if (success) {
                         // Notify server of successful lockpick to update player_state and get room/container data
-                        const serverResponse = await notifyServerUnlock(lockable, type, 'lockpick');
+                        // 'key' when the player switched to key mode and a key opened it
+                        const method = outcome?.method === 'key' ? 'key' : 'lockpick';
+                        const serverResponse = await notifyServerUnlock(lockable, type, method);
                         setTimeout(() => {
+                            // No toast here: minigame-starters.js already showed the pick or
+                            // key success the moment the minigame completed (two toasts before)
                             unlockTarget(lockable, type, lockable.layer, serverResponse);
-                            window.gameAlert(`Successfully picked the lock!`, 'success', 'Lock Picked', 4000);
                         }, 100);
                     } else {
                         console.log('LOCKPICK FAILED');

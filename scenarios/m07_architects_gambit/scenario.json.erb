@@ -220,25 +220,26 @@ scada_password = "CascadeWindow19"
           { "text": "THE ARCHITECT'S GAMBIT", "style": "subtitle" },
           { "text": "" },
           { "text": "PACIFIC NORTHWEST REGIONAL GRID: SEQUENCE ABORTED", "style": "entry", "condition": "globalVars.grid_saved" },
-          { "text": "CUSTOMERS AFFECTED: 0 of 8,400,000 — 147 substations held", "style": "entry", "condition": "globalVars.grid_saved && !globalVars.countdown_expired" },
-          { "text": "STEP ONE RAN: Seattle metro dark until the abort — steps two to four never executed", "style": "warning", "condition": "globalVars.grid_saved && globalVars.countdown_expired" },
-          { "text": "CASCADE SEQUENCE RAN TO COMPLETION — three states dark", "style": "warning", "condition": "!globalVars.grid_saved" },
+          { "text": "CUSTOMERS AFFECTED: 0 of 8,400,000, 147 substations held", "style": "entry", "condition": "globalVars.grid_saved && !globalVars.countdown_expired" },
+          { "text": "STEP ONE RAN: Seattle metro dark until the abort, steps two to four never executed", "style": "warning", "condition": "globalVars.grid_saved && globalVars.countdown_expired" },
+          { "text": "CASCADE SEQUENCE RAN TO COMPLETION, three states dark", "style": "warning", "condition": "!globalVars.grid_saved" },
           { "text": "" },
           <%# PASS 5 alignment r1 (M1): unconditional, because the credits roll only
               after the debrief, which needs all four flags. %>
           { "text": "── THE ATTACK HOST ──", "style": "section-header" },
-          { "text": "ATTACK HOST: share read, listener intercepted, operator login, root — job killed, operators locked out", "style": "entry" },
+          { "text": "ATTACK HOST: share read, listener intercepted, operator login, root, job killed, operators locked out", "style": "entry" },
           { "text": "CLOCK: armed by the agent's login, stopped with time on it", "style": "entry", "condition": "globalVars.cascade_armed && !globalVars.countdown_expired" },
           { "text": "CLOCK: armed by the agent's login, ran out one step before the abort", "style": "warning", "condition": "globalVars.countdown_expired" },
           { "text": "ORDER: logged in on the host before the control room door was open", "style": "warning", "condition": "globalVars.logged_in_before_door" },
           { "text": "" },
           { "text": "── THE TRIAGE ──", "style": "section-header" },
-          { "text": "TACTICAL TEAM: Operation Fracture — voter records exfiltrated, Social Fabric cluster seized intact", "style": "entry", "condition": "globalVars.team_assignment === 'fracture'" },
-          { "text": "TACTICAL TEAM: Operation Trojan Horse — 840 signing keys burned, no backdoor shipped", "style": "entry", "condition": "globalVars.team_assignment === 'trojan_horse' && !globalVars.team_redirected" },
-          { "text": "TACTICAL TEAM: Operation Trojan Horse, redirected mid-flight — injection stopped at 30%, dispatch keys reached first", "style": "entry", "condition": "globalVars.team_redirected" },
-          { "text": "TACTICAL TEAM: Operation Meltdown — 4,200 hospitals ran a normal night", "style": "entry", "condition": "globalVars.team_assignment === 'meltdown'" },
-          { "text": "TACTICAL TEAM: Never committed — held over Denver for the duration", "style": "warning", "condition": "!globalVars.team_assignment" },
-          { "text": "PROJECTION CORRECTED: Trojan Horse dormancy nine days, not ninety — EHR and dispatch keys on the manifest", "style": "entry", "condition": "globalVars.projection_revised" },
+          { "text": "THE CALL: Four operations running, one agent, one tactical team to send", "style": "entry" },
+          { "text": "TACTICAL TEAM: Operation Fracture, voter records exfiltrated, Social Fabric cluster seized intact", "style": "entry", "condition": "globalVars.team_assignment === 'fracture'" },
+          { "text": "TACTICAL TEAM: Operation Trojan Horse, 840 signing keys burned, no backdoor shipped", "style": "entry", "condition": "globalVars.team_assignment === 'trojan_horse' && !globalVars.team_redirected" },
+          { "text": "TACTICAL TEAM: Operation Trojan Horse, redirected mid-flight, injection stopped at 30%, dispatch keys reached first", "style": "entry", "condition": "globalVars.team_redirected" },
+          { "text": "TACTICAL TEAM: Operation Meltdown, 4,200 hospitals ran a normal night", "style": "entry", "condition": "globalVars.team_assignment === 'meltdown'" },
+          { "text": "TACTICAL TEAM: Never committed, held over Denver for the duration", "style": "warning", "condition": "!globalVars.team_assignment" },
+          { "text": "PROJECTION CORRECTED: Trojan Horse dormancy nine days, not ninety, EHR and dispatch keys on the manifest", "style": "entry", "condition": "globalVars.projection_revised" },
           { "text": "REDIRECT OFFERED WITH THE WINDOW OPEN: weighed, and held", "style": "entry", "condition": "globalVars.redirect_declined && !globalVars.team_redirected" },
           { "text": "CORRECTION FOUND WITH THE WINDOW OPEN: the team was not moved", "style": "warning", "condition": "globalVars.revision_found_open && !globalVars.revision_before_commit && !globalVars.redirect_declined && !globalVars.team_redirected" },
           <%# PASS 5 alignment r2 (m2, m3, A2): held before the commit; read with the
@@ -252,11 +253,12 @@ scada_password = "CascadeWindow19"
           { "text": "PROJECTION UNCHALLENGED: Their schedule was read; the Austin row was never put against the brief", "style": "warning", "condition": "!globalVars.projection_revised && globalVars.found_coordination_traffic === true && globalVars.team_assignment !== 'trojan_horse'" },
           { "text": "" },
           { "text": "── INSIDE THE FACILITY ──", "style": "section-header" },
-          { "text": "DR. JAMES MERCER (BLACKOUT): Detained — signed casualty projection in evidence", "style": "entry", "condition": "globalVars.mercer_fate === 'arrested'" },
-          { "text": "DR. JAMES MERCER (BLACKOUT): Neutralised at the console — questioning deferred", "style": "warning", "condition": "globalVars.mercer_ko" },
-          { "text": "DR. JAMES MERCER (BLACKOUT): Left before the cordon closed — no trace", "style": "warning", "condition": "globalVars.mercer_fate === 'escaped' && !globalVars.mercer_ko" },
+          { "text": "ON SITE: Searched room by room", "style": "entry" },
+          { "text": "DR. JAMES MERCER (BLACKOUT): Detained, signed casualty projection in evidence", "style": "entry", "condition": "globalVars.mercer_fate === 'arrested'" },
+          { "text": "DR. JAMES MERCER (BLACKOUT): Neutralised at the console, questioning deferred", "style": "warning", "condition": "globalVars.mercer_ko" },
+          { "text": "DR. JAMES MERCER (BLACKOUT): Left before the cordon closed, no trace", "style": "warning", "condition": "globalVars.mercer_fate === 'escaped' && !globalVars.mercer_ko" },
           { "text": "DR. JAMES MERCER (BLACKOUT): Came at the agent, then gone before the police reached the room", "style": "warning", "condition": "globalVars.mercer_fate === 'ko' && !globalVars.mercer_ko" },
-          { "text": "DR. JAMES MERCER (BLACKOUT): Left at the console — gone before the police reached the room", "style": "warning", "condition": "!globalVars.mercer_fate && !globalVars.mercer_ko" },
+          { "text": "DR. JAMES MERCER (BLACKOUT): Left at the console, gone before the police reached the room", "style": "warning", "condition": "!globalVars.mercer_fate && !globalVars.mercer_ko" },
           { "text": "MERCER ON RECORD: Named the dead he had already costed", "style": "entry", "condition": "globalVars.mercer_stance === 'condemned' && globalVars.mercer_fate === 'arrested' && !globalVars.mercer_ko" },
           { "text": "MERCER, CONFRONTED: Told what he was", "style": "entry", "condition": "globalVars.mercer_stance === 'condemned' && globalVars.mercer_fate !== 'arrested'" },
           { "text": "MERCER ON RECORD: Argued his arithmetic to the end", "style": "entry", "condition": "globalVars.mercer_stance === 'reasoned' && globalVars.mercer_fate === 'arrested' && !globalVars.mercer_ko" },
@@ -264,36 +266,37 @@ scada_password = "CascadeWindow19"
           { "text": "MERCER ON RECORD: Said nothing", "style": "entry", "condition": "globalVars.mercer_stance === 'silent' && globalVars.mercer_fate === 'arrested' && !globalVars.mercer_ko" },
           { "text": "MERCER, CONFRONTED: Given nothing to answer", "style": "entry", "condition": "globalVars.mercer_stance === 'silent' && globalVars.mercer_fate !== 'arrested'" },
           { "text": "MERCER TOLD: He was the diversion, not the operation", "style": "entry", "condition": "globalVars.mercer_told_diversion" },
-          { "text": "ELENA RODRIGUEZ: Turned — cooperating, contractor survey work now evidence", "style": "entry", "condition": "globalVars.elena_outcome === 'turned'" },
-          { "text": "ELENA RODRIGUEZ: Left the site before the abort — whereabouts unknown", "style": "warning", "condition": "globalVars.elena_outcome === 'fled'" },
-          { "text": "ELENA RODRIGUEZ: Neutralised — never questioned", "style": "warning", "condition": "globalVars.elena_ko" },
-          { "text": "ELENA RODRIGUEZ: Never spoken to — in the wind with everything she knows", "style": "warning", "condition": "!globalVars.elena_outcome && !globalVars.elena_ko && !globalVars.elena_met" },
-          { "text": "ELENA RODRIGUEZ: Spoken to, left at the rack — still there when the police came down", "style": "warning", "condition": "!globalVars.elena_outcome && !globalVars.elena_ko && globalVars.elena_met" },
+          { "text": "ELENA RODRIGUEZ: Turned, cooperating, contractor survey work now evidence", "style": "entry", "condition": "globalVars.elena_outcome === 'turned'" },
+          { "text": "ELENA RODRIGUEZ: Left the site before the abort, whereabouts unknown", "style": "warning", "condition": "globalVars.elena_outcome === 'fled'" },
+          { "text": "ELENA RODRIGUEZ: Neutralised, never questioned", "style": "warning", "condition": "globalVars.elena_ko" },
+          { "text": "ELENA RODRIGUEZ: Never spoken to, in the wind with everything she knows", "style": "warning", "condition": "!globalVars.elena_outcome && !globalVars.elena_ko && !globalVars.elena_met" },
+          { "text": "ELENA RODRIGUEZ: Spoken to, left at the rack, still there when the police came down", "style": "warning", "condition": "!globalVars.elena_outcome && !globalVars.elena_ko && globalVars.elena_met" },
           { "text": "RAY HOLLIS: Talked, and handed over the zone badge", "style": "entry", "condition": "globalVars.hollis_resolved === 'talked'" },
           { "text": "RAY HOLLIS: Neutralised on shift", "style": "warning", "condition": "globalVars.hollis_ko" },
-          { "text": "RAY HOLLIS: Badge copied off his belt — he never knew, still on their payroll", "style": "warning", "condition": "globalVars.hollis_cloned && globalVars.hollis_resolved === 'evaded' && !globalVars.hollis_ko" },
-          { "text": "RAY HOLLIS: Evaded — still on the checkpoint desk, still on their payroll", "style": "warning", "condition": "globalVars.hollis_resolved === 'evaded' && !globalVars.hollis_cloned && !globalVars.hollis_ko" },
-          { "text": "RAY HOLLIS: Went for you, left standing — still on their payroll", "style": "warning", "condition": "globalVars.hollis_resolved === 'ko' && !globalVars.hollis_ko" },
-          { "text": "RAY HOLLIS: Left at his post — still on their payroll", "style": "warning", "condition": "!globalVars.hollis_ko && globalVars.hollis_resolved !== 'talked' && globalVars.hollis_resolved !== 'evaded' && globalVars.hollis_resolved !== 'ko'" },
-          { "text": "THOMAS PARK: Talked — the transfer switch was left intact", "style": "entry", "condition": "globalVars.park_resolved === 'talked'" },
+          { "text": "RAY HOLLIS: Badge copied off his belt, he never knew, still on their payroll", "style": "warning", "condition": "globalVars.hollis_cloned && globalVars.hollis_resolved === 'evaded' && !globalVars.hollis_ko" },
+          { "text": "RAY HOLLIS: Evaded, still on the checkpoint desk, still on their payroll", "style": "warning", "condition": "globalVars.hollis_resolved === 'evaded' && !globalVars.hollis_cloned && !globalVars.hollis_ko" },
+          { "text": "RAY HOLLIS: Went for you, left standing, still on their payroll", "style": "warning", "condition": "globalVars.hollis_resolved === 'ko' && !globalVars.hollis_ko" },
+          { "text": "RAY HOLLIS: Left at his post, still on their payroll", "style": "warning", "condition": "!globalVars.hollis_ko && globalVars.hollis_resolved !== 'talked' && globalVars.hollis_resolved !== 'evaded' && globalVars.hollis_resolved !== 'ko'" },
+          { "text": "THOMAS PARK: Talked, the transfer switch was left intact", "style": "entry", "condition": "globalVars.park_resolved === 'talked'" },
           { "text": "THOMAS PARK: Neutralised in the vault", "style": "warning", "condition": "globalVars.park_ko" },
-          { "text": "THOMAS PARK: Evaded — finished the cut and walked out", "style": "warning", "condition": "globalVars.park_resolved === 'evaded' && !globalVars.park_ko" },
-          { "text": "THOMAS PARK: Fought off, not stopped — finished the cut and walked out", "style": "warning", "condition": "globalVars.park_resolved === 'ko' && !globalVars.park_ko" },
-          { "text": "THOMAS PARK: Seen, left to work — finished the cut and walked out", "style": "warning", "condition": "globalVars.vault_entered === true && !globalVars.park_ko && globalVars.park_resolved !== 'talked' && globalVars.park_resolved !== 'evaded' && globalVars.park_resolved !== 'ko'" },
-          { "text": "THOMAS PARK: Never found — the backup was cut before anyone went down", "style": "warning", "condition": "!globalVars.vault_entered && !globalVars.park_ko" },
+          { "text": "THOMAS PARK: Evaded, finished the cut and walked out", "style": "warning", "condition": "globalVars.park_resolved === 'evaded' && !globalVars.park_ko" },
+          { "text": "THOMAS PARK: Fought off, not stopped, finished the cut and walked out", "style": "warning", "condition": "globalVars.park_resolved === 'ko' && !globalVars.park_ko" },
+          { "text": "THOMAS PARK: Seen, left to work, finished the cut and walked out", "style": "warning", "condition": "globalVars.vault_entered === true && !globalVars.park_ko && globalVars.park_resolved !== 'talked' && globalVars.park_resolved !== 'evaded' && globalVars.park_resolved !== 'ko'" },
+          { "text": "THOMAS PARK: Never found, the backup was cut before anyone went down", "style": "warning", "condition": "!globalVars.vault_entered && !globalVars.park_ko" },
           { "text": "OPERATIONS STAFF: Hurt on your way through", "style": "warning", "condition": "globalVars.adaeze_ko || globalVars.gwen_ko" },
           { "text": "OPERATIONS STAFF: Struck, left the building", "style": "warning", "condition": "globalVars.ops_staff_upset && !globalVars.adaeze_ko && !globalVars.gwen_ko" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
-          { "text": "TOMB GAMMA: Dossier recovered — the Architect's workshop, no coordinates on file", "style": "entry", "condition": "globalVars.found_tomb_gamma" },
-          { "text": "MOLE INTERCEPT: Evidence recovered — SAFETYNET tasking read before it was sent", "style": "entry", "condition": "globalVars.found_mole_evidence" },
+          { "text": "SITE PAPERS: Bagged and logged for the evidence team", "style": "entry" },
+          { "text": "TOMB GAMMA: Dossier recovered, the Architect's workshop, no coordinates on file", "style": "entry", "condition": "globalVars.found_tomb_gamma" },
+          { "text": "MOLE INTERCEPT: Evidence recovered, SAFETYNET tasking read before it was sent", "style": "entry", "condition": "globalVars.found_mole_evidence" },
           { "text": "NOTHING FURTHER RECOVERED: The site's other papers went to the evidence team unread", "style": "warning", "condition": "!globalVars.found_tomb_gamma && !globalVars.found_mole_evidence" },
           { "text": "" },
           { "text": "── ON THE RECORD ──", "style": "section-header" },
-          { "text": "AGENT 0x00: Defended the call — the triage was sound on what was known", "style": "entry", "condition": "globalVars.debrief_stance === 'defended'" },
+          { "text": "AGENT 0x00: Defended the call, the triage was sound on what was known", "style": "entry", "condition": "globalVars.debrief_stance === 'defended'" },
           { "text": "AGENT 0x00: Owned the two that went unanswered", "style": "entry", "condition": "globalVars.debrief_stance === 'owned'" },
-          { "text": "AGENT 0x00: Refused the premise — one agent, four operations, no fourth option", "style": "entry", "condition": "globalVars.debrief_stance === 'refused'" },
-          { "text": "AGENT 0x00: Wants the numbers before writing them — no more briefing off the Architect's figures", "style": "entry", "condition": "globalVars.debrief_stance === 'hardened'" },
+          { "text": "AGENT 0x00: Refused the premise, one agent, four operations, no fourth option", "style": "entry", "condition": "globalVars.debrief_stance === 'refused'" },
+          { "text": "AGENT 0x00: Wants the numbers before writing them, no more briefing off the Architect's figures", "style": "entry", "condition": "globalVars.debrief_stance === 'hardened'" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large. He chose the night, and the questions you were given.", "style": "warning" },
           { "text": "ENTROPY: Still operational.", "style": "warning" }
@@ -569,7 +572,8 @@ scada_password = "CascadeWindow19"
           "title": "Face the man at the master console",
           "type": "npc_conversation",
           "targetNPC": "james_mercer",
-          "status": "active"
+          "status": "active",
+          "optional": true
         }
       ]
     },
@@ -695,8 +699,7 @@ scada_password = "CascadeWindow19"
       "startOnGlobal": "team_assigned",
       "cancelOnGlobal": "grid_saved",
       "setGlobal": { "architect_t20_played": true },
-      "showCountdown": false,
-      "onceOnly": true
+      "showCountdown": false
     },
     {
       "id": "architect_taunt_t10",
@@ -706,8 +709,7 @@ scada_password = "CascadeWindow19"
       "startOnGlobal": "team_assigned",
       "cancelOnGlobal": "grid_saved",
       "setGlobal": { "architect_t10_played": true },
-      "showCountdown": false,
-      "onceOnly": true
+      "showCountdown": false
     },
     {
       "id": "redirect_window_close",
@@ -717,8 +719,7 @@ scada_password = "CascadeWindow19"
       "startOnGlobal": "team_assigned",
       "cancelOnGlobal": "grid_saved",
       "setGlobal": { "redirect_window_closed": true },
-      "showCountdown": false,
-      "onceOnly": true
+      "showCountdown": false
     },
     {
       "id": "redirect_window_display",
@@ -727,8 +728,7 @@ scada_password = "CascadeWindow19"
       "delayMs": 2400000,
       "startOnGlobal": "team_assigned",
       "cancelOnGlobal": "grid_saved",
-      "showCountdown": true,
-      "onceOnly": true
+      "showCountdown": true
     },
     {
       "id": "architect_taunt_t5",
@@ -738,8 +738,7 @@ scada_password = "CascadeWindow19"
       "startOnGlobal": "cascade_armed",
       "cancelOnGlobal": "grid_saved",
       "setGlobal": { "architect_t5_played": true },
-      "showCountdown": false,
-      "onceOnly": true
+      "showCountdown": false
     },
     {
       "id": "architect_taunt_t1",
@@ -749,8 +748,7 @@ scada_password = "CascadeWindow19"
       "startOnGlobal": "cascade_armed",
       "cancelOnGlobal": "grid_saved",
       "setGlobal": { "architect_t1_played": true },
-      "showCountdown": false,
-      "onceOnly": true
+      "showCountdown": false
     },
     {
       "id": "cascade_zero",
@@ -760,8 +758,7 @@ scada_password = "CascadeWindow19"
       "startOnGlobal": "cascade_armed",
       "cancelOnGlobal": "grid_saved",
       "setGlobal": { "countdown_expired": true },
-      "showCountdown": true,
-      "onceOnly": true
+      "showCountdown": true
     },
     <%# PASS 4 (design review fix 1): the debrief no longer opens by itself the
         moment the Architect hangs up, so a player who left the plant for after
@@ -779,8 +776,7 @@ scada_password = "CascadeWindow19"
       "startOnGlobal": "grid_saved",
       "cancelOnGlobal": "debrief_requested",
       "setGlobal": { "debrief_timer_fired": true },
-      "showCountdown": false,
-      "onceOnly": true
+      "showCountdown": false
     }
   ],
 
@@ -1107,7 +1103,7 @@ scada_password = "CascadeWindow19"
                 Mission-side stopgap; the engine fix is E1 in DECISIONS_PENDING. %>
             {
               "eventPattern": "object_interacted",
-              "condition": "data.objectName === 'Cascade Control System' && !globalVars.flag4_submitted",
+              "condition": "data.objectName === 'Cascade Control System' && data.objectType !== 'vm-launcher' && !globalVars.flag4_submitted",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 800, "message": "That console takes nothing typed into it. The root flag goes through the relay in the server hall, and the console opens itself after." }
             },
@@ -1198,14 +1194,14 @@ scada_password = "CascadeWindow19"
             <%# PASS 5 puzzle chains r1 (F2): when a fight starts, say how to fight and
                 that walking away works (m06 S1 pattern, the tutorial's control words).
                 A reload restores hostility with restored: true, so it doesn't repeat. %>
-            <%# PASS 5 puzzle chains closing round (F8/N1): Q cycles open hand, jab, cross
-                (hud.js), so it never "stows" the fists, and the chase has no leash, so no
+            <%# PASS 5 puzzle chains closing round (F8/N1): the old Q cycling is gone (F
+                punches, Q held blocks), and the chase has no leash, so no
                 promise that walking away ends it. Same wording as m05; split for the 30-word cap. %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Fists up, face him, hit him. Q a second time throws the harder punch." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Face him and hit him: F to punch, keep pressing for a harder one. Hold Q to block." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1217,25 +1213,25 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Park's swinging. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+              "sendTimedMessage": { "delay": 1000, "message": "Park's swinging. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the vault, and won't wait while you read." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk (not while blocking). He's slower than you, won't follow you out of the vault, and won't wait while you read." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Mercer's coming at you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+              "sendTimedMessage": { "delay": 1000, "message": "Mercer's coming at you. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the control room, and won't wait while you read." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk (not while blocking). He's slower than you, won't follow you out of the control room, and won't wait while you read." }
             },
             <%# Engine regression fixes (2026-10-17, finding 3): a Restart after a
                 knockout calms a non-KO'd Hollis, Park or Mercer and emits
@@ -1259,17 +1255,14 @@ scada_password = "CascadeWindow19"
             {
               "eventPattern": "conversation_closed:opening_briefing_cutscene",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: F to punch, hold Q to block, face them squarely." }
             },
-            <%# Blind run A fixes (M1, the run's Mercer note): after the first knockout,
-                fists up blocks every click (m05's pattern). Once, on whichever KO is first. %>
 <% %w[ray_hollis thomas_park james_mercer].each do |ko_id| %>
             {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_ko:<%= ko_id %>",
-              "condition": "!globalVars.hands_down_said",
-              "onceOnly": true,
-              "setGlobal": { "hands_down_said": true },
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             },
 <% end %>
             <%# Blind run A fixes (m7) added a case hint as the keypad opened. Since
@@ -1394,7 +1387,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.debrief_requested && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true",
               "onceOnly": true,
               "setGlobal": { "debrief_requested": true },
-              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. Next door you go through, he's on the link." }
+              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. Next door you go through, he's on the link. Anything left to do here, finish it before you take that door." }
             },
 <% [1, 2, 3].each do |n| %>
             {
@@ -1403,7 +1396,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.debrief_requested && !globalVars.flag<%= n %>_submitted",
               "onceOnly": true,
               "setGlobal": { "debrief_requested": true },
-              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. The moment the last of it is through the relay, he's on." }
+              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. The moment the last of it is through the relay, he's on. Finish anything else here first." }
             },
 <% end %>
 <% %w[security_checkpoint operations_floor server_room scada_control generator_room cable_vault].each do |r| %>
@@ -1441,18 +1434,16 @@ scada_password = "CascadeWindow19"
             { "eventPattern": "npc_attacked:adaeze_okafor", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
             { "eventPattern": "npc_attacked:gwen_pritchard", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
             {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_ko:adaeze_okafor",
-              "condition": "!globalVars.hands_down_said",
-              "onceOnly": true,
-              "setGlobal": { "hands_down_said": true },
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             },
             {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_ko:gwen_pritchard",
-              "condition": "!globalVars.hands_down_said",
-              "onceOnly": true,
-              "setGlobal": { "hands_down_said": true },
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             }
           ],
           "itemsHeld": [
@@ -1832,7 +1823,7 @@ scada_password = "CascadeWindow19"
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
-          "observations": "The bound visitor log. NERC compliance requires it, so it is immaculate -- which is exactly why it is worth reading.",
+          "observations": "The bound visitor log. NERC compliance requires it, so it is immaculate, which is exactly why it is worth reading.",
           "observationDisplay": "gameDisplay",
           "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- VISITOR AND CONTRACTOR LOG\n(NERC CIP-006 visitor control. Site retention: 3 years. Do not remove from the desk.)\n\n... entries 1-214 omitted ...\n\n215  14 JUN  J. MERCER          OptiGrid Solutions   SCADA stack -- scheduled maintenance   ESCORT: R. HOLLIS\n216  15 JUN  J. MERCER          OptiGrid Solutions   SCADA stack -- scheduled maintenance   ESCORT: R. HOLLIS\n217  15 JUN  E. RODRIGUEZ       OptiGrid Solutions   Server hall -- cabling survey          ESCORT: R. HOLLIS\n218  16 JUN  J. MERCER          OptiGrid Solutions   SCADA stack -- scheduled maintenance   ESCORT: NONE / CREDENTIALS RENEWED\n219  16 JUN  T. PARK            OptiGrid Solutions   Plant -- keypad service                ESCORT: R. HOLLIS\n\n... entries 220-388 omitted ...\n\nHandwritten in the margin beside 218, in a different pen: \"who signed this off??\"",
           "onRead": { "setVariable": { "visitor_log_read": true } },
@@ -2135,7 +2126,7 @@ scada_password = "CascadeWindow19"
           "id": "vm_launcher_attack_terminal",
           "name": "Field Console (Kali)",
           "takeable": false,
-          "observations": "The Kali box you set up here on the maintenance VLAN -- your working machine for reaching the host that is running the cascade.",
+          "observations": "The Kali box you set up here on the maintenance VLAN, your working machine for reaching the host that is running the cascade.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"172.16.0.3","enable_console":true}) %>,
           "showPostit": true,
@@ -2650,7 +2641,6 @@ scada_password = "CascadeWindow19"
     "architect_echo_heard": false,
     "teacher_discussed": false,
     "hurt_line_said": false,
-    "hands_down_said": false,
     "flags_nag_sent": false,
     "live_warning_sent": false,
     "debrief_requested": false,

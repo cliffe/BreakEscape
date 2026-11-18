@@ -63,5 +63,5 @@ test('npc-barks uses the reading-time lifetime, not a fixed 60 s, and keeps clic
   assert.match(barksSrc, /this\.openPhoneChat\(payload\);\s*\n\s*this\._removeBark\(el\);/);
   assert.match(barksSrc, /barksToTrim\(/);
   // a toast whose conditions lapsed while a conversation covered it closes when it ends
-  assert.match(barksSrc, /drainDeferredBarks\(\) \{\s*\n\s*if \(!this\._shouldDefer\(\)\) this\._dropStaleVisibleBarks\(\);/);
+  assert.match(barksSrc, /drainDeferredBarks\(\) \{\s*\n(?:\s*this\._foldHeldIntoOpenThread\(\);\s*\n)?\s*if \(!this\._shouldDefer\(\)\) this\._dropStaleVisibleBarks\(\);/);
 });

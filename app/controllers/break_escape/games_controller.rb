@@ -268,6 +268,14 @@ module BreakEscape
       preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags]
       initial_state = @game.player_state.is_a?(Hash) ? @game.player_state.slice(*preserved_keys) : {}
 
+      # D144: a released set is never carried forward. A VM mission with no live set has
+      # nothing to bind, so the player is sent back to start it again for fresh VMs. A VM-free
+      # mission and standalone mode (state :none) copy exactly as before.
+      if @game.vm_set_state == :released
+        return render json: { success: false, reason: 'vm_released', error: Game::VM_RELEASED_NEW_SESSION_MESSAGE },
+                      status: :unprocessable_entity
+      end
+
       # Abandon the current game before creating a new one.
       # The unique partial index allows only one in_progress game per player+mission.
       @game.update!(status: 'abandoned') if @game.status == 'in_progress'
@@ -1244,6 +1252,13 @@ module BreakEscape
         return render json: body, status: :unprocessable_entity
       end
 
+      # D144: a flag-lock on a game whose VM set was released opens only for a flag already
+      # solved on that set; otherwise it is refused here, before anything is unlocked.
+      if method == 'flag' && attempt.present?
+        released = @game.released_flag_refusal(attempt)
+        return render json: released, status: :unprocessable_entity if released
+      end
+
       # An access-list rfid unlock says which held card passed: the player's own keycard by
       # id, a copy only as viaCopy (UX devices R1)
       rfid_card_answer = method == 'rfid' && card_ids && !already_open ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
@@ -1261,7 +1276,8 @@ module BreakEscape
       end
 
       # Use transaction to ensure atomic update
-      ActiveRecord::Base.transaction do
+      flag_not_recorded = false
+      ActiveRecord::Base.transaction(requires_new: true) do
         if target_type == 'door'
           if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
             # Gated route-room split (§3.5): the NPC route opened the door for the player's
@@ -1318,7 +1334,19 @@ module BreakEscape
           # If this was a flag-unlock: submit to Hacktivity, process rewards, complete linked task
           if method == 'flag' && attempt.present?
             # Submit flag to Hacktivity and mark in submitted_flags (ignore if already submitted)
-            @game.submit_flag(attempt)
+            submit_result = @game.submit_flag(attempt)
+            if !submit_result[:success] && submit_result[:reason].nil?
+              if submit_result[:retryable]
+                # A transient Hacktivity error (FlagService raised). Undo the unlock so the
+                # player sees a refusal and can try again, rather than opening the object with
+                # its task silently left incomplete. already_submitted is not an error.
+                flag_not_recorded = true
+                raise ActiveRecord::Rollback
+              end
+              # Permanent (no VM set, flag not in the set, FlagService missing): retrying
+              # cannot help, so keep the long-standing behaviour and open the object.
+              Rails.logger.warn "[BreakEscape] Flag-lock unlock without Hacktivity record: #{submit_result[:message]}"
+            end
 
             rewards = find_flag_rewards(attempt)
             unless rewards.empty?
@@ -1343,6 +1371,12 @@ module BreakEscape
 
           render json: response
         end
+      end
+
+      if flag_not_recorded
+        render json: { success: false, reason: 'flag_not_recorded',
+                       message: 'The flag could not be recorded. Try again.' },
+               status: :unprocessable_entity
       end
     rescue ActiveRecord::RecordInvalid => e
       render json: {
@@ -1996,11 +2030,11 @@ module BreakEscape
     end
 
     # PUT /games/:id/objectives/tasks/:task_id
-    # Update task progress (for collect_items and submit_flags tasks)
+    # Update task progress (collect_items tasks only; other types are refused)
     #
     # Wrapped in with_game_lock (see around_action above): unlike complete_task
     # right above it, update_task_progress! only writes this one task's own
-    # progress/submittedFlags — it never calls check_aim_completion, so it's a
+    # progress — it never calls check_aim_completion, so it's a
     # candidate to drop the lock if this ever moves to atomic per-path writes
     # — see the FUTURE IMPROVEMENT note above. Don't confuse this with
     # complete_task's lock requirement; they look similar but touch very
@@ -2010,16 +2044,15 @@ module BreakEscape
 
       task_id = params[:task_id]
       progress = params[:progress].to_i
-      submitted_flags = params[:submittedFlags]
 
       unless task_id.present?
         return render json: { success: false, error: 'Missing task_id' }, status: :bad_request
       end
 
-      result = @game.update_task_progress!(task_id, progress, submitted_flags)
+      result = @game.update_task_progress!(task_id, progress)
 
-      Rails.logger.debug "[BreakEscape] Task progress updated: #{task_id} = #{progress}, submittedFlags: #{submitted_flags&.length || 0}"
-      render json: result
+      Rails.logger.debug "[BreakEscape] Task progress updated: #{task_id} = #{progress}"
+      render json: result, status: result[:success] ? :ok : :not_found
     end
 
     # ==========================================
@@ -2150,8 +2183,13 @@ module BreakEscape
 
         # Server-side task/aim completion — runs after rewards so the final save!
         # captures all accumulated in-memory state changes
+        # prior_flag_ids: flags this game already had validated (submit_flags tasks part-way
+        # through when this record was introduced still complete).
+        prior_flag_ids = Array(@game.player_state['submitted_flags']).flat_map do |value|
+          generate_flag_identifiers(value, find_flag_station_for_flag(value))
+        end
         task_outcomes = flag_ids.any? \
-          ? @game.process_flag_task_completions!(flag_ids)
+          ? @game.process_flag_task_completions!(flag_ids, prior_flag_ids: prior_flag_ids)
           : { completed_tasks: [], updated_tasks: [] }
 
         # Notify the host app so it can route this through its own flag-scoring pipeline
@@ -2185,7 +2223,8 @@ module BreakEscape
           updatedTasks:   task_outcomes[:updated_tasks]
         }
       else
-        render json: result.merge(reason: result[:reason] || 'invalid'), status: :unprocessable_entity
+        # No reason means Hacktivity could not record a flag the scenario accepts: not a wrong flag.
+        render json: result.merge(reason: result[:reason] || 'flag_not_recorded'), status: :unprocessable_entity
       end
     end
 
@@ -2213,8 +2252,10 @@ module BreakEscape
                                       : vm_set.vms.first
       return head :not_found unless vm
 
-      # Race guard: only unlock console if the game is still in_progress.
+      # Race guard: only unlock console if the game is still in_progress, and (D144) only
+      # while the set is still the player's.
       return head :not_found unless @game.reload.status == 'in_progress'
+      return head :not_found unless @game.vm_set_state == :live
 
       # Gate: verify the player has reached the room containing this terminal in-game.
       # Admins and account managers bypass this check.
@@ -2245,12 +2286,14 @@ module BreakEscape
     # Redirects to the Hacktivity VmSet#show page for this game's assigned VM set,
     # with ?embedded=1 so Hacktivity hides navigation and footer.
     def vm_set_panel
+      authorize @game if defined?(Pundit)
       return head :not_found unless BreakEscape::Mission.hacktivity_mode? && @game.vm_set_id
 
       vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: @game.vm_set_id) : nil
       return head :not_found unless vm_set&.sec_gen_batch&.event
 
       return head :not_found unless @game.reload.status == 'in_progress'
+      return head :not_found unless @game.vm_set_state == :live
 
       batch = vm_set.sec_gen_batch
       event = batch.event
@@ -2277,6 +2320,7 @@ module BreakEscape
       # Race guard: only act while the game is still in_progress (a finished game's set may be
       # relinquished and reverted; re-locking is the start/restart flow's job, not this one).
       return head :not_found unless @game.reload.status == 'in_progress'
+      return head :not_found unless @game.vm_set_state == :live
 
       vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: @game.vm_set_id) : nil
       return head :not_found unless vm_set&.sec_gen_batch&.event

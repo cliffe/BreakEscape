@@ -78,7 +78,7 @@ export class KeyOperations {
         
         // Add click handler for key insertion
         clickZone.on('pointerdown', () => {
-            if (!this.parent.keyInserting) {
+            if (!this.parent.keyInserting && !this.parent.keyInsertTween) {
                 // Hide labels on first key click (similar to pin clicks)
                 if (!this.parent.pinClicked) {
                     this.parent.pinClicked = true;
@@ -121,13 +121,15 @@ export class KeyOperations {
             keyInserting: this.parent.keyInserting 
         });
         
-        if (!this.parent.keyGroup || !this.parent.keyConfig || this.parent.keyInserting) {
+        if (!this.parent.keyGroup || !this.parent.keyConfig || this.parent.keyInserting || this.parent.keyInsertTween) {
             console.log('startKeyInsertion early return - missing requirements');
             return;
         }
         
         console.log('Starting key insertion animation...');
         this.parent.keyInserting = true;
+        // No mode switching while the key goes in
+        this.parent.toolMgr?.setModeButtonsDisabled?.(true);
         this.parent.keyInsertion.updateFeedback("Inserting key...");
         
         // Play key insertion sound
@@ -145,7 +147,7 @@ export class KeyOperations {
         const fullyInsertedX = keywayLeftEdge - shoulderRightEdge; // 100 - 286 = -186px
         
         // Create smooth animation from left to right
-        this.parent.scene.tweens.add({
+        const insertTween = this.parent.scene.tweens.add({
             targets: this.parent.keyGroup,
             x: fullyInsertedX,
             duration: 4000, // 4 seconds for slower insertion
@@ -160,6 +162,9 @@ export class KeyOperations {
                 this.parent.keyInsertion.updatePinsWithKeyInsertion(this.parent.keyInsertionProgress);
             },
             onComplete: () => {
+                // A stale tween (restarted or killed) must not touch the current state
+                if (this.parent.keyInsertTween !== insertTween) return;
+                this.parent.keyInsertTween = null;
                 this.parent.keyInserting = false;
                 this.parent.keyInsertionProgress = 1.0; // Fully inserted
                 
@@ -167,8 +172,11 @@ export class KeyOperations {
                 this.parent.keyAnim.snapPinsToExactPositions();
                 
                 this.checkKeyCorrectness();
+                // A wrong key can be swapped for picking again; a correct one stays locked in
+                if (!this.parent.keyUnlocked) this.parent.toolMgr?.setModeButtonsDisabled?.(false);
             }
         });
+        this.parent.keyInsertTween = insertTween;
     }
 
     checkKeyCorrectness() {
@@ -202,6 +210,11 @@ export class KeyOperations {
         if (isCorrect) {
             // Key is correct - all pins are aligned at the shear line
             this.parent.keyInsertion.updateFeedback("Key fits perfectly! Lock unlocked.");
+
+            // The key has opened it: no more mode switching, so the unlock reports 'key'
+            this.parent.keyUnlocked = true;
+            // Keep the row (no jump in the strip during the rotation), button disabled
+            this.parent.toolMgr?.setModeButtonsDisabled?.(true);
             
                     // Start the rotation animation for correct key
         this.parent.scene.time.delayedCall(500, () => {
@@ -209,9 +222,7 @@ export class KeyOperations {
         });
             
             // Complete the minigame after rotation animation
-            setTimeout(() => {
-                this.parent.complete(true);
-            }, 3000); // Longer delay to allow rotation animation to complete
+            this.parent.holdSuccess(3000); // Longer delay to allow rotation animation to complete
         } else {
             // Key is wrong - show red flash and then pop up key selection again
             this.parent.keyInsertion.updateFeedback("Wrong key! The lock won't turn.");
@@ -225,7 +236,11 @@ export class KeyOperations {
             this.flashLockRed();
             
             // Reset key position and show key selection again after a delay
-            setTimeout(() => {
+            clearTimeout(this.parent.keyRetryTimer);
+            this.parent.keyRetryTimer = setTimeout(() => {
+                this.parent.keyRetryTimer = null;
+                // The player switched to picking meanwhile: leave the pick view alone
+                if (!this.parent.keyMode) return;
                 this.parent.keyInsertion.updateKeyPosition(0);
                 // Show key selection again
                 if (this.parent.keySelectionMode) {
@@ -235,7 +250,8 @@ export class KeyOperations {
                         // This is the locksmith-forge.html challenge mode
                         this.parent.keySelection.createKeysForChallenge('correct_key');
                     } else {
-                        // This is the main game - go back to key selection with original inventory keys
+                        // This is the main game - go back to key selection with original inventory keys.
+                        // Never made-up keys when a real list exists (switch from pick mode sets it).
                         this.parent.startWithKeySelection(this.parent.originalInventoryKeys, this.parent.originalCorrectKeyId);
                     }
                 }
@@ -313,6 +329,7 @@ export class KeyOperations {
         // Close the popup immediately
         if (this.parent.keySelectionContainer) {
             this.parent.keySelectionContainer.destroy();
+            this.parent.keySelectionContainer = null;
         }
         
         // Remove the input blocker (legacy - may not exist)
@@ -362,9 +379,12 @@ export class KeyOperations {
         this.parent.selectedKeyData = keyData;
         
         // Create the visual key with the selected key data
+        // Save the lock's pin count: a key without pinCount must not leave it undefined
+        const lockPinCount = this.parent.pinCount;
         this.parent.keyData = keyData;
-        this.parent.pinCount = keyData.pinCount;
+        this.parent.pinCount = keyData.pinCount || keyData.cuts?.length || lockPinCount;
         this.createKey();
+        this.parent.pinCount = lockPinCount;
         
         // Restore the original key data for correctness checking
         this.parent.keyData = originalKeyData;

@@ -302,6 +302,7 @@ Narrator: He offers his wrists without being asked. Whatever else he is, he came
     Graham Reeves: If you've really put his warnings on the record, then something came of tonight I couldn't manage on my own. I'd like that noted.
 }
 
+#set_global:reeves_stance:quiet
 #set_global:insider_confronted:true
 #set_global:insider_asset_arrested:true
 #exit_conversation
@@ -317,6 +318,7 @@ Graham Reeves: Let the readers decide which of us they're angrier at. I suspect 
 
 Narrator: You log his identity into the SAFETYNET evidence package. He doesn't resist when backup takes the door.
 
+#set_global:reeves_stance:public
 #set_global:insider_confronted:true
 #set_global:insider_asset_arrested:true
 #set_global:insider_asset_exposed:true
@@ -331,6 +333,7 @@ Graham Reeves: Fewer chances for either of us to say something we actually mean.
 
 Narrator: You signal SAFETYNET. Reeves sits at the boardroom table, folds his hands, and waits like a man who thinks he's already won the argument.
 
+#set_global:reeves_stance:handover
 #set_global:insider_confronted:true
 #set_global:insider_asset_arrested:true
 #exit_conversation
@@ -345,6 +348,7 @@ Graham Reeves: Then we're past talking.
 Graham Reeves: Everyone always is. Right up until the lights go out.
 
 #hostile:night_security_supervisor
+#set_global:reeves_stance:hostile
 #set_global:insider_confronted:true
 #set_global:insider_hostile:true
 #set_global:insider_asset_arrested:true

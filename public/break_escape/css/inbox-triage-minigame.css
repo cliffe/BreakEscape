@@ -26,9 +26,18 @@
     color: var(--ui-text-dim, #a8b2c8);
     border: 2px solid var(--ui-line, #4c5b80);
     border-radius: 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
 }
 .tri-step.done { color: var(--ui-text, #eef1f8); }
+/* Not colour alone: done steps lead with a 2px-pixel tick (zero-blur shadows) and carry a hidden " (done)". */
+.tri-step.done::before { content: ''; display: inline-block; width: 2px; height: 2px; margin: 0 6px 8px 14px; background: currentColor;
+    box-shadow: -12px 4px 0 0 currentColor, -10px 6px 0 0 currentColor, -8px 8px 0 0 currentColor, -6px 6px 0 0 currentColor, -4px 4px 0 0 currentColor, -2px 2px 0 0 currentColor; }
+.tri-step-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .tri-step.current { color: var(--ui-text, #eef1f8); border-color: var(--ui-accent, #ffcc44); background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96)); }
+/* Not colour alone: the current step has a 4px bottom border (the 2px it adds comes off the padding). */
+.tri-step.current { border-bottom-width: 4px; padding-bottom: 2px; }
 
 .tri-live:empty { min-height: 0; height: 0; overflow: hidden; }
 /* batch-12 item 1: in immediate feedback the review card is the visible confirmation, so the
@@ -321,10 +330,10 @@
     .tri-sheet-backdrop { align-items: flex-end; }
     .tri-sheet { width: 100%; max-height: 80%; }
     .triage-client .tri-toolbar { flex-wrap: wrap; }
-    /* C-X7: at narrow widths the stepper is one sideways-scrolling row, not a wrapped block. */
-    .tri-steps { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; }
+    /* C-X7 (revised 2026-11-18): the stepper takes its own row and wraps, so no step is hidden. */
+    .tri-steps { flex: 1 1 100%; flex-wrap: wrap; }
     /* Title and close X share the first row (X in the top-right corner); the stepper takes the
-       row below and scrolls sideways, so the X never wraps onto a row of its own. */
+       row below and wraps, so the X never wraps onto a row of its own. */
     .triage-client .tri-title { order: 1; flex: 1 1 0; }
     .triage-client .tri-toolbar .se-overlay-close { order: 2; margin-left: auto; }
     .triage-client .tri-steps { order: 3; }

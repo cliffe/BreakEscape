@@ -307,3 +307,14 @@ See `DESIGN_REVIEW.md`, "Changes made (pass 4 design)".
   `mole_identified`, completes `name_the_mole`). Cipher knots `audit_beat`, `locker_key`; Cipher and
   Phantom local VAR `gave_locker_key`. Confrontation VARs `accused_cipher`, `accused_phantom`,
   `go_bag_lining_known`. Off-duty agent VARs `accused_*`. Debrief VAR `nightshade_tipped_off`.
+
+---
+
+## OFFICE LIFE amendments (relief watch, 2026-11-18; supersede the sections above where they differ)
+
+- **NPCs:** `julian_sallow` and `agnieszka_duda`, night-duty officers on `operations_floor`, hidden until `found_badge_audit`. Story file `ink/m08_relief_watch.ink` (knots `julian_start`, `julian_hub`, `agnieszka_start`, `agnieszka_hub`, exchanges `ex_relief_handover`, `ex_lock_it`, `ex_the_suite`). `globalVarOnKO`: `julian_ko`, `agnieszka_ko`.
+- **Objects:** `ops_cooler` (water cooler, `offWhen: ops_watch_ko`), `julian_console` (workstation owned by Julian; its upset lock-screen text variant applies only while `julian_console_owner_away` is false, so the text matches the claimable state), decor twins `ops_duty_pc_east` and `ops_analyst_pc`.
+- **Globals (local):** `ops_watch_upset` (any trouble on the floor: an officer attacked or knocked down, or the analyst or Vector knocked down; never cleared; it silences both officers' cooler chatter pools and their exchanges and barks, but does not stop their trips), `ops_watch_ko` (an officer knocked down; set only by the `julian_ko` and `agnieszka_ko` mappings on `agent_0x99`, which also set upset; never cleared; it switches the cooler off and ends the trips and the coupling), `julian_console_owner_away`, `julian_console_screen_locked` (set and cleared by the console state). `tipoff_source` gains the value `watch`.
+- **Exported globals (D151b):** `julian_ko` and `agnieszka_ko` are in `exportGlobals`, so the officers' knock-downs carry into m10. Both are bounded booleans, set only by `globalVarOnKO`, never cleared. m10 imports them (`m10_imports`, m08 row) and counts them in its bystander knock-down tally.
+- **Not required:** no objective, task, lock, key or VM flag reads an office-life global. Julian's and Agnieszka's lines are optional.
+- **Change log:** 2026-11-18, `julian_ko` and `agnieszka_ko` added to the m08 exports and to the m10 imports (this contract and the m10 contract updated together).

@@ -101,6 +101,8 @@ VAR m08_analyst_ko = false
 VAR m08_athena_ko = false
 VAR m08_netherton_ko = false
 VAR m08_hax_ko = false
+VAR m08_julian_ko = false
+VAR m08_agnieszka_ko = false
 VAR m08_named_on_evidence = false
 
 // m09 Digital Archaeology
@@ -193,6 +195,7 @@ VAR hall_a_warnings = 0            // times the player has backed off hall_guard
 VAR hall_a_engaged = false        // hall_guard_a has turned hostile; stops the repeat challenge
 VAR hall_b_warnings = 0            // as hall_a_warnings, for hall_guard_b (one Back off)
 VAR hall_b_engaged = false         // hall_guard_b has turned hostile; stops the repeat challenge
+VAR duty_warnings = 0              // times the player has backed off the duty guard at the fitter's locker; a second catch turns him
 VAR breach_call_done = false       // set by HaX's breach_call, so a call held back by the tunnel fight rings only once
 VAR hax_rest_promised = false      // dialogue R1 m14: HaX promised the rest at six (hax_post), so 06:00 and the hearing offer the question
 VAR plans_read = false
@@ -360,7 +363,7 @@ VAR close_zero_day = ""
 { m07_elena_ko:
     ~ n = n + 1
 }
-{ m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko:
+{ m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko or m08_julian_ko or m08_agnieszka_ko:
     ~ n = n + 1
 }
 // R2-M4: m09, the night before (its default "left" never counts).

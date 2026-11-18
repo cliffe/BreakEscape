@@ -1578,7 +1578,7 @@ export class PasswordMinigame extends MinigameScene {
                 notebookObservations,
                 null,
                 false,
-                false
+                true // add to the Notepad (a filed item passes false)
             );
 
             this.showSuccess("Added postit note to notepad", false, 2000);

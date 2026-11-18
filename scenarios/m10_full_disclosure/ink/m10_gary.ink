@@ -142,7 +142,7 @@ Gary Whitlock: Then you're the board. Three weeks here and I've not shipped a th
     -> tech_menu
 }
 ~ gary_t_costs = true
-agent_0x99: A man on their bench who ships nothing is worth something to us. Think about that.
+agent_0x99: A man on their bench who ships nothing is worth something to us.
 -> tech_menu
 
 === tech_menu ===

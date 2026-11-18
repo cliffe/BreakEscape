@@ -318,6 +318,26 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
+/**
+ * Room under each item of a safe or cabinet for its whole name: the label hangs below the
+ * slot, so each slot's bottom margin is the label's height plus its 6px offset and the row
+ * (and the frame) is exactly as tall as the contents need. Again once the pixel font arrives.
+ */
+export function fitContentLabels(grid) {
+    if (!grid?.querySelectorAll) return;
+    const fit = () => {
+        for (const slot of grid.querySelectorAll('.container-content-slot')) {
+            const label = slot.querySelector('.container-content-label');
+            const h = label?.offsetHeight || 0;
+            slot.style.marginBottom = h > 0 ? `${h + 6}px` : '0px';
+        }
+    };
+    fit();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
+    // Load the face itself: fonts.ready can already be resolved before GNF is requested
+    if (typeof document !== 'undefined' && document.fonts?.load) document.fonts.load('16px GNF').then(fit, () => {});
+}
+
 const LABEL_SEP = /[_.\-\/]/;
 const LABEL_TRAIL = /[_.\-\/\s]+$/;
 const LABEL_LINES = 3;
@@ -1319,9 +1339,7 @@ export class ContainerMinigame extends MinigameScene {
                     </div>
                 </div>
                 
-                <div class="container-actions">
-                    ${this.isTakeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
-                </div>
+                ${this.isTakeable ? '<div class="container-actions"><button class="minigame-button" id="take-container-btn">Take Container</button></div>' : ''}
             </div>
         `;
     }
@@ -1711,7 +1729,7 @@ export class ContainerMinigame extends MinigameScene {
             // hovering each one (UX pass, 2026-11-12)
             const label = document.createElement('div');
             label.className = 'container-content-label';
-            label.textContent = displayDashes(shareParts ? shareParts.name : item.name);
+            label.textContent = displayDashes((shareParts ? shareParts.name : item.name) ?? '');
 
             // In a share's folder window a file is drawn at a whole-number scale that fills
             // a 64px cell (a 16px glyph at x4), not the grid's x2 (slice 2a review R1 M2)
@@ -1722,6 +1740,7 @@ export class ContainerMinigame extends MinigameScene {
             contentsGrid.appendChild(slot);
         });
         if (this.shareFolder) evenShareLabels(contentsGrid);
+        else fitContentLabels(contentsGrid);
     }
     
     populateDesktopIcons() {
@@ -2384,7 +2403,7 @@ export class ContainerMinigame extends MinigameScene {
                 notebookObservations,
                 null,
                 false,
-                false
+                true // add to the Notepad (a filed item passes false)
             );
 
             this.showMessage("Added postit note to notepad", 'success');

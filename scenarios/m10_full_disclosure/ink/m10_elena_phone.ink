@@ -8,7 +8,7 @@ VAR elena_decided_said = false   // FA row 90: said on the first ring only
 
 === start ===
 + [(Put the phone away.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> start
 
 // ---------------------------------------------------------------
@@ -38,7 +38,7 @@ It's Elena Rodriguez. They patched me into your feed. I've worked on switchgear 
     ~ elena_decided_said = true
     Your director decided what to do with me. This is it.
 }
-There's a gray cabinet by the door. A key switch and a breaker row, labeled GALLERY SHUTTER.
+There's a grey cabinet by the door. A key switch and a breaker row, labelled GALLERY SHUTTER.
 -> cut_0_menu
 = cut_0_menu
 + [I'm at it.]
@@ -97,7 +97,7 @@ Done. That shutter's dead. Go get him.
 // After the cut: no text, one way out.
 === cut_after ===
 + [(Put the phone away.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> cut_after
 
 // Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after

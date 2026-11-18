@@ -10,6 +10,8 @@
  * Kept here, not in the view, so a jsdom test can drive the flow.
  */
 
+import { safeShellUrl } from '../utils/desktop-app.js';
+
 export const START_OVER_LABEL = 'Start over';
 export const CONFIRM_TITLE = 'START OVER?';
 export const CONFIRM_TEXT = 'This erases your progress in this game and starts the mission again.';
@@ -24,6 +26,45 @@ const IDS = {
   newSession: 'session-new-btn',
   status: 'session-restart-status'
 };
+
+export const RELEASED_NOTE = "This session's VMs have been released. Starting again here would not give you " +
+  'new VMs. Go back to the missions page to start the mission with fresh ones.';
+export const BACK_TO_MISSIONS_LABEL = 'Back to missions';
+
+/**
+ * D144: on a game whose VM set was released, New Session and Start over would only carry
+ * the dead set forward (or strand the player on a run that can never score a VM flag), so
+ * both buttons are hidden, a note says why, and a "Back to missions" link takes their place
+ * (shellMenuUrl, else shellReturnUrl, each only if same-origin; no link if neither is).
+ * Text is set with textContent. Returns true when it changed the overlay.
+ */
+export function applyReleasedState({ doc = globalThis.document, released = false, cfg = {}, base } = {}) {
+  if (!released) return false;
+  const el = (k) => doc.getElementById(IDS[k]);
+  const row = el('mainRow');
+  if (!row) return false;
+  for (const k of ['open', 'newSession']) {
+    const b = el(k);
+    if (b) b.style.display = 'none';
+  }
+  const url = safeShellUrl(cfg.shellMenuUrl, base) || safeShellUrl(cfg.shellReturnUrl, base);
+  if (url) {
+    const a = doc.createElement('a');
+    a.id = 'session-back-link';
+    a.className = 'session-overlay-btn';
+    a.textContent = BACK_TO_MISSIONS_LABEL;
+    a.href = url;
+    a.setAttribute('style', "padding:15px 40px; font-size:16px; font-family:'GNF', monospace; background:#1a6fb0; " +
+      'color:#fff; border:2px solid #1a6fb0; text-decoration:none; display:inline-block;');
+    row.appendChild(a);
+  }
+  const note = doc.createElement('p');
+  note.id = 'session-released-note';
+  note.textContent = RELEASED_NOTE;
+  note.setAttribute('style', "color:#ffaa00; font-size:16px; font-family:'GNF', monospace; margin:0; text-align:center; max-width:520px;");
+  row.insertAdjacentElement('afterend', note);
+  return true;
+}
 
 /**
  * Wire the buttons. `fetchFn` and `reload` are injectable for tests. Returns
@@ -98,5 +139,5 @@ export function installRestartConfirm({
 }
 
 if (typeof window !== 'undefined') {
-  window.BreakEscapeSessionRestartConfirm = { installRestartConfirm };
+  window.BreakEscapeSessionRestartConfirm = { installRestartConfirm, applyReleasedState };
 }

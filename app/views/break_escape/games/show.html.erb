@@ -200,7 +200,9 @@
     _vm_set_activate_url = ''
     _vm_set_activated    = false
     _vm_set_activated_until = nil
-    if BreakEscape::Mission.hacktivity_mode?
+    # D144: none (standalone or no VM set), live, or released (the set was handed back).
+    _vm_set_state = @game.vm_set_state.to_s
+    if BreakEscape::Mission.hacktivity_mode? && _vm_set_state != 'released'
       _vm_set_id = (@game.vm_set_id.presence ||
                     (@game.player_state.is_a?(Hash) && @game.player_state['vm_set_id']))&.to_i
       if _vm_set_id.to_i > 0
@@ -238,7 +240,9 @@
       playerSprite: '<%= @player_preference&.selected_sprite || 'male_hacker_hood_v2' %>',
       hasProgress: <%= @game.has_progress? ? 'true' : 'false' %>,
       hasSiblings: <%= (@mission_sessions.length > 1) ? 'true' : 'false' %>,
-      vmPanelUrl: '<%= BreakEscape::Mission.hacktivity_mode? ? vm_panel_game_path(@game) : '' %>',
+      // Plain string: none | live | released. A released set gets no panel, widget or activate URL.
+      vmSetState: '<%= _vm_set_state %>',
+      vmPanelUrl: '<%= BreakEscape::Mission.hacktivity_mode? && _vm_set_state != 'released' ? vm_panel_game_path(@game) : '' %>',
       vmSetPanelUrl: '<%= _vm_set_panel_url %>',
       vmSetActivateUrl: '<%= _vm_set_activate_url %>',
       vmSetActivated: <%= _vm_set_activated ? 'true' : 'false' %>,
@@ -450,6 +454,14 @@
             csrfToken: window.breakEscapeConfig.csrfToken
           })
         : null;
+
+      // D144: a released VM set hides New Session and Start over, with a way back to missions.
+      if (window.BreakEscapeSessionRestartConfirm && window.BreakEscapeSessionRestartConfirm.applyReleasedState) {
+        window.BreakEscapeSessionRestartConfirm.applyReleasedState({
+          released: window.breakEscapeConfig.vmSetState === 'released',
+          cfg: window.breakEscapeConfig
+        });
+      }
 
       newSessionBtn.addEventListener('click', function() {
         var status = document.getElementById('session-restart-status');

@@ -21,7 +21,7 @@ function copy(p, rewrites = {}) {
     return pathToFileURL(out).href;
 }
 writeFileSync(join(tmp, 'api-stub.mjs'), 'export const ApiClient = {};');
-writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.gameContainer = c; this.params = p; } init() {} start() {} complete() {} cleanup() {} }');
+writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.gameContainer = c; this.params = p; } init() {} start() {} complete() {} cleanup() {} resolveEarlyClose(s) { return s || this._successPending === true; } markSuccessPending() { this._successPending = true; } holdSuccess(ms) { this.markSuccessPending(); setTimeout(() => this.complete(true), ms); } }');
 const P = "'./rfid-protocols.js'", PM = "'./rfid-protocols.mjs'";
 const protocolsUrl = copy('minigames/rfid/rfid-protocols.js');
 copy('utils/display-dashes.js');
@@ -982,8 +982,10 @@ test('closed during the success hold: the door still opens, once', async () => {
         await tick();
         g.gameState.isActive = false;
         timers.forEach(f => f());
-        assert.equal(done(), null);
-        assert.equal(late.length, 1);
+        // holdSuccess: the held timer completes the success (a real early close has already
+        // committed it through complete(), see success-hold-early-close.test.mjs); no late path
+        assert.equal(done(), true);
+        assert.equal(late.length, 0);
     } finally { globalThis.setTimeout = realTimeout; }
 });
 

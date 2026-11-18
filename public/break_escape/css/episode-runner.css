@@ -59,7 +59,7 @@
 /* R2 m2 (a): the kiosk close is the themed steel .minigame-close-button (the PC monitor's X),
    not the flat red SE X. Keep it in the top strip's flex flow (the base rule makes it absolute). */
 .epr-kiosk-top .epr-kiosk-close {
-    position: static;
+    position: relative;   /* in flow, and the anchor for the X's hit area */
     top: auto;
     right: auto;
     flex: 0 0 auto;

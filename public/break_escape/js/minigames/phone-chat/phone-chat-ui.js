@@ -611,11 +611,38 @@ export default class PhoneChatUI {
         // Hide conversation, show contact list
         this.elements.conversationView.style.display = 'none';
         this.elements.contactListView.style.display = 'flex';
+        this.elements.contactListView.setAttribute('role', 'region');
+        this.elements.contactListView.setAttribute('aria-label', 'Messages');
         
         // Populate contacts
         this.populateContactList(phoneId);
         
+        this.focusIntoPhone();
         console.log('📋 Showing contact list');
+    }
+
+    /**
+     * Put keyboard focus inside the phone: the visible view itself (tabindex -1), so the
+     * first Tab reaches the view's first control instead of a toast behind the phone (A1).
+     * Left alone when the player is typing in a field outside the phone, or focus is
+     * already on a control inside the phone's visible view.
+     */
+    focusIntoPhone() {
+        try {
+            const view = this.currentView === 'conversation'
+                ? this.elements.conversationView : this.elements.contactListView;
+            const doc = this.container?.ownerDocument;
+            if (!view || !doc || typeof view.focus !== 'function') return false;
+            const active = doc.activeElement;
+            const editable = (el) => !!el && (el.isContentEditable
+                || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName || ''));
+            if (active && active !== doc.body && !this.container.contains(active) && editable(active)) return false;
+            if (active && active !== view && view.contains(active)) return false;
+            if (!view.hasAttribute('tabindex')) view.setAttribute('tabindex', '-1');
+            view.style.outline = 'none';
+            view.focus({ preventScroll: true });
+            return doc.activeElement === view;
+        } catch (e) { return false; }
     }
     
     /**
@@ -690,6 +717,54 @@ export default class PhoneChatUI {
     }
     
     /**
+     * A text or call row arrived while the contact list is showing: bring each row's preview,
+     * time and unread badge up to date in place (the rows keep their place and focus). A
+     * contact the list has not shown yet rebuilds the whole list. Does nothing in a thread.
+     * @returns {boolean} whether the list was refreshed
+     */
+    refreshContactList() {
+        try {
+            const list = this.elements?.contactList;
+            if (this.currentView !== 'contact-list' || !list || !list.isConnected) return false;
+            const npcs = this.listContacts(this._listPhoneId ?? this.params.phoneId ?? 'player_phone', true);
+            const rows = Array.from(list.querySelectorAll('.contact-item'));
+            const rowFor = (id) => rows.find(r => r.dataset.npcId === id);
+            if (rows.length !== npcs.length || npcs.some(npc => !rowFor(npc.id))) {
+                // A contact came or went: rebuild, keeping the scroll position
+                const top = list.scrollTop;
+                this.populateContactList(this._listPhoneId);
+                list.scrollTop = top;
+                return true;
+            }
+            for (const npc of npcs) {
+                const row = rowFor(npc.id);
+                const fresh = this.createContactItem(npc);
+                const meta = row.querySelector('.contact-meta');
+                const freshMeta = fresh.querySelector('.contact-meta');
+                if (meta && freshMeta) meta.replaceWith(freshMeta);
+                const last = row.querySelector('.contact-last-message');
+                const freshLast = fresh.querySelector('.contact-last-message');
+                if (!last || !freshLast) continue;
+                if (npc.livePreview !== true) {
+                    last.className = freshLast.className;
+                    last.textContent = freshLast.textContent;
+                } else {
+                    // A livePreview row shows its own dry-run line; a new text in its thread
+                    // makes that stale, so show the history line and run the dry run again
+                    const length = String(this.npcManager.getConversationHistory(npc.id).length);
+                    if (row.dataset.historyLength !== length) {
+                        last.className = freshLast.className;
+                        last.textContent = freshLast.textContent;
+                        row.dataset.historyLength = length;
+                        this.refreshLivePreview(npc, row).catch(() => {});
+                    }
+                }
+            }
+            return true;
+        } catch (e) { return false; }
+    }
+
+    /**
      * Populate the contact list with NPCs
      * @param {string} phoneId - Optional phone ID to filter contacts
      */
@@ -713,7 +788,10 @@ export default class PhoneChatUI {
             contactList.appendChild(contactItem);
             // Opt-in (NPC "livePreview": true, lab R5 F4): a looping hint contact
             // previews the line opening its thread would add now
-            if (npc.livePreview === true) this.refreshLivePreview(npc, contactItem);
+            if (npc.livePreview === true) {
+                contactItem.dataset.historyLength = String(this.npcManager.getConversationHistory(npc.id).length);
+                this.refreshLivePreview(npc, contactItem);
+            }
         });
 
         console.log(`📋 Populated ${npcs.length} contacts`);
@@ -745,6 +823,7 @@ export default class PhoneChatUI {
         const preview = this.previewText({ type: 'npc', text: raw }, npc);
         if (preview === null) return null;
         el.textContent = displayDashes(preview);
+        el.classList.remove('missed');
         return preview;
     }
 
@@ -853,11 +932,16 @@ export default class PhoneChatUI {
 
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
+        // The thread is cleared below and redrawn from the history once that loads; a text
+        // that arrives in between is part of that draw (npc-barks _foldIntoOpenThread)
+        this.historyDrawn = false;
         this.syncSkipHint();
         
         // Hide contact list, show conversation
         this.elements.contactListView.style.display = 'none';
         this.elements.conversationView.style.display = 'flex';
+        this.elements.conversationView.setAttribute('role', 'region');
+        this.elements.conversationView.setAttribute('aria-label', `Conversation with ${npc.displayName || npc.id}`);
         
         // Update header with avatar
         this.updateHeader(npc.displayName || npc.id, npc.id);
@@ -875,6 +959,7 @@ export default class PhoneChatUI {
             this.startCallTimer();
         }
         
+        this.focusIntoPhone();
         console.log(`💬 Showing conversation with ${npc.displayName || npcId}`);
     }
     
