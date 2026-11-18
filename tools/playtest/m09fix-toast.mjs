@@ -55,9 +55,12 @@ if (mode === 'cabinet') {
   await ev(() => window.__test.dismissBlockingUi());
   // head start: plan_cabinet seeded as unlocked on this fresh game (Game#unlock_object!), no biometric play
   await t(2500); log('dismiss', await ev(() => window.__test.dismissBlockingUi())); const mv2 = await ev(() => window.__test.moveToNear('plan_cabinet')); log('move', mv2.ok ? 'ok' : mv2);
+  // a lifted print of Margaret Sorensen (the stamp's owner), as dusting would store it; the server merges known owners
+  log('sample', await ev(async () => { const m = await import('/break_escape/js/systems/biometric-samples.js'); const r = m.addBiometricSample({ owner: 'Margaret Sorensen', quality: 0.8, identified: true, sourceObjectId: 'sorensen_stamp', sourceName: 'Rubber Stamp' }); await new Promise(r => setTimeout(r, 1500)); return !!r; }));
   log('interact', await ev(() => window.__test.interact('plan_cabinet')));
   await t(1500);
   log('mg', await ev(() => window.__test.getState().activeMinigame));
+  if (await ev(() => !!document.querySelector('.fpr-card'))) { await ev(() => { window.__tl = []; const t0 = Date.now(); let last = ''; window.__tlTimer = setInterval(() => { const a = window.__test.getState().activeMinigame; const k = (a && a.id) + '|' + window.__toasts.length + '|' + document.querySelectorAll('#notification-container .notification').length; if (k !== last) { last = k; window.__tl.push([Date.now() - t0, k]); } }, 50); document.querySelector('.fpr-card').click(); }); await t(4000); log('timeline', await ev(() => window.__tl)); log('mg after present', await ev(() => window.__test.getState().activeMinigame)); log('toasts@present', await toasts()); }
   log('take', await ev(() => window.__test.minigame.take('Candidate Assessment, Intake 2011')));
   await t(500);
   log('held', await ev(() => window.gameState.globalVariables.nightshade_file_held));
@@ -103,6 +106,26 @@ if (mode === 'ko') {
     await t(500);
   }
   await t(8000);
+}
+if (mode === 'notice') {
+  log('task0', await task('send_the_notice'));
+  if ((await task('send_the_notice')) === 'locked') await ev(() => window.objectivesManager.unlockTask?.('send_the_notice'));
+  await t(1000); log('task1', await task('send_the_notice'));
+  const tl = (name) => ev(n => window.__test.getState().activeMinigame?.type || null);
+  await t(8000);
+  let op; for (let i = 0; i < 6; i++) { await ev(() => window.__test.dismissBlockingUi()); op = await ev(() => window.__test.openInventoryItem?.('phone')); if (op && op.ok) break; await t(1500); }
+  log('open phone', op);
+  await t(1500); log('click HaX', await ev(() => window.__test.minigame.clickText('Agent HaX')));
+  const pickChoice = async (rx, maxs = 60) => { for (let i = 0; i < maxs * 2; i++) { const d = await dlg(); if (d && d.awaitingChoice) { const texts = d.choices.map(c => (c && c.text) || String(c)); const k = texts.findIndex(x => rx.test(x)); log('choices', texts); if (k >= 0) { await ev(n => window.__test.minigame.chooseIndex(n), k + 1); return true; } return false; } if (d && d.canContinue) await ev(() => window.__test.minigame.continue()); await t(500); } return false; };
+  // The ink tag #complete_task:send_the_notice runs this same call; the HaX thread's resting knot is gated by story state we do not replay here.
+  log('complete while phone open', await ev(() => { window.__toasts.length = 0; return window.objectivesManager.completeTask('send_the_notice'); }));
+  await t(500); log('phone-open check', await ev(() => ({ mg: window.__test.getState().activeMinigame?.type, shown: document.querySelectorAll('#notification-container .notification').length })));
+  log('toasts@notyet', await toasts()); await t(6000); log('toasts@+6s', await toasts());
+  log('phone state', await ev(() => window.__test.getState().activeMinigame));
+  log('task2', await task('send_the_notice'));
+  log('close phone', await ev(() => { window.__tclose = Date.now(); return window.__test.minigame.close(); })); await t(500);
+  log('close phone2', await ev(() => window.__test.minigame.close()));
+  await t(6000);
 }
 log('fate', await ev(() => window.gameState.globalVariables.sorensen_fate));
 log('task', await task('stop_the_shredding'));
