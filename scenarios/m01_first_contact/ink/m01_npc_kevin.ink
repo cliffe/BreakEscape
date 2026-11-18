@@ -27,6 +27,7 @@ VAR security_audit_given = false
 VAR audit_questions_asked = 0
 VAR audit_correct_answers = 0
 VAR audit_wrong_answers = 0
+VAR audit_doubts = 0
 
 // ================================================
 // START: FIRST MEETING
@@ -192,7 +193,7 @@ Kevin Park: I've set up a Kali Linux workstation in there for you—use it for t
     -> get_lockpicks
 + {not given_keycard} [I need the server room keycard]
     -> get_keycard
-+ {not asked_about_passwords and influence >= 2} [Tell me about password security here]
++ {not asked_about_passwords and (influence >= 2 or security_audit_given)} [Tell me about password security here]
     -> ask_passwords
 + {not asked_about_derek and influence >= 3} [What else can you tell me about Derek?]
     -> ask_about_derek
@@ -348,6 +349,8 @@ Player: First, let's talk about physical security. What would you say is the mos
 
 + [The building's physical access controls are adequate for a company this size]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: Really? I was worried about those old door locks...
     Kevin Park: But I guess if you think they're adequate, maybe I'm being paranoid.
     -> audit_question_2
@@ -359,8 +362,10 @@ Player: First, let's talk about physical security. What would you say is the mos
     Kevin Park: I requested modern electronic locks six months ago. Budget was "under review."
     Kevin Park: Anyone with basic lockpicking skills could get into most rooms here.
     -> audit_question_2
-+ [Physical security isn't really a priority compared to digital security]
++ [Physical security matters less than digital, and the locks can wait for next year's budget]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: Hmm. I thought physical access was important, but you're the expert.
     Kevin Park: I guess I should focus more on the digital side then.
     -> audit_question_2
@@ -374,8 +379,10 @@ Player: First, let's talk about physical security. What would you say is the mos
 
 Player: Second question—I've been reviewing the access logs. What concerns you most about the patterns?
 
-+ [Everything looks normal. Standard office hours access mostly]
++ [Mostly normal office-hours access, and the odd late login is probably maintenance]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: But... what about those 2 AM logins to the server room?
     Kevin Park: Maybe I'm reading too much into it.
     -> audit_question_3
@@ -389,6 +396,8 @@ Player: Second question—I've been reviewing the access logs. What concerns you
     -> audit_question_3
 + [The access logs seem fine, but you should implement better monitoring]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: I thought the current logs were already showing problems...
     Kevin Park: But yeah, better monitoring couldn't hurt.
     -> audit_question_3
@@ -399,11 +408,14 @@ Player: Second question—I've been reviewing the access logs. What concerns you
 
 === audit_question_3 ===
 ~ audit_questions_asked += 1
+-> audit_doubt ->
 
 Player: Third—password security. What's your assessment of the biggest vulnerability?
 
-+ [Your password complexity requirements are sufficient]
++ [Your complexity rules are sound; the weakness is that nobody rotates passwords often enough]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: I guess the requirements are technically there...
     Kevin Park: I just worry people are finding predictable ways around them.
     -> audit_question_4
@@ -417,6 +429,8 @@ Player: Third—password security. What's your assessment of the biggest vulnera
     -> audit_question_4
 + [Passwords aren't the real issue—focus on multi-factor authentication instead]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: We don't have MFA yet—budget constraints.
     Kevin Park: So I'm stuck with just passwords for now. Wish we could implement MFA.
     -> audit_question_4
@@ -427,11 +441,14 @@ Player: Third—password security. What's your assessment of the biggest vulnera
 
 === audit_question_4 ===
 ~ audit_questions_asked += 1
+-> audit_doubt ->
 
 Player: Fourth—personnel security. What's the biggest red flag you see?
 
-+ [The staff seem trustworthy. No major concerns]
++ [Staff seem trustworthy, and the firing looks like an ordinary performance matter]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: I want to believe that, I really do.
     Kevin Park: But Patricia's firing still bothers me.
     -> audit_question_5
@@ -446,6 +463,8 @@ Player: Fourth—personnel security. What's the biggest red flag you see?
     -> audit_question_5
 + [You need better background checks and security clearances]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: I mean, we do background checks for sensitive positions...
     Kevin Park: But yeah, we could probably do better.
     -> audit_question_5
@@ -456,11 +475,14 @@ Player: Fourth—personnel security. What's the biggest red flag you see?
 
 === audit_question_5 ===
 ~ audit_questions_asked += 1
+-> audit_doubt ->
 
 Player: Finally—data protection practices. What concerns you about how sensitive data is handled here?
 
-+ [Standard security practices seem to be followed adequately]
++ [Data handling looks standard, and encryption on Derek's systems is just sensible practice]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: I suppose most people follow the basics...
     Kevin Park: Though Derek's setup still seems excessive to me.
     -> audit_complete
@@ -476,9 +498,29 @@ Player: Finally—data protection practices. What concerns you about how sensiti
     -> audit_complete
 + [You need better encryption across the board]
     ~ audit_wrong_answers += 1
+    ~ influence -= 1
+    # influence_decreased
     Kevin Park: We have encryption where we need it...
     Kevin Park: Though I guess more couldn't hurt?
     -> audit_complete
+
+// ================================================
+// KEVIN LOSES PATIENCE - tunnel, reached from questions 3 to 5.
+// Wrong answers cost trust: second wrong answer, then the fourth.
+// ================================================
+
+=== audit_doubt ===
+{audit_wrong_answers >= 2 and audit_doubts == 0:
+    ~ audit_doubts = 1
+    Kevin Park: Hold on. That's twice you've told me not to worry, and I've got the logs open right here. #delivery: wary, a little stung
+    ->->
+}
+{audit_wrong_answers >= 4 and audit_doubts == 1:
+    ~ audit_doubts = 2
+    Kevin Park: I'm starting to wonder if you've looked at anything in this building. #delivery: flat, disappointed
+    ->->
+}
+->->
 
 // ================================================
 // AUDIT COMPLETE - Kevin's Response
@@ -488,11 +530,17 @@ Player: Finally—data protection practices. What concerns you about how sensiti
 
 Kevin Park: Thank you. Seriously, thank you for taking the time to go through this with me.
 
-{audit_correct_answers >= 4:
+{audit_correct_answers == 5:
     Kevin Park: You really understand what's happening here. Everything you've flagged matches my concerns exactly.
     Kevin Park: It's such a relief to have a professional validate what I've been seeing.
     Kevin Park: I've felt like I'm going crazy, or being paranoid. But you see it too.
     ~ influence += 3
+    # influence_increased
+}
+{audit_correct_answers == 4:
+    Kevin Park: Most of that matches what I've seen. There's one point I'd argue with, but you've got the shape of it.
+    Kevin Park: It helps, hearing someone else say it out loud. I'll take that over being told I'm paranoid.
+    ~ influence += 2
     # influence_increased
 }
 {audit_correct_answers == 3:
@@ -501,17 +549,25 @@ Kevin Park: Thank you. Seriously, thank you for taking the time to go through th
     ~ influence += 2
     # influence_increased
 }
-{audit_correct_answers <= 2:
+{audit_correct_answers == 2:
     Kevin Park: I appreciate the feedback, even if we see some things differently.
     Kevin Park: Maybe I am being too paranoid about some of this stuff.
     Kevin Park: But... I still can't shake the feeling something's wrong here.
     ~ influence += 1
     # influence_increased
 }
+{audit_correct_answers <= 1:
+    Kevin Park: I'll be straight with you. I expected more than that, and half of it is what I'd already ruled out myself.
+    Kevin Park: I'll log it, but I'm checking it against my own notes before it goes anywhere near management. #delivery: polite but cooler
+    ~ influence -= 1
+    # influence_decreased
+}
 
-Kevin Park: I'm going to document your findings in my incident log.
+{audit_correct_answers >= 2:
+    Kevin Park: I'm going to document your findings in my incident log.
 
-Kevin Park: If management won't listen to me, maybe they'll listen to the security auditor.
+    Kevin Park: If management won't listen to me, maybe they'll listen to the security auditor.
+}
 
 Kevin Park: Keep investigating. And please—if you find anything concrete, tell me immediately.
 

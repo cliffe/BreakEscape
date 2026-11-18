@@ -44,7 +44,7 @@ for (const rel of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils
     'utils/pc-monitor.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js',
     'utils/locked-hint.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'systems/captures.js',
     'utils/remote-host-text.js', 'systems/keyring.js', 'systems/notifications.js', 'ui/modal-stack.js', 'utils/overlay-open.js',
-    'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/network-links.js', 'api-client.js',
+    'systems/unlock-system.js', 'systems/pc-sessions.js', 'utils/sync-before-fetch.js', 'systems/network-links.js', 'api-client.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
     'minigames/container/container-minigame.js', 'minigames/password/password-minigame.js']) copy(rel);
 
@@ -323,6 +323,21 @@ test('step 8 races: 403 not_responding, 403 unreachable and 422 remoteBlocked an
         assert.equal(opened.length, 0);
         assert.equal(signIns.length, 0);
     }
+});
+
+test('R2 n1: a 403 after a sync that ran out of time adds the note to the Connect toast', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    window.stateSync = { syncConfirmed: async () => {}, sync: () => new Promise(() => {}) };
+    loginAnswer = () => { throw refusal(403, { reason: 'not_responding' }); };
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const pending = window.keyring.connect(ITEM);
+        for (let i = 0; i < 6; i++) { await settle(2); mock.timers.tick(3000); }
+        const r = await pending;
+        assert.equal(r.outcome, 'target_off');
+        assert.deepEqual(toasts(), ['HB-FIN-02 is not responding. The link may be behind; try again in a moment.']);
+    } finally { mock.timers.reset(); }
 });
 
 test('step 8 refusals: LOGIN_NOT_PERMITTED is a toast, no screen', async () => {

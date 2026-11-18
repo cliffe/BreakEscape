@@ -637,6 +637,55 @@ export default class PhoneChatConversation {
         }
     }
 
+    /**
+     * True when the saved choices are one silent way out: a single choice whose run prints
+     * nothing, fires no game-action tag (only exit_conversation / end_conversation / speaker /
+     * delivery are allowed), changes no story VAR (a `~` assignment counts, synced or not) and
+     * leaves no choices, so the story ends or closes. A lone "[Understood.]" that sets nothing
+     * is one. Anything it says or sets would be lost if the reopen jumped away from it (m09's
+     * tesseract_call "[Understood.]" sets tesseract_call_closed), and a decision menu is never
+     * one, even when every option closes. The choice is tried on `state` (the synced story)
+     * with the observer detached, and the story is put back to `state` afterwards.
+     */
+    _savedChoicesAreExits(story, state) {
+        const count = story.currentChoices?.length || 0;
+        if (count !== 1) return false;
+        const observer = story.variablesState.variableChangedEvent;
+        story.variablesState.variableChangedEvent = null;
+        // A save from an older layout can hold a choice thread the story no longer has: ink then
+        // only warns and runs on to a false dead end. Any ink error or warning means "not sure",
+        // which is not "an exit".
+        const priorOnError = story.onError;
+        let inkTrouble = false;
+        story.onError = () => { inkTrouble = true; };
+        // Public save format, not a private inkjs field: a rename there must not turn the rule off
+        const snapshot = () => JSON.stringify(JSON.parse(story.state.ToJson()).variablesState || {});
+        const silentTag = t => /^(exit_conversation|end_conversation|speaker|delivery)$/i
+            .test(String(t).split(':')[0].trim());
+        try {
+            story.state.LoadJson(state);
+            const before = snapshot();
+            story.ChooseChoiceIndex(0);
+            const steps = PhoneChatConversation.collectSteps(story);
+            if (inkTrouble || story.state.hasWarning || story.state.hasError) return false;
+            // Still choices after it: a branch, not a way out
+            if (story.currentChoices?.length > 0) return false;
+            // It says something, or fires a game action
+            if (steps.some(st => phoneStepLines(st.text, st.tags).length > 0 ||
+                (st.tags || []).some(t => !silentTag(t)))) return false;
+            // It sets a VAR
+            const after = snapshot();
+            return before === after;
+        } catch (e) {
+            return false;
+        } finally {
+            try { story.state.LoadJson(state); } catch (e) { /* keep what we have */ }
+            story.variablesState.variableChangedEvent = observer;
+            story.onError = priorOnError;
+            try { story.ResetErrors(); } catch (e) { /* older ink */ }
+        }
+    }
+
     /** True when the story has a top-level knot of that name. */
     _hasKnot(story, name) {
         try {
@@ -811,6 +860,35 @@ export default class PhoneChatConversation {
         // keeps its choices. Dialogue only, no globals written, so left as is.
         const home = String(homeKnot || 'start').split('.')[0];
         const sameChoices = !chosen || JSON.stringify(chosen.choices) === savedKey;
+        // The player is looking at nothing but ways out (m09's identity call ends on a lone
+        // "Understood.") and a global has changed since that was saved: the thread's resting
+        // point is a dead end, and what the home knot now has pending (a hub read-out) has not
+        // been seen from here. Play the home knot in full, not trimmed against its own run under
+        // the old globals: a read-out that was already pending then (e.g. a catalogue read the
+        // player skipped) would run identically in both and read as "nothing new".
+        // Only when the home run is a read-out: it prints something or closes the phone AND
+        // carries a state-changing tag. A plain hub greeting leaves the kept exit alone.
+        if (knot !== home && this._hasKnot(story, home)) {
+            // Cheap question first: only a home run that reads out (n3), then the exit test
+            const full = dryRun(home);
+            const closesHome = tags => (tags || []).some(t =>
+                /^(exit_conversation|end_conversation)$/i.test(String(t).split(':')[0].trim()));
+            // A read-out is a hub beat that changes state (#set_global, #unlock_task ...); a plain
+            // hub greeting ("What now?") carries none and must not displace a kept exit.
+            const changesState = tags => (tags || []).some(t =>
+                /^(set_global|set_variable|unlock_task|complete_task|skip_task|unlock_aim|set_objective|give_item)$/i
+                    .test(String(t).split(':')[0].trim()));
+            // A read-out written as `~ synced_var = true` with no tag is not seen here (n2): the
+            // check is conservative, it leaves the kept exit in place.
+            if (full && full.steps.some(st => changesState(st.tags)) &&
+                full.steps.some(st => phoneStepLines(st.text, st.tags).length > 0 || closesHome(st.tags)) &&
+                this._savedChoicesAreExits(story, syncedState)) {
+                full.baseline = [];
+                full.replayed = 0;
+                full.fresh = full.steps.length;
+                chosen = full;
+            }
+        }
         if ((!chosen || chosen.fresh === 0) && sameChoices && knot !== home && this._hasKnot(story, home)) {
             const viaHome = dryRun(home);
             // Visible output only: a tag-only step (m02 support_hub opens with one) is a

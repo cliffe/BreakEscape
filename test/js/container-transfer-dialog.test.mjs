@@ -42,6 +42,7 @@ copy('minigames/container/container-item-image.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/container/container-minigame.js');
 copy('systems/pc-sessions.js');
+copy('utils/sync-before-fetch.js');
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;

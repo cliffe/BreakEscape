@@ -22,7 +22,7 @@ import { splitReplyTags, partitionSlowTags, tagAction } from './person-chat-pend
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
-import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, rememberShownText, rememberPlayerChoice, markClosedByExit, isExitTag, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -641,7 +641,16 @@ export class PersonChatMinigame extends MinigameScene {
 
         try {
             // Get current content without advancing
-            const result = this.conversation.continue();
+            // Re-entering the knot on a reopen replays lines the player has just seen and heard.
+            // Run it forward in silence first: if it is only those lines, keep the choices, drop the
+            // replay (and its tags, which already ran) and let the recap below show the last line
+            // once, display only. Anything new in it plays as normal (person-chat-reopen.js).
+            let result = null;
+            if (this.isResumedConversation) {
+                result = drainReopenEcho({ npcId: this.npcId, engine: this.inkEngine, story: this.inkEngine?.story, step: () => this.conversation.continue() });
+                if (result) console.log(`🔇 ${this.npcId}: reopen would replay lines already shown - showing choices with a recap`);
+            }
+            if (!result) result = this.conversation.continue();
             // Only the first display after a reopen may need the context line
             const isReopen = this.isResumedConversation;
             this.isResumedConversation = false;
@@ -743,6 +752,7 @@ export class PersonChatMinigame extends MinigameScene {
                         this.ui.showChoices(result.choices);
                         this.ui.showDialogue(result.text, speaker, true); // preserveChoices=true
                         rememberNpcLine(this.npcId, { text: result.text, speaker });
+                        rememberShownText(this.npcId, result.text, result.tags);
                     }
                 } else {
                     // No text, just choices - show them immediately
@@ -1119,7 +1129,10 @@ export class PersonChatMinigame extends MinigameScene {
             
             // Clear choice buttons immediately
             this.ui.hideChoices();
-            
+
+            // A choice breaks the shown-line log: a reopen echo can never span it
+            rememberPlayerChoice(this.npcId);
+
             // Make choice in conversation (this also calls continue() internally)
             const result = this.conversation.makeChoice(choiceIndex);
             
@@ -1254,6 +1267,7 @@ export class PersonChatMinigame extends MinigameScene {
             // tags: it cannot be answered during teardown, so that step stays unread.
             if ((probe.tags || []).some(t => tagAction(t) === 'ending_check')) return;
             const step = this.conversation.continue();
+            if (step && (step.tags || []).some(t => String(t).includes('exit_conversation'))) markClosedByExit(this.npcId);
             if (step && step.tags && step.tags.length > 0) {
                 this._pendingReply = { tags: step.tags };
                 this._flushPendingReply();
@@ -1289,6 +1303,10 @@ export class PersonChatMinigame extends MinigameScene {
             }
             this.pendingContinueCallback = null;
         }
+        // Closed during the reply delay after a goodbye: the farewell is never displayed, so
+        // mark the exit here or the next visit would take its hub greeting for an echo.
+        // (Not on pagehide: the reply may still display.)
+        if (reply && !keepPending && (reply.tags || []).some(isExitTag)) markClosedByExit(this.npcId);
         if (!reply || reply._stateTagsApplied) return;
         const { state } = splitReplyTags(reply.tags);
         // A debrief gate (#ending_check) asks the player to confirm and, on "Keep going",
@@ -1359,6 +1377,8 @@ export class PersonChatMinigame extends MinigameScene {
             return;
         }
         this.isProcessingDialogue = true;
+        // Remembered only for a call that is not ignored, with its tags (reopen echo test)
+        rememberShownText(this.npcId, result?.text, result?.tags);
         
         try {
             // Process any game action tags (give_item, unlock_door, exit_conversation, etc.) FIRST
@@ -1666,6 +1686,7 @@ export class PersonChatMinigame extends MinigameScene {
                 // Check for exit_conversation tag FIRST (may come with empty text)
                 if (nextLine.tags && nextLine.tags.some(tag => tag.includes('exit_conversation'))) {
                     console.log('🚪 Exit conversation tag detected after blocks - closing minigame');
+                    markClosedByExit(this.npcId);
                     // Process game action tags (set_global, give_item, remove_npc, etc.) before closing.
                     // PhoneChatConversation.processTags() fires exit_conversation synchronously during
                     // continue(), ending the minigame before displayAccumulatedDialogue can process them.
@@ -1869,6 +1890,7 @@ export class PersonChatMinigame extends MinigameScene {
                 console.log(`🗣️ Calling showDialogue with speaker: ${speaker}`);
                 this.ui.showDialogue(result.text, speaker);
                 rememberNpcLine(this.npcId, { text: result.text, speaker });
+                rememberShownText(this.npcId, result.text, result.tags);
             } else {
                 console.log(`⚠️ Skipping showDialogue - no text or text is empty`);
             }

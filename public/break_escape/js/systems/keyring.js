@@ -655,10 +655,11 @@ export class Keyring {
                 // 'unreachable' or none (the route does not reach it). Anything else is not a
                 // network problem, so it gets the Connect failure line (R1 m4).
                 const why = result.serverReason;
-                if (why === 'not_responding' || why === 'off') return toast(t.notRespondingMessage(host), 'target_off');
+                const late = result.syncLate && result.syncNote ? ` ${result.syncNote}` : '';
+                if (why === 'not_responding' || why === 'off') return toast(t.notRespondingMessage(host) + late, 'target_off');
                 // A reason-less 403 reads as unreachable only when it says so; the Pundit
                 // { error: 'Not authorized' } answer is not a network problem (R2 t2)
-                if (why === 'unreachable' || (!why && /not reachable/i.test(String(result.message || '')))) return toast(t.trayUnreachableMessage(host), 'no_route');
+                if (why === 'unreachable' || (!why && /not reachable/i.test(String(result.message || '')))) return toast(t.trayUnreachableMessage(host) + late, 'no_route');
             }
             return toast(t.CONNECT_FAILED_TEXT, 'login_failed');
         }

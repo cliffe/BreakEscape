@@ -35,6 +35,7 @@ copy('utils/npc-headshot.js');
 copy('utils/pc-taskbar.js');
 copy('utils/author-html.js');
 copy('utils/remote-host-text.js');
+copy('utils/sync-before-fetch.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',
     'export const adds = [];\n' +
@@ -1075,4 +1076,159 @@ test('icon focus return: a text file closed over a network screen reopens it car
     assert.equal(calls.length, 1, 'the network screen is reopened once');
     assert.equal(calls[0][0], desktop);
     assert.deepEqual(calls[0][5], { focusReturn: mark }, 'the 6th argument carries the mark');
+});
+
+// Plan 9.3b 5.2: the latest globals reach the server before a remote sign-in, a remote desktop
+// fetch and a share fetch (the wait the network view uses)
+test('a remote sign-in, a remote desktop fetch and a share fetch each sync first; a keyboard desktop does not', async () => {
+    setup();
+    const order = [];
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    const api = window.ApiClient.login;
+    window.ApiClient.login = async (...a) => { order.push('login'); return api(...a); };
+    const realFetch = window.fetch;
+    window.fetch = globalThis.fetch = async (url) => { order.push('fetch'); return realFetch(url); };
+    await openRemote();
+    assert.deepEqual(order.slice(0, 4), ['sync', 'login', 'sync', 'fetch'], 'sign-in, then the desktop');
+    order.length = 0;
+    icon('Ledger-Archive').click();
+    await settle();
+    assert.deepEqual(order, ['sync', 'fetch'], 'the share fetch');
+    order.length = 0;
+    await sessions.signIn('sam_pc', 'sokafor', 'x');
+    window.startContainerMinigame({ scenarioData: { id: 'sam_pc', name: "Sam's PC", type: 'pc', lockType: 'login', locked: true } }, null, false, true);
+    await settle();
+    assert.deepEqual(order, ['login', 'fetch'], 'a keyboard sign-in and desktop send no sync');
+    delete window.stateSync;
+});
+
+test('a sync that fails, throws or never lands does not stop the fetch', async () => {
+    for (const sync of [async () => false, () => { throw new Error('x'); }, () => Promise.reject(new Error('y'))]) {
+        setup();
+        window.stateSync = { sync };
+        await openRemote();
+        assert.equal(fetches[0], '/break_escape/games/9/container/lena_pc?foothold=jack_comms_port');
+    }
+    setup();
+    window.stateSync = { sync: () => new Promise(() => {}) };
+    const { syncBeforeFetch } = await imp('utils/sync-before-fetch.js');
+    const r = await syncBeforeFetch({ waitMs: 15 });
+    assert.equal(r.synced, false);
+    assert.equal(r.timedOut, true);
+    assert.equal(typeof r.run.then, 'function', 'the sync\'s own promise comes back for a late follow-up');
+    delete window.stateSync;
+});
+
+test('syncBeforeFetch reports a landed sync, and tolerates no stateSync', async () => {
+    const { syncBeforeFetch, SYNC_BEFORE_FETCH_WAIT_MS } = await imp('utils/sync-before-fetch.js');
+    assert.equal(SYNC_BEFORE_FETCH_WAIT_MS, 3000);
+    delete window.stateSync;
+    assert.deepEqual(await syncBeforeFetch(), { synced: false, timedOut: false });
+    window.stateSync = { sync: async () => true };
+    const landed = await syncBeforeFetch();
+    assert.equal(landed.synced, true);
+    assert.equal(landed.timedOut, false);
+    assert.equal(await landed.run, true);
+    delete window.stateSync;
+});
+
+// Review R1 M1: a keyring sign-in goes by the same rule as a typed password
+test('a keyring sign-in through a foothold or a source desktop syncs first; a keyboard or relay one does not (R1 M1)', async () => {
+    setup();
+    const order = [];
+    window.stateSync = { sync: async () => { order.push('sync'); return true; } };
+    window.ApiClient.loginWithCredential = async (pcId, cred, route) => {
+        order.push(`cred:${JSON.stringify(route)}`);
+        return { success: true, npcId: 'lena', username: 'u', displayName: 'U', via: 'credential' };
+    };
+    await sessions.signInWithCredential('lena_pc', 'cred_a', { foothold: 'jack_comms_port' });
+    assert.deepEqual(order, ['sync', 'cred:{"foothold":"jack_comms_port"}']);
+    order.length = 0;
+    await sessions.signInWithCredential('lena_pc', 'cred_a', { from: 'sam_pc' });
+    assert.deepEqual(order, ['sync', 'cred:{"from":"sam_pc"}']);
+    order.length = 0;
+    await sessions.signInWithCredential('lena_pc', 'cred_a');
+    assert.deepEqual(order, ['cred:{}'], 'the keyboard sends no sync');
+    order.length = 0;
+    await sessions.signInWithCredential('lena_pc', 'cred_a', { relay: true });
+    assert.deepEqual(order, ['cred:{"relay":true}'], 'a relay sends none either');
+    delete window.stateSync;
+});
+
+// Review R1 n3
+test('a remote sign-in error after a sync that ran out of time says the link may be behind; otherwise it does not (R1 n3)', async () => {
+    setup();
+    const { SYNC_LATE_NOTE } = await imp('systems/pc-sessions.js');
+    window.ApiClient.login = async () => { throw Object.assign(new Error('x'), { status: 403, body: { message: 'Not responding' } }); };
+    window.stateSync = { sync: () => Promise.resolve(true) };
+    let r = await sessions.signIn('lena_pc', 'u', 'x', { foothold: 'jack_comms_port' });
+    assert.equal(r.message, 'Not responding', 'sync landed: no note');
+    // A sync that never lands: the helper's wait is the real 3 s, so stub the timer short
+    const realSetTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = (fn, ms, ...a) => realSetTimeout(fn, ms === 3000 ? 5 : ms, ...a);
+    try {
+        window.stateSync = { sync: () => new Promise(() => {}) };
+        r = await sessions.signIn('lena_pc', 'u', 'x', { foothold: 'jack_comms_port' });
+        assert.equal(r.message, `Not responding ${SYNC_LATE_NOTE}`);
+        assert.equal(r.syncLate, true, 'R2 n1: the flag the drawn lines read');
+        assert.equal(r.syncNote, SYNC_LATE_NOTE);
+        r = await sessions.signIn('lena_pc', 'u', 'x');
+        assert.equal(r.message, 'Not responding', 'a keyboard sign-in has no note');
+    } finally { globalThis.setTimeout = realSetTimeout; }
+    delete window.stateSync;
+});
+
+// Review R1 m5
+test('a share closed while its contents load builds no UI and reports no share opened (R1 m5)', async () => {
+    setup();
+    await openRemote();
+    let release;
+    const gate = new Promise(r => { release = r; });
+    const realFetch = window.fetch;
+    window.fetch = globalThis.fetch = async (url) => { await gate; return realFetch(url); };
+    const built = [];
+    const proto = ContainerMinigame.prototype;
+    const create = proto.createContainerUI;
+    proto.createContainerUI = function (...a) { built.push(this); return create.apply(this, a); };
+    try {
+        icon('Ledger-Archive').click();
+        await settle();
+        const share = current();
+        assert.equal(share.shareFolder, true);
+        const before = events.filter(([n]) => n === 'network_share_opened').length;
+        window.MinigameFramework.endMinigame(false, null);
+        release();
+        await settle(8);
+        assert.equal(built.includes(share), false, 'no UI on the closed screen');
+        assert.equal(events.filter(([n]) => n === 'network_share_opened').length, before, 'no share_opened');
+        assert.equal(share.tokenLineTimer ?? null, null, 'no interval started');
+    } finally { proto.createContainerUI = create; }
+});
+
+// Review R2 n5
+for (const mode of ['403', 'throw']) test(`a share closed while its contents load shows no error toast: ${mode} (R2 n5)`, async () => {
+    {
+        setup();
+        await openRemote();
+        let release;
+        const gate = new Promise(r => { release = r; });
+        const realFetch = window.fetch;
+        let answered = 0;
+        window.fetch = globalThis.fetch = async (url) => {
+            if (answered++) return realFetch(url);
+            await gate;
+            if (mode === 'throw') throw new Error('offline');
+            return { ok: false, status: 403, statusText: 'Forbidden', json: async () => ({}) };
+        };
+        const alerts = [];
+        try {
+            icon('Ledger-Archive').click();
+            await settle();
+            window.gameAlert = (...a) => alerts.push(a);
+            window.MinigameFramework.endMinigame(false, null);
+            release();
+            await settle(8);
+            assert.deepEqual(alerts.filter(a => a[1] === 'error'), [], `no error toast (${mode})`);
+        } finally { window.fetch = globalThis.fetch = realFetch; }
+    }
 });
