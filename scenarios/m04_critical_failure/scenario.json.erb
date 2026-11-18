@@ -2698,8 +2698,9 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_voltage.json",
           "currentKnot": "start",
+          <%# 2026-11-18 release: attackDamage 12 -> 8. The fight route makes Voltage and Static hostile together; at 12 a student who engages Static first (nearest-target) loses ~107 HP before both are down. %>
           "behavior": {
-            "hostile": { "chaseSpeed": 145, "attackDamage": 12, "pauseToAttack": true }
+            "hostile": { "chaseSpeed": 145, "attackDamage": 8, "pauseToAttack": true }
           },
           <%# Playtest D4: this was globalVarOnKO "voltage_captured". The engine writes
               that global itself inside the KO routine (npc-hostile.js:159-166), so no
