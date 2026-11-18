@@ -22,7 +22,7 @@ VAR heard_ex_stay_out_of_the_halls = false
 {aes_staff_off:
     Ibrahim Diallo: I'll keep to my work, if it's all the same to you. #exit_conversation
 - else:
-    Ibrahim Diallo: Hello. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list. #exit_conversation
+    Ibrahim Diallo: {&Hello. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list.|Still imaging. Forty minutes a machine, and there are six.|If the reception PCs boot by six, I'll call it a win.|Nobody thanks IT until the screens go black.} #exit_conversation
 }
 // Loop to the knot, not DONE: the chat closes on the tag with the divert still unread, so the
 // saved story is mid-knot and a plain DONE here made every later talk show only "(End of
