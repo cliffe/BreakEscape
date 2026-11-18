@@ -63,3 +63,12 @@ test('every answer has a heading and a symbol', () => {
         assert.ok(h.title && h.glyph, r);
     }
 });
+
+test('an accepted container lift expects the panel before the reader closes (Task Complete shown twice, m09 gate m1)', () => {
+    const src = readFileSync(join(root, 'public/break_escape/js/minigames/biometrics/fingerprint-reader-minigame.js'), 'utf8');
+    const expectAt = src.indexOf('window.expectPanelWithin?.(1500)');
+    const completeAt = src.indexOf('this.complete(true)');
+    assert.ok(expectAt > 0, 'the accepted branch calls expectPanelWithin');
+    assert.ok(expectAt < completeAt, 'expected before the reader closes and the held toasts release');
+    assert.match(src.slice(Math.max(0, expectAt - 120), expectAt), /lockType !== 'door'/, 'doors open no panel, so they are skipped');
+});

@@ -1,0 +1,14 @@
+{
+  "key": "674ddd1bd66aedd36813c07fe02c88eb",
+  "npc": "kevin_park",
+  "text": "I'm starting to wonder if you've looked at anything in this building.",
+  "delivery": "flat, disappointed",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:58:07Z"
+}

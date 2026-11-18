@@ -88,6 +88,13 @@
  *
  * Exposed as window.pcSessions; window.__test.access.sessions() reads list().
  */
+import { syncBeforeFetch } from '../utils/sync-before-fetch.js';
+
+// A refused or lost remote sign-in after the globals sync ran out of time may only be the
+// server working from older globals: say so, in the error the player already sees (review R1 n3)
+export const SYNC_LATE_NOTE = 'The link may be behind; try again in a moment.';
+const withSyncNote = (message, late) => (late ? `${message} ${SYNC_LATE_NOTE}` : message);
+
 
 export const SIGNED_OUT_MESSAGE = 'Signed out';
 export const SCREEN_LOCKED_MESSAGE = 'The screen locked';
@@ -509,9 +516,13 @@ export class PcSessions {
         const api = apiClient();
         if (!api?.login) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
         let body;
+        let syncLate = false;
         try {
             // One route at a time: a foothold, else a source desktop (K4), else the keyboard
             const route = foothold ? { foothold } : (typeof from === 'string' && from ? { from } : {});
+            // A remote sign-in is judged on the server's copy of the globals (outages, a host
+            // switched off): send the latest first (9.3b plan 5.2). Keyboard sign-ins skip it.
+            if (route.foothold || route.from) syncLate = (await syncBeforeFetch()).timedOut;
             body = await api.login(pcId, { username, password, ...route });
         } catch (err) {
             const b = err?.body || {};
@@ -532,8 +543,10 @@ export class PcSessions {
             }
             return {
                 ok: false, reason: 'error', error: true, status: err?.status ?? null,
-                message: b.message || b.error || 'Could not reach the sign-in service',
-                serverReason: typeof b.reason === 'string' ? b.reason : null
+                message: withSyncNote(b.message || b.error || 'Could not reach the sign-in service', syncLate),
+                serverReason: typeof b.reason === 'string' ? b.reason : null,
+                // The screens that draw their own error line append syncNote when syncLate (R2 n1)
+                ...(syncLate ? { syncLate: true, syncNote: SYNC_LATE_NOTE } : {})
             };
         }
         if (!body || body.success === false || !body.npcId) {
@@ -571,11 +584,15 @@ export class PcSessions {
         const api = apiClient();
         if (!api?.loginWithCredential) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
         let body;
+        let syncLate = false;
         try {
             // A relay (an assist invite, K3c) names relay only; never relay: false
             // K4: a source desktop names from
             const route = relay === true ? { relay: true }
                 : (foothold ? { foothold } : (typeof from === 'string' && from ? { from } : {}));
+            // Same as a typed password: a remote route is judged on the server's globals, so
+            // send the latest first. A relay and the keyboard skip it (review R1 M1)
+            if (route.foothold || route.from) syncLate = (await syncBeforeFetch()).timedOut;
             body = await api.loginWithCredential(pcId, credentialId, route);
         } catch (err) {
             const b = err?.body || {};
@@ -593,8 +610,10 @@ export class PcSessions {
             }
             return {
                 ok: false, reason: 'error', error: true, status: err?.status ?? null,
-                message: b.message || b.error || 'Could not reach the sign-in service',
-                serverReason: typeof b.reason === 'string' ? b.reason : null
+                message: withSyncNote(b.message || b.error || 'Could not reach the sign-in service', syncLate),
+                serverReason: typeof b.reason === 'string' ? b.reason : null,
+                // The screens that draw their own error line append syncNote when syncLate (R2 n1)
+                ...(syncLate ? { syncLate: true, syncNote: SYNC_LATE_NOTE } : {})
             };
         }
         if (!body || body.success === false || !body.npcId) {

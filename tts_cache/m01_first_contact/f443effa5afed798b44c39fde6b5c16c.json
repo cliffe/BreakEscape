@@ -1,0 +1,14 @@
+{
+  "key": "f443effa5afed798b44c39fde6b5c16c",
+  "npc": "kevin_park",
+  "text": "Hold on. That's twice you've told me not to worry, and I've got the logs open right here.",
+  "delivery": "wary, a little stung",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:58:03Z"
+}

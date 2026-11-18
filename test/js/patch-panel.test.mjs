@@ -25,7 +25,7 @@ const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: tru
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 for (const rel of ['utils/escape-html.js', 'utils/more-below.js', 'utils/conditional-text.js', 'utils/overlay-open.js',
-    'utils/remote-host-text.js', 'systems/global-writer.js', 'systems/network-links.js', 'systems/notifications.js',
+    'utils/remote-host-text.js', 'utils/sync-before-fetch.js', 'systems/global-writer.js', 'systems/network-links.js', 'systems/notifications.js',
     'ui/modal-stack.js', 'minigames/framework/base-minigame.js',
     'minigames/patch-panel/patch-panel-model.js', 'minigames/patch-panel/patch-panel-minigame.js']) copy(rel);
 

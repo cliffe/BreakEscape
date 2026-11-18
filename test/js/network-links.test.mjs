@@ -45,6 +45,7 @@ const inventoryUrl = copy('systems/inventory.js', 'systems/inventory.mjs', [
     ["'./forced-minigame-guard.js'", "'./forced-minigame-guard.mjs'"],
     ["'./consumables.js'", "'./consumables.mjs'"],
 ]);
+copy('utils/sync-before-fetch.js', 'utils/sync-before-fetch.js');
 const linksUrl = copy('systems/network-links.js', 'systems/network-links.js');
 
 const dom = new JSDOM('<!doctype html><div id="inventory-container"></div>');
