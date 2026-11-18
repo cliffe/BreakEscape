@@ -83,14 +83,14 @@ VAR hub_quiet = false
 ~ brief_taken = true
 Narrator: The Director's office, blinds drawn against the night. Netherton stands at the window, his back to the door. He does not turn round.
 
-Director Magnus Netherton: Agent. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
+Director Magnus Netherton: Agent. Nine days ago I sent you to Portland.
 
 Director Magnus Netherton: What I did not tell you, because I did not yet know it, is that ENTROPY had your name before I signed the order.
 
 Narrator: Now he turns.
 
 Director Magnus Netherton: They did not out-think us at Portland. They were handed the board: your assignment, your timing, your identity on the ground.
-Director Magnus Netherton: Two of ours are dead at the sites the team could not reach. They are dead because someone in this building told the enemy where the gaps would be.
+Director Magnus Netherton: Two of ours are dead at the sites the team could not reach.
 
 Director Magnus Netherton: I have run field operations for five years. I have never had to say the next sentence.
 Director Magnus Netherton: There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.
@@ -266,9 +266,8 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
         // PASS 5 (puzzle chains C1, m1): "the men who went through that lab door", so
         // Phantom's travel-desk row (circular at step 4) is plainly not the one.
         { stopping:
-        - Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. If a man's own row is wrong, he will say so.
-          Director Magnus Netherton: Come back when one of them has told you it is right.
-        - Director Magnus Netherton: Not yet. A row nobody has owned is only paper. Put the log in front of Vector or Nightshade. Let the man tell you whether his line is right.
+        - Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. Come back when one of them has told you his row is right.
+        - Director Magnus Netherton: Not yet. A row nobody has owned is only paper. Put the log in front of Vector or Nightshade.
         - Director Magnus Netherton: Still nothing from the lab door. Vector or Nightshade, Agent. One of them has to say "that row is mine" before I will weigh it.
         }
         -> back
@@ -423,7 +422,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
 #set_global:mole_identified:true
 Director Magnus Netherton: He walked into his own lab twenty-three minutes before that plan opened, and out again eighteen minutes after it closed.
 { found_access_logs:
-    Director Magnus Netherton: And the box has an account on that terminal for those forty-seven minutes. A door and a login, at the same minute. That I can act on.
+    Director Magnus Netherton: And the box has an account on that terminal for those forty-seven minutes. That I can act on.
 - else:
     Director Magnus Netherton: A door is not a login, and a court will want both. Get root on the box and bring me its logs.
 }
