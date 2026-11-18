@@ -845,13 +845,19 @@ export default class PhoneChatConversation {
         // been seen from here. Play the home knot in full, not trimmed against its own run under
         // the old globals: a read-out that was already pending then (e.g. a catalogue read the
         // player skipped) would run identically in both and read as "nothing new".
-        // Only when the home run prints something or closes the phone; a multi-way menu with a
-        // real branch in it is not a dead end and resumes as before.
+        // Only when the home run is a read-out: it prints something or closes the phone AND
+        // carries a state-changing tag. A plain hub greeting leaves the kept exit alone.
         if (knot !== home && this._hasKnot(story, home) && this._savedChoicesAreExits(story, syncedState)) {
             const full = dryRun(home);
             const closesHome = tags => (tags || []).some(t =>
                 /^(exit_conversation|end_conversation)$/i.test(String(t).split(':')[0].trim()));
-            if (full && full.steps.some(st => phoneStepLines(st.text, st.tags).length > 0 || closesHome(st.tags))) {
+            // A read-out is a hub beat that changes state (#set_global, #unlock_task ...); a plain
+            // hub greeting ("What now?") carries none and must not displace a kept exit.
+            const changesState = tags => (tags || []).some(t =>
+                /^(set_global|set_variable|unlock_task|complete_task|skip_task|unlock_aim|set_objective|give_item)$/i
+                    .test(String(t).split(':')[0].trim()));
+            if (full && full.steps.some(st => changesState(st.tags)) &&
+                full.steps.some(st => phoneStepLines(st.text, st.tags).length > 0 || closesHome(st.tags))) {
                 full.baseline = [];
                 full.replayed = 0;
                 full.fresh = full.steps.length;
