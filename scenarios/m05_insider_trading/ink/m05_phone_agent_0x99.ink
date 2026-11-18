@@ -57,7 +57,7 @@ VAR torres_suspected = false // Synced scenario global: enough on Torres to sear
 VAR found_door_log = false
 VAR heard_tin_story = false // Synced scenario global (round 2, 2026-10-17): Lisa told the tin story without a name; set by m05_npc_lisa_park
 VAR found_ashworth_notice = false // Synced scenario global (D136 a): Ben Ashworth's final-demand notice has been read
-VAR ashworth_named = false // Synced scenario global (D136 a): Ben Ashworth was named and cleared by the badge log; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia)
+VAR ashworth_named = false // Synced scenario global (D136 a): Ben Ashworth was named to HaX or Patricia, with or without the log; also set by Patricia (m05_npc_patricia_morgan, m05_phone_patricia)
 VAR found_ashworth_vetting = false // Synced scenario global (D136 a): Ben Ashworth's vetting folder is in the notes
 VAR found_halloran_vetting = false // Synced scenario global (fixes round 3, 2026-10-17): Halloran's vetting file is in the notes; set by its onRead
 VAR files_hint_given = false // Fixes round 3 (2026-10-17): local; the gentle vetting-files rung has been given, so the next ask may give "One file fits"
@@ -472,9 +472,9 @@ Go on. Who?
 // D136 a: Ben is a live name once the player holds his folder, his notice or the log.
 // With the log it is a guess; without it HaX points at the log, free.
 + {found_door_log or ashworth_lead()} [Ben Ashworth.]
+    ~ ashworth_named = true
     {found_door_log:
         ~ torres_reason_guessed = true
-        ~ ashworth_named = true
         Ben's on that log one evening, at eight. Patricia's transfers run two till four in the morning.
         Don't guess at me. Come back when you're sure.
     - else:

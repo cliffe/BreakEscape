@@ -1587,7 +1587,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             {
               "_comment": "D136 a: either Ashworth lead latches ashworth_lead_texted once, so HaX texts once however the player finds him. && only.",
               "eventPattern": "global_variable_changed:<%= g %>",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.torres_identified !== true",
               "onceOnly": true,
               "setGlobal": { "ashworth_lead_texted": true }
             },

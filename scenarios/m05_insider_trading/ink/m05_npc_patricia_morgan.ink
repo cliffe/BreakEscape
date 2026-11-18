@@ -56,7 +56,7 @@ VAR torres_suspected = false // Synced scenario global: enough on Torres to sear
 VAR found_door_log = false
 VAR found_halloran_alibi = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by HaX (m05_phone_agent_0x99) and Patricia's phone (m05_phone_patricia)
-VAR ashworth_named = false // Synced scenario global: the player named Ben Ashworth to Patricia and the log cleared him; read by the debrief
+VAR ashworth_named = false // Synced scenario global: the player named Ben Ashworth to Patricia or HaX, with or without the log; read by the debrief
 VAR halloran_questioned = false
 VAR found_ashworth_notice = false // Synced scenario global (D136 a): Ben Ashworth's final-demand notice has been read; set by its onRead
 VAR found_ashworth_vetting = false // Synced scenario global (D136 a): Ben Ashworth's vetting folder is in the notes; set by its onRead and at the hand-over
@@ -402,6 +402,7 @@ Patricia Morgan: Go on, then. Who?
 // a reopened chat replays nothing.
 === accuse_ashworth ===
 {torres_identified: -> hub}
+~ ashworth_named = true
 #speaker:patricia_morgan
 Patricia Morgan: Ben. Why?
 -> ashworth_why
@@ -435,7 +436,6 @@ Patricia Morgan: Once. Front door at five past eight on a Thursday evening, the 
 === ashworth_cleared ===
 {torres_identified: -> hub}
 #speaker:patricia_morgan
-~ ashworth_named = true
 ~ torres_reason_guessed = true
 ~ patricia_influence -= 1
 #influence_decreased

@@ -150,7 +150,7 @@ test('the Ashworth lines carry no em dash', () => {
 });
 
 test('debrief: no Ashworth praise for a player who named him, praise for one who held the lead and did not', () => {
-    const praise = /you had Ben Ashworth on paper/;
+    const praise = /never spent a name on him/;
     const picks = ['And the research portal?', 'Whose job was it to fix that?'];
     const base = { found_pamphlet: true, found_door_log: true };
     const run = v => play('m05_closing_debrief.json', 'the_night', { ...base, ...v }, picks);
@@ -160,6 +160,37 @@ test('debrief: no Ashworth praise for a player who named him, praise for one who
     const held = run({ ashworth_lead_texted: true, ashworth_named: false });
     assert.ok(has(held.lines, praise));
     assert.ok(!has(run({}).lines, praise));
+});
+
+test('debrief: other wrong names or reasons silence the praise too', () => {
+    const praise = /never spent a name on him/;
+    const picks = ['And the research portal?', 'Whose job was it to fix that?'];
+    const run = v => play('m05_closing_debrief.json', 'the_night', { found_pamphlet: true, found_door_log: true, ...v }, picks);
+    assert.ok(!has(run({ ashworth_lead_texted: true, halloran_accused: true }).lines, praise));
+    assert.ok(!has(run({ ashworth_lead_texted: true, torres_reason_guessed: true }).lines, praise));
+    assert.ok(has(run({ ashworth_lead_texted: true }).lines, praise));
+});
+
+test('naming Ben WITHOUT the log still sets ashworth_named (Patricia, her phone, HaX) so no praise follows', () => {
+    const picks = ['And the research portal?', 'Whose job was it to fix that?'];
+    const a = play('m05_npc_patricia_morgan.json', 'share_findings_who', { ...CAN_NAME, found_ashworth_notice: true }, ['Ben Ashworth', 'broke']);
+    const b = play('m05_phone_patricia.json', 'phone_who', { ...CAN_NAME, found_ashworth_vetting: true }, ['Ben Ashworth', 'broke']);
+    const c = play('m05_phone_agent_0x99.json', 'name_to_hax_who', { ...CAN_NAME, patricia_ko: true, found_ashworth_notice: true }, ['Ben Ashworth']);
+    // Closing the chat at "Ben. Why?" must also count.
+    const d = play('m05_npc_patricia_morgan.json', 'share_findings_who', { ...CAN_NAME, found_ashworth_notice: true }, ['Ben Ashworth']);
+    const e = play('m05_phone_patricia.json', 'phone_who', { ...CAN_NAME, found_ashworth_vetting: true }, ['Ben Ashworth']);
+    for (const r of [a, b, c, d, e]) {
+        assert.equal(r.v('ashworth_named'), true);
+        assert.equal(r.v('torres_reason_guessed'), false);
+        const deb = play('m05_closing_debrief.json', 'the_night', { found_pamphlet: true, found_door_log: true, ashworth_lead_texted: true, ashworth_named: r.v('ashworth_named') }, picks);
+        assert.ok(!has(deb.lines, /never spent a name on him/));
+    }
+});
+
+test('scenario: the Ashworth latch mappings stop once Torres is named', { skip }, () => {
+    const latches = hax.eventMappings.filter(m => m.setGlobal && m.setGlobal.ashworth_lead_texted);
+    assert.equal(latches.length, 2);
+    for (const m of latches) assert.equal(m.condition, 'value === true && globalVars.torres_identified !== true');
 });
 
 test('HaX KO route: naming Ben with the log sets ashworth_named', () => {
