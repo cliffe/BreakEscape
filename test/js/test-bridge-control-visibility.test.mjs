@@ -30,6 +30,7 @@ writeFileSync(join(dir, 'systems/test-bridge/log.js'), 'export const logAction =
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
+globalThis.Event = dom.window.Event;
 globalThis.MouseEvent = dom.window.MouseEvent;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.PointerEvent = dom.window.PointerEvent || dom.window.MouseEvent;
@@ -42,10 +43,10 @@ const { MinigameScene } = await import(pathToFileURL(join(js, 'minigames/framewo
 // Layout stand-in: everything not display:none has a size; the fixed X has no offsetParent.
 const proto = window.HTMLElement.prototype;
 Object.defineProperty(proto, 'offsetParent', {
-    get() { return this.id === 'minigame-close' ? null : this.parentNode; }, configurable: true
+    get() { return (this.id === 'minigame-close' || this.id.startsWith('fx')) ? null : this.parentNode; }, configurable: true
 });
 proto.getBoundingClientRect = function () {
-    const shown = this.style.display !== 'none';
+    const shown = this.style.display !== 'none' && this.style.visibility !== 'hidden';
     return { width: shown ? 20 : 0, height: shown ? 20 : 0, left: 0, top: 0, right: 20, bottom: 20, x: 0, y: 0 };
 };
 
@@ -105,4 +106,46 @@ test('close() falls back to Esc when the X is hidden', async () => {
     await minigameBridge.close();
     assert.equal(mg.closeCalls, 0);
     assert.ok(esc >= 1, 'Esc sent');
+});
+
+// Fields: type / select take their list from getTestFieldElements, the source of getState().fields.
+function openFields(html) {
+    const mg = open();
+    const body = document.createElement('div');
+    body.innerHTML = html;
+    mg.container.appendChild(body);
+    return mg;
+}
+
+test('type(index) writes to the field getState().fields names, for a position:fixed field', async () => {
+    // fx1 stands for an input in a fixed modal: null offsetParent, plainly on screen
+    const mg = openFields('<input id="f0"><input id="fx1"><input id="f2">');
+    const fields = mg.getTestState().fields;
+    assert.deepEqual(fields.map((f) => f.id), ['f0', 'fx1', 'f2']);
+    const res = await minigameBridge.type(1, 'hello');
+    assert.equal(res.ok, true, JSON.stringify(res));
+    assert.equal(document.getElementById('fx1').value, 'hello');
+    assert.equal(document.getElementById('f2').value, '');
+});
+
+test('a visibility:hidden field is in neither list, so later type indices stay aligned', async () => {
+    const mg = openFields('<input id="f0"><input id="hid" style="visibility:hidden"><input id="f2">');
+    assert.deepEqual(mg.getTestState().fields.map((f) => f.id), ['f0', 'f2']);
+    await minigameBridge.type(1, 'x');
+    assert.equal(document.getElementById('f2').value, 'x');
+    assert.equal(document.getElementById('hid').value, '');
+});
+
+test('select(index) uses the same field list, and the 30-field cap applies to type', async () => {
+    const mg = openFields('<input id="fx0"><select id="s1"><option value="a">A</option><option value="b">B</option></select>');
+    const idx = mg.getTestState().fields.findIndex((f) => f.id === 's1');
+    const res = await minigameBridge.select(idx, 'B');
+    assert.equal(res.ok, true, JSON.stringify(res));
+    assert.equal(document.getElementById('s1').value, 'b');
+
+    const many = openFields(Array.from({ length: 35 }, (_, i) => `<input id="m${i}">`).join(''));
+    assert.equal(many.getTestFieldElements().length, 30);
+    assert.equal(many.getTestState().fields.length, 30);
+    const over = await minigameBridge.type(31, 'z');
+    assert.equal(over.ok, false, 'index past the 30 cap is not a field');
 });

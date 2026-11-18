@@ -43,7 +43,16 @@ if (!('innerText' in window.HTMLElement.prototype)) {
     Object.defineProperty(window.HTMLElement.prototype, 'innerText', { get() { return this.textContent.replace(/\s+/g, ' ').trim(); } });
 }
 
+// jsdom has no layout: give every element not display:none a size, so the real
+// MinigameScene visibility helper (isTestVisible) is what this test exercises.
+window.HTMLElement.prototype.getBoundingClientRect = function () {
+    const shown = this.style.display !== 'none';
+    return { width: shown ? 20 : 0, height: shown ? 20 : 0, left: 0, top: 0, right: 20, bottom: 20, x: 0, y: 0 };
+};
+globalThis.KeyboardEvent = dom.window.KeyboardEvent;
+
 const { minigameBridge } = await import(pathToFileURL(join(dir, 'systems/test-bridge/minigames.js')));
+const { MinigameScene } = await import(pathToFileURL(join(js, 'minigames/framework/base-minigame.js')));
 
 const selectorIn = (src, anchor) => {
     const at = src.indexOf(anchor);
@@ -51,11 +60,21 @@ const selectorIn = (src, anchor) => {
     return src.slice(at).match(/querySelectorAll\(\s*'([^']+)'/)[1];
 };
 
-test('clickControl and getTestState controls use the same selector, with .tri-chip', () => {
-    const bridge = selectorIn(bridgeSrc, 'function controlElements(');
-    const base = selectorIn(baseSrc, 'getTestControlElements() {');
-    assert.equal(bridge, base);
-    assert.ok(bridge.split(',').map(s => s.trim()).includes('.tri-chip'));
+test('a .tri-chip is listed by getState().controls and clickControl(index) reaches it, via the scene list', async () => {
+    document.body.innerHTML = '<div id="mg"></div>';
+    const mg = new MinigameScene(document.getElementById('mg'), { title: 'Triage' });
+    mg.init();
+    const body = document.createElement('div');
+    body.innerHTML = '<label class="tri-chip"><input type="checkbox" data-chip="senderTrust"><span>Sender address</span></label><button>Next</button>';
+    mg.container.appendChild(body);
+    window.MinigameFramework = { currentMinigame: mg };
+    assert.equal(typeof mg.getTestControlElements, 'function', 'bridge takes the scene list, not its fallback');
+    const controls = mg.getTestState().controls;
+    const idx = controls.findIndex((c) => (c.classes || '').includes('tri-chip'));
+    assert.ok(idx >= 0, 'chip listed in getState().controls');
+    const r = await minigameBridge.clickControl(idx);
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(mg.container.querySelector('[data-chip="senderTrust"]').checked, true);
 });
 
 test('tri-chip is only used by the inbox triage overlay', () => {
@@ -84,7 +103,10 @@ test('a chip can be clicked by its label through clickControl, which ticks its c
       </fieldset>
       <button class="tri-next">Next</button>`;
     document.body.appendChild(container);
-    window.MinigameFramework = { currentMinigame: { container, gameState: { isActive: true } } };
+    // a real scene over this markup, so the base visibility helper is the live path
+    const scene = new MinigameScene(container, { title: 'Triage' });
+    scene.gameState = { isActive: true };
+    window.MinigameFramework = { currentMinigame: scene };
 
     const r = await minigameBridge.clickControl('Sender address');
     assert.equal(r.ok, true, JSON.stringify(r));

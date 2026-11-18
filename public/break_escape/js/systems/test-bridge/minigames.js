@@ -34,6 +34,17 @@ function controlElements(mg) {
     )).filter(el => el.offsetParent !== null);
 }
 
+/**
+ * The fields getState().fields lists, as elements, in the same order and cap
+ * (MinigameScene#getTestFieldElements). Fallback only for a non-scene object.
+ */
+function fieldElements(mg) {
+    if (typeof mg.getTestFieldElements === 'function') return mg.getTestFieldElements();
+    return Array.from(mg.container.querySelectorAll(
+        'input:not([type="button"]):not([type="submit"]), textarea, select'
+    )).filter(el => el.offsetParent !== null);
+}
+
 /** The same visibility test getState() uses (computed style and size). */
 function isShown(mg, el) {
     if (typeof mg.isTestVisible === 'function') return mg.isTestVisible(el);
@@ -123,10 +134,7 @@ export const minigameBridge = {
     async select(field, option) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        const visible = el => el.offsetParent !== null;
-        const all = Array.from(mg.container.querySelectorAll(
-            'input:not([type="button"]):not([type="submit"]), textarea, select'
-        )).filter(visible);
+        const all = fieldElements(mg);
         const labelOf = el => {
             const bits = [el.id, el.name, el.className, el.getAttribute('aria-label')];
             if (el.id) {
@@ -213,9 +221,7 @@ export const minigameBridge = {
     async type(index, text, { submit = false, clear = true } = {}) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        const fields = Array.from(mg.container.querySelectorAll(
-            'input:not([type="button"]):not([type="submit"]), textarea, select'
-        )).filter(el => el.offsetParent !== null);
+        const fields = fieldElements(mg);
         const el = fields[index];
         if (!el) return fail(`no-field-at-index-${index}`);
         if (clear) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }

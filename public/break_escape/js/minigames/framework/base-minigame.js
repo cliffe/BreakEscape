@@ -449,6 +449,19 @@ export class MinigameScene {
     }
 
     /**
+     * The field elements behind getTestState().fields, in the same order and
+     * with the same cap (30), so index N means the same element in both and
+     * the bridge's type / select cannot drift from getState().
+     */
+    getTestFieldElements() {
+        const root = this.container;
+        if (!root) return [];
+        return Array.from(
+            root.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select')
+        ).filter((el) => this.isTestVisible(el)).slice(0, 30);
+    }
+
+    /**
      * ── Test bridge hook ─────────────────────────────────────────────────────
      *
      * Return a JSON-safe snapshot of this minigame for window.__test.
@@ -474,8 +487,6 @@ export class MinigameScene {
         const root = this.container;
         if (!root) return { available: false };
 
-        const visible = (el) => this.isTestVisible(el);
-
         const controls = this.getTestControlElements()
             .map((el, i) => ({
             index: i,
@@ -485,9 +496,7 @@ export class MinigameScene {
             disabled: !!el.disabled || el.getAttribute('aria-disabled') === 'true'
         }));
 
-        const fields = Array.from(
-            root.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select')
-        ).filter(visible).slice(0, 30).map((el, i) => ({
+        const fields = this.getTestFieldElements().map((el, i) => ({
             index: i,
             id: el.id || null,
             name: el.name || null,
