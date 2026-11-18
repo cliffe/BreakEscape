@@ -176,7 +176,7 @@ test('compare zoom: structure, crisp scale, text tags, pixel-art CSS', () => {
     assert.match(game, /data-zoom/);
     assert.match(game, /imageSmoothingEnabled = false/);
     assert.match(game, /zoomScale\(side, avail, ZOOM_MAX_H_SHORT\)/, 'short landscape: whole-number scale of at least 2x, height capped');
-    assert.match(game, /zoomPlan\(\{ side, availW, budgetH: zoomBudgetH/, 'elsewhere the plan fits the width and the height left');
+    assert.match(game, /zoomPlan\(\{ side, availW, budgetH, maxS, preferStack/, 'elsewhere the plan fits the width and the height left');
     assert.match(game, /Check that each numbered mark on your lift has the same kind of mark in the same place on the card:/);
     assert.match(game, /Math\.max\(0, Math\.min\(W - 24/, 'tag left is clamped');
     assert.match(game, /t\.textContent = labels\[i\]/, 'tags set by textContent');

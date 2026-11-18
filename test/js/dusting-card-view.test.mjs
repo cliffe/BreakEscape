@@ -123,8 +123,8 @@ test('each card has its own pick button and a separate View large button; none o
     const html = g._refButtons(false);
     assert.equal((html.match(/data-action="ref"/g) || []).length, 3);
     assert.equal((html.match(/data-action="view"/g) || []).length, 3);
-    assert.match(html, /data-action="view" data-index="1" aria-pressed="true"[^>]*>Back to my lift</);
-    assert.match(html, /data-action="view" data-index="0" aria-pressed="false" aria-label="View card 1, Jesse Tran, at full size">View large</);
+    assert.match(html, /data-action="view" data-index="1" aria-pressed="true"[^>]*>Back to my lift \(V\)</);
+    assert.match(html, /data-action="view" data-index="0" aria-pressed="false"[^>]*aria-label="View large \(V\): card 1, Jesse Tran">View large \(V\)</);
     const done = g._refButtons(true);
     assert.equal((done.match(/data-action="view"/g) || []).length, 0);
 });

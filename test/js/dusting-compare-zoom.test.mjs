@@ -81,13 +81,13 @@ test('M3: the plan keeps the pair inside the height budget at 1280x720, 1000x700
         for (let side = 60; side <= 106; side += 2) {
             const p = M.zoomPlan({ side, availW, budgetH: M.zoomBudgetH(innerH), maxS });
             assert.ok(p.S >= 2 && Number.isInteger(p.S));
-            const stageH = p.stacked ? 2 * p.W + 62 : p.W + 26;
+            const stageH = p.stacked ? 2 * p.W + 80 : p.W + 46;
             if (innerH < 800) assert.ok(stageH <= M.zoomBudgetH(innerH), `${label} side ${side}: ${stageH} > ${M.zoomBudgetH(innerH)}`);
             assert.ok((p.stacked ? p.W + 4 : 2 * (p.W + 4) + 8) <= availW, `${label} side ${side}: fits the width (stacks, never wraps)`);
         }
     }
     const lim = M.zoomPlan({ side: 120, availW: 308, budgetH: M.zoomBudgetH(700) });
-    assert.ok(lim.S === 2 && lim.W * 2 + 62 <= M.zoomBudgetH(700));
+    assert.ok(lim.S === 2 && lim.W * 2 + 80 <= M.zoomBudgetH(700));
     const css = readFileSync(join(pub, 'css/dusting.css'), 'utf8');
     assert.match(css, /\.dusting-canvas\[hidden\] \{ display: none; \}/);
     assert.match(css, /\[data-step="compare"\]:not\(\.dusting-matched\) \.dusting-forensic \{ display: none; \}/);
@@ -108,4 +108,76 @@ test('m3 and n3: one near timer, cleared with the cue; the lift is described onc
     const z = src.slice(src.indexOf('this._zoomSpeech = `'), src.indexOf('this._zoomSpeech = `') + 90);
     assert.doesNotMatch(z, /Your lift/);
     assert.match(src, /Your lift, turned upright: \$\{describeMarks\(this\.liftMarks, actual, true\)\}/);
+});
+
+test('B1: the panel keeps one row of cards, so 2, 3 and 4 cards never wrap at 1280x720 and 1000x700 (root 956)', () => {
+    assert.equal(M.comparePanelMin(2), 330);
+    assert.equal(M.comparePanelMin(3), 3 * 144 + 2 * 10 + 32);
+    assert.equal(M.comparePanelMin(4), 600);
+    for (const [cards, innerH] of [[2, 720], [2, 700], [3, 720], [3, 700], [4, 720], [4, 700]]) {
+        const availW = 956 - 52 - M.comparePanelMin(cards);
+        const panel = 956 - 52 - availW;
+        assert.ok(panel >= cards * 144 + (cards - 1) * 8, `${cards} cards fit one row in ${panel}`);
+        for (let side = 60; side <= 106; side += 2) {
+            const p = M.zoomPlan({ side, availW, budgetH: M.zoomBudgetH(innerH), maxS: 6 });
+            if (p.limited) continue;
+            assert.ok((p.stacked ? p.W + 4 : 2 * (p.W + 4) + 8) <= availW, `${cards} cards side ${side}: pair fits ${availW}`);
+            assert.ok((p.stacked ? 2 * p.W + 80 : p.W + 46) <= M.zoomBudgetH(innerH), `${cards} cards side ${side}: height`);
+        }
+    }
+});
+
+test('M1: pane overheads and the status line allowance', () => {
+    assert.equal(M.ZOOM_SBS_EXTRA, 46);
+    assert.equal(M.ZOOM_STACK_EXTRA, 80);
+    assert.ok(M.ZOOM_STATUS_MAX_H >= 65);
+    assert.ok(M.zoomBudgetH(720, 150) > M.zoomBudgetH(720), 'a measured chrome feeds the budget');
+});
+
+test('M2: at availW 112 with four cards every lift mark (and card mark) lies inside the limited crop', async () => {
+    const G = await import(pathToFileURL(join(root, 'js/minigames/dusting/fingerprint-generator.js')).href);
+    const PF = await import(pathToFileURL(join(root, 'js/minigames/dusting/print-features.js')).href);
+    const names = ['Alice Moore', 'Bob Kahn', 'Chen Wei', 'Dara Okafor', 'Eve Novak', 'Femi Adeyemi', 'Gwen Hart', 'Hiro Sato'];
+    for (const owner of names) for (const rot of [-18, 9, 17]) {
+        const pattern = G.patternForOwner(owner);
+        const print = G.generatePrint({ size: 128, owner, pattern, variant: { rotation: rot, dx: 2, dy: -3 } });
+        const decoys = names.filter(n => n !== owner).slice(0, 3);
+        const cands = [owner, ...decoys].map((nm, i) => ({ print: G.generatePrint({ size: 128, owner: nm, pattern: i === 0 ? pattern : G.patternForOwner(nm) }) }));
+        const { lift, card } = PF.pickLiftMarks(print, cands[0].print, 3);
+        cands.forEach((c, i) => { c.marks = i === 0 ? card : PF.pickDecoyMarks(PF.featuresOf(print, lift), c.print, 3); });
+        const sets = [{ marks: PF.uprightMarks(lift, print.centre), centre: print.centre }, ...cands.map(c => ({ marks: PF.uprightMarks(c.marks, c.print.centre), centre: c.print.centre }))];
+        const side = PF.cropSide(sets);
+        const plan = M.zoomPlan({ side, availW: 112, budgetH: M.zoomBudgetH(720), maxS: 6 });
+        const fit = PF.fitCropToMarks(sets, plan.limited ? plan.side : side);
+        for (const { marks, centre } of sets) {
+            const crop = PF.cropAround({ x: centre.x + fit.ox, y: centre.y + fit.oy }, fit.side);
+            for (const m of marks) {
+                assert.ok(m.x - 3 >= crop.x && m.x + 3 < crop.x + fit.side && m.y - 3 >= crop.y && m.y + 3 < crop.y + fit.side, `${owner} rot ${rot}: mark ${m.x},${m.y} inside crop ${crop.x},${crop.y} side ${fit.side}`);
+            }
+        }
+    }
+});
+
+test('n3: preferStack stacks the pair when it fits, a wide layout still prefers side by side', () => {
+    const budgetH = M.zoomBudgetH(844);
+    const wideAvail = 700;
+    assert.equal(M.zoomPlan({ side: 60, availW: wideAvail, budgetH, maxS: 2 }).stacked, false, 'room for both: side by side');
+    const p = M.zoomPlan({ side: 60, availW: wideAvail, budgetH, maxS: 2, preferStack: true });
+    assert.equal(p.stacked, true);
+    assert.equal(p.limited, false);
+    const game = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
+    assert.match(game, /plan\(rootW - 16 - 4, 2, true\)/);
+});
+
+test('m1/m2/m3/n1/n2/n4: labels, keys line, spoken marks again, held L, fullLift reason, corner colour', () => {
+    const game = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
+    assert.match(game, /aria-pressed="\$\{!!this\.fullLift\}" aria-keyshortcuts="L">Whole lift \(L\)<\/button>/);
+    assert.match(game, /Peel and mount \(P\)/);
+    assert.match(game, /1 to \$\{n\} picks a card, V views it large/);
+    assert.match(game, /data-zmarks/);
+    assert.match(game, /zm\.textContent = /);
+    assert.match(game, /if \(e\.repeat\) return;   \/\/ holding L/);
+    assert.match(game, /fullLiftBy = 'view'/);
+    assert.match(game, /this\.fullLiftBy === 'view'/);
+    assert.match(game, /src\.data\[3\] === 255 \? \[src\.data\[0\]/);
 });

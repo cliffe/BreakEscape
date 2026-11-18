@@ -243,6 +243,29 @@ export function cropSide(sets, pad = 10, min = 48, max = 120) {
 }
 
 /**
+ * A crop for a limited plan: the largest side up to `maxSide` (even), with its centre moved off the reference point to the
+ * middle of the marks' bounding box, so every mark (glyph radius 3 plus `pad`) lies inside. If the marks still do not fit
+ * `maxSide`, the side is widened to hold them: showing every mark the player is told to check beats a tidy layout.
+ * The offset is the same for the lift and the cards (the upright frame), whole numbers.
+ * @param {{marks:{x:number,y:number}[], centre:{x:number,y:number}}[]} sets @param {number} maxSide
+ * @returns {{side:number, ox:number, oy:number}}
+ */
+export function fitCropToMarks(sets, maxSide, pad = 4) {
+    let x0 = 0, x1 = 0, y0 = 0, y1 = 0, any = false;
+    for (const { marks, centre } of sets) {
+        for (const m of marks) {
+            const dx = m.x - centre.x, dy = m.y - centre.y;
+            if (!any) { x0 = x1 = dx; y0 = y1 = dy; any = true; }
+            x0 = Math.min(x0, dx); x1 = Math.max(x1, dx); y0 = Math.min(y0, dy); y1 = Math.max(y1, dy);
+        }
+    }
+    if (!any) return { side: maxSide, ox: 0, oy: 0 };
+    const need = Math.max(x1 - x0, y1 - y0) + 2 * (pad + 3) + 1;   // +1: the centre offset is rounded
+    const side = Math.max(maxSide, 2 * Math.ceil(need / 2));
+    return { side, ox: Math.round((x0 + x1) / 2), oy: Math.round((y0 + y1) / 2) };
+}
+
+/**
  * A mark's place in the upright card frame: the reference point plus its core-relative offset (dx, dy). The lift is
  * rotated on the surface, so its own x, y are not comparable with a card's; these are.
  * @param {{dx:number, dy:number}[]} marks @param {{x:number,y:number}} centre

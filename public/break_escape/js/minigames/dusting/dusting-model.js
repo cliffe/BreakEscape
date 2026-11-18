@@ -529,20 +529,40 @@ export function zoomScale(side, availW, maxH) {
     return Math.max(2, Math.min(6, Math.floor(availW / side), Math.floor(maxH / side)));
 }
 export const ZOOM_MAX_H = 160;
-/** Estimated height (px) of everything in the frame except the main row while comparing on a desktop-sized window:
- *  padding and border 20, title 32, step row 44, status line (two lines) 44, options 32. An estimate, not a measurement. */
-export const ZOOM_CHROME_H = 172;
+/** Height (px) of everything in the frame except the main row while comparing on a desktop-sized window, as a fallback
+ *  when it cannot be measured: padding and border 20, title 32, step row 44, status line (three lines, the lift's mark
+ *  list can run to three) 65, options 32. The game measures the real chrome in _layout and passes it to zoomBudgetH. */
+export const ZOOM_STATUS_MAX_H = 65;
+export const ZOOM_CHROME_H = 20 + 32 + 44 + ZOOM_STATUS_MAX_H + 32;
 /** Height the pair may use in the stage column: the frame is the window less 24 px, less the chrome. */
-export function zoomBudgetH(innerH) { return Math.max(240, innerH - 24 - ZOOM_CHROME_H); }
+export function zoomBudgetH(innerH, chrome = ZOOM_CHROME_H) { return Math.max(240, innerH - 24 - chrome); }
+/** Overheads of the pair, px. A pane is its canvas plus the 4 px box border (2 + 2). The caption is 19.8 px, plus the 2 px gap. */
+export const ZOOM_PANE_BORDER = 4, ZOOM_PANE_GAP = 8;
+export const ZOOM_CAP_H = 20 + 2;
+/** Zoom margin 6 + 6, and the note's 8 px top margin. */
+export const ZOOM_MARGIN_H = 6 + 6 + 8;
+/** Side by side: W + caption + border + margins (46). Stacked: 2 (W + caption + border) + the 8 px pane gap + margins (80). */
+export const ZOOM_SBS_EXTRA = ZOOM_CAP_H + ZOOM_PANE_BORDER + ZOOM_MARGIN_H;
+export const ZOOM_STACK_EXTRA = 2 * (ZOOM_CAP_H + ZOOM_PANE_BORDER) + ZOOM_PANE_GAP + ZOOM_MARGIN_H;
+/** Reference card width: 128 canvas + 2 x 6 padding + 2 x 2 border. Gap between cards 10 (flex row) or 8 (the four-card grid). */
+export const REF_CARD_W = 144, REF_GAP = 10, REF_GAP_GRID = 8, PANEL_SIDE_PAD = 32;
+/** The panel width the cards need in one row (four cards: the 600 px at which dusting.css switches 2x2 to 4x1), plus the button row's room. */
+export function comparePanelMin(cards) {
+    if (cards >= 4) return 4 * REF_CARD_W + 3 * REF_GAP_GRID;
+    return Math.max(330, cards * REF_CARD_W + (cards - 1) * REF_GAP + PANEL_SIDE_PAD);
+}
+/** Four cards that cannot have a 600 px panel fall back to 2x2, which needs about this much. */
+export const COMPARE_PANEL_MIN_2X2 = 300;
 /**
- * The pair for the stage column (non-short screens). Panes sit side by side (width 2 (S side + 4) + 8, height S side + 26)
- * or stacked, lift above card (width S side + 4, height 2 S side + 62). The largest whole S from 2 to `maxS` that fits
- * the width `availW` and the height budget wins; side by side on a tie. If even 2x does not fit, the crop is limited to
- * what fits (stacked, 2x) and `limited` is true: a mark near the edge of a wide crop may then lose its margin.
+ * The pair for the stage column (non-short screens). Panes sit side by side (width 2 (S side + 4) + 8, height S side + 46)
+ * or stacked, lift above card (width S side + 4, height 2 S side + 80). The largest whole S from 2 to `maxS` that fits
+ * the width `availW` and the height budget wins; side by side on a tie, unless `preferStack` (a narrow or portrait layout)
+ * and a stacked pair fits. If even 2x does not fit, the crop is limited to what fits (stacked, 2x) and `limited` is true:
+ * a mark near the edge of a wide crop may then lose its margin.
  * @returns {{side:number, S:number, W:number, stacked:boolean, limited:boolean}}
  */
-export function zoomPlan({ side, availW, budgetH, maxS = 6 }) {
-    const capSbs = budgetH - 30, capStack = Math.floor((budgetH - 62) / 2);
+export function zoomPlan({ side, availW, budgetH, maxS = 6, preferStack = false }) {
+    const capSbs = budgetH - ZOOM_SBS_EXTRA, capStack = Math.floor((budgetH - ZOOM_STACK_EXTRA) / 2);
     const best = (stacked) => {
         const cap = stacked ? capStack : capSbs;
         for (let S = maxS; S >= 2; S--) {
@@ -555,7 +575,7 @@ export function zoomPlan({ side, availW, budgetH, maxS = 6 }) {
     };
     const a = best(false), b = best(true);
     if (a || b) {
-        const stacked = b > a;
+        const stacked = preferStack && b ? true : b > a;
         const S = stacked ? b : a;
         return { side, S, W: S * side, stacked, limited: false };
     }

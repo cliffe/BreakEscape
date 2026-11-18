@@ -267,6 +267,7 @@
 .dusting-zoom-stack { flex-direction: column; flex-wrap: nowrap; }
 .dusting-zoom-pane { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dusting-zoom-cap { font-size: 18px; color: var(--d-dim); }
+.dusting-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .dusting-zoom-box { position: relative; border: 2px solid var(--d-line); line-height: 0; background: #f2f0ea; align-self: flex-start; }
 .dusting-zoom-canvas { display: block; image-rendering: pixelated; }
 .dusting-zoom-tag {

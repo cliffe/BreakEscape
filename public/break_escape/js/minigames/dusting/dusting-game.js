@@ -14,9 +14,10 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
-    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT
+    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
+    comparePanelMin, COMPARE_PANEL_MIN_2X2, ZOOM_STATUS_MAX_H, ZOOM_CHROME_H
 } from './dusting-model.js';
-import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide, markGlyph, describeMarks, uprightMarks, rotateUpright } from './print-features.js';
+import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide, fitCropToMarks, markGlyph, describeMarks, uprightMarks, rotateUpright } from './print-features.js';
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
 import { displayDashes } from '../../utils/display-dashes.js';
@@ -236,6 +237,7 @@ export class DustingMinigame extends MinigameScene {
         this.candidates = [];
         this.correctIndex = -1;
         this.viewing = null; // F26 follow-up: index of the card shown at full size in place of the lift
+        this.fullLiftBy = null; // 'L' when the player asked for the whole lift, 'view' when V brought it
         this.fullLift = false; // compare on a non-short screen: true brings the lift canvas back in place of the magnified pair
         this.peelStart = 0;
         this.foundAt = 0;
@@ -303,7 +305,7 @@ export class DustingMinigame extends MinigameScene {
                 <div class="dusting-options">
                     <label><input type="checkbox" class="dusting-opt-hc"> High contrast</label>
                     <label><input type="checkbox" class="dusting-opt-steady"> Steady hand (gentler powder)</label>
-                    <span class="dusting-keys">Keys: arrows move, Space acts, Shift = big steps</span>
+                    <span class="dusting-keys" data-keys>Keys: arrows move, Space acts, Shift = big steps</span>
                 </div>
             </div>`;
         this.root = this.gameContainer.querySelector('.dusting-root');
@@ -314,6 +316,7 @@ export class DustingMinigame extends MinigameScene {
         this.stageNote = this.root.querySelector('.dusting-stage-note');
         this.statusEl = this.root.querySelector('.dusting-status');
         this.forensicEl = this.root.querySelector('.dusting-forensic');
+        this.keysEl = this.root.querySelector('[data-keys]');
         this.root.querySelector('.dusting-object').textContent = displayDashes(this.data.name || 'Surface');
         this.img = this.ctx.createImageData(N, N);
         this.hcBox = this.root.querySelector('.dusting-opt-hc');
@@ -492,6 +495,14 @@ export class DustingMinigame extends MinigameScene {
             this.stageNote.hidden = !inStage;
         }
         this.root.classList.toggle('dusting-matched', !!this.identified);
+        if (this.keysEl) {
+            let keys = 'Keys: arrows move, Space acts, Shift = big steps';
+            if (this.step === 'compare' && this.patternOk) {
+                const n = this.candidates.length, whole = this._zoomShort ? '' : (this.identified ? 'L whole lift' : ', L whole lift');
+                keys = this.identified ? `Keys: ${whole}` : `Keys: 1 to ${n} picks a card, V views it large${whole}`;
+            }
+            this.keysEl.textContent = keys;
+        }
         this._drawKeyGlyphs();
         if (this.step === 'compare' && this.patternOk) this._drawZoom();
         this._refreshDynamic();
@@ -635,7 +646,7 @@ export class DustingMinigame extends MinigameScene {
     /** The magnified lift and card pair; it is drawn by _drawZoom. The lift pane is turned upright to the card's frame. */
     _zoomHtml() {
         return `<div class="dusting-zoom" data-zoom>
-                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap">Your lift (turned upright)</span><div class="dusting-zoom-box" data-zbox="lift"></div></div>
+                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap">Your lift (turned upright)<span class="dusting-sr" data-zmarks></span></span><div class="dusting-zoom-box" data-zbox="lift"></div></div>
                 <div class="dusting-zoom-pane"><span class="dusting-zoom-cap" data-zcap>Card</span><div class="dusting-zoom-box" data-zbox="card"></div></div>
             </div>`;
     }
@@ -660,7 +671,7 @@ export class DustingMinigame extends MinigameScene {
     /** "My whole lift" / "Back to the pair": only where the pair stands in for the lift (not short landscape). */
     _wholeLiftButton() {
         if (this._zoomShort) return '';
-        return `<button class="dusting-btn" data-action="fulllift" aria-pressed="${!!this.fullLift}" aria-keyshortcuts="L">${this.fullLift ? 'Back to the pair' : 'My whole lift'}</button>`;
+        return `<button class="dusting-btn" data-action="fulllift" aria-pressed="${!!this.fullLift}" aria-keyshortcuts="L">Whole lift (L)</button>`;
     }
 
     _refButtons(done) {
@@ -669,7 +680,7 @@ export class DustingMinigame extends MinigameScene {
         return this.candidates.map(c => {
             const viewing = !done && this.viewing === c.index;
             const view = done ? '' : `
-                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to your lift' : `View card ${c.index + 1}, ${escapeHtml(c.label)}, at full size`}">${viewing ? 'Back to my lift' : 'View large'}</button>`;
+                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-keyshortcuts="V" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
             return `
             <div class="dusting-ref-wrap">
             <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}">
@@ -792,7 +803,13 @@ export class DustingMinigame extends MinigameScene {
         if (this.step !== 'compare' || !this.patternOk || this.identified) return;
         const c = Number.isInteger(i) ? this.candidates[i] : null;
         this.viewing = c && this.viewing !== i ? i : null;
-        if (this.viewing !== null) { this.zoomIdx = this.viewing; this.fullLift = true; }   // V drives the pair too; the card shows in the big frame
+        if (this.viewing !== null) {
+            // V drives the pair too; the card shows in the big frame. Remember whether L or V brought the lift canvas back.
+            this.zoomIdx = this.viewing;
+            if (!this.fullLift) { this.fullLift = true; this.fullLiftBy = 'view'; }
+        } else if (this.fullLiftBy === 'view') {
+            this.fullLift = false; this.fullLiftBy = null;   // viewing ended: the pair returns unless the player asked for the whole lift
+        }
         this._renderPanel();
         this._drawCard();
         this._updateAria();
@@ -806,6 +823,7 @@ export class DustingMinigame extends MinigameScene {
     _toggleWholeLift() {
         if (this.step !== 'compare' || !this.patternOk || this._zoomShort) return;
         this.fullLift = !this.fullLift;
+        this.fullLiftBy = this.fullLift ? 'L' : null;
         if (!this.fullLift) this.viewing = null;
         this._renderPanel();
         this._drawCard();
@@ -824,7 +842,7 @@ export class DustingMinigame extends MinigameScene {
         const c = this.candidates[i];
         if (!c || c.rejected) return;
         if (this.viewing !== null) { this.viewing = null; this.dirty = true; this._updateAria(); this._drawCard(); }
-        if (this.fullLift) this.fullLift = false;   // the pair comes back for the result
+        if (this.fullLift) { this.fullLift = false; this.fullLiftBy = null; }   // the pair comes back for the result
         if (c.correct) {
             this.identified = true;
             this._renderPanel();
@@ -1124,6 +1142,7 @@ export class DustingMinigame extends MinigameScene {
         }
         if (this.step === 'compare' && this.patternOk && lower === 'l' && !this._zoomShort) {
             e.preventDefault();
+            if (e.repeat) return;   // holding L must not flicker the view
             this._toggleWholeLift();
             return;
         }
@@ -1608,21 +1627,37 @@ export class DustingMinigame extends MinigameScene {
             return { side, S, W: side * S, stacked: false, limited: false };
         }
         const rootW = this.root.clientWidth || (this.wide ? 960 : 360);
-        let availW;
+        const budgetH = zoomBudgetH(window.innerHeight || 720, this._zoomChrome());
+        const plan = (availW, maxS, preferStack) => zoomPlan({ side, availW, budgetH, maxS, preferStack });
+        let p;
         if (this.wide) {
-            // beside the panel: leave it 600 px for four cards in a row (fewer cards need less)
-            const minPanel = this.candidates.length >= 4 ? 600 : 300;
-            availW = rootW - 36 - 16 - minPanel;
+            // beside the panel: leave it one row of cards plus the button row (comparePanelMin), less if the pair cannot fit
+            const avail = minPanel => rootW - 36 - 16 - minPanel;
+            p = plan(avail(comparePanelMin(this.candidates.length)), 6, false);
+            // four cards fall back to 2x2 in a narrower panel, which keeps the crop whole
+            if (p.limited && this.candidates.length >= 4) p = plan(avail(COMPARE_PANEL_MIN_2X2), 6, false);
         } else {
-            availW = rootW - 16 - 4;   // the 8 px padding either side of the content
+            p = plan(rootW - 16 - 4, 2, true);   // the 8 px padding either side of the content; portrait stacks when it fits
         }
-        const plan = zoomPlan({ side, availW, budgetH: zoomBudgetH(window.innerHeight || 720), maxS: this.wide ? 6 : 2 });
-        if (plan.limited) {
-            // a tighter pad so the marks still fit the smaller crop
-            const s2 = cropSide(this._zoomSets, 4, 48, plan.side);
-            return { ...plan, side: s2, W: 2 * s2 };
+        if (p.limited) {
+            // last resort: a smaller crop, its centre moved onto the marks (or the crop widened) so every mark still shows
+            const fit = fitCropToMarks(this._zoomSets, p.side);
+            return { ...p, side: fit.side, W: 2 * fit.side, ox: fit.ox, oy: fit.oy };
         }
-        return plan;
+        return p;
+    }
+
+    /**
+     * Height of the frame outside the main row, measured (frame scroll height less the main row), with room kept for a
+     * status line of up to three lines so a long mark list never grows the budget. Falls back to ZOOM_CHROME_H.
+     */
+    _zoomChrome() {
+        const main = this.root.querySelector && this.root.querySelector('.dusting-main');
+        const total = this.root.scrollHeight, mh = main ? main.offsetHeight : 0;
+        if (!total || !mh) return ZOOM_CHROME_H;
+        const sh = this.statusEl ? (this.statusEl.offsetHeight || 0) : 0;
+        const chrome = total - mh + Math.max(0, ZOOM_STATUS_MAX_H - sh);
+        return Math.max(120, Math.min(320, chrome));
     }
 
     /**
@@ -1641,7 +1676,7 @@ export class DustingMinigame extends MinigameScene {
         const reveal = cand.rejected === true || this.identified === true;
         const lm = this.liftMarks || [], cm = cand.marks || [];
         const inPanel = this.root.classList.contains('dusting-short');
-        const { side, S, W, stacked } = this._zoomLayout(inPanel);
+        const { side, S, W, stacked, ox = 0, oy = 0 } = this._zoomLayout(inPanel);
         host.dataset.stack = stacked ? '1' : '';
         host.classList.toggle('dusting-zoom-stack', stacked);
         // upright positions (centre + the core-relative offsets), the same frame for both panes
@@ -1655,7 +1690,7 @@ export class DustingMinigame extends MinigameScene {
         const pane = (key, src, print, pts, labels, col, bg, cross) => {
             const box = host.querySelector(`[data-zbox="${key}"]`);
             box.textContent = '';
-            const crop = cropAround(print.centre, side);
+            const crop = cropAround({ x: print.centre.x + ox, y: print.centre.y + oy }, side);
             const cv = document.createElement('canvas');
             cv.className = 'dusting-zoom-canvas'; cv.width = cv.height = W;
             cv.style.width = cv.style.height = `${W}px`;
@@ -1700,9 +1735,12 @@ export class DustingMinigame extends MinigameScene {
         pane('card', ref, cand.print, cardPts, reveal ? tags.card : null, '#b00020', '#f2f0ea', '#0a8f3c');
 
         this._zoomTags = { lift: tags.lift, card: reveal ? tags.card : [] };
-        this._zoomInfo = { side, S, W, stacked, canvases: { lift: W, card: W } };
+        this._zoomInfo = { side, S, W, stacked, ox, oy, canvases: { lift: W, card: W } };
         const cap = `Card ${cand.index + 1}: ${cand.label}`;
         host.querySelector('[data-zcap]').textContent = cap;
+        // the lift's marks again for a screen reader (spoken once on naming the pattern); textContent only
+        const zm = host.querySelector('[data-zmarks]');
+        if (zm) zm.textContent = lm.length ? `. Marks: ${describeMarks(lm, this.print.pattern, true)}` : '';
         // in words, marks only: no counts, no verdict. Only the card's words are spoken on a focus change.
         this._zoomSpeech = `${cap}: ${describeMarks(cm, cand.pattern, false)}.`;
     }
@@ -1711,14 +1749,16 @@ export class DustingMinigame extends MinigameScene {
     _uprightLift(bgHex) {
         const rot = this.print.transform ? this.print.transform.rotation : 0;
         if (!rot) return this.cardCanvas;
-        if (this._uprightFor === this.cardCanvas && this._uprightCv) return this._uprightCv;
-        const bg = [1, 3, 5].map(i => parseInt(bgHex.slice(i, i + 2), 16));
+        if (this._uprightFor === this.cardCanvas && this._uprightBg === bgHex && this._uprightCv) return this._uprightCv;
         const src = this.cardCanvas.getContext('2d').getImageData(0, 0, N, N);
+        // outside the turned print: the lift's own background, which is what the lift canvas shows at its corner
+        // (the dark panel colour round a card PNG), else the theme's lift colour
+        const bg = src.data[3] === 255 ? [src.data[0], src.data[1], src.data[2]] : [1, 3, 5].map(i => parseInt(bgHex.slice(i, i + 2), 16));
         const out = rotateUpright(src.data, N, this.print.centre, rot, bg);
         const cv = document.createElement('canvas');
         cv.width = cv.height = N;
         cv.getContext('2d').putImageData(new ImageData(out, N, N), 0, 0);
-        this._uprightFor = this.cardCanvas; this._uprightCv = cv;
+        this._uprightFor = this.cardCanvas; this._uprightBg = bgHex; this._uprightCv = cv;
         return cv;
     }
 
