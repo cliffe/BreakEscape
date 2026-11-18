@@ -31,8 +31,9 @@ test('the panel fits only with its 12 px padding top and bottom inside the windo
     assert.equal(refCardsFit(box(2000), 0), true, 'no window height: leave the cards alone');
 });
 
-test('_drawReferences drops the cards to 1x when the panel overflows', () => {
+test('_drawReferences keeps the cards at 1x (the magnified pair carries the detail; refCardsFit is no longer called)', () => {
     const src = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
     const fn = src.slice(src.indexOf('_drawReferences() {'), src.indexOf('getTestState() {'));
-    assert.match(fn, /if \(!refCardsFit\(this\.root, window\.innerHeight\)\) \{[\s\S]*?cv\.style\.width = `\$\{N\}px`/);
+    assert.match(fn, /const s = 1;/);
+    assert.doesNotMatch(fn, /refCardsFit/);
 });

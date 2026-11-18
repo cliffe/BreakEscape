@@ -16,66 +16,107 @@ const { generatePrint, patternForOwner, hashString } = await load('fingerprint-g
 const M = await load('dusting-model.js');
 const F = await load('print-features.js');
 
-test('hint appears after 8 seconds and the game uses the model constant', () => {
+test('hint delay and near radius come from the difficulty', () => {
     assert.equal(M.HINT_AFTER_MS, 8000);
+    assert.deepEqual(['easy', 'medium', 'hard'].map(d => M.DIFFICULTY[d].hintAfterMs), [8000, 10000, 15000]);
+    assert.deepEqual(['easy', 'medium', 'hard'].map(d => M.DIFFICULTY[d].nearRadius), [8, 8, 5]);
     assert.doesNotMatch(game, /const HINT_AFTER_MS/);
-    assert.match(game, /HINT_AFTER_MS\)/);
+    assert.match(game, /this\.diff\.hintAfterMs\);/);
+    assert.match(game, /this\.diff\.nearRadius\)/);
 });
 
-test('proximity: near only close to the mask, with hysteresis', () => {
+test('proximity: near only close to the mask, with hysteresis scaled to the radius', () => {
     const n = 128, mask = new Float32Array(n * n);
     for (let y = 60; y < 70; y++) for (let x = 60; x < 70; x++) mask[y * n + x] = 1;
-    assert.equal(M.torchNearPrint(mask, n, 65, 65, M.FIND_NEAR_RADIUS), true);
-    assert.equal(M.torchNearPrint(mask, n, 5, 5, M.FIND_NEAR_RADIUS), false);
-    assert.equal(M.torchNearPrint(mask, n, 60 - M.FIND_NEAR_RADIUS - 3, 65, M.FIND_NEAR_RADIUS), false, 'does not reveal the patch from afar');
-    // 11 px from the edge: not near on approach, still near on leaving
-    const x = 59 - 11;
-    assert.equal(M.nextNearState(false, mask, n, x, 65), false);
-    assert.equal(M.nextNearState(true, mask, n, x, 65), true);
-    assert.equal(M.nextNearState(true, mask, n, 59 - M.FIND_LEAVE_RADIUS - 2, 65), false);
-    assert.ok(M.FIND_LEAVE_RADIUS > M.FIND_NEAR_RADIUS);
+    assert.equal(M.torchNearPrint(mask, n, 65, 65, 8), true);
+    assert.equal(M.torchNearPrint(mask, n, 5, 5, 8), false);
+    assert.equal(M.torchNearPrint(mask, n, 60 - 8 - 3, 65, 8), false, 'does not reveal the patch from afar');
+    const x = 59 - 11;   // 11 px out: not near on approach, still near on leaving (radius 8, leave 14)
+    assert.equal(M.nextNearState(false, mask, n, x, 65, 8), false);
+    assert.equal(M.nextNearState(true, mask, n, x, 65, 8), true);
+    assert.equal(M.nextNearState(true, mask, n, 59 - 16, 65, 8), false);
+    // hard: radius 5, leave 11
+    assert.equal(M.nextNearState(false, mask, n, 59 - 7, 65, 5), false);
+    assert.equal(M.nextNearState(true, mask, n, 59 - 9, 65, 5), true);
+    assert.equal(M.nextNearState(true, mask, n, 59 - 13, 65, 5), false);
 });
 
-test('proximity: a real print is near at its centre and not at a corner', () => {
+test('proximity: a real print is near at its centre and not at every corner', () => {
     const p = generatePrint({ owner: 'Margaret Sorensen', pattern: patternForOwner('Margaret Sorensen') });
     const b = p.bounds;
-    assert.equal(M.torchNearPrint(p.mask, 128, b.x + b.w / 2, b.y + b.h / 2, M.FIND_NEAR_RADIUS), true);
-    const far = [[0, 0], [127, 0], [0, 127], [127, 127]].filter(([x, y]) => !M.torchNearPrint(p.mask, 128, x, y, M.FIND_NEAR_RADIUS));
-    assert.ok(far.length >= 1);
+    assert.equal(M.torchNearPrint(p.mask, 128, b.x + b.w / 2, b.y + b.h / 2, 5), true);
+    assert.ok([[0, 0], [127, 0], [0, 127], [127, 127]].some(([x, y]) => !M.torchNearPrint(p.mask, 128, x, y, 8)));
 });
 
-test('find step: key line, near cue wiring and status text', () => {
-    assert.match(game, /class="dusting-keys">Move the torch with the mouse or arrow keys\. Look for a dotted patch\./);
-    assert.match(game, /data-dyn="near"/);
+test('find step: key line by difficulty, one visible copy of the cue, queued announce, touch on lift', () => {
+    assert.match(game, /Move the torch with the mouse or arrow keys\. \$\{look\}/);
+    assert.match(game, /Look for a dotted patch\./);
+    assert.match(game, /Look for a small patch of curved ridges in the beam\./);
+    assert.match(game, /findFloor === 0/);
+    assert.match(game, /H: hint \(after \$\{Math\.round\(this\.diff\.hintAfterMs \/ 1000\)\} seconds\)/);
+    assert.doesNotMatch(game, /data-dyn="near"/, 'the status line is the one visible copy');
     assert.match(game, /Faint ridges catch the light here\./);
-    assert.match(game, /if \(near\) this\.announce\(NEAR_TEXT\)/);
+    assert.match(game, /this\._saidAt/);
     assert.match(game, /_updateNear\(\);\s*return;/, 'arrow keys call it');
+    assert.match(game, /pointerType === 'touch' && this\.step === 'find'/);
+    assert.match(game, /!from && !this\._touchFind/);
+    assert.match(game, /e\.type === 'pointerup'/);
     assert.match(css, /\.dusting-keys\s*{/);
-    assert.match(css, /\.dusting-near\s*{/);
+    const find = game.slice(game.indexOf('_htmlFind() {'), game.indexOf('_htmlPowder() {'));
+    assert.doesNotMatch(find, /Click on the patch/, 'the key line carries the controls');
 });
 
-test('mark tags: owner card pairs 1..n in order, decoys show X where they differ', () => {
+test('mark tags: owner card pairs 1..n in order (revealed only after a pick)', () => {
     const owner = 'Margaret Sorensen', pattern = patternForOwner(owner);
     const lift = generatePrint({ owner, pattern, variant: 'sorensen_stamp' });
     const card = generatePrint({ owner, pattern });
     const { lift: lm, card: cm } = F.pickLiftMarks(lift, card, 3);
-    assert.ok(lm.length >= 2);
     const own = F.pairMarkTags(lm, cm);
-    assert.deepEqual(own.lift, lm.map((_, i) => String(i + 1)));
-    assert.deepEqual(own.card, own.lift, 'same numbers on the matching card');
+    assert.deepEqual(own.card, own.lift);
     assert.equal(own.paired, lm.length);
-    for (const nm of ['Jesse Tran', 'Noor Haddad', 'Owen Gallagher']) {
-        const dp = patternForOwner(nm);
-        const decoy = generatePrint({ owner: nm, pattern: dp });
-        const liftF = F.featuresOf(lift, lm);
-        const dm = F.pickDecoyMarks(liftF, decoy, 3);
-        const t = F.pairMarkTags(lm, dm);
-        const differs = !F.compareFeatures(liftF, F.featuresOf(decoy, dm)).match;
-        if (differs && dp === pattern && decoy.canonical.opens === lift.canonical.opens) {
-            assert.ok(t.paired < lm.length || t.card.includes('X'), `${nm}: a mismatch is visible`);
+});
+
+test('B1: choosing shows no card tags, no counts in the speech; tags only on rejected cards and after the match', () => {
+    const z = game.slice(game.indexOf('_drawZoom() {'), game.indexOf('/** A reference card (ink'));
+    assert.match(z, /const reveal = cand\.rejected === true \|\| this\.identified === true/);
+    assert.match(z, /reveal \? tags\.card : null/, 'the card pane has no labels before a pick');
+    assert.match(z, /if \(!labels\) return;/);
+    assert.match(z, /zoomTags = \{ lift: tags\.lift, card: reveal \? tags\.card : \[\] \}/);
+    const speech = z.slice(z.indexOf('this._zoomSpeech'));
+    assert.doesNotMatch(speech.split('\n')[0], /paired|marked X|\.length|of \$\{/, 'no counts or verdict');
+    assert.match(speech, /describeMarks/);
+    assert.match(game, /c\.rejected = true;\s*this\.zoomIdx = i;/, 'the zoom stays on the rejected card');
+    assert.match(game, /if \(this\.identified\) return this\.correctIndex/);
+});
+
+test('B1: words for the non-visual path give no count and no verdict', () => {
+    const marks = [{ type: 'bifurcation', dx: 10, dy: -10 }, { type: 'ending', dx: 0, dy: 20 }];
+    const lift = F.describeMarks(marks, 'whorl', true);
+    assert.equal(lift, '1, a fork above and to the right of the centre; 2, an ending below the centre'.replace('an ending', 'a ridge ending'));
+    assert.equal(F.describeMarks(marks, 'loop', false), 'a fork above and to the right of the core; a ridge ending below the core');
+    assert.doesNotMatch(lift, /match|pair|of 2|\bX\b/);
+});
+
+test('B1: every same-class decoy differs from the lift, whatever skip was needed', () => {
+    const names = ['Jesse Tran', 'Noor Haddad', 'Owen Gallagher', 'Voltage', 'Cipher', 'Bob', 'Relay', 'Alice', 'Static', 'Security Guard', 'David Torres', 'Robert Vance'];
+    let n = 0;
+    for (const owner of ['Margaret Sorensen', 'David Torres', 'Alice', 'Static']) {
+        const pattern = patternForOwner(owner);
+        for (const obj of ['a', 'b', 'c', 'mug_1']) {
+            const lift = generatePrint({ owner, pattern, variant: obj });
+            const card = generatePrint({ owner, pattern });
+            for (const count of [2, 3]) {
+                const { lift: lm } = F.pickLiftMarks(lift, card, count);
+                const liftF = F.featuresOf(lift, lm);
+                for (const nm of names) for (const dp of ['loop', 'whorl', 'arch']) {
+                    const d = generatePrint({ owner: nm, pattern: dp });
+                    const marks = F.pickDecoyMarks(liftF, d, count);
+                    if (dp === pattern && lm.length) { assert.equal(F.compareFeatures(liftF, F.featuresOf(d, marks)).match, false, `${owner}/${obj}/${nm}/${dp}`); n++; }
+                }
+            }
         }
-        assert.equal(new Set(t.card.filter(v => v !== 'X')).size, t.card.filter(v => v !== 'X').length, 'a number is used once');
     }
+    assert.ok(n > 50);
 });
 
 test('mark tags: type must agree and each lift mark pairs once', () => {
@@ -85,23 +126,54 @@ test('mark tags: type must agree and each lift mark pairs once', () => {
     assert.deepEqual(F.pairMarkTags([], []).card, []);
 });
 
-test('crop: whole numbers, inside the canvas, same side for both prints', () => {
-    const a = [{ x: 30, y: 40 }, { x: 70, y: 60 }], b = [{ x: 100, y: 120 }];
-    const side = F.cropSide([a, b]);
-    assert.ok(Number.isInteger(side) && side >= 48 && side <= 80);
-    for (const pts of [a, b, []]) {
-        const c = F.cropAround(pts, side, 128);
-        assert.ok(Number.isInteger(c.x) && Number.isInteger(c.y));
-        assert.ok(c.x >= 0 && c.y >= 0 && c.x + c.side <= 128 && c.y + c.side <= 128);
+test('crop: centred on the reference point, whole numbers, every mark inside', () => {
+    const sets = [];
+    for (const [owner, v] of [['Margaret Sorensen', 'a'], ['Alice', 'b'], ['Static', 'c'], ['David Torres', 'd'], ['Robert Vance', 'e']]) {
+        const pattern = patternForOwner(owner);
+        const lift = generatePrint({ owner, pattern, variant: v }), card = generatePrint({ owner, pattern });
+        const { lift: lm, card: cm } = F.pickLiftMarks(lift, card, 3);
+        const side = F.cropSide([{ marks: lm, centre: lift.centre }, { marks: cm, centre: card.centre }]);
+        assert.ok(Number.isInteger(side) && side >= 48 && side <= 120 && side % 2 === 0);
+        for (const [pr, marks] of [[lift, lm], [card, cm]]) {
+            const c = F.cropAround(pr.centre, side);
+            assert.ok(Number.isInteger(c.x) && Number.isInteger(c.y));
+            assert.equal(c.x + side / 2, Math.round(pr.centre.x), 'centred on the reference point');
+            for (const m of marks) {
+                assert.ok(m.x - 4 >= c.x && m.x + 4 <= c.x + side && m.y - 4 >= c.y && m.y + 4 <= c.y + side, `${owner}: mark and glyph inside the crop`);
+            }
+        }
+        sets.push(side);
     }
-    const c = F.cropAround(a, side, 128);
-    for (const p of a) assert.ok(p.x >= c.x && p.x <= c.x + side && p.y >= c.y && p.y <= c.y + side);
+    assert.ok(sets.length);
+});
+
+test('zoom scale: whole number, at least 2x, height within budget', () => {
+    for (let side = 48; side <= 120; side += 2) {
+        for (const [availW, maxH] of [[210, M.ZOOM_MAX_H], [180, M.ZOOM_MAX_H], [150, M.ZOOM_MAX_H_SHORT], [60, M.ZOOM_MAX_H_SHORT]]) {
+            const S = M.zoomScale(side, availW, maxH);
+            assert.ok(Number.isInteger(S) && S >= 2 && S <= 6);
+            if (S > 2) assert.ok(S * side <= maxH && S * side <= availW);
+        }
+    }
+    // desktop pair under the lift: a typical 100 px crop is 200 px tall, caption and legend add about 70
+    assert.equal(M.zoomScale(100, 210, M.ZOOM_MAX_H), 2);
+    assert.ok(M.ZOOM_MAX_H <= 160 && M.ZOOM_MAX_H_SHORT <= 128);
+});
+
+test('glyphs are whole pixels (no arcs at the zoom scale)', () => {
+    assert.ok(F.markGlyph('ending').length >= 12);
+    assert.equal(F.markGlyph('bifurcation').length, 28);
+    for (const t of ['ending', 'bifurcation']) for (const [x, y] of F.markGlyph(t)) assert.ok(Number.isInteger(x) && Number.isInteger(y) && Math.abs(x) <= 3 && Math.abs(y) <= 3);
+    const z = game.slice(game.indexOf('_drawZoom() {'), game.indexOf('/** A reference card (ink'));
+    assert.doesNotMatch(z, /\.arc\(|\.stroke\(/);
 });
 
 test('compare zoom: structure, crisp scale, text tags, pixel-art CSS', () => {
     assert.match(game, /data-zoom/);
     assert.match(game, /imageSmoothingEnabled = false/);
-    assert.match(game, /Math\.max\(2, Math\.min\(6, Math\.floor\(avail \/ side\)\)\)/, 'whole-number scale of at least 2x');
+    assert.match(game, /zoomScale\(side, avail, inPanel \? ZOOM_MAX_H_SHORT : ZOOM_MAX_H\)/, 'whole-number scale of at least 2x, height capped');
+    assert.match(game, /Both magnified at the same scale and centred on the core\. Your lift's marks are numbered: check each has a mark of the same kind in the same place on the card\./);
+    assert.match(game, /Math\.max\(0, Math\.min\(W - 24/, 'tag left is clamped');
     assert.match(game, /t\.textContent = labels\[i\]/, 'tags set by textContent');
     assert.match(game, /'pointerover'/);
     assert.match(game, /'focusin'/);
@@ -114,8 +186,8 @@ test('compare zoom: structure, crisp scale, text tags, pixel-art CSS', () => {
 });
 
 test('wrong pick: card is rejected, feedback shown above the cards, other cards stay pickable', () => {
-    assert.match(game, /c\.rejected = true;[\s\S]{0,400}this\._renderPanel\(\);\s*this\.announce\(this\.message\)/);
-    const html = game.slice(game.indexOf('That is ${/^[aeiou]/i'), game.indexOf('/** The marks key'));
-    assert.ok(html.indexOf('data-dyn="feedback"') < html.indexOf('data-zoom'), 'feedback sits above the zoom and cards');
+    assert.match(game, /c\.rejected = true;[\s\S]{0,600}this\._renderPanel\(\);\s*this\.announce\(this\.message\)/);
+    const html = game.slice(game.indexOf('That is ${/^[aeiou]/i'), game.indexOf('/** The magnified lift'));
+    assert.ok(html.indexOf('data-dyn="feedback"') < html.indexOf('_zoomHtml()'), 'feedback sits above the zoom and cards');
     assert.match(game, /if \(!c \|\| c\.rejected\) return;/);
 });

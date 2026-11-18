@@ -80,7 +80,6 @@
 .dusting-feedback { min-height: 1.2em; color: #ffd75e; }
 .dusting-feedback.good { color: var(--d-accent); }
 .dusting-keys { color: var(--d-dim); }
-.dusting-near { min-height: 1.2em; color: var(--d-accent); }
 .dusting-estimate { color: var(--d-text); }
 .dusting-result .dusting-result-value { color: var(--d-accent); }
 

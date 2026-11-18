@@ -133,7 +133,7 @@ test('the key under the lift explains the marks and that viewing is not a pick; 
     const g = compareGame();
     const note = g._compareNote();
     assert.match(note, /ridge ending/);
-    assert.match(note, /press V to step through the cards\. Viewing is not a pick/);
+    assert.match(note, /View large \(or V\) shows a card at the lift's size above; click a card or press its number to pick it/);
     g.identified = true;
     assert.equal(g._compareNote(), '');
 });

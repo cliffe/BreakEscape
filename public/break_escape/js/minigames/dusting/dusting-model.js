@@ -101,15 +101,15 @@ export const POWDERS = {
  *   cards can be told apart by eye; the right card carries the same marks in the same places.
  * @type {Object<string, {pfog:number, minCoverage:number, residueStrength:number, candidates:number,
  *   decoySamePattern:'never'|'one'|'all', findFloor:number, partial:'never'|'maybe'|'always', sheenScale:number,
- *   marks:number}>}
+ *   marks:number, hintAfterMs:number, nearRadius:number}>}
  */
 export const DIFFICULTY = {
     // easy: decoys have a different pattern class by default, so the compare is by class; near-identical
     // whorls on easy were not a fair comparison (m08 E16). A scenario may force a same-class decoy with a
     // { name, pattern } entry in fingerprintCandidates (m05's mug does). Medium and hard keep the minutiae test.
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.24, partial: 'never', sheenScale: 1.0, marks: 3 },
-    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, marks: 3 },
-    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findFloor: 0, partial: 'always', sheenScale: 0.7, marks: 2 }
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.24, partial: 'never', sheenScale: 1.0, hintAfterMs: 8000, nearRadius: 8, marks: 3 },
+    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, hintAfterMs: 10000, nearRadius: 8, marks: 3 },
+    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findFloor: 0, partial: 'always', sheenScale: 0.7, hintAfterMs: 15000, nearRadius: 5, marks: 2 }
 };
 
 const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];
@@ -495,11 +495,12 @@ export function findSheen({ lit, ridge, mask, res, floor, floorScale = 1, dotted
     return s;
 }
 
-/** The Hint button appears this long after the Find step opens (a blind run needed it sooner than 15 s). */
+/** Default Hint delay; each difficulty sets its own (DIFFICULTY.*.hintAfterMs: 8 s easy, 10 s medium, 15 s hard). */
 export const HINT_AFTER_MS = 8000;
-/** The torch is "near the print" within this many canvas px of a mask pixel; it stays near until FIND_LEAVE_RADIUS (no flicker). */
+/** The torch is "near the print" within `radius` canvas px of a mask pixel (DIFFICULTY.*.nearRadius) and stays near until radius + FIND_LEAVE_MARGIN (no flicker). */
 export const FIND_NEAR_RADIUS = 8;
-export const FIND_LEAVE_RADIUS = 14;
+export const FIND_LEAVE_MARGIN = 6;
+export const FIND_LEAVE_RADIUS = FIND_NEAR_RADIUS + FIND_LEAVE_MARGIN;
 /**
  * Is any print-mask pixel (above 0.3, as the click test uses) within `radius` px of (x, y)?
  * @param {ArrayLike<number>} mask n x n @param {number} n @param {number} x @param {number} y @param {number} radius
@@ -515,7 +516,17 @@ export function torchNearPrint(mask, n, x, y, radius) {
     }
     return false;
 }
-/** Next "near" state with hysteresis: enters at FIND_NEAR_RADIUS, leaves only past FIND_LEAVE_RADIUS. */
-export function nextNearState(wasNear, mask, n, x, y) {
-    return torchNearPrint(mask, n, x, y, wasNear ? FIND_LEAVE_RADIUS : FIND_NEAR_RADIUS);
+/** Next "near" state with hysteresis: enters at `radius`, leaves only past radius + FIND_LEAVE_MARGIN. */
+export function nextNearState(wasNear, mask, n, x, y, radius = FIND_NEAR_RADIUS) {
+    return torchNearPrint(mask, n, x, y, wasNear ? radius + FIND_LEAVE_MARGIN : radius);
 }
+
+/**
+ * Scale of the magnified compare pair: a whole number from 2 to 6 that fits `availW` per pane and, above 2x,
+ * `maxH` tall (2x is the floor, so a wide crop can still be taller than maxH).
+ */
+export function zoomScale(side, availW, maxH) {
+    return Math.max(2, Math.min(6, Math.floor(availW / side), Math.floor(maxH / side)));
+}
+export const ZOOM_MAX_H = 160;
+export const ZOOM_MAX_H_SHORT = 128;

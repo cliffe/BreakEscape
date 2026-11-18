@@ -160,6 +160,11 @@ export function pickDecoyMarks(liftFeatures, decoy, count) {
         const f = { pattern: decoy.pattern, opens: decoy.canonical.opens, marks };
         if (!compareFeatures(liftFeatures, f).match) return marks;
     }
+    // No alternative differed: a card with fewer marks leaves some lift mark without a partner, so it can never match.
+    for (let n = count - 1; n >= 0; n--) {
+        const marks = n ? ringPick(pool, centre, n, 0, singularOf(decoy)) : [];
+        if (!compareFeatures(liftFeatures, { pattern: decoy.pattern, opens: decoy.canonical.opens, marks }).match) return marks;
+    }
     return first || [];
 }
 
@@ -216,26 +221,48 @@ export function pairMarkTags(liftMarks, cardMarks) {
 }
 
 /**
- * One square crop (canvas px, whole numbers) that holds every mark of a print with `pad` to spare, at least
- * `min` wide, clamped inside the size x size canvas. Both prints of a pair use the same side so they magnify alike.
- * @param {{x:number,y:number}[]} points @param {number} side crop side @param {number} size canvas size
+ * Square crop (canvas px, whole numbers) centred on a print's reference point, so both prints of a pair
+ * line up round it. It may reach past the canvas edge when the reference point is near it; the caller clips.
+ * @param {{x:number,y:number}} centre @param {number} side
  */
-export function cropAround(points, side, size) {
-    if (!points.length) return { x: Math.round((size - side) / 2), y: Math.round((size - side) / 2), side };
-    const cx = (Math.min(...points.map(p => p.x)) + Math.max(...points.map(p => p.x))) / 2;
-    const cy = (Math.min(...points.map(p => p.y)) + Math.max(...points.map(p => p.y))) / 2;
-    const clamp = v => Math.max(0, Math.min(size - side, Math.round(v - side / 2)));
-    return { x: clamp(cx), y: clamp(cy), side };
+export function cropAround(centre, side) {
+    return { x: Math.round(centre.x - side / 2), y: Math.round(centre.y - side / 2), side };
 }
 
-/** Crop side that fits the marks of every print in the pair (each mark kept `pad` px inside), between min and max. */
-export function cropSide(pointSets, pad = 12, min = 48, max = 80) {
+/**
+ * Crop side that holds every mark of every print in the pair, each kept `pad` px inside, centred on that
+ * print's reference point. Even, at least `min`; the max leaves room for the widest ring (MAX_R_WIDE).
+ * @param {{marks:{x:number,y:number}[], centre:{x:number,y:number}}[]} sets
+ */
+export function cropSide(sets, pad = 10, min = 48, max = 120) {
     let need = 0;
-    for (const pts of pointSets) {
-        if (!pts.length) continue;
-        const w = Math.max(...pts.map(p => p.x)) - Math.min(...pts.map(p => p.x));
-        const h = Math.max(...pts.map(p => p.y)) - Math.min(...pts.map(p => p.y));
-        need = Math.max(need, w, h);
+    for (const { marks, centre } of sets) {
+        for (const m of marks) need = Math.max(need, 2 * Math.max(Math.abs(m.x - centre.x), Math.abs(m.y - centre.y)));
     }
     return Math.max(min, Math.min(max, 2 * Math.ceil((need + 2 * pad) / 2)));
+}
+
+/**
+ * Pixel offsets of a mark glyph at 1x: a ring (radius 3) for a ridge ending, a 7 x 7 square outline for a fork.
+ * Drawn with fillRect and scaled by a whole number, so the glyph is never antialiased.
+ */
+export function markGlyph(type) {
+    const out = [];
+    if (type === 'bifurcation') {
+        for (let i = -3; i <= 3; i++) out.push([i, -3], [i, 3], [-3, i], [3, i]);
+    } else {
+        for (const [x, y] of [[-1, -3], [0, -3], [1, -3], [-1, 3], [0, 3], [1, 3], [-3, -1], [-3, 0], [-3, 1], [3, -1], [3, 0], [3, 1],
+            [-2, -2], [2, -2], [-2, 2], [2, 2]]) out.push([x, y]);
+    }
+    return out;
+}
+
+/**
+ * Spoken description of a print's marks for the magnified view: no counts and no verdict. With `numbered`
+ * the lift's marks carry their tag numbers.
+ * @returns {string} e.g. '1, a fork above and to the right of the centre; 2, a ridge ending below the centre'
+ */
+export function describeMarks(marks, pattern, numbered) {
+    const ref = REF_WORDS[pattern] || 'the core';
+    return marks.map((m, i) => `${numbered ? `${i + 1}, ` : ''}${TYPE_WORDS[m.type]} ${spotWords(m.dx, m.dy)} ${ref}`).join('; ');
 }
