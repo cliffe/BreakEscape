@@ -2275,10 +2275,8 @@ export function tryInteractWithNearest() {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
-        // Clearly nearer the free place of a sofa she shares, E is for the sofa: no seat reach for her, and she loses to it
-        const freeFirst = npcSprite && nearerFreePlace(player, npcSprite);
         const npcSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
-        const distSq = npcSprite ? seatedNpcReachDistSq(player, npcSprite, npcSq) : npcSq; // gives the plain reach itself when freeFirst
+        const distSq = npcSprite ? seatedNpcReachDistSq(player, npcSprite, npcSq) : npcSq; // clearly nearer the free place of a sofa she shares, it returns Infinity: E is for the sofa
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
@@ -2287,7 +2285,6 @@ export function tryInteractWithNearest() {
         // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
-        if (freeFirst) score += 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
         if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
     }

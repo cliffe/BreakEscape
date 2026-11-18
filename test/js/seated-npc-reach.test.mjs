@@ -181,6 +181,19 @@ test('a three-place bench: the free place wins only against every sitter (n2)', 
     assert.equal(isObjectInInteractionRange(npc), false, 'beyond both sitters: free end');
 });
 
+test('a three-place bench, sitters on places 0 and 1: beside place 1, E talks to that sitter though free place 2 is nearer than place 0 (R4 m1)', () => {
+    const seat = chair({ width: 90, displayWidth: 90, _places: { 0: 'amara', 1: 'bo' } });
+    const npc = amara({ x: 120, y: 105 });
+    const bo = amara({ x: 160, y: 105, npcId: 'bo' });
+    setup({ seat, npc, place: 0, player: { x: 165, y: 100, direction: 'up' } });
+    globalThis.__testRooms.r.npcSprites = [npc, bo];
+    const places = [[10, 0], [50, 0], [80, 0]];
+    window.npcBehaviorManager.getBehavior = (id) => ({ _seat: { chair: seat, seat: { places }, place: id === 'amara' ? 0 : 1 } });
+    // x 165: 5 px from place 1's foot (160), 25 from free place 2 (190), 45 from place 0 (120)
+    press();
+    assert.deepEqual(aimed(), ['160,105'], 'aimed at the place-1 sitter, not the bench: ' + aimed());
+});
+
 test('the tap path reaches a seated NPC through her seat, as E does (m1)', () => {
     const seat = chair({ seatedBy: 'amara' });
     const npc = amara();
