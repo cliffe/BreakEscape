@@ -4,6 +4,8 @@
 // B: as A, then the player walks east into the security office with the guard behind.
 // N: control, no fight at all: shows whether an un-fought breach call rings or connects direct.
 // D: as A, the guard is ended by a KO (debugKO) instead of standing down.
+// K: kite. As A, but the guard is slowed so it cannot land a hit; the chase runs 30 s in the player's room with no hit:
+//    the combat hold must stay on the whole time, the call must never ring, and rings once after the fight.
 // C: as A, then the player is KO'd, Respawn is clicked: the call still comes, once.
 import { start } from './m10-ol-lib.mjs';
 const [gid, out, which = 'A'] = process.argv.slice(2);
@@ -65,10 +67,26 @@ for (let i = 0; i < 5; i++) { await g.t(2000); await closeChat(); await log(`t+$
 await sh('1-during-chase');
 const evs = await g.evs('phone|breach|conversation');
 console.log('events while chasing', JSON.stringify(evs.slice(-8)));
+if (which === 'K') {
+  await g.ev(() => { const b = window.npcBehaviorManager.getBehavior('tunnel_guard'); window.__kiteSpeed = b.config.hostile.chaseSpeed; b.config.hostile.chaseSpeed = 5; });
+  const hp0 = (await R()).hp;
+  let bad = 0;
+  for (let i = 0; i < 28; i++) {
+    await g.t(1000); await closeChat();
+    // Keep the player moving away so the slowed guard never closes the 40 px swing range
+    await g.ev(() => { const gb = window.npcBehaviorManager.getBehavior('tunnel_guard').sprite, p = window.player; const dx = p.x - gb.x, dy = p.y - gb.y, d = Math.hypot(dx, dy) || 1; if (d < 100) p.setPosition(p.x + dx / d * 30, p.y + dy / d * 30); });
+    const r = await R(); if (i % 4 === 3) console.log(`kite t+${i + 1}s`, JSON.stringify(r));
+    if (r.guard && r.guard.st === 'chase' && !r.combat) { bad++; viol.push(`kite t+${i + 1}s: guard chases but playerInCombat is false`); }
+    if (r.cur) viol.push(`kite t+${i + 1}s: a call is current mid-chase`);
+    if (r.hp < hp0) { viol.push(`INVALID: the guard hit the player at t+${i + 1}s (hp ${hp0} -> ${r.hp})`); break; }
+  }
+  await sh('2-kite-30s');
+  console.log('kite combat-false samples while chasing:', bad);
+}
 if (which === 'B') {
   await closeChat();
   g.ev(() => window.__test.enterRoom('security_office')).then((r) => console.log('enterRoom', JSON.stringify(r).slice(0, 200))).catch((e) => console.log('enterRoom err', String(e).slice(0, 120)));
-  for (let i = 0; i < 10; i++) { await g.t(1500); await closeChat(); await g.ev(() => window.playerHealth.heal(30)); await log(`office t${i}`); if (i === 4) await sh('2-office'); }
+  for (let i = 0; i < 10; i++) { await g.t(1500); await closeChat(); await log(`office t${i}`); if (i === 4) await sh('2-office'); }
   console.log('events', JSON.stringify((await g.evs('room_entered|phone|breach')).slice(-6)));
 }
 if (which === 'C') {
