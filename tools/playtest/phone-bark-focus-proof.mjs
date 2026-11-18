@@ -9,6 +9,7 @@ const [url, outdir] = process.argv.slice(2);
 let bad = 0;
 const check = (ok, msg) => { console.log((ok ? 'ok   ' : 'FAIL ') + msg); if (!ok) bad++; };
 const HAX = 'agent_0x99';
+const RUN = Date.now().toString(36).slice(-4); // texts are unique per run and viewport: a game keeps its history
 const browser = await chromium.launch();
 
 
@@ -54,6 +55,7 @@ async function openPhone(page, tag) {
 }
 
 async function run(w, h, tag) {
+  const P = `Proof ${RUN} ${tag}`;
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!window.game?.loop && !!window.__test, null, { timeout: 90000 });
@@ -86,15 +88,15 @@ async function run(w, h, tag) {
   const before = await barks();
   // Add the history row first (unread), sample the phone's unread total, then deliver the bark
   // so the fold has something to mark read: the drop is measured across the fold itself.
-  await page.evaluate((id) => window.npcManager.addMessage(id, 'npc', 'Proof text one: eyes on the vault.', { isBark: true }), HAX);
+  await page.evaluate((id) => window.npcManager.addMessage(id, 'npc', `${P} one: eyes on the vault.`, { isBark: true }), HAX);
   const totalBefore = await total();
   const haxBefore = await page.evaluate((id) => (window.npcManager.getConversationHistory(id) || [])
     .filter(m => !m.read && (m.type === 'npc' || (m.type === 'call' && m.callEvent === 'missed'))).length, HAX);
   check(haxBefore >= 1, `${tag}: the proof text is unread before the fold (HaX unread ${haxBefore})`);
-  await send('Proof text one: eyes on the vault.', undefined, true);
+  await send(`${P} one: eyes on the vault.`, undefined, true);
   await page.waitForTimeout(1500);
   check((await barks()) === before, `${tag}: no toast for HaX while HaX's conversation is open`);
-  check(await page.evaluate(() => document.body.innerText.includes('Proof text one')), `${tag}: the open thread shows the text`);
+  check(await page.evaluate((t) => document.body.innerText.includes(t), `${P} one`), `${tag}: the open thread shows the text`);
   const unread = () => page.evaluate((id) => (window.npcManager.getConversationHistory(id) || [])
     .filter(m => !m.read && (m.type === 'npc' || (m.type === 'call' && m.callEvent === 'missed'))).length, HAX);
   check((await unread()) === 0, `${tag}: HaX has 0 unread after the fold`);
@@ -110,7 +112,7 @@ async function run(w, h, tag) {
   // Back to the list: the toast shows
   await page.click('.back-button, #back-button, .phone-back-button').catch(() => {});
   await page.waitForTimeout(800);
-  await send('Proof text two: list view toast.');
+  await send(`${P} two: list view toast.`);
   await page.waitForTimeout(1500);
   const onList = await page.evaluate(() => window.MinigameFramework.currentMinigame?.ui?.getCurrentView?.());
   check(onList === 'contact-list', `${tag}: phone is on the contact list (${onList})`);
@@ -120,7 +122,7 @@ async function run(w, h, tag) {
   // Closed phone: the toast shows
   await page.evaluate(() => window.MinigameFramework.endMinigame(false, null));
   await page.waitForTimeout(800);
-  await send('Proof text three: phone closed.');
+  await send(`${P} three: phone closed.`);
   await page.waitForTimeout(1500);
   check((await barks()) > 0, `${tag}: toast shows with the phone closed`);
   await page.screenshot({ path: `${outdir}/${tag}-4-closed-toast.png` });
@@ -133,10 +135,10 @@ async function run(w, h, tag) {
   await page.evaluate((id) => window.MinigameFramework.currentMinigame.openConversation(id), HAX);
   await page.waitForTimeout(1500);
   const b0 = await barks();
-  await send('Proof text four: knot text, held.', 'first_ring');
+  await send(`${P} four: knot text, held.`, 'first_ring');
   await page.waitForTimeout(1500);
   check((await barks()) === b0, `${tag}: knot text shows no toast while the thread is open`);
-  check(!(await page.evaluate(() => document.body.innerText.includes('Proof text four'))), `${tag}: knot text is not folded into the thread`);
+  check(!(await page.evaluate((t) => document.body.innerText.includes(t), `${P} four`)), `${tag}: knot text is not folded into the thread`);
   await page.screenshot({ path: `${outdir}/${tag}-5-knot-held.png` });
   await page.evaluate(() => window.MinigameFramework.endMinigame(false, null));
   await page.waitForTimeout(4500);
