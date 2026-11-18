@@ -9,12 +9,12 @@ St. Catherine's Regional went dark at 02:47. Every clinical system is encrypted,
 | Metric | Value |
 |---|---|
 | Story aims | 8 |
-| Total tasks | 29 (3 optional) |
+| Total tasks | 30 (4 optional) |
 | VM flag challenges | 4 |
-| Physical locks | 31 |
+| Physical locks | 33 |
 | AND-gate convergences | 0 |
 | Rooms | 13 |
-| Puzzle graph nodes / edges | 105 / 126 |
+| Puzzle graph nodes / edges | 108 / 130 |
 | Story graph nodes / edges | 8 / 7 |
 
 ## Critical Path
@@ -120,6 +120,7 @@ flowchart TD
   handwritten_note_taped_inside_the_rack{"Handwritten Note, Taped Inside the Rack"}
   lock_entropy_field_case["Sealed Equipment Case<br/>Key lock"]
   pin_cracker{"PIN Cracker"}
+  lock_supervisor_wall_safe["Supervisor Wall Safe"]
   entropy_asset_tag{"ENTROPY Asset Tag"}
   sealed_equipment_case["Sealed Equipment Case"]
   lock_entropy_staging_cache["ENTROPY Staging Cache<br/>Flag lock"]
@@ -138,10 +139,12 @@ flowchart TD
   zero_day_syndicate_invoice{"Zero Day Syndicate Invoice"}
   npc_dr_sarah_kim{"Dr. Sarah Kim"}
   dr_kim_s_signed_statement{"Dr. Kim's Signed Statement"}
-  action_meet_dr_kim>"Get Kim's verbal authorisation and the boardroom code"]
+  action_meet_dr_kim>"Get Kim's verbal authorisation"]
   ransomware_incorporated_proposal{"Ransomware Incorporated Proposal"}
   night_security_post_log{"Night Security Post Log"}
   lock_press_terminal["Hospital Communications Terminal"]
+  drill_override_authorisation{"Drill Override Authorisation"}
+  supervisor_s_wall_safe["Supervisor's Wall Safe"]
   lock_security_desk_terminal["Security Desk Terminal (Encrypted)<br/>Ransomware terminal"]
   security_desk_terminal_encrypted["Security Desk Terminal (Encrypted)"]
   key_cabinet_empty{"Key Cabinet (Empty)"}
@@ -229,6 +232,8 @@ flowchart TD
   server_room --> lock_entropy_field_case
   lock_entropy_field_case -.-> pin_cracker
   pin_cracker -.-> lock_emergency_storage_safe
+  pin_cracker -.-> lock_supervisor_wall_safe
+  pin_cracker -.-> door_conference_room
   lock_entropy_field_case --> entropy_asset_tag
   server_room -.-> sealed_equipment_case
   server_room --> lock_entropy_staging_cache
@@ -254,6 +259,9 @@ flowchart TD
   conference_room --> ransomware_incorporated_proposal
   conference_room --> night_security_post_log
   conference_room --> lock_press_terminal
+  security_office --> lock_supervisor_wall_safe
+  lock_supervisor_wall_safe --> drill_override_authorisation
+  security_office -.-> supervisor_s_wall_safe
   security_office --> lock_security_desk_terminal
   security_office --> security_desk_terminal_encrypted
   security_office --> key_cabinet_empty
@@ -297,21 +305,20 @@ flowchart TD
   office_corridor --> staff_room
   ward_vestibule --> ward_approach
   vmfl_submit_database_flag --> lock_hospital_recovery_console
-  action_meet_dr_kim --> conference_room
   action_meet_dr_kim -.-> it_department
   vmfl_submit_ghost_log_flag --> lock_press_terminal
   lock_hospital_recovery_console --> lock_press_terminal
 
-  class door_it_department,door_server_room,door_conference_room,door_security_office,lock_it_filing_cabinet,lock_emergency_storage_safe,lock_reception_terminal,reception_workstation_encrypted,lock_reception_kiosk_1,lock_reception_kiosk_2,lock_ehr_terminal_ward,ehr_terminal_offline,lock_infected_terminal,lock_gary_workstation,gary_s_workstation,lock_vm_launcher_rooting_for_a_win,lock_hospital_recovery_console,lock_entropy_field_case,sealed_equipment_case,lock_entropy_staging_cache,entropy_staging_cache,pin_locked_safe,lock_kim_office_terminal,cto_workstation_encrypted,lock_dr_kim_safe,lock_press_terminal,lock_security_desk_terminal,security_desk_terminal_encrypted,lock_proftpd_exploitation_unlocked,lock_database_backup_accessible,lock_ghost_lore_unlocked lock
+  class door_it_department,door_server_room,door_conference_room,door_security_office,lock_it_filing_cabinet,lock_emergency_storage_safe,lock_reception_terminal,reception_workstation_encrypted,lock_reception_kiosk_1,lock_reception_kiosk_2,lock_ehr_terminal_ward,ehr_terminal_offline,lock_infected_terminal,lock_gary_workstation,gary_s_workstation,lock_vm_launcher_rooting_for_a_win,lock_hospital_recovery_console,lock_entropy_field_case,lock_supervisor_wall_safe,sealed_equipment_case,lock_entropy_staging_cache,entropy_staging_cache,pin_locked_safe,lock_kim_office_terminal,cto_workstation_encrypted,lock_dr_kim_safe,lock_press_terminal,supervisor_s_wall_safe,lock_security_desk_terminal,security_desk_terminal_encrypted,lock_proftpd_exploitation_unlocked,lock_database_backup_accessible,lock_ghost_lore_unlocked lock
   class it_department,server_room,conference_room,security_office,reception_lobby,hospital_ward,emergency_equipment_storage,dr_kim_office,office_corridor,staff_room,ward_vestibule,ward_approach,ward_hall room
-  class lock_pick_kit,reception_desk_visitor_log,hospital_founding_plaque,crisis_protocol_notice,infected_terminal,backup_server_ssh_notes,printouts_on_gary_s_desk,gary_s_password_sticky_note,photo_frame_emma_s_birthday,gary_s_email_archive_warning_7_of_7,dr_kim_s_reply_12_november,network_diagram_whiteboard,planted_network_device,cyberchef_workstation,handwritten_note_taped_inside_the_rack,pin_cracker,entropy_asset_tag,ghost_s_operational_manifesto,affiliate_handling_note,dr_kim_s_desk_diary,zero_day_syndicate_invoice,dr_kim_s_signed_statement,ransomware_incorporated_proposal,night_security_post_log,key_cabinet_empty,night_rota,ward_board,val_s_pocket_notebook,night_handover_board,estates_audit_snag_list,staff_noticeboard,ward_clerk_s_laptop,appointment_card_on_the_chairs,nurse_s_handwritten_note item
+  class lock_pick_kit,reception_desk_visitor_log,hospital_founding_plaque,crisis_protocol_notice,infected_terminal,backup_server_ssh_notes,printouts_on_gary_s_desk,gary_s_password_sticky_note,photo_frame_emma_s_birthday,gary_s_email_archive_warning_7_of_7,dr_kim_s_reply_12_november,network_diagram_whiteboard,planted_network_device,cyberchef_workstation,handwritten_note_taped_inside_the_rack,pin_cracker,entropy_asset_tag,ghost_s_operational_manifesto,affiliate_handling_note,dr_kim_s_desk_diary,zero_day_syndicate_invoice,dr_kim_s_signed_statement,ransomware_incorporated_proposal,night_security_post_log,drill_override_authorisation,key_cabinet_empty,night_rota,ward_board,val_s_pocket_notebook,night_handover_board,estates_audit_snag_list,staff_noticeboard,ward_clerk_s_laptop,appointment_card_on_the_chairs,nurse_s_handwritten_note item
   class npc_bernie_nwosu,it_department_override_key,npc_sister_doyle,bank_staff_lanyard,npc_gary_whitlock,server_room_keycard,spare_contractor_lanyard,entropy_key_material,offline_backup_encryption_keys,npc_dr_sarah_kim,npc_val_okonkwo,security_office_key,wrapped_contractor_lanyard key
   class action_sign_in_at_reception,action_talk_to_ward_nurse,action_social_engineer_gary,action_meet_dr_kim,action_val_opens_office action
   class safetynet_field_console,vmch_submit_database_flag,vmch_submit_ssh_flag,vmch_submit_proftpd_flag,vmch_submit_ghost_log_flag vm
   class vmfl_submit_database_flag,vmfl_submit_ssh_flag,vmfl_submit_proftpd_flag,vmfl_submit_ghost_log_flag flag
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,hospital_founding_plaque,bank_staff_lanyard,gary_s_password_sticky_note,spare_contractor_lanyard,pin_cracker,sealed_equipment_case,dr_kim_s_desk_diary,dr_kim_s_signed_statement,security_office_key,wrapped_contractor_lanyard,nurse_s_handwritten_note optional
+  class lock_pick_kit,hospital_founding_plaque,bank_staff_lanyard,gary_s_password_sticky_note,spare_contractor_lanyard,pin_cracker,sealed_equipment_case,dr_kim_s_desk_diary,dr_kim_s_signed_statement,supervisor_s_wall_safe,security_office_key,wrapped_contractor_lanyard,nurse_s_handwritten_note optional
   class node_start start
 ```
 
@@ -434,6 +441,7 @@ flowchart TD
   handwritten_note_taped_inside_the_rack{"Handwritten Note, Taped Inside the Rack"}
   lock_entropy_field_case["Sealed Equipment Case<br/>Key lock"]
   pin_cracker{"PIN Cracker"}
+  lock_supervisor_wall_safe["Supervisor Wall Safe"]
   entropy_asset_tag{"ENTROPY Asset Tag"}
   sealed_equipment_case["Sealed Equipment Case"]
   lock_entropy_staging_cache["ENTROPY Staging Cache<br/>Flag lock"]
@@ -452,10 +460,12 @@ flowchart TD
   zero_day_syndicate_invoice{"Zero Day Syndicate Invoice"}
   npc_dr_sarah_kim{"Dr. Sarah Kim"}
   dr_kim_s_signed_statement{"Dr. Kim's Signed Statement"}
-  action_meet_dr_kim>"Get Kim's verbal authorisation and the boardroom code"]
+  action_meet_dr_kim>"Get Kim's verbal authorisation"]
   ransomware_incorporated_proposal{"Ransomware Incorporated Proposal"}
   night_security_post_log{"Night Security Post Log"}
   lock_press_terminal["Hospital Communications Terminal"]
+  drill_override_authorisation{"Drill Override Authorisation"}
+  supervisor_s_wall_safe["Supervisor's Wall Safe"]
   lock_security_desk_terminal["Security Desk Terminal (Encrypted)<br/>Ransomware terminal"]
   security_desk_terminal_encrypted["Security Desk Terminal (Encrypted)"]
   key_cabinet_empty{"Key Cabinet (Empty)"}
@@ -551,6 +561,8 @@ flowchart TD
   server_room --> lock_entropy_field_case
   lock_entropy_field_case -.-> pin_cracker
   pin_cracker -.-> lock_emergency_storage_safe
+  pin_cracker -.-> lock_supervisor_wall_safe
+  pin_cracker -.-> door_conference_room
   lock_entropy_field_case --> entropy_asset_tag
   server_room -.-> sealed_equipment_case
   server_room --> lock_entropy_staging_cache
@@ -576,6 +588,9 @@ flowchart TD
   conference_room --> ransomware_incorporated_proposal
   conference_room --> night_security_post_log
   conference_room --> lock_press_terminal
+  security_office --> lock_supervisor_wall_safe
+  lock_supervisor_wall_safe --> drill_override_authorisation
+  security_office -.-> supervisor_s_wall_safe
   security_office --> lock_security_desk_terminal
   security_office --> security_desk_terminal_encrypted
   security_office --> key_cabinet_empty
@@ -619,7 +634,6 @@ flowchart TD
   office_corridor --> staff_room
   ward_vestibule --> ward_approach
   vmfl_submit_database_flag --> lock_hospital_recovery_console
-  action_meet_dr_kim --> conference_room
   action_meet_dr_kim -.-> it_department
   vmfl_submit_ghost_log_flag --> lock_press_terminal
   lock_hospital_recovery_console --> lock_press_terminal
@@ -657,13 +671,14 @@ flowchart TD
   ransomware_incorporated_proposal -.-> aim_unmask_inside_asset
   night_security_post_log -.-> aim_identify_inside_asset
   lock_press_terminal -.-> aim_restore_hospital_systems
+  supervisor_s_wall_safe -.-> aim_unmask_inside_asset
   security_desk_terminal_encrypted -.-> aim_cover_compromised
   night_rota -.-> aim_unmask_inside_asset
   night_handover_board -.-> aim_unmask_inside_asset
 
-  class door_it_department,door_server_room,door_conference_room,door_security_office,lock_it_filing_cabinet,lock_emergency_storage_safe,lock_reception_terminal,reception_workstation_encrypted,lock_reception_kiosk_1,lock_reception_kiosk_2,lock_ehr_terminal_ward,ehr_terminal_offline,lock_infected_terminal,lock_gary_workstation,gary_s_workstation,lock_vm_launcher_rooting_for_a_win,lock_hospital_recovery_console,lock_entropy_field_case,sealed_equipment_case,lock_entropy_staging_cache,entropy_staging_cache,pin_locked_safe,lock_kim_office_terminal,cto_workstation_encrypted,lock_dr_kim_safe,lock_press_terminal,lock_security_desk_terminal,security_desk_terminal_encrypted,lock_proftpd_exploitation_unlocked,lock_database_backup_accessible,lock_ghost_lore_unlocked lock
+  class door_it_department,door_server_room,door_conference_room,door_security_office,lock_it_filing_cabinet,lock_emergency_storage_safe,lock_reception_terminal,reception_workstation_encrypted,lock_reception_kiosk_1,lock_reception_kiosk_2,lock_ehr_terminal_ward,ehr_terminal_offline,lock_infected_terminal,lock_gary_workstation,gary_s_workstation,lock_vm_launcher_rooting_for_a_win,lock_hospital_recovery_console,lock_entropy_field_case,lock_supervisor_wall_safe,sealed_equipment_case,lock_entropy_staging_cache,entropy_staging_cache,pin_locked_safe,lock_kim_office_terminal,cto_workstation_encrypted,lock_dr_kim_safe,lock_press_terminal,supervisor_s_wall_safe,lock_security_desk_terminal,security_desk_terminal_encrypted,lock_proftpd_exploitation_unlocked,lock_database_backup_accessible,lock_ghost_lore_unlocked lock
   class it_department,server_room,conference_room,security_office,reception_lobby,hospital_ward,emergency_equipment_storage,dr_kim_office,office_corridor,staff_room,ward_vestibule,ward_approach,ward_hall room
-  class lock_pick_kit,reception_desk_visitor_log,hospital_founding_plaque,crisis_protocol_notice,infected_terminal,backup_server_ssh_notes,printouts_on_gary_s_desk,gary_s_password_sticky_note,photo_frame_emma_s_birthday,gary_s_email_archive_warning_7_of_7,dr_kim_s_reply_12_november,network_diagram_whiteboard,planted_network_device,cyberchef_workstation,handwritten_note_taped_inside_the_rack,pin_cracker,entropy_asset_tag,ghost_s_operational_manifesto,affiliate_handling_note,dr_kim_s_desk_diary,zero_day_syndicate_invoice,dr_kim_s_signed_statement,ransomware_incorporated_proposal,night_security_post_log,key_cabinet_empty,night_rota,ward_board,val_s_pocket_notebook,night_handover_board,estates_audit_snag_list,staff_noticeboard,ward_clerk_s_laptop,appointment_card_on_the_chairs,nurse_s_handwritten_note item
+  class lock_pick_kit,reception_desk_visitor_log,hospital_founding_plaque,crisis_protocol_notice,infected_terminal,backup_server_ssh_notes,printouts_on_gary_s_desk,gary_s_password_sticky_note,photo_frame_emma_s_birthday,gary_s_email_archive_warning_7_of_7,dr_kim_s_reply_12_november,network_diagram_whiteboard,planted_network_device,cyberchef_workstation,handwritten_note_taped_inside_the_rack,pin_cracker,entropy_asset_tag,ghost_s_operational_manifesto,affiliate_handling_note,dr_kim_s_desk_diary,zero_day_syndicate_invoice,dr_kim_s_signed_statement,ransomware_incorporated_proposal,night_security_post_log,drill_override_authorisation,key_cabinet_empty,night_rota,ward_board,val_s_pocket_notebook,night_handover_board,estates_audit_snag_list,staff_noticeboard,ward_clerk_s_laptop,appointment_card_on_the_chairs,nurse_s_handwritten_note item
   class npc_bernie_nwosu,it_department_override_key,npc_sister_doyle,bank_staff_lanyard,npc_gary_whitlock,server_room_keycard,spare_contractor_lanyard,entropy_key_material,offline_backup_encryption_keys,npc_dr_sarah_kim,npc_val_okonkwo,security_office_key,wrapped_contractor_lanyard key
   class action_sign_in_at_reception,action_talk_to_ward_nurse,action_social_engineer_gary,action_meet_dr_kim,action_val_opens_office action
   class safetynet_field_console,vmch_submit_database_flag,vmch_submit_ssh_flag,vmch_submit_proftpd_flag,vmch_submit_ghost_log_flag vm
@@ -672,7 +687,7 @@ flowchart TD
   class aim_unmask_inside_asset,aim_identify_inside_asset,aim_recover_offline_keys aim
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,hospital_founding_plaque,bank_staff_lanyard,gary_s_password_sticky_note,spare_contractor_lanyard,pin_cracker,sealed_equipment_case,dr_kim_s_desk_diary,dr_kim_s_signed_statement,security_office_key,wrapped_contractor_lanyard,nurse_s_handwritten_note optional
+  class lock_pick_kit,hospital_founding_plaque,bank_staff_lanyard,gary_s_password_sticky_note,spare_contractor_lanyard,pin_cracker,sealed_equipment_case,dr_kim_s_desk_diary,dr_kim_s_signed_statement,supervisor_s_wall_safe,security_office_key,wrapped_contractor_lanyard,nurse_s_handwritten_note optional
   class node_start start
 ```
 
@@ -855,7 +870,7 @@ flowchart TD
   rc_dr_kim_safe_82[["Dr. Kim's Safe"]]
   rc_obj83_83{"Zero Day Syndicate Invoice"}
   rc_npc_dr_sarah_kim_84("Dr. Sarah Kim")
-  rc_obj85_85{"Visitor Badge (Countersigned)"}
+  rc_kim_countersigned_badge_85{"Visitor Badge (Countersigned)"}
   rc_kim_statement_86{"Dr. Kim's Signed Statement"}
   rc_obj87_87{"Conference Table Budget Papers"}
   rc_obj88_88{"Conference Whiteboard"}
@@ -867,28 +882,31 @@ flowchart TD
   rc_conference_water_cooler_94{"Water Cooler"}
   rc_npc_hospital_comms_terminal_95("Hospital Comms Terminal")
   rc_npc_graham_reeves_96("Graham Reeves")
-  rc_security_desk_terminal_97{"Security Desk Terminal (Encrypted)"}
-  rc_obj98_98{"Key Cabinet (Empty)"}
-  rc_obj99_99{"CCTV Monitor Bank"}
-  rc_obj100_100{"Night Rota"}
-  rc_obj101_101{"Val's Chair"}
-  rc_obj102_102{"Spare Desk Monitor"}
-  rc_obj103_103{"Ward Board"}
-  rc_npc_val_okonkwo_104("Val Okonkwo")
-  rc_obj105_105{"Security Office Key"}
-  rc_val_notebook_106{"Val's Pocket Notebook"}
-  rc_handover_whiteboard_107{"Night Handover Board"}
-  rc_estates_audit_snag_list_108{"Estates Audit Snag List"}
-  rc_obj109_109{"Staff Noticeboard"}
-  rc_ward_clerk_laptop_110{"Ward Clerk's Laptop"}
-  rc_contractor_lanyard_111{"Wrapped Contractor Lanyard"}
-  rc_staff_boiler_112{"Hot Water Boiler"}
-  rc_staff_cooler_113{"Water Cooler"}
-  rc_staff_microwave_114{"Microwave"}
-  rc_npc_ernesto_bautista_115("Ernesto Bautista")
-  rc_npc_hodan_warsame_116("Hodan Warsame")
-  rc_vestibule_appointment_card_117{"Appointment Card on the Chairs"}
-  rc_obj118_118{"Nurse's Handwritten Note"}
+  rc_supervisor_wall_safe_97[["Supervisor's Wall Safe"]]
+  rc_drill_override_form_98{"Drill Override Authorisation"}
+  rc_blank_contractor_pass_stack_99{"Stack of Blank Contractor Passes"}
+  rc_security_desk_terminal_100{"Security Desk Terminal (Encrypted)"}
+  rc_obj101_101{"Key Cabinet (Empty)"}
+  rc_obj102_102{"CCTV Monitor Bank"}
+  rc_obj103_103{"Night Rota"}
+  rc_obj104_104{"Val's Chair"}
+  rc_obj105_105{"Spare Desk Monitor"}
+  rc_obj106_106{"Ward Board"}
+  rc_npc_val_okonkwo_107("Val Okonkwo")
+  rc_obj108_108{"Security Office Key"}
+  rc_val_notebook_109{"Val's Pocket Notebook"}
+  rc_handover_whiteboard_110{"Night Handover Board"}
+  rc_estates_audit_snag_list_111{"Estates Audit Snag List"}
+  rc_obj112_112{"Staff Noticeboard"}
+  rc_ward_clerk_laptop_113{"Ward Clerk's Laptop"}
+  rc_contractor_lanyard_114{"Wrapped Contractor Lanyard"}
+  rc_staff_boiler_115{"Hot Water Boiler"}
+  rc_staff_cooler_116{"Water Cooler"}
+  rc_staff_microwave_117{"Microwave"}
+  rc_npc_ernesto_bautista_118("Ernesto Bautista")
+  rc_npc_hodan_warsame_119("Hodan Warsame")
+  rc_vestibule_appointment_card_120{"Appointment Card on the Chairs"}
+  rc_obj121_121{"Nurse's Handwritten Note"}
 
   reception_lobby --> ward_vestibule
   hospital_ward --> ward_approach
@@ -986,7 +1004,7 @@ flowchart TD
   dr_kim_office --> rc_dr_kim_safe_82
   rc_dr_kim_safe_82 --> rc_obj83_83
   dr_kim_office --> rc_npc_dr_sarah_kim_84
-  rc_npc_dr_sarah_kim_84 --> rc_obj85_85
+  rc_npc_dr_sarah_kim_84 --> rc_kim_countersigned_badge_85
   rc_npc_dr_sarah_kim_84 --> rc_kim_statement_86
   conference_room --> rc_obj87_87
   conference_room --> rc_obj88_88
@@ -998,33 +1016,36 @@ flowchart TD
   conference_room --> rc_conference_water_cooler_94
   conference_room --> rc_npc_hospital_comms_terminal_95
   conference_room --> rc_npc_graham_reeves_96
-  security_office --> rc_security_desk_terminal_97
-  security_office --> rc_obj98_98
-  security_office --> rc_obj99_99
-  security_office --> rc_obj100_100
+  security_office --> rc_supervisor_wall_safe_97
+  rc_supervisor_wall_safe_97 --> rc_drill_override_form_98
+  rc_supervisor_wall_safe_97 --> rc_blank_contractor_pass_stack_99
+  security_office --> rc_security_desk_terminal_100
   security_office --> rc_obj101_101
   security_office --> rc_obj102_102
-  office_corridor --> rc_obj103_103
-  office_corridor --> rc_npc_val_okonkwo_104
-  rc_npc_val_okonkwo_104 --> rc_obj105_105
-  rc_npc_val_okonkwo_104 --> rc_val_notebook_106
-  staff_room --> rc_handover_whiteboard_107
-  staff_room --> rc_estates_audit_snag_list_108
-  staff_room --> rc_obj109_109
-  staff_room --> rc_ward_clerk_laptop_110
-  staff_room --> rc_contractor_lanyard_111
-  staff_room --> rc_staff_boiler_112
-  staff_room --> rc_staff_cooler_113
-  staff_room --> rc_staff_microwave_114
-  staff_room --> rc_npc_ernesto_bautista_115
-  staff_room --> rc_npc_hodan_warsame_116
-  ward_vestibule --> rc_vestibule_appointment_card_117
-  ward_approach --> rc_obj118_118
+  security_office --> rc_obj103_103
+  security_office --> rc_obj104_104
+  security_office --> rc_obj105_105
+  office_corridor --> rc_obj106_106
+  office_corridor --> rc_npc_val_okonkwo_107
+  rc_npc_val_okonkwo_107 --> rc_obj108_108
+  rc_npc_val_okonkwo_107 --> rc_val_notebook_109
+  staff_room --> rc_handover_whiteboard_110
+  staff_room --> rc_estates_audit_snag_list_111
+  staff_room --> rc_obj112_112
+  staff_room --> rc_ward_clerk_laptop_113
+  staff_room --> rc_contractor_lanyard_114
+  staff_room --> rc_staff_boiler_115
+  staff_room --> rc_staff_cooler_116
+  staff_room --> rc_staff_microwave_117
+  staff_room --> rc_npc_ernesto_bautista_118
+  staff_room --> rc_npc_hodan_warsame_119
+  ward_vestibule --> rc_vestibule_appointment_card_120
+  ward_approach --> rc_obj121_121
 
   class reception_lobby,hospital_ward,emergency_equipment_storage,dr_kim_office,office_corridor,staff_room,ward_hall,ward_vestibule,ward_approach room
   class it_department,server_room,conference_room,security_office lock
-  class rc_reception_visitor_log_1,rc_obj2_2,rc_obj3_3,rc_reception_terminal_4,rc_reception_kiosk_1_5,rc_reception_kiosk_2_6,rc_obj11_11,rc_m02_scanning_field_guide_13,rc_m02_vulnerability_field_guide_14,rc_m02_exploitation_field_guide_15,rc_m02_scanning_exploitation_field_guide_16,rc_m02_lockpicking_field_guide_17,rc_m02_ssh_bruteforce_field_guide_18,rc_m02_privilege_escalation_field_guide_19,rc_m02_infoleak_field_note_20,rc_m02_cyberchef_field_guide_21,rc_ehr_terminal_ward_24,rc_obj25_25,rc_obj26_26,rc_obj27_27,rc_ward_paper_obs_rack_28,rc_ward_manual_bp_cuff_29,rc_bank_staff_lanyard_31,rc_infected_terminal_36,rc_obj38_38,rc_gary_desk_printouts_39,rc_password_sticky_note_40,rc_obj41_41,rc_gary_vindication_email_43,rc_kim_deferral_reply_44,rc_obj45_45,rc_obj46_46,rc_obj47_47,rc_ghost_terminal_device_48,rc_it_department_kettle_49,rc_it_department_wet_floor_sign_50,rc_gary_mug_51,rc_it_photocopier_52,rc_it_copier_page_53,rc_obj55_55,rc_gary_contractor_lanyard_56,rc_vm_launcher_rooting_for_a_win_57,rc_flag_station_dropsite_58,rc_cyberchef_workstation_59,rc_hospital_recovery_console_60,rc_obj61_61,rc_operator_site_note_62,rc_pin_cracker_64,rc_entropy_asset_tag_65,rc_entropy_key_material_67,rc_ghost_manifesto_68,rc_obj69_69,rc_offline_backup_encryption_keys_71,rc_storage_first_aid_kit_73,rc_storage_nitrile_gloves_74,rc_storage_stock_check_75,rc_kim_office_terminal_76,rc_obj77_77,rc_obj78_78,rc_obj79_79,rc_obj80_80,rc_obj81_81,rc_obj83_83,rc_obj85_85,rc_kim_statement_86,rc_obj87_87,rc_obj88_88,rc_obj89_89,rc_obj90_90,rc_obj91_91,rc_press_terminal_92,rc_conference_coat_stand_93,rc_conference_water_cooler_94,rc_security_desk_terminal_97,rc_obj98_98,rc_obj99_99,rc_obj100_100,rc_obj101_101,rc_obj102_102,rc_obj103_103,rc_obj105_105,rc_val_notebook_106,rc_handover_whiteboard_107,rc_estates_audit_snag_list_108,rc_obj109_109,rc_ward_clerk_laptop_110,rc_contractor_lanyard_111,rc_staff_boiler_112,rc_staff_cooler_113,rc_staff_microwave_114,rc_vestibule_appointment_card_117,rc_obj118_118 item
-  class rc_npc_agent_hax_7,rc_npc_director_magnus_netherton_8,rc_npc_agent_0x47_nightshade_9,rc_npc_bernie_nwosu_10,rc_npc_agent_hax_12,rc_npc_ghost_22,rc_npc_agent_hax_23,rc_npc_sister_doyle_30,rc_npc_nurse_raval_32,rc_npc_mr_pryce_33,rc_npc_mrs_hargreaves_34,rc_npc_ms_chen_35,rc_npc_gary_whitlock_54,rc_npc_dr_sarah_kim_84,rc_npc_hospital_comms_terminal_95,rc_npc_graham_reeves_96,rc_npc_val_okonkwo_104,rc_npc_ernesto_bautista_115,rc_npc_hodan_warsame_116 npc
-  class rc_gary_workstation_37,rc_it_filing_cabinet_42,rc_entropy_field_case_63,rc_entropy_staging_cache_66,rc_emergency_storage_safe_70,rc_emergency_supply_cabinet_72,rc_dr_kim_safe_82 container
+  class rc_reception_visitor_log_1,rc_obj2_2,rc_obj3_3,rc_reception_terminal_4,rc_reception_kiosk_1_5,rc_reception_kiosk_2_6,rc_obj11_11,rc_m02_scanning_field_guide_13,rc_m02_vulnerability_field_guide_14,rc_m02_exploitation_field_guide_15,rc_m02_scanning_exploitation_field_guide_16,rc_m02_lockpicking_field_guide_17,rc_m02_ssh_bruteforce_field_guide_18,rc_m02_privilege_escalation_field_guide_19,rc_m02_infoleak_field_note_20,rc_m02_cyberchef_field_guide_21,rc_ehr_terminal_ward_24,rc_obj25_25,rc_obj26_26,rc_obj27_27,rc_ward_paper_obs_rack_28,rc_ward_manual_bp_cuff_29,rc_bank_staff_lanyard_31,rc_infected_terminal_36,rc_obj38_38,rc_gary_desk_printouts_39,rc_password_sticky_note_40,rc_obj41_41,rc_gary_vindication_email_43,rc_kim_deferral_reply_44,rc_obj45_45,rc_obj46_46,rc_obj47_47,rc_ghost_terminal_device_48,rc_it_department_kettle_49,rc_it_department_wet_floor_sign_50,rc_gary_mug_51,rc_it_photocopier_52,rc_it_copier_page_53,rc_obj55_55,rc_gary_contractor_lanyard_56,rc_vm_launcher_rooting_for_a_win_57,rc_flag_station_dropsite_58,rc_cyberchef_workstation_59,rc_hospital_recovery_console_60,rc_obj61_61,rc_operator_site_note_62,rc_pin_cracker_64,rc_entropy_asset_tag_65,rc_entropy_key_material_67,rc_ghost_manifesto_68,rc_obj69_69,rc_offline_backup_encryption_keys_71,rc_storage_first_aid_kit_73,rc_storage_nitrile_gloves_74,rc_storage_stock_check_75,rc_kim_office_terminal_76,rc_obj77_77,rc_obj78_78,rc_obj79_79,rc_obj80_80,rc_obj81_81,rc_obj83_83,rc_kim_countersigned_badge_85,rc_kim_statement_86,rc_obj87_87,rc_obj88_88,rc_obj89_89,rc_obj90_90,rc_obj91_91,rc_press_terminal_92,rc_conference_coat_stand_93,rc_conference_water_cooler_94,rc_drill_override_form_98,rc_blank_contractor_pass_stack_99,rc_security_desk_terminal_100,rc_obj101_101,rc_obj102_102,rc_obj103_103,rc_obj104_104,rc_obj105_105,rc_obj106_106,rc_obj108_108,rc_val_notebook_109,rc_handover_whiteboard_110,rc_estates_audit_snag_list_111,rc_obj112_112,rc_ward_clerk_laptop_113,rc_contractor_lanyard_114,rc_staff_boiler_115,rc_staff_cooler_116,rc_staff_microwave_117,rc_vestibule_appointment_card_120,rc_obj121_121 item
+  class rc_npc_agent_hax_7,rc_npc_director_magnus_netherton_8,rc_npc_agent_0x47_nightshade_9,rc_npc_bernie_nwosu_10,rc_npc_agent_hax_12,rc_npc_ghost_22,rc_npc_agent_hax_23,rc_npc_sister_doyle_30,rc_npc_nurse_raval_32,rc_npc_mr_pryce_33,rc_npc_mrs_hargreaves_34,rc_npc_ms_chen_35,rc_npc_gary_whitlock_54,rc_npc_dr_sarah_kim_84,rc_npc_hospital_comms_terminal_95,rc_npc_graham_reeves_96,rc_npc_val_okonkwo_107,rc_npc_ernesto_bautista_118,rc_npc_hodan_warsame_119 npc
+  class rc_gary_workstation_37,rc_it_filing_cabinet_42,rc_entropy_field_case_63,rc_entropy_staging_cache_66,rc_emergency_storage_safe_70,rc_emergency_supply_cabinet_72,rc_dr_kim_safe_82,rc_supervisor_wall_safe_97 container
   class node_start start
 ```
