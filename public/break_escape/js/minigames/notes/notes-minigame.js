@@ -18,9 +18,9 @@ function setObservationText(div, text) {
 
 
 // Whether a page has text below its visible part (the MORE cue). Pure.
-// lastBottom: bottom edge of the last thing on the page; visibleBottom: bottom of the visible
-// text area (its edge minus padding). The area's own bottom padding and the last box's margin
-// are blank paper, so they never count as "more".
+// lastBottom: bottom edge of the last thing on the page; visibleBottom: bottom edge of the
+// text area. Its own bottom padding and the last box's margin are blank paper: scrollHeight
+// counts them, so it is not used. Content that ends inside the padding is fully shown.
 export function moreBelow(lastBottom, visibleBottom, tolerance = 2) {
     return lastBottom - visibleBottom > tolerance;
 }
@@ -419,8 +419,7 @@ export class NotesMinigame extends MinigameScene {
         const last = area.lastElementChild;
         if (!last) { this._moreCue.hidden = true; return; }
         const areaRect = area.getBoundingClientRect();
-        const padBottom = parseFloat(window.getComputedStyle(area).paddingBottom) || 0;
-        this._moreCue.hidden = !moreBelow(last.getBoundingClientRect().bottom, areaRect.bottom - padBottom);
+        this._moreCue.hidden = !moreBelow(last.getBoundingClientRect().bottom, areaRect.bottom);
     }
 
     updateDisplayedNote() {

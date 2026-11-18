@@ -216,7 +216,6 @@ test('JSDOM: padding/margin-only overflow gives no cue, real overflow does, the 
         + '<div class="notes-minigame-observation-container"><div class="notes-minigame-observation"></div>'
         + '<button class="notes-minigame-edit-btn"></button></div>';
     const area = document.createElement('div');
-    area.style.paddingBottom = '40px';
     m.container.append(area);
     m._contentArea = area;
     const cue = { hidden: true };
@@ -225,13 +224,13 @@ test('JSDOM: padding/margin-only overflow gives no cue, real overflow does, the 
     area.appendChild(last);
     const rect = (b) => ({ bottom: b, top: 0, left: 0, right: 0, width: 0, height: 0 });
     area.getBoundingClientRect = () => rect(400);
-    // visible bottom = 400 - 40 = 360. Last box ends at 360 although scrollHeight would be 420.
-    last.getBoundingClientRect = () => rect(360);
+    // Area bottom 400. Last box ends at 390 (inside the padding) although scrollHeight would be 420.
+    last.getBoundingClientRect = () => rect(390);
     Object.defineProperty(area, 'scrollHeight', { value: 420 });
     Object.defineProperty(area, 'clientHeight', { value: 400 });
     m._syncMore();
     assert.equal(cue.hidden, true, 'only padding/margin below: no cue');
-    last.getBoundingClientRect = () => rect(380);
+    last.getBoundingClientRect = () => rect(430);
     m._syncMore();
     assert.equal(cue.hidden, false, 'content below the visible bottom: cue');
 
