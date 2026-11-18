@@ -60,12 +60,12 @@ const js = readFileSync(join(here, '../../public/break_escape/js/music/bond-visu
 const glow = (js.match(/const _GLOW_DARK\s*=\s*'([^']*)'/) || [])[1] || '';
 const jsInline = js.replace(/\$\{_GLOW_DARK\}/g, glow);
 
-// parser self-check: a hex colour is not a blur value
-{
-  const probe = '2px 2px #997a00';
-  const l = probe.replace(/#[0-9a-fA-F]{3,8}\b/g, ' ').match(/-?[\d.]+(px|em|rem)?/g);
-  check('shadow parser ignores hex colours', l.length === 2);
+// the parser the scan uses: blur radius (3rd length) of one shadow, or null if it has fewer than 3
+function shadowBlur(sh) {
+  const lengths = sh.replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8}\b|\binset\b|\b[a-z]+\b/g, ' ').match(/-?[\d.]+(px|em|rem)?/g) || [];
+  return lengths.length >= 3 ? parseFloat(lengths[2]) : null;
 }
+check('shadow parser ignores hex colours', shadowBlur('2px 2px #997a00') === null && shadowBlur('2px 2px 0 #997a00') === 0 && shadowBlur('0 0 6px #000') === 6);
 
 // 2. blur radius in shadows (CSS file, then inline styles in the JS)
 let shadows = 0, blurry = [];
@@ -78,8 +78,8 @@ for (const dm of shadowDecls.map(([a, b]) => [null, a, b])) {
   if (/^(none|inherit|initial|unset)$/.test(dm[2].trim())) continue;
   for (const sh of splitTop(dm[2])) {
     shadows++;
-    const lengths = sh.replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8}\b|\binset\b|\b[a-z]+\b/g, ' ').match(/-?[\d.]+(px|em|rem)?/g) || [];
-    if (lengths.length >= 3 && parseFloat(lengths[2]) !== 0) blurry.push(`${dm[1]}: ${sh}`);
+    const blur = shadowBlur(sh);
+    if (blur !== null && blur !== 0) blurry.push(`${dm[1]}: ${sh}`);
   }
 }
 check('no blur radius in text-shadow or box-shadow', blurry.length === 0, blurry.join(' | '));
@@ -115,17 +115,19 @@ function familyOf(sel) {
   if (sel.startsWith('#bond-vis-overlay')) return "'Press Start 2P'";
   return null;
 }
-const badGnf = [], unresolved = [];
+const badGnf = [], badPs2p = [], unresolved = [];
 for (const r of rules) {
   if (!r.size) continue;
   const fam = familyOf(r.sel);
   if (!fam) { unresolved.push(r.sel); continue; }
+  if (/Press Start/.test(fam) && parseFloat(r.size) % 8 !== 0) badPs2p.push(`${r.sel} ${r.size}px`);
   if (/GNF/.test(fam)) {
     const px = parseFloat(r.size);
     if (px < 16 || px % 8 !== 0) badGnf.push(`${r.sel} ${px}px`);
   }
 }
 check('every GNF font-size is a multiple of 8 from 16px', badGnf.length === 0, badGnf.join(', '));
+check('every Press Start 2P font-size is a multiple of 8', badPs2p.length === 0, badPs2p.join(', '));
 if (unresolved.length) console.log(`NOTE font-family not resolved from CSS for: ${unresolved.join(' | ')}`);
 
 // 6. inline font sizes in the JS: the family and size sit in the same style string (one line)

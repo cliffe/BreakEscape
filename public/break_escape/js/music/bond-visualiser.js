@@ -1787,7 +1787,7 @@ function _updateTrackInfo(state) {
     info.innerHTML = '';
     const span = document.createElement('span');
     span.textContent = label;
-    span.setAttribute('title', detail ? label + ' ' + detail : label); // full text on hover when the row is cut off
+    info.setAttribute('title', detail ? label + ' ' + detail : label); // the ellipsis clips this element, so the full text goes here
     info.appendChild(span);
     if (detail) info.appendChild(document.createTextNode(' ' + detail));
     const pauseBtn = document.getElementById('bv-pause-btn');

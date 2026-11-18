@@ -364,13 +364,14 @@
   color: var(--bv-green);
   cursor: pointer;
   image-rendering: pixelated;
-  transition: all 0.1s;
+  transition: background 0.1s, color 0.1s, box-shadow 0.1s; /* transform is not eased: the press is a crisp step */
   white-space: nowrap;
 }
 #bond-vis-overlay .bv-btn:hover  { background: var(--bv-green); color: #000; box-shadow: 2px 2px 0 var(--bv-green); }
-#bond-vis-overlay .bv-btn:active { transform: translate(2px, 2px); }
+#bond-vis-overlay .bv-btn:active { transform: translate(2px, 2px); box-shadow: none; }
 #bond-vis-overlay .bv-btn.gold   { border-color: var(--bv-gold); color: var(--bv-gold); }
 #bond-vis-overlay .bv-btn.gold:hover { background: var(--bv-gold); color: #000; box-shadow: 2px 2px 0 var(--bv-gold); }
+#bond-vis-overlay .bv-btn.gold:active { box-shadow: none; }
 #bond-vis-overlay .bv-btn.active { background: var(--bv-gold); color: #000; border-color: var(--bv-gold); }
 
 #bond-vis-overlay .bv-mode-group {
