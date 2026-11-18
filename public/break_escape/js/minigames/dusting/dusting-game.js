@@ -32,6 +32,10 @@ if (!document.getElementById('dusting-css')) {
 }
 
 const N = 128;
+/** Phone on its side: at or under this height the kit uses two columns (see dusting.css). */
+export const SHORT_LANDSCAPE_MAX_H = 500;
+/** Height the title, frame padding and canvas border take in the two-column layout. */
+export const SHORT_LANDSCAPE_CHROME = 100;
 // Does the dusting panel fit the window height? The container pads 12 px top and bottom.
 export function refCardsFit(root, viewportHeight, pad = 24) {
     if (!root || typeof root.getBoundingClientRect !== 'function' || !viewportHeight) return true;
@@ -355,7 +359,13 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _layout() {
-        const maxPx = Math.min(window.innerHeight * 0.52, window.innerWidth * 0.86, 512);
+        // Short landscape (a phone on its side): two columns, canvas left at the largest whole scale that fits,
+        // controls right (dusting.css .dusting-short). Whole scales only, never below 1x.
+        const short = window.innerHeight <= SHORT_LANDSCAPE_MAX_H && window.innerWidth > window.innerHeight;
+        this.root.classList.toggle('dusting-short', short);
+        const maxPx = short
+            ? Math.min(window.innerHeight - SHORT_LANDSCAPE_CHROME, window.innerWidth * 0.45, 512)
+            : Math.min(window.innerHeight * 0.52, window.innerWidth * 0.86, 512);
         this.scale = Math.max(1, Math.min(this.step === 'compare' ? 3 : 4, Math.floor(maxPx / N)));
         this.canvas.style.width = `${N * this.scale}px`;
         if (this.stageNote) this.stageNote.style.maxWidth = `${N * this.scale}px`;
@@ -517,6 +527,7 @@ export class DustingMinigame extends MinigameScene {
             <p>Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</p>
             <div class="dusting-tools">${this._brushButtons()}</div>
             <p class="dusting-powder-line"><span class="mg-field-label">Powder:</span> ${escapeHtml(pw.label)}</p>
+            <div class="dusting-actions">
             <div class="dusting-meters">
                 <div class="dusting-meter"><label>Coverage <span class="dusting-meter-value" data-dyn="cov-text"></span></label><div class="dusting-bar"><i data-dyn="cov-bar"></i><u data-dyn="cov-min"></u></div></div>
                 <div class="dusting-meter"><label>Clarity <span class="dusting-meter-value" data-dyn="clar-text"></span></label><div class="dusting-bar"><i data-dyn="clar-bar"></i></div></div>
@@ -527,6 +538,7 @@ export class DustingMinigame extends MinigameScene {
                 <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn">Lift (L)</button>
                 <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Press T">Puff off excess (T)</button>
                 <button class="dusting-btn" data-action="change-powder" title="Press C">Change powder (C)</button>
+            </div>
             </div>`;
     }
 
@@ -534,6 +546,7 @@ export class DustingMinigame extends MinigameScene {
         return `
             <h3>Lift with tape</h3>
             <p>The tape is laid over the print with air bubbles under it. Rub over it (drag, or hold Space and use the arrows) to press the bubbles out. Bubbles left in leave holes in the lift.</p>
+            <div class="dusting-actions">
             <div class="dusting-meters">
                 <div class="dusting-meter"><label>Tape pressed <span class="dusting-meter-value" data-dyn="tape-text"></span></label><div class="dusting-bar"><i data-dyn="tape-bar"></i></div></div>
                 <p class="dusting-estimate" data-dyn="estimate"></p>
@@ -542,6 +555,7 @@ export class DustingMinigame extends MinigameScene {
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="peel" title="Press P"><span data-slot="tape-roll" data-scale="1"></span> Peel and mount (P)</button>
                 <button class="dusting-btn" data-action="back-dust">Back to dusting</button>
+            </div>
             </div>`;
     }
 

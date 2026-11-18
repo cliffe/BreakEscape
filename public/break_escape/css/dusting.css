@@ -193,3 +193,46 @@
 .dusting-ref[data-viewing] { border-color: var(--d-accent); outline: 2px solid var(--d-accent); }
 .dusting-stage-note { margin-top: 8px; font-size: 0.92em; }
 .dusting-stage-note p { margin: 0 0 6px; }
+
+/* Phone portrait and narrow screens: the meters and the action buttons stay pinned to the bottom of the
+   frame while the rest scrolls, so Coverage, Lift and Change powder / Back are always in view (sweep B7). */
+.dusting-actions { background: var(--d-bg); }
+@media (max-width: 760px) {
+    .dusting-actions {
+        position: sticky; bottom: 0; z-index: 3;
+        border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 8px;
+    }
+    .dusting-actions .dusting-meters { margin: 0 0 4px; }
+    .dusting-actions .dusting-meter { margin-bottom: 2px; }
+    .dusting-actions .dusting-estimate, .dusting-actions .dusting-feedback { margin-bottom: 4px; }
+    .dusting-actions .dusting-buttons { margin-top: 4px; gap: 6px; }
+    .dusting-actions .dusting-btn { min-height: 40px; padding: 4px 8px; }
+}
+
+/* Short landscape (a phone on its side; the class is set in _layout at 500 px high or less): two columns.
+   The canvas sits on the left at a whole-number scale chosen in JS (never below 1x), the title, steps and
+   controls on the right; the controls column scrolls on its own and keeps the action row pinned. */
+.dusting-short {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    column-gap: 12px; height: calc(100dvh - 24px); overflow: hidden; padding: 6px 10px; font-size: 18px;
+}
+.dusting-short .dusting-title { grid-column: 1; grid-row: 1; margin-bottom: 4px; padding-right: 0; gap: 0 8px; }
+.dusting-short .dusting-steps { grid-column: 2; grid-row: 1; margin: 0 0 4px; flex-wrap: nowrap; padding-right: 44px; }
+.dusting-short .dusting-steps li { flex: 1 1 0; min-width: 0; padding: 2px 3px; font-size: 16px; overflow: hidden; white-space: nowrap; }
+.dusting-short .dusting-step-num { display: none; }
+.dusting-short .dusting-main { display: contents; }
+.dusting-short .dusting-stage { grid-column: 1; grid-row: 2 / 6; align-self: start; max-height: 100%; overflow-y: auto; }
+.dusting-short .dusting-panel { grid-column: 2; grid-row: 2; min-width: 0; width: auto; overflow-y: auto; align-self: stretch; }
+.dusting-short .dusting-forensic { grid-column: 2; grid-row: 3; margin: 4px 0 0; padding-top: 4px; font-size: 16px; }
+.dusting-short .dusting-status { grid-column: 2; grid-row: 4; font-size: 16px; }
+.dusting-short .dusting-options { grid-column: 2; grid-row: 5; gap: 4px 12px; font-size: 16px; }
+.dusting-short .dusting-options label { min-height: 28px; }
+.dusting-short .dusting-actions {
+    position: sticky; bottom: 0; z-index: 3;
+    border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 6px;
+}
+.dusting-short .dusting-actions .dusting-meters { margin: 0 0 4px; }
+.dusting-short .dusting-actions .dusting-meter { margin-bottom: 2px; }
+.dusting-short .dusting-actions .dusting-estimate, .dusting-short .dusting-actions .dusting-feedback { margin-bottom: 4px; }
+.dusting-short .dusting-actions .dusting-buttons { margin-top: 4px; gap: 6px; }
+.dusting-short .dusting-btn, .dusting-short .dusting-jar, .dusting-short .dusting-pattern, .dusting-short .dusting-ref { min-height: 36px; padding: 4px 8px; }
