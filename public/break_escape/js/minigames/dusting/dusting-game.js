@@ -542,13 +542,13 @@ export class DustingMinigame extends MinigameScene {
         if (this.identified) {
             return `${head}<p class="dusting-feedback good">Match: ridge detail agrees at the ${this.print.pattern === 'arch' ? 'ridge flow' : this.print.deltas.length > 1 ? 'core and both deltas' : 'core and the delta'}. The numbered tags mark the same ridge detail on both cards.</p>
                 <p>This is ${escapeHtml(this.ownerName)}'s print.</p>
-                <div class="dusting-refs">${this._refButtons(true)}</div>
+                <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(true)}</div>
                 <div class="dusting-buttons"><button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
         }
         const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
             ? ` It opens to the ${this.print.canonical.opens}.` : '';
         return `${head}<p>That is ${/^[aeiou]/i.test(this.print.pattern) ? 'an' : 'a'} ${PATTERN_INFO[this.print.pattern].label.toLowerCase()}, marked on the card.${opens} Check the class first: rule out any card with a different pattern${this.print.pattern === 'loop' ? ' or a loop that opens the other way' : ''}.</p>
-            <div class="dusting-refs">${this._refButtons(false)}</div>
+            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons"><button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
     }

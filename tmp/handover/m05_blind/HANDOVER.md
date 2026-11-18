@@ -10,3 +10,5 @@ Validator: 0 errors, 29 warnings, same as main. bin/test-js: no FAIL lines.
 Open: live screenshots for #2 (Compare with 4 cards), #4 (Go on), #7 (overlay), #6 re-check with the fixed ink (needs a fresh game), toast screenshot after chat closes.
 Shots so far in tmp/handover/m05_blind/ (1_lisa_choices.png was the first, bracket-outside version; superseded).
 Server :3113 stopped. Games 8349, 8350, 8362 are throwaway.
+
+R1 fix pass (2026-11-18): M1 key 4, M2 forced Owen loop decoy (schema extended), M3 D1 block restored, M4 live proof (game 8402 on :3115, stopped; shots in the session scratchpad m05fix/), four-card grid CSS, m1 to m5, m7 done. Orphaned clips (m6) listed in the final report for AC0.

@@ -128,6 +128,10 @@
 .dusting-refs { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
 .dusting-ref { display: flex; flex-direction: column; gap: 4px; padding: 6px; max-width: 100%; }
 .dusting-ref-canvas { image-rendering: pixelated; display: block; background: #f2f0ea; }
+/* Four cards (fingerprintCandidateCount 4): a grid, so they sit four across where the panel is wide (one screen at 1280x720) and two across on a phone */
+.dusting-refs[data-count="4"] { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.dusting-refs[data-count="4"] .dusting-ref { align-items: center; text-align: center; }
+.dusting-refs[data-count="4"] .dusting-ref-canvas { margin: 0 auto; }
 
 .dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 18px; line-height: 1.15; border-top: 2px solid var(--d-line); padding-top: 8px; }
 .dusting-status { min-height: 1.2em; color: var(--d-text); font-size: 18px; }
