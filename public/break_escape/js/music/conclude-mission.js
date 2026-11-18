@@ -126,6 +126,11 @@ export function withScoreLine(credits, score) {
     return [...lines, { text: '' }, { text: `MISSION SCORE: ${Math.round(score)} / 100`, style: 'entry' }];
 }
 
+/** The STATUS-row text that stays once the credits end, or undefined with no usable score. */
+export function scoreStatusNote(score) {
+    return Number.isFinite(score) ? `COMPLETE: SCORE ${Math.round(score)}/100` : undefined;
+}
+
 /**
  * Keep trying the conclude in the background (every BACKGROUND_RETRY_MS, and as
  * soon as the browser says it is back online) until the server answers.

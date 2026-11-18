@@ -87,7 +87,7 @@ function loadMusicEvents() {
     stub('closing-sequence.js', 'export const buildEndSequence = () => [{ text: "END" }]; export const replayEndingEntry = () => null;');
     stub('ending-audio.js', 'export const playEndingMusic = () => null; export const whenEndingAudible = () => ({ ready: Promise.resolve() });');
     stub('music-config.js', 'export const MUSIC_CONFIG = {};');
-    stub('conclude-mission.js', 'export const concludeWithRetry = (id) => globalThis.__concludeCall(id); export const offlineEndingOptions = (o) => o; export const queueConcludeRetry = () => {}; export const withScoreLine = (c) => c;');
+    stub('conclude-mission.js', 'export const concludeWithRetry = (id) => globalThis.__concludeCall(id); export const offlineEndingOptions = (o) => o; export const queueConcludeRetry = () => {}; export const withScoreLine = (c) => c; export const scoreStatusNote = () => undefined;');
     writeFileSync(join(dir, 'scenario-music-events.js'), readFileSync(join(jsRoot, 'music/scenario-music-events.js'), 'utf8'));
     return import(pathToFileURL(join(dir, 'scenario-music-events.js')).href);
 }

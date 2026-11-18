@@ -40,3 +40,15 @@ test('the music event passes the concluded score into the credits, and offline p
     assert.match(src, /openCredits\(undefined, result\.score\)/);
     assert.match(src, /openCredits\(offlineEndingOptions\)/);
 });
+
+test('scoreStatusNote gives the STATUS text, and nothing without a score', () => {
+    assert.equal(cm.scoreStatusNote(88.6), 'COMPLETE: SCORE 89/100');
+    assert.equal(cm.scoreStatusNote(null), undefined);
+});
+
+test('the visualiser keeps the end note in the STATUS row once the credits finish on a concluded mission', () => {
+    const src = read('music/bond-visualiser.js');
+    assert.match(src, /if \(typeof opts\.endNote === 'string' && opts\.endNote\) _endNote = opts\.endNote;/);
+    assert.match(src, /if \(finished && _missionOver && _endNote\) \{[\s\S]*?status\.textContent = _endNote;/);
+    assert.match(read('music/scenario-music-events.js'), /endNote:\s+scoreStatusNote\(score\)/);
+});

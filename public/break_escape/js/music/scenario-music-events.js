@@ -22,7 +22,7 @@ import MusicController from './music-controller.js';
 import { buildEndSequence, replayEndingEntry } from './closing-sequence.js';
 import { playEndingMusic, whenEndingAudible } from './ending-audio.js';
 import { MUSIC_CONFIG } from './music-config.js';
-import { concludeWithRetry, offlineEndingOptions, queueConcludeRetry, withScoreLine } from './conclude-mission.js';
+import { concludeWithRetry, offlineEndingOptions, queueConcludeRetry, withScoreLine, scoreStatusNote } from './conclude-mission.js';
 
 const TAG = '[ScenarioMusic]';
 
@@ -307,6 +307,7 @@ function playEntry(entry, data) {
         // happen here, because this path opened the visualiser and never asked.
         const openCredits = (adjust = (o) => o, score = null) => window.BondVisualiser.open(adjust({
             credits:      withScoreLine(filteredLines, score),
+            endNote:      scoreStatusNote(score),                 // stays in the STATUS row after the credits fade
             autoClose:    !!entry.stopAfterTrack,  // legacy: close when track ends
             autoStop:     !!entry.autoStop,         // new: stop music, keep vis open
             disableClose: !!entry.disableClose,

@@ -55,6 +55,7 @@ let _creditsHideTimer = null;  // setTimeout handle for deferred display:none af
 let _creditsActive    = false;
 let _autoCloseOnEnd   = false; // close visualiser when musiccontroller:trackended fires
 let _disableClose     = false; // hide × and block Esc — for forced/cutscene contexts
+let _endNote          = null;  // a short result line (the score) kept in the STATUS row once the credits end
 let _missionOver      = false; // past the point of no return: × becomes EXIT MISSION, never unset
 
 // ── MusicController state ─────────────────────────────────────────────────
@@ -1502,6 +1503,11 @@ function _startCredits(lines) {
                 const closeBtn = document.getElementById('bv-close-btn');
                 if (closeBtn) closeBtn.style.display = '';
             }
+            // The credits fade away with the score line: leave the result in the STATUS row.
+            if (finished && _missionOver && _endNote) {
+                const status = document.querySelectorAll('#bond-vis-overlay .bv-status-block .bv-status-line .val')[1];
+                if (status) status.textContent = _endNote;
+            }
             return;
         }
         const item = items[idx++];
@@ -1880,6 +1886,7 @@ function _open_overlay(opts = {}) {
 
     // missionOver — the mission has concluded: no way back into the game
     if (opts.missionOver) _missionOver = true;
+    if (typeof opts.endNote === 'string' && opts.endNote) _endNote = opts.endNote;
     _applyCloseLabel();
 
     // disableClose — hide × button and block Esc
