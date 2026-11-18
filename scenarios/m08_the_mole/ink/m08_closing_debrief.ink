@@ -195,6 +195,7 @@ Director Magnus Netherton: Say it, Agent. I would rather hear it than watch you 
 { nightshade_triple_agent:
     Director Magnus Netherton: And you've kept him in play. A triple agent.
     Director Magnus Netherton: I approved it, and I want it on the record that I did so with my eyes open.
+    Director Magnus Netherton: We are now a service that uses a man who trades lives, to save lives.
     Director Magnus Netherton: Watch him as you would a live wire. If he burns you, it is on my signature.
 - else:
     { nightshade_ko_before_fate:
@@ -215,7 +216,7 @@ Director Magnus Netherton: Say it, Agent. I would rather hear it than watch you 
 === hub ===
 + { not asked_how } [How did they get him in the first place, sir?]
     ~ asked_how = true
-    Director Magnus Netherton: In training, fifteen years ago. Then they waited.
+    Director Magnus Netherton: In training, fifteen years ago. They took a tired young idealist and waited.
     Director Magnus Netherton: There may be others in this service, recruited the same way and still waiting.
     Director Magnus Netherton: I shall spend the rest of my career reading our own files.
     -> hub

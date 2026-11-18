@@ -127,7 +127,7 @@ So I'm going to be very professional tonight. Bear with me.
         You've got the door. Now you need the clock: when was the plan opened? Somebody in this building wrote it down.
     // Design C1 (D1): both lab-door men down or hostile skips the confirmation, as in his audit_case.
     - not (vector_audit_confirmed or nightshade_audit_confirmed or ((vector_ko or vector_hostile) and (nightshade_ko or nightshade_hostile))):
-        Door and clock. Now one of the men on the lab door has to stand behind his own row.
+        Door and clock. Ask the men who badge through the lab door. He'll want one of them to stand behind his own row.
     - audit_warned:
         He's warned you. One more miss and {found_access_logs:he reads it himself|he takes it off you, and the floor will know}. Every row against the minute. Who stayed inside?
     - audit_misread:
