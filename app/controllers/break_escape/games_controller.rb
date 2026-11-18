@@ -2040,7 +2040,7 @@ module BreakEscape
         missing: result[:missing],
         missionConcludedAt: @game.mission_concluded_at,
         status: @game.status,
-        score: @game.score
+        score: @game.score_for_client # nil when a host (Hacktivity) owns scoring
       }
     end
 

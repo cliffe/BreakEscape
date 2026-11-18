@@ -161,7 +161,53 @@ module BreakEscape
       assert_equal first, body['missionConcludedAt'], 'The timestamp must not move on a repeat call.'
     end
 
-    # Carry-over (docs/agents/CARRY_OVER_PLAN.md 2.4): the credits of a Restart
+    # The score shown at the end: the engine's number only when no host owns scoring.
+    # Hacktivity's GameScoringJob writes games.score from the listing's policy, so under
+    # a game slot the response carries no score and the client shows none.
+    test 'standalone: the conclude response carries the engine score, and 0 is a score' do
+      game = create_game(ungated_scenario)
+      game.update_columns(score: 0)
+
+      post conclude_game_url(game)
+      body = JSON.parse(response.body)
+
+      assert_equal true, body['success']
+      assert body.key?('score'), 'the score key is always present'
+      assert_kind_of Integer, body['score']
+      assert_equal game.reload.score, body['score']
+    end
+
+    test 'hosted (a game slot present): the conclude response carries no score, first or repeat' do
+      game = create_game(ungated_scenario)
+      with_game_slot do
+        post conclude_game_url(game)
+        first = JSON.parse(response.body)
+        post conclude_game_url(game)
+        again = JSON.parse(response.body)
+
+        assert_equal true, first['success']
+        assert_nil first['score'], 'Hacktivity owns the number; the engine must not show its own'
+        assert_equal true, again['alreadyConcluded']
+        assert_nil again['score']
+      end
+    end
+
+    test 'the page config carries the score only for a concluded standalone game' do
+      game = create_game(ungated_scenario)
+      get game_url(game)
+      assert_match(/missionScore: null,/, response.body, 'not concluded: no score')
+
+      post conclude_game_url(game)
+      get game_url(game)
+      assert_match(/missionScore: \d+,/, response.body)
+
+      with_game_slot do
+        get game_url(game)
+        assert_match(/missionScore: null,/, response.body, 'hosted: the host owns the number')
+      end
+    end
+
+        # Carry-over (docs/agents/CARRY_OVER_PLAN.md 2.4): the credits of a Restart
     # replay refresh the story snapshot later missions import, and still roll.
     test 'a repeat conclude after a Restart refreshes the story snapshot and still answers alreadyConcluded' do
       game = create_game(gated_scenario, tasks: { 'submit_ssh_flag' => 'completed', 'submit_sudo_flag' => 'completed' })
@@ -194,6 +240,14 @@ module BreakEscape
     end
 
     private
+
+    # Stand in for Hacktivity's GameSlot association, which does not exist in this app.
+    def with_game_slot
+      Game.define_method(:game_slot) { Object.new }
+      yield
+    ensure
+      Game.send(:remove_method, :game_slot) if Game.method_defined?(:game_slot, false)
+    end
 
     def create_game(scenario, tasks: {})
       state = PLAYER_STATE.deep_dup

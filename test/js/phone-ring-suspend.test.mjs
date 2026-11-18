@@ -87,7 +87,7 @@ function loadMusicEvents() {
     stub('closing-sequence.js', 'export const buildEndSequence = () => [{ text: "END" }]; export const replayEndingEntry = () => null;');
     stub('ending-audio.js', 'export const playEndingMusic = () => null; export const whenEndingAudible = () => ({ ready: Promise.resolve() });');
     stub('music-config.js', 'export const MUSIC_CONFIG = {};');
-    stub('conclude-mission.js', 'export const concludeWithRetry = (id) => globalThis.__concludeCall(id); export const offlineEndingOptions = (o) => o; export const queueConcludeRetry = () => {}; export const withScoreLine = (c) => c; export const scoreStatusNote = () => undefined;');
+    stub('conclude-mission.js', 'export const concludeWithRetry = (id) => globalThis.__concludeCall(id); export const offlineEndingOptions = (o) => o; export const queueConcludeRetry = () => {}; export const withScoreLine = (c, s) => (Number.isFinite(s) ? [...c, { text: `SCORE ${s}` }] : c); export const scoreStatusNote = (s) => (Number.isFinite(s) ? `SCORE ${s}` : undefined);');
     writeFileSync(join(dir, 'scenario-music-events.js'), readFileSync(join(jsRoot, 'music/scenario-music-events.js'), 'utf8'));
     return import(pathToFileURL(join(dir, 'scenario-music-events.js')).href);
 }
@@ -103,7 +103,7 @@ async function playEnding(result) {
         gameState: { globalVariables: {} },
         breakEscapeConfig: { gameId: 7 },
         stateSync: { sync: async () => {} },
-        BondVisualiser: { open: () => log.push('credits'), setAutoOpenSuppressed() {} },
+        BondVisualiser: { open: (o) => { log.push('credits'); log.opened = o; }, setAutoOpenSuppressed() {} },
         phoneRinger: { suspend: (on) => log.push(`suspend:${on}`), close: () => log.push('close') },
         addEventListener() {}, removeEventListener() {},
         gameAlert: () => log.push('alert'),
@@ -138,4 +138,18 @@ test('playEntry: a refusal lifts the suspension so calls ring again, and the rin
     const after = log.slice(log.indexOf('(pending)'));
     assert.ok(after.includes('suspend:false'), log.join(' | '));
     assert.ok(!log.includes('close') && !log.includes('credits'));
+});
+
+test('playEntry: a concluded score reaches the credits and the end note; 0 counts; offline carries none', async () => {
+    const withScore = await playEnding({ concluded: true, missing: [], score: 89 });
+    assert.deepEqual(withScore.opened.credits.at(-1), { text: 'SCORE 89' });
+    assert.equal(withScore.opened.endNote, 'SCORE 89');
+    const zero = await playEnding({ concluded: true, missing: [], score: 0 });
+    assert.equal(zero.opened.endNote, 'SCORE 0');
+    const none = await playEnding({ concluded: true, missing: [], score: null });
+    assert.equal(none.opened.endNote, undefined);
+    assert.ok(!none.opened.credits.some((l) => /SCORE/.test(l.text)));
+    const offline = await playEnding({ concluded: true, offline: true, missing: [] });
+    assert.equal(offline.opened.endNote, undefined);
+    assert.ok(!offline.opened.credits.some((l) => /SCORE/.test(l.text)));
 });

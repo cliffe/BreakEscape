@@ -63,15 +63,23 @@ function evaluateCondition(condition, data) {
  * forced-close options, since nothing is playing. Null when the scenario has none.
  * @param {object} scenario - window.gameScenario
  * @param {object} [globals] - defaults to window.gameState.globalVariables
+ * @param {number|null} [score] - defaults to breakEscapeConfig.missionScore (null when a host owns scoring)
  */
-export function endingReplayOptions(scenario, globals) {
+export function endingReplayOptions(scenario, globals, score) {
     const found = replayEndingEntry(
         scenario?.music?.events,
         globals || window.gameState?.globalVariables || {},
         (cond, data) => evaluateCondition(cond, data)
     );
     if (!found) return null;
-    return { credits: found.sequence, headerText: found.entry.headerText, statusText: found.entry.statusText };
+    const shown = score !== undefined ? score : (typeof window !== 'undefined' ? window.breakEscapeConfig?.missionScore : null);
+    const num = Number.isFinite(shown) ? shown : null;
+    return {
+        credits: withScoreLine(found.sequence, num),
+        endNote: scoreStatusNote(num),
+        headerText: found.entry.headerText,
+        statusText: found.entry.statusText,
+    };
 }
 if (typeof window !== 'undefined') window.endingReplayOptions = endingReplayOptions;
 

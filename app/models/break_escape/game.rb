@@ -74,6 +74,19 @@ module BreakEscape
       self.class.raw_score(tasks_completed, total_tasks, objectives_completed, total_aims)
     end
 
+    # True when a host (Hacktivity) owns this game's score: its GameScoringJob
+    # writes games.score from the listing's policy, so the engine's own number
+    # may differ and must not be shown to the player as the mission score.
+    def host_owns_score?
+      slot = respond_to?(:game_slot) ? game_slot : nil
+      slot.present?
+    end
+
+    # The score the client may display, or nil when a host owns scoring.
+    def score_for_client
+      host_owns_score? ? nil : score
+    end
+
     # Get score based on game_slot scoring method (if available)
     def calculate_score
       # Try to get scoring method from game_slot if available

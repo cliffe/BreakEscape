@@ -123,12 +123,21 @@ export function offlineEndingOptions(opts = {}) {
 export function withScoreLine(credits, score) {
     const lines = Array.isArray(credits) ? credits : [];
     if (!Number.isFinite(score)) return lines;
-    return [...lines, { text: '' }, { text: `MISSION SCORE: ${Math.round(score)} / 100`, style: 'entry' }];
+    const line = { text: scoreLabel(score), style: 'entry' };
+    const last = lines[lines.length - 1];
+    // A teaser is the closing beat: the score goes before it.
+    if (last && last.style === 'teaser') return [...lines.slice(0, -1), line, last];
+    return [...lines, line];
+}
+
+/** The one score format, in the credits and in the STATUS row: "SCORE 89 / 100". */
+export function scoreLabel(score) {
+    return `SCORE ${Math.round(score)} / 100`;
 }
 
 /** The STATUS-row text that stays once the credits end, or undefined with no usable score. */
 export function scoreStatusNote(score) {
-    return Number.isFinite(score) ? `COMPLETE: SCORE ${Math.round(score)}/100` : undefined;
+    return Number.isFinite(score) ? scoreLabel(score) : undefined;
 }
 
 /**
@@ -162,6 +171,9 @@ export function queueConcludeRetry(gameId, deps = {}) {
             if (result.failed) return result;
             stop();
             if (result.concluded) {
+                // The row said PENDING SYNC: replace it with the score the server now holds.
+                const note = scoreStatusNote(result.score);
+                if (note) w?.BondVisualiser?.setEndNote?.(note, { replace: true });
                 notify(RECORDED_NOTICE, 'success', 'Synced');
             } else {
                 console.warn(`${TAG} late conclude refused; missing:`, result.missing);
