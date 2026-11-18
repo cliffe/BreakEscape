@@ -11,6 +11,8 @@
  *   node playtest-session.js --url <game-url> [--speed fast|human] [--headless]
  *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *                            [--storage-state FILE]      (signed-in browser state from tools/video/capture/login.mjs)
+ *                            [--throttle-fps N]          (headless physics-timed proofs: run the loop at N steps/s
+ *                                                         via window.__test.throttleFps; reply carries before/after)
  *                            [--hacktivity-dir PATH] [--game-id ID]   (VM steps; or env HACKTIVITY_DIR)
  *                            [--capture-responses FILE]  (one line per JSON response from the game server,
  *                                                         for tools/playtest/access-leak-check.rb; see response-capture.js)
@@ -270,7 +272,12 @@ const vmSteps = createVmSteps({
     await browser.close(); process.exit(1);
   }
   const ready = await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 }));
-  emit({ ok: true, event: 'session-open', ready, speed: argv.speed || 'fast', url: argv.url,
+  let throttle = null;
+  if (argv['throttle-fps'] !== undefined && argv['throttle-fps'] !== true) {
+    throttle = await page.evaluate((n) => window.__test.throttleFps(n), Number(argv['throttle-fps']))
+      .catch((e) => ({ ok: false, reason: String(e && e.message || e) }));
+  }
+  emit({ ok: true, event: 'session-open', ready, throttle, speed: argv.speed || 'fast', url: argv.url,
          flagsConfigured: FLAGS.length, logPath, capturePath: responseCapture ? responseCapture.file : null, pid: process.pid });
 
   const pause = (ms) => ms ? page.waitForTimeout(ms) : Promise.resolve();
