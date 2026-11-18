@@ -20,6 +20,8 @@ async function openPhone(page, tag) {
   const trail = [];
   for (let i = 0; i < 40; i++) {
     last = await page.evaluate(() => window.__test.openInventoryItem('phone'));
+    // On a fresh load the Mission Brief opens over the phone click: it counts as a miss.
+    if (last?.ok && last?.opened?.id === 'notes') last = { ok: false, reason: 'minigame-active', activeMinigame: { id: 'notes' } };
     if (last?.ok) {
       try {
         await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
