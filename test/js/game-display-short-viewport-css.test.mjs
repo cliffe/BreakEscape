@@ -27,6 +27,17 @@ test('the reserve is smaller than the tall-screen 232px', () => {
     }
 });
 
+test('both rules give a vh fallback first and the dvh line after it', () => {
+    const base = css.slice(css.indexOf('html .game-display-dialog {'));
+    const rules = [base.slice(0, base.indexOf('}')), block.slice(0, block.indexOf('}'))];
+    for (const rule of rules) {
+        const vh = rule.search(/max-height:[^;]*100vh/);
+        const dvh = rule.search(/max-height:[^;]*100dvh/);
+        assert.ok(vh >= 0 && dvh >= 0, 'needs a vh and a dvh max-height line');
+        assert.ok(vh < dvh, 'the vh fallback must come before the dvh line, or dvh is overridden');
+    }
+});
+
 test('body text is GNF at a crisp 16px and no radius or blur is added', () => {
     assert.match(block, /html \.game-display-dialog \.game-display-body\s*\{[^}]*font-size:\s*16px/);
     assert.doesNotMatch(block, /border-radius|box-shadow:\s*[^;]*\d+px\s+\d+px\s+\d+px|gradient/);
