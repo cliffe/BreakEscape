@@ -1,10 +1,11 @@
 // Live proof of the m08 chatter-pool gate. Usage: PORT=3094 node tools/playtest/m08-chatter-gate-proof.mjs <gameId>
 // Game made with: new-game.rb m08_the_mole --start-room operations_floor (a test-only head start on that game's own row).
-// States are set through npcManager.setGlobalVariable (the real global path, so mappings fire) and the needs
-// system's own mapping lever (levels.thirst) to start trips quickly. No game row is edited.
+// States are set by writing gameState.globalVariables directly, then broadcasting and emitting the change event
+// (setG below: the same writes a mapping setGlobal makes), and the needs system's own mapping lever (levels.thirst) to start trips quickly. No game row is edited.
 import { chromium } from 'playwright';
 const PORT = Number(process.env.PORT), BASE = `http://127.0.0.1:${PORT}`;
 const id = process.argv[2];
+const id2 = process.argv[3]; // a second fresh game, for the agnieszka_ko phase (ko is never cleared)
 const OBS_S = Number(process.env.OBS_S || 150);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const out = { phases: {} };
@@ -61,12 +62,27 @@ const summarise = ev => {
     used: ev.filter(e => e.k.startsWith('npc_used')).map(e => `${e.d.npcId}@${e.t}`)
   };
 };
+// The duty console as the player meets it: resolved read text, the globals the amber emitter and the
+// pc-session claim read, and the claimable state those two give (owner away and screen not locked).
+const consoleNow = page => page.evaluate(async () => {
+  const { resolveObjectField } = await import('/break_escape/js/utils/conditional-text.js');
+  const o = Object.values(window.rooms?.operations_floor?.objects || {}).map(sp => sp.scenarioData).find(x => x?.id === 'julian_console');
+  const g = window.gameState.globalVariables;
+  const away = !!g.julian_console_owner_away, locked = !!g.julian_console_screen_locked;
+  return { upset: !!g.ops_watch_upset, away, locked, claimable: away && !locked, text: resolveObjectField(o, 'text', '', g).split('\n')[0] };
+});
 async function watch(page, label, secs, extra = {}) {
-  // push both officers to thirsty every 40 s so trips repeat inside the window
-  const end = Date.now() + secs * 1000;
-  while (Date.now() < end) { await thirst(page, 5); await sleep(Math.min(40000, end - Date.now())); }
+  // push both officers to thirsty every 40 s so trips repeat inside the window; sample the console every 5 s
+  const end = Date.now() + secs * 1000, seen = new Map();
+  let nextThirst = 0;
+  while (Date.now() < end) {
+    if (Date.now() >= nextThirst) { await thirst(page, 5); nextThirst = Date.now() + 40000; }
+    const c = await consoleNow(page); const k = JSON.stringify(c); seen.set(k, (seen.get(k) || 0) + 1);
+    await sleep(Math.min(5000, Math.max(0, end - Date.now())));
+  }
   const ev = await take(page);
-  out.phases[label] = { upset: await G(page, 'ops_watch_upset'), ko: await G(page, 'ops_watch_ko'), cooler: await cooler(page), ...extra, ...summarise(ev) };
+  const consoleStates = [...seen].map(([k, n]) => ({ ...JSON.parse(k), samples: n }));
+  out.phases[label] = { upset: await G(page, 'ops_watch_upset'), ko: await G(page, 'ops_watch_ko'), cooler: await cooler(page), ...extra, ...summarise(ev), consoleStates };
   console.log(label, JSON.stringify(out.phases[label]));
 }
 let page = await open(id);
@@ -88,5 +104,24 @@ await sleep(3000);
 const koState = { upset: await G(page, 'ops_watch_upset'), ko: await G(page, 'ops_watch_ko'), cooler: await cooler(page) };
 console.log('after ko', JSON.stringify(koState)); await take(page);
 await watch(page, 'c_ko', OBS_S, { method: 'setG(julian_ko,true) (global only; Julian not physically KO)' });
+// e: reload with ops_watch_ko true (n2). The server must keep it, and the cooler must stay off.
+await sleep(3000);
+await page.close();
+page = await open(id);
+console.log('after reload ko', await G(page, 'ops_watch_ko'), 'upset', await G(page, 'ops_watch_upset'));
+await sleep(5000); await take(page);
+await watch(page, 'e_after_reload_ko', OBS_S);
+await page.close();
+// f: agnieszka_ko on a fresh game (n3). Upset starts false, so this also shows the upset-to-KO order from clean.
+if (id2) {
+  page = await open(id2);
+  console.log('badge audit set (game 2)', await setG(page, 'found_badge_audit', true));
+  await sleep(5000); await take(page);
+  console.log('before ko', JSON.stringify({ upset: await G(page, 'ops_watch_upset'), ko: await G(page, 'ops_watch_ko'), cooler: await cooler(page) }));
+  console.log('agnieszka_ko set', await setG(page, 'agnieszka_ko', true));
+  await sleep(3000);
+  console.log('after agnieszka_ko', JSON.stringify({ upset: await G(page, 'ops_watch_upset'), ko: await G(page, 'ops_watch_ko'), julian_ko: await G(page, 'julian_ko'), cooler: await cooler(page) })); await take(page);
+  await watch(page, 'f_agnieszka_ko', OBS_S, { method: 'setG(agnieszka_ko,true) from a clean game (global only; Agnieszka not physically KO)' });
+}
 await browser.close();
 console.log(JSON.stringify(out));
