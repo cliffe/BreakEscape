@@ -68,6 +68,12 @@ Dr Abena Asante: You're the one off the office wall. Don't touch my console and 
 - else:
     Dr Abena Asante: Somebody rang out through the switchboard and told the next shift to stay home. I've nothing to say to you.
 }
+// Blind playtest m10 part 2: the corrected model she left on the bench terminal earns one answer, even after Wendell's call.
++ {margin_note_read and not asante_confirmed_sheet} [You left your corrected figures on the bench terminal.]
+    ~ asante_confirmed_sheet = true
+    ~ asan_quiet = true
+    Dr Abena Asante: Then you've read them. He thanked me and signed the old number anyway. That's all I'll say.
+    -> warned
 + [Suit yourself.]
     Dr Abena Asante: I will.
     ~ asan_quiet = true
