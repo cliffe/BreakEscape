@@ -127,6 +127,43 @@
               }
             }
           ]
+        },
+        {
+          "id": "proof_text",
+          "displayName": "Text Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Combat-hold check: a scripted text thread opens on this event, held while a fight is on.",
+              "eventPattern": "proof_text",
+              "conversationMode": "phone-chat",
+              "targetKnot": "start",
+              "cooldown": 0,
+              "onceOnly": true
+            }
+          ]
+        },
+        {
+          "id": "proof_voice",
+          "displayName": "Voice Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Combat-hold check: a voiced call goes to the ringer, held while a fight is on.",
+              "eventPattern": "proof_voice",
+              "conversationMode": "phone-chat",
+              "targetKnot": "start",
+              "voiced": true,
+              "cooldown": 0,
+              "onceOnly": true
+            }
+          ]
         }
       ],
       "objects": []
