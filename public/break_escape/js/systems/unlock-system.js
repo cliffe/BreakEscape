@@ -18,6 +18,7 @@ import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalT
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
 import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
+import { wantsDispense, dispenseContents } from '../utils/dispense-on-unlock.js';
 import { remoteOffMessage, notRespondingMessage, unreachableMessage } from '../utils/remote-host-text.js';
 
 // Helper function to notify server of unlock and get room/container data
@@ -1730,9 +1731,15 @@ export function unlockTarget(lockable, type, layer, serverResponse, { autoOpen =
                     });
                 }
 
-                // Automatically launch container minigame after unlocking
-                setTimeout(() => {
-                    if (autoOpen && window.handleContainerInteraction) {
+                // A "dispenses" container (a badge printer) hands its contents over at once; if that
+                // fails it falls back to the container screen, so nothing is ever stuck behind it
+                setTimeout(async () => {
+                    if (!autoOpen) return;
+                    if (wantsDispense(lockable.scenarioData)) {
+                        const result = await dispenseContents(lockable.scenarioData);
+                        if (result.ok) return;
+                    }
+                    if (window.handleContainerInteraction) {
                         console.log('Auto-launching container minigame after unlock');
                         window.handleContainerInteraction(lockable);
                     }
