@@ -130,6 +130,16 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal 2, AccessLeakScanner.new(capture_scenario).counts[:capture_secrets]
   end
 
+  test 'a capture page label may separate its words with a space, hyphen or underscore' do
+    ['captures terminal', 'captures-terminal', 'captures_terminal', 'capture_log', 'Capture Log'].each do |label|
+      page = [['dom.jsonl', 1, { 'dom' => "Captures\n#{CAPTURE_SECRET}", 'label' => label }]]
+      assert_empty AccessLeakScanner.new(capture_scenario).scan(page), label
+    end
+    # A label that only contains the letters is not a capture page
+    page = [['dom.jsonl', 1, { 'dom' => "x\n#{CAPTURE_SECRET}", 'label' => 'recaptured' }]]
+    assert_equal [[1, 'capture_secret', 'capture:informant']], summary(AccessLeakScanner.new(capture_scenario).scan(page))
+  end
+
   test 'an account capture secret stays with the password rule, not the capture_secret rule' do
     # A secret equal to an account holder's own creds.password is a password, not a capture secret:
     # build_authored_capture_secrets skips a writer on an account holder, and so does the scanner.

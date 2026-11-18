@@ -150,7 +150,9 @@ class AccessLeakScanner
   # A hash under one of these keys is a capture descriptor: its `secret` never ships (E0.3)
   CAPTURE_DESCRIPTOR_KEYS = %w[capture addCapture usePayload].freeze
   # A page the tester read counts as a capture page only when its label says so (E0.3)
-  CAPTURE_PAGE_LABEL = /\bcaptures?\b/i.freeze
+  # Space, hyphen or underscore may follow or precede the word ("captures terminal", "captures-terminal", "captures_terminal");
+  # \b would not split on "_"
+  CAPTURE_PAGE_LABEL = /(?<![a-z0-9])captures?(?![a-z0-9])/i.freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
 

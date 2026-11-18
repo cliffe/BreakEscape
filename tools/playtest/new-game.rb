@@ -104,7 +104,7 @@ until args.empty?
 end
 ARGV.replace(rest)
 ARGV.reject! { |a| a.start_with?('--imports=') && (imports_opt = a.split('=', 2)[1]) }
-arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>] [--start-room R] [--unlock R] [--set k=v] [--give ITEM_ID] [--complete-task TASK_ID] [--submit-flag FLAG_ID]  (--help for details)'
+arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>] [--start-room R] [--carry-npc NPC_ID] [--unlock R] [--set k=v] [--give ITEM_ID] [--complete-task TASK_ID] [--submit-flag FLAG_ID]  (--help for details)'
 xml_path = ARGV[1]
 
 mission = if arg =~ /\A\d+\z/

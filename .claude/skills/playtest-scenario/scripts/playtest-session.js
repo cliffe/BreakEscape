@@ -73,6 +73,7 @@ const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
 const { briefTasks } = require('./brief-tasks');
+const { lockOutcome } = require('./lock-outcome');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
 const { nextBootstrapTarget, readBootstrapFacts, converseEnding, converseIdleAction } = require('./bootstrap-steps');
@@ -946,6 +947,7 @@ const vmSteps = createVmSteps({
       const tried = new Set();
       let st = await read();
       if (!st) return { ok: false, reason: 'no-active-minigame' };
+      const startId = await page.evaluate(() => window.__test.getState().activeMinigame?.id ?? null);
 
       // The lock renders its controls a beat after opening, so the first read
       // can show nothing to act on. Wait for it to become actionable rather
@@ -1029,7 +1031,7 @@ const vmSteps = createVmSteps({
         return { activeMinigame: s2.activeMinigame, room: s2.room };
       });
       return {
-        ok: !!(st?.isComplete || st?.result === 'success' || !after.activeMinigame),
+        ...lockOutcome({ startId, st, after }),
         steps,
         finalState: st ? { isComplete: st.isComplete, result: st.result, text: st.text } : null,
         activeMinigame: after.activeMinigame,
