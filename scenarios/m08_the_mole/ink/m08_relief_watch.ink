@@ -122,7 +122,7 @@ Agnieszka Duda: Duda, watch log. If you need something entered, say it slowly. T
 
 // First meeting at the cooler after the pair arrive.
 === ex_relief_handover ===
-Julian Sallow: The day watch handed over without a word.
+Julian Sallow: The day watch left without a word.
 Agnieszka Duda: Nobody says much on Level Red.
 Julian Sallow: Then we write it down instead.
 -> DONE
@@ -131,13 +131,13 @@ Julian Sallow: Then we write it down instead.
 === ex_lock_it ===
 Agnieszka Duda: You left your console open again.
 Julian Sallow: Thirty seconds at the cooler.
-Agnieszka Duda: Long enough for someone to sit down and be you.
+Agnieszka Duda: Long enough for a stranger to be you.
 Julian Sallow: All right. Lock it when I leave it.
 -> DONE
 
 // After the naming (needs mole_identified).
 === ex_the_suite ===
 Julian Sallow: They've taken someone down to the suite.
-Agnieszka Duda: I'm not writing a name until the Director gives me one.
+Agnieszka Duda: No name goes in till the Director says.
 Julian Sallow: Good. Neither am I.
 -> DONE

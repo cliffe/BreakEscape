@@ -298,9 +298,9 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "AGENT HAX: Put on the break-room floor by her own agent.", "style": "warning", "condition": "globalVars.hax_ko" },
           { "text": "AN OFF-DUTY AGENT: Knocked out in the break room. A witness, not a suspect.", "style": "warning", "condition": "globalVars.offduty_agent_ko" },
           { "text": "A JUNIOR ANALYST: Knocked out at her desk. A witness to nothing.", "style": "warning", "condition": "globalVars.analyst_ko" },
-          { "text": "A NIGHT-DUTY OFFICER: Knocked down at the duty desk. A witness to nothing.", "style": "warning", "condition": "globalVars.julian_ko && !globalVars.agnieszka_ko" },
-          { "text": "A NIGHT-DUTY OFFICER: Knocked down at the duty desk. A witness to nothing.", "style": "warning", "condition": "globalVars.agnieszka_ko && !globalVars.julian_ko" },
-          { "text": "TWO NIGHT-DUTY OFFICERS: Both knocked down at the duty desk.", "style": "warning", "condition": "globalVars.julian_ko && globalVars.agnieszka_ko" },
+          { "text": "A NIGHT-DUTY OFFICER: Knocked down on the night watch. A witness to nothing.", "style": "warning", "condition": "globalVars.julian_ko && !globalVars.agnieszka_ko" },
+          { "text": "A NIGHT-DUTY OFFICER: Knocked down on the night watch. A witness to nothing.", "style": "warning", "condition": "globalVars.agnieszka_ko && !globalVars.julian_ko" },
+          { "text": "TWO NIGHT-DUTY OFFICERS: Both knocked down on the night watch.", "style": "warning", "condition": "globalVars.julian_ko && globalVars.agnieszka_ko" },
           { "text": "ATHENA: Her reception avatar, knocked flat. She logged it.", "style": "warning", "condition": "globalVars.athena_ko" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large, with every weakness SAFETYNET ever catalogued.", "style": "warning" },
@@ -1770,6 +1770,7 @@ CREDITS
           "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
           "avatar": "assets/characters/julian_sallow_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m08_the_mole/ink/m08_relief_watch.json",
           "currentKnot": "julian_start",
           "voice": {
             "name": "Rasalgethi",
@@ -1781,6 +1782,12 @@ CREDITS
           "needsRooms": ["operations_floor"],
           "needsCompany": { "groups": ["ops_watch"] },
           "chatterCooldownMin": 2,
+          "chatter": {"cooler": ["Still on Level Red. Still quiet.", "Long night. They're all long on Red.", "Nobody talks above a whisper tonight.", "Water. Coffee's in the wrong room."]},
+          "exchanges": [
+            {"with": "agnieszka_duda", "knot": "ex_relief_handover", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false}},
+            {"with": "agnieszka_duda", "knot": "ex_lock_it", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false, "flag4_submitted": true}},
+            {"with": "agnieszka_duda", "knot": "ex_the_suite", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false, "mole_identified": true}}
+          ],
           "habits": { "screen": { "lockChance": 0.25 } },
           "needs": { "thirst": { "initial": 100, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
           "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
@@ -1789,7 +1796,8 @@ CREDITS
             { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'main_lobby' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'intel_analysis' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'server_room' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-            { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 100 } } }
+            { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 100 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "onceOnly": true, "delayMs": 3000, "bark": "Relief watch is on, Agent. Don't mind us." }
           ],
           "observations": "The senior night-duty officer on the relief watch. He keeps the duty desk, the door readers and the log."
         },
@@ -1805,6 +1813,7 @@ CREDITS
           "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
           "avatar": "assets/characters/agnieszka_duda_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m08_the_mole/ink/m08_relief_watch.json",
           "currentKnot": "agnieszka_start",
           "voice": {
             "name": "Callirrhoe",
@@ -1816,6 +1825,7 @@ CREDITS
           "needsRooms": ["operations_floor"],
           "needsCompany": { "groups": ["ops_watch"] },
           "chatterCooldownMin": 2,
+          "chatter": {"cooler": ["Everything goes in the log. Everything.", "Nine days. Nobody here has slept.", "I wrote the time I came for water.", "Back to the desk in a minute."]},
           "needs": { "thirst": { "initial": 85, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
           "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           "globalVarOnKO": "agnieszka_ko",
