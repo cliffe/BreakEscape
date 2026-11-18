@@ -105,9 +105,9 @@ export const DIFFICULTY = {
     // easy: decoys have a different pattern class by default, so the compare is by class; near-identical
     // whorls on easy were not a fair comparison (m08 E16). A scenario may force a same-class decoy with a
     // { name, pattern } entry in fingerprintCandidates (m05's mug does). Medium and hard keep the minutiae test.
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, partial: 'never', sheenScale: 1.0, marks: 3 },
-    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0, marks: 3 },
-    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7, marks: 2 }
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, findFloor: 0.24, partial: 'never', sheenScale: 1.0, marks: 3 },
+    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, marks: 3 },
+    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, findFloor: 0.11, partial: 'always', sheenScale: 0.7, marks: 2 }
 };
 
 const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];
@@ -450,4 +450,22 @@ export function wrongPowderReason(powder, surface) {
     else if (!s.smooth) why = 'it catches in the grain and shows faint';
     else why = 'low contrast';
     return `${POWDER_NAMES[powder]} on ${s.name}: ${why}. ${better} would show these ridges better.`;
+}
+
+/**
+ * Find step: how strongly one pixel of the latent print shows (0 to 1 blend towards the glint colour).
+ * Two parts, both hard pixels (no blur): the torch sheen, full strength over most of the beam
+ * (`lit` reaches 1 only at its centre, so it is scaled by FIND_BEAM_GAIN and capped), and a dotted
+ * checkerboard floor of the print mask that shows without the torch, so the patch can be spotted by
+ * looking while the torch still confirms it. The floor is a texture, so it does not rely on colour.
+ * High contrast raises both (sheen gain and floor) and returns a stronger glint colour.
+ * @param {{lit:number, ridge:number, mask:number, res:number, floor:number, dotted:boolean, hc:boolean}} p
+ */
+export const FIND_BEAM_GAIN = 1.6;
+export const FIND_HC_FLOOR_BONUS = 0.16;
+export function findSheen({ lit, ridge, mask, res, floor, dotted, hc }) {
+    let s = lit > 0 ? ridge * mask * res * Math.min(1, lit * FIND_BEAM_GAIN) : 0;
+    if (hc) s = Math.min(1, s * 1.25);
+    if (dotted) s = Math.max(s, mask * (floor + (hc ? FIND_HC_FLOOR_BONUS : 0)));
+    return s;
 }

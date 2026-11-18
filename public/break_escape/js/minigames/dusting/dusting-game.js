@@ -13,7 +13,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
 import {
-    SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor,
+    SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen,
     liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns
 } from './dusting-model.js';
 import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS } from './print-features.js';
@@ -745,6 +745,8 @@ export class DustingMinigame extends MinigameScene {
         if (!success && this.mounted && this.final) {
             this.gameResult = this._buildResult();
             this._resultSent = true;
+            // The close path records the print; say so (the Log the print button already did, so no toast then)
+            if (typeof window !== 'undefined' && window.showNotification) window.showNotification('Print logged', 'success');
             return super.complete(true);
         }
         if (!success && !this.gameResult) this.gameResult = { cancelled: true };
@@ -1137,8 +1139,8 @@ export class DustingMinigame extends MinigameScene {
         const rx = this.reticle.x, ry = this.reticle.y;
         const R = 24 * this.diff.sheenScale;
         const res = this.diff.residueStrength;
-        const glint = this.surfaceLight ? [110, 135, 165] : [255, 255, 255];
-        const easy = this.diff.findHintVisible;
+        const hcGlint = this.highContrast;
+        const glint = this.surfaceLight ? (hcGlint ? [0, 0, 0] : [70, 95, 130]) : [255, 255, 255];
         for (let y = 0; y < N; y++) {
             for (let x = 0; x < N; x++) {
                 const i = y * N + x, j = i * 4;
@@ -1147,10 +1149,9 @@ export class DustingMinigame extends MinigameScene {
                 let r = sp[j], g = sp[j + 1], b = sp[j + 2];
                 const dim = 0.5 + 0.5 * Math.min(1, lit * 2.2);
                 r *= dim; g *= dim; b *= dim;
-                let s = lit > 0 ? p.ridges[i] * p.mask[i] * res * lit * 0.8 : 0;
-                // easy: a faint dotted outline of the print shows even before the light reaches it
-                // (0.16 was too faint to see on some surfaces: m05 blind A m8, m06 A-R10)
-                if (easy && ((x + y) & 1) === 0) s = Math.max(s, p.mask[i] * 0.24);
+                // The dotted floor shows on every level, fainter as it gets harder (m04 blind run: the
+                // patch was nearly invisible with the options off; m05 blind A m8, m06 A-R10 on easy)
+                const s = findSheen({ lit, ridge: p.ridges[i], mask: p.mask[i], res, floor: this.diff.findFloor, dotted: ((x + y) & 1) === 0, hc: this.highContrast });
                 if (s > 0) {
                     r += (glint[0] - r) * s; g += (glint[1] - g) * s; b += (glint[2] - b) * s;
                 }
