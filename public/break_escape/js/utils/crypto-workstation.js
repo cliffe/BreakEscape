@@ -12,6 +12,79 @@ export function createCryptoWorkstation(objectData) {
 
 const CYBERCHEF_PATH = '/break_escape/assets/cyberchef/CyberChef_v10.19.4.html';
 
+// ---- Decode watch -------------------------------------------------------
+// A workstation item can carry `decodeWatch: [{ contains, setVariable }]`. While the
+// popup is open the CyberChef output is read now and then; when it contains a marker
+// (matched ignoring case and runs of whitespace) the named global is set once, so a
+// task can tick on the player decoding something rather than on opening it. The
+// markers are plaintext phrases that only a correct decode prints.
+export const DECODE_WATCH_INTERVAL_MS = 800;
+
+const squash = (t) => String(t || '').replace(/\s+/g, ' ').toLowerCase();
+
+/** The watches whose marker appears in `outputText`, minus any already fired. */
+export function matchDecodeWatches(outputText, watches, fired = new Set()) {
+    const hay = squash(outputText);
+    if (!hay || !Array.isArray(watches)) return [];
+    return watches.filter((w) => w && typeof w.contains === 'string' && w.contains
+        && w.setVariable && !fired.has(w.setVariable)
+        && hay.includes(squash(w.contains)));
+}
+
+/** The CyberChef output pane text, '' when the frame is not readable yet. */
+export function readCyberChefOutput(frame) {
+    try {
+        const doc = frame && frame.contentDocument;
+        const pane = doc && (doc.querySelector('#output-text .cm-content') || doc.querySelector('#output-text'));
+        return pane ? (pane.innerText || pane.textContent || '') : '';
+    } catch (e) {
+        return '';
+    }
+}
+
+function applyDecodeGlobal(name) {
+    const w = typeof window !== 'undefined' ? window : null;
+    if (!w || !w.gameState || !w.gameState.globalVariables) return;
+    const oldValue = w.gameState.globalVariables[name];
+    if (oldValue === true) return;
+    w.gameState.globalVariables[name] = true;
+    w.npcConversationStateManager?.broadcastGlobalVariableChange?.(name, true, null);
+    w.eventDispatcher?.emit?.(`global_variable_changed:${name}`, { name, value: true, oldValue });
+}
+
+function decodeWatchesFromInventory() {
+    const items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || [];
+    for (const it of items) {
+        const d = it && (it.scenarioObject?.scenarioData || it.scenarioData);
+        if (d && d.type === 'workstation' && Array.isArray(d.decodeWatch)) return d.decodeWatch;
+    }
+    return [];
+}
+
+let decodeTimer = null;
+let decodeTick = null;
+const firedWatches = new Set();
+
+function stopDecodeWatch() {
+    if (decodeTick) { try { decodeTick(); } catch (e) { /* frame gone */ } decodeTick = null; }
+    if (decodeTimer) { clearInterval(decodeTimer); decodeTimer = null; }
+}
+
+function startDecodeWatch() {
+    stopDecodeWatch();
+    const watches = decodeWatchesFromInventory();
+    if (!watches.length || typeof setInterval !== 'function') return;
+    const tick = () => {
+        const frame = document.getElementById('cyberchef-frame');
+        for (const m of matchDecodeWatches(readCyberChefOutput(frame), watches, firedWatches)) {
+            firedWatches.add(m.setVariable);
+            applyDecodeGlobal(m.setVariable);
+        }
+    };
+    decodeTick = tick;
+    decodeTimer = setInterval(tick, DECODE_WATCH_INTERVAL_MS);
+}
+
 // Open the crypto workstation
 export function openCryptoWorkstation() {
     const laptopPopup = document.getElementById('laptop-popup');
@@ -28,6 +101,8 @@ export function openCryptoWorkstation() {
     // Toasts over the popup keep clear of its title bar and X (ui/hud-lanes.js, toast plan 2.8)
     window.hudLanesRelayout?.();
     
+    startDecodeWatch();
+
     // Disable game input while laptop is open
     if (window.game && window.game.input) {
         window.game.input.mouse.enabled = false;
@@ -40,6 +115,7 @@ export function closeLaptop() {
     const laptopPopup = document.getElementById('laptop-popup');
     // Hide the laptop popup
     laptopPopup.style.display = 'none';
+    stopDecodeWatch();
     
     // Leave the iframe loaded (do not clear src) so the recipe and input persist.
     

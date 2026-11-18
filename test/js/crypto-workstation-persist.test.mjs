@@ -60,3 +60,43 @@ test('new tab opens the live frame location (recipe hash), else the base URL', (
     mod.openCryptoWorkstationInNewTab();
     assert.equal(state.opened[1][0], '/break_escape/assets/cyberchef/CyberChef_v10.19.4.html');
 });
+
+// ---- decode watch (blind m03 m4/m7): tasks tick when the output shows the decode ----
+test('matchDecodeWatches: marker found ignoring case and whitespace, fired ones skipped', () => {
+    const watches = [
+        { contains: 'ZERO DAY: ACTIVE CLIENT ROSTER', setVariable: 'roster_decoded' },
+        { contains: 'NIGHT TEAM: CATALOGUE', setVariable: 'whiteboard_decoded' },
+    ];
+    assert.deepEqual(mod.matchDecodeWatches('5a45524f', watches), []);
+    const hit = mod.matchDecodeWatches('zero day:\n  active   client roster (export)', watches);
+    assert.deepEqual(hit.map((w) => w.setVariable), ['roster_decoded']);
+    assert.deepEqual(mod.matchDecodeWatches('ZERO DAY: ACTIVE CLIENT ROSTER', watches, new Set(['roster_decoded'])), []);
+    assert.deepEqual(mod.matchDecodeWatches('', watches), []);
+    assert.deepEqual(mod.matchDecodeWatches('x', null), []);
+});
+
+test('readCyberChefOutput reads the output pane, and is empty when the frame is unreadable', () => {
+    const doc = { querySelector: (s) => (s === '#output-text .cm-content' ? { innerText: 'decoded text' } : null) };
+    assert.equal(mod.readCyberChefOutput({ contentDocument: doc }), 'decoded text');
+    assert.equal(mod.readCyberChefOutput({ get contentDocument() { throw new Error('cross-origin'); } }), '');
+    assert.equal(mod.readCyberChefOutput(null), '');
+});
+
+test('opening the workstation with a decodeWatch sets the global once the output shows the marker', async () => {
+    const { frame } = setup();
+    const events = [];
+    const out = { text: 'hex only' };
+    frame.contentDocument = { querySelector: () => ({ innerText: out.text }) };
+    globalThis.window.gameState = { globalVariables: {} };
+    globalThis.window.eventDispatcher = { emit: (n, d) => events.push([n, d.value]) };
+    globalThis.window.inventory = { items: [{ scenarioData: { type: 'workstation',
+        decodeWatch: [{ contains: 'CLIENT ROSTER', setVariable: 'roster_decoded' }] } }] };
+    mod.openCryptoWorkstation();
+    await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS + 150));
+    assert.equal(events.length, 0);
+    out.text = 'Zero Day: Active Client Roster';
+    await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS + 150));
+    assert.deepEqual(events, [['global_variable_changed:roster_decoded', true]]);
+    assert.equal(globalThis.window.gameState.globalVariables.roster_decoded, true);
+    mod.closeLaptop();
+});

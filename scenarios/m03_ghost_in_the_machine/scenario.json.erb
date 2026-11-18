@@ -240,6 +240,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     ]
   },
 
+  <%# Blind m9: without this the ticker shows the music track ("Ghost in the Wire") under a header reading GHOST IN THE MACHINE. True in every ending. %>
+  "creditsOverlay": {
+    "operation": "GHOST IN THE MACHINE",
+    "ticker": [
+      "OPERATION GHOST IN THE MACHINE: CONCLUDED",
+      "ST. CATHERINE'S LINK: PROVEN",
+      "ZERO DAY SYNDICATE: ON SAFETYNET'S RADAR"
+    ]
+  },
+
   "objectives": [
     {
       "aimId": "act1_gain_access",
@@ -259,7 +269,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "_comment": "Pass 5 blind (B-2): the reader refusal needs an on-screen cue, not only a phone text. HaX's door_unlock_attempt mapping on the conference reader unlocks this (toast and panel); closing_debrief completes it when clone_reception_badge completes (clone or KO). Optional, so a player who never tries the reader first never sees it.",
           "taskId": "copy_staff_badge",
           "title": "Copy the receptionist's staff badge with your cloner",
-          "description": "The reader wants a staff badge. The receptionist wears one on her lanyard. Talk to her and lean in.",
+          "description": "The reader wants a staff badge. The receptionist wears one on her lanyard, and the cloner reads a badge from arm's length. Stand close, talk to her and lean in by the lanyard.",
           "type": "custom",
           "status": "locked",
           "optional": true
@@ -381,8 +391,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "decode_client_roster",
-          "title": "Take Sterling's client roster",
-          "description": "The client roster export is on Sterling's computer, as raw hex. Take it; the CyberChef workstation will read it if you want the names.",
+          "title": "Decode Sterling's client roster",
+          "description": "The client roster export is on Sterling's computer, as raw hex. Take it, then run it through the CyberChef workstation until it reads as names.",
           "type": "custom",
           "status": "active"
         },
@@ -425,8 +435,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "decode_whiteboard",
-          "title": "Read the night team's whiteboard",
-          "description": "Find what the night team wrote on the server room whiteboard. It sits with the wall safe it is about.",
+          "title": "Decode the night team's whiteboard",
+          "description": "The note on the server room whiteboard is scrambled. Read it, then run it through the CyberChef workstation until it makes sense. It sits with the wall safe it is about.",
           "type": "custom",
           "status": "active"
         },
@@ -1341,13 +1351,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             },
 <% end %>
             {
-              "eventPattern": "global_variable_changed:whiteboard_seen",
+              "_comment": "Blind m4: ticks when the CyberChef workstation's output shows the decoded board (decodeWatch on the workstation), not when the board is opened.",
+              "eventPattern": "global_variable_changed:whiteboard_decoded",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "decode_whiteboard"
             },
             {
-              "eventPattern": "global_variable_changed:roster_seen",
+              "_comment": "Blind m7: ticks when the CyberChef workstation's output shows the decoded roster (decodeWatch on the workstation), not when the file is taken.",
+              "eventPattern": "global_variable_changed:roster_decoded",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "decode_client_roster"
@@ -1768,7 +1780,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"192.168.100.2","enable_console":true}) %>,
           "showPostit": true,
-          "postitNote": "user: kali\npassword: kali"
+          "postitNote": "user: kali\npassword: kali",
+          "flagNote": "Each flag you capture goes back to the Drop-Site Terminal in this room. Submit it there to turn it into intel."
         },
         {
           "type": "workstation",
@@ -1777,6 +1790,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "host": "OPS-BENCH-LT",
           "_comment": "Room dressing cycle 1 (2026-10-12): room_zds_servers puts the workstation and the flag-station on the ops bench, their top-lefts 32 px or more from each other's centres, so the Pass 3e pin on the old west desk is gone.",
           "takeable": true,
+          "decodeWatch": [
+            { "contains": "NIGHT TEAM: CATALOGUE STAYS IN THE WALL SAFE", "setVariable": "whiteboard_decoded" },
+            { "contains": "ZERO DAY: ACTIVE CLIENT ROSTER", "setVariable": "roster_decoded" }
+          ],
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
           "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number."
@@ -2204,6 +2221,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "debrief_played": false,
     "clone_call_done": false,
     "whiteboard_seen": false,
+    "whiteboard_decoded": false,
+    "roster_decoded": false,
     "draft_seen": false,
     "catalogue_seen": false,
     "exec_office_entered": false,
