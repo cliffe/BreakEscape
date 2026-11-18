@@ -1264,9 +1264,10 @@ export default class PhoneChatConversation {
             const manager = window.npcConversationStateManager;
             manager?.applySavedInkVariables?.(npc.id, story);
             // The saved story, if there is one: its ink-local VARs and visit counts carry over
-            if (npc.storyState && conversation.restoreState(npc.storyState)) {
-                manager?.syncGlobalVariablesToStory?.(story);
-            }
+            if (npc.storyState) conversation.restoreState(npc.storyState);
+            // Always: a first voicemail has no saved story, and its knot read the ink defaults
+            // ("" team_assignment fell into the San Francisco line; m07 blind part 2)
+            manager?.syncGlobalVariablesToStory?.(story);
             // The knot reads call_is_callback, call_answer_seconds: the defaults, as for any preload
             manager?.applyEngineVariables?.(npc.id, story, { channel: 'phone-preload' });
 

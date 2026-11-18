@@ -97,9 +97,14 @@ function releaseHeldNotifications() {
 // The window used to be 1.5 s and a toast could be pulled back again each time it was
 // shown, so a task, objective or unlock toast the player had already read came back
 // after the next panel closed (m09/m10 phase 5: "fires twice", "three times"). Now only
-// a glimpse (under 0.7 s) is replayed, and a toast that has been replayed once is never
-// held again.
-export const RECENT_TOAST_MS = 700;
+// a glimpse is replayed, and a toast that has been replayed once is never held again.
+//
+// A glimpse is now under 0.3 s (m07 blind playtest: relay closed, the NFS "Task Complete"
+// toast slid in, the phone opened 0.3 to 0.7 s later, the toast vanished and came back when
+// the phone closed). A toast that has been up for 0.3 s has finished sliding in and its title
+// has been read, so one that old is dismissed when a panel opens, never replayed. Only a toast
+// the panel covered before it could be read is shown again.
+export const RECENT_TOAST_MS = 300;
 
 /** Shown info/success toasts not to hold again: dismissed when a panel opens. */
 export function pickStaleHoldable(entries, now, windowMs = RECENT_TOAST_MS) {

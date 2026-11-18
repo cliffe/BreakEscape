@@ -406,7 +406,7 @@ Satoshi Nakamoto II: The balances, sure. The advances went out a week ago, and n
 
 Satoshi Nakamoto II: At least you're honest about the trade-off.
 
-Satoshi Nakamoto II: So you'd save the people on the projection and risk whoever my martyrdom recruits. That's human. Wrong, but human.
+Satoshi Nakamoto II: Wrong, but human.
 
 -> arrest_finale
 
@@ -433,9 +433,9 @@ Satoshi Nakamoto II: You'll let it run. I didn't expect that from SAFETYNET.
 === long_term_strategy_response ===
 #speaker:satoshi
 
-Satoshi Nakamoto II: Maybe. Cells move house. We've done it before.
+Satoshi Nakamoto II: Maybe. Cells move house.
 
-Satoshi Nakamoto II: Meanwhile the operations on that page go ahead. You've read the projection.
+Satoshi Nakamoto II: Meanwhile the operations on that page go ahead.
 
 -> arrest_finale
 
