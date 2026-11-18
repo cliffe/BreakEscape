@@ -568,3 +568,8 @@ test('m2 budget: the longest short-mode feedback (wrong powder, every powder and
     assert.ok(model.wrongPowderReason('magnetic', 'glossy_light', true).length < model.wrongPowderReason('magnetic', 'glossy_light').length);
     assert.ok(worst > 0);
 });
+
+test('m2 budget: short dust feedback has 16 px lines and the Clarity gap is 0, so four lines fit above the strip at 667x375', () => {
+    assert.match(rule('.dusting-short[data-step="dust"] .dusting-actions .dusting-feedback'), /font-size: 16px; line-height: 16px/);
+    assert.match(rule('.dusting-short[data-step="dust"] .dusting-actions .dusting-meter:nth-child(2)'), /margin-bottom: 0/);
+});

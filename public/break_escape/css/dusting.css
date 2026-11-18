@@ -291,6 +291,10 @@
 .dusting-short[data-step="dust"] .dusting-options label { min-height: 24px; }
 .dusting-short[data-step="dust"] .dusting-tools { margin-bottom: 2px; }
 .dusting-short[data-step="dust"] .dusting-panel > .dusting-powder-line { margin-bottom: 0; }
+/* Feedback line on the dust step: 16 px lines (the 21 px inherited pitch left room for three, the longest messages take four).
+   The Clarity meter loses its 2 px gap so four 16 px lines fit between it and the pinned Coverage strip at 667x375. */
+.dusting-short[data-step="dust"] .dusting-actions .dusting-feedback { font-size: 16px; line-height: 16px; }
+.dusting-short[data-step="dust"] .dusting-actions .dusting-meter:nth-child(2) { margin-bottom: 0; }
 /* Only the Coverage (or Tape pressed) bar and the button row are pinned, one 80 px strip (44 buttons + 36 Coverage) at the foot of the
    panel; the tools, powder line, Clarity, estimate and feedback scroll above it. The panel is a flex column
    here so the pinned bar sits directly above the buttons whatever the markup order is. */
