@@ -61,7 +61,7 @@ const pin = css('pin.css');
 const box = css('container-minigame.css');
 
 test('B6: the message row is not pulled up over the display on short screens', () => {
-    const short = rule(pin, '.pin-minigame-message', '(max-height: 700px)');
+    const short = rule(pin, '.pin-minigame-message', '(max-height: 840px)');
     assert.ok(short.margin, 'a short-screen rule sets the message margin');
     assert.ok(!/-\d/.test(short.margin), 'no negative margin: it overlapped the display border by 12px');
     const base = rule(pin, '.pin-minigame-message');
@@ -79,7 +79,7 @@ test('B6: the attempts log shows whole rows and snaps to the newest', () => {
     assert.equal(row['flex'], '0 0 auto', 'rows never shrink inside the scrolling log');
     assert.equal(row['scroll-snap-align'], 'end');
     const rowH = px(row['line-height']) + 16 + 4;   // 8px padding top and bottom, 2px borders
-    for (const [media, rows] of [[null, 3], ['(max-height: 700px)', 2], ['(max-height: 520px)', 2]]) {
+    for (const [media, rows] of [[null, 3], ['(max-height: 840px)', 2], ['(max-height: 520px)', 2]]) {
         const log = rule(pin, '.pin-minigame-attempts-log', media);
         assert.equal(px(log['max-height']), rows * rowH + (rows - 1) * 8, `${media || 'default'}: ${rows} whole rows`);
     }
@@ -182,4 +182,17 @@ test('B8: an empty actions row is neither drawn nor styled as a band', () => {
     assert.ok(!/<div class="container-actions">\s*\$\{/.test(ui), 'the row is only emitted with a Take button (whitespace made it non-empty)');
     assert.match(ui, /\$\{this\.isTakeable \? '<div class="container-actions">/);
     assert.ok(Object.keys(rules(box, '.container-actions:not(:has(*))')[0] || {}).includes('display'));
+});
+
+test('PIN pad: no border-radius in pin.css (UI rule); corners are stepped clip-paths', () => {
+    for (const m of pin.matchAll(/border-radius\s*:\s*([^;}]+)/g)) {
+        assert.match(m[1].trim(), /^0(px)?$/, `border-radius must be 0, found ${m[1]}`);
+    }
+    assert.match(pin, /clip-path: polygon/, 'the keypad and log plates keep their stepped pixel corners');
+});
+
+test('PIN pad: windows up to 840px high get the compact layout, so 720 and 768 fit', () => {
+    const c = rule(pin, '.pin-minigame-game-container', '(max-height: 840px)');
+    assert.equal(c.padding, '12px 20px');
+    assert.ok(px(rule(pin, '.pin-minigame-key', '(max-height: 840px)')['min-height']) <= 40);
 });

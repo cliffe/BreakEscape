@@ -550,7 +550,7 @@
 
 /* Short screens (800x600 and below): a tighter pad so the display, every key and the
    attempts log all fit on the plate (slice 7 R1) */
-@media (max-height: 700px) {
+@media (max-height: 840px) {
     .pin-minigame-game-container { padding: 12px 20px; gap: 12px; }
     .pin-minigame-interface { gap: 10px; }
     .pin-minigame-display-container { margin-bottom: 0; }
@@ -705,7 +705,7 @@
    display (-12px) overlapped the display's lower border once the short-screen rules took the
    display's bottom margin away. On a short screen the row sits below the display in the flow;
    in the landscape layout it is as wide as the left column, so a wrong code is one line. */
-@media (max-height: 700px) {
+@media (max-height: 840px) {
     .pin-minigame-message { margin: 0 auto; }
 }
 
