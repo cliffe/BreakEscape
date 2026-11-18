@@ -35,6 +35,6 @@ The probe sampled the console every 5 s: its resolved read text, `julian_console
 | at the cooler | true | false | yes | "NIGHT WATCH CONSOLE. Signed in: J. SALLOW, duty officer." |
 | at the cooler | true | true | no | "J. SALLOW -- SESSION LOCKED." |
 
-The three signals now agree in every sampled state (phases b and d: 30 samples each across the three rows). The upset lock-screen text no longer shows while Julian is away and the console can be claimed. With the officers at post and upset, the text says locked and the console is not claimable. Not exercised live: the actual sign-in click, which the unchanged pc-sessions code gates on the same two globals.
+The three signals now agree in every sampled state (phase b showed the first two rows, phase d all three, 30 samples each). The upset lock-screen text no longer shows while Julian is away and the console can be claimed. With the officers at post and upset, the text says locked and the console is not claimable. Not exercised live: the actual sign-in click, which the unchanged pc-sessions code gates on the same two globals.
 
 Caveats: all states are set by global writes, not by attacking or knocking down an officer. Julian and Agnieszka were not physically knocked out. Phase a on game 9393 followed an aborted earlier probe attempt that had already set `found_badge_audit` on that game.
