@@ -26,7 +26,7 @@ Verdict: the run did NOT reach the credits or debrief. The player was knocked ou
 | 16 | Mid-mission reload (sync, session-stop, session-start same game id, bootstrap "Continue?") | PASS for Joanne: still KO, sprite (186,189), `koX/koY` unchanged, `joanne_ko`/`aes_staff_off`/`robert_vance_ko` kept, Ibrahim not KO. Player respawned in main_entrance at (159,141) HP 46. Screenshot `screenshots/pt_ko_after_reload.png`. Body-centre readout moved (231 to 185) while sprite stayed put; not a position change |
 | 17 | Ibrahim twice: curt line "I'll keep to my work, if it's all the same to you." | NOT TESTED / BLOCKED: Ibrahim was hostile (finding 1). `interact` on him opened no chat; he hit the player instead (`currentKnot: start`, `hasTalked` false) |
 | 18 | Relay card clone, workshop, case, VM terminal, flag stations (needs `--flags`), print, plant room, Static, Voltage, ESD, "Bring me in", debrief, credits | NOT REACHED |
-| 19 | Credits text ("OFFICE STAFF: HURT, ON YOUR ACCOUNT", no "ALL THIRTEEN") and debrief head-count line | NOT REACHED. Static read only: `scenario.json.erb:243-250` carry the conditions |
+| 19 | Credits text ("OFFICE STAFF: hurt, and that's on you", no "ALL THIRTEEN") and debrief head-count line | NOT REACHED. Static read only: `scenario.json.erb:243-250` carry the conditions |
 
 ## Office-life checks
 
@@ -91,7 +91,7 @@ HEAD 5678582166a74fac2178ed3862bcfa6a2e1e1381 (build/ol-m04). Game 8082 from new
 - `tools/playtest/session-start.sh --url http://127.0.0.1:3097/break_escape/games/8082 --flags tools/playtest/m04_critical_failure-flags-game8082.xml --speed human --log tools/playtest/m04_critical_failure-session-g8082b.jsonl`, then loop-limit eval, `bootstrap` (this is the mid-mission reload: click Resume if the page asks). Check Joanne still KO at sprite (168,113), `joanne_ko`, `aes_staff_off`, `robert_vance_ko` kept, Ibrahim not hostile, player HP.
 - Phone: finish the HaX guides (network mapping, attack surface), `plant_reader_seen`/`server_room_reached` come from the plant door and workshop. Submit `<flag:1>` to `<flag:4>` at `flag_station_dropsite` (`mg type [0,"<flag:N>",{"submit":true}]`), one per HaX guide/VM prerequisite as far as the game offers.
 - Hall 1 `hall1_round_panel`: Dust for prints, lift Vance's print (recipe in the 8053b log, seq 76 to 132; Vance is KO, so check which print the panel offers when "Robert Vance" is on the floor).
-- Plant room door (biometric), Static (`converse ["not here for you"]`), Voltage (needs about 48 HP: drink the coffee via `inventoryAct office-misc-cup Use` just before), ESD button, then `openInventoryItem phone`, HaX "Bring me in" x2 and "On my way", debrief picks as in `r6_vance_ko.json`, credits. Expect "OFFICE STAFF: HURT, ON YOUR ACCOUNT", no "ALL THIRTEEN"; record the head-count line.
+- Plant room door (biometric), Static (`converse ["not here for you"]`), Voltage (needs about 48 HP: drink the coffee via `inventoryAct office-misc-cup Use` just before), ESD button, then `openInventoryItem phone`, HaX "Bring me in" x2 and "On my way", debrief picks as in `r6_vance_ko.json`, credits. Expect "OFFICE STAFF: hurt, and that's on you", no "ALL THIRTEEN"; record the head-count line.
 - Then `verify-run.rb 8082`, screenshot `pt_ko2_credits.png`, finish this section, commit the two paths.
 
 ### Findings so far

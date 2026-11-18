@@ -135,7 +135,7 @@ A newcomer hidden mid-use has no update to release its machine (`npc-behavior.js
 
 If the player stays in reception through the alarm, the pair sit on the sofa until the player leaves the room. This is accepted: the alarm usually goes off in the ops office or by phone elsewhere.
 
-**Bark.** On `joanne_pell`, appended last: `global_variable_changed:crew_warned`, `value === true`, `onceOnly`, bark "That's the evacuation. Coats, now." She is a person NPC with a voice, so it is voiced by the batch. The hide does not wait on the bark.
+**Bark.** On `joanne_pell`, appended last: `global_variable_changed:crew_warned`, `value === true`, `onceOnly`, bark "That's the alarm. Coats on, out we go." She is a person NPC with a voice, so it is voiced by the batch. The hide does not wait on the bark.
 
 The render check at the evacuation turn uses a seated newcomer (instant unseat on hide).
 
@@ -187,7 +187,7 @@ The comments at 238 and `:429` are updated to say thirteen: the nine night crew,
       "condition": "data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off",
       "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
     { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true",
-      "onceOnly": true, "bark": "That's the evacuation. Coats, now." },
+      "onceOnly": true, "bark": "That's the alarm. Coats on, out we go." },
     { "eventPattern": "room_entered:*", "condition": "globalVars.aes_staff_evacuated === true",
       "onceOnly": true, "setVisible": false } ] }
 ```

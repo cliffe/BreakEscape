@@ -10,7 +10,7 @@ Two people sit on the reception sofa while the briefing plays. Coming back into 
 
 ## Talk lines (E on either of them; `ink/m04_npc_ibrahim_diallo.ink`, `ink/m04_npc_joanne_pell.ink`)
 
-- Ibrahim: "Morning. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list."
+- Ibrahim: "Hello. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list."
 - Ibrahim, after trouble: "I'll keep to my work, if it's all the same to you."
 - Joanne: "Hiya, duck. I've a dozen inductions at six, so I came in early to get ahead. Don't mind me."
 - Joanne, after trouble: "I'd rather you kept your distance, love."
@@ -26,7 +26,7 @@ Ibrahim:
 Joanne:
 - "Proper brew, none of that cooler stuff."
 - "Who leaves teabags in the sink?"
-- "Six o'clock comes round fast, duck."
+- "Who's moved my mug again, duck?"
 - "I'll be needing another one of these."
 
 ## Exchanges at the kettle (each heard once; knots in `ink/m04_npc_ibrahim_diallo.ink`)
@@ -45,7 +45,7 @@ Each exchange line is at most 40 characters of speech (the validator's cap).
 > Ibrahim Diallo: Neither of us is on tonight's rota.
 > Joanne Pell: Your swap was booked late, then?
 > Ibrahim Diallo: After the rota went out. You're early.
-> Joanne Pell: Inductions at six. Nobody knows I'm in.
+> Joanne Pell: Inductions today. Nobody knows I'm in.
 
 `ex_stay_out_of_the_halls` (only after you have met Vance):
 

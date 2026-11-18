@@ -51,4 +51,4 @@ None that are not already on the base. The `ALL ELEVEN` difference described abo
 
 ## 5. Routes added after the run
 
-`r41_joanne_ko_debrief_credits.json` and `r42_ibrahim_ko_debrief_credits.json` (build review R2 m7): a newcomer KO taken to the debrief and the credits. Both pass (`all expectations met`): the debrief head-count takes the KO branch (`m04_closing_debrief.ink:436`), the credits carry "not all of them on their own feet" (`scenario.json.erb:244`) and "OFFICE STAFF: HURT, ON YOUR ACCOUNT" (`:250`), and "ALL THIRTEEN" is absent.
+`r41_joanne_ko_debrief_credits.json` and `r42_ibrahim_ko_debrief_credits.json` (build review R2 m7): a newcomer KO taken to the debrief and the credits. Both pass (`all expectations met`): the debrief head-count takes the KO branch (`m04_closing_debrief.ink:436`), the credits carry "not all of them on their own feet" (`scenario.json.erb:244`) and "OFFICE STAFF: hurt, and that's on you" (`:250`), and "ALL THIRTEEN" is absent.
