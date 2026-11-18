@@ -103,6 +103,7 @@ export function initNPCHostileSystem() {
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
     announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
+    applyRestoredStats: (npcId, config) => applyRestoredStats(npcId, config),
     recordCalm: (npcId) => recordCalm(npcId),
     resetHostilesForRespawn: () => resetHostilesForRespawn(),
     redropPending: (npcId) => redropPending(npcId)
@@ -217,6 +218,20 @@ export function takeRestoredHostility(npcId) {
 export function recordCalm(npcId) {
   if (!npcId || hostilityRecord.has(npcId)) return;
   hostilityRecord.set(npcId, { hostile: false, ko: false });
+}
+
+/**
+ * Give a restored NPC its configured combat numbers (attackDamage, attackCooldown,
+ * attackRange, maxHP). restoreHostility runs before any behavior exists, so the
+ * state it builds carries the defaults; the behavior calls this once it has its
+ * config, for every restored NPC (KO and calm included, which are never announced).
+ * Local only: nothing here is recorded or synced.
+ */
+export function applyRestoredStats(npcId, config) {
+  const state = npcHostileStates.get(npcId);
+  if (!state) return false;
+  applyHostileStats(state, configuredHostileStats(npcId, config));
+  return true;
 }
 
 /**
