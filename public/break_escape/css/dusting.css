@@ -285,6 +285,12 @@
 .dusting-short .dusting-status { grid-column: 2; grid-row: 4; font-size: 16px; }
 .dusting-short .dusting-options { grid-column: 2; grid-row: 5; gap: 4px 12px; font-size: 16px; }
 .dusting-short .dusting-options label { min-height: 28px; }
+/* Dust step at 667x375: the over-brush warning wraps to four lines, so the options rows (24 px labels, no row gap) and the tools and
+   powder line (2 px, 0 px below) give the feedback line the 18 px it needs above the pinned strip. */
+.dusting-short[data-step="dust"] .dusting-options { row-gap: 0; }
+.dusting-short[data-step="dust"] .dusting-options label { min-height: 24px; }
+.dusting-short[data-step="dust"] .dusting-tools { margin-bottom: 2px; }
+.dusting-short[data-step="dust"] .dusting-panel > .dusting-powder-line { margin-bottom: 0; }
 /* Only the Coverage (or Tape pressed) bar and the button row are pinned, one 80 px strip (44 buttons + 36 Coverage) at the foot of the
    panel; the tools, powder line, Clarity, estimate and feedback scroll above it. The panel is a flex column
    here so the pinned bar sits directly above the buttons whatever the markup order is. */

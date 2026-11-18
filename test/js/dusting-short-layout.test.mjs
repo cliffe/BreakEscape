@@ -467,3 +467,11 @@ test('r7 (b): short mode hides the Lift estimate on the dust step only, visually
     assert.doesNotMatch(css, /\.dusting-short\[data-step="lift"\][^{]*\.dusting-estimate/);
     assert.doesNotMatch(src, /dusting-estimate"[^>]*aria-live/);
 });
+
+test('r7 (c): the dust step tightens the options rows, tools margin and powder line so the feedback line clears the strip at 667x375', () => {
+    assert.match(rule('.dusting-short[data-step="dust"] .dusting-options'), /row-gap: 0/);
+    assert.match(rule('.dusting-short[data-step="dust"] .dusting-options label'), /min-height: 24px/);
+    assert.match(rule('.dusting-short[data-step="dust"] .dusting-tools'), /margin-bottom: 2px/);
+    assert.match(rule('.dusting-short[data-step="dust"] .dusting-panel > .dusting-powder-line'), /margin-bottom: 0/);
+    assert.doesNotMatch(css, /\.dusting-short[^{]*\{[^}]*font-size: (1[0-5]|[0-9])px/);
+});
