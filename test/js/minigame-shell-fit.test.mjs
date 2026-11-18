@@ -386,7 +386,7 @@ test('BLE scanner list uses the pixel scrollbar, a More below cue and an accent 
 test('notes: the page scroll box starts below the X, so its scrollbar never runs under it (M3)', () => {
     const r = rule(css('notes.css'), '.notes-minigame-content-area');
     assert.equal(r.top, '48px');
-    assert.match(r.height, /calc\(90% - 48px\)/);
+    assert.match(r.height, /calc\(85% - 48px\)/);
 });
 
 test('notes: the short-landscape rule keeps the 48px offset in its height and drops the top padding (R2 M1)', () => {

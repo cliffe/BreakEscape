@@ -89,9 +89,9 @@ test('no rule slices or stretches the notepad non-uniformly (the art has per-rin
 test('portrait: the page body scrolls inside the notepad with a scrollbar and a MORE cue', () => {
     const area = rule(notes, '.notes-minigame-content-area');
     assert.equal(area.overflow, 'auto');
-    assert.match(area.height, /calc\(90% - 48px\)/);
+    assert.match(area.height, /calc\(85% - 48px\)/);
     const p = rule(notes, '.notes-minigame-notepad .notes-minigame-content-area', PORTRAIT);
-    assert.match(p.height, /calc\(86% - 48px\)/, 'the body stops above the cue');
+    assert.match(p.height, /calc\(85% - 48px\)/, 'the body stops above the cue');
     const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
     assert.match(js, /notes-minigame-content-area pixel-scroll/, 'visible pixel scrollbar');
     assert.match(js, /moreCue\.className = 'notes-minigame-more'/);
@@ -145,26 +145,32 @@ test('short landscape: 16px MORE cue and an 85% body', () => {
     assert.match(rule(notes, '.notes-minigame-content-area', L).height, /calc\(85% - 48px\)/);
 });
 
-test('the body stops above the MORE cue at every notepad height (paper foot at row 191 of 205)', () => {
+test('the body stops above the MORE cue at every notepad height (clear for H >= 343; 320x568 gives 366)', () => {
     const PORT = '(orientation: portrait) and (max-width: 768px)';
     const LAND = 'orientation: landscape) and (max-height: 640px)';
-    const cue = (media) => {
-        const c = Object.assign({}, rule(notes, '.notes-minigame-more'), rule(notes, '.notes-minigame-more', media));
-        const px = (v) => parseFloat(v);
-        const border = px((c.border || '0').split(' ')[0]) || 0;
-        return px(c['line-height']) + 2 * border;
-    };
-    const frac = (media, sel) => parseFloat(rule(notes, sel, media).height.match(/calc\((\d+)%/)[1]) / 100;
+    const px = (v) => parseFloat(v);
+    const baseTop = px(rule(notes, '.notes-minigame-content-area').top);
+    assert.equal(baseTop, 48);
     const cases = [
-        ['portrait', PORT, '.notes-minigame-notepad .notes-minigame-content-area', 28],
-        ['landscape', LAND, '.notes-minigame-content-area', 20],
+        ['portrait', PORT, '.notes-minigame-notepad .notes-minigame-content-area', 28, [344, 366, 384, 412, 446]],
+        ['landscape', LAND, '.notes-minigame-content-area', 20, [276, 312, 378]],
+        ['desktop', null, '.notes-minigame-content-area', 28, [559, 592, 904]],
     ];
-    for (const [name, media, sel, box] of cases) {
-        assert.equal(cue(name === 'portrait' ? null : media) , box, `${name} cue box height`);
-        const f = frac(media, sel);
-        // a portrait notepad is never under about 412px tall (360x640 gives roughly 1.5px of clearance)
-        for (const H of [276, 312, 378, 412, 446, 588].filter(h => name === 'landscape' || h >= 412)) {
-            assert.ok(H * f <= H * 191 / 205 - box, `${name} H=${H}: body bottom ${H * f} vs cue top ${H * 191 / 205 - box}`);
+    for (const [name, media, sel, box, heights] of cases) {
+        const c = Object.assign({}, rule(notes, '.notes-minigame-more'), ...(media ? rules(notes, '.notes-minigame-more', media) : []));
+        const border = px((c.border || '0').split(' ')[0]) || 0;
+        const padV = px(String(c.padding).split(/\s+/)[0]) || 0;
+        assert.equal(px(c['line-height']) + padV * 2 + 2 * border, box, `${name} cue box height`);
+        const m = c.bottom.match(/100% \* (\d+) \/ (\d+)/);
+        const anchor = 1 - Number(m[1]) / Number(m[2]);
+        const h = Object.assign({}, rule(notes, '.notes-minigame-content-area'), ...(media ? rules(notes, sel, media) : [])).height;
+        const hm = h.match(/calc\((\d+)% - (\d+)px\)/);
+        assert.equal(Number(hm[2]), baseTop, `${name}: calc offset equals the content area top`);
+        const f = Number(hm[1]) / 100;
+        for (const H of heights) {
+            const bodyBottom = H * f;
+            const cueTop = H * anchor - box;
+            assert.ok(bodyBottom <= cueTop, `${name} H=${H}: body bottom ${bodyBottom} vs cue top ${cueTop}`);
         }
     }
 });
