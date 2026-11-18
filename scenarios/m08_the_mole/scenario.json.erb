@@ -1005,10 +1005,10 @@ CREDITS
     hostile, m07's two-part wording (Hollis, Park, Mercer) with a per-NPC
     opening. restored !== true so a reload's re-announced hostility repeats
     nothing. ATHENA and HaX in person don't fight back (aggroDistance 1), so
-    each gets one text: how to put the fists away.
+    each gets one text: they won't fight back or talk.
     Puzzle chains C2 (N3): in m08 hostility never clears (no #hostile:false,
     no influence recovery) and survives a reload, and clicking a hostile NPC
-    jabs even with the open hand. So the texts say the NPC won't talk again;
+    punches. So the texts say the NPC won't talk again;
     for the Director, the KO route (his card off the floor) is what's left.
     Design C1 (D1, m1, m7): the first text also latches <npc>_hostile, so the
     mission can treat "punched but standing" like a KO where a conversation is
@@ -1053,7 +1053,7 @@ CREDITS
               "onceOnly": true,
 <% if id == "director_netherton" %>              "setGlobal": { "brief_taken": true },
               "completeTask": "brief_with_netherton",
-<% end %>              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
+<% end %>              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
             },
 <% if id == "director_netherton" %>
             {
@@ -1081,13 +1081,13 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'receptionist_ai' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar. She won't hit back, or answer you now, and she logs everything. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar. She won't hit back, or answer you now, and she logs everything." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'agent_0x99_person' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Message me. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Message me." }
             },
             {
               "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",
