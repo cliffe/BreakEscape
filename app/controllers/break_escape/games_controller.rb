@@ -1271,6 +1271,7 @@ module BreakEscape
             # untracked until promotion.
             @game.record_npc_route_room!(target_id)
             room_data = @game.filtered_room_data(target_id)
+            annotate_station_submission_status!(room_data, target_id) if room_data
             track_npc_encounters(target_id, room_data)
           else
             # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
@@ -2872,6 +2873,10 @@ module BreakEscape
     def serve_opened_room(room_id)
       @game.unlock_room!(room_id)
       room_data = @game.filtered_room_data(room_id)
+      # The client caches this copy and builds the room from it, so a flag station in it
+      # needs the same submitted-flags annotation as GET /room (else its list reads empty
+      # after a reload until the player submits again).
+      annotate_station_submission_status!(room_data, room_id) if room_data
       # Track NPC encounters when unlocking a door (room data is cached by client)
       # This ensures NPCs are tracked even if loadRoom() uses cached data
       track_npc_encounters(room_id, room_data)
