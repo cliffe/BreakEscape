@@ -79,6 +79,8 @@
 }
 .dusting-feedback { min-height: 1.2em; color: #ffd75e; }
 .dusting-feedback.good { color: var(--d-accent); }
+.dusting-keys { color: var(--d-dim); }
+.dusting-near { min-height: 1.2em; color: var(--d-accent); }
 .dusting-estimate { color: var(--d-text); }
 .dusting-result .dusting-result-value { color: var(--d-accent); }
 
@@ -257,6 +259,20 @@
 .dusting-short .dusting-ref { padding: 4px; }
 .dusting-short .dusting-stage-note { font-size: 16px; }
 .dusting-short .dusting-btn, .dusting-short .dusting-jar, .dusting-short .dusting-pattern, .dusting-short .dusting-ref { min-height: 36px; padding: 4px 8px; }
+
+/* Compare: the lift and one card magnified side by side (whole-number scale, no smoothing). Tags are text with a 2px box. */
+.dusting-zoom { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.dusting-zoom[hidden] { display: none; }
+.dusting-zoom-pane { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dusting-zoom-cap { font-size: 18px; color: var(--d-dim); }
+.dusting-zoom-box { position: relative; border: 2px solid var(--d-line); line-height: 0; background: #f2f0ea; align-self: flex-start; }
+.dusting-zoom-canvas { display: block; image-rendering: pixelated; }
+.dusting-zoom-tag {
+    position: absolute; box-sizing: border-box; min-width: 20px; height: 20px; padding: 0 3px; text-align: center;
+    font: 20px/16px 'VT323', 'GNF', monospace; color: #fff; background: #000; border: 2px solid #ffd23f;
+}
+.dusting-zoom-tag[data-none] { border-style: dashed; border-color: #ff5a6a; color: #ff5a6a; }
+.dusting-hc .dusting-zoom-tag { border-color: #fff; }
 
 /* Compare screen on a desktop-sized frame (1280x720): a smaller key note and tighter rows so the options and
    key lines at the foot fit without the frame scrolling (live proof r1: scrollHeight 693 against 660). */

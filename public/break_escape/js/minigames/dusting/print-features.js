@@ -190,3 +190,52 @@ export function mismatchReason(diff, lift, card) {
     const there = diff.there ? `that card has ${TYPE_WORDS[diff.there.type]} there` : 'that card has no marked detail there';
     return `No match: same pattern, but the minutiae differ. Your lift has ${TYPE_WORDS[m.type]} ${where}; ${there}.`;
 }
+
+/**
+ * Tags for a card's marks in the magnified compare view. The lift's marks are numbered 1..n. A card mark
+ * takes the number of the lift mark it pairs with (same type, within SAME_SPOT in the core-relative frame,
+ * the test compareFeatures uses), each lift mark pairing once; a mark with no partner is tagged 'X'. The
+ * owner's card carries the lift's marks, so it gets 1..n in order; a decoy shows X where it differs.
+ * @param {{type:string, dx:number, dy:number}[]} liftMarks
+ * @param {{type:string, dx:number, dy:number}[]} cardMarks
+ * @returns {{lift:string[], card:string[], paired:number}}
+ */
+export function pairMarkTags(liftMarks, cardMarks) {
+    const taken = new Set();
+    const card = cardMarks.map(c => {
+        let best = -1, bd = SAME_SPOT;
+        liftMarks.forEach((l, i) => {
+            const d = Math.hypot(c.dx - l.dx, c.dy - l.dy);
+            if (!taken.has(i) && l.type === c.type && d < bd) { bd = d; best = i; }
+        });
+        if (best < 0) return 'X';
+        taken.add(best);
+        return String(best + 1);
+    });
+    return { lift: liftMarks.map((_, i) => String(i + 1)), card, paired: taken.size };
+}
+
+/**
+ * One square crop (canvas px, whole numbers) that holds every mark of a print with `pad` to spare, at least
+ * `min` wide, clamped inside the size x size canvas. Both prints of a pair use the same side so they magnify alike.
+ * @param {{x:number,y:number}[]} points @param {number} side crop side @param {number} size canvas size
+ */
+export function cropAround(points, side, size) {
+    if (!points.length) return { x: Math.round((size - side) / 2), y: Math.round((size - side) / 2), side };
+    const cx = (Math.min(...points.map(p => p.x)) + Math.max(...points.map(p => p.x))) / 2;
+    const cy = (Math.min(...points.map(p => p.y)) + Math.max(...points.map(p => p.y))) / 2;
+    const clamp = v => Math.max(0, Math.min(size - side, Math.round(v - side / 2)));
+    return { x: clamp(cx), y: clamp(cy), side };
+}
+
+/** Crop side that fits the marks of every print in the pair (each mark kept `pad` px inside), between min and max. */
+export function cropSide(pointSets, pad = 12, min = 48, max = 80) {
+    let need = 0;
+    for (const pts of pointSets) {
+        if (!pts.length) continue;
+        const w = Math.max(...pts.map(p => p.x)) - Math.min(...pts.map(p => p.x));
+        const h = Math.max(...pts.map(p => p.y)) - Math.min(...pts.map(p => p.y));
+        need = Math.max(need, w, h);
+    }
+    return Math.max(min, Math.min(max, 2 * Math.ceil((need + 2 * pad) / 2)));
+}

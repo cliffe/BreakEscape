@@ -494,3 +494,28 @@ export function findSheen({ lit, ridge, mask, res, floor, floorScale = 1, dotted
     if (dotted) s = Math.max(s, mask * Math.min(FIND_FLOOR_MAX, (floor + (hc ? FIND_HC_FLOOR_BONUS : 0)) * floorScale));
     return s;
 }
+
+/** The Hint button appears this long after the Find step opens (a blind run needed it sooner than 15 s). */
+export const HINT_AFTER_MS = 8000;
+/** The torch is "near the print" within this many canvas px of a mask pixel; it stays near until FIND_LEAVE_RADIUS (no flicker). */
+export const FIND_NEAR_RADIUS = 8;
+export const FIND_LEAVE_RADIUS = 14;
+/**
+ * Is any print-mask pixel (above 0.3, as the click test uses) within `radius` px of (x, y)?
+ * @param {ArrayLike<number>} mask n x n @param {number} n @param {number} x @param {number} y @param {number} radius
+ */
+export function torchNearPrint(mask, n, x, y, radius) {
+    const r = Math.ceil(radius), px = Math.round(x), py = Math.round(y);
+    for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy > radius * radius) continue;
+            const xx = px + dx, yy = py + dy;
+            if (xx >= 0 && yy >= 0 && xx < n && yy < n && mask[yy * n + xx] > 0.3) return true;
+        }
+    }
+    return false;
+}
+/** Next "near" state with hysteresis: enters at FIND_NEAR_RADIUS, leaves only past FIND_LEAVE_RADIUS. */
+export function nextNearState(wasNear, mask, n, x, y) {
+    return torchNearPrint(mask, n, x, y, wasNear ? FIND_LEAVE_RADIUS : FIND_NEAR_RADIUS);
+}

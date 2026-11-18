@@ -14,9 +14,9 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
-    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns
+    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns, HINT_AFTER_MS, nextNearState
 } from './dusting-model.js';
-import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS } from './print-features.js';
+import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide } from './print-features.js';
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
 import { displayDashes } from '../../utils/display-dashes.js';
@@ -49,7 +49,7 @@ export function nextView(current, count) {
 }
 const STEPS = ['find', 'powder', 'dust', 'lift', 'compare'];
 const STEP_NAMES = { find: 'Find', powder: 'Powder', dust: 'Dust', lift: 'Lift', compare: 'Compare' };
-const HINT_AFTER_MS = 15000;
+const NEAR_TEXT = 'Faint ridges catch the light here.';
 const KEY_TICK_MS = 70;
 const STORE_HC = 'breakEscape.dusting.highContrast';
 const STORE_STEADY = 'breakEscape.dusting.steadyHand';
@@ -339,11 +339,23 @@ export class DustingMinigame extends MinigameScene {
         this.addEventListener(cv, 'pointermove', e => this._onPointerMove(e));
         this.addEventListener(cv, 'pointerup', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointercancel', e => this._onPointerUp(e));
-        this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; } });
+        this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; if (this.nearPrint) { this.nearPrint = false; this._setDyn('near', el => { el.textContent = ''; }); } } });
         this.addEventListener(this.panel, 'click', e => {
             const el = e.target.closest('[data-action]');
             if (el && !el.disabled) this._action(el.dataset.action, el.dataset);
         });
+        // Compare: the magnified pair follows the card under the pointer or the keyboard focus (no re-render, so focus stays).
+        const zoomTo = (e, speak) => {
+            const w = e.target.closest && e.target.closest('.dusting-ref-wrap');
+            const b = w && w.querySelector('[data-index]');
+            const i = b ? Number(b.dataset.index) : NaN;
+            if (!Number.isInteger(i) || this.step !== 'compare' || this.identified || this.zoomIdx === i) return;
+            this.zoomIdx = i;
+            this._drawZoom();
+            if (speak && this._zoomSpeech) this.announce(this._zoomSpeech);
+        };
+        this.addEventListener(this.panel, 'pointerover', e => zoomTo(e, false));
+        this.addEventListener(this.panel, 'focusin', e => zoomTo(e, true));
         this.addEventListener(document, 'keydown', e => this._onKeyDown(e));
         this.addEventListener(document, 'keyup', e => this._onKeyUp(e));
         this.addEventListener(window, 'resize', () => this._layout());
@@ -371,6 +383,7 @@ export class DustingMinigame extends MinigameScene {
         if (this.stageNote) this.stageNote.style.maxWidth = `${N * this.scale}px`;
         this.canvas.style.height = `${N * this.scale}px`;
         this.wide = window.innerWidth >= 760;
+        if (this.step === 'compare' && this.patternOk && this.panel) this._drawZoom();
     }
 
     _later(fn, ms) {
@@ -454,7 +467,7 @@ export class DustingMinigame extends MinigameScene {
         p.querySelectorAll('[data-slot]').forEach(host => {
             host.appendChild(slotCanvas(host.dataset.slot, Number(host.dataset.scale || 2)));
         });
-        if (this.step === 'compare' && this.patternOk) this._drawReferences();
+        if (this.step === 'compare' && this.patternOk) { this._drawReferences(); this._drawZoom(); }
         // The compare key sits under the lift, where there is room, so the panel fits a 1000 px window.
         if (this.stageNote) {
             const note = this.step === 'compare' ? this._compareNote() : '';
@@ -489,6 +502,8 @@ export class DustingMinigame extends MinigameScene {
             <p>Hold the light low across the surface. Where residue catches the light you will see a small patch
             of fine curved ridges. Long straight streaks are only reflections.
             Click on the patch, or move the light with the arrow keys and press Space.</p>
+            <p class="dusting-keys">Move the torch with the mouse or arrow keys. Look for a dotted patch. Space: check. H: hint (after 8 seconds).</p>
+            <p class="dusting-near" data-dyn="near"></p>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-hint" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
@@ -585,8 +600,13 @@ export class DustingMinigame extends MinigameScene {
         const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
             ? ` It opens to the ${this.print.canonical.opens}.` : '';
         return `${head}<p>That is ${/^[aeiou]/i.test(this.print.pattern) ? 'an' : 'a'} ${PATTERN_INFO[this.print.pattern].label.toLowerCase()}, marked on the card.${opens} Check the class first: rule out any card with a different pattern${this.print.pattern === 'loop' ? ' or a loop that opens the other way' : ''}.</p>
-            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
+            <div class="dusting-zoom" data-zoom>
+                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap">Your lift</span><div class="dusting-zoom-box" data-zbox="lift"></div></div>
+                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap" data-zcap></span><div class="dusting-zoom-box" data-zbox="card"></div></div>
+            </div>
+            <p class="dusting-legend">Magnified, side by side. The same number marks the same detail on both. X is a mark with no partner on your lift; a number missing from the card is a detail it lacks.</p>
+            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
             <div class="dusting-buttons"><button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
     }
 
@@ -912,6 +932,17 @@ export class DustingMinigame extends MinigameScene {
         if (this.pointerDown) this._act(pos, this.lastPt || prev);
         this.lastPt = this.pointerDown ? pos : null;
         this.dirty = true;
+        this._updateNear();
+    }
+
+    /** Find step: say once per approach that the torch is close to the print (visible text and aria-live), clear it on leaving. */
+    _updateNear() {
+        if (this.step !== 'find' || this.found || !this.pointerInside) return;
+        const near = nextNearState(!!this.nearPrint, this.print.mask, N, this.reticle.x, this.reticle.y);
+        if (near === !!this.nearPrint) return;
+        this.nearPrint = near;
+        this._setDyn('near', el => { el.textContent = near ? NEAR_TEXT : ''; });
+        if (near) this.announce(NEAR_TEXT);
     }
 
     _onPointerUp() {
@@ -970,6 +1001,7 @@ export class DustingMinigame extends MinigameScene {
             this.pointerInside = true;
             if (this.spaceHeld || this.stickyBrush) this._act(this.reticle, old);
             this.dirty = true;
+            this._updateNear();
             return;
         }
         if ((k === ' ' || k === 'Enter') && !nativeControl && canvasStep) {
@@ -1043,6 +1075,7 @@ export class DustingMinigame extends MinigameScene {
             return;
         }
         this.found = true;
+        this.nearPrint = false;
         this.foundAt = performance.now();
         this.message = 'Found it: a latent print.';
         this._refreshDynamic();
@@ -1092,6 +1125,7 @@ export class DustingMinigame extends MinigameScene {
         const word = v => (v >= 0.85 ? 'good' : v >= 0.6 ? 'fair' : v >= 0.3 ? 'faint' : 'low');
         if (this.step === 'find' || this.step === 'compare') {
             this._setDyn('feedback', el => { el.textContent = this.message; });
+            this._setDyn('near', el => { el.textContent = this.nearPrint ? NEAR_TEXT : ''; });
             return;
         }
         if (this.step === 'dust') {
@@ -1455,8 +1489,72 @@ export class DustingMinigame extends MinigameScene {
         c.restore();
     }
 
-    /** A reference card (ink on pale card) with its core, deltas and marks, on a 128 x 128 context. */
-    _paintReference(c, cand) {
+    /** Which card the magnified pair shows: the one hovered or focused, else the one on view, else the first still open. */
+    _zoomIndex() {
+        const open = i => Number.isInteger(i) && this.candidates[i] && !this.candidates[i].rejected;
+        if (open(this.zoomIdx)) return this.zoomIdx;
+        if (open(this.viewing)) return this.viewing;
+        return this.candidates.findIndex(c => !c.rejected);
+    }
+
+    /**
+     * The lift and one card cropped round their marks and drawn at the same whole-number scale (no smoothing),
+     * marks numbered 1..n on the lift and with the paired number (or X) on the card. Tags are HTML text.
+     */
+    _drawZoom() {
+        const host = this.panel.querySelector('[data-zoom]');
+        if (!host) return;
+        const cand = this.candidates[this._zoomIndex()];
+        host.hidden = !cand;
+        if (!cand) return;
+        const lm = this.liftMarks || [], cm = cand.marks || [];
+        const side = cropSide([lm, cm]);
+        const tags = pairMarkTags(lm, cm);
+        const avail = Math.floor(((this.panel.clientWidth || 340) - 8) / 2);
+        const S = Math.max(2, Math.min(6, Math.floor(avail / side)));
+        const ref = document.createElement('canvas');
+        ref.width = N; ref.height = N;
+        this._paintReference(ref.getContext('2d'), cand, true);
+        const pane = (key, src, print, marks, labels, col) => {
+            const box = host.querySelector(`[data-zbox="${key}"]`);
+            box.textContent = '';
+            const crop = cropAround(marks, side, N);
+            const cv = document.createElement('canvas');
+            cv.className = 'dusting-zoom-canvas'; cv.width = cv.height = side * S;
+            cv.style.width = cv.style.height = `${side * S}px`;
+            cv.setAttribute('aria-hidden', 'true');
+            const c = cv.getContext('2d');
+            c.imageSmoothingEnabled = false;
+            c.drawImage(src, crop.x, crop.y, side, side, 0, 0, side * S, side * S);
+            const at = p => ({ x: Math.round((p.x - crop.x) * S), y: Math.round((p.y - crop.y) * S) });
+            c.strokeStyle = '#0a6b2d'; c.lineWidth = 2;
+            for (const k of print.cores) { const q = at(k), a = 2 * S; c.beginPath(); c.moveTo(q.x - a, q.y); c.lineTo(q.x + a, q.y); c.moveTo(q.x, q.y - a); c.lineTo(q.x, q.y + a); c.stroke(); }
+            for (const t of print.deltas) { const q = at(t), a = 2 * S; c.beginPath(); c.moveTo(q.x, q.y - a); c.lineTo(q.x + a, q.y + a); c.lineTo(q.x - a, q.y + a); c.closePath(); c.stroke(); }
+            c.strokeStyle = col;
+            const r = Math.round(1.5 * S) + 2;
+            box.appendChild(cv);
+            marks.forEach((m, i) => {
+                const q = at(m);
+                if (q.x < 0 || q.y < 0 || q.x >= side * S || q.y >= side * S) return;
+                c.beginPath();
+                if (m.type === 'bifurcation') c.rect(q.x - r, q.y - r, 2 * r, 2 * r); else c.arc(q.x, q.y, r, 0, Math.PI * 2);
+                c.stroke();
+                const t = document.createElement('span');
+                t.className = 'dusting-zoom-tag'; t.textContent = labels[i];
+                if (labels[i] === 'X') t.dataset.none = '1';
+                t.style.left = `${Math.min(side * S - 24, q.x + r + 2)}px`; t.style.top = `${Math.max(0, q.y - r - 18)}px`;
+                box.appendChild(t);
+            });
+        };
+        pane('lift', this.cardCanvas, this.print, lm, tags.lift, this.cardDark ? '#ffd23f' : '#b00020');
+        pane('card', ref, cand.print, cm, tags.card, '#b00020');
+        const cap = `Card ${cand.index + 1}: ${cand.label}`;
+        host.querySelector('[data-zcap]').textContent = cap;
+        this._zoomSpeech = `${cap}. ${tags.paired} of ${lm.length} marks on your lift pair with this card${cm.length > tags.paired ? `, ${cm.length - tags.paired} marked X` : ''}.`;
+    }
+
+    /** A reference card (ink on pale card) with its core, deltas and marks, on a 128 x 128 context. `bare` leaves them off (the zoom draws its own). */
+    _paintReference(c, cand, bare = false) {
         const d = c.createImageData(N, N);
         const bgc = [242, 240, 234], ink = [27, 27, 27];
         const p = cand.print;
@@ -1465,6 +1563,7 @@ export class DustingMinigame extends MinigameScene {
             d.data[j] = bgc[0] + (ink[0] - bgc[0]) * a; d.data[j + 1] = bgc[1] + (ink[1] - bgc[1]) * a; d.data[j + 2] = bgc[2] + (ink[2] - bgc[2]) * a; d.data[j + 3] = 255;
         }
         c.putImageData(d, 0, 0);
+        if (bare) return;
         if (this.patternOk && !this.identified) this._drawCardSingulars(c, p);
         if (this.patternOk && !this.identified && cand.marks) this._drawMarks(c, cand.marks, '#b00020');
     }
@@ -1476,7 +1575,7 @@ export class DustingMinigame extends MinigameScene {
             const p = cand.print;
             this._paintReference(c, cand);
             if (this.identified && cand.correct) this._drawMatchTags(c, p, this._matches().map(m => m.ref), '#b00020', false);
-            const s = this.wide && this.candidates.length <= 2 ? 2 : 1;
+            const s = 1;   // the magnified pair above the cards shows the detail, so the cards stay at 1x and leave room for it
             cv.style.width = `${N * s}px`; cv.style.height = `${N * s}px`;
         });
         // Two cards at 2x put the panel's foot ~21 px below a 1000 px window (m08
