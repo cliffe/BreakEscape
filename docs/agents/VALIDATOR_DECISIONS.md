@@ -266,6 +266,21 @@ Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an
 
 **Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): the same held item as the hl_box entry above. Once the player unlocks hl_box and picks the item up, its display name travels with it into playerInventory. The item is only takeable after the hl_box unlock that earns the answer, so this adds no new exposure. Not a filter gap; does not start 6b.
 
+## 2026-11-18: user decision D160 (m05 Owen badge number 4430, allow with a signed-off scan exception)
+
+```json
+{
+  "scenario": "scenarios/m05_insider_trading/scenario.json.erb",
+  "route": "GET room/:id",
+  "paths": [
+    "rooms/open_office_area/npcs[0]/rfidCard/rfid_data/cardNumber",
+    "rooms/open_office_area/npcs[0]/rfidCard/rfid_card_number"
+  ]
+}
+```
+
+**Signed by the user (decisions page D160), 2026-11-18.** Owner: m05. Opened-state payload scan, class 4 by design: Owen Gallagher's EM4100 card number 4430 (low 16 bits of 2A0000114E) is the #4430 on the door log and the on-call lockbox code. The RFID cloner shows it when the player clones his badge, so the room payload carries it with his NPC. Matching badge, log and lockbox is the intended clue.
+
 ## 2026-11-16: rogue_ap sprite waits on A3 art (RESOLVED 2026-11-16, entry removed)
 
 ```json

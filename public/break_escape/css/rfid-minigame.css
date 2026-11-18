@@ -148,7 +148,7 @@
 }
 
 .flipper-logo {
-    font-size: 20px;
+    font-size: 16px;
     color: white;
     letter-spacing: 2px;
     font-family: 'GNF', monospace;
@@ -198,8 +198,8 @@
     background: #222;
     border-top: 2px solid #1a1a1a;
     color: #FFA500;
-    font-size: 14px;
-    font-family: 'GNF', monospace;
+    font-size: 20px;
+    font-family: 'VT323', monospace;
 }
 
 .flipper-more[hidden] {
@@ -313,7 +313,7 @@
 
 /* Breadcrumb */
 .flipper-breadcrumb {
-    font-size: 14px;
+    font-size: 16px;
     color: #FFA500;
     margin-bottom: 15px;
     font-family: 'GNF', monospace;
@@ -358,7 +358,7 @@
     color: #c8c8c8;   /* readable on the copier's dark screen (critique A44) */
     margin: 10px 0;
     text-align: center;
-    font-size: 14px;
+    font-size: 16px;
     font-family: 'GNF', monospace;
 }
 
@@ -373,7 +373,7 @@
 
 /* Card Name */
 .flipper-card-name {
-    font-size: 20px;
+    font-size: 24px;
     color: #FFA500;
     margin: 10px 0;
     text-align: center;
@@ -387,7 +387,7 @@
     border: 2px solid #1a1a1a;
     padding: 15px;
     margin: 15px 0;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.8;
     font-family: 'GNF', monospace;
 }
@@ -566,7 +566,7 @@
 
 .flipper-success-message,
 .flipper-error-message {
-    font-size: 20px;
+    font-size: 24px;
     font-family: 'GNF', monospace;
 }
 
@@ -581,7 +581,7 @@
 /* Under a refusal (rfid-minigame.js _showDenial): it clears on a tap or after 3 s */
 .flipper-error-hint {
     margin-top: 12px;
-    font-size: 14px;
+    font-size: 16px;
     font-family: 'GNF', monospace;
     color: #FFA500;
     text-align: center;
@@ -665,16 +665,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
+    font-size: 20px;
     color: #AAA;
-    font-family: 'GNF', monospace;
+    font-family: 'VT323', monospace;
 }
 
 .security-badge {
     padding: 3px 8px;
     border: 2px solid #1a1a1a;
-    font-size: 13px;
-    font-family: 'GNF', monospace;
+    font-size: 20px;
+    font-family: 'VT323', monospace;
 }
 
 .security-badge.security-low {
@@ -721,14 +721,14 @@
 
 /* Attack Progress */
 #attack-status {
-    font-size: 14px;
+    font-size: 16px;
     margin-top: 10px;
     color: #FFA500;
     font-family: 'GNF', monospace;
 }
 
 #attack-percentage {
-    font-size: 18px;
+    font-size: 16px;
     color: white;
     font-family: 'GNF', monospace;
 }
@@ -785,14 +785,14 @@
 
 .flipper-crack-hint {
     margin: 4px 0;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 /* Under a refusal or notice: why it happened (rfid-minigame.js _showDenial) */
 .flipper-error-detail {
     margin-top: 10px;
     max-width: 90%;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.3;
     font-family: 'GNF', monospace;
     color: #ddd;
@@ -812,7 +812,7 @@
 /* Left on the Info screen after a dictionary attack found nothing */
 .flipper-dict-miss {
     margin: 4px 0;
-    font-size: 14px;
+    font-size: 16px;
     color: #FFA500;
     border: 2px solid #FFA500;
     padding: 4px 8px;
@@ -827,7 +827,7 @@
     margin: 8px 0;
     padding: 4px 8px;
     text-align: center;
-    font-size: 14px;
+    font-size: 16px;
     font-family: 'GNF', monospace;
     border: 2px solid currentColor;
 }
@@ -907,7 +907,7 @@
 
 .flipper-section-head {
     color: #FFA500;
-    font-size: 14px;
+    font-size: 16px;
     margin-top: 8px;
 }
 

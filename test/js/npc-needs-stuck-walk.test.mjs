@@ -55,7 +55,7 @@ test('a wedged walk home re-routes, then logs return_stuck once and backs off in
     const before = homeMoves(w, sys).length;
     sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
     assert.equal(evs(sys, 'return_resumed').length, 1);
-    assert.equal(homeMoves(w, sys).at(-1).reroute, undefined, 'the first re-issue keeps the plain path (a player who held it has gone)');
+    assert.equal(homeMoves(w, sys).at(-1).reroute, true, 'the first re-issue plans round other bodies too (a plain plan can run through a standing NPC\'s lane)');
     sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
     assert.equal(homeMoves(w, sys).at(-1).reroute, true, 'a second stall in the same place plans round other bodies');
     for (let i = 0; i < STUCK_TRIES - 1; i++) sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);

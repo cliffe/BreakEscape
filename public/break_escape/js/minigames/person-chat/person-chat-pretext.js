@@ -563,6 +563,8 @@ export function renderDebrief(container, { session, spec, onDone, theme = null }
     // m1: trap Tab within the panel while the modal is up, and stop keystrokes reaching the chat's
     // global keydown handler behind it. role="dialog" + aria-modal names it a modal to AT.
     panel.setAttribute('aria-modal', 'true');
+    // The minigame focus trap steps aside for this panel: the backdrop handler below cycles Tab.
+    panel.setAttribute('data-own-tab-cycle', '');
     const focusables = () => Array.from(panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
         .filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true');
     backdrop.addEventListener('keydown', (e) => {

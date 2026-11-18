@@ -8,7 +8,7 @@
     border: 2px solid #00ff00;
     margin: 10px 0;
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 16px;
     text-align: center;
     min-height: 20px;
     /* The box grows with its text: in the flex column that holds the lock it must not shrink
@@ -74,7 +74,8 @@
 }
 
 .lockpicking-item-info p {
-    font-size: 16px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
     margin: 0;
     color: #ecf0f1;
     line-height: 1.4;
@@ -98,7 +99,8 @@
     }
     
     .lockpicking-item-info p {
-        font-size: 14px;
+        font-size: 20px;
+        font-family: 'VT323', monospace;
     }
 }
 
@@ -228,7 +230,8 @@
     }
 
     .lockpicking-item-info p {
-        font-size: 12px;
+        font-size: 20px;
+        font-family: 'VT323', monospace;
     }
 }
 
