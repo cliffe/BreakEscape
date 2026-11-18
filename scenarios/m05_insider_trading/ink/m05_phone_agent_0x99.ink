@@ -435,7 +435,12 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
     Start with the box's user accounts.
 - else:
     ~ flag1_discussed = true
-    Now use it. The upload flaw needs you logged in, and you are.
+    // R1 review: after flag 1 the player holds the note, not a login.
+    {portal_login_found:
+        You've got the login card. Use it. The upload flaw needs you logged in.
+    - else:
+        The login's on a card in the IT on-call lockbox, on the server-room rack. The upload flaw needs you logged in.
+    }
 }
 -> support_hub
 
