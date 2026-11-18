@@ -347,6 +347,7 @@
 }
 
 .pin-minigame-attempt-empty {
+    font-size: 16px;
     text-align: center;
     color: #c9d1d9;
     font-style: normal;

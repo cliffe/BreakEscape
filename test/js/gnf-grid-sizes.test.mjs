@@ -80,3 +80,29 @@ test('a compact PC monitor hides the 16px username line, which no longer fits it
     const css = readFileSync(new URL('../../public/break_escape/css/password-minigame.css', import.meta.url), 'utf8');
     assert.match(css, /\.pc-monitor\[data-compact\] \.signin-username\s*\{\s*display: none;/);
 });
+
+// Elements that set no size of their own inherit the framework's 18px GNF from .minigame-container,
+// which the scan above cannot see. Each of these must declare a grid size itself, and none may
+// declare an off-grid one (live run, 18 Nov: all of them drew at 18px).
+const OWN_SIZE = [
+    ['password-minigame.css', '.pc-screen-area .signin-prompt'],
+    ['pc-monitor.css', '.pc-monitor > .postit-note.pc-monitor-postit'],
+    ['pin.css', '.pin-minigame-attempt-empty'],
+    ['combination-minigame.css', '.combination-reset-btn, .combination-unlock-btn'],
+    ['biometrics-minigame.css', '.sample-quality'],
+    ['panels.css', '.sample-quality'],
+];
+for (const [file, sel] of OWN_SIZE) {
+    test(`${file}: ${sel.replace(/\n/g, ' ')} declares its own GNF grid size`, () => {
+        const rules = fontRules(file).filter((r) => r.sel === sel && !r.media);
+        const sizes = rules.map((r) => r.size).filter((s) => s !== null);
+        assert.ok(sizes.length > 0, 'a base rule sets font-size (else it inherits the framework 18px)');
+        for (const s of sizes) assert.ok(s >= 16 && s % 8 === 0, `${sel} is ${s}px`);
+    });
+}
+
+test('a compact tile name wraps, so "Other user" fits the 76px of content', () => {
+    const text = readFileSync(join(css, 'password-minigame.css'), 'utf8');
+    assert.match(text, /\.pc-monitor\[data-compact\] \.signin-other \.signin-name\s*\{\s*white-space: normal;/);
+    assert.match(text, /\.signin-other \.signin-name,\s*\.signin-other \.signin-username\s*\{\s*white-space: nowrap;/);
+});
