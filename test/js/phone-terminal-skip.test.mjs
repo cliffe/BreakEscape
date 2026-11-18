@@ -430,6 +430,63 @@ test('a key press also skips a playing clip, as the click does', async () => {
     } finally { c.restore(); }
 });
 
+// Code review R1 M2: Space/Enter skip a voiced call's clip on the call screen (non-terminal theme)
+// exactly as a click does, with the same guards.
+function callRig() {
+    const r = rig();
+    r.ui.isTerminalTheme = false;
+    r.ui.isCallMode = true;
+    r.mg.params = { theme: 'phone', voiced: true };
+    let skips = 0, playing = true;
+    r.mg._callVoice = { get active() { return playing; }, skip() { skips++; playing = false; } };
+    r.again = () => { playing = true; };
+    r.skips = () => skips;
+    return r;
+}
+
+test('call screen: the key listener is registered for call mode as well as the terminal theme', () => {
+    const src = readFileSync(join(chat, 'phone-chat-minigame.js'), 'utf8');
+    assert.match(src, /if \(this\.ui\.isTerminalTheme \|\| this\.ui\.isCallMode\) \{\s*this\.addEventListener\(document, 'keydown'/);
+});
+
+test('call screen: Space and Enter skip the playing clip and are swallowed', () => {
+    const r = callRig();
+    for (const k of [' ', 'Enter']) {
+        r.again();
+        const before = r.skips();
+        const e = key({ key: k }, document.body);
+        r.mg._onSkipKey(e);
+        assert.equal(r.skips(), before + 1, `${JSON.stringify(k)} skipped the clip`);
+        assert.equal(e.defaultPrevented, true);
+    }
+    const e = key({ key: ' ' }, document.body);
+    r.mg._onSkipKey(e);
+    assert.equal(e.defaultPrevented, false, 'nothing playing: the key is left alone');
+});
+
+test('call screen: modifiers, repeat, other keys, fields, buttons and a covered call leave the clip alone', () => {
+    const r = callRig();
+    const input = document.createElement('input'); document.body.appendChild(input);
+    const btn = document.createElement('button'); document.body.appendChild(btn);
+    const press = (init, target) => { const e = key(init, target); r.mg._onSkipKey(e); return e; };
+    const none = (what) => { assert.equal(r.skips(), 0, what); assert.equal(r.mg._callVoice.active, true, what); };
+    press({ key: ' ', ctrlKey: true }, document.body); none('ctrl');
+    press({ key: ' ', shiftKey: true }, document.body); none('shift');
+    press({ key: ' ', repeat: true }, document.body); none('repeat');
+    press({ key: 'a' }, document.body); none('other key');
+    press({ key: ' ' }, input); none('target is a field');
+    press({ key: 'Enter' }, btn); none('target is a button');
+    input.focus(); press({ key: ' ' }, document.body); none('focus in a field'); input.blur();
+    r.ui.incomingCallShowing = () => true; press({ key: ' ' }, document.body); none('incoming-call panel');
+    r.ui.incomingCallShowing = () => false;
+    globalThis.__modalCount = 1; press({ key: ' ' }, document.body); none('a dialog on top'); globalThis.__modalCount = 0;
+    r.ui.getCurrentView = () => 'contact-list'; press({ key: ' ' }, document.body); none('thread not showing');
+    r.ui.getCurrentView = () => 'conversation';
+    r.mg.gameState.isActive = false; press({ key: ' ' }, document.body); none('game inactive'); r.mg.gameState.isActive = true;
+    press({ key: ' ' }, document.body);
+    assert.equal(r.skips(), 1, 'with every guard clear, it skips');
+});
+
 test('handleChoice: the reply types out, a click skips it, and the skip state resets on entry', async () => {
     const c = clock(); const r = rig();
     try {
@@ -450,4 +507,20 @@ test('handleChoice: the reply types out, a click skips it, and the skip state re
         assert.deepEqual(r.text(), ['Reply one.', 'Reply two.']);
         assert.equal(r.mg._skipAll, false, 'reset at the end');
     } finally { c.restore(); }
+});
+
+test('call screen: a real Space and Enter keydown on the document, through setupEventListeners, skip the clip', () => {
+    const r = callRig();
+    for (const el of ['contactList', 'conversationHeader', 'backButton']) r.ui.elements[el] = document.createElement('div');
+    r.mg._eventListeners = [];
+    r.mg.handleKeyPress = () => {};
+    r.mg.setupEventListeners();
+    try {
+        for (const k of [' ', 'Enter']) {
+            r.again();
+            const before = r.skips();
+            document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+            assert.equal(r.skips(), before + 1, `${JSON.stringify(k)} on the document skipped the clip`);
+        }
+    } finally { baseCleanup(r.mg); }
 });

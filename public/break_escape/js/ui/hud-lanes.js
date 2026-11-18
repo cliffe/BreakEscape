@@ -990,6 +990,9 @@ function applyLanesPass(doc, win, { cursor = null, shared = { panel: null } } = 
   // have stepped aside above; next the other toasts step aside, oldest first (their countdown
   // waits, notifications.js), and they stay aside while a brief line shows. Then the notify lane
   // gets the brief line's height whole (notifyFloor). With no brief line they all come back.
+  // An immediate toast (feedback on something the player just did) skips the cap the same way,
+  // so on the one-toast phone lane the others step aside for it too.
+  const priority = el => el.classList.contains('brief') || el.classList.contains('immediate');
   const toastEls = toastsEl ? Array.from(toastsEl.querySelectorAll('.notification'))
     .filter(el => !el._toast?.closing && !el.classList.contains('toast-pending')) : [];
   const yieldToast = (el, hide) => {
@@ -997,11 +1000,11 @@ function applyLanesPass(doc, win, { cursor = null, shared = { panel: null } } = 
     el.classList.toggle('hud-lane-yield', hide);
     try { el._onLaneYield?.(hide); } catch (e) { /* the toast closed meanwhile */ }
   };
-  if (toastEls.some(el => el.classList.contains('brief'))) {
+  if (toastEls.some(priority)) {
     let tH = toastH;
     for (const el of toastEls) {
       if (tH <= lanes.notify.maxHeight) break;
-      if (el.classList.contains('brief') || el.classList.contains('hud-lane-yield')) continue;
+      if (priority(el) || el.classList.contains('hud-lane-yield')) continue;
       const oh = outerHeightOf(el);
       if (oh > 0) el._laneH = oh;
       tH = Math.max(0, tH - oh);

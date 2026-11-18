@@ -60,6 +60,42 @@ test('a third info or success toast waits, then shows as the first goes, in orde
     assert.equal(T.waitingToastCount(), 0);
 });
 
+test('an immediate toast (action feedback) shows at once, past the limit', async () => {
+    T.showNotification('a', 'info', '', 300);
+    T.showNotification('b', 'info', '', 300);
+    const late = T.showNotification('Card saved', 'success', 'Card copied', 300, { immediate: true });
+    assert.ok(late, 'rendered, not queued');
+    assert.equal(T.waitingToastCount(), 0);
+    assert.deepEqual(messages(), ['a', 'b', 'Card saved']);
+    const plain = T.showNotification('c', 'success', '', 300);
+    assert.equal(plain, null, 'an ordinary toast still waits');
+    await wait(1500);
+    assert.equal(children.length, 0);
+    assert.equal(T.waitingToastCount(), 0);
+});
+
+// Code review R1 M1: the pull-back when a panel opens rebuilt the options without immediate, so
+// "Card copied" replayed after the chat closed was queued behind other toasts again.
+test('an immediate toast pulled back by a panel is replayed immediate: past the limit, at once', async () => {
+    const first = T.showNotification('Card saved', 'success', 'Card copied', 300, { immediate: true, whole: true });
+    assert.ok(first);
+    assert.equal(first._toast.immediate, true);
+    globalThis.__panelOpen = true;
+    assert.equal(T.holdRecentNotifications(), 1, 'pulled back');
+    assert.equal(children.length, 0);
+    globalThis.__panelOpen = false;
+    const a = T.showNotification('a', 'info', '', 60000);   // the panel closed and two others took the places
+    const b = T.showNotification('b', 'info', '', 60000);
+    await wait(400);
+    assert.deepEqual(messages(), ['a', 'b', 'Card saved'], 'replayed at once, not queued behind a and b');
+    assert.equal(children[2]._toast.immediate, true);
+    assert.equal(children[2]._toast.whole, true);
+    assert.equal(T.waitingToastCount(), 0);
+    T.removeNotification(a); T.removeNotification(b);
+    await wait(1200);
+    assert.equal(children.length, 0);
+});
+
 test('warnings and errors show at once, past the limit', async () => {
     T.showNotification('a', 'info', '', 200);
     T.showNotification('b', 'info', '', 200);
