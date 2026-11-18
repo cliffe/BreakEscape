@@ -84,6 +84,9 @@ export function hostnameClass(name) {
 
 /** Plan 9.3b 5.2: an open view refetches this often (ms). */
 export const REFETCH_MS = 5000;
+/** After this many unchanged answers in a row the gap widens to REFETCH_IDLE_MS (review R1 m3). */
+export const REFETCH_IDLE_AFTER = 3;
+export const REFETCH_IDLE_MS = 15000;
 export const REMOTE_OFF_TEXT = 'Remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'Powered down';
 export const NO_ROUTE_TEXT = 'No route';
@@ -269,8 +272,13 @@ export class NetworkViewMinigame extends MinigameScene {
         this._staleRefetched = false;
         // Plan 9.3b 5.2: an open view refetches every five seconds (params.refetchMs for tests)
         this.refetchMs = Number.isFinite(params?.refetchMs) ? params.refetchMs : REFETCH_MS;
+        this.refetchIdleMs = Number.isFinite(params?.refetchIdleMs) ? params.refetchIdleMs : REFETCH_IDLE_MS;
         this._refetchTimer = null;
         this._refetching = false;
+        this._unchanged = 0;
+        this._pointerDown = false;
+        this._viewedKeys = new Set();
+        this.noticeRowId = null;
     }
 
     links() { return window.networkLinks || null; }
@@ -291,7 +299,42 @@ export class NetworkViewMinigame extends MinigameScene {
         this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-loading">Connecting...</div></div>';
         // Unplug is there from the start: it does not wait for the link to answer
         this.showHeader('');
+        this.bindDelegates();
         this.loaded = this.load();
+    }
+
+    /**
+     * One set of listeners for the life of the view, so a redraw adds none (review R1 n2): a
+     * click on a row's control, on Unplug, an image settling, and the pointer-down flag that
+     * holds a redraw while a press is in progress (R1 m1).
+     */
+    bindDelegates() {
+        const game = this.gameContainer;
+        if (!game) return;
+        this.addEventListener(game, 'click', (e) => {
+            const btn = e.target?.closest?.('[data-action]');
+            if (!btn || !game.contains(btn)) return;
+            const li = btn.closest('[data-host-id], [data-resource-id]');
+            const id = li?.dataset.hostId || li?.dataset.resourceId;
+            const row = this.allRows().find(r => r.id === id);
+            if (!row) return;
+            e.preventDefault?.();
+            this.act(row, btn.dataset.action);
+        });
+        const root = this.frameElement || game;
+        this.addEventListener(root, 'click', (e) => {
+            const btn = e.target?.closest?.('[data-unplug]');
+            if (!btn || !root.contains(btn)) return;
+            e.preventDefault?.();
+            this.unplugBox();
+        });
+        this.addEventListener(game, 'load', () => this.updateScrollCue(), true);
+        this.addEventListener(game, 'pointerdown', () => { this._pointerDown = true; });
+        const up = () => { this._pointerDown = false; };
+        if (typeof document !== 'undefined') {
+            this.addEventListener(document, 'pointerup', up);
+            this.addEventListener(document, 'pointercancel', up);
+        }
     }
 
     /**
@@ -366,36 +409,75 @@ export class NetworkViewMinigame extends MinigameScene {
             this.refetched = Promise.resolve(answer.synced).then(ok => {
                 if (!ok || this._reported) return null;
                 if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
-                // The late sync has landed, so the globals are on the server: no second sync
-                return this.load({ sync: false });
+                // The late sync has landed, so the globals are on the server: fetch again the way
+                // the timed refetch does (it skips if one is on its way, keeps the scroll)
+                return this.refetch({ sync: false });
             });
         }
         this.render();
         this.startRefetchTimer();
-        const hostIds = this.rows().filter(r => r.kind === 'pc').map(r => r.id);
-        const networkId = this.view?.network?.id ?? null;
-        this._emit('network_viewed', { footholdId: this.footholdId, networkId, hostIds, hostList: hostIds.join(',') }, networkId);
+        this.emitViewed();
+        return answer;
+    }
+
+    /**
+     * network_viewed for the own network and each reachable further network, once per distinct
+     * (network, host list). The first load emits them all; a refetch that brings up a new host
+     * or network block emits only the new ones, so a task waiting for it completes without a
+     * reopen (review R1 m2).
+     */
+    emitViewed() {
+        const emitOnce = (networkId, ids, extra) => {
+            const hostList = ids.join(',');
+            const key = `${networkId ?? ''}|${hostList}`;
+            if (this._viewedKeys.has(key)) return;
+            this._viewedKeys.add(key);
+            this._emit('network_viewed', { footholdId: this.footholdId, networkId, hostIds: ids, hostList, ...extra }, networkId);
+        };
+        emitOnce(this.view?.network?.id ?? null, this.rows().filter(r => r.kind === 'pc').map(r => r.id), {});
         // A pivot-reached network (slice 9.3b K, 5.1) emits its own network_viewed, so a task
         // on the further network completes when its block appears.
         this.networkBlocks().forEach(block => {
             if (block.route === 'down') return;
-            const ids = this.blockRows(block).filter(r => r.kind === 'pc').map(r => r.id);
-            this._emit('network_viewed',
-                { footholdId: this.footholdId, networkId: block.id, hostIds: ids, hostList: ids.join(','), via: block.via?.hostId ?? null },
-                block.id);
+            emitOnce(block.id, this.blockRows(block).filter(r => r.kind === 'pc').map(r => r.id), { via: block.via?.hostId ?? null });
         });
-        return answer;
     }
 
-    /** Start the five-second refetch once the first view is up (one timer per view). */
+    /** Start the refetch loop once the first view is up (one timer per view). */
     startRefetchTimer() {
         if (this._refetchTimer || this._reported || !(this.refetchMs > 0)) return;
-        this._refetchTimer = setInterval(() => { this.refetch(); }, this.refetchMs);
+        this.scheduleRefetch();
+    }
+
+    /** The gap to the next tick: refetchMs, or the idle gap after a run of unchanged answers. */
+    nextRefetchDelay() {
+        return this._unchanged >= REFETCH_IDLE_AFTER ? Math.max(this.refetchMs, this.refetchIdleMs) : this.refetchMs;
+    }
+
+    scheduleRefetch() {
+        if (this._reported || this._ending || !(this.refetchMs > 0)) return;
+        this._refetchTimer = setTimeout(async () => {
+            this._refetchTimer = null;
+            try { await this.refetch(); } catch (e) { console.warn('[network-view] refetch failed', e); }
+            // A view that is no longer the running screen (replaced without a cleanup) stops asking
+            if (window.MinigameFramework?.currentMinigame !== this) return;
+            if (!this._reported && !this._ending && !this._refetchTimer) this.scheduleRefetch();
+        }, this.nextRefetchDelay());
     }
 
     stopRefetchTimer() {
-        if (this._refetchTimer) clearInterval(this._refetchTimer);
+        if (this._refetchTimer) clearTimeout(this._refetchTimer);
         this._refetchTimer = null;
+    }
+
+    /** The player did something: back to the short gap at once (review R1 m3). */
+    noteActivity() {
+        const wasIdle = this._unchanged >= REFETCH_IDLE_AFTER;
+        this._unchanged = 0;
+        if (wasIdle && this._refetchTimer) {
+            this.stopRefetchTimer();
+            this.scheduleRefetch();
+        }
     }
 
     /**
@@ -405,12 +487,14 @@ export class NetworkViewMinigame extends MinigameScene {
      * position, and draws again only when the answer differs. A refused or lost answer leaves
      * the view as it was; a dropped foothold ends the view as the first load does.
      */
-    async refetch() {
+    async refetch({ sync = true } = {}) {
         if (this._refetching || this._reported || this._ending || this.status !== 'ready') return null;
+        // A hidden tab asks nothing; the next tick after it is visible again does
+        if (typeof document !== 'undefined' && document.hidden) return null;
         if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
         this._refetching = true;
         try {
-            const answer = await this.links()?.view?.(this.footholdId);
+            const answer = await this.links()?.view?.(this.footholdId, { sync });
             if (this._reported || this._ending) return answer ?? null;
             if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return answer ?? null;
             if (!answer) return null;
@@ -424,17 +508,50 @@ export class NetworkViewMinigame extends MinigameScene {
             if (!answer.ok) return answer;
             const stale = !!answer.stale;
             if (JSON.stringify(answer.view) !== JSON.stringify(this.view) || stale !== this.stale) {
+                // A press is in progress in the list: keep the buttons under it. The view is
+                // left as it was, so the next tick sees the difference and draws it (R1 m1)
+                if (this._pointerDown) return answer;
+                this._unchanged = 0;
                 const top = this.gameContainer?.scrollTop ?? 0;
+                const focus = this.focusedControl();
                 this.view = answer.view;
                 this.stale = stale;
+                // The Look text goes when the row it describes has gone
+                if (this.noticeRowId && !this.allRows().some(r => r.id === this.noticeRowId)) {
+                    this.notice = null;
+                    this.noticeRowId = null;
+                }
                 this.render();
                 if (this.gameContainer) this.gameContainer.scrollTop = top;
+                this.restoreFocus(focus);
                 this.updateScrollCue?.();
+                this.emitViewed();
+            } else {
+                this._unchanged++;
             }
             return answer;
         } finally {
             this._refetching = false;
         }
+    }
+
+    /** Which row control has keyboard focus, as { id, action }, so a redraw can give it back. */
+    focusedControl() {
+        const el = typeof document !== 'undefined' ? document.activeElement : null;
+        if (!el || !this.gameContainer?.contains?.(el)) return null;
+        const btn = el.closest?.('[data-action]');
+        const li = btn?.closest?.('[data-host-id], [data-resource-id]');
+        const id = li?.dataset?.hostId || li?.dataset?.resourceId;
+        return id ? { id, action: btn.dataset.action } : null;
+    }
+
+    restoreFocus(target) {
+        if (!target) return;
+        const match = [...(this.gameContainer?.querySelectorAll?.('[data-action]') || [])].find(btn => {
+            const li = btn.closest('[data-host-id], [data-resource-id]');
+            return (li?.dataset.hostId || li?.dataset.resourceId) === target.id && btn.dataset.action === target.action;
+        });
+        match?.focus?.();
     }
 
     ownNetworkId() { return this.view?.network?.id ?? null; }
@@ -619,22 +736,12 @@ export class NetworkViewMinigame extends MinigameScene {
                     </ul>
                 </div>`}
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
-                <div class="network-view-notice" aria-live="polite"></div>
+                <div class="network-view-notice" aria-live="polite">${escapeHtml(this.notice || '')}</div>
             </div>`;
-        if (inList) this.bindUnplug(this.gameContainer);
-        const lookup = this.allRows();
-        this.gameContainer.querySelectorAll('[data-action]').forEach(btn => {
-            const li = btn.closest('[data-host-id], [data-resource-id]');
-            const id = li?.dataset.hostId || li?.dataset.resourceId;
-            const row = lookup.find(r => r.id === id);
-            if (row) this.addEventListener(btn, 'click', (e) => { e.preventDefault?.(); this.act(row, btn.dataset.action); });
-        });
         this.updateScrollCue();
         // Images and fonts can change the height after this frame: look again once they settle
+        // (the delegated load listener catches images, bindDelegates)
         if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => this.updateScrollCue());
-        this.gameContainer?.querySelectorAll?.('img').forEach(img => {
-            if (!img.complete) this.addEventListener(img, 'load', () => this.updateScrollCue());
-        });
     }
 
     /**
@@ -658,7 +765,6 @@ export class NetworkViewMinigame extends MinigameScene {
         const full = `${html}${this.unplugHtml()}`;
         this.headerElement.innerHTML = full;
         if (this.headerStrip) this.headerStrip.hidden = !full.trim();
-        this.bindUnplug(this.headerElement);
     }
 
     /**
@@ -681,11 +787,6 @@ export class NetworkViewMinigame extends MinigameScene {
         return `
                     <div class="network-view-actions"><button type="button" class="minigame-button network-view-unplug" data-unplug${this._unplugging ? ' disabled' : ''}>${label}</button></div>
                     <p class="network-view-unplug-notice" aria-live="polite"${this.unplugNotice ? '' : ' hidden'}>${escapeHtml(this.unplugNotice || '')}</p>`;
-    }
-
-    bindUnplug(root) {
-        const btn = root?.querySelector?.('[data-unplug]');
-        if (btn) this.addEventListener(btn, 'click', (e) => { e?.preventDefault?.(); this.unplugBox(); });
     }
 
     /**
@@ -726,8 +827,9 @@ export class NetworkViewMinigame extends MinigameScene {
         el.hidden = !this.unplugNotice;
     }
 
-    showNotice(text) {
+    showNotice(text, rowId = null) {
         this.notice = text;
+        this.noticeRowId = rowId;
         const el = this.gameContainer?.querySelector('.network-view-notice');
         if (el) el.textContent = text;
     }
@@ -735,10 +837,11 @@ export class NetworkViewMinigame extends MinigameScene {
     /** A row's control: sign in, open a held session or a share, or look at a resource. */
     act(row, action) {
         if (!this.gameState.isActive || this.status !== 'ready') return false;
+        this.noteActivity();
         const footholdId = this.footholdId;
         this._emit('network_host_opened', { footholdId, hostId: row.id, kind: row.kind || null }, row.id);
         if (action === 'observe') {
-            this.showNotice(row.observations || 'Nothing more to see from here.');
+            this.showNotice(row.observations || 'Nothing more to see from here.', row.id);
             return true;
         }
         if (row.kind === 'pc') {

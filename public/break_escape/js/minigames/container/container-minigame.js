@@ -1234,11 +1234,15 @@ export class ContainerMinigame extends MinigameScene {
         if (gameId && this.loginPcId) {
             // A sign-in PC stays locked in room data: its session, not the lock, opens it.
             const loaded = await this.loadLoginDesktop();
-            if (loaded === null) return;
+            if (loaded === null || this.screenGone()) return;
             this.contents = loaded;
         } else if (gameId && this.containerItem.scenarioData.locked === false) {
             console.log('Reloading container contents from server to get latest state');
-            this.contents = await this.loadContainerContents();
+            const contents = await this.loadContainerContents();
+            // Closed (or replaced) while the contents were on their way: build no UI, start no
+            // timer and report no share opened (review R1 m5)
+            if (this.screenGone()) return;
+            this.contents = contents;
             this.shareOpened();
         } else if (this.params.contents && this.params.contents.length > 0) {
             // Only use passed contents if server loading isn't available (locked container or local game)
@@ -1247,9 +1251,16 @@ export class ContainerMinigame extends MinigameScene {
         }
 
         // Create the container minigame UI
+        if (this.screenGone()) return;
         this.createContainerUI();
     }
     
+    /** True once this screen was closed or replaced, so a late answer must not build on it. */
+    screenGone() {
+        const cur = window.MinigameFramework?.currentMinigame;
+        return !!this._ending || (!!cur && cur !== this);
+    }
+
     createContainerUI() {
         if (this.mode === 'npc') {
             this.createNPCUI();
