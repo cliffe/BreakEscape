@@ -200,6 +200,7 @@ test('HaX KO route: naming Ben with the log sets ashworth_named', () => {
 
 test('scenario: the Ashworth mappings are the LAST HaX mappings, so no saved once-index moves', { skip }, () => {
     // Later mappings go AFTER these (append-only keeps saved once-indexes stable); when you add one, extend this list rather than moving Ashworth to the end again.
-    const tail = hax.eventMappings.slice(-3).map(m => m.eventPattern);
-    assert.deepEqual(tail, ['global_variable_changed:found_ashworth_notice', 'global_variable_changed:found_ashworth_vetting', 'global_variable_changed:ashworth_lead_texted']);
+    // m05 blind fixes: the transfer-log and upload-schedule task ticks are appended after them.
+    const tail = hax.eventMappings.slice(-5).map(m => m.eventPattern);
+    assert.deepEqual(tail, ['global_variable_changed:found_ashworth_notice', 'global_variable_changed:found_ashworth_vetting', 'global_variable_changed:ashworth_lead_texted', 'global_variable_changed:found_transfer_log', 'global_variable_changed:found_upload_schedule']);
 });
