@@ -77,7 +77,8 @@ async function run(w, h, tag) {
   const inside = await page.evaluate(() => !!document.activeElement?.closest?.('.phone-messages-container'));
   check(inside, `${tag}: focus is inside the phone on open (${await active()})`);
   await page.keyboard.press('Tab');
-  const tabInside = await page.evaluate(() => !!document.activeElement?.closest?.('.phone-messages-container'));
+  // The phone's own X and Notepad buttons sit outside .phone-messages-container but inside the phone.
+  const tabInside = await page.evaluate(() => !!document.activeElement?.closest?.('[data-minigame="phone-chat"]'));
   check(tabInside && !(await page.evaluate(() => document.activeElement?.classList?.contains('npc-bark-dismiss'))),
     `${tag}: first Tab stays in the phone (${await active()})`);
   await page.screenshot({ path: `${outdir}/${tag}-1-phone-open.png` });
@@ -118,7 +119,11 @@ async function run(w, h, tag) {
   await page.waitForTimeout(1500);
   const onList = await page.evaluate(() => window.MinigameFramework.currentMinigame?.ui?.getCurrentView?.());
   check(onList === 'contact-list', `${tag}: phone is on the contact list (${onList})`);
-  check((await barks()) > before, `${tag}: toast shows for HaX on the list view`);
+  // Wide screens keep texts on top of the open list; the phone layout (body.hud-compact) holds
+  // every bark while the phone is open (npc-barks.js _shouldDefer), shown after it closes.
+  const compact = await page.evaluate(() => document.body.classList.contains('hud-compact'));
+  if (compact) check((await barks()) === before, `${tag}: phone layout holds the list-view toast while the phone is open (shown after close, below)`);
+  else check((await barks()) > before, `${tag}: toast shows for HaX on the list view`);
   await page.screenshot({ path: `${outdir}/${tag}-3-list-toast.png` });
 
   // Closed phone: the toast shows
