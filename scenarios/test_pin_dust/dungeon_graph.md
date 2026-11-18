@@ -4,7 +4,7 @@
 
 TEST: PIN dust
 
-One lobby, one vault. The vault door (north) and the wall safe both take a PIN. On the table: a fingerprint kit and a PIN cracker. With the kit in your inventory, a PIN pad shows a Dust action; using it greys every key that is not in the code (not the order). The clean safe opts out with dustable false.
+One lobby, one vault. The vault door (north) and the wall safe both take a PIN. On the table: a fingerprint kit and a PIN cracker. With the kit in your inventory, a PIN pad shows a Dust action; using it greys every key that is not in the code (not the order). Dust is opt-in: the vault door and the wall safe set dustable true; the clean safe sets dustable false and shows no Dust action.
 
 ## Scenario Statistics
 

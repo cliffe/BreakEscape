@@ -674,7 +674,7 @@ Applies to both rooms and objects (safes, PCs, briefcases, doors, etc.):
 | `lockType` | `requires` value | Notes |
 |-----------|-----------------|-------|
 | `key` | a string naming this lock, matched against a key item's `opens_lock` | Also requires `keyPins` array on **both** the lock and the matching key item (e.g., `[45, 25, 55, 35]`) |
-| `pin` | 4-digit PIN string (e.g., `"2468"`) | Player enters PIN in numeric keypad mini-game. A player holding a `fingerprint_kit` gets a **Dust** button that greys out the keys not in the PIN. `dustable: false` removes the button on this lock (default true); `dustHint` (string) is shown after dusting, for example to say a digit repeats. Both apply to PIN locks only (the validator warns elsewhere) |
+| `pin` | 4-digit PIN string (e.g., `"2468"`) | Player enters PIN in numeric keypad mini-game. A player holding a `fingerprint_kit` gets a **Dust** button that greys out the keys not in the PIN. Dusting is opt-in: set `dustable: true` on the lock (on the room, for a door) to offer the button, and leave it unset or false to withhold it (default off, so campaign PINs that gate a clue or VM step stay at 10,000 codes); `dustHint` (string) is shown after dusting, for example to say a digit repeats. Both apply to PIN locks only (the validator warns elsewhere) |
 | `password` | Password string (e.g., `"Marketing123"`) | Player types password; `showKeyboard: true` shows on-screen keys; `maxAttempts: 3` limits tries; `postitNote` + `showPostit: true` shows a hint post-it |
 | `rfid` | a string naming this lock, matched against a keycard's `card_id` or `opens_lock` | Player must scan a keycard using the `rfid_cloner` or by carrying the card |
 | `bluetooth` | Bluetooth device MAC address | Requires `bluetooth_scanner` tool; device must be discovered |
@@ -1588,7 +1588,7 @@ Security tools enable specific mini-games and unlock mechanics. Can be placed as
 | Type | Mini-game / Effect |
 |------|-------------------|
 | `lockpick` | Enables lockpicking mini-game on `lockType: "key"` locks |
-| `fingerprint_kit` | Enables fingerprint collection from objects with `hasFingerprint`; required for biometric locks. Also adds Dust to every PIN keypad (see `pin` above): the server records which digits the PIN uses (the order stays hidden) and the pad greys the rest, also after a reload. Set `dustable: false` on a pad to withhold it |
+| `fingerprint_kit` | Enables fingerprint collection from objects with `hasFingerprint`; required for biometric locks. Also adds Dust to every PIN keypad (see `pin` above): the server records which digits the PIN uses (the order stays hidden) and the pad greys the rest, also after a reload. Only pads that set `dustable: true` offer it (a kit in a mission does nothing to PINs that do not opt in); the server refuses otherwise. `dustHint` reaches the client with the room/object data, so keep it free of spoilers |
 | `pin-cracker` / `pin-cracker-large` | Enables PIN-cracking mini-game on `lockType: "pin"` locks. Combined with the kit, greyed keys take no input, so the cracker only tries the dusted digits and has far fewer codes to search; each tool works on its own too |
 | `bluetooth_scanner` | Enables Bluetooth scanning to discover devices for `lockType: "bluetooth"` locks |
 | `rfid_cloner` | Enables RFID cloning from keycards for `lockType: "rfid"` locks |

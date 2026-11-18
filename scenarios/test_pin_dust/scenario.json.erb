@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: PIN dust\n\nOne lobby, one vault. The vault door (north) and the wall safe both take a PIN. On the table: a fingerprint kit and a PIN cracker. With the kit in your inventory, a PIN pad shows a Dust action; using it greys every key that is not in the code (not the order). The clean safe opts out with dustable false.",
+  "scenario_brief": "TEST: PIN dust\n\nOne lobby, one vault. The vault door (north) and the wall safe both take a PIN. On the table: a fingerprint kit and a PIN cracker. With the kit in your inventory, a PIN pad shows a Dust action; using it greys every key that is not in the code (not the order). Dust is opt-in: the vault door and the wall safe set dustable true; the clean safe sets dustable false and shows no Dust action.",
   "endGoal": "Test only: dust the pads, then open them.",
   "startRoom": "lobby",
   "startPosition": { "x": 5, "y": 7 },
@@ -21,7 +21,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "PIN dust.\nTake the fingerprint kit from the table. Open a PIN pad (the vault door north, the wall safe, the clean safe) and press DUST KEYPAD: keys that are not in the code go dull. The vault is 4172 (24 orderings), the wall safe 3883 (repeated digits), the clean safe 1357 and will not dust. Take the PIN cracker too: its lights still work on the keys left.",
+          "text": "PIN dust.\nTake the fingerprint kit from the table. Open a PIN pad (the vault door north, the wall safe, the clean safe) and press DUST KEYPAD: keys that are not in the code go dull. The vault is 4172 (24 orderings), the wall safe 3883 (repeated digits), the clean safe 1357 has no dust action (it does not set dustable). Take the PIN cracker too: its lights still work on the keys left.",
           "observations": "A sign on the wall."
         },
         {
@@ -49,6 +49,7 @@
           "locked": true,
           "lockType": "pin",
           "requires": "3883",
+          "dustable": true,
           "dustHint": "Only two keys are worn. The code repeats a digit.",
           "observations": "A small wall safe with a four-digit keypad. Two of the keys are shiny with use.",
           "contents": [
@@ -96,6 +97,7 @@
       "locked": true,
       "lockType": "pin",
       "requires": "4172",
+      "dustable": true,
       "objects": [
         {
           "type": "notes",

@@ -79,9 +79,9 @@ export class PinMinigame extends MinigameScene {
         this.allowBackspace = params.allowBackspace !== false;
         this.hasPinCracker = params.hasPinCracker || false;
         // Dusting (fingerprint kit): the action shows when the kit is held and the lock hasn't
-        // opted out (`dustable: false`); the server decides again on every ask.
+        // opted in (`dustable: true`); the server decides again on every ask.
         this.hasFingerprintKit = params.hasFingerprintKit || false;
-        this.dustable = params.dustable !== false;
+        this.dustable = params.dustable === true;
         this.dustHint = typeof params.dustHint === 'string' ? params.dustHint : '';
         this.dustSet = null;
         this.dustPending = false;
@@ -188,27 +188,29 @@ export class PinMinigame extends MinigameScene {
         interfaceContainer.appendChild(this.messageLineElement);
         
         // The Dust action (fingerprint kit): sits between the message line and the keys it greys
-        if (this.hasFingerprintKit && this.dustable) {
+        if (this.dustable) {
             this.dustBarElement = document.createElement('div');
             this.dustBarElement.className = 'pin-minigame-dust-bar';
-            this.dustButtonElement = document.createElement('button');
-            this.dustButtonElement.type = 'button';
-            this.dustButtonElement.className = 'pin-minigame-dust-button';
-            const dustIcon = document.createElement('img');
-            dustIcon.src = '/break_escape/assets/objects/fingerprint_kit.png';
-            dustIcon.alt = '';
-            dustIcon.className = 'pin-minigame-dust-icon';
-            const dustLabel = document.createElement('span');
-            dustLabel.textContent = 'DUST KEYPAD';
-            this.dustButtonElement.appendChild(dustIcon);
-            this.dustButtonElement.appendChild(dustLabel);
-            this.dustButtonElement.setAttribute('aria-label', 'Dust the keypad with the fingerprint kit');
-            this.dustButtonElement.addEventListener('click', () => this.handleDust());
+            if (this.hasFingerprintKit) {
+                this.dustButtonElement = document.createElement('button');
+                this.dustButtonElement.type = 'button';
+                this.dustButtonElement.className = 'pin-minigame-dust-button';
+                const dustIcon = document.createElement('img');
+                dustIcon.src = '/break_escape/assets/objects/fingerprint_kit.png';
+                dustIcon.alt = '';
+                dustIcon.className = 'pin-minigame-dust-icon';
+                const dustLabel = document.createElement('span');
+                dustLabel.textContent = 'DUST KEYPAD';
+                this.dustButtonElement.appendChild(dustIcon);
+                this.dustButtonElement.appendChild(dustLabel);
+                this.dustButtonElement.setAttribute('aria-label', 'Dust the keypad with the fingerprint kit');
+                this.dustButtonElement.addEventListener('click', () => this.handleDust());
+                this.dustBarElement.appendChild(this.dustButtonElement);
+            }
             this.dustNoteElement = document.createElement('div');
             this.dustNoteElement.className = 'pin-minigame-dust-note';
             this.dustNoteElement.setAttribute('role', 'status');
             this.dustNoteElement.setAttribute('aria-live', 'polite');
-            this.dustBarElement.appendChild(this.dustButtonElement);
             this.dustBarElement.appendChild(this.dustNoteElement);
             interfaceContainer.appendChild(this.dustBarElement);
         }
@@ -494,6 +496,12 @@ export class PinMinigame extends MinigameScene {
     /** Grey every key that is not a digit of the PIN, and say what that shows. */
     applyDust(dustSet, hint = '') {
         this.dustSet = dustSet;
+        // Digits typed before the dust may be impossible ones, and the last one could auto-submit
+        // a known-wrong code (costing an attempt): start the entry again.
+        if (this.currentInput) {
+            this.currentInput = '';
+            this.updateDisplay();
+        }
         if (this.keypadElement) {
             this.keypadElement.querySelectorAll('.pin-minigame-key[data-number]').forEach(key => {
                 const greyed = isKeyGreyed(key.dataset.number, dustSet);
@@ -526,6 +534,7 @@ export class PinMinigame extends MinigameScene {
                 return;
             }
             if (window.playUISound) window.playUISound('item');
+            this.showPinMessage(''); // a stale 'The dust does not take.' from an earlier try
             if (this.historyKey) pinDustKnown.set(this.historyKey, { set, hint: body.hint || '' });
             this.applyDust(set, body.hint || this.dustHint);
         } catch (error) {
@@ -544,7 +553,9 @@ export class PinMinigame extends MinigameScene {
 
     /** On opening: a lock dusted earlier (this session or before a reload) comes up greyed. */
     async restoreDust() {
-        if (!this.hasFingerprintKit || !this.dustable) return;
+        // No kit needed to restore: the server remembers what was dusted, so the pad stays
+        // greyed (with the note, without the button) after the kit is used up or handed on.
+        if (!this.dustable) return;
         const known = this.historyKey ? pinDustKnown.get(this.historyKey) : null;
         if (known) { this.applyDust(known.set, known.hint || this.dustHint); return; }
         const targetId = this.getTargetId();

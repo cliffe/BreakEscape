@@ -549,7 +549,7 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             cryptexConfig: lockProps.cryptexConfig ?? connectedRoomData?.cryptexConfig ?? null,
             // Digits on the PIN pad: the server sends the PIN's length, never the PIN
             pinLength: lockProps.pinLength ?? connectedRoomData?.pinLength ?? null,
-            // Fingerprint-kit dusting of the PIN pad: opt out, or give a hint line (neither is secret)
+            // Fingerprint-kit dusting of the PIN pad: opt in with dustable true, or give a hint line (neither is secret)
             dustable: lockProps.dustable ?? connectedRoomData?.dustable ?? null,
             dustHint: lockProps.dustHint ?? connectedRoomData?.dustHint ?? null
         };

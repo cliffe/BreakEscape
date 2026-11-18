@@ -2485,6 +2485,11 @@ def check_pin_locks(json_data)
         where = "'#{path}'#{node['name'] ? " (#{node['name']})" : ''}"
         issues << "❌ ERROR: #{where} dustable must be true or false, got #{node['dustable'].inspect}." if node.key?('dustable') && ![true, false].include?(node['dustable'])
         issues << "❌ ERROR: #{where} dustHint must be a non-empty string, got #{node['dustHint'].inspect}." if node.key?('dustHint') && (!node['dustHint'].is_a?(String) || node['dustHint'].strip.empty?)
+        where_hint = where
+        issues << "⚠️ WARNING: #{where_hint} sets dustHint without dustable: true, so the hint is never shown (dusting is opt-in)." if node.key?('dustHint') && node['dustable'] != true
+        if node['dustable'] == true && node['requires'].to_s =~ /\A\d+\z/ && node['requires'].to_s.chars.uniq.length <= 1
+          issues << "⚠️ WARNING: #{where_hint} is dustable but its PIN repeats one digit, so dusting reveals all of it."
+        end
         pin = node['requires']
         declared = node['pinLength']
         if pin.nil? || pin.to_s.empty?

@@ -5,14 +5,14 @@ module BreakEscape
   #
   # The PIN never leaves the server. The only thing sent is the sorted set of its distinct
   # digits, and only while a real (non-forged) fingerprint kit is in the server's copy of
-  # the inventory. A lock opts out with `dustable: false` and may give `dustHint`, a line
-  # the pad shows once dusted.
+  # the inventory. Dust is opt-in: a lock sets `dustable: true` (room for a door), and may
+  # give `dustHint`, a line the pad shows once dusted. Anything else answers 422.
   #
   # player_state key (in Game::ACCESS_STATE_DEFAULTS):
   #   pinDusted  { "door:<room>" or "object:<id>" => "0179" }  server-written only, never read
-  #              from a sync body and never in the bootstrap. At most one short string per PIN
-  #              lock in the scenario, so it is bounded by authorship and never re-sent: the
-  #              pad asks for its own lock when it opens (a delta of one lock, not the set).
+  #              from a sync body and never in the bootstrap. Keyed by the lock's canonical id, so
+  #              at most one short string per PIN lock in the scenario (bounded by authorship),
+  #              never re-sent: the pad asks for its own lock when it opens (a delta of one lock).
   module PinDust
     extend ActiveSupport::Concern
 
@@ -49,9 +49,9 @@ module BreakEscape
       # Like unlock: a pad on a door says 'door', anything else (the client sends 'item' for a
       # safe or PC) is an object.
       target_type = target_type.to_s == 'door' ? 'door' : 'object'
-      key = "#{target_type}:#{target_id}"
-      record = pin_dust_records[key]
       lock = pin_dust_lock(target_type, target_id)
+      key = pin_dust_key(target_type, target_id, lock)
+      record = pin_dust_records[key]
 
       unless apply
         return { status: :ok, body: { success: true, dusted: false } } unless record.present? && lock
@@ -61,7 +61,7 @@ module BreakEscape
 
       return pin_dust_refusal(:forbidden, 'no_kit', 'You need a fingerprint kit to dust a keypad.') unless has_fingerprint_kit_in_inventory?
       return pin_dust_refusal(:not_found, 'nothing_to_dust', 'Nothing to dust here.') unless lock
-      return pin_dust_refusal(:unprocessable_entity, 'not_dustable', 'This keypad cannot be dusted.') if lock['dustable'] == false
+      return pin_dust_refusal(:unprocessable_entity, 'not_dustable', 'This keypad cannot be dusted.') unless lock['dustable'] == true
 
       if record.blank?
         record = lock['requires'].to_s.chars.select { |c| c.match?(/\A\d\z/) }.uniq.sort.join
@@ -72,6 +72,13 @@ module BreakEscape
     end
 
     private
+
+    # Canonical lock id, so an alias (name, generated id) cannot make a second record.
+    # A door is keyed by room id; an object by its scenario id when it has one.
+    def pin_dust_key(target_type, target_id, lock)
+      canonical = target_type == 'door' ? target_id.to_s : (lock.is_a?(Hash) && lock['id'].present? ? lock['id'].to_s : target_id.to_s)
+      "#{target_type}:#{canonical}"
+    end
 
     def pin_dust_records
       recs = player_state['pinDusted']

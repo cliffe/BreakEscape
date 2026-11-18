@@ -539,8 +539,8 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
     
     console.log('PIN-CRACKER CHECK:', hasPinCracker);
 
-    // The fingerprint kit adds a Dust action to the pad. A lock opts out with dustable: false
-    // and may give dustHint (doors keep both on doorProperties). The server checks its own copy.
+    // The fingerprint kit adds a Dust action to the pad. Dusting is opt-in: a lock sets dustable: true
+    // (the room for a door) and may give dustHint (doors keep both on doorProperties). The server checks its own copy.
     const hasFingerprintKit = window.inventory.items.some(item =>
         item && item.scenarioData && item.scenarioData.type === 'fingerprint_kit'
     );
@@ -556,7 +556,7 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
         pinLength: correctPin ? correctPin.length : (lockable?.scenarioData?.pinLength || lockable?.doorProperties?.pinLength || 4),
         hasPinCracker: hasPinCracker,
         hasFingerprintKit: hasFingerprintKit,
-        dustable: dustOption('dustable') !== false,
+        dustable: dustOption('dustable') === true,
         dustHint: typeof dustOption('dustHint') === 'string' ? dustOption('dustHint') : '',
         allowBackspace: true,
         lockable: lockable,

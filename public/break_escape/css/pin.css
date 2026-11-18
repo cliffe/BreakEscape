@@ -638,7 +638,8 @@
 }
 
 .pin-minigame-dust-icon {
-    width: 24px;
+    /* fingerprint_kit.png is 10x24: native aspect, whole-number scale (1x), never stretched */
+    width: auto;
     height: 24px;
     image-rendering: pixelated;
 }

@@ -2367,12 +2367,14 @@ module BreakEscape
           # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
           # access, acceptsUIDOnly: an rfid door's role list and whether a UID-only copy opens it
           # (access model 4.1). They name roles and NPC ids, nothing secret.
+          # dustable, dustHint: a PIN door's opt-in to fingerprint-kit dusting and its hint line
+          # (neither is secret), so a door pad that opens before its room loads sees them (pin dust R1 M1).
           # cryptexConfig: a cryptex door's wheels (wheelCount, alphabets, hintStrip, wornRings,
           # maxAttempts), so its pad shows the right wheels before the room loads (unlock gaps
           # R1 M2). Its old `answer` field is stripped here and again by the controller filter.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
              maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
-             access acceptsUIDOnly cryptexConfig].each do |field|
+             access acceptsUIDOnly cryptexConfig dustable dustHint].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
           self.class.strip_lock_answers!(kept_fields)

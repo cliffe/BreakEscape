@@ -4239,6 +4239,8 @@
           "type": "array",
           "items": { "type": "integer" }
         },
+        "dustable": { "type": "boolean", "description": "PIN door only: true lets a fingerprint kit dust this door's keypad (opt-in, default off)." },
+        "dustHint": { "type": "string", "description": "PIN door only: shown after dusting, for example to say a digit repeats." },
         "lockedHint": { "type": "string", "minLength": 1, "description": "Opt-in: appended to the Requires key and wrong-key alerts of a locked key lock, to say where the key comes from (utils/locked-hint.js). Linted by scripts/validate_social/options.rb" },
         "difficulty": {
           "type": "string",
@@ -5298,7 +5300,7 @@
         },
         "passwordHint": { "type": "string" },
         "showHint": { "type": "boolean" },
-        "dustable": { "type": "boolean", "description": "PIN locks only: false stops the fingerprint kit offering Dust on this pad (default true)." },
+        "dustable": { "type": "boolean", "description": "PIN locks only: true lets a fingerprint kit dust this pad (opt-in, default off; set it on the room for a door)." },
         "dustHint": { "type": "string", "description": "PIN locks only: shown after dusting, for example to say a digit repeats." },
         "showKeyboard": { "type": "boolean" },
         "maxAttempts": { "type": "integer" },
