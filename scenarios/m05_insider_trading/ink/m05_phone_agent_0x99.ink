@@ -935,7 +935,7 @@ It only works if he wants out.
     I won't choose for you. But weigh it like this.
     Soft gets us his network and keeps his family whole, if he means it. If he doesn't, we've put a liar back inside.
     Hard is certain tonight, and we learn nothing from him.
-    If it turns into a fight: he's no fighter. F to punch, hold Q to block. Can't take him? Get out of his reach, then message me.
+    If it turns into a fight: he's no fighter. F to punch, hold Q to block. Can't win? Get clear, then message me.
     -> support_hub
 
 + [I'll decide when I'm standing in front of him.]
