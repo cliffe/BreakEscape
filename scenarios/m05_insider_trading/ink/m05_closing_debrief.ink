@@ -315,6 +315,11 @@ Agent HaX: Let's go through it.
 === the_night ===
 #speaker:agent_0x99
 
+// Blind m05 #3 cut four plain recap lines here (front-door times in the end, read past the
+// obvious line, Halloran told you whose spare, badge log in your kit): the player has just
+// done that reading, so they only repeated it. Do not reinstate them. The D1 early-naming
+// credit below is a choice-dependent payoff, so it stays (restored after review R1, M3).
+
 // PASS 5 (D1): the deduction paid off before the server confirmed it.
 // R2 (B1, B2), R3-1: only when it came from reading the log, first time
 // (a reason-menu answer before the naming, not the post-naming disclosure).
@@ -326,17 +331,9 @@ Agent HaX: Let's go through it.
 {
 - halloran_accused:
     Agent HaX: Dr Halloran spent hours suspended because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
-- door_log_reasoned and torres_reason_guessed:
-    Agent HaX: You got to the front-door times in the end. It took a couple of goes.
-// Struggling run A (D3): a wrong name or reason, without the log reasoning.
+// Struggling run A (D3): a wrong name or reason (with or without the log reasoning).
 - torres_reason_guessed:
     Agent HaX: You gave a wrong name or a wrong reason before the right one. Patricia's report says so, and so does mine.
-- door_log_reasoned:
-    Agent HaX: You read past the obvious line on the badge log. Halloran's spare on the server hallway, Torres' badge on the front door six minutes before, every night.
-- halloran_questioned:
-    Agent HaX: Halloran told you whose spare it was. The log had already said who carried it.
-- found_door_log:
-    Agent HaX: The badge log was in your kit. Its front-door lines had him all along.
 }
 
 {patricia_ko:
@@ -388,7 +385,7 @@ Agent HaX: Once you were in, one account was allowed to run far more than its jo
     }
     {found_door_log or found_incident_log:
         {header_said:
-            // C2 (D5C2-2): the_night has already given the badge log's facts.
+            // C2 (D5C2-2): the_night no longer recaps the log, so this is the first mention of it.
             {found_door_log:
                 Agent HaX: Hours. Two in the morning, week after week, and nobody asked why.
             - else:

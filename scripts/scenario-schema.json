@@ -5308,6 +5308,7 @@
         "dustHint": { "type": "string", "description": "PIN locks only: shown after dusting, for example to say a digit repeats." },
         "showKeyboard": { "type": "boolean" },
         "maxAttempts": { "type": "integer" },
+        "lockoutSeconds": { "type": "integer", "minimum": 1, "description": "Password locks only, opt-in: after maxAttempts wrong guesses the lock stays shut for this many seconds, and the count survives closing and reopening the window (client-side; a page reload resets it)." },
         "postitNote": { "type": "string", "description": "A sticky note shown on the lock screen. On a sign-in PC a writesDown habit on the owner (slice 9.1) can supply one, served by GET /login_accounts; an authored note wins." },
         "showPostit": { "type": "boolean" },
         "hasFingerprint": { "type": "boolean" },
@@ -5327,7 +5328,24 @@
         },
         "fingerprintCandidates": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "description": "A reference card with its pattern class fixed (F26): a decoy in the lift's class forces ridge comparison",
+                "properties": {
+                  "name": { "type": "string" },
+                  "pattern": { "type": "string", "enum": ["loop", "whorl", "arch"] }
+                },
+                "required": ["name"]
+              }
+            ]
+          }
+        },
+        "fingerprintCandidateCount": {
+          "type": "integer", "minimum": 2, "maximum": 4,
+          "description": "How many reference cards the Compare step shows (the lift's owner plus decoys); default from fingerprintDifficulty (easy 2, medium and hard 3)"
         },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "mac": { "type": "string" },
