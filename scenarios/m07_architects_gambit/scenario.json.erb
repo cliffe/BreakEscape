@@ -1389,7 +1389,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.debrief_requested && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true",
               "onceOnly": true,
               "setGlobal": { "debrief_requested": true },
-              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. Next door you go through, he's on the link." }
+              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. Next door you go through, he's on the link. Anything left to do here, finish it before you take that door." }
             },
 <% [1, 2, 3].each do |n| %>
             {
@@ -1398,7 +1398,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.debrief_requested && !globalVars.flag<%= n %>_submitted",
               "onceOnly": true,
               "setGlobal": { "debrief_requested": true },
-              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. The moment the last of it is through the relay, he's on." }
+              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. The moment the last of it is through the relay, he's on. Finish anything else here first." }
             },
 <% end %>
 <% %w[security_checkpoint operations_floor server_room scada_control generator_room cable_vault].each do |r| %>

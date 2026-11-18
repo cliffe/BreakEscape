@@ -217,14 +217,14 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
 Narrator: The disposition screen behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|{netherton_hostile:the Director, who will not see you tonight, countersigns whatever goes in|the Director countersigns whatever goes in}}. Nightshade is watching you.
 Narrator: Once it is entered, the case closes. Anything else in the building, finish it first.
 Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was right?
-+ [No deals. The police get the file. You answer for those two names in court.]
++ [No deals. The police get the file. You answer for those two names in court. #ending_check]
     #complete_task:decide_the_fate
     ~ nightshade_arrested = true
     -> lock_in ->
     Agent 0x47 'Nightshade': Clean. Predictable. I'd expect nothing else from you, and I mean that as a compliment.
     Agent 0x47 'Nightshade': Enter it. I won't fight it.
     -> aftermath
-+ [No cell. A leash. Feed us ENTROPY, and pay it back an inch a day.]
++ [No cell. A leash. Feed us ENTROPY, and pay it back an inch a day. #ending_check]
     #complete_task:decide_the_fate
     ~ nightshade_triple_agent = true
     -> lock_in ->
