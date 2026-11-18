@@ -5,6 +5,13 @@
 // The client grants nothing: the contents come from GET /container/<id>, which the server only
 // answers once the unlock has been accepted, and which leaves out anything already collected.
 import { takeStandIn } from '../minigames/container/container-item-image.js';
+import { displayDashes } from './display-dashes.js';
+
+// One hand-over at a time per object: a second call while the first is still talking to the server
+// waits for it, so the badge is never added (or announced) twice. A WeakMap keeps the promise off
+// the scenario data, which is sent to the server.
+const inFlight = new WeakMap();
+const NOTES_FAMILY = /^notes\d*$/;
 
 // Default dependencies are loaded on first use so node tests can inject their own
 async function defaultDeps() {
@@ -17,7 +24,33 @@ async function defaultDeps() {
 }
 
 export function wantsDispense(data) {
-    return !!(data && data.dispenses === true && (data.contents || data.hasContents));
+    if (!data || data.dispenses !== true) return false;
+    // A tray already emptied this session needs no further GET on every reopen
+    if (Array.isArray(data.contents) && data.contents.length === 0) return false;
+    return !!(data.contents || data.hasContents);
+}
+
+export function isDispensing(data) {
+    return !!(data && typeof data === 'object' && inFlight.has(data));
+}
+
+/**
+ * What happens after a locked container is unlocked: hand its contents over if it dispenses, and
+ * open the container screen otherwise or when the hand-over fails. unlock-system.js stays a thin
+ * caller of this.
+ * @param {object} data - scenario data of the container
+ * @param {{autoOpen?: boolean, openScreen: Function}} opts
+ * @returns {Promise<'skipped'|'dispensed'|'screen'>}
+ */
+export async function afterContainerUnlock(data, { autoOpen = true, openScreen } = {}, deps = {}) {
+    if (!autoOpen) return 'skipped';
+    if (isDispensing(data)) return 'skipped';
+    if (wantsDispense(data)) {
+        const result = await dispenseContents(data, deps);
+        if (result.ok) return 'dispensed';
+    }
+    if (openScreen) { openScreen(); return 'screen'; }
+    return 'skipped';
 }
 
 /**
@@ -26,7 +59,16 @@ export function wantsDispense(data) {
  * @returns {Promise<{ok: boolean, taken: string[], failed: string[]}>} ok is false when nothing was
  *   handed over, and the caller then falls back to opening the container screen
  */
-export async function dispenseContents(data, deps = {}) {
+export function dispenseContents(data, deps = {}) {
+    if (!data || typeof data !== 'object') return runDispense(data, deps);
+    const running = inFlight.get(data);
+    if (running) return running.then(() => ({ ok: true, taken: [], failed: [] }));
+    const p = runDispense(data, deps).finally(() => inFlight.delete(data));
+    inFlight.set(data, p);
+    return p;
+}
+
+async function runDispense(data, deps) {
     const d = { ...(await (deps.addToInventory ? {} : defaultDeps())), ...deps };
     const alert = d.alert || ((msg, kind, title, ms) => window.gameAlert?.(msg, kind, title, ms));
     const sound = d.sound || ((name) => { try { window.playUISound?.(name); } catch (e) { /* no audio */ } });
@@ -46,7 +88,10 @@ export async function dispenseContents(data, deps = {}) {
         return out;
     }
 
-    const items = contents.filter(i => i && i.takeable !== false);
+    // Anything that is not a plain takeable item (a note that opens a minigame, a fixture) needs the
+    // container screen, so dispense nothing and let the caller open it
+    if (contents.some(i => i && (i.takeable === false || NOTES_FAMILY.test(i.type || '')))) return out;
+    const items = contents.filter(i => i);
     if (!items.length) return out;
     for (const item of items) {
         const res = await d.addToInventory(takeStandIn(item, d.imageKey));
@@ -57,7 +102,7 @@ export async function dispenseContents(data, deps = {}) {
     if (out.taken.length) {
         sound('item');
         const names = items.filter(i => out.taken.includes(i.id || i.name)).map(i => i.name).join(', ');
-        alert(`${data.name}: ${names} added to inventory`, 'success', 'Printed', 3000);
+        alert(`${displayDashes(data.name)}: ${displayDashes(names)} added to inventory`, 'success', 'Printed', 3000);
     }
     if (out.failed.length) sound('reject');
     out.ok = out.failed.length === 0 && out.taken.length > 0;

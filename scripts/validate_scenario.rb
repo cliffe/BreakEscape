@@ -2582,6 +2582,32 @@ end
 # sees "Access denied" (unlock gaps R1 m2). The container test matches the server's:
 # contents, locked, or a container type.
 NPC_CONTAINER_TYPES = %w[suitcase briefcase bag1 bin1].freeze
+# A container marked "dispenses" hands its contents straight to the inventory when opened (any
+# lock type), through dispense-on-unlock.js. Items that need the container screen (not takeable, or
+# a notes-family item that opens the notes minigame) make the engine fall back to the screen, so
+# the flag does nothing useful there.
+def check_dispenses_containers(json_data)
+  issues = []
+  walk = lambda do |node, path|
+    case node
+    when Array then node.each_with_index { |n, i| walk.call(n, "#{path}[#{i}]") }
+    when Hash
+      if node['dispenses'] == true
+        Array(node['contents']).each_with_index do |c, i|
+          next unless c.is_a?(Hash)
+          if c['takeable'] == false || c['type'].to_s =~ /\Anotes\d*\z/
+            issues << "⚠️ WARNING: '#{path}'#{node['name'] ? " (#{node['name']})" : ''} sets dispenses but its contents[#{i}] " \
+                      "(#{c['id'] || c['name'] || c['type']}) is not takeable or is a notes item, so the engine opens the container screen instead of dispensing."
+          end
+        end
+      end
+      node.each { |k, v| walk.call(v, "#{path}/#{k}") if v.is_a?(Hash) || v.is_a?(Array) }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
 def check_npc_held_containers(json_data)
   issues = []
   npcs = []
@@ -8788,6 +8814,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_lock_credentials') { check_lock_credentials(json_data) }
   run.call('check_pin_locks') { check_pin_locks(json_data) }
   run.call('check_combination_cryptex_locks') { check_combination_cryptex_locks(json_data) }
+  run.call('check_dispenses_containers') { check_dispenses_containers(json_data) }
   run.call('check_npc_held_containers') { check_npc_held_containers(json_data) }
   run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
   run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }

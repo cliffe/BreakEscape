@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const js = join(root, 'public/break_escape/js');
-const { wantsDispense, dispenseContents } = await import(join(js, 'utils/dispense-on-unlock.js'));
+const { wantsDispense, dispenseContents, afterContainerUnlock, isDispensing } = await import(join(js, 'utils/dispense-on-unlock.js'));
 
 const badge = { type: 'keycard', id: 'printed_contractor_badge', name: 'Printed Contractor Badge', takeable: true };
 function deps({ contents = [badge], ok = true, addOk = true } = {}) {
@@ -60,11 +60,118 @@ test('a server refusal or an empty tray hands nothing over', async () => {
     assert.deepEqual(d.added, []);
 });
 
-test('unlockTarget tries the dispense before it opens the container screen', () => {
+test('unlock-system.js is a thin caller of afterContainerUnlock, with the screen as the fallback', () => {
     const src = readFileSync(join(js, 'systems/unlock-system.js'), 'utf8');
-    const a = src.indexOf('wantsDispense(lockable.scenarioData)');
-    const b = src.indexOf('window.handleContainerInteraction(lockable)', a);
-    assert.ok(a > 0 && b > a, 'dispense check must come first, the container screen stays the fallback');
+    assert.match(src, /import \{ afterContainerUnlock \} from '..\/utils\/dispense-on-unlock.js'/);
+    const a = src.indexOf('afterContainerUnlock(lockable.scenarioData');
+    assert.ok(a > 0);
+    assert.match(src.slice(a, a + 500), /openScreen:[\s\S]*window\.handleContainerInteraction\(lockable\)/);
+});
+
+function screenCounter() { const c = { n: 0, open: () => { c.n++; } }; return c; }
+const printer = (extra = {}) => ({ id: 'badge_printer', name: 'Badge Station', ...extra });
+
+test('no dispenses flag: the container screen opens once and nothing is fetched', async () => {
+    const d = deps(); const c = screenCounter();
+    assert.equal(await afterContainerUnlock(printer({ contents: [badge] }), { openScreen: c.open }, d), 'screen');
+    assert.equal(c.n, 1);
+    assert.deepEqual(d.urls, []);
+});
+
+test('flag plus success: the screen is not opened', async () => {
+    const d = deps(); const c = screenCounter();
+    assert.equal(await afterContainerUnlock(printer({ dispenses: true, contents: [badge] }), { openScreen: c.open }, d), 'dispensed');
+    assert.equal(c.n, 0);
+    assert.deepEqual(d.added, ['printed_contractor_badge']);
+});
+
+test('flag plus failure: the screen is opened once', async () => {
+    const d = deps({ addOk: false }); const c = screenCounter();
+    assert.equal(await afterContainerUnlock(printer({ dispenses: true, contents: [badge] }), { openScreen: c.open }, d), 'screen');
+    assert.equal(c.n, 1);
+});
+
+test('autoOpen false does nothing at all', async () => {
+    const d = deps(); const c = screenCounter();
+    assert.equal(await afterContainerUnlock(printer({ dispenses: true, contents: [badge] }), { autoOpen: false, openScreen: c.open }, d), 'skipped');
+    assert.equal(c.n, 0);
+    assert.deepEqual(d.urls, []);
+});
+
+test('two items, one refused: the other is kept, the refused one stays in contents, the screen opens', async () => {
+    const second = { type: 'lockpick', id: 'second', name: 'Second', takeable: true };
+    const d = deps({ contents: [badge, second] });
+    d.addToInventory = async (sprite) => { d.added.push(sprite.scenarioData.id); return { ok: sprite.scenarioData.id !== 'second' }; };
+    const data = printer({ dispenses: true, contents: [badge, second] });
+    const c = screenCounter();
+    assert.equal(await afterContainerUnlock(data, { openScreen: c.open }, d), 'screen');
+    assert.equal(c.n, 1);
+    assert.deepEqual(data.contents.map(i => i.id), ['second']);
+    const r = await dispenseContents({ ...data }, deps({ contents: [badge, second], addOk: true }));
+    assert.equal(r.ok, true);
+});
+
+test('a second dispense while the first is in flight adds one item and gives no fallback', async () => {
+    let release; const gate = new Promise(r => { release = r; });
+    const d = deps();
+    const slow = d.fetchFn;
+    d.fetchFn = async (u) => { await gate; return slow(u); };
+    const data = printer({ dispenses: true, contents: [badge] });
+    const first = dispenseContents(data, d);
+    assert.equal(isDispensing(data), true);
+    const second = dispenseContents(data, d);
+    release();
+    const [r1, r2] = await Promise.all([first, second]);
+    assert.equal(r1.ok, true);
+    assert.equal(r2.ok, true);
+    assert.equal(d.added.length, 1);
+    assert.equal(d.alerts.length, 1);
+    assert.equal(d.urls.length, 1);
+    assert.equal(isDispensing(data), false);
+});
+
+test('the unlock timer does nothing while a dispense is in flight', async () => {
+    let release; const gate = new Promise(r => { release = r; });
+    const d = deps(); const slow = d.fetchFn;
+    d.fetchFn = async (u) => { await gate; return slow(u); };
+    const data = printer({ dispenses: true, contents: [badge] });
+    const c = screenCounter();
+    const first = afterContainerUnlock(data, { openScreen: c.open }, d);
+    assert.equal(await afterContainerUnlock(data, { openScreen: c.open }, d), 'skipped');
+    release();
+    assert.equal(await first, 'dispensed');
+    assert.equal(c.n, 0);
+    assert.equal(d.added.length, 1);
+});
+
+test('an emptied tray is not fetched again on a reopen', async () => {
+    assert.equal(wantsDispense({ dispenses: true, contents: [] }), false);
+    const d = deps(); const c = screenCounter();
+    assert.equal(await afterContainerUnlock(printer({ dispenses: true, contents: [] }), { openScreen: c.open }, d), 'screen');
+    assert.deepEqual(d.urls, []);
+});
+
+test('a non-takeable or notes-family item sends the whole container to the screen, dispensing nothing', async () => {
+    for (const bad of [{ type: 'suitcase', id: 'fixture', name: 'Fixture', takeable: false },
+                       { type: 'notes2', id: 'memo', name: 'Memo', takeable: true, readable: true, text: 'x' }]) {
+        const d = deps({ contents: [badge, bad] }); const c = screenCounter();
+        assert.equal(await afterContainerUnlock(printer({ dispenses: true, contents: [badge, bad] }), { openScreen: c.open }, d), 'screen');
+        assert.deepEqual(d.added, []);
+        assert.equal(c.n, 1);
+    }
+});
+
+test('the toast shows the item name the way the container screen does (double hyphen as a dash)', async () => {
+    const d = deps({ contents: [{ ...badge, name: 'Badge -- Server' }] });
+    await dispenseContents(printer({ dispenses: true, contents: [badge] }), d);
+    assert.ok(!d.alerts[0].msg.includes('--'));
+});
+
+test('the test scenario carries a PIN, a password and a fallback dispenser', () => {
+    const src = readFileSync(join(root, 'scenarios/test_dispense_on_unlock/scenario.json.erb'), 'utf8');
+    const j = JSON.parse(src);
+    const objs = j.rooms.lobby.objects.filter(o => o.dispenses);
+    assert.deepEqual(objs.map(o => [o.lockType, o.contents.length]), [['pin', 1], ['password', 2], ['pin', 2]]);
 });
 
 test('the m07 and m08 badge printers are marked dispenses and still hold a takeable keycard server-side', () => {
