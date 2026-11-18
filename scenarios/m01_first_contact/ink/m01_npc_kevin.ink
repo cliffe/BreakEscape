@@ -563,9 +563,11 @@ Kevin Park: Thank you. Seriously, thank you for taking the time to go through th
     # influence_decreased
 }
 
-Kevin Park: I'm going to document your findings in my incident log.
+{audit_correct_answers >= 2:
+    Kevin Park: I'm going to document your findings in my incident log.
 
-Kevin Park: If management won't listen to me, maybe they'll listen to the security auditor.
+    Kevin Park: If management won't listen to me, maybe they'll listen to the security auditor.
+}
 
 Kevin Park: Keep investigating. And please—if you find anything concrete, tell me immediately.
 
