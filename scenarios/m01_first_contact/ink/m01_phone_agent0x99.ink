@@ -36,6 +36,7 @@ VAR launch_code_submitted = false
 VAR player_aborted_attack = false
 VAR player_launched_attack = false
 VAR ready_for_debrief = false
+VAR m01_debrief_offered = false
 
 // Closing debrief variables
 VAR final_choice = ""
@@ -127,6 +128,25 @@ So: quiet, deniable. Message me the moment you're stuck and I'll walk you throug
     -> DONE
 + [What if I need you fast?]
     Then you message me fast. I'm on the thread the whole way. Go.
+    #exit_conversation
+    -> DONE
+
+// ================================================
+// AFTER THE ABORT (incoming call, a few seconds after OPERATION SHATTER: ABORTED)
+// A short call before the debrief, so the abort does not just end in silence.
+// Reached only by the attack_aborted ring mapping on agent_0x99.
+// ================================================
+
+=== after_abort ===
+// lint: call-knot
+#speaker:agent_0x99
+
+Stay put. I'm sending a team to collect Derek and the servers.
+
+They'll be a while, so finish up in there. Call me when you want the debrief.
+
++ [Understood. I'll be here.]
+    Good. Well done.
     #exit_conversation
     -> DONE
 
@@ -980,6 +1000,7 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
 === closing_debrief ===
 // lint: call-knot
 #speaker:agent_0x99
+#set_global:m01_debrief_offered:true
 
 {
     - player_launched_attack:
