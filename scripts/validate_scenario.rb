@@ -8198,6 +8198,35 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     end
   end
 
+  # closeDoor names a room with no gate (scenario-schema.json closeDoor: "Warns if the door is
+  # not a gate"). door-gates.js closeNow matches a gate whose own room or connectedRoom is the
+  # id, among the gates it registers: enabled, on a north or south door, on an entry doors.js
+  # reads. Anything else only logs a console warning in play. Unknown room ids are reported by
+  # the schema's room reference check, so they are skipped here.
+  if rooms.any?
+    gated = BreakEscape::NpcHabits.gate_entries(json_data)
+                                  .reject { |g| %w[east west].include?(g[:direction].to_s) || g[:doorway] }
+                                  .flat_map { |g| [g[:room], g[:connected_room]] }.grep(String).to_set
+    walk_close = lambda do |node, path|
+      case node
+      when Hash
+        if node.key?('closeDoor')
+          Array(node['closeDoor']).grep(String).each do |rid|
+            next unless rooms.key?(rid) && !gated.include?(rid)
+
+            warn.call("'#{path}' closeDoor '#{rid}': no gate door leads into or out of that room, so " \
+                      'nothing shuts in play. Add a gate on a north or south door of that room, or name ' \
+                      'the room the gate is on.')
+          end
+        end
+        node.each { |k, v| walk_close.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+      when Array
+        node.each_with_index { |v, i| walk_close.call(v, "#{path}/#{i}") }
+      end
+    end
+    walk_close.call(json_data, '')
+  end
+
   issues
 end
 
