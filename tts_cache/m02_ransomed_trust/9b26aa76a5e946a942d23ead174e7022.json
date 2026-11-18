@@ -1,0 +1,13 @@
+{
+  "key": "9b26aa76a5e946a942d23ead174e7022",
+  "npc": "security_guard_patrol",
+  "text": "Estates don't come out at night. Even the drill had two on the form and none turned up.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T14:14:07Z"
+}

@@ -184,9 +184,10 @@ export class SightChallengeWatcher {
         }
         // A conversation or minigame is open: the player isn't walking about
         if (window.MinigameFramework?.currentMinigame) return [];
-        // Nor in a fight (player-damage-interrupt.js playerInCombat): the challenge is skipped, not
-        // marked as fired, so it fires fresh once the fight is over if the player is still in sight
-        if (window.playerInCombat?.()) return [];
+        // Nor in a fight (player-damage-interrupt.js playerInCombat): a challenge is not fired, and
+        // sighting state is kept up to date, so one not fired in the fight fires afterwards if the
+        // player is still in its cone (firedThisSighting stays false), and not at all if they left it
+        const inCombat = !!window.playerInCombat?.();
         // Nor while the tutorial prompt (plain DOM, not a minigame) is up
         if (window.getTutorialManager?.()?.isPromptOpen?.()) return [];
 
@@ -230,6 +231,7 @@ export class SightChallengeWatcher {
             }
             state.inSight = true;
             if (state.firedThisSighting) continue;
+            if (inCombat) continue;
             if (cfg.rooms && !cfg.rooms.includes(playerRoom)) continue;
             if (!requiredGlobalsHold(cfg.requireGlobal, globals)) continue;
             if (skippedByGlobal(cfg.skipIfGlobal, globals)) continue;
