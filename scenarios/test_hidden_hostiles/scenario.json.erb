@@ -7,7 +7,9 @@
   "globalVariables": {
     "night": false,
     "dawn": false,
-    "reserve": false
+    "reserve": false,
+    "proof_voice_off": false,
+    "proof_forced_off": false
   },
   "music": {
     "events": [
@@ -127,6 +129,65 @@
               }
             }
           ]
+        },
+        {
+          "id": "proof_text",
+          "displayName": "Text Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Combat-hold check: a scripted text thread opens on this event, held while a fight is on.",
+              "eventPattern": "proof_text",
+              "conversationMode": "phone-chat",
+              "targetKnot": "start",
+              "cooldown": 0,
+              "onceOnly": true
+            }
+          ]
+        },
+        {
+          "id": "proof_voice",
+          "displayName": "Voice Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Combat-hold check: a voiced call goes to the ringer, held while a fight is on; its condition is re-checked all the while it is queued (set proof_voice_off during the fight and it never rings).",
+              "eventPattern": "proof_voice",
+              "condition": "!globalVars.proof_voice_off",
+              "conversationMode": "phone-chat",
+              "targetKnot": "start",
+              "voiced": true,
+              "cooldown": 0,
+              "onceOnly": true
+            }
+          ]
+        },
+        {
+          "id": "proof_forced",
+          "displayName": "Forced Contact",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Combat-hold check: a forced voiced call is held while a fight is on and rings again after a reload (an ordinary call would count as missed); its condition is read once as it leaves the hold (set proof_forced_off during the fight and it never rings).",
+              "eventPattern": "proof_forced",
+              "condition": "!globalVars.proof_forced_off",
+              "conversationMode": "phone-chat",
+              "targetKnot": "start",
+              "voiced": true,
+              "disableClose": true,
+              "cooldown": 0,
+              "onceOnly": true
+            }
+          ]
         }
       ],
       "objects": []
@@ -149,6 +210,26 @@
         "west": "lobby"
       },
       "npcs": [
+        {
+          "id": "post_guard",
+          "displayName": "Post Guard",
+          "_comment": "Combat-hold check: a hostile that never leaves its annex post (chaseSpeed 1, a crawl) while the player works in the lobby. It is chasing but in another room, so it must not hold a call.",
+          "npcType": "person",
+          "position": {
+            "x": 1.5,
+            "y": 3
+          },
+          "spriteSheet": "female_security_guard_v2",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "hostile": {
+              "startHostile": true,
+              "chaseSpeed": 1,
+              "attackDamage": 1
+            }
+          }
+        },
         {
           "id": "day_guard",
           "displayName": "Day Guard",

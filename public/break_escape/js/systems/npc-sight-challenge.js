@@ -151,6 +151,17 @@ export class SightChallengeWatcher {
         this._lastCheck = 0;
     }
 
+    /**
+     * Let an NPC challenge again at once: the player is still in sight, and a challenge that was
+     * dropped (the player was in a fight) has not been delivered.
+     */
+    rearm(npcId) {
+        const state = this._state.get(npcId);
+        if (!state) return;
+        state.firedThisSighting = false;
+        state.lastFired = 0;
+    }
+
     /** Forget every sighting and cooldown (a new game, or a test). */
     reset() {
         this._state.clear();
@@ -173,6 +184,9 @@ export class SightChallengeWatcher {
         }
         // A conversation or minigame is open: the player isn't walking about
         if (window.MinigameFramework?.currentMinigame) return [];
+        // Nor in a fight (player-damage-interrupt.js playerInCombat): the challenge is skipped, not
+        // marked as fired, so it fires fresh once the fight is over if the player is still in sight
+        if (window.playerInCombat?.()) return [];
         // Nor while the tutorial prompt (plain DOM, not a minigame) is up
         if (window.getTutorialManager?.()?.isPromptOpen?.()) return [];
 
