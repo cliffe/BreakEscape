@@ -88,3 +88,24 @@ test('throttling twice keeps the first prior value for unthrottle', async () => 
     await unthrottleFps(w);
     assert.equal(w.loop.hasFpsLimit, false);
 });
+
+test('R4 m3: sampling that throws after the limit is applied replies with an error and unthrottle recovers', async () => {
+    const w = makeWorld();
+    let calls = 0;
+    const flaky = async (ms) => { if (++calls === 2) throw new Error('boom'); return w.sleep(ms); };
+    const r = await throttleFps(20, { ...w, sleep: flaky });
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'throttle-failed');
+    assert.match(r.error, /boom/);
+    const u = await unthrottleFps(w);
+    assert.equal(u.ok, true);
+    assert.equal(w.loop.hasFpsLimit, false);
+    assert.equal(w.loop._limitRate, 0);
+});
+
+test('R4 n1: a loop without actualFps reports rafFps null, not NaN', async () => {
+    const w = makeWorld();
+    delete w.loop.actualFps;
+    const r = await throttleFps(20, w);
+    assert.equal(r.rafFps, null);
+});

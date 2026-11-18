@@ -74,11 +74,21 @@ export async function throttleFps(fps, deps, opts = {}) {
     const prior = { fpsLimit: loop.fpsLimit, hasFpsLimit: loop.hasFpsLimit, limitRate: loop._limitRate };
     if (!phaserGame.__throttlePrior) phaserGame.__throttlePrior = prior;
     const before = await stepsPerSecond(phaserGame, windowMs, sleep, now);
-    applyLimit(loop, target);
-    const after = await stepsPerSecond(phaserGame, windowMs, sleep, now);
+    let after;
+    try {
+        applyLimit(loop, target);
+        after = await stepsPerSecond(phaserGame, windowMs, sleep, now);
+    } catch (err) {
+        // The limit may be half applied: say so and leave the loop recoverable. The prior
+        // values are kept in __throttlePrior, so unthrottleFps restores them.
+        return {
+            ok: false, reason: 'throttle-failed', fps: target,
+            error: String(err && err.message || err), recoverWith: 'unthrottleFps'
+        };
+    }
     return {
         ok: true, fps: target, before, after,
-        rafFps: Math.round(loop.actualFps * 10) / 10,
+        rafFps: Number.isFinite(loop.actualFps) ? Math.round(loop.actualFps * 10) / 10 : null,
         limitRate: loop._limitRate, fixedStep
     };
 }

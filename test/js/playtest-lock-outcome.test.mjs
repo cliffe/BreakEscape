@@ -70,7 +70,7 @@ const keyState = { id: 'lockpicking', keyMode: true, result: null, isComplete: f
 const pickState = { id: 'lockpicking', keyMode: false, result: { lockable: {} }, isComplete: false };
 
 test('key lock solved: no own verdict, lockable went from locked to unlocked -> ok', () => {
-  const r = lockOutcome({ startId: 'lockpicking', ownSt: keyState, after: { activeMinigame: null }, lockState: { startLocked: true, nowLocked: false } });
+  const r = lockOutcome({ startId: 'lockpicking', ownSt: keyState, after: { activeMinigame: null }, lockState: { startLocked: true, nowLocked: false }, keyInserted: true });
   assert.deepEqual(r, { ok: true, via: 'lockable-state' });
 });
 
@@ -261,4 +261,35 @@ test('R3 n2: network error and time lock are named after the grace', () => {
   assert.equal(attemptStep(base, pw({ text: 'Attempts: 0/3\nNetwork error. Please try again.' }), 1600).reply.reason, 'network-error');
   assert.equal(attemptStep(base, pw({ text: 'Too many wrong passwords. Locked for 20 more seconds.' }), 1600).reply.reason, 'time-locked');
   assert.equal(attemptStep(base, pw(), 1600).reply.reason, 'not-submitted');
+});
+
+// R4 m1: a cancelled key pad (key mode, no insert step) plus a scripted unlock is not ok.
+test('R4 m1: key pad cancelled with no insert, door unlocked by a script, is not ok', () => {
+  const r = lockOutcome({ startId: 'lockpicking', ownSt: keyState, after: { activeMinigame: null }, lockState: { startLocked: true, nowLocked: false } });
+  assert.equal(r.ok, false);
+});
+
+// R4 M1: "Signing in..." is progress, not an answer.
+test('R4 M1: Signing in... stays pending, then the pad closes (success)', async () => {
+  const seq = [signin(null), signin('Signing in...'), signin('Signing in...'), { available: false }];
+  let i = 0, t = 0;
+  const reply = await awaitAttempt({ base: attemptSnapshot(signin(null)), read: async () => seq[Math.min(i++, seq.length - 1)], wait: async (ms) => { t += ms; }, now: () => t });
+  assert.equal(reply, null);
+  assert.equal(attemptStep(attemptSnapshot(signin(null)), signin('Signing in...'), 300).state, 'pending');
+});
+
+test('R4 M1: Signing in... then a refusal settles as wrong-code', async () => {
+  const seq = [signin('Signing in...'), signin('Signing in...'), signin('Incorrect username or password.')];
+  let i = 0, t = 0;
+  const reply = await awaitAttempt({ base: attemptSnapshot(signin(null)), read: async () => seq[Math.min(i++, seq.length - 1)], wait: async (ms) => { t += ms; }, now: () => t });
+  assert.equal(reply.reason, 'wrong-code');
+});
+
+// R4 m2: the same refusal text twice still counts once it has been cleared in between.
+test('R4 m2: a repeated identical refusal is wrong-code after the line was replaced', async () => {
+  const refusal = 'Incorrect username or password.';
+  const seq = [signin(refusal), signin('Signing in...'), signin(refusal)];
+  let i = 0, t = 0;
+  const reply = await awaitAttempt({ base: attemptSnapshot(signin(refusal)), read: async () => seq[Math.min(i++, seq.length - 1)], wait: async (ms) => { t += ms; }, now: () => t });
+  assert.equal(reply.reason, 'wrong-code');
 });

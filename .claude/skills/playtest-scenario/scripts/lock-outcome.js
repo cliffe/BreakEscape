@@ -14,8 +14,9 @@
  * verdict is undefined the target lockable's real locked state decides: locked when the
  * command began and unlocked once the pad closed -> ok (via:'lockable-state'). The fallback
  * also needs evidence that this pad did it: the pad is closed (activeId differs from
- * startId) and a key was inserted, the pad was in key mode, or the pick path left {lockable};
- * a scripted unlock while the pad is still open, or after only wrong keys, is not ok.
+ * startId) and a key was inserted (an actual insert step) or the pick path left {lockable};
+ * a scripted unlock while the pad is still open, after only wrong keys, or after a cancelled
+ * key pad, is not ok.
  *
  * Kept apart from the session script so node tests can load it without Playwright
  * (test/js/playtest-lock-outcome.test.mjs).
@@ -31,7 +32,7 @@ function lockOutcome({ startId, ownSt, after, lockState, keyInserted = false }) 
   const result = ownSt && ownSt.result ? ownSt.result : null;
   const verdict = result ? result.success : undefined;
   const padClosed = !activeId || activeId !== startId;
-  const padDidIt = keyInserted || !!(ownSt && (ownSt.keyMode === true || (result && result.lockable)));
+  const padDidIt = keyInserted || !!(result && result.lockable);
   const viaLockable = verdict === undefined && !!lockState && padClosed && padDidIt
     && lockState.startLocked === true && lockState.nowLocked === false;
   const ok = verdict === true || viaLockable;
@@ -83,6 +84,12 @@ function attemptSnapshot(st) {
   };
 }
 
+/** Progress text a sign-in or join screen shows while the server is still thinking. */
+function isTransientMessage(msg) {
+  return typeof msg === 'string'
+    && /^\s*(signing in|joining|connecting|checking|please wait)|(\.\.\.|\u2026)\s*$/i.test(msg);
+}
+
 const SUBMIT_GRACE_MS = 1500;   // nothing sent after this long: the tap or typing missed
 const ANSWER_TIMEOUT_MS = 8000; // sent but unanswered after this long: a very slow or stuck server
 
@@ -92,16 +99,22 @@ const ANSWER_TIMEOUT_MS = 8000; // sent but unanswered after this long: a very s
  * lockOutcome decides), 'wrong' (an answered wrong attempt, with `reply`), 'pending' (sent,
  * not answered yet), or once the time is up 'not-submitted' / 'no-answer' with `reply`.
  */
-function attemptStep(base, st, elapsedMs, steps = []) {
+function attemptStep(base, st, elapsedMs, steps = [], track = {}) {
   if (padGone(st) || st.isComplete || st.result) return { state: 'closed' };
   const now = attemptSnapshot(st);
   const grew = now.history !== null && base.history !== null && now.history > base.history;
   const sent = grew || (now.used !== null && base.used !== null && now.used > base.used);
   const answered = grew || (now.history === null && sent && now.wrongLine !== null);
   if (base.blind) {
-    // No counters to compare: a changed message line is the answer, otherwise wait out the
+    // No counters to compare: a settled message line is the answer, otherwise wait out the
     // timeout. Never 'not-submitted': a correct sign-in can take longer than the grace.
-    const changed = now.message !== null && now.message !== base.message;
+    // Progress text ("Signing in...") is not an answer; the pad closing is the success.
+    // `track` (kept by awaitAttempt across polls) remembers that the line left its baseline
+    // value (cleared or transient), so a repeated identical refusal still counts as new.
+    const transient = isTransientMessage(now.message);
+    if (now.message !== base.message) track.left = true;
+    const settled = now.message !== null && !transient;
+    const changed = settled && (now.message !== base.message || track.left === true);
     const out = (reason) => ({
       ok: false, reason, steps, attemptsUsed: null, maxAttempts: null, lastFeedback: now.message,
       finalState: { isComplete: st.isComplete, result: st.result, text: st.text }
@@ -138,12 +151,13 @@ function attemptStep(base, st, elapsedMs, steps = []) {
  */
 async function awaitAttempt({ base, read, wait, now = Date.now, steps = [], pollMs = 250 }) {
   const t0 = now();
+  const track = {};
   for (;;) {
-    const stp = attemptStep(base, await read(), now() - t0, steps);
+    const stp = attemptStep(base, await read(), now() - t0, steps, track);
     if (stp.state === 'closed') return null;
     if (stp.reply) return stp.reply;
     await wait(pollMs);
   }
 }
 
-module.exports = { lockOutcome, padGone, attemptSnapshot, attemptStep, awaitAttempt, SUBMIT_GRACE_MS, ANSWER_TIMEOUT_MS };
+module.exports = { isTransientMessage, lockOutcome, padGone, attemptSnapshot, attemptStep, awaitAttempt, SUBMIT_GRACE_MS, ANSWER_TIMEOUT_MS };
