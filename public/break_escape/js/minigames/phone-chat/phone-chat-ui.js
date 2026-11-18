@@ -24,6 +24,15 @@ import { isPhoneCallMode, callLabelFor, formatCallDuration, callSubtitle, CALL_S
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { escapeHtml as escHtml } from '../../utils/escape-html.js';
 
+/** Touch screens say "Tap", others name the keys; Space and Enter both skip, as does a click. */
+export function skipHintText() {
+    try {
+        const w = globalThis.window;
+        if (w?.matchMedia?.('(pointer: coarse)')?.matches || w?.matchMedia?.('(hover: none)')?.matches) return 'Tap to skip';
+    } catch (e) { /* fall through */ }
+    return 'Space, Enter or click to skip';
+}
+
 /** The player's OS asks for less motion: terminal lines appear whole. */
 function prefersReducedMotion() {
     try { return globalThis.window?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true; } catch (e) { return false; }
@@ -128,9 +137,7 @@ export default class PhoneChatUI {
                             <span></span>
                             <span></span>
                         </div>
-                        <div class="choices-container" id="choices-container">
-                            <!-- Choice buttons will be added here -->
-                        </div>
+                        <div class="choices-container" id="choices-container"></div>
                         <div class="choices-more-cue" id="choices-more-cue" aria-hidden="true">▼ more choices</div>
                     </div>
                 </div>
@@ -141,7 +148,15 @@ export default class PhoneChatUI {
             this.container.querySelector('.phone-messages-container')
                 .classList.add('phone-terminal-theme');
             this.container.querySelector('#messages-container')
-                ?.setAttribute('title', 'Click, Space or Enter to skip');
+                ?.setAttribute('title', skipHintText());
+            // Visible skip hint, shown only while a line types or a pause runs (syncSkipHint)
+            const hint = document.createElement('div');
+            hint.className = 'phone-skip-hint';
+            hint.id = 'phone-skip-hint';
+            hint.setAttribute('aria-hidden', 'true');
+            hint.hidden = true;
+            hint.textContent = skipHintText();
+            this.container.querySelector('.phone-screen')?.appendChild(hint);
         }
         if (this.isCallMode) this._renderCallChrome();
         if (this.isSocialTheme) {
@@ -331,6 +346,8 @@ export default class PhoneChatUI {
 
     /** The speaking indicator under the portrait: on while a call line plays. */
     setCallSpeaking(on) {
+        this._clipPlaying = !!on;   // a click or Space skips the clip, so the skip hint stays up
+        this.syncSkipHint();
         if (!this.isCallMode) return;
         this.elements?.conversationView?.classList.toggle('call-speaking-now', !!on);
     }
@@ -588,6 +605,7 @@ export default class PhoneChatUI {
         }
         this.currentView = 'contact-list';
         this.currentNPCId = null;
+        this.syncSkipHint();
         this.stopCallTimer();
         
         // Hide conversation, show contact list
@@ -835,6 +853,7 @@ export default class PhoneChatUI {
 
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
+        this.syncSkipHint();
         
         // Hide contact list, show conversation
         this.elements.contactListView.style.display = 'none';
@@ -1127,6 +1146,28 @@ export default class PhoneChatUI {
         return typeof this._typewriterFinish === 'function';
     }
 
+    /** A wait between story lines is running (set by the minigame's pace timer). */
+    setPaceActive(on) {
+        this._paceActive = !!on;
+        this.syncSkipHint();
+    }
+
+    /** A panel over the thread (the pretext debrief) is up or gone: the hint hides while it is. */
+    setOverlayOpen(on) {
+        this._overlayOpen = !!on;
+        this.syncSkipHint();
+    }
+
+    /** Show the skip hint while a line types or a pause runs; hidden otherwise (choices, idle). */
+    syncSkipHint() {
+        const hint = this.container?.querySelector?.('#phone-skip-hint');
+        if (!hint) return;
+        const choicesUp = !!this.elements?.choicesContainer?.querySelector?.('.choice-button');
+        hint.hidden = !(this.isTerminalTheme && this.currentView === 'conversation' && !choicesUp
+            && !this._overlayOpen && !this._incomingCallPanel
+            && (this.isTypewriting() || this._paceActive || this._clipPlaying));
+    }
+
     /** Finish the line being typed at once. Returns true if there was one. */
     skipTypewriter() {
         if (!this.isTypewriting()) return false;
@@ -1167,6 +1208,7 @@ export default class PhoneChatUI {
                 cancelled = true;
                 if (this._typewriterFinish === finish) this._typewriterFinish = null;
                 if (this._typewriterCancel === cancel) this._typewriterCancel = null;
+                this.syncSkipHint();
                 resolve();
             };
             this._typewriterCancel = cancel;
@@ -1177,6 +1219,7 @@ export default class PhoneChatUI {
                 if (cancelled) return;
                 cancelled = true;
                 if (this._typewriterFinish === finish) this._typewriterFinish = null;
+                this.syncSkipHint();
                 messageText.textContent = text;
                 messageText.classList.remove('terminal-typing');
                 cursor.remove();
@@ -1184,6 +1227,7 @@ export default class PhoneChatUI {
                 resolve();
             };
             this._typewriterFinish = finish;
+            this.syncSkipHint();
             // Reduced motion: lines appear whole (no character-by-character typing)
             if (this._instantType || prefersReducedMotion()) { finish(); return; }
 
@@ -1199,6 +1243,7 @@ export default class PhoneChatUI {
                     setTimeout(() => {
                         if (cancelled) return;
                         if (this._typewriterFinish === finish) this._typewriterFinish = null;
+                        this.syncSkipHint();
                         cursor.remove();
                         resolve();
                     }, BLINK_DURATION);
@@ -1303,6 +1348,7 @@ export default class PhoneChatUI {
 
         this.scrollToBottom();
         this.updateChoicesScrollCue();
+        this.syncSkipHint();
         // Measure again once the buttons have laid out
         if (typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => this.updateChoicesScrollCue());
@@ -1327,6 +1373,7 @@ export default class PhoneChatUI {
         this.elements.choicesContainer.innerHTML = '';
         this.elements.choicesMoreCue?.classList.remove('visible');
         if (this.isCallMode) this.elements.conversationView?.classList.remove('call-has-choices');
+        this.syncSkipHint();
     }
     
     /**

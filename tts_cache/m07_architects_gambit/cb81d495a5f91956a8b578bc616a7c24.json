@@ -1,7 +1,7 @@
 {
-  "key": "d3028f0bb1d2c9312df79d1e177af933",
+  "key": "cb81d495a5f91956a8b578bc616a7c24",
   "npc": "adaeze_okafor",
-  "text": "Same. Two minutes and I'm out the door.",
+  "text": "Same. Two more minutes and I'm done.",
   "voice": "Gacrux",
   "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent General American accent with a light Nigerian inflection throughout, do not shift to any other accent.",
   "language": "en-US",
@@ -9,5 +9,5 @@
   "scenario": "m07_architects_gambit",
   "source": "generate",
   "generated": "2026-11-18",
-  "recorded_at": "2026-11-18T01:51:30Z"
+  "recorded_at": "2026-11-18T03:35:24Z"
 }

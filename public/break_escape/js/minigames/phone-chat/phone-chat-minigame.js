@@ -1010,11 +1010,15 @@ export class PhoneChatMinigame extends MinigameScene {
         return new Promise(resolve => {
             const wake = () => {
                 clearTimeout(timer);
-                if (this._paceWake === wake) this._paceWake = null;
+                if (this._paceWake === wake) {
+                    this._paceWake = null;
+                    this.ui?.setPaceActive?.(false);
+                }
                 resolve();
             };
             const timer = setTimeout(wake, ms);
             this._paceWake = wake;
+            this.ui?.setPaceActive?.(true);
         });
     }
 
