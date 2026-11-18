@@ -48,6 +48,49 @@ const log = async (tag) => {
 // A person chat (the guard's) in the way: close only that, never a phone call.
 const closeChat = () => g.ev(() => { const m = window.MinigameFramework?.currentMinigame; if (m && m.constructor.name === 'PersonChatMinigame') window.__test.minigame.close(); });
 await boot();
+await g.ev(() => window.__test.minigame && window.__test.minigame.close && window.__test.minigame.close()).catch(() => {});
+if ((await R()).room !== 'blast_tunnel') {
+  // A fresh game starts in forward_post with the blast door locked behind the gate terminal's flag: submit the game's
+  // flags there (tools/playtest/m10_full_disclosure-flags-game<id>.xml, written by new-game.rb), then walk through.
+  const { readFileSync } = await import('node:fs');
+  const flags = [...readFileSync(new URL(`./m10_full_disclosure-flags-game${gid}.xml`, import.meta.url), 'utf8').matchAll(/<flag>([^<]+)<\/flag>/g)].map((m) => m[1]);
+  await g.ev(() => window.__test.minigame.close && window.__test.minigame.close()).catch(() => {});
+  await g.ev(() => { try { window.MinigameFramework.forceCloseMinigame(); } catch (e) { /* none open */ } });
+  await g.ev(() => window.__test.interact('gate_terminal')).catch(() => {});
+  await g.page.waitForSelector('#flag-input', { timeout: 15000 }).catch(() => console.log('no flag station'));
+  for (const f of flags) {
+    await g.page.fill('#flag-input', f).catch(() => {}); await g.page.click('#flag-submit-btn').catch(() => {}); await g.t(1500);
+    console.log('flag', f, '->', (await g.ev(() => (document.querySelector('#flag-result')?.textContent || '').replace(/\s+/g, ' ').slice(0, 120)).catch(() => '?')));
+  }
+  await g.ev(() => { try { window.MinigameFramework.forceCloseMinigame(); } catch (e) { /* none open */ } });
+  await g.t(1000);
+  await g.page.reload({ waitUntil: 'domcontentloaded' });   // the server holds the flag; the page picks it up on a reload
+  await boot();
+  // The breach also needs the door scene and the pair back (story beats, played by hand in a real run): set them in the page silently (no event, or the
+  // unlock mapping fires breach_open and the call rings before the guard is hostile); the script sets breach_open below. Nothing is written to the game row.
+  await g.ev(() => { const v = window.gameState.globalVariables; for (const n of ['door_scene_done', 'pair_back', 'aside_done', 'split_started']) { v[n] = true; } });
+  await g.ev(() => { window.__ev = window.__ev || []; });   // the lib's event log hook was lost with the reload
+  await g.t(4000);
+  for (let k = 0; k < 6 && (await R()).room !== 'blast_tunnel'; k++) {
+    await boot();   // resume overlay, title card, popups
+    await g.ev(() => { try { window.MinigameFramework.forceCloseMinigame(); } catch (e) { /* none open */ } });
+    await g.t(800);
+    g.ev(() => window.__test.enterRoom('blast_tunnel')).then((r) => console.log('enterRoom', JSON.stringify(r).slice(0, 140))).catch(() => {});   // resolves late: not awaited, as in mode B
+    for (let w = 0; w < 25 && (await R()).room !== 'blast_tunnel'; w++) await g.t(1500);
+  }
+}
+// Walking in unlocks the door, which sets breach_open and lets the call connect before the guard is hostile. Undo that in the
+// page only (no row is edited): close the call, clear the breach globals and the fired-handler count, so the script's own
+// breach_open below is the first one the player sees. A run that starts clean skips this.
+if ((await R()).open) {
+  await g.t(4000);   // the unlock's call is offered 1.5 s after breach_open: let it show itself before undoing it
+  await g.ev(() => { try { window.MinigameFramework.forceCloseMinigame(); } catch (e) { /* none open */ } });
+  await g.ev(() => {
+    const v = window.gameState.globalVariables; for (const n of ['breach_open', 'breach_call_done', 'breach_announced', 'inner_door_open']) v[n] = false;
+    for (const k of [...window.npcManager.triggeredEvents.keys()]) if (/global_variable_changed:(breach_open|inner_door_open)/.test(k)) window.npcManager.triggeredEvents.delete(k);
+  });
+  console.log('breach state reset in the page', JSON.stringify(await R()));
+}
 await g.t(2500);
 await log('start');
 await g.ev(() => window.__test.minigame && window.__test.minigame.close && window.__test.minigame.close()).catch(() => {});
@@ -55,13 +98,17 @@ await g.t(1500);
 await log('chat closed');
 if (which !== 'N') await g.ev(() => window.npcHostileSystem.setNPCHostile('tunnel_guard', true));   // N: control, no fight
 await closeChat();
-await g.t(2500);
+// The guard may take a few seconds to start the chase (a chat or the title card in the way): wait for it, up to 10 s.
+for (let w = 0; w < 10 && which !== 'N' && (await R()).guard?.st !== 'chase'; w++) { await g.t(1000); await closeChat(); }
+await g.t(1500);
 await log('guard hostile');
 // Precondition: the guard must be chasing before breach_open fires, or the run proves nothing.
 if (which !== 'N' && (await R()).guard?.st !== 'chase') {
   console.log(`VERDICT ${which}: INVALID SETUP (the guard is not chasing: ${JSON.stringify((await R()).guard)}); use a fresh game`);
   await g.close(); process.exit(2);
 }
+// A leftover phone chat from the unlock's own call (it opens late) would block every ring: close it, and say so.
+if ((await R()).mg === 'PhoneChatMinigame') { console.log('closing a leftover phone chat before breach_open'); await g.ev(() => { try { window.MinigameFramework.forceCloseMinigame(); } catch (e) { /* none */ } }); await g.t(500); }
 await g.ev(() => { const v = window.gameState.globalVariables; v.breach_open = true; window.eventDispatcher.emit('global_variable_changed:breach_open', { name: 'breach_open', value: true }); });
 for (let i = 0; i < 5; i++) { await g.t(2000); await closeChat(); await log(`t+${(i + 1) * 2}s`); }
 await sh('1-during-chase');
@@ -69,12 +116,16 @@ const evs = await g.evs('phone|breach|conversation');
 console.log('events while chasing', JSON.stringify(evs.slice(-8)));
 if (which === 'K') {
   await g.ev(() => { const b = window.npcBehaviorManager.getBehavior('tunnel_guard'); window.__kiteSpeed = b.config.hostile.chaseSpeed; b.config.hostile.chaseSpeed = 5; });
+  // Page only: top HP up (the 10 s chase has cost 60) and put 90 px between the two (a bigger jump leaves the room and the guard stops chasing), so the slowed guard has to cross a gap to reach him.
+  await g.ev(() => { window.playerHealth.heal(100); const gb = window.npcBehaviorManager.getBehavior('tunnel_guard').sprite, p = window.player; const dx = p.x - gb.x, dy = p.y - gb.y, d = Math.hypot(dx, dy) || 1; p.setPosition(p.x + dx / d * 90, p.y + dy / d * 90); });
+  await g.t(500);
   const hp0 = (await R()).hp;
+  console.log('kite start', JSON.stringify(await R()));
   let bad = 0;
   for (let i = 0; i < 28; i++) {
     await g.t(1000); await closeChat();
     // Keep the player moving away so the slowed guard never closes the 40 px swing range
-    await g.ev(() => { const gb = window.npcBehaviorManager.getBehavior('tunnel_guard').sprite, p = window.player; const dx = p.x - gb.x, dy = p.y - gb.y, d = Math.hypot(dx, dy) || 1; if (d < 100) p.setPosition(p.x + dx / d * 30, p.y + dy / d * 30); });
+    await g.ev(() => { const gb = window.npcBehaviorManager.getBehavior('tunnel_guard').sprite, p = window.player; const dx = p.x - gb.x, dy = p.y - gb.y, d = Math.hypot(dx, dy) || 1; if (d < 70) p.setPosition(p.x + dx / d * 20, p.y + dy / d * 20); });
     const r = await R(); if (i % 4 === 3) console.log(`kite t+${i + 1}s`, JSON.stringify(r));
     if (r.guard && r.guard.st === 'chase' && !r.combat) { bad++; viol.push(`kite t+${i + 1}s: guard chases but playerInCombat is false`); }
     if (r.cur) viol.push(`kite t+${i + 1}s: a call is current mid-chase`);
@@ -85,8 +136,9 @@ if (which === 'K') {
 }
 if (which === 'B') {
   await closeChat();
+  await g.ev(() => window.playerHealth.heal(100));   // page only: a KO on the way ends the run, and the walk to the office takes longer than the chase so far
   g.ev(() => window.__test.enterRoom('security_office')).then((r) => console.log('enterRoom', JSON.stringify(r).slice(0, 200))).catch((e) => console.log('enterRoom err', String(e).slice(0, 120)));
-  for (let i = 0; i < 10; i++) { await g.t(1500); await closeChat(); await log(`office t${i}`); if (i === 4) await sh('2-office'); }
+  for (let i = 0; i < 10; i++) { await g.t(1500); await closeChat(); await g.ev(() => { if (window.playerHealth.getHP() < 50) window.playerHealth.heal(100); }); await log(`office t${i}`); if (i === 4) await sh('2-office'); }
   console.log('events', JSON.stringify((await g.evs('room_entered|phone|breach')).slice(-6)));
 }
 if (which === 'C') {
