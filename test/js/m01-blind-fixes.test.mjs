@@ -30,19 +30,21 @@ function play(file, knot, vars, picks) {
 }
 
 const REASONING = "So. Here we are. You've heard my reasoning. You've seen the evidence.";
-const NO_REASONING = "So. Here we are. You've seen the evidence.";
+// The voiced release line no longer mentions "reasoning", so the heard_reasoning gate was dropped (Train 216).
+const NO_REASONING = "So. Here we are. What happens now is up to you.";
 
-test('Derek: skipping the monologue drops "heard my reasoning"', () => {
+test('Derek: skipping the monologue still gets the voiced line, never "heard my reasoning"', () => {
     // start -> option 4 (I have everything) goes straight to confrontation_choice
     const lines = play('m01_derek_confrontation.json', 'start', { entropy_reveal_read: true, found_casualty_projections: true }, [3, 0]);
     assert.ok(lines.includes(NO_REASONING), lines.join(' | '));
     assert.ok(!lines.includes(REASONING));
 });
 
-test('Derek: after the monologue the original line plays', () => {
+test('Derek: after the monologue the same voiced line plays', () => {
     // I know what you're planning -> ... -> "Why?" (evil_monologue_part1 sets heard_reasoning)
     const lines = play('m01_derek_confrontation.json', 'start', { entropy_reveal_read: true }, [0, 0, 0]);
-    assert.ok(lines.includes(REASONING), lines.join(' | '));
+    assert.ok(lines.includes(NO_REASONING), lines.join(' | '));
+    assert.ok(!lines.includes(REASONING));
 });
 
 test('debrief: Kevin gear echo only when he took everything and Kevin is still around', () => {

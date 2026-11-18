@@ -143,7 +143,7 @@ for (const [text, extra] of nightOpenings) {
         assert.equal(s.variablesState.victoria_night_opened, true);
         const s2 = story(...VIC, { ...NIGHT, ...extra, ...synced(s, ['victoria_night_opened', 'victoria_fate', 'came_via_hospital']) });
         const lines = enter(s2);
-        assert.ok(lines.some(l => l.includes('spare us the scene')), lines.join('|'));
+        assert.ok(lines.some(l => l.includes('You want the confession')), lines.join('|'));
         assert.ok(!lines.some(l => l.includes('standing by the window')));
         assert.ok(s2.currentChoices.some(c => c.text.includes('walked away from that sale')));
     });
