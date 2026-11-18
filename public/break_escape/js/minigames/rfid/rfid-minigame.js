@@ -657,6 +657,7 @@ export class RFIDMinigame extends MinigameScene {
 
             // Update card data with found keys
             if (result.success) {
+                this.dictionaryMissUid = null;
                 cardData.rfid_data.sectors = result.foundKeys;
                 this.ui.showSuccess(result.message);
 
@@ -671,6 +672,7 @@ export class RFIDMinigame extends MinigameScene {
                 // A miss is a result, not a fault: say what ran and what to try next, and
                 // hold it long enough to read (1.5 s flashed past in m09 m-7; Darkside gets
                 // a failure line too, so this one must not look like nothing happened).
+                this.dictionaryMissUid = uid;
                 this.ui.showError('Dictionary attack found no keys',
                     String(result.message || '').replace(/^\u26A0\uFE0F?\s*/, ''), 'notice');
 

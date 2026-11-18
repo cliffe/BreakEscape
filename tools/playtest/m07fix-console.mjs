@@ -1,0 +1,22 @@
+// m07 gate minors: the abort console's confirmation reads as a file you open, not a take-item icon.
+import { open, ev } from './m01-ol-lib.mjs';
+const [gid, port='3168', out] = process.argv.slice(2);
+const h = await open(gid, port);
+await ev(h, () => window.__test.throttleFps(20));
+const log = (k,v)=>console.log(k, JSON.stringify(v));
+const shot = n => h.page.screenshot({ path: `${out}/${n}.png` });
+await h.t(3000);
+log('start', await ev(h,()=>({room:window.currentPlayerRoom, inv:(window.inventory?.items||[]).length})));
+log('move', JSON.stringify(await ev(h,()=>window.__test.moveToNear('crisis_control_system'))).slice(0,200));
+log('interact', JSON.stringify(await ev(h,()=>window.__test.interact('crisis_control_system'))).slice(0,300));
+await h.t(2500);
+log('mg', await ev(h,()=>{const s=window.__test.minigame.getState();return {id:s?.id,title:s?.title,controls:(s?.controls||[]).map(c=>c.label||c.text||c.name).slice(0,10)}}));
+await shot('console1-icon');
+const invBefore = await ev(h,()=>Object.keys(window.inventory?.items||{}).length ?? 0);
+const msgs = [];
+log('click', JSON.stringify(await ev(h,()=>window.__test.minigame.clickText ? window.__test.minigame.clickText('Sequence Abort Confirmation') : 'no clickText')).slice(0,300));
+await h.t(2500);
+await shot('console2-after-click');
+log('after', await ev(h,()=>{const s=window.__test.minigame.getState();return {id:s?.id,title:s?.title,text:(s?.text||'').slice(0,400),toast:[...document.querySelectorAll('[class*=toast],[class*=notification],.container-message')].map(e=>e.textContent.trim().slice(0,100)),inv:(window.inventory?.items||[]).map?.(i=>i.scenarioData?.name)}}));
+log('errs', h.errs.filter(e=>!/503/.test(e)));
+await h.browser.close();

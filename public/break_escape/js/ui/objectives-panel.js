@@ -1,7 +1,7 @@
 /**
  * ObjectivesPanel
  * 
- * HUD element displaying current mission objectives (top-right).
+ * HUD element displaying current mission objectives (top-left).
  * Collapsible panel with aim/task hierarchy.
  * Pixel-art aesthetic with sharp corners and 2px borders.
  * 
@@ -39,6 +39,7 @@ export class ObjectivesPanel {
       const compact = ObjectivesPanel.compactNow();
       if (compact && !this._wasCompact) this.setCollapsed(true);
       this._wasCompact = compact;
+      this.updatePill();
       this.container.classList.toggle('objectives-sheet', compact && !this.isCollapsed);
     };
     window.addEventListener?.('resize', this._compactCue);
@@ -51,7 +52,26 @@ export class ObjectivesPanel {
       this.setCollapsed(true);
     };
     window.addEventListener?.('keydown', this._escCue, true);
-    this.manager.addListener((aims) => this.render(aims));
+    this._onAims = (aims) => this.render(aims);
+    this.manager.addListener(this._onAims);
+
+    // Desktop: the open list covered a third of the view at mission start (m08 and m09 blind
+    // runs). It stays open for AUTO_COLLAPSE_MS of time it is actually on screen (a minigame, the
+    // briefing or a hidden tab do not count), so a new player reads it, then folds to a one-line
+    // summary unless the player has used it.
+    this._autoCollapseTimer = null;
+    this._autoCollapseDone = false;
+    this._autoFolded = false;      // folded by the timer, not by the player
+    this._visibleMs = 0;           // on-screen time counted toward the fold
+    this._hadHeld = false;
+    this._userTouched = false;
+    this._hovering = false;
+    this.container.addEventListener?.('mouseenter', () => { this._hovering = true; this._graceSteps = 0; });
+    this._graceSteps = 0;          // fold steps to wait after the pointer leaves (review R2 n3)
+    this.container.addEventListener?.('mouseleave', () => {
+      this._hovering = false;
+      this._graceSteps = ObjectivesPanel.HOVER_GRACE_STEPS;
+    });
 
     // Initial render
     this.render(this.manager.getActiveAims());
@@ -70,7 +90,7 @@ export class ObjectivesPanel {
       <span class="objectives-title"><i class="objectives-clipboard" aria-hidden="true"></i><span class="objectives-title-text">Objectives</span></span>
       <span class="objectives-pill-summary" aria-live="polite"><span class="objectives-pill-count"></span><span class="objectives-pill-text"></span></span>
       <div class="objectives-controls">
-        <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">${CHEVRON}</button>
+        <button type="button" class="objectives-toggle" aria-label="Close objectives" aria-expanded="true" aria-controls="objectives-content" title="Collapse/Expand">${CHEVRON}</button>
       </div>
     `;
     
@@ -88,14 +108,20 @@ export class ObjectivesPanel {
     // Create content area
     this.content = document.createElement('div');
     this.content.className = 'objectives-content';
+    this.content.id = 'objectives-content';
     
+    // A postponed ending's button sits in a footer under the list, so a long list never scrolls it
+    // out of sight (review R2 m1)
+    this.footer = document.createElement('div');
+    this.footer.className = 'objectives-footer';
+    this.footer.hidden = true;
+    this.footer.addEventListener('click', (e) => {
+      // A postponed ending (systems/ending-check.js): "End the mission" finishes it
+      if (e.target.closest('.objectives-end-button')) window.endingCheck?.endHeld?.();
+    });
+
     // Delegate aim header clicks to toggle individual aim collapse
     this.content.addEventListener('click', (e) => {
-      // A postponed ending (systems/ending-check.js): "End the mission" finishes it
-      if (e.target.closest('.objectives-end-button')) {
-        window.endingCheck?.endHeld?.();
-        return;
-      }
       const aimHeader = e.target.closest('.aim-header');
       if (!aimHeader) return;
       const aimEl = aimHeader.closest('.objective-aim');
@@ -109,6 +135,7 @@ export class ObjectivesPanel {
 
     this.container.appendChild(header);
     this.container.appendChild(this.content);
+    this.container.appendChild(this.footer);
     document.body.appendChild(this.container);
 
     // The "more below" cue follows the list as it scrolls, folds and resizes
@@ -153,7 +180,74 @@ export class ObjectivesPanel {
     panel.classList.toggle('has-more-below', more);
   }
   
+  /**
+   * Whether the one-off desktop auto-fold should happen now. Pure; tested. Never on a phone
+   * (the pill is already collapsed), after the player has used the panel, or while it is
+   * collapsed, hovered or has keyboard focus inside.
+   */
+  static shouldAutoCollapse({ compact, collapsed, userTouched, hovering, focusInside, done }) {
+    return !(compact || collapsed || userTouched || hovering || focusInside || done);
+  }
+
+  /** Whether the panel can be seen now: no minigame over it, not hidden by code, tab in front. */
+  _onScreen() {
+    if (!this.container?.classList) return false;
+    if (typeof document !== 'undefined' && document.hidden) return false;
+    if (document.body?.classList?.contains('minigame-active')) return false;
+    // A minigame (the opening briefing's person chat, the title screen) is drawn over the HUD
+    if (window.MinigameFramework?.currentMinigame) return false;
+    return !(this.container.classList.contains('hidden') || this.container.style.display === 'none');
+  }
+
+  /**
+   * Start the auto-fold clock once, when the first aims have been shown. It steps every
+   * AUTO_COLLAPSE_STEP_MS and counts a step only while the panel is on screen, so the opening
+   * briefing (a minigame that hides the panel) does not use up the reading time. In use (hover,
+   * focus) or holding an ending's button, the count keeps going but the fold waits.
+   */
+  _startAutoCollapse() {
+    if (this._autoCollapseDone || this._autoCollapseTimer || this._userTouched) return;
+    const step = () => {
+      this._autoCollapseTimer = null;
+      if (!this.container?.classList) return;
+      if (this._autoCollapseDone) return;   // a held ending opened it for good   // torn down, or a test's stand-in panel
+      if (this._onScreen()) {
+        this._visibleMs += ObjectivesPanel.AUTO_COLLAPSE_STEP_MS;
+      } else {
+        this._hovering = false;   // a hover cannot be ended while the panel is hidden
+      }
+      const focusInside = !!this.container?.contains?.(document.activeElement);
+      const held = !!window.endingCheck?.hasHeld?.();
+      const grace = !this._hovering && this._graceSteps > 0;
+      if (grace) this._graceSteps -= 1;   // the pointer just left: a moment before it folds
+      if (this._visibleMs >= ObjectivesPanel.AUTO_COLLAPSE_MS && this._onScreen() && !this._hovering && !grace && !focusInside && !held) {
+        if (ObjectivesPanel.shouldAutoCollapse({
+          compact: ObjectivesPanel.compactNow(), collapsed: this.isCollapsed,
+          userTouched: this._userTouched, hovering: false, focusInside: false, done: this._autoCollapseDone
+        })) { this.setCollapsed(true); this._autoFolded = true; }
+        this._autoCollapseDone = true;
+        return;
+      }
+      this._autoCollapseTimer = setTimeout(step, ObjectivesPanel.AUTO_COLLAPSE_STEP_MS);
+      this._autoCollapseTimer?.unref?.();
+    };
+    this._autoCollapseTimer = setTimeout(step, ObjectivesPanel.AUTO_COLLAPSE_STEP_MS);
+    this._autoCollapseTimer?.unref?.();   // node: never keeps a test process alive
+  }
+
+  /** Give the fold a fresh AUTO_COLLAPSE_MS of visible time. */
+  _rearmAutoCollapse() {
+    clearTimeout(this._autoCollapseTimer);
+    this._autoCollapseTimer = null;
+    this._autoCollapseDone = false;
+    this._visibleMs = 0;
+  }
+
   toggleCollapse() {
+    this._userTouched = true;
+    clearTimeout(this._autoCollapseTimer);
+    this._autoCollapseTimer = null;
+    this._autoFolded = false;
     this.setCollapsed(!this.isCollapsed);
     if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
   }
@@ -167,6 +261,7 @@ export class ObjectivesPanel {
     const toggle = this.container.querySelector('.objectives-toggle');
     toggle?.classList.toggle('is-collapsed', this.isCollapsed);
     toggle?.setAttribute('aria-label', this.isCollapsed ? 'Open objectives' : 'Close objectives');
+    toggle?.setAttribute('aria-expanded', String(!this.isCollapsed));
   }
 
   /** The phone layout (ui/hud-lanes.js isCompactViewport: under 900 px wide or 500 px tall). */
@@ -187,6 +282,15 @@ export class ObjectivesPanel {
     return { title: aim.title || '', done, total: visible.length };
   }
 
+  /** Title of the first open task of the pill's aim, or ''. Pure; tested. */
+  static nextTaskTitle(aims) {
+    const aim = (aims || []).find(a => a && a.status !== 'completed' && a.status !== 'locked');
+    const open = (aim?.tasks || []).filter(x => x.status !== 'locked' && x.status !== 'completed' && x.status !== 'skipped');
+    // A required task first; an optional one only when nothing required is open (review R2 m3)
+    const t = open.find(x => x.optional !== true) || open[0];
+    return t?.title || '';
+  }
+
   /**
    * Write the pill's line: the count first, in a box of its own that never shrinks, then the
    * current aim, cut with an ellipsis; the whole line is the pill's title (review R1 M2).
@@ -199,10 +303,29 @@ export class ObjectivesPanel {
     const countEl = el.querySelector('.objectives-pill-count');
     const textEl = el.querySelector('.objectives-pill-text');
     if (countEl) { countEl.textContent = count; countEl.hidden = !count; }
-    if (textEl) textEl.textContent = sum ? sum.title : '';
+    // A held ending says so; a desktop folded line names the next task (the aim title is too long to
+    // finish a sentence in it); a phone pill shows the aim
+    const held = !!window.endingCheck?.hasHeld?.();
+    const compact = ObjectivesPanel.compactNow();
+    const next = compact ? '' : ObjectivesPanel.nextTaskTitle(aims);
+    if (textEl) textEl.textContent = held ? 'Open to end the mission' : (sum ? (next || sum.title) : '');
+    // The desktop toast carries the news aloud; only the phone pill announces itself
+    el.setAttribute('aria-live', compact ? 'polite' : 'off');
     const header = this.container.querySelector('.objectives-header');
-    const full = sum ? (count ? `${sum.title} (${count})` : sum.title) : 'Objectives';
+    let full = sum ? (count ? `${sum.title} (${count})` : sum.title) : 'Objectives';
+    if (sum && next && next !== sum.title) full += `: ${next}`;
+    if (held) full += ' (the mission can be ended)';
     if (header) header.title = full;
+  }
+
+  /** Blink the folded panel's outline (restarts a running pulse). */
+  _pulse(ms = ObjectivesPanel.PILL_FLASH_MS) {
+    if (!this.container) return;
+    this.container.classList.remove('pill-pulse');
+    void this.container.offsetWidth;   // restart the pulse
+    this.container.classList.add('pill-pulse');
+    clearTimeout(this._pillFlashTimer);
+    this._pillFlashTimer = setTimeout(() => this.container?.classList.remove('pill-pulse'), ms);
   }
 
   /**
@@ -213,13 +336,15 @@ export class ObjectivesPanel {
    * on the phone layout with the pill showing.
    */
   foldToast(title, message, ms = ObjectivesPanel.PILL_FLASH_MS) {
+    // Desktop, folded to its summary line: blink it for news, and let the toast show as usual
+    if (!ObjectivesPanel.compactNow() && this.isCollapsed && this.container && !this.container.classList.contains('hidden')
+      && !document.body?.classList?.contains('minigame-active')) {
+      this._pulse(ms);
+      return false;
+    }
     if (!ObjectivesPanel.compactNow() || !this.container || this.container.classList.contains('hidden')) return false;
     if (document.body?.classList?.contains('minigame-active')) return false;   // pill hidden: keep the toast
-    this.container.classList.remove('pill-pulse');
-    void this.container.offsetWidth;   // restart the pulse
-    this.container.classList.add('pill-pulse');
-    clearTimeout(this._pillFlashTimer);
-    this._pillFlashTimer = setTimeout(() => this.container?.classList.remove('pill-pulse'), ms);
+    this._pulse(ms);
     return true;
   }
 
@@ -344,11 +469,42 @@ export class ObjectivesPanel {
       `;
     });
     
-    if (window.endingCheck?.hasHeld?.()) {
-      html += '<div class="objectives-end-held"><button type="button" class="objectives-end-button" '
-        + 'title="Some optional objectives are still open">End the mission</button></div>';
+    const heldNow = !!window.endingCheck?.hasHeld?.();
+    if (this.footer) {   // (a test's stand-in panel has none)
+      this.footer.innerHTML = heldNow
+        ? '<div class="objectives-end-held"><button type="button" class="objectives-end-button" '
+          + 'title="Some optional objectives are still open">End the mission</button></div>'
+        : '';
+      this.footer.hidden = !heldNow;
     }
+    this.container?.classList?.toggle?.('has-end-footer', heldNow);
     this.content.innerHTML = html;
+    // A new aim lengthens the list: if the player has not taken the panel over, it gets another
+    // AUTO_COLLAPSE_MS of visible time to be read before it folds again (m08 part 2: three aims, a
+    // third of the view). One that the timer folded opens again for it.
+    if (newAimIds.length && !this._userTouched) {
+      if (this.isCollapsed && this._autoFolded && !ObjectivesPanel.compactNow()) {
+        this.setCollapsed(false);
+        this._autoFolded = false;
+      }
+      if (!this.isCollapsed) this._rearmAutoCollapse();
+    }
+    // A held ending's button lives in the list: when it first appears the panel opens (desktop) so
+    // the way out is in view, and stays open while it is there. If the player folded the panel
+    // themselves, or on a phone, the folded line says so and blinks.
+    const hasHeld = !!window.endingCheck?.hasHeld?.();
+    if (hasHeld && !this._hadHeld) {
+      if (!this._userTouched && !ObjectivesPanel.compactNow()) {
+        this.setCollapsed(false);
+        this._autoFolded = false;
+        this._autoCollapseDone = true;   // it stays open while held: stop the clock (review R2 n2)
+      } else if (this.isCollapsed) {
+        this._pulse();
+      }
+    }
+    this._hadHeld = hasHeld;
+    if (hasHeld) this.updatePill(aims);
+    this._startAutoCollapse();
     if (newAimIds.length) this.revealAim(this.aimToReveal(newAimIds, aims));
     this.updateMoreBelow();
   }
@@ -462,12 +618,18 @@ export class ObjectivesPanel {
     if (this._compactCue) window.removeEventListener?.('resize', this._compactCue);
     if (this._escCue) window.removeEventListener?.('keydown', this._escCue, true);
     clearTimeout(this._pillFlashTimer);
+    clearTimeout(this._autoCollapseTimer);
     this._moreBelowObserver?.disconnect();
     this._moreBelowObserver = null;
-    this.manager.removeListener(this.render);
+    this.manager.removeListener(this._onAims);
   }
 }
 
 ObjectivesPanel.PILL_FLASH_MS = 4000;
+/** Desktop: how long (ms of visible time) the list stays open at mission start before it folds, and the clock's step. */
+ObjectivesPanel.AUTO_COLLAPSE_MS = 25000;
+/** The fold clock steps this often, counting only the steps taken with the panel on screen. */
+ObjectivesPanel.AUTO_COLLAPSE_STEP_MS = 1000;
+ObjectivesPanel.HOVER_GRACE_STEPS = 2;   // 2 s after the pointer leaves
 
 export default ObjectivesPanel;

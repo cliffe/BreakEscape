@@ -1816,20 +1816,10 @@ end
             { "eventPattern": "<%= ev %>", "condition": "globalVars.split_started === true && globalVars.arakawa_ko === true && !globalVars.arakawa_call_done", "setGlobal": { "arakawa_call_done": true } },
 <% end %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.nightshade_tethered && !globalVars.override_held", "setGlobal": { "breach_announced": true } },
-            <%# Blind fix R1 m5: tunnel_fight_on holds the breach call while either tunnel guard is fighting (it would cover the screen mid-fight); the call rings once the fight is over. Set by hostility, cleared by a KO or a Restart's reset. The condition is re-checked when the 1.5 s delay is up, so a fight that starts inside it cancels the ring. %>
-            { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.hax_jammed && !globalVars.tunnel_fight_on", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
-            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard' && data.isHostile === true", "setGlobal": { "tunnel_fight_on": true } },
-            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard_kettle' && data.isHostile === true", "setGlobal": { "tunnel_fight_on": true } },
-            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard' && data.isHostile === false", "setGlobal": { "tunnel_fight_on": false } },
-            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard_kettle' && data.isHostile === false", "setGlobal": { "tunnel_fight_on": false } },
-            { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard'", "setGlobal": { "tunnel_fight_on": false } },
-            { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard_kettle'", "setGlobal": { "tunnel_fight_on": false } },
-            { "eventPattern": "global_variable_changed:tunnel_fight_on", "condition": "value === false && globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
-            <%# Blind fix R2 m3: backstops for a breach call the fight hold lost. A Respawn or an F5 inside the 1.5 s re-ring window reloads the page and the timer dies, so game_loaded rings it again; a tunnel guard who is out-run stays hostile, so entering the security office rings it (the first mapping) or clears tunnel_fight_on (the second, whose change rings it through the mapping above). Both stop at breach_call_done. %>
-            { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.tunnel_fight_on && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 3000 },
-            { "eventPattern": "room_entered:security_office", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.tunnel_fight_on && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
-            <%# Blind fix R3 m2: an unleashed tunnel guard can chase into the office, so this clear may ring the call mid-chase. Accepted: the engine combat hold on fix/phone-defer-combat (playerInCombat) covers a chaser in the room. %>
-            { "eventPattern": "room_entered:security_office", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && globalVars.tunnel_fight_on === true", "setGlobal": { "tunnel_fight_on": false } },
+            <%# Engine fight hold (fix/phone-defer-combat): this voiced call, offered while a chaser is in the player's room or the player was hit in the last few seconds, is held by the ringer (playerInCombat) and rings once the fight is over, so no scenario global is needed. A Respawn or F5 mid-fight turns the held unforced call into a missed one; the game_loaded mapping below rings it again, and breach_call_done (set by the call) stops any later ring. %>
+            { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
+            <%# Backstop for a breach call a reload lost: a Respawn or an F5 turns the unanswered call into a missed one, so game_loaded rings it again until HaX has given it (breach_call_done). Not onceOnly, so a second reload mid-fight cannot lose it; the ringer drops a duplicate offer for the same knot. %>
+            { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 3000 },
             <%# Blind fix R2 M1/m2: a hall guard who turns hostile by any route is engaged, which ends the repeat challenge. %>
             { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_a' && data.isHostile === true", "setGlobal": { "hall_a_engaged": true } },
             { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_b' && data.isHostile === true", "setGlobal": { "hall_b_engaged": true } },
@@ -4716,7 +4706,6 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "mercer_fighting": false,
     "victoria_call_deferred": false,
     "power_fight_on": false,
-    "tunnel_fight_on": false,
     "breach_call_done": false,
     "hall_a_warnings": 0,
     "hall_a_engaged": false,

@@ -219,7 +219,7 @@ inkcheck at `start` after the 3b fixes: Victoria, guard and phone each 800/800 c
 2. **Clone not recoverable (major).**
    - *Cause:* both clones completed their task and set their global from the ink tag batch (`#complete_task` / `#set_global` beside `#clone_keycard`). Closing the flipper before Save left no card but a ticked task, and the clone option had gone.
    - *Fix, m04 Vance pattern:*
-     - New `card_cloned` mappings complete the tasks only on Save (`rfid-minigame.js handleSaveCard` emits it with `cardName`). "Staff Access Badge" (on the receptionist) sets `reception_badge_cloned` and completes `clone_reception_badge`. "Executive Keycard" (on HaX) sets `victoria_card_cloned` and completes `clone_rfid_card`.
+     - New `card_cloned` mappings complete the tasks only on Save (`rfid-minigame.js handleSaveCard` emits it with `cardName`). "Staff Access Badge" (on the receptionist) sets `reception_badge_cloned` and completes `clone_reception_badge`. "Executive Keycard" (on HaX) sets `victoria_card_cloned` and completes `clone_rfid_card`. (superseded: the task now completes on the door unlock, not on card_cloned)
      - Each mapping sits on a different NPC, so the validator's co-fire warning count is unchanged.
      - The ink tags now sit on throwaway lines, followed by a debrief knot that checks the synced global.
      - Receptionist: the hub's "Lean across the desk" option shows while `not reception_badge_cloned`.
