@@ -228,6 +228,7 @@ function restoredThreadHarness({ params = { voiced: true }, ended = false, prete
         params, _pretext: pretext,
         conversation: {
             getCurrentState: () => ({ hasEnded: ended }),
+            restoredStoryHasOnlyTheEnd: () => false,
             restartAfterEnd: () => { calls.push('restartAfterEnd'); return true; }
         },
         _presentReopened: r => calls.push(['presentReopened', r.knot]),

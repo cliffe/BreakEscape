@@ -1,5 +1,11 @@
 // Minimal InkEngine wrapper around the global inkjs.Story
 // Exports a default class InkEngine matching the test harness API.
+// Externals that only read window.gameState; they stay bound during a look-ahead probe.
+const PURE_EXTERNALS = [
+  'player_name', 'current_mission_id', 'npc_location',
+  'mission_phase', 'operational_stress_level', 'equipment_status'
+];
+
 export default class InkEngine {
   constructor(id) {
     this.id = id || 'ink-engine';
@@ -134,6 +140,37 @@ export default class InkEngine {
             this.story.variablesState[name] = value;
         } catch (err) {
             console.warn(`⚠️ Failed to set variable ${name}:`, err.message);
+        }
+  }
+
+  /**
+   * Run a look-ahead (reading a step the player has not reached, to be rolled back) with
+   * every bound external swapped for a no-op stub, except the pure getters below. An
+   * external that has effects (se_influence writes an influence global and can fire
+   * thresholds, pretext_say / pretext_ask log into the call's ledger, and whatever is bound
+   * next) must not run twice, so the default is to stub; a new pure getter has to be added
+   * to PURE_EXTERNALS. The stubs return 0, not void, so a step that uses the value
+   * (`{se_influence(1) > 0: ...}`) does not throw. The real functions are put back after,
+   * even if fn throws, and any error a stub provoked is cleared so the story can still be
+   * stepped for real once the caller has restored its saved state.
+   * @param {Function} fn
+   * @returns {*} whatever fn returns
+   */
+  withEffectfulExternalsStubbed(fn) {
+        const externals = this.story && this.story._externals;
+        const swapped = [];
+        if (externals && typeof externals.forEach === 'function') {
+            externals.forEach((def, name) => {
+                if (!def || PURE_EXTERNALS.includes(name)) return;
+                swapped.push([def, def.function]);
+                def.function = () => 0;
+            });
+        }
+        try {
+            return fn();
+        } finally {
+            for (const [def, original] of swapped) def.function = original;
+            try { this.story?.ResetErrors?.(); } catch (_) { /* nothing to reset */ }
         }
   }
 

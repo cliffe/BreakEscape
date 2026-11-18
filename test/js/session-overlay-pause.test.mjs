@@ -132,7 +132,7 @@ test('person-chat: no overlay, no change; click-through mode still waits for the
 
 test('wiring: the voice, the closing line and phone typing wait; the page sets and clears the flag', () => {
     const pc = read('minigames/person-chat/person-chat-minigame.js');
-    assert.match(pc, /await whenSessionOverlayClosed\(\);\n\s+if \(!this\.ttsManager\) return;\n\s+const audioDuration = await this\.ttsManager\.play/);
+    assert.match(pc, /await whenSessionOverlayClosed\(\);\n\s+if \(this\._cleanedUp \|\| !this\.ttsManager\) return;\n\s+const audioDuration = await this\.ttsManager\.play/);
     assert.match(pc, /whenSessionOverlayClosed\(\)\.then\(\(\) => setTimeout\(\(\) => \{\n\s+if \(this\.gameState\.isActive\) this\.complete\(true\);/);
     assert.match(pc, /cleanup\(\) \{\n\s+\/\/ Drop an auto-advance held[^\n]*\n\s+this\._releaseOverlayHold\?\.\(\);/);
     const phone = read('minigames/phone-chat/phone-chat-minigame.js');
