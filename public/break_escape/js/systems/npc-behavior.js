@@ -2069,10 +2069,19 @@ export class NPCBehavior {
         if (this._moveOwner === 'needs' && this._moveReroute) {
             const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true } };
             if (rooms?.length) opts.avoidRooms = rooms;
-            return pfm.findWorldPath(sx, sy, ex, ey, (path) => {
-                if (path && path.length > 0) { callback(path); return; }
+            // Three tiers: round every body with a clearance ring; else round their exact reach (a
+            // standing NPC in an aisle the ring closes); else the plain path.
+            const plain = () => {
                 if (rooms?.length) pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
                 else pfm.findWorldPath(sx, sy, ex, ey, callback);
+            };
+            return pfm.findWorldPath(sx, sy, ex, ey, (path) => {
+                if (path && path.length > 0) { callback(path); return; }
+                const tight = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, tight: true } };
+                if (rooms?.length) tight.avoidRooms = rooms;
+                pfm.findWorldPath(sx, sy, ex, ey, (p2) => {
+                    if (p2 && p2.length > 0) callback(p2); else plain();
+                }, false, tight);
             }, false, opts);
         }
         if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });

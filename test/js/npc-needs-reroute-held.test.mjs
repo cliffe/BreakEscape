@@ -145,8 +145,9 @@ test('a needs re-route plans round held bodies; with no such path it takes the p
     const n = walker({ reroute: true, detour: null });
     const got2 = [];
     n._planMovePath(n.pathfindingManager, 0, 0, 100, 0, p => got2.push(p));
-    assert.equal(n.calls.length, 2, 'falls back to the plain search');
-    assert.equal(n.calls[1], null);
+    assert.equal(n.calls.length, 3, 'tries the tight search, then falls back to the plain search');
+    assert.equal(n.calls[1].avoidDynamic.tight, true, 'the second tier plans round the bodies\' exact reach');
+    assert.equal(n.calls[2], null);
     assert.deepEqual(got2[0], [{ x: 100, y: 0 }]);
 });
 
