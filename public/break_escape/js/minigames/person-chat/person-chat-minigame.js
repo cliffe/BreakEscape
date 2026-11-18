@@ -22,7 +22,7 @@ import { splitReplyTags, partitionSlowTags, tagAction } from './person-chat-pend
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
-import { rememberNpcLine, getRememberedNpcLine, rememberShownText, markClosedByExit, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, rememberShownText, rememberPlayerChoice, markClosedByExit, isExitTag, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -1129,7 +1129,10 @@ export class PersonChatMinigame extends MinigameScene {
             
             // Clear choice buttons immediately
             this.ui.hideChoices();
-            
+
+            // A choice breaks the shown-line log: a reopen echo can never span it
+            rememberPlayerChoice(this.npcId);
+
             // Make choice in conversation (this also calls continue() internally)
             const result = this.conversation.makeChoice(choiceIndex);
             
@@ -1300,6 +1303,10 @@ export class PersonChatMinigame extends MinigameScene {
             }
             this.pendingContinueCallback = null;
         }
+        // Closed during the reply delay after a goodbye: the farewell is never displayed, so
+        // mark the exit here or the next visit would take its hub greeting for an echo.
+        // (Not on pagehide: the reply may still display.)
+        if (reply && !keepPending && (reply.tags || []).some(isExitTag)) markClosedByExit(this.npcId);
         if (!reply || reply._stateTagsApplied) return;
         const { state } = splitReplyTags(reply.tags);
         // A debrief gate (#ending_check) asks the player to confirm and, on "Keep going",

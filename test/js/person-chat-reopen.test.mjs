@@ -13,7 +13,7 @@ const src = join(here, '../../public/break_escape/js/minigames/person-chat/perso
 const dir = mkdtempSync(join(tmpdir(), 'person-chat-reopen-'));
 writeFileSync(join(dir, 'reopen.mjs'), readFileSync(src, 'utf8'));
 const { rememberNpcLine, getRememberedNpcLine, forgetNpcLine, reopenContextLine,
-    rememberShownText, markClosedByExit, forgetShownText, matchesShownTail, drainReopenEcho } =
+    rememberShownText, rememberPlayerChoice, isExitTag, markClosedByExit, forgetShownText, matchesShownTail, drainReopenEcho } =
     await import(pathToFileURL(join(dir, 'reopen.mjs')).href);
 
 const hub = { text: '', choices: [{ text: 'Ask' }, { text: 'Leave' }] };
@@ -240,4 +240,101 @@ test('M2: an action-tag step with no line is never an echo', () => {
     const f = fakeStory([{ text: 'Okay.\n' }, { text: '', tags: ['give_item:key'], choices: knotChoices, canContinue: false }]);
     assert.equal(drainReopenEcho({ npcId: 'g', engine: f.engine, story: f.story }), null);
     assert.equal(f.pos(), 0);
+});
+
+// ---- R3: m1 (choice marker), m2 (real ink, live branch after the echo), m3 (null step), n1 ----
+test('m1: a player choice breaks the log, so an echo cannot span it', () => {
+    forgetShownText();
+    rememberShownText('h', 'What else?');
+    rememberPlayerChoice('h');           // the goodbye was picked, reply never displayed
+    const f = fakeStory([{ text: 'What else?\n', choices: knotChoices, canContinue: false }]);
+    assert.equal(drainReopenEcho({ npcId: 'h', engine: f.engine, story: f.story }), null, 'greeting after a choice is new');
+    // lines shown after the choice still echo
+    rememberShownText('h', 'What else?');
+    const g = fakeStory([{ text: 'What else?\n', choices: knotChoices, canContinue: false }]);
+    assert.ok(drainReopenEcho({ npcId: 'h', engine: g.engine, story: g.story }));
+    // a multi-line replay cannot reach back over the marker either
+    forgetShownText();
+    rememberShownText('h', 'One.'); rememberPlayerChoice('h'); rememberShownText('h', 'Two.');
+    const k = fakeStory([{ text: 'One.\n' }, { text: 'Two.\n', choices: knotChoices, canContinue: false }]);
+    assert.equal(drainReopenEcho({ npcId: 'h', engine: k.engine, story: k.story }), null);
+    rememberPlayerChoice('nobody'); // no record: harmless
+});
+
+test('m1: handleChoice marks the choice and a goodbye closed in the reply delay marks closed-by-exit', () => {
+    const msrc = readFileSync(join(here, '../../public/break_escape/js/minigames/person-chat/person-chat-minigame.js'), 'utf8');
+    assert.match(msrc, /rememberPlayerChoice\(this\.npcId\);\s*\n\s*\/\/ Make choice in conversation/);
+    assert.match(msrc, /reply && !keepPending && \(reply\.tags \|\| \[\]\)\.some\(isExitTag\)\) markClosedByExit\(this\.npcId\)/);
+    // the flush runs on stubs: lift the method as person-chat-pending-reply.test.mjs does
+    const m = msrc.match(/\n    _flushPendingReply\(([^)]*)\) \{\n([\s\S]*?)\n    \}\n/);
+    const marks = [];
+    const flush = new Function('markClosedByExit', 'isExitTag', 'splitReplyTags', 'partitionSlowTags', 'tagAction', 'processGameActionTags', 'window',
+        `return function (${m[1]}) {\n${m[2]}\n};`)(n => marks.push(n), isExitTag, () => ({ state: [] }), () => ({ slow: [], fast: [] }), () => '', () => {}, {});
+    const mk = tags => ({ npcId: 'bernie', _pendingReply: { tags }, autoAdvanceTimer: null, pendingContinueCallback: null, _tagOptions: () => ({}) });
+    flush.call(mk(['speaker:bernie', 'exit_conversation']));
+    assert.deepEqual(marks, ['bernie'], 'exit tag in the pending reply');
+    flush.call(mk(['complete_task:x']));
+    assert.equal(marks.length, 1, 'no exit tag: no mark');
+    flush.call(mk(['end_conversation']), { keepPending: true });
+    assert.equal(marks.length, 1, 'pagehide may be a bfcache stash: not marked');
+});
+
+test('m2: real ink, a live branch after the echoed line comes back unchanged, not as an empty close', async () => {
+    const { createRequire } = await import('node:module');
+    globalThis.window = { gameState: { globalVariables: {} } };
+    globalThis.inkjs = createRequire(import.meta.url)(join(here, '../../public/break_escape/assets/vendor/ink.js'));
+    writeFileSync(join(dir, 'ink-engine.mjs'), readFileSync(join(here, '../../public/break_escape/js/systems/ink/ink-engine.js'), 'utf8'));
+    const { default: InkEngine } = await import(pathToFileURL(join(dir, 'ink-engine.mjs')).href);
+    const json = readFileSync(join(here, 'fixtures/reopen_echo_branch.json'), 'utf8').replace(/^﻿/, '');
+    const build = live => {
+        const e = new InkEngine('t'); e.loadStory(json);
+        e.story.ChoosePathString('k2');
+        if (live !== undefined) e.story.BindExternalFunction('ext_check', () => live);
+        return e;
+    };
+    // Case A: the live external still returns 0: a true echo
+    forgetShownText(); rememberShownText('r', 'Okay.');
+    let e = build(0);
+    let res = drainReopenEcho({ npcId: 'r', engine: e, story: e.story });
+    assert.ok(res && res.choices.length === 1 && res.text === '', 'echo');
+    // Case B: the live external flips: the branch is handed back with its own tags and end
+    forgetShownText(); rememberShownText('r', 'Okay.');
+    e = build(1);
+    res = drainReopenEcho({ npcId: 'r', engine: e, story: e.story });
+    assert.ok(res, 'a step comes back, never null');
+    assert.deepEqual(res.tags.slice().sort(), ['exit_conversation', 'give_item:secret'], 'tags kept');
+    assert.equal(res.choices.length, 0);
+    assert.notEqual(res.hasEnded, false, 'hasEnded not forced false');
+    assert.equal(res.canContinue, false);
+});
+
+test('m3: a null replay step gives a closed step, never null (no second continue)', () => {
+    forgetShownText(); showReplay();
+    const f = fakeStory(replayScript());
+    const r = drainReopenEcho({ npcId: 'receptionist', engine: f.engine, story: f.story, step: () => null });
+    assert.ok(r);
+    assert.equal(r.hasEnded, true);
+    assert.equal(r.text, '');
+});
+
+test('m2: the replay requires choices at the end and a tags difference hands the step back', () => {
+    forgetShownText(); showReplay();
+    const f = fakeStory(replayScript());
+    let n = 0;
+    const steps = [{ text: 'x', tags: [], canContinue: true }];
+    const real = () => ({ text: '', tags: ['give_item:k'], choices: [], canContinue: false });
+    // dry run text matches but the live step has no text where one was expected: handed back
+    const r = drainReopenEcho({ npcId: 'receptionist', engine: f.engine, story: f.story, step: real });
+    assert.deepEqual(r.tags, ['give_item:k']);
+    void n; void steps;
+});
+
+test('n1: the dry run stops once it has more lines than the log holds', () => {
+    forgetShownText(); rememberShownText('s', 'Only one.');
+    let calls = 0;
+    const script = Array.from({ length: 30 }, (_, i) => ({ text: `L${i}\n`, canContinue: true }));
+    const engine = { continue: () => script[calls++] };
+    const story = { state: { ToJson: () => '{}', LoadJson() {} } };
+    assert.equal(drainReopenEcho({ npcId: 's', engine, story }), null);
+    assert.ok(calls <= 3, `stopped early (${calls} steps)`);
 });

@@ -62,10 +62,13 @@ const MAX_SHOWN = 40;
 const MAX_STEPS = 60;
 const shownLines = new Map(); // npcId -> { list: [{ t, g }], exit: boolean }
 const normLine = l => String(l).replace(/\s+/g, ' ').trim();
-const isExitTag = t => /^(exit|end)_conversation\b/i.test(String(t).trim());
+export const isExitTag = t => /^(exit|end)_conversation\b/i.test(String(t).trim());
 // speaker: / delivery: only change how a line is presented, not what it does
 const isPresentationTag = t => /^(speaker|delivery)\s*:/i.test(String(t).trim());
 const tagKey = tags => (tags || []).map(t => String(t).trim()).filter(t => t && !isPresentationTag(t)).join('|');
+// A player's choice sits in the log as an entry no ink line can equal (NUL cannot survive
+// normLine's text), so a tail match can never span a choice.
+const CHOICE_MARK = { t: '\u0000player-chose', g: '' };
 const entriesOf = (text, tags) => {
     const g = tagKey(tags);
     return String(text || '').split('\n').map(normLine).filter(Boolean).map(t => ({ t, g }));
@@ -85,6 +88,15 @@ export function rememberShownText(npcId, text, tags) {
     for (const e of added) rec.list.push(e);
     rec.list = rec.list.slice(-MAX_SHOWN);
     shownLines.set(npcId, rec);
+}
+
+/** The player picked a choice: later lines are new, so an echo can never reach back past this. */
+export function rememberPlayerChoice(npcId) {
+    if (!npcId) return;
+    const rec = shownLines.get(npcId);
+    if (!rec || !rec.list.length) return;
+    rec.list.push(CHOICE_MARK);
+    rec.list = rec.list.slice(-MAX_SHOWN);
 }
 
 /** The chat closed on an exit_conversation that was not recorded with a line (tags-only step). */
@@ -120,6 +132,10 @@ export function matchesShownTail(npcId, entries) {
  * bookkeeping runs and ink variables reach gameState once); the text and tags of that
  * replay are dropped, because the tags already ran when the lines were first shown.
  *
+ * A true echo drops every tag of the replayed steps on purpose, presentation ones
+ * (portrait, lighting) and counters included: they ran when the lines were first shown,
+ * and a non-idempotent tag must not run again on each re-entry.
+ *
  * Returns the choices result with text and tags blanked for an echo, else null with the
  * story exactly as it was. Not an echo: a new or reordered line, a tag that differs, an
  * action-tag step with no text, an exit/end tag, no choices, an error, more than 60 steps
@@ -139,6 +155,7 @@ export function drainReopenEcho({ npcId, engine, story, step }) {
 
     const entries = [];
     const stepTexts = [];
+    const stepKeys = [];
     let reachedChoices = false;
     const dryRun = () => {
         for (let i = 0; i < MAX_STEPS; i++) {
@@ -148,8 +165,11 @@ export function drainReopenEcho({ npcId, engine, story, step }) {
             if (tags.some(isExitTag)) return;
             const hasText = !!(r.text && r.text.trim());
             if (hasText) entries.push(...entriesOf(r.text, tags));
+            // Once there are more lines than the log holds it can no longer match
             else if (tagKey(tags)) return; // an action tag with no line: cannot prove it already ran
             stepTexts.push(hasText ? normLine(r.text) : '');
+            stepKeys.push(tagKey(tags));
+            if (entries.length > rec.list.length) return;
             if (r.choices && r.choices.length > 0) { reachedChoices = true; return; }
             if (!r.canContinue) return;
         }
@@ -176,9 +196,13 @@ export function drainReopenEcho({ npcId, engine, story, step }) {
     for (let i = 0; i < stepTexts.length; i++) {
         last = run();
         // Stubbed externals can return different values from the live ones. If the real
-        // replay prints anything else, hand that step back as ordinary content.
-        if (!last || normLine(last.text || '') !== stepTexts[i]) return last;
+        // replay prints anything else (other text, other tags), hand that step back
+        // unchanged as ordinary content. The story has moved, so never null.
+        if (!last) return { text: '', choices: [], tags: [], canContinue: false, hasEnded: true };
+        if (normLine(last.text || '') !== stepTexts[i] || tagKey(last.tags) !== stepKeys[i]) return last;
     }
+    // The run must still end at choices, and carry no exit/end tag
+    if (!(last.choices && last.choices.length > 0) || (last.tags || []).some(isExitTag)) return last;
     return { ...last, text: '', tags: [], hasEnded: false };
 }
 
