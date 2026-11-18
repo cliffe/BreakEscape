@@ -982,8 +982,10 @@ test('closed during the success hold: the door still opens, once', async () => {
         await tick();
         g.gameState.isActive = false;
         timers.forEach(f => f());
-        assert.equal(done(), null);
-        assert.equal(late.length, 1);
+        // holdSuccess: the held timer completes the success (a real early close has already
+        // committed it through complete(), see success-hold-early-close.test.mjs); no late path
+        assert.equal(done(), true);
+        assert.equal(late.length, 0);
     } finally { globalThis.setTimeout = realTimeout; }
 });
 
