@@ -6409,6 +6409,24 @@
       "w": 40,
       "h": 28,
       "gid": 1500
+    },
+    "usb_badusb_flat": {
+      "id": 700,
+      "w": 16,
+      "h": 7,
+      "gid": 1501
+    },
+    "usb_storage_swivel": {
+      "id": 701,
+      "w": 14,
+      "h": 6,
+      "gid": 1502
+    },
+    "keylogger_flat": {
+      "id": 702,
+      "w": 15,
+      "h": 6,
+      "gid": 1503
     }
   }
 }
