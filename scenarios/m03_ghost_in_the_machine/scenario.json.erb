@@ -1736,7 +1736,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Training Lab Runbook",
               "takeable": true,
               "readable": true,
-              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It used to be plain ROT13; Sable has put it on her own shift and mails the number to clients. Still only a letter shift, not real encryption.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
+              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It used to be plain ROT13; Sable has put it on her own shift and mails the number to clients. Still only a letter shift, not real encryption: twenty-five possible keys, so ROT13 Brute Force on the CyberChef laptop will list them all.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
             }
           ]
         },
@@ -1770,7 +1770,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": false,
           "readable": true,
           "text": "<%= whiteboard_message_encoded %>",
-          "observations": "Someone has written a note across the whiteboard. The letters are scrambled but the word lengths and punctuation hold: each letter swapped for another, not gibberish. The decoding laptop will read it.",
+          "observations": "Each letter has been swapped for another. A letter shift has only twenty-five keys: try ROT13, or ROT13 Brute Force to see them all.",
           "onRead": { "setVariable": { "whiteboard_seen": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["wall_safe_server"],
@@ -1804,7 +1804,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           ],
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
-          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number."
+          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number. With no number, a letter shift has just twenty-five keys: ROT13 Brute Force tries them all, and you pick the one that reads as English."
         },
         {
           "type": "flag-station",
@@ -2044,7 +2044,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "<%= base64_encode("To: night team. From: Sable.\nCatalogue safe re-coded to #{catalogue_safe_code} -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nThe web price board is off ROT13 -- any student could read it. Every letter now moves on #{price_board_shift} places. Clients get the number from me, nobody else.\nArchitect wants the Phase 2 list same day. -V") %>",
-              "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it.",
+              "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it. Whatever is inside, keep the shift-cipher idea for later: a letter shift has only twenty-five possible keys.",
               "onRead": { "setVariable": { "draft_seen": true } },
               "puzzle_graph_role": "clue",
               "puzzle_graph_unlocks": ["wall_safe_server"],
