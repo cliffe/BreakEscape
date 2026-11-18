@@ -164,14 +164,14 @@ They'll be a while, so finish up in there. Call me when you want the debrief.
 + {priv_esc_guide_offered and not priv_esc_guide_hint_given} [I need the privilege escalation guide]
     -> request_priv_esc_guide
 // The debrief waits for the report: the player has to tell SAFETYNET what ENTROPY planned first.
-+ {entropy_reveal_read and operation_shatter_reported and (player_aborted_attack or player_launched_attack)} [Operation Shatter resolved — I'm ready for debrief]
++ {entropy_reveal_read and operation_shatter_reported and (player_aborted_attack or player_launched_attack)} [Operation Shatter resolved, I'm ready for debrief]
     #place_call:closing_debrief
     -> DONE
 + {(entropy_reveal_read or (talked_to_maya and discussed_operation)) and not operation_shatter_reported} [I discovered what ENTROPY is planning - Operation Shatter]
     -> report_operation_shatter
-+ {framing_evidence_seen and kevin_choice == ""} [Those files on Kevin's PC — what should I do with this?]
++ {framing_evidence_seen and kevin_choice == ""} [Those files on Kevin's PC, what should I do with this?]
     -> framing_evidence_briefing
-+ {derek_office_locked_seen and not derek_office_entered} [Derek's office is locked — how do I get in?]
++ {derek_office_locked_seen and not derek_office_entered} [Derek's office is locked, how do I get in?]
     -> event_derek_office_locked
 + {has_lockpick and not derek_office_entered and not lockpick_hint_given} [Lockpicking guidance]
     -> lockpick_help
@@ -244,7 +244,7 @@ Command format: hydra -l username -P passwordlist.txt target ssh
 
 Linux navigation basics: ls lists files, cd changes directory, cat reads files.
 
-Check the home directory first. User files, hidden configs—look for .bashrc, .ssh, personal directories.
+Check the home directory first. User files, hidden configs: look for .bashrc, .ssh, personal directories.
 
 Hidden files start with a dot. Use ls -la to see them.
 
@@ -282,13 +282,13 @@ Command: sudo -u otherusername bash gives you a shell as that user.
 === cyberchef_help ===
 ~ cyberchef_hint_given = true
 
-You've found encoded notes. Both can be decoded in CyberChef — or using the commandline tools on the Kali desktop.
+You've found encoded notes. Both can be decoded in CyberChef, or using the commandline tools on the Kali desktop.
 
 If you have found a CyberChef workstation. For the base64 one: drag "From Base64" into the recipe. Paste the text and it decodes instantly.
 
-For the one where the letters look scrambled but word lengths are right — that could be ROT13. Drag "ROT13" into the recipe.
+For the one where the letters look scrambled but word lengths are right, that could be ROT13. Drag "ROT13" into the recipe.
 
-+ [Got it — CyberChef or Kali]
++ [Got it, CyberChef or Kali]
     Exactly. Good hunting.
     -> support_hub
 + [What do the decoded messages tell me?]
@@ -306,7 +306,7 @@ For the one where the letters look scrambled but word lengths are right — that
 
 I've uploaded the lockpicking field guide to your secure terminal.
 
-Covers pin tumbler mechanics, tension control, and how to read pin feedback. Light pressure — if you're forcing it, ease off.
+Covers pin tumbler mechanics, tension control, and how to read pin feedback. Light pressure: if you're forcing it, ease off.
 
 + [Thanks, I'll use it]
     Good. Work the pins one at a time.
@@ -328,7 +328,7 @@ I'm uploading the SSH and Linux basics manual to your secure terminal right now.
 
 You've got Linux fundamentals, SSH bruteforce with Hydra, and the filesystem navigation you need once you're inside their Kali system.
 
-The manual is in your inventory—reference it whenever you need it.
+The manual is in your inventory. Reference it whenever you need it.
 
 + [Thanks, this will help]
     Good luck in there. Tell me if you hit anything unexpected.
@@ -380,12 +380,12 @@ Use it when a note looks like Base64 or a shift cipher. Start with the pattern, 
 // ================================================
 
 === general_advice ===
-Remember the mission priorities: gather evidence, identify operatives, minimize innocent casualties.
+Remember the mission priorities: gather evidence, identify operatives, minimise innocent casualties.
 
 Most people at Viral Dynamics are legitimate employees. We want ENTROPY, not collateral damage.
 
 + [How do I know who's ENTROPY?]
-    Evidence correlation. Look for encrypted communications, connections to known cells, suspicious behavior.
+    Evidence correlation. Look for encrypted communications, connections to known cells, suspicious behaviour.
     Derek's our primary suspect, but gather proof before confronting.
     -> support_hub
 + [What about Maya?]
@@ -430,13 +430,13 @@ How bad are we talking?
 
 + [Their own projections: 42 to 85 deaths in the first 24 hours]
     -> shatter_reaction
-+ [They've calculated acceptable casualties. Vulnerable demographic cohorts paired with crafted misinformation—and blind trust in emergency channels so millions move at once.]
++ [They've calculated acceptable casualties. Vulnerable demographic cohorts paired with crafted misinformation, and blind trust in emergency channels so millions move at once.]
     -> shatter_reaction
 
 === shatter_reaction ===
 ...Forty-two to eighty-five people. Calculated. Deliberate.
 
-They're not just terrorists. They're mass murderers with spreadsheets.
+They're mass murderers with spreadsheets.
 
 {player_name}, listen carefully. Your mission just changed priority.
 
@@ -446,7 +446,7 @@ They're not just terrorists. They're mass murderers with spreadsheets.
 === updated_objectives ===
 New priority objective: Stop Operation Shatter before deployment.
 
-Find the complete documentation—target lists, message templates, deployment systems.
+Find the complete documentation: target lists, message templates, deployment systems.
 
 Gather proof of Derek's involvement. And shut down their attack infrastructure before those messages go out.
 
@@ -458,9 +458,7 @@ Gather proof of Derek's involvement. And shut down their attack infrastructure b
 === people_at_stake ===
 They're counting on you, {player_name}. Even if they don't know it.
 
-People in the segments ENTROPY treated as statistics—and everyone downstream when switchboards flood and seconds decide outcomes.
-
-Every piece of evidence you find brings us closer to stopping this.
+People in the segments ENTROPY treated as statistics, and everyone downstream when switchboards flood and seconds decide outcomes.
 
 -> mission_commitment
 
@@ -470,9 +468,7 @@ Every piece of evidence you find brings us closer to stopping this.
 
 Good work discovering this. Now we know what we're dealing with.
 
-Continue investigating. Find the Operation Shatter files, identify all operatives, and prepare to shut this down.
-
-Message me if you need support. This just became a race against the clock.
+Message me if you need support. We're on the clock now.
 
 + [Understood. I'll stop it.]
     #exit_conversation
@@ -485,7 +481,7 @@ Message me if you need support. This just became a race against the clock.
 === event_derek_office_locked ===
 #speaker:agent_0x99
 
-That's Derek's office — locked tight. You'll need a way in.
+That's Derek's office, locked tight. You'll need a way in.
 
 A lockpick would do the trick. Kevin in IT might be able to help with that.
 
@@ -495,7 +491,7 @@ Or there might be a spare key somewhere. Poke around the other offices.
     #exit_conversation
     -> support_hub
 + [Where exactly is Kevin?]
-    IT room, east side of the main office. You'll need the PIN to get in — check around for maintenance notes.
+    IT room, east side of the main office. You'll need the PIN to get in. Check around for maintenance notes.
     + + [Got it]
         #exit_conversation
         -> support_hub
@@ -508,14 +504,14 @@ Or there might be a spare key somewhere. Poke around the other offices.
 #speaker:agent_0x99
 
 {kevin_ko:
-    Got the lockpick kit. Direct approach — Kevin wasn't going to hand them over like that.
+    Got the lockpick kit. Direct approach: Kevin wasn't going to hand them over like that.
 - else:
     I see Kevin gave you lockpicks. Smart social engineering.
 }
 
 Practice on low-risk targets first. Storage closet, unlocked areas.
 
-Remember, you're testing security—officially.
+Remember, you're testing security, officially.
 
 + [Will do]
     #exit_conversation
@@ -556,7 +552,7 @@ Each flag unlocks intelligence. Keep correlating VM findings with physical evide
 
 + [What should I focus on next?]
     Continue the VM challenges, but don't forget physical investigation. Derek's office, filing cabinets, computer access.
-    Hybrid approach—digital and physical evidence together.
+    Hybrid approach: digital and physical evidence together.
     + + [Got it. Hybrid approach.]
         #exit_conversation
         -> support_hub
@@ -578,7 +574,7 @@ Look for communications, project documents, anything linking him to ENTROPY.
 Whiteboard messages, computer files, filing cabinets. Be thorough.
 
 + [What if Derek catches me?]
-    Your cover is solid. You're doing a security audit—accessing offices is expected.
+    Your cover is solid. You're doing a security audit: accessing offices is expected.
     But don't tip your hand too early. Gather evidence before confronting.
     + + [Understood. Evidence first.]
         #exit_conversation
@@ -617,18 +613,17 @@ Now correlate with physical evidence. Then we can move to confrontation.
 === framing_evidence_briefing ===
 #speaker:agent_0x99
 
-Read those files carefully, {player_name}. Not just the content — the details around it.
+Read those files carefully, {player_name}. Not just the content, the details around it.
 
 Who filed what. Who signed off. Whether the headers actually match what they claim to be.
 
-Forensic markers are easy to overlook. They're also hard to fake perfectly.
+Forensic markers are easy to overlook, and hard to fake perfectly.
 
 + [I'll take another look.]
     #exit_conversation
     -> support_hub
 + [What am I looking for exactly?]
     Inconsistencies. Someone in the wrong role doing something outside their remit. A timestamp that doesn't add up. Authentication data the system itself has flagged.
-    The files will tell you what they are — if you read them right.
     + + [Understood. I'll look again.]
         #exit_conversation
         -> support_hub
@@ -644,7 +639,7 @@ Forensic markers are easy to overlook. They're also hard to fake perfectly.
 
 He's planning to frame Kevin Park for the entire breach. Fake logs, forged emails, the works.
 
-Kevin—the IT guy who gave you access, who trusted you—is going to take the fall for ENTROPY.
+Kevin (the IT guy who gave you access, who trusted you) is going to take the fall for ENTROPY.
 
 + [That's monstrous]
     -> contingency_reaction
@@ -679,13 +674,13 @@ What do you want to do?
 // ================================================
 
 === confront_kevin_choice ===
-So — present Derek's manufactured evidence to Kevin and see how he responds.
+So, present Derek's manufactured evidence to Kevin and see how he responds.
 
-If he's innocent, he'll know exactly what he's looking at. The anomaly report, the forged email — a good IT manager will spot the inconsistencies immediately.
+If he's innocent, he'll know exactly what he's looking at. The anomaly report, the forged email: a good IT manager will spot the inconsistencies immediately.
 
 Just remember: we already know it's a setup. Whatever Kevin says, you decide what to believe.
 
-And if you decide to act on the false evidence anyway — that authority is yours. I won't stop you.
+And if you decide to act on the false evidence anyway, that authority is yours. I won't stop you.
 
 #set_variable:framing_evidence_seen=true
 
@@ -702,7 +697,7 @@ And if you decide to act on the false evidence anyway — that authority is your
 // ================================================
 
 === warn_kevin_choice ===
-Direct warning. Risky—if Kevin panics or acts differently, Derek might notice.
+Direct warning. Risky: if Kevin panics or acts differently, Derek might notice.
 
 But if it works, Kevin has time to lawyer up, document everything. He's protected.
 
@@ -795,7 +790,7 @@ Confrontation, silent extraction, or public exposure. Each has consequences.
 
 Unorthodox approach to reception, {player_name}.
 
-Sarah's a civilian—nothing operational about her. Her items will be on the floor when she goes down. The visitor badge and the main office key.
+Sarah's a civilian: nothing operational about her. Her items will be on the floor when she goes down. The visitor badge and the main office key.
 
 You've got the authority. Keep moving.
 
@@ -811,7 +806,7 @@ You've got the authority. Keep moving.
 === event_sarah_ko ===
 #speaker:agent_0x99
 
-Check-in resolved. Sarah's key and badge are on the floor—pick them up and proceed.
+Check-in resolved. Sarah's key and badge are on the floor. Pick them up and proceed.
 
 For the record: Sarah O'Brien has no connection to ENTROPY. She's the receptionist.
 
@@ -833,7 +828,7 @@ Collateral noted. Keep the mission moving.
 === event_maya_attacked ===
 #speaker:agent_0x99
 
-{player_name}—that's the informant.
+{player_name}, that's the informant.
 
 Maya Chen is the one who contacted SAFETYNET. She's the reason we even know about Operation Shatter.
 
@@ -855,7 +850,7 @@ You have the authority to make field calls. Just be aware of what you're losing.
 
 We may never know what Maya had to tell us.
 
-Whatever she'd gathered on Operation Shatter's inner workings—the names, the connections, the parts we don't have yet—that intelligence is gone.
+Whatever she'd gathered on Operation Shatter's inner workings (the names, the connections, the parts we don't have yet), that intelligence is gone.
 
 Maya Chen was our contact, {player_name}. Not ENTROPY. She came to us because she trusted SAFETYNET.
 
@@ -867,7 +862,7 @@ You had the authority. The mission can still succeed. But we lost something toda
         #exit_conversation
         -> support_hub
 + [I know. I'm sorry.]
-    Honest answer. Focus on what's ahead—stop Operation Shatter. That's what Maya wanted.
+    Honest answer. Focus on what's ahead: stop Operation Shatter. That's what Maya wanted.
     + + [For Maya.]
         #exit_conversation
         -> support_hub
@@ -881,7 +876,7 @@ You had the authority. The mission can still succeed. But we lost something toda
 
 That's one way to get the lockpick, {player_name}.
 
-You've got full operational authority—do whatever it takes to complete the mission. Just try to minimise collateral where you can.
+You've got full operational authority. Do whatever it takes to complete the mission. Just try to minimise collateral where you can.
 
 Kevin's items should drop when he goes down. Keep moving.
 
@@ -902,11 +897,11 @@ Kevin's items should drop when he goes down. Keep moving.
 === event_kevin_ko ===
 #speaker:agent_0x99
 
-Kevin's down. His items are on the floor—pick them up and continue.
+Kevin's down. His items are on the floor. Pick them up and continue.
 
 For the record: nothing in Kevin's files connects him to ENTROPY. He was just the IT guy trying to do his job.
 
-You had the authority to make that call. The debrief will note it—but this isn't a reprimand.
+You had the authority to make that call. The debrief will note it, but this isn't a reprimand.
 
 + [Mission comes first]
     That's the job. Keep going.
@@ -914,7 +909,7 @@ You had the authority to make that call. The debrief will note it—but this isn
         #exit_conversation
         -> support_hub
 + [I know. It wasn't ideal.]
-    No. But field decisions rarely are. You've got the lockpick and keycard now—use them.
+    No. But field decisions rarely are. You've got the lockpick and keycard now. Use them.
     + + [Got it. Moving.]
         #exit_conversation
         -> support_hub
@@ -928,7 +923,7 @@ You had the authority to make that call. The debrief will note it—but this isn
 
 You're in. Get a feel for the place.
 
-IT room is east — that's Kevin's territory. Break room is west. Start broad before you go deep.
+IT room is east. That's Kevin's territory. Break room is west. Start broad before you go deep.
 
 Desks, filing cabinets, notice boards. People leave more behind than they realise.
 
@@ -936,7 +931,7 @@ Desks, filing cabinets, notice boards. People leave more behind than they realis
     #exit_conversation
     -> support_hub
 + [Any priority targets?]
-    Kevin in the IT room can set you up with tools. But don't rush — context comes from exploration.
+    Kevin in the IT room can set you up with tools. But don't rush: context comes from exploration.
     + + [Got it. Starting broad.]
         #exit_conversation
         -> support_hub
@@ -950,7 +945,7 @@ Desks, filing cabinets, notice boards. People leave more behind than they realis
 
 Hold on, {player_name}.
 
-Those logs pointing at Kevin were filed by Derek — a Marketing Manager submitting IT security reports and bypassing the IT Manager. That's not normal.
+Those logs pointing at Kevin were filed by Derek, a Marketing Manager submitting IT security reports and bypassing the IT Manager. That's not normal.
 
 Check Derek's office before you do anything you can't take back. I think you'll find the full picture there.
 
@@ -975,15 +970,15 @@ Check Derek's office before you do anything you can't take back. I think you'll 
 
 That's the full picture, {player_name}.
 
-The Architect is real. ENTROPY is a network — nodes that don't know each other, each running independent operations.
+The Architect is real. ENTROPY is a network: nodes that don't know each other, each running independent operations.
 
 Derek is one node. Stopping Operation Shatter buys time. But The Architect is still out there.
 
-Whatever you choose to do with Derek — choose carefully. The way this ends sets a precedent.
+Whatever you choose to do with Derek, choose carefully. The way this ends sets a precedent.
 
 + [Who is The Architect?]
     We don't know. Not yet. That's the next mission.
-    For now — you have Derek. Make it count.
+    For now, you have Derek. Make it count.
     + + [I'll make it count.]
         #exit_conversation
         -> support_hub

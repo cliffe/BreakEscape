@@ -37,7 +37,7 @@ VAR audit_doubts = 0
 #set_variable:talked_to_kevin=true
 #complete_task:meet_kevin
 {not met_kevin:
-    Kevin Park: Oh hey! You found the IT room. I'm Kevin—IT manager, sole IT department, and professional worrier.
+    Kevin Park: Oh hey! You found the IT room. I'm Kevin. IT manager, sole IT department, and professional worrier.
     Kevin Park: You're the security auditor, right? Thank god you're here.
     Kevin Park: I've been telling them we need a review for months.
     -> first_meeting
@@ -80,7 +80,7 @@ VAR audit_doubts = 0
 === security_situation ===
 Kevin Park: Honestly? I'm worried.
 
-Kevin Park: Someone's been accessing the server room without authorization. Late at night. Multiple times.
+Kevin Park: Someone's been accessing the server room without authorisation. Late at night. Multiple times.
 
 Kevin Park: I flagged it to management three times. Nothing happened.
 
@@ -104,7 +104,7 @@ Kevin Park: The access logs show his credentials being used at 2 AM. But he says
 
 Kevin Park: We don't have campaign servers in that room. It's all internal infrastructure.
 
-Kevin Park: The last person who raised concerns about Derek was Patricia—our manager. She got fired.
+Kevin Park: The last person who raised concerns about Derek was Patricia, our manager. She got fired.
 
 + [I'll look into it]
     ~ influence += 2
@@ -160,7 +160,7 @@ Kevin Park: Okay, so for the audit I can give you a lockpick set. I bought it fo
 
 Kevin Park: Also, here's my server room keycard. You'll need it to access the main servers.
 
-Kevin Park: I've set up a Kali Linux workstation in there for you—use it for the technical side of the audit.
+Kevin Park: I've set up a Kali Linux workstation in there for you. Use it for the technical side of the audit.
 
 + [I'll take all of it]
     ~ given_lockpick = true
@@ -199,7 +199,7 @@ Kevin Park: I've set up a Kali Linux workstation in there for you—use it for t
     -> ask_about_derek
 + [I'll keep investigating. Thanks for the help.]
     #exit_conversation
-    Kevin Park: No problem. And seriously—if you find anything, let me know. I need to know I'm not going crazy.
+    Kevin Park: No problem. And seriously, if you find anything, let me know. I need to know I'm not going crazy.
     -> hub
 
 // ================================================
@@ -226,7 +226,7 @@ Kevin Park: Most of the older locks in the building are vulnerable. Good for tes
 
 Kevin Park: Here's my server room keycard.
 
-Kevin Park: The servers hold everything. If there's evidence of unauthorized activity, that's where you'll find it.
+Kevin Park: The servers hold everything. If there's evidence of unauthorised activity, that's where you'll find it.
 
 -> hub
 
@@ -238,7 +238,7 @@ Kevin Park: The servers hold everything. If there's evidence of unauthorized act
 === warn_kevin_direct ===
 Kevin Park: You found something. I can tell.
 
-Kevin Park: Is it about the name-filing thing? Because I've been trying to figure out who's been submitting reports in my name and—
+Kevin Park: Is it about the name-filing thing? Because I've been trying to figure out who's been submitting reports in my name and...
 
 + [Kevin. Stop. Derek is planning to frame you for the entire breach.]
     -> warn_kevin_details
@@ -249,7 +249,7 @@ Kevin Park: Is it about the name-filing thing? Because I've been trying to figur
 === warn_kevin_details ===
 Kevin Park: Say that again.
 
-Player: I found a contingency plan in Derek's files. Fake logs, forged emails — all pointing to you.
+Player: I found a contingency plan in Derek's files. Fake logs, forged emails, all pointing to you.
 
 Player: If this investigation closes in on him, he activates it. You get arrested. He walks.
 
@@ -257,7 +257,7 @@ Kevin Park: Patricia. #delivery: quietly
 
 Kevin Park: That's why she was fired. She got too close to Derek and he neutralised her. And now he's got a ready-made scapegoat if someone else gets too close.
 
-Kevin Park: How do I... what do I do? I have two kids. I can't— #delivery: frightened, faltering
+Kevin Park: How do I... what do I do? I have two kids. I can't... #delivery: frightened, faltering
 
 + [Act normal. We handle Derek. You won't be touched.]
     #set_variable:kevin_choice=warn
@@ -273,7 +273,7 @@ Kevin Park: How do I... what do I do? I have two kids. I can't— #delivery: fri
     #set_variable:kevin_protected=true
     Kevin Park: Right. Yes. A paper trail they can't dismiss.
     Kevin Park: I'll send a copy to my personal email and a solicitor. If anything happens to me, there's a record.
-    Kevin Park: I don't know who you are or why you're really here — but whatever you're doing, it's the right thing.
+    Kevin Park: I don't know who you are or why you're really here, but whatever you're doing, it's the right thing.
     #exit_conversation
     -> hub
 
@@ -312,7 +312,7 @@ Kevin Park: Said it was for "client confidentiality" but... marketing doesn't ne
 
 + [What do you think he's really doing?]
     Kevin Park: I don't know. But whatever it is, it's not marketing.
-    Kevin Park: He's been meeting with external people—calls them "partners."
+    Kevin Park: He's been meeting with external people, calls them "partners."
     ~ influence += 2
     # influence_increased
     -> hub
@@ -377,7 +377,7 @@ Player: First, let's talk about physical security. What would you say is the mos
 === audit_question_2 ===
 ~ audit_questions_asked += 1
 
-Player: Second question—I've been reviewing the access logs. What concerns you most about the patterns?
+Player: Second question: I've been reviewing the access logs. What concerns you most about the patterns?
 
 + [Mostly normal office-hours access, and the odd late login is probably maintenance]
     ~ audit_wrong_answers += 1
@@ -410,7 +410,7 @@ Player: Second question—I've been reviewing the access logs. What concerns you
 ~ audit_questions_asked += 1
 -> audit_doubt ->
 
-Player: Third—password security. What's your assessment of the biggest vulnerability?
+Player: Third: password security. What's your assessment of the biggest vulnerability?
 
 + [Your complexity rules are sound; the weakness is that nobody rotates passwords often enough]
     ~ audit_wrong_answers += 1
@@ -419,7 +419,7 @@ Player: Third—password security. What's your assessment of the biggest vulnera
     Kevin Park: I guess the requirements are technically there...
     Kevin Park: I just worry people are finding predictable ways around them.
     -> audit_question_4
-+ [Staff are using predictable patterns—birthdays, company name plus numbers]
++ [Staff are using predictable patterns: birthdays, company name plus numbers]
     ~ audit_correct_answers += 1
     ~ influence += 1
     # influence_increased
@@ -427,11 +427,11 @@ Player: Third—password security. What's your assessment of the biggest vulnera
     Kevin Park: "Viral2023" "Viral2024" - I've warned people but they keep doing it.
     Kevin Park: And Derek... well, you've probably figured out his pattern by now.
     -> audit_question_4
-+ [Passwords aren't the real issue—focus on multi-factor authentication instead]
++ [Passwords aren't the real issue: focus on multi-factor authentication instead]
     ~ audit_wrong_answers += 1
     ~ influence -= 1
     # influence_decreased
-    Kevin Park: We don't have MFA yet—budget constraints.
+    Kevin Park: We don't have MFA yet: budget constraints.
     Kevin Park: So I'm stuck with just passwords for now. Wish we could implement MFA.
     -> audit_question_4
 
@@ -443,7 +443,7 @@ Player: Third—password security. What's your assessment of the biggest vulnera
 ~ audit_questions_asked += 1
 -> audit_doubt ->
 
-Player: Fourth—personnel security. What's the biggest red flag you see?
+Player: Fourth: personnel security. What's the biggest red flag you see?
 
 + [Staff seem trustworthy, and the firing looks like an ordinary performance matter]
     ~ audit_wrong_answers += 1
@@ -452,7 +452,7 @@ Player: Fourth—personnel security. What's the biggest red flag you see?
     Kevin Park: I want to believe that, I really do.
     Kevin Park: But Patricia's firing still bothers me.
     -> audit_question_5
-+ [A manager investigating security concerns was suddenly fired—that's suspicious]
++ [A manager investigating security concerns was suddenly fired: that's suspicious]
     ~ audit_correct_answers += 1
     ~ influence += 2
     # influence_increased
@@ -477,7 +477,7 @@ Player: Fourth—personnel security. What's the biggest red flag you see?
 ~ audit_questions_asked += 1
 -> audit_doubt ->
 
-Player: Finally—data protection practices. What concerns you about how sensitive data is handled here?
+Player: Finally: data protection practices. What concerns you about how sensitive data is handled here?
 
 + [Data handling looks standard, and encryption on Derek's systems is just sensible practice]
     ~ audit_wrong_answers += 1
@@ -532,7 +532,6 @@ Kevin Park: Thank you. Seriously, thank you for taking the time to go through th
 
 {audit_correct_answers == 5:
     Kevin Park: You really understand what's happening here. Everything you've flagged matches my concerns exactly.
-    Kevin Park: It's such a relief to have a professional validate what I've been seeing.
     Kevin Park: I've felt like I'm going crazy, or being paranoid. But you see it too.
     ~ influence += 3
     # influence_increased
@@ -569,7 +568,7 @@ Kevin Park: Thank you. Seriously, thank you for taking the time to go through th
     Kevin Park: If management won't listen to me, maybe they'll listen to the security auditor.
 }
 
-Kevin Park: Keep investigating. And please—if you find anything concrete, tell me immediately.
+Kevin Park: Keep investigating. And please, if you find anything concrete, tell me immediately.
 
 -> hub
 
@@ -582,7 +581,7 @@ Kevin Park: Keep investigating. And please—if you find anything concrete, tell
 ~ met_kevin = true
 ~ framing_evidence_seen = false
 
-Kevin Park: You're back. Something's wrong — I can see it on your face. What did you find?
+Kevin Park: You're back. Something's wrong: I can see it on your face. What did you find?
 
 Kevin Park: Someone used my credentials remotely. That's exactly the kind of thing I've been reporting.
 
@@ -593,13 +592,13 @@ Kevin Park: What happens now? Am I... is Derek going to get away with it?
 + {contingency_file_read} [He's not. We have his contingency files. He documented his own frame-up plan.]
     -> evidence_exonerated
 + {not contingency_file_read} [Something's not right. I'll keep investigating.]
-    Kevin Park: Please — if you find anything that clears me, tell me immediately. I'm not the one who did this.
+    Kevin Park: Please, if you find anything that clears me, tell me immediately. I'm not the one who did this.
     #exit_conversation
     -> hub
 + [The evidence on file points to you, Kevin. I have to report what I found.]
     -> wrongly_accused_warning
 + [I'm not here to discuss it. This conversation is over.]
-    Kevin Park: What? No — please. I can prove it. The header on that email, the simultaneous session flag—
+    Kevin Park: What? No, please. I can prove it. The header on that email, the simultaneous session flag...
     ~ framing_evidence_seen = false
     #exit_conversation
     -> hub
@@ -624,7 +623,7 @@ Kevin Park: So what do I do? Do I just go back to my desk and pretend everything
     #set_variable:kevin_choice=warn
     #set_variable:kevin_protected=true
     Kevin Park: Okay. Yeah. I can do that.
-    Kevin Park: Can I ask — who are you, really? You're not just a security auditor, are you.
+    Kevin Park: Can I ask: who are you, really? You're not just a security auditor, are you.
     Kevin Park: Actually, don't answer that. I think I'm better off not knowing.
     Kevin Park: Just... thank you. I thought I was going to be the next Patricia.
     #exit_conversation
@@ -645,7 +644,7 @@ Kevin Park: So what do I do? Do I just go back to my desk and pretend everything
 
 === wrongly_accused_warning ===
 #set_variable:kevin_accused=true
-Kevin Park: The report has a "HEADER MISMATCH DETECTED" flag. That's not me questioning it — that's the mail server's own forensic system flagging a forgery.
+Kevin Park: The report has a "HEADER MISMATCH DETECTED" flag. That's not me questioning it: that's the mail server's own forensic system flagging a forgery.
 
 Kevin Park: And the anomaly report itself says my workstation was active at the same time the server room was being accessed.
 
@@ -660,7 +659,7 @@ Kevin Park: Please. I have two kids. I've been trying to do the right thing here
 + [The totality of evidence is too strong. I'm calling this in, Kevin.]
     #set_variable:kevin_choice=wrongly_accused
     Kevin Park: I understand you have a job to do. I just hope whoever reviews this actually reads the forensic notes.
-    Kevin Park: For what it's worth — I hope you find whatever you're really looking for here.
+    Kevin Park: For what it's worth, I hope you find whatever you're really looking for here.
     #exit_conversation
     -> hub
 + [You are ENTROPY! Time for you to pay!]
