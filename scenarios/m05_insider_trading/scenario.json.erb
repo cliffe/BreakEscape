@@ -1056,6 +1056,15 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "completeTask": "receive_mission_briefing",
               "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running." }
             },
+<% [["!== true", "Nobody's walking in while we're still guessing. Take Patricia a name, with the motive and how the data's leaving."], ["=== true", "Nobody's walking in while we're still guessing. Call me with a name, the motive and how the data's leaving."]].each do |ko, txt| %>
+            {
+              "_comment": "Blind finding (part5): in the data centre before the naming, Torres stays hidden and the room looks empty. Once-only HaX text on the first unnamed entry; skipIfGlobal re-checks at delivery, so a naming inside the delay drops it. The condition keeps it off the torres_identified mapping on david_torres. Split on patricia_ko: with Patricia down the route is HaX (name_to_hax), and her naming needs motive and exfil evidence.",
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.torres_identified !== true && globalVars.patricia_ko <%= ko %>",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "<%= txt %>", "skipIfGlobal": "torres_identified" }
+            },
+<% end %>
             {
               "_comment": "Playtest D4 backstop: the briefing was marked played (setGlobalOnStart) but never finished, e.g. a reload mid-cutscene. The task is custom, so this completes it without the server needing the NPC encountered.",
               "eventPattern": "room_entered:reception_lobby",
