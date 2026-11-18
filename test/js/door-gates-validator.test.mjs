@@ -481,7 +481,7 @@ test('a door-entry requires that differs on a pin or password room warns without
 
 test('lock fields on a door entry warn that the game never reads them', { skip }, () => {
     const fields = { keyPins: [1, 2, 3, 4], key_pins: [1, 2], difficulty: 'hard', lockedHint: 'Badge only',
-        biometricMatchThreshold: 0.8, maxAttempts: 3, passwordHint: 'pet', showHint: true, postitNote: 'x',
+        biometricMatchThreshold: 0.8, maxAttempts: 3, lockoutSeconds: 30, passwordHint: 'pet', showHint: true, postitNote: 'x',
         showPostit: true, showKeyboard: true, pinLength: 4 };
     const sc = carelessGate();
     Object.assign(sc.rooms.office.doors[0], fields);
@@ -545,4 +545,16 @@ test('a cloner, a keycard item or another accepted item card clears the start it
         const out = credentialIssues(sc);
         assert.ok(!has(out, "'SAM-1'"), out.join('\n'));
     }
+});
+
+test('lockoutSeconds on a non-password lock warns (rooms and objects)', { skip }, () => {
+    const sc = carelessGate();
+    Object.assign(sc.rooms.vault, { lockoutSeconds: 30 });
+    sc.rooms.office.objects = [{ type: 'safe', name: 'Safe', locked: true, lockType: 'pin', requires: '1234', lockoutSeconds: 30 }];
+    const out = issues(sc);
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("'rooms/vault' has 'lockoutSeconds' but its lock is not a password lock")), out.join('\n'));
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("has 'lockoutSeconds' but its lock is not a password lock") && s.includes('objects')), out.join('\n'));
+    const ok = carelessGate();
+    Object.assign(ok.rooms.vault, { lockType: 'password', requires: 'hunter22', lockoutSeconds: 30 });
+    assert.ok(!has(issues(ok), 'not a password lock'));
 });
