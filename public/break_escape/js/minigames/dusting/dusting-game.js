@@ -681,8 +681,10 @@ export class DustingMinigame extends MinigameScene {
         this.puffMode = false;
         this._setStep('dust');
         this._refreshMetrics(true);
-        const why = wrongPowderReason(this.powder, this.surfaceId);
-        if (why) this.advise(`${why} You can change powder.`);
+        // short landscape drops the trailing sentence: the Powder (C) button sits right below the feedback line
+        const short = !!(this.root && this.root.classList.contains('dusting-short'));
+        const why = wrongPowderReason(this.powder, this.surfaceId, short);
+        if (why) this.advise(short ? why : `${why} You can change powder.`);
     }
 
     _chooseTool(t) {
@@ -964,7 +966,6 @@ export class DustingMinigame extends MinigameScene {
     _countStroke() {
         if (this.step !== 'dust' || this.puffMode) return;
         this.toolStrokes = (this.toolStrokes || 0) + 1;
-        if (!this.brushed) this._setBrushed(true);
         if (this.toolStrokes === FINE_SWITCH_AFTER_STROKES && this._suggestFeather()) this.announce(FEATHER_SUGGESTION);
     }
 
@@ -1127,6 +1128,17 @@ export class DustingMinigame extends MinigameScene {
         if (el) fn(el);
     }
 
+    /** Sets the feedback line; in short landscape, when the text changed, scrolls it into view above the pinned foot
+     *  (the panel's scroll-padding-bottom is the foot height). Unchanged text never scrolls, so the panel does not jitter. */
+    _setFeedback(text, tip) {
+        this._setDyn('feedback', el => {
+            if (tip !== undefined) { if (tip) el.title = tip; else if (el.removeAttribute) el.removeAttribute('title'); }
+            if (el.textContent === text) return;
+            el.textContent = text;
+            if (this.root && this.root.classList.contains('dusting-short') && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest' });
+        });
+    }
+
     _refreshDynamic() {
         const m = this.metrics;
         const pct = v => `${Math.round(v * 100)}%`;
@@ -1163,8 +1175,11 @@ export class DustingMinigame extends MinigameScene {
             });
             // Short landscape hides the status line and the Keys line on this step, so sticky keyboard brushing
             // shows its state on the feedback line too (R6 m1); the announcement is unchanged.
-            const brushing = this.stickyBrush && this.root.classList.contains('dusting-short') ? 'Brushing on (Enter stops). ' : '';
-            this._setDyn('feedback', el => { el.textContent = brushing + (this.message || this.advice || this._coach()); });
+            const brushing = this.stickyBrush && this.root.classList.contains('dusting-short') ? 'Brushing on. ' : '';
+            // the Enter key help: Keys line and instruction are hidden here, so it rides on the line's tooltip too
+            this._setFeedback(brushing + (this.message || this.advice || this._coach()), shortMode && this.stickyBrush ? 'Enter stops brushing' : '');
+            // a real ridge brushed in (coverage above 0) hides the instruction in short dust; a stray click does not
+            if (!this.brushed && m.coverage > 0) this._setBrushed(true);
         } else if (this.step === 'lift') {
             const tc = this.tape.coverage();
             this._setDyn('tape-text', el => { el.textContent = `${pct(tc)} (${tc >= 0.85 ? 'good' : tc >= 0.5 ? 'fair' : 'bubbles left'})`; });
@@ -1179,8 +1194,9 @@ export class DustingMinigame extends MinigameScene {
 
     _coach() {
         const m = this.metrics;
-        const why = wrongPowderReason(this.powder, this.surfaceId);
-        if (why && m.coverage > 0.03) return `${why} Change powder to see the difference.`;
+        const short = !!(this.root && this.root.classList.contains('dusting-short'));
+        const why = wrongPowderReason(this.powder, this.surfaceId, short);
+        if (why && m.coverage > 0.03) return short ? why : `${why} Change powder to see the difference.`;
         if (m.foggy > 0.08) return foggyCoach(m.coverage, this.diff.minCoverage);
         if (m.coverage < 0.03) return 'Brush over the print. Ridges appear where the powder clings.';
         if (this._suggestFeather()) return FEATHER_SUGGESTION;
@@ -1196,7 +1212,7 @@ export class DustingMinigame extends MinigameScene {
     advise(msg) {
         if (!msg) return;
         this.advice = this.root && this.root.classList.contains('dusting-short') ? msg : '';
-        if (this.advice) this._setDyn('feedback', el => { el.textContent = this.advice; });
+        if (this.advice) this._setFeedback(this.advice);
         this.announce(msg);
     }
 

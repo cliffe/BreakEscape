@@ -394,6 +394,7 @@ export class TapeGrid {
  * surface (it still works, gently), else 0.85.
  * @param {string} powder POWDERS id.
  * @param {string} surface SURFACES id.
+ * @param {boolean} [short] Short landscape wording: the same advice in fewer characters (four lines at 667x375).
  * @returns {number} 1, 0.95 or 0.85
  */
 export function contrastFactor(powder, surface) {
@@ -443,12 +444,12 @@ const POWDER_NAMES = { black: 'Black powder', silver: 'Silver powder', magnetic:
  * @param {string} surface SURFACES id.
  * @returns {string|null}
  */
-export function wrongPowderReason(powder, surface) {
+export function wrongPowderReason(powder, surface, short = false) {
     const s = SURFACES[surface], p = POWDERS[powder];
     if (!s || !p || s.bestPowder === powder) return null;
     const better = POWDER_NAMES[s.bestPowder] || s.bestPowder;
     let why;
-    if (powder === 'magnetic') why = 'it works, but it is meant for textured plastic and shows a little faint';
+    if (powder === 'magnetic') why = short ? 'meant for textured plastic, so it shows faint' : 'it works, but it is meant for textured plastic and shows a little faint';
     else if (!s.smooth) why = 'it catches in the grain and shows faint';
     else why = 'low contrast';
     return `${POWDER_NAMES[powder]} on ${s.name}: ${why}. ${better} would show these ridges better.`;

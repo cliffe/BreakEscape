@@ -319,7 +319,7 @@ test('short dust and lift: the panel keeps room above the 80 px strip (no headin
 
 test('M1: long advice reaches the unclipped feedback line in short mode and is announced once', () => {
     assert.match(src, /advise\(msg\) \{/);
-    assert.match(src, /this\.advise\(`\$\{why\} You can change powder\.`\)/);
+    assert.match(src, /this\.advise\(short \? why : `\$\{why\} You can change powder\.`\)/);
     assert.match(src, /this\.announce\(FEATHER_SUGGESTION\)/);
     assert.doesNotMatch(src, /advise\(FEATHER_SUGGESTION\)/);
     assert.match(src, /this\.message \|\| this\.advice \|\| this\._coach\(\)/);
@@ -424,7 +424,9 @@ test('r6 m1: sticky keyboard brushing shows on the short-mode feedback line (sta
     const s = feedbackGame({ foggy: 0 });
     s.g.stickyBrush = true;
     s.g._refreshDynamic();
-    assert.match(s.fb.textContent, /^Brushing on \(Enter stops\)\. /);
+    assert.match(s.fb.textContent, /^Brushing on\. [A-Z]/);
+    assert.doesNotMatch(s.fb.textContent, /Enter stops/);
+    assert.equal(s.fb.title, 'Enter stops brushing', 'the Enter help stays reachable as the feedback tooltip');
     s.g.stickyBrush = false;
     s.g._refreshDynamic();
     assert.doesNotMatch(s.fb.textContent, /Brushing on/);
@@ -454,6 +456,8 @@ test('r7 (a): after the first stroke the dust instruction paragraph is visually 
         _suggestFeather: () => false, announce() {} });
     assert.equal(attrs.has('data-brushed'), false, 'shows before the first stroke');
     g._countStroke();
+    assert.equal(attrs.has('data-brushed'), false, 'a stroke start alone (a stray click) does not hide the instruction');
+    g._setBrushed(true);
     assert.equal(attrs.get('data-brushed'), '1');
     g._setBrushed(false);
     assert.equal(attrs.has('data-brushed'), false, 'a new powder shows the instruction again');
@@ -474,4 +478,93 @@ test('r7 (c): the dust step tightens the options rows, tools margin and powder l
     assert.match(rule('.dusting-short[data-step="dust"] .dusting-tools'), /margin-bottom: 2px/);
     assert.match(rule('.dusting-short[data-step="dust"] .dusting-panel > .dusting-powder-line'), /margin-bottom: 0/);
     assert.doesNotMatch(css, /\.dusting-short[^{]*\{[^}]*font-size: (1[0-5]|[0-9])px/);
+});
+
+test('m2: _choosePowder resets the brushed flag, so a new powder shows the instruction again', () => {
+    const body = src.match(/_choosePowder\(id\) \{[\s\S]*?\n    \}/)[0];
+    assert.match(body, /this\._setBrushed\(false\)/);
+});
+
+function brushedGame(coverage, { short = true, sticky = false } = {}) {
+    const attrs = new Map();
+    const { g, fb } = feedbackGame({ short, foggy: 0, coverage });
+    g.root.setAttribute = (k, v) => attrs.set(k, v);
+    g.root.removeAttribute = k => attrs.delete(k);
+    g.stickyBrush = sticky;
+    return { g, fb, attrs };
+}
+
+test('m1: data-brushed is set once coverage is above 0, never at coverage 0, also for sticky keyboard brushing', () => {
+    const a = brushedGame(0);
+    a.g._countStroke(); a.g._refreshDynamic();
+    assert.equal(a.attrs.has('data-brushed'), false, 'stray click on bare card');
+    const b = brushedGame(0, { sticky: true });
+    b.g._countStroke(); b.g._refreshDynamic();
+    assert.equal(b.attrs.has('data-brushed'), false, 'sticky brush over bare card');
+    b.g.metrics.coverage = 0.04;
+    b.g._refreshDynamic();
+    assert.equal(b.attrs.get('data-brushed'), '1', 'sticky strokes that lay ridges get there');
+    const c = brushedGame(0.2);
+    c.g._refreshDynamic();
+    assert.equal(c.attrs.get('data-brushed'), '1');
+});
+
+test('M1 (a): in short dust the feedback line scrolls into view only when its text changed', () => {
+    assert.match(css, /\.dusting-short \.dusting-panel \{[^}]*scroll-padding-bottom: var\(--d-strip-h\)/);
+    const { g, fb } = feedbackGame({ foggy: 0 });
+    const calls = [];
+    fb.scrollIntoView = o => calls.push(o);
+    g.metrics.coverage = 0.5;
+    g._refreshDynamic();
+    assert.deepEqual(calls, [{ block: 'nearest' }]);
+    g._refreshDynamic(); g._refreshDynamic();
+    assert.equal(calls.length, 1, 'same text: no scroll, no jitter on every stroke');
+    g.stickyBrush = true;
+    g._refreshDynamic();
+    assert.equal(calls.length, 2, 'changed text scrolls again');
+    const l = feedbackGame({ foggy: 0, short: false, coverage: 0.5 });
+    const lc = [];
+    l.fb.scrollIntoView = () => lc.push(1);
+    l.g._refreshDynamic();
+    assert.equal(lc.length, 0, 'full mode never scrolls the feedback');
+});
+
+test('M1 (b): the short prefix is "Brushing on. " and the full prefix is gone from the source', () => {
+    assert.match(src, /'Brushing on\. '/);
+    assert.doesNotMatch(src, /Brushing on \(Enter stops\)/);
+    assert.match(src, /Enter keeps brushing/, 'the instruction carries the Enter key help until the first real ridge');
+});
+
+test('M1 (c): short mode drops the trailing change-powder sentences, full mode keeps them', () => {
+    for (const short of [true, false]) {
+        const { g, fb } = feedbackGame({ short, foggy: 0, coverage: 0.2 });
+        Object.assign(g, { powder: 'magnetic', surfaceId: 'glossy_light', announce() {} });
+        g._refreshDynamic();
+        if (short) {
+            assert.doesNotMatch(fb.textContent, /Change powder|You can change/);
+            assert.match(fb.textContent, /Black powder would show these ridges better\.$/);
+        } else {
+            assert.match(fb.textContent, /Change powder to see the difference\.$/);
+        }
+        const adv = feedbackGame({ short, foggy: 0, coverage: 0 });
+        Object.assign(adv.g, { powder: 'magnetic', surfaceId: 'glossy_light', field: { clear() {} }, lastBand: 0, _setStep() {}, _refreshMetrics() {}, announce() {} });
+        adv.g._choosePowder('magnetic');
+        if (short) assert.doesNotMatch(adv.g.advice, /You can change/);
+        else assert.equal(adv.g.advice, '', 'full mode leaves the advice to the coach, which keeps the trailing sentence');
+    }
+});
+
+test('m2 budget: the longest short-mode feedback (wrong powder, every powder and surface, with the prefix) is at most 164 characters', async () => {
+    const model = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-model.js')).href);
+    let worst = 0, n = 0;
+    for (const s of Object.keys(model.SURFACES)) for (const p of Object.keys(model.POWDERS)) {
+        const why = model.wrongPowderReason(p, s, true);
+        if (!why) continue;
+        n++;
+        worst = Math.max(worst, ('Brushing on. ' + why).length);
+        assert.ok(('Brushing on. ' + why).length <= 164, `${p} on ${s}: ${('Brushing on. ' + why).length}`);
+    }
+    assert.ok(n >= 4, 'wrong-powder combinations were found');
+    assert.ok(model.wrongPowderReason('magnetic', 'glossy_light', true).length < model.wrongPowderReason('magnetic', 'glossy_light').length);
+    assert.ok(worst > 0);
 });
