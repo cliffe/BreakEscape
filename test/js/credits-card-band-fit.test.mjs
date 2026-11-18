@@ -160,7 +160,10 @@ test('a resize listener is added while credits run, rAF throttled, and removed o
 test('the scroll cue stays pixel style: scrollbar-color only where ::-webkit-scrollbar is missing', () => {
     // Chrome 121+ ignores the ::-webkit-scrollbar rules once scrollbar-color is set on the element
     const outside = css.replace(/@supports not selector\(::-webkit-scrollbar\)\s*\{[\s\S]*?\n\}\n/, '');
-    assert.ok(!/scrollbar-color/.test(outside.replace(/\/\*[\s\S]*?\*\//g, '')), 'scrollbar-color only inside @supports not selector(::-webkit-scrollbar)');
+    // only the credits label rules matter here (the side panel has its own CRT scrollbar)
+    const labelRules = outside.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^{}]*bv-cr-label[^{}]*\{[^}]*\}/g) || [];
+    assert.ok(labelRules.length > 0);
+    assert.ok(!labelRules.some(r => /scrollbar-color/.test(r)), 'scrollbar-color only inside @supports not selector(::-webkit-scrollbar)');
     assert.match(css, /@supports not selector\(::-webkit-scrollbar\)/);
     assert.match(css, /\.bv-cr-scrolls::-webkit-scrollbar-thumb\s*\{[^}]*border:\s*2px solid/);
 });
