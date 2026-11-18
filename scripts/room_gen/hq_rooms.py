@@ -161,8 +161,8 @@ def room_hq_ops():
     r.item("hq_ops_board1", 140.0, 54.0)
     r.item("hq_poster_ears1", 256.0, 50.0)
     r.item("hq_badge_reader1", 68.0, 54.0)
-    # the print tray, west of Cipher
-    cop = r.table("photocopier1", 84.0, 170.0, kind="objects")   # x 84-119
+    # the print tray, against the back wall north-east of Cipher, clear of the officers and the walkway
+    cop = r.table("photocopier1", 216.0, 100.0, kind="objects")  # x 216-251, against the back wall (was 84,170: its body blocked the post-2 officer)
     r.on(cop, "notes3", 0.45, 0.12, layer="conditional_table_items")
     # Cipher's barricade of three monitors
     cd = r.table("zds_desk1", 127.0, 210.0, kind="objects")      # x 127-205
