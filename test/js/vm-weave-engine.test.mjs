@@ -133,7 +133,7 @@ test('R7: a hint-only response is neutral info with a soft sound, never the succ
     els['#flag-input'].value = 'flag{launch}';
     await s.submitFlag();
     assert.equal(els['#flag-result'].className, 'flag-result info');
-    assert.match(els['#flag-result'].textContent, /^ℹ Launch code validated/);
+    assert.match(els['#flag-result'].textContent, /^NOTE: Launch code validated/);
     assert.doesNotMatch(els['#flag-result'].textContent, /✓/);
     assert.deepEqual(sounds, ['notification']);
     assert.ok(!sounds.includes('confirm'));

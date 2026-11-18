@@ -119,13 +119,18 @@ export class FlagStationMinigame extends MinigameScene {
             }
             
             .flag-station-icon {
-                font-size: 48px;
+                display: inline-block;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 24px;
+                color: #00ff00;
+                border: 2px solid #00aa00;
+                padding: 8px 16px;
                 margin-bottom: 10px;
             }
             
             .flag-station-description {
                 color: #888;
-                font-size: 14px;
+                font-size: 20px;
                 line-height: 1.4;
             }
             
@@ -137,22 +142,24 @@ export class FlagStationMinigame extends MinigameScene {
                 display: block;
                 color: #00ff00;
                 margin-bottom: 8px;
-                font-size: 14px;
+                font-size: 20px;
             }
             
             .flag-input-wrapper {
                 display: flex;
+                flex-wrap: wrap;
                 gap: 10px;
             }
             
             .flag-input {
                 flex: 1;
+                min-width: 0;
                 background: #000;
                 border: 2px solid #333;
                 color: #00ff00;
                 padding: 12px 15px;
                 font-family: 'VT323', monospace;
-                font-size: 16px;
+                font-size: 24px;
                 outline: none;
             }
             
@@ -189,7 +196,8 @@ export class FlagStationMinigame extends MinigameScene {
                 margin-top: 15px;
                 padding: 15px;
                 text-align: center;
-                font-size: 14px;
+                font-size: 20px;
+                overflow-wrap: anywhere;
                 display: none;
             }
             
@@ -230,7 +238,7 @@ export class FlagStationMinigame extends MinigameScene {
             
             .flag-history-title {
                 color: #888;
-                font-size: 12px;
+                font-size: 20px;
                 margin-bottom: 10px;
                 text-transform: uppercase;
             }
@@ -247,6 +255,7 @@ export class FlagStationMinigame extends MinigameScene {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                gap: 12px;
                 padding: 8px 12px;
                 margin: 5px 0;
                 background: rgba(0, 255, 0, 0.05);
@@ -257,10 +266,13 @@ export class FlagStationMinigame extends MinigameScene {
                 font-family: 'VT323', monospace;
                 color: #00ff00;
                 font-size: 20px;
+                min-width: 0;
+                overflow-wrap: anywhere;
             }
             
             .flag-check {
                 color: #00aa00;
+                flex-shrink: 0;
             }
             
             .reward-notification {
@@ -274,7 +286,7 @@ export class FlagStationMinigame extends MinigameScene {
             .reward-notification h4 {
                 color: #0088ff;
                 margin: 0 0 10px 0;
-                font-size: 14px;
+                font-size: 20px;
             }
             
             .reward-item {
@@ -282,18 +294,18 @@ export class FlagStationMinigame extends MinigameScene {
                 align-items: center;
                 gap: 10px;
                 color: #ccc;
-                font-size: 13px;
+                font-size: 20px;
                 margin: 5px 0;
             }
             
             .reward-icon {
-                font-size: 18px;
+                font-size: 20px;
             }
             
             .no-flags-yet {
                 color: #666;
                 font-style: italic;
-                font-size: 13px;
+                font-size: 20px;
             }
             
             .accepts-vms {
@@ -307,7 +319,7 @@ export class FlagStationMinigame extends MinigameScene {
             
             .accepts-label {
                 color: #888;
-                font-size: 12px;
+                font-size: 20px;
             }
             
             .vm-badge {
@@ -317,6 +329,23 @@ export class FlagStationMinigame extends MinigameScene {
                 font-size: 20px;
                 font-weight: bold;
                 font-family: 'VT323', monospace;
+            }
+
+            .flag-recognised-tag {
+                margin-left: 12px;
+                font-size: 20px;
+            }
+
+            /* Short landscape screens: compact header and spacing so the input and
+               the result fit without scrolling the panel */
+            @media (max-height: 450px) {
+                .flag-station { padding: 8px 12px; }
+                .flag-station-header { margin-bottom: 8px; }
+                .flag-station-icon { font-size: 16px; padding: 4px 8px; margin-bottom: 4px; }
+                .flag-input-container { margin: 8px 0; }
+                .flag-result { margin-top: 8px; padding: 8px; }
+                .flag-history { margin-top: 12px; padding-top: 8px; }
+                .flag-history-list { max-height: 96px; }
             }
         `;
         this.gameContainer.appendChild(style);
@@ -341,7 +370,7 @@ export class FlagStationMinigame extends MinigameScene {
         
         return `
             <div class="flag-station-header">
-                <div class="flag-station-icon">🏁</div>
+                <div class="flag-station-icon">FLAG</div>
                 <p class="flag-station-description">
                     Enter captured CTF flags below to validate your findings.
                 </p>
@@ -821,7 +850,7 @@ export class FlagStationMinigame extends MinigameScene {
                 // a soft sound, saying where it goes.
                 if (window.playUISound) window.playUISound('notification');
                 const note = (data.rewards || []).find(r => r?.type === 'hint' && r.message)?.message;
-                this.showResult(resultEl, 'info', `ℹ ${note || 'Flag recognised, but this station does not take it.'}`);
+                this.showResult(resultEl, 'info', `NOTE: ${note || 'Flag recognised, but this station does not take it.'}`);
                 // Keep it in the list, marked as a key for another device, and for reopening
                 if (!this.recognisedFlags.some(r => r.flag === flagValue) && !this.submittedFlags.includes(flagValue)) {
                     this.recognisedFlags.push({ flag: flagValue, note: note || '' });
@@ -924,6 +953,8 @@ export class FlagStationMinigame extends MinigameScene {
         element.className = `flag-result ${type}`;
         element.textContent = displayDashes(message);
         element.style.display = 'block';
+        // On a short screen the result can land below the fold of the scrolling panel
+        if (typeof element.scrollIntoView === 'function') element.scrollIntoView({ block: 'nearest' });
     }
     
     showRewards(element, rewards) {
@@ -974,7 +1005,7 @@ export class FlagStationMinigame extends MinigameScene {
         }).filter(h => h).join('');
         
         if (rewardHtml) {
-            element.innerHTML = `<h4>🎁 Rewards Unlocked!</h4>${rewardHtml}`;
+            element.innerHTML = `<h4>Rewards Unlocked!</h4>${rewardHtml}`;
             element.style.display = 'block';
         }
     }
