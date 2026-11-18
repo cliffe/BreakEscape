@@ -264,6 +264,7 @@ Sister Doyle: If it's the emergency kit you're after: far end of this ward, thro
 ~ gave_lanyard = true
 #give_item:id_badge:bank_staff_lanyard
 #set_global:staff_lanyard_obtained:true
+#set_global:lanyard_issued:true
 
 Narrator: She doesn't take her eyes off the machine.
 

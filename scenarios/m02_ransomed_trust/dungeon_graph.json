@@ -309,6 +309,12 @@
       "optional": true
     },
     {
+      "id": "lock_supervisor_wall_safe",
+      "label": "Supervisor Wall Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "entropy_asset_tag",
       "label": "ENTROPY Asset Tag",
       "kind": "item",
@@ -418,7 +424,7 @@
     },
     {
       "id": "action_meet_dr_kim",
-      "label": "Get Kim's verbal authorisation and the boardroom code",
+      "label": "Get Kim's verbal authorisation",
       "kind": "action",
       "optional": false
     },
@@ -439,6 +445,18 @@
       "label": "Hospital Communications Terminal",
       "kind": "lock",
       "optional": false
+    },
+    {
+      "id": "drill_override_authorisation",
+      "label": "Drill Override Authorisation",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "supervisor_s_wall_safe",
+      "label": "Supervisor's Wall Safe",
+      "kind": "lock",
+      "optional": true
     },
     {
       "id": "lock_security_desk_terminal",
@@ -905,6 +923,16 @@
       "soft": true
     },
     {
+      "from": "pin_cracker",
+      "to": "lock_supervisor_wall_safe",
+      "soft": true
+    },
+    {
+      "from": "pin_cracker",
+      "to": "door_conference_room",
+      "soft": true
+    },
+    {
       "from": "lock_entropy_field_case",
       "to": "entropy_asset_tag",
       "soft": false
@@ -1028,6 +1056,21 @@
       "from": "conference_room",
       "to": "lock_press_terminal",
       "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "lock_supervisor_wall_safe",
+      "soft": false
+    },
+    {
+      "from": "lock_supervisor_wall_safe",
+      "to": "drill_override_authorisation",
+      "soft": false
+    },
+    {
+      "from": "security_office",
+      "to": "supervisor_s_wall_safe",
+      "soft": true
     },
     {
       "from": "security_office",
@@ -1242,11 +1285,6 @@
     {
       "from": "vmfl_submit_database_flag",
       "to": "lock_hospital_recovery_console",
-      "soft": false
-    },
-    {
-      "from": "action_meet_dr_kim",
-      "to": "conference_room",
       "soft": false
     },
     {

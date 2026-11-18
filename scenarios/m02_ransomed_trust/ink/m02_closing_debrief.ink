@@ -6,6 +6,7 @@
 
 // Variables synced from globalVars by engine at call-open
 VAR paid_ransom = false
+VAR reeves_safe_opened = false // Synced: the player opened the Supervisor's Wall Safe with the cracker
 VAR exposed_hospital = false
 // Decision-weight: enacted ward outcome. ward_recovering distinguishes a fast recovery
 // (ransom or combined) from the slow offline-only restore; the Bed 4 vars carry whether
@@ -142,6 +143,9 @@ Agent 0x47 'Nightshade': Agent 0x00. Lovely piece of kit you brought me. It's a 
 Agent 0x47 'Nightshade': Every wrong try, it tells you how many digits were right and in place, and how many in the wrong slot.
 
 Agent 0x47 'Nightshade': Each answer narrows the field. Mastermind, in silicon.
+{reeves_safe_opened:
+    Agent 0x47 'Nightshade': You turned it on their own man's wall safe, I hear. Any keypad that tells you how close you are has already given the code away.
+}
 Agent 0x47 'Nightshade': The firmware is how I know it's ENTROPY, not some catalogue burglar. Signed, versioned, built to be handed out, logged out, handed back.
 
 Agent 0x47 'Nightshade': Somebody manufactures these at scale, for people they trust with buildings.
