@@ -212,6 +212,13 @@ export class PhoneChatMinigame extends MinigameScene {
      * Set up event listeners for UI interactions
      */
     setupEventListeners() {
+        // Terminal theme: click the thread, or press Space/Enter, to skip the typeout
+        if (this.ui.isTerminalTheme) {
+            this.addEventListener(this.ui.elements.messagesContainer, 'click', (e) => {
+                if (this._onSkipPress()) e.stopPropagation();
+            });
+            this.addEventListener(document, 'keydown', (e) => this._onSkipKey(e));
+        }
         // Contact list item clicks
         this.addEventListener(this.ui.elements.contactList, 'click', (e) => {
             const contactItem = e.target.closest('.contact-item');
@@ -886,7 +893,8 @@ export class PhoneChatMinigame extends MinigameScene {
     async _presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied = false, deliveries = null } = {}) {
         const TYPING_DELAY_MS  = 1000;
         const INTER_MESSAGE_MS = 400;
-        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        const delay = ms => this._pace(ms);
+        this._resetSkip();
 
         // If story has ended with no messages, end conversation immediately (unless the step places a
         // call: #place_call is checked once the lines have shown, before the story-end checks)
@@ -949,6 +957,7 @@ export class PhoneChatMinigame extends MinigameScene {
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
         this._pendingNpcMessages = [];
+        this._resetSkip();
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)
         if (this._placeCallFromTags?.(accumulatedTags)) return;
@@ -991,6 +1000,60 @@ export class PhoneChatMinigame extends MinigameScene {
     }
 
     /**
+     * A wait between story lines ("receiving_" indicator, pause). Ends early on a skip
+     * press; after a second press (skip-all) it does not wait at all.
+     */
+    _pace(ms) {
+        if (this._skipAll) return Promise.resolve();
+        return new Promise(resolve => {
+            const wake = () => {
+                clearTimeout(timer);
+                if (this._paceWake === wake) this._paceWake = null;
+                resolve();
+            };
+            const timer = setTimeout(wake, ms);
+            this._paceWake = wake;
+        });
+    }
+
+    _resetSkip() {
+        this._skipAll = false;
+        this.ui?.setInstantType?.(false);
+    }
+
+    /**
+     * Skip press (click on the thread, Space or Enter) in the terminal theme. First press while
+     * a line types: the line finishes now. A press during the indicator or pause (or a later
+     * one): skip-all, so the remaining lines appear whole with no waits and the choices come
+     * at once. Returns true if it acted. Never touches audio: a voiced call line speaks after
+     * its text, and the existing click-to-skip-voice handler is separate.
+     */
+    _onSkipPress() {
+        if (!this.ui?.isTerminalTheme) return false;
+        if (!this.ui.isTypewriting?.() && !this._paceWake) return false;
+        if (this.ui.isTypewriting() && !this._skipAll) {
+            this.ui.skipTypewriter();
+            return true;
+        }
+        this._skipAll = true;
+        this.ui.setInstantType(true);
+        this.ui.skipTypewriter();
+        this._paceWake?.();
+        return true;
+    }
+
+    _onSkipKey(e) {
+        if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+        if (e.key !== ' ' && e.key !== 'Enter') return;
+        const t = e.target;
+        const tag = t?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || t?.isContentEditable) return;
+        const a = document.activeElement;
+        if (a && a !== t && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+        if (this._onSkipPress()) { e.preventDefault(); e.stopPropagation(); }
+    }
+
+    /**
      * Type one story line into the open thread and record it. A line written as the
      * player's ("You: …", or tagged #speaker:player) goes in as a player bubble with the
      * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced, except in a voiced call (F17).
@@ -1014,7 +1077,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (line.type === 'npc') {
             this.ui.showTypingIndicator();
             this.ui.scrollToBottom();
-            await new Promise(resolve => setTimeout(resolve, typingDelayMs));
+            await this._pace(typingDelayMs);
             this.ui.hideTypingIndicator();
             if (!stillOurs()) return false;
         }
@@ -1185,7 +1248,8 @@ export class PhoneChatMinigame extends MinigameScene {
 
         const TYPING_DELAY_MS  = 1000;
         const INTER_MESSAGE_MS = 400;
-        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        const delay = ms => this._pace(ms);
+        this._resetSkip();
 
         // Get choice text before making choice
         const choices = this.ui.elements.choicesContainer.querySelectorAll('.choice-button');
@@ -1318,6 +1382,7 @@ export class PhoneChatMinigame extends MinigameScene {
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
         this._pendingNpcMessages = [];
+        this._resetSkip();
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)
         if (this._placeCallFromTags?.(accumulatedTags)) return;
