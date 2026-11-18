@@ -101,6 +101,8 @@ VAR m08_analyst_ko = false
 VAR m08_athena_ko = false
 VAR m08_netherton_ko = false
 VAR m08_hax_ko = false
+VAR m08_julian_ko = false
+VAR m08_agnieszka_ko = false
 VAR m08_named_on_evidence = false
 
 // m09 Digital Archaeology
@@ -360,7 +362,7 @@ VAR close_zero_day = ""
 { m07_elena_ko:
     ~ n = n + 1
 }
-{ m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko:
+{ m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko or m08_julian_ko or m08_agnieszka_ko:
     ~ n = n + 1
 }
 // R2-M4: m09, the night before (its default "left" never counts).
