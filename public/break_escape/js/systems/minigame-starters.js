@@ -442,6 +442,13 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         itemName: itemName,
         itemImage: itemImage,
         itemObservations: itemObservations,
+        // Same predicate as the pick-first path uses for its "Switch to Key Mode": once the
+        // player has gone to pick mode they need the way back to the keys.
+        canSwitchToKeyMode: window.inventory.items.some(item =>
+            item && item.scenarioData &&
+            (item.scenarioData.type === 'key' ||
+             (item.scenarioData.type === 'key_ring' && item.scenarioData.allKeys?.length > 0))
+        ),
         canSwitchToPickMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
             item.scenarioData.type === 'lockpick'

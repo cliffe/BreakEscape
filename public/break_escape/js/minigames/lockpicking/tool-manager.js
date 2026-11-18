@@ -289,9 +289,13 @@ export class ToolManager {
         // Swap the key row for the pick row (can switch back to lockpicking if available)
         this.replaceModeRow(this.parent.canSwitchToPickMode ? () => this.buildPickButtonRow() : null);
         
-        // Show key selection UI with available keys
-        if (this.parent.availableKeys && this.parent.availableKeys.length > 0) {
-            this.parent.createKeySelectionUI(this.parent.availableKeys, this.parent.requiredKeyId);
+        // Show key selection UI with available keys. createKeySelectionUI lives on the
+        // KeySelection helper (parent.keySelection), not on the minigame. Pick-first
+        // locks pass availableKeys; key-first locks store the converted list as originalInventoryKeys.
+        const keys = this.parent.availableKeys || this.parent.originalInventoryKeys || this.parent.inventoryKeys;
+        const requiredId = this.parent.requiredKeyId ?? this.parent.originalCorrectKeyId ?? null;
+        if (keys && keys.length > 0 && this.parent.keySelection) {
+            this.parent.keySelection.createKeySelectionUI(keys, requiredId);
             this.parent.keyInsertion.updateFeedback("Select a key to use");
         } else {
             this.parent.keyInsertion.updateFeedback("No keys available");

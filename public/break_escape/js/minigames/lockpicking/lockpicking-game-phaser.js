@@ -166,7 +166,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // Mode switching settings
         this.canSwitchToPickMode = params.canSwitchToPickMode || false; // Allow switching from key to pick mode
         this.inventoryKeys = params.inventoryKeys || null; // Stored for mode switching
-        this.requirefKeyId = params.requiredKeyId || null; // Track required key ID
+        this.requiredKeyId = params.requiredKeyId || null; // Track required key ID
         this.canSwitchToKeyMode = params.canSwitchToKeyMode || false; // Allow switching from lockpick to key mode
         this.availableKeys = params.availableKeys || null; // Keys available for mode switching
         

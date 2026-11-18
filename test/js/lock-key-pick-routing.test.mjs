@@ -234,7 +234,8 @@ test('mode rows round trip pick -> key -> pick -> key without losing a way back'
             canSwitchToPickMode: true, canSwitchToKeyMode: true, availableKeys: [{ id: 'k' }],
             lockConfig: { resetPinsToOriginalPositions() {} },
             keyInsertion: { updateFeedback() {} },
-            createKeySelectionUI: () => selections.push('ui'),
+            // createKeySelectionUI lives on the KeySelection helper, not on the minigame
+            keySelection: { createKeySelectionUI: () => selections.push('ui') },
         };
         const tm = new ToolManager(parent);
         doc.strip.appendChild(tm.buildPickButtonRow());
