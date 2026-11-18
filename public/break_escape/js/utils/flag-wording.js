@@ -9,7 +9,7 @@
 export const FLAG_HINT = 'Check it was copied in full, with nothing missing at either end.';
 
 /** Said when what was typed is not shaped like a flag at all. */
-export const FLAG_FORMAT_HINT = 'A flag looks like flag{...}, with the curly braces. Check you copied all of it.';
+export const FLAG_FORMAT_HINT = 'Flags usually look like flag{...}. Check you copied all of it, including the braces.';
 
 /** True when the text is shaped like a flag: flag{...} (any case, any inner text). */
 export function looksLikeFlag(value) {
