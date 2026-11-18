@@ -58,7 +58,7 @@
 .aw-step-skipped { color: #8c99a4; }
 .aw-step-skipped .aw-step-label { text-decoration: line-through; }
 .aw-step-skipped .aw-step-num { background: var(--aw-line); color: #6b7680; opacity: 0.6; }
-.aw-step-label { overflow-wrap: anywhere; }
+.aw-step-label { overflow-wrap: break-word; }
 .aw-step-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* C-X7 / C-ER2: Revised 2026-11-18 (AC1 UI sweep): steppers wrap at narrow widths so no step is hidden. */
 

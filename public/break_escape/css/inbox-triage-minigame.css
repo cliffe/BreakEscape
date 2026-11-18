@@ -28,7 +28,7 @@
     border-radius: 0;
     min-width: 0;
     max-width: 100%;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 .tri-step.done { color: var(--ui-text, #eef1f8); }
 .tri-step.current { color: var(--ui-text, #eef1f8); border-color: var(--ui-accent, #ffcc44); background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96)); }
@@ -329,7 +329,7 @@
     /* C-X7 (revised 2026-11-18): the stepper takes its own row and wraps, so no step is hidden. */
     .tri-steps { flex: 1 1 100%; flex-wrap: wrap; }
     /* Title and close X share the first row (X in the top-right corner); the stepper takes the
-       row below and scrolls sideways, so the X never wraps onto a row of its own. */
+       row below and wraps, so the X never wraps onto a row of its own. */
     .triage-client .tri-title { order: 1; flex: 1 1 0; }
     .triage-client .tri-toolbar .se-overlay-close { order: 2; margin-left: auto; }
     .triage-client .tri-steps { order: 3; }

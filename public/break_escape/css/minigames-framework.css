@@ -905,6 +905,7 @@ html .minigame-container .console-window > .console-body > * {
     .console-window.console-subtitle-essential .console-title {
         flex: 1 1 0;
         min-width: 0;
+        margin-right: 2px; /* .console-titles is display: contents here, so its padding-right is lost */
     }
     .console-window.console-subtitle-essential .console-subtitle {
         order: 3;

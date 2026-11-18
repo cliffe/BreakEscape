@@ -106,7 +106,7 @@
     font-size: 14px;
     min-width: 0;
     max-width: 100%;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 
 .lpb-step::before { content: counter(lpb-step); font-weight: normal; }

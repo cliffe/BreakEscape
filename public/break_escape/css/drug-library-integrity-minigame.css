@@ -303,10 +303,9 @@
   font-family: 'VT323', monospace;
   font-size: 16px;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.dli-backup-btn:hover { background: #112210; }
+.dli-backup-btn:hover { background: #1a4a2a; }
 
 /* ── Diff view ─────────────────────────────────────────────── */
 .dli-diff-split {
@@ -624,7 +623,9 @@
 
 .dli-modal-confirm-btn:focus-visible,
 .dli-source-btn:focus-visible,
-.dli-restore-btn:focus-visible {
+.dli-restore-btn:focus-visible,
+.dli-backup-btn:focus-visible,
+.dli-view-log-btn:focus-visible {
   outline: 2px solid #33cc66;
   outline-offset: 2px;
 }

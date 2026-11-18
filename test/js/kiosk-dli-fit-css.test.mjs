@@ -60,7 +60,7 @@ test('DLI CSS has no blue left; source button is green with focus rings', () => 
     assert.match(d, /\.dli-source-btn:hover:not\(:disabled\) \{ background: #1a4a2a/);
     assert.match(d, /\.dli-modal-confirm-btn:hover \{ background: #1a4a2a/);
     assert.match(d, /\.dli-restore-btn-active:hover \{ background: #1a4a2a/);
-    assert.match(d, /\.dli-modal-confirm-btn:focus-visible,\s*\.dli-source-btn:focus-visible,\s*\.dli-restore-btn:focus-visible \{\s*outline: 2px solid #33cc66;\s*outline-offset: 2px;/);
+    assert.match(d, /\.dli-modal-confirm-btn:focus-visible,\s*\.dli-source-btn:focus-visible,\s*\.dli-restore-btn:focus-visible,\s*\.dli-backup-btn:focus-visible,\s*\.dli-view-log-btn:focus-visible \{\s*outline: 2px solid #33cc66;\s*outline-offset: 2px;/);
     assert.match(d, /\.dli-source-btn:disabled/);
 });
 
@@ -69,5 +69,4 @@ test('DLI source-modal confirm uses the pixel-palette confirm look, not blue', (
     assert.doesNotMatch(r, /#1f6feb|#388bfd|border: none/i);
     assert.match(r, /border: 2px solid #33cc66/);
     assert.match(r, /border-radius: 0/);
-    
 });
