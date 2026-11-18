@@ -30,3 +30,7 @@ Findings: B0 M0 m4. All four fixed.
 - `ex_last_two` line 1 ("The muster board still has us missing.") stands alone; the pronoun is clear on the ops floor with the board in the checkpoint behind them.
 
 Voicing: 28 clips still need voicing (10 conversation, 10 exchange, 8 pool). Three have changed text since SPOKEN_LINES.md was first drafted, all still unvoiced, so no audio is stale.
+
+## Follow-up (build review R1, m1)
+
+Gwen opener 1: "if something's playing up" changed to "if something's acting up" (American wording per D113). Ink recompiled; SPOKEN_LINES.md updated. Not yet voiced.

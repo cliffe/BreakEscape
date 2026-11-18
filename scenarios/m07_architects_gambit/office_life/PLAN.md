@@ -70,7 +70,7 @@ One need each, met by the cooler (`ops_cooler`):
 
 | Need | Adaeze | Gwen |
 |---|---|---|
-| thirst | initial 45, decayPerMin 10, urgentAt 30, jitterPct 10 | initial 60, decayPerMin 8, urgentAt 30, jitterPct 10 |
+| thirst | initial 40, decayPerMin 10, urgentAt 30, jitterPct 10 | initial 55, decayPerMin 8, urgentAt 30, jitterPct 10 |
 
 Adaeze leads every trip and Gwen follows (2.5). In the engine, jitter applies to `initial` (`npc-needs.js:520`) and to each refill (`:3675`); decay is fixed (`:1570`). The cooler preset restores 70, plus or minus 10%.
 
@@ -80,7 +80,7 @@ Adaeze leads every trip and Gwen follows (2.5). In the engine, jitter applies to
 
 Five live tries cannot catch a rare order swap, so slice 3 also runs a manual-clock check. Jitter is seeded per NPC (`npc-needs.js:483` to `:485`, `:515`), so the check runs 50 different needs seeds, and for each covers three paths: a natural trip, a talk break from seated, and a talk-break set landing while Adaeze is mid-use (her refill then lands on 20, giving 83 to 97 and urgent again after 5.3 to 6.7 minutes). It asserts that Adaeze reaches `urgent` before Gwen every time.
 
-The first natural trip must come no sooner than 45 s and no later than 120 s of real time after the room loads. The 45 s floor keeps both seated through the stacked first entry (the HaX hurt line at 1 s, the Architect's call at 5 s, the RFID guide text at 9.5 s; `:896`, `:903`, `:1604`, `:1306`). Slice 3 measures how needs-clock minutes map to real seconds (`references/measurement-recipes.md` section 10) and scales Adaeze's `initial` (and Gwen's, keeping the gap) to land in that window. After a reload both start at `initial` again (needs are not saved), which is harmless: they sit, then go.
+The first natural trip must come no sooner than 45 s and no later than 120 s of real time after the room loads. The 45 s floor keeps both seated through the stacked first entry (the HaX hurt line at 1 s, the Architect's call at 5 s, the RFID guide text at 9.5 s; `:896`, `:903`, `:1604`, `:1306`). Slice 3 measured how needs-clock minutes map to real seconds (`references/measurement-recipes.md` section 10) and scales Adaeze's `initial` (and Gwen's, keeping the gap) to land in that window. With initials 40 and 55 the measured first trip is about 82 s after the room loads (the needs clock runs at 1.0 times wall). After a reload both start at `initial` again (needs are not saved), which is harmless: they sit, then go.
 
 ### 2.5 What starts a break
 
@@ -146,7 +146,7 @@ They take the player for someone the utility sent in; they are leaving in a minu
   "needsCompany": { "groups": ["ops_floor"] }, "chatterCooldownMin": 2,
   "globalVarOnKO": "adaeze_ko",
   "behavior": { "hostile": { "leash": true } },
-  "needs": { "thirst": { "initial": 45, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
+  "needs": { "thirst": { "initial": 40, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
   "chatter": { "cooler": ["<4 lines>"] },
   "exchanges": [
     { "with": "gwen_pritchard", "knot": "ex_last_two", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false } },
@@ -154,7 +154,7 @@ They take the player for someone the utility sent in; they are leaving in a minu
   "eventMappings": [ "<talk break on her own close>", "<talk break on Gwen's close>", "<the three hides>" ] }
 ```
 
-Gwen mirrors it with her own keys, voice Sulafat, thirst `initial` 60 and `decayPerMin` 8, no `exchanges` (the pair's exchanges sit on the lower id), no talk break, the coupled break and her own hides. Exchange knots live in Adaeze's ink file. The pool lines and knots are written in `DIALOGUE_SAMPLE.md` and `SPOKEN_LINES.md`, not here.
+Gwen mirrors it with her own keys, voice Sulafat, thirst `initial` 55 and `decayPerMin` 8, no `exchanges` (the pair's exchanges sit on the lower id), no talk break, the coupled break and her own hides. Exchange knots live in Adaeze's ink file. The pool lines and knots are written in `DIALOGUE_SAMPLE.md` and `SPOKEN_LINES.md`, not here.
 
 Exchange topics (the sample fixes the words): `ex_last_two`, the board is amber, the machine is still broken, and somebody should have crossed them off by now; `ex_going_now`, they agree to go once this is logged. Neither mentions the supervisor's tray, the key, the handover sheet's contents or the PIN, and neither contradicts a clue.
 

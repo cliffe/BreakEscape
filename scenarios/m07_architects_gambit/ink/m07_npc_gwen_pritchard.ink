@@ -32,7 +32,7 @@ VAR hub_quiet = false
         {met:
             Gwen Pritchard: Oh, you're still here. I'll be off in a minute.
         - else:
-            Gwen Pritchard: Hi there. I look after the systems on this floor, if something's playing up.
+            Gwen Pritchard: Hi there. I look after the systems on this floor, if something's acting up.
             Gwen Pritchard: Not that I'd be much use tonight. I'm just tidying up before I go.
             ~ met = true
         }

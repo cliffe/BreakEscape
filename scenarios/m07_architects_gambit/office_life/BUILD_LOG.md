@@ -10,7 +10,9 @@ Commit c36090d54 (first cut). Measurements below are NOT done yet; see HANDOVER.
 - Lock/key diff: empty.
 - Ink compiles (10 files, 0 failed); dialoguelint: no findings on both operator files.
 
-## Open conflict: exchanges not wired
+## Resolved: exchanges wired (e1bccce0e)
+
+Resolved in e1bccce0e: the four lines were shortened and the exchanges block is wired in adaeze_okafor. The text below is the original note.
 
 Four exchange lines exceed the validator's 40 character bubble limit (an ERROR): ex_last_two 1 (56), ex_last_two 2 (45), ex_going_now 2 (42), ex_going_now 3 (44). Line text was not changed. The exchanges block was left out of the scenario so it validates; an ERB comment marks the spot in adaeze_okafor (before `eventMappings`). Ready block, to add once the user shortens the four lines (suggestions: "The board still has us down as missing." 39; "Someone should have crossed us off." 35; "Two minutes and I'm out of the door." 36; "The fire marshal won't thank us." 32):
 
@@ -23,7 +25,9 @@ Four exchange lines exceed the validator's 40 character bubble limit (an ERROR):
 
 `heard_ex_last_two` and `heard_ex_going_now` are already declared false.
 
-## Placeholders to measure
+## Resolved: seat and cooler placeholders (measured live)
+
+Resolved by the slice 3 measurements (b72a83d5f, eb6df8486, 84e1d4b4f): the chair cells were confirmed live and the cooler `useFrom` worked for both operators. The text below is the original note.
 
 Positions Gwen tile (2,5), Adaeze tile (4,5) are estimates from the Tiled chairs (60,178) and (124,178); cooler `useFrom` is dx 0, dy -1, also an estimate.
 
@@ -62,3 +66,7 @@ Zero in the full logs of the six trips (five above plus a sixth after the chair 
 - Before: the grey office chair Tiled object (gid 271, 24 x 38, bottom-left origin (60, 258), so footprint x 60..84, y 220..258) contained Adaeze's cooler cell (about (82, 244)). The render shows the chair standing directly above the cooler. Overlap confirmed.
 - Applied PLAN 3 fallback 1: moved that chair to x 32 (one cell west, against the wall column; tmj and json both). It spans x 32..56, clear of Gwen's walk lane (x 56..72), both cooler cells and the desk. Only m07 uses `room_pnw_ops`. The positions diff (10.6) now shows this chair as well as `ops_cooler`.
 - After: render (tmp/m07-chair-check.png, game 7682) shows the cooler's north side clear; a trip on game 7684 reached `using` for both with no `no_beside_cell`. Probe: tools/playtest/m07-ol-chair.mjs.
+
+## Accepted: one punch can hit both operators (10.4)
+
+A punch thrown from between the two seats (64 px apart, inside punch range) can turn both operators hostile (2 of 7 runs, games 7889 and 7930). Accepted: it is the player's choice, and the credits stay correct because `ops_staff_upset` and the KO globals do not depend on how many turn hostile. Moving a seat would need another Tiled change for a player-caused edge case.

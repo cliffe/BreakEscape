@@ -99,3 +99,7 @@ Scratch driver for route: scratchpad ex1.mjs (not committed; it only calls route
 # Slice 3 live checks part 4 (2026-11-18)
 
 All seven checks pass; evidence in LIVE_SLICE3.md "part 4". Server :3098 stopped by PID 3204557. Nothing running. Game ids up to 8089 used. Probe changes: `m07-ol-route.mjs` now interacts with the server door (badge held) before entering; `m07-ol-s3.mjs` gained modes l6, ko, pre, walk2 and PARK/DESK env; `m07-ol-door.mjs` is an exploration script. Open note: Gwen logs `mount_stuck` once per cooler trip but returns to post.
+
+# Engine follow-up (build review R1, m2)
+
+Clicking a seated NPC's sprite centre hits the chair's hit box ("A chair.") instead of opening the chat. Evidence: games 7779, 7789, 7793. Gwen's chair box sits about 19 px west of her sprite centre. Likely in tap-pick.js (npcYieldTarget, in-reach pick) or the bridge's aimPointFor reporting clean on a chair. No data-only fix: moving her position off the chair breaks the sit. Send to the engine owner. Workaround for probes: click 12 px right of her sprite centre.

@@ -9,7 +9,7 @@ All new lines for `adaeze_okafor` and `gwen_pritchard`. Nothing is voiced yet; n
 | Adaeze Okafor | hub, repeat | Still here? I'm nearly done, I promise. | 39 |
 | Adaeze Okafor | hub, upset | Please keep your distance. We're leaving. | 41 |
 | Adaeze Okafor | hub, goodbye | Thank you. I'll shut this down and go. | 38 |
-| Gwen Pritchard | hub, opener 1 | Hi there. I look after the systems on this floor, if something's playing up. | 76 |
+| Gwen Pritchard | hub, opener 1 | Hi there. I look after the systems on this floor, if something's acting up. | 76 |
 | Gwen Pritchard | hub, opener 2 | Not that I'd be much use tonight. I'm just tidying up before I go. | 66 |
 | Gwen Pritchard | hub, repeat | Oh, you're still here. I'll be off in a minute. | 47 |
 | Gwen Pritchard | hub, upset | That's enough. We're leaving, okay? | 35 |

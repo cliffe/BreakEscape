@@ -281,8 +281,8 @@ scada_password = "CascadeWindow19"
           { "text": "THOMAS PARK: Fought off, not stopped — finished the cut and walked out", "style": "warning", "condition": "globalVars.park_resolved === 'ko' && !globalVars.park_ko" },
           { "text": "THOMAS PARK: Seen, left to work — finished the cut and walked out", "style": "warning", "condition": "globalVars.vault_entered === true && !globalVars.park_ko && globalVars.park_resolved !== 'talked' && globalVars.park_resolved !== 'evaded' && globalVars.park_resolved !== 'ko'" },
           { "text": "THOMAS PARK: Never found — the backup was cut before anyone went down", "style": "warning", "condition": "!globalVars.vault_entered && !globalVars.park_ko" },
-          { "text": "OPERATIONS STAFF: HURT ON YOUR WAY THROUGH", "style": "warning", "condition": "globalVars.adaeze_ko || globalVars.gwen_ko" },
-          { "text": "OPERATIONS STAFF: STRUCK, LEFT THE BUILDING", "style": "warning", "condition": "globalVars.ops_staff_upset && !globalVars.adaeze_ko && !globalVars.gwen_ko" },
+          { "text": "OPERATIONS STAFF: Hurt on your way through", "style": "warning", "condition": "globalVars.adaeze_ko || globalVars.gwen_ko" },
+          { "text": "OPERATIONS STAFF: Struck, left the building", "style": "warning", "condition": "globalVars.ops_staff_upset && !globalVars.adaeze_ko && !globalVars.gwen_ko" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
           { "text": "TOMB GAMMA: Dossier recovered — the Architect's workshop, no coordinates on file", "style": "entry", "condition": "globalVars.found_tomb_gamma" },
@@ -1884,7 +1884,7 @@ scada_password = "CascadeWindow19"
           "needsCompany": { "groups": ["ops_floor"] },
           "chatterCooldownMin": 2,
           "globalVarOnKO": "adaeze_ko",
-          "behavior": { "hostile": { "leash": true } },
+          "behavior": { "hostile": { "leash": true, "chaseRange": 200 } },
           "needs": { "thirst": { "initial": 40, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
           "chatter": { "cooler": ["Cold water again. Great.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Almost there. Almost."] },
           "exchanges": [
@@ -1920,7 +1920,7 @@ scada_password = "CascadeWindow19"
           "needsCompany": { "groups": ["ops_floor"] },
           "chatterCooldownMin": 2,
           "globalVarOnKO": "gwen_ko",
-          "behavior": { "hostile": { "leash": true } },
+          "behavior": { "hostile": { "leash": true, "chaseRange": 200 } },
           "needs": { "thirst": { "initial": 55, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 } },
           "chatter": { "cooler": ["Cooler's the only thing working.", "Plan's simple: finish up, then out.", "I'd give a lot for real coffee.", "Last glass, then I'm off."] },
           "eventMappings": [
@@ -2020,7 +2020,7 @@ scada_password = "CascadeWindow19"
           "takeable": false,
           "offWhen": "ops_staff_upset",
           "observations": "The floor's water cooler, a stack of paper cups beside it. It is the one machine in this corner that still works.",
-          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "useSeconds": 22, "overhearRadius": 360 }
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "useSeconds": 22, "overhearRadius": 360, "seat": "stand" }
         }
       ]
     },
