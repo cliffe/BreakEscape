@@ -510,7 +510,7 @@ export class NPCPathfindingManager {
      * body and skips the walker's own sprite. skipCX/skipCY: never avoid the
      * walker's own start cell.
      */
-    _avoidDynamicPositions(exceptSprite, skipCX, skipCY, { includeHeld = false, endCX = -1, endCY = -1, tight = false } = {}) {
+    _avoidDynamicPositions(exceptSprite, skipCX, skipCY, { includeHeld = false, endCX = -1, endCY = -1, tight = false, laneHalf = null } = {}) {
         if (!this.worldPathfinder || !this.worldGridBounds) return;
         const { minX, minY, cols, rows, step } = this.worldGridBounds;
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -535,8 +535,10 @@ export class NPCPathfindingManager {
         // would overlap his, or the cell is within the lane (AVOID_LANE_HALF_PX 13, plus 1) of his
         // centre on both axes. A standing NPC 20 px from a home with a chair on the far side then
         // no longer closes the home's neighbours and forces the plain path (return stall R2, m1);
-        // the near-arrival timer (32 px) ends the walk if the lane check stops it close in.
-        const LANE_PX = 14;
+        // the 32 px arrival guard (updatePatrol) ends a return walk at once if the lane check stops
+        // it close in. The lane width comes from the caller (npc-behavior.js AVOID_LANE_HALF_PX,
+        // passed as avoidDynamic.laneHalf) so the two cannot drift; without it the whole ring stays.
+        const LANE_PX = (laneHalf ?? 0) + 1;
         const standingRing = (body, wx, wy) => {
             const hw = (exceptSprite?.body?.width || 20) / 2, hh = (exceptSprite?.body?.height || 10) / 2;
             const dx = Math.abs(wx - (body.left + body.right) / 2), dy = Math.abs(wy - (body.top + body.bottom) / 2);
@@ -560,7 +562,7 @@ export class NPCPathfindingManager {
                     if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
                     const ring = cx < bx1 || cx > bx2 || cy < by1 || cy > by2;
                     if (ring && soft && nearEnd(cx, cy)) continue;
-                    if (ring && !soft && npc && nearGoal(cx, cy) && !nearStart(cx, cy) &&
+                    if (ring && !soft && npc && laneHalf !== null && nearGoal(cx, cy) && !nearStart(cx, cy) &&
                         !standingRing(body, minX + cx * step + step / 2, minY + cy * step + step / 2)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
@@ -593,7 +595,7 @@ export class NPCPathfindingManager {
                     if (Math.abs(wx - cxMid) >= reachX || Math.abs(wy - cyMid) >= reachY) continue;
                     const ring = cx < bx1 || cx > bx2 || cy < by1 || cy > by2;
                     if (soft && ring && nearEnd(cx, cy)) continue;
-                    if (!soft && ring && nearGoal(cx, cy) && !nearStart(cx, cy) && !standingRing(body, wx, wy)) continue;
+                    if (!soft && ring && laneHalf !== null && nearGoal(cx, cy) && !nearStart(cx, cy) && !standingRing(body, wx, wy)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }
@@ -666,7 +668,7 @@ export class NPCPathfindingManager {
         if (avoidNPCs) this._avoidNPCPositions(sx, sy);
         const avoidDyn = opts?.avoidDynamic || null;
         if (avoidDyn) this._avoidDynamicPositions(avoidDyn.exceptSprite, sx, sy,
-            avoidDyn.includeHeld ? { includeHeld: true, endCX: toCX(endX), endCY: toCY(endY), tight: !!avoidDyn.tight } : undefined);
+            avoidDyn.includeHeld ? { includeHeld: true, endCX: toCX(endX), endCY: toCY(endY), tight: !!avoidDyn.tight, laneHalf: avoidDyn.laneHalf ?? null } : undefined);
         // Player paths also pay extra to cross "prefer to route around" objects
         // (path-avoid.js). calculate() runs every queued search to the end
         // before it returns, so the costs are cleared straight after it.

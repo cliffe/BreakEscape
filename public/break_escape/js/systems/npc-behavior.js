@@ -62,7 +62,7 @@ const routeActionHasWork = action => !!((action?.unlockRoom && !window.rooms?.[a
 // A body behind or beside the NPC is ignored, so the tailgate/body-block lever is
 // untouched. Times on clockNow(). Tie-breaks are deterministic (no Math.random).
 export const AVOID_LOOKAHEAD_PX = TILE_SIZE + 10;   // a body within this far ahead blocks
-const AVOID_LANE_HALF_PX   = 13;    // lateral half-width of the "ahead" lane (~body half + a hair)
+export const AVOID_LANE_HALF_PX = 13;    // lateral half-width of the "ahead" lane (~body half + a hair)
 const AVOID_WAIT_MS        = 600;   // stop and wait this long before acting
 const AVOID_PRIORITY_WAIT_MS = 1800; // a higher-priority NPC waits this long for the yielder first
 const AVOID_REPATH_MS      = 400;   // at most one detour re-path this often
@@ -2041,7 +2041,7 @@ export class NPCBehavior {
         const held = this._moveOwner === 'needs';
         const search = (tier) => {
             const includeHeld = tier !== 'moving';
-            const opts = tier === 'tight' ? this._tightOpts(rooms) : { avoidDynamic: { exceptSprite: this.sprite, includeHeld } };
+            const opts = tier === 'tight' ? this._tightOpts(rooms) : { avoidDynamic: { exceptSprite: this.sprite, includeHeld, laneHalf: AVOID_LANE_HALF_PX } };
             if (tier !== 'tight' && rooms?.length) opts.avoidRooms = rooms;
             pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
                 if (this.patrolTarget !== target) { a.pending = false; this._avoid = null; return; }  // re-targeted meanwhile
@@ -2069,7 +2069,7 @@ export class NPCBehavior {
 
     /** Options for the tight held-aware search (npc-pathfinding.js), with the needs room leash. */
     _tightOpts(rooms) {
-        const o = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, tight: true } };
+        const o = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, tight: true, laneHalf: AVOID_LANE_HALF_PX } };
         if (rooms?.length) o.avoidRooms = rooms;
         return o;
     }
@@ -2081,7 +2081,7 @@ export class NPCBehavior {
         // set by the return stall watch, by an outbound walk_rerouted, by the wedge recovery of any
         // needs goToAndStay, and stays set for collision re-plans of that move (code review R1, m5).
         if (this._moveOwner === 'needs' && this._moveReroute) {
-            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true } };
+            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true, laneHalf: AVOID_LANE_HALF_PX } };
             if (rooms?.length) opts.avoidRooms = rooms;
             // Three tiers: round every body with a clearance ring; else round their exact reach (a
             // standing NPC in an aisle the ring closes); else the plain path. _planTier records the

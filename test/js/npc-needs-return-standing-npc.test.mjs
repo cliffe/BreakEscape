@@ -42,10 +42,10 @@ const quietSync = fn => {
     console.log = () => {}; console.warn = () => {};
     try { return fn(); } finally { console.log = l; console.warn = w; }
 };
-const { NPCBehavior, nearestBlockerOnPath } = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
+const { NPCBehavior, nearestBlockerOnPath, AVOID_LANE_HALF_PX } = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
 
 const N = 80, STEP = 8;
-const LANE = 13;   // AVOID_LANE_HALF_PX in npc-behavior.js
+const LANE = AVOID_LANE_HALF_PX;   // npc-behavior.js, the lane local avoidance stops for
 /** Real EasyStar on a grid open in the given cell rectangles, walls elsewhere. */
 function floor(rects) {
     const grid = Array.from({ length: N }, () => new Array(N).fill(1));
@@ -296,5 +296,52 @@ test('R2 m1: a standing NPC 20 px east of the home with a chair 14 px west: a he
     // Touching at home, so the 8 px advance on the last turn grazes his corner (3.2 px deep at 2 px
     // per tick, inside the 32 px near-arrival radius and not on the lane); bounded, not zero.
     const worst = deepestOverlap(path, me.body.center, guard);
-    assert.ok(worst <= 4, `deepest overlap ${worst.toFixed(2)} px`);
+    // The bound is 3.5 px, not 4: the 3.2 px graze is this layout's measured value, while a plain
+    // head-on arrival gives 4.00 px (the 4 px snap between the home point and its cell centre, on
+    // the previous engine too). A bound of 4 would pass a rise from 3.2 to 4.0; 3.5 holds it.
+    assert.ok(worst <= 3.5, `deepest overlap ${worst.toFixed(2)} px`);
+});
+
+/** Plan home on open floor past a standing NPC; the path and the lane check from the start. */
+async function probe({ start, home, guard, chair = null }) {
+    const pm = floor([[2, 10, 75, 40]]);
+    const me = { body: box(start.x, start.y) };
+    const g = { body: box(guard.x, guard.y) };
+    const b = walker(pm, me, [g], chair ? [box(chair.x, chair.y, 16, 12, true)] : []);
+    const path = await plan(b, pm, me.body.center, home);
+    return { b, path, me, g, lane: path ? inLane(me.body.center, path, g) : undefined, worst: path ? deepestOverlap(path, me.body.center, g) : 0 };
+}
+
+test('R3 m1 (a): arriving from the standing NPC\'s side (he stands between the start and the home): ring tier, outside his lane', async () => {
+    // Home (200,180); the NPC 20 px west of it, on the approach from the west, on the line and 10 px off it;
+    // a chair 14 px east of the home in the second case. (Behind the home, 20 px past it, the path ends
+    // in his lane by design: the goal cell is exempt and the 32 px arrival guard ends the walk.)
+    for (const [guard, chair] of [[{ x: 180, y: 180 }, null], [{ x: 180, y: 170 }, { x: 214, y: 180 }], [{ x: 180, y: 190 }, { x: 214, y: 180 }]]) {
+        const r = await probe({ start: { x: 80, y: 180 }, home: { x: 200, y: 180 }, guard, chair });
+        const tag = JSON.stringify(guard);
+        assert.ok(r.path && r.path.length > 0, `a path home ${tag}`);
+        assert.equal(r.b._planTier, 'ring', tag);
+        assert.equal(r.lane, null, `${tag} the path keeps ${LANE} px clear of him: ${JSON.stringify(r.path.slice(-5))}`);
+        assert.ok(r.worst <= 4, `${tag} deepest overlap ${r.worst.toFixed(2)} px`);
+    }
+});
+
+test('R3 m1 (b): the standing NPC on the 14 to 20 px diagonal of the home: ring tier, outside his lane', async () => {
+    for (const [dx, dy] of [[17, 17], [-17, 17], [14, -20], [20, 14]]) {
+        const home = { x: 200, y: 180 };
+        const r = await probe({ start: { x: 320, y: 180 }, home, guard: { x: home.x + dx, y: home.y + dy }, chair: { x: 186, y: 180 } });
+        assert.ok(r.path && r.path.length > 0, `a path home (${dx},${dy})`);
+        assert.equal(r.b._planTier, 'ring', `(${dx},${dy})`);
+        assert.equal(r.lane, null, `(${dx},${dy}) the path keeps ${LANE} px clear: ${JSON.stringify(r.path.slice(-5))}`);
+        assert.ok(r.worst <= 4, `(${dx},${dy}) deepest overlap ${r.worst.toFixed(2)} px`);
+    }
+});
+
+test('R3 m1 (c): a 5 to 8 cell walk with the standing NPC near the start keeps the m08 start fix (the goal-side rule does not undo it)', async () => {
+    // The m08 start (505.5,162.7) with Vector 11.3 px off the y 164 leg; the home 5, 6, 7 and 8 cells west.
+    for (const cells of [5, 6, 7, 8]) {
+        const r = await probe({ start: { x: 505.5, y: 162.7 }, home: { x: 505.5 - cells * STEP, y: 162.7 }, guard: { x: 486.4, y: 152.7 } });
+        assert.ok(r.path && r.path.length > 0, `a path home (${cells} cells)`);
+        assert.equal(r.lane, null, `${cells} cells: the path keeps ${LANE} px clear of Vector: ${JSON.stringify(r.path.slice(0, 4))}`);
+    }
 });
