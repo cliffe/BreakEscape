@@ -255,7 +255,11 @@ function initializeGame() {
     // activate_and_start endpoint (same action the VM controls panel uses).
     // Fire-and-forget: quota failures and errors are non-fatal; the VM controls
     // widget shows current state and the player can activate manually via the HUD.
-    const activateUrl = window.breakEscapeConfig?.hacktivityMode && window.breakEscapeConfig?.vmSetActivateUrl;
+    // A released set (D144) is never activated: the server also sends no URL for it, this is the
+    // second guard, so no refusal flash is left for the next Hacktivity page.
+    const activateUrl = window.breakEscapeConfig?.hacktivityMode
+        && window.breakEscapeConfig?.vmSetState !== 'released'
+        && window.breakEscapeConfig?.vmSetActivateUrl;
     if (activateUrl) {
         fetch(activateUrl, {
             method: 'POST',

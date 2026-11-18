@@ -5,14 +5,15 @@
 .vm-launcher {
     padding: 15px;
     font-family: 'GNF', monospace;
-    max-height: 400px;
+    max-height: min(400px, calc(100vh - 110px));   /* fallback where dvh is unsupported */
+    max-height: min(400px, calc(100dvh - 110px));  /* viewport-relative: the launch actions stay reachable at 390px high */
     overflow-y: auto;
 }
 
 .vm-launcher-description {
     color: #888;
     margin-bottom: 15px;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.4;
 }
 
@@ -47,6 +48,8 @@
 
 .vm-header {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
@@ -55,11 +58,11 @@
 .vm-title {
     color: #00ff00;
     font-size: 16px;
-    font-weight: bold;
+    overflow-wrap: anywhere;
 }
 
 .vm-status {
-    font-size: 12px;
+    font-size: 16px;
     padding: 3px 8px;
     border-radius: 0;
 }
@@ -84,7 +87,7 @@
 .vm-details {
     display: flex;
     gap: 20px;
-    font-size: 14px;
+    font-size: 16px;
     color: #aaa;
 }
 
@@ -92,11 +95,6 @@
     color: #666;
 }
 
-.vm-ip {
-    font-family: 'VT323', monospace;   /* a pixel face for the address (critique A30) */
-    font-size: 24px;
-    color: #ffaa00;
-}
 
 .vm-actions {
     margin-top: 15px;
@@ -112,8 +110,14 @@
     padding: 10px 20px;
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;   /* on its 8px grid */
+    overflow-wrap: anywhere;
     cursor: pointer;
     transition: background 0.2s;
+}
+
+a.vm-action-btn {
+    display: inline-block;
+    text-decoration: none;
 }
 
 .vm-action-btn:hover:not(:disabled) {
@@ -134,7 +138,7 @@
     text-align: center;
     padding: 10px;
     margin-top: 10px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .launch-status.success {
@@ -165,7 +169,7 @@
     border: 2px solid #333;
     padding: 15px;
     margin-top: 15px;
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1.6;
 }
 
@@ -222,11 +226,28 @@
     border: none;
 }
 
+/* Rules that used to exist only in an injected <style> (removed; the stylesheet is the one source) */
+.vm-ip-display {
+    background: rgba(255, 170, 0, 0.1);
+    border: 2px solid #ffaa00;
+    padding: 16px;
+    margin-top: 8px;
+    text-align: center;
+}
 
+.vm-ip-display .vm-detail-label {
+    display: block;
+    color: #888;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
 
-
-
-
+.vm-ip-value {
+    font-family: 'VT323', monospace;   /* a pixel face for the address */
+    font-size: 24px;
+    color: #ffaa00;
+    letter-spacing: 1px;
+}
 
 
 

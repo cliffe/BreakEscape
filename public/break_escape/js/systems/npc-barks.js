@@ -233,8 +233,14 @@ export default class NPCBarkSystem {
     // (m06 confirmation R4 M2)
     if (this._shownInOpenThread(payload)) {
       console.debug('[barks] dropped, already in the open thread:', payload.text || payload.message);
+      if (payload.npcId && phoneThreadOpenFor(payload.npcId)) this._markThreadRead(payload.npcId);
       return null;
     }
+
+    // A phone text for the contact whose conversation is open on the player's phone: the
+    // thread takes it (drawn live, marked read) and no toast follows, now or after the phone
+    // closes (A11). Another contact, the list view and a closed phone all keep the bark.
+    if (this._foldIntoOpenThread(payload)) return null;
 
     // HOLD POLICY (code in bark-release-policy.js; README_scenario_design.md "Bark notifications").
     // While a person-chat or another full-screen minigame is open, hold the bark (it covered
@@ -261,6 +267,62 @@ export default class NPCBarkSystem {
     this._processBarkQueue();
 
     return null; // Return null since we're processing async
+  }
+
+  /**
+   * True when the bark is a phone text for the contact whose conversation is open: the
+   * text goes into that thread (drawn if it isn't already, then marked read) and the
+   * caller shows no toast. Speech lines and continuations are never folded in. Only the
+   * open same-contact thread may be the reason the bark would be held: a text that names a
+   * knot (its click opens the thread there), a call, a dialog and a workstation popup all
+   * keep the old hold-and-toast path (review R1 M1, M2).
+   */
+  _foldIntoOpenThread(payload = {}) {
+    if (payload.continuation || !payload.npcId || payload.startKnot) return false;
+    if (!phoneThreadOpenFor(payload.npcId) || this._isSpeech(payload)) return false;
+    try {
+      const m = window.MinigameFramework?.currentMinigame;
+      if (m?.ui?.isCallMode || window.phoneRinger?.callActive?.() || dialogLayerOpen() || workstationPopupOpen()) return false;
+      const raw = String(payload.text || payload.message || '');
+      const contact = (this.npcManager || window.npcManager)?.getNPC?.(payload.npcId) || { id: payload.npcId, displayName: payload.npcName };
+      let text = raw;
+      try { text = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }
+      if (!text.trim()) return false;
+      // stillValid is not checked: the text is already in the thread's history, so folding it
+      // in is a display choice, not a delayed notification that may have gone stale.
+      // The thread was cleared and its history is still loading: that draw includes this row.
+      if (m?.ui?.historyDrawn !== false) {
+        const key = threadTextKey(text);
+        if (key && typeof m?.ui?.addMessage === 'function') {
+          // A terminal thread types its lines. One already typing (first-open lines, a live
+          // ink line) owns the skip handlers, so the folded text is drawn at once instead of
+          // typing alongside it and replacing them (round 3 m1). Its bubble lands after the
+          // one being typed, which is already in the thread.
+          const ui = m.ui;
+          const typing = ui.isTerminalTheme && typeof ui.isTypewriting === 'function' && ui.isTypewriting();
+          const saved = ui.isTerminalTheme;
+          if (typing) ui.isTerminalTheme = false;
+          try { Promise.resolve(ui.addMessage('npc', text)).catch(() => {}); }
+          finally { if (typing) ui.isTerminalTheme = saved; }
+        }
+        this._markThreadRead(payload.npcId);
+      }
+      // else: the history draw in openConversation includes this row and its markAllRead
+      // marks it, so a phone that closes during the load leaves it unread, not unseen.
+      if (m?.phoneId && typeof window.updatePhoneBadge === 'function') window.updatePhoneBadge(m.phoneId);
+      console.debug('[barks] folded into the open thread, no toast:', text);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /** Mark every unread npc/call row of a contact's saved thread read (as markAllRead does). */
+  _markThreadRead(npcId) {
+    // main.js builds this system with no manager (as _isSpeech notes): use the global one
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    const rows = manager?.conversationHistory?.get?.(npcId) || [];
+    for (const r of rows) {
+      if (r && !r.read && (r.type === 'npc' || r.type === 'call')) r.read = true;
+    }
   }
 
   _shouldDefer(payload) {
@@ -299,7 +361,7 @@ export default class NPCBarkSystem {
   _shownInOpenThread(payload, thread = openPhoneThread()) {
     if (!thread || thread.keys.size === 0) return false;
     const raw = String(payload?.text || payload?.message || '');
-    const contact = (payload?.npcId && this.npcManager?.getNPC?.(payload.npcId))
+    const contact = (payload?.npcId && (this.npcManager || window.npcManager)?.getNPC?.(payload.npcId))
       || { id: payload?.npcId, displayName: payload?.npcName };
     let stripped = raw;
     try { stripped = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }
@@ -344,7 +406,19 @@ export default class NPCBarkSystem {
     return history.some(m => m && typeof m.text === 'string' && m.text.trim() === text);
   }
 
+  /**
+   * Held texts for the contact whose thread is open now go into that thread (they were held
+   * behind a dialog or call, which has gone): fold them and drop them from the queue, so they
+   * are not toasts after the phone closes (round 2 n2). Edits the queue in place.
+   */
+  _foldHeldIntoOpenThread() {
+    const q = this.deferredBarkQueue;
+    const kept = q.filter(p => !this._foldIntoOpenThread(p)); // in arrival order
+    if (kept.length !== q.length) q.splice(0, q.length, ...kept);
+  }
+
   async drainDeferredBarks() {
+    this._foldHeldIntoOpenThread();
     if (!this._shouldDefer()) this._dropStaleVisibleBarks();
     if (this.isDrainingDeferred || this.deferredBarkQueue.length === 0) return;
     // Another minigame opened (drained when it closes), or a dialog is open: a minigame that
@@ -863,6 +937,7 @@ export default class NPCBarkSystem {
       if (dialogLayerOpen()) return;
       clearInterval(this._dialogHoldTimer);
       this._dialogHoldTimer = null;
+      this._foldHeldIntoOpenThread();
       if (this.deferredBarkQueue.length > 0 && !this._shouldDefer()) this.drainDeferredBarks();
     }, NPCBarkSystem.DIALOG_HOLD_POLL_MS);
   }

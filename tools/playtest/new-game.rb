@@ -33,7 +33,9 @@
 #                          room are moved into the new start room in this game's copy,
 #                          because the client only loads the start room's NPCs at boot
 #                          and would otherwise never register them (contacts, hub,
-#                          #unlock_door). Other NPCs stay where they are.
+#                          #unlock_door). Other NPCs stay where they are; a person NPC
+#                          outside the new start room that owns eventMappings gets a
+#                          WARNING naming it (use --carry-npc).
 #   --carry-npc NPC_ID     also move this NPC (any type) from the original start room
 #                          into the new start room. Repeatable. It spawns at its
 #                          x/y in the new room, so use for position-free NPCs.
@@ -205,6 +207,16 @@ if [start_room_opt, unlock_opts, set_opts, give_opts, carry_opts].any?(&:present
         moving.each { |n| dest << n unless dest.any? { |d| d['id'] == n['id'] } }
         head_start_notes << "moved NPCs #{moving.map { |n| n['id'] }.join(',')} #{orig_start} -> #{start_room_opt}"
       end
+      # The client loads NPCs per room, so a person NPC left in another room never registers its
+      # eventMappings and they never fire. Warn (do not move: that is the caller's call).
+      sd['rooms'].each do |rid, rd|
+        next if rid == start_room_opt
+        Array(rd['npcs']).each do |n|
+          next if n['npcType'] == 'phone' || Array(n['eventMappings']).empty?
+          warn "WARNING: #{n['id']} (room #{rid}) owns #{Array(n['eventMappings']).size} eventMappings but is outside start room #{start_room_opt}; " \
+               "its mappings will not register. Add --carry-npc #{n['id']} (only works from the original start room #{orig_start})."
+        end
+      end
     end
     g.scenario_data = sd
     ps['currentRoom'] = start_room_opt
@@ -222,6 +234,15 @@ if [start_room_opt, unlock_opts, set_opts, give_opts, carry_opts].any?(&:present
       v
     end
     head_start_notes << "set #{k}=#{gv[k].inspect}"
+  end
+  if set_opts.any?
+    # GamesController sends objectivesState to the client only when it is present, and
+    # Game#objectives_state_for_client (story-gated aims) runs only then. Seed it the way
+    # --complete-task does (Game#initialize_objectives), without completing anything.
+    g.player_state = ps
+    g.send(:initialize_objectives)
+    ps = g.player_state
+    head_start_notes << 'objectivesState seeded (story-gated aims open from --set globals)'
   end
   give_opts.each do |item_id|
     found = nil

@@ -135,7 +135,7 @@ drop_seal = "candle-in-a-hurricane"
 backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Package delivered: deployment, timeline, agent ID, all confirmed. Your coordination held. They spent the night choosing which fire to fight and never saw the vault open behind them. I know what the unanswered sites cost. You do not need to tell me the number. I made the trade with my eyes open. Order is a candle in a hurricane; I would rather help the wind than keep relighting the wick. Awaiting next tasking. -- N"
 %>
 {
-  "scenario_brief": "Nine days ago four ENTROPY operations went live inside the same minute, and the ones nobody could reach cost lives. Since that night you have known why. An intercept pulled off the wire was timestamped before the deployment order was ever written -- which means ENTROPY did not guess where SAFETYNET would send you. Somebody told them. The leak was not the operation. The leak was the agent. Director Netherton has pulled you back to the Citadel, SAFETYNET's own headquarters, and handed you three names. One of them has been feeding the people who got your colleagues killed. Find the mole. Do it quietly -- the moment they know you are looking, they are gone.",
+  "scenario_brief": "Nine days ago four ENTROPY operations went live inside the same minute, and the ones nobody could reach cost lives. Since that night you have known why. An intercept pulled off the wire was timestamped before the deployment order was ever written, which means ENTROPY did not guess where SAFETYNET would send you. Somebody told them. The leak was not the operation. The leak was the agent. Director Netherton has pulled you back to the Citadel, SAFETYNET's own headquarters, and handed you three names. One of them has been feeding the people who got your colleagues killed. Find the mole. Do it quietly: the moment they know you are looking, they are gone.",
 
   "show_scenario_brief": "on_resume",
 
@@ -243,8 +243,9 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "NIGHTSHADE: Knocked down before he could answer, then handed to the police. No deal.", "style": "warning", "condition": "globalVars.nightshade_ko_before_fate" },
           { "text": "NIGHTSHADE: Left in place as a triple agent, on the Director's signature", "style": "warning", "condition": "globalVars.nightshade_triple_agent" },
           { "text": "HIS FIRST PAYMENT: which of our own catalogued weaknesses guard Tomb Gamma, owed on arrival", "style": "entry", "condition": "globalVars.nightshade_triple_agent && globalVars.triple_agent_first_payment" },
-          { "text": "TOMB GAMMA: Coordinates given up in the interrogation room -- Montana", "style": "entry", "condition": "globalVars.tomb_gamma_location_known" },
-          { "text": "TOMB GAMMA: Named, not located -- the coordinate is still in Nightshade's head", "style": "warning", "condition": "!globalVars.tomb_gamma_location_known" },
+          { "text": "TOMB GAMMA: Coordinates given up in the interrogation room: Montana", "style": "entry", "condition": "globalVars.tomb_gamma_location_known" },
+          { "text": "TOMB GAMMA: Named, not located: the coordinate is still in Nightshade's head", "style": "warning", "condition": "!globalVars.tomb_gamma_location_known" },
+          { "text": "THE CASE FILE: Closed.", "style": "entry" },
           { "text": "" },
           { "text": "── THE SUSPECTS ──", "style": "section-header" },
           { "text": "VECTOR: Accused to his face, then cleared by the logs", "style": "warning", "condition": "globalVars.accused_vector && !globalVars.vector_apologised && !globalVars.vector_ko" },
@@ -267,8 +268,9 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "THE CASE: The door audit read to HaX. The Director would not have you in the room.", "style": "warning", "condition": "globalVars.named_by_hax && !globalVars.netherton_ko" },
           { "text": "THE LOCKERS: Seen picking one by an off-duty agent who saw nothing", "style": "warning", "condition": "globalVars.locker_seen_picked" },
           { "text": "NIGHTSHADE: Tipped off before he was named", "style": "warning", "condition": "globalVars.nightshade_tipped_off" },
-          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Vector -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'vector'" },
-          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom -- wrong, and corrected", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
+          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Vector (wrong, and corrected)", "style": "warning", "condition": "globalVars.suspect_theory === 'vector'" },
+          { "text": "YOUR FIRST CALL TO THE DIRECTOR: Phantom (wrong, and corrected)", "style": "warning", "condition": "globalVars.suspect_theory === 'phantom'" },
+          { "text": "THE SUSPECTS: Vector, Phantom and Nightshade, the three names you were given.", "style": "entry" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
           { "text": "SEALED PSYCH EVALUATION: Read. The warning was in writing a year ago.", "style": "entry", "condition": "globalVars.found_nightshade_profile" },
@@ -281,6 +283,7 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "THE SERVER ROOM: A badge off SAFETYNET's own visitor printer", "style": "entry", "condition": "globalVars.badge_cloned" },
           { "text": "THE SERVER ROOM: The Director's own card, picked up off his office floor", "style": "warning", "condition": "globalVars.netherton_card_taken && !globalVars.netherton_card_cloned" },
           { "text": "GLOBAL THREAT DATABASE: Confirmed stolen during the four-site night", "style": "warning", "condition": "globalVars.database_theft_understood" },
+          { "text": "THE ARCHIVE: Whatever you brought out of the Citadel is in the case file.", "style": "entry" },
           { "text": "" },
           { "text": "── THE BOX ──", "style": "section-header" },
           { "text": "THE REPOSITORY BROWSER: Ours, never patched, open without a password", "style": "entry" },
@@ -298,6 +301,9 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "AGENT HAX: Put on the break-room floor by her own agent.", "style": "warning", "condition": "globalVars.hax_ko" },
           { "text": "AN OFF-DUTY AGENT: Knocked out in the break room. A witness, not a suspect.", "style": "warning", "condition": "globalVars.offduty_agent_ko" },
           { "text": "A JUNIOR ANALYST: Knocked out at her desk. A witness to nothing.", "style": "warning", "condition": "globalVars.analyst_ko" },
+          { "text": "A NIGHT-DUTY OFFICER: Knocked down on the night watch. A witness to nothing.", "style": "warning", "condition": "globalVars.julian_ko && !globalVars.agnieszka_ko" },
+          { "text": "A NIGHT-DUTY OFFICER: Knocked down on the night watch. A witness to nothing.", "style": "warning", "condition": "globalVars.agnieszka_ko && !globalVars.julian_ko" },
+          { "text": "TWO NIGHT-DUTY OFFICERS: Both knocked down on the night watch.", "style": "warning", "condition": "globalVars.julian_ko && globalVars.agnieszka_ko" },
           { "text": "ATHENA: Her reception avatar, knocked flat. She logged it.", "style": "warning", "condition": "globalVars.athena_ko" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large, with every weakness SAFETYNET ever catalogued.", "style": "warning" },
@@ -377,7 +383,7 @@ CREDITS
     {
       "aimId": "take_the_brief",
       "title": "Report In And Take The Brief",
-      "description": "Director Netherton wants you in his office before you talk to a soul on this floor. Everyone in the Citadel is a suspect until he says otherwise -- including the three names he is about to give you.",
+      "description": "Director Netherton wants you in his office before you talk to a soul on this floor. Everyone in the Citadel is a suspect until he says otherwise, including the three names he is about to give you.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -606,7 +612,8 @@ CREDITS
   <%# Lighting stage (pass 5): the Citadel at night on Level Red. LIGHTING_PLAN.md. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
-  <%# Office life (office_life/PLAN.md 2): room tone only, no people. Keys are room types. %>
+  <%# Office life (office_life/PLAN.md 2): room tone, and (relief-watch plan, slice 3) machine presets; the clue PCs opt out below. Keys are room types. %>
+  "officePresets": true,
   "roomTone": true,
   "roomToneTypes": {
     "room_hq_lobby": "quiet_office", "room_hq_director": "quiet_office", "room_hq_intel": "quiet_office",
@@ -777,6 +784,8 @@ CREDITS
           "callLabel": "SAFETYNET secure line",
           "npcType": "phone",
           "phoneId": "player_phone",
+          "spriteTalk": "assets/characters/agent_hax_talk.png",
+          "spriteVisemes": "assets/characters/agent_hax_visemes.png",
           "avatar": "assets/characters/agent_hax_v2_headshot.png",
           "storyPath": "scenarios/m08_the_mole/ink/m08_phone_agent_0x99.json",
           "voice": {
@@ -996,10 +1005,10 @@ CREDITS
     hostile, m07's two-part wording (Hollis, Park, Mercer) with a per-NPC
     opening. restored !== true so a reload's re-announced hostility repeats
     nothing. ATHENA and HaX in person don't fight back (aggroDistance 1), so
-    each gets one text: how to put the fists away.
+    each gets one text: they won't fight back or talk.
     Puzzle chains C2 (N3): in m08 hostility never clears (no #hostile:false,
     no influence recovery) and survives a reload, and clicking a hostile NPC
-    jabs even with the open hand. So the texts say the NPC won't talk again;
+    punches. So the texts say the NPC won't talk again;
     for the Director, the KO route (his card off the floor) is what's left.
     Design C1 (D1, m1, m7): the first text also latches <npc>_hostile, so the
     mission can treat "punched but standing" like a KO where a conversation is
@@ -1044,7 +1053,7 @@ CREDITS
               "onceOnly": true,
 <% if id == "director_netherton" %>              "setGlobal": { "brief_taken": true },
               "completeTask": "brief_with_netherton",
-<% end %>              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
+<% end %>              "sendTimedMessage": { "delay": 1000, "message": <%= (opener + " F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely.").then { |t| id == "background_analyst" ? t.sub("when he's", "when she's").sub("Face him", "Face her") : t }.to_json %> }
             },
 <% if id == "director_netherton" %>
             {
@@ -1072,13 +1081,13 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'receptionist_ai' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar. She won't hit back, or answer you now, and she logs everything. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 1000, "message": "That's ATHENA's reception avatar. She won't hit back, or answer you now, and she logs everything." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'agent_0x99_person' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Message me. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Message me." }
             },
             {
               "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",
@@ -1262,6 +1271,28 @@ CREDITS
               "onceOnly": true,
               "setGlobal": { "scanning_guide_offered": true, "vulnanalysis_guide_offered": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's the repo box. Fingerprint the service, then go for the GitList flaw. I've got the scanning guide, and one on why that flaw works, if you want either." }
+            },
+<%# Relief watch (slice 3): trouble on the ops floor, never cleared. The cooler carries offWhen on this global. %>
+            { "eventPattern": "npc_attacked:julian_sallow", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "npc_attacked:agnieszka_duda", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:julian_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:agnieszka_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:analyst_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:vector_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+<%# Relief watch: a KO before the naming tips the mole off, as for every other bystander. One text per officer; the nightshade_tipped_off gate lets only the first through. %>
+            {
+              "eventPattern": "npc_ko:julian_sallow",
+              "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "watch" },
+              "sendTimedMessage": { "delay": 2000, "message": "You've put a duty officer down on the ops floor. The watch log will have it before he wakes. If the mole reads it, he knows we're looking." }
+            },
+            {
+              "eventPattern": "npc_ko:agnieszka_duda",
+              "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "watch" },
+              "sendTimedMessage": { "delay": 2000, "message": "You've put a duty officer down on the ops floor. The watch log will have it before she wakes. If the mole reads it, he knows we're looking." }
             }
           ],
           "itemsHeld": [
@@ -1546,7 +1577,7 @@ CREDITS
           "lockType": "pin",
           "requires": "<%= safe_pin %>",
           "difficulty": "medium",
-          "observations": "A biometric safe under the desk with a keypad fallback. The keypad is the way in tonight -- biometrics are logged, and the Director would rather this particular errand were not.",
+          "observations": "A biometric safe under the desk with a keypad fallback. The keypad is the way in tonight: biometrics are logged, and the Director would rather this particular errand were not.",
           <%# PASS 4 (fix 20): keeps its graph role. Without puzzle_graph_unlocks
               here the validator doesn't read the code card inside, and the suite
               door shows as unmapped; the printer's duplicate node was removed. %>
@@ -1637,7 +1668,8 @@ CREDITS
         "emitters": {
           "hq_ops_board": [ { "color": "#a8c0ff", "radius": 56, "intensity": 0.55, "effect": "screen", "offsetY": 24 } ],
           "hq_badge_reader": [ { "color": "#ff3030", "radius": 6, "intensity": 0.9, "effect": null, "offsetX": -1, "offsetY": 2, "above": true } ],
-          "fire_alarm_point": [ { "intensity": 0 } ]
+          "fire_alarm_point": [ { "intensity": 0 } ],
+          "julian_console": [ { "condition": "globalVars.julian_console_owner_away && !globalVars.julian_console_screen_locked", "color": "#ffb23c", "radius": 84, "intensity": 1, "effect": "breathe" } ]
         }
       },
       "door_sign": "Operations Floor",
@@ -1732,9 +1764,113 @@ CREDITS
             { "eventPattern": "room_entered:operations_floor", "condition": "!globalVars.analyst_ko", "onceOnly": true, "delayMs": 3500, "bark": "Nobody's said a word on this floor for an hour. I counted." }
           ],
           "observations": "A junior analyst monitoring threat feeds she has read four times without seeing."
+        },
+        {
+          "_comment": "Relief watch (slice 3): senior night-duty officer. Ambient: holds nothing, no clue, no task. Appears when the badge audit is read (found_badge_audit); thirst reset at the reveal so the first cooler trip comes later. Lines, pools and exchanges arrive in slice 5.",
+          "id": "julian_sallow",
+          "displayName": "Julian Sallow",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 3.2, "y": 6.59 },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "avatar": "assets/characters/julian_sallow_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m08_the_mole/ink/m08_relief_watch.json",
+          "currentKnot": "julian_start",
+          "voice": {
+            "name": "Rasalgethi",
+            "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "seated": true,
+          "needsHome": { "room": "operations_floor", "x": 3.2, "y": 6.59, "facing": "east" },
+          "needsRooms": ["operations_floor"],
+          "needsCompany": { "groups": ["ops_watch"] },
+          "chatterCooldownMin": 2,
+          "chatter": {"cooler": ["Still on Level Red. Still quiet.", "Long night. They're all long on Red.", "Nobody talks above a whisper tonight.", "Water. Coffee's in the wrong room."]},
+          "exchanges": [
+            {"with": "agnieszka_duda", "knot": "ex_relief_handover", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false}},
+            {"with": "agnieszka_duda", "knot": "ex_lock_it", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false, "flag4_submitted": true}},
+            {"with": "agnieszka_duda", "knot": "ex_the_suite", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false, "mole_identified": true}}
+          ],
+          "habits": { "screen": { "lockChance": 0.25 } },
+          "needs": { "thirst": { "initial": 100, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
+          "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
+          "globalVarOnKO": "julian_ko",
+          "eventMappings": [
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'main_lobby' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'intel_analysis' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'server_room' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 100 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "onceOnly": true, "delayMs": 3000, "bark": "Relief watch is on, Agent. Don't mind us." }
+          ],
+          "observations": "The senior night-duty officer on the relief watch. He keeps the duty desk, the door readers and the log."
+        },
+        {
+          "_comment": "Relief watch (slice 3): watch log-keeper. Follows Julian to the cooler (one-way coupling). Appears with him.",
+          "id": "agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 3.2, "y": 5.09 },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "avatar": "assets/characters/agnieszka_duda_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m08_the_mole/ink/m08_relief_watch.json",
+          "currentKnot": "agnieszka_start",
+          "voice": {
+            "name": "Callirrhoe",
+            "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "seated": true,
+          "needsHome": { "room": "operations_floor", "x": 3.2, "y": 5.09, "facing": "east" },
+          "needsRooms": ["operations_floor"],
+          "needsCompany": { "groups": ["ops_watch"] },
+          "chatterCooldownMin": 2,
+          "chatter": {"cooler": ["Everything goes in the log. Everything.", "Nine days. Nobody here has slept.", "I wrote the time I came for water.", "Back to the desk in a minute."]},
+          "needs": { "thirst": { "initial": 85, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
+          "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
+          "globalVarOnKO": "agnieszka_ko",
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'julian_sallow' && !globalVars.ops_watch_upset && !globalVars.agnieszka_ko", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 85 } } }
+          ],
+          "observations": "The night-watch log-keeper, seated beside the senior duty officer with the watch log open in front of her."
         }
       ],
       "objects": [
+<%# Relief watch (slice 4): the duty-desk console and the two pc12 twins. Plain type pc with no position, declared FIRST so they claim
+    the Tiled pc12 sprites in layer order (hq_rooms.py puts the three pc12s before Vector's pc8s): console = duty desk west monitor,
+    twin 1 = duty desk east monitor, twin 2 = the analyst's monitor. The twins are decor so the sprites stay drawn (a claim hides every
+    unclaimed same-image sprite); nothing else on the floor may be a pc. The console is a workstation owned by Julian: its indicator
+    and texts follow the julian_console_owner_away / _screen_locked globals; his habits.screen decides the lock. affordance false:
+    no officer is ever sent to sit at it (homes are coordinates). %>
+        {
+          "type": "pc",
+          "id": "julian_console",
+          "name": "Duty Officer's Console",
+          "takeable": false,
+          "affordance": false,
+          "workstation": true,
+          "owner": "julian_sallow",
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "The duty desk's console.",
+          "text": "The duty officer's console. He angles it away from you without looking up.",
+          "textVariants": [
+            { "condition": "globalVars.ops_watch_upset", "value": "The console has been snapped to the lock screen." },
+            { "condition": "globalVars.julian_console_screen_locked", "value": "J. SALLOW -- SESSION LOCKED.\nRe-authentication required (Level Red)." },
+            { "condition": "globalVars.julian_console_owner_away", "value": "NIGHT WATCH CONSOLE. Signed in: J. SALLOW, duty officer.\n\nOPERATIONS: all teams stood down.\nINTERNAL INVESTIGATION: active.\n\nWATCH LOG, this watch\nRelief watch on. Duty desk handed over.\nLevel Red notice: all classified systems require re-authentication.\n\nAnything typed here now goes in the log as J. SALLOW." }
+          ]
+        },
+        { "type": "pc", "id": "ops_duty_pc_east", "name": "Duty Desk Monitor", "decor": true, "takeable": false, "observations": "A monitor on the duty desk, stood down." },
+        { "type": "pc", "id": "ops_analyst_pc", "name": "Analyst's Monitor", "decor": true, "takeable": false, "observations": "The junior analyst's monitor, a threat feed scrolling." },
         {
           "_comment": "Source of the safe PIN. PASS 2: the safe is the Director's, but the PIN printed here used to be Nightshade's own service number. Now the printout carries the requesting officer's service number (the Director's) and the margin note says everyone uses their service number on their safe: a small deduction, not a read-off. ATHENA and HaX both point here.",
           "type": "notes",
@@ -1762,6 +1898,18 @@ CREDITS
           "observations": "The floor's wall board. Every active operation reads the same word.",
           "observationDisplay": "gameDisplay",
           "text": "SAFETYNET GLOBAL OPERATIONS -- LIVE\n\nTeam Alpha ....... STAND DOWN (debrief)\nTeam Bravo ....... STAND DOWN (debrief)\nTeam Charlie ..... STAND DOWN (debrief)\nPortland response . AFTERMATH -- CASUALTY ASSESSMENT ONGOING\n\nINTERNAL INVESTIGATION: ACTIVE\nAll non-essential operations suspended until the leak is closed.\n\nFooter: 'We are not running operations. We are running a search of ourselves.'"
+        },
+<%# Relief watch (slice 3): the ops-floor water cooler. Base type name, no position (claims the Tiled water_cooler1). offWhen switches it off for good once the watch is upset. Use and queue cells are hand-written north of the cooler, off the archives walkway and the door mouths. %>
+        {
+          "type": "water_cooler",
+          "id": "ops_cooler",
+          "name": "Water Cooler",
+          "takeable": false,
+          "offWhen": "ops_watch_upset",
+          "observations": "The floor's water cooler, a stack of paper cups beside it.",
+          "affordance": { "capacity": 2, "useSeconds": 18, "chatter": "cooler", "overhearRadius": 360, "seat": "stand",
+                          "useFrom": { "dx": -0.375, "dy": -1.02 },
+                          "queue": { "cells": [ { "dx": 0.19, "dy": -0.5 }, { "dx": 0.875, "dy": -0.44 } ] } }
         }
       ]
     },
@@ -1872,7 +2020,7 @@ CREDITS
           "readable": true,
           "observations": "The tactical board from the night of the four attacks, still up. Somebody could not bring themselves to take it down.",
           "observationDisplay": "gameDisplay",
-          "text": "FOUR SITES, ONE TEAM -- AFTERMATH\n\nFour simultaneous operations. One agent on the ground at Portland, one tactical team for the other three. Every crisis it could not reach went unanswered. ENTROPY knew in advance where our agent would be, and that one team could not be everywhere.\n\nAT THE UNANSWERED SITES:\n  - Confirmed dead: 2 SAFETYNET field agents, plus civilians.\n  - The agent on the ground was compromised before deployment.\n\nENTROPY did not out-think us. They were told. Everything on this board -- the deployment, the timing, the agent -- was in the leak.\n\nHandwritten, Phantom's pen: 'Two of ours. HOW DID THEY KNOW.'",
+          "text": "FOUR SITES, ONE TEAM -- AFTERMATH\n\nFour simultaneous operations. One agent on the ground at Portland, one tactical team for the other three. Every crisis it could not reach went unanswered. ENTROPY knew in advance where our agent would be, and that one team could not be everywhere.\n\nAT THE UNANSWERED SITES:\n  - Confirmed dead: 2 SAFETYNET field agents, plus civilians.\n  - The agent on the ground was compromised before deployment.\n\nENTROPY did not out-think us. They were told. Everything on this board (the deployment, the timing, the agent) was in the leak.\n\nHandwritten, Phantom's pen: 'Two of ours. HOW DID THEY KNOW.'",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_leak_got_people_killed"
         },
@@ -1885,7 +2033,7 @@ CREDITS
           "readable": true,
           "observations": "A private notebook Phantom did not quite hide.",
           "observationDisplay": "gameDisplay",
-          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from Cryptography Lab terminal 03, for forty-seven minutes, on a file you read in five.\nPulled a door audit for the window on the archive terminal. The archive duty officer walked in before I could get it off the printer. Doors tell you who was in a room, not whose account. Match it to when the plan was opened.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it -- fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
+          "text": "MINE. Not for the file.\n\nThe leak had planning access + timing + the agent's ID. That's a very short list.\nTracked server auth: someone's been in mission_planning from Cryptography Lab terminal 03, for forty-seven minutes, on a file you read in five.\nPulled a door audit for the window on the archive terminal. The archive duty officer walked in before I could get it off the printer. Doors tell you who was in a room, not whose account. Match it to when the plan was opened.\nNetherton won't give me the suspect list, so I'm building my own. If I'm on it, fine. I'd put me on it too.\n\nWhoever it is: they didn't do it for money. Money leaves a trail. This is someone who thinks they were RIGHT.",
           "onPickup": { "setVariable": { "found_phantom_lead": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "the_leak_came_from_the_crypto_lab"
@@ -1919,7 +2067,7 @@ CREDITS
           "id": "vm_launcher_gitlist",
           "name": "Field Console (Kali)",
           "takeable": false,
-          "observations": "A field console racked beside SAFETYNET's internal code server, which hums in the corner and hosts the org's source -- and, it turns out, a great deal that was never meant to be source. Agent HaX has set it up as a Kali box on a quiet network of her own, so you can work the server without a single query reaching the floor upstairs. The address on the console is this Kali box's own; the repository server is elsewhere on the network, so find it first.",
+          "observations": "A field console racked beside SAFETYNET's internal code server, which hums in the corner and hosts the org's source and, it turns out, a great deal that was never meant to be source. Agent HaX has set it up as a Kali box on a quiet network of her own, so you can work the server without a single query reaching the floor upstairs. The address on the console is this Kali box's own; the repository server is elsewhere on the network, so find it first.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>,
           "showPostit": true,
@@ -1945,10 +2093,10 @@ CREDITS
     door-audit reading (Netherton's or HaX's ink), or from flag 4 only on the
     fallbacks (audit closed, Director down). %>
           "flagRewards": [
-            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "The code server's repository -- exposed, no password needed", "description": "SAFETYNET's own GitList repo browser shows the repository to anyone, no login: the README names the ops account and a credential that was never rotated" },
-            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Broke in -- credentials recovered from the repo history", "description": "GitList remote command execution, no login, then credentials dug out of the repository's deleted history" },
-            { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Logged in -- the Architect's mail is in their home directory", "description": "Logged in properly -- home directory holds the ENTROPY correspondence" },
-            { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Root -- the access logs name the account", "description": "Root via sudo apt-get -- access logs place the mole" }
+            { "type": "set_global", "key": "flag1_submitted", "value": true, "label": "The code server's repository: exposed, no password needed", "description": "SAFETYNET's own GitList repo browser shows the repository to anyone, no login: the README names the ops account and a credential that was never rotated" },
+            { "type": "set_global", "key": "flag2_submitted", "value": true, "label": "Broke in: credentials recovered from the repo history", "description": "GitList remote command execution, no login, then credentials dug out of the repository's deleted history" },
+            { "type": "set_global", "key": "flag3_submitted", "value": true, "label": "Logged in: the Architect's mail is in their home directory", "description": "Logged in properly: home directory holds the ENTROPY correspondence" },
+            { "type": "set_global", "key": "flag4_submitted", "value": true, "label": "Root: the access logs name the account", "description": "Root via sudo apt-get: access logs place the mole" }
           ]
         },
         {
@@ -1962,7 +2110,7 @@ CREDITS
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "A printout tray on the floor at the relay. It prints a copy of whatever you send back through it.",
-          "text": "RELAY PRINTOUT\n\nThe relay prints a copy of whatever goes back through it. Tray's empty so far -- nothing has gone through.",
+          "text": "RELAY PRINTOUT\n\nThe relay prints a copy of whatever goes back through it. Tray's empty so far. Nothing has gone through.",
           "textVariants": [
             { "condition": "globalVars.flag4_submitted", "value": "RELAY PRINTOUT -- full chain\n\nFrom the drop in the account's home (opened with the intercept's seal):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nFrom the auth log (root dropped the redaction):\n  USER svc-planning  OPEN pnw_contingency.enc  DURATION 00:47:00\n  SOURCE Cryptography Lab terminal 03\n\nThe outbox and the log are the one account: svc-planning. Root put a name to the login. A name is still not a face." },
             { "condition": "globalVars.flag3_submitted", "value": "RELAY PRINTOUT -- so far\n\nFrom the drop in the account's home (opened with the intercept's seal):\n  To:   architect@entropy.onion\n  From: deep_state_drop\n  'Package delivered.'\n\nThat sender is the handle ENTROPY stripped off the Portland intercept. Whose login sends as 'deep_state_drop'? The outbox will not say. Root on the box will." }
@@ -2074,6 +2222,7 @@ CREDITS
           "spriteSheet": "nightshade",
           "spriteTalk": "assets/characters/nightshade_talk.png",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
+          "avatar": "assets/characters/nightshade_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_nightshade.json",
           "voice": {
@@ -2152,6 +2301,7 @@ CREDITS
           "name": "CyberChef Workstation",
           "host": "LAB-DECODE-01",
           "takeable": false,
+          "affordance": false,
           "observations": "The lab's decoding station, CyberChef loaded and waiting. Whatever turns up encoded in this building, this is where it comes apart."
         },
         <%# No host or desktopUser here on purpose: this is a text-only object that never opens a desktop, and a numbered host would pair with the lab terminal log clue. %>
@@ -2161,6 +2311,7 @@ CREDITS
           "id": "nightshade_desk",
           "name": "Nightshade's Workstation",
           "takeable": false,
+          "affordance": false,
           "readable": true,
           "observations": "A desk with nothing personal on it. No photos, no mug, no clutter.",
           "text": "0x47 -- SESSION LOCKED.\nRe-authentication required (Level Red)."
@@ -2211,6 +2362,7 @@ CREDITS
           "spriteSheet": "nightshade",
           "spriteTalk": "assets/characters/nightshade_talk.png",
           "spriteVisemes": "assets/characters/nightshade_visemes.png",
+          "avatar": "assets/characters/nightshade_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m08_the_mole/ink/m08_nightshade_confrontation.json",
           "voice": {
@@ -2299,7 +2451,7 @@ CREDITS
           "textVariants": [
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified && globalVars.found_nightshade_profile", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- ENTROPY's dead drop, opened with the seal off the Portland intercept. Inside: the mail to architect@entropy.onion.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n5. Psych eval -- ideological drift flagged a year ago. Sealed by the Director.\n\nVERDICT: conclusive." },
             { "condition": "globalVars.all_flags_submitted && globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\n1. GitList RCE -- SAFETYNET's own repo, exploited without credentials.\n2. Credentials -- committed to the repository history. They open one account.\n3. Home directory -- ENTROPY's dead drop, opened with the seal off the Portland intercept. Inside: the mail to architect@entropy.onion.\n4. Root -- access logs: operations plan open 47 min, T-48h, Cryptography Lab terminal 03.\n\nVERDICT: conclusive." },
-            { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: Cryptography Lab terminal 03, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending -- awaiting a name the Director can act on." },
+            { "condition": "globalVars.all_flags_submitted", "value": "CASE FILE -- PERSONS OF INTEREST (3)\n\nThe chain is in: Cryptography Lab terminal 03, D-2 10:38 UTC, plan open 47 min, one account. An account is not yet a person.\n\nVERDICT: pending, awaiting a name the Director can act on." },
             { "condition": "globalVars.mole_identified", "value": "CASE FILE -- AGENT 0x47 'NIGHTSHADE'\n\nNamed on the door audit. The rest of the chain has not yet come through the relay.\n\nVERDICT: pending." }
           ]
         },
@@ -2570,7 +2722,7 @@ CREDITS
                 "puzzle_graph_role": "clue",
                 "puzzle_graph_reveals": "nightshade_knew_the_cost"
               },
-<% deep_state_body = %q{'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned -- those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.}
+<% deep_state_body = %q{'Deep State' Programme (fragment, p.7)\n\nIdeal candidates are not bought. They are convinced. Look inside intelligence agencies for the disillusioned, those who have started to believe that defence is a delaying action against an outcome already decided.\n\nRecruit young. During training, before loyalty sets. Place them, then wait years. A convinced asset needs no handler and leaves no financial trail. They will act, when asked, because they believe it is right.\n\nCompensation: none. Belief is the payment.}
    deep_state_text = %q{ENTROPY -- INSIDER THREAT INITIATIVE\n} + deep_state_body
    deep_state_unnamed = deep_state_body + %q{\n\nNo letterhead. He gave your intake the insider-threat lecture; this could be his reading for it. Or not.} %>
               {
@@ -2691,7 +2843,8 @@ CREDITS
                     "netherton_ko", "netherton_hostile", "hax_ko", "accused_vector",
                     "accused_phantom", "vector_apologised", "phantom_apologised", "vector_hostile",
                     "phantom_hostile", "nightshade_tidied", "offduty_agent_ko", "analyst_ko",
-                    "athena_ko", "named_on_evidence"],
+                    "athena_ko", "named_on_evidence",
+                    "julian_ko", "agnieszka_ko"],
 
 <%# ---------------------------------------------------------------------------
     STATE CONTRACT. CONTRACT.md (WP2) is the authority; this block must match it.
@@ -2815,6 +2968,14 @@ CREDITS
     "offduty_agent_ko": false,
     "analyst_ko": false,
     "athena_ko": false,
+    "julian_ko": false,
+    "agnieszka_ko": false,
+    "ops_watch_upset": false,
+    "julian_console_owner_away": false,
+    "julian_console_screen_locked": false,
+    "heard_ex_relief_handover": false,
+    "heard_ex_lock_it": false,
+    "heard_ex_the_suite": false,
     "nightshade_tidied": false,
     "triple_agent_first_payment": false,
 

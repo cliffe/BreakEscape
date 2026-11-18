@@ -89,8 +89,8 @@ test('a fetch failure is swallowed so the panel still loads', async () => {
 
 test('buildUI triggers the unlock in Hacktivity mode only (source contract)', () => {
     const src = readFileSync(join(js, 'minigames/vm-launcher/vm-launcher-minigame.js'), 'utf8');
-    // buildUI gates the call on hacktivityMode; standalone falls through untouched.
-    assert.match(src, /buildUI\(\)\s*\{[\s\S]*?if \(this\.hacktivityMode\) \{\s*this\.requestConsoleUnlock\(\);/);
+    // buildUI gates the call on hacktivityMode and a set that is not released (D144); standalone falls through untouched.
+    assert.match(src, /buildUI\(\)\s*\{[\s\S]*?if \(this\.hacktivityMode && !this\.vmSetReleased\) \{\s*this\.requestConsoleUnlock\(\);/);
 });
 
 test('flagNote shows under the VM steps, escaped, and only when set (blind m03 m5)', () => {

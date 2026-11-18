@@ -87,7 +87,12 @@ Agent HaX: Two people matter. The CEO calls himself "Satoshi Nakamoto the Second
 
 Agent HaX: The CTO, Dr Irina Volkova, built the mixer. She might turn.
 
-+ [Why would Volkova help us?]
+-> hashchain_questions
+
+// A small hub: "Why would Volkova help us?" is asked once, and "How do I get
+// in?" stays on offer until it is asked, whichever order they come in.
+=== hashchain_questions ===
+* [Why would Volkova help us?]
     -> irina_background
 + [How do I get in?]
     -> cover_story
@@ -101,7 +106,7 @@ Agent HaX: Show her what her work is paying for. If she turns, she opens the mix
 
 Agent HaX: If she won't, you detain her and hand her to the police with the evidence.
 
--> cover_story
+-> hashchain_questions
 
 // ================================================
 // COVER STORY (every route comes through here)

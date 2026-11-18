@@ -61,6 +61,8 @@ export class VmLauncherMinigame extends MinigameScene {
         if (this.vmPanelRefused) {
             console.warn(`VM launcher: refused the server's VM panel URL (${rawPanelUrl.length} characters)`);
         }
+        // D144: the session's VM set was handed back. The panel, IPs and console are all hidden.
+        this.vmSetReleased = this.hacktivityMode && window.breakEscapeConfig?.vmSetState === 'released';
         this.postitNote = params.postitNote || '';
         // Optional one-line scenario note shown under the VM steps (where the flags go back to).
         this.flagNote = typeof params.flagNote === 'string' ? params.flagNote : '';
@@ -91,14 +93,14 @@ export class VmLauncherMinigame extends MinigameScene {
         // to its default (attack VMs on, "*server*" targets stay locked). Non-blocking and
         // idempotent server-side; the vm_panel endpoint re-checks when the iframe loads.
         // Standalone mode never calls it.
-        if (this.hacktivityMode) {
+        if (this.hacktivityMode && !this.vmSetReleased) {
             this.requestConsoleUnlock();
         }
 
         // Re-enabled: root causes fixed — user_not_authorized now uses root_path (not
         // request.referrer), vm_panel? policy includes admin check, and main.js has an
         // iframe guard preventing re-initialisation if the game page ever loads in a frame.
-        if (this.hacktivityMode && this.vmPanelUrl) {
+        if (this.hacktivityMode && this.vmPanelUrl && !this.vmSetReleased) {
             const iframeSrc = vmPanelUrlWithTitle(this.vmPanelUrl, this.vm?.title);
             const launcher = document.createElement('div');
             launcher.className = 'vm-launcher vm-launcher-iframe';
@@ -135,263 +137,15 @@ export class VmLauncherMinigame extends MinigameScene {
             return;
         }
 
-        // Add custom styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .vm-launcher {
-                padding: 15px;
-                font-family: 'VT323', monospace;
-                max-height: 400px;
-                overflow-y: auto;
-            }
-            
-            .vm-launcher-description {
-                color: #888;
-                margin-bottom: 15px;
-                font-size: 14px;
-                line-height: 1.4;
-            }
-            
-            .vm-list {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .vm-card {
-                background: #1a1a1a;
-                border: 2px solid #333;
-                padding: 15px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            
-            .vm-card:hover {
-                border-color: #00ff00;
-                background: #1f1f1f;
-            }
-            
-            .vm-card.selected {
-                border-color: #00ff00;
-                background: rgba(0, 255, 0, 0.1);
-            }
-            
-            .vm-card.launching {
-                opacity: 0.7;
-                cursor: wait;
-            }
-            
-            .vm-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 8px;
-            }
-            
-            .vm-title {
-                color: #00ff00;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            
-            .vm-status {
-                font-size: 12px;
-                padding: 3px 8px;
-                border-radius: 0;
-            }
-            
-            .vm-status.online {
-                background: #00aa00;
-                color: #000;
-            }
-            
-            .vm-status.offline {
-                background: #aa0000;
-                color: #fff;
-            }
-            
-            .vm-status.console {
-                background: #0088ff;
-                color: #fff;
-            }
-            
-            .vm-details {
-                display: flex;
-                gap: 20px;
-                font-size: 14px;
-                color: #aaa;
-            }
-            
-            .vm-detail-label {
-                color: #666;
-            }
-            
-            .vm-ip {
-                font-family: 'VT323', monospace;
-                color: #ffaa00;
-            }
-            
-            .vm-ip-display {
-                background: rgba(255, 170, 0, 0.1);
-                border: 2px solid #ffaa00;
-                padding: 12px 15px;
-                margin-top: 10px;
-                text-align: center;
-            }
-            
-            .vm-ip-display .vm-detail-label {
-                display: block;
-                color: #888;
-                font-size: 12px;
-                margin-bottom: 5px;
-            }
-            
-            .vm-ip-value {
-                font-family: 'VT323', monospace;
-                font-size: 20px;
-                font-weight: bold;
-                color: #ffaa00;
-                letter-spacing: 1px;
-            }
-            
-            .vm-actions {
-                margin-top: 15px;
-                display: flex;
-                gap: 10px;
-                justify-content: center;
-            }
-            
-            .vm-action-btn {
-                background: #00aa00;
-                color: #fff;
-                border: 2px solid #000;
-                padding: 10px 20px;
-                font-family: 'Press Start 2P', monospace;
-                font-size: 12px;
-                cursor: pointer;
-                transition: background 0.2s;
-            }
-            
-            .vm-action-btn:hover:not(:disabled) {
-                background: #00cc00;
-            }
-            
-            .vm-action-btn:disabled {
-                background: #333;
-                color: #666;
-                cursor: not-allowed;
-            }
-            
-            .vm-action-btn.launching {
-                background: #666;
-            }
-            
-            .launch-status {
-                text-align: center;
-                padding: 10px;
-                margin-top: 10px;
-                font-size: 14px;
-            }
-            
-            .launch-status.success {
-                color: #00ff00;
-            }
-            
-            .launch-status.error {
-                color: #ff4444;
-            }
-            
-            .launch-status.loading {
-                color: #ffaa00;
-            }
-            
-            .no-vms-message {
-                text-align: center;
-                padding: 40px;
-                color: #888;
-            }
-            
-            .no-vms-message h4 {
-                color: #ffaa00;
-                margin-bottom: 15px;
-            }
-
-            .vm-launcher-iframe {
-                padding: 0;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .vm-launcher-iframe iframe {
-                flex: 1;
-                width: 1024px;
-                height: 80vh;
-                min-height: 768px;
-                border: none;
-                background: #000;
-            }
-
-            .standalone-instructions {
-                background: #1a1a1a;
-                border: 2px solid #333;
-                padding: 15px;
-                margin-top: 15px;
-                font-size: 13px;
-                line-height: 1.6;
-            }
-            
-            .standalone-instructions h4 {
-                color: #00ff00;
-                margin-top: 0;
-                margin-bottom: 10px;
-            }
-            
-            .standalone-instructions code {
-                background: #000;
-                padding: 2px 6px;
-                color: #ffaa00;
-            }
-            
-            .vm-names {
-                display: flex;
-                gap: 15px;
-                justify-content: center;
-                margin: 20px 0;
-            }
-
-            .vm-name-badge {
-                background: #00aa00;
-                color: #000;
-                padding: 12px 24px;
-                font-weight: bold;
-                font-size: 16px;
-                border: 2px solid #000;
-                font-family: 'VT323', monospace;
-            }
-
-            .standalone-instructions h3 {
-                color: #00ff00;
-                margin-top: 0;
-            }
-
-            .standalone-instructions ol {
-                margin: 0;
-                padding-left: 20px;
-            }
-            
-            .standalone-instructions li {
-                margin: 8px 0;
-                color: #ccc;
-            }
-        `;
-        this.gameContainer.appendChild(style);
+        // Styles live in css/vm-launcher-minigame.css (loaded by show.html.erb)
         
         // Build main container
         const launcher = document.createElement('div');
         launcher.className = 'vm-launcher';
         
-        if (!this.vm) {
+        if (this.vmSetReleased) {
+            launcher.appendChild(this.buildReleasedMessage());
+        } else if (!this.vm) {
             launcher.innerHTML = this.buildNoVmMessage();
         } else {
             launcher.innerHTML = this.buildVmDisplay();
@@ -411,6 +165,37 @@ export class VmLauncherMinigame extends MinigameScene {
         this.attachEventHandlers();
     }
     
+    /**
+     * The VM set was handed back (D144). Fixed text, no VM title or IP, and a link only to the
+     * host's menu (else its return page), each only if same-origin. Built with createElement and
+     * textContent (engine text rule); returns the element.
+     */
+    buildReleasedMessage() {
+        const cfg = window.breakEscapeConfig;
+        const back = safeVmPanelUrl(cfg?.shellMenuUrl) || safeVmPanelUrl(cfg?.shellReturnUrl);
+        const box = document.createElement('div');
+        box.className = 'no-vms-message vm-released';
+        const add = (tag, text) => {
+            const el = document.createElement(tag);
+            el.textContent = text;
+            box.appendChild(el);
+        };
+        add('h4', 'VMs released');
+        add('p', 'The VMs for this session have been released. Your progress is kept.');
+        add('p', 'To keep hacking, start the mission again from the mission page.');
+        if (back) {
+            const row = document.createElement('div');
+            row.className = 'vm-actions';
+            const a = document.createElement('a');
+            a.className = 'vm-action-btn';
+            a.textContent = 'Back to missions';
+            a.href = back;
+            row.appendChild(a);
+            box.appendChild(row);
+        }
+        return box;
+    }
+
     buildNoVmMessage() {
         if (this.hacktivityMode) {
             return `
@@ -546,7 +331,7 @@ export class VmLauncherMinigame extends MinigameScene {
                     important: true
                 }
             };
-            window.startNotesMinigame(postitItem, notebookContent, 'Postit note found on VM terminal.', null, false, false);
+            window.startNotesMinigame(postitItem, notebookContent, 'Postit note found on VM terminal.', null, false, true);
             this.showSuccess("Added postit note to notepad", false, 2000);
         } else {
             this.showFailure("Notepad not available", false, 2000);

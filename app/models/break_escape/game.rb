@@ -1922,6 +1922,21 @@ module BreakEscape
       end
     end
 
+    # True when the set is the player's own, or their team's. An unknown shape counts as not
+    # held, so a released game fails closed.
+    def vm_set_held_by_player?(record)
+      return false unless record.respond_to?(:user_id)
+
+      # The host's account class is User; the standalone demo account is DemoUser.
+      return false unless player_type.to_s.split('::').last.to_s.end_with?('User')
+      return true if record.user_id.present? && record.user_id == player_id
+
+      team = record.respond_to?(:team) ? record.team : nil
+      return false unless team.respond_to?(:users)
+
+      team.users.exists?(player_id)
+    end
+
     def sync_vm_set_id_column
       state = player_state.is_a?(String) ? JSON.parse(player_state) : player_state
       self.vm_set_id ||= state&.dig('vm_set_id')&.to_i
@@ -5272,7 +5287,9 @@ module BreakEscape
           return { success: false, error: 'Room not reached', retryable: true }
         end
       when 'submit_flags'
-        unless validate_flag_submission(task, validation_data[:submittedFlags])
+        # The client's submittedFlags list is ignored: the decision rests on the flags this
+        # game's own /flags endpoint accepted (see server_satisfied_target_flags).
+        unless validate_flag_submission(task)
           return { success: false, error: 'Not all required flags submitted' }
         end
       when 'custom'
@@ -5363,27 +5380,39 @@ module BreakEscape
       response
     end
 
-    # Update task progress (for collect_items and submit_flags tasks)
-    def update_task_progress!(task_id, progress, submitted_flags = nil)
+    # Update task progress (for collect_items tasks; submit_flags progress is server-written).
+    #
+    # Only tasks the scenario defines are accepted, and progress is capped, so a client cannot
+    # grow player_state (it ships back on bootstrap) with made-up task ids or large values.
+    # Tasks of any other type are refused: submit_flags completion is decided from the
+    # server-only flag_task_matches record (process_flag_task_completions!).
+    def update_task_progress!(task_id, progress)
       initialize_objectives
 
-      progress = [progress, 0].max
-      task = find_task_in_scenario(task_id)
-      if (max_progress = task&.dig('maxProgress'))
-        progress = [progress, max_progress].min
+      task = find_task_in_scenario(task_id.to_s)
+      return { success: false, error: 'Unknown task' } unless task
+      # Only collect_items progress comes from the client; every other type is server-written.
+      return { success: false, error: 'Unknown task' } unless task['type'] == 'collect_items'
+
+      progress = [progress.to_i, 0].max
+      cap = task['maxProgress'] || task['targetCount']
+      progress = [progress, cap].min if cap.to_i.positive?
+
+      # A progress POST can arrive after the completion POST (the client fires both
+      # without waiting: the last-but-one pickup's "2 of 3" sync lands after the
+      # third pickup completed the task). Writing it then left a completed task
+      # showing progress 2 of 3 (m06 read_transaction_server_files). A completed
+      # task keeps its record; the stale count is dropped.
+      if player_state.dig('objectivesState', 'tasks', task['taskId'], 'status') == 'completed'
+        return { success: true, taskId: task['taskId'], progress: progress, ignored: 'already completed' }
       end
 
-      player_state['objectivesState']['tasks'][task_id] ||= {}
-      player_state['objectivesState']['tasks'][task_id]['progress'] = progress
-
-      # Store submittedFlags for submit_flags tasks
-      if submitted_flags.is_a?(Array)
-        player_state['objectivesState']['tasks'][task_id]['submittedFlags'] = submitted_flags
-      end
+      player_state['objectivesState']['tasks'][task['taskId']] ||= {}
+      player_state['objectivesState']['tasks'][task['taskId']]['progress'] = progress
 
       save!
 
-      { success: true, taskId: task_id, progress: progress }
+      { success: true, taskId: task['taskId'], progress: progress }
     end
 
     # Get current objectives state
@@ -6777,7 +6806,7 @@ module BreakEscape
     # completes when its remaining flag arrives.
     #
     # Returns { completed_tasks: [...taskIds], updated_tasks: [...taskIds] }
-    def process_flag_task_completions!(flag_ids)
+    def process_flag_task_completions!(flag_ids, prior_flag_ids: [])
       initialize_objectives
       candidate_ids   = Array(flag_ids)
       completed_tasks = []
@@ -6798,20 +6827,25 @@ module BreakEscape
           # Skip already-completed tasks
           next if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
 
-          # Record the matched targetFlags entries in submittedFlags (merge, not
-          # replace) so stored progress stays in the same form as targetFlags.
+          # Server-only record of the matches. task_state['submittedFlags'] is client-visible
+          # and was once client-writable, so completion is decided from this record alone.
+          # prior_flag_ids are rebuilt by the caller from player_state['submitted_flags'], which holds
+          # only values submit_flag validated, so games part-way through a multi-flag task (labs)
+          # keep their earlier flags. A client-written list is never read.
+          player_state['flag_task_matches'] ||= {}
+          recorded = (player_state['flag_task_matches'][task_id] ||= [])
+          (matched | (Array(task['targetFlags']) & Array(prior_flag_ids))).each do |entry|
+            recorded << entry unless recorded.include?(entry)
+          end
+
+          # Mirror the record into submittedFlags for the client's progress display. This
+          # replaces whatever was stored, so a forged list left by an older build is wiped.
           player_state['objectivesState']['tasks'][task_id] ||= {}
           task_state = player_state['objectivesState']['tasks'][task_id]
-          task_state['submittedFlags'] ||= []
+          task_state['submittedFlags'] = recorded.dup
 
-          matched.each do |entry|
-            task_state['submittedFlags'] << entry unless task_state['submittedFlags'].include?(entry)
-          end
-
-          # Check if all targetFlags are now submitted
-          all_submitted = Array(task['targetFlags']).all? do |tf|
-            task_state['submittedFlags'].include?(tf)
-          end
+          # Check if all targetFlags are now submitted (server record only)
+          all_submitted = Array(task['targetFlags']).all? { |tf| recorded.include?(tf) }
 
           if all_submitted
             # Mark complete (merge-style — preserves submittedFlags)
@@ -6954,25 +6988,34 @@ module BreakEscape
       count >= target_count
     end
 
-    # Validate submit_flags tasks.
-    # submitted_flags_from_request MUST be provided — stored state is never used
-    # for validation to prevent pre-injection via update_task_progress.
-    def validate_flag_submission(task, submitted_flags_from_request = nil)
+    # Validate submit_flags tasks from the server's own record only. The request body is
+    # never consulted: a crafted submittedFlags list must not complete the task.
+    def validate_flag_submission(task)
       return false unless task['targetFlags'].is_a?(Array)
+      return false if task['targetFlags'].empty?
 
-      # Require flags to be supplied in the request body; reject attempts that
-      # omit them (which would otherwise fall through to manipulable stored state).
-      return false unless submitted_flags_from_request.present?
+      satisfied = server_satisfied_target_flags(task)
+      task['targetFlags'].all? { |target_flag| satisfied.include?(target_flag) }
+    end
 
-      submitted = Array(submitted_flags_from_request)
-      Rails.logger.debug "[BreakEscape] Validating flags using request data: #{submitted.inspect}"
+    # The task's targetFlags entries this game has really satisfied, from server state:
+    #   - entries process_flag_task_completions! recorded when /flags accepted a flag at
+    #     the matching station (player_state['flag_task_matches']); and
+    #   - entries written as a flag reference ("vm:flag_N") whose value is in the
+    #     player_state['submitted_flags'] list that submit_flag fills.
+    # Nothing here reads the client-writable task submittedFlags.
+    def server_satisfied_target_flags(task)
+      recorded = Array(player_state.dig('flag_task_matches', task['taskId']))
+      submitted = Array(player_state['submitted_flags']).map { |f| f.to_s.downcase }
 
-      # Check that all targetFlags are in submittedFlags
-      all_submitted = task['targetFlags'].all? { |target_flag| submitted.include?(target_flag) }
+      from_refs = Array(task['targetFlags']).select do |target|
+        next false unless target.is_a?(String) && target.match?(/\A[^:]+:flag_\d+\z/)
 
-      Rails.logger.debug "[BreakEscape] Flag validation: targetFlags=#{task['targetFlags'].inspect}, submitted=#{submitted.inspect}, result=#{all_submitted}"
+        value = resolve_flag_ref(target)
+        value.present? && submitted.include?(value.to_s.downcase)
+      end
 
-      all_submitted
+      recorded + from_refs
     end
 
     # Check if NPC was encountered
@@ -7648,6 +7691,75 @@ module BreakEscape
     # Flag Submission System
     # ==========================================
 
+    # ==========================================
+    # VM set state (D144)
+    # ==========================================
+
+    # The sentence a player sees when a released session refuses a new flag. Fixed text:
+    # nothing a user or organisation supplies is ever put into it.
+    VM_RELEASED_MESSAGE = "This session's VMs have been released, so new flags can't be scored here. " \
+                          "Start the mission again to get fresh VMs."
+
+    # The sentence a player sees when New Session is refused on a released game.
+    VM_RELEASED_NEW_SESSION_MESSAGE = "This session's VMs have been released. Start the mission from the " \
+                                      "mission page to get fresh VMs."
+
+    # Build states that never count as a set the player holds. 'pending' is not in the list:
+    # a set still building is the player's and is not released. This is wider than
+    # Hacktivity's GameSlot#active_game_for, which still treats deleted (VMs archived),
+    # removed (gone from the cluster) and build_stopped as active: those VMs cannot be used,
+    # so the launcher must not offer them and new flags must not score. Hacktivity also tests
+    # failed_to_revert by substring, so it is matched the same way (see below).
+    VM_SET_RELEASED_BUILD_STATUSES = %w[error relinquished deleted removed build_stopped marked_broken
+                                        failed_to_revert].freeze
+
+    # The one place the host's VmSet is looked up for the state check, so tests can stub it
+    # (the dummy app must keep ::VmSet undefined).
+    def self.find_vm_set_record(id)
+      return nil unless defined?(::VmSet)
+
+      ::VmSet.find_by(id: id)
+    end
+
+    # The one source for this game's VM set id: the column first, then player_state. 0 = none.
+    def vm_set_id_for_state
+      raw_id = self[:vm_set_id].presence
+      raw_id ||= player_state['vm_set_id'] if player_state.is_a?(Hash)
+      raw_id.to_i
+    end
+
+    # Where this game stands with its VM set, worked out from the host's VmSet row on each
+    # call (no column, no migration):
+    #   :none     standalone mode, a VM-free mission, or no VM set on the game. Unchanged.
+    #   :live     the set exists, belongs to the player (or their team) and is not released.
+    #   :released anything else: relinquished, errored, gone, or held by someone else.
+    def vm_set_state
+      return :none unless BreakEscape::Mission.hacktivity_mode?
+
+      id = vm_set_id_for_state
+      return :none unless id.positive?
+
+      record = self.class.find_vm_set_record(id)
+      return :released unless record
+      return :released if record.respond_to?(:relinquished) && record.relinquished
+      status = record.try(:build_status).to_s
+      return :released if VM_SET_RELEASED_BUILD_STATUSES.include?(status) || status.include?('failed_to_revert')
+      return :released unless vm_set_held_by_player?(record)
+
+      :live
+    end
+
+    # What a released session says to a new flag, or nil when the flag may go on (any state
+    # other than :released; a flag this game already holds; a flag already solved on its old
+    # set, which creates no new score).
+    def released_flag_refusal(flag_key)
+      return nil unless vm_set_state == :released
+      return nil if flag_submitted?(flag_key)
+      return nil if hacktivity_flag_solved?(flag_key)
+
+      { success: false, message: VM_RELEASED_MESSAGE, reason: 'vm_released' }
+    end
+
     # Submit a CTF flag
     def submit_flag(flag_key)
       # Check if already submitted
@@ -7667,6 +7779,18 @@ module BreakEscape
       valid_flags = extract_valid_flags_from_scenario
       unless valid_flags.any? { |f| f.downcase == flag_key.downcase }
         return { success: false, message: 'Invalid flag', reason: 'invalid' }
+      end
+
+      # A released set: a flag already solved on it is recorded here with no new score
+      # (the caller skips the host's scoring); any other flag is refused (D144).
+      if vm_set_state == :released
+        refusal = released_flag_refusal(flag_key)
+        return refusal if refusal
+
+        player_state['submitted_flags'] ||= []
+        player_state['submitted_flags'] << flag_key
+        save!
+        return { success: true, message: 'Flag accepted!', already_in_hacktivity: true }
       end
 
       # Submit to Hacktivity if in Hacktivity mode
@@ -7810,9 +7934,9 @@ module BreakEscape
     # Used for backward compat when a flag was previously consumed by the wrong
     # station but already counted in Hacktivity.
     def hacktivity_flag_solved?(flag_key)
-      return false unless defined?(::Flag) && player_state['vm_set_id'].present?
+      return false unless defined?(::Flag) && vm_set_id_for_state.positive?
 
-      vm_set = ::VmSet.find_by(id: player_state['vm_set_id'])
+      vm_set = self.class.find_vm_set_record(vm_set_id_for_state)
       return false unless vm_set
 
       ::Flag.joins(:vm)
@@ -7825,9 +7949,9 @@ module BreakEscape
     # Submit flag to Hacktivity's FlagService
     def submit_to_hacktivity(flag_key)
       return { success: false, message: 'FlagService not available' } unless defined?(::FlagService)
-      return { success: false, message: 'No VM set associated' } unless player_state['vm_set_id'].present?
+      return { success: false, message: 'No VM set associated' } unless vm_set_id_for_state.positive?
 
-      vm_set = ::VmSet.find_by(id: player_state['vm_set_id'])
+      vm_set = ::VmSet.find_by(id: vm_set_id_for_state)
       return { success: false, message: 'VM set not found' } unless vm_set
 
       # Find the specific VM that owns this flag — FlagService.process_flag takes a VM, not a user
@@ -7843,7 +7967,7 @@ module BreakEscape
         { success: true, message: mock_flash[:notice] || 'Flag submitted to Hacktivity' }
       rescue StandardError => e
         Rails.logger.error "[BreakEscape] FlagService error: #{e.message}"
-        { success: false, message: 'Error submitting flag to Hacktivity' }
+        { success: false, message: 'Error submitting flag to Hacktivity', retryable: true }
       end
     end
   end

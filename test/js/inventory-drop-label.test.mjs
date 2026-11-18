@@ -62,5 +62,5 @@ test('an item with no name gets no half label', () => {
 });
 
 test('the inventory slot uses the label on hover', () => {
-    assert.match(source, /addEventListener\('mouseenter', \(\) => setHudLabel\(inventoryHoverLabel\(sprite\.scenarioData\)\)\)/);
+    assert.match(source, /bindSlotHover\(slot, \(\) => inventoryHoverLabel\(sprite\.scenarioData\)\)/);
 });

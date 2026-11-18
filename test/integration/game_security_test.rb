@@ -458,11 +458,14 @@ module BreakEscape
         "SECURITY FAIL: submit_flags task completed without submittedFlags parameter"
     end
 
-    test "SECURITY: complete_task accepts submit_flags task when all flags submitted" do
+    test "SECURITY: complete_task accepts submit_flags task when the server recorded all flags" do
       setup_submit_flags_task
+      # The server's own record (written when /flags accepts a flag), not the request body.
+      @game.player_state["flag_task_matches"] =
+        { "task_flags" => ["flag_admin", "flag_database", "flag_network"] }
+      @game.save!
 
-      post complete_task_game_url(@game, task_id: "task_flags"),
-           params: { submittedFlags: ["flag_admin", "flag_database", "flag_network"] }
+      post complete_task_game_url(@game, task_id: "task_flags")
 
       json = JSON.parse(response.body)
       assert json["success"],
@@ -471,6 +474,17 @@ module BreakEscape
       @game.reload
       task_status = @game.player_state.dig("objectivesState", "tasks", "task_flags", "status")
       assert_equal "completed", task_status
+    end
+
+    test "SECURITY: complete_task refuses a forged full submittedFlags list for a submit_flags task" do
+      setup_submit_flags_task
+
+      post complete_task_game_url(@game, task_id: "task_flags"),
+           params: { submittedFlags: ["flag_admin", "flag_database", "flag_network"] }
+
+      assert_equal false, JSON.parse(response.body)["success"]
+      @game.reload
+      assert_not_equal "completed", @game.player_state.dig("objectivesState", "tasks", "task_flags", "status")
     end
 
     test "SECURITY: complete_task ignores pre-stored flags in player_state for submit_flags task" do
