@@ -21,6 +21,8 @@ VAR ledger_read_heard = false
 VAR hatch_met = false
 VAR hatch_leaned = false
 VAR hatch_asked_wren = false
+VAR hatch_asked_run = false
+VAR hatch_asked_kept = false
 VAR hub_quiet = false
 // Playtest R1 B-M1: the bin is chosen once; this local closes the buttons
 // at once (the #set_global reaches the story too late for the next menu).
@@ -176,6 +178,14 @@ agent_0x99: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwr
     #clone_keycard:stacks_card
     Narrator: She goes on stamping.
     ~ hatch_leaned = true
+    -> back
++ {bin_chosen and not hatch_asked_run} [How long have you run this counter?]
+    ~ hatch_asked_run = true
+    Margaret Sorensen: Eleven years of other people's paper. Nobody asks the clerk what she kept.
+    -> back
++ {bin_chosen and hatch_asked_run and not hatch_asked_kept} [What did you keep?]
+    ~ hatch_asked_kept = true
+    Margaret Sorensen: A stamp, and a list in my head of what went in the feed. The list is the heavier one.
     -> back
 + {ledger_read_heard and not hatch_asked_wren} [Who's WREN?]
     ~ hatch_asked_wren = true
