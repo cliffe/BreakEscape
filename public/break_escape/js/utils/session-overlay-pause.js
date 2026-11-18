@@ -1,13 +1,13 @@
 /**
  * Hold timed dialogue while the session-resume overlay is up (games/show.html.erb).
  *
- * A game reloaded mid-cutscene boots under the Resume / Restart / New Session overlay.
+ * A game reloaded mid-cutscene boots under the Resume / Start over / New Session overlay.
  * person-chat's auto-advance (5 s a line with no voice) kept running underneath, so the
  * player lost lines while deciding to Resume (engine fixes round 6, item 6). Timed
  * advances ask here first and wait for the overlay to close.
  *
  * The page sets window.breakEscapeSessionOverlayShowing while the overlay shows, clears it
- * when Resume closes it, and dispatches SESSION_OVERLAY_CLOSED on window. Restart and New
+ * when Resume closes it, and dispatches SESSION_OVERLAY_CLOSED on window. Start over and New
  * Session reload the page, so they never need to release anything. No imports, so tests
  * can load it on its own.
  */

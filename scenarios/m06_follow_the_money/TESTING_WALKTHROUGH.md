@@ -55,7 +55,7 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 
 3. **Trading Floor — Irina** — First meeting shows only the three openers (`first_meeting_scene`). Hub option "test your password strength" (`request_passwords`): hands over the wordlist at `irina_trust >= 15` (reachable on every opener), and on a second ask regardless of trust. `#give_item:text_file:m06_password_dictionary` → `obtain_access_tools` completes itself from the pickup (collect task; optional since puzzle chains R2, because a player can guess the passphrase from the checklist, and the required step is `find_server_credentials`, which completes on entering the server room). HaX's three wordlist lines (the pickup text, the hub's "What do I do with it?", the recap's "Get it from her") stay quiet once the door is open; the handler sets `found_password_lists` and offers the cracking guide. The option disappears at once after the handover.
 4. **Security Checkpoint — IT New Starter Checklist** — Read the note → `server_passphrase_known` set (`onPickup`). Handler's text is now only a pointer (puzzle chains M3): "That's their house rule for door passphrases. Volkova keeps the list of words her people pick." The full recipe stays in the recap ("Remind me where we are"), which the player asks for. `find_server_credentials` completes once both the wordlist and the checklist are in hand (or on entering the server room, as a backstop).
-5. **Server Room door** — The house convention is a crypto term + the checklist's year. Top of Irina's list is `bitcoin`; the checklist is Rev. January 2025 → **`bitcoin2025`**. Enter it at the password lock.
+5. **Server Room door** — The house convention is a crypto term + the checklist's year. Top of Irina's list (ranked most-picked first) is `hodl`; the checklist is Rev. January 2025 → **`hodl2025`**. Enter it at the password lock.
 6. **Server Room (enter)** — `access_server_room` completes → `onComplete: unlockAim crack_passwords`.
 7. **Blockchain Lab (enter)** — `access_blockchain_lab` completes (the lab is open off the hub; it lives in this aim so an early visit can't auto-reveal a later aim).
 8. **Blockchain Lab — Priya's write-up ("ENTROPY Transaction Network Analysis")** — now a clue on the critical path: three ENTROPY deposits into the mixer with amount and UTC time (ransom $2,400,000 at 21:40 14 Jul; exploits $1,200,000 at 22:10 29 Jul; Social Fabric $680,000 at 20:05 3 Aug), and the method (amount less the fee, no sooner than the hold). It does not name the fund wallet or its slot. Her "Privacy Coin Mixing Analysis" notes no longer name the Fund ("5. Into one wallet? Every cell draws on something.") and carry the safe's number in a margin line ("21M cap. Last coin due around 2140. Not our problem."). Priya's sticky hub option "How would you follow money through a mixer?" (`mixer_matching`) teaches the method. Read/take → `onPickup: found_blockchain_evidence, financial_network_mapped`; `find_transaction_records` completes itself from the pickup (no mapping `completeTask`, playtest D3); handler sets `blockchain_debrief_available`.
@@ -110,7 +110,7 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 - [ ] `meet_irina` unlocks aim 2
 - [ ] First meeting shows only three openers; wordlist obtainable on every path (second ask always succeeds); `obtain_access_tools` completes and stays complete
 - [ ] Handed-over wordlist / badge options vanish in the same conversation
-- [ ] `bitcoin2025` opens the server room; `find_server_credentials` completes
+- [ ] `hodl2025` opens the server room; `find_server_credentials` completes
 - [ ] Blockchain note sets `financial_network_mapped`, completes `find_transaction_records`
 - [ ] vm-launcher completes `access_hackme_vm`
 - [ ] All four flags submit in order (station-qualified `flag_station_financial:hackme_crack_me_lab-flagN`)
@@ -167,3 +167,7 @@ Critical path (6 aims, 5 hops): **Establish Cover → Work The Floor → Crack T
 - The **$847,000** is the Architect's **acquisition budget** for the Quantum Dynamics job, paid **out** of the fund (slot 4471, `1ARCHITECT9FUND`) to the Insider Threat Initiative via the **TalentStack** wallet. It is not proceeds of selling data. Priya's write-up, daily report, opening briefing and phone all show it as an outbound payment.
 - The $2.4M ransomware figure is inbound, pooled across victims (m02).
 - The Architect = Dr. Adrian Tesseract (87% in the safe file) seeds the later reveal.
+
+## Blind-playtest minors (G2, G3, passphrase)
+- Irina turns only on proof plus trust: trust >= 35 needs Priya's write-up shown (`shown_casualties`), or her research notes, or the Ledger Hold Log. Pressure and "Think about it" alone leave her refusing; the fallback is detaining her.
+- The safe (optional) opens from Priya's margin note without Irina: Irina detained, `2140` typed on the pad, container opens.

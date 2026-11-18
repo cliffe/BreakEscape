@@ -23,6 +23,8 @@ VAR heard_ex_going_now = false
 VAR met = false
 // Skips the line block once after an exit, so the line printed behind the exit tag is not shown.
 VAR hub_quiet = false
+// Set once she has pointed the player at the handover sheet.
+VAR told_sheet = false
 
 === start ===
 -> hub
@@ -46,6 +48,12 @@ VAR hub_quiet = false
         }
     }
 }
++ {not told_sheet} [Anything out here I should look at?]
+    ~ told_sheet = true
+    Adaeze Okafor: The supervisor wrote his handover on paper when the screens went flaky. It's still on a desk out here.
+    Adaeze Okafor: He puts everything on it. Even the PIN for the badge station.
+    ~ hub_quiet = true
+    -> hub
 + [Don't let me hold you up.]
     Adaeze Okafor: Thank you. I'll shut this down and go.
     ~ hub_quiet = true

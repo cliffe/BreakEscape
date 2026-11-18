@@ -11,7 +11,9 @@
 #
 # A line {"dom": "<page text>", "label": "<what>"} in a file is the text of a page the tester read
 # (the capture log device: eval `() => document.querySelector('.capture-log')?.innerText`), checked
-# like a /capture_secrets answer when its label names a capture page (/\bcaptures?\b/i; any other
+# like a /capture_secrets answer when its label names a capture page (CAPTURE_PAGE_LABEL in the
+# scanner: the word capture or captures not joined to a letter or digit, so capture_log passes and
+# recapture or an accented join does not; any other
 # page, such as a device console, is scanned in full). A password passes there, and in
 # /capture_secrets, only for an account the server would serve now (its capture proofs applied,
 # engine plan section 6).

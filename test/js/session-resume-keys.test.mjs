@@ -128,3 +128,15 @@ test('show.html.erb loads the guard as a module before the overlay script and re
   assert.ok(overlayScript > mod, 'module comes before the overlay script');
   assert.match(erb, /installResumeKeyGuard\(\{[\s\S]*?resumeBtn\.click\(\)/);
 });
+
+test('Escape runs onEscape while the overlay shows, Tab stays blocked', () => {
+  const win = fakeWindow();
+  let escapes = 0;
+  installResumeKeyGuard({ target: win, isShowing: () => true, onResume() {}, onEscape() { escapes++; return true; } });
+  const tab = win.dispatch('keydown', { key: 'Tab', code: 'Tab' });
+  assert.ok(tab.stopped && tab.prevented);
+  assert.equal(escapes, 0);
+  const esc = win.dispatch('keydown', { key: 'Escape', code: 'Escape' });
+  assert.ok(esc.stopped);
+  assert.equal(escapes, 1);
+});
