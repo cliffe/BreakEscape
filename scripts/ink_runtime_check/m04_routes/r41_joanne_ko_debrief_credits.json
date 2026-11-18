@@ -1,0 +1,80 @@
+{
+"steps": [
+{
+"note": "R41: a newcomer is knocked out (joanne_ko). The debrief head-count takes the KO branch and the credits show the not-all-on-their-feet entry and the office-staff line, never ALL THIRTEEN."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"anomaly_detected": true,
+"vance_spoken": true
+}
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true,
+"voltage_captured": true,
+"voltage_neutralised": true,
+"esd_authorized": true,
+"attack_prevented": true,
+"operative_static_defeated": true,
+"joanne_ko": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Shutdown engaged",
+"What did we get",
+"how did they get in",
+"fix first",
+"goes in the report",
+"The Architect",
+"I'm in",
+"Full public",
+"Just doing my job"
+]
+},
+{
+"said": [
+"not all of them on their own feet"
+],
+"notSaid": [
+"Thirteen people walked out of there tonight"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"not all of them on their own feet",
+"OFFICE STAFF: hurt, and that's on you"
+],
+"notSaid": [
+"ALL THIRTEEN"
+]
+}
+]
+}

@@ -21,6 +21,37 @@ function current() {
 }
 
 /**
+ * The controls getState().controls lists, as elements, in the same order. The
+ * minigame itself owns the list (MinigameScene#getTestControlElements), so
+ * clickControl indices cannot drift from getState(). The offsetParent filter is
+ * only the fallback for a scene without the method: it is wrong for
+ * position:fixed elements such as the X (#minigame-close).
+ */
+function controlElements(mg) {
+    if (typeof mg.getTestControlElements === 'function') return mg.getTestControlElements();
+    return Array.from(mg.container.querySelectorAll(
+        'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option'
+    )).filter(el => el.offsetParent !== null);
+}
+
+/**
+ * The fields getState().fields lists, as elements, in the same order and cap
+ * (MinigameScene#getTestFieldElements). Fallback only for a non-scene object.
+ */
+function fieldElements(mg) {
+    if (typeof mg.getTestFieldElements === 'function') return mg.getTestFieldElements();
+    return Array.from(mg.container.querySelectorAll(
+        'input:not([type="button"]):not([type="submit"]), textarea, select'
+    )).filter(el => el.offsetParent !== null);
+}
+
+/** The same visibility test getState() uses (computed style and size). */
+function isShown(mg, el) {
+    if (typeof mg.isTestVisible === 'function') return mg.isTestVisible(el);
+    return el.offsetParent !== null;
+}
+
+/**
  * A failure result. The `extra` fields are the diagnostic — the choices that
  * were actually on screen, the pattern that missed, what matched ambiguously.
  * A bare reason string is not enough to fix a broken trace, so always pass them.
@@ -61,12 +92,7 @@ export const minigameBridge = {
     async clickControl(indexOrLabel) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        // .tri-chip: inbox triage flag chips. [role="option"]: the mail composer and
-        // pretext-prep blank-picker rows. .mail-create-option: the Create-account radio
-        // rows. Same list as BaseMinigame#getTestState.
-        const buttons = Array.from(mg.container.querySelectorAll(
-            'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option'
-        )).filter(el => el.offsetParent !== null);
+        const buttons = controlElements(mg);
         // Indices shift as a minigame re-renders, so allow a label too — a
         // caller that means "the SUBMIT button" should be able to say so.
         let el;
@@ -108,10 +134,7 @@ export const minigameBridge = {
     async select(field, option) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        const visible = el => el.offsetParent !== null;
-        const all = Array.from(mg.container.querySelectorAll(
-            'input:not([type="button"]):not([type="submit"]), textarea, select'
-        )).filter(visible);
+        const all = fieldElements(mg);
         const labelOf = el => {
             const bits = [el.id, el.name, el.className, el.getAttribute('aria-label')];
             if (el.id) {
@@ -198,9 +221,7 @@ export const minigameBridge = {
     async type(index, text, { submit = false, clear = true } = {}) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        const fields = Array.from(mg.container.querySelectorAll(
-            'input:not([type="button"]):not([type="submit"]), textarea, select'
-        )).filter(el => el.offsetParent !== null);
+        const fields = fieldElements(mg);
         const el = fields[index];
         if (!el) return fail(`no-field-at-index-${index}`);
         if (clear) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
@@ -527,7 +548,7 @@ export const minigameBridge = {
         // very next unrelated getState() a moment later.
         const willReturnToContainer = !!window.pendingContainerReturn;
         const closeBtn = mg.container.querySelector('.minigame-close-button');
-        if (closeBtn && closeBtn.offsetParent !== null) {
+        if (closeBtn && isShown(mg, closeBtn)) {
             clickElement(closeBtn);
         } else {
             keyDown('Escape');

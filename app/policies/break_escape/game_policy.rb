@@ -122,6 +122,11 @@ module BreakEscape
       show?
     end
 
+    # Fingerprint-kit dusting of a PIN pad (PinDust)
+    def pin_dust?
+      show?
+    end
+
     # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
     def wear?
       show?
