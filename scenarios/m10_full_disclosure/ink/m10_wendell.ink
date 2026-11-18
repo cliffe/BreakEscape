@@ -49,8 +49,8 @@ Wendell Briggs: You with the data company? Nobody told me there'd be a visit.
     {not gallery_shutter_cut:
         ~ gallery_shutter_cut = true
         ~ cut_by_hand = false
-        Wendell Briggs: Well. Which switch do you want. #delivery: after a pause, decided
-        -> wendell_switch
+        Wendell Briggs: Well. It'll be the gallery shutter, then. #delivery: after a pause, decided
+        -> wendell_switch_done
     }
     -> wendell_dale
 + [Never mind. Carry on, Mr Briggs.]
@@ -63,13 +63,6 @@ Wendell Briggs: You with the data company? Nobody told me there'd be a visit.
     ~ wend_quiet = true
     #exit_conversation
     -> wendell_rest
-
-// No tunnel: a reopen can enter this knot directly (R9), so it diverts on.
-// Dialogue R1 m7: the question is asked in the told choice, so a reopen here
-// (the knot owning this choice) offers the choice again without repeating it.
-=== wendell_switch ===
-+ [The one marked gallery shutter.]
-    -> wendell_switch_done
 
 === wendell_switch_done ===
 Wendell Briggs: There. Key's turned, breaker's down. That door won't move again tonight.

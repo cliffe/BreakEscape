@@ -74,10 +74,10 @@ Agent 0x47 'Nightshade': Of everyone in this building, they picked the one perso
     Agent 0x47 'Nightshade': I know. I do know that. #delivery: quietly
     Agent 0x47 'Nightshade': I've been grieving a long time, 0x00. Longer than nine days. It wears smooth. #set_global:nightshade_suspected:true
     -> back
-+ { not asked_insiders } [Your insider briefing. "The calm of someone who's decided the rules don't apply to them."]
++ { not asked_insiders } [You gave my intake the insider-threat lecture. What were the warning signs?]
     ~ asked_insiders = true
     ~ nightshade_suspected = true
-    Agent 0x47 'Nightshade': I said that. The access a little too broad, the hours a little too odd, and the calm. Good. You were listening.
+    Agent 0x47 'Nightshade': I did. The access a little too broad, the hours a little too odd, and the calm of someone who's decided the rules don't apply to them. Now you're listening.
     Agent 0x47 'Nightshade': I'd add one thing now, if I were giving that briefing again.
     // Blind A (D1, M5): the narrator's "holds your eye" tell cut; the line does the work.
     Agent 0x47 'Nightshade': Don't rule anyone out because they wrote the list. #set_global:nightshade_suspected:true
