@@ -558,3 +558,31 @@ test('lockoutSeconds on a non-password lock warns (rooms and objects)', { skip }
     Object.assign(ok.rooms.vault, { lockType: 'password', requires: 'hunter22', lockoutSeconds: 30 });
     assert.ok(!has(issues(ok), 'not a password lock'));
 });
+
+// closeDoor names a room with no registered gate (scenario-schema.json closeDoor description)
+const closeMsg = 'no gate door leads into or out of that room';
+function withClose(sc, target) {
+    sc.rooms.office.npcs[0].eventMappings = [{ eventPattern: 'global_variable_changed:alarm', closeDoor: target }];
+    return sc;
+}
+
+test('closeDoor on a room a north or south gate leads into, or sits in, raises no warning', { skip }, () => {
+    for (const target of ['vault', 'office', ['vault']]) {
+        const out = issues(withClose(scenario(), target));
+        assert.ok(!has(out, closeMsg), out.join('\n'));
+    }
+});
+
+test('closeDoor on a room whose only gate is on an east or west door is a warning', { skip }, () => {
+    const out = issues(withClose(scenario({ direction: 'east' }), 'vault'));
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("closeDoor 'vault'") && s.includes(closeMsg)), out.join('\n'));
+});
+
+test('closeDoor on a room with no gate at all is a warning; an unknown room is left to the schema', { skip }, () => {
+    const sc = scenario();
+    sc.rooms.store = { type: 'room_office', connections: {} };
+    let out = issues(withClose(sc, 'store'));
+    assert.ok(out.some(s => s.startsWith('⚠️') && s.includes("closeDoor 'store'")), out.join('\n'));
+    out = issues(withClose(scenario(), 'nowhere'));
+    assert.ok(!has(out, closeMsg), out.join('\n'));
+});

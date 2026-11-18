@@ -127,9 +127,9 @@ Alright, here's a hint for reconnaissance:
 
 Start with Nmap to identify services and versions: nmap \-sV TARGET_IP
 
-Use Dirb to find hidden directories: dirb http://TARGET_IP
+Use Dirb to find hidden directories: dirb http:\/\/TARGET_IP
 
-Use Nikto for web vulnerabilities: nikto \-h http://TARGET_IP
+Use Nikto for web vulnerabilities: nikto \-h http:\/\/TARGET_IP
 
 Look carefully at discovered files - some contain very useful information about usernames and passwords!
 
@@ -226,7 +226,7 @@ Nikto is a web vulnerability scanner that checks for dangerous files, outdated s
 OWASP ZAP is an intercepting proxy that lets you capture, modify, and replay HTTP requests - perfect for brute forcing.
 
 + [How do I use Dirb?]
-    Dirb is straightforward: dirb http://TARGET_IP
+    Dirb is straightforward: dirb http:\/\/TARGET_IP
 
     It uses a built-in dictionary to test common paths like /admin/, /backup/, /config/, etc.
 
@@ -238,7 +238,7 @@ OWASP ZAP is an intercepting proxy that lets you capture, modify, and replay HTT
     #influence_increased
 
 + [How do I use Nikto?]
-    Nikto scans for web vulnerabilities: nikto \-h http://TARGET_IP
+    Nikto scans for web vulnerabilities: nikto \-h http:\/\/TARGET_IP
 
     It checks for over 6,000 security issues including dangerous files, server misconfigurations, and known vulnerabilities.
 
@@ -278,9 +278,9 @@ Each phase builds on the previous, so thorough reconnaissance is crucial.
 
     This identifies open ports, running services, and software versions.
 
-    Then scan the web application: dirb http://TARGET_IP
+    Then scan the web application: dirb http:\/\/TARGET_IP
 
-    Follow up with: nikto \-h http://TARGET_IP
+    Follow up with: nikto \-h http:\/\/TARGET_IP
 
     Look for admin panels, configuration files, backup files, and anything that might contain credentials.
 
@@ -308,9 +308,9 @@ Each phase builds on the previous, so thorough reconnaissance is crucial.
 
     1. Run Nmap: nmap \-sV \-p- TARGET_IP (scan all ports with version detection)
 
-    2. Run Dirb: dirb http://TARGET_IP (find hidden directories and files)
+    2. Run Dirb: dirb http:\/\/TARGET_IP (find hidden directories and files)
 
-    3. Run Nikto: nikto \-h http://TARGET_IP (identify web vulnerabilities)
+    3. Run Nikto: nikto \-h http:\/\/TARGET_IP (identify web vulnerabilities)
 
     4. Browse discovered URLs - open them in Firefox to see what they contain
 
@@ -605,9 +605,9 @@ Phase 1 - Reconnaissance:
 
 nmap \-sV \-p- TARGET_IP
 
-dirb http://TARGET_IP
+dirb http:\/\/TARGET_IP
 
-nikto \-h http://TARGET_IP
+nikto \-h http:\/\/TARGET_IP
 
 Browse discovered files, find admin login at /admin/, discover Bludit CMS, find leaked credentials
 
