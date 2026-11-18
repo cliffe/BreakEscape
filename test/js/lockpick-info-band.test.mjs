@@ -52,6 +52,7 @@ test('every h4 rule in the info block is 16px Press Start 2P on a 24px line', ()
         const m = body.match(/font-size\s*:\s*(\d+)px/);
         if (m) assert.ok(Number(m[1]) >= 16, `h4 font-size ${m[1]}px`);
     }
+    assert.ok(rs.some((b) => /line-height\s*:\s*24px/.test(b)), 'a 24px line for the 16px heading');
 });
 
 test('empty observations leave no empty paragraph or heading gap', () => {
@@ -74,10 +75,16 @@ test('render: no paragraph when observations are empty, one when present', () =>
 });
 
 test('the lock frame wraps its content on phones (auto height, scoped to the lock)', () => {
-    const phone = css.slice(css.indexOf('@media (max-width: 768px) {\n    #phaser-game-container {\n        aspect-ratio'));
-    const body = phone.slice(0, phone.indexOf('\n}\n'));
-    const m = body.match(/\.minigame-game-container:has\(> #phaser-game-container\)\s*\{([^}]*)\}/);
-    assert.ok(m, 'a lock-scoped game container rule in the phone block');
+    // every block holding the lock-scoped frame rule must be narrow AND tall (R2 M1: in a short
+    // window the frame has to shrink and scroll by itself, or the shell scrolls too)
+    const blocks = [...css.matchAll(/@media([^{]*)\{((?:[^{}]*\{[^}]*\})*)\s*\}/g)]
+        .filter((b) => /\.minigame-game-container:has\(> #phaser-game-container\)\s*\{[^}]*height:\s*auto/.test(b[2]));
+    assert.ok(blocks.length >= 1, 'a lock-scoped game container rule exists');
+    for (const b of blocks) {
+        assert.match(b[1], /max-width:\s*768px/);
+        assert.match(b[1], /min-height:\s*561px/, 'not applied in short windows');
+    }
+    const m = blocks[0][2].match(/\.minigame-game-container:has\(> #phaser-game-container\)\s*\{([^}]*)\}/);
     assert.match(m[1], /height\s*:\s*auto/);
     assert.doesNotMatch(m[1], /height\s*:\s*100%/);
     const framework = readFileSync(join(root, 'css/minigames-framework.css'), 'utf8');

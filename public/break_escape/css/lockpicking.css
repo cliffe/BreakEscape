@@ -184,10 +184,14 @@
         height: auto;
         flex: 0 0 auto;
     }
+}
 
-    /* The frame wraps the lock and its feedback line: the shared 100% height left an empty dark
-       band under the feedback box. Spare window height sits outside the frame (the shell centres
-       it, over the dimmed backdrop). Scoped to the lock, so other minigames keep the shared rule. */
+/* The frame wraps the lock and its feedback line: the shared 100% height left an empty dark
+   band under the feedback box. Spare window height sits outside the frame (the shell centres
+   it, over the dimmed backdrop). Scoped to the lock, so other minigames keep the shared rule.
+   Not in short windows (560px and under): there the frame must shrink and scroll by itself, or
+   the shell scrolls too and two scrollbars nest. */
+@media (max-width: 768px) and (min-height: 561px) {
     .minigame-game-container:has(> #phaser-game-container) {
         height: auto;
         flex: 0 0 auto;
