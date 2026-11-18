@@ -71,7 +71,7 @@ VAR night_answer_quiet = false
     # influence_increased
     Narrator: You sign the visitor log.
     Ffion Rees: There you go. Keep it on show, or the guard has kittens.
-    Ffion Rees: The conference room's through the card reader on the left, staff badges only. Ms. Sterling's strict about it, and she doesn't come out to fetch people.
+    Ffion Rees: The conference room's behind the card reader on the left -- staff badges only. Ms. Sterling's strict about that. She doesn't come out to fetch people.
     -> first_impression_choice
 * [Before I go in, what's WhiteHat like?]
     ~ receptionist_influence = receptionist_influence + 10
