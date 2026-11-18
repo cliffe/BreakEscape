@@ -305,7 +305,50 @@ test('short dust and lift: the panel keeps room above the 80 px strip (no headin
     assert.doesNotMatch(hide, /display: none/);
     assert.match(css, /\.dusting-keys \{ display: none; \}/);
     for (const step of ['dust', 'lift']) assert.match(css, new RegExp(`\\.dusting-short\\[data-step="${step}"\\] \\.dusting-status`));
-    assert.match(css, /\.dusting-status \{ max-height: 32px; overflow-y: auto; \}/);
+    assert.match(css, /\.dusting-status \{ max-height: 32px; overflow: hidden; \}/);
     // the other steps keep their heading and note
     assert.doesNotMatch(css, /dusting-short\[data-step="compare"\] \.dusting-forensic/);
+});
+
+test('M1: long advice reaches the unclipped feedback line in short mode and is announced once', () => {
+    assert.match(src, /advise\(msg\) \{/);
+    assert.match(src, /this\.advise\(`\$\{why\} You can change powder\.`\)/);
+    assert.match(src, /this\.advise\(FEATHER_SUGGESTION\)/);
+    assert.match(src, /this\.message \|\| this\.advice \|\| this\._coach\(\)/);
+    // the status line stays the only live region; the feedback line is not
+    assert.match(src, /class="dusting-status" role="status" aria-live="polite"/);
+    assert.doesNotMatch(src, /dusting-feedback"[^>]*aria-live/);
+    assert.doesNotMatch(css, /\.dusting-status[^}]*overflow-y: auto/);
+    const calls = [];
+    const g = Object.create(DustingMinigame.prototype);
+    const fb = { textContent: '' };
+    Object.assign(g, {
+        statusEl: { textContent: '' }, panel: { querySelector: () => fb },
+        root: { classList: { contains: c => c === 'dusting-short' } }
+    });
+    const spy = g.announce.bind(g); g.announce = m => { calls.push(m); spy(m); };
+    g.advise('Black powder would show these. You can change powder.');
+    assert.equal(fb.textContent, 'Black powder would show these. You can change powder.');
+    assert.equal(g.statusEl.textContent, fb.textContent);
+    assert.equal(calls.length, 1, 'announced once');
+    g.root = { classList: { contains: () => false } };
+    fb.textContent = 'keep';
+    g.advise('Long mode advice');
+    assert.equal(fb.textContent, 'keep', 'long mode leaves the feedback line to the coach');
+    assert.equal(g.advice, '');
+});
+
+test('M2: phone portrait pins only the primary button; short landscape and desktop are untouched', () => {
+    const i = css.indexOf('/* Phone portrait (not short): one 44 px bar');
+    assert.ok(i >= 0, 'portrait pin block exists');
+    const m = [css.slice(i, css.indexOf('/* Short landscape (a phone on its side;', i))];
+    assert.match(m[0], /\.dusting-buttons \{ display: contents; \}/);
+    assert.match(m[0], /\.dusting-primary \{[^}]*position: sticky;[^}]*bottom: 0;[^}]*z-index: 3;[^}]*width: 100%;[^}]*background: var\(--d-bg\)/);
+    assert.match(m[0], /min-height: 44px/);
+    assert.match(m[0], /\.dusting-primary:disabled \{ opacity: 1/);
+    assert.doesNotMatch(m[0], /\.dusting-btn:not\(\.dusting-primary\) \{[^}]*sticky/);
+    // the whole block is scoped to not-short and phone width
+    assert.doesNotMatch(m[0], /^\s+\.dusting-(actions|buttons|primary|meters)/m);   // every selector is scoped not-short
+    // the original phone-width rule (static, in flow) still holds
+    assert.match(css, /@media \(max-width: 760px\) \{\s*\.dusting-actions \{\s*position: static/);
 });

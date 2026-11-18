@@ -447,6 +447,7 @@ export class DustingMinigame extends MinigameScene {
         this.forensicEl.textContent = FORENSIC[step] || '';
         if (step === 'compare' && this.patternOk && this.identified) this.forensicEl.textContent = `${FORENSIC.compare} ${FORENSIC_MATCH}`;
         this.message = '';
+        this.advice = '';
         this._renderPanel();
         this._updateAria();
         this.dirty = true;
@@ -680,13 +681,13 @@ export class DustingMinigame extends MinigameScene {
         this._setStep('dust');
         this._refreshMetrics(true);
         const why = wrongPowderReason(this.powder, this.surfaceId);
-        if (why) this.announce(`${why} You can change powder.`);
+        if (why) this.advise(`${why} You can change powder.`);
     }
 
     _chooseTool(t) {
         if (!TOOLS[t] || !POWDERS[this.powder].tools.includes(t)) return;
         if (this.tool !== t) this.toolStrokes = 0;
-        this.tool = t; this.puffMode = false;
+        this.tool = t; this.puffMode = false; this.advice = '';
         if (this.step === 'dust') this._renderPanel();
         this.announce(`${TOOLS[t].label} selected.`);
     }
@@ -955,7 +956,7 @@ export class DustingMinigame extends MinigameScene {
     _countStroke() {
         if (this.step !== 'dust' || this.puffMode) return;
         this.toolStrokes = (this.toolStrokes || 0) + 1;
-        if (this.toolStrokes === FINE_SWITCH_AFTER_STROKES && this._suggestFeather()) this.announce(FEATHER_SUGGESTION);
+        if (this.toolStrokes === FINE_SWITCH_AFTER_STROKES && this._suggestFeather()) this.advise(FEATHER_SUGGESTION);
     }
 
     _suggestFeather() {
@@ -1151,7 +1152,8 @@ export class DustingMinigame extends MinigameScene {
                     el.querySelector('.dusting-lbl').innerHTML = lblHtml(parts);
                 }
             });
-            this._setDyn('feedback', el => { el.textContent = this.message || this._coach(); });
+            if (this.advice === FEATHER_SUGGESTION && !this._suggestFeather()) this.advice = '';   // no longer true
+            this._setDyn('feedback', el => { el.textContent = this.message || this.advice || this._coach(); });
         } else if (this.step === 'lift') {
             const tc = this.tape.coverage();
             this._setDyn('tape-text', el => { el.textContent = `${pct(tc)} (${tc >= 0.85 ? 'good' : tc >= 0.5 ? 'fair' : 'bubbles left'})`; });
@@ -1174,6 +1176,16 @@ export class DustingMinigame extends MinigameScene {
         if (m.coverage < this.diff.minCoverage) return 'Ridges are coming up. Keep sweeping across the print.';
         if (m.clarity < 0.75) return 'Good start. Cover the rest of the print with light strokes, then lift.';
         return 'The ridges are clear. Lift when you are happy, or fill any gaps first.';
+    }
+
+    /** Advice that can run long (wrong powder, feather brush). It is announced as usual; in short landscape the status
+     *  line is capped at two lines, so the full text also rides on the panel's feedback line, which is not clipped. The
+     *  feedback line is not a live region, so a screen reader still hears it once, from the status line. */
+    advise(msg) {
+        if (!msg) return;
+        this.advice = this.root && this.root.classList.contains('dusting-short') ? msg : '';
+        if (this.advice) this._setDyn('feedback', el => { el.textContent = this.advice; });
+        this.announce(msg);
     }
 
     announce(msg) {

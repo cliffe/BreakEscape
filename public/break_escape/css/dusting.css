@@ -209,6 +209,23 @@
     .dusting-actions .dusting-btn { min-height: 40px; padding: 4px 8px; }
 }
 
+/* Phone portrait (not short): one 44 px bar stays pinned. Only the primary button (Lift, or Peel and mount) is sticky; the
+   wrappers use display: contents so it sticks to the foot of the scrolling frame while the meters and the other buttons stay
+   in flow. DOM order is untouched, so Tab order is unchanged. */
+@media (max-width: 760px) {
+    .dusting-root:not(.dusting-short) .dusting-actions, .dusting-root:not(.dusting-short) .dusting-buttons { display: contents; }
+    .dusting-root:not(.dusting-short) .dusting-meters { border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 8px; }
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary {
+        position: sticky; bottom: 0; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
+        margin: 4px 0; background: var(--d-bg); border-color: var(--d-accent);
+    }
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #0e3b1b; }
+    /* a translucent disabled button would show the meters scrolling under it: stay opaque, dim by colour and border */
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:disabled { opacity: 1; background: var(--d-bg); color: var(--d-dim); border-color: var(--d-line); }
+    .dusting-hc:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #fff; color: #000; }
+    .dusting-root:not(.dusting-short) .dusting-actions .dusting-btn:not(.dusting-primary) { margin: 4px 6px 4px 0; }
+}
+
 /* Short landscape (a phone on its side; the class is set in _layout at 500 px high or less): two columns.
    The canvas sits on the left at a whole-number scale chosen in JS (never below 1x), the title, steps and
    controls on the right; the controls column scrolls on its own and keeps the action row pinned. */
@@ -247,7 +264,9 @@
 .dusting-short[data-step="dust"] .dusting-keys, .dusting-short[data-step="lift"] .dusting-keys { display: none; }
 /* The status line grows with each announcement and would take the panel's room (the strip then rose over the powder line at
    667x375 after a long message); two lines at most, the rest scrolls inside it */
-.dusting-short[data-step="dust"] .dusting-status, .dusting-short[data-step="lift"] .dusting-status { max-height: 32px; overflow-y: auto; }
+.dusting-short[data-step="dust"] .dusting-status, .dusting-short[data-step="lift"] .dusting-status { max-height: 32px; overflow: hidden; }
+/* Long advice (wrong powder, feather brush) is also written to the panel's feedback line in short mode (dusting-game.js advise()),
+   so nothing is lost to the cap; the status line is the screen-reader announcement, hence overflow hidden: no unlabelled scroll stop. */
 .dusting-short .dusting-tools { flex-wrap: nowrap; gap: 4px; margin-bottom: 4px; }
 .dusting-short .dusting-tools .dusting-tool { flex: 1 1 auto; min-width: 0; min-height: 28px; padding: 2px 4px; line-height: 16px; font-size: 16px; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: clip; }
 .dusting-short .dusting-tools .dusting-tool [data-slot], .dusting-short .dusting-actions .dusting-btn [data-slot] { display: none; }
