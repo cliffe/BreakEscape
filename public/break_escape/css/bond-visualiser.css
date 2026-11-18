@@ -530,8 +530,14 @@
    scrollbar with 2px borders, and the label takes the pointer so it can be scrolled. */
 #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
   pointer-events: auto;
-  scrollbar-width: auto;
-  scrollbar-color: var(--bv-gold, #FFD700) #000;
+  scrollbar-width: auto;   /* auto keeps the ::-webkit-scrollbar rules below in force */
+}
+/* Browsers without ::-webkit-scrollbar (Firefox) get the standard colours instead. Chrome
+   121+ ignores the webkit rules once scrollbar-color is set, so it stays out of their way. */
+@supports not selector(::-webkit-scrollbar) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+    scrollbar-color: var(--bv-gold, #FFD700) #000;
+  }
 }
 #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar { width: 12px; }
 #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-track {

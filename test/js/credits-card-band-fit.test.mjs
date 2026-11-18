@@ -156,3 +156,18 @@ test('a resize listener is added while credits run, rAF throttled, and removed o
     assert.match(grab('_showCreditsHold'), /_watchCreditsBand\(\)/);
     assert.match(grab('_startCredits'), /_watchCreditsBand\(\)/);
 });
+
+test('the scroll cue stays pixel style: scrollbar-color only where ::-webkit-scrollbar is missing', () => {
+    // Chrome 121+ ignores the ::-webkit-scrollbar rules once scrollbar-color is set on the element
+    const outside = css.replace(/@supports not selector\(::-webkit-scrollbar\)\s*\{[\s\S]*?\n\}\n/, '');
+    assert.ok(!/scrollbar-color/.test(outside.replace(/\/\*[\s\S]*?\*\//g, '')), 'scrollbar-color only inside @supports not selector(::-webkit-scrollbar)');
+    assert.match(css, /@supports not selector\(::-webkit-scrollbar\)/);
+    assert.match(css, /\.bv-cr-scrolls::-webkit-scrollbar-thumb\s*\{[^}]*border:\s*2px solid/);
+});
+
+test('closing the visualiser mid-credits removes the resize watch', () => {
+    const i = js.indexOf('// Stop any credits immediately');
+    assert.ok(i > 0);
+    const closeBlock = js.slice(i, i + 400);
+    assert.match(closeBlock, /_unwatchCreditsBand\(\);/);
+});

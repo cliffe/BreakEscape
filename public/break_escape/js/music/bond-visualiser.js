@@ -2013,6 +2013,7 @@ function _close_overlay() {
     // Stop any credits immediately (no fade — overlay is closing anyway)
     _creditsHoldToken++;
     _creditsActive = false;
+    _unwatchCreditsBand();
     clearTimeout(_creditsTimerId);  _creditsTimerId  = null;
     clearTimeout(_creditsHideTimer); _creditsHideTimer = null;
     const creditsOverlay = document.getElementById('bv-credits-overlay');
