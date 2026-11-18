@@ -202,6 +202,10 @@ export class KeyOperations {
         if (isCorrect) {
             // Key is correct - all pins are aligned at the shear line
             this.parent.keyInsertion.updateFeedback("Key fits perfectly! Lock unlocked.");
+
+            // The key has opened it: no more mode switching, so the unlock reports 'key'
+            this.parent.keyUnlocked = true;
+            this.parent.toolMgr?.replaceModeRow?.(null);
             
                     // Start the rotation animation for correct key
         this.parent.scene.time.delayedCall(500, () => {
@@ -225,7 +229,11 @@ export class KeyOperations {
             this.flashLockRed();
             
             // Reset key position and show key selection again after a delay
-            setTimeout(() => {
+            clearTimeout(this.parent.keyRetryTimer);
+            this.parent.keyRetryTimer = setTimeout(() => {
+                this.parent.keyRetryTimer = null;
+                // The player switched to picking meanwhile: leave the pick view alone
+                if (!this.parent.keyMode) return;
                 this.parent.keyInsertion.updateKeyPosition(0);
                 // Show key selection again
                 if (this.parent.keySelectionMode) {
@@ -235,7 +243,8 @@ export class KeyOperations {
                         // This is the locksmith-forge.html challenge mode
                         this.parent.keySelection.createKeysForChallenge('correct_key');
                     } else {
-                        // This is the main game - go back to key selection with original inventory keys
+                        // This is the main game - go back to key selection with original inventory keys.
+                        // Never made-up keys when a real list exists (switch from pick mode sets it).
                         this.parent.startWithKeySelection(this.parent.originalInventoryKeys, this.parent.originalCorrectKeyId);
                     }
                 }
@@ -362,9 +371,12 @@ export class KeyOperations {
         this.parent.selectedKeyData = keyData;
         
         // Create the visual key with the selected key data
+        // Save the lock's pin count: a key without pinCount must not leave it undefined
+        const lockPinCount = this.parent.pinCount;
         this.parent.keyData = keyData;
-        this.parent.pinCount = keyData.pinCount;
+        this.parent.pinCount = keyData.pinCount ?? keyData.cuts?.length ?? lockPinCount;
         this.createKey();
+        this.parent.pinCount = lockPinCount;
         
         // Restore the original key data for correctness checking
         this.parent.keyData = originalKeyData;

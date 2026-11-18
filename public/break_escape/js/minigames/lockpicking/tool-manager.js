@@ -170,6 +170,9 @@ export class ToolManager {
         // Switch from key selection mode to lockpicking mode
         console.log('Switching from key mode to lockpicking mode');
 
+        // A correct key is already turning: the unlock is a key unlock
+        if (this.parent.keyUnlocked) return;
+
         // An NPC watching catches the pick (same gate as the direct pick path);
         // the gate closes this minigame and opens the conversation.
         const gate = this.parent.params?.beforeSwitchToPickMode;
@@ -181,6 +184,10 @@ export class ToolManager {
         // to key mode when the player holds a key
         this.replaceModeRow(this.parent.canSwitchToKeyMode ? () => this.buildKeyButtonRow() : null);
         
+        // Cancel a pending wrong-key retry so it cannot rebuild the key panel
+        clearTimeout(this.parent.keyRetryTimer);
+        this.parent.keyRetryTimer = null;
+
         // Exit key mode
         this.parent.keyMode = false;
         this.parent.keySelectionMode = false;
@@ -265,6 +272,8 @@ export class ToolManager {
         // Switch from lockpicking mode to key selection mode
         console.log('Switching from lockpicking mode to key mode');
         
+        if (this.parent.keyUnlocked) return;
+
         // Enter key mode
         this.parent.keyMode = true;
         this.parent.keySelectionMode = true;
@@ -291,11 +300,19 @@ export class ToolManager {
         
         // Show key selection UI with available keys. createKeySelectionUI lives on the
         // KeySelection helper (parent.keySelection), not on the minigame. Pick-first
-        // locks pass availableKeys; key-first locks store the converted list as originalInventoryKeys.
-        const keys = this.parent.availableKeys || this.parent.originalInventoryKeys || this.parent.inventoryKeys;
+        // locks pass availableKeys; key-first locks store the converted list as
+        // originalInventoryKeys (parent.inventoryKeys holds raw items, so it is not used).
+        // requiredKeyId is null in production (the server filters it); it only picks the
+        // highlighted entry and the log line, never the correctness gate.
+        const keys = this.parent.availableKeys || this.parent.originalInventoryKeys;
         const requiredId = this.parent.requiredKeyId ?? this.parent.originalCorrectKeyId ?? null;
         if (keys && keys.length > 0 && this.parent.keySelection) {
-            this.parent.keySelection.createKeySelectionUI(keys, requiredId);
+            // Pick-first locks arrive with no key data and keys without a pinCount
+            if (!this.parent.keyData) this.parent.keyDataGen.generateKeyDataFromPins();
+            const normalised = keys.map(k => ({ ...k, pinCount: k.pinCount ?? k.cuts?.length ?? this.parent.pinCount }));
+            this.parent.originalInventoryKeys ??= normalised;
+            this.parent.originalCorrectKeyId ??= requiredId;
+            this.parent.keySelection.createKeySelectionUI(normalised, requiredId);
             this.parent.keyInsertion.updateFeedback("Select a key to use");
         } else {
             this.parent.keyInsertion.updateFeedback("No keys available");

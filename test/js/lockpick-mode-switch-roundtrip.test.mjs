@@ -6,7 +6,7 @@
 // Run with: node --max-old-space-size=2048 test/js/lockpick-mode-switch-roundtrip.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -16,6 +16,13 @@ const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_esc
 const dir = mkdtempSync(join(tmpdir(), 'mode-switch-test-'));
 writeFileSync(join(dir, 'tool-manager.mjs'), readFileSync(join(js, 'minigames/lockpicking/tool-manager.js'), 'utf8'));
 const { ToolManager } = await import(pathToFileURL(join(dir, 'tool-manager.mjs')).href);
+// Real helpers (key-selection.js imports display-dashes.js; key-operations.js has no imports)
+mkdirSync(join(dir, 'utils'), { recursive: true });
+writeFileSync(join(dir, 'utils/display-dashes.js'), readFileSync(join(js, 'utils/display-dashes.js'), 'utf8'));
+mkdirSync(join(dir, 'minigames/lockpicking'), { recursive: true });
+for (const f of ['key-selection.js', 'key-operations.js']) writeFileSync(join(dir, 'minigames/lockpicking', f), readFileSync(join(js, 'minigames/lockpicking', f), 'utf8'));
+const { KeySelection } = await import(pathToFileURL(join(dir, 'minigames/lockpicking/key-selection.js')).href);
+const { KeyOperations } = await import(pathToFileURL(join(dir, 'minigames/lockpicking/key-operations.js')).href);
 
 // ── minimal DOM: one strip that holds mode rows ──────────────────────────────
 function el(tag) {
@@ -53,7 +60,8 @@ function minigame(extra = {}) {
     const calls = [];
     const feedback = [];
     const mg = {
-        keyMode: true, keySelectionMode: true, params: {},
+        keyMode: true, keySelectionMode: true, params: {}, pinCount: 3, keyData: { cuts: [1, 2, 3] },
+        keyDataGen: { generateKeyDataFromPins() {} },
         canSwitchToPickMode: true, canSwitchToKeyMode: true,
         lockConfig: { resetPinsToOriginalPositions() {} },
         keyInsertion: { updateFeedback: (t) => feedback.push(t) },
@@ -72,7 +80,8 @@ test('defect 1: switching to key mode rebuilds the panel through parent.keySelec
     mg.toolMgr.switchToKeyMode();
     assert.equal(mg.keyMode, true);
     assert.equal(calls.length, 1);
-    assert.deepEqual(calls[0].keys, KEYS);
+    assert.deepEqual(calls[0].keys.map(k => [k.id, k.cuts]), KEYS.map(k => [k.id, k.cuts]));
+    assert.ok(calls[0].keys.every(k => k.pinCount === 3), 'pinCount filled in');
     assert.equal(calls[0].id, 'office_key');
     assert.deepEqual(feedback, ['Select a key to use']);
 });
@@ -163,13 +172,13 @@ test('defect 2: key-first with key and lockpick offers both switches', () => {
     assert.equal(typeof p.beforeSwitchToPickMode, 'function', 'same watcher gate');
 });
 
-test('key-first without a lockpick never offers picking, so a key-only lock cannot be picked', () => {
+test('key-first without a lockpick hides the pick button (the server\'s lockpick check is the real gate)', () => {
     const p = runStarter([keyItem('office_key')]);
     assert.equal(p.canSwitchToPickMode, false);
 });
 
 test('key-ring keys count for the way back, same predicate as the pick-first path', () => {
-    const p = runStarter([ringItem, keyItem('office_key'), pickItem]);
+    const p = runStarter([ringItem, pickItem]);
     assert.equal(p.canSwitchToKeyMode, true);
 });
 
@@ -178,4 +187,112 @@ test('unlock method follows the mode the lock was opened in (key stays "key", pi
         const p = runStarter([keyItem('office_key'), pickItem], { keyMode });
         assert.deepEqual(p.posted, [expected]);
     }
+});
+
+// ── the real helpers behind the round trip ───────────────────────────────────
+test('the helper the tool manager calls really exists on KeySelection', () => {
+    assert.equal(typeof KeySelection.prototype.createKeySelectionUI, 'function');
+});
+
+// A pick-first parent: no keyData, keys with no pinCount, real ToolManager + KeyOperations
+function pickFirstParent() {
+    const log = { feedback: [], panels: [], retries: [], timers: [] };
+    const parent = {
+        keyMode: false, keySelectionMode: false, pinCount: 4, params: {},
+        canSwitchToPickMode: true, canSwitchToKeyMode: true,
+        keyData: null, selectedKeyData: null, sounds: {},
+        availableKeys: [
+            { id: 'a', name: 'A', cuts: [40, 30, 50, 20] },
+            { id: 'b', name: 'B', cuts: [10, 60, 20, 45] },
+        ],
+        lockConfig: { resetPinsToOriginalPositions() {} },
+        keyInsertion: { updateFeedback: (t) => log.feedback.push(t), updateKeyPosition() {} },
+        keyDataGen: { generateKeyDataFromPins() { parent.keyData = { cuts: [40, 30, 50, 20] }; } },
+        keySelection: { createKeySelectionUI: (k, id) => log.panels.push({ k, id }) },
+        startWithKeySelection: (k, id) => log.retries.push({ k, id }),
+        scene: { time: { delayedCall() {} } },
+        keyAnim: { startKeyRotationAnimationWithChamberHoles() {} },
+        complete() {},
+    };
+    parent.toolMgr = new ToolManager(parent);
+    parent.keyOps = new KeyOperations(parent);
+    parent.keyOps.createKey = () => { log.pinCountAtCreate = parent.pinCount; };
+    parent.keyOps.startKeyInsertion = () => {};
+    parent.keyOps.flashLockRed = () => {};
+    return { parent, log };
+}
+function captureTimers() {
+    const real = globalThis.setTimeout, realClear = globalThis.clearTimeout;
+    const timers = [];
+    globalThis.setTimeout = (fn, ms) => { timers.push({ fn, ms, cleared: false }); return timers.length - 1; };
+    globalThis.clearTimeout = (id) => { if (timers[id]) timers[id].cleared = true; };
+    return { timers, restore: () => { globalThis.setTimeout = real; globalThis.clearTimeout = realClear; } };
+}
+
+test('pick-first lock: a wrong key gives the wrong-key path, pinCount survives, only real keys come back', () => {
+    installDom();
+    const t = captureTimers();
+    try {
+        const { parent, log } = pickFirstParent();
+        parent.toolMgr.switchToKeyMode();
+        const offered = log.panels[0].k;
+        assert.ok(offered.every(k => k.pinCount === 4), 'pinCount filled in');
+        assert.deepEqual(offered.map(k => k.id), ['a', 'b']);
+        assert.ok(parent.keyData, 'correct-key data generated');
+        parent.keyOps.selectKey(1, 0, offered[1]);
+        assert.equal(parent.pinCount, 4, 'lock pin count unchanged');
+        assert.equal(log.pinCountAtCreate, 4);
+        parent.keyOps.checkKeyCorrectness();
+        assert.ok(log.feedback.includes("Wrong key! The lock won't turn."));
+        const retry = t.timers.find(x => x.ms === 2000);
+        retry.fn();
+        assert.equal(log.retries.length, 1);
+        assert.deepEqual(log.retries[0].k.map(k => k.id), ['a', 'b'], 'the real list, not made-up keys');
+    } finally { t.restore(); }
+});
+
+test('m2: leaving key mode cancels the pending wrong-key retry; the retry also bails out in pick mode', () => {
+    installDom();
+    const t = captureTimers();
+    try {
+        const { parent, log } = pickFirstParent();
+        parent.toolMgr.switchToKeyMode();
+        parent.keyOps.selectKey(1, 0, log.panels[0].k[1]);
+        parent.keyOps.checkKeyCorrectness();
+        const retry = t.timers.find(x => x.ms === 2000);
+        parent.toolMgr.switchToPickMode();
+        assert.equal(retry.cleared, true);
+        retry.fn(); // even if it fired
+        assert.equal(log.retries.length, 0);
+    } finally { t.restore(); }
+});
+
+test('m2: createKeySelectionUI destroys an earlier panel first', () => {
+    const t = captureTimers();
+    try {
+        let destroyed = 0;
+        const parent = { keySelectionContainer: { destroy: () => destroyed++ }, scene: null, game: null };
+        new KeySelection(parent).createKeySelectionUI([{ id: 'a', cuts: [1] }], 'a');
+        assert.equal(destroyed, 1);
+        assert.equal(parent.keySelectionContainer, null);
+    } finally { t.restore(); }
+});
+
+test('m3: once a correct key is turning, "Switch to Lockpicking" does nothing and the row is gone', () => {
+    const strip = installDom();
+    const t = captureTimers();
+    try {
+        const { parent, log } = pickFirstParent();
+        parent.keyMode = true; parent.keySelectionMode = true;
+        strip.appendChild(parent.toolMgr.buildPickButtonRow());
+        parent.selectedKeyData = { cuts: [40, 30, 50, 20] };
+        parent.keyData = { cuts: [40, 30, 50, 20] };
+        parent.keyOps.checkKeyCorrectness();
+        assert.equal(parent.keyUnlocked, true);
+        assert.equal(strip.children.filter(c => c.className === 'lockpicking-mode-row').length, 0);
+        parent.toolMgr.switchToPickMode();
+        assert.equal(parent.keyMode, true, 'still key mode, so the unlock reports key');
+        parent.toolMgr.switchToKeyMode();
+        assert.equal(log.panels.length, 0);
+    } finally { t.restore(); }
 });

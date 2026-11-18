@@ -230,7 +230,7 @@ test('mode rows round trip pick -> key -> pick -> key without losing a way back'
     try {
         const selections = [];
         const parent = {
-            params: {}, keyMode: true, keySelectionMode: true,
+            params: {}, keyMode: true, keySelectionMode: true, pinCount: 3, keyData: { cuts: [1] }, keyDataGen: { generateKeyDataFromPins() {} },
             canSwitchToPickMode: true, canSwitchToKeyMode: true, availableKeys: [{ id: 'k' }],
             lockConfig: { resetPinsToOriginalPositions() {} },
             keyInsertion: { updateFeedback() {} },

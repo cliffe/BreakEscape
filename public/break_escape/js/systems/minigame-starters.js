@@ -501,7 +501,9 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
     // Start with key selection using inventory keys
     // Wait for the minigame to be fully initialized and lock configuration to be saved
     setTimeout(() => {
-        if (window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.startWithKeySelection) {
+        // Bail out if the player has already switched to picking
+        if (window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.startWithKeySelection &&
+            window.MinigameFramework.currentMinigame.keyMode) {
             // DEFERRED KEY PREPARATION:
             // Regenerate keys after minigame initialization to ensure lock config is saved
             const updatedInventoryKeys = playerKeys.map(key => {
