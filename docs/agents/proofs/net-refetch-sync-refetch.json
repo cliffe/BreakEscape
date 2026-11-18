@@ -1,0 +1,352 @@
+{
+  "mode": "refetch",
+  "gameId": 8928,
+  "base": "http://127.0.0.1:3186",
+  "startedAt": "2026-11-18T10:43:05.551Z",
+  "steps": [
+    {
+      "t": 22319,
+      "step": "page A loaded"
+    },
+    {
+      "t": 25170,
+      "step": "enter comms_room",
+      "ok": true
+    },
+    {
+      "t": 26435,
+      "step": "interact comms_port (plant)",
+      "confirmed": true,
+      "via": "engine-record"
+    },
+    {
+      "t": 27285,
+      "step": "confirm \"Plug it in\"",
+      "ok": true
+    },
+    {
+      "t": 29299,
+      "step": "view open",
+      "minigame": "network-view"
+    },
+    {
+      "t": 41440,
+      "step": "quiet period",
+      "nvBefore": 1,
+      "nvAfterQuiet": 1
+    },
+    {
+      "t": 69129,
+      "step": "page B view",
+      "minigame": "network-view"
+    },
+    {
+      "t": 69134,
+      "step": "page B clicks Unplug",
+      "clicked": true,
+      "at": 69129
+    }
+  ],
+  "checks": {
+    "viewOpenedInA": true,
+    "pageBUnplugResponded": {
+      "status": 200,
+      "t": 69193
+    },
+    "viewDroppedInA": {
+      "closed": true,
+      "reason": "minigame closed",
+      "toast": null,
+      "msAfterUnplugResponse": 3538
+    },
+    "withinFiveSeconds": true,
+    "networkViewedEmits": {
+      "atStart": 1,
+      "endOfRun": 1,
+      "secondEmitWhileOpen": false
+    },
+    "getNetworkA": [
+      27514,
+      32663,
+      37612,
+      42612,
+      47608,
+      52623,
+      57605,
+      62611,
+      67662,
+      72605
+    ],
+    "getNetworkGapsMs": [
+      5149,
+      4949,
+      5000,
+      4996,
+      5015,
+      4982,
+      5006,
+      5051,
+      4943
+    ],
+    "pass": true
+  },
+  "requestLog": [
+    {
+      "t": 27253,
+      "who": "A",
+      "phase": "request",
+      "method": "POST",
+      "path": "/network/plant",
+      "body": "{\"jack_id\":\"comms_port\",\"delta\":true,\"device_id\":\"kit_dropbox\"}"
+    },
+    {
+      "t": 27339,
+      "who": "A",
+      "phase": "response",
+      "method": "POST",
+      "path": "/network/plant",
+      "status": 200
+    },
+    {
+      "t": 27366,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"globalVariables\":{\"n7_armed\":false,\"bench_pc_off\":true,\"n14_seen_off\":false,\"p5_lena_remote\":false,\"servers_offline\":false,\"capture_card_ian\":false,\"capture_card_lena\":false,\"bench_port_planted\":false,\"comms_port_planted\":true},\"notes\":[{\"id\":1794998605197001,\"title\":\"Notepad\",\"text\":\"Use this notepad to review your collected notes and observations.\\n\\nObservation: A handy notepad for keeping tr"
+    },
+    {
+      "t": 27491,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 27514,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 27564,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 32609,
+      "who": "A",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"triggeredEvents\":{\"sam:network_viewed:1\":1},\"scenarioClock\":{\"elapsedMs\":14007},\"timedMessages\":{\"pending\":[],\"delivered\":[]},\"clientTs\":1794998618156}"
+    },
+    {
+      "t": 32661,
+      "who": "A",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 32663,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 32681,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 37612,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 37662,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 42612,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 42659,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 47608,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 48181,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 52623,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 52803,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 57605,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 57767,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 62611,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 62688,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 67526,
+      "who": "B",
+      "phase": "request",
+      "method": "PUT",
+      "path": "/sync_state",
+      "body": "{\"notes\":[{\"id\":1794998605197001,\"title\":\"Notepad\",\"text\":\"Use this notepad to review your collected notes and observations.\\n\\nObservation: A handy notepad for keeping track of important information.\",\"timestamp\":\"2026-11-18T10:43:25.197Z\",\"read\":true,\"important\":false},{\"id\":1794998605217002,\"title\":\"Mission Brief\",\"text\":\"TEST: Access model networks\\n\\nA test floor for networks (ACCESS_MODEL_SL"
+    },
+    {
+      "t": 67617,
+      "who": "B",
+      "phase": "response",
+      "method": "PUT",
+      "path": "/sync_state",
+      "status": 200
+    },
+    {
+      "t": 67626,
+      "who": "B",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 67662,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 67696,
+      "who": "B",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 67742,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 200
+    },
+    {
+      "t": 69134,
+      "who": "B",
+      "phase": "request",
+      "method": "POST",
+      "path": "/network/unplug",
+      "body": "{\"jack_id\":\"comms_port\",\"delta\":true}"
+    },
+    {
+      "t": 69193,
+      "who": "B",
+      "phase": "response",
+      "method": "POST",
+      "path": "/network/unplug",
+      "status": 200
+    },
+    {
+      "t": 72605,
+      "who": "A",
+      "phase": "request",
+      "method": "GET",
+      "path": "/network",
+      "body": ""
+    },
+    {
+      "t": 72664,
+      "who": "A",
+      "phase": "response",
+      "method": "GET",
+      "path": "/network",
+      "status": 404
+    }
+  ],
+  "finishedAt": "2026-11-18T10:44:18.486Z"
+}
