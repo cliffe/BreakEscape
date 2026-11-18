@@ -466,6 +466,18 @@
      "width": 16,
      "x": 128.0,
      "y": 218.0
+    },
+    {
+     "gid": 1499,
+     "height": 50,
+     "id": 70,
+     "name": "",
+     "rotation": 0,
+     "type": "",
+     "visible": true,
+     "width": 44,
+     "x": 165.0,
+     "y": 63.0
     }
    ],
    "opacity": 1,
@@ -557,7 +569,7 @@
   }
  ],
  "nextlayerid": 14,
- "nextobjectid": 70,
+ "nextobjectid": 71,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.2",
@@ -2990,7 +3002,7 @@
    "margin": 0,
    "name": "objects/hospital_extras",
    "spacing": 0,
-   "tilecount": 688,
+   "tilecount": 690,
    "tileheight": 60,
    "tiles": [
     {
@@ -7120,6 +7132,18 @@
      "image": "../objects/lw_chair_e1.png",
      "imageheight": 32,
      "imagewidth": 17
+    },
+    {
+     "id": 698,
+     "image": "../objects/lw_fire_door_propped1.png",
+     "imageheight": 50,
+     "imagewidth": 44
+    },
+    {
+     "id": 699,
+     "image": "../objects/lw_delivery_hatch1.png",
+     "imageheight": 28,
+     "imagewidth": 40
     }
    ],
    "tilewidth": 60

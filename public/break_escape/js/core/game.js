@@ -492,6 +492,8 @@ export function preload() {
     this.load.image('lw_chair_n1', 'objects/lw_chair_n1.png');
     this.load.image('lw_chair_w1', 'objects/lw_chair_w1.png');
     this.load.image('lw_chair_e1', 'objects/lw_chair_e1.png');
+    this.load.image('lw_fire_door_propped1', 'objects/lw_fire_door_propped1.png');
+    this.load.image('lw_delivery_hatch1', 'objects/lw_delivery_hatch1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
