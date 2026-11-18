@@ -1752,9 +1752,9 @@ end
             { "eventPattern": "room_entered:<%= room %>", "condition": "globalVars.raid_clock < '<%= step %>'", "setGlobal": { "raid_clock": "<%= step %>" } },
 <% end %>
 <% if room == 'gallery' %>
-            { "eventPattern": "room_entered:gallery", "condition": "!globalVars.outer_lock_open && !globalVars.hax_jammed", "setGlobal": { "hax_jammed": true } },
+            { "eventPattern": "room_entered:gallery", "cooldown": 0, "condition": "!globalVars.outer_lock_open && !globalVars.hax_jammed", "setGlobal": { "hax_jammed": true } },
 <% else %>
-            { "eventPattern": "room_entered:<%= room %>", "condition": "globalVars.hax_jammed === true", "setGlobal": { "hax_jammed": false } },
+            { "eventPattern": "room_entered:<%= room %>", "cooldown": 0, "condition": "globalVars.hax_jammed === true", "setGlobal": { "hax_jammed": false } },
 <% end %>
 <% end %>
             { "eventPattern": "global_variable_changed:hax_jammed", "condition": "value === false && !globalVars.outer_lock_open", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Lost you up there. I'm back." } },
@@ -2915,8 +2915,8 @@ end
 raid_copy = lambda do |p, id, room, knot, x, y, arms, look|
   r = raid[p]
   maps = after_end.(room)
+  # cooldown 0 on the reveal and the hide below: the default 5 s cooldown let a step out and back in within 5 s skip the reveal after the exit hid the copy (hall_team_present stayed false, no wave option), or skip the hide.
   maps += arms.map do |arm|
-    # cooldown 0: the default 5 s cooldown let a step back out and in again within 5 s skip this reveal after the exit hid the copy (hall_team_present stayed false, no wave option).
     m = { 'eventPattern' => "room_entered:#{room}", 'cooldown' => 0, 'condition' => [raid_guard.(p), arm, '!globalVars.closing_done'].compact.join(' && '), 'setVisible' => true }
     # Playtest B-03: a raid copy standing in the hall lets the player call the team up (ink: hall_team_present). HaX clears it first on entry and on leaving.
     m['setGlobal'] = { 'hall_team_present' => true } if room == 'server_hall'
@@ -3138,8 +3138,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           ],
           "eventMappings": [
             <%= after_end_json.('security_office') %>
-            { "eventPattern": "room_entered:security_office", "condition": "globalVars.vector_on_team === true && !globalVars.vector_ko && globalVars.officer_out !== 'vector' && !globalVars.closing_done", "setVisible": true },
-            { "eventPattern": "room_exited", "condition": "data.roomId === 'security_office'", "setVisible": false },
+            { "eventPattern": "room_entered:security_office", "cooldown": 0, "condition": "globalVars.vector_on_team === true && !globalVars.vector_ko && globalVars.officer_out !== 'vector' && !globalVars.closing_done", "setVisible": true },
+            { "eventPattern": "room_exited", "cooldown": 0, "condition": "data.roomId === 'security_office'", "setVisible": false },
             { "eventPattern": "global_variable_changed:officer_out", "condition": "value === 'vector'", "setVisible": false, "delayMs": 500 }
           ],
           "observations": "Vector beside the records cupboard, frowning at its keypad as if it owes him money."
@@ -4137,8 +4137,8 @@ not_tethered = '!globalVars.nightshade_tethered'
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'core'", "cooldown": 0, "setGlobal": { "at_keypad": true } },
             <%# Confirmation run: his own handover ("Go on through") sets only an ink-local flag, so the card's onPickup and this net set lock_guard_known and his challenge stands down. %>
             { "eventPattern": "item_picked_up:notes", "condition": "data.itemId === 'gallery_code_card' && !globalVars.lock_guard_stood_down", "setGlobal": { "lock_guard_known": true, "lock_guard_stood_down": true } },
-            { "eventPattern": "room_exited", "condition": "data.roomId === 'gallery' && globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
+            { "eventPattern": "room_exited", "cooldown": 0, "condition": "data.roomId === 'gallery' && globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
+            { "eventPattern": "room_entered:gallery", "cooldown": 0, "condition": "globalVars.at_keypad === true", "setGlobal": { "at_keypad": false } },
             { "eventPattern": "player_spotted:lock_guard", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
             { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'core' && !globalVars.lock_guard_known && !globalVars.fonoti_ko", "onceOnly": true, "bark": "That takes the shift code. It's on my card, and it stays there." },
             { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'core' && globalVars.ghost_gift === 'code' && !globalVars.fonoti_ko", "onceOnly": true, "bark": "Who gave out the code?" },
