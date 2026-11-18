@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: dispense on unlock",
+  "description": "Test of containers that hand their contents over when opened: a PIN dispenser with one item, a password dispenser with two, and a dispenser that holds a fixture it cannot hand over, so it falls back to the container screen. Nothing to solve beyond the codes.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "dispense_on_unlock",
+  "test_objective": "Prove a container marked dispenses puts its items straight into the inventory with one toast when the PIN or password is accepted, never twice on a fast second press, and opens the container screen instead when any item cannot be handed over"
+}
