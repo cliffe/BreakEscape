@@ -193,7 +193,7 @@ Kevin Park: I've set up a Kali Linux workstation in there for you—use it for t
     -> get_lockpicks
 + {not given_keycard} [I need the server room keycard]
     -> get_keycard
-+ {not asked_about_passwords and influence >= 2} [Tell me about password security here]
++ {not asked_about_passwords and (influence >= 2 or security_audit_given)} [Tell me about password security here]
     -> ask_passwords
 + {not asked_about_derek and influence >= 3} [What else can you tell me about Derek?]
     -> ask_about_derek
@@ -537,15 +537,15 @@ Kevin Park: Thank you. Seriously, thank you for taking the time to go through th
     ~ influence += 3
     # influence_increased
 }
-{audit_correct_answers == 3:
-    Kevin Park: You've identified some key issues. A few things we see differently, but overall you're confirming my main worries.
-    Kevin Park: At least I know I'm not completely off base with my concerns.
-    ~ influence += 2
-    # influence_increased
-}
 {audit_correct_answers == 4:
     Kevin Park: Most of that matches what I've seen. There's one point I'd argue with, but you've got the shape of it.
     Kevin Park: It helps, hearing someone else say it out loud. I'll take that over being told I'm paranoid.
+    ~ influence += 2
+    # influence_increased
+}
+{audit_correct_answers == 3:
+    Kevin Park: You've identified some key issues. A few things we see differently, but overall you're confirming my main worries.
+    Kevin Park: At least I know I'm not completely off base with my concerns.
     ~ influence += 2
     # influence_increased
 }

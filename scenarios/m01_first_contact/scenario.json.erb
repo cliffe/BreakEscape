@@ -1073,28 +1073,6 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
-              "_comment": "Abort beat (D137c): HaX rings 8 s after the abort text with the stay-put call. after_abort is in m01_phone_agent0x99.ink. A reload inside the window re-arms it through the game_loaded twin; m01_abort_call_rung stops a second ring.",
-              "eventPattern": "attack_aborted",
-              "onceOnly": true,
-              "delayMs": 8000,
-              "conversationMode": "phone-chat",
-              "targetKnot": "after_abort",
-              "ring": { "onMissed": "callback" },
-              "callLabel": "SAFETYNET secure line",
-              "setGlobal": { "m01_abort_call_rung": true }
-            },
-            {
-              "eventPattern": "game_loaded",
-              "condition": "globalVars.player_aborted_attack === true && globalVars.m01_abort_call_rung !== true",
-              "onceOnly": true,
-              "delayMs": 8000,
-              "conversationMode": "phone-chat",
-              "targetKnot": "after_abort",
-              "ring": { "onMissed": "callback" },
-              "callLabel": "SAFETYNET secure line",
-              "setGlobal": { "m01_abort_call_rung": true }
-            },
-            {
               "eventPattern": "attack_launched",
               "onceOnly": true,
               "completeTask": "deactivate_launch",
@@ -1216,6 +1194,29 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "cooldown": 0,
               "condition": "globalVars.maya_away === true",
               "setGlobal": { "maya_away": false }
+            },
+            {
+              "_comment": "Abort beat (D137c): HaX rings 8 s after the abort text with the stay-put call. after_abort is in m01_phone_agent0x99.ink. A reload inside the window re-arms it through the game_loaded twin; m01_abort_call_rung stops a second ring.",
+              "eventPattern": "attack_aborted",
+              "condition": "globalVars.start_debrief_cutscene !== true",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "conversationMode": "phone-chat",
+              "targetKnot": "after_abort",
+              "ring": { "onMissed": "callback", "callbackWhen": "globalVars.start_debrief_cutscene !== true", "ringWhile": "globalVars.start_debrief_cutscene !== true" },
+              "callLabel": "SAFETYNET secure line",
+              "setGlobal": { "m01_abort_call_rung": true }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.player_aborted_attack === true && globalVars.m01_abort_call_rung !== true && globalVars.start_debrief_cutscene !== true",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "conversationMode": "phone-chat",
+              "targetKnot": "after_abort",
+              "ring": { "onMissed": "callback", "callbackWhen": "globalVars.start_debrief_cutscene !== true", "ringWhile": "globalVars.start_debrief_cutscene !== true" },
+              "callLabel": "SAFETYNET secure line",
+              "setGlobal": { "m01_abort_call_rung": true }
             }
           ]
         },

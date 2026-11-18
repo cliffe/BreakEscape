@@ -2,7 +2,8 @@
 // Root divert: a finished conversation restarts from the root (npc-conversation-state.js).
 VAR heard_ex_interns = false
 VAR heard_ex_biscuits = false
-// Synced globals: set once the player has heard Derek's name from Kevin or Maya.
+// Synced globals (talked_to_kevin, talked_to_maya): set once the player has heard Derek's name from Kevin or Maya.
+// told_derek_rumour is NPC-local, not synced: it is saved with this NPC's own ink state.
 VAR talked_to_kevin = false
 VAR talked_to_maya = false
 VAR told_derek_rumour = false
