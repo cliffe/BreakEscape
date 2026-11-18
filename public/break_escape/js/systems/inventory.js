@@ -10,6 +10,19 @@ import { setHudLabel, clearHudLabel } from '../ui/info-label.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 import { markObjectConsumed } from './consumables.js';
 
+// The img is only as big as its sprite (the phone is 22x44 px), but the slot is 60px: a press
+// or hover on the slot beside the img is forwarded to the img's own handlers, with the
+// pointer position, so the whole slot is the click target (touch minimum 32 px).
+export function forwardSlotPointer(slot, img) {
+    for (const type of ['click', 'mouseenter', 'mouseleave']) {
+        slot.addEventListener(type, (e) => {
+            if (e.target === img || img.contains(e.target)) return;
+            if (type !== 'click' && e.target !== slot) return;
+            img.dispatchEvent(new MouseEvent(type, { clientX: e.clientX, clientY: e.clientY, bubbles: false }));
+        });
+    }
+}
+
 // Helper function to create a unique identifier for an item
 export function createItemIdentifier(scenarioData) {
     if (!scenarioData) return 'unknown';
@@ -1042,6 +1055,7 @@ export async function addToInventory(sprite) {
 
         // Add to slot
         slot.appendChild(itemImg);
+        forwardSlotPointer(slot, itemImg);
         
         // Add to inventory array
         window.inventory.items.push(itemImg);
@@ -1246,6 +1260,7 @@ function updateKeyRingDisplay() {
 
     // Add to slot
     slot.appendChild(itemImg);
+    forwardSlotPointer(slot, itemImg);
     
     // Store references
     keyRing.slot = slot;

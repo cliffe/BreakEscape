@@ -25,6 +25,7 @@
     align-items: center;
     position: relative;
     background: rgb(149 157 216 / 80%);
+    cursor: pointer; /* the whole slot is the click target (forwardSlotPointer, inventory.js) */
 }
 
 /* Pulse animation for newly added items */
@@ -68,7 +69,6 @@
     left: -10px;
     color: white;
     padding: 4px 8px;
-    border-radius: 4px;
     font-size: 18px;
     white-space: nowrap;
     pointer-events: none;
@@ -92,7 +92,6 @@
     right: -5px;
     background: #ff6b6b;
     color: white;
-    border-radius: 50%;
     width: 18px;
     height: 18px;
     font-size: 10px;

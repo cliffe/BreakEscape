@@ -167,8 +167,7 @@ html .game-display-dialog {
   position: relative;
   width: var(--combat-button-size);
   height: var(--combat-button-size);
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--face) 70%, #fff) 0, var(--face) 70%);
+  background: var(--face);
   /* stepped ring: black edge, a thick bezel, black edge, then the raised
      base below in the bezel's shadow colour */
   box-shadow:
@@ -342,7 +341,6 @@ html .game-display-dialog {
     right: -5px;
     background: #ff6b6b;
     color: white;
-    border-radius: 50%;
     width: 18px;
     height: 18px;
     font-size: 10px;

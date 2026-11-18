@@ -214,7 +214,9 @@
   flex-direction: column;
   gap: 10px;
   font-size: 6px;
-  overflow: hidden;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* a short window scrolls the panel instead of cutting the last VIS MODE button */
   box-shadow: 0 0 8px rgba(0,255,65,0.08);
 }
 
@@ -382,9 +384,15 @@
 /* ── Mode selector in right panel ──────────────────────────────────────── */
 
 #bond-vis-overlay .bv-mode-group-panel {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
-  flex-wrap: wrap;
+}
+
+/* three to a row in the 160px panel: 11 buttons take four short rows */
+#bond-vis-overlay .bv-mode-group-panel .bv-btn {
+  padding: 6px 2px;
+  text-align: center;
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
