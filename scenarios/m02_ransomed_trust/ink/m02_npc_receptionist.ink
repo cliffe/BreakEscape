@@ -244,7 +244,7 @@ Bernie Nwosu: Gary's in there. He's not come out since half ten, so knock proper
 
 {bernie_key_withheld:
     Bernie Nwosu: That's all you get from me.
-    Bernie Nwosu: The keys stay on my hook. You can find IT on your own.
+    Bernie Nwosu: The keys stay on my hook. You can knock all you like.
     Narrator: She goes back to her clipboard as if you've already left.
 - else:
     {was_honest:

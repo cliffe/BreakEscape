@@ -190,7 +190,7 @@ test('Val found_pass_pretext: reload mid-choice resumes; a wrong answer sends he
     assert.equal(v(s3, 'cleared_after_burn'), true);
 });
 
-test('Val found_agency_pass: refuses, retires the option for the story, and offers it again after a reload', () => {
+test('Val found_agency_pass: refuses, and the refusal persists across re-talks and reloads', () => {
     const g = { ...COVER_BURNED, holds_agency_pass: true };
     const s = open(JSONS.val, { globals: g });
     const hub = run(s);
@@ -206,14 +206,32 @@ test('Val found_agency_pass: refuses, retires the option for the story, and offe
     s.ChoosePathString('cover_challenge_options');
     assert.ok(!run(s).choices.some(c => c.includes(SHOW)), 'hidden after the refusal');
 
-    // the flag is local on purpose: a fresh talk offers it and Val refuses once more
-    const s2 = open(JSONS.val, { globals: g });
-    assert.ok(run(s2).choices.some(c => c.includes(SHOW)));
+    // NPC-local variables are saved and seeded back (npc-conversation-state.js), so a later
+    // talk or a page reload restores agency_pass_refused and the option stays hidden
+    const kept = agencyRefusedLocals(s);
+    const s2 = open(JSONS.val, { globals: g, locals: kept });
+    assert.ok(!run(s2).choices.some(c => c.includes(SHOW)), 'still hidden on a later talk after the saved locals are restored');
+
+    // a contractor pass arriving later reopens the option
+    const s4 = open(JSONS.val, { globals: { ...g, holds_contractor_pass: true }, locals: kept });
+    assert.ok(run(s4).choices.some(c => c.includes(SHOW)), 'a contractor pass makes the option available again');
+
     // and a save taken before the refusal replays to the same refusal
     const s3 = open(JSONS.val, { saved });
     const r3 = pick(s3, SHOW);
     assert.ok(r3.text.some(l => /Away from my door/.test(l)));
 });
+
+// What the engine keeps for an NPC across a page reload: the local ink variables only.
+function agencyRefusedLocals(s) {
+    return { agency_pass_refused: v(s, 'agency_pass_refused'), pretext_story_told: v(s, 'pretext_story_told'), influence: v(s, 'influence') };
+}
+/** A page reload: a fresh story seeded with the saved globals and locals, restarted at `start`. */
+const pageReload = (json, s, names, globals = {}) => {
+    const locals = {};
+    for (const n of names) locals[n] = v(s, n);
+    return open(json, { globals, locals });
+};
 
 test('Val: holding both passes asks the contractor pretext, not the agency refusal', () => {
     const s = open(JSONS.val, { globals: { ...COVER_BURNED, holds_agency_pass: true, holds_contractor_pass: true } });
@@ -333,4 +351,97 @@ test("Kim's badge: the give_item tag selects by name, so a game made before the 
         assert.equal(given[0], badge, `${label}: it is the countersigned badge`);
         assert.equal(left, false, `${label}: it leaves Kim's inventory`);
     }
+});
+
+
+// ---------------------------------------------------------------- R2 m5: Val's pretext costs something
+
+test('Val found_pass_pretext: a wrong story costs influence and a second story is not heard', () => {
+    const g = { ...COVER_BURNED, holds_contractor_pass: true };
+    const s = open(JSONS.val, { globals: g, locals: { influence: 12 } });
+    run(s);
+    pick(s, SHOW);
+    pick(s, 'Estates');
+    assert.equal(v(s, 'influence'), 2, 'a wrong story costs 10');
+    assert.equal(v(s, 'pretext_story_told'), true);
+    assert.equal(v(s, 'cover_restored'), false);
+    // later talk (locals restored): the lanyard option is gone, so no second story can be tried
+    const s2 = pageReload(JSONS.val, s, ['influence', 'pretext_story_told'], g);
+    assert.ok(!run(s2).choices.some(c => c.includes(SHOW)), 'no second story');
+    // the other routes are still on offer (argument, Bernie when he trusts, the fight)
+    assert.ok(s2.currentChoices.some(c => /Who benefits/.test(c.text)), 'the argument route remains');
+    assert.ok(s2.currentChoices.some(c => /Fight her/.test(c.text)), 'so does the hard way');
+    // Gary handing over a pass later reopens the option
+    const s3 = pageReload(JSONS.val, s, ['influence', 'pretext_story_told'], { ...g, lanyard_issued: true, gary_lanyard_issued: true });
+    assert.ok(run(s3).choices.some(c => c.includes(SHOW)), 'an issued pass is still accepted');
+});
+
+// ---------------------------------------------------------------- R2 m2: page reload, not just in-session restore
+
+test('page reload restarts at start and re-asks Gary cost_check once, not duplicated', () => {
+    const s = open(JSONS.gary, { locals: { gary_influence: 30, met_gary: true }, path: 'keycard_request' });
+    run(s);
+    // the page reloads: only the local variables come back, and the story starts at `start`
+    const s2 = pageReload(JSONS.gary, s, ['gary_influence', 'met_gary', 'cost_checked', 'cost_failed']);
+    const hub = run(s2);
+    assert.ok(hub.text.some(l => /Yeah\?|What now\?|Any joy\?/.test(l)), 'start -> returning -> hub');
+    assert.equal(hub.choices.filter(c => c.includes('I need into the server room')).length, 1, 'one card option on the hub');
+    const asked = pick(s2, 'I need into the server room');
+    assert.equal(asked.text.filter(l => /What did I cost it at/.test(l)).length, 1, 'the question is asked once');
+    assert.equal(asked.choices.length, 4, 'four options');
+    assert.equal(new Set(asked.choices).size, 4, 'none duplicated');
+    assert.equal(v(s2, 'cost_checked'), false);
+    const done = pick(s2, 'Eighty-five');
+    assert.ok(done.tags.some(t => t.startsWith('give_item:keycard')));
+});
+
+test('page reload: Val found_pass_pretext is offered once from start, with no duplicate lanyard option', () => {
+    const g = { ...COVER_BURNED, holds_contractor_pass: true };
+    const s = open(JSONS.val, { globals: g });
+    run(s);
+    const s2 = pageReload(JSONS.val, s, ['influence', 'agency_pass_refused', 'pretext_story_told'], g);
+    const hub = run(s2);
+    assert.equal(hub.choices.filter(c => c.includes(SHOW)).length, 1, 'one lanyard option');
+    const asked = pick(s2, SHOW);
+    assert.equal(asked.choices.length, 3);
+    assert.ok(asked.text.some(l => /Blank IT pass/.test(l)));
+    assert.equal(asked.text.filter(l => /Blank IT pass/.test(l)).length, 1, 'asked once');
+});
+
+test('page reload: Bernie key_on_badge is offered once from start', () => {
+    const s = open(JSONS.bernie, { globals: BERNIE_WITHHELD, locals: { gave_key: true } });
+    run(s);
+    const s2 = pageReload(JSONS.bernie, s, ['gave_key', 'bernie_influence'], BERNIE_WITHHELD);
+    const r = run(s2);
+    assert.equal(r.choices.filter(c => c.includes(BADGE)).length, 1, 'one badge option');
+    const got = pick(s2, BADGE);
+    assert.ok(got.tags.includes('give_item:key:it_override_key'));
+});
+
+// ---------------------------------------------------------------- R2 m2: Bernie's offer_key decision
+
+test('Bernie offer_key: a rude player (influence 0) is signed in but gets no key', () => {
+    const s = open(JSONS.bernie, { locals: { bernie_influence: 0 }, path: 'offer_key' });
+    const r = run(s);
+    assert.ok(r.tags.includes('set_global:bernie_key_withheld:true'));
+    assert.equal(v(s, 'bernie_key_withheld'), true);
+    assert.equal(v(s, 'bernie_gave_key'), false);
+    assert.ok(!r.tags.some(t => t.startsWith('give_item')), 'no key');
+    assert.ok(r.text.some(l => /The keys stay on my hook/.test(l)));
+    assert.ok(!r.text.some(l => /find IT on your own/.test(l)), 'the old put-down is gone');
+});
+
+test('Bernie offer_key: a civil player (influence above 0) gets the key', () => {
+    const s = open(JSONS.bernie, { locals: { bernie_influence: 2 }, path: 'offer_key' });
+    const r = run(s);
+    assert.ok(r.tags.includes('give_item:key:it_override_key'));
+    assert.ok(r.tags.includes('set_global:bernie_gave_key:true'));
+    assert.equal(v(s, 'bernie_gave_key'), true);
+    assert.equal(v(s, 'bernie_key_withheld'), false);
+});
+
+test('Bernie offer_key: after a burn she is not withholding (met_after_burn)', () => {
+    const s = open(JSONS.bernie, { locals: { bernie_influence: 0, met_after_burn: true }, path: 'offer_key' });
+    const r = run(s);
+    assert.ok(r.tags.includes('give_item:key:it_override_key'));
 });

@@ -52,7 +52,8 @@ VAR holds_agency_pass = false     // Synced: the player has picked up Doyle's ag
 VAR ward_nurse_ko = false         // Synced
 VAR gary_ko = false               // Synced
 VAR seen_wall_safe = false        // Synced: the player has been in the security office
-VAR agency_pass_refused = false   // local on purpose: after a reload the option returns and Val refuses once more
+VAR agency_pass_refused = false   // local, saved with the NPC's variables: after a refusal the lanyard option stays hidden on re-talk and after a reload, until a contractor pass or an issued pass arrives
+VAR pretext_story_told = false    // local, saved: the player gave Val a wrong story for a found contractor pass; a second story is not heard
 VAR asked_wall_safe = false
 VAR bernie_vouched = false
 VAR dr_kim_met = false
@@ -197,7 +198,7 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
 -> cover_challenge_options
 
 === cover_challenge_options ===
-+ {staff_lanyard_obtained and (holds_contractor_pass or lanyard_issued or not agency_pass_refused)} [Show her the lanyard.]
++ {staff_lanyard_obtained and (lanyard_issued or (not pretext_story_told and (holds_contractor_pass or not agency_pass_refused)))} [Show her the lanyard.]
     -> show_lanyard
 
 + {bernie_vouched} [Ring Bernie on reception. She's logged a correction under her own name.]
@@ -290,6 +291,9 @@ Val Okonkwo: Blank IT pass. So what are you here for, on an IT pass?
     -> pretext_failed
 
 === pretext_failed ===
+~ pretext_story_told = true
+~ influence -= 10
+# influence_decreased
 Val Okonkwo: Go away and come back with a story that matches your pass.
 #exit_conversation
 -> DONE
@@ -389,7 +393,7 @@ Narrator: She unlocks the office door and stands aside.
     Val Okonkwo: "Who benefits?" is what people say when they've got none of those.
 }
 
-+ {staff_lanyard_obtained and (holds_contractor_pass or lanyard_issued or not agency_pass_refused)} [Fine. Here.]
++ {staff_lanyard_obtained and (lanyard_issued or (not pretext_story_told and (holds_contractor_pass or not agency_pass_refused)))} [Fine. Here.]
     -> show_lanyard
 
 + {bernie_vouched} [Then ring Bernie. She's already logged it.]
