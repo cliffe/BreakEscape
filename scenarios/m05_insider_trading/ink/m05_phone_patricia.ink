@@ -59,6 +59,7 @@ VAR torres_suspected = false // Synced scenario global: enough on Torres to sear
 VAR found_door_log = false
 VAR found_halloran_alibi = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
+VAR ashworth_named = false // Synced scenario global: the player named Ben Ashworth to Patricia and the log cleared him; read by the debrief
 VAR halloran_questioned = false
 VAR found_ashworth_notice = false // Synced scenario global (D136 a): Ben Ashworth's final-demand notice has been read
 VAR found_ashworth_vetting = false // Synced scenario global (D136 a): Ben Ashworth's vetting folder is in the notes
@@ -205,7 +206,7 @@ Ben. Why?
 // lint: call-knot
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
-+ {ashworth_lead()} [He's broke. His file and the final demand say so.]
++ {ashworth_lead()} [He's broke, and he works nights.]
     -> phone_ashworth_money
 + {found_door_log} [His badge is on the server hallway on the log.]
     -> phone_ashworth_hallway
@@ -216,7 +217,7 @@ Ben. Why?
 {torres_identified: -> hub}
 #speaker:patricia_morgan
 {found_door_log:
-    That's why he might. It isn't how. Ben's on that log once, Thursday the 24th, eight in the evening, on his own badge.
+    That's why he might. It isn't how. Ben's on that log one night, Thursday the 24th, eight in the evening, on his own badge.
     -> phone_ashworth_cleared
 }
 Skint and on the overnight rota. That's a lead, not a case. Half my caseload is skint.
@@ -229,7 +230,7 @@ Owen keeps the badge readers. See when Ben's really in that hallway, then ring b
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 #speaker:patricia_morgan
-Once. Eight on a Thursday evening, six minutes in the hallway, on his own badge, 4419.
+Once. Front door at five past eight on a Thursday evening, the hallway six minutes later, on his own badge, 4419.
 -> phone_ashworth_cleared
 
 === phone_ashworth_cleared ===
@@ -237,6 +238,7 @@ Once. Eight on a Thursday evening, six minutes in the hallway, on his own badge,
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 #speaker:patricia_morgan
+~ ashworth_named = true
 ~ torres_reason_guessed = true
 The transfers I flagged run between two and four in the morning.
 The first night went in on the spare, 4471. Ben isn't either of those.

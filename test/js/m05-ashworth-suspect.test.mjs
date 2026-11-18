@@ -61,7 +61,7 @@ test('scenario: third folder, notice, globals, and the KO drop', { skip }, () =>
     const notice = (rooms.open_office_area.objects || []).find(o => o.id === 'ashworth_final_notice');
     assert.ok(notice && notice.readable && notice.takeable);
     assert.equal(notice.onRead.setVariable.found_ashworth_notice, true);
-    for (const g of ['found_ashworth_vetting', 'found_ashworth_notice', 'ashworth_lead']) assert.equal(scenario.globalVariables[g], false, g);
+    for (const g of ['found_ashworth_vetting', 'found_ashworth_notice', 'ashworth_lead_texted', 'ashworth_named']) assert.equal(scenario.globalVariables[g], false, g);
     // ids and names unique across every item (the server resolves by id OR name)
     const seen = new Map();
     const walk = (o) => { if (!o || typeof o !== 'object') return; if (Array.isArray(o)) return o.forEach(walk);
@@ -71,10 +71,10 @@ test('scenario: third folder, notice, globals, and the KO drop', { skip }, () =>
 });
 
 test('scenario: one HaX reaction to the lead, latched once, dash-free, no culprit named', { skip }, () => {
-    const latches = hax.eventMappings.filter(m => m.setGlobal && m.setGlobal.ashworth_lead);
+    const latches = hax.eventMappings.filter(m => m.setGlobal && m.setGlobal.ashworth_lead_texted);
     assert.deepEqual(latches.map(m => m.eventPattern).sort(), ['global_variable_changed:found_ashworth_notice', 'global_variable_changed:found_ashworth_vetting']);
     latches.forEach(m => assert.ok(m.onceOnly));
-    const r = hax.eventMappings.filter(m => m.eventPattern === 'global_variable_changed:ashworth_lead');
+    const r = hax.eventMappings.filter(m => m.eventPattern === 'global_variable_changed:ashworth_lead_texted');
     assert.equal(r.length, 1);
     assert.ok(r[0].onceOnly);
     assert.equal(r[0].sendTimedMessage.skipIfGlobal, 'torres_identified');
@@ -147,4 +147,9 @@ test('the Ashworth lines carry no em dash', () => {
     const src = ['m05_npc_patricia_morgan.ink', 'm05_phone_patricia.ink', 'm05_phone_agent_0x99.ink'].map(ink).join('\n');
     const block = src.split('\n').filter((l, i, a) => /ashworth|Ben/i.test(l) && !/^\s*(\/\/|VAR)/.test(l));
     for (const l of block) assert.doesNotMatch(l, /—|–/);
+});
+
+test('scenario: the Ashworth mappings are the LAST HaX mappings, so no saved once-index moves', { skip }, () => {
+    const tail = hax.eventMappings.slice(-3).map(m => m.eventPattern);
+    assert.deepEqual(tail, ['global_variable_changed:found_ashworth_notice', 'global_variable_changed:found_ashworth_vetting', 'global_variable_changed:ashworth_lead_texted']);
 });

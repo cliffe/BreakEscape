@@ -809,7 +809,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "found_halloran_vetting": false,
     "found_ashworth_vetting": false,
     "found_ashworth_notice": false,
-    "ashworth_lead": false,
+    "ashworth_lead_texted": false,
+    "ashworth_named": false,
     "door_log_reasoned": false,
     "it_notice_read": false,
 
@@ -1326,22 +1327,6 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             },
 <% end %>
 <% end %>
-<% %w[found_ashworth_notice found_ashworth_vetting].each do |g| %>
-            {
-              "_comment": "D136 a: either Ashworth lead latches ashworth_lead once, so HaX texts once however the player finds him. && only.",
-              "eventPattern": "global_variable_changed:<%= g %>",
-              "condition": "value === true",
-              "onceOnly": true,
-              "setGlobal": { "ashworth_lead": true }
-            },
-<% end %>
-            {
-              "_comment": "D136 a: one HaX reaction to the Ashworth lead. Fair and unspoiled: it names no culprit and sends the player to the badge log. skipIfGlobal drops it after the naming.",
-              "eventPattern": "global_variable_changed:ashworth_lead",
-              "condition": "value === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That makes him a lead, not a name. Test his times against the badge log before you spend one.", "skipIfGlobal": "torres_identified" }
-            },
             {
               "_comment": "PASS 4 fix 4 (M5: now her call): recruiter_texted goes true when her ring is offered, while the player is being sent to the vault, so HaX flags the number. Single-term condition (&&-only rule). Skipped if the player has already rung her back.",
               "eventPattern": "global_variable_changed:recruiter_texted",
@@ -1597,7 +1582,23 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             { "eventPattern": "npc_ko:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_attacked:bernadette_lyons", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "global_variable_changed:qdc_staff_upset", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
-            { "eventPattern": "global_variable_changed:torres_identified", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } }
+            { "eventPattern": "global_variable_changed:torres_identified", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
+<% %w[found_ashworth_notice found_ashworth_vetting].each do |g| %>
+            {
+              "_comment": "D136 a: either Ashworth lead latches ashworth_lead_texted once, so HaX texts once however the player finds him. && only.",
+              "eventPattern": "global_variable_changed:<%= g %>",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": { "ashworth_lead_texted": true }
+            },
+<% end %>
+            {
+              "_comment": "D136 a: one HaX reaction to the Ashworth lead. Fair and unspoiled: it names no culprit and sends the player to the badge log. skipIfGlobal drops it after the naming.",
+              "eventPattern": "global_variable_changed:ashworth_lead_texted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That makes him a lead, not a name. Test his times against the badge log before you spend one.", "skipIfGlobal": "torres_identified" }
+            }
           ]
         },
         {

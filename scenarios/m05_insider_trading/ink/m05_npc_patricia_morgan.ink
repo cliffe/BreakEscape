@@ -56,6 +56,7 @@ VAR torres_suspected = false // Synced scenario global: enough on Torres to sear
 VAR found_door_log = false
 VAR found_halloran_alibi = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by HaX (m05_phone_agent_0x99) and Patricia's phone (m05_phone_patricia)
+VAR ashworth_named = false // Synced scenario global: the player named Ben Ashworth to Patricia and the log cleared him; read by the debrief
 VAR halloran_questioned = false
 VAR found_ashworth_notice = false // Synced scenario global (D136 a): Ben Ashworth's final-demand notice has been read; set by its onRead
 VAR found_ashworth_vetting = false // Synced scenario global (D136 a): Ben Ashworth's vetting folder is in the notes; set by its onRead and at the hand-over
@@ -407,7 +408,7 @@ Patricia Morgan: Ben. Why?
 
 === ashworth_why ===
 {torres_identified: -> hub}
-+ {ashworth_lead()} [He's broke. His file and the final demand say so.]
++ {ashworth_lead()} [He's broke, and he works nights.]
     -> ashworth_money
 + {found_door_log} [His badge is on the server hallway on the log.]
     -> ashworth_hallway
@@ -416,7 +417,7 @@ Patricia Morgan: Ben. Why?
 {torres_identified: -> hub}
 #speaker:patricia_morgan
 {found_door_log:
-    Patricia Morgan: That's why he might. It isn't how. Ben's on that log once, Thursday the 24th, eight in the evening, on his own badge.
+    Patricia Morgan: That's why he might. It isn't how. Ben's on that log one night, Thursday the 24th, eight in the evening, on his own badge.
     -> ashworth_cleared
 }
 Patricia Morgan: Skint and on the overnight rota. That's a lead, not a case. Half my caseload is skint.
@@ -428,12 +429,13 @@ Patricia Morgan: Owen keeps the badge readers. See when Ben's really in that hal
 === ashworth_hallway ===
 {torres_identified: -> hub}
 #speaker:patricia_morgan
-Patricia Morgan: Once. Eight on a Thursday evening, six minutes in the hallway, on his own badge, 4419.
+Patricia Morgan: Once. Front door at five past eight on a Thursday evening, the hallway six minutes later, on his own badge, 4419.
 -> ashworth_cleared
 
 === ashworth_cleared ===
 {torres_identified: -> hub}
 #speaker:patricia_morgan
+~ ashworth_named = true
 ~ torres_reason_guessed = true
 ~ patricia_influence -= 1
 #influence_decreased

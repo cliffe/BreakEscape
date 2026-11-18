@@ -70,6 +70,7 @@ VAR bernadette_ko = false
 // Whodunnit (PASS 4)
 VAR found_door_log = false
 VAR halloran_accused = false
+VAR ashworth_named = false // Synced scenario global: Ben Ashworth was named to Patricia and cleared by the badge log
 VAR door_log_reasoned = false
 VAR halloran_questioned = false
 VAR found_halloran_vetting = false
@@ -418,6 +419,9 @@ Agent HaX: Once you were in, one account was allowed to run far more than its jo
     // Round 2 (m5): the lesson the two vetting files set up.
     {found_halloran_vetting:
         Agent HaX: Halloran had the same recruiter at her table in Zurich. She reported it, late. Torres never reported anything.
+    }
+    {ashworth_named:
+        Agent HaX: And you didn't hang Ben Ashworth on a bank statement. You checked the log first. That's the job.
     }
 - else:
     Agent HaX: You found him by what he did. Next time, look for the signs that come before.
