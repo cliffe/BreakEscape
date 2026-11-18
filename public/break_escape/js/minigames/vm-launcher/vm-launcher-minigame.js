@@ -61,6 +61,8 @@ export class VmLauncherMinigame extends MinigameScene {
         if (this.vmPanelRefused) {
             console.warn(`VM launcher: refused the server's VM panel URL (${rawPanelUrl.length} characters)`);
         }
+        // D144: the session's VM set was handed back. The panel, IPs and console are all hidden.
+        this.vmSetReleased = this.hacktivityMode && window.breakEscapeConfig?.vmSetState === 'released';
         this.postitNote = params.postitNote || '';
         // Optional one-line scenario note shown under the VM steps (where the flags go back to).
         this.flagNote = typeof params.flagNote === 'string' ? params.flagNote : '';
@@ -91,14 +93,14 @@ export class VmLauncherMinigame extends MinigameScene {
         // to its default (attack VMs on, "*server*" targets stay locked). Non-blocking and
         // idempotent server-side; the vm_panel endpoint re-checks when the iframe loads.
         // Standalone mode never calls it.
-        if (this.hacktivityMode) {
+        if (this.hacktivityMode && !this.vmSetReleased) {
             this.requestConsoleUnlock();
         }
 
         // Re-enabled: root causes fixed — user_not_authorized now uses root_path (not
         // request.referrer), vm_panel? policy includes admin check, and main.js has an
         // iframe guard preventing re-initialisation if the game page ever loads in a frame.
-        if (this.hacktivityMode && this.vmPanelUrl) {
+        if (this.hacktivityMode && this.vmPanelUrl && !this.vmSetReleased) {
             const iframeSrc = vmPanelUrlWithTitle(this.vmPanelUrl, this.vm?.title);
             const launcher = document.createElement('div');
             launcher.className = 'vm-launcher vm-launcher-iframe';
@@ -391,7 +393,9 @@ export class VmLauncherMinigame extends MinigameScene {
         const launcher = document.createElement('div');
         launcher.className = 'vm-launcher';
         
-        if (!this.vm) {
+        if (this.vmSetReleased) {
+            launcher.innerHTML = this.buildReleasedMessage();
+        } else if (!this.vm) {
             launcher.innerHTML = this.buildNoVmMessage();
         } else {
             launcher.innerHTML = this.buildVmDisplay();
@@ -411,6 +415,22 @@ export class VmLauncherMinigame extends MinigameScene {
         this.attachEventHandlers();
     }
     
+    /** The VM set was handed back (D144). Fixed text, no VM title or IP, and a link only to the host's menu. */
+    buildReleasedMessage() {
+        const menu = safeVmPanelUrl(window.breakEscapeConfig?.shellMenuUrl);
+        const link = menu
+            ? `<p><a class="vm-action-btn" href="${this.escapeHtml(menu)}">Back to missions</a></p>`
+            : '';
+        return `
+            <div class="no-vms-message vm-released">
+                <h4>VMs released</h4>
+                <p>The VMs for this session have been released. Your progress is kept.</p>
+                <p>To keep hacking, start the mission again from the mission page.</p>
+                ${link}
+            </div>
+        `;
+    }
+
     buildNoVmMessage() {
         if (this.hacktivityMode) {
             return `
