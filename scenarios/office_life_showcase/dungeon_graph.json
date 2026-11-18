@@ -1,0 +1,25 @@
+{
+  "scenario": "office_life_showcase",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "kitchen",
+      "soft": false
+    }
+  ]
+}

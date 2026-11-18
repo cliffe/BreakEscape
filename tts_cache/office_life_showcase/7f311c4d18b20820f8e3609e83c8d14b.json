@@ -1,0 +1,13 @@
+{
+  "key": "7f311c4d18b20820f8e3609e83c8d14b",
+  "npc": "ama_owusu",
+  "text": "Jun's left his screen open. Have a look.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:50:44Z"
+}
