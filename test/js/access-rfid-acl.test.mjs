@@ -32,7 +32,7 @@ const stubs = {
     '../utils/remote-host-text.js': dataUrl(readFileSync(join(js, 'utils/remote-host-text.js'), 'utf8')),
     '../minigames/biometrics/fingerprint-reader-minigame.js': dataUrl('export function startFingerprintReader() {}'),
     '../utils/lock-scope-refusal.js': dataUrl(readFileSync(join(js, 'utils/lock-scope-refusal.js'), 'utf8')),
-    './lockpick-catch.js': dataUrl('export function catchLockpickInView() { return false; }')
+    './lockpick-catch.js': dataUrl('export function catchLockpickInView() { return false; } export function anyKeyMightFitLock() { return true; } export function lockKeyPinsOf() { return undefined; }')
 };
 let src = readFileSync(join(js, 'systems/unlock-system.js'), 'utf8');
 for (const [spec, url] of Object.entries(stubs)) {

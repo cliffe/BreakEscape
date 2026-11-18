@@ -278,6 +278,7 @@ The catalogue calls what's in there Tomb Beta. It's still drawing power, and nob
 The ledger's live. Twenty-three placements, forty-seven candidates.
 And a legacy section, older than any list we've ever had off them.
 One legacy entry, codename WREN. Updated on day ten, in Sorensen's hand. "Assigned TF Null, Montana operation."
+The entry's source is a search firm, H&L, file number HL2015-0477. Write that down; the screen won't keep it.
 -> ask
 
 = ask

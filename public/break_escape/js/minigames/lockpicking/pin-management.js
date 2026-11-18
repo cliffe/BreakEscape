@@ -370,7 +370,8 @@ export class PinManagement {
             }
             
             // Stop key insertion if in key mode
-            if (this.parent.keyMode) {
+            // (not while the insertion tween field is set: it is set right after add() and nulled on complete or kill; isPlaying() can read false before the first update and while paused)
+            if (this.parent.keyMode && !this.parent.keyInsertTween) {
                 this.parent.keyInserting = false;
             }
         });
@@ -571,7 +572,7 @@ export class PinManagement {
                 // Prevent this event from bubbling up to global handlers
                 pointer.event.stopPropagation();
                 
-                if (!this.parent.keyInserting) {
+                if (!this.parent.keyInserting && !this.parent.keyInsertTween) {
                     console.log('Starting key insertion animation...');
                     this.parent.keyOps.startKeyInsertion();
                 } else {

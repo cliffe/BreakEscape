@@ -837,7 +837,10 @@ export class PinMinigame extends MinigameScene {
         }
 
         // The log scrolls; keep the newest guess in view.
-        this.attemptsLogElement.scrollTop = this.attemptsLogElement.scrollHeight;
+        // Again once laid out: set while the pad is still being drawn, scrollHeight can be short.
+        const log = this.attemptsLogElement;
+        log.scrollTop = log.scrollHeight;
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
     }
     
     updatePinCrackerIcon() {

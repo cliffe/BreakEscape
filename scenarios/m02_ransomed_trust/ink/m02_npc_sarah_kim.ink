@@ -41,6 +41,7 @@ VAR cover_burned = false
 VAR cover_restored = false
 VAR board_coverup_email_found = false
 VAR offline_keys_recovered = false
+VAR kim_has_escrow_keys = false // Synced scenario global: the player handed Kim the escrow keys (hand_keys)
 VAR escrow_safe_known = false // Synced scenario global: the player has learnt of the emergency-store safe (flag 1, snag list, Kim, HaX, or opening it)
 // Playtest loop round 1: B11 retires the IT escape hatch once IT is open; R7 retires
 // the boardroom-code question once her diary has been read.
@@ -165,8 +166,6 @@ Dr. Sarah Kim: I am the Chief Technology Officer of this hospital, and I cannot 
 === access_because ===
 Dr. Sarah Kim: Access control runs on the same estate as everything else. Every permission, every card, every door group, behind that ransom screen.
 
-Dr. Sarah Kim: I can authorise you until I lose my voice. It won't open one door.
-
 Narrator: She signs your paper badge, writes an extension on it, and hands it back.
 
 Dr. Sarah Kim: That's the extent of my power tonight. A signature on a piece of card.
@@ -197,7 +196,7 @@ Dr. Sarah Kim: Gary has one. I don't.
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Dr. Sarah Kim: {cover_burned and not cover_restored and not cover_reaction: I've heard. Security control rang the switchboard about you.|{offline_keys_recovered: Tell me you have something I can take into that room.|{&Progress?|Yes?|What do you need?}}}
+    Dr. Sarah Kim: {cover_burned and not cover_restored and not cover_reaction: I've heard. Security control rang the switchboard about you.|{offline_keys_recovered and not kim_has_escrow_keys: Tell me you have something I can take into that room.|{&Progress?|Yes?|What do you need?}}}
 }
 // Newest topics first (m01 support_hub pattern); spent topics retire; the fixed
 // choices (boardroom code, goodbye) sit last.
@@ -220,6 +219,10 @@ Dr. Sarah Kim: Gary has one. I don't.
 
 + {not escrow_safe_known and not topic_escrow and not offline_keys_recovered} [Is anything in this building still offline? Anything they couldn't reach?]
     -> escrow_lead_in
+
+// Blind-playtest fix: holding the escrow keys is a deliberate act, not only a console load.
++ {offline_keys_recovered and not kim_has_escrow_keys} [(Hand her the escrow keys.)]
+    -> hand_keys
 
 + {topic_ransom_vote and not advised_on_vote} [You asked what to tell the board. I'll answer properly now.]
     -> ransom_decision_input
@@ -245,7 +248,7 @@ Dr. Sarah Kim: Gary has one. I don't.
     -> boardroom_code
 
 + [I need to get on.]
-    {offline_keys_recovered:
+    {offline_keys_recovered and not kim_has_escrow_keys:
         Dr. Sarah Kim: Then go. If you find me an alternative before they dial in, I'll use it.
     - else:
         Dr. Sarah Kim: Yes. Go.
@@ -343,11 +346,7 @@ Dr. Sarah Kim: You have my statement and his emails. If it comes to it, you have
 === fire_drill ===
 ~ topic_fire_drill = true
 
-Dr. Sarah Kim: Six weeks ago.
-
-Dr. Sarah Kim: There was a drill. Half past two, no notice. I was rung at home about it, and Estates spent the next week furious.
-
-Dr. Sarah Kim: Nobody had scheduled it. It isn't on the annual plan, and there's no record of anyone requesting it.
+Dr. Sarah Kim: Six weeks ago there was a drill. Half past two, no notice, and nobody had scheduled it. I was rung at home, and Estates spent the next week furious.
 
 Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a scanner to install.
 
@@ -389,6 +388,16 @@ Dr. Sarah Kim: Estates put it on the audit snag list. Three times. Item nineteen
     Dr. Sarah Kim: Yes.
     Dr. Sarah Kim: The year we were founded. I'm saying it quickly because it doesn't sound better slowly.
     -> escrow_safe_out
+
+=== hand_keys ===
+~ kim_has_escrow_keys = true
+#set_global:kim_has_escrow_keys:true
+Narrator: You put the drive in her hand. She turns it over twice, like someone checking it is real.
+
+Dr. Sarah Kim: Then I've something to put in front of them besides a cheque.
+
+~ hub_quiet = true
+-> hub
 
 === escrow_safe_out ===
 Dr. Sarah Kim: If those keys are still in there, they're the only thing in this building ENTROPY hasn't got a copy of.
@@ -447,6 +456,7 @@ Dr. Sarah Kim: Careful. I'll say it on that call as though I thought of it mysel
     -> hub
 
 + [It isn't my decision. Buy me time and I'll change the options.]
+    #set_global:advised_board_time:true
     #set_global:advised_board_refuse:false
     #set_global:advised_board_pay:false
     # influence_increased
@@ -522,7 +532,7 @@ Dr. Sarah Kim: We are finished. Find your own way round my hospital.
     ~ hub_quiet = true
     -> hub
 }
-{offline_keys_recovered:
+{offline_keys_recovered and not kim_has_escrow_keys:
     Dr. Sarah Kim: Tell me you have something I can take into that room.
     ~ hub_quiet = true
     -> hub

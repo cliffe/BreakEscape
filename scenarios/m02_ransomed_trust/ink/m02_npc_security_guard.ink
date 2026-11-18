@@ -58,6 +58,9 @@ VAR asked_wall_safe = false
 VAR bernie_vouched = false
 VAR dr_kim_met = false
 VAR insider_identified = false
+VAR insider_asset_arrested = false     // Synced: Reeves has been dealt with in the boardroom
+VAR insider_asset_escaped = false      // Synced
+VAR night_security_supervisor_ko = false // Synced
 VAR backdoor_fully_exploited = false // Synced scenario global: the backup server investigation is done
 VAR val_opened_office = false
 VAR bernie_gave_key = false
@@ -156,7 +159,7 @@ Val Okonkwo: So. Who are you and who says you're allowed?
         Val Okonkwo: Get yourself signed in properly at reception and have a word with Dr Kim.
     }
 }
-Val Okonkwo: Server room's through my office, and it's card-only. One card left in the building opens it: Gary's, in IT.
+Val Okonkwo: Server room's through my office, and only one card opens it: Gary's, in IT.
 Val Okonkwo: Come back with it and I'll open the office for you.
 ~ hub_quiet = true
 -> hub
@@ -198,6 +201,9 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
 -> cover_challenge_options
 
 === cover_challenge_options ===
+{attacked_guard and not guard_knocked_out:
+    -> after_fight
+}
 + {staff_lanyard_obtained and (lanyard_issued or (not pretext_story_told and (holds_contractor_pass or not agency_pass_refused)))} [Show her the lanyard.]
     -> show_lanyard
 
@@ -383,6 +389,9 @@ Narrator: She unlocks the office door and stands aside.
 ->->
 
 === the_argument ===
+{attacked_guard and not guard_knocked_out:
+    -> after_fight
+}
 {val_argument_heard:
     Val Okonkwo: We've done this. A pass, a name on a log, or somebody on a phone. Not a theory.
 - else:
@@ -635,6 +644,9 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
 -> reeves_questions
 
 === reeves_questions ===
+{attacked_guard and not guard_knocked_out:
+    -> after_fight
+}
 + {not asked_about_drill} [Anything odd on nights lately? Drills, alarms?]
     ~ asked_about_drill = true
     ~ influence += 10
@@ -710,18 +722,25 @@ Val Okonkwo: I'll not be dramatic. But when they ask afterwards who knew, and th
     ~ influence += 15
     # influence_increased
     Val Okonkwo: Then that'll do me.
-    Val Okonkwo: Go and get him. And be careful. He's stood next to the only phone line out of this building that still works.
+    {not insider_asset_arrested and not insider_asset_escaped and not night_security_supervisor_ko:
+        Val Okonkwo: Go and get him. And be careful. He's stood next to the only phone line out of this building that still works.
+    }
     ~ hub_quiet = true
     #exit_conversation
     -> hub
 
-+ [Stay out of the boardroom until SAFETYNET arrive. He's not what he looks like.]
++ {not insider_asset_arrested and not insider_asset_escaped and not night_security_supervisor_ko} [Stay out of the boardroom until SAFETYNET arrive. He's not what he looks like.]
     ~ influence += 8
     # influence_increased
     Val Okonkwo: I've had him in my notebook six weeks. I know exactly what he looks like.
     Val Okonkwo: But I'll hold this corridor. Go on.
     ~ hub_quiet = true
     #exit_conversation
+    -> hub
+
+// Fallback: once Reeves is dealt with and the first answer is spent, nothing else is on offer here.
+* ->
+    ~ hub_quiet = true
     -> hub
 
 // Round 2 (CF-C): re-talk after the player went for her.
