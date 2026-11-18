@@ -36,6 +36,7 @@ VAR launch_code_submitted = false
 VAR player_aborted_attack = false
 VAR player_launched_attack = false
 VAR ready_for_debrief = false
+VAR m01_debrief_offered = false
 
 // Closing debrief variables
 VAR final_choice = ""
@@ -999,6 +1000,7 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
 === closing_debrief ===
 // lint: call-knot
 #speaker:agent_0x99
+#set_global:m01_debrief_offered:true
 
 {
     - player_launched_attack:
