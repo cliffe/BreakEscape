@@ -1499,7 +1499,8 @@ function _startCredits(lines) {
         label.id = 'bv-cr-label';
         overlay.appendChild(label);
     }
-    label.style.cssText = 'text-align:center;padding:0 10%;transition:opacity 0.4s ease;';
+    label.className = 'bv-cr-label';
+    label.style.cssText = 'text-align:center;transition:opacity 0.4s ease;';
 
     // Filter to non-empty lines only (a card carries its own lines)
     const items = lines.filter(l => (Array.isArray(l.lines) && l.lines.length) || (l.text && l.text.trim()));
@@ -1528,7 +1529,8 @@ function _startCredits(lines) {
 
         label.style.opacity = '0';
         _creditsTimerId = setTimeout(() => {
-            label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${baseStyle}`;
+            label.className = 'bv-cr-label';
+            label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${baseStyle}`;
             let holdMs = 3000;
             if (Array.isArray(item.lines) && item.lines.length) {
                 // A closing card or teaser: its lines together, one per row
@@ -1570,7 +1572,8 @@ function _showCreditsHold(text) {
         label.id = 'bv-cr-label';
         overlay.appendChild(label);
     }
-    label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    label.className = 'bv-cr-label';
+    label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
     label.textContent = text;
     label.style.opacity = '1';
 }
