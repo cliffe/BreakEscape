@@ -2385,8 +2385,13 @@ class _Uni:
         self.tables.append(t)
         return t
 
-    def item(self, name, x, y, layer="items"):
-        getattr(self, layer).append(make_obj("objects", name, x, y, self._next()))
+    def item(self, name, x, y, layer="items", fixed=False):
+        """fixed=True on a wheeled chair writes the Tiled property fixed=true: the chair never
+        gets shoved while empty (rooms.js isFixedChair)."""
+        o = make_obj("objects", name, x, y, self._next())
+        if fixed:
+            o["properties"] = [{"name": "fixed", "type": "bool", "value": True}]
+        getattr(self, layer).append(o)
 
     def on(self, table, name, x_frac, surface_frac, layer="table_items"):
         getattr(self, layer).append(
