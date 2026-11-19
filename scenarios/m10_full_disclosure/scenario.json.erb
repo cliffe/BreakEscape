@@ -2020,7 +2020,7 @@ end
             { "eventPattern": "global_variable_changed:officer_out", "condition": "value !== ''", "onceOnly": true, "completeTask": "name_the_sleeper" },
             { "eventPattern": "global_variable_changed:wren_at_core", "condition": "value === true && globalVars.accused === ''", "onceOnly": true, "completeTask": "name_the_sleeper" },
 <%# --- HaX's texts (texts/BARKS_AND_TEXTS.md; ids in the messages' order) --- %>
-            { "eventPattern": "global_variable_changed:door_scene_done", "condition": "value === true && !globalVars.flag1_submitted && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "The gate terminal's yours. Get me their monitoring." } },
+            { "eventPattern": "global_variable_changed:door_scene_done", "condition": "value === true && !globalVars.flag1_submitted && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 3000, "message": "The gate terminal's yours. Get me their monitoring. If you're stuck, open this chat and pick from my list." } },
             <%# Teaching R2-m2 (opus48): what the foothold bought, said when flag 1 goes in; the inner-door payoff still lands at the breach a room later. Kept to visibility, not door control. %>
             { "eventPattern": "global_variable_changed:flag1_submitted", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "I'm in their monitoring. Their cameras and doors report here, and their desk sees only what I let it now." } },
             { "eventPattern": "global_variable_changed:flag1_submitted", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "Whoever's in the power room runs your lights." } },
@@ -3247,6 +3247,20 @@ not_tethered = '!globalVars.nightshade_tethered'
           ]
         },
         {
+          "_comment": "Blind playtest m10 part 3 (minor 2): a findable code for the records cupboard, so the PIN is not only the cracker's or an NPC's to give. Same value as Ghost's and Vector's notes.",
+          "type": "notes",
+          "id": "keypad_reset_slip",
+          "name": "Keypad Reset Slip",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 2.0, "y": 5.5 },
+          "observations": "A slip left on the floor by the records cupboard. Annex keypads, reset.",
+          "text": "ANNEX KEYPADS. RESET TO STORES DEFAULT AFTER THE READER UPGRADE.\nRecords cupboard: <%= cupboard_pin %>.\nChange it on first use. Nobody has.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": "lock_records_cupboard",
+          "puzzle_graph_optional": true
+        },
+        {
           "type": "filing_cabinet_locked1",
           "id": "records_cupboard",
           "name": "Records Cupboard",
@@ -4003,6 +4017,20 @@ not_tethered = '!globalVars.nightshade_tethered'
           "text": "RELEASE SERVICE. OPERATOR ON SHIFT.\nHost: <%= release_host_ip %>\nShift login: <%= release_login_user %>\nPassword: <%= release_login_password %>\nThe release service's port is in the handover log, in the shift home. Sign it at handover.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "sealed_hatch"
+        },
+        {
+          "_comment": "Blind playtest m10 part 3 (minor 2): a findable code for the outer lock, in the hall before the gallery. Same value as Ghost's, Vos's and Fonoti's cards. Position by the operator's sheet.",
+          "type": "notes",
+          "id": "lock_maintenance_slip",
+          "name": "Lock Maintenance Slip",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 13.5, "y": 3.5 },
+          "observations": "A maintenance slip left near the east racks. The gallery's outer lock.",
+          "text": "TOMB GAMMA. GALLERY OUTER LOCK, MAINTENANCE.\nCode: <%= outer_lock_pin %>.\nRetire the code after tonight's release.",
+          "puzzle_graph_role": "clue",
+          "puzzle_graph_unlocks": "core",
+          "puzzle_graph_optional": true
         },
         {
           "type": "pnw_portable_printer1",

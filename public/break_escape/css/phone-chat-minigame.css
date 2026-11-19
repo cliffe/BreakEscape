@@ -169,6 +169,22 @@
     background: rgba(0, 0, 0, 0.1);
 }
 
+/* Keyboard focus: the framework's 2px square ring, drawn inside the row so the list's
+   overflow does not clip it */
+.contact-item:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: -2px;
+    border-radius: 0;
+}
+
+.phone-terminal-theme .contact-item:focus-visible {
+    outline-color: #00ff41;
+}
+
+.phone-social-theme .contact-item:focus-visible {
+    outline-color: var(--dm-accent);
+}
+
 .contact-avatar {
     width: 64px;
     height: 64px;
@@ -1977,4 +1993,14 @@
    otherwise meet the phone (centred 400px shell vs a 15px-inset X: viewport under ~490px). */
 @media (max-width: 500px) {
     [data-minigame="phone-chat"] .phone-messages-container { margin-top: 44px; }
+}
+
+/* Read by screen readers only (the unread badge's " unread") */
+.contact-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }

@@ -15,7 +15,7 @@ VAR vec_code_given = false
 VAR vec_why_asked = false
 
 === function vec_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
+~ return clue_door_log and clue_bench_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
 
 === start ===
 {ending != "": -> end_rest}

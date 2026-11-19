@@ -17,13 +17,13 @@ const aims = [
     { id: 'bonus_read', status: 'active', optional: true },
   ] },
   { status: 'locked', tasks: [{ id: 'submit_flag', status: 'active' }] },
-  { status: 'completed', tasks: [{ id: 'arrive', status: 'completed' }] },
+  { status: 'completed', tasks: [{ id: 'arrive', status: 'completed' }, { id: 'find_wren', status: 'active', optional: true }, { id: 'hidden_later', status: 'locked' }] },
 ];
 
 test('openTasks lists only tasks the panel shows as to do; locked ones go to lockedTasks', () => {
   assert.deepEqual(briefTasks(aims), {
-    openTasks: ['talk_to_victoria', 'bonus_read (opt)'],
-    lockedTasks: ['copy_badge (opt)', 'leave_until_dark'],
+    openTasks: ['talk_to_victoria', 'bonus_read (opt)', 'find_wren (opt)'],
+    lockedTasks: ['copy_badge (opt)', 'leave_until_dark', 'hidden_later'],
   });
 });
 

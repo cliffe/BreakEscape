@@ -122,6 +122,32 @@ export function sessionOverlayUi() {
 }
 
 /**
+ * blockingUi entry for the "Before the mission ends" question (systems/ending-check.js), or
+ * null when it is not up. Reported even while a chat is open: it sits over the chat, takes the
+ * number keys and holds the ending choice until it is answered (m10 blind part 3, where a
+ * scripted run kept pressing the choice under it and saw nothing happen).
+ */
+export function endingCheckOverlayUi() {
+    const el = document.getElementById('ending-check-overlay');
+    if (!el) return null;
+    const buttons = ['ending-check-keep', 'ending-check-end']
+        .map(id => document.getElementById(id))
+        .filter(Boolean)
+        .map((b, i) => ({ index: i, id: b.id, label: (b.textContent || '').trim() }));
+    return {
+        blocking: true,
+        kind: 'ending-check-overlay',
+        tag: el.tagName,
+        id: 'ending-check-overlay',
+        classes: String(el.className || '').slice(0, 120),
+        text: (el.innerText || el.textContent || '').trim().slice(0, 500),
+        buttons,
+        hint: 'The end-of-mission question is up over the chat: the choice you picked waits for it. '
+            + 'Answer with __test.dismissBlockingUi("End the mission now") to take the choice, or "Keep going" to leave the choices as they were.'
+    };
+}
+
+/**
  * Detect DOM UI sitting on top of the canvas and eating pointer input.
  *
  * Minigames are not the only thing that can block the main world: the tutorial
@@ -136,6 +162,8 @@ export function sessionOverlayUi() {
 export function detectBlockingUi() {
     const sessionOverlay = sessionOverlayUi();
     if (sessionOverlay) return sessionOverlay;
+    const endingOverlay = endingCheckOverlayUi();
+    if (endingOverlay) return endingOverlay;
     const canvas = getCanvas();
     if (!canvas || !document.elementsFromPoint) return null;
 
@@ -817,7 +845,8 @@ export function getState({ radius, limit } = {}) {
         // The session-resume overlay covers everything, a minigame included (the
         // world loads under it and an opening briefing can open there, paused), so
         // it is reported even while a minigame is active.
-        blockingUi: (mg && !sessionOverlayShowing()) ? null : detectBlockingUi(),
+        // The ending question also sits over a chat, so it is reported with one open.
+        blockingUi: (mg && !sessionOverlayShowing()) ? endingCheckOverlayUi() : detectBlockingUi(),
         // Non-null once the end-of-mission credits overlay is up. Treat it as
         // "stop playing", never as something to wait out or dismiss -- and
         // confirm the actual outcome against the server's game record.
