@@ -20,7 +20,11 @@
     justify-content: center;
     /* 2px border above, no glow (pixel-art UI rule, slice 7 R5 m5) */
     box-shadow: none;
-    position: relative;
+    /* Sticky, not relative: a lock taller than its frame (a long observation at 1024 to 1366
+       wide) scrolls inside the game area, and the status line stays in view at its foot
+       instead of being clipped below the fold */
+    position: sticky;
+    bottom: 4px;
     z-index: 1000;
     width: 100%;
     max-width: 600px;
