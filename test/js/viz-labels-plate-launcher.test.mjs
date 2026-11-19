@@ -220,16 +220,13 @@ test('the themes do not override the launcher content colours', () => {
   assert.doesNotMatch(themes, /\[data-ui-theme\] \.vm-launcher-description/);
 });
 
-test('the launcher face is painted on the whole window, in every theme, so there is no band', () => {
+test('the launcher is a device frame: the face is the frame\'s, the window is clear and unthemed, so there is no band', () => {
   const themes = readFileSync(join(root, 'css/ui-themes.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const win = /\.minigame-container\[data-minigame="vm-launcher"\] > \.minigame-game-container \{([^}]*)\}/.exec(launcherCss);
   assert.ok(win, 'window rule in the launcher stylesheet');
-  assert.match(win[1], /background:\s*var\(--device-palette-face\)/);
-  const th = /\[data-ui-theme\] \.minigame-container\[data-minigame="vm-launcher"\] > \.minigame-game-container \{([^}]*)\}/.exec(themes);
-  assert.ok(th, 'matching themed rule');
-  assert.match(th[1], /background-color:\s*var\(--device-palette-face\)/);
-  // it comes after the shared themed surface rule, so it wins at equal specificity
-  assert.ok(themes.lastIndexOf('data-minigame="vm-launcher"] > .minigame-game-container {') > themes.indexOf('background-color: var(--ui-surface)'));
-  // the inner launcher div no longer carries the face (it would end above the post-it slot)
+  assert.match(win[1], /background:\s*none/);
+  // no themed frame on the window any more: the shared device frame draws it
+  assert.doesNotMatch(themes, /data-minigame="vm-launcher"\] > \.minigame-game-container/);
+  // the inner launcher div does not carry the face (the frame does)
   assert.doesNotMatch(/\.vm-launcher \{[^}]*\}/.exec(launcherCss)[0], /background/);
 });

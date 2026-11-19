@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e5_signin_pages_defend_complete:
-        Niamh Doherty: That's both seats done, thanks. The trick is always the address: read the bar before you type a password. A padlock doesn't make a page ours.
+        Niamh Doherty: That's both seats done, thanks. Read the address bar before you type a password. A padlock doesn't make a page ours.
     - else:
         { phish_sso_staff_attempts > 0:
             Niamh Doherty: Your email with the link has gone to Hana. Now take the other seat and check the pages that land behind links like yours.

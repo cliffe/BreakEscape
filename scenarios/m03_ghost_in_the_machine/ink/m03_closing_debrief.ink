@@ -24,6 +24,8 @@ VAR usb_seen = false
 // (fix 8) and the briefing line HaX quotes back (fix 10).
 VAR receptionist_ko = false
 VAR guard_told_safetynet = false
+// D187: synced scenario global, set where Terry believes the player's lie and waves them on; cleared when he turns them away. Read with guard_told_safetynet/guard_bribed so only a lie counts.
+VAR guard_lie_believed = false
 VAR guard_bribed = false
 VAR called_it_murder = false
 VAR directive_decoded = false
@@ -104,6 +106,10 @@ Agent HaX: There you are. Sit down before you fall down.
 }
 { guard_told_safetynet:
     Agent HaX: You told Sterling's own guard who you work for. He rang her.{victoria_fate != "ko": That's one reason she had her coat on when you walked in.}
+}
+// D187 (owner-approved): only a player who lied to Terry and was believed.
+{ guard_lie_believed and not guard_told_safetynet and not guard_bribed:
+    Agent HaX: The guard believed you. That's one more reason to stop trusting a torch and a good story.
 }
 { guard_bribed and (guard_detection_count > 0 or guard_knocked_out):
     Agent HaX: And there's five hundred pounds of ours in a security guard's pocket. Finance will want a receipt.

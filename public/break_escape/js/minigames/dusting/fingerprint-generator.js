@@ -85,8 +85,26 @@ function makeValueNoise(rng, cells) {
     };
 }
 
+/**
+ * Whorl layouts (fractions of the canvas). Same-class cards used to differ only by a few pixels of jitter, so two
+ * whorls read as one print (m09 confirm). Each shape moves the cores and deltas by 4 to 8 percent of the canvas
+ * (5 to 10 px at 128), enough to see by eye: a stagger that climbs left or right, a wide or a tight pair of cores.
+ * cores are [x offset from centre, y] pairs, left then right; deltas likewise.
+ */
+export const WHORL_SHAPES = [
+    { cores: [[-0.06, 0.46], [0.06, 0.52]], deltas: [[-0.18, 0.74], [0.18, 0.74]] },
+    { cores: [[-0.06, 0.54], [0.06, 0.44]], deltas: [[-0.14, 0.68], [0.22, 0.80]] },
+    { cores: [[-0.11, 0.47], [0.11, 0.51]], deltas: [[-0.25, 0.69], [0.25, 0.69]] },
+    { cores: [[-0.03, 0.40], [0.03, 0.58]], deltas: [[-0.12, 0.79], [0.12, 0.79]] }
+];
+
+/** Whorl layout index for an owner (deterministic), unless a `whorlShape` option overrides it. */
+export function whorlShapeFor(owner) {
+    return hashString('whorl-shape:' + owner) % WHORL_SHAPES.length;
+}
+
 /** Singular points (canonical frame, pixels) for a pattern. */
-function singularPoints(pattern, size, rng) {
+export function singularPoints(pattern, size, rng, whorlShape = 0) {
     const N = size;
     const j = () => (rng() - 0.5) * 0.05 * N;
     if (pattern === 'loop') {
@@ -99,16 +117,9 @@ function singularPoints(pattern, size, rng) {
         };
     }
     if (pattern === 'whorl') {
-        return {
-            cores: [
-                { x: 0.5 * N - 0.06 * N + j(), y: 0.46 * N + j() },
-                { x: 0.5 * N + 0.06 * N + j(), y: 0.52 * N + j() }
-            ],
-            deltas: [
-                { x: 0.5 * N - 0.18 * N + j(), y: 0.74 * N + j() },
-                { x: 0.5 * N + 0.18 * N + j(), y: 0.74 * N + j() }
-            ]
-        };
+        const sh = WHORL_SHAPES[((whorlShape % WHORL_SHAPES.length) + WHORL_SHAPES.length) % WHORL_SHAPES.length];
+        const pt = ([dx, y]) => ({ x: 0.5 * N + dx * N + j(), y: y * N + j() });
+        return { cores: sh.cores.map(pt), deltas: sh.deltas.map(pt) };
     }
     return { cores: [], deltas: [] };
 }
@@ -387,6 +398,7 @@ function resolveVariant(variant, size, partial) {
  *   A string/number derives a touch (rotation within +-20 degrees, offset) from the id; an object
  *   `{rotation (degrees), dx, dy, cutAngle (radians), cutOffset (px)}` sets it explicitly.
  * @param {boolean} [opts.partial=false] With a string/number variant, also cut the print with a straight line.
+ * @param {number|null} [opts.whorlShape=null] Whorls only: index into WHORL_SHAPES; null takes whorlShapeFor(owner).
  * @returns {{size:number, owner:string, pattern:string, ridges:Float32Array, mask:Float32Array,
  *   cores:{x:number,y:number}[], deltas:{x:number,y:number}[],
  *   minutiae:{x:number,y:number,type:'ending'|'bifurcation',ux:number,uy:number}[],
@@ -396,14 +408,14 @@ function resolveVariant(variant, size, partial) {
  *   `ridges` and `mask` are row-major 0..1. `minutiae` are in this print's frame; `ux`/`uy` are the
  *   canonical coordinates, equal for the same finger across variants. `bounds` bounds mask > 0.5.
  */
-export function generatePrint({ owner, pattern, size = 128, variant = null, partial = false } = {}) {
+export function generatePrint({ owner, pattern, size = 128, variant = null, partial = false, whorlShape = null } = {}) {
     const N = size;
     const pat = PATTERNS.includes(pattern) ? pattern : patternForOwner(owner);
     const seed = hashString(`${owner}|${pat}`);
     const rng = mulberry32(seed);
     const period = 5 * N / 128;
 
-    const sp = singularPoints(pat, N, rng);
+    const sp = singularPoints(pat, N, rng, Number.isInteger(whorlShape) ? whorlShape : whorlShapeFor(owner));
     const theta = buildOrientation(pat, N, sp, rng);
     const cont = growRidges(theta, N, period, rng, 8);
     const maskC = buildMask(N, rng);

@@ -14,6 +14,8 @@
  *     debrief or a result screen still on show when the mission concludes
  *     (an awareness shell concludes when the triage result saves, before the
  *     episode's own debrief);
+ *   - also waits while a registered hold applies (EC1: a step-away awareness
+ *     episode between its defend stage and its debrief; see setSuccessScreenHold);
  *   - opens at most once per page load, and Close (or Esc) dismisses it and
  *     gives the game back, the way the credits behave after a reload of a
  *     concluded game. A reload shows it once more, then it can be closed.
@@ -42,10 +44,40 @@ let movementBefore = null;
 
 const win = () => (typeof window !== 'undefined' ? window : null);
 
-/** True while a minigame (conversation, kiosk, result screen...) is open. */
+/**
+ * Holds (EC1 d): named checks that keep the screen waiting while any returns true, read on
+ * every idle poll. They live on window.successScreenHolds (a Map), so a module can register one
+ * without importing this file; the episode starter registers the step-away hold at boot.
+ */
+function holds() {
+    const w = win();
+    if (!w) return null;
+    if (!(w.successScreenHolds instanceof Map)) w.successScreenHolds = new Map();
+    return w.successScreenHolds;
+}
+
+/** Register (or with a non-function, remove) a named hold. */
+export function setSuccessScreenHold(id, check) {
+    const map = holds();
+    if (!map) return;
+    if (typeof check === 'function') map.set(id, check);
+    else map.delete(id);
+}
+
+/** True while any registered hold says the screen must wait. A hold that throws is ignored. */
+export function successScreenHeld() {
+    const map = holds();
+    if (!map) return false;
+    for (const check of map.values()) {
+        try { if (check() === true) return true; } catch (e) { /* a broken hold must not block the end */ }
+    }
+    return false;
+}
+
+/** True while a minigame (conversation, kiosk, result screen...) is open, or a hold applies. */
 function busy() {
     const w = win();
-    return !!(w?.MinigameFramework?.currentMinigame);
+    return !!(w?.MinigameFramework?.currentMinigame) || successScreenHeld();
 }
 
 /**
@@ -234,4 +266,5 @@ function openNow(opts, deps) {
 if (typeof window !== 'undefined') {
     window.showSuccessScreen = showSuccessScreen;
     window.closeSuccessScreen = closeSuccessScreen;
+    window.setSuccessScreenHold = setSuccessScreenHold;
 }

@@ -537,6 +537,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             // a lock opened at full size and resized short later keeps its scrolling frame
             this.gameContainer.querySelector?.('#phaser-game-container')?.classList.add('lockpicking-fit');
         }
+        // What the boot gate chose, so a later resize can tell when it no longer holds
+        this._lockFitApplied = LockpickingMinigamePhaser.lockFitState();
         
         try {
             this.game = new Phaser.Game(config);
@@ -555,6 +557,107 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     }
     
     
+    // Which layout a window gets: the phone crop with Scale.FIT (narrow or short windows), the
+    // full 600x400 lock otherwise. The boot gate and the resize refit share this.
+    static lockFitState(w = window.innerWidth, h = window.innerHeight) {
+        if (!(w <= 768 || h <= 560)) return { fit: false, portrait: false, capped: false };
+        const portrait = h > w;
+        return { fit: true, portrait, capped: !portrait && h <= 560 };
+    }
+
+    // A resize or rotation after the lock opened: the boot gate chose the crop or the full
+    // lock for the old size. Debounced; a change of layout is re-applied to the live game.
+    _watchLockRefit() {
+        let timer = null;
+        const refit = () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { this._lockRefitTimer = null; this._refitLock(); }, 120);
+            this._lockRefitTimer = timer;
+        };
+        this._lockRefitOnResize = refit;
+        window.addEventListener('resize', refit);
+        window.addEventListener('orientationchange', refit);
+    }
+
+    _refitLock() {
+        const game = this.game;
+        const box = this.gameContainer?.querySelector?.('#phaser-game-container');
+        if (!game?.scale || !box) return;
+        const next = LockpickingMinigamePhaser.lockFitState();
+        const prev = this._lockFitApplied || {};
+        const same = prev.fit === next.fit && prev.portrait === next.portrait && prev.capped === next.capped;
+        if (!same) {
+            this._applyLockFit(game, box, next);
+            this._lockFitApplied = next;
+        }
+        if (next.fit) {
+            try { if (game.scale.getParentBounds?.()) game.scale.refresh(); } catch (e) { /* game gone */ }
+        } else {
+            this._fitLockZoom();
+        }
+        this._syncObsButton();
+        this._scrollKeyPanelIntoView();
+    }
+
+    // Phaser's canvas size, scale mode, camera crop and the CSS class all follow the layout
+    _applyLockFit(game, box, st) {
+        const scale = game.scale;
+        const unlimited = Number.MAX_VALUE;
+        if (st.fit) {
+            // The class first: the CSS re-lays the box out, and Phaser reads the box's size next
+            box.style.maxWidth = '';
+            box.classList.remove('lockpicking-zoomed');
+            box.classList.add('lockpicking-fit');
+            this._portraitCameraOffset = { x: 0, y: st.portrait ? 20 : 30 };
+            scale.scaleMode = Phaser.Scale.FIT;
+            scale.autoCenter = Phaser.Scale.CENTER_BOTH;
+            scale.zoom = 1;
+            // The display Size was built for the boot mode: its aspect mode and parent decide
+            // how setSize constrains the canvas, so they follow the scale mode
+            scale.displaySize.setAspectMode(Phaser.Scale.FIT);
+            scale.getParentBounds?.();
+            if (scale.parentSize?.width > 0 && scale.parentSize?.height > 0) scale.displaySize.setParent(scale.parentSize);
+            scale.displaySize.setMax(st.capped ? 580 : unlimited, st.capped ? 340 : unlimited);
+            scale.setGameSize(580, 340);
+            if (!this._lockBoxObserver) this._watchLockBox();
+        } else {
+            this._portraitCameraOffset = null;
+            this._lockBoxObserver?.disconnect?.();
+            this._lockBoxObserver = null;
+            box.classList.remove('lockpicking-fit');
+            scale.scaleMode = Phaser.Scale.NONE;
+            scale.autoCenter = Phaser.Scale.NO_CENTER;
+            scale.displaySize.setAspectMode(Phaser.Scale.NONE);
+            scale.displaySize.setParent(null);
+            scale.displaySize.setMax(unlimited, unlimited);
+            const st2 = scale.canvas?.style;
+            if (st2) { st2.marginLeft = ''; st2.marginTop = ''; }
+            scale.zoom = 1;
+            scale._resetZoom = true;
+            scale.setGameSize(600, 400);
+        }
+        const off = this._portraitCameraOffset;
+        this.scene?.cameras?.main?.setScroll?.(off ? off.x : 0, off ? off.y : 0);
+        this._placeKeyPanel();
+    }
+
+    // The key-selection panel follows the camera crop: a refit changes the crop, so its y is set
+    // again by the same formula the builder used
+    _placeKeyPanel() {
+        const c = this.keySelectionContainer;
+        if (!c || typeof c.setY !== 'function') return;
+        c.setY(KeySelection.panelY(this._portraitCameraOffset, c.panelHeight || 160));
+    }
+
+    // With the key panel open the labels sit at the foot of the 600x400 lock, where the sticky
+    // feedback line would cover them on a 1024 to 1366 wide desktop. Scroll the game area to its
+    // end so the line sits below the canvas, in its own place, and nothing is covered.
+    _scrollKeyPanelIntoView() {
+        const area = this.gameContainer;
+        if (!this.keySelectionContainer || !area) return;
+        area.scrollTop = area.scrollHeight;
+    }
+
     // The largest whole-number zoom at which the 600x400 lock fits the room it has (A09): 1 when
     // the window is small or the lock is cropped for a phone, 2 or more on a big window
     static wholeZoom(availW, availH, baseW = 600, baseH = 400) {
@@ -584,6 +687,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const game = this.game;
         const box = this.gameContainer?.querySelector?.('#phaser-game-container');
         if (!game?.scale || !box || window.innerWidth <= 768 || window.innerHeight <= 560) return;
+        // The layout the game is in decides, not the window: a refit is pending after a resize
+        if (this._lockFitApplied?.fit) return;
         const room = this._lockRoom();
         if (!room) return;
         const z = LockpickingMinigamePhaser.wholeZoom(room.w, room.h);
@@ -671,6 +776,13 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         clearTimeout(this.keyRetryTimer);
         this.keyRetryTimer = null;
         if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
+        if (this._lockRefitOnResize) {
+            window.removeEventListener('resize', this._lockRefitOnResize);
+            window.removeEventListener('orientationchange', this._lockRefitOnResize);
+            this._lockRefitOnResize = null;
+        }
+        clearTimeout(this._lockRefitTimer);
+        this._lockRefitTimer = null;
         if (this._obsOnResize) window.removeEventListener('resize', this._obsOnResize);
         this._obsOnResize = null;
         this._lockScrollEls?.forEach((el) => el.removeEventListener("scroll", this._lockScrollUpdate));
@@ -693,6 +805,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
 
     _watchLockZoom() {
         this._watchLockScroll();
+        this._watchLockRefit();
         if (window.innerWidth <= 768 || window.innerHeight <= 560) return;
         const fit = () => this._fitLockZoom();
         this._lockZoomOnResize = fit;

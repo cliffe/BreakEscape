@@ -48,7 +48,7 @@ test('m03: every ending choice carries ending_check, and "Not yet" does not', ()
 });
 
 test('m03: "Not yet" decides nothing, and the next talk resumes at the decision', () => {
-    const s = at(M03, 'confrontation_decision');
+    const s = at(M03, 'confrontation_decision', { usb_seen: true });
     drain(s);
     s.ChooseChoiceIndex(find(s, /Not yet/));
     const { tags } = drain(s);

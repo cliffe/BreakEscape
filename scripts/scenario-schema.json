@@ -3137,6 +3137,8 @@
             "reportedPct": {"type": "string", "description": "The stored-reopen summary line 'Reported {pct}% of the phish' ({pct} is the percentage). Hidden when the set has no phish at all. For a non-phishing set (batch-6 C3). batch-8: the defend set's resultCopy.reportedPct wins over this and also covers the reopened result card; prefer setting it there so both read the same"},
             "weakestTell": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when one skill was missed most ({names} is the skill, {counts} is 'caught X of Y'; default 'The tell most often missed: {names} ({counts}).'). For a non-phishing set where 'tell' reads as phishing jargon"},
             "weakestTells": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when skills tied ({names} is the joined list, {counts} is 'caught X of Y'; default 'The tells most often missed: {names} ({counts} each).'). For a non-phishing set where 'tells' reads as phishing jargon"},
+            "stepAway": {"type": "string", "description": "EC1: the step-away panel's line; default 'Look up from the kiosk to see how a case like this plays out here. It takes about 20 seconds, and your place is saved.'"},
+            "stepAwayHeading": {"type": "string", "description": "EC1: the step-away panel's heading; default 'Before the debrief'"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
             "writeReloadNote": {"type": "string", "description": "batch-6 (E14 F11): the write-stage launch note that a close/reload starts the compose draft again (default 'If you close or reload before you send, your draft starts again.'). '' suppresses it"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
@@ -3372,6 +3374,7 @@
           "additionalProperties": false
         },
         "facilitated": {"type": "boolean"},
+        "stepAway": {"type": "boolean", "description": "EC1 (living office): true shows the step-away panel when the runner reopens after the defend triage: Look up (enabled once kit_defend_done is true) closes the kiosk and emits episode_step_away; Carry on shows the debrief. The debrief keeps the defend answers in the state, and the success screen waits until the debrief closes. A full episode only (never a twin, brief or check); a facilitated run shows Look up on the pause after defend"},
         "assistant": {"$ref": "#/definitions/socialAssistant"}
       },
       "patternProperties": {"^_": {}},
@@ -3627,6 +3630,7 @@
           }
         },
         "blanks": {"type": "object", "additionalProperties": {"type": "string"}, "maxProperties": 2},
+        "optionalBlanks": {"type": "boolean", "description": "The line's blanks fill independently: a blank the player left unfilled is not stated, so its claim is skipped rather than judged a mismatch (06 §5). Pair with ink choice variants that speak only the filled facts."},
         "repairs": {"type": "string"},
         "doublesDown": {"type": "string"},
         "extra": {"type": "number"},
@@ -4222,6 +4226,11 @@
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "maxAttempts": { "type": "integer", "minimum": 1, "description": "Password locks: wrong guesses allowed before the pad locks out (client-side). Not secret: it survives the bootstrap filter." },
         "lockoutSeconds": { "type": "integer", "minimum": 1, "description": "Password locks only, opt-in: after maxAttempts wrong guesses the door pad stays shut for this many seconds, and the count survives closing and reopening the window (client-side; a page reload resets it). Not secret: it survives the bootstrap filter." },
+        "passwordHint": { "type": "string", "description": "Password locks: the hint line the door pad shows when showHint is true. doors.js reads it from the door or the connected room. Not secret: it survives the bootstrap filter, so it must not contain the answer." },
+        "showHint": { "type": "boolean", "description": "Password locks: show the Show Hint button and passwordHint on the door pad. Without it passwordHint is never displayed." },
+        "postitNote": { "type": "string", "description": "Password locks: text of a post-it note shown beside the door pad when showPostit is true." },
+        "showPostit": { "type": "boolean", "description": "Password locks: show postitNote beside the door pad." },
+        "showKeyboard": { "type": "boolean", "description": "Password locks: show the on-screen keyboard on the door pad." },
         "network": { "x-serverOnly": true, "type": "string", "x-ref": "network", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser (deleted from every room payload)." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
@@ -5183,6 +5192,7 @@
           ]
         },
         "observations": { "type": "string" },
+        "emptyText": {"type": "string", "description": "Container (safe, bookcase, etc.) only: the toast shown when the player opens it after its contents are gone. Default: \"<name> is empty.\""},
         "observationDisplay": {
           "type": "string",
           "description": "Display mode for observation text: 'gameDisplay' for modal dialog, or omit for toast notification",

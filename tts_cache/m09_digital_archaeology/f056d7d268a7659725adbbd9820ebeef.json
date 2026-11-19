@@ -1,0 +1,13 @@
+{
+  "key": "f056d7d268a7659725adbbd9820ebeef",
+  "npc": "narrator",
+  "text": "You lean on the counter, nearer than you need to be. Her card reel is within easy reach of the cloner in your jacket.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:47:53Z"
+}

@@ -146,7 +146,7 @@ Kevin Park: Now she's gone and nobody will tell me why.
 + [What was she investigating?]
     ~ warned_about_derek = true
     Kevin Park: I don't know exactly. Something about Derek's "external partners."
-    Kevin Park: She kept her notes in her office safe. I think her briefcase is still in there too.
+    Kevin Park: She kept her notes in her briefcase. I think it's still in her office.
     -> offer_tools
 + [Let's focus on the audit]
     Kevin Park: Right. Sorry. Let me get you set up.
