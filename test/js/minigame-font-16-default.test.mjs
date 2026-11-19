@@ -18,13 +18,13 @@ const NOT_MINIGAME = new Set(['game-menu.css', 'hud.css', 'main.css', 'modals.cs
 
 // The face a sheet's text draws in when a rule names none: the sheet's root rule decides.
 // Everything not listed is GNF (the framework's .minigame-container face). Sheets whose root
-// draws in VT323 (no pixel grid, so its 18px stays) are listed here; biometrics only inside .fpr-.
+// draws in VT323 (no pixel grid, so its 18px stays) are listed here; biometrics only inside .fpr-, bar the .fpr-card buttons (GNF).
 const VT323_ROOT = new Set(['dusting.css', 'coverage-decision-form-minigame.css', 'scada-historian-minigame.css',
     'drug-library-integrity-minigame.css', 'log-filter-minigame.css', 'ncsc-brief-minigame.css',
     'combination-minigame.css', 'cryptex-minigame.css', 'flag-station-minigame.css',
     'forensic-data-platform-minigame.css', 'network-architecture-minigame.css', 'patch-panel-minigame.css',
     'warranty-checklist-minigame.css']);
-const VT323_SELECTOR = [['biometrics-minigame.css', /\.fpr-/]];
+const VT323_SELECTOR = [['biometrics-minigame.css', /\.fpr-(?!card)/]];
 
 // First family in a font-family value, quotes stripped: "VT323", 'VT323' and VT323 are the same.
 function firstFamily(value) {
@@ -42,14 +42,14 @@ function varFace(value) {
 // Form controls inside .minigame-container draw in GNF whatever the sheet root says:
 // `.minigame-container button { font-family: 'GNF' }` is (0,1,1), which beats a sheet's (0,1,0)
 // `.x-btn { font-family: inherit }` or `{ font-family: 'VT323' }`. Odd button class names go here.
-const EXTRA_CONTROLS = new Set(['lf-filter-token-remove']);
+const EXTRA_CONTROLS = new Set(['lf-filter-token-remove', 'dusting-view', 'fdp-tab']);
 function lastCompound(sel) {
     const last = sel.split(',').pop().trim();
     return last.split(/[\s>+~]+/).pop();
 }
 function isControl(sel) {
-    // every comma part must be a control for the rule to be GNF throughout
-    return sel.split(',').every((part) => {
+    // a rule that lists a control anywhere in its comma list draws that control in GNF
+    return sel.split(',').some((part) => {
         const c = lastCompound(part);
         return /^(button|input|select|textarea)\b/.test(c) || /(?:^|[^\w-])(button|input|select|textarea)\b/.test(c)
             || /\.[\w-]*-(btn|button)\b/.test(c) || [...EXTRA_CONTROLS].some((n) => c.includes('.' + n));

@@ -436,10 +436,11 @@
 .notes-minigame-text .note-md-h2 { font-size: 24px; }
 .notes-minigame-text .note-md-h3 { font-size: 16px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
 
-/* Narrow window: 24px GNF headings wrap to three lines in the ~135px column, so h1 and h2 drop to 16px (h1 keeps its rule) */
+/* Narrow window: 24px GNF headings wrap to three lines in the ~135px column, so h1 and h2 drop to 16px (both keep a 2px rule) */
 @media (max-width: 480px) {
     .notes-minigame-text .note-md-h1,
     .notes-minigame-text .note-md-h2 { font-size: 16px; text-transform: uppercase; }
+    .notes-minigame-text .note-md-h2 { padding-bottom: 2px; border-bottom: 2px solid currentColor; }
 }
 
 .notes-minigame-text code,
