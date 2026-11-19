@@ -1888,6 +1888,8 @@ export class ContainerMinigame extends MinigameScene {
         
         if (this.contents.length === 0) {
             desktopIcons.innerHTML = '<div class="empty-desktop">Desktop is empty</div>';
+            // A note read from the last icon: the desktop itself takes the focus back
+            this.focusReturnedIcon(desktopIcons);
             return;
         }
         
@@ -2008,7 +2010,19 @@ export class ContainerMinigame extends MinigameScene {
         const mark = this.params?.focusReturn;
         if (mark) this.params = { ...this.params, focusReturn: null }; // once
         if (!mark || mark.byKey !== true) return;
-        const icon = Array.from(grid.children).find(el => el.itemKey === mark.key);
+        const icons = Array.from(grid.children).filter(el => el.classList?.contains('desktop-icon'));
+        let icon = icons.find(el => el.itemKey === mark.key);
+        if (!icon && Number.isInteger(mark.index)) {
+            // The file is gone (a note is taken as it is read): the icon now at its place, else
+            // the last one, else the desktop itself. Never the body.
+            icon = icons[Math.max(0, Math.min(mark.index, icons.length - 1))];
+            if (!icon) {
+                const desk = grid.closest?.('.desktop-background') || grid;
+                if (!desk.hasAttribute?.('tabindex')) desk.setAttribute?.('tabindex', '-1');
+                desk.focus?.({ preventScroll: true });
+                return;
+            }
+        }
         if (!icon) return;
         const active = typeof document !== 'undefined' ? document.activeElement : null;
         if (active && !grid.contains(active)
@@ -2383,6 +2397,11 @@ export class ContainerMinigame extends MinigameScene {
                 // Where the list was scrolled to, so the container comes back there
                 scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
+                // A note opened from a desktop icon: the icon is gone on reopen (the note is
+                // taken), so the mark carries its place and the focus lands on the icon now there
+                focusReturn: itemElement?.parentElement?.classList?.contains('desktop-icon')
+                    ? { ...iconFocusMark(item, this.openedByKey === true), index: Array.from(itemElement.parentElement.parentElement?.children || []).indexOf(itemElement.parentElement) }
+                    : null,
                 // A note taken by key: on reopen the focus goes to the slot at this place
                 slotReturn: this.openedByKey === true && itemElement?.parentElement
                     ? { index: Array.from(itemElement.parentElement.parentElement?.children || []).indexOf(itemElement.parentElement), byKey: true }
