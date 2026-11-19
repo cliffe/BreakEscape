@@ -37,7 +37,13 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**NEWEST-2 (late night 2026-11-19), read this first.** SETTLED: core (R10 `ec281cf60`, 4 nits
+**NEWEST-3, read this first.** Cross-plan R6 done and fixed (`3c3970c31`, `6634e49f8`,
+`474292bd3`); Sonnet cross-plan R7 delta check running → `CROSS_PLAN_R7.md`. Bug-fix branch
+8aac59791 sent to AC0; AC0 queued it in the pre-release train (waits on AC1/AC4 items; AC0
+re-runs the two chatter JS tests if they fail again). Then: wait for round 3 answers on the
+picks page and apply them.
+
+**NEWEST-2 (late night 2026-11-19).** SETTLED: core (R10 `ec281cf60`, 4 nits
 left), lock (R12 `20461519b`), cracking (R4 `7566a4055`; Sonnet fixing F1/F2 minors now), priv,
 MFA, log. Skin: R10 fixes `7b4dd6309`, Sonnet R11 delta running. Core 9.1 took skin request 5
 (`d335b4f6f`). ROUND 3 page published (same artifact, key `be-ops-plan-picks-r3`, source
