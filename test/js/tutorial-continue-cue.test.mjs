@@ -254,3 +254,55 @@ test('the ready words contain no dash characters', () => {
         assert.ok(!/[–—]/.test(m[1]), 'no em or en dash');
     }
 });
+
+// Fake layout: rect(top, bottom) per element, panel scrollHeight/clientHeight
+const rect = (top, bottom) => () => ({ top, bottom });
+function setLayout({ panelTop = 0, panelBottom = 310, lineTop, btnTop, btnBottom, scrollH = 387, clientH = 310 }) {
+    const panel = overlayParts['.tutorial-panel'];
+    panel.getBoundingClientRect = rect(panelTop, panelBottom);
+    panel.scrollHeight = scrollH; panel.clientHeight = clientH; panel.scrollTop = 0;
+    overlayParts['.tutorial-ready'].getBoundingClientRect = rect(lineTop, lineTop + 16);
+    overlayParts['.tutorial-next'].getBoundingClientRect = rect(btnTop, btnBottom);
+    return panel;
+}
+
+test('clipped Continue: the panel scrolls just enough to show it', async () => {
+    const t = await begin();
+    const panel = setLayout({ lineTop: 330, btnTop: 349, btnBottom: 385 });
+    t.notifyPlayerMoved(); tick();
+    assert.ok(panel.scrollTop === 75, 'scrolled by the hidden part of the button: ' + panel.scrollTop);
+});
+
+test('visible Continue: no scroll', async () => {
+    const t = await begin();
+    const panel = setLayout({ lineTop: 250, btnTop: 270, btnBottom: 300 });
+    t.notifyPlayerMoved(); tick();
+    assert.ok(panel.scrollTop === 0, 'untouched');
+    const p2 = setLayout({ lineTop: 330, btnTop: 349, btnBottom: 385, scrollH: 310 });
+    t.clearStepReady(); t.setStepReady(overlayParts['.tutorial-next']);
+    assert.ok(p2.scrollTop === 0, 'no overflow, no scroll');
+});
+
+test('scroll never pushes the ready line above the panel top', async () => {
+    const t = await begin();
+    const panel = setLayout({ lineTop: 40, btnTop: 60, btnBottom: 500 });
+    t.notifyPlayerMoved(); tick();
+    assert.ok(panel.scrollTop === 40, 'capped at the line: ' + panel.scrollTop);
+});
+
+test('no layout API (test environments): ready state still works, no throw', async () => {
+    const t = await begin();
+    t.notifyPlayerMoved(); tick();
+    assert.ok(ready() === 'Done. Press Continue (or Enter).', 'ready set without layout');
+    const panel = overlayParts['.tutorial-panel'];
+    panel.getBoundingClientRect = rect(0, 310); panel.scrollHeight = 387; panel.clientHeight = 310;
+    t.clearStepReady();
+    t.setStepReady(overlayParts['.tutorial-next']);
+    assert.ok(t.stepReady === true, 'no throw when the button has no rect');
+});
+
+test('the reveal uses no smooth scrolling, focus or window scroll', () => {
+    const src = readFileSync(join(js, 'systems/tutorial-manager.js'), 'utf8');
+    const body = src.slice(src.indexOf('revealReadyCue(readyLine'), src.indexOf('clearStepReady() {'));
+    assert.ok(!/smooth|\.focus\(|scrollTo\(|scrollBy\(|scrollIntoView/.test(body), 'instant, panel only');
+});

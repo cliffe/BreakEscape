@@ -404,6 +404,32 @@ export class TutorialManager {
         nextButton.classList.add('tutorial-next-ready');
         const ready = this.tutorialOverlay?.querySelector('.tutorial-ready');
         if (ready) ready.textContent = isTouchFirst() ? TUTORIAL_READY_TEXT_TOUCH : TUTORIAL_READY_TEXT;
+        this.revealReadyCue(ready, nextButton);
+    }
+
+    /**
+     * In short windows (phone landscape) the panel scrolls and the new ready line and
+     * Continue can sit below the fold. Scroll the panel, and only the panel, by the least
+     * amount that shows the button, keeping the ready line in view if both fit. Instant
+     * (assigning scrollTop never animates), no focus change, no window scroll. Does nothing
+     * when already visible or when layout measures are unavailable (tests).
+     */
+    revealReadyCue(readyLine, nextButton) {
+        try {
+            const panel = this.tutorialOverlay?.querySelector('.tutorial-panel');
+            if (!panel || !nextButton || typeof nextButton.getBoundingClientRect !== 'function'
+                || typeof panel.getBoundingClientRect !== 'function') return;
+            if (!(panel.scrollHeight > panel.clientHeight)) return;
+            const box = panel.getBoundingClientRect();
+            const btn = nextButton.getBoundingClientRect();
+            const lineTop = readyLine && typeof readyLine.getBoundingClientRect === 'function'
+                ? readyLine.getBoundingClientRect().top : btn.top;
+            let delta = btn.bottom - box.bottom;
+            if (!(delta > 0)) return;
+            if (lineTop - delta < box.top) delta = Math.max(0, lineTop - box.top);
+            if (!(delta > 0)) return;
+            panel.scrollTop += delta;
+        } catch (e) { /* cosmetic only */ }
     }
 
     clearStepReady() {
