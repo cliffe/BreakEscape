@@ -1495,7 +1495,13 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           },
           "postitNote": "Collect paper MAR charts before using this terminal",
           "showPostit": true,
-          "observations": "An infusion pump on a pole at the foot of Bed 2. The current infusion has finished; a new rate needs to be entered. The keypad display reads: DRUG: MORPHINE SULPHATE | AWAITING RATE ENTRY."
+          "observations": "An infusion pump on a pole at the foot of Bed 2. The current infusion has finished; a new rate needs to be entered. The keypad display reads: DRUG: MORPHINE SULPHATE | AWAITING RATE ENTRY.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.pump_programmed_at",
+              "value": "An infusion pump on a pole at the foot of Bed 2. A rate has been entered and the morphine infusion is running. The keypad display shows the programmed rate."
+            }
+          ]
         },
 
         {
@@ -2533,7 +2539,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                   "Restore point: Sunday 21:00. Monday's snapshots were taken while the attacker held domain admin, so they are not offered.",
                   "Integrity: unverified. Ravi's scan checks for the indicators found so far; anything not yet found would come back with the restore.",
                   "Data lost: Monday's EHR entries. Wards re-key a day of records from paper.",
-                  "Reinfection risk: high if the network is not isolated first."
+                  "Reinfection risk: high unless the network is already isolated."
                 ],
 <%# Blind 2: the card kept saying INTEGRITY UNVERIFIED after a clean scan. whenAvailable
     (backup-recovery console, opt-in) replaces these fields once the nas_scan slot is loaded. %>
@@ -2545,7 +2551,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                     "Restore point: Sunday 21:00. Monday's snapshots were taken while the attacker held domain admin, so they are not offered.",
                     "Integrity: Ravi's scan found none of the indicators known so far. Anything not yet found would come back with the restore.",
                     "Data lost: Monday's EHR entries. Wards re-key a day of records from paper.",
-                    "Reinfection risk: high if the network is not isolated first."
+                    "Reinfection risk: high unless the network is already isolated."
                   ]
                 },
                 "outcomeHeader": "RESTORE INITIATED - NAS SNAPSHOT (SUNDAY 21:00)",
@@ -2574,7 +2580,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                   "Restore point: Monday 20:00, two hours before the ransomware ran. EHR only.",
                   "Integrity: immutable copy behind the vendor's own credentials. The attacker never reached it.",
                   "Clinical impact: wards stay on paper until the early hours.",
-                  "Reinfection risk: high if the network is not isolated first."
+                  "Reinfection risk: high unless the network is already isolated."
                 ]
               },
               {
@@ -2594,7 +2600,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
                   "Restore point: Friday night's full backup. Saturday to Monday are lost.",
                   "Integrity: the tapes were offline, so the data on them is clean.",
                   "Clinical impact: days of paper operations on every ward.",
-                  "Reinfection risk: high if the network is not isolated first."
+                  "Reinfection risk: high unless the network is already isolated."
                 ],
                 "outcomeHeader": "RESTORE INITIATED - TAPE LIBRARY",
                 "outcomeStatus": "TAPE LIBRARY - ETA: 3-5 DAYS",
@@ -2641,7 +2647,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "consoleTitle":    "NORTHGATE TRUST — PUMP FLEET MANAGEMENT CONSOLE",
             "consoleSubtitle": "InfusionGuard Fleet Manager v4.2 | northgate-fleet-01",
             "libraryFile":     "drug_library.csv",
-            "backupFile":      "drug_library.bak",
+            "backupFile":      "drug_library.signed.bak",
             "hashFile":        "drug_library.sha256",
 
             "tamperedEntry": {
