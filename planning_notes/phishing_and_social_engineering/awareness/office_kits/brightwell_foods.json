@@ -1,0 +1,57 @@
+{
+  "company": "brightwell_foods",
+  "_note": "Matches scenarios/test_ca_office_kit (gate A). Positions are placeholders until the pilot's dressing pass. Pool lines: awareness level, nothing that blames anyone.",
+  "scenario": { "npcThoughts": false },
+  "pool": {
+    "key": "kit_brightwell",
+    "lines": ["Busy inbox today.", "Kettle's on in a sec.", "Audit week again."],
+    "requireGlobal": { "kit_quiet": false }
+  },
+  "sources": [
+    {
+      "type": "coffee_station",
+      "id": "kit_coffee",
+      "name": "Coffee station",
+      "sprite": "coffee_station1",
+      "position": { "x": 2, "y": 7 },
+      "takeable": false,
+      "interactable": false,
+      "observations": "The office coffee station. Staff drift over for a top-up.",
+      "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 8, "useFrom": { "dx": 0, "dy": -1 }, "capacity": 2, "chatter": "pool" }
+    },
+    {
+      "type": "water_cooler",
+      "id": "kit_cooler",
+      "name": "Water cooler",
+      "sprite": "water_cooler1",
+      "position": { "x": 7, "y": 7 },
+      "takeable": false,
+      "interactable": false,
+      "observations": "A water cooler by the far wall.",
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 6, "useFrom": { "dx": 0, "dy": -1 } }
+    }
+  ],
+  "staff": {
+    "gwen_pritchard": {
+      "displayName": "Gwen Pritchard",
+      "spriteSheet": "gwen_pritchard",
+      "position": { "x": 3, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 3, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } },
+      "chatterLines": ["Morning, all.", "Tea round shortly?"]
+    },
+    "agnieszka_duda": {
+      "displayName": "Agnieszka Duda",
+      "spriteSheet": "agnieszka_duda",
+      "position": { "x": 6, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 6, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
+      "chatterLines": ["Long week.", "Any biscuits left?"]
+    }
+  },
+  "setPieces": {}
+}
