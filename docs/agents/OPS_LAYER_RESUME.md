@@ -157,6 +157,14 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   codes closes an account's code step for the game (reviewer asked whether that can strand a
   player). MFA's log requests sent to the log reviser (`own_phone` code, no `request` or
   `credential` detail, `as: nil`).
+- 11:26. Log rows R2 revision HALF done, committed `437e34745` (sections 3 to 11; 1104 lines).
+  Continuation running (Opus, a325100074ccbcabb) from
+  `ops_layer/HANDOVER_OPS_LOG_ROWS_PLAN_reviser.md`: sections 12 to 15, all of 13 (helper with a
+  `once:` option and a stored-or-not return, sibling mapping, core's and MFA's requests), leftover
+  grep, decisions file. When it reports: commit plan + DECISIONS, launch log rows R3 full review
+  on Fable. Settled in the plan: 400-byte row cap, 128 KB total; refused sign-ins logged; a play
+  row cannot be a puzzle's anomaly. Log questions for the picks page are now 2 (copied-card
+  identity in the door log; NPC or office-life rows): drop the other LOG questions.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
