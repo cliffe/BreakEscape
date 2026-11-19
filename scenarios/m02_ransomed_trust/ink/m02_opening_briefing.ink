@@ -39,11 +39,7 @@ Director Magnus Netherton: I have a handler who knows this one cold, and a hospi
 
 Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clinical system encrypted in the same minute.
 
-Agent HaX: Monitoring, medication records, imaging. All of it behind a ransom screen.
-
 Agent HaX: Forty-seven people are on life support in there, running on backup generators. Twelve hours of power, less if anything trips.
-
-Agent HaX: After that, the machines keeping them breathing start going quiet.
 
 * [Who did this?]
     -> q_ransomware
@@ -131,8 +127,6 @@ Agent HaX: Find a neglected system, encrypt everything, squeeze a public service
 Agent HaX: And the ransom note reads like a business invoice. Same signature we flagged in Derek's material.
 {not derek_outcome: -> derek_outcome ->}
 
-Agent HaX: ENTROPY want to show that everything you rely on is one unpatched box from collapse. The patients are their chalkboard.
-
 -> briefing_hub
 
 === q_zds ===
@@ -143,8 +137,6 @@ Agent HaX: Exploits, mostly. The Zero Day Syndicate, ENTROPY's arms shop. They f
 
 Agent HaX: Nothing clever needed here. St. Catherine's backup server runs software with a public advisory and a patch that's been out for years. Nobody applied it.
 
-Agent HaX: Half the NHS is held together with software that old. The Syndicate noticed this door was never locked, and sold the address.
-
 -> briefing_hub
 
 === q_ransomware ===
@@ -152,8 +144,6 @@ Agent HaX: Half the NHS is held together with software that old. The Syndicate n
 ~ asked_ransomware = true
 
 Agent HaX: A cell we hadn't confirmed until Derek's notes named them. Ransomware Incorporated.
-
-Agent HaX: They run like a company. Professional ransom notes, a payment portal, even "support" for victims who get stuck paying.
 
 Agent HaX: They buy the way in from the Syndicate and go after whoever will pay fastest. Hospitals. Councils.
 
@@ -172,8 +162,6 @@ Agent HaX: Two clocks. The generators are one. The other is the hospital board, 
 Agent HaX: If they pay, the systems come back fast, and ENTROPY walks off a hundred and fifty thousand pounds richer. That funds the next hospital.
 
 Agent HaX: If they refuse and you're too slow, people die on the ward.
-
-Agent HaX: Recover the decryption keys yourself, and nobody has to choose between their patients and their principles.
 
 -> briefing_hub
 
@@ -204,8 +192,6 @@ Agent HaX: Then turn their own backdoor on them. Recover the decryption keys and
 
 Agent HaX: Their CTO, Dr. Sarah Kim, put out a call at one this morning for an emergency security consultant. We made sure you answered it.
 
-Agent HaX: So you're genuinely booked. There's a line in their visitor log with your job title on it.
-
 Agent HaX: Kim doesn't know SAFETYNET's involved, or that this is ENTROPY. To her you're a contractor on a very bad night. Keep it that way.
 
 + [Then what's the problem? I walk in the front door.]
@@ -224,7 +210,6 @@ Agent HaX: Ransomware Incorporated encrypted the access control server along wit
 Agent HaX: Kim can authorise you all she likes. It won't move a single reader.
 
 * [So a badge is worthless.]
-    Agent HaX: A badge is a bit of card with your name on it. It proves a human being vouched for you. That's all it does tonight.
     -> security_routes
 
 * [Then how does anyone get through their own doors?]
@@ -248,7 +233,6 @@ Agent HaX: Or open it yourself. You're equipped for that, and it's a confession 
     -> final_instructions
 
 + [Understood. I'll talk my way in where I can.]
-    Agent HaX: Do. And be pleasant to the people who can't help you as well. You won't know which is which until about four in the morning.
     -> final_instructions
 
 // ===========================================
@@ -262,11 +246,7 @@ Agent HaX: Or open it yourself. You're equipped for that, and it's a confession 
     Agent HaX: One name before you go. The operative running this calls themselves Ghost. Ghost encrypted the place and set the price against a body count.
 }
 
-Agent HaX: Ghost is still in the wires, watching that network. If they reach out, it'll be arithmetic. Don't let it get in your head.
-
 Agent HaX: And Ghost may have had help. Fourteen months of preparation, and they picked the one hospital with a perfect paper trail of ignored warnings.
-
-Agent HaX: You don't find that with a scanner. Somebody tells you.
 
 Agent HaX: Good luck, Agent. Forty-seven lives, twelve hours. Go.
 -> arrival
