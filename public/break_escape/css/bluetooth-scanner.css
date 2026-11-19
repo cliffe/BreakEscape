@@ -278,7 +278,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     color: #e0e0e0;
 }
@@ -290,7 +290,7 @@
 }
 
 .bluetooth-device-icon {
-    font-size: 18px;
+    font-size: 16px;
     opacity: 0.8;
 }
 
@@ -327,7 +327,7 @@
 }
 
 .bluetooth-device-details {
-    font-size: 18px;
+    font-size: 16px;
     color: #aaa;
     white-space: pre-line;
     margin-bottom: 6px;
@@ -342,7 +342,7 @@
 }
 
 .bluetooth-device-timestamp {
-    font-size: 18px;
+    font-size: 16px;
     color: #666;
     font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
@@ -354,7 +354,7 @@
     background: rgba(0, 0, 0, 0.2);
     border: 2px solid #444;
     /* border-radius: 6px; */
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.4;
     color: #ccc;
     transition: all 0.3s ease;
