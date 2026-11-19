@@ -25,7 +25,11 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { kit_defend_done && not kit_ca01_host_said:
-        Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. {kit_caught: That was down to you, before it went anywhere.}
+        { kit_caught:
+            Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
+        - else:
+            Adaeze Okafor: That change went onto the supplier file, so the run paid the account from the email, not Harlow. It got picked up afterwards and the bank's been asked to recall it, but the money moved that same afternoon.
+        }
         Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.
         ~ kit_ca01_host_said = true
     - else:

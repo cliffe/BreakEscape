@@ -155,3 +155,51 @@ for (const stub of STUBS) {
         assert.ok(r.choices.length === 1);
     });
 }
+
+// ---- host (Adaeze) layer-2 line branches on kit_caught (R3 F1: a miss must not read as a catch) ----
+// The hub knot speaks the catch line only when kit_caught; on a miss it states what the run cost,
+// in attacker terms, without claiming success. The panel and fallback inks are identical.
+async function openHost(globals) {
+    const json = JSON.parse(
+        readFileSync(join(root, 'scenarios/test_ca01_panel/ink/adaeze_okafor.json'), 'utf8').replace(/^﻿/, ''));
+    const base = { hub_quiet: false, kit_ca01_host_said: false, phish_supplier_contact_attempts: 0,
+        episode_e1_invoice_fraud_defend_complete: false, kit_defend_done: false, kit_caught: false };
+    window.gameScenario = { globalVariables: base };
+    window.gameState = { globalVariables: { ...base, ...globals } };
+    window.npcConversationStateManager = undefined;
+    const npcManager = { getNPC: id => ({ id, itemsHeld: [] }), npcs: new Map() };
+    const conv = new PhoneChatConversation('adaeze_okafor', npcManager, new InkEngine('adaeze_okafor'));
+    conv.observeGlobals = false;
+    assert.ok((await conv.loadStory(json)) === true);
+    conv.goToKnot('start');
+    stateManager.declaredGlobalNames = null;
+    stateManager.syncGlobalVariablesToStory(conv.engine.story);
+    return conv;
+}
+
+function hostLines(conv) {
+    const texts = [];
+    for (let i = 0; i < 8; i++) {
+        const r = conv.continue();
+        if (typeof r.text === 'string' && r.text.trim()) texts.push(r.text.trim());
+        if (r.hasEnded === true || r.choices.length > 0) break;
+    }
+    return texts.join(' ');
+}
+
+test('host layer-2: a catch reads as a catch, a miss reads as a miss (not the catch line)', async () => {
+    const caught = hostLines(await openHost({ kit_defend_done: true, kit_caught: true }));
+    assert.ok(caught.includes('went out clean') === true);
+    assert.ok(caught.includes('That was down to you') === true);
+    assert.ok(caught.includes('recall it') === false);
+    assert.ok(caught.includes('Ring the person back') === true);
+
+    const miss = hostLines(await openHost({ kit_defend_done: true, kit_caught: false }));
+    assert.ok(miss.includes('onto the supplier file') === true);
+    assert.ok(miss.includes('recall it') === true);
+    assert.ok(miss.includes('went out clean') === false);
+    assert.ok(miss.includes('Ring the person back') === true);
+
+    // The two outcomes must not speak the same opening line (R3 F1).
+    assert.ok((caught === miss) === false);
+});

@@ -147,3 +147,67 @@ Gwen stub (`scenarios/_office_kit/ink/gwen_pritchard_ambient.ink`, ca01 knot, no
 Agnieszka stub (`scenarios/_office_kit/ink/agnieszka_duda_ambient.ink`, ca01 knot, now kit_caught-gated)
 - caught: `Agnieszka Duda: Nice one, catching that. Saved the whole floor a headache.`
 - not caught: `Agnieszka Duda: Busy one on the payments inbox today. Those bank-change emails keep coming.`
+
+## Round 3 (persona playtest findings, fallback + panel; 2026-11-19)
+
+From the two persona reports (fallback Marcus runs 10358/10363, panel Dana run 10359). Six items; all
+fixes land in both `scenarios/ca01_invoice_fraud` and `scenarios/test_ca01_panel` unless noted.
+
+| # | Finding | Disposition |
+|---|---|---|
+| F1 (HIGH) | Host spoke the catch line after a miss (kit_caught false). | Fixed. The whole first host line now branches on `kit_caught`: a truthful, non-blaming miss line that states the cost in attacker terms. |
+| F2 (HIGH) | Board notice ("went to the wrong account, being chased") contradicted the catch run; same text both runs. | Fixed. Notice is now an explicit EARLIER, separate case, true after both a catch and a miss, consistent with Agnieszka's "a different case, one that got through" bark. |
+| F3 (MED) | Notice invisible (notes4 lying on the floor). | Fixed. Sprite/type → `notice_board1` (preloaded 42x31 corkboard), `wallMounted:true`, moved to the back wall. |
+| F4 (MED) | Debrief cost passage gave no concrete money cost; identical both runs. | Fixed in scenario: the conceptPanel cost sentence now names £6,412.80 (the invoice in play) alongside the fortnight of staff time. conceptPanel cannot vary by outcome from the scenario (engine draws it unconditionally), so one passage, framed conditionally, reads true for both runs. |
+| F4b / F5 | "Your reports and checks this round kept N phish away…" reads as praise on a miss. | Engine, not scenario: `public/break_escape/js/minigames/episode-runner/debrief-view.js:313-323` (`teamLine`). It counts only phish the learner actually reported/verified, so it is a true statement, not a false congratulation; the jarring the persona saw came from F1 and is resolved by fixing F1. The scenario-side `strings.teamLine` override is count-only (`{n}`/`{team}`), so it cannot be made catch/miss-aware without an engine change. Left for the orchestrator (no engine edit here). |
+| F5b | "…have a word with Adaeze" (fallback conceptPanel only) read oddly next to the wrong miss line. | Resolved by F1; invite kept (Adaeze now has an honest miss line). |
+| F8 (LOW) | Send banner "In real life a reply … would land in Derek Mason's own inbox, not yours" after "They acted on it". | Engine, not scenario: `public/break_escape/js/minigames/mail-client/mail-bridge.js:797` (and the "They acted on it" banner at `:616`). Correct teaching content; no scenario lever. Left for the orchestrator. |
+| F6 (LOW) | Triple repetition of per-message feedback. | Engine (debrief recap + result screen in `debrief-view.js`), not scenario text. No scenario lever; left for the orchestrator. |
+
+### Changed / new spoken lines R3 (before / after)
+
+Host ink, line 28 block (identical in `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink:27-33` and
+`scenarios/test_ca01_panel/ink/adaeze_okafor.ink:27-33`). The whole first line now branches on `kit_caught`:
+- caught (reworded from the old inline-`{kit_caught}` line, now the sole catch branch): `Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.`
+- not caught (NEW): `Adaeze Okafor: That change went onto the supplier file, so the run paid the account from the email, not Harlow. It got picked up afterwards and the bank's been asked to recall it, but the money moved that same afternoon.`
+- shared second line (unchanged, both outcomes): `Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.`
+
+Board notice observation (`kit_ca01_notice`, in `office_kits/brightwell_foods.json` set pieces
+`ca01_recall_fallback`/`ca01_recall`, regenerated into `scenarios/ca01_invoice_fraud/scenario.json.erb`, and
+hand-edited in `scenarios/test_ca01_panel/scenario.json.erb`):
+- before: `A printed notice on the payments board: a supplier payment went to the wrong account and is being chased with the bank.`
+- after (NEW): `A notice pinned to the payments board about an earlier case: a supplier redirect that got through here a few months back. The run paid an account that wasn't the supplier's, and finance are still clawing the money back from the bank.`
+
+conceptPanel cost sentence (both full panels: `scenarios/ca01_invoice_fraud/scenario.json.erb` and
+`scenarios/test_ca01_panel/scenario.json.erb`):
+- before: `…the run pays the wrong account, and finance spend the next fortnight chasing the bank and the real supplier to put it right.`
+- after: `…the run pays the wrong account — £6,412.80, on the invoice in play — and finance spend the next fortnight chasing the bank and the real supplier to put it right.`
+
+No bark lines changed this round. Agnieszka's board bark (panel :1001) already read "a different case, one
+that got through" (R2-1) and is now consistent with the rewritten notice.
+
+### Notice sprite / position (F3)
+
+`notice_board1` (preloaded 42x31 corkboard, as used by `test_needs_sims`/`office_life_showcase`),
+`wallMounted:true`, `position {x:3.5, y:1.25}` on the back wall, just LEFT of the wide RANGE board (gid
+1426, back-wall cols ~5-6), directly above Agnieszka's walk target `patrolOverride {4,3}` (kept). The back
+wall of `room_aw_brightwell` is crowded (windows at cols 1 and 7, a small frame at col 3, RANGE at cols
+5-6), so no 42px slot is fully clear; {3.5,1.25} clears RANGE and the windows but sits close to the col-3
+frame. Exact tile and clearance are provisional pending the dressing pass and live proof 9 (noted in the kit
+`_note`). No art generated.
+
+### kit_caught timing (F1 verification)
+
+`kit_defend_done` and `kit_caught` are both set on the same synchronous event
+(`global_variable_changed:episode_e1_invoice_fraud_defend_complete`; panel `scenario.json.erb:876-885`,
+the defend-percent `>= 85` gate on the second mapping). The learner cannot reach the host hub between the
+two mappings firing, so there is no stale-`kit_caught` window: by the time the layer-2 branch is read, both
+globals are resolved. The one residual risk is if `episode_e1_invoice_fraud_defend_percent` were written
+strictly after the `_complete` event in some engine path (then a catch could read `kit_caught` false); the
+live proof should confirm the catch run speaks the catch branch.
+
+### Test added
+
+`test/js/office-kit-quiet-and-stub.test.mjs`: "host layer-2: a catch reads as a catch, a miss reads as a
+miss (not the catch line)" runs the real Adaeze ink through the conversation class on both `kit_caught`
+branches and asserts the catch/miss lines differ and neither leaks into the other. Boolean asserts only.
