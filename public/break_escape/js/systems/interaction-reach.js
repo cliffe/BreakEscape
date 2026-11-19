@@ -140,6 +140,73 @@ export function aimDiff(player, target, faceX, faceY, facingAngle) {
     return feetAim.diff <= bodyAim.diff ? feetAim : bodyAim;
 }
 
+/** Scenario object types that are a desk computer (trailing digits are stripped first: laptop1, pc10, pc3). */
+const DESK_COMPUTER_TYPES = new Set(['pc', 'workstation', 'laptop', 'mail_terminal', 'log_filter_terminal', 'drug_library_terminal']);
+
+/** A seated player's computer must lie within this many degrees of the way they face. */
+export const SEATED_PC_FRONT_DEG = 70;
+
+/** Facing angle in degrees (right 0, down 90) for a player.direction; an unknown direction faces down. */
+export function directionAngle(dir) {
+    switch (dir) {
+        case 'right':      return 0;
+        case 'down-right': return 45;
+        case 'down':       return 90;
+        case 'down-left':  return 135;
+        case 'left':       return 180;
+        case 'up-left':    return 225;
+        case 'up':         return 270;
+        case 'up-right':   return 315;
+        default:           return 90;
+    }
+}
+
+/** True for a scenario object that is a computer at a desk (type pc, workstation, laptop or a *_terminal PC). */
+export function isDeskComputer(sprite) {
+    const type = sprite?.scenarioData?.type;
+    return !!sprite && !sprite._isNPC && !sprite.doorProperties && typeof type === 'string' && DESK_COMPUTER_TYPES.has(type.replace(/\d+$/, ''));
+}
+
+/**
+ * reachY for the reach tests, with one addition: a seated player reaches the desk computer in front of them at its
+ * footprint, like a tall prop (a 27px monitor on Gary's desk is 48px from the seat by its top edge, beyond the 32px
+ * reach, but sits right in front of him). "In front" is the same test as isSeatedDeskPc (within SEATED_PC_FRONT_DEG
+ * of player.direction), so a neighbour's computer to the side gains no reach. Standing, or any other object, is
+ * plain reachY. Every reach check (E, the label, the highlight, tap-pick, handleObjectInteraction) calls this so
+ * they agree.
+ */
+export function reachYSeated(sprite, player, seated) {
+    const fromY = player?.y;
+    if (seated && isDeskComputer(sprite) && Number.isFinite(fromY) && Number.isFinite(sprite.y) && !sprite.rotation) {
+        const h = sprite.displayHeight ?? sprite.height ?? 0;
+        if (h > 0 && aimDiff(player, sprite, aimX(sprite), aimY(sprite), directionAngle(player.direction)).diff <= SEATED_PC_FRONT_DEG) {
+            const top = sprite.y - (sprite.originY ?? 0.5) * h;
+            return Math.max(top, Math.min(fromY, top + h));
+        }
+    }
+    return reachY(sprite, fromY);
+}
+
+/**
+ * Seated at a desk, E and the E label prefer its computer. There is no seat-to-desk link in the scenarios, so
+ * "the seat's desk PC" is a computer the player can already reach (the callers' reach and wall tests) that lies
+ * in front of the way they face: `diff` is its aimDiff, and a PC behind or beside the chair is some other desk's.
+ * A fixed seat cannot turn, and a swivel chair turns only to face a way the player chose, so the PC beats every
+ * other object in reach, but an NPC that is better aimed than the PC (lower plain score) wins instead, even over a
+ * mug that scored best overall: someone sitting across the desk is who E means.
+ * `seated` is window.seating.currentSeat(); the callers keep the best such PC apart from their plain best, and the
+ * best NPC apart again (seatedPcWins).
+ */
+export function isSeatedDeskPc(seated, target, diff) {
+    return !!seated && isDeskComputer(target) && Number.isFinite(diff) && diff <= SEATED_PC_FRONT_DEG;
+}
+
+/** Whether the best seated PC (plain score `pcScore`) beats the best NPC (plain score `bestNpcScore`, Infinity when none). */
+export function seatedPcWins(pcScore, bestNpcScore) {
+    if (!Number.isFinite(pcScore)) return false;
+    return !(bestNpcScore < pcScore);
+}
+
 /**
  * Drop swivel chairs from a tap's pick list when anything else was gathered with
  * them: a chair pushed under a desk shouldn't turn "the keyboard" into a

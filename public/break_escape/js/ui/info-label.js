@@ -10,7 +10,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
-import { reachX, reachY, aimX, aimY, aimDiff } from '../systems/interaction-reach.js';
+import { reachX, aimX, aimY, aimDiff, isSeatedDeskPc, seatedPcWins, reachYSeated, directionAngle, npcGivesWay, objectIdOf } from '../systems/interaction-reach.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -119,7 +119,7 @@ export function updateInfoLabel() {
     const py = player.y;
 
     const playerDirection = player.direction || 'down';
-    const facingAngle = _directionToAngle(playerDirection);
+    const facingAngle = directionAngle(playerDirection);
 
     function angularDiff(ox, oy) {
         let angle = Math.atan2(oy - py, ox - px) * 180 / Math.PI;
@@ -131,21 +131,42 @@ export function updateInfoLabel() {
 
     let bestScore = Infinity;
     let bestText  = null;
+    let bestNpcScore = Infinity; // the best NPC apart: a better-aimed colleague beats the seated PC (seatedPcWins)
+    let bestNpcText = null;
+    // The best desk computer in front of a seated player (interaction-reach.js isSeatedDeskPc), kept apart
+    let pcScore = Infinity;
+    let pcText = null;
     // E from a chair reaches what is around it (interactions.js skips the occupied seat), so the label does too
     const seatedOn = window.seating?.currentSeat?.() || null;
+
+    // Ids of the objects in reach (an owner on the move from her own PC among them gives way, as in E), and the NPCs, which
+    // are considered last once those are known (interactions.js does the same)
+    const inReachIds = [];
+    const npcs = [];
 
     function consider(ox, oy, text, rangeSq, target = null, faceX = ox, faceY = oy) {
         if (!text) return;
         const dx = ox - px;
         const dy = oy - py;
-        if (dx * dx + dy * dy > rangeSq) return;
+        // An NPC is in reach as E measures it (static body edge, a seated NPC from her chair); interactions.js sets this global
+        const inReach = target?._isNPC && typeof window.isObjectInInteractionRange === 'function'
+            ? window.isObjectInInteractionRange(target)
+            : dx * dx + dy * dy <= rangeSq;
+        if (!inReach) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
+        if (target && !target._isNPC) inReachIds.push(objectIdOf(target));
         // Same scoring as tryInteractWithNearest, from the one helper
         let diff = angularDiff(faceX, faceY);
         if (target && !target._isNPC && !target.doorProperties) {
             diff = aimDiff(player, target, faceX, faceY, facingAngle).diff;
         }
-        const score = diff * 1000 + Math.sqrt(dx * dx + dy * dy);
+        let score = diff * 1000 + Math.sqrt(dx * dx + dy * dy);
+        if (target?._isNPC && npcGivesWay(player, target, inReachIds)) score += 30000; // someone walking away, as E
+        if (isSeatedDeskPc(seatedOn, target, diff) && score < pcScore) {
+            pcScore = score;
+            pcText = text;
+        }
+        if (target && target._isNPC && score < bestNpcScore) { bestNpcScore = score; bestNpcText = text; }
         if (score < bestScore) {
             bestScore = score;
             bestText  = text;
@@ -169,7 +190,7 @@ export function updateInfoLabel() {
                 }
                 // A sign-in PC with a sticky note picture says so (slice 9.2 B)
                 if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
-                consider(reachX(obj, px), reachY(obj, py), text, INTERACTION_RANGE_SQ, obj, aimX(obj), aimY(obj));
+                consider(reachX(obj, px), reachYSeated(obj, player, seatedOn), text, INTERACTION_RANGE_SQ, obj, aimX(obj), aimY(obj));
             });
         }
 
@@ -195,11 +216,14 @@ export function updateInfoLabel() {
                 if (koCheck && sprite.npcId && koCheck.isNPCKO(sprite.npcId)) return;
                 const npc = sprite.npcId && window.npcManager ? window.npcManager.getNPC(sprite.npcId) : null;
                 const text = npc?.observations || npc?.displayName || null;
-                consider(sprite.x, sprite.y, text, INTERACTION_RANGE_SQ, sprite);
+                npcs.push({ sprite, text });
             });
         }
     });
+    npcs.forEach(({ sprite, text }) => consider(sprite.x, sprite.y, text, INTERACTION_RANGE_SQ, sprite));
 
+    // Seated at a desk, its computer (interactions.js decides E the same way)
+    if (pcText) bestText = seatedPcWins(pcScore, bestNpcScore) ? pcText : bestNpcText;
     proximityText = bestText;
     if (!hoverText) _applyText(proximityText);
 }
@@ -212,19 +236,5 @@ function _applyText(text) {
         labelEl.classList.add('visible');
     } else {
         labelEl.classList.remove('visible');
-    }
-}
-
-function _directionToAngle(dir) {
-    switch (dir) {
-        case 'right':      return 0;
-        case 'down-right': return 45;
-        case 'down':       return 90;
-        case 'down-left':  return 135;
-        case 'left':       return 180;
-        case 'up-left':    return 225;
-        case 'up':         return 270;
-        case 'up-right':   return 315;
-        default:           return 90;
     }
 }

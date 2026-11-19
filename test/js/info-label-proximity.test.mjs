@@ -21,7 +21,8 @@ writeFileSync(join(dir, 'display-dashes.js'), 'export const displayDashes = t =>
 writeFileSync(join(dir, 'computer-keywords.js'), readFileSync(join(js, 'utils/computer-keywords.js'), 'utf8'));
 writeFileSync(join(dir, 'pc-observations.js'), readFileSync(join(js, 'utils/pc-observations.js'), 'utf8'));
 writeFileSync(join(dir, 'walls.js'), 'export const interactionLineClear = () => true;');
-writeFileSync(join(dir, 'reach.js'), 'export const reachX = o => o.x; export const reachY = o => o.y; export const aimX = o => o.x; export const aimY = o => o.y; export const aimDiff = () => ({ diff: 0 });');
+writeFileSync(join(dir, 'reach-real.js'), readFileSync(new URL('../../public/break_escape/js/systems/interaction-reach.js', import.meta.url), 'utf8'));
+writeFileSync(join(dir, 'reach.js'), "export * from './reach-real.js'; export const reachX = o => o.x; export const reachY = o => o.y; export const reachYSeated = o => o.y; export const aimX = o => o.x; export const aimY = o => o.y; export const aimDiff = () => ({ diff: 0 });");
 const code = readFileSync(join(js, 'ui/info-label.js'), 'utf8')
     .replace("'../utils/constants.js'", "'./constants.js'")
     .replace("'../utils/conditional-text.js'", "'./conditional-text.js'")
