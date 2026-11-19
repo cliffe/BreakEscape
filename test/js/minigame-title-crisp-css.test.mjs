@@ -27,6 +27,7 @@ const EXPECTED = [
     '.patch-panel-title',
     '.rogue-ap-title-text',
     '.rogue-ap-heading',
+    '.vm-launcher-title',
     '.console-title',
     '.pin-minigame-title',
     '.pin-minigame-attempts-title',

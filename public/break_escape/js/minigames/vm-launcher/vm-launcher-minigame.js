@@ -69,10 +69,45 @@ export class VmLauncherMinigame extends MinigameScene {
         this.showPostit = params.showPostit || false;
     }
 
+    // The X sits at the top right of the device frame, like the patch panel and rogue AP
+    closeAnchor() {
+        return this.frame || this.gameContainer;
+    }
+
+    // Footer buttons (Add to Notepad) go inside the frame, so it wraps them
+    controlsHost() {
+        return this.frame || null;
+    }
+
+    /**
+     * The shared device frame (css/device-frame.css): title row with the device name, then the
+     * launcher content. Made once, on first use, so buildUI also works when called on its own.
+     * The name is plain text (textContent).
+     */
+    ensureFrame() {
+        if (this.frame) return this.frame;
+        const frame = document.createElement('div');
+        frame.className = 'device-frame vm-launcher-frame';
+        const title = document.createElement('div');
+        title.className = 'device-frame-title vm-launcher-title-row';
+        const name = document.createElement('span');
+        name.className = 'vm-launcher-title';
+        name.textContent = this.params?.title || 'VM Console Access';
+        title.appendChild(name);
+        frame.appendChild(title);
+        this.gameContainer.appendChild(frame);
+        this.frame = frame;
+        return frame;
+    }
+
     init() {
         this.params.title = this.params.title || 'VM Console Access';
         this.params.cancelText = 'Close';
         super.init();
+        this.container.classList?.add('vm-launcher-minigame');
+        // The device frame carries its own title row
+        if (this.headerElement?.style) this.headerElement.style.display = 'none';
+        this.ensureFrame();
 
         // Add notebook button to minigame controls if postit note exists
         const controls = (this.showPostit && this.postitNote) ? this.ensureControlsRow() : null;
@@ -105,7 +140,9 @@ export class VmLauncherMinigame extends MinigameScene {
         // Re-enabled: root causes fixed — user_not_authorized now uses root_path (not
         // request.referrer), vm_panel? policy includes admin check, and main.js has an
         // iframe guard preventing re-initialisation if the game page ever loads in a frame.
+        const frame = this.ensureFrame();
         if (this.hacktivityMode && this.vmPanelUrl && !this.vmSetReleased) {
+            frame.classList.add('vm-launcher-frame-iframe');
             const iframeSrc = vmPanelUrlWithTitle(this.vmPanelUrl, this.vm?.title);
             const launcher = document.createElement('div');
             launcher.className = 'vm-launcher vm-launcher-iframe';
@@ -113,32 +150,17 @@ export class VmLauncherMinigame extends MinigameScene {
             iframe.src = iframeSrc;
             iframe.title = 'VM Controls';
             launcher.appendChild(iframe);
-            this.gameContainer.appendChild(launcher);
+            frame.appendChild(launcher);
             if (this.showPostit && this.postitNote) {
                 const postit = document.createElement('div');
-                postit.className = 'postit-note';
-                // Overlay on top of the iframe in the bottom-left corner
-                postit.style.cssText = `
-                    position: absolute;
-                    left: 20px;
-                    z-index: 15;
-                    background: #ffff88;
-                    border: 2px solid #ddd;
-                    padding: 15px;
-                    box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-                    transform: rotate(-2deg);
-                    font-family: 'Pixelify Sans', 'Comic Sans MS', cursive;
-                    font-size: 18px;
-                    color: #333;
-                    max-width: 200px;
-                    word-wrap: break-word;
-                    white-space: pre-line;
-                    top: 75%;
-                `;
+                // Overlay on top of the iframe in the bottom-left corner (css/vm-launcher-minigame.css)
+                postit.className = 'postit-note vm-postit-overlay';
                 postit.textContent = this.postitNote;
                 makeDraggable(postit);
-                this.gameContainer.appendChild(postit);
+                frame.appendChild(postit);
             }
+            this.settleControls();
+            this.attachEventHandlers();
             return;
         }
 
@@ -156,7 +178,8 @@ export class VmLauncherMinigame extends MinigameScene {
             launcher.appendChild(this.buildVmDisplay());
         }
         
-        this.gameContainer.appendChild(launcher);
+        launcher.classList.add('pixel-scroll');
+        frame.appendChild(launcher);
 
         // Postit note
         if (this.showPostit && this.postitNote) {
@@ -164,12 +187,20 @@ export class VmLauncherMinigame extends MinigameScene {
             postit.className = 'postit-note';
             postit.textContent = this.postitNote;
             makeDraggable(postit);
-            this.gameContainer.appendChild(postit);
+            frame.appendChild(postit);
         }
 
+        this.settleControls();
         this.attachEventHandlers();
     }
     
+    /** The footer row (Add to Notepad) goes last in the frame, under the content and the post-it. */
+    settleControls() {
+        if (this.controlsElement && this.frame && this.controlsElement.parentNode === this.frame) {
+            this.frame.appendChild(this.controlsElement);
+        }
+    }
+
     /**
      * The VM set was handed back (D144). Fixed text, no VM title or IP, and a link only to the
      * host's menu (else its return page), each only if same-origin. Built with createElement and

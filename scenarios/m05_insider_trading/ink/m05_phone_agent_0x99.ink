@@ -1002,7 +1002,7 @@ Ask me what you want to ask.
 }
 // R2 (m7): she has nothing left to offer once he's dealt with.
 {recruiter_texted and not recruiter_contacted_player:
-    TalentStack's line is still open. She's lost him. Ring her if you want to hear her lose.
+    TalentStack's caller is still on your phone. She's lost him. Ring her if you want to hear her lose.
 }
 -> extract_choices
 
@@ -1178,7 +1178,7 @@ Thursday, nine o'clock. My office.
 }
 // R2 (m7): after the fate she has no pitch left (never_talked_terms).
 {recruiter_texted and not recruiter_contacted_player and final_choice == "":
-    That TalentStack number's still there. Don't give her anything.
+    That TalentStack caller's still on your phone. Don't give her anything.
 }
 -> report_progress_choices
 

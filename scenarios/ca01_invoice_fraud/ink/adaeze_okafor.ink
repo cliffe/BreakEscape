@@ -23,7 +23,7 @@ VAR hub_quiet = false
 - else:
     { episode_e1_invoice_fraud_defend_complete:
         Adaeze Okafor: You've worked it from both ends now.
-        Adaeze Okafor: Whoever asks you to move money or change bank details, ring them back on a number you already hold first. That habit is what I'd want from my team.
+        Adaeze Okafor: Anyone asking you to move money or change bank details, ring them back on a number you already hold before you act. That's what I want from my team.
     - else:
         { phish_supplier_contact_attempts > 0:
             Adaeze Okafor: Your message has gone. Now take the other seat at the kiosk and read the payments inbox the way it would land on a busy afternoon.

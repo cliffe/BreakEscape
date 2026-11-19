@@ -2,9 +2,83 @@
  * VM Launcher Minigame Styles
  */
 
-/* The face is painted on the whole window, so the area inside the frame (content and the post-it's slot) is one colour */
+/* The launcher is a device frame (css/device-frame.css, as the patch panel and rogue AP): the header
+   is hidden and the frame carries the device name and the X. The window around it is clear. */
+.minigame-container[data-minigame="vm-launcher"] > .minigame-header {
+    display: none;
+}
+
 .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
-    background: var(--device-palette-face);
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    margin: 16px;
+    background: none;
+    display: flex;
+    justify-content: center;
+    overflow: visible;
+}
+
+.vm-launcher-frame {
+    position: relative;   /* the post-it overlay in the console iframe path is placed against the frame */
+    width: min(calc(100vw - 32px), 640px);
+    padding: var(--device-frame-gap);
+    font-family: 'GNF', monospace;
+}
+
+.vm-launcher-frame * {
+    border-radius: 0;
+}
+
+/* The X sits inside the frame at its top right: keep the name clear of it */
+.vm-launcher-frame .vm-launcher-title-row {
+    padding-right: 40px;
+}
+
+.vm-launcher-frame .vm-launcher-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Hacktivity console path: the panel iframe fills a frame of fixed height */
+.vm-launcher-frame.vm-launcher-frame-iframe {
+    width: min(calc(100vw - 32px), 960px);
+    height: min(720px, calc(100dvh - 32px));
+}
+
+/* The post-it and the footer row sit inside the frame, clear of the bezel */
+.vm-launcher-frame > .postit-note {
+    top: 0;
+    white-space: pre-line; /* two-line notes (user / password) keep their line break */
+    align-self: flex-start;
+    margin: 8px var(--device-frame-gap) var(--device-frame-gap);
+}
+
+.vm-launcher-frame > .minigame-controls {
+    margin: 8px 0 var(--device-frame-gap);
+}
+
+/* Over the console iframe: square, a hard shadow, the game's pixel font (no tilt, no blur) */
+.vm-launcher-frame > .postit-note.vm-postit-overlay {
+    position: absolute;
+    left: 20px;
+    top: 75%;
+    margin: 0;
+    z-index: 15;
+    max-width: 200px;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+@media (max-width: 559px) {
+    .vm-launcher-frame .vm-launcher-title-row {
+        padding-right: 32px;
+    }
+    .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
+        margin: 16px 0;
+    }
 }
 
 .vm-launcher {
@@ -223,10 +297,15 @@ a.vm-action-btn {
     overflow: hidden;
 }
 
+.vm-launcher-frame-iframe > .vm-launcher-iframe {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
 .vm-launcher-iframe iframe {
     display: block;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     border: none;
 }
 

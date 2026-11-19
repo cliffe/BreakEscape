@@ -204,6 +204,13 @@
     outline: none;
 }
 
+/* A keyboard player left on the empty desktop sees where the focus is (square, 2px) */
+.desktop-background:focus-visible {
+    outline: 2px solid var(--ui-accent, #ffcc44);
+    outline-offset: -2px;
+    border-radius: 0;
+}
+
 .desktop-wallpaper {
     position: absolute;
     top: 0;
@@ -933,6 +940,14 @@
 .share-folder-files .container-content-slot:focus-visible .container-content-label {
     background: #000080;
     color: #fff;
+}
+
+/* An empty share opened by key focuses the white pane itself: the gold ring is about 1.6:1 on
+   white, so the share pane gets the navy of its file selection (square, 2px) */
+.container-contents-grid.share-folder-files#container-contents-grid:focus-visible {
+    outline: 2px solid #000080;
+    outline-offset: -2px;
+    border-radius: 0;
 }
 
 .share-folder-files .container-content-slot[aria-disabled="true"] {

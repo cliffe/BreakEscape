@@ -3039,7 +3039,6 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "condition": "!globalVars.voltage_neutralised && !globalVars.attack_prevented && !globalVars.racks_vented",
       "setGlobal": { "racks_vented": true, "casualties_occurred": true, "vented_by_trigger": true, "urgency_stage": 4 },
       "showCountdown": true,
-      "onceOnly": true,
       "actions": [
         {
           "type": "tint_objects",
@@ -3064,7 +3063,6 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "condition": "!globalVars.attack_prevented && !globalVars.racks_vented && !globalVars.hydrogen_alarm && !globalVars.attack_mechanism_known",
       "setGlobal": { "hydrogen_alarm": true, "urgency_stage": 3 },
       "showCountdown": true,
-      "onceOnly": true,
       "actions": [
         {
           "type": "tint_objects",
@@ -3089,7 +3087,6 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "condition": "!globalVars.attack_prevented && !globalVars.racks_vented && !globalVars.hydrogen_alarm",
       "setGlobal": { "hydrogen_alarm": true, "urgency_stage": 3 },
       "showCountdown": true,
-      "onceOnly": true,
       "actions": [
         {
           "type": "tint_objects",
@@ -3117,7 +3114,6 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "condition": "!globalVars.attack_prevented && !globalVars.racks_vented",
       "setGlobal": { "racks_vented": true, "casualties_occurred": true, "vented_by_alarm_clock": true, "urgency_stage": 4 },
       "showCountdown": false,
-      "onceOnly": true,
       "actions": [
         {
           "type": "hint",
@@ -3135,7 +3131,6 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "condition": "!globalVars.attack_prevented && !globalVars.racks_vented",
       "setGlobal": { "racks_vented": true, "casualties_occurred": true, "urgency_stage": 4 },
       "showCountdown": false,
-      "onceOnly": true,
       "actions": [
         {
           "type": "hint",
