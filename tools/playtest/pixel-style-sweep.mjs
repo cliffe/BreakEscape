@@ -369,6 +369,38 @@ async function checkScene(page, scene) {
     }, { ALLOWED: ALLOWED_FONTS, hardSrc: hardGradient.toString(), KEEP });
 }
 
+// Fit metrics (D164 font-size change): how much of the open minigame scrolls or clips.
+// scrolls = elements inside the shell with a visible scroll range (overflow auto/scroll and
+// scrollHeight/Width beyond the box); clipped = elements with overflow hidden/clip whose
+// content is wider/taller than the box by more than 1px (text cut off); wrapButtons =
+// buttons whose text wraps to more than one line.
+async function checkFit(page) {
+    return page.evaluate(() => {
+        const root = document.querySelector('.minigame-container') || document.body;
+        const name = (el) => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''}`;
+        const scrolls = []; const clipped = []; const wrapButtons = [];
+        for (const el of [root, ...root.querySelectorAll('*')]) {
+            const cs = getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+            const r = el.getBoundingClientRect();
+            if (!r.width || !r.height) continue;
+            const ox = cs.overflowX; const oy = cs.overflowY;
+            const sy = el.scrollHeight - el.clientHeight; const sx = el.scrollWidth - el.clientWidth;
+            if ((oy === 'auto' || oy === 'scroll') && sy > 1) scrolls.push(`${name(el)} y+${sy}`);
+            if ((ox === 'auto' || ox === 'scroll') && sx > 1) scrolls.push(`${name(el)} x+${sx}`);
+            if ((ox === 'hidden' || ox === 'clip') && sx > 1 && el.children.length + el.childNodes.length > 0 && el.textContent.trim()) clipped.push(`${name(el)} x+${sx}`);
+            if ((oy === 'hidden' || oy === 'clip') && sy > 1 && el.textContent.trim() && el !== document.body) clipped.push(`${name(el)} y+${sy}`);
+            if (el.tagName === 'BUTTON' && el.textContent.trim()) {
+                const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+                const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+                if (r.height - pad > lh * 1.6) wrapButtons.push(`${name(el)} ${el.textContent.trim().slice(0, 24)}`);
+            }
+        }
+        const win = { w: innerWidth, h: innerHeight, docScrollX: document.documentElement.scrollWidth - innerWidth, docScrollY: document.documentElement.scrollHeight - innerHeight };
+        return { scrolls: scrolls.slice(0, 12), clipped: clipped.slice(0, 12), wrapButtons: wrapButtons.slice(0, 8), win };
+    });
+}
+
 async function main() {
     // Scrollbars shown, as a desktop player sees them (the headless shell hides them by default)
     const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
@@ -411,6 +443,8 @@ async function main() {
             const chk = await checkScene(page, scene);
             const cv = await checkCanvas(page);
             const found = [...chk.breaches, ...(cv?.breaches || [])];
+            const fit = await checkFit(page);
+            (res.fit ||= {})[`${w}x${h}`] = fit;
             if (!res) res = { ...st, errors: [...(st.errors || [])], elements: chk.elements, canvasTexts: cv?.texts ?? null, breaches: [], seen: new Map() };
             else for (const e of st.errors || []) if (!res.errors.includes(e)) res.errors.push(e);
             if (!st.open) res.open = false;
@@ -431,7 +465,7 @@ async function main() {
         }
         const byKind = {};
         for (const b of res.breaches) byKind[b.kind] = (byKind[b.kind] || 0) + 1;
-        report[scene] = { inScope: SCOPE.includes(scene), open: res.open, setup: res.setup ?? null, errors: res.errors, elements: res.elements, canvasTexts: res.canvasTexts, byKind, breaches: res.breaches };
+        report[scene] = { inScope: SCOPE.includes(scene), open: res.open, setup: res.setup ?? null, errors: res.errors, elements: res.elements, canvasTexts: res.canvasTexts, fit: res.fit, byKind, breaches: res.breaches };
         const sum = Object.entries(byKind).map(([k, n]) => `${k} ${n}`).join(', ') || 'clean';
         console.log(`${SCOPE.includes(scene) ? '*' : ' '} ${scene.padEnd(28)} ${String(res.elements).padStart(4)} el  ${sum}${res.errors.length ? `  ERR ${res.errors[0].slice(0, 80)}` : ''}${res.open ? '' : '  (did not open)'}`);
     }
