@@ -1,6 +1,10 @@
 // Voiced call mode in phone landscape (max-height 500px, the 844x390 budget): the status bar,
 // header, thread, replies and the end-call button all fit the 253px phone screen, the end-call
-// button stays visible, and portrait/desktop call rules are untouched. Reads the CSS, no browser.
+// button stays visible, and call rules for screens taller than 820px are untouched. The end-call
+// button rules are shared with every screen up to 820px tall (@media screen and (max-height: 820px)),
+// and calls with replies showing on 501 to 820px screens (1280x720, 800x600, portrait phones) get a
+// scrolling thread of the latest line plus the newest tell (@media (500px < height <= 820px)).
+// Reads the CSS, no browser.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -33,7 +37,11 @@ function rules(src, media = '') {
 const all = rules(css);
 const land = all.filter(r => /max-height:\s*500px/.test(r.media));
 const V = '.phone-call-mode #conversation-view';
-const L = sel => { const r = land.find(x => x.selector.split(', ').includes(V + ' ' + sel)); assert.ok(r, 'landscape rule ' + sel); return r; };
+const SHARED_MEDIA = '@media screen and (max-height: 820px)';
+const DESK_MEDIA = '@media (500px < height <= 820px)';
+// The end-call button rules serve every call screen up to 820px tall, so they live in one shared block
+const shared = all.filter(r => r.media === SHARED_MEDIA);
+const L = sel => { const r = land.concat(shared).find(x => x.selector.split(', ').includes(V + ' ' + sel)); assert.ok(r, 'landscape or shared rule ' + sel); return r; };
 const px = (body, prop) => parseFloat(body.match(new RegExp('(?:^|[\\s;])' + prop + ':\\s*([\\d.]+)px'))[1]);
 
 // Selector specificity as [ids, classes, elements]. :has()/:not()/:is() count their most specific argument.
@@ -213,7 +221,7 @@ check('landscape call: end-call is out of the flow, on screen and never hidden',
     assert.ok(px(b.body, 'width') >= 32 && px(b.body, 'height') >= 32, 'tap target at least 32px');
     assert.ok(px(b.body, 'height') <= statusH);
     assert.match(b.body, /border:\s*2px solid/);
-    for (const r of land) {
+    for (const r of land.concat(shared)) {
         if (/call-end|call-controls/.test(r.selector)) assert.doesNotMatch(r.body, /display:\s*none|visibility:\s*hidden|opacity:\s*0\b/, r.selector);
     }
     assert.match(status.body, /padding:\s*0 52px 0 10px/, 'status bar leaves room for the button');
@@ -242,7 +250,7 @@ check('landscape call rules are all scoped to call mode', () => {
         assert.ok(r.selector.split(', ').every(s => s.includes('phone-call-mode')), r.selector);
     }
 });
-check('portrait and desktop call rules are unchanged', () => {
+check('portrait and tall-desktop (over 820px) call rules are unchanged', () => {
     const base = all.filter(r => r.media === '');
     const B = sel => base.find(r => r.selector === sel).body;
     assert.match(B('.phone-call-mode .conversation-avatar, .phone-call-mode .conversation-avatar-placeholder'), /width:\s*128px/);
@@ -252,8 +260,8 @@ check('portrait and desktop call rules are unchanged', () => {
     assert.match(B('.phone-call-mode .call-controls'), /padding:\s*10px 0 14px/);
     assert.match(B('.phone-call-mode .conversation-header'), /padding:\s*16px/);
     assert.match(B('.phone-call-mode .call-status-bar'), /padding:\s*8px 14px/);
-    // nothing for call mode lives in the 820px (tablet) block
-    assert.ok(!all.some(r => /max-height:\s*820px/.test(r.media) && !/min-height:\s*501px/.test(r.media) && r.selector.includes('phone-call-mode')));
+    // call mode rules live only in the two exact blocks below the 820px line (nothing in the tablet block)
+    assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.media !== DESK_MEDIA && r.selector.includes('phone-call-mode')));
 });
 
 check('landscape call: the influence bar stacks (head over a full-width track) inside the 40px header row', () => {
@@ -316,28 +324,90 @@ check('appendTellBubbles: scrollTop is unchanged when no tell was added', () => 
     assert.equal(c.scrollTop, 17);
 });
 
-// Desktop-height call (501 to 820 px tall, e.g. 1280x720): the 575px phone screen clipped the
-// end-call button because the thread kept its 110px minimum and the replies could not shrink.
-const desk = all.filter(r => /min-height:\s*501px/.test(r.media) && /max-height:\s*820px/.test(r.media));
-const D = sel => { const r = desk.find(x => x.selector === V + ' ' + sel); assert.ok(r, 'desktop-height call rule ' + sel); return r; };
-check('desktop-height call: thread min-height is below the old 110px and its max-height is capped', () => {
-    const b = D('.messages-container').body;
-    assert.ok(px(b, 'min-height') <= 56, 'thread min-height ' + px(b, 'min-height'));
-    assert.ok(px(b, 'max-height') <= 64, 'thread max-height ' + px(b, 'max-height'));
+// Calls on 501 to 820px screens (1280x720, 1366x657, 800x600, portrait phones). The 575px screen at
+// 1280x720 clipped the end-call button, so the button leaves the flow (shared with landscape) and the
+// thread, while replies show, is a scrolling box of the latest line plus the newest tell.
+const desk = all.filter(r => r.media === DESK_MEDIA);
+const D = sel => { const r = desk.find(x => x.selector === sel); assert.ok(r, 'desktop-height call rule ' + sel); return r; };
+const baseCall = sel => { const r = all.find(x => x.media === '' && x.selector === sel); assert.ok(r, 'base rule ' + sel); return r; };
+const CH = V + '.call-has-choices';
+const beats = (sel, base) => assert.ok(cmpSpec(spec(sel), spec(base)) > 0, sel + ' ' + spec(sel) + ' must beat ' + base + ' ' + spec(base));
+check('desktop-height call: the range starts exactly where the landscape block ends (no gap, no overlap)', () => {
+    assert.ok(DESK_MEDIA.includes('500px < height'), 'strict lower bound');
+    assert.ok(land.length > 0 && land.every(r => r.media === '@media (max-height: 500px)'), 'landscape block is max-height 500px');
+    assert.ok(desk.length >= 5);
+    assert.ok(!desk.some(r => /max-height:\s*500px/.test(r.media)));
+    // the end-call rules are single-source: the landscape block no longer repeats them
+    assert.ok(!land.some(r => /call-end-button|call-controls|call-status-bar/.test(r.selector)));
 });
-check('desktop-height call: replies may shrink (flex-shrink 1) and keep room for two rows', () => {
-    const b = D('.choices-container').body;
-    assert.match(b, /flex-shrink:\s*1/);
-    assert.ok(px(b, 'min-height') >= 90, 'replies min-height ' + px(b, 'min-height'));
+check('desktop-height call: the end-call button is out of the flow, same size and style as landscape, and wins the cascade', () => {
+    assert.equal(shared.length, 5, 'view, status bar, controls, end button and its focus ring share one block');
+    const c = L('.call-controls'), b = L('.call-end-button');
+    assert.match(c.body, /position:\s*absolute/);
+    assert.match(c.body, /top:\s*0/);
+    assert.equal(px(b.body, 'width'), 36);
+    assert.equal(px(b.body, 'height'), 36);
+    assert.match(b.body, /border:\s*2px solid #000/);
+    assert.match(L('.call-end-button:focus-visible').body, /outline:\s*2px solid #000/);
+    assert.equal(px(L('.call-status-bar').body, 'height'), 36);
+    beats(V + ' .call-controls', '.phone-call-mode .call-controls');
+    beats(V + ' .call-end-button', '.phone-call-mode .call-end-button');
+    beats(V + ' .call-status-bar', '.phone-call-mode .call-status-bar');
+    assert.ok(px(baseCall('.phone-call-mode .call-end-button').body, 'width') > 36, 'the 60px desktop button is what this replaces');
 });
-check('desktop-height call: influence legend is compact so the header stays short', () => {
-    const b = D('.se-chat-header .ib-infl-legend').body;
-    assert.ok(px(b, 'line-height') <= 16);
-    assert.ok(px(b, 'font-size') >= 16);
+check('desktop-height call: replies showing, the thread scrolls (never clips) and holds three lines of Dev text', () => {
+    const b = D(CH + ' .messages-container').body;
+    assert.match(b, /overflow-y:\s*auto/);
+    assert.match(b, /justify-content:\s*flex-start/);
+    assert.match(b, /box-sizing:\s*border-box/);
+    const lineH = 16 * 1.3;                                  // .call-subtitle: 16px at 1.3
+    const pad = b.match(/padding:\s*(\d+)px/);
+    assert.ok(px(b, 'min-height') >= 3 * lineH + 2 * Number(pad[1]), 'room for 3 lines, min-height ' + px(b, 'min-height'));
+    assert.ok(px(b, 'max-height') >= px(b, 'min-height'));
+    assert.ok(px(b, 'max-height') < 190, 'below the old 190px cap');
+    beats(CH + ' .messages-container', '.phone-call-mode .messages-container');
+    beats(CH + ' .messages-container', '.conversation-view .messages-container');
 });
-check('desktop-height call: block does not overlap the landscape block and adds no radius/blur/gradient', () => {
-    assert.ok(desk.length >= 3);
-    for (const r of desk) assert.doesNotMatch(r.body, /border-radius|blur|gradient/);
+check('desktop-height call: only while replies show; the speaking phase keeps the old thread size', () => {
+    assert.ok(desk.some(r => /\.messages-container/.test(r.selector)), 'the desktop-height thread rules exist');
+    assert.ok(desk.every(r => !/\.messages-container/.test(r.selector) || r.selector.includes('.call-has-choices')));
+    assert.ok(!desk.some(r => /\.choices-container/.test(r.selector)), 'no cap on the replies box');
+    assert.match(baseCall('.phone-call-mode .messages-container').body, /min-height:\s*110px/);
+    assert.match(baseCall('.phone-call-mode .messages-container').body, /max-height:\s*190px/);
+});
+check('desktop-height call: the thread shows the latest subtitle plus the newest trailing tell, and beats the base hide rule', () => {
+    const base = '.phone-call-mode .messages-container > :not(:nth-last-child(-n + 2))';
+    const hideOthers = D(CH + ' .messages-container > :not(.call-subtitle)');
+    assert.match(hideOthers.body, /display:\s*none/);
+    const latest = D(CH + ' .messages-container > .call-subtitle');
+    assert.match(latest.body, /display:\s*block/);
+    beats(CH + ' .messages-container > .call-subtitle', base);
+    const older = D(CH + ' .messages-container > .call-subtitle:has(~ .call-subtitle)');
+    assert.match(older.body, /display:\s*none/);
+    assert.ok(cmpSpec(spec(older.selector), spec(latest.selector)) > 0, 'older-subtitle hide beats the latest-subtitle show');
+    const tell = D(CH + ':has(.se-chat-header) .messages-container > .pretext-tell:last-child');
+    assert.match(tell.body, /display:\s*block/);
+    beats(tell.selector, hideOthers.selector);
+    beats(tell.selector, base);
+});
+check('desktop-height call: height budget at 1280x720, 1366x657 and 800x600 (end button on screen, stack fits)', () => {
+    // Measured live (header with the three-line influence legend and a change line): status 36, header 236.
+    const statusPx = px(L('.call-status-bar').body, 'height');
+    const header = 236;
+    const thread = px(D(CH + ' .messages-container').body, 'min-height');
+    const repliesMin = px(baseCall('.conversation-view .choices-container').body, 'min-height');
+    const cue = 25;
+    const need = statusPx + header + thread + repliesMin + cue;
+    for (const [vw, vh] of [[1280, 720], [1366, 657], [800, 600]]) {
+        const screen = screenAt(vh);
+        assert.ok(need <= screen, vw + 'x' + vh + ' screen ' + screen + ' needs ' + need);
+    }
+    // the button is out of the flow, so it is on screen even where the stack no longer fits
+    assert.match(L('.call-controls').body, /position:\s*absolute/);
+});
+check('desktop-height call: no radius, blur or gradient', () => {
+    assert.ok(desk.length > 0 && shared.length > 0);
+    for (const r of desk.concat(shared)) assert.doesNotMatch(r.body, /border-radius|blur|gradient/, r.selector);
 });
 
 console.log(`\n${pass} checks passed`);
