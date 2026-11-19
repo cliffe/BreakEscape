@@ -879,7 +879,8 @@ Files this plan changes:
   collected accounts. `lib/break_escape/npc_habits.rb`: `expand!` skips `account_only?`.
 - `app/controllers/break_escape/games_controller.rb`, `config/routes.rb`: the collect route;
   `harvest_credentials` added to the `set_game` list and to `with_game_lock`; `hasNPCs` and the NPC
-  count (`games_controller.rb:527`, `:603`) reading `account_only?`.
+  count (`games_controller.rb:527`, `:603`) reading `account_only?`; `#container` writes
+  `admin_profile_read` in its profile branch, after the reach check passes and the contents are served.
 - `app/policies/break_escape/game_policy.rb`: the `harvest_credentials?` method;
   `test/unit/break_escape/policy_test.rb` adds the action to `DEVICE_ACTIONS`.
 - The network host row's serialiser (the core plan's), for the `access` rule.

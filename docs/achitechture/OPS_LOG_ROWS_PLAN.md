@@ -231,7 +231,8 @@ helper write seeds it.
     an unlocked room, or an object in an unlocked room outside an unpromoted route room), with an
     rfid card or clone held in server state (`held_rfid_cards`, `game.rb:3951`; `:4054-4061`).
     `badge_swipe` `denied`, no identity, `save_limit: true` (10 registered), saving when
-    `r&.stored?`.
+    `r&.stored?`. Once S8c lands, its guard runs first and writes no row for an object below a
+    closed second step, which answers as an invented id.
 
 **L3 call sites:** `plant_device!` (`net_link_up`), `unplug_device!` (`net_link_down`),
 `join_network!` on success (`net_wifi_join`); each saves after the call (`network_access.rb:282`,
@@ -314,7 +315,7 @@ One new route. The helper adds no route of its own; every write rides on an exis
      - **Scoped readers, shared with `/container`.** The three scoped branches of
        `GamesController#container` (`games_controller.rb:638-669`) move into one private method,
        `container_reach_refusal(located)`, which returns nil or a symbol (`:not_found`,
-       `:unreachable`, `:locked`) and lets each route render; `/container` renders exactly the
+       `:unreachable`, `:locked`), writes no rows (a pure check, so `/log_rows` never writes `admin_profile_read`; rows stay in `#container`) and lets each route render; `/container` renders exactly the
        404, 403 and 403-with-`reason` it renders today (section 10, check 6). A resource scope (a
        share): `session_admits?(scope)` (`game.rb:3260-3277`), then the sign-in-object refusal,
        then `path_unlocked?(path + [object])` (`game.rb:3310-3313`). A sign-in PC or profile
@@ -689,7 +690,7 @@ logs.
    `bin/ops-golden-compare`, the folder `test/fixtures/files/ops_unchanged/`, and the rake task
    `ops:unchanged:capture` (`lib/tasks/ops_unchanged.rake`), which writes fixtures once from main
    before any engine change. Each fixture is JSON: a fixed script played through the real routes
-   (bootstrap, room answers, the route answers a plan names, server state). The helper compares
+   (every captured answer comes through a route; test setup may seed the inventory directly, identically on main and branch) (bootstrap, room answers, the route answers a plan names, server state). The helper compares
    answer bodies and statuses for equality and the server state with two normalisations: it strips
    every key of `ACCESS_STATE_DEFAULTS` that is empty in the live state and absent from the fixture
    (so each ops plan's new empty keys need no registration), and it freezes the clock (server times,

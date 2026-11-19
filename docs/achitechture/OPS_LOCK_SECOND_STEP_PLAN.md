@@ -248,7 +248,7 @@ server:
 
 | Exit | The `secondStep` object itself | An object below a closed step |
 |---|---|---|
-| `/unlock` (`games_controller.rb:1211-1335`) | the gate, in the order below; the answer's `contents` come from the object the gate resolved | `validate_unlock` refuses it first, beside `unlock_scope_refused?` (`game.rb:4688-4691`): the generic 422. `pin_cracker_feedback`, `password_case_mismatch?` (`game.rb:4793`, `:4808`) and `unlock_session_refusal` (`:4214`) answer nil for it, so the body is an invented id's |
+| `/unlock` (`games_controller.rb:1211-1335`) | the gate, in the order below; the answer's `contents` come from the object the gate resolved | `validate_unlock` refuses it first, beside `unlock_scope_refused?` (`game.rb:4688-4691`): the generic 422, before the log plan's refused `badge_swipe` row (L1b) is written, so a swipe here writes no row. `pin_cracker_feedback`, `password_case_mismatch?` (`game.rb:4793`, `:4808`) and `unlock_session_refusal` (`:4214`) answer nil for it, so the body is an invented id's |
 | Room payload marker (`game.rb:2999-3010`) | matched by id only | nothing to do: the filter drops a closed object's `contents` (`:7226-7232`) |
 | `GET /container`, plain (`games_controller.rb:672-680`, `check_container_unlocked` `:3119-3126`) | tested by id only | 404 "Container not found", as an invented id |
 | `GET /container` scope branches (`:641-669`), take from a share (`network_access.rb:1720-1732`) or from a sign-in desktop (`games_controller.rb:3510`) | `path_unlocked?` or the path test, by id already | refused already: a `secondStep` object is locked, so a closed one fails the path test |
@@ -405,7 +405,7 @@ plan's flag bodies (`mfaIncorrect`, `codeLocked`, `tooSoon`, `expired`, `cancell
 
 The `/mfa/*` routes (MFA plan, "Server routes") take a lock where they take a PC:
 `target_type` (`object` or `door`) with `target_id` in place of `pc_id`. A request naming
-both a PC and a lock, or neither, is the generic 422. `target_id` is resolved by id only: an
+both a PC and a lock, or neither, is the generic 422. The 403 and 404 bodies are the MFA plan's `/mfa/*` ones (`{ success: false, error: "no such device" }`, `"no such phone"` or `"not found"`). `target_id` is resolved by id only: an
 object id must be in `second_step_ids` and a door id must name a room with `secondStep`; the
 name-matching finder is never used here. With a lock as subject, in order:
 
@@ -550,7 +550,7 @@ built in the log plan's L1a: this plan adds to `test/fixtures/files/ops_unchange
 `m02_ransomed_trust`. The fixed script, through the real routes: every lock posted once
 wrong and once right, breadth-first from the start room along room connections in file order,
 each room's objects in file order, after its room and container ancestors are open, the lock's
-`requires` item set in the inventory by the test (same on main and branch); a lock the scope
+`requires` item seeded into the inventory by test setup (directly, identically on main and branch; every captured answer still comes through the real routes); a lock the scope
 refuses is recorded as refused, and locks below it as unreached. `GET /container` for each
 open container, then `filtered_room_data` for each room (`test_simple_success` has no locks
 or containers: room answers only). The log plan's rake task `ops:unchanged:capture` writes them once from main before any change of this plan, and `bin/ops-golden-compare`
