@@ -620,8 +620,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         this._lockBoxObserver.observe(box);
     }
 
-    // The observations are a button (role, tab stop, aria-expanded, a name that says what it
-    // does) only while they can be opened: short window and the two-line clamp hides text, or
+    // The observations are a button (role, tab stop, aria-expanded; the accessible name is the
+    // observation text itself) only while they can be opened: short window and the two-line clamp hides text, or
     // they are already open. Elsewhere they are plain text.
     _syncObsButton() {
         const obs = this._obsEl;

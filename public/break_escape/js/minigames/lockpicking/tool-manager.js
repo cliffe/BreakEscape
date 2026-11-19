@@ -243,9 +243,11 @@ export class ToolManager {
         // to key mode when the player holds a key
         this.replaceModeRow(this.parent.canSwitchToKeyMode ? () => this.buildKeyButtonRow() : null);
         
-        // Cancel a pending wrong-key retry so it cannot rebuild the key panel
+        // Cancel a pending wrong-key retry or key insertion so neither can rebuild the key panel
         clearTimeout(this.parent.keyRetryTimer);
         this.parent.keyRetryTimer = null;
+        clearTimeout(this.parent._keyInsertTimer);
+        this.parent._keyInsertTimer = null;
 
         // Exit key mode
         this.parent.keyMode = false;
