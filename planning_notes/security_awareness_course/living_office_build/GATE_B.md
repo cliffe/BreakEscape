@@ -35,7 +35,18 @@ Branch `feat/ca-living-office-build`. It lands after `fix/ec1-reopen-hold` (d135
   - sets without the option are unchanged;
   - Opus 5.5 review clean; `bin/test-js` 887/888 (only m01-decode-task fails, a Bundler environment issue);
   - test scenario `test_triage_message_globals`.
-- **Final three-outcome live replay at d199a1760:** see the "Final replay" section below once it lands.
+- **Final three-outcome live replay at d199a1760:** PASS, 0 FAIL in 32 checks. See "Final replay".
+
+## Final replay (d199a1760)
+
+| Run | Game | kit_fraud_caught | kit_caught | Score | Lines | Result |
+|---|---|---|---|---|---|---|
+| Fallback CATCH | 10381 | true | true | 98 | catch host, shared close, praise stubs | PASS |
+| Fallback PARTIAL (Ravinder phish trusted) | 10382 | true | false | 66 | partial host, shared close, praise stubs | PASS |
+| Fallback MISS | 10383 | false | false | 68 | miss host, own close, neutral stubs | PASS |
+| Panel CATCH with Look up | 10384 | true | true | 98 | catch host; Agnieszka bark at 1.2 s, Adaeze bark at 5.2 s, kit_ca01_done at 5.2 s | PASS |
+
+The notice is visible on the back wall (x 129, y 22) in all four runs.
 
 ## Minors carried
 
