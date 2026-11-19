@@ -1822,8 +1822,9 @@ showing and reads through `compromiseMarks()`.
    naming the file and the fault (never catalog text) and loads an empty map, so every linked
    finding is built without `cli` and prints the defaults evenly, and the check and confirm
    routes answer as normal. The skin's catalog validator, run on every build, stays the hard
-   gate for those faults; the core's loader test changes its three refusing folders (a cross-file id, a shared `module`, an unparseable file) to assert the
-   empty map and the warning. The row builders in `network_access.rb` (`network_rows`, the
+   gate for those faults, reading the faults the loader keeps; the core's loader test has three
+   faulty folders (a cross-file id, a shared `module`, an unparseable file) and asserts the
+   empty map and the warning for each (taken by the core). The row builders in `network_access.rb` (`network_rows`, the
    block, `host_row` and the device-row builder) and the one finding builder in
    `network_ops.rb` copy, unchanged and by named keys only (so a `_` note key is never served),
    beside the fields they belong to:
