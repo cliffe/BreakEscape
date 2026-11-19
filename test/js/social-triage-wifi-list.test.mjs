@@ -62,7 +62,7 @@ test('a wifiList card draws the venue note and one static row per network, with 
     assert.equal(rows.length, 3);
     assert.deepEqual(rows.map((r) => r.querySelector('.tri-wifi-ssid').textContent), NETWORKS.map((n) => n.ssid));
     assert.equal(rows[0].querySelector('.tri-wifi-note').textContent, 'The name on the sign at the till');
-    assert.equal(rows[1].querySelector('.tri-wifi-note'), null);
+    assert.ok(rows[1].querySelector('.tri-wifi-note') === null);
 });
 
 test('nothing in a wifiList card can be typed or clicked', () => {
@@ -93,7 +93,7 @@ test('the lock words can be overridden by data, and a row with no secured flag s
 
 test('every string goes in as text, not markup', () => {
     const node = surface({ state: 'wifiList', venueNote: '<b>x</b>', networks: [{ ssid: '<img src=x onerror=1>', signal: 'fair', secured: true, note: '<i>n</i>' }] });
-    assert.equal(node.querySelector('img, b, i'), null);
+    assert.ok(node.querySelector('img, b, i') === null);
     assert.equal(node.querySelector('.tri-wifi-ssid').textContent, '<img src=x onerror=1>');
 });
 

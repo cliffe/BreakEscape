@@ -76,7 +76,7 @@ test('the debrief is a centred modal over a backdrop, with a real Done (F-E12-3)
     // Done removes the whole backdrop (not just the panel) and reports done.
     doneBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     assert.equal(done, true);
-    assert.equal(container.querySelector('.pretext-debrief-backdrop'), null, 'the backdrop is cleared on Done');
+    assert.ok(container.querySelector('.pretext-debrief-backdrop') === null, 'the backdrop is cleared on Done');
 });
 
 test('got_it with an ask left pending and never granted reads as partial (lab R9 F3)', () => {
