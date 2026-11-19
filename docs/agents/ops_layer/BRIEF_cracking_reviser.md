@@ -41,8 +41,9 @@ Work only in the worktree
   local admin) carries its own crack recipe on the record (the facts or weak-password class
   that crack it). The "account needs a password habit" validator rule applies only to a hash
   record with no recipe. Read the privilege plan's section 14 requests to S7 and answer each.
-- Delete the plan's own log row list; give a section 13 table in the log rows plan's format
-  instead (event, who, where, result, detail), using `write_log_row!`.
+- Delete the plan's own log row list. Cracking writes no log rows: an offline crack leaves
+  nothing on the target (the log rows plan says so at its cracking lines). Collecting the hash is
+  the privilege plan's row. Section 13 states this in one short paragraph, with no table.
 - Follow brief section 5: own validator file `scripts/validate_cracking.rb` hooked by one line;
   unchanged-scenario fixtures in `test/fixtures/files/ops_unchanged/` through
   `bin/ops-golden-compare` (built in the log rows plan's stage L1a); new routes refuse with
