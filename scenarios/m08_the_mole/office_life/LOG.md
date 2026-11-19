@@ -74,3 +74,7 @@ Screenshots (scratchpad m08-console): at_post.png, away_unlocked_before_tune.png
 ## Chatter-pool gate (data half)
 
 The two officers' `cooler` chatter pools now carry `requireGlobal {ops_watch_upset: false}`. The cooler's `offWhen` is the new `ops_watch_ko` (set with `ops_watch_upset` by the julian_ko and agnieszka_ko mappings on `agent_0x99`), so upset alone no longer switches it off. The three Julian break mappings and Agnieszka's cooler coupling test `!ops_watch_ko` instead of `!ops_watch_upset`; cooldowns unchanged. No line text changed. Live proof: LIVE_CHATTER_GATE.md (upset: trips continue, 0 spoken; KO: cooler off).
+
+## Cooler queue cells check (fix/m08-cooler-queue, 2026-11-19)
+
+The six validator warnings on `ops_cooler` queue cells 1 and 2 are a false positive: the object has no scenario position, so the validator reads it at 0,0. The engine puts the cells at (220,180) and (244,180) in operations_floor, walkable, clear of the doors. Live (games 10123, 10125, capacity forced to 1): Julian queued on cell 1 and used the cooler when the slot freed. No scenario change. Validator fix (skip the check when unpositioned, 17 to 11 warnings) saved as `validator-queue-skip.patch.txt`, not applied. Detail: LIVE_COOLER_QUEUE.md.

@@ -1,0 +1,15 @@
+diff --git a/scripts/validate_npc_needs.rb b/scripts/validate_npc_needs.rb
+index 72c42238f..6d8b6e8ed 100644
+--- a/scripts/validate_npc_needs.rb
++++ b/scripts/validate_npc_needs.rb
+@@ -792,6 +792,10 @@ module ValidateNpcNeeds
+       issues << "⚠️ WARNING: #{where}.maxWaitSeconds must be a positive number of seconds (default 30)." if q.key?('maxWaitSeconds') && !(w.is_a?(Numeric) && w.positive?)
+       satisfies = list(aff['satisfies'])
+       issues << "⚠️ WARNING: #{where} is on an object that satisfies no need; nobody will queue there." if satisfies.empty?
++      # An object with no scenario position claims a Tiled one the validator cannot see (x, y read
++      # as 0), so the tile arithmetic below would put every cell at the room's north-west corner.
++      next unless positioned?(o)
++
+       room = json.dig('rooms', o.room)
+       dims = room.is_a?(Hash) ? room_tiles(room['type']) : nil
+       next if dims.nil? || o.room.nil?
