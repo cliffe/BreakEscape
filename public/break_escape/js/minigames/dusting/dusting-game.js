@@ -717,9 +717,9 @@ export class DustingMinigame extends MinigameScene {
                 <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
             return `
             <div class="dusting-ref-wrap">
-            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}">
+            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}" title="${c.index + 1}. ${escapeHtml(c.label)}${c.rejected ? ' (not a match)' : ''}">
                 <canvas class="dusting-ref-canvas" data-ref="${c.index}" width="${N}" height="${N}"></canvas>
-                <span>${c.index + 1}. ${escapeHtml(c.label)}${c.rejected ? ' (not a match)' : ''}${done && c.correct ? ' (match)' : ''}</span>
+                <span><span class="dusting-ref-name">${c.index + 1}. ${escapeHtml(c.label)}</span>${c.rejected ? ' <span class="dusting-ref-tag">(not a match)</span>' : ''}${done && c.correct ? ' <span class="dusting-ref-tag">(match)</span>' : ''}</span>
             </button>${view}
             </div>`;
         }).join('');
@@ -1821,7 +1821,9 @@ export class DustingMinigame extends MinigameScene {
         this._zoomTags = { lift: tags.lift, card: reveal ? tags.card : [] };
         this._zoomInfo = { side, S, W, stacked, ox, oy, canvases: { lift: W, card: W } };
         const cap = `Card ${cand.index + 1}: ${cand.label}`;
-        host.querySelector('[data-zcap]').textContent = cap;
+        const capEl = host.querySelector('[data-zcap]');
+        capEl.textContent = cap;
+        capEl.title = cap;   // the caption is clipped to its pane with an ellipsis: the full name is the title and the text content
         // the lift's marks again for a screen reader (spoken once on naming the pattern); textContent only
         const zm = host.querySelector('[data-zmarks]');
         if (zm) zm.textContent = lm.length ? `. Marks: ${describeMarks(lm, this.print.pattern, true)}` : '';

@@ -554,10 +554,12 @@ export const ZOOM_STACK_EXTRA = 2 * (ZOOM_CAP_H + ZOOM_PANE_BORDER) + ZOOM_PANE_
 export const REF_CARD_W = 144, REF_GAP = 10, REF_GAP_GRID = 8, PANEL_SLACK = 32;
 /** The panel is never squeezed below this by a 3x or larger pair: it falls back to 2x instead. */
 export const PANEL_COMFORT_W = 420;
+/** The panel is never narrower than this beside the pair on a desktop-sized window, whatever the card count or the names on the cards. */
+export const PANEL_MIN_W = 480;
 /** The panel width the cards need in one row (four cards: the 600 px at which dusting.css switches 2x2 to 4x1), plus the button row's room. */
 export function comparePanelMin(cards) {
     if (cards >= 4) return 4 * REF_CARD_W + 3 * REF_GAP_GRID;
-    return Math.max(330, cards * REF_CARD_W + (cards - 1) * REF_GAP + PANEL_SLACK);
+    return Math.max(PANEL_MIN_W, cards * REF_CARD_W + (cards - 1) * REF_GAP + PANEL_SLACK);
 }
 /**
  * The pair for the stage column (non-short screens). Panes sit side by side (width 2 (S side + 4) + 8, height S side + 46)
