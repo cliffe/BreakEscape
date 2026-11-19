@@ -229,7 +229,7 @@ Dr Fiona Hartley: I would. They've seen this group before, and they'll warn othe
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Dr Fiona Hartley: {&What can I help with?|You've a question?|Yes, go ahead.}
+    Dr Fiona Hartley: {&What can I help with?|You've a question?|Go on, I'm listening.}
 }
 + {(patient_bed2_deceased or patient_bed4_deceased or pump_dose_error) and not candour_discussed} [What do we owe anyone who was harmed today?]
     -> candour
