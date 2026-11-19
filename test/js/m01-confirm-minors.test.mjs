@@ -21,16 +21,22 @@ test('Derek post-it points at the break room bin', () => {
     assert.ok(m[1].includes("Lisa's card"), 'post-it mentions the card');
 });
 
-test('HaX first Derek-door text points at the manager office', () => {
-    const m = erb.match(/"message":\s*"That door's locked\.[^"]*"/);
-    assert.ok(m !== null, 'HaX locked-door text exists');
-    assert.ok(m[0].includes("manager's office"), 'text names the manager office');
+test('HaX points at the manager office only until it has been entered', () => {
+    assert.ok(erb.includes('"message": "Patricia kept her things in the manager\'s office, so start there."'), 'pointer text exists');
+    assert.ok(erb.includes("data.connectedRoom === 'derek_office' && globalVars.manager_office_seen !== true"), 'pointer is gated on the office not yet seen');
+    assert.ok(erb.includes('"eventPattern": "room_entered:manager_office"'), 'office entry sets the flag');
+    assert.ok(/"manager_office_seen":\s*false/.test(erb), 'flag declared');
+});
+
+test('ready_for_debrief is declared and set by the abort', () => {
+    assert.ok(/"ready_for_debrief":\s*false/.test(erb), 'declared in globalVariables');
+    assert.ok(/"onAbort"[\s\S]{0,400}"ready_for_debrief":\s*true/.test(erb), 'onAbort sets it');
 });
 
 test('drop-site task titles and terminal description say where the keys go', () => {
-    assert.ok(erb.includes('"title": "Unlock the ENTROPY encrypted archive (enter the decryption key at the archive)"'), 'archive title');
+    assert.ok(erb.includes('"title": "Enter the decryption key at the ENTROPY archive"'), 'archive title');
     assert.ok(erb.includes('"title": "Enter the launch authorisation code on Derek\'s launch device"'), 'launch title');
-    assert.ok(erb.includes('the archive key and the launch code are recognised here but entered at the archive and the launch device'), 'terminal description');
+    assert.ok(erb.includes('those go into the archive and the launch device'), 'terminal description');
 });
 
 function hubChoices(file, hubKnot, ready, vars) {
@@ -57,5 +63,5 @@ test('Sarah hides "Where exactly is the IT room?" once ready_for_debrief', () =>
     const after = hubChoices('m01_npc_sarah.json', 'hub', true, {});
     assert.ok(before.includes(q), 'offered before the abort');
     assert.ok(!after.includes(q), 'hidden after the abort');
-    assert.ok(after.length > 0, 'other choices remain');
+    assert.ok(after.some(c => c.includes('Thanks')), 'other choices remain');
 });
