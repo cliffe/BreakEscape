@@ -888,16 +888,17 @@ Files this plan changes:
 
 ## 13. Log rows this feature writes
 
-Storage and reading are S9's. Rows go through S9's one helper; until it lands the call is a no-op.
+Storage and reading are S9's. Rows go through S9's one helper, which lands first (L1a), before any stage of this plan.
+S5b registers the hash values a collect yields as a secret source with `OpsLog.register_secret_source`, in the stage that adds them, so no row can show one.
 A step up is the core plan's technique row and is not listed here.
 
 Event names and details are as the log rows plan's section 13.7 writes them (`OpsLog::EVENTS`).
 
 | Stage | Event | `as` | `where` | `result` | `detail` | Bound | Saved by |
 |---|---|---|---|---|---|---|---|
-| S5a | `admin_profile_read` | `{ account: }` (the session's) | `pc` | ok | `profile` (`{ id: 'profile' }`) | `once: true`: one per PC and profile | `GET /container`, which saves nothing of its own: `save!` only when `r&.stored?` |
+| S5a | `admin_profile_read` | `{ account: }` (the session's) | `pc` | ok | `profile` (`{ id: 'profile' }`) | `once: true`: one per PC, profile and account | `GET /container`, which saves nothing of its own: `save!` only when `r&.stored?` |
 | S5a | `usb_install_overridden` | `{ account: }` | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and the plant proof, which already save |
-| S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count`, `hashes` (integers: pairs added, and how many of them are hashes) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
+| S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count`, `hashes` (integers: pairs added, and how many of them are hashes; `{ count: 9 }` each, and a collect adds at most 8 pairs, the cap of section 9) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
 
 Nothing in this feature reads a log row back. Obtaining a hash by collect is counted by `hashes`;
 there is no separate hash row. No `detail` holds a secret: an authored id, a `usbClass`, two
