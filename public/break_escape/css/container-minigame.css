@@ -502,7 +502,7 @@
     align-items: center;
     background: rgb(149 157 216 / 80%);
     /* border-radius: 5px; */
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .container-content-slot:hover {
@@ -519,6 +519,17 @@
     border-radius: 0;
     border-color: rgba(255, 255, 255, 0.6);
     background: rgb(149 157 216 / 90%);
+}
+
+/* Nothing to take or open: no pointer, no hover growth, dimmed, and a dashed edge so the
+   state does not rest on colour alone */
+.container-content-slot[aria-disabled="true"],
+.container-content-slot[aria-disabled="true"]:hover {
+    cursor: default;
+    transform: none;
+    opacity: 0.6;
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 .container-content-item {
@@ -904,6 +915,24 @@
     background: transparent;
     border-color: transparent;
     transform: none;
+}
+
+/* Keyboard focus on a share file reads as the hover does, and as a desktop icon's: the name
+   goes navy behind white text, no ring on the white window */
+.share-folder-files .container-content-slot:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
+    background: transparent;
+}
+
+.share-folder-files .container-content-slot:focus-visible .container-content-label {
+    background: #000080;
+    color: #fff;
+}
+
+.share-folder-files .container-content-slot[aria-disabled="true"] {
+    border-color: #808080;
 }
 
 /* A 16px file glyph drawn x4 (fitWholeScale sets the size from the loaded picture) */

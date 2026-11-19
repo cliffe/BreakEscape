@@ -387,6 +387,40 @@ export function iconFocusMark(item, byKey) {
     return item ? { key: iconKeyOf(item), byKey: byKey === true } : null;
 }
 
+// A held Enter keeps firing keydown (e.repeat) after a take has moved the focus to Take
+// Container, the X or a note viewer's button, and would click it. After a take started by
+// Enter, one document-level capture listener swallows those repeats until Enter is let go.
+// One at a time, always removed: on Enter keyup, window blur, a safety timeout, or the
+// minigame closing (unless the close hands over to a note viewer, which needs it to live on).
+let heldEnterGuard = null;
+export function releaseHeldEnter() {
+    if (!heldEnterGuard) return;
+    const g = heldEnterGuard;
+    heldEnterGuard = null;
+    document.removeEventListener('keydown', g.down, true);
+    document.removeEventListener('keyup', g.up, true);
+    window.removeEventListener?.('blur', g.up);
+    clearTimeout(g.timer);
+}
+export function swallowHeldEnter() {
+    releaseHeldEnter();
+    const g = {
+        down: (e) => {
+            if (e.key !== 'Enter' || !e.repeat) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        },
+        up: (e) => { if (!e || e.type === 'blur' || e.key === 'Enter') releaseHeldEnter(); },
+        timer: setTimeout(() => releaseHeldEnter(), 10000)
+    };
+    g.timer?.unref?.();
+    heldEnterGuard = g;
+    document.addEventListener('keydown', g.down, true);
+    document.addEventListener('keyup', g.up, true);
+    window.addEventListener?.('blur', g.up);
+}
+
 /**
  * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
  * line it ends), except a leading run of separators (".config") and the first of two in a
@@ -1098,6 +1132,7 @@ export class ContainerMinigame extends MinigameScene {
         }
         this.taskbar?.destroy?.();
         this.pcMonitor?.destroy?.();
+        if (this.exitReason !== 'item') releaseHeldEnter();
         if (typeof super.cleanup === 'function') super.cleanup();
         this.reportNetworkExit();
     }
@@ -1741,8 +1776,6 @@ export class ContainerMinigame extends MinigameScene {
             itemImg.objectId = `container_${index}`;
             
             // Add click handler for all items (both takeable and interactive)
-            itemImg.style.cursor = 'pointer';
-            
             const shareParts = item.type === 'network_share' ? shareLabelParts(item.name) : null;
             if (shareParts) {
                 // A mapped share (4.5): its own folder, never the generic flow
@@ -1776,15 +1809,22 @@ export class ContainerMinigame extends MinigameScene {
             // (nothing to take or open) is still reachable, so its name can be read, and
             // says it is unavailable.
             const acts = !!(shareParts || this.offersTransfer(item) || this.isInteractiveItem(item) || item.takeable);
+            if (acts) itemImg.style.cursor = 'pointer';
             slot.tabIndex = 0;
             slot.setAttribute('role', 'button');
-            slot.setAttribute('aria-label', label.textContent || item.name || item.type || 'Item');
+            const slotName = label.textContent || item.name || item.type || 'Item';
+            // A share's UNC path is not in the label; the slot carries it as a tooltip and in its name
+            slot.setAttribute('aria-label', shareParts?.unc ? `${slotName}, ${shareParts.unc}` : slotName);
+            if (shareParts?.unc) slot.title = shareParts.unc;
+            // Nothing to take or open: a click on the picture does nothing, so Enter and Space
+            // stay silent too (the slot is dimmed, dashed and has no pointer cursor in CSS)
             if (!acts) slot.setAttribute('aria-disabled', 'true');
             slot.addEventListener('keydown', (e) => {
                 if (e.target !== slot || (e.key !== 'Enter' && e.key !== ' ')) return;
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.repeat || !acts) return;
+                if (e.key === 'Enter') swallowHeldEnter();
                 this.openedByKey = true;
                 try { itemImg.click(); } finally { this.openedByKey = false; }
             });
@@ -1806,8 +1846,16 @@ export class ContainerMinigame extends MinigameScene {
                 if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(restore));
                 if (typeof document !== 'undefined' && document.fonts?.load) document.fonts.load('16px GNF').then(() => requestAnimationFrame?.(restore), () => {});
             }
-            if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
-            contentsGrid.focus?.({ preventScroll: true });
+            // A note taken by key: the slot now at its place (the next note), else the last
+            const back = this.params.slotReturn;
+            const stops = Array.from(contentsGrid.querySelectorAll('.container-content-slot'));
+            if (back && back.byKey === true && stops.length) {
+                const at = Math.max(0, Math.min(Number(back.index) || 0, stops.length - 1));
+                stops[at].focus?.({ preventScroll: true });
+            } else {
+                if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
+                contentsGrid.focus?.({ preventScroll: true });
+            }
         }
     }
     
@@ -1946,7 +1994,12 @@ export class ContainerMinigame extends MinigameScene {
         icon.openLabel?.();
     }
 
-    /** The icon (or the desktop) that takes the focus when `slot`, a desktop icon, has just been removed. */
+    /**
+     * The element that takes the focus when `slot` has just been removed, or undefined to leave
+     * it where it is (it moved elsewhere during the server round trip). For a contents-grid
+     * item: the next item, else the one before, else Take Container, else the X. For a desktop
+     * icon: the next icon, else the one before, else the desktop. Never the body.
+     */
     focusAfterIconRemoved(slot) {
         const active = document.activeElement;
         if (slot?.classList?.contains('container-content-slot')) {
@@ -2304,6 +2357,10 @@ export class ContainerMinigame extends MinigameScene {
                 // Where the list was scrolled to, so the container comes back there
                 scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
+                // A note taken by key: on reopen the focus goes to the slot at this place
+                slotReturn: this.openedByKey === true && itemElement?.parentElement
+                    ? { index: Array.from(itemElement.parentElement.parentElement?.children || []).indexOf(itemElement.parentElement), byKey: true }
+                    : null,
                 // Where the note came from (a PC or a share), so the server's add finds it
                 sourceExtras: this.sourceExtras(),
                 // Preserve NPC context if in NPC mode
@@ -2508,8 +2565,21 @@ export class ContainerMinigame extends MinigameScene {
         const tempSprite = takeStandIn(item, inventoryImageKey,
             fromSignIn ? { ...this.sourceExtras(), transfer: transfer || 'move' } : {});
         
-        // Add to inventory
-        const addResult = await addToInventory(tempSprite);
+        // One take at a time per slot: a second press or click inside the server round trip
+        // would add the item twice. Cleared when the take ends so a failed one can be retried.
+        const takeSlot = itemElement?.parentElement || null;
+        if (takeSlot?.dataset) {
+            if (takeSlot.dataset.taking) return false;
+            takeSlot.dataset.taking = '1';
+        }
+        let addResult;
+        try {
+            addResult = await addToInventory(tempSprite);
+        } catch (err) {
+            if (takeSlot?.dataset) delete takeSlot.dataset.taking;
+            throw err;
+        }
+        if (takeSlot?.dataset && !(addResult && addResult.ok && !isCopy)) delete takeSlot.dataset.taking;
         // Keyring K3a (R1 m2): a file taken (copied or moved) counts as opened for an "In file" tag
         if (addResult && addResult.ok) {
             try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
@@ -2805,7 +2875,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true, focusReturn: containerState.focusReturn || null, scrollTop: containerState.scrollTop || 0 }
+            { fromReturn: true, focusReturn: containerState.focusReturn || null, slotReturn: containerState.slotReturn || null, scrollTop: containerState.scrollTop || 0 }
         );
     } else {
         console.log('No pending container return found');
