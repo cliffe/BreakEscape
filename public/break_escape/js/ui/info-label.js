@@ -1,8 +1,8 @@
 /**
  * HUD Info Label
  * Shows the door_sign, item observations, or NPC name/observation for the
- * nearest interactable within reach, using the same scoring logic as
- * tryInteractWithNearest.
+ * interactable E would act on (interaction-reach.js pickInteractable, the same pick
+ * tryInteractWithNearest makes).
  */
 
 import { INTERACTION_RANGE, INTERACTION_RANGE_SQ } from '../utils/constants.js';
@@ -10,10 +10,8 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
-import { reachX, aimX, aimY, aimDiff, isSeatedDeskPc, seatedPcWins, reachYSeated, directionAngle, npcGivesWay, objectIdOf } from '../systems/interaction-reach.js';
-
-const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
-const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
+import { pickInteractable } from '../systems/interaction-reach.js';
+import { npcReachDistSq } from '../systems/npc-reach.js';
 
 let labelEl       = null;
 let lastUpdate    = 0;
@@ -115,117 +113,33 @@ export function updateInfoLabel() {
         return;
     }
 
-    const px = player.x;
-    const py = player.y;
-
-    const playerDirection = player.direction || 'down';
-    const facingAngle = directionAngle(playerDirection);
-
-    function angularDiff(ox, oy) {
-        let angle = Math.atan2(oy - py, ox - px) * 180 / Math.PI;
-        angle = (angle + 360) % 360;
-        let diff = Math.abs(facingAngle - angle);
-        if (diff > 180) diff = 360 - diff;
-        return diff;
-    }
-
-    let bestScore = Infinity;
-    let bestText  = null;
-    let bestNpcScore = Infinity; // the best NPC apart: a better-aimed colleague beats the seated PC (seatedPcWins)
-    let bestNpcText = null;
-    // The best desk computer in front of a seated player (interaction-reach.js isSeatedDeskPc), kept apart
-    let pcScore = Infinity;
-    let pcText = null;
-    // E from a chair reaches what is around it (interactions.js skips the occupied seat), so the label does too
-    const seatedOn = window.seating?.currentSeat?.() || null;
-
-    // Ids of the objects in reach (an owner on the move from her own PC among them gives way, as in E), and the NPCs, which
-    // are considered last once those are known (interactions.js does the same)
-    const inReachIds = [];
-    const npcs = [];
-
-    function consider(ox, oy, text, rangeSq, target = null, faceX = ox, faceY = oy) {
-        if (!text) return;
-        const dx = ox - px;
-        const dy = oy - py;
-        // An NPC is in reach as E measures it (static body edge, a seated NPC from her chair); interactions.js sets this global
-        const inReach = target?._isNPC && typeof window.isObjectInInteractionRange === 'function'
-            ? window.isObjectInInteractionRange(target)
-            : dx * dx + dy * dy <= rangeSq;
-        if (!inReach) return;
-        if (target && !interactionLineClear(player, target)) return; // wall between
-        if (target && !target._isNPC) inReachIds.push(objectIdOf(target));
-        // Same scoring as tryInteractWithNearest, from the one helper
-        let diff = angularDiff(faceX, faceY);
-        if (target && !target._isNPC && !target.doorProperties) {
-            diff = aimDiff(player, target, faceX, faceY, facingAngle).diff;
-        }
-        let score = diff * 1000 + Math.sqrt(dx * dx + dy * dy);
-        if (target?._isNPC && npcGivesWay(player, target, inReachIds)) score += 30000; // someone walking away, as E
-        if (isSeatedDeskPc(seatedOn, target, diff) && score < pcScore) {
-            pcScore = score;
-            pcText = text;
-        }
-        if (target && target._isNPC && score < bestNpcScore) { bestNpcScore = score; bestNpcText = text; }
-        if (score < bestScore) {
-            bestScore = score;
-            bestText  = text;
-        }
-    }
-
-    Object.values(rooms).forEach(room => {
-        // Items
-        if (room.objects) {
-            Object.values(room.objects).forEach(obj => {
-                if (!obj.active || !obj.interactable || !obj.visible) return;
-                if (seatedOn && obj === seatedOn) return;
-                let text = resolveObjectField(
-                    obj.scenarioData,
-                    'observations',
-                    obj.observations || obj.scenarioData?.name || obj.name || null
-                );
-                // An unlocked PC stops repeating its "password locked" line: its name instead
-                if (worldObservations(obj.scenarioData, text, window.pcSessions) === null) {
-                    text = obj.scenarioData?.name || obj.name || null;
-                }
-                // A sign-in PC with a sticky note picture says so (slice 9.2 B)
-                if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
-                consider(reachX(obj, px), reachYSeated(obj, player, seatedOn), text, INTERACTION_RANGE_SQ, obj, aimX(obj), aimY(obj));
-            });
-        }
-
-        // Doors
-        if (room.doorSprites) {
-            Object.values(room.doorSprites).forEach(door => {
-                if (!door.active || !door.doorProperties) return;
-                const text = door.doorProperties.door_sign || 'A door with no sign';
-                const dir = door.doorProperties.direction;
-                if (dir === 'east' || dir === 'west') {
-                    consider(door.x, door.y + SIDE_DOOR_Y_OFFSET, text, SIDE_DOOR_RANGE_SQ);
-                } else {
-                    consider(door.x, door.y, text, INTERACTION_RANGE_SQ);
-                }
-            });
-        }
-
-        // NPCs
-        if (room.npcSprites) {
-            const koCheck = window.npcHostileSystem;
-            room.npcSprites.forEach(sprite => {
-                if (!sprite.active || !sprite.visible) return;
-                if (koCheck && sprite.npcId && koCheck.isNPCKO(sprite.npcId)) return;
-                const npc = sprite.npcId && window.npcManager ? window.npcManager.getNPC(sprite.npcId) : null;
-                const text = npc?.observations || npc?.displayName || null;
-                npcs.push({ sprite, text });
-            });
-        }
-    });
-    npcs.forEach(({ sprite, text }) => consider(sprite.x, sprite.y, text, INTERACTION_RANGE_SQ, sprite));
-
-    // Seated at a desk, its computer (interactions.js decides E the same way)
-    if (pcText) bestText = seatedPcWins(pcScore, bestNpcScore) ? pcText : bestNpcText;
-    proximityText = bestText;
+    // What E would act on: the same pick, from the one helper (interaction-reach.js pickInteractable), so the
+    // label cannot name one thing while E opens another. The text is then read off that target.
+    const pick = pickInteractable(player, { rooms, range: INTERACTION_RANGE, rangeSq: INTERACTION_RANGE_SQ, npcReachDistSq, lineClear: interactionLineClear });
+    proximityText = pick ? targetText(pick) : null;
     if (!hoverText) _applyText(proximityText);
+}
+
+/** The line for what E would act on: an object's observations, a door's sign, an NPC's observations or name. */
+function targetText(pick) {
+    const t = pick.target;
+    if (pick.kind === 'door') return t.doorProperties.door_sign || 'A door with no sign';
+    if (pick.kind === 'npc') {
+        const npc = t.npcId && window.npcManager ? window.npcManager.getNPC(t.npcId) : null;
+        return npc?.observations || npc?.displayName || null;
+    }
+    let text = resolveObjectField(
+        t.scenarioData,
+        'observations',
+        t.observations || t.scenarioData?.name || t.name || null
+    );
+    // An unlocked PC stops repeating its "password locked" line: its name instead
+    if (worldObservations(t.scenarioData, text, window.pcSessions) === null) {
+        text = t.scenarioData?.name || t.name || null;
+    }
+    // A sign-in PC with a sticky note picture says so (slice 9.2 B)
+    if (window.postitMarks?.label) text = window.postitMarks.label(t.scenarioData?.id, text);
+    return text;
 }
 
 function _applyText(text) {
