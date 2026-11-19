@@ -63,14 +63,23 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
 
 | Plan | Draft | R1 | R2 | R3 | R4 | R5 |
 |---|---|---|---|---|---|---|
-| OPS_CORE | partial `23d08537c` (9-12 being written, Fable) | waits for draft (Opus) | | | | |
-| OPS_PRIVILEGE_ACCOUNTS | `9f5216ba8` (opus48) | running (Fable) | | | | |
-| OPS_REALISM_SKIN | `1f9fc50e3` | running (Opus) | | | | |
-| OPS_CRACKING | `5e88e7aff` (opus48) | running (Fable) | | | | |
-| OPS_MFA_HELPDESK | `6995773a9` | running (Opus) | | | | |
-| OPS_LOG_ROWS | `aa595c30d` | running (Fable) | | | | |
+| OPS_CORE | `bd350990a` (977 lines) | review running (Opus) | | | | |
+| OPS_PRIVILEGE_ACCOUNTS | `9f5216ba8` (opus48) | 3B 12M 9m `abd5bd1bb`; reviser running (Opus) | | | | |
+| OPS_REALISM_SKIN | `1f9fc50e3` | 1B 5M 16m `b1355fd32`; reviser running (Fable) | | | | |
+| OPS_CRACKING | `5e88e7aff` (opus48) | 4B 9M 8m `46649f23f`; reviser HELD (opus48 safeguard stop, user to choose) | | | | |
+| OPS_MFA_HELPDESK | `6995773a9` | 0B 7M 15m `f3b038b8d`; reviser running (Fable) | | | | |
+| OPS_LOG_ROWS | `aa595c30d` | review running (Fable) | | | | |
 
 ## Decisions and questions for the user
+
+- Orchestrator rulings so far (10:58): the step from user to admin uses core's shapes
+  (`needs.session`, `grants.session.access`), privilege supplies the level's meaning; the skin's
+  list of offered controls is private to the network-view folder, no registration by other plans,
+  core owns names; the skin switch shows only on `ops: true` networks; sign-in order is password,
+  PC admission (account kind), second step, session write; a technique session meets no second
+  step, a recovered or collected password does; a policy's kind is public, its answers are not.
+- User decisions pending: how the cracking revision proceeds; forged intel facts (cracking B2);
+  how the server learns cached accounts (privilege, four options).
 
 - 10:50. Cross-plan R1 review running (Fable), findings to `reviews/CROSS_PLAN_R1.md`: request
   ledger with recommended rulings, conflicts, one merged list of open questions.
