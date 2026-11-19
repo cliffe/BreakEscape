@@ -8,8 +8,12 @@ function reset() {
     delete window.seating;
     delete window.npcBehaviorManager;
     delete window.workstationState;
+    delete window.npcHostileSystem;
     window.npcManager = { getNPC: (id) => ({ observations: 'npc ' + id }) };
 }
+
+/** window.npcHostileSystem with these NPCs knocked out (E's talk path also asks isNPCHostile, so both answer). */
+const koSystem = (...ids) => ({ isNPCKO: (id) => ids.includes(id), isNPCHostile: () => false });
 
 /** A scene: { name, build(): rooms, stances: [[fx, fy, dir]] }. build() sets the globals it needs. */
 export const handScenes = [
@@ -69,10 +73,104 @@ export const handScenes = [
         stances: [[112, 132, 'up'], [150, 132, 'up'], [130, 132, 'up'], [112, 126, 'up'], [150, 126, 'up']],
     },
     {
+        // bob is on the move from the crate (workstationState.leftBy, the needs system's npc_left_post record) and keeps his velocity:
+        // npcGivesWay is true for him, so he takes the give-way penalty and the crate wins from the stance that leans his way
         name: 'a walking-away NPC beside a crate',
         build() { reset(); seatingFor(null);
+            window.workstationState = { leftBy: (id, npcId) => id === 'crate' && npcId === 'bob' };
             return { r: { objects: { crate: obj('crate', 120, 100, 24, 24) }, npcSprites: [npc('bob', 140, 112, { body: { velocity: { x: 50, y: 0 } } })] } }; },
-        stances: [[132, 140, 'up'], [132, 140, 'right']],
+        stances: [[132, 140, 'up'], [132, 140, 'right'], [150, 140, 'right'], [118, 140, 'right'], [130, 124, 'right'], [138, 128, 'right']],   // the last three: the penalty moves the pick from bob to the crate
+    },
+    {
+        name: 'the same NPC and crate with no give-way record (bob keeps his place in the pick)',
+        build() { reset(); seatingFor(null);
+            return { r: { objects: { crate: obj('crate', 120, 100, 24, 24) }, npcSprites: [npc('bob', 140, 112, { body: { velocity: { x: 50, y: 0 } } })] } }; },
+        stances: [[132, 140, 'up'], [132, 140, 'right'], [150, 140, 'right'], [118, 140, 'right'], [130, 124, 'right'], [138, 128, 'right']],   // the last three: the penalty moves the pick from bob to the crate
+    },
+    {
+        name: 'a walking-away NPC with a give-way record for a different object (no penalty)',
+        build() { reset(); seatingFor(null);
+            window.workstationState = { leftBy: (id, npcId) => id === 'elsewhere' && npcId === 'bob' };
+            return { r: { objects: { crate: obj('crate', 120, 100, 24, 24) }, npcSprites: [npc('bob', 140, 112, { body: { velocity: { x: 50, y: 0 } } })] } }; },
+        stances: [[132, 140, 'right'], [150, 140, 'right'], [118, 140, 'right'], [130, 124, 'right'], [138, 128, 'right']],
+    },
+    {
+        name: 'a blocked prop in front of an open one',
+        build() { reset(); seatingFor(null);
+            return { r: { objects: { wall: obj('wall', 130, 100, 24, 24, { __blocked: true }), open: obj('open', 170, 100, 24, 24) } } }; },
+        stances: [[142, 140, 'up'], [160, 140, 'up'], [160, 140, 'up-left'], [175, 140, 'up']],
+    },
+    {
+        name: 'a blocked NPC beside an open prop',
+        build() { reset(); seatingFor(null);
+            return { r: { objects: { crate: obj('crate', 170, 100, 24, 24) }, npcSprites: [npc('bob', 148, 112, { __blocked: true })] } }; },
+        stances: [[148, 140, 'up'], [160, 140, 'up'], [160, 140, 'up-right']],
+    },
+    {
+        name: 'a knocked-out NPC beside a mug, and a knocked-out sitter on a chair',
+        build() { reset(); seatingFor(null);
+            window.npcHostileSystem = koSystem('ko', 'kosit');
+            const chair = obj('chair', 190, 100, 24, 27, { seat: true });
+            const kosit = npc('kosit', 200, 112);
+            seatNpc(kosit, chair);
+            return { r: { objects: { mug: obj('mug', 160, 100, 12, 12), chair }, npcSprites: [npc('ko', 148, 112), kosit, npc('alive', 176, 126)] } }; },
+        stances: [[148, 140, 'up'], [160, 140, 'up'], [190, 140, 'up'], [176, 150, 'up'], [196, 140, 'up']],
+    },
+    {
+        name: 'hidden, inactive and non-interactable objects near a visible one',
+        build() { reset(); seatingFor(null);
+            return { r: { objects: {
+                hidden: obj('hidden', 140, 100, 24, 24, { visible: false }),
+                inactive: obj('inactive', 152, 100, 24, 24, { active: false }),
+                inert: obj('inert', 164, 100, 24, 24, { interactable: false }),
+                shown: obj('shown', 190, 100, 24, 24) } } }; },
+        stances: [[152, 140, 'up'], [170, 140, 'up'], [190, 140, 'up'], [175, 140, 'right']],
+    },
+    {
+        name: 'a sofa with two sitters (full)',
+        build() { reset(); seatingFor(null);
+            const sofa = obj('sofa', 100, 100, 64, 30, { seat: true, _places: { 0: 's1', 1: 's2' }, seatedBy: 'full' });
+            const s1 = npc('s1', 112, 112), s2 = npc('s2', 148, 112);
+            const places = [[12, -2], [48, -2]];
+            seatNpc(s1, sofa, places, 0); seatNpc(s2, sofa, places, 1);
+            return { r: { objects: { sofa, mug: obj('mug', 170, 112, 12, 12) }, npcSprites: [s1, s2] } }; },
+        stances: [[112, 132, 'up'], [148, 132, 'up'], [130, 132, 'up'], [130, 140, 'up'], [168, 135, 'right']],
+    },
+    {
+        name: 'a sofa with two sitters, one of them knocked out, and a free place',
+        build() { reset(); seatingFor(null);
+            window.npcHostileSystem = koSystem('s2');
+            const sofa = obj('sofa', 100, 100, 64, 30, { seat: true, _places: { 0: 's1', 1: 's2' }, seatedBy: 'full' });
+            const s1 = npc('s1', 112, 112), s2 = npc('s2', 148, 112);
+            const places = [[12, -2], [48, -2]];
+            seatNpc(s1, sofa, places, 0); seatNpc(s2, sofa, places, 1);
+            return { r: { objects: { sofa }, npcSprites: [s1, s2] } }; },
+        stances: [[112, 132, 'up'], [148, 132, 'up'], [130, 132, 'up']],
+    },
+    {
+        name: 'wall-mounted and tall props against the back wall',
+        build() { reset(); seatingFor(null);
+            return { r: { objects: {
+                cabinet: obj('cabinet', 120, 70, 30, 47),
+                poster: obj('poster', 170, 76, 20, 20, { scenarioData: { id: 'poster', wallMounted: true } }),
+                stool: obj('stool', 150, 130, 16, 16) } } }; },
+        stances: [[130, 120, 'up'], [135, 112, 'up'], [180, 112, 'up'], [180, 100, 'up'], [150, 150, 'up'], [150, 140, 'up-left']],
+    },
+    {
+        name: 'seated at a desk PC with an NPC beside it',
+        build() { reset(); const mine = obj('mine', 130, 150, 24, 27, { seat: true });
+            seatingFor(mine);
+            return { r: { objects: { mine, desk: obj('desk', 120, 80, 40, 16), pc: obj('pc', 130, 96, 24, 27, { scenarioData: { id: 'pc', type: 'pc' } }), mug: obj('mug', 150, 130, 12, 12) },
+                npcSprites: [npc('bob', 168, 120)] } }; },
+        stances: [[142, 172, 'up'], [142, 172, 'up-right'], [142, 172, 'right'], [150, 172, 'up']],
+    },
+    {
+        name: 'seated at a desk PC with an NPC nearer the line of facing',
+        build() { reset(); const mine = obj('mine', 130, 150, 24, 27, { seat: true });
+            seatingFor(mine);
+            return { r: { objects: { mine, pc: obj('pc3', 120, 96, 24, 27, { scenarioData: { id: 'pc3', type: 'pc3' } }) },
+                npcSprites: [npc('bob', 142, 128)] } }; },
+        stances: [[142, 172, 'up'], [142, 172, 'up-left'], [142, 172, 'up-right']],
     },
 ];
 
@@ -85,7 +183,7 @@ export function randomScenes(count = 60) {
         scenes.push({
             name: 'random ' + i,
             build() {
-                const rnd = lcg(1000 + i);
+                const rnd = lcg(Math.imul(1000 + i, 2654435761));
                 reset();
                 const objects = {};
                 const n = 3 + Math.floor(rnd() * 4);
@@ -107,7 +205,7 @@ export function randomScenes(count = 60) {
                 return { r: { objects, doorSprites, npcSprites } };
             },
             stances: Array.from({ length: 5 }, (_, k) => {
-                const rnd = lcg(5000 + i * 7 + k);
+                const rnd = lcg(Math.imul(5000 + i * 7 + k, 2654435761));
                 return [100 + Math.floor(rnd() * 80), 120 + Math.floor(rnd() * 60), STANCES_DIRS[Math.floor(rnd() * STANCES_DIRS.length)]];
             }),
         });

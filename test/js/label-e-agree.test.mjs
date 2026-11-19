@@ -18,7 +18,7 @@ function check(label, fx, fy, dir, expectId) {
     assert.equal(h.labelAt(fx, fy, dir), TEXT(expectId), `${label}: the label names what E acts on`);
 }
 function reset() {
-    delete window.seating; delete window.npcBehaviorManager; delete window.workstationState;
+    delete window.seating; delete window.npcBehaviorManager; delete window.workstationState; delete window.npcHostileSystem;
     window.npcManager = { getNPC: (id) => ({ observations: 'npc ' + id }) };
 }
 
@@ -80,7 +80,10 @@ test('the label agrees with E over every fixture stance', async () => {
         h.setRooms(s.build());
         for (const [fx, fy, dir] of s.stances) {
             const e = h.pressE(fx, fy, dir);
-            if (e === null || e === 'stand') continue;                  // nothing to act on: the label has nothing to say either
+            if (e === null || e === 'stand') {                           // E acts on nothing (or stands up): the label must be hidden too
+                assert.equal(h.labelAt(fx, fy, dir), null, `${s.name} @${fx},${fy} ${dir}: E acts on nothing, so the label is hidden`);
+                continue;
+            }
             assert.equal(h.labelAt(fx, fy, dir), TEXT(e), `${s.name} @${fx},${fy} ${dir}: E acts on ${e}`);
             n++;
         }

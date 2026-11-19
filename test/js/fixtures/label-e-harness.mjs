@@ -32,7 +32,7 @@ export async function loadHarness({ oldInteractions = process.env.EPICK_OLD, old
         './examine.js': 'export function shouldExamine(){return false;} export function startExamine(){return false;}',
         './combat-input.js': 'export function showPastTalkingToast(){}',
         './consumables.js': 'export function shouldConsumeOnInteract(){return false;} export function useConsumable(){}',
-        './interaction-walls.js': 'export function interactionLineClear(){return true;}',
+        './interaction-walls.js': 'export function interactionLineClear(p, t){return !(t && t.__blocked);}',
         '../utils/locked-hint.js': 'export function hintToastMs(){ return 6000; }',
         './requires-item-hint.js': 'export function requiresItemHint(){ return ""; }',
         './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
@@ -56,7 +56,7 @@ export async function loadHarness({ oldInteractions = process.env.EPICK_OLD, old
     writeFileSync(join(dir, 'display-dashes.js'), 'export const displayDashes = t => t;');
     writeFileSync(join(dir, 'computer-keywords.js'), readFileSync(join(js, 'utils/computer-keywords.js'), 'utf8'));
     writeFileSync(join(dir, 'pc-observations.js'), readFileSync(join(js, 'utils/pc-observations.js'), 'utf8'));
-    writeFileSync(join(dir, 'walls.js'), 'export const interactionLineClear = () => true;');
+    writeFileSync(join(dir, 'walls.js'), 'export const interactionLineClear = (p, t) => !(t && t.__blocked);');
     writeFileSync(join(dir, 'reach.js'), reachSrc);
     writeFileSync(join(dir, 'npc-reach.js'), npcReach);
     writeFileSync(join(dir, 'info-label.js'), readFileSync(oldLabel || join(js, 'ui/info-label.js'), 'utf8')
@@ -126,9 +126,9 @@ export function seatingFor(chair) {
 }
 
 /** Make an NPC sit on `chair` (its behaviour holds the chair; the chair holds the npc id). */
-export function seatNpc(sprite, chair, places = null) {
+export function seatNpc(sprite, chair, places = null, place = 0) {
     if (!places) chair.seatedBy = sprite.npcId;   // a sofa holds its sitters in _places, and reads 'full' only when every place is taken
-    const seat = { chair, seat: { places }, place: 0 };
+    const seat = { chair, seat: { places }, place };
     const prev = window.npcBehaviorManager?.map || {};
     prev[sprite.npcId] = { _seat: seat };
     window.npcBehaviorManager = { map: prev, getBehavior: (id) => prev[id] };
