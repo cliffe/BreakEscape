@@ -79,7 +79,7 @@ to the PC's own `contents`. Two predicates admit a profile scope: `session_admit
 is satisfied by a live session at *any* PC whose identity the `for` admits, and
 `scope_admitted_by_session?(scope, pc_id)` (`GM:3288-3307`) only through the session at one PC.
 
-**The USB policy is read in four player-side places.** Server: the implant path
+**The USB policy is read in three player-side places.** Server: the implant path
 (`network_access.rb:507-513`, `AccessWork.plant_refused?`, `lib/break_escape/access_work.rb:1198`)
 and the plant proof (`app/models/break_escape/capture_proofs.rb:50-52`, a plant the policy refuses
 is never recorded). Client: `plantRefusal` (`public/break_escape/js/systems/pc-policy.js:67-79`),
@@ -151,9 +151,7 @@ account opening some PC) and `login_account_tiles` (`GM:3874`). `CredentialModel
 validator (`scripts/validate_scenario.rb:7583`). `pcs_accepting` has two callers, both offline: the
 validator (`:7607`) and the dungeon graph (`scripts/generate_dungeon_graph.rb:1655`). Both
 definitions apply the same rule today: no PC `access` list admits every account, else
-`AccessIdentities.acl_admits?`. The run-time keyring does not judge admission: `keyring_scope_to_pc`
-(`credential_keyring.rb:479-492`) marks a password row `forThisPc` on every screen and leaves
-admission to the sign-in.
+`AccessIdentities.acl_admits?`; the run-time keyring judges no admission (section 7).
 
 **Sign-in tiles list every admitted account.** `login_account_tiles(pc)` (`GM:3868-3883`) builds
 `{ username, displayName, portrait, avatar }` for every account NPC that `pc_admits_account?`
@@ -270,7 +268,7 @@ collected on `pc01` opens `pc02` and `pc03` as admin. `lab1Admin` is the hardene
 an administrator of its own, and what is collected there opens nothing else. Absent `accountKind`
 leaves an account unscoped, as today; absent `domain` on a PC puts it in no domain. The minimal room
 and NPC fields (position, sprite) are left out of the examples for length; an `accountOnly` NPC needs
-none of them, and the validator exempts it from the person checks that require them (section 9).
+none of them, and the validator refuses them on it (section 9).
 
 ## 5. Engine behaviour: server then client
 
@@ -306,12 +304,10 @@ names; this plan adds no condition on it.
 
 `keyboard_admin?(pc_id)` is the one predicate for the USB override. It is true when the record has
 a blank `foothold`, is not a remote-route session (`remote_route_session?`, which covers relay and
-`from`), passes steps 1 to 3, and steps 5 to 8 answer `"admin"`. It skips step 4: for a keyboard
-session the only thing step 4 can still refuse is a PC whose own service is off, and a USB plant is
-physical, as the locked-session ruling already holds (`network_access.rb:502`). So an admin at the
-keyboard of a PC that has gone off still overrides, and the client's check (below), which knows
-nothing of power, agrees with it. A technique record always keeps its `foothold` (OPS_CORE 5.4), so
-a technique session is never keyboard admin; a locked session fails step 3, so it is not either.
+`from`), and `session_admin?(pc_id)` is true, step 4 (power and route) included. So a PC whose
+service is off never overrides, and the client, whose `access` comes from the same
+`session_access`, agrees once the next answer arrives. A technique record always keeps its
+`foothold` (OPS_CORE 5.4) and a locked session fails step 3, so neither is keyboard admin.
 
 **S5a: profiles.** Under S5a alone the admin set of a PC is its `owner` (empty on an unowned PC).
 Once S5b lands it is `pc_present_accounts(pc)`: the owner plus the accounts in
@@ -336,8 +332,8 @@ The extra profiles join the desktop's one flat list, as admitted profiles do tod
 (`login_desktop_contents`, `GM:3337-3344`); `find_login_item` already searches every profile, so the
 listing and the lookup need no new structure. An author who wants the player to see whose items
 these are wraps a profile's `contents` in one folder named for the person ("Priya's documents").
-The validator warns when two profiles that can appear on the same PC have top-level items with the
-same name.
+The validator warns on same-name top-level items that only an admin session brings together
+(section 9).
 
 **S5a: the USB override.** `AccessWork.plant_refused?(data, obj, item, admin: false)` returns false
 when `admin` is true; every other caller is unchanged, so the NPC-side readers
@@ -430,26 +426,34 @@ outside its domain. Account kind does not change the second sign-in step (S8): e
 account meets the PC policy's `mfa`, and `creds.mfa: false` stays the only exception.
 
 **S5c: accounts with no person.** One predicate, `AccessIdentities.account_only?(npc)`. The server
-walks room NPCs in about 120 places in `app` and `lib`; they fall into three groups.
+walks room NPCs in about 120 places in `app` and `lib`; they fall into four groups.
 - *Readers that ask whether a person is in the world* skip an `accountOnly` NPC:
   `filtered_room_data` (so it never walks, talks, rings or shows in a phone list), `hasPresentNpc`
   in the bootstrap (`GM:2444-2448`, so a room holding only one is not lit as occupied), `hasNPCs`
   and the NPC count in the room layout (`games_controller.rb:527`, `:603`), `npc_in_room?`
   (`GM:2160-2166`, which the talk routes use), `ko_claimable_room_npc_ids` (`GM:2040-2049`) and
-  `character_sprite_keys` (`GM:2232-2239`). Encounter tracking (`games_controller.rb:2944-2969`)
-  reads the filtered room answer, so it never sees one.
+  `character_sprite_keys` (`GM:2232-2239`), and `NpcHabits.expand!`
+  (`lib/break_escape/npc_habits.rb:131-143`). The last takes `awareness` from the NPC or from its
+  role (`level_with_source`, `:60-70`), and a role cannot be refused on the NPC: for an account
+  with no workstation it would otherwise write the role preset's `habits` onto the NPC and, with
+  `holdsDoors`, count it in the door gates' `noHold` fills; only the screen fill stops
+  (`:no_workstation`). Encounter tracking (`games_controller.rb:2944-2969`) reads the filtered
+  room answer, so it never sees one.
 - *Readers that ask about an account or identity* keep it: `scenario_room_npcs` and its account
   readers (sign-in, `account_for_username`, captures at `GM:2642-2694`, `rfid_identity_passes?` at
   `GM:3982-3986`).
 - *Readers of what an NPC holds* (the `itemsHeld` searches in `games_controller.rb:3612-4300`,
-  `GM:3902`, the phone walk in `social_feed.rb:208-218`) find nothing, because the validator refuses
-  `itemsHeld`, a phone and a story on an `accountOnly` NPC (section 9).
+  `GM:3902`, the phone walk in `social_feed.rb:208-218`) and *readers of other person fields*
+  (habit sticks, feed posts, `voice` and barks, clue sources) find nothing, because the validator
+  accepts only an allow-list of keys on an `accountOnly` NPC (section 9).
 
-A build step finds every reader with `rg -n "\['npcs'\]|scenario_room_npcs|room_npcs|each_room_npc"
-app lib` and notes each hit's group beside it. `account_only_readers_test.rb` puts an `accountOnly`
-NPC in a room with a PC and asserts that each first-group reader leaves it out and each
-second-group reader still finds it; a second case counts the grep hits and fails when the count
-changes, so a new loop gets a decision. Their session answer carries `displayName` and no
+`test/models/account_only_readers.yml` lists, as `file#method: group`, every method in `app` and
+`lib` whose body matches `['npcs']`, `scenario_room_npcs`, `room_npcs` or `each_room_npc`.
+`account_only_readers_test.rb` scans those files in plain Ruby and fails when a matching method is
+missing from the manifest or an entry no longer matches, so a new loop gets a decision. It puts an
+`accountOnly` NPC in a room with a PC and asserts that each first-group reader leaves it out, each
+second-group reader still finds it, and an NPC whose role has `awareness` gets no habits. Their
+session answer carries `displayName` and no
 portrait, so the desktop shows its generic account picture. The client already copes with a session
 whose NPC it has never loaded: the mirror keeps the answer's fields (`pc-sessions.js:186-209`), the
 taskbar handles an NPC whose room is not loaded (`utils/pc-taskbar.js:160-176`), `npcName` falls
@@ -485,26 +489,24 @@ The desktop then shows:
   keyring's `refresh()` (`keyring.js:436`). Its result opens a small panel listing each collected
   account with its headshot (the answer's `portrait`, or the generic picture when it is null, as
   for an `accountOnly` one), its display name and "password" or "hash", and points to the keyring,
-  whose row carries the username to type. A collect that adds
-  nothing says so. The panel is the feedback, because the keyring's find toasts and Sign-ins list
-  are not guaranteed to show a new row (`keyring.js:774-784`).
+  whose row carries the username to type. A collect that adds nothing says so. The panel is the
+  feedback: the keyring's find toasts and Sign-ins list may not show a new row
+  (`keyring.js:774-784`).
 
 `plantRefusal(heldItems, objectData, scenario, { admin })` (`pc-policy.js:67`) lets every item
 through when `admin` is true. `interactions.js:1056` passes `admin: keyboardAdmin(pcId)`, one
 function in `pc-sessions.js` that mirrors the server predicate: the mirror entry has `access ===
-"admin"` and is not `locked`, not `remote` and not `relay`. Neither side reads power, so a PC that
-goes off changes neither answer.
+"admin"` and is not `locked`, not `remote` and not `relay`. Power reaches the client through
+`access`: an answer that follows power-off has no `access`, so the entry is cleared.
 
 The two can still disagree in two ways, and the server wins in both:
-- *Client narrower.* A session opened through a foothold and then served at the keyboard loses its
-  `foothold` on the server (`settle_session_at_keyboard!`, `network_access.rb:1556-1565`) while the
-  mirror may still say `remote`. The client refuses the stick with the policy's ordinary refusal
-  message, the item stays in the tray, and a fresh session answer (any room answer or reopened
-  desktop) brings the mirror level. Nothing is lost.
-- *Client wider* (a tampered client, or a session ended by an answer the client has not yet had,
-  such as a borrow hand-over). The plant proof records nothing (`capture_proofs.rb:52` answers false
-  without a message), so the item leaves the tray with no plant recorded, as a client that skips
-  `plantRefusal` meets today. The next room answer corrects the mirror.
+- *Client narrower.* A foothold session settled at the keyboard (`settle_session_at_keyboard!`,
+  `network_access.rb:1556-1565`) is corrected by the same desktop answer that settles it, which
+  carries the fresh session (`GC:3166-3169`).
+- *Client wider* (a tampered client, or a mirror not yet updated after a session ended or a PC went
+  off, such as a borrow hand-over). The plant proof records nothing (`capture_proofs.rb:52` answers
+  false without a message), so the item leaves the tray with no plant recorded, as a client that
+  skips `plantRefusal` meets today. The next room answer corrects the mirror.
 
 No client code decides privilege. The client learns about account kinds only through the existing
 `notPermitted` refusal and through which tiles a PC shows (above).
@@ -516,8 +518,8 @@ action and the plant proof for USB); S5c's check rides `POST /login` and the key
 
 **`POST /harvest_credentials`** (new; `config/routes.rb` beside the keyring routes, action beside
 `keyring` in `app/controllers/break_escape/games_controller.rb`). Params: `pc_id` (string, at most
-64 characters) and the desktop's route params (`relay`, `foothold`, `from`, read by
-`desktop_route_params`), which the client sends exactly as it sent them for the desktop it is on.
+40 characters, the log row id cap of section 13) and the desktop's route params (`relay`,
+`foothold`, `from`, read by `desktop_route_params`), sent exactly as for the desktop it is on.
 Runs under the game lock, as the other writing routes do.
 
 Checks in order:
@@ -525,23 +527,25 @@ Checks in order:
 2. not a sign-in PC in a room (`find_login_pc`), or no session record at it
    (`access_sessions[pc_id]`, the raw record) → 404 `Container not found: <pc_id>`, the answer
    `GET /container` gives an invented id (`render_error`, `games_controller.rb:641-644`). A browser
-   with no session cannot tell a real PC id from an invented one;
+   with no session gets the same answer for a real and an invented PC id, the echoed id aside;
 3. the route params conflict, or `desktop_request_allowed?(info, route)` (`network_access.rb:1495`)
-   refuses → 403 `{ error: "PC not reachable" }`, as the desktop answers. This is the desktop's own
-   reach gate, so terms the core plan adds to it apply here too; a headless host is collected
+   refuses → 403 `{ error: "PC not reachable" }`, one body where the desktop gives one per reason
+   (`GC:3149-3162`). This is the desktop's own reach gate, which already refuses an expired token
+   and a dead route, so terms the core plan adds to it apply here too; a headless host is collected
    through its remote desktop's route;
 4. the session is locked (`session_locked?(pc_id)`) → 422 `{ error: "Sign in required", locked:
    true }`;
-5. `session_access(pc_id)` nil for any other reason (expired, route down) → 403
+5. `session_access(pc_id)` nil for any other reason (the account is gone) → 403
    `{ error: "PC not reachable" }`;
 6. `session_access(pc_id)` is `"user"` → 422 `{ error: "Administrator access required",
    notAdmin: true }`;
 7. `harvest_cached_credentials!(pc_id)`; `save!` only when a pair was added.
 
-Answer: `200 { success: true, harvested: [ { npcId, displayName, portrait, avatar, as } ], held: [ ... same shape ],
-keyringRev }`, where `harvested` is what this call added, `held` is every account collected at this
-PC so far, `portrait` and `avatar` are built as `login_account_tiles` builds them (`GM:3876-3881`;
-null for an `accountOnly` account), and `as` is `"password"` or `"hash"`. A repeat (for example after a lost answer) returns
+Answer: `200 { success: true, harvested: [ { npcId, displayName, portrait, avatar, as } ],
+held: [ ... same shape ], keyringRev }`, where `harvested` is what this call added, `held` is every
+account collected at this PC so far, `portrait` and `avatar` are built as `login_account_tiles`
+builds them (`GM:3876-3881`; null for an `accountOnly` account, which the allow-list leaves no
+sprite), and `as` is `"password"` or `"hash"`. A repeat (say after a lost answer) returns
 `harvested: []` with the same `held`, writes nothing and writes no log row. `keyringRev` is in every
 success answer. The answer never contains a password or a hash token; those arrive through
 `GET /keyring`. `Cache-Control: no-store`, as the keyring route.
@@ -555,7 +559,8 @@ action gains no param; it reads `keyboard_admin?` for the session it already che
 - `access: "admin"` on an admin session's entry (sign-in answer, session mirror entries in the
   bootstrap and room answers, network host row); absent for every other session.
 - The collect answer: account ids, display names, `portrait` and `avatar` keys, and `password` or
-  `hash`, for accounts the player has collected. No secret.
+  `hash`, for accounts the player has collected. No secret. On a PC with `loginPicker: "known"`
+  or `false` this is by design the first place an unmet account's name and picture appear.
 - A keyring row says nothing about where its account is admitted: a collected password is offered
   on every sign-in screen, and a PC that does not admit the account answers `notPermitted`, which is
   the lesson of the hardened setup. `localTo` never reaches the keyring payload.
@@ -655,17 +660,20 @@ unchanged.
 - `domain`: `creds.domain` present, and at least one sign-in PC with that `domain`, else error.
   Warn for a PC `domain` no account uses.
 - An owner or a borrower whose account kind refuses its own PC, error.
-- `accountOnly` on an NPC with no `creds.username`, error; with `itemsHeld`, an ink story or a
-  phone, error (the server readers of section 5 rely on it); with a position or sprite, warn (never
-  used). An `accountOnly` NPC named where a person who walks and is met is expected is an error: a
-  PC `owner`, an NPC with `workarounds` or `needsHome`, a `share_login` `with`, a `borrow_session`
-  borrower or an `after: "borrow"` candidate. It may be listed in `cachedAccounts` (start
-  candidate) and named by `grants.session.account`. Every person check that requires a position or
-  sprite skips it.
+- `accountOnly` on an NPC with no `creds.username`, error. An `accountOnly` NPC may carry only
+  `id`, `displayName`, `npcType`, `creds`, `role` and `accountOnly`; any other key (`itemsHeld`, a
+  story, a phone, `habits`, `awareness`, `voice`, a position or sprite) is an error, which the
+  server readers of section 5 rely on. Naming one where a person who walks and is met is expected
+  is an error: a PC `owner`, an NPC with `workarounds` or `needsHome`, a `share_login` `with`, a
+  `borrow_session` borrower or an `after: "borrow"` candidate. It may be listed in
+  `cachedAccounts` (start candidate) and named by `grants.session.account`. Every person check
+  that requires a position or sprite skips it.
 - A `|` in the id of a PC or NPC that `cachedAccounts` names, error: the pair strings of section 8
   are `"<pcId>|<npcId>"` and are split on that character.
 - `domain` on a PC or in `creds` outside the schema pattern, error.
-- Two profiles that can appear on the same PC with top-level items of the same name, warn.
+- Two profiles with top-level items of the same name that meet on a PC only through an admin
+  session (a `creds.admin` account or an admin technique grant that can hold that PC), warn. A
+  scenario with neither gets no such warning; the validator snapshot of section 10 checks it.
 - Every check here that asks whether a PC admits an account uses `CredentialModel.pc_admits_account?`
   (`validate_scenario.rb:7583`), which carries the account-kind rule.
 - A `hash` credential with a `harvested` proof: the PC is a sign-in PC and `account.npc` is in its
@@ -703,10 +711,14 @@ A scenario that sets none of the new fields behaves exactly as before:
 lock, unlock, keyring sign-in, borrow "done", implant, `GET /container`, `GET /keyring`) and compares
 the server state and every answer body with golden files under `test/fixtures/ops_privilege_golden/`.
 The test is the first commit of S5a, before any engine change. The proof for each stage is a
-comparison between two commits: `bin/ops-golden-compare <parent> <stage>` records the golden files
-at the stage's parent commit (`RECORD_GOLDEN=1`) in a scratch worktree, then runs the test against
-them at the stage's commit; the stage's review runs it. The checked-in golden files only catch
-drift between stages, so unrelated work on `main` may refresh them without weakening the proof.
+comparison between two commits, which the stage's review runs on the hash to be merged:
+`bin/ops-golden-compare <stage>` takes as parent `git merge-base main <stage>` after the stage's
+last merge of `main`. In a scratch worktree under `tmp/` at the parent's engine code, with the
+stage's `ops_privilege_unchanged_test.rb` and golden helper copied in, it records the golden files
+(`RECORD_GOLDEN=1`), runs the same test against them at the stage's commit, and removes the
+worktree with `git worktree remove`. It runs that one test file only, never a `db:` task against
+the shared Postgres, and refuses when the two commits differ in `db/`. The checked-in golden files
+only catch drift between stages, so work on `main` may refresh them without weakening the proof.
 Three rules keep the comparison honest:
 - `ACCESS_STATE_DEFAULTS` is filled into every game's `player_state` (`GM:7576`), so the new empty
   keys appear in the server state. The comparison removes `cachedAt` and `harvestedAccounts` and
@@ -732,11 +744,12 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
 - `admin_profiles_test.rb`. S5a: admin at P lists the owner's profiles once; a user session lists
   only its own; `GET /container` of another PC's owner's profile through the admin session at P is
   refused; `session_admits?` names the admin PC; `admin_profile_read` stores one row and one save on
-  the first open, none on a reopen, and no save at all in a scenario without `logSources`. S5b: the
+  the first open, none on a reopen, and no save at all in a scenario without `logSources`; with
+  `logSources`, the validator refuses a 41-character profile id. S5b: the
   cached accounts' profiles are listed, each once.
 - `admin_usb_test.rb`. S5a: implant and plant proof both allowed under keyboard admin and refused
   under user; at both sites refused under a locked admin session, a remote admin password session
-  (through a foothold, and `from` another desktop) and a relay session; allowed under keyboard admin
+  (through a foothold, and `from` another desktop) and a relay session; refused under keyboard admin
   on a PC whose service is off; allowed for a session opened through a foothold and then settled at
   the keyboard; NPC-side `usb_habit_refused?` unchanged under player admin. S3: refused under a
   technique admin session.
@@ -747,7 +760,8 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   guest caches; a second borrow by the same NPC adds no second pair; `cachedAt` survives a reload
   while `guestSessions` does not; a `cachedAt` pair for an undeclared candidate is ignored.
 - `harvest_test.rb`. S5b: collect adds pairs once; a second collect adds nothing and writes no row;
-  after a borrow "done" the collect under the borrower's guest session answers 422 `notAdmin`, and
+  after a borrow "done" a collect answers 404 until the guest claim at the desk writes the
+  borrower's session record, then 422 `notAdmin`, and
   after signing back in as the administrator (Switch user) it adds the new account; a password row
   appears in `GET /keyring` with `source: "harvest"`; an account both captured and collected is
   listed once as `capture`. S7: a pair with an authored `harvested` hash proof answers `as: "hash"`
@@ -760,18 +774,18 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   each refusal uncounted; the shared local administrator collected on `pc01` signs in as admin on
   `pc02`; `lab1Admin` is refused on `pc01`; the domain administrator signs in as admin on every
   domain PC and is refused on a PC without the domain.
-- `account_only_readers_test.rb` (S5c, section 5): every first-group reader leaves an
-  `accountOnly` NPC out, every second-group reader finds it, it signs in by typed username, and
-  the reader count guard.
+- `account_only_readers_test.rb` (S5c, section 5): the reader cases and the manifest check there;
+  the NPC signs in by typed username.
 - `login_tiles_test.rb`. S5c: a `local` account has tiles only on its `localTo` PCs, a `domain`
   account only on its domain's PCs; an `accountOnly` account none; an existing scenario's tiles
   unchanged.
 
 **Controller** (`test/controllers/harvest_credentials_test.rb`, S5b): each refusal of section 6 in
 order, each asserting nothing was written; an unknown id and a real PC id with no session give
-byte-identical answers; a route the desktop would refuse is refused alike; the success answer with
-`keyringRev`, `portrait`, no password and `Cache-Control: no-store`; the repeat answer; hostile
-`pc_id` values (non-string, 10 KB, another game's PC id).
+the same status and body once the echoed id is replaced; a route the desktop would refuse is
+refused alike; the success answer with `keyringRev`, `portrait`, no password and `Cache-Control:
+no-store`; the repeat answer; hostile `pc_id` values (non-string, 41 characters, 10 KB, another
+game's PC id).
 
 **No exposure**: the list in section 7 at each step of a full run of `test_ops_privilege`, added to
 `test/controllers/break_escape/network_no_exposure_test.rb`, the file on `main`, or to the core
@@ -779,13 +793,14 @@ plan's `network_ops_no_exposure_test.rb` if that has landed first.
 
 **JS unit** (`test/js/`): `pc-sessions` keeps `access` through `publicSession` and the bootstrap
 adopt, and drops it when the mirror locks a session; `keyboardAdmin` is false for a locked mirror
-entry that still held `access`, and for remote and relay entries, and true for an admin entry on a
-PC shown as off; a stick refused for a `remote` entry shows the policy's refusal message and stays
-in the tray; the desktop shows the marker and the collect control only for admin; the collect calls
+entry that still held `access`, and for remote and relay entries; a later answer for the same PC
+with no `access` (the PC gone off) clears it from the entry and `keyboardAdmin` is then false; a
+stick refused for a `remote` entry shows the policy's refusal message and stays in the tray; the
+desktop shows the marker and the collect control only for admin; the collect calls
 `keyring.refresh()` and the panel uses the answer's `portrait`; `plantRefusal` with `admin`; a
 session with an `npcId` the client never loaded renders; hostile display names and a hostile
-`domain` value rendered as text. A new module is added to every copy list that copies the module importing it (grep
-`test/js` for the importer's name before finishing).
+`domain` value rendered as text. A new module is added to every copy list that copies the module
+importing it (grep `test/js` for the importer's name before finishing).
 
 **Feature scenario** `test_ops_privilege`, grown per stage (the schema is closed, so each stage
 adds only its own fields):
@@ -804,8 +819,9 @@ Each stage ships `mission.json`, a regenerated graph and `PLAYTEST.md`.
 - S5b: collect on the owned PC and on the hot desk; make the borrow candidate's need fail until
   its frustration reaches the workaround's `at` level (the counted fails after which `choose_run!`
   hands a workaround over, `npc_frustration.rb:526-547`), using the same steps as the borrow in
-  `test_access_social`'s playtest; wait for the "done", see the hot desk now on the borrower's
-  session with no collect control (a collect answers 422 `notAdmin`), Switch user, sign in as the
+  `test_access_social`'s playtest; wait for the "done" (a collect now answers 404), open the desk
+  so the guest claim writes the borrower's session, see no collect control (a collect answers 422
+  `notAdmin`), Switch user, sign in as the
   administrator, collect again and get the new account.
 - S5c: use `deskAdmin`'s collected password on `pc02` as admin, typed (no tile); fail on `lab1` with
   it; sign in as the domain administrator on both domain PCs.
@@ -838,7 +854,7 @@ Files this plan changes:
 - `app/models/break_escape/credential_keyring.rb`: `account_password_rows`, `account_password_row`,
   the harvest source.
 - `lib/break_escape/access_identities.rb`: `account_kind_admits?`, `account_only?`; `reach` for
-  collected accounts.
+  collected accounts. `lib/break_escape/npc_habits.rb`: `expand!` skips `account_only?`.
 - `app/controllers/break_escape/games_controller.rb`, `config/routes.rb`: the collect route;
   `hasNPCs` and the NPC count (`games_controller.rb:527`, `:603`) reading `account_only?`.
 - The network host row's serialiser (the core plan's), for the `access` rule.
@@ -871,13 +887,13 @@ Event names and details are as the log rows plan's section 13.7 writes them (`Op
 | S5a | `usb_install_overridden` | `{ account: }` | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and the plant proof, which already save |
 | S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count`, `hashes` (integers: pairs added, and how many of them are hashes) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
 
-`write_log_row!` takes `once:` and returns a result whose `stored?` says the stored log changed. In
-a scenario with no `logSources` it returns nil, so `r&.stored?` is false and `GET /container` adds
-no save; a reopened profile stores nothing and saves nothing. Nothing in this feature reads a log
-row back. Obtaining a hash by collect is counted by `hashes`; there is no separate hash row.
-
-No `detail` holds a secret: an authored id, a `usbClass`, two counts. Account names in rows are cut
-to 32 characters and ids to 40 by the helper; never a password, a hash token or a code. An
+Nothing in this feature reads a log row back. Obtaining a hash by collect is counted by `hashes`;
+there is no separate hash row. No `detail` holds a secret: an authored id, a `usbClass`, two
+counts; never a password, a hash token or a code. The helper cuts nothing: a PC or profile id over
+40 characters, or an account username over 32, makes the call malformed (no row, a raise in test
+and development). So every PC id, profile id and account username these rows carry must be within
+those limits in a scenario that declares `logSources`, and the log rows plan's validator check
+enforces it there. An
 account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is the log rows plan's
 `signin_refused` row; this plan writes none, and S5c registers that row's optional `kind` detail
 (`local`, `domain`).
@@ -896,7 +912,9 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   parameter. A password sign-in that replaces your technique record takes the level of the account
   signed in with. Please run `CredentialModel.pc_admits_account?` (which carries the account-kind
   rule) on `grants.session.account` in your validator pass, and confirm that a technique record
-  always keeps its `foothold`, which `keyboard_admin?` relies on.
+  always keeps its `foothold`, which `keyboard_admin?` relies on. Please also confirm whether your
+  added terms in `desktop_request_allowed?` let a technique admin session on a `remote: "blocked"`
+  headless host through: the collect (section 6, step 3) passes only if they do.
 - **To OPS_CRACKING (S7).** Your draft asks for an admin-dump marker "per host, per account" with a
   proof such as `{ dumped: { host, npc } }`. This plan's side of the contract, exactly:
   - the dump is the collect route of section 6, on a sign-in PC, not a host: the marker is keyed by
@@ -925,8 +943,9 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   `<npcId>.reset` row. Lockouts and the failure counter are unchanged by this plan.
 - **To OPS_LOG_ROWS (S9).** None: section 13 is your 13.7 S5 rows as written.
 - **To all ops plans.** One golden helper for the unchanged-scenario tests that strips each plan's
-  new empty `ACCESS_STATE_DEFAULTS` keys and freezes the clock; and one test directory for unit
-  tests (this plan uses `test/models/`).
+  new empty `ACCESS_STATE_DEFAULTS` keys and freezes the clock, with `bin/ops-golden-compare`
+  (section 10) as part of the same work; and one test directory for unit tests (this plan uses
+  `test/models/`).
 
 ## 15. Open questions for the user
 
@@ -997,7 +1016,8 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
    which matches a real admin changing device policy remotely; then `keyboard_admin?` becomes
    `session_admin?` at the three sites. **Recommend (a)**:
    the plant is physical, a remote admin session is often a technique session, and (b) would let a
-   foothold quietly disarm every USB lesson in a scenario.
+   foothold quietly disarm every USB lesson in a scenario. Under either option an admin session on
+   a PC whose service is off does not override: `session_access` reads that PC as unreachable.
 7. **Is a PC's owner always collectable, or must it be declared?** (a) the owner is always cached
    from the start: no field, but any scenario that adds one administrator account or one admin step
    up makes every reached owner's password collectable, a new route through an existing puzzle

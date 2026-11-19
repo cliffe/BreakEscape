@@ -20,3 +20,10 @@ Findings not acted on as suggested, one line each.
 - **m8 (whose profiles an admin sees).** No server-built folder per account: the flat merge is kept (it is how admitted profiles show today and `find_login_item` already agrees); authors wrap a profile in a named folder, and the validator warns on same-name top-level items.
 - **m2 (`keyboard_admin?` on an off PC).** Took the reviewer's first option: the override skips the power term, so client and server agree; the narrower settled-session case is stated with what the player sees.
 - **Plan length.** Grew from 929 to about 1000 lines: the `accountOnly` reader sweep, the stage-tagged tests and the collect gate needed text that no existing repetition could absorb.
+
+## Round 4
+
+- **m2 / N1 (`keyboard_admin?` on an off PC), corrected.** The round 3 reason was wrong: the client does see power, because an answer after power-off carries no `access`. Took the second option instead: `keyboard_admin?` keeps the power term (it is `session_admin?` plus the two route terms), so an admin cannot override on a PC whose service is off and client and server agree once the answer arrives; the stale-mirror gap is the accepted "client wider" case. Question 6 notes the off-PC case.
+- **N3.** `accountOnly` NPCs take an allow-list of keys, and `NpcHabits.expand!` joins the readers that skip them (a role's `awareness` would otherwise give the account preset habits and door-gate `noHold` entries).
+- **N2.** The grep-count guard became a checked-in manifest (`test/models/account_only_readers.yml`) read by the test.
+- **N4, N5, N6, n1-n7.** Applied as wording: ids within the log caps where `logSources` is set (collect `pc_id` cap now 40), the same-name warning gated on an admin path, the golden-compare script's parent, test file and database rule stated.
