@@ -1,0 +1,13 @@
+{
+  "key": "b5b0001536d6ba5b3f881e7953ad06b0",
+  "npc": "niamh_doherty",
+  "text": "That's the morning sorted, thanks. No honest web page ever needs you to paste, run, install or call.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks_defend",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:51:42Z"
+}
