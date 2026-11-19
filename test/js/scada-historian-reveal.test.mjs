@@ -87,7 +87,7 @@ const SD = {
     ],
 };
 
-let Scene, dir;
+let Scene, dir, SR_WAIT = 400;
 const globalsSet = {}, tasksDone = [];
 
 test.before(async () => {
@@ -233,4 +233,183 @@ test('keyboard: arrows move a reading cursor and Enter marks it', () => {
     assert.ok(svgLines().some(l => l._cls.has('sh-cursor-line')), 'the cursor is drawn');
     area.fire('keydown', { key: ' ' });
     assert.equal(scene._annotateUnlocked, true);
+});
+
+// ── Round 1 fixes (D167 review) ──
+const rangeBtn = (h) => all(fakeDoc.body, 'button').find(b => b._cls.has('sh-range-btn') && +b.dataset.hours === h);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const setWidth = (scene, w) => { fakeDoc.getElementById('sh-chart-area').clientWidth = w; scene._renderChart(); };
+const sceneX = () => fakeDoc.querySelector('#minigame-close');
+function openWithX() {
+    const scene = open();
+    const x = makeNode('button'); x.id = 'minigame-close';
+    scene.container.appendChild(x);
+    return scene;
+}
+
+test('R1 M1: at phone width a tap about 30 minutes either side of the cliff still marks it; far taps do not', () => {
+    const scene = open();
+    setWidth(scene, 350);   // the 390px phone: about 0.4px a minute over 12 hours
+    hitAt(scene, '23:42:00').fire('click');
+    assert.equal(scene._annotateUnlocked, true, '30 minutes late is 12px: accepted');
+    const scene2 = open();
+    setWidth(scene2, 350);
+    hitAt(scene2, '22:42:00').fire('click');
+    assert.equal(scene2._annotateUnlocked, true, '30 minutes early is accepted');
+    const scene3 = open();
+    setWidth(scene3, 350);
+    hitAt(scene3, '01:00:00').fire('click');
+    assert.equal(scene3._annotateUnlocked, false, 'about 110 minutes late is 44px: not accepted');
+    assert.match(hint(), /Find where it starts/);
+});
+
+test('R1 M2: at 1h the cliff is off the chart and the late hint says to widen the range', () => {
+    const scene = open();
+    rangeBtn(1).fire('click');
+    hitAt(scene, '06:00:00').fire('click');
+    assert.equal(scene._annotateUnlocked, false);
+    assert.match(hint(), /widen the range/);
+    assert.doesNotMatch(hint(), /Find where it starts/);
+    rangeBtn(12).fire('click');
+    hitAt(scene, '04:00:00').fire('click');
+    assert.match(hint(), /Find where it starts/, 'back at 12h the start is in view');
+});
+
+test('R1 M3: moving the keyboard cursor tells a screen reader the time and value, debounced', async () => {
+    const scene = open();
+    const area = fakeDoc.getElementById('sh-chart-area');
+    const sr = fakeDoc.querySelector('.sh-sr-only');
+    assert.ok(sr, 'a screen-reader-only region exists');
+    assert.equal(sr.attrs['aria-live'], 'polite');
+    area.fire('keydown', { key: 'ArrowRight' });
+    area.fire('keydown', { key: 'ArrowRight' });
+    area.fire('keydown', { key: 'ArrowRight' });
+    assert.equal(sr.textContent, '', 'nothing announced while keys are still arriving');
+    await sleep(SR_WAIT);
+    assert.match(sr.textContent, /^2026-03-20 18:32:00\. Temperature: \d\d\.\d°C\. dZ\/dt: /, 'the third reading, announced once');
+    area.fire('keydown', { key: 'Shift' });
+    area.fire('keydown', { key: 'PageDown' });
+    await sleep(SR_WAIT);
+    assert.match(sr.textContent, /^2026-03-20 19:32:00\./);
+});
+
+test('R1 M4: the question has an X and no [CANCEL]; the scene X stays; the confirm keeps [CANCEL] and hides the scene X', () => {
+    const scene = openWithX();
+    hitAt(scene, '23:12:07').fire('click');
+    annotateBtn().fire('click');
+    assert.equal(fakeDoc.querySelector('.sh-modal-cancel-btn'), null, 'no lone [CANCEL] on the question');
+    assert.ok(fakeDoc.querySelector('.sh-modal-close'), 'the report has an X');
+    assert.notEqual(sceneX().style.visibility, 'hidden', 'the scene X stays');
+    fakeDoc.querySelector('.sh-modal-close').fire('click');
+    assert.equal(fakeDoc.querySelector('.sh-modal'), null, 'X closes the report');
+    annotateBtn().fire('click');
+    fakeDoc.querySelector('.sh-choice-btn[data-choice="written"]').fire('click');
+    assert.ok(fakeDoc.querySelector('.sh-modal-cancel-btn'), 'the confirm keeps its named cancel');
+    assert.equal(fakeDoc.querySelector('.sh-modal-close'), null);
+    assert.equal(sceneX().style.visibility, 'hidden', 'the scene X hides on the confirm');
+});
+
+test('R1 m5: reopening after the finding was confirmed starts revealed with ANNOTATE unlocked', () => {
+    globalThis.gameState = { globalVariables: { historian_flatline_found: true } };
+    try {
+        const scene = open();
+        assert.equal(scene._revealed, true);
+        assert.equal(scene._annotateUnlocked, true);
+        assert.equal(annotateBtn().disabled, false);
+        assert.equal(redLines().length, 1, 'the injection line is drawn');
+        annotateBtn().fire('click');
+        assert.ok(fakeDoc.querySelector('.sh-modal-confirm-btn'), 'straight to the written report');
+        assert.equal(all(fakeDoc.querySelector('.sh-modal'), '.sh-choice-btn').length, 0);
+    } finally { delete globalThis.gameState; }
+    assert.equal(open()._revealed, false, 'a fresh game starts hidden');
+});
+
+test('R1 m6: a range change keeps the keyboard cursor on the same time, or drops it when out of range', () => {
+    const scene = open();
+    const area = fakeDoc.getElementById('sh-chart-area');
+    area.fire('keydown', { key: 'End' });
+    for (let i = 0; i < 5; i++) area.fire('keydown', { key: 'ArrowLeft' });
+    const ts = scene._visible[scene._cursorIdx].ts;
+    rangeBtn(3).fire('click');
+    assert.equal(scene._visible[scene._cursorIdx].ts, ts, 'same time at 3h');
+    area.fire('keydown', { key: 'Home' });
+    const early = scene._visible[scene._cursorIdx].ts;
+    rangeBtn(24).fire('click');
+    assert.equal(scene._visible[scene._cursorIdx].ts, early, 'same time at 24h');
+    rangeBtn(1).fire('click');
+    assert.equal(scene._cursorIdx, null, 'a time outside the 1h window drops the cursor');
+});
+
+test('R1 m7: closing the report returns focus to ANNOTATE (or the chart before a mark)', () => {
+    const scene = open();
+    hitAt(scene, '23:12:07').fire('click');
+    annotateBtn().fire('click');
+    assert.equal(fakeDoc.activeElement, fakeDoc.querySelector('.sh-choice-btn'));
+    scene.handleEscapeKey();
+    assert.equal(fakeDoc.activeElement, annotateBtn());
+    annotateBtn().fire('click');
+    assert.ok(fakeDoc.querySelector('.sh-modal'), 'reopens after Esc');
+    fakeDoc.querySelector('.sh-modal-close').fire('click');
+    assert.equal(fakeDoc.activeElement, annotateBtn());
+});
+
+test('R1 m8: a ruled-out choice says so in text and for assistive tech, in a readable colour', () => {
+    const scene = open();
+    hitAt(scene, '23:12:07').fire('click');
+    annotateBtn().fire('click');
+    const drop = fakeDoc.querySelector('.sh-choice-btn[data-choice="dropout"]');
+    drop.fire('click');
+    assert.equal(drop.attrs['aria-disabled'], 'true');
+    assert.match(drop.textContent, /\(ruled out\)$/);
+    const css = readFileSync(join(here, '../../public/break_escape/css/scada-historian-minigame.css'), 'utf8');
+    const col = css.match(/\.sh-choice-btn\.wrong \{ color: (#[0-9a-f]{6})/)[1];
+    const lum = (h) => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+    const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+    assert.ok(ratio(col, '#1a233a') >= 4.5, `contrast ${ratio(col, '#1a233a').toFixed(2)}`);
+});
+
+test('R1 m9: COMPARE open at the reveal switches the banner; Esc during the question closes only the report; keys stop propagating', () => {
+    const scene = open();
+    fakeDoc.getElementById('sh-compare-toggle').fire('click');
+    assert.doesNotMatch(fakeDoc.querySelector('.sh-banner').textContent, /INJECTION/);
+    hitAt(scene, '23:12:07').fire('click');
+    annotateBtn().fire('click');
+    fakeDoc.querySelector('.sh-choice-btn[data-choice="written"]').fire('click');
+    assert.match(fakeDoc.querySelector('.sh-banner').textContent, /SYSTEMATIC INJECTION DETECTED/);
+
+    const s2 = open();
+    hitAt(s2, '23:12:07').fire('click');
+    annotateBtn().fire('click');
+    assert.equal(s2.handleEscapeKey(), true, 'Esc closes the report');
+    assert.equal(fakeDoc.querySelector('.sh-modal'), null);
+    assert.equal(s2.handleEscapeKey(), false, 'a second Esc is left to close the scene');
+
+    const calls = [];
+    fakeDoc.getElementById('sh-chart-area').fire('keydown', { key: 'ArrowRight', preventDefault: () => calls.push('pd'), stopPropagation: () => calls.push('sp') });
+    assert.deepEqual(calls, ['pd', 'sp']);
+    const other = [];
+    fakeDoc.getElementById('sh-chart-area').fire('keydown', { key: 'e', preventDefault: () => other.push('pd'), stopPropagation: () => other.push('sp') });
+    assert.deepEqual(other, [], 'keys the chart does not use pass through');
+});
+
+test('R1 live minor: the report grows the chart column on a phone; the 23:06 tooltip bug: cursor keys do not rebuild the hit targets', () => {
+    const scene = open();
+    hitAt(scene, '23:12:07').fire('click');
+    annotateBtn().fire('click');
+    assert.ok(fakeDoc.querySelector('.sh-charts').classList.contains('report-open'));
+    scene.handleEscapeKey();
+    assert.equal(fakeDoc.querySelector('.sh-charts').classList.contains('report-open'), false);
+    const css = readFileSync(join(here, '../../public/break_escape/css/scada-historian-minigame.css'), 'utf8');
+    assert.match(css, /max-width: 600px\) \{[\s\S]*\.sh-charts\.report-open \{ min-height: 640px; \}/);
+
+    const before = hits();
+    const area = fakeDoc.getElementById('sh-chart-area');
+    area.fire('keydown', { key: 'ArrowRight' });
+    const x1 = svgLines().find(l => l._cls.has('sh-cursor-line')).attrs.x1;
+    area.fire('keydown', { key: 'ArrowRight' });
+    assert.notEqual(svgLines().find(l => l._cls.has('sh-cursor-line')).attrs.x1, x1, 'the cursor line moved');
+    assert.equal(svgLines().filter(l => l._cls.has('sh-cursor-line')).length, 1, 'still one cursor line');
+    const after = hits();
+    assert.ok(before.length === after.length && before.every((h, i) => h === after[i]),
+        'the hit targets are the same nodes: no new target slides under a resting mouse and fires mouseenter');
 });

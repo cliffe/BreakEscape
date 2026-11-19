@@ -40,6 +40,8 @@ const INJECT_LINE_COLOUR = '#ff4040';
 // The player's accepted mark and the keyboard cursor
 const MARK_LINE_COLOUR = '#aabbdd';
 const CURSOR_COLOUR = '#556688';
+// Wait this long after the last cursor move before a screen reader is told the reading
+export const SR_DEBOUNCE_MS = 250;
 
 // Y-axis fixed domain per spec (prevents cherry-picking)
 const Y_MIN = 24;
@@ -85,6 +87,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._visible         = [];    // the primary rack's points in the current window
         this._plot            = null;  // geometry of the last chart render
         this._completionFired = false;
+        // Already confirmed in an earlier visit: start with the finding made (D167 R1 m5)
+        if (window.gameState?.globalVariables?.historian_flatline_found) this._revealed = true;
+        this._srTimer         = null;  // debounce for the screen-reader reading announcement
         this._progressFired   = new Set();
         this._trendData       = new Map(); // rackId → [{ts, value, dzdt, isInjected, isTransition}]
 
@@ -111,6 +116,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
     }
 
     cleanup() {
+        if (this._srTimer) { clearTimeout(this._srTimer); this._srTimer = null; }
         super.cleanup();
     }
 
@@ -256,6 +262,11 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._tooltip = this._el('div', 'sh-tooltip');
         this._tooltip.style.display = 'none';
         chartArea.appendChild(this._tooltip);
+        // The cursor's time and value for screen readers (the visual tooltip is not a live region)
+        this._srEl = this._el('div', 'sh-sr-only');
+        this._srEl.setAttribute?.('aria-live', 'polite');
+        this._srEl.setAttribute?.('aria-atomic', 'true');
+        chartArea.appendChild(this._srEl);
         charts.appendChild(chartArea);
 
         // dZ/dt panel
@@ -267,6 +278,10 @@ export class ScadaHistorianMinigame extends MinigameScene {
         body.appendChild(right);
         wrap.appendChild(body);
         gc.appendChild(wrap);
+        if (this._revealed) {
+            this._unlockAnnotate();
+            this._hintText2.textContent = 'Finding already confirmed. [ANNOTATE FINDING] opens the report again.';
+        }
     }
 
     // ── Chart rendering ────────────────────────────────────────────────────
@@ -625,7 +640,11 @@ export class ScadaHistorianMinigame extends MinigameScene {
 
     _markReading(point, rackId) {
         if (this._annotateUnlocked) return; // a mark is already accepted
-        const verdict = judgeMark(point, this._anomalyFor(rackId));
+        const plot = this._plot;
+        const verdict = judgeMark(point, this._anomalyFor(rackId), {
+            pxPerMs: plot ? plot.plotW / plot.tsRange : 0,
+            rangeStartTs: plot ? plot.startTs : NaN,
+        });
         if (this._hintText2) this._hintText2.textContent = verdict.message;
         if (this._hintEl) this._hintEl.classList.toggle('retry', !verdict.ok);
         if (!verdict.ok) return;
@@ -677,7 +696,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         if (!n) return;
         if (absolute) this._cursorIdx = toEnd ? n - 1 : 0;
         else this._cursorIdx = Math.max(0, Math.min(n - 1, (this._cursorIdx ?? 0) + delta));
-        this._renderChart();
+        // Move the cursor line in place. Rebuilding the chart here put new hit targets under a
+        // resting mouse pointer, whose mouseenter then overwrote the cursor's tooltip.
+        this._drawCursor();
         const chartArea = document.getElementById('sh-chart-area');
         const p = this._visible[this._cursorIdx];
         if (!chartArea || !p || !this._plot) return;
@@ -687,6 +708,37 @@ export class ScadaHistorianMinigame extends MinigameScene {
         const y = PAD.top + plotH - ((p.value - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
         const at = { clientX: rect.left + x * (rect.width / W), clientY: rect.top + y * (rect.height / H) };
         this._showTooltip(at, p, this._primaryRackId(), chartArea);
+        this._announce(this._tooltip ? this._tooltip.textContent : '');
+    }
+
+    /** Draw or move the keyboard cursor line without rebuilding the chart. */
+    _drawCursor() {
+        const svg = this._chartSvg;
+        const p = this._cursorIdx !== null ? this._visible[this._cursorIdx] : null;
+        if (!svg || !p || !this._plot) { this._renderChart(); return; }
+        const { startTs, tsRange, PAD, plotW, plotH } = this._plot;
+        const x = PAD.left + ((p.ts - startTs) / tsRange) * plotW;
+        let line = svg.querySelector('.sh-cursor-line');
+        if (!line) {
+            line = this._svgEl('line');
+            line.setAttribute('y1', PAD.top); line.setAttribute('y2', PAD.top + plotH);
+            line.setAttribute('stroke', CURSOR_COLOUR); line.setAttribute('stroke-width', '2');
+            line.setAttribute('stroke-dasharray', '2,2');
+            line.setAttribute('pointer-events', 'none');
+            line.classList?.add('sh-cursor-line');
+            svg.appendChild(line);
+        }
+        line.setAttribute('x1', x); line.setAttribute('x2', x);
+    }
+
+    /** Debounced polite announcement of the cursor's reading, so holding an arrow key does not flood a screen reader. */
+    _announce(text) {
+        if (!this._srEl) return;
+        if (this._srTimer) clearTimeout(this._srTimer);
+        this._srTimer = setTimeout(() => {
+            this._srTimer = null;
+            if (this._srEl) this._srEl.textContent = displayDashes(String(text).replace(/\n+/g, '. '));
+        }, SR_DEBOUNCE_MS);
     }
 
     // ── Toolbar interactions ────────────────────────────────────────────────
@@ -716,10 +768,17 @@ export class ScadaHistorianMinigame extends MinigameScene {
     }
 
     _setTimeRange(hours) {
+        // The keyboard cursor stays on the same time, not the same index (D167 R1 m6)
+        const cursorTs = this._cursorIdx !== null ? this._visible[this._cursorIdx]?.ts : null;
         this._timeRangeHours = hours;
         const btns = document.querySelectorAll('.sh-range-btn');
         btns.forEach(b => b.classList.toggle('active', +b.dataset.hours === hours));
+        this._cursorIdx = null;
         this._renderChart();
+        if (cursorTs != null) {
+            const i = this._visible.findIndex(p => p.ts === cursorTs);
+            if (i >= 0) { this._cursorIdx = i; this._renderChart(); }
+        }
     }
 
     _toggleDzDt() {
@@ -797,6 +856,14 @@ export class ScadaHistorianMinigame extends MinigameScene {
         // the written finding and the confirm button come after (D167)
         const asking = !!anomaly && !this._revealed;
         if (asking) {
+            // The question is not a confirm, so it has no named Cancel: X closes it (the scene X stays too)
+            const xBtn = this._el('button', 'sh-modal-close');
+            xBtn.textContent = 'X';
+            xBtn.setAttribute?.('aria-label', 'Close report');
+            xBtn.addEventListener('click', () => this._closeAnnotateModal());
+            title.appendChild(xBtn);
+        }
+        if (asking) {
             addRow(rows[0][0], rows[0][1]);
             if (this._markTs !== null) addRow('Marked:', fmtFull(this._markTs));
         } else {
@@ -814,6 +881,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
                 const btn = this._el('button', 'sh-choice-btn');
                 btn.dataset.choice = choice.id;
                 btn.textContent = choice.label;
+                btn.dataset.label = choice.label;
                 btn.addEventListener('click', () => this._chooseFinding(choice.id, btn, feedback, anomaly));
                 modal.appendChild(btn);
                 firstFocus = firstFocus || btn;
@@ -825,22 +893,29 @@ export class ScadaHistorianMinigame extends MinigameScene {
         if (!asking) {
             const confirmBtn = this._el('button', 'sh-modal-confirm-btn');
             confirmBtn.textContent = confirmLabel;
-            confirmBtn.addEventListener('click', () => { this._closeAnnotateModal(); this._onComplete(); });
+            confirmBtn.addEventListener('click', () => { this._closeAnnotateModal(false); this._onComplete(); });
             buttons.appendChild(confirmBtn);
             firstFocus = confirmBtn;
         }
-        const cancelBtn = this._el('button', 'sh-modal-cancel-btn');
-        cancelBtn.textContent = '[CANCEL]';
-        cancelBtn.addEventListener('click', () => this._closeAnnotateModal());
-        buttons.appendChild(cancelBtn);
-        modal.appendChild(buttons);
+        if (!asking) {
+            const cancelBtn = this._el('button', 'sh-modal-cancel-btn');
+            cancelBtn.textContent = '[CANCEL]';
+            cancelBtn.addEventListener('click', () => this._closeAnnotateModal());
+            buttons.appendChild(cancelBtn);
+            modal.appendChild(buttons);
+        }
         this._modalFirstFocus = firstFocus;
 
         overlay.appendChild(modal);
         charts.appendChild(overlay);
+        charts.classList?.add('report-open');   // phones: the chart column grows so the whole report fits
         this._annotateOverlay = overlay;
-        this._hideSceneX(true);
+        // Only the confirm (two named buttons) hides the scene X; the question keeps it
+        if (!asking) this._hideSceneX(true);
         this._modalFirstFocus?.focus?.();
+        // On a phone the report sits in a short column: bring it to the top of view
+        overlay.scrollTop = 0;
+        overlay.scrollIntoView?.({ block: 'nearest' });
     }
 
     /** A choice in the report: a wrong one explains itself; the right one reveals the finding. */
@@ -848,12 +923,15 @@ export class ScadaHistorianMinigame extends MinigameScene {
         const verdict = judgeFinding(choiceId, anomaly);
         if (!verdict.ok) {
             btn.classList.add('wrong');
+            btn.setAttribute?.('aria-disabled', 'true');
+            btn.textContent = `${btn.dataset.label} (ruled out)`;
             feedback.textContent = displayDashes(verdict.message);
+            feedback.scrollIntoView?.({ block: 'nearest' });
             return;
         }
         this._reveal();
         // Reopen the report with the finding written in and the confirm button
-        this._closeAnnotateModal();
+        this._closeAnnotateModal(false);
         this._openAnnotateModal();
     }
 
@@ -865,10 +943,16 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._renderChart();
     }
 
-    _closeAnnotateModal() {
+    _closeAnnotateModal(returnFocus = true) {
         if (this._annotateOverlay) this._annotateOverlay.remove();
         this._annotateOverlay = null;
+        document.querySelector?.('.sh-charts')?.classList?.remove('report-open');
         this._hideSceneX(false);
+        // Keyboard players land back on the button that opened the report, or on the chart
+        if (returnFocus) {
+            const target = this._annotateUnlocked ? this._annotateBtn : document.getElementById('sh-chart-area');
+            target?.focus?.();
+        }
     }
 
     // The report is a confirm (two named buttons, no X), so the scene X hides while it is open

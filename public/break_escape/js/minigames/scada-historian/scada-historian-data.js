@@ -27,12 +27,15 @@ export const HISTORIAN_FALLBACK = {
 };
 
 export const DEFAULT_HINT =
-    'Hover or tap a reading to inspect it. Click it (or Enter) to mark the moment the data stops behaving like a real sensor.';
+    'Hover a reading to read it. Click or tap it (or press Enter) to mark the moment the data stops behaving like a real sensor.';
 
 // How close to the first falsified reading a mark must be to count (D167). A little
 // early is fine (the cliff is one pixel wide at 12 hours); well into the flat part is not.
 export const MARK_EARLY_MS = 2 * 60000;
 export const MARK_LATE_MS  = 10 * 60000;
+// On a phone the 12-hour chart is under half a pixel a minute, so the time window alone is a few
+// pixels wide. A mark within this many CSS pixels of the first falsified reading counts too.
+export const MARK_TOUCH_PX = 14;
 
 const ts = (s) => (s ? new Date(s).getTime() : NaN);
 
@@ -191,23 +194,33 @@ export function compareValuesText(ts, racks, trendData) {
 
 /** Compare banner before the finding: what the view is, not what it shows. */
 export function compareNeutralText(rackCount) {
-    return `All ${rackCount} racks drawn together. Hover or tap a time to read every rack at that moment.`;
+    return `All ${rackCount} racks drawn together. Point at a time to read every rack at that moment.`;
 }
 
 /**
  * Judge the reading the player marked as "the moment the data stops behaving like a
  * real sensor". ok: within MARK_EARLY_MS before to MARK_LATE_MS after the first
- * falsified reading. Otherwise a gentle retry hint.
+ * falsified reading, or within MARK_TOUCH_PX of it on screen (opts.pxPerMs, CSS pixels per
+ * millisecond of the current chart). opts.rangeStartTs is the left edge of the current time
+ * range: a late mark when the cliff is left of it gets the "widen the range" hint, because
+ * zooming in would only hide the start. Otherwise a gentle retry hint.
  */
-export function judgeMark(point, anomaly) {
+export function judgeMark(point, anomaly, opts = {}) {
     const reading = `${fmtClock(point.ts)}: ${point.value.toFixed(1)}°C.`;
     if (!anomaly) return { ok: false, kind: 'none', message: `${reading} Nothing here stops behaving like a real sensor.` };
     const start = anomaly.firstInjected.ts;
+    const nearPx = opts.pxPerMs > 0 && Math.abs(point.ts - start) * opts.pxPerMs <= MARK_TOUCH_PX;
+    if (nearPx) {
+        return { ok: true, kind: 'ok',
+            message: `Marked ${fmtClock(point.ts)}. Now say what the data shows: press [ANNOTATE FINDING] on the left.` };
+    }
     if (point.ts < start - MARK_EARLY_MS) {
         return { ok: false, kind: 'early', message: `${reading} Still moving like a real sensor reading. The moment is later.` };
     }
     if (point.ts > start + MARK_LATE_MS) {
-        return { ok: false, kind: 'late', message: `${reading} Not moving, but it was already like this before. Find where it starts.` };
+        const offRange = Number.isFinite(opts.rangeStartTs) && start < opts.rangeStartTs;
+        const tail = offRange ? 'The start is before this time range: widen the range.' : 'Find where it starts.';
+        return { ok: false, kind: 'late', message: `${reading} Not moving, but it was already like this before. ${tail}` };
     }
     return { ok: true, kind: 'ok',
         message: `Marked ${fmtClock(point.ts)}. Now say what the data shows: press [ANNOTATE FINDING] on the left.` };
@@ -217,9 +230,9 @@ export const FINDING_QUESTION = 'What does the data show from that moment?';
 
 /** The report's choices. Exactly one is right; the others get a reason from the data. */
 export const FINDING_CHOICES = [
-    { id: 'cooling', label: 'Real cooling: the cells cooled to a steady temperature.' },
-    { id: 'written', label: 'Written, not measured: the value jumped, then never varied by even 0.1°C.' },
-    { id: 'dropout', label: 'Sensor dropout: the sensor failed and the historian is holding its last good value.' },
+    { id: 'cooling', label: 'Real cooling: the cells cooled fast, then held a steady temperature.' },
+    { id: 'written', label: 'Written in: values were put into the system, not read from the sensor.' },
+    { id: 'dropout', label: 'Sensor dropout: the sensor failed, so the historian repeats its last good reading.' },
 ];
 
 export function judgeFinding(choiceId, anomaly) {
@@ -230,8 +243,8 @@ export function judgeFinding(choiceId, anomaly) {
         return { ok: false, message: `A held value would sit at the last real reading, ${lastReal.value.toFixed(1)}°C. `
             + `This line sits at ${firstInjected.value.toFixed(1)}°C. Try again.` };
     }
-    return { ok: false, message: `Cells cannot change ${fmtSigned(delta)}°C in ${fmtGap(gapMs)}, and a real sensor `
-        + 'never reads the same to 0.1°C for hours. Try again.' };
+    return { ok: false, message: `Cells cannot ${delta < 0 ? 'cool' : 'heat up'} by ${Math.abs(delta).toFixed(1)}°C in ${fmtGap(gapMs)}, `
+        + 'and a real sensor never reads exactly the same for hours. Try again.' };
 }
 
 export function compareBannerText(anomaly, rackCount) {
