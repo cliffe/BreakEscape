@@ -191,31 +191,33 @@ function hostLines(conv) {
     return texts.join(' ');
 }
 
-test('host layer-2: catch, partial (fraud caught, other phish through), and miss each read as themselves', async () => {
+test('host layer-2: catch, partial (fraud caught, score under 85), and miss each read as themselves', async () => {
     // Catch: fraud caught and percent >= 85.
     const caught = hostLines(await openHost({ kit_defend_done: true, kit_fraud_caught: true, kit_caught: true }));
     assert.ok(caught.includes('went out clean') === true);
     assert.ok(caught.includes('That was down to you') === true);
-    assert.ok(caught.includes('recall it') === false);
-    assert.ok(caught.includes('get past us this round') === false);
-    assert.ok(caught.includes('Ring the person back') === true);
+    assert.ok(caught.includes('recall the payment') === false);
+    assert.ok(caught.includes('worth a second look') === false);
+    assert.ok(caught.includes('never sees a penny') === true);
 
-    // Partial: fraud caught but another phish got through (percent < 85).
+    // Partial: fraud caught, percent < 85 (another phish trusted or deleted, or tells missed).
     const partial = hostLines(await openHost({ kit_defend_done: true, kit_fraud_caught: true, kit_caught: false }));
     assert.ok(partial.includes('stopped the bank-change email') === true);
-    assert.ok(partial.includes('get past us this round') === true);
+    assert.ok(partial.includes('worth a second look') === true);
     assert.ok(partial.includes('went out clean') === false);
-    assert.ok(partial.includes('recall it') === false);
-    assert.ok(partial.includes('Ring the person back') === true);
+    assert.ok(partial.includes('recall the payment') === false);
+    assert.ok(partial.includes('never sees a penny') === true);
 
     // Miss: fraud not caught (trusted or left the fraud email).
     const miss = hostLines(await openHost({ kit_defend_done: true, kit_fraud_caught: false, kit_caught: false }));
     assert.ok(miss.includes('onto the supplier file') === true);
-    assert.ok(miss.includes('recall it') === true);
-    assert.ok(miss.includes('£6,412.80') === true);
+    assert.ok(miss.includes('recall the payment') === true);
+    assert.ok(miss.includes('six thousand four hundred pounds') === true);
     assert.ok(miss.includes('went out clean') === false);
-    assert.ok(miss.includes('get past us this round') === false);
-    assert.ok(miss.includes('Ring the person back') === true);
+    assert.ok(miss.includes('worth a second look') === false);
+    // The miss closes on its own line: 'never sees a penny' would contradict the loss just stated.
+    assert.ok(miss.includes('That one call is what stops this') === true);
+    assert.ok(miss.includes('never sees a penny') === false);
 
     // No two outcomes speak the same opening line (R3 F1 / R4 three-way).
     assert.ok((caught === partial) === false);

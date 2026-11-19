@@ -28,14 +28,15 @@ VAR hub_quiet = false
     { kit_defend_done && not kit_ca01_host_said:
         { kit_fraud_caught:
             { kit_caught:
-                Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
+                Adaeze Okafor: The moment that one was flagged, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
             - else:
-                Adaeze Okafor: You stopped the bank-change email, so Harlow got paid the right way. One of the others did get past us this round, though. The debrief lays out which one, so take a look before you go.
+                Adaeze Okafor: You stopped the bank-change email, so Harlow got paid the right way. A few of the others are worth a second look, and the debrief goes through them, so have a read before you go.
             }
+            Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.
         - else:
-            Adaeze Okafor: That bank-details email went onto the supplier file, so the run paid the account it named, not Harlow. We spotted it afterwards and asked the bank to recall it, but the money had gone out that same afternoon. The attacker had the whole run, £6,412.80, in an account they control.
+            Adaeze Okafor: The new bank details from that email went onto the supplier file, so the run paid the account it named, not Harlow. We spotted it afterwards and asked the bank to recall the payment, but the money was gone that same afternoon. That was just over six thousand four hundred pounds, in an account the attacker controls.
+            Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid. That one call is what stops this.
         }
-        Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.
         ~ kit_ca01_host_said = true
     - else:
     { episode_e1_invoice_fraud_defend_complete:

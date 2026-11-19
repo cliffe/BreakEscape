@@ -288,3 +288,11 @@ inklecate 0 errors (4 inks); `validate_scenario.rb --strict-social --no-graph --
 ca01_invoice_fraud, ca01_invoice_fraud_defend, test_ca01_panel, test_ca_office_kit; `python3 -m unittest
 test_office_kit test_apply_training_room` 53 OK; `node --test office-kit-quiet-and-stub social-awareness-office-kit`
 10 + 20 pass.
+
+## Round 4 review fixes (orchestrator, from REVIEW_R4.md)
+
+- MISS (major 1): "the whole run" dropped, since £6,412.80 is one invoice and not the whole batch. The details go onto the file, not the email. The figure is spoken as "just over six thousand four hundred pounds" because TTS reads "£6,412.80" unreliably; the printed panel keeps the exact figure.
+- PARTIAL (major 2): "One of the others did get past us" was untrue for most scores under 85% (a deleted phish, or tells left unticked). Now: "A few of the others are worth a second look, and the debrief goes through them…".
+- MISS closes on its own line ("…That one call is what stops this."). "Never sees a penny" now plays only after a catch or a partial.
+- CATCH: "The moment you reported that one" is now "The moment that one was flagged", because delete and verify also count as caught.
+- Not done: bark 1005's repeat ("an older one, a case from last spring") waits until the corkboard move commits, because it is in the same file. Bark 921's third statement of the rule is kept.
