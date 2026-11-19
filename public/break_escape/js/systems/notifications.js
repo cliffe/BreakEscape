@@ -121,6 +121,7 @@ function modalDialogCount() {
 function armModalPoll() {
     if (modalPoll || typeof setInterval !== 'function') return;
     modalPoll = setInterval(modalDialogClosed, HOLD_POLL_MS);
+    if (modalPoll && typeof modalPoll.unref === 'function') modalPoll.unref();   // never keep a node test process alive
 }
 
 // The ending check (ending-check.js) has no imports and calls these two through window.
