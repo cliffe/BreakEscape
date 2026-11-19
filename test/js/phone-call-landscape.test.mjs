@@ -253,7 +253,7 @@ check('portrait and desktop call rules are unchanged', () => {
     assert.match(B('.phone-call-mode .conversation-header'), /padding:\s*16px/);
     assert.match(B('.phone-call-mode .call-status-bar'), /padding:\s*8px 14px/);
     // nothing for call mode lives in the 820px (tablet) block
-    assert.ok(!all.some(r => /max-height:\s*820px/.test(r.media) && r.selector.includes('phone-call-mode')));
+    assert.ok(!all.some(r => /max-height:\s*820px/.test(r.media) && !/min-height:\s*501px/.test(r.media) && r.selector.includes('phone-call-mode')));
 });
 
 check('landscape call: the influence bar stacks (head over a full-width track) inside the 40px header row', () => {
@@ -314,6 +314,30 @@ check('appendTellBubbles: scrollTop is unchanged when no tell was added', () => 
     appendTellBubbles(c, undefined);
     assert.equal(c.tells, 2);
     assert.equal(c.scrollTop, 17);
+});
+
+// Desktop-height call (501 to 820 px tall, e.g. 1280x720): the 575px phone screen clipped the
+// end-call button because the thread kept its 110px minimum and the replies could not shrink.
+const desk = all.filter(r => /min-height:\s*501px/.test(r.media) && /max-height:\s*820px/.test(r.media));
+const D = sel => { const r = desk.find(x => x.selector === V + ' ' + sel); assert.ok(r, 'desktop-height call rule ' + sel); return r; };
+check('desktop-height call: thread min-height is below the old 110px and its max-height is capped', () => {
+    const b = D('.messages-container').body;
+    assert.ok(px(b, 'min-height') <= 56, 'thread min-height ' + px(b, 'min-height'));
+    assert.ok(px(b, 'max-height') <= 64, 'thread max-height ' + px(b, 'max-height'));
+});
+check('desktop-height call: replies may shrink (flex-shrink 1) and keep room for two rows', () => {
+    const b = D('.choices-container').body;
+    assert.match(b, /flex-shrink:\s*1/);
+    assert.ok(px(b, 'min-height') >= 90, 'replies min-height ' + px(b, 'min-height'));
+});
+check('desktop-height call: influence legend is compact so the header stays short', () => {
+    const b = D('.se-chat-header .ib-infl-legend').body;
+    assert.ok(px(b, 'line-height') <= 16);
+    assert.ok(px(b, 'font-size') >= 16);
+});
+check('desktop-height call: block does not overlap the landscape block and adds no radius/blur/gradient', () => {
+    assert.ok(desk.length >= 3);
+    for (const r of desk) assert.doesNotMatch(r.body, /border-radius|blur|gradient/);
 });
 
 console.log(`\n${pass} checks passed`);

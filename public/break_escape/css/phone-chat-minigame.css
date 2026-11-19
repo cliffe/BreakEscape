@@ -1041,6 +1041,21 @@
     .conversation-view .messages-container { padding: 8px 10px; gap: 8px; }
 }
 
+/* Voiced call on a desktop-height screen (501 to 820 px tall, e.g. 1280x720): the frame is
+   about 575 px, the influence header alone is 213 px, and the thread's 110 px minimum plus
+   the replies' 64 px pushed the end-call button below the screen, clipped and unreachable.
+   The thread gives way first (it keeps the latest line, older ones scroll away) and the
+   replies keep room for two rows. Phones held sideways are handled in the 500 px block below. */
+@media (min-height: 501px) and (max-height: 820px) {
+    .phone-call-mode #conversation-view .messages-container {
+        min-height: 48px;
+        max-height: 56px;
+        padding: 6px 12px;
+    }
+    .phone-call-mode #conversation-view .choices-container { min-height: 96px; flex-shrink: 1; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend { font-size: 16px; line-height: 16px; }
+}
+
 /* Phones held sideways (about 390 px tall): the frame is about 270 px, less than the header, the
    thread's 96 px and the replies' 64 px together, so the second reply fell below the frame and a
    tap there reached Add to Notepad. The thread gives way first and the replies take what is
