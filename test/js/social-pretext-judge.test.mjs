@@ -163,6 +163,67 @@ test('Dev open_buddy: name form in the accept list and team both match, capped t
   assert.deepEqual(wrong.opens, ['team']);
 });
 
+// Each fact fills independently (lab post-release M2): a player who prepared only the
+// name, or only the team, states just that fact. The opener's other claim draws from an
+// unfilled blank and must be skipped whole — not read as an empty value and penalised as
+// an identity mismatch. Without the fix the missing blank scored GRADE_COST.identity and
+// opened the fact, so the opener was unfair to a one-fact player.
+test('Dev open_buddy with only the intern name: team claim is skipped, not judged', () => {
+  const r = judgeUtterance(DEV, sess(), 'open_buddy', { intern: 'lord_full' }, -10);
+  assert.equal(entryFor(r, 'intern').delta, 10, 'the name still earns its claim credit');
+  assert.equal(entryFor(r, 'team'), undefined, 'no entry for the fact the player did not state');
+  assert.deepEqual(r.opens, [], 'the unfilled team is not an open mismatch');
+  assert.deepEqual(r.proven, ['intern']);
+  assert.equal(r.influenceAfter, 0);
+});
+
+test('Dev open_buddy with only the team: intern claim is skipped, not judged', () => {
+  const r = judgeUtterance(DEV, sess(), 'open_buddy', { team: 'finance' }, -10);
+  assert.equal(entryFor(r, 'team').delta, 10, 'the team still earns its claim credit');
+  assert.equal(entryFor(r, 'intern'), undefined, 'no entry for the fact the player did not state');
+  assert.deepEqual(r.opens, []);
+  assert.deepEqual(r.proven, ['team']);
+  assert.equal(r.influenceAfter, 0);
+});
+
+test('Dev open_buddy with an empty-string blank value is treated as unstated', () => {
+  // The card can hand a { value: '' } record; it still counts as not stated.
+  const r = judgeUtterance(DEV, sess(), 'open_buddy', { intern: 'lord_full', team: { value: '', label: '' } }, -10);
+  assert.equal(entryFor(r, 'intern').delta, 10);
+  assert.equal(entryFor(r, 'team'), undefined);
+  assert.deepEqual(r.opens, []);
+});
+
+test('Dev open_buddy with neither fact prepared stays neutral (no penalties)', () => {
+  const r = judgeUtterance(DEV, sess(), 'open_buddy', {}, -10);
+  assert.deepEqual(r.entries, [], 'nothing claimed, nothing judged');
+  assert.deepEqual(r.opens, []);
+  assert.equal(r.influenceAfter, -10, 'influence is unchanged');
+});
+
+// The skip is only for an UNFILLED blank, not a wrong one (lab post-release m1): leaving the
+// team empty must not launder a wrong intern. The filled-but-wrong fact is still judged as an
+// identity mismatch, while the other, empty, blank stays skipped.
+test('Dev open_buddy with the intern filled wrong and the team empty still judges the wrong fact', () => {
+  const r = judgeUtterance(DEV, sess(), 'open_buddy', { intern: 'wrong' }, -10);
+  assert.equal(entryFor(r, 'intern').delta, GRADE_COST.identity, 'the wrong intern is an identity mismatch');
+  assert.deepEqual(r.opens, ['intern'], 'the wrong fact opens; the empty team does not');
+  assert.equal(entryFor(r, 'team'), undefined, 'the unfilled team is still skipped, not judged');
+});
+
+// Regression guard (lab post-release m1): the skip is opt-in via optionalBlanks. A line
+// WITHOUT the flag keeps the strict default — a missing blank for a known fact is a mismatch,
+// not a free pass — so no other mission's lines change behaviour.
+test('a line without optionalBlanks still treats a missing blank as a mismatch', () => {
+  const strictLine = { ...DEV.lines.open_buddy };
+  delete strictLine.optionalBlanks;
+  const strictDev = { ...DEV, lines: { ...DEV.lines, open_buddy_strict: strictLine } };
+  const r = judgeUtterance(strictDev, sess(), 'open_buddy_strict', { intern: 'lord_full' }, -10);
+  assert.equal(entryFor(r, 'intern').delta, 10, 'the stated intern still earns credit');
+  assert.deepEqual(r.opens, ['team'], 'the missing team opens as a mismatch');
+  assert.equal(entryFor(r, 'team').delta, GRADE_COST.identity);
+});
+
 test('Dev repair_team recovers an open team mismatch for +20', () => {
   const r = judgeUtterance(DEV, sess({ openMismatches: ['team'] }), 'repair_team', { team: 'finance' }, -30);
   assert.equal(r.influenceAfter, -10);

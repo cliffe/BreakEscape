@@ -312,3 +312,49 @@ test('validator: malformed cells, a wait that is not positive, cells by a door w
     assert.ok(!has("'chatty' affordance.chatter needs capacity 2"), 'a queue lets a capacity-1 machine chat');
     assert.ok(!has("'off' affordance.queue"));
 });
+
+// D174: an object with no scenario position claims a Tiled object of its type from the room's map,
+// and the queue check places its cells from that object's centre, as the engine does. room_hq_ops
+// is 10 x 10 tiles with one water_cooler1 (24 x 47, centre 226,232.5).
+test('validator: a Tiled-claimed machine places its queue cells from the claimed object, not from 0,0', { skip }, () => {
+    const npc = { id: 'ann', needsHome: { room: 'ops', x: 4, y: 4 }, needs: { thirst: { decayPerMin: 5, urgentAt: 40 } } };
+    const cooler = (id, cells, type = 'water_cooler') => ({ id, type, affordance: { satisfies: 'thirst', capacity: 2, useFrom: { dx: -0.375, dy: -1.02 }, queue: { cells } } });
+    const mk = objects => ({ rooms: { ops: { type: 'room_hq_ops', connections: { north: 'hall' }, objects, npcs: [npc] }, hall: { type: 'room_hq_ops', connections: { south: 'ops' } } } });
+    const issues = needsCheck(mk([
+        // m08's cells: engine resolves them to px (220,180) and (244,180), inside the room
+        cooler('good', [{ dx: 0.19, dy: -0.5 }, { dx: 0.875, dy: -0.44 }]),
+        // a second cooler finds the one Tiled cooler already claimed
+        cooler('second', [{ dx: 0, dy: -1 }]),
+        // an unclaimable type: nothing to resolve
+        cooler('nothing', [{ dx: 0, dy: -1 }], 'no_such_thing')
+    ]));
+    const has = f => issues.some(s => s.includes(f));
+    assert.ok(!has("'good' affordance.queue cell"), 'cells inside the room give no warning: ' + issues.join('\n'));
+    assert.ok(has("'second' affordance.queue: the object's position could not be resolved"), 'the claim is taken once');
+    assert.ok(has("'nothing' affordance.queue: the object's position could not be resolved"));
+    assert.ok(!has("'second' affordance.queue cell") && !has("'nothing' affordance.queue cell"), 'no geometry from a guessed 0,0');
+    assert.ok(issues.filter(s => s.startsWith('ℹ️') && s.includes('could not be resolved')).length === 2);
+    // a cell genuinely north of the room still warns, with the neighbour leash lines
+    const out = needsCheck(mk([cooler('far', [{ dx: 0, dy: -7 }])]));
+    assert.ok(out.some(s => s.includes("'far' affordance.queue cell 1 (tile 6,-1) lies outside room 'ops' in 'hall'")), out.join('\n'));
+    // a positioned machine is unchanged: tile arithmetic from the scenario position
+    const pos = needsCheck(mk([{ ...cooler('placed', [{ dx: 0, dy: -7 }]), position: { x: 6, y: 5 } }]));
+    assert.ok(pos.some(s => s.includes("'placed' affordance.queue cell 1 (tile 6,-3) lies outside room 'ops' in 'hall'")), pos.join('\n'));
+});
+
+test('validator: Tiled claims follow scenario order, a positioned object still reserves, and as-type claims by the named type', { skip }, () => {
+    const npc = { id: 'ann', needsHome: { room: 'ops', x: 4, y: 4 }, needs: { thirst: { decayPerMin: 5, urgentAt: 40 } } };
+    const m = (id, extra) => ({ id, type: 'water_cooler', affordance: { satisfies: 'thirst', capacity: 2, queue: { cells: [{ dx: 0, dy: -1 }] } }, ...extra });
+    const run = objects => needsCheck({ rooms: { ops: { type: 'room_hq_ops', objects, npcs: [npc] } } });
+    const unresolved = (out, id) => out.some(s => s.includes(`'${id}' affordance.queue: the object's position could not be resolved`));
+    // a positioned cooler listed first takes the one Tiled cooler, so the unpositioned one finds none
+    const first = run([m('placed', { position: { x: 5, y: 5 } }), m('late', {})]);
+    assert.ok(unresolved(first, 'late'), first.join('\n'));
+    assert.ok(!unresolved(first, 'placed'));
+    // as-type names the Tiled type to claim, whatever the object's own type
+    const as = run([m('borrower', { type: 'no_such_thing', position: 'as-type:water_cooler' })]);
+    assert.ok(!unresolved(as, 'borrower'), as.join('\n'));
+    // a sprite with no Tiled match falls back to the object's type
+    const spr = run([m('skinned', { sprite: 'no_such_sprite' })]);
+    assert.ok(!unresolved(spr, 'skinned'), spr.join('\n'));
+});

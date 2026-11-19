@@ -1021,13 +1021,18 @@ export function removeNotification(notification) {
         notification._toast.pending = false;
     }
     notification.classList.remove('show');
-    // The 300 ms fade keeps it in the container, in flow: it must not take a click meant for a
-    // control under it (the close X is pointer-events: auto in the stylesheet, so it needs its own)
-    if (notification.style) notification.style.pointerEvents = 'none';
+    // The toast is whole or gone (no fade), so it leaves the stack flow at once: no empty slot
+    // holds the toasts below for 300 ms. It also takes no click meant for a control under it
+    // (the close X is pointer-events: auto in the stylesheet, so it needs its own).
+    if (notification.style) {
+        notification.style.pointerEvents = 'none';
+        notification.style.display = 'none';
+    }
     const closeBtn = notification.querySelector?.('.notification-close');
     if (closeBtn?.style) closeBtn.style.pointerEvents = 'none';
 
-    // Remove from DOM after animation
+    // Take the node out of the DOM after 300 ms; the timer now only paces refreshHover and
+    // showNextWaiting, it is not an animation
     setTimeout(() => {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);

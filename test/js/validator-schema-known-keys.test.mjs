@@ -245,3 +245,10 @@ test('the old dead keys fail the reader check on their blocks', () => {
   const actionKeys = Object.keys(schemaJson().definitions.action.properties);
   for (const k of ['task_id', 'aim_id']) assert.ok(!actionKeys.includes(k), `${k} is declared on actions again`);
 });
+
+test('room-level password pad options doors.js reads are declared, so no unknown-field warning', { skip }, () => {
+  const room = { type: 'room_office', connections: {}, locked: true, lockType: 'password', requires: 'x',
+    passwordHint: 'h', showHint: true, postitNote: 'n', showPostit: true, showKeyboard: true };
+  const w = unknownFields({ scenario_brief: 'x', startRoom: 'a', rooms: { a: room } });
+  assert.deepEqual(w.filter((m) => /passwordHint|showHint|postitNote|showPostit|showKeyboard/.test(m)), []);
+});

@@ -88,7 +88,7 @@ Ray Hollis: Building's evacuating. So you're lost, or you're the other thing.
     Ray Hollis: You again. Say it or go.
 }
 ~ hub_quiet = false
-+ [I'm on the contractor list. Check it.]
++ {not bluff_burned} [I'm on the contractor list. Check it.]
     -> bluff
 + [The grid goes down tonight. You know that.]
     -> stakes

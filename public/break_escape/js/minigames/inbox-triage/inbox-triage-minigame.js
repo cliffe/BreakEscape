@@ -1299,11 +1299,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const sel = el('select', 'tri-jump-select');
         sel.id = 'tri-jump-select';
         for (const { m } of scored) {
-            const o = el('option', null, this._cardTitle(m) || m.id);
+            const full = this._cardTitle(m) || m.id;
+            const o = el('option', null, full);
             o.value = m.id;
+            o.title = full;
             sel.appendChild(o);
         }
+        // the box cuts long titles with an ellipsis, so the full one is the hover/long-press title
+        const syncJumpTitle = () => { sel.title = sel.selectedOptions?.[0]?.textContent || ''; };
+        syncJumpTitle();
         this.addEventListener(sel, 'change', () => {
+            syncJumpTitle();
             const card = p.querySelector(`[data-message-id="${sel.value}"]`);
             card?.scrollIntoView?.({ block: 'start' });
             card?.querySelector('.tri-card-title')?.focus?.();

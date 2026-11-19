@@ -40,3 +40,8 @@ test('Last Box: talked-down variant comes before the clock-run one (first match 
     const b = src.indexOf("globalVars.legacy_clock_run && globalVars.sorensen_fate === 'talked'");
     assert.ok(b > 0 && a > b);
 });
+
+test('m09 password hints: both room locks set showHint so the pad shows passwordHint', () => {
+    const hints = src.match(/"passwordHint": "[^"]*",\s*"showHint": true,/g) || [];
+    assert.equal(hints.length, 2);
+});

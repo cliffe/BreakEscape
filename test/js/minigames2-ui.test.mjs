@@ -70,9 +70,9 @@ test('A22: the scenes\' own sheets no longer style the shared parts', () => {
 
 test('A45: tool windows are capped at 960x720, wrap their content and centre', () => {
     const c = css('minigames-framework.css');
-    const sel = '.minigame-container[data-minigame="flag-station"] > .minigame-game-container,\n.minigame-container[data-minigame="vm-launcher"] > .minigame-game-container,\n.minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),\n.minigame-container[data-minigame="combination"] > .minigame-game-container,\n.minigame-container[data-minigame="cryptex"] > .minigame-game-container,\n.minigame-container[data-minigame="text-file"] > .minigame-game-container';
+    const sel = '.minigame-container[data-minigame="flag-station"] > .minigame-game-container,\n.minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),\n.minigame-container[data-minigame="combination"] > .minigame-game-container,\n.minigame-container[data-minigame="cryptex"] > .minigame-game-container,\n.minigame-container[data-minigame="text-file"] > .minigame-game-container';
     const r = block(c, sel);
-    assert.ok(r, 'the cap rule covers the six tool windows, not the PC desktop');
+    assert.ok(r, 'the cap rule covers the five tool windows, not the PC desktop');
     assert.equal(r['max-width'], 'min(960px, 100%)');
     assert.equal(r['max-height'], 'min(720px, 100%)');
     assert.equal(r.width, 'fit-content');

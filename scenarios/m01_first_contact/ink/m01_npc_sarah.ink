@@ -12,6 +12,9 @@ VAR asked_about_office = false
 VAR asked_about_kevin = false
 VAR asked_about_manager = false
 
+// Global variable synced from scenario: set once the launch device is aborted or fired
+VAR ready_for_debrief = false
+
 // ================================================
 // START: FIRST MEETING
 // ================================================
@@ -66,7 +69,7 @@ Sarah O'Brien: Kevin should be in the IT room. It's through the main office, on 
 // ================================================
 
 === hub ===
-+ [Where exactly is the IT room?]
++ {not ready_for_debrief} [Where exactly is the IT room?]
     -> ask_it_location
 + {not asked_about_kevin} [Tell me about Kevin]
     -> ask_kevin
