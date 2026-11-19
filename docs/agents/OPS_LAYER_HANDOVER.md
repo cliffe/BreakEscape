@@ -37,6 +37,26 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
+**LATEST (late 2026-11-19), read this first.** Round 2 applied. Commits: core/priv/MFA picks
+`30e757197`; cracking revised `c22d57701` (619 lines; facts from item revealsFacts via
+canonical_inventory_item, served feed posts, grant_fact flag rewards; orchestrator verified only
+process_flag_rewards writes flag_rewards_claimed and /api controller is unrouted); priv answers
+cracking requests `7b3203e1b`; lock round 2 `0ec4379a9` (1184 lines, carried items 5.5, Rule D in
+G1); skin realism `00d10e87e` (1445 lines, cli-gen generators, request 3 to core).
+RUNNING (agent → output): opus55 cracking R2 review → `OPS_CRACKING_R2.md`; opus55 lock R10 →
+`OPS_LOCK_SECOND_STEP_R10.md` (also sorts its 6 section-15 questions); opus55 skin R9 →
+`OPS_REALISM_SKIN_R9.md`; Sonnet core applies skin request 3 (cli fields served by stage); Sonnet
+bug fixes in worktree `p-keyring-fix` branch `fix/keyring-revocation-validator-cards` (hash → AC0
+for a train, uncommitted on our side).
+NEXT: commit each; fix loops (Sonnet fixes, opus55 deltas for server-output/security); cross-plan
+R6 (check priv `cachedAccounts {npc:..}` vs schema); then a ROUND 3 picks page (new artifact path
+or same file `ops_plan_picks.html` with new key `be-ops-plan-picks-r3`, republish to
+https://claude.ai/artifact/Kovtq5LNnBVNGrAYttEg97) with: skin 15(a) real advisory ids/products in
+cli labels (rec allow, no payloads), 15(b) "(simulated)" mark (rec first line), cracking Q1 salt
+model (rec timed wait), cracking Q2 `common` in habit enum (rec no), lock remaining section-15
+questions, and the THIRD BUG: crafted /unlock opens a carried container after it left the
+inventory (existing code; ask whether to add it to the bug-fix branch).
+
 **Round 2 answered (picks file end, `3a879f440`). Running, each on its own files: opus55
 cracking reviser (brief file); opus55 skin realism revision (simulated nmap/msf-style output from
 per-tool JS generators; deny-list withdrawn; may file core requests in skin section 14); opus55
