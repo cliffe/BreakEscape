@@ -124,7 +124,7 @@ a password, an unlocked screen or a keyring credential. The network itself is ne
    a credential lands in the keyring.
 6. **See what is held** (S3). In the world, a PC or device the player holds a technique session
    on is drawn tinted red with a small lightning-bolt marker, and so are the other things the
-   player has compromised (section 5.5). Clicking such a PC opens its desktop through the held
+   player has compromised (section 5.4). Clicking such a PC opens its desktop through the held
    session, in a frame marked as a remote view, with no password asked.
 
 **Discovery is a display.** On a discovery network, Sweep decides what the network view lists;
@@ -163,7 +163,8 @@ another product; another version; then the first unmet need by name. A refusal c
 but the log.
 
 **How it joins the rest.** A granted session behaves like a remote sign-in session: it pivots
-(N6), maps shares (N4), counts for an implant that needs a session (N10), opens the desktop at
+(N6), maps shares (N4), does not satisfy an implant's `needsSession` (N10: only a session at the
+PC's own keyboard does), opens the desktop at
 the PC's own keyboard as that account, and ends when the foothold is unplugged (N5). A granted credential is a keyring entry (A15). Social engineering and
 physical work feed the needs, and network work feeds back credentials and sessions.
 
@@ -202,7 +203,7 @@ physical work feed the needs, and network work feeds back credentials and sessio
 Already doing part of the job, and reused: the network view (rows, blocks, 5 s refetch), the
 remote desktop and its route checks, `end_sessions_through!` and the prune, the keyring's
 registry-plus-proof model, the item field that ties a tray item to a registry entry (`credential`
-today, `technique` here), and `offWhen` in the requireGlobal form (the model for `fixedIf`).
+today, `technique_card` here), and `offWhen` in the requireGlobal form (the model for `fixedIf`).
 
 ## 3. Build stages
 
@@ -425,6 +426,14 @@ and a session grant, on a weakness of a sign-in host's service:
   `test/js/social-*` and `validator-social-*` test passes unchanged in meaning. The nested
   `tells.techniques` map of an NPC keeps its name. Prose, schema descriptions and validator
   messages always say "technique card" and "technique card registry", never "technique" alone.
+- **The old pretext key is still read.** `pretext-judge.js` reads `se_technique ?? technique` in
+  each of the three places it reads the key today (`:240`, `:258`, `:276`), and
+  `scripts/validate_social/pretext.rb` reads the same pair wherever it reads `line['technique']`
+  (`:290`, `:418`, `:497`). A scenario not yet migrated therefore judges and validates exactly
+  as before. The old key is never an error or a warning: the validator reports it at most as an
+  info line naming the new key, and the six shipped scenarios are migrated in the same step, so
+  none of them shows even that. When a line carries both keys, `se_technique` wins, and the
+  validator warns on that line, since the two may disagree.
 - A grant of a credential names a `credentials.<id>` entry whose `proof` is `{ "technique_card":
   "<findingId>" }` (new proof kind). The validator requires the two to name each other. The
   entry's kind must be `saved_connection`: it needs no item text and opens its `connectsTo` PC
@@ -618,7 +627,7 @@ player is already in, and the session is kept.
 Anything else is a new use and runs every check. That covers a use of the same finding through
 a different foothold that also reaches the host (a new session through that foothold replaces
 the record, so the old foothold's view no longer lists it), and a use after the session ended
-(an unplug, a newer sign-in at that PC, an NPC finishing a borrow). Then the grant:
+(an unplug, a newer sign-in at that PC, the player's own Sign out). Then the grant:
 
 - **Session.** `start_login_session!` has no parameter for extra keys, so it gains two keyword
   arguments, `access: nil` and `technique: nil`, written to the record when present, as `foothold`
@@ -646,7 +655,9 @@ is not what makes a request a repeat.
 
 **One slot per PC.** The existing rule stands with no exception for this feature: a password
 sign-in at a PC's keyboard replaces a technique session there (and its level with it), a
-technique use replaces a password session, and an NPC finishing a borrow of the PC ends either.
+technique use replaces a password session. An NPC sitting down at the PC, or finishing a
+borrow there, ends only a keyboard session (below); a technique session, like any remote one,
+stays.
 Refusing a use that would replace a session of the same account would be a new rule for one
 session kind, and the card can always be used again.
 
@@ -656,7 +667,8 @@ session kind, and the card can always be used again.
 |---|---|---|
 | `signedInPcs`, written by `start_login_session!` for every session that is not a relay or a token | `GM:4388-4417` | the PC is added, with no code change, so everything that reads the list counts a technique session for good: chains built on "a session at this PC" work however it was gained, and the validator warns the author wherever a card can stand in for a sign-in a task or proof names (section 9.2) |
 | `end_guest_session_at!`, run by every sign-in that is not a claim | `GM:4392` | a grant from across the network ends an NPC guest's session at that PC, as a remote password sign-in does. Stands: one screen holds one session |
-| `record_borrow_done!`: an NPC who borrowed the PC finishes and the player's session there is deleted | `npc_frustration.rb:391-396` | the technique session ends, as a password session would. Stands. The finding stays confirmed and the card stays held, so the player can use it again: with no session there it is a new use and grants a new session |
+| `pcSessions.displaced()`: an NPC sits down at the PC (`npc_sat_at:<pcId>`) or leaves a borrowed session open there (`npc_borrowed_session:<pcId>`), and the player's copy there is deleted, a POST /logout is sent and an open desktop closes with "<name> has signed in at this PC" | `pc-sessions.js:84-87`, `:304-308`, `:742-765` | changed: only a keyboard copy is displaced (below). A technique copy, and any remote copy (`remote: true`, which the client sets from the server's `foothold` or `from`), stays, with no logout sent |
+| `record_borrow_done!`: an NPC who borrowed the PC finishes and the player's session there is deleted | `npc_frustration.rb:391-396` | changed to match: the record is deleted only when it has neither `foothold` nor `from` (a keyboard session), so the technique session stays. The guest record is written as today |
 | `session_identity`, `reach_session_hosts` | `GM:3243-3249`; `NA:1398-1413` | serves the desktop as the named account; pivots |
 | `session_lockable?`, and the client's `sessionLockable` | `GM:3824`; `pc-sessions.js:176` | not lockable, on both sides, with no change |
 | `session_for_client`, `pc-sessions.js` `load` and `publicSession` | `GM:3778-3791` | carry `access: "admin"` when the level is admin (above) |
@@ -672,16 +684,30 @@ remote session the whole time. The player is looking at a desktop reached across
 the record keeps its `foothold`, and unplugging still ends it.
 
 *Clicking the PC.* `interactLoginPc` and `openLoginPc` (`unlock-system.js`) ask one new
-`pc-sessions.js` reader first, `remoteViewFoothold(pcId)`: the copy's `footholdId` when the copy
+`pc-sessions.js` reader, `remoteViewFoothold(pcId)`: the copy's `footholdId` when the copy
 is a technique session (`via: "technique"`) and `networkLinks` still holds that foothold, else
-null. When it answers a foothold, the click calls `networkLinks.openSession(pcId, { returnTo })`,
+null. Where it is asked matters, because the checks before it stay as they are:
+
+- in `interactLoginPc` (`:601-638`) it goes immediately before the `heldAtKeyboard` branch
+  (`:629`), after the headless check (`:605`), the switched-off check and its toast
+  (`:609-613`), the `offWhen` sync wait (`:614-621`) and the in-use check `pcUserAt`
+  (`:624-627`). A switched-off PC still shows today's "off" toast and a PC an NPC is using
+  still shows today's in-use answer;
+- in `openLoginPc` (`:283-297`, also reached from `handleUnlock`, `:979-981`) it goes after the
+  headless check and is asked only for a world sprite, that is a lockable with no
+  `scenarioData.remote`. A network-view row already carries `remote` and is in the middle of a
+  `networkLinks` trip, so it keeps today's path and no second trip starts.
+
+A headless host in a room therefore keeps its observations on a click; its remote view opens
+from the network view's Open, as any held desktop does. When the reader answers a foothold,
+the click calls `networkLinks.openSession(pcId, { returnTo })`,
 the trip the network view already uses to open a held desktop, which calls
 `window.openRemoteDesktop(pcId, footholdId)` (`US:449`). The request names the foothold, so the
 server judges it by the foothold branch of `desktop_request_allowed?` with its one change below,
 and `returnTo` brings the player back to the world when the desktop closes. No sign-in screen is
-shown and no password is asked. This also works on a headless host in a room and on a host whose
-policy blocks remote sign-in, because the route is the session's own foothold. A click on a PC
-with any other session, or none, takes today's path.
+shown and no password is asked. This also works on a host whose policy blocks remote sign-in,
+because the route is the session's own foothold. A click on a PC with any other session, or
+none, takes today's path.
 
 *The remote-view marker.* A desktop opened through a foothold already shows the line "Remote
 session through <link name>" (`.desktop-remote-line`, `container-minigame.js:1512`). For a
@@ -698,7 +724,30 @@ technique session the desktop frame adds three things, all pixel art under the U
   screen is seen happening. Under the reduced-motion setting the wipe is skipped.
 
 The same frame, line and wipe are shown however the desktop was opened (from the world or from
-the network view), so the player always knows they are viewing it remotely.
+the network view), so the player always knows they are viewing it remotely. All three key on
+the session copy, not on the route: the desktop adds them when `pcSessions.get(pcId)?.via ===
+'technique'`, whether or not the desktop's `scenarioData.remote` carries a foothold. That
+covers the keyboard fallback too: when `remoteViewFoothold` answers null (its foothold is no
+longer in `networkLinks`) but `heldAtKeyboard` is true, the click opens the keyboard desktop
+(`openLoginDesktop`), which the server serves as the account through the keyboard branch
+(`NA:1512-1516`, with the settle skipped), and that desktop still shows the red frame and the
+"Remote view" line. Its link name, which the route does not give there, is read from the
+copy's `footholdId` through `networkLinks`; when that foothold is gone the line reads
+"Remote view: <account>" with no link part.
+
+*The remote view's taskbar.* The taskbar (`utils/pc-taskbar.js`, `pcTaskbarModel`) on a
+technique remote view offers Sign out, and Switch user only where the host allows remote
+sign-in. Lock is already absent (`sessionLockable` is false for the copy). Today the desktop
+passes `canSwitch: !!desktop` (`container-minigame.js:1665`; `pc-taskbar.js:157`, `:192`), and
+on a blocked host `switchUser`
+(`container-minigame.js:1723-1735`) would open the remote sign-in screen, which can only answer
+that remote sign-in is off. So the desktop (and `text-file-minigame.js:220`, which builds the
+same model) passes `canSwitch: false` for a technique copy whose host row in the foothold's view carries `remoteSignIn: false`. Sign out is the way to the
+keyboard: every click on a PC holding a technique session opens the remote view, so the sign-in
+screen at that PC is not reachable until the player chooses Sign out on the remote desktop
+(POST /logout, the session and its mark end). The next click on the PC takes today's path to
+the sign-in screen, and a typed sign-in there is a keyboard session, which is what an object's
+`needsSession` (a session-type implant) and the MFA step ask for.
 
 *The server at the keyboard.* No refusal is added. The keyboard branch of
 `desktop_request_allowed?` (`NA:1512-1516`) serves a technique session as it serves any other
@@ -728,8 +777,17 @@ see at a glance what they own. A new client module, `systems/compromise-marks.js
 | What marks an object | Read from | Events |
 |---|---|---|
 | A technique session on a PC | `window.pcSessions`, a copy with `via: "technique"` | `pc_signed_in`, `pc_signed_out` |
-| A PC implanted with a foothold (N10) | `window.networkLinks` footholds with `via: "implant"`, by `sourceId` | `network_foothold_gained`, `network_device_unplugged` |
+| A PC implanted with a foothold (N10) | `window.networkLinks` footholds with `via: "implant"`, by `sourceId` | `network_foothold_gained`, `network_device_unplugged`, `network_foothold_dropped` |
 | A network jack with a planted device (N1) | the same footholds with `via: "jack"`, by `sourceId` | the same |
+
+A foothold can also go without an unplug: `networkLinks._dropFoothold` (`network-links.js:294-305`)
+removes one when `GET /network` answers 404 for it or leaves it out (`:277-286`), and today it
+emits nothing. S3 adds one emit at its end, `network_foothold_dropped` with `{ footholdId,
+sourceId }`. (`networkLinks.load()`, `:182-194`, also emits nothing, but it runs before any
+room loads, so `syncRoom` already reads its result.) On that event `compromise-marks.js` runs
+its `refresh()`: it re-reads every marked
+object's sources from `pcSessions` and `networkLinks` and takes off any mark whose source is
+gone, including a technique session's mark once `remoteViewFoothold` answers null for it.
 
 What is not marked, and why: a password, keyring credential, claim or relay session (the player
 signed in or was let in; nothing was compromised), a Wi-Fi access point the player joined (the
@@ -745,6 +803,21 @@ How it is drawn, all in the engine:
 - the tint is a light red multiply (`setTint(0xff8a8a)`) on the object's sprite. A sprite that
   already carries a tint from the scenario (`apply-actions.js:377`) or an object with its own
   `spriteVariants` keeps the author's look and gets only the bolt;
+- the tint survives the proximity highlight. Today `interactions.js` tints any interactable
+  object blue as it comes into range (`:266-271`) and calls `clearTint()` when it leaves range
+  (`:277-282`), leaves the viewport (`:246-248`) or stops being interactable (`:221-223`), which
+  would wipe the mark the first time the player walked past. So `compromise-marks.js` stores
+  the mark's colour on the sprite as `sprite.compromiseTint` (and deletes it when the mark
+  comes off), and `interactions.js` gains one local function, `restTint(obj)`, that calls
+  `obj.setTint(obj.compromiseTint)` when the property is set and `obj.clearTint()` otherwise;
+  the three `clearTint()` calls above become `restTint(obj)`. `interactions.js` reads only the
+  property, so it imports nothing new. While the object is highlighted the blue shows, as for
+  any object in range; `compromise-marks.js` sets or removes the property at once but calls
+  `setTint` or `clearTint` itself only when `obj.isHighlighted` is false, so a mark that arrives
+  or ends during a hover shows when the hover ends. The proximity ghost (`interactions.js:524`)
+  stays blue and carries no mark: it is the hover glow, drawn only while in range, and the
+  sprite under it carries the mark again once the player steps away. The bolt is its own image
+  and no highlight path touches it;
 - the bolt is a 7 by 11 pixel shape drawn from a pixel bitmap in code, as `utils/pixel-text.js`
   draws its glyphs, in two colours (yellow with a dark outline), scaled by whole pixels with the
   room, placed at the sprite's top right one depth above it. It needs no image file;
@@ -753,8 +826,11 @@ How it is drawn, all in the engine:
   `utils/compromise-bolt.js`, used by `compromise-marks.js`, the network view and the desktop's
   remote-view line, so all three draw one shape.
 
-The test bridge gains `window.__test.access.compromiseMarks()`, the list of `{ objectId, sources
-}` the module has applied, so a playtest can check the mark without reading pixels.
+The test bridge gains `window.__test.access.compromiseMarks()`, the list of `{ objectId, sources,
+tint }` the module has applied, where `tint` is the sprite's live `tintTopLeft` read at call
+time (or null for a sprite that keeps an authored look). A playtest can then check the mark,
+and that the sprite really shows it, without reading pixels; a playtest reads it with the
+player out of range, since in range the live tint is the highlight's blue.
 
 **Art.** None is needed to build this: the bolt is drawn in code. A drawn 16 by 16 pixel icon
 (`public/break_escape/assets/icons/compromised_bolt.png`) in place of the code bitmap is a later
@@ -1120,7 +1196,7 @@ neighbouring blocks use, and every new open location carries the `x-id-map` mark
 | S3 | top level | `techniques`: id map, `x-serverOnly: true`, `x-servedBy: ["GET /network"]`, `maxProperties: 32`, keys at most 40 characters. Entry: `name` (required, max 40), `summary` (max 200), `worksOn` (required; `class` required, `product`, `versions` as 1 to 8 strings) |
 | S3 | `definitions.item.properties`, beside `credential` (`SC:5158`) | `technique_card`: a key of the technique card registry, allowed only on an item of type `technique_card`; the description says so. It stays on the item the browser receives, as `credential` does; the registry entry it names does not |
 | S3 | `credentials.<id>.proof` (`SC:293-306`) | `technique_card`: a finding id, with its own pattern (three ids joined by dots), which the description states. The description's list of proof kinds gains it |
-| S3 | the pretext line definition (`SC:3603`) | `technique` renamed to `se_technique`, with the same enum and description; the description names the technique card as unrelated |
+| S3 | the pretext line definition (`socialPretextLine`, `SC:3603`, a closed block) | `se_technique` added with the same enum and description; the description names the technique card as unrelated. `technique` stays declared with the same enum, its description saying it is the older name of `se_technique`, so a scenario not yet migrated still passes the schema stage |
 
 The top level and `definitions.item` are open, so declaring a key there adds a known name and
 nothing more; section 3 says what refuses each field before its stage.
@@ -1157,7 +1233,6 @@ Errors:
 | S2 | `grants` or `needs.session` on a weakness ("not built yet: N15"), until S3 lands |
 | S2 | `itemType` or `global` in a `needs` map with no `label`, or a `label` with neither; `itemType` and `global` together in one `needs` map; `itemType: "technique_card"` |
 | S3 | An item with `technique_card` whose type is not `technique_card`, or an item of that type with no `technique_card` |
-| S3 | A pretext line with the key `technique` (renamed `se_technique`), reported by `scripts/validate_social/pretext.rb` with the new name, so an author who copies an old line is told at once |
 | S3 | `grants.session` on a `hosts` entry; `grants.session.account` that is not an account holder, or that the host's `access` list does not admit (the schema already refuses `grants` with both kinds or with neither) |
 | S3 | `grants.credential` whose `connectsTo` PC blocks remote sign-in or whose policy does not accept `saved_connection` (the granted entry could never be used) |
 | S1 to S3 | A field of this plan whose stage is not built yet (the table of section 3) |
@@ -1188,6 +1263,13 @@ Warnings:
 | S3 | A technique that matches only decoys' classes and no weakness (a card with no use) |
 | S3 | A weakness that grants a session on a host whose only other way in is also that weakness's own need (a loop) |
 | S1 to S3 | A `product` string found in `scripts/real_product_names.txt`, a short list kept beside the validator so that examples stay invented |
+| S3 | A pretext line that carries both `se_technique` and the old key `technique` (`se_technique` wins; the two may disagree), reported by `scripts/validate_social/pretext.rb` |
+
+Info, never an error or a warning:
+
+| Stage | Info |
+|---|---|
+| S3 | A pretext line with only the old key `technique`, reported by `scripts/validate_social/pretext.rb` as an info line naming `se_technique`. The line judges and validates as before (section 4.3). The six shipped scenarios are migrated in step 9, so none of them shows it |
 
 The schema stage catches the enums, the caps on a single list and unknown properties. The
 validator's known-failures list (`scripts/validator_known_failures.json`) must not grow: no
@@ -1233,7 +1315,7 @@ None. A scenario without the new fields takes the old path at every point this p
 | The click path in `interactLoginPc` and `openLoginPc`, `remoteViewFoothold`, the remote-view frame, line and wipe | the reader answers null for every copy that is not `via: "technique"`, so the click takes today's path; the frame class and the new line are added only for such a session, and every other desktop keeps the "Remote session through <link name>" line it has today |
 | The unplug button | the unplug guard moves into `perform` with the same pending label and notice, and `test/js/network-view.test.mjs` passes with no assertion changed |
 | `systems/compromise-marks.js` | the one intended visible change: in a scenario that already lets the player plant a jack device (N1) or implant a PC (N10), (`test_access_networks`, `test_access_devices`, `test_access_keyring`, `demo_access_tour`, `lab_physical_pentest`), that jack or PC now shows the red tint and bolt while the foothold is held. It is client drawing only: no route answer, state key or event changes, so the golden answers below are unaffected, and the existing playtests' steps and leak scans pass as before. A scenario with no such foothold draws nothing new |
-| The pretext key rename | the six scenarios that write a pretext line (section 4.3) change one key name per line and nothing else; the judge reads the new name, so every verdict is the same. Part 5 of the check below proves it |
+| The pretext key rename | the six scenarios that write a pretext line (section 4.3) change one key name per line and nothing else; the judge reads `se_technique ?? technique`, so every verdict is the same before and after the migration, and a scenario outside the repo that still writes the old key judges as before and gets at most an info line. Part 5 of the check below proves both |
 | `core/game.js`, `public/break_escape/assets/objects/technique_card.png` | one more image loaded; no existing item has the type |
 | `GET /network` top level and blocks | `techniques` is sent only when a card is held; `swept` only on a discovery network, and `ops` only where a host has services, none of which an existing scenario has |
 | `desktop_request_allowed?`, `desktop_refusal`, `host_row`, `hostAction` | each new term asks for `via: "technique"` or the `openHere` flag that follows from it, which only `POST /network/technique` causes |
@@ -1281,7 +1363,11 @@ come from the log rows plan's stage L1a; that plan's stages L1a and L1b are both
    `pretext-judge.js` over every pretext line of the six scenarios of section 4.3 and records each
    verdict and its reason keys. Step 1 writes the snapshot from main; after the S3 rename the
    same run, reading `se_technique`, must match it exactly, and the validator lines of part 2 for
-   those six scenarios must be unchanged.
+   those six scenarios must be unchanged. The same test then runs the judge a second time over a
+   copy of those lines made in memory with `se_technique` turned back into the old key
+   `technique`: every verdict must again match the snapshot, which proves a scenario not yet
+   migrated judges as before. A third copy carrying both keys with different values must judge
+   as the `se_technique` value alone does.
 
 Hacktivity's tests load `test_objectives` and `test_simple_success` from this repo; neither
 declares networks and neither is touched.
@@ -1335,8 +1421,9 @@ a scenario with no `logSources`.
 | `pc-sessions-access.test.mjs` | S3 | `load` and `publicSession` keep `access` when present and add nothing when absent; `remoteViewFoothold` answers the foothold for a technique copy whose foothold `networkLinks` holds, and null once that foothold is gone and for a password, credential, claim or relay copy; `heldAtKeyboard` answers as today for every copy; `screen-states.js` keeps the locked look |
 | `pc-remote-view-click.test.mjs` | S3 | `interactLoginPc` and `openLoginPc` on a PC with a technique copy call `networkLinks.openSession(pcId, { returnTo })` once, show no sign-in screen and send no sign-in request; on a PC with a password copy, a technique copy whose foothold is gone, or no copy, take today's path |
 | `desktop-remote-view.test.mjs` | S3 | a desktop opened for a technique session, from the world and from the network view, has the class `desktop-frame--remote-view` and the line "Remote view: <account> through <link>" from `remote-host-text.js`, set as text, with hostile account and link names shown literally; the wipe runs its four steps and is skipped under the reduced-motion setting; a foothold desktop of a password session keeps today's line, no class and no wipe; a folder opened from the remote-view desktop sends its foothold |
-| `compromise-marks.test.mjs` | S3 | each source marks its object (a technique session, an implanted PC, a planted jack) and each end clears it (`pc_signed_out` from an unplug, an NPC finishing a borrow and a newer sign-in that replaces the session; `network_device_unplugged`); a password, credential, claim or relay session, a joined Wi-Fi access point and a share are never marked; a sprite with an authored tint or `spriteVariants` gets the bolt and keeps its look; `syncRoom` marks the sprites of a room made after the event; no timer is set; `compromiseMarks()` lists exactly the applied marks; the network view's row bolt on a `hosts` entry held by a technique session |
-| `validator-social-pretext-key.test.mjs` | S3 | a pretext line with `se_technique` validates as the old key did; one with `technique` is an error naming the new key |
+| `compromise-marks.test.mjs` | S3 | each source marks its object (a technique session, an implanted PC, a planted jack) and each end clears it (`pc_signed_out` from an unplug, an NPC finishing a borrow and a newer sign-in that replaces the session; `network_device_unplugged`; `network_foothold_dropped` from a `_dropFoothold` after a 404 and after a `GET /network` answer that leaves the foothold out, clearing the jack's or implanted PC's mark and a technique session's mark through that foothold); an NPC sitting down at a PC with a technique session leaves the mark on; a password, credential, claim or relay session, a joined Wi-Fi access point and a share are never marked; a sprite with an authored tint or `spriteVariants` gets the bolt and keeps its look; `sprite.compromiseTint` set with the mark and deleted when it comes off, and `setTint`/`clearTint` not called while `isHighlighted` is true; `syncRoom` marks the sprites of a room made after the event; no timer is set; `compromiseMarks()` lists exactly the applied marks, each with the sprite's live `tint`; the network view's row bolt on a `hosts` entry held by a technique session |
+| `interactions-compromise-tint.test.mjs` | S3 | a marked sprite (`compromiseTint` set) walked into range shows the highlight blue, walked out of range shows the mark's red again (`tintTopLeft`), and the same after leaving the viewport and after `interactable` turns false; an unmarked sprite walked in and out ends with no tint, as today; a mark that ends while the sprite is highlighted leaves no red after the hover ends; the proximity ghost is blue in every case |
+| `validator-social-pretext-key.test.mjs` | S3 | a pretext line with `se_technique` validates as the old key did; one with only `technique` gives the same errors and warnings as before plus one info line naming `se_technique`, and no error or warning of its own; one with both keys gives the both-keys warning and is checked on the `se_technique` value; the six shipped SE scenarios, after the migration, show no pretext-key line at all |
 | `pretext-rename-unchanged.test.mjs` | step 1, S3 | section 10, part 5 |
 | `technique-card-item.test.mjs` | S3 | a picked-up `technique_card` gets a tray slot and a pickup toast, from a room, a container and an NPC gift; a `notes1` item in the same test gets neither, which pins why the card has its own type |
 | `network-view-ops.test.mjs` | S1 to S3 | the actions each row state offers, found by their `data-action` and row hooks; no such attribute on any control of a view built from an existing scenario's answer; select-then-Use and a drag sending the same request; the "admin" tag drawn from `access` and absent without it; Fixed drawn only from `fixed`; `hostAction` for a blocked-host row with and without `openHere`, for a powered-down row that has it (not responding), and unchanged for every existing row shape; one Confirm control per unconfirmed finding; `getTestState` fields; for each action the guard holds at that stage (unplug, sweep and scan at S1; check and confirm from S2; use from S3), the control disabled in the same tick as the press, before any `await`, while its request is pending, and a second press making no second call (one call counted); a refetch that lands while a request is pending keeping that control disabled; a `use` of another card on the same finding, or of the same card on another finding, making its own call; the unplug's pending label and notice unchanged and drawn by the renderer; the refetch after each ops success; the test bridge's `networkView` returning the blocks; hostile strings in host names, products, summaries, reasons and technique names rendered as text |
@@ -1509,7 +1596,9 @@ the real controls, saves a screenshot per beat, and asserts on the network log:
   keyboard alone; the refusal texts, with a use repeated to show no second session; the log
   rows of the run read back with `verify-run.rb`, one per refusal; the keyring gaining its
   entry; the desktop on the blocked host opening from the Use control in the red remote-view
-  frame, closing on unplug, and the same request then refused; with a second foothold planted,
+  frame; then, since the player cannot reach the unplug control while a desktop is open, the
+  desktop closed by its own Close, the device unplugged by the real control, and the same
+  desktop request then refused (`no_session`); with a second foothold planted,
   its view showing no Open on that host; `desk01` tinted with the bolt after the grant, and a
   click on it opening the remote view with its frame, line and wipe, no sign-in screen; the
   marks gone after the unplug. Screenshots of the marked sprite and the remote-view frame go
@@ -1548,7 +1637,7 @@ the branch after each landing.
 | 6 | S2 | Schema (S2 rows); model helpers; validator S2 rules; `check_service!`, `confirm_finding!` (free), `opsFindings` with aliases; the two routes with their policy methods; the `service_checked` and `finding_confirmed` events and calls; findings on rows | `network_findings_test`, `network_ops_free_test`, and the extended exposure and indistinguishable tests |
 | 7 | S2 | Client: Check and Confirm, the findings panel with needs and reasons; graph: weakness nodes (9.3, without cards) | node tests |
 | 8 | S2 | `test_ops_findings`, playtest, leak collector steps, docs (N14) | scripted playtest, live proof, full suites; land S2 |
-| 9 | S3 | Schema (S3 rows); `techniques` helpers; validator S3 rules, among them the card type rule, the `connectsTo` checks on a granted credential, and the warnings for a weakness with no `grants`, for `needs` on one, and for a card that can stand in for a sign-in; `PROOF_KINDS` and `credential_proof_holds?`; the `technique_card` type: the placeholder PNG, its `load.image` line, the grep of section 4.3; the pretext line key rename to `se_technique` in the six scenarios, the schema, `pretext-judge.js`, `scripts/validate_social/pretext.rb`, the JS fixtures and the README, with the old key still read, and the validator rule of 9.2 | unit, validator and keyring tests; `technique-card-item.test.mjs`; `validator-social-pretext-key.test.mjs`; the part 5 snapshot of section 10 unchanged |
+| 9 | S3 | Schema (S3 rows); `techniques` helpers; validator S3 rules, among them the card type rule, the `connectsTo` checks on a granted credential, and the warnings for a weakness with no `grants`, for `needs` on one, and for a card that can stand in for a sign-in; `PROOF_KINDS` and `credential_proof_holds?`; the `technique_card` type: the placeholder PNG, its `load.image` line, the grep of section 4.3; the pretext line key rename to `se_technique` in the six scenarios, the schema, `pretext-judge.js`, `scripts/validate_social/pretext.rb`, the JS fixtures and the README, with the old key still read (`se_technique ?? technique`), and the pretext rows of 9.2 (the both-keys warning, the old-key info line) | unit, validator and keyring tests; `technique-card-item.test.mjs`; `validator-social-pretext-key.test.mjs`; the part 5 snapshot of section 10 unchanged under the new key, the old key and both keys |
 | 10 | S3 | `start_login_session!` keywords; `access` through `login_session_answer` and `session_for_client`; `use_technique!` with the repeat test (every 422 writes a `technique_refused` row with `save_limit: true`); `opsUsed`; the route and its policy method; the `technique_used` and `technique_refused` events and calls; the credential grant; `techniques` with `itemId` on `GET /network` | `network_technique_test`, `network_technique_hostile_test`, `network_ops_free_test` |
 | 11 | S3 | The access check changes alone: `technique_session_through?`; its use in `desktop_request_allowed?` and `desktop_refusal`; the foothold argument of `network_rows` and `host_row` with `openHere`; the `technique` skip in `settle_session_at_keyboard!` (the keyboard branch is otherwise unchanged); the no-route line in `folder_route_allowed?`, passing only where the keyboard desktop would | `network_technique_blocked_host_test`, `network_technique_session_test`, and every existing network and keyring controller test, unmodified |
 | 12 | S3 | Client: the Techniques panel, Use, `REFUSAL_TEXT`, `hostAction`, `access` in `pc-sessions.js`, the `remoteViewFoothold` reader and the click path that opens the desktop through the foothold (`networkLinks.openSession`), the remote-view frame, line and wipe (`ui-themes.css`, `remote-host-text.js`, `screen-states.js` neighbours), `systems/compromise-marks.js` and `utils/compromise-bolt.js` with the bolt on host rows, the desktop handover and keyring refetch; graph: cards, needs, grants | node tests, among them `pc-remote-view-click`, `desktop-remote-view` and `compromise-marks` |
@@ -1589,7 +1678,7 @@ are in flight at once, their sessions agree who goes first on each file.
 | `public/break_escape/js/systems/pc-sessions.js`, `unlock-system.js`, `minigames/container/container-minigame.js` | `access` copied; the new reader `remoteViewFoothold` and the click path through `networkLinks.openSession`; `heldAtKeyboard` and the `unlock-system.js` fallback do not change (a technique copy is not held at the keyboard, so `needsSession` is not met by it); no refusal handler in `loadLoginDesktop` | S5a reads `access` on the client; S8 changes the sign-in screen |
 | `public/break_escape/js/utils/remote-host-text.js`, `public/break_escape/css/ui-themes.css`, the importers of `screen-states.js`, `public/break_escape/js/core/rooms.js` | the remote-view line, the red frame class `desktop-frame--remote-view` and the wipe; the marker module is imported where `screen-states.js` is; `rooms.js` applies the room-side marks | the skin plan restyles the same screens (section 14, request 6) |
 | `app/models/break_escape/game.rb` `settle_session_at_keyboard!` | one `technique` skip | S5a and S8 change the sign-in order just above |
-| the six shipped SE scenarios, `public/break_escape/js/minigames/social/pretext-judge.js`, `scripts/validate_social/pretext.rb`, the pretext line in `scripts/scenario-schema.json` | the pretext line key `technique` becomes `se_technique`, the old key still read (section 4.3) | the social-engineering plans; the golden comparison proves no behaviour change |
+| the six shipped SE scenarios, `public/break_escape/js/systems/pretext-judge.js`, `scripts/validate_social/pretext.rb`, the pretext line in `scripts/scenario-schema.json` | the pretext line key `technique` becomes `se_technique`; the judge and the validator read `se_technique ?? technique`, and the schema keeps the old key declared (sections 4.3, 9.1) | the social-engineering plans; the golden comparison proves no behaviour change |
 | `public/break_escape/js/core/game.js`, `public/break_escape/assets/objects/` | one `load.image` line and `technique_card.png` | any plan or art pass that adds an object sprite |
 | `app/controllers/break_escape/games_controller.rb` `folder_route_allowed?` | one line | none known |
 | `public/break_escape/js/api-client.js` | four functions | every plan with a route |
@@ -1761,11 +1850,12 @@ is settled in the body, with its reason, where it applies.
 
    | Option | Change | Cost |
    |---|---|---|
-   | (a) Rename the pretext line key `technique` to `se_technique` | in the six shipped scenarios, the schema, the engine, the validator, the fixtures and the README; the engine and the validator go on reading the old key, so a scenario not yet migrated behaves as before and is not an error | six scenario files change but no behaviour (the pretext verdict snapshot of section 10 part 5 proves it); a search for `"technique"` then finds only this plan's keys and `tells.techniques` |
+   | (a) Rename the pretext line key `technique` to `se_technique` | in the six shipped scenarios, the schema, the engine, the validator, the fixtures and the README; `pretext-judge.js` and the validator read `se_technique ?? technique`, so a scenario not yet migrated judges as before and gets at most an info line naming the new key, never an error or a warning; a line with both keys is judged on `se_technique` and gets a warning (section 4.3) | six scenario files change but no behaviour (section 10 part 5 proves it for the new key, the old key and both keys); a search of scenarios for `"technique"` then finds only this plan's keys and `tells.techniques`, though the judge and the validator keep the old name in the one fallback read |
    | (b) Leave the pretext key as `technique` | `technique_card` is used only for the new card keys; prose always says "technique card" | none in code; an author's search for `"technique"` returns both, and a validator message saying "technique" alone could mean either |
 
    Recommend (a), but only if the old key stays readable, because without that a scenario
    outside the six (a draft, a branch) breaks silently the day the engine drops the old name. The
-   plan as written is (a) with the old key read. If the answer is (b), 4.3, 9.1, 9.2, section 10
+   plan as written is (a) with the old key read. If the answer is (b), 4.3 (the rename and old-key
+   bullets), 9.1 (the pretext row), 9.2 (the both-keys warning and the info table), section 10
    (the pretext row and part 5), the two pretext tests of 11.3, the part 3 exception of 11.2,
    step 9 and the pretext rows of 12.2 come out, and nothing else moves.
