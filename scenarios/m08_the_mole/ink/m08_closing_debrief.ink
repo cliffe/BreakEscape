@@ -46,6 +46,9 @@ VAR offduty_agent_ko = false // Puzzle chains C2 (N2): the off-duty agent knocke
 // ATHENA's avatar knocked out. Synced scenario globals.
 VAR netherton_hostile = false
 VAR analyst_ko = false
+// Relief watch (office life, slice 5): the night-duty officers knocked out. Synced scenario globals.
+VAR julian_ko = false
+VAR agnieszka_ko = false
 VAR athena_ko = false
 // Design C2 (N3): an innocent suspect punched (knocked out or left standing:
 // a KO latches the hostile global too). Synced scenario globals.
@@ -75,10 +78,9 @@ VAR phantom_hostile = false
 }
 
 Director Magnus Netherton: It's done, then. Agent 0x47. Nightshade.
-Director Magnus Netherton: A year ago Dr Okafor put a warning about him on my desk. Ideological drift, she called it.
-Director Magnus Netherton: I read it, and I sealed it. He was the best planner I had, and I did not want it to be true.
+Director Magnus Netherton: A year ago Dr Okafor warned me about him, in writing. I sealed it. He was the best planner I had, and I did not want it to be true.
 Director Magnus Netherton: Two of ours are dead in the space between what I knew and what I did.
-Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I would rather hear it than watch you swallow it.
+Director Magnus Netherton: Say it, Agent. I would rather hear it than watch you swallow it.
 -> stance
 
 === stance ===
@@ -109,7 +111,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     }
 }
 { vector_hostile or phantom_hostile:
-    Director Magnus Netherton: You hit {vector_hostile and phantom_hostile:Vector and Phantom|{vector_hostile:Vector|Phantom}} on my floor. {vector_hostile and phantom_hostile:Two innocent men.|An innocent man.} That goes in the file beside everything else.
+    Director Magnus Netherton: You hit {vector_hostile and phantom_hostile:Vector and Phantom|{vector_hostile:Vector|Phantom}} on my floor. {vector_hostile and phantom_hostile:Two innocent men.|An innocent man.}
 }
 { locker_seen_picked:
     Director Magnus Netherton: You picked a colleague's locker in front of a witness, who then told the whole floor he saw nothing.
@@ -123,9 +125,18 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 { athena_ko:
     Director Magnus Netherton: ATHENA logged you putting her reception avatar on the floor. Facilities would like a word.
 }
+// Relief watch (office life, slice 5): one line for one officer, another for both.
+// Multi-condition form (a bare brace, then one branch each): inklecate rejects a first
+// condition on the opening line followed by a second.
+{
+- julian_ko and agnieszka_ko:
+    Director Magnus Netherton: You knocked down both of the night watch while they were on duty. They were keeping the log, not hiding anything in it.
+- julian_ko or agnieszka_ko:
+    Director Magnus Netherton: You knocked down one of the night watch while they were on duty. They were keeping the log, not hiding anything in it.
+}
 // Phase 4 dialogue C1 (D8-18): a player beat after the charge sheet, so the
 // conduct lines and the case don't run on as one speech.
-{ accused_vector or accused_phantom or vector_hostile or phantom_hostile or locker_seen_picked or offduty_agent_ko or analyst_ko or athena_ko:
+{ accused_vector or accused_phantom or vector_hostile or phantom_hostile or locker_seen_picked or offduty_agent_ko or analyst_ko or athena_ko or julian_ko or agnieszka_ko:
     -> conduct_beat ->
 }
 { named_on_evidence:
@@ -205,14 +216,13 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 === hub ===
 + { not asked_how } [How did they get him in the first place, sir?]
     ~ asked_how = true
-    Director Magnus Netherton: Training. His own, fifteen years ago. They took a tired young idealist and they waited.
+    Director Magnus Netherton: In training, fifteen years ago. They took a tired young idealist and waited.
     Director Magnus Netherton: There may be others in this service, recruited the same way and still waiting.
     Director Magnus Netherton: I shall spend the rest of my career reading our own files.
     -> hub
 + { database_theft_understood and not asked_database } [The database. How bad is it, honestly.]
     ~ asked_database = true
     Director Magnus Netherton: As bad as it gets. Every weakness we have ever catalogued is now theirs.
-    Director Magnus Netherton: Portland, Austin, all of it was theatre, to cover the one door Nightshade left open.
     Director Magnus Netherton: Nine days ago we handed the enemy the map to every battle still coming.
     -> hub
 // PASS 5 (alignment M5, U4): a hedge, never a name. The M9 reveal stays intact.

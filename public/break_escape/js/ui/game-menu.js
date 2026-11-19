@@ -213,7 +213,11 @@ export class GameMenu {
             ['Space', 'Jump'],
             ['E or click', 'Interact'],
         ];
-        if (!attacksDisabled()) rows.push(['Q', 'Switch interact / punch']);
+        if (!attacksDisabled()) {
+            rows[3][1] = 'Interact (on a hostile NPC, E punches)';
+            rows.push(['F or right-click', 'Punch (in a row: jab, jab, cross)']);
+            rows.push(['Hold Q', 'Block']);
+        }
         rows.push(['Esc', 'Menu, or close a window']);
         const page = this.overlay.querySelector('.game-menu-page[data-page="controls"]');
         page.innerHTML = `

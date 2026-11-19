@@ -50,7 +50,7 @@ require 'json'
 # ----------------------------------------------------------------------------
 
 # Password hint lives OUTSIDE the server room it opens (checkpoint noticeboard)
-password_hint_note = "HASHCHAIN IT — NEW STARTER CHECKLIST\n(Rev. January 2025)\n\nStep 4: Door controller passphrases\n\nEvery restricted-area controller uses the house convention:\n  <crypto term, lowercase> + <current year>\n\nThe server room controller was last rotated when this checklist\nwas written, and still follows the convention. The term is whichever one Dr. Volkova's\naudit finds staff pick most. It is the obvious one. It is always the\nobvious one, because nobody wants to be locked out at 3am.\n\n(IT has been asked four times to stop doing this. IT has declined.)\n\nStep 5: If you are locked out, do NOT call the CTO. She has opinions."
+password_hint_note = "HASHCHAIN IT: NEW STARTER CHECKLIST\n(Rev. January 2025)\n\nStep 4: Door controller passphrases\n\nEvery restricted-area controller uses the house convention:\n  <crypto term, lowercase> + <current year>\n\nThe server room controller was last rotated when this checklist\nwas written, and still follows the convention. The term is whichever one Dr. Volkova's\naudit finds staff pick most. It is the obvious one. It is always the\nobvious one, because nobody wants to be locked out at 3am.\n\n(IT has been asked four times to stop doing this. IT has declined.)\n\nStep 5: If you are locked out, do NOT call the CTO. She has opinions."
 
 # PASS 4 fix 1: the follow-the-money puzzle. Priya's write-up has what went
 # INTO the mixer (amount + time); the transaction server has what came OUT
@@ -178,7 +178,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "condition": "!globalVars.briefing_played",
         "playlist": "cutscene",
         "fade": false,
-        "comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
+        "_comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
       },
       { "trigger": "game_loaded", "condition": "<%= music_day %>",    "playlist": "noir",       "fade": false },
       { "trigger": "game_loaded", "condition": "<%= music_climax %>", "playlist": "spy-action", "fade": false },
@@ -187,7 +187,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "trigger": "conversation_closed:opening_briefing_npc",
         "playlist": "noir",
         "fade": true,
-        "comment": "Briefing ends → infiltration proper begins"
+        "_comment": "Briefing ends → infiltration proper begins"
       },
       <%# A reload restores hostile NPCs with {restored: true}, which must not change
           the phase's music (m04 round 2, N1). typeof keeps it safe when the key is
@@ -197,7 +197,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "condition": "isHostile === true && (typeof restored === 'undefined' || !restored) && globalVars.assets_decided !== true",
         "playlist": "threat",
         "fade": true,
-        "comment": "A fresh fight → tension"
+        "_comment": "A fresh fight → tension"
       },
       { "trigger": "all_hostiles_ko", "condition": "<%= music_day %>",    "playlist": "noir",       "fade": true },
       { "trigger": "all_hostiles_ko", "condition": "<%= music_climax %>", "playlist": "spy-action", "fade": true },
@@ -207,21 +207,21 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "condition": "value === true && globalVars.assets_decided !== true",
         "playlist": "spy-action",
         "fade": true,
-        "comment": "The Architect's Fund found — the mission changes gear"
+        "_comment": "The Architect's Fund found — the mission changes gear"
       },
       {
         "trigger": "global_variable_changed:assets_decided",
         "condition": "value === true",
         "playlist": "end",
         "fade": true,
-        "comment": "A1/A2: the money is settled; the sweep plays under a settled cue"
+        "_comment": "A1/A2: the money is settled; the sweep plays under a settled cue"
       },
       {
         "trigger": "global_variable_changed:start_debrief_cutscene",
         "condition": "value === true",
         "playlist": "end",
         "fade": true,
-        "comment": "Final debrief begins (m03/m04 use end here)"
+        "_comment": "Final debrief begins (m03/m04 use end here)"
       },
       {
         "trigger": "conversation_closed:closing_debrief_person",
@@ -230,24 +230,25 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
         "autoStop": true,
         "disableClose": true,
         "fade": true,
-        "comment": "Debrief ends — victory track with mission credits scroll",
+        "_comment": "Debrief ends — victory track with mission credits scroll",
         "credits": [
           { "text": "MISSION COMPLETE",                                            "style": "title" },
           { "text": "FOLLOW THE MONEY",                                            "style": "subtitle" },
           { "text": "" },
-          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER",     "style": "entry", "condition": "globalVars.found_architects_fund && (globalVars.found_blockchain_evidence || globalVars.traced_fund_slot) && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M, TRACED THROUGH THE MIXER",     "style": "entry", "condition": "globalVars.found_architects_fund && (globalVars.found_blockchain_evidence || globalVars.traced_fund_slot) && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
           <%# Scenario design R1 (m4): without Priya's write-up there was no trace to follow. Backlog 2026-10-22: the settlement tracer is a trace too. %>
-          { "text": "THE ARCHITECT'S FUND: $12.8M — FOUND ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && !globalVars.found_blockchain_evidence && !globalVars.traced_fund_slot && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M, FOUND ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && !globalVars.found_blockchain_evidence && !globalVars.traced_fund_slot && !globalVars.irina_confirmed_slot && !globalVars.console_tripped" },
           <%# Puzzle chains R2 (M-R2-2): any console lockout before the fund was found. %>
-          { "text": "THE ARCHITECT'S FUND: $12.8M — FOUND BY ELIMINATION ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.console_tripped && !globalVars.irina_confirmed_slot" },
-          { "text": "THE ARCHITECT'S FUND: $12.8M — TRACED, CONFIRMED BY VOLKOVA", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.irina_confirmed_slot" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M, FOUND BY ELIMINATION ON THE CONSOLE", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.console_tripped && !globalVars.irina_confirmed_slot" },
+          { "text": "THE ARCHITECT'S FUND: $12.8M, TRACED, CONFIRMED BY VOLKOVA", "style": "entry", "condition": "globalVars.found_architects_fund && globalVars.irina_confirmed_slot" },
           { "text": "ENTROPY FINANCIAL NETWORK: MAPPED",                           "style": "entry",   "condition": "globalVars.financial_network_mapped" },
           { "text": "ENTROPY FINANCIAL NETWORK: PARTIALLY MAPPED",                 "style": "entry",   "condition": "!globalVars.financial_network_mapped" },
           { "text": "" },
           { "text": "── ASSETS ──",                                                "style": "section-header" },
-          { "text": "FROZEN — $12.8M moved into a SAFETYNET wallet. The balances never reach the cells.", "style": "entry", "condition": "globalVars.assets_seized" },
-          { "text": "WATCHED — Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
+          { "text": "FROZEN: $12.8M moved into a SAFETYNET wallet. The balances never reach the cells.", "style": "entry", "condition": "globalVars.assets_seized" },
+          { "text": "WATCHED: Fund left running. Every recipient wallet now tagged.", "style": "entry", "condition": "globalVars.monitoring_enabled" },
           { "text": "THE RELEASE: signed on Satoshi's own thumb, off the glass of his press clipping", "style": "entry", "condition": "globalVars.signing_record_found" },
+          { "text": "THE FUND: no decision on record", "style": "entry", "_comment": "Release audit: fallback so this section never prints a bare heading; true only when no line above holds.", "condition": "!(globalVars.assets_seized) && !(globalVars.monitoring_enabled) && !(globalVars.signing_record_found)" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                             "style": "section-header" },
           <%# PASS 3 P8: four mutually exclusive guard lines. Pass 5 round 2 (R2-m6): a KO
@@ -257,44 +258,45 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           { "text": "CHECKPOINT GUARD: Knocked out at his own door", "style": "entry", "condition": "globalVars.guard_ko" },
           { "text": "CHECKPOINT GUARD: Never saw you pick his door", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && !globalVars.guard_caught" },
           { "text": "CHECKPOINT GUARD: Caught you at his lock once; you got through anyway", "style": "entry", "condition": "globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && globalVars.guard_caught" },
-          { "text": "DR. IRINA VOLKOVA: Turned — gave up the mixer tonight", "style": "entry", "condition": "globalVars.irina_recruited && !globalVars.irina_ko" },
-          { "text": "DR. IRINA VOLKOVA: Turned, then knocked down — what she gave still stands", "style": "entry", "condition": "globalVars.irina_recruited && globalVars.irina_ko" },
-          { "text": "DR. IRINA VOLKOVA: Detained — collected by the police with the laundering evidence", "style": "entry", "condition": "globalVars.irina_arrested && !globalVars.irina_ko" },
-          { "text": "DR. IRINA VOLKOVA: Detained, then knocked down — carried out by the police", "style": "entry", "condition": "globalVars.irina_arrested && globalVars.irina_ko" },
+          { "text": "DR. IRINA VOLKOVA: Turned; gave up the mixer tonight", "style": "entry", "condition": "globalVars.irina_recruited && !globalVars.irina_ko" },
+          { "text": "DR. IRINA VOLKOVA: Turned, then knocked down; what she gave still stands", "style": "entry", "condition": "globalVars.irina_recruited && globalVars.irina_ko" },
+          { "text": "DR. IRINA VOLKOVA: Detained, collected by the police with the laundering evidence", "style": "entry", "condition": "globalVars.irina_arrested && !globalVars.irina_ko" },
+          { "text": "DR. IRINA VOLKOVA: Detained, then knocked down; carried out by the police", "style": "entry", "condition": "globalVars.irina_arrested && globalVars.irina_ko" },
           { "text": "DR. IRINA VOLKOVA: Knocked down on the trading floor before her part was settled", "style": "entry", "condition": "globalVars.irina_ko && !globalVars.irina_recruited && !globalVars.irina_arrested" },
-          { "text": "'SATOSHI NAKAMOTO II': Detained — handed to the police",       "style": "entry",   "condition": "!globalVars.satoshi_ko" },
-          { "text": "'SATOSHI NAKAMOTO II': Knocked out in his own office — handed to the police", "style": "entry", "condition": "globalVars.satoshi_ko" },
+          { "text": "'SATOSHI NAKAMOTO II': Detained, handed to the police",       "style": "entry",   "condition": "!globalVars.satoshi_ko" },
+          { "text": "'SATOSHI NAKAMOTO II': Knocked out in his own office, handed to the police", "style": "entry", "condition": "globalVars.satoshi_ko" },
           <%# PASS 4 fix 17: the specific credit needs the conversation the task names
               (trader_heard_out comes from the task-completed mapping on HaX; analyst_walked_through
               from Priya's graph conversation, pass-4 dialogue playtest); a player who only
               said hello, or only asked the method, gets the neutral line. %>
-          { "text": "DANI OKONKWO (TRADER): Flagged the wallets first — left alone", "style": "entry",   "condition": "globalVars.trader_heard_out && !globalVars.trader_ko" },
-          { "text": "DANI OKONKWO (TRADER): Kept his head down — left alone", "style": "entry",   "condition": "globalVars.trader_spoken && !globalVars.trader_heard_out && !globalVars.trader_ko" },
-          { "text": "DANI OKONKWO (TRADER): Knocked out — had done nothing wrong", "style": "entry",   "condition": "globalVars.trader_ko" },
+          { "text": "DANI OKONKWO (TRADER): Flagged the wallets first, left alone", "style": "entry",   "condition": "globalVars.trader_heard_out && !globalVars.trader_ko" },
+          { "text": "DANI OKONKWO (TRADER): Kept his head down, left alone", "style": "entry",   "condition": "globalVars.trader_spoken && !globalVars.trader_heard_out && !globalVars.trader_ko" },
+          { "text": "DANI OKONKWO (TRADER): Knocked out; had done nothing wrong", "style": "entry",   "condition": "globalVars.trader_ko" },
           <%# Office life (PLAN 2.8): the two late-desk extras, same shape as the trader and analyst lines. %>
-          { "text": "LERATO DLAMINI (FLOOR COORDINATOR): Knocked out, had done nothing wrong", "style": "entry", "condition": "globalVars.lerato_ko" },
-          { "text": "TOMASZ WISNIEWSKI (APP SUPPORT): Knocked out, had done nothing wrong", "style": "entry", "condition": "globalVars.tomasz_ko" },
-          { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph — left alone",       "style": "entry",   "condition": "globalVars.analyst_walked_through && !globalVars.analyst_ko" },
-          { "text": "PRIYA RAGHAVAN (ANALYST): Never knew what her graph proved — left alone", "style": "entry", "condition": "globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko" },
-          { "text": "PRIYA RAGHAVAN (ANALYST): Knocked out — had done nothing wrong", "style": "entry", "condition": "globalVars.analyst_ko" },
+          { "text": "LERATO DLAMINI (FLOOR COORDINATOR): Knocked out; had done nothing wrong", "style": "entry", "condition": "globalVars.lerato_ko" },
+          { "text": "TOMASZ WISNIEWSKI (APP SUPPORT): Knocked out; had done nothing wrong", "style": "entry", "condition": "globalVars.tomasz_ko" },
+          { "text": "PRIYA RAGHAVAN (ANALYST): Drew the graph, left alone",       "style": "entry",   "condition": "globalVars.analyst_walked_through && !globalVars.analyst_ko" },
+          { "text": "PRIYA RAGHAVAN (ANALYST): Never knew what her graph proved, left alone", "style": "entry", "condition": "globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko" },
+          { "text": "PRIYA RAGHAVAN (ANALYST): Knocked out; had done nothing wrong", "style": "entry", "condition": "globalVars.analyst_ko" },
           <%# Pass 5 A5: Satoshi's minder in the executive wing. %>
           <%# Round 2 (R2-m7): mutually exclusive; KO, then hostile, then talked past,
               then turned back once, then never seen. %>
-          { "text": "KEMAL AYDIN (MINDER): Read the casualty line and walked out — still at large", "style": "entry", "condition": "globalVars.minder_walked && !globalVars.minder_hostile && !globalVars.minder_ko" },
+          { "text": "KEMAL AYDIN (MINDER): Read the casualty line and walked out, still at large", "style": "entry", "condition": "globalVars.minder_walked && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Talked your way past him", "style": "entry", "condition": "globalVars.minder_passed && !globalVars.minder_vouched && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Let you in on Volkova's word", "style": "entry", "condition": "globalVars.minder_vouched && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Turned you back once; you got past him anyway", "style": "entry", "condition": "globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_walked && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Never saw you come up the corridor", "style": "entry", "condition": "globalVars.satoshi_confronted && !globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Knocked out outside his boss's door", "style": "entry", "condition": "globalVars.minder_ko" },
           { "text": "KEMAL AYDIN (MINDER): Went for you; you got past him anyway", "style": "entry", "condition": "globalVars.minder_hostile && !globalVars.minder_ko" },
+          { "text": "STAFF: no further notes on file", "style": "entry", "_comment": "Release audit: fallback so this section never prints a bare heading; true only when no line above holds.", "condition": "!(globalVars.guard_waved_through && !globalVars.guard_ko) && !(globalVars.guard_ko) && !(globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && !globalVars.guard_caught) && !(globalVars.guard_resolved && !globalVars.guard_waved_through && !globalVars.guard_ko && globalVars.guard_caught) && !(globalVars.irina_recruited && !globalVars.irina_ko) && !(globalVars.irina_recruited && globalVars.irina_ko) && !(globalVars.irina_arrested && !globalVars.irina_ko) && !(globalVars.irina_arrested && globalVars.irina_ko) && !(globalVars.irina_ko && !globalVars.irina_recruited && !globalVars.irina_arrested) && !(!globalVars.satoshi_ko) && !(globalVars.satoshi_ko) && !(globalVars.trader_heard_out && !globalVars.trader_ko) && !(globalVars.trader_spoken && !globalVars.trader_heard_out && !globalVars.trader_ko) && !(globalVars.trader_ko) && !(globalVars.lerato_ko) && !(globalVars.tomasz_ko) && !(globalVars.analyst_walked_through && !globalVars.analyst_ko) && !(globalVars.analyst_spoken && !globalVars.analyst_walked_through && !globalVars.analyst_ko) && !(globalVars.analyst_ko) && !(globalVars.minder_walked && !globalVars.minder_hostile && !globalVars.minder_ko) && !(globalVars.minder_passed && !globalVars.minder_vouched && !globalVars.minder_hostile && !globalVars.minder_ko) && !(globalVars.minder_vouched && !globalVars.minder_hostile && !globalVars.minder_ko) && !(globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_walked && !globalVars.minder_hostile && !globalVars.minder_ko) && !(globalVars.satoshi_confronted && !globalVars.minder_challenged && !globalVars.minder_passed && !globalVars.minder_hostile && !globalVars.minder_ko) && !(globalVars.minder_ko) && !(globalVars.minder_hostile && !globalVars.minder_ko)" },
           { "text": "" },
           <%# Pass 5 A3: the cover's weight. %>
           { "text": "FCA COVER: held all night", "style": "entry", "condition": "!globalVars.cover_strained" },
-          { "text": "FCA COVER: strained — somebody at HashChain rang the FCA", "style": "entry", "condition": "globalVars.cover_strained" },
+          { "text": "FCA COVER: strained; somebody at HashChain rang the FCA", "style": "entry", "condition": "globalVars.cover_strained" },
           { "text": "" },
           { "text": "── THE ARCHITECT ──",                                          "style": "section-header" },
-          { "text": "IDENTITY: 87% probability — Dr. Adrian Tesseract",             "style": "entry",   "condition": "globalVars.architect_identity_found" },
-          { "text": "IDENTITY: Unknown — safe contents never recovered",            "style": "entry",   "condition": "!globalVars.architect_identity_found" },
+          { "text": "IDENTITY: 87% probability, Dr. Adrian Tesseract",             "style": "entry",   "condition": "globalVars.architect_identity_found" },
+          { "text": "IDENTITY: Unknown; safe contents never recovered",            "style": "entry",   "condition": "!globalVars.architect_identity_found" },
           { "text": "" },
           { "text": "72 hours. Six cells. Some of them were already paid.",        "style": "warning" }
         ]
@@ -1002,7 +1004,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "name": "SAFETYNET Field Guide: Reconnaissance and Network Mapping",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/reconnaissance-and-network-mapping/",
-              "observations": "Host discovery and service enumeration — find the second and third servers before you try to log into them"
+              "observations": "Host discovery and service enumeration: find the second and third servers before you try to log into them"
             },
             {
               "type": "lab-workstation",
@@ -1027,7 +1029,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "relayed_password_dictionary",
               "name": "Password Dictionary List (relayed copy)",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nhodl\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nmoonshot\nprivatekey\ncoldstorage\n\n(Most-picked first.)\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.",
+              "text": "HASHCHAIN INTERNAL: CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nhodl\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nmoonshot\nprivatekey\ncoldstorage\n\n(Most-picked first.)\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.",
               "observations": "Volkova's audit wordlist, pulled off her workstation by SAFETYNET"
             },
             {
@@ -1076,7 +1078,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "globalVars.exchange_infiltrated !== true && globalVars.irina_ko !== true",
               "onceOnly": true,
               "setGlobal": { "exchange_infiltrated": true },
-              "sendTimedMessage": { "delay": 4000, "message": "You've met Volkova. She built the mixer and hates what it's used for. She's the one person in there who might want out. Work that." }
+              "sendTimedMessage": { "delay": 4000, "message": "Volkova built the mixer and hates what it's used for. She might want out. Work that." }
             },
             {
               "_comment": "PASS 4 fix 13 (round 2: its own short text, after the Irina text): point at the lab.",
@@ -1222,7 +1224,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag3",
               "onceOnly": true,
               "setGlobal": { "flag3_submitted": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Financial database. It runs their doors: data centre code's in the export, north door. Last backend box is the vault account. It holds the wallet keys. Get it before upstairs." }
+              "sendTimedMessage": { "delay": 1500, "message": "Data centre's through the north door; the code's in the door export. Last backend box is the vault account, with the wallet keys. Get it before upstairs." }
             },
             {
               "_comment": "PASS 2: flag 4 pays out the cold-storage recovery keys from the vault account (flag-station give_item). found_wallet_keys is set here, not by an onRead on a gifted item, so it is deterministic. Freezing the fund needs it.",
@@ -1603,13 +1605,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you, and he won't wait while you read this. Q for fists, then E or click. Q till the open hand shows to walk away." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming, and he won't wait while you read this. F punches, keep pressing for harder. Hold Q to block, but you can't walk." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_nakamoto' && data.isHostile === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's fighting, and he won't wait while you read this. Q for your fists, then E or click when he's in front of you." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's fighting, and he won't wait while you read this. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             <%# Puzzle chains R2 (M-R2-1): a turned Irina checks one slot per visit, and
                 a visit is a trip back to the console. slot_checked_visit is synced
@@ -1762,7 +1764,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "takeable": true,
           "readable": true,
           "text": "HASHCHAIN EXCHANGE - Premier Cryptocurrency Trading Platform\n\nOur Services:\n- Secure cryptocurrency trading\n- Blockchain analysis tools\n- Privacy-focused transactions\n- Enterprise compliance solutions\n\nLeadership:\nCEO: 'Satoshi Nakamoto II'\nCTO: Dr. Irina Volkova\n\nTagline: 'Financial Freedom Through Cryptography'",
-          "observations": "Official exchange brochure — impeccably legitimate on the surface",
+          "observations": "Official exchange brochure: impeccably legitimate on the surface",
           "puzzle_graph_optional": true
         }
       ]
@@ -1953,7 +1955,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "m06_password_dictionary",
               "name": "Password Dictionary List",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nhodl\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nmoonshot\nprivatekey\ncoldstorage\n\n(Most-picked first.)\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
+              "text": "HASHCHAIN INTERNAL: CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nhodl\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nmoonshot\nprivatekey\ncoldstorage\n\n(Most-picked first.)\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
               "observations": "Irina's own audit wordlist: the words staff here pick, with the years they bolt on for door passphrases. The backend service accounts use the bare words. Short enough to type out by hand.",
               "puzzle_graph_role": "tool",
               "puzzle_graph_unlocks": "server_room"
@@ -2111,7 +2113,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Trading Workstation",
           "host": "TRADE-WS-01",
           "takeable": false,
-          "observations": "Real-time cryptocurrency trading terminal — the transaction volumes on it are absurd for a firm this size"
+          "observations": "Real-time cryptocurrency trading terminal: the transaction volumes on it are absurd for a firm this size"
         },
 <%# Office life (PLAN 3.1). Order matters: every pc sprite shares the base type pc, claimed in Tiled order
     (pc10, pc6, pc8, pc11, pc6, pc8, pc11, pc6). lerato_desk takes the second (pc6 at 7.0,3.5); a claim hides
@@ -2211,7 +2213,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "takeable": true,
           "readable": true,
           "text": "HASHCHAIN EXCHANGE - DAILY TRADING SUMMARY\n\nVolume (24h): $847M USD equivalent\nTop Pairs: BTC/USD, ETH/USD, XMR/USD\n\nLarge Transactions Flagged:\n- Wallet 1ENTROPY2RansomInc: $2.4M into the mixer\n- Wallet 1ENTROPY3ZeroDaySy: $1.2M into the mixer\n- Wallet 1TALENTSTACKPAY: $847K out, paid from one of our own cold slots\n\nCompliance Note: Privacy coins (Monero) usage extremely high.\nNote to Irina: Is this normal? -D.O.",
-          "observations": "The trader's own flagged-transactions report — ENTROPY wallet names in plain text",
+          "observations": "The trader's own flagged-transactions report: ENTROPY wallet names in plain text",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "entropy_wallets_known"
         },
@@ -2268,7 +2270,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "HashChain Backend Server Terminal",
           "position": "as-type:pc",
           "takeable": false,
-          "observations": "Operator terminal onto the exchange's backend financial estate — several servers, all of them behind passwords",
+          "observations": "Operator terminal onto the exchange's backend financial estate: several servers, all of them behind passwords",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('kali_cracker', {"id":6,"title":"kali_cracker","ip":"172.16.0.3","enable_console":true}) %>,
           "showPostit": true,
@@ -2293,25 +2295,25 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "key": "flag1_submitted",
               "value": true,
               "label": "First backend account cracked",
-              "description": "Flag 1: First server password cracked — initial backend access"
+              "description": "Flag 1: First server password cracked. Initial backend access"
             },
             {
               "type": "give_item",
               "item_name": "Ledger Hold Log",
-              "label": "Credential reuse — the ledger account opened",
-              "description": "Flag 2: Credential reuse — the same password opens the internal ledger; the drop-site cuts you its compliance holds"
+              "label": "Credential reuse: the ledger account opened",
+              "description": "Flag 2: Credential reuse. The same password opens the internal ledger; the drop-site cuts you its compliance holds"
             },
             {
               "type": "give_item",
               "item_name": "Door Controller Export",
               "label": "Financial-database account reached (runs the door controllers)",
-              "description": "Flag 3: Financial database reached — the same service account runs the door controllers; the drop-site cuts you their export"
+              "description": "Flag 3: Financial database reached. The same service account runs the door controllers; the drop-site cuts you their export"
             },
             {
               "type": "give_item",
               "item_name": "Cold Storage Recovery Keys",
-              "label": "Full estate — the vault account's recovery keys",
-              "description": "Flag 4: Vault account taken — the cold-storage recovery keys come with it"
+              "label": "Full estate: the vault account's recovery keys",
+              "description": "Flag 4: Vault account taken. The cold-storage recovery keys come with it"
             }
           ],
 <%# PASS 2 (m02 flag-payout pattern, 71e8852e): flag 3 opens the data centre,
@@ -2356,7 +2358,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "_comment": "Pass-4 dialogue playtest: auto-placed 23 px south of the flag station, so interacting from the north opened the station. Room dressing (room_hce_servers): it now has its own notes slot at the far end of the ops bench, 32 px+ from the station.",
           "takeable": true,
           "readable": true,
-          "text": "HASHCHAIN — RACK B INVENTORY\n\nB-01  hcauth          (staff authentication — service account)\nB-02  hc-trade-01     (matching engine)\nB-03  hcledger        (internal ledger — RESTRICTED — service account)\nB-04  hcfindb         (financial database — RESTRICTED — service account)\nB-05  hcvault         (cold storage keys — RESTRICTED — service account)\nB-06  hc-mixer-01     (privacy conversion service)\nB-07  hc-analytics-01 (Apache Druid dashboards — console on the backend LAN, no auth, \"temporary\")\n\nOperator login for the backend: hcops.\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nThe analytics box (B-07) was stood up for a board demo and never locked down — it talks to the whole backend.\nRaised as a risk in March. Closed as 'accepted'.",
+          "text": "HASHCHAIN: RACK B INVENTORY\n\nB-01  hcauth          (staff authentication, service account)\nB-02  hc-trade-01     (matching engine)\nB-03  hcledger        (internal ledger, RESTRICTED, service account)\nB-04  hcfindb         (financial database, RESTRICTED, service account)\nB-05  hcvault         (cold storage keys, RESTRICTED, service account)\nB-06  hc-mixer-01     (privacy conversion service)\nB-07  hc-analytics-01 (Apache Druid dashboards: console on the backend LAN, no auth, \"temporary\")\n\nOperator login for the backend: hcops.\n\nNote from ops: the auth and ledger service accounts share a password.\nThe financial database account also drives the door controllers.\nThe analytics box (B-07) was stood up for a board demo and never locked down: it talks to the whole backend.\nRaised as a risk in March. Closed as 'accepted'.",
           "observations": "Rack inventory. An analytics box sits on the backend with no login, two service accounts share a password, and the financial database's account runs the doors.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "credential_reuse_available"
@@ -2409,7 +2411,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "host": "TXN-SRV-01",
           "takeable": false,
           "locked": false,
-          "observations": "Core transaction processing server — every cryptocurrency movement the exchange has ever brokered passes through this box. It runs a settlement tracer: what went into the mixer on one side, what came out on the other.",
+          "observations": "Core transaction processing server: every cryptocurrency movement the exchange has ever brokered passes through this box. It runs a settlement tracer: what went into the mixer on one side, what came out on the other.",
           <%# Backlog 2026-10-22: opens the settlement tracer board (mixer_board above);
               its "Server files" button opens the three files below, which stay for
               Irina's slot check and HaX's hints. Naming the slot sets traced_fund_slot. %>
@@ -2556,7 +2558,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Blockchain Analysis Workstation",
           "host": "CHAIN-WS-01",
           "takeable": false,
-          "observations": "Transaction graph analysis and wallet clustering tools — better forensics than most law enforcement agencies run"
+          "observations": "Transaction graph analysis and wallet clustering tools: better forensics than most law enforcement agencies run"
         },
         {
           "type": "notes",
@@ -2629,7 +2631,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "host": "CTO-WS-IV",
           "desktopUser": {"name": "Irina Volkova", "character": "irina_volkova"},
           "takeable": false,
-          "observations": "The CTO's personal machine — post-quantum research on one screen, the mixer's production dashboard on the other"
+          "observations": "The CTO's personal machine: post-quantum research on one screen, the mixer's production dashboard on the other"
         },
         {
           "type": "notes",
@@ -2638,7 +2640,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "takeable": true,
           "readable": true,
           "text": "DR. IRINA VOLKOVA - RESEARCH NOTES\n\nCurrent Projects:\n- Post-quantum cryptography for cryptocurrency\n- Zero-knowledge proof systems\n- Homomorphic encryption for private transactions\n\nPublications: 37 papers in top-tier cryptography journals\nCitations: 2,847\n\nNote to self: the exchange's 'privacy features' are being used to launder money. I built these systems for financial freedom, not for this. But Satoshi pays too well to walk away.\n\nWhat have I become?",
-          "observations": "Irina's research notes — the leverage you need is in the last three lines",
+          "observations": "Irina's research notes: the leverage you need is in the last three lines",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "irina_moral_conflict",
           "onPickup": { "setVariable": { "read_irina_notes": true } }
@@ -2797,7 +2799,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "fingerprintCandidates": ["Kemal Aydin", "Dr. Irina Volkova", "Dani Okonkwo"],
           <%# Browser follow-up F4: easy difficulty shows the owner plus one decoy from this list, picked by a fixed seed (m04 R-M3), so the compare step showed Satoshi and Irina only. Intended. %>
           "fingerprintDifficulty": "easy",
-          "text": "CRYPTO WEEKLY — 'THE MAN WHO WON'T GIVE HIS NAME'\n\nHashChain's founder gives interviews only in text, only over Tor, and only under a pseudonym that is either a tribute or a taunt depending on who you ask.\n\n'The state cannot regulate what it cannot see,' he told us. 'We are not hiding money. We are demonstrating that the concept of hidden money is now permanent.'\n\nAsked whether HashChain screens its customers, he replied: 'We screen for competence.'\n\nHe signed off the interview the way he signs everything: 'Until the last coin.'",
+          "text": "CRYPTO WEEKLY: 'THE MAN WHO WON'T GIVE HIS NAME'\n\nHashChain's founder gives interviews only in text, only over Tor, and only under a pseudonym that is either a tribute or a taunt depending on who you ask.\n\n'The state cannot regulate what it cannot see,' he told us. 'We are not hiding money. We are demonstrating that the concept of hidden money is now permanent.'\n\nAsked whether HashChain screens its customers, he replied: 'We screen for competence.'\n\nHe signed off the interview the way he signs everything: 'Until the last coin.'",
           "observations": "Framed in the corridor outside the CEO's office. He had it mounted himself, and straightened it often enough to leave a thumbprint square on the glass.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "satoshi_fingerprint",
@@ -2938,7 +2940,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "name": "The Architect's Identity File",
               "takeable": true,
               "readable": true,
-              "text": "WHO IS THE ARCHITECT? (private notes, S.N. II — insurance)\n\nClues gathered:\n- Former intelligence professional (MI6, CIA, or equivalent)\n- Deep cryptography background\n- Organisational genius\n- Philosophy: accelerationism\n\nLikely candidates (my own analysis):\n- Dr. Adrian Tesseract (former SAFETYNET chief strategist, defected 7 years ago)\n- Unknown\n\nTesseract Profile:\n- Brilliant strategist\n- Mentored several current SAFETYNET agents\n- Disappeared after a philosophical disagreement\n- Believed the Cyber Security arms race accelerates collapse\n\nConclusion: 87% probability The Architect = Dr. Adrian Tesseract\n\nIf this building ever falls, this page is what I trade.",
+              "text": "WHO IS THE ARCHITECT? (private notes, S.N. II, insurance)\n\nClues gathered:\n- Former intelligence professional (MI6, CIA, or equivalent)\n- Deep cryptography background\n- Organisational genius\n- Philosophy: accelerationism\n\nLikely candidates (my own analysis):\n- Dr. Adrian Tesseract (former SAFETYNET chief strategist, defected 7 years ago)\n- Unknown\n\nTesseract Profile:\n- Brilliant strategist\n- Mentored several current SAFETYNET agents\n- Disappeared after a philosophical disagreement\n- Believed the Cyber Security arms race accelerates collapse\n\nConclusion: 87% probability The Architect = Dr. Adrian Tesseract\n\nIf this building ever falls, this page is what I trade.",
               "observations": "The CEO's own insurance file: The Architect narrowed to Dr. Adrian Tesseract, formerly of SAFETYNET",
               "onPickup": { "setVariable": { "architect_identity_found": true } }
             }

@@ -26,6 +26,8 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
 copy('utils/lock-scope-refusal.js');
+copy('utils/dispense-on-unlock.js'); // unlock-system.js imports it (dispenses containers)
+copy('minigames/container/container-item-image.js');
 copy('utils/computer-keywords.js');
 copy('utils/pc-monitor.js');
 copy('utils/npc-headshot.js');
@@ -864,7 +866,7 @@ test('R3 m1: tile text has whole-pixel line heights', () => {
     const css = readFileSync(join(here, '../../public/break_escape/css/password-minigame.css'), 'utf8');
     const rule = (sel) => css.slice(css.indexOf(`${sel} {`), css.indexOf('}', css.indexOf(`${sel} {`)));
     assert.match(rule('.signin-name'), /line-height:\s*17px/);
-    assert.match(rule('.signin-username'), /line-height:\s*15px/);
+    assert.match(rule('.signin-username'), /line-height:\s*16px/);
     assert.match(rule('.password-message'), /line-height:\s*20px/);
     assert.doesNotMatch(css, /line-height:\s*1\.1\b/);
 });

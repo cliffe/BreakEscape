@@ -9,15 +9,17 @@
  * NPC-owned `onUse` map; it never reads the NPC's `usePayload`, only clones it
  * onto npc_used.
  *
- * No static imports on purpose: the engine reaches it through window, and the
- * node tests import it directly with a stub world (see createEngineWorld for the
- * live adapter).
+ * One static import, the import-free compass8.js (the 8 facings, shared with seating.js): the
+ * engine reaches this module through window, and the node tests import it directly with a stub
+ * world (see createEngineWorld for the live adapter).
  *
  * Determinism: every decision happens on a fixed 250 ms tick of the needs clock, which the
  * engine advances by the frame step its walks use (see update);
  * the only randomness is a per-NPC mulberry32 seeded from (seed, npcId), used for
  * jitterPct. Arrivals are queued and handled at the next tick.
  */
+
+import { COMPASS8, facingPointFrom } from './compass8.js';
 
 export const NEEDS_TICK_MS = 250;
 const MAX_FRAME_MS = 1000;
@@ -272,12 +274,15 @@ export function bagOrder(n, rng, avoidFirst = -1) {
     return order;
 }
 
-/** Pure: a pool as { lines, hush, overhearRadius } from an array or { lines, hush, overhearRadius }. */
+/**
+ * Pure: a pool as { lines, hush, overhearRadius, requireGlobal } from an array or the object form
+ * { lines, hush, overhearRadius, requireGlobal }. A plain array has no gate.
+ */
 export function normalisePool(p) {
     if (Array.isArray(p)) return { lines: p.filter(l => typeof l === 'string' && l.trim()), hush: false, overhearRadius: null };
     if (p && typeof p === 'object') {
         const r = Number(p.overhearRadius);
-        return { lines: (Array.isArray(p.lines) ? p.lines : []).filter(l => typeof l === 'string' && l.trim()), hush: p.hush === true, overhearRadius: r > 0 ? r : null };
+        return { lines: (Array.isArray(p.lines) ? p.lines : []).filter(l => typeof l === 'string' && l.trim()), hush: p.hush === true, overhearRadius: r > 0 ? r : null, requireGlobal: p.requireGlobal };
     }
     return null;
 }
@@ -288,11 +293,19 @@ export function normalisePool(p) {
  * `pictures` is false when the scenario sets `"chatter": false` (no picture chat either) or
  * `"npcThoughts": false` (`thoughtsOn` false, D77): an icon-only bubble shows what an NPC wants, so it
  * is a thought, not speech. Spoken lines are unaffected.
+ *
+ * `holds` (optional) reads a pool's `requireGlobal` gate: `holds(requireGlobal)` is true when the
+ * gate is open. A pool whose gate is closed contributes nothing (no lines, no hush, no radius), and
+ * the other pool under the same key still counts. Without `holds` a gate is ignored, as an array
+ * pool or an ungated pool always is. Called afresh at each draw, so the gate reacts live.
  */
-export function chatterPool(topic, scenarioChatter, npcChatter, thoughtsOn = true) {
+export function chatterPool(topic, scenarioChatter, npcChatter, thoughtsOn = true, holds = null) {
     let base = null;
     if (scenarioChatter && typeof scenarioChatter === 'object' && scenarioChatter[topic] !== undefined) base = normalisePool(scenarioChatter[topic]);
-    const own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
+    let own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
+    const open = pool => !pool || pool.requireGlobal === undefined || typeof holds !== 'function' || !!holds(pool.requireGlobal);
+    if (!open(base)) base = null;
+    if (!open(own)) own = null;
     return {
         lines: [...(base?.lines || []), ...(own?.lines || [])],
         hush: !!(base?.hush || own?.hush),
@@ -410,6 +423,7 @@ export class NPCNeedsSystem {
      */
     constructor(world, opts = {}) {
         this.world = world;
+        this._holds = cond => this._globalHolds(cond);   // bound once: the chatterPool gate check
         this.seed = opts.seed !== undefined ? opts.seed : 0;
         this.manualClock = !!opts.manualClock;
         this.clockMs = 0;
@@ -1004,7 +1018,7 @@ export class NPCNeedsSystem {
             const first = m.satisfies.find(n => NEED_ICONS.includes(n));
             // SIMS-5 design R2 m7 (E7 for announces): with the player out of earshot of the teller the
             // telling still happens, as a picture; no line is taken from the bag, so none is voiced unheard
-            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).overhearRadius || OVERHEAR_RADIUS;
             const unheard = typeof this.world.playerHears === 'function' && !(this.world.playerHears(s.npcId, radius) || {}).overheard;
             const pick = this._pickBark(s, topic, { waitForLock: waited < NEWS_WAIT_MS, ignoreCooldown: true, unheard, icons: [first || 'social'] });
             if (pick?.wait) {
@@ -1495,6 +1509,11 @@ export class NPCNeedsSystem {
 
         if (s.mode === 'returning' && arrived) {
             s.mode = 'idle';
+            // A coordinate home with a facing: stand turned that way (a seat takes it from here)
+            if (s.home?.facing && !s.home.objectId) {
+                const p = facingPointFrom(pos, s.home.facing, 64);
+                if (p) this.world.faceTo(id, p.x, p.y);
+            }
             // Only a real trip emits; a session at one's own post object never left it
             s.returnAbandon = null;
             s.returnLate = 0;   // late walks are counted per return (R3 m1)
@@ -1532,6 +1551,14 @@ export class NPCNeedsSystem {
         // Slice 19 (OQ55): on a desk-phone call nothing is selected; decay goes on, and an urgent
         // need, a due errand or a tempted magnet starts on the first select after the call
         if (s.call) return;
+
+        // Idle at a coordinate home with a facing: back to that facing after a conversation or a turn
+        // to the player (the world skips a seated NPC, a pose hold and a player in turn-to range)
+        if (s.home?.facing && !s.home.objectId && (s.mode === 'idle' || (s.mode === 'returning' && s.atPost))
+            && Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS * 2) {
+            const p = facingPointFrom(pos, s.home.facing, 64);
+            if (p) this.world.restoreFacing?.(id, p.x, p.y);
+        }
 
         // Access 9.2 A (plan 5.3): a queued visit starts before the selector runs
         if (s.visits.length && this._startVisit(s)) return;
@@ -2146,7 +2173,7 @@ export class NPCNeedsSystem {
         // falloff range is a faint line too, on the faint throttle; it never counts as heard
         let faint = false;
         if (unheard && typeof this.world.faintVolume === 'function') {
-            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).overhearRadius || OVERHEAR_RADIUS;
             try { faint = this.world.faintVolume(s.npcId, radius) > 0; } catch (e) { faint = false; }
             if (faint) unheard = false;
         }
@@ -2158,7 +2185,7 @@ export class NPCNeedsSystem {
     /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
     _unheard(s, topic) {
         if (typeof this.world.playerHears !== 'function') return false;
-        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
+        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).overhearRadius || OVERHEAR_RADIUS;
         return !(this.world.playerHears(s.npcId, radius) || {}).overheard;
     }
 
@@ -2206,7 +2233,7 @@ export class NPCNeedsSystem {
         // the same rule as one waiting for the lock
         // A priority topic (PRIORITY_MUTTERS) waits only for the lock and for other priority
         // lines, and is queued ahead of every other mutter
-        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
+        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).lines.length > 0;
         const priority = PRIORITY_MUTTERS.has(topic);
         const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
         // R1 M3: a mutter the player hears in full takes the lock from a faint ambient line (the
@@ -2308,7 +2335,7 @@ export class NPCNeedsSystem {
     /** The grumble topic for a turn-back reason (slice 18a): chosen by which pools have lines. */
     _grumbleTopic(s, reason) {
         const own = `grumble_${reason}`;
-        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
+        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).lines.length > 0;
         if (reason !== 'avoid' && lines(own)) return own;
         if (lines('grumble')) return 'grumble';
         return PICTURE_CHATTER[own] ? own : 'grumble';
@@ -2407,7 +2434,7 @@ export class NPCNeedsSystem {
     }
 
     _hasLines(s, topic) {
-        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
+        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds).lines.length > 0;
     }
 
     /**
@@ -2941,7 +2968,7 @@ export class NPCNeedsSystem {
      * line would outlast it, so a line taken is always a line said.
      */
     _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, faint = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
-        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn());
+        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn(), this._holds);
         // M4: the next line passes over one said lately nearby (an echo), for the fit check and the draw
         const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
             && !(faint && s.faintQuietUntil > this.clockMs)
@@ -3038,7 +3065,7 @@ export class NPCNeedsSystem {
     _chatRadius(c, speakerId) {
         if (c.overhearRadius) return c.overhearRadius;
         const st = this.states.get(speakerId);
-        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null, this._thoughtsOn());
+        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null, this._thoughtsOn(), this._holds);
         return pool.overhearRadius || OVERHEAR_RADIUS;
     }
 
@@ -4142,7 +4169,14 @@ export class NPCNeedsSystem {
                 const woken = Object.keys(s.parked).sort().filter(n => s.parked[n].reason === 'no_source');
                 this._wakeParkedFor(s, woken);
             }
+            const first = !s.home || s.home.provisional;
             s.home = h;
+            // Spawn and reload: a coordinate home with a facing turns the NPC at it once, the first time
+            // the home resolves while it stands there (a trip's return turns it separately)
+            if (first && h.facing && !h.objectId && pos && Math.hypot(pos.x - h.x, pos.y - h.y) <= HOME_EPS * 2) {
+                const p = facingPointFrom(pos, h.facing, 64);
+                if (p) this.world.faceTo?.(s.npcId, p.x, p.y);
+            }
             return;
         }
         if (!s.home) s.home = h;   // keep the first provisional spot; don't chase the NPC's position
@@ -4159,7 +4193,11 @@ export class NPCNeedsSystem {
             return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null, provisional: true };
         } else if (h && typeof h === 'object' && h.room) {
             const w = this.world.tileToWorld(h.room, h.x, h.y);
-            if (w) return { x: w.x, y: w.y, roomId: h.room, objectId: null };
+            if (w) {
+                const home = { x: w.x, y: w.y, roomId: h.room, objectId: null };
+                if (COMPASS8.includes(h.facing)) home.facing = h.facing;   // seating.js turns the sitter this way
+                return home;
+            }
         }
         return { x: pos.x, y: pos.y, roomId: pos.roomId || null, objectId: null };
     }
@@ -4168,6 +4206,9 @@ export class NPCNeedsSystem {
      * stayPut: an own-desk use just ended; the NPC is at its post (maybe seated off the cell).
      * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
      * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
+     * reroute: plan round held bodies first (ring, tight, then plain). Every stall re-issue (the far
+     * re-issue and each return_resumed retry) now passes it, so the option matters only for the first
+     * walk home, which stays plain (docs/IDEAS_BACKLOG.md, "Plan the first needs walk home ring-first").
      */
     _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false, reroute = false, nudge = false } = {}) {
         const id = s.npcId;
@@ -4236,13 +4277,16 @@ export class NPCNeedsSystem {
         this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
         // SIMS-2 m1: keep returnFarReissued so an unreachable home logs `arrival_far` once per return,
         // not once per _watchReturn cycle; this re-plans the walk without re-arming the far log.
-        // The first re-issue keeps the plain path (a player who held the walk has gone); later ones
-        // plan round other bodies, seated and held ones included.
+        // Every re-issue plans round other bodies, seated and held ones included (ring, tight, then
+        // plain). The first used to keep the plain path because a player who held the walk had gone,
+        // but a plain plan from the stop can run through a standing NPC's avoidance lane (m08 game
+        // 9532: 10.6 px off Vector, held 6 s). A plan round a body that has left costs nothing: the
+        // avoid cells are the bodies' positions now, and no path falls back to the plain one.
         // The 3 s re-issue always comes before the behaviour layer's 4 s stuck watch (a new path re-arms
         // it), so its nudge onto a walkable cell never runs for a needs walk; the last re-route in one
         // place does that nudge itself (code review R1, m3)
         // The place also covers where the nudge put the body, only when a nudge ran (R2 M1, R3 M1)
-        const r = this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: tries > 1, nudge: tries === STUCK_TRIES });
+        const r = this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true, nudge: tries === STUCK_TRIES });
         this._markNudge(s.stall, r);
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
     }
@@ -4385,6 +4429,7 @@ export class NPCNeedsSystem {
         return Array.isArray(g) ? g.filter(x => typeof x === 'string' && x) : [];
     }
 
+    /** Asks the world; a world that cannot judge a gate (no globalHolds) reads as closed. */
     _globalHolds(cond) {
         return typeof this.world.globalHolds === 'function' ? !!this.world.globalHolds(cond) : false;
     }
@@ -4787,7 +4832,7 @@ export class NPCNeedsSystem {
             texts = lines.map(l => l.text);
             break;
         }
-        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter, this._thoughtsOn());
+        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter, this._thoughtsOn(), this._holds);
         if (!texts && pool.lines.length) {
             texts = [];
             for (let k = 0; k < Math.min(CALL_POOL_LINES, pool.lines.length); k++) texts.push(pool.lines[this._bagNext(s.npcId, topic, pool.lines)]);
@@ -5772,6 +5817,17 @@ export function createEngineWorld() {
         },
         faceTo(id, x, y) {
             behaviour(id)?.faceWorldPoint?.(x, y);
+        },
+        /** Turn an idle, standing NPC back to a point unless it is seated, held in a pose, or the player is close enough to be faced. */
+        restoreFacing(id, x, y) {
+            const b = behaviour(id);
+            if (!b || b._seat || b._seatMove || b._poseHoldFacing || !b.npcBodyPos) return;
+            const p = b.npcBodyPos();
+            const pl = W().player;
+            const range = b.config?.facePlayerDistance || 96;
+            if (b.config?.facePlayer && pl && Math.hypot((pl.x ?? 0) - p.x, (pl.y ?? 0) - p.y) < range) return;
+            const dir = b.calculateDirection(x - p.x, y - p.y);
+            if (b.direction !== dir) { b.direction = dir; b.playAnimation?.('idle', dir); }
         },
         pickUp(npcId, itemId) {
             const f = findSprite(itemId);

@@ -51,7 +51,6 @@ VAR told_sheet = false
 + {not told_sheet} [Anything out here I should look at?]
     ~ told_sheet = true
     Adaeze Okafor: The supervisor wrote his handover on paper when the screens went flaky. It's still on a desk out here.
-    Adaeze Okafor: He puts everything on it. Even the PIN for the badge station.
     ~ hub_quiet = true
     -> hub
 + [Don't let me hold you up.]
@@ -75,5 +74,4 @@ Gwen Pritchard: Right, I'll log this and pack up.
 Adaeze Okafor: Same. Two more minutes and I'm done.
 Gwen Pritchard: The marshal won't thank us for staying.
 Adaeze Okafor: Then let's not give him the chance.
-Gwen Pritchard: Come on, back to it. Nearly there.
 -> DONE

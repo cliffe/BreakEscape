@@ -69,15 +69,24 @@ VAR after_quiet = false
 // (2026-10-16) the scene opens 6 s after entry (delayMs), and this beat stays
 // as the case recap. Synced scenario global, the wall's own condition.
 VAR found_nightshade_profile = false
+// Reload resume: synced scenario global, set at the scene's first choice. A
+// person-chat's story position is not kept across a reload, so start diverts a
+// mid-scene reload into the topic hub instead of replaying the opening.
+VAR nightshade_scene_opened = false
 
 === start ===
 { fate_decided: -> after_choice }
 { held_at_choice: -> the_choice }
+{ nightshade_scene_opened: -> hub }
 #complete_task:confront_nightshade
 Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
 Narrator: Behind him the evidence wall is lit. He follows your eyes to it and waits.
-+ [(Read the wall first.)] -> wall
-+ [(Face him.)] -> opening
++ [(Read the wall first.)]
+    ~ nightshade_scene_opened = true
+    -> wall
++ [(Face him.)]
+    ~ nightshade_scene_opened = true
+    -> opening
 
 === wall ===
 Narrator: The case runs down the wall in order. The repository, open to anyone with no password. The break-in, and the credentials left in its history. Mail to the Architect.
@@ -213,19 +222,23 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
 + { not asked_architect } [Enough talk. What happens to you now.] -> the_choice
 
 === the_choice ===
-~ held_at_choice = false
+// m08 blind part 2: held_at_choice is cleared by the two real choices below, not here.
+// The engine reads on past the exit tag of "Not yet" and runs this knot's top, which
+// cleared the flag before the save, so the next visit fell through to the hub.
 Narrator: The disposition screen behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|{netherton_hostile:the Director, who will not see you tonight, countersigns whatever goes in|the Director countersigns whatever goes in}}. Nightshade is watching you.
 Narrator: Once it is entered, the case closes. Anything else in the building, finish it first.
 Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was right?
-+ [No deals. The police get the file. You answer for those two names in court.]
++ [No deals. The police get the file. You answer for those two names in court. #ending_check]
     #complete_task:decide_the_fate
+    ~ held_at_choice = false
     ~ nightshade_arrested = true
     -> lock_in ->
     Agent 0x47 'Nightshade': Clean. Predictable. I'd expect nothing else from you, and I mean that as a compliment.
     Agent 0x47 'Nightshade': Enter it. I won't fight it.
     -> aftermath
-+ [No cell. A leash. Feed us ENTROPY, and pay it back an inch a day.]
++ [No cell. A leash. Feed us ENTROPY, and pay it back an inch a day. #ending_check]
     #complete_task:decide_the_fate
+    ~ held_at_choice = false
     ~ nightshade_triple_agent = true
     -> lock_in ->
     ~ triple_agent_first_payment = true

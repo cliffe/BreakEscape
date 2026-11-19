@@ -377,6 +377,27 @@ export class PinMinigame extends MinigameScene {
             if (!this.gameState.isActive || this.isLocked) return;
             
             const key = e.key;
+
+            // A focused control that is not part of the pad keeps its own keys: Enter on the
+            // ring banner's Answer, Hang up or the minigame X presses that control, and typing
+            // in a text field is not PIN entry. Pad keys, the display and the body stay ours.
+            const target = e.target;
+            const tag = target && target.tagName;
+            // Only text-entry inputs keep digits and Backspace; a checkbox, radio, button, range,
+            // colour or file input is not typing, so the pad still takes digits there.
+            const NON_TEXT_INPUTS = ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image'];
+            const isInput = tag === 'INPUT';
+            const nonTextInput = isInput && NON_TEXT_INPUTS.includes(String(target.type || '').toLowerCase());
+            if (tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return;
+            if (isInput && !nonTextInput) return;
+            // Enter on a non-text input (the cracker checkbox) keeps its own behaviour
+            if (key === 'Enter' && nonTextInput) return;
+            if (key === 'Enter' && (tag === 'BUTTON' || tag === 'A') && !target.classList?.contains('pin-minigame-key')) return;
+            // Enter on a pad key the player reached by keyboard acts as that key: the native click
+            // runs once (no preventDefault, no handleEnter). A key the player focused with the
+            // pointer still submits. :focus-visible is not used: Chromium turns it on at the
+            // Enter keydown itself, so it cannot tell the two apart.
+            if (key === 'Enter' && target.classList?.contains('pin-minigame-key') && this._padPointerKey !== target) return;
             
             // Handle number keys
             if (key >= '0' && key <= '9') {
@@ -396,6 +417,19 @@ export class PinMinigame extends MinigameScene {
         };
         
         this.addEventListener(document, 'keydown', keyHandler);
+
+        // Input mode of the pad keys: _padPointerKey is the key the pointer last pressed, cleared
+        // by Tab, an arrow key, a pointer press elsewhere, or focus landing on another key.
+        this._padPointerKey = null;
+        const padKey = (el) => (el && el.closest ? el.closest('.pin-minigame-key') : null);
+        this.addEventListener(document, 'pointerdown', (e) => { this._padPointerKey = padKey(e.target); }, true);
+        this.addEventListener(document, 'focusin', (e) => {
+            const k = padKey(e.target);
+            if (k !== this._padPointerKey) this._padPointerKey = null;
+        });
+        this.addEventListener(document, 'keydown', (e) => {
+            if (e.key === 'Tab' || /^Arrow/.test(e.key || '')) this._padPointerKey = null;
+        }, true);
     }
     
     handleNumberInput(number) {
@@ -837,7 +871,10 @@ export class PinMinigame extends MinigameScene {
         }
 
         // The log scrolls; keep the newest guess in view.
-        this.attemptsLogElement.scrollTop = this.attemptsLogElement.scrollHeight;
+        // Again once laid out: set while the pad is still being drawn, scrollHeight can be short.
+        const log = this.attemptsLogElement;
+        log.scrollTop = log.scrollHeight;
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
     }
     
     updatePinCrackerIcon() {

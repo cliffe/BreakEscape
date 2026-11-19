@@ -7,6 +7,7 @@
 //
 // Run with: node test/js/vm-launcher-console-unlock.test.mjs
 import test from 'node:test';
+import { JSDOM } from 'jsdom';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -93,12 +94,23 @@ test('buildUI triggers the unlock in Hacktivity mode only (source contract)', ()
     assert.match(src, /buildUI\(\)\s*\{[\s\S]*?if \(this\.hacktivityMode && !this\.vmSetReleased\) \{\s*this\.requestConsoleUnlock\(\);/);
 });
 
-test('flagNote shows under the VM steps, escaped, and only when set (blind m03 m5)', () => {
-    const vm = { title: 'kali', ip: '10.0.0.2' };
-    const withNote = launcher({ hacktivityMode: false, vm, vmPanelRefused: false, flagNote: 'Flags go back to <b>the Drop-Site</b>.' }).buildVmDisplay();
-    assert.match(withNote, /vm-flag-note/);
-    assert.match(withNote, /&lt;b&gt;the Drop-Site&lt;\/b&gt;/);
-    assert.doesNotMatch(withNote, /<b>the Drop-Site/);
-    const without = launcher({ hacktivityMode: false, vm, vmPanelRefused: false, flagNote: '' }).buildVmDisplay();
-    assert.doesNotMatch(without, /vm-flag-note/);
+test('flagNote shows under the VM steps, as literal text, and only when set (blind m03 m5)', () => {
+    const dom = new JSDOM('<!doctype html><body></body>');
+    const saved = globalThis.document;
+    globalThis.document = dom.window.document;
+    try {
+        const vm = { title: 'kali', ip: '10.0.0.2' };
+        const render = (flagNote) => {
+            const box = dom.window.document.createElement('div');
+            box.appendChild(launcher({ hacktivityMode: false, vm, vmPanelRefused: false, flagNote }).buildVmDisplay());
+            return box;
+        };
+        const withNote = render('Flags go back to <b>the Drop-Site</b>.');
+        assert.ok(withNote.querySelector('.vm-flag-note'));
+        assert.equal(withNote.querySelector('.vm-flag-note p').textContent, 'Flags go back to <b>the Drop-Site</b>.');
+        assert.equal(withNote.querySelector('.vm-flag-note b'), null, 'no element made from the note');
+        assert.equal(render('').querySelector('.vm-flag-note'), null);
+    } finally {
+        globalThis.document = saved;
+    }
 });

@@ -1,0 +1,13 @@
+{
+  "key": "97a8dd27dd5da2f1656377de7b7e645e",
+  "npc": "agnieszka_duda",
+  "text": "I don't judge it. I write it down.",
+  "voice": "Callirrhoe",
+  "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:53Z"
+}

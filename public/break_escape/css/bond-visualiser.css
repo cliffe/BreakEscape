@@ -57,7 +57,8 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.85) 100%);
+  /* hard-edged frame in place of the smooth radial vignette */
+  box-shadow: inset 0 0 0 6px rgba(0,0,0,0.6), inset 0 0 0 12px rgba(0,0,0,0.3);
   pointer-events: none;
   z-index: 9998;
 }
@@ -96,7 +97,7 @@
   border: 2px solid var(--bv-gold);
   padding: 8px 16px;
   background: rgba(0,0,0,0.9);
-  box-shadow: 0 0 12px var(--bv-gold-dim), inset 0 0 12px rgba(255,215,0,0.04);
+  box-shadow: 2px 2px 0 var(--bv-gold-dim);
 }
 
 #bond-vis-overlay .bv-logo {
@@ -119,9 +120,9 @@
 }
 
 #bond-vis-overlay .bv-title-block h1 {
-  font-size: 10px;
+  font-size: 8px;
   color: var(--bv-gold);
-  text-shadow: 0 0 8px var(--bv-gold);
+  text-shadow: 2px 2px 0 var(--bv-gold-dim);
   letter-spacing: 2px;
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -129,7 +130,7 @@
 }
 
 #bond-vis-overlay .bv-title-block p {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--bv-green);
   margin-top: 4px;
   letter-spacing: 1px;
@@ -141,7 +142,7 @@
 #bond-vis-overlay .bv-status-block {
   text-align: right;
   font-family: 'GNF', monospace;
-  font-size: 14px;
+  font-size: 16px;
   /* a long operation name wraps; give the wrapped lines room of their own */
   line-height: 1.2;
   min-width: 0;
@@ -157,14 +158,14 @@
 #bond-vis-overlay .bv-status-line .val   { color: var(--bv-green); }
 
 #bond-vis-overlay .bv-badge {
-  font-size: 6px;
+  font-size: 8px;
   padding: 3px 6px;
-  border: 1px solid currentColor;
+  border: 2px solid currentColor;
   display: inline-block;
   white-space: nowrap; /* "● REVIEW" split over two lines at 900 px (lab R15 T4) */
   line-height: 1.6;
 }
-#bond-vis-overlay .bv-badge.red  { color: var(--bv-red);  border-color: var(--bv-red);  box-shadow: 0 0 6px var(--bv-red); }
+#bond-vis-overlay .bv-badge.red  { color: var(--bv-red);  border-color: var(--bv-red);  box-shadow: 2px 2px 0 var(--bv-red); }
 #bond-vis-overlay .bv-badge.gold { color: var(--bv-gold); border-color: var(--bv-gold); }
 
 /* Close button — top-right of header */
@@ -183,7 +184,7 @@
 #bond-vis-overlay .bv-close-btn:hover {
   background: var(--bv-red);
   color: #000;
-  box-shadow: 0 0 10px var(--bv-red);
+  box-shadow: 2px 2px 0 var(--bv-red);
 }
 #bond-vis-overlay .bv-close-btn.bv-exit-btn {
   border-color: var(--bv-green);
@@ -192,7 +193,7 @@
 #bond-vis-overlay .bv-close-btn.bv-exit-btn:hover {
   background: var(--bv-green);
   color: #000;
-  box-shadow: 0 0 10px var(--bv-green);
+  box-shadow: 2px 2px 0 var(--bv-green);
 }
 
 /* ── Stage (3-column) ───────────────────────────────────────────────────── */
@@ -213,10 +214,20 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 6px;
-  overflow: hidden;
-  box-shadow: 0 0 8px rgba(0,255,65,0.08);
+  font-size: 8px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* a short window scrolls the panel instead of cutting the last VIS MODE button */
+  box-shadow: 2px 2px 0 rgba(0,255,65,0.12);
+  scrollbar-width: thin;
+  /* Chrome 121+ uses these and ignores the webkit rules below, so the thumb is the bright green */
+  scrollbar-color: var(--bv-green) var(--bv-green-dim);
 }
+
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar { width: 8px; height: 8px; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-track { background: transparent; border-left: 2px solid var(--bv-green-dim); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-thumb { background: var(--bv-green-dim); border: 2px solid var(--bv-green); border-radius: 0; }
+#bond-vis-overlay .bv-side-panel::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 
 @media (max-width: 700px) {
   #bond-vis-overlay .bv-header { flex-wrap: wrap; gap: 8px 12px; }
@@ -234,9 +245,9 @@
 }
 
 #bond-vis-overlay .bv-panel-title {
-  font-size: 7px;
+  font-size: 8px;
   color: var(--bv-gold);
-  border-bottom: 1px solid var(--bv-gold-dim);
+  border-bottom: 2px solid var(--bv-gold-dim);
   padding-bottom: 4px;
   letter-spacing: 1px;
 }
@@ -244,8 +255,8 @@
 #bond-vis-overlay .bv-stat-row {
   display: flex;
   justify-content: space-between;
-  font-family: 'GNF', monospace;
-  font-size: 13px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
   color: var(--bv-green);
   padding: 1px 0;
 }
@@ -263,18 +274,18 @@
   height: 100%;
   background: repeating-linear-gradient(90deg, var(--bv-green) 0px, var(--bv-green) 3px, transparent 3px, transparent 5px);
   transition: width 0.1s;
-  box-shadow: 0 0 6px var(--bv-green);
+  box-shadow: 2px 2px 0 var(--bv-green);
 }
 #bond-vis-overlay .bv-meter-fill.gold-fill {
   background: repeating-linear-gradient(90deg, var(--bv-gold) 0px, var(--bv-gold) 3px, transparent 3px, transparent 5px);
-  box-shadow: 0 0 6px var(--bv-gold);
+  box-shadow: 2px 2px 0 var(--bv-gold);
 }
 
 #bond-vis-overlay .bv-log-scroll {
   flex: 1;
   overflow: hidden;
-  font-family: 'GNF', monospace;
-  font-size: 11px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
   line-height: 1.5;
   color: rgba(0,255,65,0.6);
 }
@@ -304,7 +315,7 @@
   border: 2px solid var(--bv-green-dim);
   background: #000;
   display: block;
-  box-shadow: 0 0 20px rgba(0,255,65,0.12);
+  box-shadow: 2px 2px 0 rgba(0,255,65,0.12);
 }
 
 #bond-vis-overlay .bv-classified {
@@ -346,20 +357,21 @@
 
 #bond-vis-overlay .bv-btn {
   font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: 8px;
   padding: 8px 12px;
   border: 2px solid var(--bv-green);
   background: transparent;
   color: var(--bv-green);
   cursor: pointer;
   image-rendering: pixelated;
-  transition: all 0.1s;
+  transition: background 0.1s, color 0.1s, box-shadow 0.1s; /* transform is not eased: the press is a crisp step */
   white-space: nowrap;
 }
-#bond-vis-overlay .bv-btn:hover  { background: var(--bv-green); color: #000; box-shadow: 0 0 10px var(--bv-green); }
-#bond-vis-overlay .bv-btn:active { transform: scale(0.96); }
+#bond-vis-overlay .bv-btn:hover  { background: var(--bv-green); color: #000; box-shadow: 2px 2px 0 var(--bv-green); }
+#bond-vis-overlay .bv-btn:active { transform: translate(2px, 2px); box-shadow: none; }
 #bond-vis-overlay .bv-btn.gold   { border-color: var(--bv-gold); color: var(--bv-gold); }
-#bond-vis-overlay .bv-btn.gold:hover { background: var(--bv-gold); color: #000; box-shadow: 0 0 10px var(--bv-gold); }
+#bond-vis-overlay .bv-btn.gold:hover { background: var(--bv-gold); color: #000; box-shadow: 2px 2px 0 var(--bv-gold); }
+#bond-vis-overlay .bv-btn.gold:active { box-shadow: none; }
 #bond-vis-overlay .bv-btn.active { background: var(--bv-gold); color: #000; border-color: var(--bv-gold); }
 
 #bond-vis-overlay .bv-mode-group {
@@ -370,21 +382,27 @@
 
 #bond-vis-overlay .bv-track-info {
   font-family: 'GNF', monospace;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--bv-gold);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#bond-vis-overlay .bv-track-info span { color: var(--bv-green-dim); font-size: 11px; }
+#bond-vis-overlay .bv-track-info span { color: var(--bv-green-dim); font-size: 16px; }
 
 /* ── Mode selector in right panel ──────────────────────────────────────── */
 
 #bond-vis-overlay .bv-mode-group-panel {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
-  flex-wrap: wrap;
+}
+
+/* three to a row in the 160px panel: 11 buttons take four short rows */
+#bond-vis-overlay .bv-mode-group-panel .bv-btn {
+  padding: 6px 2px;
+  text-align: center;
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
@@ -393,14 +411,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 6px;
+  font-size: 8px;
   color: var(--bv-gold-dim);
   padding: 0 4px;
 }
 
 #bond-vis-overlay .bv-ticker {
-  font-family: 'GNF', monospace;
-  font-size: 12px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
   overflow: hidden;
   flex: 1;
   margin: 0 20px;
@@ -421,10 +439,10 @@
   to   { transform: translateX(-100%); }
 }
 @keyframes bv-glitch {
-  0%,100% { text-shadow: 0 0 8px var(--bv-gold); transform: none; }
+  0%,100% { text-shadow: 2px 2px 0 var(--bv-gold-dim); transform: none; }
   92%     { text-shadow: 2px 0 var(--bv-red), -2px 0 var(--bv-cyan); transform: skewX(-2deg); }
   94%     { text-shadow: -2px 0 var(--bv-red), 2px 0 var(--bv-cyan); transform: skewX(2deg); }
-  96%     { text-shadow: 0 0 8px var(--bv-gold); transform: none; }
+  96%     { text-shadow: 2px 2px 0 var(--bv-gold-dim); transform: none; }
 }
 
 .bv-blink { animation: bv-blink 1s step-end infinite; }
@@ -437,14 +455,13 @@
   inset: 0;
   z-index: 100000;
   overflow: hidden;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.95) 0%,
-    rgba(0,0,0,0.80) 8%,
-    rgba(0,0,0,0.80) 92%,
-    rgba(0,0,0,0.95) 100%
-  );
+  background: transparent;  /* the credits run over the visualiser; JS also sets this inline */
   pointer-events: none;
+  /* Credits sit in the gap between the header band and the controls bar (set by
+     bond-visualiser.js _fitCreditsBand; unset they are 0 and the overlay is the window) */
+  box-sizing: border-box;
+  padding-top: var(--bv-cr-top, 0px);
+  padding-bottom: var(--bv-cr-bottom, 0px);
 }
 
 #bv-credits-overlay.bv-cr-active {
@@ -466,43 +483,56 @@
   line-height: 1;
 }
 
-.bv-cr-title {
-  font-size: 46px;
-  color: #FFD700;
-  padding: 20px 0 10px;
-  text-shadow: 0 0 30px rgba(255,215,0,0.6), 0 0 60px rgba(255,215,0,0.25);
-}
-
-.bv-cr-subtitle {
-  font-size: 20px;
-  color: #00FFFF;
-  padding: 4px 0 20px;
-  letter-spacing: 0.3em;
-}
-
-.bv-cr-section-header {
-  font-size: 14px;
-  color: #FFD700;
-  padding: 14px 0 6px;
-  letter-spacing: 0.3em;
-  opacity: 0.65;
-}
-
-.bv-cr-entry {
-  font-size: 24px;
-  color: #00FF41;
-  padding: 6px 0;
-}
-
-.bv-cr-warning {
-  font-size: 24px;
-  color: #FF6600;
-  padding: 10px 0;
-  text-shadow: 0 0 14px rgba(255,100,0,0.4);
-}
+/* The title, subtitle, section-header, entry and warning looks are inline styles (STYLE_MAP in
+   bond-visualiser.js); those govern, so there are no .bv-cr-title and similar rules here. */
 
 .bv-cr-gap {
   height: 22px;
+}
+
+/* The centred credits label (every single line and the hold line, plus the
+   closing-card block): no wider than the central map panel, so a long line such
+   as m03's "ZERO DAY CATALOGUE: IN SAFETYNET HANDS ..." wraps inside it instead of
+   running over the COMMS INTEL panel. With the side panels hidden (900px and
+   under) it takes the window less a margin. */
+#bv-credits-overlay #bv-cr-label.bv-cr-label {
+  box-sizing: border-box;
+  /* % of the fixed overlay (the label's containing block), not 100vw, which
+     counts a page scrollbar */
+  max-width: calc(100% - 440px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+  text-wrap: balance;
+  /* the overlay is padded to the gap between the header band and the controls bar, so
+     100% is that gap; a taller card scrolls inside itself instead of covering a bar */
+  max-height: 100%;
+  overflow-y: auto;
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+/* Only when the label overflows (bond-visualiser.js adds the class): a square pixel
+   scrollbar with 2px borders, and the label takes the pointer so it can be scrolled. */
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+  pointer-events: auto;
+  scrollbar-width: auto;   /* auto keeps the ::-webkit-scrollbar rules below in force */
+}
+/* Browsers without ::-webkit-scrollbar (Firefox) get the standard colours instead. Chrome
+   121+ ignores the webkit rules once scrollbar-color is set, so it stays out of their way. */
+@supports not selector(::-webkit-scrollbar) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+    scrollbar-color: var(--bv-gold, #FFD700) #000;
+  }
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar { width: 12px; }
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-track {
+  background: #000;
+  border: 2px solid var(--bv-gold-dim, #7a6500);
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-thumb {
+  background: var(--bv-gold, #FFD700);
+  border: 2px solid #000;
 }
 
 /* Closing-card lines (bond-visualiser.js _startCredits): no wider than the
@@ -512,7 +542,8 @@
    then to normal wrapping inside the same width. A line that already fits is
    left on one row. */
 .bv-cr-card-line {
-  max-width: calc(100vw - 440px);
+  /* the row's parent is the label, already capped to the centre panel */
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
   text-wrap: pretty;
@@ -522,4 +553,16 @@
 @media (max-width: 900px) {
   /* side panels are hidden here, so the centre is the whole width */
   .bv-cr-card-line { max-width: none; }
+  #bv-credits-overlay #bv-cr-label.bv-cr-label { max-width: 100%; padding: 0 10%; }
+}
+
+/* Short windows (phone landscape) and narrow ones (phone portrait): the closing card
+   uses the 16px pixel font size so its box fits between the header and the controls bar
+   (844x390 and 390x844 overlapped both at 30px). Larger windows keep the 30px card. */
+@media (max-height: 500px), (max-width: 600px) {
+  #bv-credits-overlay #bv-cr-label.bv-cr-label .bv-cr-card-line {
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+  }
 }

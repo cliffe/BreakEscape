@@ -41,7 +41,8 @@
 }
 
 /* Game container: as tall as the notepad, so the navigation row and Continue sit under it in
-   the shell's column (critique A04) */
+   the shell's column (critique A04). Where the framework's `height: 100%` wins (it is linked
+   after this file) the portrait rule below and the landscape rule further down set it with more weight. */
 .notes-minigame-game-container {
     width: 100%;
     height: auto;
@@ -73,6 +74,64 @@
     image-rendering: crisp-edges;
 }
 
+/* Portrait phones: the page was sized from the width alone, and the game container filled the
+   shell (minigames-framework.css is linked again after this file, so its `height: 100%` beat
+   the `height: auto` above), so a 390x844 screen got a 358x445 notepad at the top, the
+   navigation row at the bottom and about 230px of dark band between. Here the container wraps
+   the notepad (a selector with more weight than the framework's), has no side padding (the
+   notepad sits centred) and no #1a1a1a fill, and the shell centres notepad and navigation row
+   together. The notepad keeps the image's true 165:205 shape: the art is rings and shaded
+   shadow rows that differ from ring to ring, so it cannot be stretched or sliced and
+   repeated without distorting it. The X sits inside the paper (.notes-minigame-page-edge, the
+   art's paper ends at column 154 of 165). A page longer than the notepad scrolls in its body,
+   with the scrollbar and a "MORE" cue under its last line (the body stops at 85% to leave
+   the cue the margin). */
+@media (orientation: portrait) and (max-width: 768px) {
+    .minigame-container .notes-minigame-game-container {
+        height: auto;
+        margin: 0 auto;
+        padding: 8px 0;
+        background: transparent;
+    }
+    .notes-minigame-notepad {
+        width: min(92vw, calc((100vh - 176px) * 165 / 205));
+        width: min(92vw, calc((100dvh - 176px) * 165 / 205));
+        aspect-ratio: 165 / 205;
+        flex: none;
+    }
+    .notes-minigame-notepad .notes-minigame-content-area { height: calc(85% - 48px); }
+}
+
+/* The paper's edge: an empty box over the paper only (the art's paper ends at column 154 of
+   165, the last 10 columns are shadow and transparent), the anchor of the X */
+.notes-minigame-page-edge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: calc(100% * 10 / 165);
+    pointer-events: none;
+}
+
+/* The "more below" cue, in the page's bottom margin (the paper ends at art row 190 of 205, so
+   its foot is 14/205 of the height up from the bottom of the box) */
+.notes-minigame-more {
+    position: absolute;
+    right: 12%;
+    bottom: calc(100% * 14 / 205);
+    z-index: 2;
+    padding: 0 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #fefefe;
+    background: #2c3e50;
+    border: 2px solid #5c5446;
+    pointer-events: none;
+}
+
+.notes-minigame-more[hidden] { display: none; }
+
 /* Content area */
 .notes-minigame-content-area {
     position: absolute;
@@ -96,7 +155,7 @@
     --pixel-scroll-thumb: #b7ae98;
     --pixel-scroll-edge: #5c5446;
     --pixel-scroll-hover: #2c3e50;
-    height: calc(90% - 48px); /* so that it scrolls before the bottom of the image */
+    height: calc(85% - 48px); /* so that it scrolls before the bottom of the image */
 }
 
 /* Text box container */
@@ -206,9 +265,12 @@
     text-align: left;
     min-height: 30px;
     padding: 10px;
+    /* room on the right for the edit pencil, which sits over the box's top-right corner */
+    padding-right: 28px;
     border: 4px dashed #ccc;
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
+    overflow-wrap: anywhere;
     transition: background-color 0.2s ease;
 }
 
@@ -256,6 +318,7 @@
 
 /* Navigation row: in the shell's column under the notepad, never drawn over the page
    (critique A04); it wraps on a narrow window (A03) */
+.notes-minigame-nav-container:empty { display: none; }
 .notes-minigame-nav-container {
     position: relative;
     display: flex;
@@ -269,6 +332,7 @@
 }
 
 .notes-minigame-nav-button { white-space: nowrap; }
+.notes-minigame-nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Search input */
 .notes-minigame-search {
@@ -276,31 +340,32 @@
     border: 4px solid #555;
     background: rgba(0,0,0,0.7);
     color: white;
-    font-size: 18px;
+    font-size: 16px;
     width: 200px;
     max-width: 100%;
     box-sizing: border-box;
 }
 
 /* Navigation buttons */
-.notes-minigame-nav-button {
+.minigame-button.notes-minigame-nav-button {
     background: #95a5a6;
     color: white;
     border: 4px solid #7f8c8d;
     padding: 8px 15px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 16px;
     transition: background-color 0.3s ease;
 }
 
-.notes-minigame-nav-button:hover {
+.notes-minigame-nav-button:not(:disabled):hover {
     background: #7f8c8d;
 }
 
 /* Note counter */
 .notes-minigame-counter {
     color: white;
-    font-size: 18px;
+    font-size: 16px;
+    white-space: nowrap;
     display: flex;
     align-items: center;
     padding: 8px 15px;
@@ -421,13 +486,14 @@
         aspect-ratio: auto;
         background-size: 100% 100%;
     }
-    .notes-minigame-content-area { padding: 0 9% 9% 17%; font-size: 14px; line-height: 1.3; height: calc(90% - 48px); }
+    .notes-minigame-content-area { padding: 0 9% 9% 17%; font-size: 14px; line-height: 1.3; height: calc(85% - 48px); }
     .notes-minigame-text-box { margin: 2% 0 4% 4%; padding: 8px; }
     .notes-minigame-text { margin-left: 0; }
     /* 16px on short screens too, one line, cut with an ellipsis when long (S7-notes) */
     .notes-minigame-title { font-size: 16px; line-height: 24px; margin: 0 0 2% 4%; }
     .notes-minigame-observation-container { margin: 2% 0 4% 4%; }
-    .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px; }
+    .notes-minigame-more { font-size: 16px; line-height: 16px; padding: 0 6px; }
+    .notes-minigame-observation { font-size: 14px; min-height: 24px; padding: 6px 28px 6px 6px; }
     /* Continue stays beside the notepad here, out of the flow (the framework
        otherwise puts the Cancel row under the game area, which would shorten the
        notepad and cover its foot; minigame sweep, 2026-11-12) */

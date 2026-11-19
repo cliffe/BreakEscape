@@ -56,7 +56,7 @@ VAR hub_quiet = false
     -> hub
 }
 
-#complete_task:confront_mercer
+// The task ticks at the resolution (the four endings below), not when the chat opens.
 
 // PASS 4 round 2 (playtest 3a): the debrief now waits, so a player can meet
 // him for the first time after the abort. Opening and stance gate read grid_saved.
@@ -325,6 +325,7 @@ Dr. James Mercer: So. Your decision, not mine.
 === ending_record ===
 ~ mercer_fate = "arrested"
 #set_global:mercer_fate:arrested
+#complete_task:confront_mercer
 
 Narrator: For the first time tonight, he looks surprised.
 
@@ -347,6 +348,7 @@ Narrator: Two state police officers come through the door. By the stairwell he i
 === ending_hollowed ===
 ~ mercer_fate = "arrested"
 #set_global:mercer_fate:arrested
+#complete_task:confront_mercer
 
 Narrator: He sits down, as though standing now needs a reason.
 
@@ -375,6 +377,7 @@ Narrator: He says it on the way out, the way a man checks for his keys.
 === ending_hostile ===
 ~ mercer_fate = "ko"
 #set_global:mercer_fate:ko
+#complete_task:confront_mercer
 
 Narrator: He stands. He is fifty-eight and not quick, and he comes towards you anyway. This is going to be a fight.
 
@@ -396,6 +399,7 @@ Dr. James Mercer: You've come a very long way to be one more person who won't li
 === ending_walks ===
 ~ mercer_fate = "escaped"
 #set_global:mercer_fate:escaped
+#complete_task:confront_mercer
 
 Dr. James Mercer: I'm sorry? #delivery: after a long pause
 

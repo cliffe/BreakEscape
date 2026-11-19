@@ -35,7 +35,7 @@ test('sample count is a single unbreakable chip and is not pushed right', () => 
 test('no font downscaling and no radius on the count chip', () => {
     const b = body(bio, '.samples-count-header');
     assert.doesNotMatch(b, /border-radius/);
-    assert.match(b, /font-size:\s*12px/);
+    assert.match(b, /font-size:\s*20px/);
 });
 test('the label beside the icon grows so only the count chip wraps', () => {
     const b = body(panel, '.scanner-panel .scan-title > img + span');

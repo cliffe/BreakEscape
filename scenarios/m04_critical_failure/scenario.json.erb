@@ -99,7 +99,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
 
 %>
 {
-  "scenario_brief": "Infiltrate the Albion Energy Storage facility — 200 MWh of grid-scale lithium-ion battery storage — to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the falsified telemetry against a real instrument and prove how they took control: the Emergency Shutdown arms only once grid control has both. Keep the trigger holder away from his laptop, then press the shutdown before the 0800 trigger time.",
+  "scenario_brief": "Infiltrate the Albion Energy Storage facility (200 MWh of grid-scale lithium-ion battery storage) to investigate a suspected ENTROPY operation. The Critical Mass cell has weaponised the BMS and SCADA systems to drive the battery racks into thermal runaway, threatening a catastrophic fire and a grid blackout for 240,000 people. Confirm the falsified telemetry against a real instrument and prove how they took control: the Emergency Shutdown arms only once grid control has both. Keep the trigger holder away from his laptop, then press the shutdown before the 0800 trigger time.",
 
   "show_scenario_brief": "once",
 
@@ -233,7 +233,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               COSTLY SUCCESS. Exactly one headline (the title); the subtitle names the mission. %>
           { "text": "MISSION 4: CRITICAL FAILURE", "style": "subtitle" },
           { "text": "" },
-          { "text": "ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED — Emergency Shutdown engaged", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
+          { "text": "ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED, Emergency Shutdown engaged", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
           { "text": "GRID HELD: 240,000 residents kept on supply", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.racks_vented" },
           <%# Pass 5 decision 1: eleven on the rota = the nine night crew, Vance and the
               gate guard; office life adds two off the rota (Ibrahim Diallo, Joanne Pell),
@@ -241,20 +241,22 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               to) and nobody was carried. crew_lost is set when a bank vents with
               the crew still in Hall 2. %>
           { "text": "ALL THIRTEEN ON SITE WALKED OUT", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && !globalVars.security_guard_ko && !globalVars.robert_vance_ko && !globalVars.ibrahim_ko && !globalVars.joanne_ko" },
-          { "text": "EVERYONE ON SITE GOT OUT ALIVE — not all of them on their own feet", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && (globalVars.security_guard_ko || globalVars.robert_vance_ko || globalVars.ibrahim_ko || globalVars.joanne_ko)" },
+          { "text": "EVERYONE ON SITE GOT OUT ALIVE: not all of them on their own feet", "style": "entry", "condition": "globalVars.attack_prevented && !globalVars.crew_lost && (globalVars.security_guard_ko || globalVars.robert_vance_ko || globalVars.ibrahim_ko || globalVars.joanne_ko)" },
           { "text": "NIGHT CREW: out of Hall 2 on Vance's alarm, and the cell heard it too", "style": "entry", "condition": "globalVars.crew_warned" },
-          { "text": "RACK BANK B LOST — banks A and C isolated in time", "style": "entry", "condition": "globalVars.racks_vented && !globalVars.vented_by_trigger" },
-          { "text": "RACK BANK B LOST — he reached the laptop before you put him down", "style": "entry", "condition": "globalVars.vented_by_trigger" },
+          { "text": "RACK BANK B LOST: banks A and C isolated in time", "style": "entry", "condition": "globalVars.racks_vented && !globalVars.vented_by_trigger" },
+          { "text": "RACK BANK B LOST: he reached the laptop before you put him down", "style": "entry", "condition": "globalVars.vented_by_trigger" },
           { "text": "CASUALTIES: the Hall 2 night crew, and the dropped feed", "style": "warning", "condition": "globalVars.crew_lost" },
           { "text": "CASUALTIES: two on the dropped feed. Hall 2 was empty when it went", "style": "warning", "condition": "globalVars.casualties_occurred && !globalVars.crew_lost" },
           { "text": "OFFICE STAFF: hurt, and that's on you", "style": "warning", "condition": "globalVars.ibrahim_ko || globalVars.joanne_ko" },
           { "text": "" },
           { "text": "── DECISIONS ──", "style": "section-header" },
-          { "text": "VOLTAGE: CAPTURED — Blackout's field lead in custody", "style": "entry", "condition": "globalVars.voltage_captured" },
-          { "text": "VOLTAGE: ESCAPED — you took the button and let him reach the dock", "style": "entry", "condition": "globalVars.voltage_escaped" },
-          { "text": "ROBERT VANCE: brought in — ran the desk while you ran the halls", "style": "entry", "condition": "globalVars.vance_is_ally" },
-          { "text": "ROBERT VANCE: never told — the cover held all night", "style": "entry", "condition": "globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
-          { "text": "ROBERT VANCE: never met — you went round him", "style": "entry", "condition": "!globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
+          { "text": "VOLTAGE: CAPTURED, Blackout's field lead in custody", "style": "entry", "condition": "globalVars.voltage_captured" },
+          { "text": "VOLTAGE: ESCAPED, you took the button and let him reach the dock", "style": "entry", "condition": "globalVars.voltage_escaped" },
+          { "text": "ROBERT VANCE: brought in, ran the desk while you ran the halls", "style": "entry", "condition": "globalVars.vance_is_ally" },
+          <%# Blind m04: the debrief says he had the alarm on his desk when he was told and it was never sounded; the credits agree. %>
+          { "text": "ROBERT VANCE: told the truth, but the evacuation alarm stayed on his desk", "style": "entry", "condition": "globalVars.vance_is_ally && !globalVars.crew_warned && !globalVars.crew_lost && !globalVars.robert_vance_ko && globalVars.attack_prevented" },
+          { "text": "ROBERT VANCE: never told, the cover held all night", "style": "entry", "condition": "globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
+          { "text": "ROBERT VANCE: never met, you went round him", "style": "entry", "condition": "!globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
           { "text": "ROBERT VANCE: knocked down in his own office, by us", "style": "warning", "condition": "globalVars.robert_vance_ko" },
           { "text": "GATE GUARD: knocked out at his own desk, doing his job by the book", "style": "warning", "condition": "globalVars.security_guard_ko" },
           { "text": "CIPHER: walked off the job when you told him about the night crew", "style": "entry", "condition": "globalVars.cipher_walked" },
@@ -266,11 +268,11 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           { "text": "EVIDENCE: Voltage's own print on the bypass module", "style": "entry", "condition": "globalVars.voltage_print_on_bypass" },
           { "text": "SOCIAL FABRIC SAFEHOUSE: located", "style": "entry", "condition": "globalVars.lore_safehouse_address_found" },
           <%# Struggling run A (F3 sweep): the credits match the debrief's crew-lost lines. %>
-          { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came", "style": "entry", "condition": "globalVars.disclosure_choice === 'full' && !globalVars.crew_lost" },
-          { "text": "DISCLOSED IN FULL — the attack, the vulnerabilities, and the nine it cost", "style": "entry", "condition": "globalVars.disclosure_choice === 'full' && globalVars.crew_lost" },
-          { "text": "CLASSIFIED — filed as a maintenance fault, patched quietly", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet' && !globalVars.crew_lost" },
-          { "text": "CLASSIFIED — filed as an industrial accident, cause under investigation", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet' && globalVars.crew_lost" },
-          { "text": "PARTIALLY DISCLOSED — an incident acknowledged, the details withheld", "style": "entry", "condition": "globalVars.disclosure_choice === 'partial'" },
+          { "text": "DISCLOSED IN FULL: the attack, the vulnerabilities, and how close it came", "style": "entry", "condition": "globalVars.disclosure_choice === 'full' && !globalVars.crew_lost" },
+          { "text": "DISCLOSED IN FULL: the attack, the vulnerabilities, and the nine it cost", "style": "entry", "condition": "globalVars.disclosure_choice === 'full' && globalVars.crew_lost" },
+          { "text": "CLASSIFIED: filed as a maintenance fault, patched quietly", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet' && !globalVars.crew_lost" },
+          { "text": "CLASSIFIED: filed as an industrial accident, cause under investigation", "style": "entry", "condition": "globalVars.disclosure_choice === 'quiet' && globalVars.crew_lost" },
+          { "text": "PARTIALLY DISCLOSED: an incident acknowledged, the details withheld", "style": "entry", "condition": "globalVars.disclosure_choice === 'partial'" },
           { "text": "" },
           { "text": "BLACKOUT: signed the casualty model. Still at large.", "style": "warning", "condition": "globalVars.blackout_named" },
           { "text": "THE ARCHITECT: identity still unknown. Phase 3 looms.", "style": "warning" },
@@ -353,7 +355,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
     {
       "aimId": "reach_the_workshop",
       "title": "Reach the Engineering Workshop",
-      "description": "The workshop is the only place with a route onto the OT network — and it is behind a card you do not have",
+      "description": "The workshop is the only place with a route onto the OT network, and it is behind a card you do not have",
       "status": "locked",
       "unlockCondition": { "aimCompleted": "confirm_the_lie" },
       "order": 2,
@@ -578,7 +580,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "type": "rfid_cloner",
       "name": "RFID Cloner",
       "takeable": true,
-      "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
+      "observations": "Concealed RFID cloning device: get close to a keycard to copy it",
       "puzzle_graph_role": "tool",
       "puzzle_graph_unlocks": ["battery_hall_2", "engineering_workshop"]
     },
@@ -1224,7 +1226,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "cyberchef_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is Base64. Paste it into the CyberChef workstation in your kit. Decoding guide on request." }
+              "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is an encoding, not encryption. The CyberChef workstation in your kit will read it. Decoding guide on request." }
             },
             <%# operatives_defeated counter, keyed on npc_ko:<id>. History: in pass 2
                 globalVarOnKO wrote operative_*_defeated without emitting
@@ -1351,7 +1353,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "condition": "data.npcId === '<%= hostile_id %>' && data.isHostile === true && data.restored !== true && globalVars.fight_phone_texted !== true",
               "onceOnly": true,
               "setGlobal": { "fight_phone_texted": true },
-              "sendTimedMessage": { "delay": 5500, "message": "They keep swinging while you're on this phone. Get clear before you read it, or stand and fight: Q for fists, then E or click when they're in front." }
+              "sendTimedMessage": { "delay": 5500, "message": "They keep swinging while you're on this phone. Get clear first, or fight: F punches, keep pressing for harder. Hold Q to block." }
             },
 <% end %>
             <%# Playtest D7: the three optional methodology tasks never ticked.
@@ -1556,7 +1558,9 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             { "eventPattern": "global_variable_changed:robert_vance_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "global_variable_changed:security_guard_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } },
-            { "eventPattern": "global_variable_changed:racks_vented", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } }
+            { "eventPattern": "global_variable_changed:racks_vented", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } },
+            <%# Blind m04: Static is a live threat all the way to the button once he turns hostile, and the one-off fight text above is spent on an earlier fight. Appended last so no saved onceOnly index moves. %>
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'operative_static' && data.isHostile === true && data.restored !== true", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Static's turned on you, and he'll follow you to the button. Put him down first, or stay on your feet and block: Q for fists, then E or click.", "skipIfGlobal": "operative_static_defeated" } }
           ]
         },
         {
@@ -1602,7 +1606,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "condition": "globalVars.vance_is_ally === true && globalVars.vance_met === true",
               "onceOnly": true,
               "setGlobal": { "vance_phone_available": true },
-              "sendTimedMessage": { "delay": 2500, "message": "It's Vance. I'm on the ops desk, and on comms if you're moving. Call me for the engineering side — the BMS and the shutdown." }
+              "sendTimedMessage": { "delay": 2500, "message": "It's Vance. I'm on the ops desk, and on comms if you're moving. Call me for the engineering side: the BMS and the shutdown." }
             }<% %w[main_entrance operations_office security_office scada_control_room battery_hall_1 engineering_workshop battery_hall_2 plant_room loading_dock].each do |r| %>,
             {
               "_comment": "Pass 5 hear-the-debrief backstop (m03 hear_debrief pattern): report_to_0x99 completes on the debrief's last line. If the page reloads mid-debrief, debrief_started is set and the debrief won't replay, so the next room entry completes the task and the mission concludes. Kept on this always-loaded NPC so it doesn't share a pattern with the debrief NPC's re-emit backstop.",
@@ -1923,7 +1927,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "takeable": false,
           "readable": true,
           "observationDisplay": "gameDisplay",
-          "observations": "A large wall-mounted SCADA HMI mirroring the battery hall status. Every rack bank showing green, 28°C, NORMAL — all of it fed from the BMS sensor bus. If that feed is lying, only a standalone instrument in the hall would show it.",
+          "observations": "A large wall-mounted SCADA HMI mirroring the battery hall status. Every rack bank showing green, 28°C, NORMAL; all of it fed from the BMS sensor bus. If that feed is lying, only a standalone instrument in the hall would show it.",
           "text": "ALBION ENERGY STORAGE — SCADA HMI (MAIN DISPLAY)\n\nRack Bank A: 28.0°C | SoC 72% | Status: NORMAL\nRack Bank B: 27.9°C | SoC 71% | Status: NORMAL\nRack Bank C: 28.1°C | SoC 73% | Status: NORMAL\n\nHydrogen vent fans: AUTO\nESD interlocks: ARMED\nAll alarm setpoints: SATISFIED\n\nFeed source: BMS sensor bus \u2192 SCADA historian. Last integrity check: PASSED.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "scada_shows_falsified_normal_readings"
@@ -1942,7 +1946,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "takeable": true,
           "readable": true,
           "text": "EMERGENCY SHUTDOWN (ESD) PROTOCOL\n\nWARNING: Only use on authorised instruction or imminent hazard\n\n1. Isolate affected rack banks (hardwired ESD pushbutton)\n2. Force hydrogen vent fans to maximum\n3. Switch export to standby\n4. Notify grid control & emergency services\n5. Begin manual thermal monitoring\n\nNote: The ESD pushbutton in the plant room is HARDWIRED — independent of SCADA. It cannot be disabled remotely.\nThe shed of a full bank needs the grid-control permissive: the operator must have the hazard and the cause before 200 MWh leaves the network.",
-          "observations": "Emergency procedures — the plant-room ESD pushbutton is hardwired and independent of the compromised SCADA"
+          "observations": "Emergency procedures: the plant-room ESD pushbutton is hardwired and independent of the compromised SCADA"
         }
       ]
     },
@@ -2294,6 +2298,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "eventPattern": "player_spotted:operative_cipher",
               "targetKnot": "start",
               "conversationMode": "person-chat",
+              "onceOnly": true,
               "cooldown": 0
             },
             {
@@ -2693,8 +2698,9 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_voltage.json",
           "currentKnot": "start",
+          <%# 2026-11-18 release: attackDamage 12 -> 8. The fight route makes Voltage and Static hostile together; at 12 a student who engages Static first (nearest-target) loses ~107 HP before both are down. %>
           "behavior": {
-            "hostile": { "chaseSpeed": 145, "attackDamage": 12, "pauseToAttack": true }
+            "hostile": { "chaseSpeed": 145, "attackDamage": 8, "pauseToAttack": true }
           },
           <%# Playtest D4: this was globalVarOnKO "voltage_captured". The engine writes
               that global itself inside the KO routine (npc-hostile.js:159-166), so no
@@ -2815,6 +2821,8 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "name": "Emergency Shutdown Pushbutton — Rack Banks A-C",
           <%# Room dressing c3: fixed on the plant room's back wall under the EMERGENCY SHUTDOWN plate, a red-hatched keep-clear box on the floor in front (room_aes_plant, aes_esd_station1, top-left 160,33). It landed at random before (regression M4). Fix pass 2026-10-17 (engine regression F5): on the wall its centre sat on the Hall 2 / plant room line, so it could be reached (and approached) from Hall 2, where Relay waits. The station now stands on the floor inside the keep-clear box (room_aes_plant object 2, top-left 161,65, was 160,33), its centre about 46 px below the nearest Hall 2 standing point, so only the plant room reaches it. %>
           "position": "as-type:aes_esd_station",
+          <%# Blind playtest (m04): reach is measured to the sprite's top edge, so standing "near" the 25 px station was out of range (3-8 px worked). wallMounted clamps the player's y into the sprite's span (interaction-reach.js reachY), which only ever shortens the reach. %>
+          "wallMounted": true,
           "takeable": false,
           "locked": false,
           "puzzle_graph_role": "lock",
@@ -2828,7 +2836,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             { "from": "vmfl_submit_privesc_flag", "to": "lock_esd_pushbutton" },
             { "from": "action_deal_with_voltage", "to": "lock_esd_pushbutton" }
           ],
-          "observations": "A large red mushroom-head button in a yellow housing on the plant-room wall. Labelled: EMERGENCY SHUTDOWN — RACK BANKS A-C. This is the hardwired kill switch ENTROPY couldn't disable from SCADA. Pressing it isolates the banks and forces ventilation — stopping the thermal runaway. A hinged safety flap covers it: lift the flap, then press.",
+          "observations": "A large red mushroom-head button in a yellow housing on the plant-room wall. Labelled: EMERGENCY SHUTDOWN — RACK BANKS A-C. This is the hardwired kill switch ENTROPY couldn't disable from SCADA. Pressing it isolates the banks and forces ventilation, stopping the thermal runaway. A hinged safety flap covers it: lift the flap, then press.",
           "minigameData": {
             "interactionType": "esd_button",
             "label": "EMERGENCY SHUTDOWN - RACK BANKS A-C",
@@ -2864,8 +2872,10 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "position": "as-type:laptop",
           "takeable": false,
           "readable": true,
+          <%# Blind playtest (m04): a pc with no desktopUser only raised a short alert, so the laptop read as dead. It is a fixed thing read in place like the process diagram: the text opens in the game display (text only, not voiced). %>
+          "readDisplay": "gameDisplay",
           "text": "REMOTE OVERCHARGE CONTROLLER — ARMED\n\nTarget: Albion Rack Banks A / B / C\nTrigger: 0800 local (countdown running)\nSCADA thermal feed: SPOOFED (nominal)\nHydrogen vent fans: FORCED OFF\nESD interlocks (software): DISABLED\n\nSoftware abort: LOCKED until trigger. Hardwired ESD: OUT OF OUR REACH.",
-          "observations": "Critical Mass's command laptop — the overcharge is armed and counting down. The software won't stop it; the hardwired ESD will."
+          "observations": "Critical Mass's command laptop: the overcharge is armed and counting down. The software won't stop it; the hardwired ESD will."
         },
         {
           "type": "notes",
@@ -2943,7 +2953,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "takeable": true,
           "readable": true,
           "text": "CONTINGENCY: SAFETYNET INTERFERENCE\n\nIf compromised:\n1. Confirm the overcharge trigger is armed (it self-completes at 0800)\n2. Escape via the loading dock\n3. Extraction vehicle: loading zone B\n4. Rendezvous: Social Fabric safehouse (address encoded — in the go-bag)\n\nPriority: mission success > personal capture\n\nNote: Static and I can hold them long enough.",
-          "observations": "Escape plan revealing Voltage's tactical priorities — it mentions an encoded address in a 'go-bag'"
+          "observations": "Escape plan revealing Voltage's tactical priorities. It mentions an encoded address in a 'go-bag'"
         },
         {
           "type": "suitcase",
@@ -2954,7 +2964,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "lockType": "key",
           "keyPins": [40, 30, 50, 35],
           "difficulty": "easy",
-          "observations": "A grab-bag dumped by the loading-dock door — the cell's extraction kit, left in the rush. It's padlocked, but a lockpick will open it.",
+          "observations": "A grab-bag dumped by the loading-dock door: the cell's extraction kit, left in the rush. It's padlocked, but a lockpick will open it.",
           "contents": [
             {
               "type": "notes",
@@ -2962,7 +2972,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "takeable": true,
               "readable": true,
               "text": "<%= base64_encode("SOCIAL FABRIC — REGIONAL SAFEHOUSE\nUnit 14, Calder Wharf, Salford\nKnock pattern: 2-1-3\nAsk for \"Loom\". Burn this after reading.") %>",
-              "observations": "An encoded card from the go-bag — the next thread to pull on Social Fabric",
+              "observations": "An encoded card from the go-bag: the next thread to pull on Social Fabric",
               "puzzle_graph_role": "clue",
               "puzzle_graph_reveals": "social_fabric_safehouse_address_lead",
               "onPickup": { "setVariable": { "lore_safehouse_address_found": true } }
@@ -3065,7 +3075,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         },
         {
           "type": "hint",
-          "title": "H\u2082 ADVISORY \u2014 RACK BANK B",
+          "title": "H\u2082 ADVISORY: RACK BANK B",
           "message": "The hydrogen alarm in Battery Hall 2 has gone. Bank B is venting hydrogen, the stage before fire. The hardwired ESD pushbutton is in the plant room."
         }
       ]
@@ -3090,7 +3100,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         },
         {
           "type": "hint",
-          "title": "H\u2082 ADVISORY \u2014 RACK BANK B",
+          "title": "H\u2082 ADVISORY: RACK BANK B",
           "message": "The hydrogen alarm in Battery Hall 2 has gone. Bank B is venting hydrogen, the stage before fire. The hardwired ESD pushbutton is in the plant room."
         }
       ]
@@ -3100,7 +3110,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
     still reach the ESD and still reaches an ending. %>
     {
       "id": "racks_vent_alarm",
-      "label": "Thermal runaway \u2014 rack bank B",
+      "label": "Thermal runaway: rack bank B",
       "startOnGlobal": "crew_warned_early",
       "delayMs": 1800000,
       "cancelOnGlobal": "attack_prevented",
@@ -3111,14 +3121,14 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "actions": [
         {
           "type": "hint",
-          "title": "THERMAL RUNAWAY \u2014 BANK B",
-          "message": "Bank B has gone. The hall is burning and the feed has dropped. It is not over \u2014 banks A and C are still holding, and the shutdown will still save them. Get to the button."
+          "title": "THERMAL RUNAWAY: BANK B",
+          "message": "Bank B has gone. The hall is burning and the feed has dropped. It is not over. Banks A and C are still holding, and the shutdown will still save them. Get to the button."
         }
       ]
     },
     {
       "id": "racks_vent",
-      "label": "Thermal runaway \u2014 rack bank B",
+      "label": "Thermal runaway: rack bank B",
       "startOnGlobal": "attack_mechanism_known",
       "delayMs": 840000,
       "cancelOnGlobal": "attack_prevented",
@@ -3129,8 +3139,8 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "actions": [
         {
           "type": "hint",
-          "title": "THERMAL RUNAWAY \u2014 BANK B",
-          "message": "Bank B has gone. The hall is burning and the feed has dropped. It is not over \u2014 banks A and C are still holding, and the shutdown will still save them. Get to the button."
+          "title": "THERMAL RUNAWAY: BANK B",
+          "message": "Bank B has gone. The hall is burning and the feed has dropped. It is not over. Banks A and C are still holding, and the shutdown will still save them. Get to the button."
         }
       ]
     }

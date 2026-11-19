@@ -405,3 +405,80 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
 .game-display-dialog .game-display-body:first-child {
     padding-right: 40px;
 }
+
+/* Ending warning (systems/ending-check.js): the confirm/display dialog frame, above the phone and
+   every minigame (1500) and the other dialogs (3000). Text sits on the opaque frame surface. */
+.game-confirm-overlay.ending-check-overlay {
+    z-index: 10001;
+    background: rgba(0, 0, 0, 0.88);
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.ending-check-dialog,
+[data-ui-theme] .game-confirm-dialog.ending-check-dialog {
+    max-width: 640px;
+    max-height: 100%;
+    background-color: #0a0a14;   /* opaque: the themed surface is under 100% alpha and the phone shows through */
+    background-clip: padding-box;
+}
+
+/* A choice clicked while the question is up (ending-check.js nudgeEndingCheck): two hard steps, no easing. */
+.ending-check-dialog.ending-check-nudge {
+    animation: ending-check-nudge 0.4s steps(2, jump-none) 2;
+}
+@keyframes ending-check-nudge {
+    0% { transform: translateX(-4px); }
+    100% { transform: translateX(4px); }
+}
+
+/* Each theme's own tint at full opacity (--ui-surface-opaque, ui-themes.css). */
+[data-ui-theme] .game-confirm-dialog.ending-check-dialog {
+    background-color: var(--ui-surface-opaque, #0a0a14);
+    background-clip: padding-box;
+}
+
+.ending-check-dialog .ending-check-heading {
+    font-size: 16px;
+    line-height: 24px;
+    margin: 0 0 16px;
+    font-weight: normal;
+}
+
+.ending-check-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.ending-check-dialog .game-confirm-message {
+    font-size: 24px;
+    margin: 0 0 12px;
+}
+
+.ending-check-list {
+    font-family: 'GNF', monospace;
+    font-size: 24px;
+    line-height: 1.5;
+    color: #ffffff;
+    margin: 0 0 12px;
+    padding-left: 28px;
+}
+
+.ending-check-dialog .game-confirm-btn {
+    font-size: 24px;
+}
+
+.ending-check-buttons {
+    flex: 0 0 auto;
+    margin-top: 8px;
+}
+
+@media (max-height: 450px), (max-width: 480px) {
+    .ending-check-dialog .game-confirm-message,
+    .ending-check-list,
+    .ending-check-dialog .game-confirm-btn {
+        font-size: 16px;
+    }
+    .game-confirm-overlay.ending-check-overlay .ending-check-dialog { padding: 16px 20px; }
+}

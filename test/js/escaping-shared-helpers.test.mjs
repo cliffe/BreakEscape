@@ -203,7 +203,7 @@ test('VM launcher: a refused panel URL in Hacktivity mode says the panel is unav
     const mg = new VmLauncherMinigame(box, { vm: { title: 'Kali', ip: '10.0.0.5' }, hacktivityMode: true });
     assert.equal(mg.vmPanelUrl, null);
     assert.equal(mg.vmPanelRefused, true);
-    box.innerHTML = mg.buildVmDisplay();
+    box.appendChild(mg.buildVmDisplay());
     assert.equal(box.querySelector('a'), null, 'no link');
     assert.match(box.textContent, /VM panel unavailable\./);
     assert.doesNotMatch(box.textContent, /VirtualBox|click the console button/);
@@ -212,7 +212,7 @@ test('VM launcher: a refused panel URL in Hacktivity mode says the panel is unav
     // Standalone mode keeps its instructions
     const box2 = fresh();
     const solo = new VmLauncherMinigame(box2, { vm: { title: 'Kali', ip: '10.0.0.5' }, hacktivityMode: false });
-    box2.innerHTML = solo.buildVmDisplay();
+    box2.appendChild(solo.buildVmDisplay());
     assert.match(box2.textContent, /VirtualBox/);
 });
 
@@ -221,7 +221,7 @@ test('VM launcher: a javascript: panel URL gives no console link and no iframe',
     window.breakEscapeConfig = { vmPanelUrl: 'javascript:window.__pwned=4' };
     const mg = new VmLauncherMinigame(box, { vm: { title: 'Kali', ip: '10.0.0.5' }, hacktivityMode: true });
     assert.equal(mg.vmPanelUrl, null);
-    box.innerHTML = mg.buildVmDisplay();
+    box.appendChild(mg.buildVmDisplay());
     assert.equal(box.querySelector('a'), null, 'no link');
     try { mg.buildUI(); } catch { /* the standalone card needs more of the page */ }
     assert.equal(document.querySelector('iframe'), null, 'no iframe');
@@ -232,7 +232,7 @@ test('VM launcher: the server path still gives the console link', () => {
     const box = fresh();
     window.breakEscapeConfig = { vmPanelUrl: '/break_escape/games/7/vm_panel' };
     const mg = new VmLauncherMinigame(box, { vm: { title: 'Kali "box"', ip: '10.0.0.5' }, hacktivityMode: true });
-    box.innerHTML = mg.buildVmDisplay();
+    box.appendChild(mg.buildVmDisplay());
     assert.equal(box.querySelector('a.vm-action-btn').getAttribute('href'), 'https://game.example/break_escape/games/7/vm_panel?vm_title=Kali+%22box%22');
 });
 

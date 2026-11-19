@@ -308,6 +308,13 @@
     z-index: 5;
 }
 
+/* Little spill downward (the in-screen window X sits just below the strip), so the reach goes
+   up instead: 60 minus twice the border = 48 px (themed) to 52 px tall, whatever --pc-bezel-top is
+   (the target starts 10 px above the bezel's outer border, whatever the strip height). */
+.pc-monitor-bezel > .pc-monitor-close::after {
+    inset: -20px -14px -10px -14px;
+}
+
 /* The post-it, stuck on the chin: its top just under the screen's bottom edge, in from the
    left past the side bezel. pcMonitorMetrics sets left, top and max-width from the frame. */
 .pc-monitor > .postit-note.pc-monitor-postit {
@@ -321,7 +328,7 @@
     width: max-content;
     /* The right padding clears the pin (.postit-note::after: 8px wide, 5px from the edge) */
     padding: 10px 18px 10px 14px;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 20px;
 }
 

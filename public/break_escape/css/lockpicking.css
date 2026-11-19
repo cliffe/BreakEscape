@@ -8,9 +8,13 @@
     border: 2px solid #00ff00;
     margin: 10px 0;
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 16px;
     text-align: center;
     min-height: 20px;
+    /* The box grows with its text: in the flex column that holds the lock it must not shrink
+       below its content (a wrapped line spilled out of a 20px box at 1280) */
+    flex: 0 0 auto;
+    height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -54,12 +58,24 @@
 .lockpicking-item-info h4 {
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    line-height: 24px;
     margin: 0 0 10px 0;
     color: #3498db;
 }
 
+/* No observations text: no empty paragraph, and no gap left under the heading, so the strip
+   wraps its content instead of showing a blank band */
+.lockpicking-item-info p:empty {
+    display: none;
+}
+
+.lockpicking-item-info h4:last-child {
+    margin-bottom: 0;
+}
+
 .lockpicking-item-info p {
-    font-size: 16px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
     margin: 0;
     color: #ecf0f1;
     line-height: 1.4;
@@ -83,7 +99,8 @@
     }
     
     .lockpicking-item-info p {
-        font-size: 14px;
+        font-size: 20px;
+        font-family: 'VT323', monospace;
     }
 }
 
@@ -171,6 +188,18 @@
     }
 }
 
+/* The frame wraps the lock and its feedback line: the shared 100% height left an empty dark
+   band under the feedback box. Spare window height sits outside the frame (the shell centres
+   it, over the dimmed backdrop). Scoped to the lock, so other minigames keep the shared rule.
+   Not in short windows (560px and under): there the frame must shrink and scroll by itself, or
+   the shell scrolls too and two scrollbars nest. */
+@media (max-width: 768px) and (min-height: 561px) {
+    .minigame-game-container:has(> #phaser-game-container) {
+        height: auto;
+        flex: 0 0 auto;
+    }
+}
+
 /* Portrait mobile: let the canvas fill available vertical space */
 @media (max-width: 768px) and (orientation: portrait) {
     #phaser-game-container {
@@ -188,18 +217,121 @@
     }
 
     .lockpicking-item-image {
-        width: 50px;
+        /* The box follows the picture's shape (a 48x96 door is 25x50), no side gaps */
+        width: auto;
         height: 50px;
-        min-width: 50px;
+        min-width: 0;
         min-height: 50px;
     }
 
     .lockpicking-item-info h4 {
-        font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R5 M2) */
-        line-height: 16px;
+        font-size: 16px;   /* Press Start 2P on its 8px grid, as .container-info h4 (was 8px) */
+        line-height: 24px;
     }
 
     .lockpicking-item-info p {
-        font-size: 12px;
+        font-size: 20px;
+        font-family: 'VT323', monospace;
     }
+}
+
+/* The mode-switch row (Switch to Lockpicking / Switch to Key Mode) is its own full-width line
+   under the image and name (except short landscape, below): the strip wraps (flex-wrap) and the row is 100%
+   of the strip's content width, so it never competes with the image and name for width. In key mode with a lockpick in the pack the row also holds "Or pick the lock:".
+   Widths: caption about 160px (16px GNF, 18 characters at 9px) + gap 10 + button about 290px
+   = about 460px. With the shell's margins and border the strip's content is about 790px at
+   844x390 (where the rule below keeps the row on the image's line) and about 350px at 390x844,
+   where caption and button wrap inside the row (caption above the button) and the row grows by one
+   caption line (24px) in a strip that already stacks image, name and button. */
+.lockpicking-item-section {
+    flex-wrap: wrap;
+}
+
+.lockpicking-mode-row {
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Short landscape (844x390): the strip sits outside the lock's scroll area, so a row on its own
+   line would take about 70px from the lock. Keep one line there: the strip does not wrap, the
+   row keeps its natural width (about 460px with the caption, 290 without) and the name block
+   takes what is left of the about 790px (shell margins and border included) and wraps its own
+   text, so "Door: Derek Lawson - Operations" goes to two lines instead of pushing the row down */
+@media (max-height: 560px) and (min-width: 769px) {
+    .lockpicking-item-section {
+        flex-wrap: nowrap;
+    }
+
+    .lockpicking-item-info {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .lockpicking-mode-row {
+        width: auto;
+        flex: 0 0 auto;
+        margin-top: 0;
+        /* The shell's X is fixed in the top-right corner (15px in, 30px wide, plus a 14px hit
+           area), level with this row here: keep the row clear of it, and of the shell's own
+           scrollbar when it shows */
+        margin-right: calc(44px + var(--minigame-shell-bar, 0px));
+    }
+}
+
+.lockpicking-or-caption {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #ecf0f1;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .lockpicking-or-caption {
+        flex: 0 0 100%;
+        text-align: center;
+    }
+}
+
+/* Mode-switch buttons while a key goes in or after a correct key: the real disabled attribute
+   blocks clicks; the fill goes flat, the border dashed and the cursor not-allowed, so the state
+   is not only colour. Plain text on a flat dark fill, no opacity, so the pixel text stays readable.
+   The disabled button keeps exactly the outer box of the enabled one (nothing in the strip
+   shifts): the border keeps the enabled width (4px unthemed, the 9-slice width --ui-button-px
+   themed) in the fill colour, and the 2px dashed line is an outline drawn inside that band. The
+   padding is not overridden. Beats the themed 9-slice (border-image, filter, transform) and the
+   hover ring (utilities.css box-shadow) so a hovered disabled button looks the same. */
+.lockpicking-mode-row .minigame-button:disabled,
+.lockpicking-mode-row .minigame-button:disabled:hover {
+    border-image: none;
+    border: 4px solid #34495e;
+    outline: 2px dashed #bdc3c7;
+    outline-offset: -4px;
+    background: #34495e;
+    box-shadow: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+    cursor: not-allowed;
+}
+
+[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled,
+[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover {
+    border-image: none;
+    border: var(--ui-button-px) solid #34495e;
+    outline: 2px dashed #bdc3c7;
+    outline-offset: -6px;
+    background: #34495e;
+    box-shadow: none;
+    opacity: 1;
+    filter: none;
+    transform: none;
+    cursor: not-allowed;
 }

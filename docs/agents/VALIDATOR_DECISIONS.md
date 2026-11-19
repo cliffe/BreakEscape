@@ -176,11 +176,11 @@ Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (me
   "scenario": "scenarios/ceo_exfil/scenario.json.erb",
   "stage": "ink",
   "match": "in itemsHeld. Add {",
-  "count": 4
+  "count": 1
 }
 ```
 
-Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). The shared helper-npc.ink gives keycard, lockpick, phone and workstation; the reception NPC holds none of them. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario.
+Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (merge batch 13); count lowered from 4 to 1 on 2026-11-18, when the validator began skipping give_item tags inside {has_<type>: branches. Only #give_item:keycard is left. The shared helper-npc.ink gives keycard, lockpick, phone and workstation; the reception NPC holds none of them. Fix its itemsHeld or pick another ink file; do not edit the shared ink for one scenario.
 
 ## 2026-11-12: ceo_exfil phone targetKnot
 
@@ -265,6 +265,21 @@ Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an
 ```
 
 **Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): the same held item as the hl_box entry above. Once the player unlocks hl_box and picks the item up, its display name travels with it into playerInventory. The item is only takeable after the hl_box unlock that earns the answer, so this adds no new exposure. Not a filter gap; does not start 6b.
+
+## 2026-11-18: user decision D160 (m05 Owen badge number 4430, allow with a signed-off scan exception)
+
+```json
+{
+  "scenario": "scenarios/m05_insider_trading/scenario.json.erb",
+  "route": "GET room/:id",
+  "paths": [
+    "rooms/open_office_area/npcs[0]/rfidCard/rfid_data/cardNumber",
+    "rooms/open_office_area/npcs[0]/rfidCard/rfid_card_number"
+  ]
+}
+```
+
+**Signed by the user (decisions page D160), 2026-11-18.** Owner: m05. Opened-state payload scan, class 4 by design: Owen Gallagher's EM4100 card number 4430 (low 16 bits of 2A0000114E) is the #4430 on the door log and the on-call lockbox code. The RFID cloner shows it when the player clones his badge, so the room payload carries it with his NPC. Matching badge, log and lockbox is the intended clue.
 
 ## 2026-11-16: rogue_ap sprite waits on A3 art (RESOLVED 2026-11-16, entry removed)
 

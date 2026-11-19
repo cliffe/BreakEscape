@@ -254,7 +254,8 @@ test('the phone contact list shows a hostile NPC name as text', () => {
     item = item || root.querySelector('.contact-item');
     root.appendChild(item);
     assertText(item.querySelector('.contact-name'), 'phone contact name', { dashes: false });
-    assertAttr(item.querySelector('.contact-avatar img'), 'alt', 'phone contact avatar');
+    // The avatar is decorative (alt empty) so the row's name is the contact name alone
+    assert.equal(item.querySelector('.contact-avatar img').getAttribute('alt'), '', 'phone contact avatar: decorative');
     const img = item.querySelector('.contact-avatar img');
     assert.equal(img.hasAttribute('onerror'), false, 'phone contact avatar src: no onerror');
     assert.ok(img.getAttribute('src').endsWith(HOSTILE), 'phone contact avatar src: reads back as typed');
@@ -266,7 +267,7 @@ test('the phone contact list shows a hostile NPC name as text', () => {
 // Review round 3 and the full sink sweep: the text these sinks show is plain text too
 
 test('the notes page shows a hostile observation as text: on open, after Save, after Cancel and on a page change', () => {
-    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: HOSTILE, autoAddToNotes: false });
+    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: HOSTILE, autoAddToNotes: false , navigateToNote: 0 });
     initQuietly(mg);
     let div = document.querySelector('.notes-minigame-observation');
     assertText(div, 'notes observation on open');
@@ -290,7 +291,7 @@ test('the notes page shows a hostile observation as text: on open, after Save, a
 });
 
 test('the notes page keeps its placeholder when an observation is cleared', () => {
-    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: 'old', autoAddToNotes: false });
+    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: 'old', autoAddToNotes: false , navigateToNote: 0 });
     initQuietly(mg);
     mg.editObservations(document.querySelector('.notes-minigame-observation'));
     document.querySelector('.notes-minigame-edit-textarea').value = '';

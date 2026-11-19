@@ -189,7 +189,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         "condition": "!globalVars.briefing_played",
         "playlist": "cutscene",
         "fade": false,
-        "comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
+        "_comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
       },
       { "trigger": "game_loaded", "condition": "<%= music_investigate %>", "playlist": "noir",       "fade": false },
       { "trigger": "game_loaded", "condition": "<%= music_named %>",       "playlist": "spy-action", "fade": false },
@@ -198,14 +198,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         "trigger": "conversation_closed:opening_briefing",
         "playlist": "noir",
         "fade": true,
-        "comment": "Briefing ends → mission proper begins"
+        "_comment": "Briefing ends → mission proper begins"
       },
       {
         "trigger": "global_variable_changed:torres_identified",
         "condition": "value === true && globalVars.final_choice === ''",
         "playlist": "spy-action",
         "fade": true,
-        "comment": "Suspect named — the hunt narrows"
+        "_comment": "Suspect named — the hunt narrows"
       },
       <%# A reload restores hostile NPCs with {restored: true} (npc-hostile.js:107),
           which must not change the phase's music (m04 round 2). typeof keeps the
@@ -215,13 +215,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         "condition": "isHostile === true && (typeof restored === 'undefined' || !restored) && globalVars.final_choice === ''",
         "playlist": "threat",
         "fade": true,
-        "comment": "Any NPC turns hostile before the fate → tension music"
+        "_comment": "Any NPC turns hostile before the fate → tension music"
       },
       { "trigger": "all_hostiles_ko", "condition": "<%= music_investigate %>", "playlist": "noir",       "fade": true },
       { "trigger": "all_hostiles_ko", "condition": "<%= music_named %>",       "playlist": "spy-action", "fade": true },
       { "trigger": "all_hostiles_ko", "condition": "<%= music_after %>",       "playlist": "end",        "fade": true },
       {
-        "comment": "A1/A2: the fate is set and the upload is dead. The sweep and the call-in play under a settled cue; the credits follow the debrief.",
+        "_comment": "A1/A2: the fate is set and the upload is dead. The sweep and the call-in play under a settled cue; the credits follow the debrief.",
         "trigger": "global_variable_changed:final_choice",
         "condition": "value !== ''",
         "playlist": "end",
@@ -234,60 +234,65 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         "autoStop": true,
         "disableClose": true,
         "fade": true,
-        "comment": "Debrief ends — victory track (not used by m01-m04) with the credits scroll",
+        "_comment": "Debrief ends — victory track (not used by m01-m04) with the credits scroll",
         "credits": [
           { "text": "MISSION COMPLETE",                                    "style": "title", "condition": "globalVars.final_choice !== 'combat_lethal' && !globalVars.halloran_accused" },
-          { "text": "MISSION COMPLETE — AT A COST",                        "style": "title", "condition": "globalVars.final_choice === 'combat_lethal' || globalVars.halloran_accused" },
+          { "text": "MISSION COMPLETE: AT A COST",                        "style": "title", "condition": "globalVars.final_choice === 'combat_lethal' || globalVars.halloran_accused" },
           { "text": "INSIDER TRADING",                                     "style": "subtitle" },
           { "text": "" },
           { "text": "OPERATION SCHRÖDINGER: STOPPED",                       "style": "entry" },
           { "text": "CIVILIAN LIVES SAVED: 30-45 (estimated, first rollout wave)", "style": "entry" },
-          { "text": "ROTATION WINDOW LOST — the East of England re-keyed a month early", "style": "warning", "condition": "globalVars.halloran_accused" },
+          { "text": "ROTATION WINDOW LOST: the East of England re-keyed a month early", "style": "warning", "condition": "globalVars.halloran_accused" },
           { "text": "" },
           { "text": "── THE CASE ──",                                      "style": "section-header" },
-          { "text": "NAMED ON THE EVIDENCE — before the portal's manifest was in", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1, R3-1: the reward needs the badge-log reasoning given in a reason menu before the naming (not the post-naming disclosure click), no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.halloran_accused && !globalVars.door_log_hinted" },
-          { "text": "MOTIVE, MEANS AND AUTHORISATION — all on file",       "style": "entry", "condition": "(globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
-          { "text": "RECRUITMENT PIPELINE — TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
-          { "text": "BORROWED BADGE — Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
-          { "text": "WRONG ACCUSATION — Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
-          { "text": "FALSE START — a wrong name or reason before the right one", "style": "warning", "_comment": "Struggling run A (D3): wrong names and reasons now cost Patricia's trust and the call; this is the record of it.", "condition": "globalVars.torres_reason_guessed && !globalVars.halloran_accused" },
-          { "text": "INSIDER NAMED — David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.door_log_hinted)" },
+          { "text": "NAMED ON THE EVIDENCE: before the portal's manifest was in", "style": "entry", "_comment": "Pass 5 R2 B1/B2/m1, R3-1: the reward needs the badge-log reasoning given in a reason menu before the naming (not the post-naming disclosure click), no guessed reason and no accusation, not only the timing.", "condition": "globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.halloran_accused && !globalVars.door_log_hinted" },
+          { "text": "MOTIVE, MEANS AND AUTHORISATION: all on file",       "style": "entry", "condition": "(globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet" },
+          { "text": "RECRUITMENT PIPELINE: TalentStack link not documented", "style": "entry", "condition": "!globalVars.found_pamphlet && !globalVars.found_pipeline_list" },
+          { "text": "BORROWED BADGE: Halloran's spare traced back to Torres", "style": "entry", "condition": "globalVars.door_log_reasoned && !globalVars.halloran_accused" },
+          { "text": "WRONG ACCUSATION: Dr Ruth Halloran suspended, then cleared", "style": "warning", "condition": "globalVars.halloran_accused" },
+          { "text": "FALSE START: a wrong name or reason before the right one", "style": "warning", "_comment": "Struggling run A (D3): wrong names and reasons now cost Patricia's trust and the call; this is the record of it.", "condition": "globalVars.torres_reason_guessed && !globalVars.halloran_accused" },
+          { "text": "INSIDER NAMED: David Torres, though not every piece of evidence was recovered", "style": "entry", "_comment": "PASS 4 newcheck: catch-all so THE CASE never prints empty (found_pamphlet false with the pipeline list found matched no other line). Pass 5 m6: the always-true flag4_submitted term dropped (the debrief needs all four flags).", "condition": "!((globalVars.found_medical_bills || globalVars.found_torres_journal || globalVars.found_vetting_file) && globalVars.found_pamphlet) && !(!globalVars.found_pamphlet && !globalVars.found_pipeline_list) && !(globalVars.door_log_reasoned && !globalVars.halloran_accused) && !(globalVars.halloran_accused) && !(globalVars.named_before_portal && globalVars.door_log_reasoned_first && !globalVars.torres_reason_guessed && !globalVars.door_log_hinted)" },
           { "text": "" },
           { "text": "── DAVID TORRES ──",                                  "style": "section-header" },
-          { "text": "TURNED — working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
-          { "text": "HANDED TO THE POLICE — talked to SAFETYNET first",    "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
-          { "text": "HANDED TO THE POLICE — said nothing",                 "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded && !globalVars.torres_called_in" },
-          { "text": "WALKED OUT BY SECURITY — you backed off; nobody talked to him", "style": "entry", "_comment": "Struggling run A (D1): HaX's Send Security.", "condition": "globalVars.final_choice === 'arrest' && globalVars.torres_called_in" },
-          { "text": "DETAINED AFTER A FIGHT — handed to the police",       "style": "entry", "condition": "globalVars.final_choice === 'combat_nonlethal' && globalVars.torres_fight_offered" },
-          { "text": "DETAINED AT THE TERMINAL — handed to the police",     "style": "entry", "_comment": "Scenario design browser F2: knocked out without the fight line.", "condition": "globalVars.final_choice === 'combat_nonlethal' && !globalVars.torres_fight_offered" },
-          { "text": "DEAD — left injured on the data-centre floor",        "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
-          { "text": "EXPOSED — named publicly as \"The Quantum Traitor\"",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
+          { "text": "TURNED: working for SAFETYNET inside ENTROPY's network", "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
+          { "text": "HANDED TO THE POLICE: talked to SAFETYNET first",    "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
+          { "text": "HANDED TO THE POLICE: said nothing",                 "style": "entry", "condition": "globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded && !globalVars.torres_called_in" },
+          { "text": "WALKED OUT BY SECURITY: you backed off; nobody talked to him", "style": "entry", "_comment": "Struggling run A (D1): HaX's Send Security.", "condition": "globalVars.final_choice === 'arrest' && globalVars.torres_called_in" },
+          { "text": "DETAINED AFTER A FIGHT: handed to the police",       "style": "entry", "condition": "globalVars.final_choice === 'combat_nonlethal' && globalVars.torres_fight_offered" },
+          { "text": "DETAINED AT THE TERMINAL: handed to the police",     "style": "entry", "_comment": "Scenario design browser F2: knocked out without the fight line.", "condition": "globalVars.final_choice === 'combat_nonlethal' && !globalVars.torres_fight_offered" },
+          { "text": "DEAD: left injured on the data-centre floor",        "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "EXPOSED: named publicly as \"The Quantum Traitor\"",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
+          { "text": "UNRECORDED: what became of him was not logged", "style": "entry", "_comment": "Release audit: fallback so this section never prints a bare heading; true only when no line above holds.", "condition": "!(globalVars.final_choice === 'turn_double_agent') && !(globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded) && !(globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded && !globalVars.torres_called_in) && !(globalVars.final_choice === 'arrest' && globalVars.torres_called_in) && !(globalVars.final_choice === 'combat_nonlethal' && globalVars.torres_fight_offered) && !(globalVars.final_choice === 'combat_nonlethal' && !globalVars.torres_fight_offered) && !(globalVars.final_choice === 'combat_lethal') && !(globalVars.final_choice === 'public_exposure')" },
           { "text": "" },
           { "text": "── ELENA TORRES ──",                                  "style": "section-header" },
-          { "text": "Treatment paid for by SAFETYNET — first dose Monday", "style": "entry", "condition": "globalVars.elena_treatment_funded" },
-          { "text": "Still fighting Stage 3 cancer — treatment unfunded",  "style": "entry", "condition": "!globalVars.elena_treatment_funded && globalVars.final_choice !== 'combat_lethal'" },
-          { "text": "Widowed — still fighting Stage 3 cancer, alone",       "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "Treatment paid for by SAFETYNET: first dose Monday", "style": "entry", "condition": "globalVars.elena_treatment_funded" },
+          { "text": "Still fighting Stage 3 cancer: treatment unfunded",  "style": "entry", "condition": "!globalVars.elena_treatment_funded && globalVars.final_choice !== 'combat_lethal'" },
+          { "text": "Widowed, still fighting Stage 3 cancer, alone",       "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "No update on her treatment", "style": "entry", "_comment": "Release audit: fallback so this section never prints a bare heading; true only when no line above holds.", "condition": "!(globalVars.elena_treatment_funded) && !(!globalVars.elena_treatment_funded && globalVars.final_choice !== 'combat_lethal') && !(globalVars.final_choice === 'combat_lethal')" },
           { "text": "" },
           { "text": "── SOFIA (11) AND MIGUEL (8) TORRES ──",                "style": "section-header" },
           { "text": "Father home, family intact",                          "style": "entry", "condition": "globalVars.final_choice === 'turn_double_agent'" },
           { "text": "Father facing trial, mother in treatment",            "style": "entry", "condition": "globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded" },
           { "text": "Father facing trial, mother untreated",               "style": "entry", "condition": "(globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded) || globalVars.final_choice === 'combat_nonlethal'" },
-          { "text": "Father dead — and, without treatment, they may lose their mother too", "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
+          { "text": "Father dead, and without treatment they may lose their mother too", "style": "warning", "condition": "globalVars.final_choice === 'combat_lethal'" },
           { "text": "Classmates saw their father named a spy on the news",  "style": "warning", "condition": "globalVars.final_choice === 'public_exposure'" },
+          { "text": "No update on the children", "style": "entry", "_comment": "Release audit: fallback so this section never prints a bare heading; true only when no line above holds.", "condition": "!(globalVars.final_choice === 'turn_double_agent') && !(globalVars.final_choice === 'arrest' && globalVars.elena_treatment_funded) && !((globalVars.final_choice === 'arrest' && !globalVars.elena_treatment_funded) || globalVars.final_choice === 'combat_nonlethal') && !(globalVars.final_choice === 'combat_lethal') && !(globalVars.final_choice === 'public_exposure')" },
           { "text": "" },
           { "text": "── THE RECRUITER ──",                                 "style": "section-header" },
-          { "text": "OFFER REFUSED — the TalentStack list went to SAFETYNET", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && globalVars.found_pipeline_list" },
-          { "text": "OFFER REFUSED — but the TalentStack list was never recovered", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && !globalVars.found_pipeline_list" },
-          { "text": "OFFER LEFT UNANSWERED — she rang off without a yes", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_decided" },
-          { "text": "OFFER TAKEN — forty-seven names left in her pipeline", "style": "warning", "condition": "globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed" },
-          { "text": "OFFER TAKEN, THEN CONFESSED — the list went in late",  "style": "warning", "condition": "globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed" },
-          { "text": "SHE NEVER MADE HER PITCH — the TalentStack list went to SAFETYNET", "style": "entry", "_comment": "Pass 5 A2: no longer worded as the player's miss. With the sweep the envelope can always be read before the call-in.", "condition": "!globalVars.recruiter_deal_offered && globalVars.found_pipeline_list" },
-          { "text": "TALENTSTACK LIST — left unread under the terminal keyboard", "style": "warning", "_comment": "Pass 5 A2: shows only when the player called in without reading the envelope that HaX's call-in named.", "condition": "!globalVars.recruiter_deal_offered && !globalVars.found_pipeline_list" },
+          { "text": "OFFER REFUSED: the TalentStack list went to SAFETYNET", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && globalVars.found_pipeline_list" },
+          { "text": "OFFER REFUSED, but the TalentStack list was never recovered", "style": "entry", "condition": "globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && !globalVars.found_pipeline_list" },
+          { "text": "OFFER LEFT UNANSWERED: she rang off without a yes", "style": "entry", "condition": "globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_decided" },
+          { "text": "OFFER TAKEN: forty-seven names left in her pipeline", "style": "warning", "condition": "globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed" },
+          { "text": "OFFER TAKEN, THEN CONFESSED: the list went in late",  "style": "warning", "condition": "globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed" },
+          { "text": "SHE NEVER MADE HER PITCH: the TalentStack list went to SAFETYNET", "style": "entry", "_comment": "Pass 5 A2: no longer worded as the player's miss. With the sweep the envelope can always be read before the call-in.", "condition": "!globalVars.recruiter_deal_offered && globalVars.found_pipeline_list" },
+          { "text": "TALENTSTACK LIST: left unread under the terminal keyboard", "style": "warning", "_comment": "Pass 5 A2: shows only when the player called in without reading the envelope that HaX's call-in named.", "condition": "!globalVars.recruiter_deal_offered && !globalVars.found_pipeline_list" },
+          { "text": "NO RECORD of the recruiter's offer", "style": "entry", "_comment": "Release audit: fallback so this section never prints a bare heading; true only when no line above holds.", "condition": "!(globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && globalVars.found_pipeline_list) && !(globalVars.recruiter_deal_decided && !globalVars.recruiter_deal_accepted && !globalVars.found_pipeline_list) && !(globalVars.recruiter_deal_offered && !globalVars.recruiter_deal_decided) && !(globalVars.recruiter_deal_accepted && !globalVars.recruiter_deal_confessed) && !(globalVars.recruiter_deal_accepted && globalVars.recruiter_deal_confessed) && !(!globalVars.recruiter_deal_offered && globalVars.found_pipeline_list) && !(!globalVars.recruiter_deal_offered && !globalVars.found_pipeline_list)" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS ──",                              "style": "section-header" },
-          { "text": "CEO'S STAND-DOWN — on file with the Home Office review", "style": "entry", "condition": "globalVars.found_stand_down_email" },
-          { "text": "WHO STOPPED THE INTERVIEW — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && globalVars.found_vetting_file" },
-          { "text": "WHO TOLD SECURITY TO STOP — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && !globalVars.found_vetting_file" },
+          { "text": "CEO'S STAND-DOWN: on file with the Home Office review", "style": "entry", "condition": "globalVars.found_stand_down_email" },
+          { "text": "WHO STOPPED THE INTERVIEW: never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && globalVars.found_vetting_file" },
+          { "text": "WHO TOLD SECURITY TO STOP: never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && !globalVars.found_vetting_file" },
+          { "text": "No further findings on file", "style": "entry", "_comment": "Release audit: fallback so this section never prints a bare heading; true only when no line above holds.", "condition": "!(globalVars.found_stand_down_email) && !(!globalVars.found_stand_down_email && globalVars.found_vetting_file) && !(!globalVars.found_stand_down_email && !globalVars.found_vetting_file)" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS STAFF ──",                        "style": "section-header" },
           { "text": "Nobody on staff hurt",                                "style": "entry", "_comment": "Engine regression 2026-10-16 (E4): not after a fight with Torres (torres_fought), KO or not.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.thandiwe_ko && !globalVars.niamh_ko && !globalVars.bernadette_ko && !globalVars.torres_fought && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
@@ -407,7 +412,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         {
           "taskId": "find_vetting_file",
           "_comment": "Struggling run A (D2): was 'Find out who on the team is under pressure', which ticked on the hand-over of Torres' file (both files arrive together) and read as an answer. Now it says what ticks it.",
-          "title": "Get the vetting files on the cryptography team",
+          "title": "Ask Patricia for the vetting files on the cryptography team",
+          "description": "Patricia Morgan keeps the personnel security files on the team in her office. Ask her for them. The key vault is a separate sweep, and HaX will ask for that once the upload is dead.",
           "type": "collect_items",
           "targetCount": 1,
           "targetItemIds": ["torres_vetting_file"],
@@ -563,9 +569,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
         {
           "taskId": "find_upload_schedule",
           "title": "Find out when the final upload runs",
-          "type": "collect_items",
-          "targetCount": 1,
-          "targetItemIds": ["upload_schedule"],
+          "_comment": "Blind run (finding 1): was collect_items on upload_schedule alone. The server hard-checks collect_items against the inventory, so a mapping cannot tick it from the terminal's transfer_queue.log, which states the same 20:30 window. Custom, ticked by found_upload_schedule (the schedule, read or taken) or found_transfer_log (the log).",
+          "type": "custom",
           "status": "active"
         }
       ]
@@ -697,7 +702,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "type": "rfid_cloner",
       "name": "RFID Cloner",
       "takeable": true,
-      "observations": "Concealed RFID cloning device — get close to a keycard to copy it",
+      "observations": "Concealed RFID cloning device: get close to a keycard to copy it",
       "puzzle_graph_role": "tool",
       "puzzle_graph_unlocks": ["server_hallway"]
     },
@@ -729,6 +734,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 
     "final_choice": "",
     "confront_stance": "",
+    "torres_scene_opened": false,
     "torres_turned": false,
     "torres_arrested": false,
     "torres_identified": false,
@@ -741,6 +747,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "found_medical_bills": false,
     "found_torres_journal": false,
     "found_upload_schedule": false,
+    "found_transfer_log": false,
     "found_manifest": false,
     "case_ready_notified": false,
     "case_motive": false,
@@ -1058,7 +1065,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "conversation_closed:opening_briefing",
               "onceOnly": true,
               "completeTask": "receive_mission_briefing",
-              "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're in. Start with Patricia Morgan: her office is off reception, on the east side." }
             },
 <% [["!== true", "Nobody's walking in while we're still guessing. Take Patricia a name, with the motive and how the data's leaving."], ["=== true", "Nobody's walking in while we're still guessing. Call me with a name, the motive and how the data's leaving."]].each do |ko, txt| %>
             {
@@ -1174,7 +1181,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "_comment": "M5: root-flag ring declined. The old text named nothing; this one names the Architect's authorisation so the content isn't lost on a decline (R1 M2). The ring's own callback row lets the player ring topic_architect back.",
               "eventPattern": "phone_call_declined:agent_0x99_handler",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1500, "message": "Root flag's in — the Architect's authorisation, the casualty projection, all of it. Ring me back. You need to hear this." }
+              "sendTimedMessage": { "delay": 1500, "message": "Root flag's in: the Architect's authorisation, the casualty projection, all of it. Ring me back." }
             },
             {
               "eventPattern": "global_variable_changed:flag4_submitted",
@@ -1462,11 +1469,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 2000, "message": "Upload's dead. If you're leaving him there, take what's on that desk and go. Call me." }
             },
             {
-              "_comment": "Blind run B (finding 3): after a knockout the cursor is still a fist, and a fist click on the drop-site or a document does nothing. Once the fate is set and his scene closes, a reminder after the fate text.",
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "conversation_closed:david_torres",
-              "condition": "globalVars.torres_ko === true && globalVars.final_choice !== ''",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             },
             {
               "_comment": "Pass 5 A2: any fate (in person, after the knockout, or by phone) opens the call-in task.",
@@ -1502,7 +1508,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Q switches to fists (again for a harder punch), then E or click when he's in front." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             <%# Engine regression 2026-10-16 (E4, and the Restart ruling): torres_hostile
                 was set only by the onceOnly text above, so a second fight after a
@@ -1523,14 +1529,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "cooldown": 0,
               "setGlobal": { "torres_fought": false }
             },
-            <%# Orchestrator's correction: Q cycles open hand, jab, cross (hud.js), so it
-                never "stows" the fists. Split for the 30-word cap. Since engine 7.1a a
+            <%# Orchestrator's correction: no key stows or raises the fists now (F punches,
+                Q held blocks). Split for the 30-word cap. Since engine 7.1a a
                 hostile gives up at its own room's door, so stepping out does end it. %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'david_torres' && data.isHostile === true && !data.restored && globalVars.final_choice === ''",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "Press Q till the open hand shows to walk by clicking. Can't take him? Leave the data centre, then message me for Security: he swings while you're on your phone." }
+              "sendTimedMessage": { "delay": 5500, "message": "Can't take him? Leave the data centre, then message me for Security: he swings while you're on your phone." }
             },
             <%# Post-engine follow-ups (2026-10-16): a Restart after a knockout now
                 resets a Torres who isn't KO'd to calm (engine 7.1d), so game_loaded
@@ -1557,7 +1563,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "onceOnly": false,
               "cooldown": 0,
               "setGlobal": { "torres_hostile": true },
-              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. Q switches to fists, then E or click when he's in front. Or get clear and message me for Security." }
+              "sendTimedMessage": { "delay": 3000, "message": "Torres is still at that terminal, still angry. F to punch, hold Q to block. Or get clear and message me for Security." }
             },
             {
               "_comment": "PASS 2 review B1 safety net. post_ko_choice is disableClose, but if it is ever lost (a reload mid-choice), npc_ko won't re-fire and a KO'd NPC can't be talked to (interactions.js:1690). Re-entering the data centre with Torres down and no fate set offers the same two choices by phone.",
@@ -1597,7 +1603,20 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "eventPattern": "global_variable_changed:ashworth_lead_texted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That makes him a lead, not a name. Test his times against the badge log before you spend one.", "skipIfGlobal": "torres_identified" }
+              "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That's a lead, not a name: test his times against the badge log before you use one.", "skipIfGlobal": "torres_identified" }
+            },
+            {
+              "_comment": "Blind run (finding 1): the upload terminal's transfer_queue.log states the 20:30 window, so reading it ticks the Find-the-upload-time task (the printed Upload Schedule does the same through found_upload_schedule). found_upload_schedule is left alone: that global also gates the 'he is the operator' evidence lines, and the log names only dtorres.",
+              "eventPattern": "global_variable_changed:found_transfer_log",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_upload_schedule"
+            },
+            {
+              "eventPattern": "global_variable_changed:found_upload_schedule",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "find_upload_schedule"
             }
           ]
         },
@@ -2043,7 +2062,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "rfidCard": {
             "card_id": "employee_badge",
             "rfid_protocol": "EM4100",
-            "name": "Staff Badge - O. Gallagher"
+            "name": "Staff Badge - O. Gallagher",
+            "_comment": "Badge number 4430 (the #4430 on the door log and the on-call lockbox code) is the EM4100 card number, the low 16 bits of the ID: 0x114E = 1*4096 + 1*256 + 4*16 + 14 = 4430. Hex 2A0000114E (facility 0x2A = 42, DEZ 8 = last three bytes 00114E = 00004430). Without these the cloner showed a card number hashed from the card_id.",
+            "rfid_hex": "2A0000114E",
+            "rfid_facility": 42,
+            "rfid_card_number": 4430,
+            "rfid_data": { "cardId": "employee_badge", "hex": "2A0000114E", "facility": 42, "cardNumber": 4430 }
           },
           "itemsHeld": [
             {
@@ -2151,7 +2175,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "locked": true,
       "lockType": "password",
       "requires": "<%= server_room_password %>",
-      "door_sign": "Server Room — Password Access. Contact IT.",
+      "door_sign": "Server Room: Password Access. Contact IT.",
       "connections": {
         "south": "server_hallway",
         "north": "data_center"
@@ -2165,7 +2189,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "takeable": false,
           "puzzle_graph_role": "vm",
           "puzzle_graph_note": "PASS 4 fix 16: hangs the VM flag chain off the server room in the dungeon graph",
-          "observations": "An admin workstation wired into the research network. SAFETYNET has loaded it with your audit toolkit — QDC's Bludit research portal is somewhere on this subnet.",
+          "observations": "An admin workstation wired into the research network. SAFETYNET has loaded it with your audit toolkit. QDC's Bludit research portal is somewhere on this subnet.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":5,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>,
           "showPostit": true,
@@ -2270,7 +2294,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "fingerprintCandidates": ["Lisa Park", { "name": "Owen Gallagher", "pattern": "loop" }, "Patricia Morgan", "Dr Ruth Halloran"],
           "fingerprintDifficulty": "easy",
           "fingerprintCandidateCount": 4,
-          "observations": "A mug printed with a child's drawing: four stick figures and a dog. 'WORLD'S BEST DAD — love Miguel'. Cold coffee, a thumbprint on the glaze.",
+          "observations": "A mug printed with a child's drawing: four stick figures and a dog. 'WORLD'S BEST DAD, love Miguel'. Cold coffee, a thumbprint on the glaze.",
           "puzzle_graph_unlocks": "data_center"
         },
         {
@@ -2547,7 +2571,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           Torres' print exists to lift (the mug), so the vault still opens on his
           print alone in practice. %>
       "requires": ["David Torres", "Dr Ruth Halloran"],
-      "door_sign": "Key Vault — Fingerprint Access. Heisenberg Leads Only.",
+      "door_sign": "Key Vault: Fingerprint Access. Heisenberg Leads Only.",
       "connections": {
         "south": "server_room"
       },
@@ -2665,7 +2689,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "name": "transfer_queue.log",
               "takeable": false,
               "readable": true,
-              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: most of the package (previous sessions)\nTHIS SESSION: resuming, final segment...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\""
+              "text": "QUEUE: heisenberg_final.tar.gpg -> drop.talentstack-careers[.]net\nSTAGED: most of the package (previous sessions)\nTHIS SESSION: resuming, final segment...\nOPERATOR: dtorres\nWINDOW: 20:30 tonight\n\nThe last line has been typed and deleted several times: \"cancel?\"",
+              "onRead": { "setVariable": { "found_transfer_log": true } }
             }
           ]
         },

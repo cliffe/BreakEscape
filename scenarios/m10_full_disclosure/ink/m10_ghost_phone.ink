@@ -12,7 +12,7 @@ VAR ghost_l_owned = false    // broken branch: the player has owned the broken d
 
 === start ===
 + [(Put the handset down.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> start
 
 // ---------------------------------------------------------------
@@ -152,7 +152,7 @@ My share stays where it is. A clean exit, for once.
 // !ghost_call_done, so the call itself never reopens.
 === ghost_after ===
 + [(Put the handset down.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> ghost_after
 
 // Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after

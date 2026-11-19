@@ -80,7 +80,12 @@ export class VmLauncherMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            const notebookIcon = document.createElement('img');
+            notebookIcon.setAttribute('src', '/break_escape/assets/icons/notes.png');
+            notebookIcon.setAttribute('alt', 'Notepad');
+            notebookIcon.className = 'icon-small notepad-btn-icon';
+            notebookBtn.appendChild(notebookIcon);
+            notebookBtn.appendChild(document.createTextNode(' Add to Notepad'));
             controls.insertBefore(notebookBtn, controls.firstChild);
         }
 
@@ -137,257 +142,7 @@ export class VmLauncherMinigame extends MinigameScene {
             return;
         }
 
-        // Add custom styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .vm-launcher {
-                padding: 15px;
-                font-family: 'VT323', monospace;
-                max-height: 400px;
-                overflow-y: auto;
-            }
-            
-            .vm-launcher-description {
-                color: #888;
-                margin-bottom: 15px;
-                font-size: 14px;
-                line-height: 1.4;
-            }
-            
-            .vm-list {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .vm-card {
-                background: #1a1a1a;
-                border: 2px solid #333;
-                padding: 15px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-            
-            .vm-card:hover {
-                border-color: #00ff00;
-                background: #1f1f1f;
-            }
-            
-            .vm-card.selected {
-                border-color: #00ff00;
-                background: rgba(0, 255, 0, 0.1);
-            }
-            
-            .vm-card.launching {
-                opacity: 0.7;
-                cursor: wait;
-            }
-            
-            .vm-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 8px;
-            }
-            
-            .vm-title {
-                color: #00ff00;
-                font-size: 16px;
-                font-weight: bold;
-            }
-            
-            .vm-status {
-                font-size: 12px;
-                padding: 3px 8px;
-                border-radius: 0;
-            }
-            
-            .vm-status.online {
-                background: #00aa00;
-                color: #000;
-            }
-            
-            .vm-status.offline {
-                background: #aa0000;
-                color: #fff;
-            }
-            
-            .vm-status.console {
-                background: #0088ff;
-                color: #fff;
-            }
-            
-            .vm-details {
-                display: flex;
-                gap: 20px;
-                font-size: 14px;
-                color: #aaa;
-            }
-            
-            .vm-detail-label {
-                color: #666;
-            }
-            
-            .vm-ip {
-                font-family: 'VT323', monospace;
-                color: #ffaa00;
-            }
-            
-            .vm-ip-display {
-                background: rgba(255, 170, 0, 0.1);
-                border: 2px solid #ffaa00;
-                padding: 12px 15px;
-                margin-top: 10px;
-                text-align: center;
-            }
-            
-            .vm-ip-display .vm-detail-label {
-                display: block;
-                color: #888;
-                font-size: 12px;
-                margin-bottom: 5px;
-            }
-            
-            .vm-ip-value {
-                font-family: 'VT323', monospace;
-                font-size: 20px;
-                font-weight: bold;
-                color: #ffaa00;
-                letter-spacing: 1px;
-            }
-            
-            .vm-actions {
-                margin-top: 15px;
-                display: flex;
-                gap: 10px;
-                justify-content: center;
-            }
-            
-            .vm-action-btn {
-                background: #00aa00;
-                color: #fff;
-                border: 2px solid #000;
-                padding: 10px 20px;
-                font-family: 'Press Start 2P', monospace;
-                font-size: 12px;
-                cursor: pointer;
-                transition: background 0.2s;
-            }
-            
-            .vm-action-btn:hover:not(:disabled) {
-                background: #00cc00;
-            }
-            
-            .vm-action-btn:disabled {
-                background: #333;
-                color: #666;
-                cursor: not-allowed;
-            }
-            
-            .vm-action-btn.launching {
-                background: #666;
-            }
-            
-            .launch-status {
-                text-align: center;
-                padding: 10px;
-                margin-top: 10px;
-                font-size: 14px;
-            }
-            
-            .launch-status.success {
-                color: #00ff00;
-            }
-            
-            .launch-status.error {
-                color: #ff4444;
-            }
-            
-            .launch-status.loading {
-                color: #ffaa00;
-            }
-            
-            .no-vms-message {
-                text-align: center;
-                padding: 40px;
-                color: #888;
-            }
-            
-            .no-vms-message h4 {
-                color: #ffaa00;
-                margin-bottom: 15px;
-            }
-
-            .vm-launcher-iframe {
-                padding: 0;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .vm-launcher-iframe iframe {
-                flex: 1;
-                width: 1024px;
-                height: 80vh;
-                min-height: 768px;
-                border: none;
-                background: #000;
-            }
-
-            .standalone-instructions {
-                background: #1a1a1a;
-                border: 2px solid #333;
-                padding: 15px;
-                margin-top: 15px;
-                font-size: 13px;
-                line-height: 1.6;
-            }
-            
-            .standalone-instructions h4 {
-                color: #00ff00;
-                margin-top: 0;
-                margin-bottom: 10px;
-            }
-            
-            .standalone-instructions code {
-                background: #000;
-                padding: 2px 6px;
-                color: #ffaa00;
-            }
-            
-            .vm-names {
-                display: flex;
-                gap: 15px;
-                justify-content: center;
-                margin: 20px 0;
-            }
-
-            .vm-name-badge {
-                background: #00aa00;
-                color: #000;
-                padding: 12px 24px;
-                font-weight: bold;
-                font-size: 16px;
-                border: 2px solid #000;
-                font-family: 'VT323', monospace;
-            }
-
-            .standalone-instructions h3 {
-                color: #00ff00;
-                margin-top: 0;
-            }
-
-            .standalone-instructions ol {
-                margin: 0;
-                padding-left: 20px;
-            }
-            
-            .standalone-instructions li {
-                margin: 8px 0;
-                color: #ccc;
-            }
-        `;
-        this.gameContainer.appendChild(style);
+        // Styles live in css/vm-launcher-minigame.css (loaded by show.html.erb)
         
         // Build main container
         const launcher = document.createElement('div');
@@ -396,9 +151,9 @@ export class VmLauncherMinigame extends MinigameScene {
         if (this.vmSetReleased) {
             launcher.appendChild(this.buildReleasedMessage());
         } else if (!this.vm) {
-            launcher.innerHTML = this.buildNoVmMessage();
+            launcher.appendChild(this.buildNoVmMessage());
         } else {
-            launcher.innerHTML = this.buildVmDisplay();
+            launcher.appendChild(this.buildVmDisplay());
         }
         
         this.gameContainer.appendChild(launcher);
@@ -446,107 +201,111 @@ export class VmLauncherMinigame extends MinigameScene {
         return box;
     }
 
+    /**
+     * Small DOM helper (engine text rule: createElement, textContent, setAttribute; no innerHTML).
+     * attrs: className plus any other attribute name; children: nodes appended in order.
+     */
+    el(tag, className, text, attrs, children) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = text;
+        if (attrs) {
+            for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+        }
+        if (children) {
+            for (const c of children) node.appendChild(c);
+        }
+        return node;
+    }
+
+    /** Returns the "no VM" message element. */
     buildNoVmMessage() {
         if (this.hacktivityMode) {
-            return `
-                <div class="no-vms-message">
-                    <h4>No VM Available</h4>
-                    <p>No virtual machine is configured for this terminal.</p>
-                    <p>Please provision VMs through Hacktivity first.</p>
-                </div>
-            `;
-        } else {
-            return `
-                <div class="no-vms-message standalone-mode">
-                    <h2>VM Terminal</h2>
-                    <p>This terminal connects to a virtual machine. To use it, start the virtual machine on your own computer.</p>
-
-                </div>
-            `;
+            return this.el('div', 'no-vms-message', undefined, null, [
+                this.el('h4', null, 'No VM Available'),
+                this.el('p', null, 'No virtual machine is configured for this terminal.'),
+                this.el('p', null, 'Please provision VMs through Hacktivity first.')
+            ]);
         }
+        return this.el('div', 'no-vms-message standalone-mode', undefined, null, [
+            this.el('h2', null, 'VM Terminal'),
+            this.el('p', null, 'This terminal connects to a virtual machine. To use it, start the virtual machine on your own computer.')
+        ]);
     }
-    
+
+    /** Returns a DocumentFragment holding the VM display (appended straight into .vm-launcher). */
     buildVmDisplay() {
+        const frag = document.createDocumentFragment();
         const hasConsole = this.vm.enable_console !== false;
         const statusClass = hasConsole ? 'console' : 'online';
         const statusText = hasConsole ? 'Console' : 'Active';
-        let html = `<p>This terminal connects to a virtual machine. To use it, `;
+        let intro = 'This terminal connects to a virtual machine. To use it, ';
 
         if (this.hacktivityMode && this.vmPanelRefused) {
-            html += `
-                you need its VM console, which is not available.</p>
-            `;
+            intro += 'you need its VM console, which is not available.';
         } else if (this.hacktivityMode) {
-            html += `
-                click the console button below to open your VM in a new tab.</p>
-            `;
+            intro += 'click the console button below to open your VM in a new tab.';
         } else {
-            html += `
-                you need to launch the virtual machine on your local system.</p>
-            `;
+            intro += 'you need to launch the virtual machine on your local system.';
         }
-        
-        html += `
-            <div class="vm-card">
-                <div class="vm-header">
-                    <span class="vm-title">${this.escapeHtml(this.vm.title)}</span>
-                    <span class="vm-status ${statusClass}">${statusText}</span>
-                </div>
-                ${this.vm.ip ? `
-                    <div class="vm-ip-display">
-                        <span class="vm-detail-label">IP Address:</span>
-                        <span class="vm-ip-value">${this.escapeHtml(this.vm.ip)}</span>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-        
+        frag.appendChild(this.el('p', null, intro));
+
+        const card = this.el('div', 'vm-card', undefined, null, [
+            this.el('div', 'vm-header', undefined, null, [
+                this.el('span', 'vm-title', this.vm.title),
+                this.el('span', 'vm-status ' + statusClass, statusText)
+            ])
+        ]);
+        if (this.vm.ip) {
+            card.appendChild(this.el('div', 'vm-ip-display', undefined, null, [
+                this.el('span', 'vm-detail-label', 'IP Address:'),
+                this.el('span', 'vm-ip-value', this.vm.ip)
+            ]));
+        }
+        frag.appendChild(card);
+
         if (this.hacktivityMode && this.vmPanelUrl) {
             const consoleSrc = vmPanelUrlWithTitle(this.vmPanelUrl, this.vm?.title);
-            html += `
-                <div class="vm-actions">
-                    <a class="vm-action-btn" href="${this.escapeHtml(consoleSrc)}" target="_blank" rel="noopener noreferrer">
-                        Open VM Console: ${this.escapeHtml(this.vm.title)}
-                    </a>
-                </div>
-            `;
-            // DISABLED: ActionCable SPICE download approach — preserved for re-enablement.
-            // html += `
-            //     <div class="vm-actions">
-            //         <button class="vm-action-btn" id="launch-console-btn">
-            //             Open Console: ${this.escapeHtml(this.vm.title)}
-            //         </button>
-            //     </div>
-            //     <div class="launch-status" id="launch-status"></div>
-            // `;
+            frag.appendChild(this.el('div', 'vm-actions', undefined, null, [
+                this.el('a', 'vm-action-btn', 'Open VM Console: ' + (this.vm?.title ?? ''),
+                    { href: consoleSrc, target: '_blank', rel: 'noopener noreferrer' })
+            ]));
+            // DISABLED: ActionCable SPICE download approach (a #launch-console-btn button plus a
+            // #launch-status div). The markup is gone; the handler and launchConsole() are kept
+            // commented out in attachEventHandlers for re-enablement (rebuild the button with el()).
         } else if (this.hacktivityMode && this.vmPanelRefused) {
             // Not the VirtualBox steps: in Hacktivity the VM runs on the server, not locally
-            html += `
-                <div class="vm-actions vm-panel-unavailable">
-                    <p>VM panel unavailable.</p>
-                </div>
-            `;
+            frag.appendChild(this.el('div', 'vm-actions vm-panel-unavailable', undefined, null, [
+                this.el('p', null, 'VM panel unavailable.')
+            ]));
         } else if (this.vm.ip) {
             // Standalone mode: show connection instructions
-            html += `
-                <div class="standalone-instructions">
-                    <h4>Connection Instructions</h4>
-                    <p>1. Start your VM in VirtualBox: <code>${this.escapeHtml(this.vm.title)}</code></p>
-                    <p>2. Connect via SSH or VNC to: <code>${this.escapeHtml(this.vm.ip)}</code></p>
-                    <p>3. Complete the challenges and capture flags</p>
-                </div>
-            `;
+            const steps = [
+                ['1. Start your VM in VirtualBox: ', this.vm.title],
+                ['2. Connect via SSH or VNC to: ', this.vm.ip]
+            ].map(([label, value]) => {
+                const p = this.el('p', null, label);
+                p.appendChild(this.el('code', null, value));
+                return p;
+            });
+            frag.appendChild(this.el('div', 'standalone-instructions', undefined, null, [
+                this.el('h4', null, 'Connection Instructions'),
+                ...steps,
+                this.el('p', null, '3. Complete the challenges and capture flags')
+            ]));
         }
 
         if (this.flagNote.trim() !== '') {
-            html += `<div class="vm-flag-note"><p>${this.escapeHtml(this.flagNote)}</p></div>`;
+            frag.appendChild(this.el('div', 'vm-flag-note', undefined, null, [
+                this.el('p', null, this.flagNote)
+            ]));
         }
-        
-        return html;
+
+        return frag;
     }
-    
 
     
+
     attachEventHandlers() {
         const notebookBtn = document.getElementById('minigame-notebook-postit');
         if (notebookBtn) {
@@ -581,7 +340,7 @@ export class VmLauncherMinigame extends MinigameScene {
                     important: true
                 }
             };
-            window.startNotesMinigame(postitItem, notebookContent, 'Postit note found on VM terminal.', null, false, false);
+            window.startNotesMinigame(postitItem, notebookContent, 'Postit note found on VM terminal.', null, false, true);
             this.showSuccess("Added postit note to notepad", false, 2000);
         } else {
             this.showFailure("Notepad not available", false, 2000);

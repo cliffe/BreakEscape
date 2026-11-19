@@ -586,6 +586,8 @@ export class PhoneChatMinigame extends MinigameScene {
             this.history.markAllRead();
             if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
         }
+        // The history (every stored row, including a text that arrived meanwhile) is drawn
+        if (this.ui) this.ui.historyDrawn = true;
         // A toast from this contact, or repeating a line now drawn here, is done with
         // (m06 confirmation R4 M2: HaX's fight text barked before the phone opened)
         window.barkSystem?.dismissBarksForOpenThread?.();
@@ -1242,7 +1244,14 @@ export class PhoneChatMinigame extends MinigameScene {
      * or moved on meanwhile.
      */
     async _askEndingBeforeChoice(choiceIndex) {
-        if (this._endingAsking) return false;
+        if (this._endingAsking) {
+            // As person chat: nudge an open question; a lost one is dropped and asked again.
+            if (window.endingCheck?.isAsking?.()) {
+                window.endingCheck.nudge?.();
+                return false;
+            }
+            this._endingAsking = false;
+        }
         const askedTags = this.conversation?.engine?.story?.currentChoices?.[choiceIndex]?.tags;
         if (!choiceAsksEnding(askedTags)) return true;
         const asking = this.conversation;
@@ -1433,6 +1442,13 @@ export class PhoneChatMinigame extends MinigameScene {
 
             // Save state before closing
             this.saveStoryState();
+
+            // A cosmetic "(Close.)" home stub closes the thread card, not the phone: the player
+            // lands back on the contact list, so a timed-out incoming-call card needs no reopen.
+            if (this._stubExitStaysInPhone(silentChoice, accumulatedTags)) {
+                this.closeConversation();
+                return;
+            }
 
             // Complete immediately - don't delay, as this might trigger an event-driven cutscene
             // that needs to start right after this minigame closes
@@ -1939,6 +1955,15 @@ export class PhoneChatMinigame extends MinigameScene {
         }
         // The debrief is already up. Leaving the thread is the same as Done.
         this.complete(true);
+    }
+
+    /**
+     * A silent "(Close.)" stub on a plain thread (not a forced call) leaves the phone open. A stub
+     * whose label puts the phone away or hangs up carries `# close_phone` and closes the phone.
+     */
+    _stubExitStaysInPhone(silentChoice, tags = []) {
+        if (!silentChoice || phoneCloseLocked(this.params)) return false;
+        return !(tags || []).some(tag => String(tag).trim().split(/[\s:]/)[0] === 'close_phone');
     }
 
     closeConversation() {

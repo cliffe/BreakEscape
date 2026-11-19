@@ -78,7 +78,7 @@ VAR hax_suspect = ""
 === support_hub ===
 + {flag4_submitted and not flag4_heard and not hax_console_asked} [The console.] -> console_fact
 + {flag4_submitted and not flag4_heard and not hax_vault_asked} [The vault line.] -> vault_line
-+ {outer_lock_open and not hax_jammed and not what_went_out_given} [What went out?] -> what_went_out
++ {outer_lock_open and not hax_jammed and not what_went_out_given and not core_greeted} [What went out?] -> what_went_out
 + {flag2_submitted and not hax_jammed and not outer_lock_open} [What's still live?] -> whats_live
 // Stage 8 (ruling 3, m-1): while "[What's still live?]" shows, it carries the
 // backdoor too, so the hub stays at ten on the busiest save.
@@ -88,7 +88,7 @@ VAR hax_suspect = ""
 + {outer_lock_open and not flag4_submitted and not hax_box_asked} [His box.] -> box_topic
 // Puzzle chains P1: only once the cut has fallen to the player, so it never goes round Wendell's choice or Voltage's scene.
 + {power_room_entered and cut_by_hand and not gallery_shutter_cut and phone_voice_is_hax} [Talk me through the shutter.] -> shutter_topic
-+ {clue_door_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
++ {clue_door_log and clue_bench_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
 // Alignment m12: recalls after the accusation, and gone once past the gallery stair.
 + {officer_out == "malhotra" and clue_alibi and not gallery_open} [Bring Malhotra back.] -> recall_malhotra
 + {officer_out == "quintero" and clue_bench_log and not gallery_open} [Bring Quintero back.] -> recall_quintero
@@ -269,9 +269,13 @@ The shutter has to be dead before you reach him.
 // Clue 1 (arc §8.2). HaX volunteers the same read as a bark on the log's first
 // read; this topic is for a player who missed it.
 === door_log ===
+{ door_log_given:
+    That's the read I texted you. Ask me what you like.
+- else:
+    Ten past two, the core's service door opened to one of our badges.
+    The log says Malhotra's badge. Malhotra was on with me at ten past.
+}
 ~ door_log_given = true
-Ten past two, the core's service door opened to one of our badges.
-The log says Malhotra's badge. Malhotra was on with me at ten past.
 + [Is there a camera on that door?]
     That camera's a box on a bracket. Never wired.
     -> support_hub
@@ -607,7 +611,6 @@ There's a maintenance tag on their gate terminal's lead. It names the host, the 
 // Scenario design R5 n2: an envelope, not a key. Teaching R2-n3 (opus48): its find is an access code (a single token), not a login account.
 // Dialogue R5 n2/n4, puzzle chains R4 n4: beside the terminal, on the desk; one "his box".
 He's left an envelope beside his terminal, stamped CORE. His access code's in it. He wants you on his box.
-If anything moves off that console, I want to be on the feed before it does.
 He walled it off, the same way the release service was. You've broken out of one of those tonight.
 He'll have kept himself a way out. Find it.
 -> support_hub
@@ -615,13 +618,12 @@ He'll have kept himself a way out. Find it.
 // After flag 4 (MC §6.1): the feed, and the vault line with the purge.
 === console_fact ===
 ~ hax_console_asked = true
-I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
+I've got his box. I can try to kill the feed. Try.
 -> support_hub
 
 === vault_line ===
 ~ hax_vault_asked = true
 The line into our vault is open from there. We left it open.
-And if both copies die, the room purges. Doors, lights, all of it. He'll be ready for that. We won't.
 -> support_hub
 
 // The last net for the by-hand cut (OT §4.9). Exits after the cut, as the call does.

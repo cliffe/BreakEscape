@@ -1422,63 +1422,6 @@ export class ObjectivesManager {
     }, 1000);
   }
   
-  /**
-   * Sync flag task progress to server (including submittedFlags array)
-   * Debounced version for regular progress updates
-   */
-  syncFlagTaskProgress(taskId, progress, submittedFlags) {
-    const gameId = window.breakEscapeConfig?.gameId;
-    if (!gameId) return;
-    
-    // Debounce sync by 1 second
-    if (this.syncTimeouts[taskId]) {
-      clearTimeout(this.syncTimeouts[taskId]);
-    }
-    
-    this.syncTimeouts[taskId] = setTimeout(() => {
-      // RESTful route: PUT /break_escape/games/:id/objectives/tasks/:task_id
-      fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-        },
-        body: JSON.stringify({ progress, submittedFlags })
-      }).catch(err => console.warn('Failed to sync flag progress:', err));
-    }, 1000);
-  }
-  
-  /**
-   * Sync flag task progress immediately (no debounce) - returns a promise
-   * Used when completing a task to ensure server has latest data
-   */
-  async syncFlagTaskProgressImmediate(taskId, progress, submittedFlags) {
-    const gameId = window.breakEscapeConfig?.gameId;
-    if (!gameId) return Promise.resolve();
-    
-    // Clear any pending debounced sync for this task
-    if (this.syncTimeouts[taskId]) {
-      clearTimeout(this.syncTimeouts[taskId]);
-      delete this.syncTimeouts[taskId];
-    }
-    
-    // RESTful route: PUT /break_escape/games/:id/objectives/tasks/:task_id
-    const response = await fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-      },
-      body: JSON.stringify({ progress, submittedFlags })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to sync flag progress: ${response.statusText}`);
-    }
-    
-    return response.json();
-  }
-  
   // === UI Notifications ===
 
   /**
