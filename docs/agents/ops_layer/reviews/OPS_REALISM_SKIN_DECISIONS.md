@@ -186,3 +186,23 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - New validator rule in section 9: every discovery network has a `range` or none does; failing fixture added to the 11.3 validator list.
 - `cli.hosts` keys are plain strings of 1 to 64 characters (fits `kit_deviceA`, `P1`), replacing the host id pattern; a 65-character key is a failing fixture.
 
+## R10 fixes (2026-11-19)
+
+- MA1: "path" defined per field: in `banner`/`title`, a token starting `/`, `~/`, `./`, `../`, a drive letter with `:/`, or three or more `/` parts; one-`/` tokens are pairs. `module` is read only by its pattern, uniqueness, module-form rules and an equal-neighbouring-segments check, never for pairs. `/`-pair credential rule narrowed to equal sides, a default-password right side, or account word plus letter-digit right side, so `Guest/anonymous`, `Service/1.0`, `SMB/CIFS`, `TCP/IP`, `ShareServe/3.1`, `auxiliary/admin/...` pass; passing and failing fixtures for each form added to 11.3.
+- MA2: chose the scenario-wide all-or-none rule for `title`, `module`, `script` (plus decoy (first segment, depth) pairs a subset of weakness pairs when the scenario has a weakness) over requiring authored labels on decoy-only services. Reason: one count per field over the scenario is simpler to validate than finding decoy-only services, and simpler to author ("label every finding or none"); required labels on decoy-only services alone would still let authored decoys sit beside default weaknesses. The per-service rule is subsumed by the scenario-wide one and dropped as a separate row; the per-service module-category rule stays. Two decoy-only failing fixtures added.
+- m1: Panels pass no echo; the `onSent` hook (K2) records `echo ?? commandFor(offer, view)`, so Panels never import the grammar.
+- m2: an exact match beats a prefix; addresses and ranges match exactly only; grammar and round-trip cases for `web`/`web01`, `f1`/`f10`, `phish`/`phish_sms` and a near-miss address.
+- m3: operand set defined per verb (table in the Grammar); `check <host> <service or port>` and `use <technique> on <finding>` are one target; new validator error for a network id equal to a host, object or resource id.
+- m4: `-sU` added to the known flags; a protocol mismatch sends the check and prints one note giving the service's real protocol.
+- m5: the local `sweep` answer covers open, swept and non-ops blocks; per-host lines follow the sweep's down-state rule, the run closes with the `Nmap done:` line, only the note is unconditional; `TERMINAL_ONLY_TEXT` "Parse messages" widened to "Grammar answers and notes".
+- m6: option 1 version check reads a version only directly after the service's `product` or a listed product; dotted quads in the scenario's ranges never count; `TLS 1.0`, `HTTP/1.1`, `SSH-2.0`, `10.20.0.15` pass.
+- m7: `decoy`, `fake`, `bait`, `false`, `patched`, `not vulnerable` stay errors; `real`, `true`, `fixed`, `safe` became a warning, with warning fragments in 11.3.
+- m8: option 2 pattern widened (`can-`, `kb\d{6,7}`, `rhsa`/`dsa`/`usn`/`ghsa`/`zdi`) and a skin-owned `scripts/real_vuln_nicknames.txt` added (K3, option 2 only).
+- m9 / 15(a): option 1b dropped; the question now says real names in the core's `product` would be a core-plan change and would show in the Panels' service tile too (checked: core section 2 step 2 draws product and version on the tile).
+- m10: re-checked against the core at 022991ca2. Core 5.2 now has the open-network address case and `network_cli_fields_test` tests it, so those two gaps are dropped. The uniqueness wording in core 9.1 ("unique on its network") is still there: new request 5 asks the core to correct it, and the uneven-authoring phrase, and to list the network-id rule.
+- m11: `<private IPv4>:<port>` exempt from the `:` pair rule; key words split: `key`/`token` need a non-space token right after `=`/`:` (as the review asks), the password-type words fail with or without a space so `Password: letmein` is still caught (a deliberate widening of the review's wording); `SSH host key: RSA` and `API key: required` pass.
+- n1: bidi controls U+202A-U+202E and U+2066-U+2069 replaced with U+FFFD; hostile fixture gains U+202E.
+- n2: the `;` example marked as a framework-prompt line.
+- n3: open-network address collector tag named `listed` in section 7 and 11.3. The review's note that the core's collector skips open-network addresses no longer holds (core now tags them `listed`), so it is not repeated.
+- Coordinator (from core review): 12.2 now places the row builders in `network_access.rb` (`network_rows`, block, `host_row`) and the finding builder in `network_ops.rb`; the core copies `cli` objects by named keys only, so `_` notes are never served; 9 and request 3 say so.
+
