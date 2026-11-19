@@ -59,7 +59,7 @@ Phase 2: BUILD THE CASE  [unlocks when Phase 1 complete]
   → Enter IT Room (PIN 2468) → talk to Kevin (lockpick + keycard + password hints)
   → Talk to Maya (informant, Maya's Office)
   → Collect 3 investigation documents (notes2 tier)
-  → Find Derek's Office Key (safe in Manager's Office) OR Lockpick (from Kevin)
+  → Find Derek's Office Key (Patricia's briefcase in Manager's Office, lockpick only) OR Lockpick (from Kevin)
 
 Phase 3: SEARCH DEREK'S OFFICE  [unlocks when Phase 2 complete]
   → Enter Derek's office (→ ALSO unlocks Phase 4 in parallel)
@@ -112,7 +112,7 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 | 9 | Talk to Kevin Park | Get **Lockpick Kit** + **Server Room Keycard** + Password Hints |
 | 10 | Enter Maya's Office (via Hallway West) | Talk to Maya Chen (informant) |
 | 11 | Collect 3 investigation docs (notes2) | From IT room, Kevin's office, Maya's office, Manager's office |
-| 12 | Open Patricia's Safe (PIN **0419**) in Manager's Office | Get **Derek's Office Key** + Patricia's Investigation Notes |
+| 12 | Pick the lock on Patricia's Briefcase (key lock, no code; use the Lock Pick Kit from Kevin) in Manager's Office | Get **Derek's Office Key** + Patricia's Investigation Notes (and more) |
 | — | *OR: Use Kevin's lockpick on Derek's door (skip key)* | *Either path counts for find_derek_access* |
 | 13 | Have key OR lockpick, 3 notes2, Kevin + Maya talked to | **Phase 2 complete → Phase 3 unlocks** |
 
@@ -169,7 +169,7 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 | IT Room | **2468** | Maintenance Checklist (Main Office) | "IT ROOM PIN: 2468" |
 | Practice Safe | **1337** | Maintenance Checklist | "Practice safe code: 1337" |
 | Main Filing Cabinet | **2024** | Sticky Note (Main Office) | "Election year = access code" |
-| Patricia's Safe | **0419** | Birthday Card (Break Room) | "April 19th" |
+| Patricia's Briefcase | no code (key lock, lockpick) | Lock Pick Kit from Kevin | n/a |
 | Derek's Cabinet | **0419** | Whiteboard (Base64 decoded) | "FILING_CABINET_PIN: 0419" |
 | ENTROPY Encrypted Archive | shatter_server:flag_1 | SSH brute force into derek's account | Decryption key (value generated per build) |
 
@@ -178,7 +178,7 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 | Item | Location | Unlocks |
 |------|----------|---------|
 | Main Office Key | Sarah Martinez (Reception) | Main Office Area door |
-| Derek's Office Key | Patricia's Safe (Manager's Office, PIN 0419) | Derek's Office door |
+| Derek's Office Key | Patricia's Briefcase (Manager's Office, lockpick) | Derek's Office door |
 | Server Room Keycard | Kevin Park (IT Room) | Server Room RFID lock |
 | Lockpicks | Kevin Park (IT Room) | Derek's door (alt), Patricia's briefcase |
 
@@ -220,7 +220,7 @@ Phase 2: BUILD THE CASE (IT room + Kevin + Maya + 3 notes2 + Derek access)
   IT Room [PIN 2468] ─► Kevin (lockpick, keycard, password hints [notes2])
   Maya's Office ─► Maya [informant] + Disinformation Research + SAFETYNET Contact [notes2 ×2]
   Kevin's Office ─► IT Incident Log [notes2]
-  Manager's Office ─► Patricia's Safe [0419] ─► KEY #2 + Patricia's Notes [notes2]
+  Manager's Office ─► Patricia's Briefcase [lockpick] ─► KEY #2 + Patricia's Notes [notes2]
   (OR: use lockpick from Kevin for Derek's door)
                                             │
                                     [UNLOCKS Phase 3]
@@ -279,7 +279,7 @@ Phase 6: CLOSE THE CASE
 
 | Method | Requirements | Difficulty |
 |--------|--------------|------------|
-| Use Key | Find PIN 0419 (Break Room), open Patricia's safe | Easy (find clue, enter PIN) |
+| Use Key | Pick Patricia's briefcase lock with the lockpick kit | Medium (lockpick minigame) |
 | Lockpick | Get lockpicks from Kevin (IT Room) | Medium (lockpick minigame) |
 
 ### Optional Bonus Content
@@ -356,7 +356,7 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | Fragment | Location | How to Access | Tier |
 |----------|----------|---------------|------|
 | The Architect's Letter | Main Filing Cabinet | PIN 2024 | notes |
-| Patricia's Investigation Notes | Patricia's Safe | PIN 0419 (birthday card) | notes2 |
+| Patricia's Investigation Notes | Patricia's Briefcase | Lockpick (no code) | notes2 |
 | ENTROPY Infiltration Timeline | Patricia's Briefcase | **Lockpick only** | notes2 |
 | Social Fabric Manifesto | Derek's Filing Cabinet | PIN 0419 (whiteboard decode) | notes4 |
 | Network Backdoor Analysis | Server Room | Enter room | notes |
@@ -406,7 +406,7 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | Hallway West | None | North from Main Office | Directory sign; connects to Hallway East |
 | Hallway East | None | North from Main Office | Directory sign; connects to Storage Closet |
 | Storage Closet | None | East from Hallway East | Practice safe, backup codes |
-| Manager's Office | None | North from Hallway West | Safe (key + notes2), briefcase (notes2) |
+| Manager's Office | None | North from Hallway West | Briefcase (key, notes2, CyberChef; lockpick) |
 | Maya's Office | None | North from Hallway East | Maya (informant), notes2 ×2 |
 | Kevin's Office | None | North from Hallway West | Planted evidence (text_file ×2), IT incident log (notes2) |
 | Derek's Office | KEY/PICK | North from Hallway East | **No NPCs** — Computer (text_file ×3), cabinet (notes4 ×3) |
