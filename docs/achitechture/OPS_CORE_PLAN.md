@@ -214,7 +214,7 @@ today, `technique_card` here), and `offWhen` in the requireGlobal form (the mode
 | Stage | Adds | Ends playable when | Size |
 |---|---|---|---|
 | S1 (N13) | `hosts` map, `services[]`, `networks.<id>.discovery`, `POST /network/scan`, host and service rows in the view, the optional `cli` display fields copied onto the block (range), host rows (address: on an open network from the first answer that lists the row, on a discovery network from the sweep) and services (section 5.2; declared by the skin plan at its K3), the scene's `perform(offer, { echo })` path with its pending guard and its two no-op hooks `onSent` and `onEnded` (5.3) | `test_ops_scan`: a discovery network opens empty; a sweep lists its hosts; a host scan lists services; a pivot then lets a second network be swept | M |
-| S2 (N14) | `weaknesses[]`, `decoys[]`, `fixedIf`, `POST /network/check` and `/confirm`, the findings panel, a finding's `cli` copied by the one finding builder (5.3) | `test_ops_findings`: findings appear only after a check; a decoy confirms false; a real one confirms and lists its needs; a fixed weakness yields no finding; a global set by the scenario patches a weakness. No weakness in it has `grants`, so it passes the validator at S2 and unchanged after S3 | M |
+| S2 (N14) | `weaknesses[]`, `decoys[]`, `fixedIf`, `POST /network/check` and `/confirm`, the findings panel, the realism catalog loader `lib/break_escape/realism_catalog.rb`, and a finding's `cli` copied by named key from the catalog entry its `realism` link names, by the one finding builder (5.3; the link is declared by the skin plan at its K3) | `test_ops_findings`: findings appear only after a check; a decoy confirms false; a real one confirms and lists its needs; a fixed weakness yields no finding; a global set by the scenario patches a weakness. No weakness in it has `grants`, so it passes the validator at S2 and unchanged after S3 | M |
 | S3 (N15) | `techniques`, the item type `technique_card` and its field `technique_card`, `POST /network/technique`, `via: "technique"` sessions, the keyring proof kind `technique_card`, the techniques panel, the desktop at the keyboard through a technique session with its remote-view marker, the compromised marker on world sprites, the validator's grant checks (a granted credential's `connectsTo` PC must take it) | `test_ops_access`: a wrong card is refused with its reason; a card on a finding that grants nothing gets `no_grant`; the right card with needs met opens the desktop or adds the credential; the PC then shows the marker and clicking it opens the remote view; unplugging ends the session and clears the marker | L |
 
 No field is reserved ahead of its stage. What happens to a scenario that writes a field before
@@ -224,7 +224,7 @@ and open in others:
 | Field written early | Where it sits | What catches it |
 |---|---|---|
 | `weaknesses`, `decoys` on a service; `discovery` on a network; `technique_card` in a credential's `proof` | blocks this plan declares closed (`definitions.service`, a `hosts` entry), or that are closed today (`networks.<id>`, `credentials.<id>.proof`) | a schema error: unknown property |
-| `cli` on a network, service, weakness or decoy, before the skin plan's K3 declares it | the same closed blocks (`networks.<id>`, `definitions.service`, `definitions.weakness`, `definitions.decoy`) | a schema error: unknown property |
+| `cli` on a network or service, and `realism` on a weakness or decoy, before the skin plan's K3 declares them | the same closed blocks (`networks.<id>`, `definitions.service`, `definitions.weakness`, `definitions.decoy`) | a schema error: unknown property. A `cli` on a weakness or decoy stays one after K3 too: a finding's display text comes only from the catalog entry it links |
 | `hosts`, `techniques` at the top level | the top level is open (no `additionalProperties`) | the corpus test `test/js/validator-declared-top-level.test.mjs`, which fails for a top-level key the schema does not declare. A single scenario run through the validator gets no error from the schema |
 | `services` on a room object, `technique_card` on an item | `definitions.item` is open (177 properties, no `additionalProperties`) | only the unknown-key warning of `schema_unknown_key_warnings` (`VS:790-800`), and the engine ignores the field |
 
@@ -305,8 +305,8 @@ from the bootstrap by one more name in `WITHHELD_SCENARIO_KEYS`, and reads throu
 `NetworkModel` helper. Services on a sign-in object stay on the object, because that is where an
 author already describes that PC.
 
-Optional console display fields (`cli`) are described in the realism skin plan, section 4.2, and
-served as section 5.2 says.
+Optional console display fields (`cli`) on networks, hosts and services are described in the
+realism skin plan, section 4.2, and served as section 5.2 says.
 
 ### 4.2 S2
 
@@ -356,6 +356,13 @@ served as section 5.2 says.
   sends, but that one condition could be met by a forged sync. That is the project's rule for a
   step gated by dialogue, and the validator says so with a warning (section 9.2). An author who
   wants a hard gate uses an item or a credential.
+- A weakness or decoy may carry `realism`, a plain catalog id (`share_guest_login`), declared
+  by the skin plan at its K3 (section 3 says what refuses it before then). It links an entry of
+  the server-side realism catalog (`config/break_escape/realism_catalog/*.json`, the skin plan's
+  section 4.3), the one place real advisory ids and real framework module paths may live; a
+  scenario file holds none. A weakness or decoy has no `cli` object of its own. The link is
+  display only: section 5.3 says what the server sends from it, and nothing decides anything by
+  it.
 - A scenario that wants the player to know ahead which finding is real does it with ordinary
   things in the world: a maintenance log that says the panel was updated, an installer's sheet
   that says the factory account was left on. The engine does not link them to the finding.
@@ -487,11 +494,15 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
 - A device row is `{ id, kind: 'device', name, sprite, responding? }`.
 - **Display fields (`cli`).** The optional `cli` objects of section 9.1 are display text for the
   command-line skin. The row builders copy them by named key, never as a whole object, beside
-  the fields they belong to and at the stage that serves them, and never earlier. The keys are:
+  the fields they belong to and at the stage that serves them, and never earlier. The builders
+  are those in `network_access.rb` (the block, built inline in `network_blocks`, `NA:795`, and
+  `down_blocks`, `NA:813`; `network_rows`, `NA:873`; `host_row`, `NA:1043`) and the device-row
+  builder, new in `network_ops.rb`. The keys are:
   a network's `cli` gives `range` alone (the block gets `cli: { range }`); a host's entry under
   `cli.hosts` gives `address` alone (a host row or device row gets `address`); a service's `cli`
-  gives `protocol`, `service` and `banner`; a finding's `cli` gives `title`, `module` and
-  `script`. Any other key, a `_` author note included, is never copied (author notes never ship,
+  gives `protocol`, `service` and `banner`. A weakness or decoy has no `cli` object: its
+  `realism` link names a catalog entry, whose fields the finding builder copies (section 5.3).
+  Any other key, a `_` author note included, is never copied (author notes never ship,
   and `GET /network` runs no note stripper), and an object with none of its keys is left out. A
   copy by key also works before the skin plan's K3, when no schema node exists to strip notes.
   The skin plan's schema (its K3) defines the same key lists. In order of service:
@@ -508,14 +519,16 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   `GET /network`, only once the host is scanned. A host row for a PC the player holds a session
   on, listed on an unswept discovery network (above), carries no `address` until the sweep, so
   the address arrives with the sweep like the other rows' addresses (and the row carries no
-  `services` until the scan). A weakness's or a decoy's `cli` is served in section 5.3. An object
+  `services` until the scan). A finding's `cli`, built from its linked catalog entry, is served
+  in section 5.3. An object
   or key the author did not write is left out of the answer: never `{}`, never `null`, and the
   browser builds the defaults itself from fields it already has. Nothing reads a `cli` field to
   decide anything: no route, check, refusal, log row or synced key uses one, and the bootstrap and
   every room answer carry none (they carry no `networks`, `hosts` or `services` at all). Nothing
   is added to synced `player_state`. The core copies these fields at S1 and S2 and tests the
-  copying on a test-only fixture under `test/fixtures/` (not a scenario folder); the schema rows
-  that let an author write them arrive with the skin validator at the skin plan's K3 (section 9.1).
+  copying on a test-only fixture under `test/fixtures/` (not a scenario folder), the S2 cases
+  against a test-only catalog folder; the schema rows that let an author write them (the `cli`
+  objects and `realism`) arrive with the skin validator at the skin plan's K3 (section 9.1).
 - A network block gains `swept` (true or false) on a discovery network, and `ops: true` when some
   host on it declares `services`. `ops` is sent only on an open network or a swept one: on an
   unswept discovery network it would say that the network holds at least one host, which is not
@@ -547,12 +560,30 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   repeat check never turns a confirmed finding back to unconfirmed and never hands out a second
   alias. The answer lists every finding of that service the player now holds, each with its
   stored status and alias. Nothing tells a real one from a decoy until confirm: the answer
-  builds both from the same fields in id order. A finding's authored `cli` (`title`, `module`,
-  `script`) is copied by those three keys as `cli` on the finding (a `_` note is never copied), in the check answer and in
-  `GET /network`, by the one builder that makes both kinds, so a decoy cannot be told from a
-  weakness by what is sent: the same keys, drawn from the same definition, and an absent object
-  left out for both alike. The finding in the confirm answer is the same finding and carries the
-  same `cli`; the confirm and a card never read it.
+  builds both from the same fields in id order.
+- **A finding's `cli`, from the realism catalog.** For a weakness or a decoy with `realism`, the
+  one finding builder that makes both kinds looks the id up in the catalog loader's map at the
+  time it builds the finding, and copies the linked entry's `title`, `module`, `script`,
+  `advisories` and `output` (those the entry has), unchanged and by those named keys only, as
+  `cli` on the finding: in the check answer, in the confirm answer's finding and in
+  `GET /network`, only once the service has been checked. A `_` note key of an entry is never
+  copied. The same builder and the same keys serve both kinds, so a decoy cannot be told from a
+  weakness by what is sent (the skin validator holds the linked entries of a scenario to one
+  form, so their key sets match too). The link id is never copied and appears in no answer; nor
+  does the catalog, a file of it or an entry the finding does not link. A finding with no link
+  has no `cli` key. A link that does not resolve leaves the finding without `cli` and writes a
+  server log warning naming the link id; it changes no status, alias or log row. No route,
+  check, refusal, confirm or card reads a link or a `cli` field.
+- **The catalog loader** (`lib/break_escape/realism_catalog.rb`, built at S2 with the check
+  route). It reads every `config/break_escape/realism_catalog/*.json` file once, on first use,
+  into a frozen map from catalog id to entry, and refuses to load (it raises) when an id or a
+  `module` appears twice across the files; the skin plan's catalog validator test runs on every
+  build, so such a catalog fails the suite before it ships. The finding builder calls the loader
+  only for a finding with a link, so a scenario with no links never reads it. A missing folder
+  loads as an empty map, since the skin plan creates the folder at its K3, after S2. It takes
+  another folder in tests. No route serves the map or a file of it; the finding builder, the
+  skin plan's validator and the playtest leak collector (11.4) are its only readers. The files'
+  shape and the rules for what an entry may hold are the skin plan's (its section 4.3).
 - **A check is recorded whatever it finds.** The first check of a service adds
   `<hostId>.<serviceName>` to `opsDiscovered.services` and writes the `service_checked` row,
   even when it adds no finding (a service with no weaknesses or decoys, or whose only weakness
@@ -1204,10 +1235,12 @@ there after a host scan; the host scan is the one step an open network still nee
 **Display fields in these answers.** The sweep answer's host rows carry `address` where authored
 (on an open network, which has no sweep, `GET /network` carries it from the first answer that
 lists the row),
-the host scan answer's row carries each service's `cli` where authored, and the check answer's
-findings carry `cli` where authored (section 5.2, "Display fields"). They are copied, not
-computed, and no check in the table reads them, so a refusal, a status and a log row are the same
-with or without them. A repeat answers the same fields, `cli` included.
+the host scan answer's row carries each service's `cli` where authored, and the findings of the
+check answer and the confirm answer carry `cli` where the weakness or decoy links a catalog
+entry that resolves (sections 5.2, "Display fields", and 5.3). They are copied, not computed, and
+no check in the table reads them or the link, so a refusal, a status and a log row are the same
+with or without them, and with a link that does not resolve. No answer carries a link id. A
+repeat answers the same fields, `cli` included.
 
 **An exact repeat, and a stale id.** A repeat is the same request sent again with nothing
 changed in between. A repeated host scan or check answers `already: true` with the same
@@ -1246,7 +1279,8 @@ session a technique granted through an unplugged foothold has already ended with
 | A service's `cli` (`protocol`, `service`, `banner`) | after the host is scanned, as `cli` on the service; left out when not authored. `protocol` is not collected as a secret, and `service` only when it equals no `service` word or `name` of a service already earned | `GET /network`, the scan answer |
 | That a service has weaknesses or decoys, and how many | never before a check | |
 | A finding's `class`, `severity`, `summary` | after the check | check answer, `GET /network` |
-| A finding's `cli` (`title`, `module`, `script`) | after the check, as `cli` on the finding, the same keys for a weakness and a decoy; left out when not authored | check answer, confirm answer's finding, `GET /network` |
+| A finding's `cli` (the linked catalog entry's `title`, `module`, `script`, `advisories`, `output`, those it has) | after the check, as `cli` on the finding, by the same builder and keys for a weakness and a decoy; left out when the finding has no link or its link does not resolve | check answer, confirm answer's finding, `GET /network`. The leak collector reads these strings from the catalog and tags them check |
+| A `realism` link id; the catalog, a file of it, or an entry the scenario's findings do not link | never | no answer carries a link id, and no route serves the catalog. The leak collector fails at any stage on a link id or on the `module` of a catalog entry the scenario does not link |
 | Whether a finding is real | after the confirm | |
 | `falseBecause` | after the confirm, for a decoy | |
 | `needs` (kind, label, met) | after the confirm, for a real finding | a need's `label` is a name the scenario already shows elsewhere, or the entry's authored `label`; never a password, a credential's secret or a global's name |
@@ -1266,9 +1300,10 @@ technique not held is never named; the 400 body is the same for every route and 
 parameter; a `no_grant` refusal carries `reason` and nothing else; no `cli` string appears in the
 bootstrap or any room answer, none of a host's before its row is listed (on a discovery network,
 before the sweep, a held-session row included) and none of a service's before its scan, none of a
-finding's before its check, and a decoy's `cli` has exactly the keys a weakness's has. No route,
-check or refusal reads a `cli` field. The leak scanner gains a collector for these strings, staged
-by what has been earned.
+finding's before its check, and a decoy's `cli` has exactly the keys a weakness's has when their
+linked entries are of one form; no link id appears in any answer. No route, check or refusal
+reads a `cli` field or a link. The leak scanner gains a collector for these strings, staged by
+what has been earned.
 
 ## 8. State and saved games
 
@@ -1332,22 +1367,27 @@ neighbouring blocks use, and every new open location carries the `x-id-map` mark
 | S3 | `definitions.item.properties`, beside `credential` (`SC:5158`) | `technique_card`: a key of the technique card registry, allowed only on an item of type `technique_card`; the description says so. It stays on the item the browser receives, as `credential` does; the registry entry it names does not |
 | S3 | `credentials.<id>.proof` (`SC:293-306`) | `technique_card`: a finding id, with its own pattern (three ids joined by dots), which the description states. The description's list of proof kinds gains it |
 
-The `cli` objects are declared by the realism skin plan at its K3, inside these core
-definitions: on `networks.<id>`, `definitions.service`, `definitions.weakness` and
-`definitions.decoy`, with one shared `definitions.cliFinding` so a decoy's and a weakness's `cli`
-cannot drift. Until then those four blocks, all closed, refuse `cli` as an unknown property, and
-section 3 lists it among the early-write fields. The skin plan's keys for `networks.<id>.cli.hosts`
+The `cli` objects and the `realism` link are declared by the realism skin plan at its K3, inside
+these core definitions: `cli` on `networks.<id>` and `definitions.service`, and `realism` (a
+catalog id) on `definitions.weakness` and `definitions.decoy`. A weakness or decoy carries a
+`realism` id and no `cli` object, so there is no shared finding `cli` definition. Until K3 those
+four blocks, all closed, refuse `cli` and `realism` as unknown properties, and section 3 lists
+both among the early-write fields. The skin plan's keys for `networks.<id>.cli.hosts`
 are plain strings (at most 64 characters, `x-id-map: true`), not the host id pattern, because a
 key may name a sign-in object and room object ids such as `kit_deviceA` and `P1` do not follow
 that pattern; the validator's "not a host on that network" error does the checking. The `cli`
 objects inherit the server-only marks of the objects they sit in (`networks`, `hosts` and
 `services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already name
 the routes that serve them. Their rules beyond the schema (the address inside the range and
-unique in the scenario, the module unique in the scenario, findings that author a field unevenly
-anywhere in the scenario, strings holding a password or a command form, a range on every discovery
-network or on none, a network id equal to a host, object or resource id) are checked by the skin plan's `check_realism_skin` in `scripts/validate_realism_skin.rb`
-(its section 9), which reads hosts, services and findings through `NetworkModel`.
-`check_network_ops` does not read a `cli` field.
+unique in the scenario; `realism` links all or none: every weakness and decoy in the scenario
+has one or none has, each link resolves and is used once, and linked entries are of one form;
+strings holding a password or a command form; a range on every discovery network or on none; a
+network id equal to a host, object or resource id) are checked by the skin plan's
+`check_realism_skin` in `scripts/validate_realism_skin.rb` (its section 9), which reads hosts,
+services and findings through `NetworkModel` and the catalog through the core's loader. The
+catalog's own checks (unique ids and modules, the text rules) run in the skin plan's
+`scripts/validate_realism_catalog.rb`, over the catalog alone. `check_network_ops` does not read
+a `cli` field or a link.
 
 The top level and `definitions.item` are open, so declaring a key there adds a known name and
 nothing more; section 3 says what refuses each field before its stage.
@@ -1469,6 +1509,8 @@ None. A scenario without the new fields takes the old path at every point this p
 | State | three keys that default empty and are never sent |
 | Bootstrap and room data | two more names in the withheld lists, for keys no existing scenario has |
 | Schema, validator, graph | new optional properties; `check_network_ops` returns at once when there are no `hosts`, `services` or `techniques`; the graph block does not run |
+| The skin plan's validator hook (`check_realism_skin`, called beside `check_network_ops` from its K3) | its real-identifier rule reads only a scenario in which some host declares `services`. No existing scenario declares `services`, so the about 50 VM-mission and lab files that already hold CVE-style ids are not read by it and keep their validator output. Its other rules and warnings read `cli` objects, `realism` links and `networkView`, which no existing scenario has, except its rule against a network id equal to a host, object or resource id, which finds no clash in the eight scenarios that declare `networks` today. The core relies on the skin reading the catalog only for a scenario with a link, so a catalog fault never adds a line to a scenario without links. Part 2 below compares the output |
+| The catalog loader | called only by the finding builder for a finding with a link, and by the skin validator for a scenario with one; no existing scenario has a finding |
 
 **The check that proves it** has five parts, all committed in build step 1, before any engine
 change, so that the "before" side is main's own output. The golden helper, folder and rake task
@@ -1489,7 +1531,9 @@ come from the log rows plan's stage L1a; that plan's stages L1a and L1b are both
 2. **Validator and graph output.** A node test, `test/js/ops-unchanged-validator.test.mjs`, runs
    the validator and the graph generator over every scenario folder and compares the validator's
    lines and the graph JSON with a snapshot taken on main. The `dungeon_graph.*` files checked in
-   beside scenarios must show no diff after regeneration.
+   beside scenarios must show no diff after regeneration. The same snapshot holds when the skin
+   plan's `check_realism_skin` hook lands at its K3: every scenario outside the `test_ops_*`
+   folders, the VM missions and labs with real advisory ids among them, gives the same lines.
 3. **The existing suites, unmodified.** The Rails suite and `bin/test-js` pass with no edit to an
    existing test, apart from the copy lists in section 11.3; and two tests in `test/js/pc-sessions.test.mjs` that assert the
    displacement of a remote session, which the NPC rule of section 5.4 removes on purpose.
@@ -1533,6 +1577,7 @@ scripted playtest and the live proof run on the real routes in a real browser.
 | `network_model_test.rb` (extended) | S1 | `hosts`, `discovery?`, `hosts_on` (both kinds, sorted by id, a `hosts` entry with an unknown network left out), `services_of` reading at most 8 |
 | same | S2 | finding ids; `weaknesses` and `decoys` reading at most 4 each; a malformed entry skipped, never raised on |
 | same | S3 | `technique_matches?` for class only, class and product, class, product and version, and each near miss; `technique_items` finding a card in a room, a container, an NPC's items, a share and the start inventory |
+| `realism_catalog_test.rb` | S2 | the loader on a test-only catalog folder under `test/fixtures/realism_catalog/` (invented entries only): every file read into one map, from id to entry, frozen (an attempt to change an entry raises); the files read once, on first use, and not again on a second lookup; a second folder of two files sharing an id, and one of two entries sharing a `module`, each refusing to load; a missing folder loading as an empty map; a lookup of an unknown id answering nil. No route serves the map: the routes file names no catalog path and `GET /network` with every link authored carries no link id and no entry the scenario does not link |
 | `credential_model_test.rb` (extended) | S3 | `proof_kind` answers `technique_card`; a proof with `technique_card` and a second key is malformed |
 | `scenario_schema_test.rb` (runs as is) | S1 to S3 | every new open location carries its mark |
 | `break_escape/policy_test.rb` (extended) | S1 to S3 | the four new policy methods, added to `DEVICE_ACTIONS` as each stage adds its action, so every role the test walks is asserted for each |
@@ -1551,8 +1596,8 @@ a scenario with no `logSources`.
 | `network_scan_test.rb` | S1 | each check of `/network/scan` in order, with its status and reason; the 400 for a missing, non-string or over-long parameter and for both or neither of `network_id` and `host_id`; a powered-down host answering `not_responding` with and without services; the first sweep's `network_swept` row, passed with no limit (the route saves, as it changed `opsDiscovered`), and the `host_scanned` row, once only; a repeat's row passed with `save_limit: true`; a sweep through a foothold that does not reach the network (404); `already` carrying the same fields; a repeated sweep writing its `network_swept` row again (merged into the newest row's count) and saving nothing else; `GET /network` before and after; a second network swept only after a pivot session; discovery kept across an unplug and a new foothold |
 | `network_discovery_display_test.rb` | S1 | on an unswept discovery network, with a PC id the client was never sent: remote sign-in, account tiles, desktop, credential sign-in through a foothold, sign-in from a held desktop and the keyring's offered routes each answer exactly as on the same network declared open (the same requests on an open network are the reference); the unswept block lists rows only for PCs the player holds a session on, and lists them before and after the sweep; an open share on the unswept network served by `GET /container`; a host scan of a host on the unswept network answering as an invented id until the sweep |
 | `network_ops_indistinguishable_test.rb` | S1 to S3 | for each of scan (sweep and host), check, confirm and technique: the answer for a real id the player has not earned (a network out of reach, a host on an unswept network, a host not scanned, a real finding id never checked, a finding whose host is no longer listed) equals, status and body byte for byte, the answer for an invented id, a string that is not of the id form and a foothold not held; and a stale id (good before an unplug or a lost pivot) answers the same |
-| `network_cli_fields_test.rb` | S1, S2 | on a test-only fixture under `test/fixtures/` (not a scenario folder, so the corpus snapshot of section 10 part 2 never sees it, and it loads without the schema rows that arrive at the skin plan's K3) with every `cli` object authored: `networks.<id>.cli.range` as `cli.range` on the block of `GET /network`; on a discovery network a host's `address` absent from the block and from every row before the sweep, a held-session PC's row on the unswept network included (in the up block, and in the greyed down block of that network after the pivot is lost), and present in the sweep answer and in `GET /network` after it; on an open network (`discovery: "open"` and again with `discovery` absent) a host's `address` present on its row in the first `GET /network` answer that lists the row, with no sweep; a service's `cli` absent from `GET /network` before the host scan and present, unchanged, in the scan answer and after it; a finding's `cli` absent before the check and present, unchanged, in the check answer, the confirm answer and `GET /network`; no `cli` string, and no `cli` key, in the bootstrap, in any room answer, in a refusal body or in a sync answer; a weakness and a decoy of one service carrying the same key set and the same value types, with every `cli` field authored on both and again with every one left out on both, before and after the confirm; a fixture that authors none of the objects answering the same bytes as before the objects existed, with no `cli` key and no `{}` or `null` anywhere in an answer; a fixture that authors only some keys of an object (a service with a `banner` and no `protocol`) answering only those keys; every `cli` object of the fixture also carrying a `_note` key (and a range, address, service and finding each with one), and no answer carrying any `_` key; a decoy with a note and its weakness without one still carrying the same key set; the same requests with every `cli` string changed answering the same statuses, reasons, statuses of findings and log rows (nothing reads a `cli` field); the answer to a stale or unearned id unchanged by the objects (the 404 body is the one body) |
-| `access_leak_scanner_test.rb` (extended) | S1, S2 | on the test-only fixture with `cli` objects (11.4 collector rules): each `cli` string is a leak only before its tag; `listed` is tagged with a network id (and the row id for an open network's address), so a range is a leak until that network's block has appeared; `10.20.0.1` is not found inside `10.20.0.15` and is found as a whole token; `protocol` is never collected; a `service` word equal to an earned one is not collected |
+| `network_cli_fields_test.rb` | S1, S2 | on a test-only fixture under `test/fixtures/` (not a scenario folder, so the corpus snapshot of section 10 part 2 never sees it, and it loads without the schema rows that arrive at the skin plan's K3) with every `cli` object authored: `networks.<id>.cli.range` as `cli.range` on the block of `GET /network`; on a discovery network a host's `address` absent from the block and from every row before the sweep, a held-session PC's row on the unswept network included (in the up block, and in the greyed down block of that network after the pivot is lost), and present in the sweep answer and in `GET /network` after it; on an open network (`discovery: "open"` and again with `discovery` absent) a host's `address` present on its row in the first `GET /network` answer that lists the row, with no sweep; a service's `cli` absent from `GET /network` before the host scan and present, unchanged, in the scan answer and after it; at S2, with the loader pointed at the test-only catalog folder of 11.1, a linked finding's `cli` absent before the check and present in the check answer, the confirm answer and `GET /network` holding exactly the linked entry's `title`, `module`, `script`, `advisories` and `output`, unchanged, and only those it has; an entry's `_` note key never in an answer; the link id in no answer and no other entry's strings in any answer; a finding with no link carrying no `cli` key; a link that resolves to no entry giving a finding with no `cli` key, one server log warning naming the link id, and the same status, alias and log row as the same finding unlinked; no `cli` string, no `cli` key and no link id in the bootstrap, in any room answer, in a refusal body or in a sync answer; a weakness and a decoy of one service carrying the same key set and the same value types, linked to entries of one form and again with neither linked, before and after the confirm; a fixture that authors none of the objects answering the same bytes as before the objects existed, with no `cli` key and no `{}` or `null` anywhere in an answer; a fixture that authors only some keys of an object (a service with a `banner` and no `protocol`) answering only those keys; every `cli` object of the fixture also carrying a `_note` key (and a range, address and service each with one, and a linked catalog entry with one), and no answer carrying any `_` key; a decoy whose entry has a note and its weakness whose entry has none still carrying the same key set; the same requests with every `cli` string changed, and with every link pointed at another entry of the test catalog, answering the same statuses, reasons, statuses of findings and log rows (nothing reads a `cli` field or a link); the answer to a stale or unearned id unchanged by the objects (the 404 body is the one body) |
+| `access_leak_scanner_test.rb` (extended) | S1, S2 | on the test-only fixture with `cli` objects (11.4 collector rules): each `cli` string is a leak only before its tag; `listed` is tagged with a network id (and the row id for an open network's address), so a range is a leak until that network's block has appeared; `10.20.0.1` is not found inside `10.20.0.15` and is found as a whole token; `protocol` is never collected; a `service` word equal to an earned one is not collected; at S2, with the test-only catalog folder, a linked entry's `title`, `module`, `script`, each advisory and each `output` line read from the catalog and a leak only before the check; a link id, and the `module` of a test-catalog entry the fixture does not link, failing the scan at every stage, the check included |
 | `network_ops_free_test.rb` | S2, S3 | the loop costs nothing but rows: confirming every finding of a service, decoys and weaknesses alike, and trying every card in the scenario on every finding change no state beyond the statuses, the grants and the log, and add no state key; each refusal past the two 404s, the 403 `not_responding` included, writes a `technique_refused` row with `save_limit: true` and saves the game only while the helper's result is `stored?`: the first ten at a host in a five-minute window of server time save, whatever the card, finding or reason, the eleventh and every later one in that window do not (the first after the window ends does again), and none does with no log source; a refusal sent twice writes its row twice (merged into a count); a confirm repeated writes no second row |
 | `network_findings_test.rb` | S2 | aliases given in the order found and kept across a reload; a check repeated after a confirm keeps the status and the alias and answers `already: true`; a first check of a service with no weakness or decoy, and of one whose only weakness is fixed, answers no findings and no `already`, adds the service to `opsDiscovered.services` and writes one `service_checked` row, and its repeat answers `already: true` with no row; a repeat check after the weakness has become unfixed adds the finding, saves, answers no `already` and writes no second row, and the check after that answers `already: true`; a second service's check carries on the alias count; a host with services and no finding held carries no `findings` key, scanned or not; the 400s and each 403 `not_responding` of `/check` and `/confirm`; the `service_checked` and `finding_confirmed` rows; check before scan (404); a check's answer with a decoy and a weakness built from the same keys in id order; confirm for each; an invented finding id (404); a weakness whose `fixedIf` holds left out of a check; one already confirmed carrying `fixed: true`, and one found but unconfirmed carrying no `fixed` key and the same keys as a decoy; an `itemType` need met only by an unforged held item whose id is an authored item of that type; the authored `label` shown for an `itemType` and a `global`, and the global's name in no answer; `met` recomputed on each read as an item is picked up and a credential earned |
 | `network_technique_test.rb` | S3 | section 5.4, each rule one test: every refusal in its fixed order with what it writes: no row for either 404, and a `technique_refused` row for the 403 `not_responding` (`reason: not_responding`, `save_limit: true`) and for each 422, both grants with their `technique_used` row, and the repeat for a session and for a credential, each writing its `technique_used` row again with `save_limit: true` (merged into a count, the route saving only while the helper's result is `stored?`). Beyond that section's text: with two footholds that both reach the host, a use through the second being a new use that runs every check and moves the session to that foothold; a grant again after the session ended; `endedPcIds` when the grant replaces a pivot session; the step up replacing the record in place and keeping `foothold`, from a technique session and from a password session at `user`; `signedInPcs` gaining the PC; `access: "admin"` in the answer, in `GET /scenario` after a reload and on the host row for a session at admin, and no `access` key for a technique session at user or for a password, claim or credential session; `GET /network` `techniques` absent with no card held and carrying `itemId` (first in id order of two held cards) otherwise |
@@ -1733,13 +1778,16 @@ block has appeared in a `GET /network` answer, so a leak only in a bootstrap or 
 host's `address` (on a discovery network tagged sweep, a held-session PC's row included; on an
 open network tagged `listed`, earned at the first `GET /network` answer that lists the row, so a
 leak only in a bootstrap or room answer or before that first answer), a
-service's `service` word and `banner` (scan), and a finding's `title`, `module` and `script`
-(check). `protocol` (`tcp`, `udp`) is left out, and a `service` word is collected only when it
+service's `service` word and `banner` (scan), and, for a weakness or decoy with a `realism`
+link, the linked entry's `title`, `module`, `script`, each advisory and each `output` line, read
+from the catalog through the core's loader (check). A link id, and the `module` of every catalog
+entry the scenario does not link, are tagged never: one in any answer fails the run at any
+stage. `protocol` (`tcp`, `udp`) is left out, and a `service` word is collected only when it
 equals no `service` word or `name` of a service already earned, because such short words appear
 legitimately once any host is scanned and would be false leaks or hide a real one. Addresses are
 matched as whole tokens, not followed by a digit (or by a dot and a digit), so `10.20.0.1` is not
-found inside `10.20.0.15`. Each `test_ops_*` feature scenario that authors `cli` objects lists
-them in its own collector at the stage that serves them, so a `banner` or an `address`
+found inside `10.20.0.15`. Each `test_ops_*` feature scenario that authors `cli` objects or
+`realism` links lists those strings in its own collector at the stage that serves them, so a `banner` or an `address`
 appearing before its sweep or scan, or in a bootstrap or room answer, fails the run. Each string
 is tagged with the step that earns it (listed, sweep, scan, check,
 confirm, card held, never), and the scan takes the run's list of completed steps so that a string
@@ -1800,9 +1848,9 @@ the branch after each landing.
 | 3 | S1 | `network_ops.rb` with `ops_listed?`, the one 404 answer, the 400, `scan_network!` and `scan_host!`; `opsDiscovered`; the route, both controller lists, `network_scan?` in the policy and its name in the role test; the `network_swept` and `host_scanned` events and their calls; `network_rows` and block changes (the unswept block lists rows of PCs the player holds a session on; sign-in, desktop and shares are not gated by discovery); the block, `host_row` (which decides `address` from the host's own network, so down blocks follow it) and the device-row builder and service rows copy by named key `cli.range`, `address` (open network: from the first listing; discovery network: from the sweep, a held-session row included) and a service's `cli` (5.2) | `network_scan_test`, `network_discovery_display_test`, `network_ops_indistinguishable_test`, `network_cli_fields_test` (S1 cases), no-exposure and delta tests; step 1 tests |
 | 4 | S1 | Client: `ops-model.js`, the scene's `perform(offer, { echo })` path and pending guard with the unplug guard folded in, its no-op `onSent` and `onEnded` hooks at the points of 5.3 and the hook-order test, Sweep and Scan in the view, the row icon, `api-client.js`, events, `getTestState`, the test bridge's `networkView` comment and test, copy lists | node tests; `bin/test-js` whole |
 | 5 | S1 | `test_ops_scan` with its `PLAYTEST.md`, graph and its leak collector entries; `collect_ops_secrets` in `access_leak_scanner.rb`, with the `listed` (a range, an open network's addresses), sweep and scan `cli` entries (11.4); the ops lines in `verify-run.rb`; docs (N13 in `docs/ACCESS_AND_NETWORKS.md` and the `README_scenario_design.md` index, the `networkView` shape in `docs/test-bridge.md`) | scripted playtest, live proof, full suites; land S1 |
-| 6 | S2 | Schema (S2 rows); model helpers; validator S2 rules; `check_service!`, `confirm_finding!` (free), `opsFindings` with aliases; the two routes with their policy methods; the `service_checked` and `finding_confirmed` events and calls; findings on rows; the finding builder copies a finding's `cli` into check, confirm and `GET /network` answers (5.3) | `network_findings_test`, `network_ops_free_test`, `network_cli_fields_test` (S2 cases), and the extended exposure and indistinguishable tests |
+| 6 | S2 | Schema (S2 rows); model helpers; validator S2 rules; `check_service!`, `confirm_finding!` (free), `opsFindings` with aliases; the two routes with their policy methods; the `service_checked` and `finding_confirmed` events and calls; findings on rows; the catalog loader `lib/break_escape/realism_catalog.rb` and the test-only catalog folder `test/fixtures/realism_catalog/`; the finding builder resolves a `realism` link and copies the linked entry's fields by named key as the finding's `cli` into check, confirm and `GET /network` answers, never the link id (5.3) | `realism_catalog_test`, `network_findings_test`, `network_ops_free_test`, `network_cli_fields_test` (S2 cases), `access_leak_scanner_test` (S2 cases), and the extended exposure and indistinguishable tests |
 | 7 | S2 | Client: Check and Confirm, the findings panel with needs and reasons; graph: weakness nodes (9.3, without cards) | node tests |
-| 8 | S2 | `test_ops_findings`, playtest, leak collector steps and the check-stage `cli` entries in the collector, docs (N14) | scripted playtest, live proof, full suites; land S2 |
+| 8 | S2 | `test_ops_findings`, playtest, leak collector steps and the check-stage entries in the collector (a linked entry's strings read from the catalog; link ids and unlinked entries' modules tagged never), docs (N14) | scripted playtest, live proof, full suites; land S2 |
 | 9 | S3 | Schema (S3 rows); `techniques` helpers; validator S3 rules, among them the card type rule, the `connectsTo` checks on a granted credential, and the warnings for a weakness with no `grants`, for `needs` on one, and for a card that can stand in for a sign-in; `PROOF_KINDS` and `credential_proof_holds?`; the `technique_card` type: the placeholder PNG, its `load.image` line, the grep of section 4.3 | unit, validator and keyring tests; `technique-card-item.test.mjs`; the part 5 snapshot of section 10 unchanged |
 | 10 | S3 | `start_login_session!` keywords; `access` through `login_session_answer` and `session_for_client`; `use_technique!` with the repeat test (the 403 `not_responding` and every 422 write a `technique_refused` row with `save_limit: true`); `opsUsed`; the route and its policy method; the `technique_used` and `technique_refused` events and calls; the credential grant; `techniques` with `itemId` on `GET /network` | `network_technique_test`, `network_technique_hostile_test`, `network_ops_free_test` |
 | 11 | S3 | The access check changes alone: `technique_session_through?`; its use in `desktop_request_allowed?` and `desktop_refusal`; the foothold argument of `network_rows` and `host_row` with `openHere`; the `technique` skip in `settle_session_at_keyboard!` (the keyboard branch is otherwise unchanged); the no-route line in `folder_route_allowed?`, passing only where the keyboard desktop would | `network_technique_blocked_host_test`, `network_technique_session_test`, and every existing network and keyring controller test, unmodified |
@@ -1851,7 +1899,7 @@ are in flight at once, their sessions agree who goes first on each file.
 | `public/break_escape/js/core/game.js`, `public/break_escape/assets/objects/` | one `load.image` line and `technique_card.png` | any plan or art pass that adds an object sprite |
 | `app/controllers/break_escape/games_controller.rb` `folder_route_allowed?` | one line | none known |
 | `public/break_escape/js/api-client.js` | four functions | every plan with a route |
-| `scripts/scenario-schema.json` | section 9.1; the skin plan (K3) declares `cli` inside `networks.<id>`, `definitions.service`, `definitions.weakness`, `definitions.decoy`, and `definitions.cliFinding` | every plan; the file has very long lines, so two edits to one block conflict even when they do not overlap in meaning |
+| `scripts/scenario-schema.json` | section 9.1; the skin plan (K3) declares `cli` inside `networks.<id>` and `definitions.service`, and `realism` inside `definitions.weakness` and `definitions.decoy` | every plan; the file has very long lines, so two edits to one block conflict even when they do not overlap in meaning |
 | `scripts/validate_scenario.rb` | one `require_relative` and one `run.call` (`:26`, `:8968`) | every plan adds a line in the same place |
 | `scripts/generate_dungeon_graph.rb` | one new block; one `when` in the credential block; legend lines. `scripts/lock_key_diff.rb` is not changed | S5 and S7 add nodes after the same block |
 | `tools/playtest/lib/access_leak_scanner.rb` | one collector, `collect_ops_secrets` | S5b, S7, S8 add collectors |
@@ -1860,6 +1908,9 @@ are in flight at once, their sessions agree who goes first on each file.
 
 New files, owned by this plan alone: `app/models/break_escape/network_ops.rb`,
 `scripts/validate_network_ops.rb`, `scripts/real_product_names.txt`,
+`lib/break_escape/realism_catalog.rb` (the skin plan's validator calls it; the catalog folder,
+its schema and its validator are the skin plan's), the test-only catalog folder
+`test/fixtures/realism_catalog/`,
 `public/break_escape/js/minigames/network-view/ops-model.js`,
 `public/break_escape/js/systems/compromise-marks.js`,
 `public/break_escape/js/utils/compromise-bolt.js`, the test files of section 11, the
@@ -1985,7 +2036,10 @@ Each is a statement of what this plan provides or needs, for the plan named.
    surface (the optional `cli` display objects are served as sections 5.2, 5.3 and
    7 say, at the stage of the thing they belong to, copied unchanged, left out when not authored,
    and read by nothing on the server; the skin plan declares their schema rows at its K3 and owns
-   the rule that a range is authored on every discovery network or on none), and `ops-model.js` with its `REFUSAL_TEXT` is the one shared pure module (section
+   the rule that a range is authored on every discovery network or on none; a finding's `cli` is
+   the named-key copy of the realism catalog entry its `realism` link names, resolved by this
+   plan's loader `lib/break_escape/realism_catalog.rb` at S2, and the link id is never sent),
+   and `ops-model.js` with its `REFUSAL_TEXT` is the one shared pure module (section
    5.5). For typing, a finding has an `alias` and a `techniques` entry carries the `itemId` to
    send. A host's `address` rides on its row whenever the row is listed: on an open network from
    the first `GET /network` answer that lists it, on a discovery network from the sweep (a

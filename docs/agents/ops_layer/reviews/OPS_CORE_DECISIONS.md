@@ -161,3 +161,19 @@ entries below took a different fix from the one suggested.
 - n4: `listed` tag carries a network id (and row id for an open network's address), stated in 11.4.
 - n5: row 1374 reworded as a skip of the `connectsTo` check, not a second kind rule; skip added to 14 item 7; device-row builder named as an `address` copier (5.2, 12.1 step 3). Asking the cracking plan to say "error" is left to its fixer.
 - n2, n3: not in the instruction list; not applied.
+
+## Skin catalog requests applied (2026-11-19)
+
+- Req 3, section 3: S2 row gains the catalog loader and the finding's `cli` as a named-key copy of the linked catalog entry; early-write row now names `cli` (network, service) and `realism` (weakness, decoy), with `cli` on a weakness or decoy refused at every stage.
+- Req 3, 4.1/4.2: 4.1's `cli` pointer limited to networks, hosts and services; new 4.2 bullet for the `realism` link (plain catalog id, server-side catalog, no `cli` on a finding, display only).
+- Req 3, 5.2: row builders tied to the real code (block built inline in `network_blocks` `NA:795` and `down_blocks` `NA:813`, `network_rows` `NA:873`, `host_row` `NA:1043`; the device-row builder is new in `network_ops.rb`, which does not exist yet); finding key list replaced by the link; S2 tests use a test-only catalog folder.
+- Req 3, 5.3: new bullet for the finding's `cli` (title, module, script, advisories, output by named key at build time; `_` keys and the link id never sent; unresolved link: no `cli`, server warning naming the id, no status/alias/log change); new bullet for the loader (read once, frozen, refuses duplicate id or module, other folder in tests, no route).
+- Req 3, 5.3 additions not in the request: the loader treats a missing folder as an empty map (the folder arrives at the skin's K3, after S2), and the builder calls the loader only for a linked finding, so a scenario without links never reads it.
+- Req 3, section 6: check and confirm findings carry `cli` only where the link resolves; no answer carries a link id; nothing reads the link.
+- Req 3, section 7: finding `cli` row restated for catalog fields; new "never" row for link ids, the catalog and unlinked entries; no-exposure paragraph gains the link id and "entries of one form" for the equal key sets.
+- Req 3, 11.1: new `realism_catalog_test.rb` (S2) on `test/fixtures/realism_catalog/`.
+- Req 3, 11.2: `network_cli_fields_test` finding cases moved to linked entries in the test catalog (exact fields, `_` note, no link id, unlinked finding, unresolved link with warning, retargeted links change nothing); `access_leak_scanner_test` gains the catalog-string and never-tag cases.
+- Req 3, 11.4: collector reads a linked entry's strings from the catalog (tag check); link ids and unlinked entries' modules tagged never.
+- Req 3, 12.1 steps 6 and 8, 12.2 schema row and new-files list, 14 item 6: loader, test folder and link resolution stated.
+- Req 5, 9.1: `definitions.cliFinding` dropped; `realism` on weakness and decoy; the rules list replaces "module unique" and "uneven fields" with the all-or-none, resolve, used-once and one-form link rule; catalog checks named as `scripts/validate_realism_catalog.rb`; `check_network_ops` reads no link.
+- Section 10 check: new rows for the skin's `check_realism_skin` hook (real-identifier rule only where `services` is declared; the network-id rule unscoped but finds no clash in the eight `networks` scenarios, checked by script) and the loader; part 2 states the snapshot still holds after the skin's K3. The core relies on the skin reading the catalog only for a linked scenario, which the skin plan does not yet say.
