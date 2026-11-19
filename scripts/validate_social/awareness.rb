@@ -190,6 +190,7 @@ module ValidateSocial
     # ---- office kit: check and annual shells carry none --------------------------
 
     KIT_KEYS = %w[officePresets npcThoughts stepAway].freeze
+    ANNUAL_ID = /(^|_)annual(_|$)/.freeze
     KIT_NAME = /(?<![A-Za-z0-9])kit_[A-Za-z0-9]/.freeze
 
     # LIVING_OFFICE_PLAN.md 12: the office kit never reaches a check shell (stages ["check"]) or the
@@ -198,7 +199,7 @@ module ValidateSocial
     # scenario is an error there.
     def self.kit_free_checks(ctx, ep)
       kind = if check_mission?(ep) then 'a check shell'
-             elsif ep['id'].to_s.include?('annual') then 'the annual shell'
+             elsif ep['id'].to_s.match?(ANNUAL_ID) then 'the annual shell'
              end
       return [] unless kind
 

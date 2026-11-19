@@ -5,9 +5,8 @@ EPISODES and HOSTS as each is wired), from awareness/eN/defend.json.
 New generator for the E8 to E17 wave (implementation/01_PIPELINE.md P4). Its helpers are copied
 from gen_e6_e7_shells.py, not imported, so the built generators and the shells they write cannot
 be changed by this one. Differences, all to make it safe by construction:
-  - the repo comes from --repo <path> or the BREAKESCAPE_REPO environment variable, falling back to
-    this script's own path (right only when it is run from awareness/ in the real checkout), so no
-    home folder is hard-coded;
+  - the repo comes from --repo <path>, else the checkout this script sits in (no environment variable),
+    so no home folder is hard-coded;
   - the output folder is a required argument: there is no default into scenarios/;
   - it builds only the full episodes' defend-only shells. The check shells for the new topics belong
     to gen_checks_v2_shells.py.
@@ -26,18 +25,7 @@ import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
 
-def _arg_repo():
-    argv = sys.argv[1:]
-    if '--repo' in argv:
-        i = argv.index('--repo')
-        repo = argv[i + 1]
-        del argv[i:i + 2]
-        sys.argv[1:] = argv
-        return repo
-    return os.environ.get('BREAKESCAPE_REPO') or str(Path(__file__).resolve().parents[3])
-
-
-REPO = _arg_repo()
+REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
 GEN = 'planning_notes/phishing_and_social_engineering/awareness/gen_e8_e17_shells.py'
 
@@ -909,7 +897,7 @@ def defend_only(ekey):
 USAGE = 'usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>'
 HELP = (f'{USAGE}\n\n'
         'Build the E8-E20 awareness defend-only shells into <out_dir> (one folder per episode).\n'
-        '  --repo <checkout>   repo root (default: $BREAKESCAPE_REPO, else this script\'s checkout)\n'
+        '  --repo <checkout>   repo root (default: the checkout this script sits in)\n'
         '  -h, --help          show this message and exit\n\n'
         '<out_dir> is required and must not start with "-".')
 

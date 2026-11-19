@@ -19,7 +19,7 @@ chatBackground (the room-wide POV background) is spliced by --refresh, after doo
 Usage: python3 apply_training_room.py [--repo <checkout>]           # patch the 7 shells in the repo
        python3 apply_training_room.py [--repo <checkout>] <outdir>  # write patched copies to <outdir>
 
-The repository root is --repo <path>, else $BREAKESCAPE_REPO, else the checkout this script sits
+The repository root is --repo <path>, else the checkout this script sits
 in, so a run from a worktree touches that worktree, never the main checkout.
 
 Refresh (shells already wired, every wired awareness shell): re-splice the fields that
@@ -45,7 +45,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
-REPO = awareness_deploy.repo_root()   # --repo <path>, else $BREAKESCAPE_REPO, else this script's own checkout
+REPO = awareness_deploy.repo_root()   # --repo <path>, else this script's own checkout
 
 FULL_SHELLS = [
     'ca01_invoice_fraud',
@@ -209,13 +209,15 @@ def _training_room(text):
     return _member(text, ra, 'training_room')[0]
 
 
-def find_host_span(text, host_id=None):
+def find_host_span(text, host_id=None, shell=None):
     """(start, end) of the host NPC object in rooms.training_room.npcs, found by id.
 
-    With no host_id the host is the one positioned NPC whose storyPath is its own shell's ink
-    (scenarios/<shell>/ink/<name>.json; checks name it <person>_pre.json). Kit staff point at scenarios/_office_kit/ and never match;
+    With no host_id the host is the one positioned NPC whose storyPath is this shell's own ink
+    (scenarios/<shell>/ink/<name>.json; checks name it <person>_pre.json), so `shell` (the folder name)
+    is then required. Kit staff point at scenarios/_office_kit/ and another shell's ink never matches;
     a second story NPC without a position (ca03's Leila) does not match either. If a shell ever
     has two, pass host_id."""
+    assert host_id is not None or shell, 'find_host_span needs a host_id or the shell folder name'
     tr = _training_room(text)
     na, _ = _member(text, tr, 'npcs')
     found = []
@@ -225,7 +227,7 @@ def find_host_span(text, host_id=None):
             ok = npc.get('id') == host_id
         else:
             sp = npc.get('storyPath', '')
-            ok = 'position' in npc and bool(re.fullmatch(r'scenarios/(?!_office_kit/)[^/]+/ink/[^/]+\.json', sp))
+            ok = 'position' in npc and bool(re.fullmatch(rf'scenarios/{re.escape(shell)}/ink/[^/]+\.json', sp))
         if ok:
             found.append((a, b))
     assert len(found) == 1, f'expected one host NPC, found {len(found)}'
@@ -236,7 +238,7 @@ def _replace(text, span, new):
     return text[:span[0]] + new + text[span[1]:]
 
 
-def refresh_text(text, host_id=None):
+def refresh_text(text, host_id=None, shell=None):
     """Re-splice scenario lighting, room lighting, chatBackground and the host position from
     training_room. Every member is found by structure (key path and NPC id), not by a text line."""
     old = json.loads(text)
@@ -246,7 +248,7 @@ def refresh_text(text, host_id=None):
                     _indented(training_room.scenario_lighting(company), 2))
     tr = _training_room(text)
     text = _replace(text, _member(text, tr, 'lighting'), _indented(rf['lighting'], 6))
-    ha, hb = find_host_span(text, host_id)
+    ha, hb = find_host_span(text, host_id, shell)
     pa, pb = _member(text, ha, 'position')
     text = _replace(text, (pa, pb), _indented(copy.deepcopy(training_room.HOST_POSITION), 10))
     if 'chatBackground' in rf:
@@ -272,7 +274,7 @@ def refresh_text(text, host_id=None):
             if k == 'door_sign':
                 rebuilt['chatBackground'] = rf['chatBackground']
         exp['rooms']['training_room'] = rebuilt
-    new_host = json.loads(text[slice(*find_host_span(text, host_id))])
+    new_host = json.loads(text[slice(*find_host_span(text, host_id, shell))])
     hosts = [n for n in exp['rooms']['training_room']['npcs'] if n.get('id') == new_host.get('id')]
     assert len(hosts) == 1, 'expected one host NPC by id'
     hosts[0]['position'] = copy.deepcopy(training_room.HOST_POSITION)
@@ -290,7 +292,7 @@ def refresh(outdir):
         if not json.loads(text)['rooms']['training_room']['type'].startswith('room_aw_'):
             print('SKIP (not wired):', name)
             continue
-        new = refresh_text(text)
+        new = refresh_text(text, shell=name)
         dest = path
         if outdir:
             d = os.path.join(outdir, name)

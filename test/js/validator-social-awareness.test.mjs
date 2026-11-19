@@ -1087,6 +1087,12 @@ test('office kit: refused in a check shell and the annual shell, allowed in a fu
   annual.rooms.ep_room.objects[0].minigameData.episodeId = 'core_17_annual_2027_defend';
   ep(annual).stepAway = true;
   expectIn(lint(annual), /the annual shell must not have/);
+  // only a whole word "annual" in the id counts: "mannual_x" is an ordinary full shell
+  const lookalike = fx('clean_defend_only.json');
+  ep(lookalike).id = 'mannual_x';
+  lookalike.rooms.ep_room.objects[0].minigameData.episodeId = 'mannual_x';
+  ep(lookalike).stepAway = true;
+  assert.equal(hits(lint(lookalike), /the annual shell must not have/), 0);
   const full = fx('clean_full.json');
   ep(full).stepAway = true;
   full.globalVariables = { ...(full.globalVariables || {}), kit_quiet: false };
