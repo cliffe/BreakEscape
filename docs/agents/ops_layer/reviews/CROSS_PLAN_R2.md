@@ -172,3 +172,179 @@ that a cracked password meets the second step (MFA:1118-1120, LOCK:658-659).
   N13-N16, A18-A25 across plans.
 - SKIN sections 13 and 14 in full; CORE request 6 against SKIN's K1 split.
 - Build-order dependencies other than LOCK's (LOCK:584 is consistent with the outline).
+
+---
+
+## 5. Part 2
+
+Covers section 4's list. LOCK read at HEAD (`git show HEAD:...`), line numbers from that.
+Part 2 counts: 0 blockers, 1 major, 11 minors, 2 nits (X13 to X26). Running total with part 1:
+0 blockers, 2 majors, 17 minors, 6 nits.
+
+### 5.1 R1 items not checked in part 1
+
+| R1 item | Status | Evidence |
+|---|---|---|
+| M1 (skin move table) | Closed | SKIN:17-21: the control list and offers are "private to the network-view folder", nothing outside reads them, the server never sees them, "no other feature registers with it". Renamed `CONTROLS` in `view-controls.js` (SKIN:196). |
+| M2 (hash sources) | PRIV side closed, CRACK open | PRIV:185-186, 938-943: a `hash` credential with a `harvested` proof on the PC id makes the collect yield the hash. CRACK:112, :131 still has `grants: "dana_hash"` beside `proof` (section 3 to-do). |
+| M6 (`crackRuns` synced) | Open, CRACK held | CRACK:228-233 still "synced state ... delta on `sync_state`". In section 3. |
+| M8 (CRACK token and marker unnamed) | Open, CRACK held | CRACK:146, :235-238 still unnamed. In section 3. |
+| M11 (technique session on MFA PC: tests) | Open | See X26. |
+| M12 (`localAdmin: "unique"` provenance) | Closed | No `localAdmin` key in any plan. PRIV:194-195: a shared local administrator is one `local` account with several `localTo` PCs, the hardened setup one per PC; no "taken from" PC. |
+| m1 (default `user`) | Closed | Part 1, ruling B. |
+| m2 (`needs` two meanings) | Open | X21. |
+| m3, m4 (CRACK `grants`, `hashId`) | Open, CRACK held | CRACK:131, :173. |
+| m5 (refusal styles) | Open | X5. |
+| m6 (policy, set_game, lock) | Open for PRIV | X23. LOG:300-301 and MFA:692-693 state theirs. |
+| m7 (`harvestedAccounts` trim) | Closed | PRIV:623 "Neither is trimmed". |
+| m8 (bootstrap additions) | Closed | MFA:871: each addition is read or sent only when its field is set; `mfaDeclared` is gone. SKIN:866: `networkView` absent without the field. |
+| m9 (withheld lists) | PRIV closed, MFA open | PRIV:585 adds `cachedAccounts` to `WITHHELD_OBJECT_FIELDS`. MFA: X22. |
+| m10 (stale passwords after reset) | Conflict between plans | X16. |
+| m11 (graph session node) | Open | X19. |
+| m12 (validator placement) | Open | X20. |
+| m13 (wall-clock codes) | Left to the user | MFA:1159 keeps it as a question. The playtest reads a code through `GET /mfa/device` (MFA:418, :712), not by prediction. |
+
+### 5.2 Findings
+
+### Major
+
+**X13. LOG requires L1b before S3, S5a, S5c and S8; the build order puts "the rest of S9"
+after S7.** LOG should change (or the orchestrator reorders).
+LOG:99 ("L1b lands before the stages that edit the sign-in methods (S3, S5a, S5c, S8) and before
+L2a"), LOG:719 ("L1b lands first") and LOG:1170-1171 (request to the orchestrator). Against
+`OPS_LAYER_PLAN_OUTLINE.md:143-145`: L1a, then S1, S2, S3, S5, S6, S8a, S7, "the rest of S9",
+S8b, S8c. CORE, PRIV and MFA say only that L1a lands first (PRIV:891, MFA:1058), so none of
+them plans around L1b. As written, a builder of S3 meets LOG's rule and the outline's order
+in the same week and one of them loses. L1b is not a dependency of any sibling (they call
+`write_log_row!`, which L1a ships); it is a second editor of `attempt_login!`,
+`start_login_session!` and `#unlock` (LOG:197-199, :719). Fix: LOG says L1b may land at any
+point after L1a, and that whichever of L1b and each of S3, S5a, S5c, S8a lands second merges
+into the other's edit. LOG also states where `signin_ok` sits relative to MFA's second step
+(MFA:321) and CORE's `via: 'technique'` skip (CORE:1592), so L1b is correct whichever order
+it lands in.
+
+### Minors
+
+**X14. Stage ids `L1` and `L2` mean two things.** LOCK should change.
+LOCK:144, :153, :584 and :594 (stages L1, L2 of the lock plan) against LOG:92-96 (L1a, L1b,
+L2a, L2b, L3). LOCK:584 says "the log helper first; then L1; then L2", which a reader takes
+for the log's stages. Fix: LOCK renames its stages (for example `K1` and `K2` are SKIN's; use
+`T1` and `T2`), and says it needs the log's L1a and, for the badge rows it asks about in X2, L1b.
+
+**X15. MFA puts `EVENTS` in the wrong file.** MFA should change.
+MFA:1019 (`app/models/break_escape/ops_log.rb`: "this plan's entries in `OpsLog::EVENTS`")
+against LOG:660-662, :718 and CORE:1531, :1563, which put `EVENTS` and `KINDS` in
+`lib/break_escape/ops_log_events.rb`. Fix: MFA's shared-file row names `ops_log_events.rb`.
+
+**X16. A reset password: MFA says the collect calls `effective_password`, PRIV says it keeps
+`creds.password`.** MFA should change.
+MFA:511-512 ("the privilege plan's collect action calls it too") and MFA:1119-1120 ("The collect
+action calls `Game#effective_password(npc)` once H1 lands") against PRIV:390-392 ("A harvest row
+goes stale after a password reset ... keeps the scenario's password"), PRIV:779 ("a harvest row
+keeps `creds.password` after a reset") and PRIV:955-957 (the reply to MFA's request, agreed in
+PRIV's test list). PRIV's tests will fail when H1's builder follows MFA. This also settles R1 m10:
+the "stale on purpose" side is PRIV's. Fix: MFA drops both sentences and adds harvest to its
+"readers keep the authored value on purpose" list (MFA:513-514). A cracked password (CRACK) joins
+the same list once CRACK is revised.
+
+**X17. LOG's `session_admitting(scope)` is a second predicate beside two that other plans edit.**
+LOG should change.
+LOG:1148 ("a new sibling of `session_admits?`") and LOG:711 (L3). PRIV:325-327 adds an admin
+branch to `session_admits?` ("It names the admin PC") and CORE:691 adds a line to it; both land
+before L3 under the outline's order. Two predicates over the same rule will drift. Fix: LOG
+writes `session_admits?` as `!session_admitting(scope).nil?` in L3 (one rule, one place), or states
+that `session_admitting` calls the same branches including S5a's admin branch, and adds a test
+that the two answer alike over the access model suite.
+
+**X19. Admin session node: CORE draws none, PRIV draws one.** CORE and PRIV should each add one
+sentence. (R1 m11, still open.)
+CORE:1180-1181 ("Grant of a session: no new node ... from the weakness to `lock_<pcId>`") against
+PRIV:698-699 (new node `admin@<pcId>`, "with edges from ... the core plan's step-up weakness").
+CORE has no edge to `admin@<pcId>`, so a step up is drawn as reaching `lock_<pcId>` and PRIV's
+node has no incoming edge from it. Fix: CORE's table says a weakness whose grant has `access:
+admin` ends at `admin@<pcId>` once S5a lands (and at `lock_<pcId>` before); PRIV says the same.
+
+**X20. Validator check files: three patterns.** The orchestrator rules; MFA and PRIV or LOG
+follow. (R1 m12, still open.)
+CORE:1104-1106 (`scripts/validate_network_ops.rb`, called from `validate_scenario.rb`), SKIN:989
+(uses CORE's), MFA:822 and :1010 (`scripts/validate_mfa.rb`, called from `validate_scenario.rb`),
+PRIV:651 (inside `validate_scenario.rb`, `check_access_model`), LOG:419 and :672 (inside
+`validate_scenario.rb`). CORE's own reason (an 800-line function, CORE:1106) applies to PRIV and
+LOG too. Fix: one rule in the brief, a check file per feature hooked by one line (CORE:1545),
+and PRIV and LOG follow it, or each records why not.
+
+**X21. `needs` still means a map on a weakness and an integer on a helpdesk.** MFA should
+change. (R1 m2, still open.)
+CORE:38-41, :1127 (`needs` map on a weakness, `needs.session`) against MFA:190, :206 (`needs: 2`
+on `helpdesks.<id>`). Fix: MFA renames its field `minCorrect` and updates MFA:748 and its
+validator and schema entries.
+
+**X22. MFA does not say how `helpdesks` leaves the bootstrap.** MFA should change. (R1 m9.)
+MFA:748 and :816 mark `helpdesks` `x-serverOnly` with `x-servedBy: "bootstrap helpdeskForms"`.
+CORE:178 and CORE:197 say there is no generic filter: `x-serverOnly` is a marker that
+`payload_scan.rb` reads, and withholding is the named lists (`WITHHELD_SCENARIO_KEYS`,
+`network_access.rb:18`). Fix: MFA adds `helpdesks` to `WITHHELD_SCENARIO_KEYS` in its file table
+(MFA:1010-1030), with the hostile-input scan as its test.
+
+**X23. PRIV's `POST /harvest_credentials` does not name its policy method or `set_game` entry.**
+PRIV should change. (R1 m6.)
+PRIV:524-531 names the route, params and the game lock; its file list (PRIV:846-875) has
+`games_controller.rb` and `config/routes.rb` but not `game_policy.rb`, `DEVICE_ACTIONS` or the
+`set_game` list, which CORE:1528-1530 and MFA:692-693 list. Without them the route is
+unauthorised or has no game. Fix: PRIV adds both lines.
+
+**X24. Three mechanisms for "an unchanged scenario answers as before".** The orchestrator
+rules; PRIV and MFA follow. 
+CORE:1225-1233 (JSON fixtures from main, `test/fixtures/files/ops_unchanged/`), MFA:878-882
+(goldens captured on the base commit), PRIV:721-735 and :959-960 (`bin/ops-golden-compare`,
+"one golden helper for every ops plan", landing in S5a, after CORE's S1 to S3 have shipped their
+own). LOG, LOCK (LOCK:274, :503, :526) and SKIN (SKIN:637) each add a fourth way. Fix: PRIV's
+helper adopts CORE's fixture folder for scenarios that declare `networks`, and the others name
+whether they use it; or the brief picks one.
+
+**X26. No plan owns the test for a technique session on an MFA PC. (R1 M11, still open.)**
+MFA and CORE should change.
+MFA:1116-1117 and CORE:1617-1620 state the rule (a technique session meets no second step; a
+password or saved connection a card yields does). MFA's M1a proof (MFA:126) tests "a saved
+connection to that PC is refused" but names no technique case, and CORE's S3 tests (CORE:1504)
+name no MFA PC. Fix: MFA adds two controller tests once S3 exists: a technique session on a
+`code` PC opens with no pending record; a saved connection granted by a technique, signed in
+at that PC, answers `mfaRequired`. CORE's request 3 names them.
+
+### Nits
+
+**X18.** LOG:720 says S5a edits `GamesController#container`; PRIV's file list (PRIV:846-875) has
+no such edit (its admin branches are in `game.rb`). LOG drops the clause.
+
+**X25.** PRIV:880-881 ("Whichever of S5a and S3 lands first adds the answer parameter") is
+settled by the build order: S3 is first, and CORE:1534 adds the parameter. PRIV says so.
+
+### 5.3 Checked and agreed
+
+**Neutral terms.** `weakness`, `finding`, `technique`, `foothold` and `fixedIf` are used alike
+in CORE, PRIV, SKIN, MFA, LOG and LOCK. `fixedIf` appears only in CORE (28 uses) and in its graph
+label; no plan writes `vulnerability` or `fixed_if`; `exploit` appears once, as a prohibition
+(CORE:330). `access: "user"|"admin"` is used as the brief says (CORE:62-79, PRIV:277-303). PRIV
+speaks of "a weakness with `needs: { "session": "user" }`" (PRIV:206), the same shape as CORE's.
+
+**Feature ids and scenario names.** N13 to N15 (CORE:4, :210-212), N16 (SKIN:1), A18 to A20
+(PRIV:3-4), A22 and A23 (MFA:3), A24 (LOG:1), A25 (LOCK:1, :705) match brief section 4. Every
+`test_ops_*` name the plans use is on the brief's list (section 5); `test_ops_helpdesk` appears
+once, as a decision not to make it (MFA:1129).
+
+**SKIN sections 13 and 14.** Section 13 (no row, no event) is right: the seven rows it names
+match CORE:1583-1589 and LOG:1087-1093, and `log_rows_for(source_id, compare: true)` exists
+(LOG:244-245). Section 14 request 1 is met by LOG:1121 and LOG:1198. CORE request 6
+(CORE:1623-1630) and SKIN K1 agree: CORE builds `perform` and the pending guard, SKIN reads the
+pending set and `pendingKey` (SKIN:143, :976). SKIN's K1 starts after S3 (SKIN:970), which the
+outline allows. Request 2 ("beats name actions") is a request to every plan; no other plan
+answers it, which is harmless.
+
+**Shared files, order.** `games_controller.rb` `set_game` and `with_game_lock` lists, `routes.rb`,
+`game_policy.rb`, the schema and `validate_scenario.rb` are acknowledged as append-only
+conflicts by CORE:1521-1547, LOG:716-724, MFA:1012-1028 and LOCK:594-601; none depends on an
+order the build order forbids. `credential_keyring.rb`: PRIV's `account_password_row` builder
+(S5b) comes first and MFA's `<npcId>.reset` beside it (S8b) is stated in both (PRIV:386-388,
+MFA:514-515). `game.rb` sign-in methods: CORE (S3), PRIV (S5), MFA (S8a), LOG (L1b) and LOCK
+(S8c) all edit them; the order is only a problem for L1b (X13). LOCK's `unlock` gate sits after
+LOG's L1b rows under the outline (S9 before S8c), as LOCK:584 assumes.
