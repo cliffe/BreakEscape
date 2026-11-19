@@ -14,7 +14,7 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS, whorlShapeFor, WHORL_SHAPES } from './fingerprint-generator.js';
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
-    liftQuality, ratingFor, brushFeel, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
+    liftQuality, ratingFor, brushFeel, packProgress, upsampleInto, saveProgress, loadProgress, clearProgress, hintNudgeDue, NUDGE_TEXT, NUDGE_MISSES, NUDGE_IDLE_MS, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
     zoomPlanBeside, ZOOM_STATUS_MAX_H, ZOOM_CHROME_H
 } from './dusting-model.js';
 import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide, fitCropToMarks, markGlyph, describeMarks, uprightMarks, rotateUpright } from './print-features.js';
@@ -240,6 +240,8 @@ export class DustingMinigame extends MinigameScene {
         this.reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || params.reducedMotion === true;
         this.highContrast = readStore(STORE_HC);
         this.steady = readStore(STORE_STEADY);
+        this.gameId = (window.breakEscapeConfig && window.breakEscapeConfig.gameId) || null;
+        this.resume = loadProgress(this.gameId, this.objectId);   // per-viewer localStorage only; null when absent or storage fails
 
         this.step = 'examine';
         this.powder = null;
@@ -810,8 +812,9 @@ export class DustingMinigame extends MinigameScene {
 
     _action(action, ds = {}, viaKey = false) {
         switch (action) {
-            case 'start': this._setStep('find'); break;
-            case 'use-normally': this.gameResult = { cancelled: true, useNormally: true }; this._resultSent = true; super.complete(false); break;
+            case 'start': this._clearProgress(); this.resume = null; this._setStep('find'); break;
+            case 'resume': this._resumeDusting(); break;
+            case 'use-normally': this._clearProgress(); this.gameResult = { cancelled: true, useNormally: true }; this._resultSent = true; super.complete(false); break;
             case 'close': this.complete(false); break;
             case 'hint': this.hintOn = true; this.dirty = true; this.announce('The ring marks where the print is.'); break;
             case 'powder': this._choosePowder(ds.powder); break;
@@ -829,6 +832,36 @@ export class DustingMinigame extends MinigameScene {
             case 'finish': this._finish(); break;
             default: break;
         }
+    }
+
+    // ------------------------------------------------------------------ resume (per viewer, localStorage only)
+
+    /** Saves the dust step (powder, tool, quality estimate, downsampled powder and fog) so a reload can resume it. */
+    _saveProgress() {
+        if (this._resultSent || this.step !== 'dust' || !this.powder || !this.found || !this.field) return false;
+        let quality = 0;
+        try { quality = this._currentQuality(1); } catch (e) { quality = this.metrics ? this.metrics.coverage : 0; }
+        const entry = packProgress({ step: 'dust', powder: this.powder, tool: this.tool, quality }, this.field);
+        if (!entry.p.some(v => v > 0)) return false;   // nothing dusted yet: no resume to offer
+        return saveProgress(this.gameId, this.objectId, entry);
+    }
+
+    _clearProgress() { clearProgress(this.gameId, this.objectId); }
+
+    _resumeDusting() {
+        const r = this.resume;
+        this.resume = null;
+        if (!r || !POWDERS[r.powder]) { this._setStep('find'); return; }
+        this.found = true;
+        this.powder = r.powder;
+        this.tool = POWDERS[r.powder].tools.includes(r.tool) ? r.tool : POWDERS[r.powder].tools[0];
+        this.toolStrokes = 0;
+        upsampleInto(this.field.P, this.field.size, r.p);
+        upsampleInto(this.field.FP, this.field.size, r.f);
+        this._setStep('dust');
+        this._refreshMetrics(true);
+        this._setBrushed(true);
+        this.announce('Resumed where you left off.');
     }
 
     _choosePowder(id) {
@@ -1017,6 +1050,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _finish() {
+        this._clearProgress();
         this.gameResult = this._buildResult();
         this._resultSent = true;
         super.complete(true);
@@ -1026,6 +1060,7 @@ export class DustingMinigame extends MinigameScene {
     complete(success) {
         if (this._resultSent) return super.complete(success);
         if (!success && this.mounted && this.final) {
+            this._clearProgress();
             this.gameResult = this._buildResult();
             this._resultSent = true;
             // viaClose: recordLift titles its one toast "Print Logged" (the Log the print button path keeps "Print Lifted")
@@ -1196,6 +1231,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _onPointerUp(e) {
+        if (this.step === 'dust') this._saveProgress();
         if (this._touchFind && e && e.type === 'pointerup' && this.step === 'find') this._attemptFind(this.reticle);
         this._touchFind = false;
         this.pointerDown = false;
@@ -1320,6 +1356,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _onKeyUp(e) {
+        if (e.key === ' ' && this.step === 'dust') this._saveProgress();
         if (e.key === ' ') { this.spaceHeld = false; clearInterval(this._keyTimer); this._keyTimer = null; }
     }
 
@@ -2047,6 +2084,7 @@ export class DustingMinigame extends MinigameScene {
 const baseSetStep = DustingMinigame.prototype._setStep;
 DustingMinigame.prototype._setStep = function (step) {
     baseSetStep.call(this, step);
+    if (step === 'dust') this._saveProgress();
     if (step === 'find' && !this.hintReady && !this._hintTimer) {
         this._hintTimer = true;
         this._later(() => { this.hintReady = true; if (this.step === 'find') this._renderPanel(); }, this.diff.hintAfterMs);
