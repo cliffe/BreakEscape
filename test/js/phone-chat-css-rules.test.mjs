@@ -153,7 +153,9 @@ check('landscape: phone status header padding trimmed', () => {
     assert.match(L('.phone-header').body, /padding-top:\s*4px/);
 });
 check('landscape SE chats: legend hidden, empty change hidden, one-row bar, budget with and without the cue', () => {
-    assert.match(L('.conversation-header .ib-infl-legend').body, /display:\s*none/);
+    // visually hidden, still read by screen readers (it is the only text for threshold state)
+    assert.match(L('.conversation-header .ib-infl-legend').body, /clip-path:\s*inset\(50%\)/);
+    assert.match(L('.conversation-header .ib-infl-legend').body, /position:\s*absolute/);
     assert.match(L('.conversation-header .ib-infl-change:empty').body, /display:\s*none/);
     assert.match(L('.conversation-header .se-chat-header .influence-bar').body, /padding:\s*0 8px/);
     // bar: border 2 + 2, one row = track margin 8 + (12 + 2 + 2) + 2 = 26 (taller than the 22.5 head), padding 0
@@ -197,26 +199,7 @@ check('landscape social chats: handle hidden, name and View profile share one ro
     assert.ok(statusHeader + socialHeader + t + re <= 253, 'no cue: ' + (statusHeader + socialHeader + t + re));
     assert.ok(statusHeader + socialHeader + tCue + re + cueH <= 253, 'cue: ' + (statusHeader + socialHeader + tCue + re + cueH));
 });
-check('landscape: call mode drops the reply minimums and keeps the 110px thread', () => {
-    const norm = x => x.selector.replace(/\s+/g, ' ').split(', ');
-    const sels = [
-        '.phone-call-mode .conversation-view .choices-container',
-        '.phone-call-mode .conversation-view:has(.se-chat-header) .choices-container',
-        '.phone-call-mode .conversation-view:has(.choices-more-cue.visible) .choices-container',
-        '.phone-call-mode .conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .choices-container',
-    ];
-    const r = land.find(x => sels.every(sel => norm(x).includes(sel)));
-    assert.ok(r, 'call-mode reset rule');
-    assert.match(r.body, /min-height:\s*0/);
-    const th2 = land.find(x => norm(x).includes('.phone-call-mode .conversation-view:has(.choices-more-cue.visible) .messages-container'));
-    assert.ok(th2 && norm(th2).length === 3, 'call-mode thread rule covers the cue and SE variants');
-    assert.equal(px(th2.body, 'min-height'), 110);
-    const callThread = all.find(x => x.media === '' && x.selector === '.phone-call-mode .messages-container');
-    assert.equal(px(callThread.body, 'min-height'), 110);
-    // the reset rule comes after every landscape min-height rule it must beat
-    const order = land.map(x => x.selector.replace(/\s+/g, ' '));
-    assert.ok(order.indexOf(r.selector.replace(/\s+/g, ' ')) > order.indexOf('.conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .choices-container'));
-});
+// Landscape call mode has its own budget, pinned in phone-call-landscape.test.mjs
 check('landscape: terminal skip hint sits inside the 36px empty strip', () => {
     const r = L('.phone-terminal-theme .phone-skip-hint');
     const hintH = 4 + 4 + 16 * 1.2;   // border + padding + one 16px line at 1.2 = 27.2

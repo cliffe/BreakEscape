@@ -271,15 +271,23 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         // Unlock the physical object in the game world
         const objectId = this.lockable?.scenarioData?.id || this.lockable?.objectId || 'esd_pushbutton';
 
+        // Only an object that was locked has an unlock to persist. The server refuses
+        // POST /unlock for an unlocked object ("Object not found", 422), which logged a
+        // console error on every press of sis02's ESD stations (all ESD objects in
+        // sis02 and m04 are locked:false).
+        const wasLocked = this.lockable?.scenarioData?.locked === true;
+
         if (this.lockable?.scenarioData) {
             this.lockable.scenarioData.locked    = false;
             this.lockable.scenarioData.esdState  = 'activated';
         }
 
-        applyActions([{ type: 'unlock_object', objectId }], {
-            source: 'esd_minigame',
-            gameId: window.breakEscapeConfig?.gameId || window.gameConfig?.gameId
-        });
+        if (wasLocked) {
+            applyActions([{ type: 'unlock_object', objectId }], {
+                source: 'esd_minigame',
+                gameId: window.breakEscapeConfig?.gameId || window.gameConfig?.gameId
+            });
+        }
 
         if (window.gameState) {
             window.gameState.unlockedObjects = window.gameState.unlockedObjects || [];

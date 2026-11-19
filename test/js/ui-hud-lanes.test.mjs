@@ -726,7 +726,7 @@ test('R2 m1: on phones held upright the pill\'s aim may wrap to two lines', () =
     assert.ok(block, 'upright phone rule');
     assert.match(block[1], /\.objectives-pill-summary \{[^}]*white-space: normal;/);
     assert.match(block[1], /\.objectives-pill-text \{[^}]*-webkit-line-clamp: 2;/);
-    assert.doesNotMatch(block[1], /border-radius|box-shadow|gradient/);
+    assert.doesNotMatch(block[1], /border-radius|box-shadow:(?!\s*none)|gradient/);
 });
 
 test('R3 m1: a toast returning from stepping aside waits until it fits whole next to the speech line', () => {
@@ -797,5 +797,5 @@ test('older bug: on short landscape phones the replies fit inside the phone fram
     assert.ok(replies, 'replies shrink and scroll inside the frame');
     // The thread gives way before the replies do: its minimum is the smaller one.
     assert.ok(thread < parseInt(replies[1], 10), 'the thread gives way first');
-    assert.doesNotMatch(block[1], /border-radius|box-shadow|gradient/);
+    assert.doesNotMatch(block[1], /border-radius|box-shadow:(?!\s*none)|gradient/);
 });
