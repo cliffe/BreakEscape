@@ -420,10 +420,13 @@ test('opening and closing modals leaves exactly one poll while open and none aft
     const probe = document.querySelector;
     let queries = 0;
     document.querySelector = function (...a) { queries++; return probe.apply(this, a); };
-    mock.timers.tick(1000);
-    queries = 0;
-    mock.timers.tick(HOLD_POLL * 10);
-    document.querySelector = probe;
+    try {
+      mock.timers.tick(1000);
+      queries = 0;
+      mock.timers.tick(HOLD_POLL * 10);
+    } finally {
+      document.querySelector = probe;
+    }
     assert.ok(live.size === 0, 'still no poll after further ticks');
     assert.ok(queries === 0, 'no polling queries after the last close (' + queries + ')');
   } finally {
