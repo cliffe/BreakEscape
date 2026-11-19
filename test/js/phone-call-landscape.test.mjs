@@ -408,9 +408,11 @@ check('desktop-height call: height budget at 1280x720, 1366x657 and 800x600 (end
 });
 check('short-screen call (501 to 680px): the influence legend is visually hidden, not removed, and wins the cascade', () => {
     const short = all.filter(r => r.media === '@media (500px < height <= 680px)');
-    assert.equal(short.length, 1);
+    assert.equal(short.length, 2);
     const sel = V + ' .se-chat-header .ib-infl-legend';
     assert.equal(short[0].selector, sel);
+    assert.equal(short[1].selector, V + ' .se-chat-header');
+    assert.match(short[1].body, /align-self:\s*stretch/, 'the bar keeps its width without the legend');
     assert.match(short[0].body, /clip:\s*rect\(0 0 0 0\)/);
     assert.doesNotMatch(short[0].body, /display:\s*none|visibility:\s*hidden/, 'stays in the accessibility tree');
     beats(sel, '.conversation-header .ib-infl-legend');

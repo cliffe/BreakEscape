@@ -1129,6 +1129,10 @@
         clip-path: inset(50%);
         white-space: nowrap;
     }
+    /* the legend used to give the bar its width; the bar's box stretches across the header without it */
+    .phone-call-mode #conversation-view .se-chat-header {
+        align-self: stretch;
+    }
 }
 
 /* Phones held sideways (about 390 px tall): the frame is about 270 px, less than the header, the
