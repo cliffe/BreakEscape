@@ -57,7 +57,11 @@ Enumerations:
 
 A session granted by a technique is an ordinary entry in `player_state.sessions[<pcId>]` with `via:
 "technique"`, the `foothold` it came through, `access` (`user` or `admin`) and `technique` (which
-holds the finding id that granted it, not a registry key). This plan makes the one edit to
+holds the finding id that granted it, not a registry key). The key is `technique`, not
+`finding`, because it names what granted the session and so pairs with `via: "technique"`: a
+reader sees in one record that a technique made the session and which use of one it was. The
+value is a finding id because a use is a card applied to a finding, and the finding is the part
+that identifies the use (the card can change, the finding cannot). This plan makes the one edit to
 `start_login_session!` that writes those keys. The stored `access` key is written only on a
 technique session's record; a password, claim or credential session's record has none, exactly
 as today. This plan only records the level. The privilege feature (S5a) owns what the level
@@ -591,12 +595,14 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
    takes a record without one as `user`. So in S3 alone a password session can feed a step up
    that needs `user`, and only a technique session can feed one that needs `admin`.
 
-Which refusals write. The first three checks write nothing at all: they answer
-an id the player has not earned, or a host that is down, and a row there would tell a log reader
-about something the player cannot see. Every 422 is a card use, and every card use writes a
-row: each hands the log helper a `technique_refused` row (section 13), whatever its code
-(`not_confirmed`, `false_positive`, `no_grant`, `fixed`, `wrong_class`, `wrong_product`,
-`wrong_version`, `need_unmet`). Nothing else in the state changes on a refusal.
+Which refusals write. The two 404s write nothing at all: they answer an id the player has not
+earned or a card they do not hold, and a row there would tell a log reader about something the
+player cannot see. Every other refusal is a card use the player can see, and every card use
+writes a row: the 403 `not_responding` (the host is listed, the card is held, and the player is
+told the host is not responding) and every 422 each hand the log helper a `technique_refused`
+row (section 13), whatever its code (`not_responding`, `not_confirmed`, `false_positive`,
+`no_grant`, `fixed`, `wrong_class`, `wrong_product`, `wrong_version`, `need_unmet`). Nothing
+else in the state changes on a refusal.
 
 A refusal is a branch that costs no save today, so it follows the log plan's rule for such
 branches and passes the helper `save_limit: true` (the limit, 10, is registered for
@@ -768,6 +774,31 @@ request at a session whose `via` is `technique` only when the keyboard branch of
 session from anywhere. The remote desktop sends its foothold on every folder request, so the
 player's own path never meets this line.
 
+*An NPC at the PC.* An office-life borrow sits an NPC down at a PC and signs them in there, and
+the borrow may leave that session open when the NPC goes. Neither ends a remote session, because the player is not at that keyboard and nothing the NPC does at
+the screen reaches a desktop seen across the network. Two changes, client and server, keep the
+two sides in step:
+
+- `pcSessions.displaced()` (`pc-sessions.js:742-765`, called on `npc_sat_at:<pcId>` and
+  `npc_borrowed_session:<pcId>`, `:304-308`) gains one line after the relay rule (`:746`, which
+  is unchanged): a copy with `remote === true` returns false at once, with no delete, no POST
+  /logout, no `pc_signed_out` and no desktop closed. That covers a technique copy and every
+  other remote copy (a password session through a foothold, a `from` session), since the client
+  sets `remote` from the server's `foothold` or `from`. A keyboard password session, a claim and
+  a guest claim are displaced as today.
+- `record_borrow_done!` (`npc_frustration.rb:391-396`) deletes the player's record at that PC
+  only when it has neither `foothold` nor `from`. A remote record stays, `prune_unreachable_sessions!`
+  then finds nothing new to end through it, and the guest record (`guest_sessions`, a separate
+  store) is written as today, so the NPC's guest session and the player's remote session sit side
+  by side at one PC.
+
+While the NPC is seated, a click on the PC in the world shows today's in-use answer, because
+`pcUserAt` runs before the remote-view reader (above). The network view's Open still opens the
+remote view, an open remote desktop stays open and usable, and the compromise mark stays.
+`npc_sat_at` fires only for a borrow (`npc-needs.js:3639-3641`, under `job.borrowed`); an NPC
+using the PC some other way emits nothing the session layer hears. An owner returning to a
+desk (`workstation_owner_returned`) ends only a claim (`pc-sessions.js:708-712`), unchanged.
+
 **The compromised marker in the world.** Every PC or device in a room that the player holds by
 compromise is drawn tinted red with a small lightning bolt at its top right, so the player can
 see at a glance what they own. A new client module, `systems/compromise-marks.js`, works the way
@@ -795,8 +826,8 @@ access point is used, not taken over), and a share (it has no sprite). A `hosts`
 sprite in the world, so its mark is drawn in the network view instead: the host row's icon
 carries the same bolt while the player holds a technique session there. A planted jack already
 swaps to its `plantedSprite`; the mark adds the tint and bolt on top. The mark comes off when
-its source ends: an unplug, an NPC finishing a borrow, a newer sign-in that replaces the
-technique session.
+its source ends: an unplug, the player's own Sign out, a newer sign-in that replaces the
+technique session. An NPC sitting down at the PC or finishing a borrow there leaves it on.
 
 How it is drawn, all in the engine:
 
@@ -848,9 +879,10 @@ polish item, and needs the user's go-ahead before any image is generated or draw
 | Desktop and folders at the PC's own keyboard | served, and the record drops `foothold` | a click opens the desktop through the session's foothold, with the remote-view marker; the record is never settled, so it keeps `foothold` and an unplug still ends it |
 | The PC's sprite in the world | signed-in look | locked look, tinted red with the bolt |
 | Source of a sign-in from its desktop to another PC | yes | yes |
-| An NPC finishes a borrow of the PC | ends | ends; the card can be used again |
+| An NPC sits down at the PC (a borrow starts) | stays: a remote session is not displaced | stays |
+| An NPC finishes a borrow of the PC | stays: the record keeps `foothold`, and the NPC's guest record is written beside it | stays, the same way |
 | Pivots, maps shares | yes | yes |
-| Satisfies an object's `needsSession` (the session-type implant) | yes: a session at the PC's own keyboard, by typed sign-in or claim | no: only a session at the PC's own keyboard counts, and a technique session is not one, even though a click on the PC serves its desktop through the foothold |
+| Satisfies an object's `needsSession` (the session-type implant) | yes: a session at the PC's own keyboard, by typed sign-in or claim | no: only a session at the PC's own keyboard counts, and a technique session is not one, even though a click on the PC serves its desktop through the foothold. The server refuses the plant because `implant_foothold!` takes only a record whose `foothold` is blank (`NA:498`) |
 | Unplug the foothold (N5) | ends | ends, by the same `end_sessions_through!` |
 | Pivot lost | pruned | pruned, same loop |
 | Outage or host off (N7) | kept, refused while down, works again after | the same |
@@ -1075,7 +1107,7 @@ each.
 | `/network/scan` (host) | `foothold`, `host_id` | the host is listed (404 `not_found`); it is responding (403 `not_responding`); it declares `services` (422 `not_needed`) | adds to `opsDiscovered.hosts`; log row; answers `{ success, host: <row with services> }` |
 | `/network/check` | `foothold`, `host_id`, `service` | the host is listed, scanned and has that service (404 `not_found`); it is responding (403 `not_responding`) | records the service as checked and adds an entry and an alias for each finding not yet held (section 5.3); log row on the first check, whatever it found; answers `{ success, hostId, service, findings: [...] }` |
 | `/network/confirm` | `foothold`, `finding_id` | the finding is held and its host listed (404 `not_found`); the host is responding (403 `not_responding`) | sets the status; log row on the first confirm; answers `{ success, finding }` |
-| `/network/technique` | `foothold`, `finding_id`, `item_id` | section 5.4: 404 `not_found`, 403 `not_responding`, then the 422 codes in order | section 5.4; a log row for every use that reaches the 422 checks, granted or refused. Success: `{ success, grant: "session" or "credential", session? , endedPcIds?, keyringChanged? }`. Refusal: `{ success: false, reason, need? }` |
+| `/network/technique` | `foothold`, `finding_id`, `item_id` | section 5.4: 404 `not_found`, 403 `not_responding`, then the 422 codes in order | section 5.4; a log row for every use that passes the two 404 checks, granted or refused (the 403 `not_responding` included). Success: `{ success, grant: "session" or "credential", session? , endedPcIds?, keyringChanged? }`. Refusal: `{ success: false, reason, need? }` |
 
 Responding is tested before `services` on a host scan, so a powered-down host answers the same
 whether or not it has services, and nothing about its services is told before a scan succeeds.
@@ -1316,6 +1348,7 @@ None. A scenario without the new fields takes the old path at every point this p
 | The unplug button | the unplug guard moves into `perform` with the same pending label and notice, and `test/js/network-view.test.mjs` passes with no assertion changed |
 | `systems/compromise-marks.js` | the one intended visible change: in a scenario that already lets the player plant a jack device (N1) or implant a PC (N10), (`test_access_networks`, `test_access_devices`, `test_access_keyring`, `demo_access_tour`, `lab_physical_pentest`), that jack or PC now shows the red tint and bolt while the foothold is held. It is client drawing only: no route answer, state key or event changes, so the golden answers below are unaffected, and the existing playtests' steps and leak scans pass as before. A scenario with no such foothold draws nothing new |
 | The pretext key rename | the six scenarios that write a pretext line (section 4.3) change one key name per line and nothing else; the judge reads `se_technique ?? technique`, so every verdict is the same before and after the migration, and a scenario outside the repo that still writes the old key judges as before and gets at most an info line. Part 5 of the check below proves both |
+| `pcSessions.displaced()`, `record_borrow_done!` | both now keep a remote session (one with `foothold` or `from`) at a PC an NPC sits at or borrows. A remote session needs a foothold, which needs `networks`, and none of the eight scenarios that declare `networks` has an NPC borrow; the scenarios with borrows (`test_access_social`, among others) declare no `networks`, so every session an NPC can displace or end there is a keyboard one and is handled as today |
 | `core/game.js`, `public/break_escape/assets/objects/technique_card.png` | one more image loaded; no existing item has the type |
 | `GET /network` top level and blocks | `techniques` is sent only when a card is held; `swept` only on a discovery network, and `ops` only where a host has services, none of which an existing scenario has |
 | `desktop_request_allowed?`, `desktop_refusal`, `host_row`, `hostAction` | each new term asks for `via: "technique"` or the `openHere` flag that follows from it, which only `POST /network/technique` causes |
@@ -1399,15 +1432,15 @@ a scenario with no `logSources`.
 
 | File | Stage | Covers |
 |---|---|---|
-| `network_scan_test.rb` | S1 | each check of `/network/scan` in order, with its status and reason; the 400 for a missing, non-string or over-long parameter and for both or neither of `network_id` and `host_id`; a powered-down host answering `not_responding` with and without services; the `network_swept` and `host_scanned` rows, once each; a sweep through a foothold that does not reach the network (404); `already` carrying the same fields; a repeated sweep writing its `network_swept` row again (merged into the newest row's count) and saving nothing else; `GET /network` before and after; a second network swept only after a pivot session; discovery kept across an unplug and a new foothold |
+| `network_scan_test.rb` | S1 | each check of `/network/scan` in order, with its status and reason; the 400 for a missing, non-string or over-long parameter and for both or neither of `network_id` and `host_id`; a powered-down host answering `not_responding` with and without services; the first sweep's `network_swept` row and the `host_scanned` row, the first passed with `save_limit: true` and the second once only; a sweep through a foothold that does not reach the network (404); `already` carrying the same fields; a repeated sweep writing its `network_swept` row again (merged into the newest row's count) and saving nothing else; `GET /network` before and after; a second network swept only after a pivot session; discovery kept across an unplug and a new foothold |
 | `network_discovery_display_test.rb` | S1 | on an unswept discovery network, with a PC id the client was never sent: remote sign-in, account tiles, desktop, credential sign-in through a foothold, sign-in from a held desktop and the keyring's offered routes each answer exactly as on the same network declared open (the same requests on an open network are the reference); the unswept block lists rows only for PCs the player holds a session on, and lists them before and after the sweep; an open share on the unswept network served by `GET /container`; a host scan of a host on the unswept network answering as an invented id until the sweep |
 | `network_ops_indistinguishable_test.rb` | S1 to S3 | for each of scan (sweep and host), check, confirm and technique: the answer for a real id the player has not earned (a network out of reach, a host on an unswept network, a host not scanned, a real finding id never checked, a finding whose host is no longer listed) equals, status and body byte for byte, the answer for an invented id, a string that is not of the id form and a foothold not held; and a stale id (good before an unplug or a lost pivot) answers the same |
-| `network_ops_free_test.rb` | S2, S3 | the loop costs nothing but rows: confirming every finding of a service, decoys and weaknesses alike, and trying every card in the scenario on every finding change no state beyond the statuses, the grants and the log, and add no state key; each refusal writes a `technique_refused` row with `save_limit: true` and saves the game only while the helper's result is `stored?`: the first ten at a host in a five-minute window of server time save, whatever the card, finding or reason, the eleventh and every later one in that window do not (the first after the window ends does again), and none does with no log source; a refusal sent twice writes its row twice (merged into a count); a confirm repeated writes no second row |
+| `network_ops_free_test.rb` | S2, S3 | the loop costs nothing but rows: confirming every finding of a service, decoys and weaknesses alike, and trying every card in the scenario on every finding change no state beyond the statuses, the grants and the log, and add no state key; each refusal past the two 404s, the 403 `not_responding` included, writes a `technique_refused` row with `save_limit: true` and saves the game only while the helper's result is `stored?`: the first ten at a host in a five-minute window of server time save, whatever the card, finding or reason, the eleventh and every later one in that window do not (the first after the window ends does again), and none does with no log source; a refusal sent twice writes its row twice (merged into a count); a confirm repeated writes no second row |
 | `network_findings_test.rb` | S2 | aliases given in the order found and kept across a reload; a check repeated after a confirm keeps the status and the alias and answers `already: true`; a first check of a service with no weakness or decoy, and of one whose only weakness is fixed, answers no findings and no `already`, adds the service to `opsDiscovered.services` and writes one `service_checked` row, and its repeat answers `already: true` with no row; a repeat check after the weakness has become unfixed adds the finding, saves, answers no `already` and writes no second row, and the check after that answers `already: true`; a second service's check carries on the alias count; a host with services and no finding held carries no `findings` key, scanned or not; the 400s and each 403 `not_responding` of `/check` and `/confirm`; the `service_checked` and `finding_confirmed` rows; check before scan (404); a check's answer with a decoy and a weakness built from the same keys in id order; confirm for each; an invented finding id (404); a weakness whose `fixedIf` holds left out of a check; one already confirmed carrying `fixed: true`, and one found but unconfirmed carrying no `fixed` key and the same keys as a decoy; an `itemType` need met only by an unforged held item whose id is an authored item of that type; the authored `label` shown for an `itemType` and a `global`, and the global's name in no answer; `met` recomputed on each read as an item is picked up and a credential earned |
-| `network_technique_test.rb` | S3 | section 5.4, each rule one test: every refusal in its fixed order with what it writes and its `technique_refused` row, both grants with their `technique_used` row, and the repeat for a session and for a credential, each writing its `technique_used` row again with `save_limit: true` (merged into a count, the route saving only while the helper's result is `stored?`). Beyond that section's text: with two footholds that both reach the host, a use through the second being a new use that runs every check and moves the session to that foothold; a grant again after the session ended; `endedPcIds` when the grant replaces a pivot session; the step up replacing the record in place and keeping `foothold`, from a technique session and from a password session at `user`; `signedInPcs` gaining the PC; `access: "admin"` in the answer, in `GET /scenario` after a reload and on the host row for a session at admin, and no `access` key for a technique session at user or for a password, claim or credential session; `GET /network` `techniques` absent with no card held and carrying `itemId` (first in id order of two held cards) otherwise |
+| `network_technique_test.rb` | S3 | section 5.4, each rule one test: every refusal in its fixed order with what it writes: no row for either 404, and a `technique_refused` row for the 403 `not_responding` (`reason: not_responding`, `save_limit: true`) and for each 422, both grants with their `technique_used` row, and the repeat for a session and for a credential, each writing its `technique_used` row again with `save_limit: true` (merged into a count, the route saving only while the helper's result is `stored?`). Beyond that section's text: with two footholds that both reach the host, a use through the second being a new use that runs every check and moves the session to that foothold; a grant again after the session ended; `endedPcIds` when the grant replaces a pivot session; the step up replacing the record in place and keeping `foothold`, from a technique session and from a password session at `user`; `signedInPcs` gaining the PC; `access: "admin"` in the answer, in `GET /scenario` after a reload and on the host row for a session at admin, and no `access` key for a technique session at user or for a password, claim or credential session; `GET /network` `techniques` absent with no card held and carrying `itemId` (first in id order of two held cards) otherwise |
 | `network_technique_blocked_host_test.rb` | S3 | the hostile test for the changed access check. On a host with `remote: "blocked"`: every row of the "stays refused" table in section 5.4, each with a session made through the real routes; then the technique session opens the desktop and its folders through its own foothold and through no other. With two footholds that both reach the host: the first foothold's view lists the session with `openHere` and the second's row has no session, so no view offers an Open the server refuses; a folder request with no route is refused away from the PC and served beside it, as the keyboard desktop is; a desktop request with no route from beside a PC the player can walk to, on a blocked host and on one that allows remote sign-in, is served as the session's account with no password, the record keeps its `foothold` (`settle_session_at_keyboard!` skips it) and an unplug afterwards still ends the session; a desktop request naming the session's own foothold, as the world click sends it, is served from anywhere. On a headless blocked host with the technique session at admin, `desktop_request_allowed?` is true through the session's own foothold and false through another held foothold, a `from` route and no route. Host off answers `not_responding`; an unplug ends it and the next request is `no_session`. On a host that allows remote sign-in: a password session's desktop behaves as before |
 | `network_technique_hostile_test.rb` | S3 | a card item id the player does not hold; an item the client forged into its inventory; an inventory entry whose `technique_card` field the client added or changed (the server reads the authored definition); an item matched only by `name`; a finding id of another host; a foothold id not held; a sync body that writes `opsDiscovered`, `opsFindings`, `opsUsed` or a session with `via: "technique"`; non-string and over-long parameters. Each is refused or ignored and leaves the state untouched |
-| `network_technique_session_test.rb` | S3 | the table in section 5.4 row by row: lock refused, remote-view desktop served on a click and `foothold` kept, sign-in from its desktop to another PC, an NPC finishing a borrow ending it and a repeat use granting it again, an NPC guest session ended by the grant, pivot, share mapping, `needsSession` for an implant refused for a technique session and met by a keyboard session, outage and host off kept then refused then working again, `fixedIf` turning true afterwards, reload |
+| `network_technique_session_test.rb` | S3 | the table in section 5.4 row by row: lock refused, remote-view desktop served on a click and `foothold` kept, sign-in from its desktop to another PC, an NPC finishing a borrow keeping it (the record kept with its `foothold`, the guest record written beside it, nothing pruned) and a repeat use answering `already: true`, the same `record_borrow_done!` keeping a password session through a foothold and a `from` session and still deleting a keyboard password session and a claim, an NPC guest session ended by the grant, pivot, share mapping, `needsSession` for an implant refused for a technique session and met by a keyboard session, outage and host off kept then refused then working again, `fixedIf` turning true afterwards, reload |
 | `network_ops_no_exposure_test.rb` | S1 to S3 | the no-exposure list of section 7 at each step of a full run, over the bootstrap, every room, `GET /network`, `GET /keyring`, `GET /container` and all four ops answers; the payload scan over the same answers |
 | `network_ops_state_delta_test.rb` | S1 to S3 | no ops key appears in any sync answer; each route's answer holds only what it changed; the size of `GET /network` at full discovery of `test_ops_access` is under 16 KB |
 | `network_ops_unchanged_test.rb` | step 1 | section 10, part 1 |
@@ -1418,10 +1451,10 @@ a scenario with no `logSources`.
 | File | Stage | Covers |
 |---|---|---|
 | `ops-model.test.mjs` | S1 to S3 | row merging, the works-on line, need labels, alias and item id lookup, every code in `ops_refusal_codes.json` (section 6) present in `REFUSAL_TEXT`, unknown codes mapped to a neutral text |
-| `pc-sessions-access.test.mjs` | S3 | `load` and `publicSession` keep `access` when present and add nothing when absent; `remoteViewFoothold` answers the foothold for a technique copy whose foothold `networkLinks` holds, and null once that foothold is gone and for a password, credential, claim or relay copy; `heldAtKeyboard` answers as today for every copy; `screen-states.js` keeps the locked look |
+| `pc-sessions-access.test.mjs` | S3 | `load` and `publicSession` keep `access` when present and add nothing when absent; `remoteViewFoothold` answers the foothold for a technique copy whose foothold `networkLinks` holds, and null once that foothold is gone and for a password, credential, claim or relay copy; `heldAtKeyboard` answers as today for every copy; `screen-states.js` keeps the locked look; `npc_sat_at:<pcId>` and `npc_borrowed_session:<pcId>` on a technique copy and on a remote password copy: `displaced()` answers false, the copy stays, no POST /logout is sent, no `pc_signed_out` is emitted and an open desktop stays open; the same events on a keyboard password copy, a claim and a guest claim displace them as today, and the relay rule is unchanged |
 | `pc-remote-view-click.test.mjs` | S3 | `interactLoginPc` and `openLoginPc` on a PC with a technique copy call `networkLinks.openSession(pcId, { returnTo })` once, show no sign-in screen and send no sign-in request; on a PC with a password copy, a technique copy whose foothold is gone, or no copy, take today's path |
 | `desktop-remote-view.test.mjs` | S3 | a desktop opened for a technique session, from the world and from the network view, has the class `desktop-frame--remote-view` and the line "Remote view: <account> through <link>" from `remote-host-text.js`, set as text, with hostile account and link names shown literally; the wipe runs its four steps and is skipped under the reduced-motion setting; a foothold desktop of a password session keeps today's line, no class and no wipe; a folder opened from the remote-view desktop sends its foothold |
-| `compromise-marks.test.mjs` | S3 | each source marks its object (a technique session, an implanted PC, a planted jack) and each end clears it (`pc_signed_out` from an unplug, an NPC finishing a borrow and a newer sign-in that replaces the session; `network_device_unplugged`; `network_foothold_dropped` from a `_dropFoothold` after a 404 and after a `GET /network` answer that leaves the foothold out, clearing the jack's or implanted PC's mark and a technique session's mark through that foothold); an NPC sitting down at a PC with a technique session leaves the mark on; a password, credential, claim or relay session, a joined Wi-Fi access point and a share are never marked; a sprite with an authored tint or `spriteVariants` gets the bolt and keeps its look; `sprite.compromiseTint` set with the mark and deleted when it comes off, and `setTint`/`clearTint` not called while `isHighlighted` is true; `syncRoom` marks the sprites of a room made after the event; no timer is set; `compromiseMarks()` lists exactly the applied marks, each with the sprite's live `tint`; the network view's row bolt on a `hosts` entry held by a technique session |
+| `compromise-marks.test.mjs` | S3 | each source marks its object (a technique session, an implanted PC, a planted jack) and each end clears it (`pc_signed_out` from an unplug, the player's Sign out and a newer sign-in that replaces the session; `network_device_unplugged`; `network_foothold_dropped` from a `_dropFoothold` after a 404 and after a `GET /network` answer that leaves the foothold out, clearing the jack's or implanted PC's mark and a technique session's mark through that foothold); an NPC sitting down at a PC with a technique session leaves the mark on; a password, credential, claim or relay session, a joined Wi-Fi access point and a share are never marked; a sprite with an authored tint or `spriteVariants` gets the bolt and keeps its look; `sprite.compromiseTint` set with the mark and deleted when it comes off, and `setTint`/`clearTint` not called while `isHighlighted` is true; `syncRoom` marks the sprites of a room made after the event; no timer is set; `compromiseMarks()` lists exactly the applied marks, each with the sprite's live `tint`; the network view's row bolt on a `hosts` entry held by a technique session |
 | `interactions-compromise-tint.test.mjs` | S3 | a marked sprite (`compromiseTint` set) walked into range shows the highlight blue, walked out of range shows the mark's red again (`tintTopLeft`), and the same after leaving the viewport and after `interactable` turns false; an unmarked sprite walked in and out ends with no tint, as today; a mark that ends while the sprite is highlighted leaves no red after the hover ends; the proximity ghost is blue in every case |
 | `validator-social-pretext-key.test.mjs` | S3 | a pretext line with `se_technique` validates as the old key did; one with only `technique` gives the same errors and warnings as before plus one info line naming `se_technique`, and no error or warning of its own; one with both keys gives the both-keys warning and is checked on the `se_technique` value; the six shipped SE scenarios, after the migration, show no pretext-key line at all |
 | `pretext-rename-unchanged.test.mjs` | step 1, S3 | section 10, part 5 |
@@ -1532,7 +1565,9 @@ gives, the other needs nothing.
 
 **`test_ops_access` (S3).** `office_lan` (discovery) holds the printer, `files01`
 (headless, remote sign-in allowed), `vault01` (headless, policy `remote: "blocked"`) and `desk01`
-(a PC in a room the player can walk into, with one weakness that grants a session). `plant_lan` links
+(a PC in a room the player can walk into, remote sign-in allowed, with one weakness that grants a
+session; a note in that room holds its account's password, and `desk01` takes a session-type
+implant (N10), whose device lies in the same room). `plant_lan` links
 to it and holds one PC. Cards: one for factory accounts (in a folder in the lobby), one for the
 file service's product and versions (on an NPC, handed over in dialogue), one for another class
 and one for the right product at the wrong version (both in a drawer). The printer's weakness
@@ -1566,6 +1601,7 @@ two and the spare.
 | 15 | Flips the switch that fixes `files01`'s file service and the spare, tries the product card on `files01`'s confirmed finding, which has `grants` and so passes the `no_grant` check, then on the spare | 422 `fixed`; then 422 `no_grant` for the spare, now shown Fixed; the `vault01` session still opens | two rows only |
 | 16 | Unplugs the jack A device | `vault01`, `files01` and `desk01` sessions ended, `plant_lan` gone; a desktop request answers `no_session`; the marks on jack A and `desk01` and the `vault01` row bolt gone | sessions gone; `opsUsed` and the keyring entry kept |
 | 17 | Plants again, uses the card on `vault01`'s first weakness | the session again | a new record |
+| 17a | Uses the fitting card on `desk01`'s weakness again and clicks `desk01`; reads the taskbar; opens the `vault01` remote view from the view and reads its taskbar; back at `desk01`, chooses Sign out; clicks `desk01`, types the password from the note in `desk01`'s room; uses the implant device on `desk01` | the remote view opens; its taskbar offers Sign out and Switch user (remote sign-in allowed on `desk01`), and the `vault01` one offers Sign out only (blocked host); after Sign out the mark comes off and the next click shows the sign-in screen; the typed sign-in opens the keyboard desktop with no red frame; the implant is accepted and `desk01` is marked again, `compromiseMarks()` naming the implant foothold as its source | `sessions.desk01` a technique session, then gone, then a `password` session with no `foothold`; an implant foothold from `desk01` |
 | 18 | End of run | leak scan clean; `GET /network` at full discovery measured and under 16 KB | |
 
 The scenario also carries one NPC line on `network_technique_used` and one objective per event of
@@ -1666,7 +1702,7 @@ are in flight at once, their sessions agree who goes first on each file.
 | `app/controllers/break_escape/games_controller.rb` | four actions; their names in the `set_game` list (`:27`) and the `with_game_lock` list (`:103`) | every ops plan adds actions to the same two long lines: a certain merge conflict, resolved by keeping both sets |
 | `config/routes.rb` | four lines after `network/join` (`:55`) | S5, S7, S8 add lines nearby |
 | `app/policies/break_escape/game_policy.rb`, `test/unit/break_escape/policy_test.rb` | four `?` methods returning `show?`; four names in `DEVICE_ACTIONS` | every ops plan with an action adds a method and a name in the same places |
-| `lib/break_escape/ops_log_events.rb` (the log feature's, landed first) | six entries in `EVENTS`, added stage by stage, one line each; the `KINDS` entries `network`, `host`, `service` and `technique` | every plan that writes rows adds lines to the same two constants |
+| `lib/break_escape/ops_log_events.rb` (the log feature's, landed first) | six entries in `EVENTS`, added stage by stage, exactly the lines of section 13 (with `save_limit` on `network_swept`, `technique_refused` and `technique_used`); the `KINDS` entries `network`, `host`, `service` and `technique` | every plan that writes rows adds lines to the same two constants |
 | `tools/playtest/verify-run.rb` | three names in `ACCESS_KEYS`, three printed lines, two keys on the session line (about 20 lines) | the log feature adds `--ops-log`; S5 and S8 will add their own keys to the same list |
 | `public/break_escape/js/systems/test-bridge/access.js`, `docs/test-bridge.md` | the documented shape of `networkView` gains `networks` and `techniques`; no behaviour change | none known |
 | `app/models/break_escape/game.rb` | `ACCESS_STATE_DEFAULTS` (three keys); `start_login_session!` (two keywords), `login_session_answer` and `session_for_client` (`access`), the reader `client_access_level`; the include of `NetworkOps` | S5a adds `session_access`, points `client_access_level` at it, writes no level, and may add its own keys to the same constant; S8 and S5c change the sign-in order just above |
@@ -1675,7 +1711,10 @@ are in flight at once, their sessions agree who goes first on each file.
 | `lib/break_escape/credential_model.rb`, `app/models/break_escape/credential_keyring.rb` | `PROOF_KINDS`, one `when` | S7 builds the `hash` kind in the same catalogue; S5b adds a harvest proof |
 | `public/break_escape/js/minigames/network-view/network-view-minigame.js` | rows, panels, `hostAction`, `getTestState`; the `perform` path and its pending guard, built in S1 with the unplug guard folded in and widened in S2 and S3 | S6 adds the second renderer, which reads the same answers through `ops-model.js`, never the DOM, and is routed through the same `perform` path; S5a adds no badge here (section 14, request 1) |
 | `public/break_escape/js/minigames/network-view/ops-model.js` (new here) | the shared pure module, with `REFUSAL_TEXT` | S6 builds on it and adds its own exports; later plans add their refusal codes to the one table |
-| `public/break_escape/js/systems/pc-sessions.js`, `unlock-system.js`, `minigames/container/container-minigame.js` | `access` copied; the new reader `remoteViewFoothold` and the click path through `networkLinks.openSession`; `heldAtKeyboard` and the `unlock-system.js` fallback do not change (a technique copy is not held at the keyboard, so `needsSession` is not met by it); no refusal handler in `loadLoginDesktop` | S5a reads `access` on the client; S8 changes the sign-in screen |
+| `public/break_escape/js/systems/pc-sessions.js`, `unlock-system.js`, `minigames/container/container-minigame.js`, `minigames/text-file/text-file-minigame.js` | `access` copied; the new reader `remoteViewFoothold` and the click path through `networkLinks.openSession`; `displaced()` gains one line that keeps a remote copy (section 5.4, "An NPC at the PC"); `canSwitch: false` on a technique remote view of a blocked host; `heldAtKeyboard` and the `unlock-system.js` fallback do not change (a technique copy counts as held at the keyboard; `needsSession` is still not met by it, because the server's `implant_foothold!` takes only a record whose `foothold` is blank, `NA:498`); no refusal handler in `loadLoginDesktop` | S5a reads `access` on the client; S8 changes the sign-in screen; office-life work that touches `displaced()` |
+| `public/break_escape/js/systems/interactions.js` | the local `restTint(obj)` in place of the three `clearTint()` calls (`:221-223`, `:246-248`, `:277-282`); no new import, so no harness copy list changes | any plan that changes the proximity highlight |
+| `public/break_escape/js/systems/network-links.js` | one emit, `network_foothold_dropped`, at the end of `_dropFoothold` (`:294-305`) | S5 and S8 read footholds from the same module |
+| `app/models/break_escape/npc_frustration.rb` `record_borrow_done!` | the player's record is deleted only when it has neither `foothold` nor `from` (`:391-396`) | office-life and access work on borrows |
 | `public/break_escape/js/utils/remote-host-text.js`, `public/break_escape/css/ui-themes.css`, the importers of `screen-states.js`, `public/break_escape/js/core/rooms.js` | the remote-view line, the red frame class `desktop-frame--remote-view` and the wipe; the marker module is imported where `screen-states.js` is; `rooms.js` applies the room-side marks | the skin plan restyles the same screens (section 14, request 6) |
 | `app/models/break_escape/game.rb` `settle_session_at_keyboard!` | one `technique` skip | S5a and S8 change the sign-in order just above |
 | the six shipped SE scenarios, `public/break_escape/js/systems/pretext-judge.js`, `scripts/validate_social/pretext.rb`, the pretext line in `scripts/scenario-schema.json` | the pretext line key `technique` becomes `se_technique`; the judge and the validator read `se_technique ?? technique`, and the schema keeps the old key declared (sections 4.3, 9.1) | the social-engineering plans; the golden comparison proves no behaviour change |
@@ -1719,17 +1758,39 @@ row's `where` already names the host. `from` on the two scan rows is a foothold 
 jack device, a joined access point or an implanted PC), which is not a `hosts` entry. It is
 registered with the kind `foothold`, which the log plan adds and fills; this plan does not.
 
-The table below is the log plan's own list of these rows (its section 13.7), with the method
-and branch added. No row holds a password or any secret, and no row is written from a sync
-merge, on a 400 or on the 404.
+**The rule.** Every sweep writes a row, a repeat included, and so does every technique use: a
+grant, a repeat of a grant and every refusal past the two 404s. A host scan, a service check and
+a confirm write the first time only. There is no quiet or noisy split of refusals and no alert
+row. The log plan's list of these rows is to match the table below (section 14, request 8). No
+row holds a password or any secret, and no row is written from a sync merge, on a 400 or on a
+404.
+
+**The six `EVENTS` lines**, added stage by stage (`network_swept` and `host_scanned` in S1,
+`service_checked` and `finding_confirmed` in S2, the two technique events in S3):
+
+```ruby
+'network_swept'     => { label: 'NET_SWEEP', places: %w[network],  results: %w[ok],      detail: { 'from' => { id: 'foothold' } }, save_limit: { 'ok' => 10 } },
+'host_scanned'      => { label: 'HOST_SCAN', places: %w[host pc],  results: %w[ok],      detail: { 'from' => { id: 'foothold' } } },
+'service_checked'   => { label: 'SVC_CHECK', places: %w[host pc],  results: %w[ok],      detail: { 'service' => { id: 'service' } } },
+'finding_confirmed' => { label: 'CONFIRM',   places: %w[host pc],  results: %w[ok],      detail: { 'finding' => { alias: 'finding' }, 'status' => %w[confirmed false] } },
+'technique_refused' => { label: 'TECHNIQUE', places: %w[host pc],  results: %w[refused], detail: { 'finding' => { alias: 'finding' }, 'technique' => { id: 'technique' }, 'reason' => %w[not_responding not_confirmed false_positive no_grant fixed wrong_class wrong_product wrong_version need_unmet] }, save_limit: { 'refused' => 10 } },
+'technique_used'    => { label: 'TECHNIQUE', places: %w[host pc],  results: %w[ok],      detail: { 'finding' => { alias: 'finding' }, 'technique' => { id: 'technique' }, 'grant' => %w[session credential], 'access' => %w[user admin] }, save_limit: { 'ok' => 10 } },
+```
+
+The `ok` limits on `network_swept` and `technique_used` are what let a repeat sweep and a
+repeat use pass `save_limit: true`; the helper treats such a call as malformed when its result
+has no registered limit. The first sweep and a new grant change state and save anyway, so they
+pass no limit.
+
+The table gives the method and branch of each call.
 
 | Event | Who (`as`) | Where | When (method, branch) | Result | Detail | Bound |
 |---|---|---|---|---|---|---|
-| `network_swept` | nil | `network`, the one swept | `scan_network!`, on every sweep, a repeat included. `POST /network/scan` saves after the first sweep, which changed `opsDiscovered`; after a repeat it saves only when the helper's result is `stored?` | `ok` | `from`: the foothold id (kind `foothold`) | the first sweep is written once; a repeat is written with `save_limit: true` (limit 10 in `EVENTS`) and merges into the first row's count up to the log plan's bound |
+| `network_swept` | nil | `network`, the one swept | `scan_network!`, on every sweep, a repeat included. `POST /network/scan` saves after the first sweep, which changed `opsDiscovered`; after a repeat it saves only when the helper's result is `stored?` | `ok` | `from`: the foothold id (kind `foothold`) | every sweep writes: the first with no limit, each repeat with `save_limit: true` (`ok`, 10 in `EVENTS`), merging into the newest row's count up to the log plan's bound |
 | `host_scanned` | nil | `host` or `pc`, the one scanned | `scan_host!`, when the host is newly added. `POST /network/scan` saves | `ok` | `from` | once per host: a repeat scan writes nothing |
 | `service_checked` | nil | `host` or `pc` | `check_service!`, when the service is newly added to `opsDiscovered.services`, whatever the check found. `POST /network/check` saves | `ok` | `service`: the service name | once per service: a repeat check writes nothing |
 | `finding_confirmed` | nil | `host` or `pc` | `confirm_finding!`, when the status is set. `POST /network/confirm` saves | `ok` | `finding`: the alias; `status`: `confirmed` or `false` | once per finding: a repeat confirm writes nothing |
-| `technique_refused` | nil | `host` or `pc` | `use_technique!`, on each 422 of section 5.4 (never on its 404 or 403). `POST /network/technique` saves only when the helper's result is `stored?` (section 5.4) | `refused` | `finding`: the alias; `technique`: the technique id; `reason`: the 422 code, a closed list | merged repeats; every refusal is written with `save_limit: true` (limit 10 in `EVENTS`), so at most ten of them store per place in a five-minute window of server time and the rest are dropped and save nothing until the window ends |
+| `technique_refused` | nil | `host` or `pc` | `use_technique!`, on the 403 `not_responding` and on each 422 of section 5.4 (never on its two 404s). `POST /network/technique` saves only when the helper's result is `stored?` (section 5.4) | `refused` | `finding`: the alias; `technique`: the technique id; `reason`: the refusal code, a closed list (`not_responding` and the eight 422 codes) | merged repeats; every refusal is written with `save_limit: true` (limit 10 in `EVENTS`), so at most ten of them store per place in a five-minute window of server time and the rest are dropped and save nothing until the window ends |
 | `technique_used` | `{ account: }` (the username the session is as) for a session grant; nil for a credential grant | `host` or `pc` | `use_technique!`, on every grant and on every repeat of one, a refused use being the row above. `POST /network/technique` saves after a new grant; after a repeat it saves only when the helper's result is `stored?` | `ok` | `finding`, `technique`; `grant`: `session` or `credential`; `access`: `user` or `admin` for a session grant | a repeat (`already: true`) writes the row again, passed with `save_limit: true` (limit 10 in `EVENTS`), so repeats merge into a count on the grant's row and are bounded by the helper's limit; a new session after the old one ended is a new grant and a new row |
 
 A step up from user to admin is the `technique_used` row with `access: admin`; no other feature
@@ -1815,7 +1876,9 @@ Each is a statement of what this plan provides or needs, for the plan named.
    every sweep writes a row, a repeat included, and so does every technique use (a grant, a
    repeat of a grant with `save_limit: true`, or a refusal); a scan, a check and a confirm write the first time only; every
    `technique_refused` row passes `save_limit: true` (limit 10 in `EVENTS`) and saves only when
-   the result is `stored?`, with no quiet or noisy split; `network_alerted` and the `how` detail
+   the result is `stored?`, with no quiet or noisy split, and its `reason` list gains
+   `not_responding`; `network_swept` and `technique_used` each register `save_limit: { 'ok' =>
+   10 }` for their repeats (the six `EVENTS` lines are in section 13); `network_alerted` and the `how` detail
    of `finding_confirmed` do not exist, so its event list and its rows for them come out; and its
    row for `service_checked` is bounded once per service (the caller writes it on the first
    check, by `opsDiscovered.services`), not by "a check that adds a finding".

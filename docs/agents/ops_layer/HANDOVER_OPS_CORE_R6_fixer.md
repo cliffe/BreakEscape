@@ -36,7 +36,14 @@ m7 refused use writes a row).
   row changed to delete only records with neither `foothold` nor `from`), the "new use" list at the
   start of the grant paragraph.
 
-## Open (do these next)
+## Status (second fixer, 2026-11-19)
+
+All nine items below are done, the log plan's network rows, EVENTS example and request 3 included,
+and the R6 lines are in `OPS_CORE_DECISIONS.md`. Not done: no test_ops_access beat for an NPC
+borrow at a carded PC (node and Rails tests cover it). Left alone: the log plan's generic helper
+text on `save_limit: false` "noisy refusal" examples (LOG:607, :939, :992), outside the network rows.
+
+## Open at the first handover (now done)
 
 1. M2 rest:
    - Add a paragraph after "*Folders.*" in 5.4: "*An NPC at the PC.*" displaced() (pc-sessions.js:742-765)

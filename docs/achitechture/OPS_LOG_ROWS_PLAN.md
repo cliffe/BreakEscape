@@ -1056,7 +1056,7 @@ events there, one line per event, in the build stage that adds the action:
 ```ruby
 EVENTS = {
   'signin_ok'       => { label: 'SIGN_IN',   places: %w[pc],      results: %w[ok], detail: { 'method' => %w[password credential], 'route' => %w[keyboard foothold from relay] } },
-  'network_swept'   => { label: 'NET_SWEEP', places: %w[network], results: %w[ok], detail: { 'from' => { id: 'foothold' } } },
+  'network_swept'   => { label: 'NET_SWEEP', places: %w[network], results: %w[ok], detail: { 'from' => { id: 'foothold' } }, save_limit: { 'ok' => 10 } },
   'credentials_harvested' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 9 } } },
   'signin_refused'  => { label: 'SIGN_IN',   places: %w[pc],      results: %w[denied blocked], save_limit: { 'denied' => 10, 'blocked' => 10 } },
   'badge_swipe'     => { label: 'BADGE',     places: %w[door object], results: %w[ok denied], save_limit: { 'denied' => 10 } },
@@ -1122,13 +1122,12 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
 
 | Plan | Event | `as` | `where` | `result` | `detail` | Bound | Saved by |
 |---|---|---|---|---|---|---|---|
-| S1 | `network_swept` | nil | `network` | ok | `from` (`{ id: 'foothold' }`) | once (caller: first sweep only) | `POST /network/scan` |
+| S1 | `network_swept` | nil | `network` | ok | `from` (`{ id: 'foothold' }`) | every sweep writes, a repeat included; merged repeats; a repeat is written with `save_limit: true`, 10 per network (registered for `ok`) | the first sweep: the route's own save. A repeat changes nothing else: `save!` only when `r&.stored?` |
 | S1 | `host_scanned` | nil | `host`, `pc` | ok | `from` (`{ id: 'foothold' }`) | once per host (caller) | `POST /network/scan` |
 | S2 | `service_checked` | nil | `host`, `pc` | ok | `service` (`{ id: 'service' }`, shown by name) | once per service (caller: written when the service is first added to `opsDiscovered.services`, whatever the check found) | `POST /network/check` |
-| S2 | `finding_confirmed` | nil | `host`, `pc` | ok | `finding` (`{ alias: 'finding' }`), `status` (`confirmed`, `false`), `how` (`quiet`, `probe`) | once per finding (caller) | `POST /network/confirm` |
-| S2 | `network_alerted` | nil | `network` | ok | none | once per network (caller: the request that sets the alert global) | the confirm or technique route that raised the noise |
-| S3 | `technique_refused` | nil | `host`, `pc` | refused | `finding` (alias), `technique` (`{ id: 'technique' }`), `reason` (the closed list of 422 codes) | merged repeats; a quiet refusal also `save_limit: true`, 10 per host (registered for `refused`) | a noisy refusal: the route's own save, `save_limit: false`. A quiet refusal saves nothing today: `save!` only when `r&.stored?`, written with `save_limit: true` |
-| S3 | `technique_used` | `{ account: }` for a session grant, nil for a credential grant | `host`, `pc` | ok | `finding`, `technique`, `grant` (`session`, `credential`), `access` (`user`, `admin`; session grants only) | one per grant (caller: a repeat with `already: true` writes nothing) | `POST /network/technique` |
+| S2 | `finding_confirmed` | nil | `host`, `pc` | ok | `finding` (`{ alias: 'finding' }`), `status` (`confirmed`, `false`) | once per finding (caller) | `POST /network/confirm` |
+| S3 | `technique_refused` | nil | `host`, `pc` | refused | `finding` (alias), `technique` (`{ id: 'technique' }`), `reason` (the closed list: `not_responding` and the eight 422 codes) | every refusal past the two 404s writes; merged repeats; every one written with `save_limit: true`, 10 per host (registered for `refused`) | a refusal changes nothing else: `save!` only when `r&.stored?` |
+| S3 | `technique_used` | `{ account: }` for a session grant, nil for a credential grant | `host`, `pc` | ok | `finding`, `technique`, `grant` (`session`, `credential`), `access` (`user`, `admin`; session grants only) | every use writes: a grant, and each repeat (`already: true`) with `save_limit: true`, 10 per host (registered for `ok`); merged repeats | a new grant: the route's own save. A repeat changes nothing else: `save!` only when `r&.stored?` |
 | S5a | `admin_profile_read` | `{ account: }` (the session's) | `pc` | ok | `profile` (`{ id: 'profile' }`) | `once: true`: one per PC, profile and account | `GET /container`, which saves nothing of its own: `save!` only when `r&.stored?` |
 | S5a | `usb_install_overridden` | `{ account: }` (any admin session on the PC, at its keyboard or remote) | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and plant proof, which already save (`network_access.rb:535`) |
 | S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count` (`{ count: 9 }`: hashes added; a collect always yields hashes) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
@@ -1210,10 +1209,12 @@ records nothing for these, and the gap is the lesson.
 2. **Orchestrator, ordering:** L1a and L1b land before every other ops stage, before S1; the rest
    of the log stages (L2a, L2b, L3) land after S7. L1b is the stage that edits `attempt_login!`,
    `start_login_session!` and `#unlock`, so S3, S5a, S5c and S8a meet it already in place.
-3. **OPS_CORE (S1 to S3):** `technique_refused` registers `save_limit: { 'refused' => 10 }`; a
-   quiet refusal is written with `save_limit: true` (not `10`) and saves only on `r&.stored?`, a
-   noisy one passes none (the default `false`) and keeps the route's save; a repeat of one of a source's 10 newest rows
-   merges.
+3. **OPS_CORE (S1 to S3):** `technique_refused` registers `save_limit: { 'refused' => 10 }`, and
+   `network_swept` and `technique_used` each register `save_limit: { 'ok' => 10 }`. Every refusal
+   is written with `save_limit: true` (not `10`) and saves only on `r&.stored?`, with no quiet or
+   noisy split; a repeat sweep and a repeat technique use are written the same way, while the
+   first sweep and a new grant pass none and keep the route's save; a repeat of one of a source's
+   10 newest rows merges.
 4. **OPS_PRIVILEGE_ACCOUNTS (S5):** `admin_profile_read` is one per PC, profile and account; the
    harvest detail is `count` and `hashes`, each `{ count: 9 }`, a collect adding at most 8 pairs;
    S5b registers no secret source for hash values, because L1a's credential source covers every
