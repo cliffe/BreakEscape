@@ -1070,10 +1070,12 @@ tests and scenario beats. "When" names the model method and branch, inside the g
 This plan authors no second-step seed: the code key comes from the application's secret and is
 in no scenario or game row, so there is no seed field to register. Each stage's controller
 tests include one case that tries to write a row holding its secret and asserts the guard
-refuses it (for H1, a row holding `creds.resetPassword`; for M1a and M3, a test-only event
-whose `detail` value is forced to the code or number just passed to `note_issued_secret`, since
-no row of this plan has a field that could hold either. Typed text in `as.typed` is stored as
-typed and never checked against secrets, so it cannot serve as the guard case).
+refuses it with the guard's own `secret in` error, not the type check's (for H1, a test-only
+event whose `detail` value is forced to a `creds.resetPassword` that equals no username, id or
+code; for M1a and M3, the same with the code or number just passed to `note_issued_secret`,
+since no row of this plan has a field that could hold either). Typed text in `as.typed` is the
+normalised username (section 6), stored whatever it equals and never checked against secrets,
+so it cannot serve as the guard case.
 
 | Event | Where | When | Result | Detail | Bound | Saved by | Stage |
 |---|---|---|---|---|---|---|---|
