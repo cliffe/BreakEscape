@@ -10,7 +10,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
-import { reachX, reachY, aimX, aimY, aimDiff } from '../systems/interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff, isSeatedDeskPc, seatedPcWins } from '../systems/interaction-reach.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -131,6 +131,10 @@ export function updateInfoLabel() {
 
     let bestScore = Infinity;
     let bestText  = null;
+    let bestIsNpc = false;
+    // The best desk computer in front of a seated player (interaction-reach.js isSeatedDeskPc), kept apart
+    let pcScore = Infinity;
+    let pcText = null;
     // E from a chair reaches what is around it (interactions.js skips the occupied seat), so the label does too
     const seatedOn = window.seating?.currentSeat?.() || null;
 
@@ -146,9 +150,14 @@ export function updateInfoLabel() {
             diff = aimDiff(player, target, faceX, faceY, facingAngle).diff;
         }
         const score = diff * 1000 + Math.sqrt(dx * dx + dy * dy);
+        if (isSeatedDeskPc(seatedOn, target, diff) && score < pcScore) {
+            pcScore = score;
+            pcText = text;
+        }
         if (score < bestScore) {
             bestScore = score;
             bestText  = text;
+            bestIsNpc = !!(target && target._isNPC);
         }
     }
 
@@ -200,6 +209,8 @@ export function updateInfoLabel() {
         }
     });
 
+    // Seated at a desk, its computer (interactions.js decides E the same way)
+    if (pcText && seatedPcWins(pcScore, bestScore, bestIsNpc)) bestText = pcText;
     proximityText = bestText;
     if (!hoverText) _applyText(proximityText);
 }

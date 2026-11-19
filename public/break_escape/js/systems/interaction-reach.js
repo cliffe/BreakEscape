@@ -140,6 +140,35 @@ export function aimDiff(player, target, faceX, faceY, facingAngle) {
     return feetAim.diff <= bodyAim.diff ? feetAim : bodyAim;
 }
 
+/** Scenario object types that are a desk computer. */
+const DESK_COMPUTER_TYPES = new Set(['pc', 'workstation', 'laptop']);
+
+/** A seated player's computer must lie within this many degrees of the way they face (the front half). */
+export const SEATED_PC_FRONT_DEG = 90;
+
+/** True for a scenario object that is a computer at a desk (type pc, workstation or laptop). */
+export function isDeskComputer(sprite) {
+    return !!sprite && !sprite._isNPC && !sprite.doorProperties && DESK_COMPUTER_TYPES.has(sprite.scenarioData?.type);
+}
+
+/**
+ * Seated at a desk, E and the E label prefer its computer. There is no seat-to-desk link in the scenarios, so
+ * "the seat's desk PC" is a computer the player can already reach (the callers' reach and wall tests) that lies
+ * in front of the way they face: `diff` is its aimDiff, and a PC behind the chair is some other desk's. A seated
+ * player cannot turn to a neighbour, so the PC beats every other object in reach, but an NPC that is better
+ * aimed than the PC (lower plain score) still wins: someone sitting across the desk is who E means.
+ * `seated` is window.seating.currentSeat(); the callers keep the best such PC apart from their plain best.
+ */
+export function isSeatedDeskPc(seated, target, diff) {
+    return !!seated && isDeskComputer(target) && Number.isFinite(diff) && diff <= SEATED_PC_FRONT_DEG;
+}
+
+/** Whether the best seated PC (plain score `pcScore`) beats the plain best, which scored `bestScore` and was an NPC or not. */
+export function seatedPcWins(pcScore, bestScore, bestIsNpc) {
+    if (!Number.isFinite(pcScore)) return false;
+    return !(bestIsNpc && bestScore < pcScore);
+}
+
 /**
  * Drop swivel chairs from a tap's pick list when anything else was gathered with
  * them: a chair pushed under a desk shouldn't turn "the keyboard" into a

@@ -270,3 +270,72 @@ test('E and the label both skip the seat the player is sitting on', () => {
         assert.equal(labelAt(142, 170, 'up'), 'A mug.');
     } finally { delete window.seating; }
 });
+
+// Seated at a desk, E and the label prefer the desk's computer (interaction-reach.js isSeatedDeskPc). Gary's m02 desk:
+// the chair under the player, his mug nearer the facing line than the PC, the PC a little off to one side.
+const seatedAt = (chair) => { window.seating = { currentSeat: () => chair, isSeat: (o) => o === chair, standUp() {} }; };
+const deskScene = (pcType = 'pc') => {
+    const chair = obj('chair', 130, 150, 24, 30, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
+    const mug = obj('mug', 138, 138, 12, 14, { scenarioData: { id: 'mug', observations: 'A mug.' } });
+    const pc = obj('pc', 120, 120, 30, 30, { scenarioData: { id: 'pc', type: pcType, observations: 'A workstation.' } });
+    setRoom(chair, mug, pc);
+    return chair;
+};
+
+test('seated with a PC in reach in front, E and the label pick the PC and not the nearer-aimed mug', () => {
+    seatedAt(deskScene());
+    try {
+        assert.equal(pressE(142, 170, 'up'), 'pc');
+        assert.equal(labelAt(142, 170, 'up'), 'A workstation.');
+    } finally { delete window.seating; }
+});
+
+test('seated, a workstation or laptop counts as the desk computer too', () => {
+    for (const t of ['workstation', 'laptop']) {
+        seatedAt(deskScene(t));
+        try {
+            assert.equal(pressE(142, 170, 'up'), 'pc', t);
+            assert.equal(labelAt(142, 170, 'up'), 'A workstation.', t);
+        } finally { delete window.seating; }
+    }
+});
+
+test('seated with no computer in reach keeps the old pick: the mug', () => {
+    seatedAt(deskScene('mug_stand'));
+    try {
+        assert.equal(pressE(142, 170, 'up'), 'mug');
+        assert.equal(labelAt(142, 170, 'up'), 'A mug.');
+    } finally { delete window.seating; }
+});
+
+test('seated with the PC behind the chair keeps the old pick: that is another desk', () => {
+    const chair = deskScene();
+    seatedAt(chair);
+    try {
+        assert.equal(pressE(142, 170, 'down'), 'mug');   // facing down, away from the desk: the old pick
+        assert.equal(labelAt(142, 170, 'down'), 'A mug.');
+    } finally { delete window.seating; }
+});
+
+test('standing, nothing changes: the mug is picked and the label names it', () => {
+    deskScene();
+    delete window.seating;
+    // not seated, so the chair is an ordinary object: the pick is what it was before the seated rule
+    assert.equal(pressE(142, 170, 'up'), 'chair');
+    assert.equal(labelAt(142, 170, 'up'), 'A hospital chair.');
+});
+
+test('seated, an NPC aimed better than the PC still wins; a worse-aimed one does not', () => {
+    const chair = deskScene();
+    const npc = (x, y) => ({ x, y, active: true, visible: true, _isNPC: true, npcId: 'n1', scenarioData: undefined });
+    const room = globalThis.__testRooms.r;
+    seatedAt(chair);
+    try {
+        room.npcSprites = [npc(142, 120)];            // dead ahead of the player, across the desk
+        window.npcManager = { getNPC: () => ({ observations: 'A colleague.' }) };
+        assert.equal(labelAt(142, 170, 'up'), 'A colleague.');
+        room.npcSprites = [npc(190, 150)];            // off to the right
+        assert.equal(labelAt(142, 170, 'up'), 'A workstation.');
+        assert.equal(pressE(142, 170, 'up'), 'pc');
+    } finally { delete window.seating; delete window.npcManager; delete room.npcSprites; }
+});
