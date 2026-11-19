@@ -220,18 +220,20 @@ helper write seeds it.
   forged `/logout` writes nothing. `lock_session!` (`game.rb:3836`): `session_lock`, past its
   refusals. Both methods save.
 - `GamesController#unlock` (`games_controller.rb:1211`), under the game lock, keyed on what the
-  server resolved, never on the request's `method`. An open target (`:1223-1224`) or a lock not in
-  force (`game.rb:4754-4755`) writes nothing.
-  - Granted (rfid lock in force, not open, `validate_unlock` passed, and the request's method is
-    `rfid`, a card presented; an NPC's `unlockDoor` on an rfid door posts `method: "npc"` and
-    writes no badge row): `badge_swipe` `ok` inside the
+  server resolved: the lock in force, the target, and the request's `method` only as
+  `validate_unlock` accepted it against the lock type. Both rows below need `method: "rfid"`, a
+  card presented. The other methods that reach an rfid lock write no badge row: `npc` (a door
+  through `unlockDoor`, an object through `unlockable`) and `flag_reward` (an object). An open
+  target (`:1223-1224`) or a lock not in force (`game.rb:4754-4755`) writes nothing.
+  - Granted (rfid lock in force, not open, `validate_unlock` passed with `method: "rfid"`):
+    `badge_swipe` `ok` inside the
     transaction (`:1280`), after the route-room refusal (`:1273-1276`), before `unlock_room!` or
     `unlock_object!` (and after the lock plan's second-step gate, once S8c lands), whose save persists it. `as` from server state: `rfid_unlock_card_answer`
     (`game.rb:4070-4081`) at an access-list lock, or a new `rfid_requires_card(lock)` from the loop
     of `rfid_lock_passes?` (`:3997-4004`) at a requires-only lock; a copy follows section 7.
-  - Refused (`:1252`): only for an rfid lock in force, in reach (a door into a room connected to
-    an unlocked room, or an object in an unlocked room outside an unpromoted route room), with an
-    rfid card or clone held in server state (`held_rfid_cards`, `game.rb:3951`; `:4054-4061`).
+  - Refused (`:1252`): only for a request with `method: "rfid"`, at an rfid lock in force, in
+    reach (a door into a room connected to an unlocked room, or an object in an unlocked room
+    outside an unpromoted route room), with an rfid card or clone held in server state (`held_rfid_cards`, `game.rb:3951`; `:4054-4061`).
     `badge_swipe` `denied`, no identity, `save_limit: true` (10 registered), saving when
     `r&.stored?`, and only when not `behind_closed_step?(path)`: once S8c lands, the lock plan (G1)
     edits this branch so the closed-step refusal returns before the row, and an object below a
@@ -712,7 +714,9 @@ logs.
    `rfid_requires_card(lock)` beside `rfid_lock_passes?`. `games_controller.rb#unlock`:
    `already_open` for every rfid request, then the granted and refused badge rows. Test: an NPC
    `unlockDoor` (`method: "npc"`) on an rfid door opens it and writes no `badge_swipe`; the same
-   door opened with a card writes one.
+   door opened with a card writes one; a `flag_reward` open of an rfid object writes none. With a
+   card held: a refused `npc` post and a `lockpick` post at an rfid door (refused by the
+   lock-type check) write no `denied` row, and a refused `rfid` post writes one.
 3. `scenarios/test_ops_logs/`: a door, a sign-in PC, a `gameClock`, a `logSources` block. Controller
    tests on a re-read game; the scripted playtest; `README_scenario_design.md` feature index and
    `docs/ACCESS_AND_NETWORKS.md` (A24, write side).
@@ -1162,8 +1166,8 @@ Sources match these by prefix: `badge_*`, `signin_*`, `session_*`, `net_*`, `sha
 
 | Event | Who (`as`) | Where | When | Result | Detail | Bound | Saved by |
 |---|---|---|---|---|---|---|---|
-| `badge_swipe` | holder's own keycard: `{ npc: holder }`; a copy: the holder when the request carried one card, none when several, always the holder with `showCardHolder` (question 1); a card with no single holder: `{ card: id }` | `door`, `object` | `#unlock`, rfid lock in force, target not open, `validate_unlock` passed with `method: "rfid"` (5.1; an `npc` open of an rfid door writes none), and the lock's second step, if any, has passed (at a gated lock the row is written after the second-step gate, by the final post only; the first right card writes `mfa_challenge`, not this row) | ok | none | one per unlock | the unlock's save |
-| `badge_swipe` | none | `door`, `object` | `#unlock` refusal: rfid lock in force, target in reach, an rfid card held (5.1) | denied | none | merged repeats; `save_limit: true`, 10 per door | `save!` only when `r&.stored?` |
+| `badge_swipe` | holder's own keycard: `{ npc: holder }`; a copy: the holder when the request carried one card, none when several, always the holder with `showCardHolder` (question 1); a card with no single holder: `{ card: id }` | `door`, `object` | `#unlock`, rfid lock in force, target not open, `validate_unlock` passed with `method: "rfid"` (5.1; an `npc` or `flag_reward` open of an rfid lock writes none), and the lock's second step, if any, has passed (at a gated lock the row is written after the second-step gate, by the final post only; the first right card writes `mfa_challenge`, not this row) | ok | none | one per unlock | the unlock's save |
+| `badge_swipe` | none | `door`, `object` | `#unlock` refusal of a `method: "rfid"` request: rfid lock in force, target in reach, an rfid card held (5.1); a refused `npc` post or a lockpick at an rfid door writes none | denied | none | merged repeats; `save_limit: true`, 10 per door | `save!` only when `r&.stored?` |
 | `signin_ok` | `{ account: }` | `pc` | `start_login_session!`, `via` `password` or `credential` | ok | `method` (`password`, `credential`), `route` (shared codes, 13.7) | one per sign-in | both callers |
 | `signin_fail` | `{ typed: }` | `pc` | `record_login_failure!` | fail | none | merged repeats; `maxAttempts` | the method's save |
 | `signin_lockout` | `{ typed: }` | `pc` | `add_login_lockout!` | ok | none | one per lockout | `record_login_failure!` |

@@ -82,3 +82,18 @@
 - 5. Cloned card at a gated door: the badge row names the card holder, the step rows name the step owner; the two may differ by design. LOCK section 13.
 - 6. LOCK section 2 gains a short paragraph: keyring read only by sign-in; card, fingerprint and Bluetooth are separate first factors; fingerprint and Bluetooth/BLE are browser-trusted, so the step is the only server-checked part.
 - 7. Two existing-code findings (keycard keyring credential survives revocation; validator counts `fob`/`rfid` item types the engine ignores) listed in LOCK section 14 as outside this plan's scope.
+
+## R7 fixes (2026-11-19)
+
+- M1: the wait lives in `MfaClient.runLockStep` for `method: "npc"` only: opens when `currentMinigame` is null or `_ending`, `pendingConversationReturn` is null and no `gameConfirmOpen`, checked every `CHAT_RETURN_SETTLE_MS`, two clear checks in a row; no `conversation_closed` hook. LOCK 5.4, JS rows.
+- M2: server `npcStepGrants["door:<roomId>"]` (G2, doors only) kept through deny/expiry/X, deleted by the open; reaches the browser as `opener` in the `secondStep` answer and `npcStepOpener` in the bootstrap; `handleUnlock` on such a door re-posts `npc` via `NPCGameBridge.unlockDoor(roomId, opener)`; bridge returns `secondStepCancelled`, no "Failed to unlock"; UI waiting toast; "walking away" defined; X sends nothing, record lives out five minutes. LOCK 5.3, 5.4, 7, 8, tests.
+- M3: STEP 2 cancel branch (no copier, no `door_unlock_failed`, no `refusedKeycards`), `showAccessRefusal` branch, `_askAccessList` live-instance branch, suspended copier silent, pass via late path with `autoOpen: true` on a gated lock. LOCK 5.4, JS rows.
+- M4: fingerprint reader shows "Print accepted.", skips both `expectPanelWithin` calls; toast after `success: true`. LOCK 5.4, JS row.
+- M5: G2 names the bootstrap allowlist (kind and owner only), `doors.js` `doorProperties`, the three `getLockRequirementsForDoor` copies; build steps and shared files updated. LOCK 5.3, 12.
+- m1: key/lockpick toasts cited at `minigame-starters.js:232-234`, `:481`, `:83`, `:257`, moved with `expectContainerAfterUnlock` into the `unlock-system.js` callbacks on a gated lock.
+- m2: one cancel rule via `MfaClient.cancelFeedback`: deny/expiry tone plus "Not approved.", player's X nothing; `body.closedByPlayer` added.
+- m3: LOG 5.1 lead-in reworded; both `badge_swipe` rows need `method: "rfid"`; `flag_reward` named; refused-row test added. LOG 5.1, 13.8 rows, L1b tests.
+- m4: LOCK 13 defers to LOG 13.8's copy rule for `as`.
+- m5: BLE `completesTask`/`onPairSetGlobal` move after `success: true` on a gated lock via `applyBlePairEffects`.
+- m6: B12 split into B12a to B12e (Gordon's ink opens, Moira owns; give_item child; X; retry; reload; approve) on a fresh game.
+- Nits: n1 keyring wording; n2 backlog destination and owners; n3 kind/owner only; n4 clone-outside-access-list opens alone.
