@@ -1156,6 +1156,27 @@
     }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item { white-space: nowrap; }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-state { display: none; }
+    /* the compact header gives the thread room for a tell above Dev's line */
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header { padding: 6px 16px; gap: 4px 12px; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 48px; height: 48px; font-size: 20px; }
+}
+
+/* Below 560 px the stack no longer fits with the change line (the tell carries the same figure), so
+   as in landscape the line goes visually hidden and stays in the page for screen readers. */
+@media (min-height: 500.02px) and (max-height: 560px) {
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-change {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 40px; height: 40px; font-size: 16px; }
 }
 
 /* Influence (pretext) calls on every screen taller than 500 px: the compact header, the 64px

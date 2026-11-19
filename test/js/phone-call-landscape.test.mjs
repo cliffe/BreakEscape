@@ -4,7 +4,7 @@
 // button rules are shared with every screen up to 820px tall (@media screen and (max-height: 820px)),
 // and calls with replies showing on screens taller than 500px (1280x720, 800x600, 1920x1080, portrait
 // phones; the phone screen stops growing at 700px) get a scrolling thread of the latest line plus the
-// newest tell (@media (height > 500px)).
+// tell before the contact's line (@media (min-height: 500.02px)).
 // Reads the CSS, no browser.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -39,7 +39,11 @@ const all = rules(css);
 const land = all.filter(r => /max-height:\s*500px/.test(r.media));
 const V = '.phone-call-mode #conversation-view';
 const SHARED_MEDIA = '@media screen and (max-height: 820px)';
-const DESK_MEDIA = '@media (height > 500px)';
+// Classic syntax: 500.02px sits just above the landscape block's max-height 500px for every whole-pixel
+// viewport, and older browsers (Safari before 16.4, Chrome before 104) drop range syntax whole.
+const DESK_MEDIA = '@media (min-height: 500.02px)';
+const TALL_MEDIA = '@media (min-height: 680.02px)';
+const SHORT_MEDIA = '@media (min-height: 500.02px) and (max-height: 680px)';
 // The end-call button rules serve every call screen up to 820px tall, so they live in one shared block
 const shared = all.filter(r => r.media === SHARED_MEDIA);
 const L = sel => { const r = land.concat(shared).find(x => x.selector.split(', ').includes(V + ' ' + sel)); assert.ok(r, 'landscape or shared rule ' + sel); return r; };
@@ -333,8 +337,10 @@ const D = sel => { const r = desk.find(x => x.selector === sel); assert.ok(r, 'd
 const baseCall = sel => { const r = all.find(x => x.media === '' && x.selector === sel); assert.ok(r, 'base rule ' + sel); return r; };
 const CH = V + '.call-has-choices';
 const beats = (sel, base) => assert.ok(cmpSpec(spec(sel), spec(base)) > 0, sel + ' ' + spec(sel) + ' must beat ' + base + ' ' + spec(base));
-check('desktop-height call: the range starts exactly where the landscape block ends (no gap, no overlap)', () => {
-    assert.ok(DESK_MEDIA.includes('height > 500px'), 'strict lower bound, no upper gap');
+check('desktop-height call: the range starts exactly where the landscape block ends (no gap, no overlap), classic syntax', () => {
+    assert.ok(desk.length > 0, 'the rules are parsed under ' + DESK_MEDIA);
+    assert.ok(parseFloat(DESK_MEDIA.match(/min-height:\s*([\d.]+)px/)[1]) > 500 && parseFloat(DESK_MEDIA.match(/min-height:\s*([\d.]+)px/)[1]) < 501, 'just above 500px');
+    assert.ok(!/@media[^{]*height\s*[<>]/.test(css), 'no range syntax in any media query');
     assert.ok(land.length > 0 && land.every(r => r.media === '@media (max-height: 500px)'), 'landscape block is max-height 500px');
     assert.ok(desk.length >= 5);
     assert.ok(!desk.some(r => /max-height:\s*500px/.test(r.media)));
@@ -376,7 +382,8 @@ check('desktop-height call: only while replies show; the speaking phase keeps th
     assert.match(baseCall('.phone-call-mode .messages-container').body, /min-height:\s*110px/);
     assert.match(baseCall('.phone-call-mode .messages-container').body, /max-height:\s*190px/);
 });
-check('desktop-height call: the thread shows the latest subtitle plus the newest trailing tell, and beats the base hide rule', () => {
+const Dm = (media, sel) => { const r = all.filter(x => x.media === media).find(x => x.selector.split(', ').includes(sel)); assert.ok(r, media + ' rule ' + sel); return r; };
+check('desktop-height call: the thread shows the latest subtitle plus the tell directly before it (the real order: You, tell, Dev), and beats the base hide rule', () => {
     const base = '.phone-call-mode .messages-container > :not(:nth-last-child(-n + 2))';
     const hideOthers = D(CH + ' .messages-container > :not(.call-subtitle)');
     assert.match(hideOthers.body, /display:\s*none/);
@@ -386,43 +393,92 @@ check('desktop-height call: the thread shows the latest subtitle plus the newest
     const older = D(CH + ' .messages-container > .call-subtitle:has(~ .call-subtitle)');
     assert.match(older.body, /display:\s*none/);
     assert.ok(cmpSpec(spec(older.selector), spec(latest.selector)) > 0, 'older-subtitle hide beats the latest-subtitle show');
-    const tell = D(CH + ':has(.se-chat-header) .messages-container > .pretext-tell:last-child');
+    // appendTellBubbles adds the tell when the reply is scored, before the contact answers: it sits BEFORE the contact's line
+    const before = CH + ':has(.se-chat-header) .messages-container > .pretext-tell:has(+ .call-subtitle:last-child)';
+    const trailing = CH + ':has(.se-chat-header) .messages-container > .pretext-tell:last-child';
+    const tell = D(before + ', ' + trailing);
+    assert.ok(tell.selector.split(', ').includes(before), 'a tell followed by the last subtitle shows');
+    assert.ok(tell.selector.split(', ').includes(trailing), 'a trailing tell still shows');
     assert.match(tell.body, /display:\s*block/);
-    beats(tell.selector, hideOthers.selector);
-    beats(tell.selector, base);
+    for (const sel of tell.selector.split(', ')) { beats(sel, hideOthers.selector); beats(sel, base); }
+    assert.ok(!/previous|:last-child\s*$/.test(before.replace(trailing, '')) || before.includes('+ .call-subtitle'), 'not the old trailing-only rule');
 });
-check('desktop-height call: height budget at 1280x720, 1366x657 and 800x600 (end button on screen, stack fits)', () => {
-    // Measured live (header with the three-line influence legend and a change line): status 36, header 236.
-    const statusPx = px(L('.call-status-bar').body, 'height');
-    const header = 236;
-    const thread = px(D(CH + ' .messages-container').body, 'min-height');
-    const repliesMin = px(baseCall('.conversation-view .choices-container').body, 'min-height');
-    const cue = 25;
-    const need = statusPx + header + thread + repliesMin + cue;
-    for (const [vw, vh] of [[1280, 720], [1366, 657], [800, 600]]) {
-        const screen = screenAt(vh);
-        assert.ok(need <= screen, vw + 'x' + vh + ' screen ' + screen + ' needs ' + need);
+check('desktop-height call: influence calls use the compact header (64px portrait row) in both phases', () => {
+    const h = D(V + ':has(.se-chat-header) .conversation-header');
+    assert.match(h.body, /flex:\s*0 0 auto/);
+    assert.match(h.body, /flex-direction:\s*row/);
+    const av = D(V + ':has(.se-chat-header) .conversation-avatar, ' + V + ':has(.se-chat-header) .conversation-avatar-placeholder');
+    assert.equal(px(av.body, 'width'), 64);
+    assert.equal(px(av.body, 'height'), 64);
+    assert.match(D(V + ':has(.se-chat-header) .call-caption').body, /display:\s*none/);
+    assert.ok(!/display:\s*none/.test(D(V + ':has(.se-chat-header) .call-speaking').body), 'the speaking bars stay beside the name');
+    assert.match(D(V + ':has(.se-chat-header) .se-chat-header').body, /flex:\s*1 0 100%/);
+    // no taller exception: nothing in a taller block re-enables the stage portrait
+    assert.ok(!all.some(r => r.media === TALL_MEDIA && /conversation-avatar|conversation-header/.test(r.selector)));
+    // it only applies to influence calls; ordinary calls keep the large portrait
+    for (const r of desk.filter(x => /conversation-(header|info|avatar)|npc-name|npc-id|call-caption|call-speaking/.test(x.selector))) {
+        assert.ok(r.selector.split(', ').every(x => x.includes(':has(.se-chat-header)')), r.selector);
     }
-    // the button is out of the flow, so it is on screen even where the stack no longer fits
-    assert.match(L('.call-controls').body, /position:\s*absolute/);
+    // the stage never spills upward under the status bar
+    assert.match(baseCall('.phone-call-mode .conversation-header').body, /justify-content:\s*safe center/);
+    beats(V + ':has(.se-chat-header) .conversation-header', '.phone-call-mode .conversation-header');
+    beats(V + ':has(.se-chat-header) .conversation-avatar', '.phone-call-mode .conversation-avatar');
+    beats(V + ':has(.se-chat-header) .conversation-avatar', '.phone-call-mode .call-has-choices .conversation-avatar');
 });
-check('short-screen call (501 to 680px): the influence legend is visually hidden, not removed, and wins the cascade', () => {
-    const short = all.filter(r => r.media === '@media (500px < height <= 680px)');
-    assert.equal(short.length, 2);
-    const sel = V + ' .se-chat-header .ib-infl-legend';
-    assert.equal(short[0].selector, sel);
-    assert.equal(short[1].selector, V + ' .se-chat-header');
-    assert.match(short[1].body, /align-self:\s*stretch/, 'the bar keeps its width without the legend');
-    assert.match(short[0].body, /clip:\s*rect\(0 0 0 0\)/);
-    assert.doesNotMatch(short[0].body, /display:\s*none|visibility:\s*hidden/, 'stays in the accessibility tree');
-    beats(sel, '.conversation-header .ib-infl-legend');
-    assert.ok(!all.some(r => r.media === '' && /ib-infl-legend/.test(r.selector) && /clip/.test(r.body)), 'the legend is only hidden on short screens');
-    // 800x600 budget with the legend hidden: status 36 + header 236 - legend (about 70) + thread max 112 + replies 64 + cue 25
-    assert.ok(36 + (236 - 70) + px(D(CH + ' .messages-container').body, 'max-height') + 64 + 25 <= screenAt(600));
+check('desktop-height call: thread cap is 112px, 131px above 680px (two-line tell plus three-line Dev line)', () => {
+    assert.equal(px(D(CH + ' .messages-container').body, 'max-height'), 112);
+    assert.equal(px(Dm(TALL_MEDIA, CH + ' .messages-container').body, 'max-height'), 131);
+    const pad = 8, tellH = 2 * 16 * 1.3 + 4, gap = 6, devH = 3 * 16 * 1.3;
+    assert.ok(2 * pad + tellH + gap + devH <= 131 + 0.5, 'cap holds a two-line tell and a three-line line: ' + (2 * pad + tellH + gap + devH));
+    beats(CH + ' .messages-container', '.phone-call-mode .messages-container');
+});
+// Height budget. The phone screen is screenAt(vh); inside it the phone status header (signal, battery, Notepad) takes 48px
+// (4 + 4 padding, 2 border, 38 row at desktop) before the conversation view starts.
+const PHONE_HEADER = 48, STATUS = 36, CUE_H = 25;
+check('short-screen call (501 to 680px): the thread gives way to 44px and the replies box has a one-reply floor, so the cue and a reply stay on screen', () => {
+    const t = Dm(SHORT_MEDIA, CH + ' .messages-container').body;
+    assert.equal(px(t, 'min-height'), 44, 'two lines');
+    assert.match(t, /flex:\s*0 1 auto/, 'the thread shrinks first');
+    const r = Dm(SHORT_MEDIA, CH + ' .choices-container').body;
+    assert.match(r, /box-sizing:\s*border-box/);
+    assert.equal(px(r, 'min-height'), 64, 'one reply is the floor (outer height)');
+    beats(CH + ' .messages-container', '.conversation-view .messages-container');
+    beats(CH + ' .choices-container', '.conversation-view .choices-container');
+    // Budget with the compact header measured live at 1366x657 with a one-line legend and change line (186.5), and at the
+    // shortest screens the thread at its 44px minimum, replies at 64px, plus the cue.
+    const HEADER = 187;
+    for (const [vw, vh] of [[1366, 657], [800, 600], [1280, 576], [1280, 560]]) {
+        const view = screenAt(vh) - PHONE_HEADER;
+        const need = STATUS + HEADER + 44 + 64 + CUE_H;
+        assert.ok(need <= view, vw + 'x' + vh + ': view ' + view + ' needs ' + need);
+    }
+});
+check('desktop-height call: height budget at 1280x720 with the legend shown (status header counted, end button on screen)', () => {
+    const header = 238;          // measured live: 64px portrait row, influence bar with three legend lines and a change line
+    const need = PHONE_HEADER + STATUS + header + px(D(CH + ' .messages-container').body, 'min-height') + 82 + CUE_H;
+    assert.ok(need <= screenAt(720), 'screen ' + screenAt(720) + ' needs ' + need);
+    assert.match(L('.call-controls').body, /position:\s*absolute/, 'the button is out of the flow');
+});
+check('short-screen call (501 to 680px): the legend is one line of text, not hidden, with a word for each threshold', () => {
+    const rs = all.filter(r => r.media === SHORT_MEDIA);
+    const legend = rs.find(r => r.selector === V + ' .se-chat-header .ib-infl-legend');
+    assert.ok(legend, 'a short-screen legend rule');
+    assert.match(legend.body, /flex-wrap:\s*nowrap/);
+    assert.doesNotMatch(legend.body, /display:\s*none|clip|visibility:\s*hidden|opacity/, 'visible text, not hidden');
+    assert.ok(px(legend.body, 'font-size') >= 16, 'VT323 16px');
+    beats(legend.selector, '.conversation-header .ib-infl-legend');
+    const state = rs.find(r => /ib-infl-legend-state/.test(r.selector));
+    assert.ok(state && /:not\(\.is-reached\)/.test(state.selector) && /display:\s*none/.test(state.body), '"reached" shows only once a threshold is passed');
+    assert.ok(!all.some(r => r.media === '' && /ib-infl-legend/.test(r.selector) && /clip/.test(r.body)), 'the legend is not clipped on tall screens');
+    assert.ok(!rs.some(r => /align-self/.test(r.body)), 'no stretch hack: the legend gives the bar its width');
 });
 check('desktop-height call: no radius, blur or gradient', () => {
     assert.ok(desk.length > 0 && shared.length > 0);
-    for (const r of desk.concat(shared, all.filter(x => x.media === '@media (500px < height <= 680px)'))) assert.doesNotMatch(r.body, /border-radius|blur|gradient/, r.selector);
+    for (const r of desk.concat(shared, all.filter(x => x.media === SHORT_MEDIA || x.media === TALL_MEDIA))) assert.doesNotMatch(r.body, /border-radius|blur|gradient/, r.selector);
+});
+check('the shared end-button block is its own "screen and" block, with the reason in a comment', () => {
+    assert.ok(shared.length > 0);
+    assert.match(readFileSync(path.join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8'), /"screen and" is deliberate/);
 });
 
 console.log(`\n${pass} checks passed`);
