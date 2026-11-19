@@ -73,8 +73,8 @@ Review against plan 9: no code changed; every builder pointer and the five parts
   only when the debrief view was showing at `cleanup`, only in stepAway episodes. Globals sync as keyed deltas
   (`state-sync.js:40-43`): the changed key `episode_<id>_state` goes once, then is confirmed and not re-sent. One extra
   save at most, never on Finish (Finish puts `debrief` in `done`), never on a second close. Nothing grows.
-  Side note for the plan: a close without Finish releases the success screen but leaves `done` without `debrief`, so the
-  6.1 "debrief done" mapping never lowers `kit_quiet` on that route. Pools stay quiet until Finish. Plan decision, not EC1 code.
+  A close without Finish releases the success screen but leaves `done` without `debrief`. Settled below
+  ("kit_quiet after a close without Finish").
 - (b) holds: `STEP_AWAY_READY_GLOBAL = 'kit_defend_done'`, fixed, as plan 6.1/6.2 name it.
 - (c) holds: `_lookUp` calls `close()` then emits; the unit test records the emit with no minigame open, once on a double click.
 - (d) holds: `stepAwayOn` requires stepAway === true, not check, `variantOf === 'full'` (twins are defendOnly), debrief
@@ -114,6 +114,41 @@ Still open (next agent):
 In a shell with the step-away panel, the pause after the defend stage has a Look up button. It turns on once the
 result has saved. Press it to close the kiosk so the group can watch the office for a minute; reopen the kiosk for the
 debrief. Press Next step instead to go straight to the debrief.
+
+## kit_quiet after a close without Finish (2026-11-19, decided)
+
+The gap: closing the kiosk at the debrief without Finish saved `debriefSeen: true` and released the success screen,
+but `done` never gained `debrief`, so the 6.1 "debrief done" mapping never fired and `kit_quiet` stayed true for the
+session.
+
+Chosen: kit content, not engine. A second `onceOnly` mapping on the same state event lowers `kit_quiet` when the
+saved state carries the marker:
+
+    { "eventPattern": "global_variable_changed:episode_<id>_state",
+      "condition": "data.value.debriefSeen === true", "onceOnly": true,
+      "setGlobal": { "kit_quiet": false } }
+
+The condition grammar has `&&` but no `||` (`npc-manager.js` `safeEvaluateCondition`), so it is a second mapping, not
+an extra term. No engine code changed and no new write: the mapping reads the one `debriefSeen` save that already
+happens.
+
+Why not complete the debrief stage on a close: `completeStage` ending the last stage also runs `_writeDone`, which
+writes `awarenessEpisode.doneGlobal` (ca00 concludes its objective on it; any shell may author one). A close would then
+conclude where an unchanged shell's close does not, against the plan's rule that the server conclusion and score
+equal an unchanged shell's. It would also turn a reopen into the "Finished" panel, so a learner who closed by mistake could
+no longer read the debrief or press Finish.
+
+Rule for the wave 1A kit builder: every kit shell carries this mapping next to the "debrief done" one. It is inert
+where it cannot fire (`readState` drops `debriefSeen` outside stepAway shells, and only stepAway shells write it), so
+twins and plain shells can take it unchanged. A shell's "finished" kiosk text keyed on `kit_quiet === false` now
+also shows after a close without Finish; reword per shell if that matters (the fixture's stub text is left).
+
+Done: `scenarios/test_ca_step_away` has the mapping (validator `--strict-social --no-graph`: 0 errors, 6 warnings,
+as before). `test/js/social-episode-step-away.test.mjs` runs the fixture's own state mappings on the real
+`NPCManager` evaluator: close without Finish lowers `kit_quiet`, `done` keeps no `debrief`, the done global stays
+unwritten, one save; Finish is unchanged (done gains debrief, done global written, no marker, nothing written on the
+later close); `done`/`stage`/done global after a close match a plain full shell's; a check shell closes with the same
+state with or without stepAway.
 
 ## Decisions to check
 

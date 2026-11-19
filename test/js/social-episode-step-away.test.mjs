@@ -31,7 +31,8 @@ for (const rel of [
     'ui/influence-bar.js', 'systems/social-influence.js',
     'minigames/framework/minigame-manager.js', 'minigames/framework/base-minigame.js',
     'minigames/framework/social-overlay.js', 'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js',
-    'ui/success-screen.js', 'utils/desktop-app.js', 'systems/bark-release-policy.js'
+    'ui/success-screen.js', 'utils/desktop-app.js', 'systems/bark-release-policy.js',
+    'systems/npc-manager.js', 'systems/npc-los.js', 'minigames/phone-chat/phone-chat-speaker.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
@@ -72,6 +73,7 @@ const { startEpisodeRunner, stepAwayHoldNow, STEP_AWAY_HOLD } = await load('syst
 const SS = await load('ui/success-screen.js');
 const { releaseHeldBarks } = await load('systems/bark-release-policy.js');
 const M = await load('minigames/episode-runner/episode-model.js');
+const { default: NPCManager } = await load('systems/npc-manager.js');
 window.MinigameFramework = FW;
 FW.init({ input: { mouse: { enabled: true }, keyboard: { enabled: true } } });
 
@@ -572,6 +574,108 @@ test('EC1: a held chain bark whose condition reads kit_quiet is dropped once kit
     await releaseHeldBarks([{ text: 'chain line', stillValid: () => globals.kit_quiet === true }],
         { shouldHold: () => false, render: (p) => { shown2.push(p.text); }, sleep: async () => {}, log: () => {} });
     assert.deepEqual(shown2, ['chain line']);
+});
+
+// ── kit_quiet down on a close without Finish (plan 6.1, EC1 follow-up) ─────────
+// The fixture's own state mappings (test_ca_step_away, host ep_host) run on the real NPC
+// manager's evaluator, re-pointed at the test episode's state key.
+
+const FIXTURE = JSON.parse(readFileSync(join(here, '../../scenarios/test_ca_step_away/scenario.json.erb'), 'utf8'));
+const FIXTURE_STATE_EVENT = 'global_variable_changed:episode_e1_stub_state';
+function mountKitMappings(ep) {
+    const host = FIXTURE.rooms.ep_room.npcs.find((n) => n.id === 'ep_host');
+    const mappings = host.eventMappings.filter((m) => m.eventPattern === FIXTURE_STATE_EVENT)
+        .map((m) => ({ ...m, eventPattern: `global_variable_changed:${M.stateKey(ep.id)}` }));
+    const npcs = new NPCManager(window.eventDispatcher, null);
+    npcs.npcs.set('ep_host', { id: 'ep_host', npcType: 'person', currentKnot: 'start', eventMappings: mappings });
+    npcs._setupEventMappings('ep_host', mappings);
+    return mappings;
+}
+/** Stage at defend with kit_quiet declared, mount the fixture's state mappings, play the triage. */
+function playDefendWithKit(ep) {
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE] }, kit_defend_done: true, kit_quiet: false });
+    const mappings = mountKitMappings(ep);
+    open(ep);
+    click('.epr-launch');
+    cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0.5, verifyCount: 0, answers: ANSWERS.map((a) => ({ ...a })) };
+    cur().complete(true);
+    return mappings;
+}
+const g = () => window.gameState.globalVariables;
+
+test('EC1 6.1: the fixture lowers kit_quiet on debrief done and, as a second mapping, on debriefSeen', () => {
+    const conds = mountKitMappings(fullEpisode()).map((m) => m.condition ?? null);
+    assert.deepEqual(conds, [null, "data.value.done.includes('debrief')", 'data.value.debriefSeen === true']);
+});
+
+test('EC1 6.1: closing the kiosk at the debrief without Finish lowers kit_quiet; done keeps no debrief', () => {
+    const ep = fullEpisode({ doneGlobal: 'ep_fixture_done' });
+    playDefendWithKit(ep);
+    assert.equal(g().kit_quiet, true, 'raised at the first state save');
+    click('.epr-carry-on');
+    const writes = stateEvents(ep.id).length;
+    click('.se-overlay-close, .epr-kiosk-close');
+    assert.equal(cur(), null);
+    assert.equal(stored(ep.id).debriefSeen, true);
+    assert.deepEqual(stored(ep.id).done, [...ATTACK_DONE, 'defend'], 'the debrief stage is not completed');
+    assert.equal(g().ep_fixture_done, undefined, 'no done global, so no objective concludes on a close');
+    assert.equal(g().kit_quiet, false, 'background staff speak again');
+    assert.equal(stateEvents(ep.id).length, writes + 1, 'the one debriefSeen save, nothing more');
+    // a reopen still offers the debrief and its Finish; Finish completes it as before
+    open(ep);
+    assert.equal(epState().stage, 'debrief');
+    click('.stub-finish');
+    assert.deepEqual(stored(ep.id).done, [...ATTACK_DONE, 'defend', 'debrief']);
+    assert.equal(g().ep_fixture_done, true);
+    assert.equal(g().kit_quiet, false);
+});
+
+test('EC1 6.1: Finish is unchanged: done gains debrief, the done global is written, kit_quiet is lowered, no debriefSeen', () => {
+    const ep = fullEpisode({ doneGlobal: 'ep_fixture_done' });
+    playDefendWithKit(ep);
+    click('.epr-carry-on');
+    click('.stub-finish');
+    assert.deepEqual(stored(ep.id).done, [...ATTACK_DONE, 'defend', 'debrief']);
+    assert.equal(stored(ep.id).stage, null);
+    assert.equal(g().ep_fixture_done, true);
+    assert.equal(g().kit_quiet, false);
+    const writes = stateEvents(ep.id).length;
+    click('.se-overlay-close, .epr-kiosk-close');
+    assert.equal('debriefSeen' in stored(ep.id), false, 'Finish needs no marker');
+    assert.equal(stateEvents(ep.id).length, writes, 'closing after Finish writes nothing');
+});
+
+test('EC1 6.1: a close without Finish leaves done and the done global as a plain full shell does', () => {
+    const shapes = [];
+    for (const ep of [fullEpisode({ doneGlobal: 'ep_fixture_done' }), fullEpisode({ stepAway: undefined, doneGlobal: 'ep_fixture_done' })]) {
+        playDefendWithKit(ep);
+        if (q('.epr-carry-on')) click('.epr-carry-on');
+        assert.ok(q('.stub-finish'), 'at the debrief');
+        click('.se-overlay-close, .epr-kiosk-close');
+        shapes.push({ done: stored(ep.id).done, stage: M.readState(ep, stored(ep.id)).stage, doneGlobal: g().ep_fixture_done ?? null,
+            debriefSeen: stored(ep.id).debriefSeen ?? null, kitQuiet: g().kit_quiet });
+    }
+    const [stepAway, plain] = shapes;
+    assert.deepEqual({ ...stepAway, debriefSeen: null, kitQuiet: null }, { ...plain, debriefSeen: null, kitQuiet: null });
+    assert.equal(stepAway.debriefSeen, true);
+    assert.equal(plain.debriefSeen, null, 'a plain shell writes no marker');
+    assert.equal(stepAway.kitQuiet, false);
+    assert.equal(plain.kitQuiet, true, 'a plain shell is as before: only Finish lowers it');
+});
+
+test('EC1 6.1: a check shell closes with the same state with or without stepAway, and no debriefSeen', () => {
+    const shapes = [];
+    for (const chk of [checkEpisode(), checkEpisode({ stepAway: true })]) {
+        setup(chk);
+        open(chk);
+        click('.epr-launch');
+        cur().gameResult = { setId: 'fixture_inbox', stage: 'pre', percent: 70, reportRate: 0.4, answers: ANSWERS.map((a) => ({ ...a })) };
+        cur().complete(true);
+        while (cur()) click('.se-overlay-close, .epr-kiosk-close');
+        shapes.push(structuredClone(stored(chk.id)));
+    }
+    assert.deepEqual(shapes[1], shapes[0]);
+    assert.equal('debriefSeen' in shapes[1], false);
 });
 
 test('EC1: no console errors across the cases', () => {

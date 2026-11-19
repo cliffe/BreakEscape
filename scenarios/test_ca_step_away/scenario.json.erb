@@ -481,6 +481,14 @@
               }
             },
             {
+              "eventPattern": "global_variable_changed:episode_e1_stub_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
               "eventPattern": "episode_step_away",
               "condition": "globalVars.kit_defend_done === true",
               "onceOnly": true,
