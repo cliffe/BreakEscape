@@ -34,8 +34,9 @@ VAR sudo_flag_submitted = false
 {not entropy_reveal_read:
     -> insufficient_evidence
 }
-// Player has the ENTROPY intelligence — proceed with confrontation
-#complete_task:confront_derek
+// Player has the ENTROPY intelligence — proceed with confrontation.
+// confront_derek is NOT completed here: opening the confrontation is not the confrontation.
+// Each outcome sets derek_confronted, and the scenario's mapping on that global completes the task.
 
 Working late on the security audit?
 
@@ -71,7 +72,12 @@ You're not an IT contractor. And you've found Operation Shatter.
     -> start
 }
 Oh, you must be the IT contractor. Security audit, right?
-
+// The engine reads ahead past an #exit_conversation tag and saves the story here, after this
+// line and before the next, so a reopen resumes at this point. Recheck the archive flag
+// here too, or a reopen after the archive was read shows this stale hub (m01 deploy-gate finding).
+{entropy_reveal_read:
+    -> start
+}
 I'm kind of busy. Maybe check back later?
 
 + [I need to look at your systems]

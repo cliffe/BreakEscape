@@ -401,3 +401,32 @@ test('phone body text is 24px GNF, the conversation dialogue size; the name stay
     assert.doesNotMatch(src, /\.examine-(text|observations)[^{}]*\{[^}]*font-family/, 'body text inherits GNF');
     assert.doesNotMatch(src, /font-style:\s*italic/, 'GNF has no italic');
 });
+
+test('routing: a click that starts a scripted call raises no examine view in front of it (m10 duty handset)', () => {
+    reset();
+    const handset = { type: 'aes_emergency_phone1', id: 'duty_handset', name: 'Duty Handset', takeable: false,
+        observations: 'The desk phone. Ringing.' };
+    // The object_interacted mapping starts the call: the manager reports one starting afterwards
+    let starting = false;
+    window.npcManager = { getNPC: () => ({}), scriptedConversationActive: () => starting };
+    window.eventDispatcher = { emit: (name) => { if (name === 'object_interacted') starting = true; } };
+    handleObjectInteraction(roomSprite(handset));
+    assert.deepEqual(started, [], 'no examine over the call');
+    assert.equal(calls.filter(c => c[0] === 'gameAlert').length, 0, 'no toast over the call');
+
+    // Nothing starts (the call is over): the same object is examined as before
+    reset();
+    starting = false;
+    window.eventDispatcher = { emit: () => {} };
+    handleObjectInteraction(roomSprite({ ...handset, observations: 'The desk phone. Quiet now.' }));
+    assert.equal(started[0]?.[0], 'examine');
+
+    // A call already starting before the click is not this click's doing: examine still opens
+    reset();
+    starting = true;
+    handleObjectInteraction(roomSprite(handset));
+    assert.equal(started[0]?.[0], 'examine');
+
+    delete window.eventDispatcher;
+    window.npcManager = { getNPC: () => ({}) };
+});
