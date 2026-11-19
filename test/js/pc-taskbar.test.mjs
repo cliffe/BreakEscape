@@ -591,6 +591,31 @@ test('R1 nit 1: Tab out of the panel closes it; moving between its entries does 
     assert.equal(panelOpen(), true, 'Start is part of the menu');
 });
 
+test('container post R2 m1: a Places share item passes byKey true for a keyboard click (detail 0), false for a mouse click', () => {
+    const share = { type: 'network_share', id: 'sh1', name: 'Public (\\\\fs01\\public)', takeable: false };
+    const model = pcTaskbarModel({ pcData: { lockType: 'login', name: 'Desk', host: 'HB-DESK-03' },
+        session: { username: 'ishaw', displayName: 'Ian Shaw', via: 'password' }, places: [share] });
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const calls = [];
+    const bar = taskbarMod.mountPcTaskbar(root, model, { onPlace: (p) => calls.push(p) });
+    const click = (detail) => {
+        bar.open();
+        const btn = bar.panel.querySelector('[data-place="share"]');
+        assert.ok(btn, 'the share place is in the panel');
+        btn.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail }));
+    };
+    click(0);
+    click(1);
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].kind, 'share');
+    assert.equal(calls[0].item, share);
+    assert.equal(calls[0].byKey, true, 'Enter or Space on the item (detail 0) is by key');
+    assert.equal(calls[1].byKey, false, 'a mouse click (detail 1) is not by key');
+    bar.destroy();
+    root.remove();
+});
+
 // UI slice 6 review R3 major 1: on a remote desktop the start panel overflowed and hid Switch
 // user and Sign out. Only the Places list scrolls now; the actions sit outside it.
 const R3_CSS = readFileSync(join(here, '../../public/break_escape/css/pc-monitor.css'), 'utf8');

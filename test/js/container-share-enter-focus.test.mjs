@@ -134,7 +134,7 @@ test('D2: an empty share puts the focus on its grid, a click puts it nowhere new
     const ic = icons();
     ic[0].focus(); key(ic[0], 'Enter'); await settle();
     await window.MinigameFramework.currentMinigame.ready; await settle();
-    assert.notEqual(document.activeElement, document.body);
+    assert.equal(document.activeElement.id, 'container-contents-grid', 'the empty share puts the focus on its grid');
     releaseHeldEnter();
     await openDesktop([SHARE]);
     await wire([{ type: 'key', id: 'k1', name: 'Brass Key', takeable: true }]);

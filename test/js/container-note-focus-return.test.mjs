@@ -162,4 +162,18 @@ test('m2: the empty desktop shows a square 2px focus-visible outline', async () 
     assert.ok(m, 'a :focus-visible rule exists');
     assert.match(m[1], /outline:\s*2px solid/);
     assert.match(m[1], /border-radius:\s*0/);
+    // equal specificity: the focus-visible rule must come after `:focus { outline: none }`
+    const focusAt = css.search(/\.desktop-background:focus\s*\{/);
+    assert.ok(focusAt >= 0, 'the :focus rule exists');
+    assert.ok(css.search(/\.desktop-background:focus-visible\s*\{/) > focusAt, 'focus-visible comes after :focus, so it wins the cascade');
+});
+
+test('empty share ring: a dark 2px ring on the white share pane only', async () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/container-minigame.css'), 'utf8');
+    const m = css.match(/\.container-contents-grid\.share-folder-files#container-contents-grid:focus-visible\s*\{([^}]*)\}/);
+    assert.ok(m, 'a share-pane-scoped focus-visible rule exists');
+    assert.match(m[1], /outline:\s*2px solid #000080/);
+    assert.match(m[1], /border-radius:\s*0/);
+    const plain = css.search(/^#container-contents-grid:focus-visible\s*\{/m);
+    assert.ok(css.search(/\.container-contents-grid\.share-folder-files#container-contents-grid:focus-visible/) > plain, 'after the general rule');
 });
