@@ -71,35 +71,7 @@ export function settleAfterPanelClose(now = Date.now()) {
     expectPanelWithin(PANEL_SETTLE_MS, now);
 }
 
-/**
- * The toast for an item the player was given (an NPC's ink give_item, a flag reward or a
- * triggerOnInteract give_item). The in-chat line and the station window's reward list
- * disappear with their panel, so without this the player got no inventory toast at all
- * (m03 confirm run: Ffion's Visitor Badge, flag rewards). Returns null for notes, which
- * have the notepad's own toast.
- */
-export function itemGainToast(item) {
-    if (!item || typeof item !== 'object') return null;
-    if (/^notes\d*$/.test(item.type || '')) return null;
-    const name = String(item.name || item.type || 'item');
-    return { message: `Received: ${name}`, type: 'success', title: 'Item Acquired', duration: 5000 };
-}
-
-/**
- * Say an item was gained, once, when addToInventory answered with a new slot ('added').
- * 'already' and refusals say nothing here. Over a conversation or minigame the toast waits
- * (showNotification's hold) and shows when it closes.
- */
-export function announceItemGain(item, result, alert = (typeof window !== 'undefined' ? window.gameAlert : null)) {
-    if (!result || result.ok !== true || result.reason !== 'added') return false;
-    const toast = itemGainToast(item);
-    if (!toast || typeof alert !== 'function') return false;
-    alert(toast.message, toast.type, toast.title, toast.duration);
-    return true;
-}
-
 if (typeof window !== 'undefined') {
-    window.announceItemGain = announceItemGain;
     window.expectContainerAfterUnlock = expectContainerAfterUnlock;
     window.expectPanelWithin = expectPanelWithin;
     window.clearExpectedPanel = clearExpectedPanel;
