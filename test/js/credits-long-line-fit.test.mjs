@@ -41,7 +41,7 @@ test('the credits label is capped to the centre panel and wraps', () => {
 
 test('with the side panels hidden the label takes the window and keeps its side padding', () => {
     const narrow = css.slice(css.lastIndexOf('@media (max-width: 900px)'));
-    assert.match(narrow, /#bv-cr-label\.bv-cr-label \{ max-width: 100%; padding: 0 10%; \}/);
+    assert.match(narrow, /#bv-cr-label\.bv-cr-label \{ max-width: calc\(100% - 20px\); padding: 8px 10%; \}/);
 });
 
 test('every place that styles the label gives it the class and no inline padding', () => {
