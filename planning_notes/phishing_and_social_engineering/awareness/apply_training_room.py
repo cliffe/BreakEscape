@@ -35,8 +35,12 @@ leaving everything else in the file byte for byte:
 Kit mode (living office, LIVING_OFFICE_PLAN.md 4.4): splice the office kit's content into every shell
 whose episodes.json row has a tier (a hand-authored shell, or a generated one you want to patch):
 
-       python3 apply_training_room.py [--repo <checkout>] --kit           # in place
-       python3 apply_training_room.py [--repo <checkout>] --kit <outdir>  # patched copies to <outdir>
+       python3 apply_training_room.py [--repo <checkout>] --kit <outdir> [--allow-drop]   # patched copies to <outdir>
+
+The outdir is required: the tool never writes into scenarios/ (generate into scratch, diff, copy back what
+you mean to change). A shell holding hand-written kit content that the kit data would not write back is
+refused with the names of what would go; move it into the kit data (a set piece's staff patches, mappings,
+globals, timers, objects), or pass --allow-drop to erase it on purpose.
 
 Old kit-owned members (office_kit ownership by name) are removed and the current ones inserted as
 text; every other byte of the file is left alone. The result is loaded and must equal
@@ -406,13 +410,32 @@ def _try_member(text, obj_start, key):
     return hits[0] if hits else None
 
 
-def kit_text(text, kit, row, shell):
-    """Splice the kit into one shell's text. Returns the new text."""
+def _first_set_outcome(text):
+    """Start of social.triageSets[0].outcome (the set office_kit.key_outcome reads)."""
+    social = _member(text, _root(text), 'social')[0]
+    sets = _member(text, social, 'triageSets')[0]
+    first = next(_elements(text, sets))[0]
+    return _member(text, first, 'outcome')[0]
+
+
+class WouldDropHandWrittenContent(Exception):
+    """Regenerating would erase kit-owned content the kit data does not produce."""
+
+
+def kit_text(text, kit, row, shell, allow_drop=False):
+    """Splice the kit into one shell's text. Returns the new text. Refuses (WouldDropHandWrittenContent)
+    when the shell holds kit-owned content that the kit data would not write back, unless allow_drop."""
     old = json.loads(text)
     host_id = office_kit._find_host(old)['id']
     expect = office_kit.apply_kit(old, kit, row, host_id=host_id)
     prefix, state_global = office_kit.shell_ids(old, row)
     b = office_kit.build(kit, row, prefix, state_global)
+    lost = office_kit.hand_written(office_kit.kit_owned(old, host_id), b)
+    if lost and not allow_drop:
+        raise WouldDropHandWrittenContent(
+            f"{shell}: --kit would drop hand-written kit content it cannot regenerate: " + '; '.join(lost)
+            + ". Move it into the kit data (the set piece's staff patches, mappings, globals, timers, objects) "
+            + "or pass --allow-drop to erase it on purpose.")
     is_kit = lambda e: office_kit.is_kit_member(e)  # noqa: E731
 
     # host mappings (deepest first, so the spans above are re-found afterwards)
@@ -436,6 +459,15 @@ def kit_text(text, kit, row, shell):
     social = _member(text, _root(text), 'social')[0]
     epa = _member(text, social, 'awarenessEpisode')[0]
     text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] else [])
+    # social.triageSets[0].outcome.messageGlobals (the row's keyMessage)
+    oc = _first_set_outcome(text)
+    own_mg = [v for k, a, bb in _members(text, oc) if k == 'messageGlobals' for v in [json.loads(text[a:bb])]]
+    if not own_mg or all(str(v).startswith('kit_') for v in own_mg[0].values()):
+        text = _splice_object(text, oc, lambda k: k == 'messageGlobals',
+                              [('messageGlobals', b['messageGlobals'])] if b.get('messageGlobals') else [])
+    else:    # the shell's own non-kit entries stay; the kit's are merged in as apply_kit does
+        mg = {**own_mg[0], **b.get('messageGlobals', {})}
+        text = _splice_object(text, oc, lambda k: k == 'messageGlobals', [('messageGlobals', mg)])
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
     text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()))
@@ -479,9 +511,12 @@ def kit_text(text, kit, row, shell):
     return text
 
 
-def kit(outdir):
-    """Splice the kit into every tiered row's shell. Every text is built (and every row checked) before
-    any file is written, so a failure on a later shell leaves the earlier ones untouched."""
+def kit(outdir, allow_drop=False):
+    """Splice the kit into every tiered row's shell, writing patched copies into outdir (required: the
+    tool never writes into scenarios/). Every text is built (and every row checked) before any file is
+    written, so a failure on a later shell leaves the earlier ones untouched."""
+    if not outdir:
+        sys.exit('--kit needs an output folder: apply_training_room.py --kit <outdir> (nothing is written into scenarios/)')
     plan = []
     for row in office_kit.load_rows():
         if office_kit.tier_of(row) == 'none':
@@ -499,15 +534,15 @@ def kit(outdir):
         if not os.path.exists(path):
             sys.exit(f'episodes.json row {name} has no shell at {path}')
         text = open(path).read()
-        plan.append((name, path, text, kit_text(text, office_kit.load_kit(row['company']), row, name)))
+        try:
+            new = kit_text(text, office_kit.load_kit(row['company']), row, name, allow_drop=allow_drop)
+        except WouldDropHandWrittenContent as e:
+            sys.exit(str(e))
+        plan.append((name, path, text, new))
     for name, path, text, new in plan:
-        dest = path
-        if outdir:
-            d = os.path.join(outdir, name)
-            os.makedirs(d, exist_ok=True)
-            dest = os.path.join(d, 'scenario.json.erb')
-        elif new == text:
-            continue
+        d = os.path.join(outdir, name)
+        os.makedirs(d, exist_ok=True)
+        dest = os.path.join(d, 'scenario.json.erb')
         with open(dest, 'w') as f:
             f.write(new)
         print('wrote', dest, '' if new != text else '(unchanged)')
@@ -515,7 +550,10 @@ def kit(outdir):
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == '--kit':
-        kit(sys.argv[2] if len(sys.argv) > 2 else None)
+        rest = sys.argv[2:]
+        allow = '--allow-drop' in rest
+        rest = [a for a in rest if a != '--allow-drop']
+        kit(rest[0] if rest else None, allow_drop=allow)
         return
     if len(sys.argv) > 1 and sys.argv[1] == '--refresh':
         refresh(sys.argv[2] if len(sys.argv) > 2 else None)

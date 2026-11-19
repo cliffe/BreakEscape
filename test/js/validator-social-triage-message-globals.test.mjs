@@ -48,6 +48,14 @@ test('a valid mapping gives no error', { skip }, () => {
   assert.ok(mgErrors(lintJson(base({ a: 'caught_a', b: 'caught_b' }))).length === 0);
 });
 
+test('a name equal to one of the set\'s own result globals is an error', { skip }, () => {
+  for (const clash of ['t_complete', 't_percent', 't_reportRate']) {
+    const e = mgErrors(lintJson(base({ a: clash })));
+    assert.ok(e.some((m) => /own result globals/.test(m) && m.includes(clash)), `${clash}: ${e.join(' | ')}`);
+  }
+  assert.ok(!mgErrors(lintJson(base({ a: 'caught_a' }))).some((m) => /own result globals/.test(m)));
+});
+
 test('no option gives no messageGlobals error', { skip }, () => {
   assert.ok(mgErrors(lintJson(base(undefined))).length === 0);
 });

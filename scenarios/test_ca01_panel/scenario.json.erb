@@ -6,6 +6,7 @@
   "endGoal": "Send the email in Derek's name, then sort the payments inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -87,8 +88,31 @@
     "kit_ca01_agn_there": false,
     "kit_ca01_done": false,
     "kit_ca01_host_said": false,
-    "kit_fraud_caught": false
+    "kit_key_caught": false
   },
+  "chatter": {
+    "kit_brightwell": {
+      "lines": [
+        "Busy inbox today.",
+        "Kettle's on in a sec.",
+        "Audit week again."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
+  },
+  "timers": [
+    {
+      "id": "kit_ca01_t_done",
+      "startOnGlobal": "kit_ca01_out",
+      "delayMs": 12000,
+      "condition": "!globalVars.kit_ca01_done",
+      "setGlobal": {
+        "kit_ca01_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -117,7 +141,7 @@
           "setGlobalPrefix": "episode_e1_invoice_fraud_defend_",
           "passPercent": 0,
           "messageGlobals": {
-            "e1_lookalike_bank": "kit_fraud_caught"
+            "e1_lookalike_bank": "kit_key_caught"
           }
         },
         "messages": [
@@ -336,7 +360,6 @@
         "accent": "#2f6f5e"
       },
       "variant": "full",
-      "stepAway": true,
       "durationTargetMin": 15,
       "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one email to Adaeze, Brightwell's finance manager, and the Brightwell payments inbox. Nothing you write leaves the game.",
       "stages": [
@@ -393,7 +416,8 @@
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -1010,6 +1034,12 @@
               "onceOnly": true,
               "delayMs": 3000,
               "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca01_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
             }
           ]
         },
@@ -1152,19 +1182,6 @@
           "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
         }
       ]
-    }
-  },
-  "npcThoughts": false,
-  "chatter": {
-    "kit_brightwell": {
-      "lines": [
-        "Busy inbox today.",
-        "Kettle's on in a sec.",
-        "Audit week again."
-      ],
-      "requireGlobal": {
-        "kit_quiet": false
-      }
     }
   }
 }

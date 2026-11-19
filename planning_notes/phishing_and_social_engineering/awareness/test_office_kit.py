@@ -281,6 +281,7 @@ class Generators(unittest.TestCase):
             made = sorted(os.listdir(out))
             self.assertNotIn('test_ca_office_kit', made)
             self.assertIn('ca01_invoice_fraud', made)
+            self.assertIn('test_ca01_panel', made)
 
     def test_checks_pass_tier_none(self):
         import gen_e1_shells as g
@@ -329,6 +330,14 @@ class KitMode(unittest.TestCase):
         stale = json.loads(self.text)
         stale['rooms']['training_room']['npcs'][1]['position'] = {'x': 9, 'y': 9}
         stale['globalVariables']['kit_old'] = 1
+        text = json.dumps(stale, indent=2) + '\n'
+        # an old value under a name the kit still writes is replaced; a kit_ name it does not write is hand-written
+        new = atr.kit_text(text, self.kit, self.row, 'test_ca_office_kit', allow_drop=True)
+        self.assertEqual(json.loads(new), self.fx)
+        with self.assertRaises(atr.WouldDropHandWrittenContent) as cm:
+            atr.kit_text(text, self.kit, self.row, 'test_ca_office_kit')
+        self.assertIn('global kit_old', str(cm.exception))
+        del stale['globalVariables']['kit_old']
         new = atr.kit_text(json.dumps(stale, indent=2) + '\n', self.kit, self.row, 'test_ca_office_kit')
         self.assertEqual(json.loads(new), self.fx)
 
@@ -339,6 +348,7 @@ class KitMode(unittest.TestCase):
                                capture_output=True, text=True, cwd=tempfile.gettempdir())
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertTrue(os.path.exists(os.path.join(out, 'ca01_invoice_fraud', 'scenario.json.erb')))
+            self.assertTrue(os.path.exists(os.path.join(out, 'test_ca01_panel', 'scenario.json.erb')))
             self.assertFalse(os.path.exists(os.path.join(out, 'test_ca_office_kit')))
             self.assertIn('SKIP (fixture', r.stdout)
 
@@ -370,8 +380,7 @@ class ReviewFixes(unittest.TestCase):
         self.assertEqual(json.loads(new), out)
 
     def test_kit_writes_nothing_when_a_later_row_fails(self):
-        rows = [row(id='ca01_invoice_fraud', ep='ca01', setPiece=None, attack=True),
-                row(id='ca99_no_such_shell')]
+        rows = [dict(ok.row_for('ca01_invoice_fraud')), row(id='ca99_no_such_shell')]
         saved = ok.load_rows
         ok.load_rows = lambda kits_dir=None: rows
         try:
@@ -476,7 +485,7 @@ class ReviewFixes(unittest.TestCase):
                        g.HOSTS['adaeze'], 'x', ('o', 'o'), {}, tier='S', kit_row=row(handAuthored=True))
 
     def test_kit_refuses_a_check_row_before_writing(self):
-        rows = [row(id='ca01_invoice_fraud', ep='ca01', attack=True), row(id='ca_pre_general_v2_ab')]
+        rows = [dict(ok.row_for('ca01_invoice_fraud')), row(id='ca_pre_general_v2_ab')]
         saved = ok.load_rows
         ok.load_rows = lambda kits_dir=None: rows
         try:
@@ -517,6 +526,117 @@ class ReviewFixes(unittest.TestCase):
         sc['rooms']['training_room']['npcs'][0]['eventMappings'] = []
         stripped = ok.strip_kit(sc)
         self.assertEqual(stripped['rooms']['training_room']['npcs'][0]['eventMappings'], [])
+
+
+class RegenerateTheChain(unittest.TestCase):
+    """Wrap review M3: the ca01 chain lives in the ca01_recall set piece, so --kit regenerates it."""
+
+    def test_committed_ca01_and_panel_regenerate_unchanged(self):
+        for name in ('ca01_invoice_fraud', 'test_ca01_panel'):
+            r = ok.row_for(name)
+            text = shell_text(name)
+            self.assertEqual(atr.kit_text(text, ok.load_kit(r['company']), r, name), text, name)
+
+    def test_the_panel_chain_is_set_piece_data(self):
+        name = 'test_ca01_panel'
+        r = ok.row_for(name)
+        self.assertEqual((r['tier'], r['setPiece'], r['stepAway']), ('O', 'ca01_recall', True))
+        kit = ok.load_kit(r['company'])
+        sc = json.loads(shell_text(name))
+        prefix, state = ok.shell_ids(sc, r)
+        b = ok.build(kit, r, prefix, state)
+        by = {n['id']: n for n in b['npcs']}
+        for n in by.values():
+            self.assertTrue(n['eventMappings'])
+        for m in [m for n in by.values() for m in n['eventMappings']] + b['mappings']:
+            if 'bark' in m:
+                self.assertIn('globalVars.kit_quiet === true', m['condition'], m['bark'])
+        self.assertLessEqual(sum('bark' in m for n in by.values() for m in n['eventMappings']) + sum('bark' in m for m in b['mappings'] if 'kit_ca01' in str(m)), 3)
+        # the timer fallback: 12 s after the walk starts, kit_ca01_done is set and both colleagues resume on it
+        t = [x for x in b['timers'] if x['id'] == 'kit_ca01_t_done']
+        self.assertEqual(len(t), 1)
+        self.assertEqual((t[0]['startOnGlobal'], t[0]['setGlobal']), ('kit_ca01_out', {'kit_ca01_done': True}))
+        self.assertTrue(10000 <= t[0]['delayMs'] <= 12000)
+        for person in ('agnieszka_duda', 'gwen_pritchard'):
+            self.assertTrue([m for m in by[f'kit_{person}']['eventMappings']
+                             if m['eventPattern'] == 'global_variable_changed:kit_ca01_done' and m.get('needs') == 'resume'], person)
+        # kit_ca01_done is only ever set by the Adaeze mapping or the timer
+        setters = [m for m in b['mappings'] if 'kit_ca01_done' in m.get('setGlobal', {})]
+        self.assertEqual(len(setters), 1)
+        self.assertIn('kit_quiet === true', setters[0]['condition'])
+
+    def test_key_message_writes_the_generic_global(self):
+        r = ok.row_for('ca01_invoice_fraud')
+        self.assertEqual(r['keyMessage'], 'e1_lookalike_bank')
+        for name in ('ca01_invoice_fraud', 'test_ca01_panel'):
+            sc = json.loads(shell_text(name))
+            self.assertEqual(sc['social']['triageSets'][0]['outcome']['messageGlobals'], {'e1_lookalike_bank': 'kit_key_caught'})
+            self.assertIs(sc['globalVariables']['kit_key_caught'], False)
+            self.assertNotIn('kit_fraud_caught', json.dumps(sc))
+            self.assertNotIn('messageGlobals', ok.strip_kit(sc)['social']['triageSets'][0]['outcome'])
+            self.assertNotIn('kit_key_caught', ok.strip_kit(sc)['globalVariables'])
+        # a row with no keyMessage writes neither
+        b = ok.build(ok.load_kit('brightwell_foods'), row(), 'p_', 's')
+        self.assertNotIn('messageGlobals', b)
+        self.assertNotIn('kit_key_caught', b['globals'])
+        # the twin's set source carries no messageGlobals of its own
+        self.assertNotIn('messageGlobals', twin_shell()['social']['triageSets'][0]['outcome'])
+
+    def test_key_message_splices_into_a_bare_shell_and_a_shell_with_its_own_entry(self):
+        r = row(keyMessage='e1_lookalike_bank', attack=True, stepAway=True)
+        kit = ok.load_kit('brightwell_foods')
+        sc = twin_shell()
+        new = atr.kit_text(dumped(sc), kit, r, 'x')
+        self.assertEqual(json.dumps(json.loads(new)), json.dumps(ok.apply_kit(sc, kit, r)))
+        self.assertEqual(atr.kit_text(new, kit, r, 'x'), new)
+        self.assertEqual(ok.strip_kit(json.loads(new)), sc)
+        own = copy.deepcopy(sc)
+        own['social']['triageSets'][0]['outcome']['messageGlobals'] = {'m_own': 'own_global'}
+        new = atr.kit_text(dumped(own), kit, r, 'x')
+        self.assertEqual(json.loads(new)['social']['triageSets'][0]['outcome']['messageGlobals'],
+                         {'m_own': 'own_global', 'e1_lookalike_bank': 'kit_key_caught'})
+        self.assertEqual(ok.strip_kit(json.loads(new)), own)
+
+    def test_regeneration_refuses_to_erase_hand_written_kit_content(self):
+        name = 'test_ca01_panel'
+        r = ok.row_for(name)
+        text = shell_text(name)
+        # the chain removed from the kit data: the committed shell's hand-written copy would be erased
+        kit = copy.deepcopy(ok.load_kit(r['company']))
+        kit['setPieces']['ca01_recall'].pop('staff')
+        with self.assertRaises(atr.WouldDropHandWrittenContent) as cm:
+            atr.kit_text(text, kit, r, name)
+        msg = str(cm.exception)
+        self.assertIn('npc kit_agnieszka_duda mapping on npc_arrived:kit_agnieszka_duda', msg)
+        self.assertIn('would drop hand-written kit content', msg)
+        # a hand-added host mapping and timer
+        sc = json.loads(text)
+        host = ok._find_host(sc)
+        host['eventMappings'].append({'eventPattern': 'x', 'setGlobal': {'kit_hand': True}})
+        sc['timers'].append({'id': 'kit_hand_t', 'startOnGlobal': 'kit_ca01_out', 'delayMs': 1})
+        with self.assertRaises(atr.WouldDropHandWrittenContent) as cm:
+            atr.kit_text(dumped(sc), ok.load_kit(r['company']), r, name)
+        self.assertIn("host mapping on x setting ['kit_hand']", str(cm.exception))
+        self.assertIn('timer kit_hand_t', str(cm.exception))
+        # editing wording, delays or values of a mapping the kit data still writes is a normal regeneration
+        sc = json.loads(text)
+        for n in sc['rooms']['training_room']['npcs']:
+            for m in n.get('eventMappings', []):
+                if 'bark' in m:
+                    m['bark'] = 'an old wording'
+        new = atr.kit_text(dumped(sc), ok.load_kit(r['company']), r, name)
+        self.assertIn('That notice on the wall is from last spring', new)
+
+    def test_kit_cli_needs_an_out_folder_and_writes_nothing_without_one(self):
+        before = subprocess.run(['git', '-C', REPO, 'status', '--short', '--', 'scenarios'], capture_output=True, text=True).stdout
+        r = subprocess.run([sys.executable, os.path.join(HERE, 'apply_training_room.py'), '--repo', REPO, '--kit'],
+                           capture_output=True, text=True, cwd=tempfile.gettempdir())
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('--kit needs an output folder', r.stderr + r.stdout)
+        after = subprocess.run(['git', '-C', REPO, 'status', '--short', '--', 'scenarios'], capture_output=True, text=True).stdout
+        self.assertEqual(before, after)
+        with self.assertRaises(SystemExit):
+            atr.kit(None)
 
 
 if __name__ == '__main__':

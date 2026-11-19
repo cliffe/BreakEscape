@@ -1,6 +1,6 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
-VAR kit_fraud_caught = false
+VAR kit_key_caught = false
 
 === start ===
 { kit_defend_done:
@@ -10,7 +10,7 @@ Gwen Pritchard: Morning. Grab a coffee if you need one.
 -> bye
 
 === ca01 ===
-{ kit_fraud_caught:
+{ kit_key_caught:
     Gwen Pritchard: Good spot on that bank-details email. That one would've sailed straight through.
 - else:
     Gwen Pritchard: Heard you've been through the inbox. Some real traps in there lately.

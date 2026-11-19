@@ -1,5 +1,5 @@
 {
-  "_note": "One row per shell. Wave 0 held only the hand-authored flag; wave 1A adds the kit fields. Kit fields (only when tier is not 'none'): tier (none|S|T|O|E), company (a kit file in this folder), ep (the string kit_ep holds, e.g. ca01), chainId (optional, names kit_<chainId>_out; defaults to ep), ambient (two person keys from the kit's staff), stub (the shared stub knot; defaults to ep), setPiece (name in the kit's setPieces, or null), attack (true for a full shell with an attack half: adds the kit_attack_done mapping), stepAway (the row is the one source: written to social.awarenessEpisode.stepAway), stepAwayBark (optional host line on the step-away mapping), override (optional: deep-merges into the kit before building, keyed sources by id and staff by person; a value of null deletes that key; used only to pin a test fixture to its frozen placeholder positions and timings). A row with handAuthored true is never written by a generator (it is touched only by apply_training_room.py). A row with fixture true is a test scenario, not a course shell.",
+  "_note": "One row per shell. Wave 0 held only the hand-authored flag; wave 1A adds the kit fields. Kit fields (only when tier is not 'none'): tier (none|S|T|O|E), company (a kit file in this folder), ep (the string kit_ep holds, e.g. ca01), chainId (optional, names kit_<chainId>_out; defaults to ep), ambient (two person keys from the kit's staff), stub (the shared stub knot; defaults to ep), setPiece (name in the kit's setPieces, or null), attack (true for a full shell with an attack half: adds the kit_attack_done mapping), stepAway (the row is the one source: written to social.awarenessEpisode.stepAway), stepAwayBark (optional host line on the step-away mapping), keyMessage (optional: the id of the message in the shell's first triage set that the episode's key lesson rides on; the tool writes outcome.messageGlobals {<id>: kit_key_caught} on that set and declares the generic global kit_key_caught, the one name every episode's stubs and host ink read; the validator errors if the global clashes with the set's own result names), override (optional: deep-merges into the kit before building, keyed sources by id and staff by person; a value of null deletes that key; used only to pin a test fixture to its frozen placeholder positions and timings). A row with handAuthored true is never written by a generator (it is touched only by apply_training_room.py). A row with fixture true is a test scenario, not a course shell. A row for a test scenario that is not a fixture (test_ca01_panel) is regenerated like a course shell: --kit rebuilds its kit content from the set piece and refuses to erase hand-written kit content.",
   "episodes": [
     {
       "id": "ca13_ai_assistant_defend",
@@ -46,7 +46,23 @@
       ],
       "setPiece": "ca01_recall_fallback",
       "attack": true,
-      "stepAway": false
+      "stepAway": false,
+      "keyMessage": "e1_lookalike_bank"
+    },
+    {
+      "id": "test_ca01_panel",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "brightwell_foods",
+      "ep": "ca01",
+      "ambient": [
+        "agnieszka_duda",
+        "gwen_pritchard"
+      ],
+      "setPiece": "ca01_recall",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e1_lookalike_bank"
     }
   ]
 }

@@ -256,8 +256,10 @@ module ValidateSocial
       return [err("#{at} must be an object of message id to global name")] unless mg.is_a?(Hash)
 
       msgs = Mail.hash_list(set['messages']).to_h { |m| [m['id'], m] }
+      own = (result_names(set, set['stage']) || {}).values
       issues = []
       mg.each do |id, name|
+        issues << err("#{at}['#{id}'] names '#{name}', which is one of this set's own result globals (#{own.join(', ')}); the launch writes it too, so it would be emitted twice. Use a name of its own") if own.include?(name)
         m = msgs[id]
         if m.nil?
           issues << err("#{at} lists '#{id}', which is not a message id in this set")

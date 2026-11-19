@@ -59,7 +59,7 @@
     "kit_defend_done": false,
     "kit_quiet": false,
     "kit_caught": false,
-    "kit_fraud_caught": false,
+    "kit_key_caught": false,
     "kit_ep": "ca01",
     "kit_e1_out": false,
     "kit_e1_walk": false,
@@ -529,7 +529,7 @@
               "eventPattern": "global_variable_changed:episode_e1_stub_defend_complete",
               "condition": "value === true && globalVars.episode_e1_stub_defend_percent >= 85",
               "onceOnly": true,
-              "setGlobal": { "kit_fraud_caught": true }
+              "setGlobal": { "kit_key_caught": true }
             },
             {
               "eventPattern": "global_variable_changed:episode_e1_stub_state",

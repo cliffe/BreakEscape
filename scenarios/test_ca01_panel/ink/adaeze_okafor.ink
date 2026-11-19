@@ -14,7 +14,7 @@ VAR phish_supplier_contact_attempts = 0
 VAR episode_e1_invoice_fraud_defend_complete = false
 VAR kit_defend_done = false
 VAR kit_caught = false
-VAR kit_fraud_caught = false
+VAR kit_key_caught = false
 VAR kit_ca01_host_said = false
 VAR hub_quiet = false
 
@@ -26,7 +26,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { kit_defend_done && not kit_ca01_host_said:
-        { kit_fraud_caught:
+        { kit_key_caught:
             { kit_caught:
                 Adaeze Okafor: The moment that bank-details email was flagged, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
             - else:

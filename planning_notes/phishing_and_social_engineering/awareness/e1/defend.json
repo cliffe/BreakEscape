@@ -30,10 +30,7 @@
       ],
       "outcome": {
         "setGlobalPrefix": "episode_e1_invoice_fraud_defend_",
-        "passPercent": 0,
-        "messageGlobals": {
-          "e1_lookalike_bank": "kit_fraud_caught"
-        }
+        "passPercent": 0
       },
       "messages": [
         {

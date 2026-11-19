@@ -36,14 +36,14 @@ const mkSet = (outcomeExtra = {}) => ({
     outcome: { setGlobalPrefix: P, passPercent: 0, ...outcomeExtra },
     messages: []
 });
-const withMg = () => mkSet({ messageGlobals: { fraud: 'kit_fraud_caught', other: 'kit_other_caught' } });
+const withMg = () => mkSet({ messageGlobals: { fraud: 'kit_key_caught', other: 'kit_other_caught' } });
 const ctxFor = (set, extra = {}) => ({ set, stage: 'mission', prefix: resolvePrefix(set, 'mission'), ...extra });
 const ans = (id, verdict) => ({ id, verdict, isPhish: true });
 const result = (answers, percent = 50) => ({ percent, reportRate: 0.5, answers });
 
 function env(globals = {}) {
     _resetTriageStarterForTests();
-    const g = { kit_fraud_caught: false, kit_other_caught: false, ...globals };
+    const g = { kit_key_caught: false, kit_other_caught: false, ...globals };
     const events = [];
     const log = [];
     const emitGlobals = (evs) => { for (const e of evs) events.push(e.data.name); };
@@ -71,7 +71,7 @@ for (const [verdict, expected] of [['report', true], ['delete', true], ['verify'
     test(`messageGlobals: a ${verdict} on the listed phish writes ${expected}`, async () => {
         const e = env();
         await save(e, withMg(), result([ans('fraud', verdict), ans('other', 'trust')]));
-        assert.ok(e.g.kit_fraud_caught === expected);
+        assert.ok(e.g.kit_key_caught === expected);
         assert.ok(e.g.kit_other_caught === false);
     });
 }
@@ -79,34 +79,34 @@ for (const [verdict, expected] of [['report', true], ['delete', true], ['verify'
 test('messageGlobals: a listed message with no answer writes false', async () => {
     const e = env();
     await save(e, withMg(), result([ans('fraud', 'report')]));
-    assert.ok(e.g.kit_fraud_caught === true);
+    assert.ok(e.g.kit_key_caught === true);
     assert.ok(e.g.kit_other_caught === false);
     const e2 = env();
     await save(e2, withMg(), { percent: 10, reportRate: 0 });
-    assert.ok(e2.g.kit_fraud_caught === false);
+    assert.ok(e2.g.kit_key_caught === false);
 });
 
 test('messageGlobals: written with deferEmit before complete, and emitted before complete', async () => {
     const e = env();
     await save(e, withMg(), result([ans('fraud', 'report'), ans('other', 'trust')]));
     const names = e.log.map(l => l[0]);
-    assert.ok(JSON.stringify(names) === JSON.stringify([`${P}percent`, `${P}reportRate`, 'kit_fraud_caught', 'kit_other_caught', `${P}complete`]));
+    assert.ok(JSON.stringify(names) === JSON.stringify([`${P}percent`, `${P}reportRate`, 'kit_key_caught', 'kit_other_caught', `${P}complete`]));
     assert.ok(e.log.every(l => l[2] === true));
     // only the changed one has an event (other stays false), and it comes before complete
-    assert.ok(JSON.stringify(e.events) === JSON.stringify([`${P}percent`, `${P}reportRate`, 'kit_fraud_caught', `${P}complete`]));
+    assert.ok(JSON.stringify(e.events) === JSON.stringify([`${P}percent`, `${P}reportRate`, 'kit_key_caught', `${P}complete`]));
 });
 
 test('messageGlobals: a later, lower round never flips true to false; a later catch flips false to true', async () => {
     const e = env();
     const set = withMg();
     await save(e, set, result([ans('fraud', 'report'), ans('other', 'trust')], 80));
-    assert.ok(e.g.kit_fraud_caught === true);
+    assert.ok(e.g.kit_key_caught === true);
     await save(e, set, result([ans('fraud', 'trust'), ans('other', 'trust')], 20));
-    assert.ok(e.g.kit_fraud_caught === true, 'kept');
+    assert.ok(e.g.kit_key_caught === true, 'kept');
     assert.ok(e.g[`${P}percent`] === 80);
     await save(e, set, result([ans('fraud', 'trust'), ans('other', 'delete')], 30));
     assert.ok(e.g.kit_other_caught === true, 'a later round can set a false to true');
-    assert.ok(e.g.kit_fraud_caught === true);
+    assert.ok(e.g.kit_key_caught === true);
 });
 
 test('messageGlobals: one boolean per listed message, no growth on a re-save of the same result', async () => {
@@ -119,7 +119,7 @@ test('messageGlobals: one boolean per listed message, no growth on a re-save of 
     assert.ok(e.log.length === n, 'the same result object saves once');
     await save(e, set, result([ans('fraud', 'report')]));
     const keys = Object.keys(e.g).filter(k => k.startsWith('kit_'));
-    assert.ok(JSON.stringify(keys.sort()) === JSON.stringify(['kit_fraud_caught', 'kit_other_caught']));
+    assert.ok(JSON.stringify(keys.sort()) === JSON.stringify(['kit_key_caught', 'kit_other_caught']));
 });
 
 test('no option: identical writes and events to a set without messageGlobals', async () => {
@@ -127,28 +127,28 @@ test('no option: identical writes and events to a set without messageGlobals', a
     await save(e, mkSet(), result([ans('fraud', 'report')]));
     assert.ok(JSON.stringify(e.log.map(l => l[0])) === JSON.stringify([`${P}percent`, `${P}reportRate`, `${P}complete`]));
     assert.ok(JSON.stringify(e.events) === JSON.stringify([`${P}percent`, `${P}reportRate`, `${P}complete`]));
-    assert.ok(e.g.kit_fraud_caught === false, 'untouched');
+    assert.ok(e.g.kit_key_caught === false, 'untouched');
     for (const bad of [null, [], 'x', { a: 1 }, { '': 'x' }]) {
         assert.ok(messageGlobalPairs(mkSet({ messageGlobals: bad })).length === 0, JSON.stringify(bad));
     }
 });
 
 test('reopen: a conclusion task still open re-emits the true globals before complete', async () => {
-    const e = env({ [`${P}complete`]: true, [`${P}percent`]: 80, kit_fraud_caught: true });
+    const e = env({ [`${P}complete`]: true, [`${P}percent`]: 80, kit_key_caught: true });
     const set = withMg();
     const out = await reemitTriageDone(ctxFor(set, { conclusionTaskId: 't' }), e.deps);
     assert.ok(out.confirmed === true);
-    assert.ok(JSON.stringify(e.events) === JSON.stringify(['kit_fraud_caught', `${P}complete`]));
-    assert.ok(e.g.kit_fraud_caught === true, 'the value survives the reopen');
+    assert.ok(JSON.stringify(e.events) === JSON.stringify(['kit_key_caught', `${P}complete`]));
+    assert.ok(e.g.kit_key_caught === true, 'the value survives the reopen');
 });
 
 test('Gate B D2 re-emit: reemitTriageComplete sends true message globals first when given the set', async () => {
-    const e = env({ [`${P}complete`]: true, kit_fraud_caught: true });
+    const e = env({ [`${P}complete`]: true, kit_key_caught: true });
     const out = await reemitTriageComplete({ prefix: P, set: withMg() }, e.deps);
     assert.ok(out.confirmed === true);
-    assert.ok(JSON.stringify(e.events) === JSON.stringify(['kit_fraud_caught', `${P}complete`]));
+    assert.ok(JSON.stringify(e.events) === JSON.stringify(['kit_key_caught', `${P}complete`]));
     // without the set (or without the option) only complete goes, as before
-    const e2 = env({ [`${P}complete`]: true, kit_fraud_caught: true });
+    const e2 = env({ [`${P}complete`]: true, kit_key_caught: true });
     await reemitTriageComplete({ prefix: P }, e2.deps);
     assert.ok(JSON.stringify(e2.events) === JSON.stringify([`${P}complete`]));
 });
@@ -159,9 +159,9 @@ test('an unconfirmed save holds the message events for the next confirmed save',
     const set = withMg();
     await save(e, set, result([ans('fraud', 'report')]));
     assert.ok(e.events.length === 0);
-    assert.ok(e.g.kit_fraud_caught === true, 'in gameState for the next sync');
+    assert.ok(e.g.kit_key_caught === true, 'in gameState for the next sync');
     e.deps.stateSync = { syncConfirmed: async () => true };
     await save(e, set, result([ans('fraud', 'report')]));
-    assert.ok(e.events.includes('kit_fraud_caught'));
-    assert.ok(e.events.indexOf('kit_fraud_caught') < e.events.indexOf(`${P}complete`));
+    assert.ok(e.events.includes('kit_key_caught'));
+    assert.ok(e.events.indexOf('kit_key_caught') < e.events.indexOf(`${P}complete`));
 });

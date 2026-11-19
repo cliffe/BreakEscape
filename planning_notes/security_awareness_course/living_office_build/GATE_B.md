@@ -22,8 +22,8 @@ Branch `feat/ca-living-office-build`. It lands after `fix/ec1-reopen-hold` (d135
 - **Dialogue:** five rounds (Haiku scan, Opus 4.8 edit, Sonnet reviews R2-R5; log in CA01_DIALOGUE_EDITS.md).
   - The ICO claim is removed.
   - One staff-time cost, "a fortnight".
-  - The host branches three ways, on kit_fraud_caught and kit_caught.
-  - The colleague stubs branch on kit_fraud_caught.
+  - The host branches three ways, on kit_key_caught and kit_caught.
+  - The colleague stubs branch on kit_key_caught.
 - **Persona playtests** (Dana on the panel, Marcus on the fallback) found:
   - the host told a learner who missed it that they had caught it;
   - the board notice contradicted the catch run;
@@ -39,7 +39,7 @@ Branch `feat/ca-living-office-build`. It lands after `fix/ec1-reopen-hold` (d135
 
 ## Final replay (d199a1760)
 
-| Run | Game | kit_fraud_caught | kit_caught | Score | Lines | Result |
+| Run | Game | kit_key_caught | kit_caught | Score | Lines | Result |
 |---|---|---|---|---|---|---|
 | Fallback CATCH | 10381 | true | true | 98 | catch host, shared close, praise stubs | PASS |
 | Fallback PARTIAL (Ravinder phish trusted) | 10382 | true | false | 66 | partial host, shared close, praise stubs | PASS |
@@ -54,7 +54,7 @@ The notice is visible on the back wall (x 129, y 22) in all four runs.
   - a listed name can clash with the set's own result names, which would emit twice;
   - messages from `defend.calls` can't be listed.
 - EC1 D2 race (pass / inbox_triage_completed share a slot): on AC0's post-release list.
-- Fixture `test_ca_office_kit` / `_defend` sets `kit_fraud_caught` from the percent (e1_stub has no messageGlobals). That is fixture-only.
+- Fixture `test_ca_office_kit` / `_defend` sets `kit_key_caught` from the percent (e1_stub has no messageGlobals). That is fixture-only.
 - The debrief "kept N phish away" line is engine text. It is truthful (it counts actual reports), so it stays.
 
 ## Still open
