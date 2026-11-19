@@ -1179,7 +1179,7 @@ produce the graph it does today. The new drawing is one block after the credenti
 | Weakness | `weak_<findingId>`, kind `lock`, label: host name, service label and port, class and severity; a third line "fixed if <global>" when `fixedIf` is set, written as outage conditions are (`DG:653`) | on a sign-in host, from the network node, labelled with the service name (the host's own node `lock_<pcId>` means "signed in there", so it cannot be the source); on a device, from `host_<id>` |
 | Technique card | `tech_<techniqueId>`, kind `key`, label: the technique's name; one source node per carrying item at its home, drawn as held-credential sources are (`DG:1639-1644`) | to every weakness it matches |
 | Need | no new node | an edge into the weakness from `cred_<id>` (a credential), from the item's existing node, or from `lock_<pcId>` of the same host (a session, for a step up) |
-| Grant of a session | no new node | from the weakness to `lock_<pcId>`, labelled `grants session`. The lock node already stands for "a session held there" and already takes a second way in from a credential (`DG:1656-1660`), so shares and pivots that hang from it (`DG:797-803`, `DG:1062-1075`) are reached by either route |
+| Grant of a session | no new node | from the weakness to `lock_<pcId>`, labelled `grants session`. The lock node already stands for "a session held there" and already takes a second way in from a credential (`DG:1656-1660`), so shares and pivots that hang from it (`DG:797-803`, `DG:1062-1075`) are reached by either route. A weakness whose grant has `access: admin` ends at the node `admin@<pcId>` once S5a lands (and at `lock_<pcId>` before); S5a draws that node and its edges |
 | Grant of a credential | no new node | from the weakness to `cred_<id>`; the credential block's `case` gains `when 'technique'` and draws nothing itself |
 | Evidence | no new node | a soft edge into the weakness from the evidence item's or credential's node, labelled `confirms quietly`: it is never required |
 | Alert | no new node | the network node's label gains "alert after N"; a `fixedIf` or `offWhen` on the alert's global is already drawn as that condition |
@@ -1230,7 +1230,9 @@ change, so that the "before" side is main's own output:
    without an edit): gain each foothold, sign in remotely where the scenario allows, then record
    the bootstrap, each room answer, `GET /network` per foothold, `GET /keyring` and the desktop
    answer. The recordings are JSON fixtures under `test/fixtures/files/ops_unchanged/`, written
-   once from main by a rake task and compared for equality on every run after.
+   once from main by a rake task and compared for equality on every run after, through the one
+   shared helper `bin/ops-golden-compare`. This folder is the shared one: other ops plans add
+   their own fixtures beside these and build no second mechanism.
 2. **Validator and graph output.** A node test, `test/js/ops-unchanged-validator.test.mjs`, runs
    the validator and the graph generator over every scenario folder and compares the validator's
    lines and the graph JSON with a snapshot taken on main. The `dungeon_graph.*` files checked in
@@ -1614,10 +1616,16 @@ Each is a statement of what this plan provides or needs, for the plan named.
    host sit on the weakness. S5a adds no second shape and no other escalation route.
 3. **Privilege (S5a).** A PC holds one session, so a password sign-in replaces a technique
    record and its `access`; a technique record always has its `foothold` (section 0).
+   Opening objects: `POST /network/technique` opens no lockable object by its own route (it
+   grants a session or a credential on a sign-in PC), so it does not call `record_step_open!`
+   or `step_object_open?`.
 4. **Account kinds (S5c) and MFA (S8).** A technique session attempts no sign-in, so lockouts,
    `accepts`, account-kind checks and the second sign-in step do not run for it at run time.
    The validator applies `pc_admits_account?`, with the account-kind rule once that exists, to
-   `grants.session.account`. Both plans should say this from their side.
+   `grants.session.account`. Both plans should say this from their side. The MFA plan adds two
+   controller tests once S3 exists: a technique session on a `code` PC opens with no pending
+   record; a saved connection granted by a technique, signed in at that PC, answers
+   `mfaRequired`.
 5. **Account kinds (S5c) and MFA (S8).** `host_reachable_through?` and `from_route_refusal` gain
    the discovery condition ahead of every sign-in check. New sign-in checks come after it.
 6. **Skin (S6).** The four routes and the `GET /network` fields of sections 5 to 7 are the whole
