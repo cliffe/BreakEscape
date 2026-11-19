@@ -41,6 +41,22 @@ export function typewriterCharDelay(totalChars) {
     return Math.max(10, Math.min(TERMINAL_CHAR_DELAY_MS, Math.floor(TERMINAL_BLOCK_MAX_MS / n)));
 }
 
+/** A whole batch (typing plus the "typing" pauses and gaps between lines) aims to finish in about 15 s. */
+export const TERMINAL_BATCH_TOTAL_MS = 15000;
+/**
+ * Factor to multiply the pauses by so a batch of `lines` lines and `totalChars` characters,
+ * with `pauseMs` of pauses in all, fits the total budget. 1 for a short batch; never under 0.15,
+ * so the "typing" indicator still shows for a moment.
+ */
+export function batchPauseScale(totalChars, pauseMs) {
+    const chars = Math.max(0, Number(totalChars) || 0);
+    const pauses = Math.max(0, Number(pauseMs) || 0);
+    if (!pauses) return 1;
+    const typing = chars ? typewriterCharDelay(chars) * chars : 0;
+    if (typing + pauses <= TERMINAL_BATCH_TOTAL_MS) return 1;
+    return Math.max(0.15, (TERMINAL_BATCH_TOTAL_MS - typing) / pauses);
+}
+
 /** The player's OS asks for less motion: terminal lines appear whole. */
 function prefersReducedMotion() {
     try { return globalThis.window?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true; } catch (e) { return false; }
@@ -1336,8 +1352,14 @@ export default class PhoneChatUI {
     }
 
     /** Characters in the batch about to type (0 clears), so the whole block shares one time budget. */
-    setBlockChars(n) {
+    setBlockChars(n, pauseMs = 0) {
         this._blockChars = Number(n) || 0;
+        this._pauseScale = this._blockChars ? batchPauseScale(this._blockChars, pauseMs) : 1;
+    }
+
+    /** A pause (typing indicator, gap between lines) shortened so the batch fits its total budget. */
+    scalePause(ms) {
+        return Math.round(ms * (this._pauseScale ?? 1));
     }
 
     /** Show the "reply options follow" cue only when choices will come after the lines. */

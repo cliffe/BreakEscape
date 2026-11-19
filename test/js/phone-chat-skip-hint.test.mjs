@@ -298,7 +298,28 @@ test('p1: a whole batch types in about 12 s at most; short batches keep 28 ms a 
     assert.ok(typewriterCharDelay(100000) === 10, 'never faster than 10 ms a character');
     assert.ok(typewriterCharDelay(0) === 28, 'empty is safe');
     assert.ok(/typewriterCharDelay\(this\._blockChars \|\| text\.length\)/.test(uiSrc), 'the typewriter uses the batch budget');
-    assert.ok(/setBlockChars\?\.\(accumulatedMessages/.test(mgSrc), 'the minigame sets the batch size');
+    assert.ok(/_setBatchBudget\(accumulatedMessages/.test(mgSrc), 'the minigame sets the batch size');
+    assert.ok((mgSrc.match(/_setBatchBudget\(accumulatedMessages/g) || []).length === 2, 'both the story and the choice paths set the budget');
+});
+
+test('p1b: pauses shrink so a whole batch (typing plus pauses) is about 15 s at most', () => {
+    const { batchPauseScale, typewriterCharDelay } = uiMod;
+    const lines = 12, chars = 800, pauses = lines * 1000 + (lines - 1) * 400;
+    const total = (sc) => typewriterCharDelay(chars) * chars + pauses * sc;
+    const sc = batchPauseScale(chars, pauses);
+    assert.ok(pauses + typewriterCharDelay(chars) * chars > 25000, 'the unscaled long batch is far over budget');
+    assert.ok(sc < 1 && sc >= 0.15, 'long batch pauses scale down but not to nothing: ' + sc);
+    assert.ok(total(sc) <= 15100, 'scaled batch fits 15 s: ' + total(sc));
+    assert.ok(batchPauseScale(60, 2 * 1000 + 400) === 1, 'a short batch keeps its pauses');
+    assert.ok(batchPauseScale(500, 0) === 1, 'no pauses is safe');
+    assert.ok(batchPauseScale(0, 5000) === 1, 'no text is safe');
+    assert.ok(batchPauseScale(100000, 20000) === 0.15, 'floor at 0.15');
+    const ui = Object.create(UI.prototype);
+    ui.setBlockChars(chars, pauses);
+    assert.ok(ui.scalePause(1000) < 1000 && ui.scalePause(1000) >= 150, 'scalePause shortens a pause');
+    ui.setBlockChars(0);
+    assert.ok(ui.scalePause(1000) === 1000, 'cleared budget leaves pauses alone');
+    assert.ok(/_scaledPause\(TYPING_DELAY_MS\)/.test(mgSrc) && /_scaledPause\(INTER_MESSAGE_MS\)/.test(mgSrc), 'the minigame scales both pauses');
 });
 
 test('p2: the terminal hint says the reply options follow', () => {
