@@ -94,3 +94,129 @@ test('pin: pinned shells carry no kit_ name, no officePresets, no npcThoughts an
   }
   assert.ok(bad.length === 0, `${PIN_MSG}\n${bad.join('\n')}`);
 });
+
+// ---- wave 1A: the kit tool's output and the conformance rules (plan 4.5, gate A rules) ----------------
+import { execFileSync } from 'node:child_process';
+
+const AW = join(root, 'planning_notes/phishing_and_social_engineering/awareness');
+const rowsFile = JSON.parse(readFileSync(join(AW, 'office_kits/episodes.json'), 'utf8'));
+const kitRows = rowsFile.episodes.filter((r) => r.tier && r.tier !== 'none');
+const readShell = (name) => JSON.parse(readFileSync(join(scenarios, name, 'scenario.json.erb'), 'utf8'));
+const exportKit = (shell) => {
+  const out = execFileSync('python3', ['-I', join(AW, 'office_kit.py'), '--repo', root, 'export', shell], { encoding: 'utf8', cwd: root });
+  return JSON.parse(out.slice(out.indexOf('\n{') + 1));
+};
+const hostOf = (sc) => {
+  const npcs = sc.rooms.training_room.npcs.filter((n) => !n.id.startsWith('kit_'));
+  return npcs.find((n) => (n.storyPath || '').startsWith(`scenarios/${sc.scenario_id}/ink/`)) || npcs[0];
+};
+const isKitMapping = (m) => Object.keys(m.setGlobal || {}).some((k) => k.startsWith('kit_')) ||
+  String(m.condition || '').includes('kit_') || String(m.knot || '').includes('kit_');
+const kitShellNames = () => readdirSync(scenarios, { withFileTypes: true })
+  .filter((d) => d.isDirectory() && /^(ca\d\d_|test_ca_office_kit)/.test(d.name))
+  .map((d) => d.name)
+  .filter((n) => existsSync(join(scenarios, n, 'scenario.json.erb')) &&
+    readShell(n).rooms.training_room.npcs.some((x) => x.id.startsWith('kit_'))); // not payloadKit ids such as ca02's
+
+test('kit: every non-fixture kit row has its shell, and the shell holds exactly what the tool exports', () => {
+  for (const r of kitRows.filter((x) => !x.fixture)) {
+    const sc = readShell(r.id);
+    const want = exportKit(r.id);
+    const tr = sc.rooms.training_room;
+    const got = {
+      npcs: tr.npcs.filter((n) => n.id.startsWith('kit_')),
+      objects: tr.objects.filter((o) => o.id.startsWith('kit_')),
+      globals: Object.fromEntries(Object.entries(sc.globalVariables).filter(([k]) => k.startsWith('kit_'))),
+      mappings: (hostOf(sc).eventMappings || []).filter(isKitMapping),
+      stepAway: sc.social.awarenessEpisode.stepAway === true,
+    };
+    for (const k of Object.keys(got)) assert.ok(JSON.stringify(got[k]) === JSON.stringify(want[k]), `${r.id}: ${k} differs from the tool's export`);
+  }
+});
+
+test('kit: the gate A fixture still carries everything the tool exports for it (it may add a chain on top)', () => {
+  const fx = kitRows.find((r) => r.fixture);
+  assert.ok(fx !== undefined);
+  const sc = readShell(fx.id);
+  const want = exportKit(fx.id);
+  const tr = sc.rooms.training_room;
+  const has = (list, e) => list.some((x) => JSON.stringify(x) === JSON.stringify(e));
+  const mappings = hostOf(sc).eventMappings;
+  for (const m of want.mappings) assert.ok(has(mappings, m), `mapping missing: ${JSON.stringify(m)}`);
+  for (const [k, v] of Object.entries(want.globals)) assert.ok(JSON.stringify(sc.globalVariables[k]) === JSON.stringify(v), `global ${k}`);
+  assert.ok(JSON.stringify(sc.chatter) === JSON.stringify(want.scenario.chatter));
+  assert.ok(sc.npcThoughts === false);
+  for (const n of want.npcs) assert.ok(tr.npcs.some((x) => x.id === n.id && x.chatter && JSON.stringify(x.chatter) === JSON.stringify(n.chatter)), n.id);
+  assert.ok(sc.social.awarenessEpisode.stepAway === true);
+});
+
+test('kit: tier none exports nothing, and a pinned shell has no kit row with a tier', () => {
+  const pinned = new Set([...pins.checkShells, ...pins.annualShells]);
+  for (const r of kitRows) assert.ok(!pinned.has(r.id), `${r.id} is pinned and must stay without a kit`);
+  for (const r of rowsFile.episodes) assert.ok(['none', 'S', 'T', 'O', 'E', undefined].includes(r.tier), r.id);
+});
+
+test('kit: each kit row matches its shell (stepAway, ambient ids, kit_ep)', () => {
+  for (const r of kitRows) {
+    const sc = readShell(r.id);
+    assert.ok((sc.social.awarenessEpisode.stepAway === true) === (r.stepAway === true), `${r.id}: stepAway`);
+    assert.ok(sc.globalVariables.kit_ep === r.ep, `${r.id}: kit_ep`);
+    const ids = sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_') && n.person).map((n) => n.person);
+    assert.ok(JSON.stringify(ids) === JSON.stringify(r.ambient), `${r.id}: ambient`);
+  }
+});
+
+test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell that carries a kit', () => {
+  const names = kitShellNames();
+  assert.ok(names.includes('test_ca_office_kit'));
+  const gate = JSON.stringify({ kit_quiet: false });
+  for (const name of names) {
+    const sc = readShell(name);
+    const tr = sc.rooms.training_room;
+    const where = (m) => `${name}: ${m}`;
+    // pools: object form under any gated key, kit_ pools always gated on kit_quiet:false
+    for (const [key, pool] of Object.entries(sc.chatter || {})) {
+      if (key.startsWith('kit_')) assert.ok(JSON.stringify(pool.requireGlobal) === gate, where(`top-level pool ${key}`));
+    }
+    for (const n of tr.npcs.filter((x) => x.id.startsWith('kit_'))) {
+      assert.ok(!('exchange' in n) && !('call' in n) && !('los' in n) && !('frustration' in n) && !('workarounds' in n), where(`${n.id} has banned fields`));
+      for (const [key, pool] of Object.entries(n.chatter || {})) {
+        assert.ok(!Array.isArray(pool) && Array.isArray(pool.lines), where(`${n.id} pool ${key} must be the object form`));
+        if (key.startsWith('kit_')) assert.ok(JSON.stringify(pool.requireGlobal) === gate, where(`${n.id} pool ${key} gate`));
+        for (const l of pool.lines) assert.ok(l.length <= 40 && !/[{}]/.test(l), where(`${n.id} line "${l}"`));
+      }
+      assert.ok(n.currentKnot === 'start' && n.storyPath.startsWith('scenarios/_office_kit/ink/'), where(`${n.id} stub`));
+      assert.ok(existsSync(join(root, n.storyPath)), where(`${n.id} storyPath exists`));
+    }
+    // the pool is spoken through the coffee topic, capacity 2
+    const coffee = tr.objects.find((o) => o.affordance && o.affordance.chatter);
+    assert.ok(coffee && coffee.affordance.chatter.startsWith('kit_') && coffee.affordance.capacity === 2, where('coffee topic, capacity 2'));
+    assert.ok(sc.npcThoughts === false, where('npcThoughts is a top-level false'));
+    // mappings: no ||, kit writes only, barks gated, both quiet releases with stepAway
+    const maps = (hostOf(sc).eventMappings || []).filter(isKitMapping);
+    for (const m of maps) {
+      assert.ok(!String(m.condition || '').includes('||'), where('no || in a condition'));
+      if (m.bark) assert.ok(/kit_defend_done|kit_[a-z0-9]+_out/.test(m.condition || ''), where('a bark is gated'));
+      if (m.eventPattern.endsWith('_state')) assert.ok(m.onceOnly === true && Object.keys(m.setGlobal).every((k) => k.startsWith('kit_')), where('state mappings set kit_ only, once'));
+    }
+    assert.ok(maps.some((m) => m.setGlobal && m.setGlobal.kit_defend_done === true), where('sets kit_defend_done'));
+    if (sc.social.awarenessEpisode.stepAway === true) {
+      const releases = maps.filter((m) => m.setGlobal && m.setGlobal.kit_quiet === false).map((m) => m.condition);
+      assert.ok(releases.includes("data.value.done.includes('debrief')"), where('debrief release'));
+      assert.ok(releases.includes('data.value.debriefSeen === true'), where('debriefSeen release'));
+      const kiosk = tr.objects.find((o) => o.type === 'kiosk');
+      const finished = (kiosk.observationVariants || []).map((v) => v.condition);
+      assert.ok(finished.includes('globalVars.kit_defend_done === true && globalVars.kit_quiet === false'), where('kiosk finished text keys on the kit'));
+    }
+  }
+});
+
+test('kit data: Brightwell pool lines and ambient ids are well formed', () => {
+  const kit = JSON.parse(readFileSync(join(AW, 'office_kits/brightwell_foods.json'), 'utf8'));
+  assert.ok(JSON.stringify(kit.pool.requireGlobal) === JSON.stringify({ kit_quiet: false }));
+  assert.ok(kit.pool.key === 'kit_brightwell');
+  for (const l of [...kit.pool.lines, ...Object.values(kit.staff).flatMap((s) => s.chatterLines)]) assert.ok(l.length <= 40 && !/[{}]/.test(l), l);
+  for (const r of kitRows.filter((x) => x.company === 'brightwell_foods')) {
+    for (const p of r.ambient) assert.ok(p in kit.staff, `${r.id}: ${p}`);
+  }
+});
