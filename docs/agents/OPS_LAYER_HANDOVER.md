@@ -37,7 +37,12 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**NEWEST-3, read this first.** Cross-plan R6 done and fixed (`3c3970c31`, `6634e49f8`,
+**NEWEST-4, read this first.** ALL SEVEN PLANS AND THE CROSS-PLAN CHECK SETTLED (`dd7dc92ea`;
+R7 nits left: CRACK:419/:720 "any source", PRIV keyringRev test row, CORE:2005 "thirteenth").
+Nothing running. Waiting on round 3 answers; then apply them (Sonnet per plan, opus55 delta where
+security), and act on R3-6/7/8 bug picks (new small branch → AC0 train).
+
+**NEWEST-3.** Cross-plan R6 done and fixed (`3c3970c31`, `6634e49f8`,
 `474292bd3`); Sonnet cross-plan R7 delta check running → `CROSS_PLAN_R7.md`. Bug-fix branch
 8aac59791 sent to AC0; AC0 queued it in the pre-release train (waits on AC1/AC4 items; AC0
 re-runs the two chatter JS tests if they fail again). Then: wait for round 3 answers on the
