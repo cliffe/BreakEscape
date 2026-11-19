@@ -361,6 +361,23 @@ export class DustingMinigame extends MinigameScene {
         this.addEventListener(cv, 'pointerup', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointercancel', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; if (this.nearPrint) this._clearNear(); } });
+        this._bindPanel();
+        this.addEventListener(document, 'keydown', e => this._onKeyDown(e));
+        this.addEventListener(document, 'keyup', e => this._onKeyUp(e));
+        this.addEventListener(window, 'resize', () => this._layout());
+        this.addEventListener(this.hcBox, 'change', () => {
+            this.highContrast = this.hcBox.checked; writeStore(STORE_HC, this.highContrast);
+            this.root.classList.toggle('dusting-hc', this.highContrast); this.dirty = true; this._drawKeyGlyphs();
+        });
+        this.addEventListener(this.steadyBox, 'change', () => {
+            this.steady = this.steadyBox.checked; writeStore(STORE_STEADY, this.steady);
+            this.field.fogRate = this.steady ? 0.5 : 1;
+            this.announce(this.steady ? 'Steady hand on: powder fogs half as fast.' : 'Steady hand off.');
+        });
+    }
+
+    /** The panel's click, hover and focus routes (split out so a test can wire them on a JSDOM panel). */
+    _bindPanel() {
         this.addEventListener(this.panel, 'click', e => {
             const el = e.target.closest('[data-action]');
             // a click with detail 0 comes from the keyboard (Enter or Space on a focused button); a pointer click has detail 1 or more
@@ -378,18 +395,6 @@ export class DustingMinigame extends MinigameScene {
         };
         this.addEventListener(this.panel, 'pointerover', e => zoomTo(e, false));
         this.addEventListener(this.panel, 'focusin', e => zoomTo(e, true));
-        this.addEventListener(document, 'keydown', e => this._onKeyDown(e));
-        this.addEventListener(document, 'keyup', e => this._onKeyUp(e));
-        this.addEventListener(window, 'resize', () => this._layout());
-        this.addEventListener(this.hcBox, 'change', () => {
-            this.highContrast = this.hcBox.checked; writeStore(STORE_HC, this.highContrast);
-            this.root.classList.toggle('dusting-hc', this.highContrast); this.dirty = true; this._drawKeyGlyphs();
-        });
-        this.addEventListener(this.steadyBox, 'change', () => {
-            this.steady = this.steadyBox.checked; writeStore(STORE_STEADY, this.steady);
-            this.field.fogRate = this.steady ? 0.5 : 1;
-            this.announce(this.steady ? 'Steady hand on: powder fogs half as fast.' : 'Steady hand off.');
-        });
     }
 
     _layout() {
@@ -927,8 +932,8 @@ export class DustingMinigame extends MinigameScene {
             this._renderPanel();
             this._drawCard();
             this.forensicEl.textContent = `${FORENSIC.compare} ${FORENSIC_MATCH}`;
+            if (viaKey) this._refocus('[data-action="finish"]');   // focus first, so a screen reader queues the message after the focus speech
             this.announce(`Match. This is ${this.ownerName}'s print. The numbered tags mark the same ridge detail on both cards.`);
-            if (viaKey) this._refocus('[data-action="finish"]');
         } else {
             c.rejected = true;
             this.zoomIdx = i;   // the zoom stays on the rejected card, now with its numbers and X marks
@@ -937,8 +942,8 @@ export class DustingMinigame extends MinigameScene {
                 ? 'No match: the ridge endings and forks near the core sit in different places. Compare them card by card.'
                 : mismatchReason(diff, this.liftFeatures, c.features);
             this._renderPanel();
+            if (viaKey) this._refocusAfterPick(i);   // focus first, then the polite message
             this.announce(this.message);
-            if (viaKey) this._refocusAfterPick(i);
         }
     }
 
@@ -1245,7 +1250,7 @@ export class DustingMinigame extends MinigameScene {
         if (this.step === 'powder' && ['1', '2', '3'].includes(lower)) { this._choosePowder(Object.keys(POWDERS)[Number(lower) - 1]); return; }
         if (this.step === 'compare' && this.patternOk && !this.identified && /^[1-9]$/.test(lower) && Number(lower) <= this.candidates.length) {
             e.preventDefault();
-            this._chooseRef(Number(lower) - 1);
+            this._chooseRef(Number(lower) - 1, !!(this.panel && this.panel.contains(document.activeElement)));
             return;
         }
         if (this.step === 'compare' && this.patternOk && lower === 'l' && !this._zoomShort) {

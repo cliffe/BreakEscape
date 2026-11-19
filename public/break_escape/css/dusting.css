@@ -47,10 +47,10 @@
 }
 
 /* The named scroll region: everything under the steps. In a frame capped to the screen (800x600, phone portrait) it is the only
-   part that scrolls. Its 6px padding is cancelled by the -6px margin (the outer size is unchanged) and gives a focus ring (3px
+   part that scrolls. Its 6px padding is cancelled by the -6px margin (the outer size is unchanged), is position: relative so the visually hidden status stays inside this scroller, and gives a focus ring (3px
    at offset 2px) room, because overflow clips at the padding edge; scroll-padding keeps a control scrolled into view 6px clear of the
    edge for the same reason. The frame's own padding is 8px or more. Short landscape lays the frame out as a grid and scrolls its own columns, so the body drops out of the box tree there. */
-.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px; margin: -6px; scroll-padding: 6px; }
+.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px; margin: -6px; scroll-padding: 6px; position: relative; }
 .dusting-short .dusting-body { display: contents; }
 
 /* padding-right keeps the title clear of the X in the frame's corner (critique A14) */
@@ -99,6 +99,7 @@
 .dusting-btn:hover:not(:disabled), .dusting-jar:hover, .dusting-pattern:hover, .dusting-ref:hover:not(:disabled) { border-color: var(--d-accent); }
 .dusting-btn:focus-visible, .dusting-jar:focus-visible, .dusting-pattern:focus-visible, .dusting-ref:focus-visible,
 .dusting-options input:focus-visible { outline: 3px solid var(--d-accent); outline-offset: 2px; }
+.dusting-ref:focus-visible, .dusting-jar:focus-visible, .dusting-pattern:focus-visible, .dusting-btn:not(.dusting-primary):focus-visible { position: relative; z-index: 2; }   /* a later sibling would paint over the ring's edge */
 .dusting-btn:disabled, .dusting-ref[data-rejected] { opacity: 0.55; cursor: not-allowed; }
 .dusting-ref:disabled:not([data-rejected]) { cursor: default; }
 /* After the match only the matched card is framed in the accent; the other (untried) cards stay on the line colour */

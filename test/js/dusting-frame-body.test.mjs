@@ -26,6 +26,7 @@ globalThis.window = { gameState: { globalVariables: {} }, innerWidth: 1280, inne
 globalThis.document = doc;
 globalThis.Image = class {};
 const { DustingMinigame } = await import(pathToFileURL(join(tmp, 'js/minigames/dusting/dusting-game.js')).href);
+const { zoomPlan, zoomBudgetH } = await import(pathToFileURL(join(tmp, 'js/minigames/dusting/dusting-model.js')).href);
 
 const mark = (type, x, y, dx, dy) => ({ type, x, y, dx, dy });
 const LONG = 'Bartholomew Featherstonehaugh-Smythe';
@@ -72,7 +73,15 @@ test('the root is a flex column that does not scroll; the body is the scroll reg
     assert.match(body, /flex: 1 1 auto/);
     assert.match(body, /padding: 6px; margin: -6px/, 'ring room, cancelled so the outer size does not change');
     assert.match(body, /scroll-padding: 6px/, 'a control scrolled into view stays clear of the edge, so its ring is not cut');
+    assert.match(body, /position: relative/, 'contains the visually hidden status (position: absolute) so it cannot add to the minigame container\'s scroll height');
     assert.match(css, /\.dusting-short \.dusting-body \{ display: contents; \}/);
+});
+
+test('a focused control is raised above its later siblings (the primary is excluded, it is sticky)', () => {
+    const m = css.match(/([^{}]*:focus-visible[^{}]*)\{[^}]*position: relative; z-index: 2;/);
+    assert.ok(m, 'a raise rule');
+    for (const c of ['.dusting-ref', '.dusting-jar', '.dusting-pattern', '.dusting-btn:not(.dusting-primary)']) assert.ok(m[1].includes(c + ':focus-visible'), c);
+    assert.ok(!/\.dusting-primary:focus-visible/.test(m[1].replace('.dusting-btn:not(.dusting-primary):focus-visible', '')), 'the sticky primary is not made relative');
 });
 
 test('short landscape scrolls the root, so it keeps a focused control 6px clear of the edge too', () => {
@@ -101,22 +110,25 @@ test('the status line is visually hidden (not display: none) on the desktop comp
 });
 
 test('_zoomLayout measures the body width (less its scrollbar) plus the root padding', () => {
-    const run = bodyClient => {
+    const budgetH = zoomBudgetH(window.innerHeight, 200);
+    const plan = rootW => zoomPlan({ side: 48, availW: rootW - 16 - 4, budgetH, maxS: 2 });
+    const key = p => `${p.W}/${p.S}/${p.stacked}`;
+    // find a root width where a 15px scrollbar crosses a plan step, so the old formula (root.clientWidth) gives another plan
+    let R = 0;
+    for (let w = 200; w <= 760 && !R; w++) if (key(plan(w)) !== key(plan(w - 15))) R = w;
+    assert.ok(R, 'a plan step exists in the scan range');
+    const run = (rootClient, bodyOffset, bodyClient) => {
         const g = compareGame();
         Object.assign(g, { zoomSide: 48, wide: false, _zoomChrome: () => 200 });
-        const bodyEl = { clientWidth: bodyClient, offsetWidth: 376 };
-        g.root = { clientWidth: 392, querySelector: s => (s === '.dusting-body' ? bodyEl : null) };
+        const bodyEl = { clientWidth: bodyClient, offsetWidth: bodyOffset };
+        g.root = { clientWidth: rootClient, querySelector: s => (s === '.dusting-body' ? bodyEl : null) };
         return g._zoomLayout(false);
     };
-    // body border box 376 = root content 364 + 12 of ring room; with a 15px scrollbar the width left is 15 less
-    const free = run(376), bar = run(361);
-    assert.ok(free.W >= bar.W);
-    // the same total through the formula: 361 + (392 - 376) = 377 = 392 - 15
-    const g = compareGame();
-    Object.assign(g, { zoomSide: 48, wide: false, _zoomChrome: () => 200 });
-    g.root = { clientWidth: 377, querySelector: () => null };
-    const direct = g._zoomLayout(false);
-    assert.deepEqual({ W: bar.W, S: bar.S, stacked: bar.stacked }, { W: direct.W, S: direct.S, stacked: direct.stacked }, 'a body scrollbar narrows the plan exactly as a narrower root would');
+    // body border box = root + 12 of ring room; the scrollbar takes 15 off its clientWidth
+    const bar = run(R, R + 12, R + 12 - 15), free = run(R, R + 12, R + 12);
+    assert.equal(key(bar), key(plan(R - 15)), 'a body scrollbar narrows the plan as a root 15px narrower would');
+    assert.equal(key(free), key(plan(R)));
+    assert.notEqual(key(bar), key(free), 'the scrollbar changes the plan, so the old root.clientWidth formula fails here');
 });
 
 test('cards: name, tag and state are text; aria-label and title equal the visible words; before the match', () => {
@@ -222,6 +234,72 @@ test('a mouse pick does not move focus', () => {
     assert.equal(doc.activeElement, before);
 });
 
-test('the panel click handler passes click detail 0 as a keyboard activation', () => {
-    assert.match(game, /this\._action\(el\.dataset\.action, el\.dataset, e\.detail === 0\)/);
+/** Wire the real panel routes (click, pointerover, focusin) on the JSDOM panel and count announcements. */
+function wired(labels) {
+    const g = compareGame(labels);
+    g.addEventListener = (t, ev, fn) => t.addEventListener(ev, fn);
+    g.gameState = { isActive: true };
+    g._drawZoom = () => {};
+    g._zoomSpeech = 'Card words.';
+    g._renderPanel();
+    g._bindPanel();
+    return g;
+}
+const click = (el, detail) => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, detail }));
+
+test('a click with detail 0 (Enter, Space, assistive tech) refocuses a control; detail 1 (a pointer) does not', () => {
+    const g = wired();
+    doc.body.focus();
+    const before = doc.activeElement;
+    click(g.panel.querySelector('.dusting-ref[data-index="0"]'), 1);
+    assert.equal(g.candidates[0].rejected, true);
+    assert.equal(doc.activeElement, before, 'a pointer click leaves focus alone');
+    const g2 = wired();
+    click(g2.panel.querySelector('.dusting-ref[data-index="0"]'), 0);
+    assert.equal(g2.candidates[0].rejected, true);
+    assert.equal(doc.activeElement.dataset.index, '1', 'a keyboard click puts focus on the next open card');
+});
+
+test('the refocus guard: a keyboard pick neither moves the zoom nor announces over the message; a plain Tab does', () => {
+    const g = wired();
+    g.panel.querySelector('.dusting-ref[data-index="0"]').focus();   // focusin zooms to card 0 and speaks it
+    assert.equal(g.zoomIdx, 0);
+    g.announced.length = 0;
+    click(g.panel.querySelector('.dusting-ref[data-index="0"]'), 0);
+    assert.equal(doc.activeElement.dataset.index, '1');
+    assert.equal(g.zoomIdx, 0, 'the focusin on card 2 did not move the zoom');
+    assert.equal(g.announced.length, 1, 'only the mismatch message was announced');
+    assert.match(g.announced[0], /No match|differ|pattern/);
+    g.panel.querySelector('.dusting-ref[data-index="2"]').focus();   // a Tab onto another card
+    assert.equal(g.zoomIdx, 2);
+    assert.equal(g.announced.at(-1), 'Card words.');
+});
+
+test('focus moves before the message is announced (a focus change can cut queued speech)', () => {
+    const g = wired();
+    const seen = [];
+    g.announce = m => seen.push({ m, focus: doc.activeElement && doc.activeElement.dataset.index });
+    g._action('ref', { index: '0' }, true);
+    assert.equal(seen.at(-1).focus, '1', 'focus was already on card 2 when the message went out');
+    const h = wired();
+    const seen2 = [];
+    h.announce = m => seen2.push({ m, action: doc.activeElement && doc.activeElement.dataset.action });
+    h._action('ref', { index: '2' }, true);
+    assert.equal(seen2.at(-1).action, 'finish');
+});
+
+test('number keys 1 to n pick a card and keep keyboard focus; with no focus in the panel they do not pull it in', () => {
+    const g = wired();
+    g.panel.querySelector('.dusting-ref[data-index="0"]').focus();
+    g._onKeyDown({ key: '1', target: doc.activeElement, preventDefault() {} });
+    assert.equal(g.candidates[0].rejected, true);
+    assert.equal(doc.activeElement.dataset.index, '1', 'focus lands on the next open card, not the page');
+    g._onKeyDown({ key: '3', target: doc.activeElement, preventDefault() {} });
+    assert.equal(g.identified, true);
+    assert.equal(doc.activeElement.dataset.action, 'finish');
+    const h = wired();
+    doc.body.focus();
+    h._onKeyDown({ key: '1', target: doc.body, preventDefault() {} });
+    assert.equal(h.candidates[0].rejected, true);
+    assert.ok(!h.panel.contains(doc.activeElement), 'a pick with focus outside the panel does not grab focus');
 });
