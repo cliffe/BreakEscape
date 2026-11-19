@@ -81,6 +81,6 @@ test('a label with markup is set as text, not parsed', () => {
     const { ui, bar } = overlay({ videoLabel: '<b>x</b>' });
     const link = bar.querySelector('.person-chat-vc-link');
     assert.equal(link.textContent, '<b>x</b>');
-    assert.equal(link.querySelector('b'), null, 'the value is not parsed as HTML');
+    assert.ok(link.querySelector('b') === null, 'the value is not parsed as HTML');
     done(ui);
 });

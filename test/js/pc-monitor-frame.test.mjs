@@ -248,7 +248,7 @@ test('a mid-flow cleanup() (lockout screen) keeps the frame snap and pc-view; th
         const hadView = !!document.querySelector('.pc-view');
         mg.signInLockedOut?.();
         assert.equal(live.size, before, 'the lockout screen keeps its observers');
-        assert.equal(!!document.querySelector('.pc-view'), hadView, 'pc-view stays on the container');
+        assert.ok(!!document.querySelector('.pc-view') === hadView, 'pc-view stays on the container');
         mg._ending = true;
         mg.cleanup();
         assert.equal(live.size, 0, 'the real end releases them');
@@ -588,7 +588,7 @@ test('a PC\'s sign-in screen and its desktop use the same frame, at the same siz
             assert.equal(document.querySelector('.pc-monitor').style.width, `${m.width}px`, `${w}x${h}: sized by the metrics`);
             // The desktop's X is in the bezel; its Close button is gone; Add to Notepad is in the chin
             assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the X in the bezel');
-            assert.equal(document.getElementById('minigame-cancel'), null, 'no Close beside the X');
+            assert.ok(document.getElementById('minigame-cancel') === null, 'no Close beside the X');
             assert.ok(document.querySelector('.pc-monitor-controls #minigame-notebook-postit'), 'Add to Notepad in the chin');
             assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
             b.cleanup?.();
@@ -628,7 +628,7 @@ test('the desktop\'s taskbar shows the signed-in NPC\'s headshot (x1), the start
     try {
         await desktop();
         await settle(5); await settle(5);
-        assert.equal(document.querySelector('.pc-desktop-topbar'), null, 'no top bar for a password session');
+        assert.ok(document.querySelector('.pc-desktop-topbar') === null, 'no top bar for a password session');
         const box = document.querySelector('.pc-taskbar .pc-taskbar-headshot');
         assert.ok(box, 'a headshot in the taskbar');
         assert.equal(box.dataset.headshot, 'male_office_worker_v2');
@@ -686,7 +686,7 @@ test('R1 M1: the mounted frame grows its chin to the note, and keeps that height
             a.cleanup?.();
             // The same PC's desktop with no note on it: the same frame
             const b = await desktop({ showPostit: false });
-            assert.equal(document.querySelector('.pc-monitor-postit'), null);
+            assert.ok(document.querySelector('.pc-monitor-postit') === null);
             const desk = JSON.parse(frameBox());
             const was = JSON.parse(signIn);
             assert.deepEqual(desk.root, was.root, `${w}x${h}: same size and place without the note`);
@@ -759,8 +759,8 @@ test('UI PC polish 1: the desktop does not repeat the PC\'s observations, howeve
     const long = 'A shared hot desk PC. Anyone with an account can sign in here, and the last user left a sticky note about the payroll share on the second floor.';
     try {
         await desktop({ observations: long });
-        assert.equal(document.querySelector('.desktop-taskbar-note'), null, 'no description on the desktop');
-        assert.equal(document.querySelector('.pc-desktop-status'), null, 'no strip for it');
+        assert.ok(document.querySelector('.desktop-taskbar-note') === null, 'no description on the desktop');
+        assert.ok(document.querySelector('.pc-desktop-status') === null, 'no strip for it');
         assert.ok(!document.querySelector('.pc-desktop').textContent.includes('payroll share'), 'the words are not on the desktop');
     } finally {
         restore();
@@ -840,11 +840,11 @@ test('R2 m4 / slice 6 / UI PC polish 1: no description strip, with or without ob
     const restore = sizeWindow(390, 844);
     try {
         const a = await desktop({ observations: '' });
-        assert.equal(document.querySelector('.pc-desktop-status'), null, 'no empty strip');
+        assert.ok(document.querySelector('.pc-desktop-status') === null, 'no empty strip');
         assert.ok(document.querySelector('.pc-desktop > .pc-taskbar'), 'the taskbar');
         a.cleanup?.();
         const b = await desktop({ observations: 'A hot desk.' });
-        assert.equal(document.querySelector('.pc-desktop-status'), null, 'a description gets no strip (item 1)');
+        assert.ok(document.querySelector('.pc-desktop-status') === null, 'a description gets no strip (item 1)');
         b.cleanup?.();
     } finally {
         restore();
@@ -979,7 +979,7 @@ test('UI PC polish 2: a word too wide for the label ends in an ellipsis; the who
     // refitting from the cut state restores the whole name first
     label.dataset.fullName = 'Short name';
     assert.equal(fitIconLabel(label), 'fits');
-    assert.equal(label.querySelector('.desktop-icon-word'), null);
+    assert.ok(label.querySelector('.desktop-icon-word') === null);
     assert.equal(label.getAttribute('title'), null);
     assert.equal(label.classList.contains('desktop-icon-label-cut'), false);
 });
@@ -1005,7 +1005,7 @@ test('Icon labels: a name that wraps in full shows no title and no cut class; th
     hostile.textContent = '<img src=x onerror=1>_a.b';
     stubWidths(hostile);
     fitIconLabel(hostile);
-    assert.equal(hostile.querySelector('img'), null);
+    assert.ok(hostile.querySelector('img') === null);
     assert.equal(plain(hostile.textContent).replace('…', ''), '<img src=x onerror=1>_a.b'.slice(0, plain(hostile.textContent).replace('…', '').length));
 });
 
@@ -1563,18 +1563,18 @@ test('R3 M2: a file opened from a PC desktop opens in that PC\'s monitor frame; 
             assert.equal(document.getElementById('minigame-notebook-postit').title, '', 'no title repeating the visible label');
             assert.equal(document.querySelector('.pc-monitor-name').textContent, 'Hot desk PC');
             assert.ok(document.querySelector('.pc-monitor-bezel > #minigame-close'), 'the X in the bezel');
-            assert.equal(document.querySelector('.window-controls'), null, 'no window buttons');
+            assert.ok(document.querySelector('.window-controls') === null, 'no window buttons');
             assert.equal(document.querySelector('.share-folder-path').textContent, 'Mail export.txt');
             for (const id of ['copy-btn', 'minigame-notebook']) {
                 assert.ok(document.getElementById(id).classList.contains('pc-os-btn'), id);
             }
             // R4 m4: no Select All in the monitor (Copy takes the whole file)
-            assert.equal(document.getElementById('select-all-btn'), null);
+            assert.ok(document.getElementById('select-all-btn') === null);
             assert.equal(document.querySelector('.pc-file-status').textContent, 'An inbox.');
             assert.match(document.querySelector('.pc-file-body').textContent, /Line one/);
             mg.notify('Copied.');
             assert.equal(document.querySelector('.pc-file-message').textContent, 'Copied.', 'results on the toolbar, not a toast');
-            assert.equal(document.querySelector('.minigame-success-message'), null);
+            assert.ok(document.querySelector('.minigame-success-message') === null);
             mg.cleanup();
             assert.equal(document.getElementById('mg').classList.contains('pc-view'), false, 'the frame goes with cleanup');
         } finally {
@@ -1585,7 +1585,7 @@ test('R3 M2: a file opened from a PC desktop opens in that PC\'s monitor frame; 
     document.body.innerHTML = '<div id="mg"></div>';
     const world = new TextFileMinigame(document.getElementById('mg'), { title: 'x', fileName: 'Memo', fileContent: 'x', lockable: { scenarioData: {} } });
     world.init();
-    assert.equal(document.querySelector('.pc-monitor'), null);
+    assert.ok(document.querySelector('.pc-monitor') === null);
     assert.ok(document.querySelector('.text-file-container'));
     assert.ok(document.getElementById('select-all-btn'), 'the old viewer keeps Select All');
     world.cleanup();
@@ -1930,7 +1930,7 @@ test('UI quick: the chin button reads Add Postit to notepad on the sign-in scree
         });
         window.MinigameFramework.currentMinigame = mg;
         mg.init();
-        assert.equal(document.querySelector('.pc-monitor'), null, 'a safe is not a monitor');
+        assert.ok(document.querySelector('.pc-monitor') === null, 'a safe is not a monitor');
         assert.equal(label(), 'Add to Notepad', 'non-PC lock');
         mg.cleanup?.();
     } finally {
@@ -2101,7 +2101,7 @@ test('Icon labels: a trailing separator travels with the letter before it in a n
         }
     }
     assert.equal(label.dataset.fullName, name, 'full name kept');
-    assert.equal(label.querySelector('img'), null);
+    assert.ok(label.querySelector('img') === null);
     // A title is set exactly when the name is cut; either way the test says which
     if (label.classList.contains('desktop-icon-label-cut')) assert.equal(label.getAttribute('title'), name, 'cut label carries the full name as title');
     else assert.equal(label.getAttribute('title'), null, 'uncut label has no title');

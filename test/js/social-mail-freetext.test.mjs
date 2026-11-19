@@ -129,7 +129,7 @@ test('bodyMode freeText shows the box; the default (templates) does not', () => 
 
     const off = makeComposer({});
     assert.equal(off.composer.freeTextEnabled, false);
-    assert.equal(off.host.querySelector('textarea.mail-compose-freetext'), null, 'no box by default');
+    assert.ok(off.host.querySelector('textarea.mail-compose-freetext') === null, 'no box by default');
 });
 
 test('freeTextFlavour true is the same switch as bodyMode freeText', () => {
@@ -156,7 +156,7 @@ test('typing updates state without a re-render, so the caret stays in the box', 
     area.value = 'half a sentence';
     area.dispatchEvent(new host.ownerDocument.defaultView.Event('input'));
     // The same textarea node is still on the page (no render() tore it down and rebuilt it).
-    assert.equal(host.querySelector('textarea.mail-compose-freetext'), area);
+    assert.ok(host.querySelector('textarea.mail-compose-freetext') === area);
     assert.equal(composer.freeText, 'half a sentence');
 });
 
@@ -268,7 +268,7 @@ test('end to end: with the box off, nothing stray is stored even if the message 
     clock = 0;
     const { scene, scheduler, host } = openClient({});
     scene.openCompose();
-    assert.equal(host.querySelector('textarea.mail-compose-freetext'), null);
+    assert.ok(host.querySelector('textarea.mail-compose-freetext') === null);
     scene.composer.setAttachment('kit_cv');
     host.querySelector('.mail-compose-send').click();
     const sent = sentRecords(scheduler);
@@ -301,9 +301,9 @@ test('hostile learner/host text in a mail body and subject renders as literal te
     assert.ok(body && subject, 'body and subject rendered');
 
     // No element node was created from the hostile strings.
-    assert.equal(body.querySelector('script'), null, 'no script element in the body');
-    assert.equal(body.querySelector('img'), null, 'no img element in the body');
-    assert.equal(subject.querySelector('script'), null, 'no script element in the subject');
+    assert.ok(body.querySelector('script') === null, 'no script element in the body');
+    assert.ok(body.querySelector('img') === null, 'no img element in the body');
+    assert.ok(subject.querySelector('script') === null, 'no script element in the subject');
     assert.equal(body.querySelectorAll('script,img,iframe,object,svg').length, 0);
 
     // The characters are shown exactly as typed, braces and angle brackets included.

@@ -121,11 +121,11 @@ test('the call card lists the claims by label, as text', () => {
     // a value that looks like markup goes in as text
     const evil = renderKindSurface({ id: 'e', kind: 'call', claims: [{ fact: 'who', value: '<img src=x>' }], transcript: [] },
         { showNote() {}, showLink() {}, bodyNode: () => document.createElement('div') });
-    assert.equal(evil.querySelector('img'), null);
+    assert.ok(evil.querySelector('img') === null);
     assert.equal(evil.querySelector('.tri-claim-value').textContent, '<img src=x>');
     // no claims: no claims block
     const none = renderKindSurface({ id: 'n', kind: 'call', transcript: [] }, { showNote() {}, showLink() {}, bodyNode: () => null });
-    assert.equal(none.querySelector('.tri-call-claims'), null);
+    assert.ok(none.querySelector('.tri-call-claims') === null);
     assert.equal(claimLabel('cost_centre'), 'Cost centre');
     assert.equal(claimLabel('employeeRef'), 'Employee ref');
 });

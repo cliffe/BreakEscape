@@ -94,7 +94,7 @@ test('without aftermath the flip is the same as before (message, page, call, mis
         const h = host();
         const v = renderFlipView(h, { ...props, strings: {}, onContinue() {} });
         assert.deepEqual(v.getState().parts, parts);
-        assert.equal(h.querySelector('.aw-flip-aftermath'), null);
+        assert.ok(h.querySelector('.aw-flip-aftermath') === null);
         const markup = h.innerHTML;
         const w = host();
         const v2 = renderFlipView(w, { ...props, aftermath: null, strings: {}, onContinue() {} });
@@ -115,9 +115,9 @@ test('with aftermath and a message: parts are message, aftermath; one item each;
     const row = items[0];
     assert.ok(row.textContent.includes('finance@fixture.example'));
     assert.ok(row.textContent.includes('Invoice <b>attached</b>'), 'strings go in as text');
-    assert.equal(row.querySelector('b'), null);
+    assert.ok(row.querySelector('b') === null);
     assert.ok(!row.textContent.includes('SHOULD NOT SHOW'), 'no body');
-    assert.equal(row.querySelector('a'), null, 'no link');
+    assert.ok(row.querySelector('a') === null, 'no link');
     assert.ok(row.textContent.includes('Kieran did not write this.'));
     assert.ok(items[1].querySelector('[data-kind-surface="push"]'));
     assert.ok(items[1].textContent.includes('Authenticator'));
@@ -132,12 +132,12 @@ test('no aftermath on missed, landedNoTells or noSend; invalid items are dropped
     for (const props of [{ missed: true }, { landedNoTells: true }, {}, { message: sent(), missed: true }]) {
         const h = host();
         renderFlipView(h, { ...props, aftermath: aftermath(), strings: {}, onContinue() {} });
-        assert.equal(h.querySelector('.aw-flip-aftermath'), null, JSON.stringify(Object.keys(props)));
+        assert.ok(h.querySelector('.aw-flip-aftermath') === null, JSON.stringify(Object.keys(props)));
     }
     const h = host();
     const v = renderFlipView(h, { message: sent(), aftermath: { items: [{ kind: 'email' }, { id: 'x', kind: 'weird' }, 'no'] }, strings: {}, onContinue() {} });
     assert.deepEqual(v.getState().parts, ['message']);
-    assert.equal(h.querySelector('.aw-flip-aftermath'), null);
+    assert.ok(h.querySelector('.aw-flip-aftermath') === null);
 });
 
 test('flipAftermathFor: null for landed false and for an episode with no block', () => {
