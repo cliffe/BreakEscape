@@ -1113,6 +1113,24 @@
     .phone-call-mode #conversation-view.call-has-choices .messages-container > .call-subtitle.narrator { opacity: 0.75; }
 }
 
+/* Short screens (501 to 680 px: a 1366x768 laptop's browser, 800x600): with a long reply tell under the
+   contact's line the three-line influence legend left the replies about 10 px of room. The legend
+   goes visually hidden here, as in landscape (the words stay for screen readers; the bar's marks and
+   the change line still show) and the replies get their room back. */
+@media (500px < height <= 680px) {
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
 /* Phones held sideways (about 390 px tall): the frame is about 270 px, less than the header, the
    thread's 96 px and the replies' 64 px together, so the second reply fell below the frame and a
    tap there reached Add to Notepad. The thread gives way first and the replies take what is

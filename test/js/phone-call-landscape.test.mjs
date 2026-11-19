@@ -262,7 +262,7 @@ check('portrait and tall-desktop (over 820px) base call rules are unchanged', ()
     assert.match(B('.phone-call-mode .conversation-header'), /padding:\s*16px/);
     assert.match(B('.phone-call-mode .call-status-bar'), /padding:\s*8px 14px/);
     // call mode rules live only in the two exact blocks (shared end-button, taller than 500px) (nothing in the tablet block)
-    assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.media !== DESK_MEDIA && r.selector.includes('phone-call-mode')));
+    assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.selector.includes('phone-call-mode')));
 });
 
 check('landscape call: the influence bar stacks (head over a full-width track) inside the 40px header row', () => {
@@ -406,9 +406,21 @@ check('desktop-height call: height budget at 1280x720, 1366x657 and 800x600 (end
     // the button is out of the flow, so it is on screen even where the stack no longer fits
     assert.match(L('.call-controls').body, /position:\s*absolute/);
 });
+check('short-screen call (501 to 680px): the influence legend is visually hidden, not removed, and wins the cascade', () => {
+    const short = all.filter(r => r.media === '@media (500px < height <= 680px)');
+    assert.equal(short.length, 1);
+    const sel = V + ' .se-chat-header .ib-infl-legend';
+    assert.equal(short[0].selector, sel);
+    assert.match(short[0].body, /clip:\s*rect\(0 0 0 0\)/);
+    assert.doesNotMatch(short[0].body, /display:\s*none|visibility:\s*hidden/, 'stays in the accessibility tree');
+    beats(sel, '.conversation-header .ib-infl-legend');
+    assert.ok(!all.some(r => r.media === '' && /ib-infl-legend/.test(r.selector) && /clip/.test(r.body)), 'the legend is only hidden on short screens');
+    // 800x600 budget with the legend hidden: status 36 + header 236 - legend (about 70) + thread max 112 + replies 64 + cue 25
+    assert.ok(36 + (236 - 70) + px(D(CH + ' .messages-container').body, 'max-height') + 64 + 25 <= screenAt(600));
+});
 check('desktop-height call: no radius, blur or gradient', () => {
     assert.ok(desk.length > 0 && shared.length > 0);
-    for (const r of desk.concat(shared)) assert.doesNotMatch(r.body, /border-radius|blur|gradient/, r.selector);
+    for (const r of desk.concat(shared, all.filter(x => x.media === '@media (500px < height <= 680px)'))) assert.doesNotMatch(r.body, /border-radius|blur|gradient/, r.selector);
 });
 
 console.log(`\n${pass} checks passed`);
