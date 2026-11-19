@@ -1158,12 +1158,14 @@
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-state { display: none; }
 }
 
-/* Influence (pretext) calls on screens up to 820 px tall: the compact header, the 64px portrait in a
-   row with the name, in both phases. The large 128px stage portrait plus the influence panel needs
-   about 410px, more than the slot the thread and controls leave (about 295px at 1280x720), so it
-   spilled up under the status bar and down over the tell. Here the speaking bars sit beside the
-   name and the caption is folded. */
-@media (min-height: 500.02px) and (max-height: 820px) {
+/* Influence (pretext) calls on every screen taller than 500 px: the compact header, the 64px
+   portrait in a row with the name, in both phases. The large 128px stage portrait plus the
+   influence panel needs about 410px, more than the slot the thread and controls leave (about 295px
+   at 1280x720). Measured live after a scored reply, the large portrait still spilled 80px at
+   1920x1080 and 390x844 (the phone screen stops at 700px tall), with the influence panel over the
+   thread, so there is no taller exception. The speaking bars sit beside the name and the caption is
+   folded. Ordinary calls (no influence bar) keep the large portrait. */
+@media (min-height: 500.02px) {
     .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header {
         flex: 0 0 auto;
         flex-direction: row;
