@@ -42,7 +42,7 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 content check); core loader fails closed with a fault list `332e2f005`; skin R13 delta 0/5/3
 `d1ecba417`, fixed `caa6640bd`, `9052beca8`; cross-plan R8 0/3/4 `0332427ad`, fixed `780b2cc95`.
 Bug fix R3-6: `fix/knockout-drop-item-id` `b3749f058` (worktree p-knockout-drop), Rails 3571/0
-fail; send to AC0 for a train once bin/test-js is clean (log in scratchpad js.log). R3-7 noted only.
+fail, test-js 886/0; sent to AC0 for a train (2026-11-19). R3-7 noted only.
 Nothing else running. Next: wait for the user (build go-ahead, or further rounds).
 
 **NEWEST-7.** Skin catalog done `b0ccefae4` (1811); core took requests 3 and 5
