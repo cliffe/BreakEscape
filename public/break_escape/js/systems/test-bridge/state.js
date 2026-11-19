@@ -758,7 +758,8 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
-            const dir = quantiseDirection((target ? aimX(target) : targetX) - sx, targetY - sy); // the game faces the object's centre
+            // A click faces from the body to the object's top edge (core/game.js useObjectInReach)
+            const dir = quantiseDirection((target ? aimX(target) : targetX) - sx, targetY - sy);
             const off = interactionOffset(dir);
             // Two conditions, and PLAIN distance is the binding one. A click
             // gathers only interactables within plain range; with one it acts

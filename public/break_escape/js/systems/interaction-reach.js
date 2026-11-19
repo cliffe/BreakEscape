@@ -89,6 +89,58 @@ export function aimX(sprite) {
 }
 
 /**
+ * The y to aim the facing angle at: the vertical centre of the object, the
+ * counterpart of aimX. A scenario object's origin is its top-left, so aiming at
+ * sprite.y read a short prop's top edge as far off the player's facing (the
+ * 30px safe beside the 47px cabinet in m01). Doors, NPCs and sprites without
+ * scenario data keep sprite.y.
+ */
+export function aimY(sprite) {
+    if (!sprite || !Number.isFinite(sprite.y)) return sprite ? sprite.y : 0;
+    if (sprite._isNPC || sprite.doorProperties || !sprite.scenarioData) return sprite.y;
+    if (sprite.rotation && typeof sprite.getBounds === 'function') {
+        try {
+            const b = sprite.getBounds();
+            if (b && b.height > 0) return b.centerY ?? (b.top + b.height / 2);
+        } catch (e) { /* fall through */ }
+    }
+    const h = sprite.displayHeight ?? sprite.height ?? 0;
+    if (!(h > 0)) return sprite.y;
+    return sprite.y - (sprite.originY ?? 0.5) * h + h / 2;
+}
+
+/** Scenario objects shorter than this (px) may be aimed at from the body to the top edge (aimDiff). */
+export const BODY_AIM_MAX_PX = 40;
+
+/**
+ * How far off the player's facing a scenario object is, and the aim point that gave it (E and the E label
+ * both score with this, so they cannot disagree). The aim is the feet to the object's centre. A prop shorter
+ * than BODY_AIM_MAX_PX also gets the older body-to-top-edge aim, and the smaller angle wins: a player level
+ * with a low prop beside them faces it from the body, which the feet angle alone calls 45 degrees off. Taller
+ * props never use the body aim: its angle to a tall top edge reads almost straight up and beat a short
+ * neighbour's feet angle. Not for doors or NPCs. `facingAngle` is degrees, right 0, down 90.
+ * Returns { diff, x, y, fromX, fromY }.
+ */
+export function aimDiff(player, target, faceX, faceY, facingAngle) {
+    const c = player?.body?.center;
+    const foot = c && Number.isFinite(c.x) && Number.isFinite(c.y) ? c : { x: player.x, y: player.y };
+    const diffFrom = (x, y, fromX, fromY) => {
+        let a = Math.atan2(y - fromY, x - fromX) * 180 / Math.PI;
+        a = (a + 360) % 360;
+        let d = Math.abs(facingAngle - a);
+        if (d > 180) d = 360 - d;
+        return d;
+    };
+    const feetAim = { x: faceX, y: faceY, fromX: foot.x, fromY: foot.y };
+    feetAim.diff = diffFrom(feetAim.x, feetAim.y, feetAim.fromX, feetAim.fromY);
+    const h = target?.displayHeight ?? target?.height ?? 0;
+    if (h >= BODY_AIM_MAX_PX || !Number.isFinite(target?.y)) return feetAim;
+    const bodyAim = { x: faceX, y: target.y, fromX: player.x, fromY: player.y };
+    bodyAim.diff = diffFrom(bodyAim.x, bodyAim.y, bodyAim.fromX, bodyAim.fromY);
+    return feetAim.diff <= bodyAim.diff ? feetAim : bodyAim;
+}
+
+/**
  * Drop swivel chairs from a tap's pick list when anything else was gathered with
  * them: a chair pushed under a desk shouldn't turn "the keyboard" into a
  * "Mail Workstation / chair" menu. Chairs on their own are left as they are.
