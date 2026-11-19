@@ -173,7 +173,7 @@ accounts that use the PC, and installing a device the USB policy refuses at the 
 policy is read (implant path, plant proof, client `plantRefusal`), only for an unlocked admin
 session at the PC's own keyboard. Answers carry `access: "admin"` when the level is admin; the core
 plan's step up reads the level through this helper. S5a does not need S3: the administrator account
-gives a real admin session through the real sign-in route. Whichever of S5a and S3 lands first adds
+gives a real admin session through the real sign-in route. S3 lands first, and the core plan adds
 the `access:` keyword to `login_session_answer` (section 5). The first commit of S5a is the
 unchanged-scenario test (section 10).
 
@@ -527,24 +527,34 @@ action and the plant proof for USB); S5c's check rides `POST /login` and the key
 `foothold`, `from`, read by `desktop_route_params`), sent exactly as for the desktop it is on.
 Runs under the game lock, as the other writing routes do.
 
+Refusals follow the ops convention: `{ success: false, reason: "not_admin" | "locked" |
+"not_reachable" | "bad_request" }`. The 404 body of check 2 mirrors `GET /container` on purpose (so
+a real and an invented id look alike) and stays as that route gives it.
+
 Checks in order:
-1. `pc_id` missing, not a string or too long → 400 `Missing pc_id`;
+1. `pc_id` missing, not a string or too long → 400 `{ success: false, reason: "bad_request" }`;
 2. not a sign-in PC in a room (`find_login_pc`), or no session record at it
    (`access_sessions[pc_id]`, the raw record) → 404 `Container not found: <pc_id>`, the answer
    `GET /container` gives an invented id (`render_error`, `games_controller.rb:641-644`). A browser
    with no session gets the same answer for a real and an invented PC id, the echoed id aside;
 3. the route params conflict, or `desktop_request_allowed?(info, route)` (`network_access.rb:1495`)
-   refuses → 403 `{ error: "PC not reachable" }`, one body where the desktop gives one per reason
-   (`GC:3149-3162`). This is the desktop's own reach gate, which already refuses an expired token
+   refuses → 403 `{ success: false, reason: "not_reachable" }`, one body where the desktop gives
+   one per reason (`GC:3149-3162`; the desktop's own bodies stay as they are). This is the desktop's own reach gate, which already refuses an expired token
    and a dead route, so terms the core plan adds to it apply here too; a headless host is collected
    through its remote desktop's route;
-4. the session is locked (`session_locked?(pc_id)`) → 422 `{ error: "Sign in required", locked:
-   true }`;
+4. the session is locked (`session_locked?(pc_id)`) → 422 `{ success: false, reason: "locked" }`;
 5. `session_access(pc_id)` nil for any other reason (the account is gone) → 403
-   `{ error: "PC not reachable" }`;
-6. `session_access(pc_id)` is `"user"` → 422 `{ error: "Administrator access required",
-   notAdmin: true }`;
+   `{ success: false, reason: "not_reachable" }`;
+6. `session_access(pc_id)` is `"user"` → 422 `{ success: false, reason: "not_admin" }`;
 7. `harvest_cached_credentials!(pc_id)`; `save!` only when a pair was added.
+
+The route opens no lockable object (it acts on a sign-in PC's session, not on a container or
+item), so it does not call `record_step_open!` or `step_object_open?`; S5 opens objects by no route
+of its own.
+
+Policy and game lookup: `GamePolicy#harvest_credentials?` (the same rule as `keyring?`), the action
+name added to `DEVICE_ACTIONS`, and `harvest_credentials` added to the `before_action :set_game`
+list in `games_controller.rb`, so the route is authorised and finds its game.
 
 Answer: `200 { success: true, harvested: [ { npcId, displayName, portrait, avatar, as } ],
 held: [ ... same shape ], keyringRev }`, where `harvested` is what this call added, `held` is every
@@ -648,8 +658,10 @@ unchanged.
   `x-serverOnly`) and `domain` (string, same pattern, sent).
 - Nothing on `policies`.
 
-**Validator** (`scripts/validate_scenario.rb`). This plan's checks go in `check_access_model`
-(`:7642`) except the hash pairing, which goes in `check_credentials` (`:7304`):
+**Validator** (new file `scripts/validate_privilege.rb`, one function `check_privilege(json_data)`,
+required and run from `scripts/validate_scenario.rb` by one line beside the core plan's
+`check_network_ops` call; the checks read through `CredentialModel` and do not edit
+`check_access_model` or `check_credentials`):
 - `cachedAccounts`: each `npc` is an account holder; no duplicates; the PC is a sign-in PC; the
   owner may be listed (that is how it becomes collectable). An `after: "borrow"` candidate on a PC
   with an `owner` or on a headless PC, error (the engine never performs that borrow,
@@ -696,7 +708,8 @@ unchanged.
 **Dungeon graph** (`scripts/generate_dungeon_graph.rb`, beside the `password` habit edges at
 `:427-450`; reach input `AccessIdentities.reach`, `lib/break_escape/access_identities.rb:291-306`).
 New node `admin@<pcId>` for each PC with an admin path, with edges from each administrator account
-admitted there and from the core plan's step-up weakness. New edges `admin@<pcId>` → `<npcId>
+admitted there and from every weakness whose grant has `access: admin` (the core plan's step-up;
+before S5a lands, the core plan ends such a weakness at `lock_<pcId>`). New edges `admin@<pcId>` → `<npcId>
 password` (or the hash record) for each cached account, labelled "collect", and, for `after:
 "borrow"`, a second input from the borrow workaround. `reach` treats a collected account like a
 captured one, so a shared local administrator or a domain administrator shows every PC it opens. No
@@ -707,7 +720,7 @@ password text in any label.
 A scenario that sets none of the new fields behaves exactly as before:
 - **S5a.** No account has `creds.admin` and no technique session exists, so `session_access` never
   answers admin, no session answer gains `access`, and every admin branch is a guard not taken.
-- **S5b.** No `cachedAccounts` and no admin, so the collect route answers 422 `notAdmin` and
+- **S5b.** No `cachedAccounts` and no admin, so the collect route answers 422 `reason: "not_admin"` and
   `cachedAt`, `harvestedAccounts` stay empty. `record_borrow_done!` adds nothing without a declared
   candidate. The keyring row helper lists the same capture rows, in the same order, with the same
   fields, so `rev` is unchanged.
@@ -718,22 +731,16 @@ A scenario that sets none of the new fields behaves exactly as before:
 **Proof.** `test/integration/ops_privilege_unchanged_test.rb` replays fixed request sequences on
 `test_access_signin`, `test_access_sessions`, `test_access_keyring` and `test_access_social` (sign-in,
 lock, unlock, keyring sign-in, borrow "done", implant, `GET /container`, `GET /keyring`) and compares
-the server state and every answer body with golden files under `test/fixtures/ops_privilege_golden/`.
-The test is the first commit of S5a, before any engine change. The proof for each stage is a
-comparison between two commits, which the stage's review runs on the hash to be merged:
-`bin/ops-golden-compare <stage>` takes as parent `git merge-base main <stage>` after the stage's
-last merge of `main`. In a scratch worktree under `tmp/` at the parent's engine code, with the
-stage's `ops_privilege_unchanged_test.rb` and golden helper copied in, it records the golden files
-(`RECORD_GOLDEN=1`) into the directory `OPS_GOLDEN_DIR` names, runs the same test against it in a
-second `tmp/` worktree at the stage's commit, and removes both with `git worktree remove`; it never
-writes the checked-in golden files. It runs that one test file only, never a `db:` task against
-the shared Postgres, and refuses when the two commits differ in `db/`. The checked-in golden files
-only catch drift between stages, so work on `main` may refresh them without weakening the proof.
-Three rules keep the comparison honest:
+the server state and every answer body with JSON fixtures in the shared folder
+`test/fixtures/files/ops_unchanged/` (the core plan's folder), named `privilege_<scenario>.json`,
+captured from `main` before any engine change and compared by the one shared helper
+`bin/ops-golden-compare` (the core plan builds it in its first stage). This plan builds no golden
+mechanism of its own. The test is the first commit of S5a, before any engine change. Three rules
+keep the comparison honest:
 - `ACCESS_STATE_DEFAULTS` is filled into every game's `player_state` (`GM:7576`), so the new empty
   keys appear in the server state. The comparison removes `cachedAt` and `harvestedAccounts` and
-  asserts them separately as empty. One shared golden helper strips the empty new keys of every ops
-  plan (section 14).
+  asserts them separately as empty. The shared helper strips the empty new keys of every ops plan
+  (section 14).
 - Server times (`guestSessionsAt`, the hand-over `time`, `npc_frustration.rb:545`) and token clocks
   vary per run, so the test freezes the clock.
 - Tile lists are part of every room answer, so they are compared too.
@@ -771,7 +778,7 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   while `guestSessions` does not; a `cachedAt` pair for an undeclared candidate is ignored.
 - `harvest_test.rb`. S5b: collect adds pairs once; a second collect adds nothing and writes no row;
   after a borrow "done" a collect answers 404 until the guest claim at the desk writes the
-  borrower's session record, then 422 `notAdmin`, and
+  borrower's session record, then 422 `reason: "not_admin"`, and
   after signing back in as the administrator (Switch user) it adds the new account; a password row
   appears in `GET /keyring` with `source: "harvest"`; an account both captured and collected is
   listed once as `capture`. S7: a pair with an authored `harvested` hash proof answers `as: "hash"`
@@ -833,7 +840,7 @@ Each stage ships `mission.json`, a regenerated graph and `PLAYTEST.md`.
   hands a workaround over, `npc_frustration.rb:526-547`), using the same steps as the borrow in
   `test_access_social`'s playtest; wait for the "done" (a collect now answers 404), open the desk
   so the guest claim writes the borrower's session, see no collect control (a collect answers 422
-  `notAdmin`), Switch user, sign in as the
+  `not_admin`), Switch user, sign in as the
   administrator, collect again and get the new account.
 - S5c: use `deskAdmin`'s collected password on `pc02` as admin, typed (no tile); fail on `lab1` with
   it; sign in as the domain administrator on both domain PCs.
@@ -856,7 +863,10 @@ Files this plan changes:
   `pc_admits_account?` delegating to `CredentialModel`; `login_account_tiles` skipping
   `accountOnly`; the first-group readers of section 5 (`filtered_room_data`, `hasPresentNpc`,
   `npc_in_room?`, `ko_claimable_room_npc_ids`, `character_sprite_keys`) reading `account_only?`.
-- `bin/ops-golden-compare`: the two-commit unchanged-scenario comparison (section 10).
+- `test/fixtures/files/ops_unchanged/privilege_<scenario>.json`: this plan's unchanged-scenario
+  fixtures, compared by the core plan's `bin/ops-golden-compare` (section 10).
+- `scripts/validate_privilege.rb` (new): this plan's validator checks (section 9), required and run
+  from `scripts/validate_scenario.rb` by one line.
 - `lib/break_escape/credential_model.rb`: `pc_admits_account?` calling `account_kind_admits?`.
 - `lib/break_escape/access_work.rb`: `admin:` keyword on `plant_refused?`.
 - `app/models/break_escape/network_access.rb`: implant call site; `cachedAccounts` in
@@ -868,9 +878,13 @@ Files this plan changes:
 - `lib/break_escape/access_identities.rb`: `account_kind_admits?`, `account_only?`; `reach` for
   collected accounts. `lib/break_escape/npc_habits.rb`: `expand!` skips `account_only?`.
 - `app/controllers/break_escape/games_controller.rb`, `config/routes.rb`: the collect route;
-  `hasNPCs` and the NPC count (`games_controller.rb:527`, `:603`) reading `account_only?`.
+  `harvest_credentials` added to the `set_game` list and to `with_game_lock`; `hasNPCs` and the NPC
+  count (`games_controller.rb:527`, `:603`) reading `account_only?`.
+- `app/policies/break_escape/game_policy.rb`: the `harvest_credentials?` method;
+  `test/unit/break_escape/policy_test.rb` adds the action to `DEVICE_ACTIONS`.
 - The network host row's serialiser (the core plan's), for the `access` rule.
-- `scripts/scenario-schema.json`, `scripts/validate_scenario.rb`, `scripts/generate_dungeon_graph.rb`.
+- `scripts/scenario-schema.json`, `scripts/generate_dungeon_graph.rb`; `scripts/validate_scenario.rb`
+  gains one `require_relative` and one call line only.
 - Client: `pc-sessions.js`, `pc-policy.js`, `interactions.js`, the desktop view, `keyring.js` call.
 - `docs/ACCESS_AND_NETWORKS.md` and the `README_scenario_design.md` feature index (A18 to A20).
 
@@ -878,18 +892,19 @@ Files this plan changes:
 - `start_login_session!`: the core plan adds the stored `access:` and `technique:` for a technique
   record; this plan reads `access` only through `session_access`.
 - `login_session_answer`, `session_for_client` and the host row: the `access` rule of section 5.
-  Whichever of S5a and S3 lands first adds the answer parameter; the other finds it there.
-- `attempt_login!` and `attempt_credential_login!`: S8 adds the second step after step 6; this plan
-  changes only `pc_admits_account?`.
+  S3 lands first, and the core plan adds the answer parameter; S5a finds it there.
+- `attempt_login!` and `attempt_credential_login!`: S8 adds the second step after the Admission
+  step (`pc_admits_account?`); this plan changes only `pc_admits_account?`.
 - `credential_model.rb`: S7 and S8 may read `pcs_accepting`; this plan changes only its admission.
-- The unchanged-scenario golden helper (section 10), shared by every ops plan's unchanged test.
+- The unchanged-scenario fixture folder and `bin/ops-golden-compare` (section 10), shared by every
+  ops plan's unchanged test.
 - `credential_keyring.rb` row helper: S7 adds `source: "cracked"` and the `harvested` proof kind.
 - `ACCESS_STATE_DEFAULTS`, `AccessIdentities.reach`, the dungeon graph and the validator.
 
 ## 13. Log rows this feature writes
 
 Storage and reading are S9's. Rows go through S9's one helper, which lands first (L1a), before any stage of this plan.
-S5b registers the hash values a collect yields as a secret source with `OpsLog.register_secret_source`, in the stage that adds them, so no row can show one.
+S5b registers no secret source of its own: the log rows plan's L1a credential source covers keyring entries, including `hash` entries, so no row can show a hash value.
 A step up is the core plan's technique row and is not listed here.
 
 Event names and details are as the log rows plan's section 13.7 writes them (`OpsLog::EVENTS`).
@@ -922,8 +937,7 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   row carry `access: "admin"` when `session_access` is admin, for any session kind, and omit the key
   otherwise; the record's stored value is never passed through, so a technique user session sends no
   key. "No other session carries `access`" becomes "no session of a scenario without `creds.admin` or
-  a technique grant carries `access`". Whichever of S5a and S3 lands first adds the answer
-  parameter. A password sign-in that replaces your technique record takes the level of the account
+  a technique grant carries `access`". S3 lands first, so you add the answer parameter. A password sign-in that replaces your technique record takes the level of the account
   signed in with. Please run `CredentialModel.pc_admits_account?` (which carries the account-kind
   rule) on `grants.session.account` in your validator pass, and confirm that a technique record
   always keeps its `foothold`, which `keyboard_admin?` relies on. Please also confirm whether your
@@ -946,19 +960,19 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
     key, not `harvestedAccounts`.
   Please replace `dumped` with `harvested` and "host" with the sign-in PC id in your plan, or say
   why a host-level marker is needed.
-- **To OPS_MFA_HELPDESK (S8).** Agreed order: account-kind check inside step 6, then your second
-  step, then the session. The account-kind check lives in `pc_admits_account?`, which
+- **To OPS_MFA_HELPDESK (S8).** Agreed order: account-kind check inside your Admission step, then
+  your second step, then the session. The account-kind check lives in `pc_admits_account?`, which
   `credential_login_checks` already calls, so your second-step re-judge picks it up: please drop
   "adds any check" from request 4. Account kind does not change the second step: every enrolled
   account meets the PC policy's `mfa`, `creds.mfa: false` is the only exception, and a local account
-  is not exempt. The session write stores no level: please change 5.2 step 6 and request 1 to "the
+  is not exempt. The session write stores no level: please change your Session step in 5.2 and request 1 to "the
   level is computed by `session_access`; nothing is written". A harvest row keeps `creds.password`
   and goes stale after a reset, like your earlier sources; the new password comes only through your
   `<npcId>.reset` row. Lockouts and the failure counter are unchanged by this plan.
 - **To OPS_LOG_ROWS (S9).** None: section 13 is your 13.7 S5 rows as written.
-- **To all ops plans.** One golden helper for the unchanged-scenario tests that strips each plan's
-  new empty `ACCESS_STATE_DEFAULTS` keys and freezes the clock, with `bin/ops-golden-compare`
-  (section 10) as part of the same work; and one test directory for unit tests (this plan uses
+- **To all ops plans.** One fixture folder, `test/fixtures/files/ops_unchanged/`, and one helper,
+  `bin/ops-golden-compare` (section 10), which strips each plan's new empty `ACCESS_STATE_DEFAULTS`
+  keys and freezes the clock; and one test directory for unit tests (this plan uses
   `test/models/`).
 
 ## 15. Open questions for the user
@@ -1005,9 +1019,8 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
 3. **Does a collect or an admin action cost game minutes or risk detection?** No server clock is
    assumed. (a) no cost now, or (b) a fixed cost per collect, which needs a server clock.
    **Recommend (a)**; detection belongs to the defence work.
-4. **Domain-wide lockout.** Left out: the lockout key is read in six places (sign-in, keyring
-   sign-in, the client's lockout marks, NPC frustration, feed posts, the failure counter), and a
-   domain scope would need one key helper for all of them, a rule for which PC's `maxAttempts`
+4. **Domain-wide lockout.** Left out: the lockout key is read at every site in the MFA plan's
+   list of lockout key sites, and a domain scope would need one key helper for all of them, a rule for which PC's `maxAttempts`
    counts, and the NPC side updated. The MFA plan already adds the key helpers
    (`AccessIdentities.lockout_key`, `lockout_key_parts`, `Game#login_lockout_keys_for`), so the
    remaining cost is the `maxAttempts` rule and the NPC side. Options: (a) leave per-PC lockouts
