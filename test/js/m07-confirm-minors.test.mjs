@@ -69,5 +69,6 @@ test('Substation map reads in place (readDisplay) and keeps its text', () => {
   assert.ok(/"readable": true/.test(block) === true, 'readable');
   assert.ok(/"readDisplay": "gameDisplay"/.test(block) === true, 'shown in the game display, not a toast');
   assert.ok(/"observationDisplay": "gameDisplay"/.test(block) === true, 'observation shown in the display');
+  assert.ok(/"addToNotes": false/.test(block) === true, 'flavour map stays out of the Notepad');
   assert.ok(/THESE ARE NOT STOCK ITEMS/.test(block) === true, 'text kept');
 });
