@@ -395,6 +395,12 @@
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+    /* a narrow notebook page wraps Cancel below Save instead of breaking a label mid-word */
+    flex-wrap: wrap;
+}
+.notes-minigame-save-btn,
+.notes-minigame-cancel-btn {
+    white-space: nowrap;
 }
 
 .notes-minigame-save-btn {
