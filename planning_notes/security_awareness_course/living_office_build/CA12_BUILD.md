@@ -388,3 +388,104 @@ Gate C runs on a keyless server from the worktree, fresh game, headless, `window
 3. **Visitor NPC: hand-author vs extend the tool.** Recommend hand-authoring the visitor into `ca12_visitor_tailgater` (test_ca01_panel precedent; no tool change). Alternative: add an `npcs` array to the set-piece schema so `room_npcs` can own it. Owner/orchestrator to confirm the hand-author route for the one flagship.
 4. **Panel/fallback split for the pilot.** ca01 shipped `ca01_invoice_fraud` (fallback course shell) + `test_ca01_panel` (panel test). ca12 is the flagship, so recommend the **course shell `ca12_visitor_tailgater` is the panel build** and a separate `test_ca12_fallback` (stepAway false) carries the fallback for the persona comparison. Confirm this inversion (course shell = panel for the flagship), and that a `test_ca12_fallback` name is clear of the Hacktivity `test/` fixtures.
 5. **Budget trim.** Plan 8.4 pays for the required 0.35 min by replacing one debrief sentence, trimming one flip sentence, and cutting one hint screen if the measured baseline exceeds 14.5 min. Confirm the wave-0 timing baseline for ca12 and which hint screen (if any) is cut; the ceiling is 18.5 min (ca12 engaged path ~18.2).
+
+---
+
+## Dialogue review R1
+
+Reviewer: Sonnet 5.5, text-only (the lines are not in ink yet). Judged against the owner's goals (fun, immersion, to the point, natural, no repetition), the five ca01 rounds (`CA01_DIALOGUE_EDITS.md`), the existing ca12 ink (Lorna: short, warm, plain; Delphine: polite, procedural, "Right you are", "I'd rather sign you in") and the chain in Part 2. Section 3 is untouched; edits below are proposals for the orchestrator to merge. Counts stay at 13 (inline conditionals count as one line, as in ca01).
+
+**Totals: 4 keep, 9 edit, 3 gaps filled (door labels, screen labels, one H1 fallback), 2 chain/design flags.**
+
+### Findings that cross lines
+
+1. **H1 contradicts the chain for most answer combinations (major).** It branches on triage scores (`kit_key_caught`, `kit_caught`) first, so a learner who caught the key phish but let Camila in hears "You turned that visitor away and knew why". The door-choice branch is only reached when `kit_key_caught` is false. The triage score and the door answer are unrelated, so they must not share a sentence.
+2. **"Say nothing" does not put a stranger inside (major).** Part 2.5 has Camila wait at the door until Delphine walks over, but H1's last branch says "an unescorted visitor and a screen left open are the same afternoon's trouble", which is only true for "let in". The same branch also claims an open screen after a learner who told Thandiwe to lock it.
+3. **H1 never reads `kit_ca12_screen_choice`.** The screen answer is the only thing the learner chose about the screen, and the recap ignores it.
+4. **No fallback for `kit_ca12_door_choice == ""`.** In the no-panel form the visitor is placed statically and nobody is asked; and in the panel form the layer-2 gate (`kit_defend_done && not kit_ca12_host_said`) opens before the look-up beat, so a learner who talks to Lorna early gets "Camila stood at the door" about a beat that has not happened. Gate on `kit_ca12_done` for the panel build and give the fallback its own line.
+5. **Praise is spoken three times for one act.** Lorna (kit_key_caught/kit_caught), Thandiwe (S1) and Julian (S2) all praise the triage result. CA01 R2-9 settled this by gating stubs only. Here the stubs carry the praise; Lorna recaps the visitor beat and does not mention the score. That also makes `kit_caught` and `episode_e12_..._defend_percent` unnecessary VARs in her ink.
+6. **Cost shown for each choice.** Reception: no cost, correct. Let in: a stranger at the desks and (if unmentioned) a client list in view. Say nothing at the door: a stranger looking in while she waits, plus the delay. Say nothing about the screen: no cost surfaces unless the visitor also comes in (H1 now covers that). Accepted: the debrief layer 0/1 carries the general cost.
+7. **Visitor plausibility.** The visitor is a client-side rep, but A4 has her carrying "a parcel" and offering to "drop it to her myself". That is the courier pretext the learner just played in the red-team half, and "drop it myself" reads as slipping past someone. A6 ("I know the way. Second floor, isn't it?") contradicts itself (knows the way, then asks) and invents a floor the studio map does not have. Both edited.
+8. **Design flag (not a wording fix): the screen beat fires on her return.** C1 and A3 as drafted read as if she is leaving ("grabbing five", "back in five"), but the chain fires the bark on `workstation_owner_returned`, when she is already sitting at an unlocked screen. Lines below are written for return, as the chain says. If the orchestrator would rather the mention matter (a screen left open while she is away), fire the bark on departure and use the alternates marked **(departure)**.
+
+### Per-line verdicts
+
+| # | Line | Verdict | Proposed text and reason |
+|---|---|---|---|
+| S1 caught | Thandiwe: "Good eye on the desk today. Makes the whole floor easier." | Edit | `Heard the desk was sharp today. Good to know.` "Makes the whole floor easier" is the ca01 slogan that F02 cut ("the whole floor"), and it echoes Julian. |
+| S1 not caught | "Quiet one at the desk today. I'll be glad of a proper break." | Edit | `Long day on the plan sets. Bet the desk's been busy.` She has just had her break in the beat, so "glad of a proper break" contradicts it; "quiet one" is also a quiet judgement on the learner's score. |
+| S2 caught | Julian: "Nice to know front of house is sharp. Half my drawings are confidential." | Edit | `Good to hear front of house is on form. Most of my drawings are confidential.` "Half" is an invented figure and unbacked. |
+| S2 not caught | "Long day drawing. Good to see a friendly face on the way out." | Edit | `Long day drawing. Nearly time for tea.` "On the way out" assumes the learner is leaving; the line is neutral otherwise. |
+| H1 | Lorna's nested outcome line | Edit (rewrite, see below) | Replace the nested conditional with a three-way door branch (plus empty fallback) and an inline screen clause. Cuts the triage angle. |
+| H2 | "Sign them in and walk them up, and lock your screen before you step away. Costs nothing, and there's no stranger loose on the floor." | Edit | `If someone you don't know turns up on the floor, walk them back to the desk. And lock your screen when you step away. It only takes a second.` Her existing defend-complete line already says "signs people in and walks them up", so the old H2 restates it; "no stranger loose on the floor" is dramatic and not true after "reception". The new wording is about what a colleague does, not a result. |
+| C1 | Thandiwe bark: "Just grabbing five on the sofa. Left everything up, I'll only be a sec." | Edit | `Right, that's me back.` (11 chars, reads in a second, fits a return.) "Left everything up" hands the learner the answer before the choice. **(departure):** `Back in five, just the sofa.` Do not say "left it up". |
+| A1 | Player: "Your screen's still unlocked." | Edit | `You left your screen unlocked, Thandiwe.` Matches the return timing (past tense) and names her so it reads as addressed. |
+| A2 | "Oh — good shout, thanks. One click and it's locked. Easy to forget when you're only nipping off." | Edit | `Oh, good shout. Locked. Easy to do when you've only nipped off.` Em dash to comma; "one click and it's locked" duplicates "locked"; "thanks" and "good shout" double up. Keeps the non-blame clause. |
+| A3 | Player "[Say nothing]"; Thandiwe: "Right, back in five." | Edit | Player `[Leave it]` (distinct from the door's say-nothing); Thandiwe `Right, back to it.` **(departure):** keep `Right, back in five.` |
+| A4 | Camila: "Parcel for Yasmin Chaudhry, she's expecting me. Mind if I drop it to her myself?" | Edit | `Hi, Camila, for Yasmin Chaudhry. She said to come straight up.` Client rep, not courier; 11 words; plausible and not sinister. Optional colour if the owner wants it: add "Harbour job." (links to the pool line "Deadline on the Harbour job."). |
+| A5 | Camila: "No bother, I'll sign in. Point me at the desk." | Edit | `Of course. I'll go and sign in.` She has just come through the lobby, so "point me at the desk" is odd; this implies she skipped it by accident. |
+| A6 | Camila: "Ta, I know the way. Second floor, isn't it?" | Edit | `Lovely, thanks. I'll find her myself.` Removes the contradiction and the invented floor. The cost of "let in" is that she goes looking, which shows the problem without anyone speaking it. |
+| A7 | Delphine: "Pop your name in the book for me and I'll walk you up. Won't be a moment." | Edit | `Pop your name in the book and I'll let Yasmin know you're here.` Calling the host is the check Delphine already does in her ink; "won't be a moment" is padding. |
+| A8 | Delphine: "I've got them from here — nobody goes up without signing in." | Edit | `Sorry, I was on the phone. Come and sign in and I'll walk you up.` The old line has an em dash, repeats her existing "Everyone signs in" and lectures the learner who stayed silent. The phone gives a reason Camila reached the door unchecked, so nobody is blamed. Addressed to Camila. |
+
+### H1 and H2, merged form
+
+Declare `kit_ca12_door_choice`, `kit_ca12_screen_choice`, `kit_ca12_done`, `kit_ca12_host_said`, `kit_defend_done` in Lorna's ink. Gate: `{ kit_defend_done && (kit_ca12_done || kit_ca12_door_choice == "") && not kit_ca12_host_said }` is wrong for a no-panel run; use `kit_defend_done && not kit_ca12_host_said` and rely on the empty branch below, but in the panel build the builder keeps `kit_ca12_done` in the gate so the early re-talk reaches the existing line instead.
+
+```
+Lorna Easton: {
+  - kit_ca12_door_choice == "reception":
+    You sent Camila to Delphine's desk, so she signed in and got walked up. That's how it should go.
+  - kit_ca12_door_choice == "letin":
+    Camila got as far as the desks before anyone had signed her in. {kit_ca12_screen_choice == "mention": Thandiwe's screen was locked by then, at least.|With Thandiwe's screen still open, that was a client list in front of a stranger.}
+  - kit_ca12_door_choice == "silent":
+    Camila stood at the door a while before Delphine came over, and she could see most of the studio from there.
+  - else:
+    A visitor waiting at the studio door and a screen left on. Small things, easy to miss.
+}
+Lorna Easton: If someone you don't know turns up on the floor, walk them back to the desk. And lock your screen when you step away. It only takes a second.
+~ kit_ca12_host_said = true
+```
+
+Checks against every combination (door x screen): reception/mention, reception/silent (screen not mentioned, correct, no visitor reached it); letin/mention ("locked by then"); letin/silent (client list in view); silent/either (door only, no claim about entry or screen); empty (fallback form, no Camila named). No branch says who let anyone in. No figure is spoken. Spoken length: longest H1 branch is 31 words, in a conversation, not a bark.
+
+### Player choice labels (undrafted in section 3, proposed)
+
+Door knot `ca12_door` (after Camila's bark; each starts differently):
+- reception: `Reception's just through there. They'll sign you in.`
+- letin: `Of course, go on through.`
+- silent: `[Say nothing]`
+
+Screen knot `ca12_screen`:
+- mention: `You left your screen unlocked, Thandiwe.`
+- silent: `[Leave it]`
+
+Notes: the three door labels differ by first word and by intent (redirect / permit / stay quiet). The two screen labels are distinct from each other and from the door's "[Say nothing]". Camila's A5 and A6 replies are the responses to the first two door labels; the silent branch has no reply, Delphine's A8 follows.
+
+### Barks: length check
+
+C1 (4 words), A4 (11 words, the longest bark), A8 (13 words, spoken as a bark by Delphine on arrival): all fit a bubble and read in under four seconds. A8 is at the limit; if it wraps badly, drop "Sorry," and keep the rest. A7 is spoken in person-chat on arrival, not a bark.
+
+### Gap noted, not fixed
+
+On "let in", Lorna walks over to Camila with no spoken line (only the recap later). The 13-line count has no room; a silent walk reads fine and the recap carries the explanation. Flag only.
+
+### Part 4 (layer 0 and layer 1)
+
+Part 4 is a description of the text, not final text, so the verdict is on the drafted sentences. Both have problems.
+
+**Layer 0: edit.** "worth an unescorted pass" is unclear, the third sentence restates the habit that the conceptPanel ("What these visitors relied on") and Lorna's H2 already say, and "reaches more of the floor" is vague. Proposed (2 sentences):
+`To a real attacker, an unescorted visitor is time alone on the studio floor. A client's project list left on an open screen can be read and copied there, and a friendly "she said to come up" is often all it takes to get that far.`
+Attacker's terms, no method, no habit repeat, no figure. The observed/E variant adds one sentence pointing back at the scene: `The visitor at the door and the open screen you just watched are the two halves of that.`
+
+**Layer 1: edit.** Problems in the draft: "the practice had to tell the affected client" is a legal obligation claim (rule: none); "no sign-in record" points a finger at the desk; "a day of senior time" contradicts "the afternoon" (two time figures, one cost rule in ca01); "No cash leaves; a client's trust ..." and "No-blame: ..." are builder notes that read as copy; and it is stated as a fact about this run, which is wrong for a learner who sent Camila to reception. Frame it as an earlier case, like ca01's notice. Proposed (2 sentences):
+`An earlier visitor at a practice like this was walked up without signing in, and a client's project list sat open on an unlocked screen. Nobody could say who had seen it, so reception and the partners spent an afternoon working out who had been on the floor, and the client was told.`
+One time figure (an afternoon), who dealt with it, no blame, no legal claim. Fallback form only, append: `Before you leave, take a look around the office and have a word with Lorna.`
+
+**Twin:** the layer 1 text above has no "you", so it suits the defend-twin fragment as is. No host line is drafted for the twin in section 3; that is a gap for the orchestrator (the twin host's catch/miss lines, as ca01's twin had).
+
+### Other notes
+
+- Pool line "Client's in at three." sits beside Camila arriving on a "10:00" client in the triage set (`CA12:49`). Not a ca12 conflict in play, but the orchestrator may prefer "Client's in this afternoon." to avoid the clash.
+- Delphine's A7/A8 call Camila a visitor and sign her in without asking her name, which matches the pretext flow already in her ink.
+- Voicing: every edited line above is new and unvoiced, so no re-voicing cost. A7/A8 need Delphine's voice.
