@@ -29,7 +29,11 @@ of characters, a defender console, staff patching on a schedule) and
    "user" | "admin"`, `fixedIf`. Code, schema, file names and test names use these. Player-facing
    text may use the standard security words where that teaches something.
 4. **Fictional and abstract.** Products, versions and organisations are invented. Weaknesses are
-   classes, not real identifiers. The abstract GUI has no commands. The command-line skin (S6)
+   classes, not real identifiers, in scenario files and in the abstract GUI. The one exception
+   (user, 2026-11-19, R3-1): the realism skin may show real advisory ids and real framework
+   module paths, held in a separate realism catalog (not in scenario files), which a scenario
+   links to by a plain id. Even there: no payloads, shellcode or working exploit content, private
+   address ranges only, nothing run against a real host. The abstract GUI has no commands. The command-line skin (S6)
    simulates the look of scanner and framework tools over the same game moves; it runs nothing.
 5. **Realism skin is only a skin** (S6): it must never add or remove a move, so it needs no
    playtests of its own.

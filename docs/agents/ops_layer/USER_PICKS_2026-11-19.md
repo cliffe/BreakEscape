@@ -115,3 +115,25 @@ User's words quoted; orchestrator's readings marked "Reading:".
 - **R2-10**: a. The approval prompt waits until the conversation and its screens close.
 - **R2-11**: a. Fix both existing-code bugs (keycard credential signs in after revocation;
   validator counts fob/rfid as cards) on a small branch with tests, through the usual train.
+
+# Round 3 (answered 2026-11-19, night)
+
+- **R3-1**: a. Allow real advisory ids and module paths in the realism skin; brief rule 4
+  changed accordingly. User: "But keep these simulated realism details separate from the main
+  scenario, to avoid false positive classifier hits -- maybe a separate catalog of vulns with
+  matching details, with a simple id to link that to the scenaro". Reading: vulnerability
+  details (advisory ids, module paths, script titles, banners naming them) live in a separate
+  realism catalog file outside scenario files; a weakness or decoy links to an entry by a plain
+  id. Network layout (addresses, ranges, host names) stays in the scenario's `cli`.
+- **R3-2**: b. **No mark**: every line bare, as the real tools print (plan was written to a
+  first-line mark). The "in this simulation" local answers stay.
+- **R3-3**: a. Real-time wait per guess on a salted record (default 60 s).
+- **R3-4**: a. `common` is recipe only. User: "When specifying the password we could specify a
+  cracking difficulty?" Reading: the cracking plan designs an optional author-facing difficulty
+  on the password/recipe and recommends it.
+- **R3-5**: a. Wording only; no `carriedGone` list.
+- **R3-6**: a. Fix the knock-out drop id / credential re-stamp bug on a branch with tests,
+  through the usual train (branch `fix/knockout-drop-item-id`).
+- **R3-7**: c. Note it and leave it (timer/object-action item claims are not trigger-checked).
+- **R3-8**: a. Leave plain carried containers until the lock plan is built, then extend its
+  Rule D check to them.
