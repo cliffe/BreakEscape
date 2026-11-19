@@ -157,3 +157,14 @@
 - NIT-2: "walks the same homes except profiles and shares, which the scope branches find".
 - NIT-3: B13e uses `GET /container` on the briefcase and `/unlock` plus a take on `board_minutes`; the courier box's `remove_item` names the briefcase by id.
 - NIT-4: drop row says rooms never lock again, so the case is a crafted `player_drop` naming an unopened room.
+
+## R11 fixes (2026-11-19)
+
+- MAJOR-1: at take routes and the copy builder Rule D judges the item's own carrier chain minus the item itself (trigger as before, deepest carried id, empty chain true), so a gated archive in a gone ungated briefcase is refused; give, start and grant adds still pass. Case (c), the Re-adds paragraph and the G-stage row updated.
+- MINOR-1: section 15 option (b) now writes on `remove` only when no room's `objects_added` holds the id, on `hide`, the jack plant and the implant; clears on pick-up; read by `validate_item_collectible` only. Recommendation (a) stays; the closing line names the drop rule.
+- MINOR-2: Rule D runs before the takeable test (`:3416-3437`); its take refusal is "Item not found in scenario", never the named takeable 422. Refusal order row and B13e extended.
+- MINOR-3: the out-of-reach drop is a model test (a copy written straight into `objects_added` of an unopened room); no route reaches it (`games_controller.rb:1087-1089`).
+- MINOR-4: new section 9 error for a carrier with no `id` at or above a `secondStep` object.
+- NIT-1: leg 1 says a route room in `npcRouteRooms` does not count and an awareness world room counts once its first `GET /room` adds it.
+- NIT-2: row 998 takes the archive, not the note, and says why.
+- NIT-3: the removal row in 5.5 names the jack plant and the implant.

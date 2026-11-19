@@ -674,7 +674,7 @@ public `secondStep` it already has (section 7).
 | Player drop | `item-drop.js` (`add_object` with `player_drop`, then an inventory remove); the server needs `droppable: true` and stores the held copy under the same id (`game.rb:1143-1167`) | kept | neither the drop nor the pick-up touches `lockSteps`: the request count never resets |
 | Put in a container | no route stores a held item in a container | | none |
 | NPC carry (needs) | `carriable_object?` (`game.rb:1365-1376`) refuses `locked`, `lockType`, `requires` and `contents` | never carried | none |
-| Removed, consumed, planted, hidden | `remove_item` (`apply-actions.js:274-293`), `consumables.js`, the inventory `remove` (`games_controller.rb:1454-1460`, `remove_inventory_item!` at `game.rb:845-850`, by id with no other check) and `hide` (`:1462-1473`) | the item leaves; its record stays under its id | a nested `takeable` returns to its container, listed and takeable again, as today (`filter_container_contents` hides an item only while it is in the inventory, `games_controller.rb:3235-3258`); a top-level carrier does not. **Stale reach**: the released-container and start-item walks still resolve a top-level carrier after it has gone. Rule D |
+| Removed, consumed, planted, hidden | `remove_item` (`apply-actions.js:274-293`), `consumables.js`, the inventory `remove` (`games_controller.rb:1454-1460`, `remove_inventory_item!` at `game.rb:845-850`, by id with no other check), `hide` (`:1462-1473`), and two server routes that skip `remove`: the network jack plant (`network_access.rb:262`) and the USB implant (`:516`). The validator refuses neither a gated `rogueDevice` nor an item an implant's `needsHeld` names; Rule D reads membership, so it holds for both | the item leaves; its record stays under its id | a nested `takeable` returns to its container, listed and takeable again, as today (`filter_container_contents` hides an item only while it is in the inventory, `games_controller.rb:3235-3258`); a top-level carrier does not. **Stale reach**: the released-container and start-item walks still resolve a top-level carrier after it has gone. Rule D |
 | Flag-station reward | a flag station's `itemsHeld`, handed over on a flag and re-collected through the `flag_station` location (`games_controller.rb:3476-3485`) | | no walk covers it, so the validator refuses `secondStep` there (section 9) |
 | Card copier | `clone_card` (`games_controller.rb:1655`) copies keycards into `saved_cards`, not inventory objects | | a keycard inside a gated case is taken only once the case is open, by id |
 | Copy transfer (sign-in desktop, share) | `record_copied_item!` (`game.rb:4258`; `games_controller.rb:1448`, only for `transfer == 'copy'`) | one id, two copies | the copies share one record and one `unlockedObjects` entry (below) |
@@ -694,8 +694,9 @@ briefcase's chain. It then decides in two legs:
    The first carrier the player holds (`ItemIdentity.held_in?` by id, client-added items
    excluded as `held_grant_items` excludes them, `game.rb:4975`) or has dropped (a copy with
    that id in the `objects_added` of a room for which `Game#room_unlocked?`, `game.rb:141-143`,
-   holds: in `unlockedRooms` or the start room; an awareness world room and a route room in
-   `npcRouteRooms` do not count) makes the test true. Everything below that carrier is where
+   holds: in `unlockedRooms` or the start room; a route room in `npcRouteRooms` does not
+   count, and an awareness world room counts once its first `GET /room` has added it to
+   `unlockedRooms`, `games_controller.rb:581-591`) makes the test true. Everything below that carrier is where
    it was put: a nested `takeable` that left the inventory is back in its container, as the
    engine lists it today.
 2. **In its authored place.** When no carrier on the chain is held or dropped, the outermost
@@ -718,16 +719,22 @@ the `/mfa/*` 404 for the lock form, so a pane left up after the item has gone cl
 expiry. Nothing is written, and the record stays as it was.
 
 **Where it runs.** Rules C and D run straight after the finder at every exit of 5.2's table,
-before any test that answers 403: before `check_container_unlocked` (`games_controller.rb:3119-3126`)
-and the scope branches' 403s at `GET /container`, before the take route's "Container not
-unlocked" and room tests (`:3424-3437`) and the sign-in desktop and share take tests, in the
-inventory copy builder, in `validate_unlock`, and in the `/mfa/*` lock form's hook (section 14).
-So a gone, unopened briefcase answers 404 and never a 403 that tells the player it exists. An
+before any test that answers 403 or 422 with the item's name: before `check_container_unlocked`
+(`games_controller.rb:3119-3126`) and the scope branches' 403s at `GET /container`, before the
+take route's takeable test ("Item is not takeable: <name>", 422), "Container not unlocked" and
+room tests (`:3416-3437`) and the sign-in desktop and share take tests, in the inventory copy
+builder, in `validate_unlock`, and in the `/mfa/*` lock form's hook (section 14). So a gone,
+unopened briefcase answers 404 and never a 403 that tells the player it exists, and a
+non-takeable object inside it never gets the takeable answer, which carries its name: Rule D's
+refusal at a take route is the closed-list "Item not found in scenario", with no name in it. An
 object in its authored place passes Rule D and meets the 403s as any object does today. At the
-take routes and the copy builder the item being taken is about to be held, so Rule D judges
-the path above it only (`carried_step_reachable?(path.last, path[0...-1])`, true for an empty
-path): a give, a start item and a grant item are judged by their own add branch, as today, and
-an item inside a gone briefcase is refused.
+take routes and the copy builder the item being taken is not held yet, so Rule D judges the
+item's own carrier chain minus the item itself. The trigger is as above (the item or any object
+on its path has an id in `carried_step_ids`); take the chain of the deepest such id, the item
+included when it is takeable; drop the item's own entry; an empty chain is true. A give, a start
+item and a grant item have only themselves in the chain, so they pass to their own add branch,
+as today. A gated item inside a briefcase that has gone is judged by the briefcase, so it is
+refused even though the item itself was never the one removed.
 
 **Re-adds.** Rule D reads inventory membership, and four existing add paths put a gone item
 back with no record that it left: a start item (`validate_item_collectible` accepts one
@@ -738,7 +745,10 @@ always, `games_controller.rb:3373-3382`), a declared grant (claimable at any tim
 the project's cheat-resistance policy: the server hard-enforces secrets, keys and forged items,
 and some steps stay best-effort. A re-added item keeps its step record, which no inventory path
 writes or resets, so the owner's approval is still needed unless the step had already passed;
-a crafted re-add never skips the step. Whether removal itself should be enforced is section 15.
+a crafted re-add never skips the step. A take of an item that sits inside a gone carrier is
+not one of these routes: Rule D judges the carrier chain above the item (the briefcase's
+release record and `unlockedObjects` entry do not make the item reachable), so it is refused.
+Whether removal itself should be enforced is section 15.
 
 **Copies share one step.** A gated file a sign-in desktop or a share lets the player copy
 (`transfer` `copy`, or `both`, the default, when the player picks Copy) leaves one copy in
@@ -867,6 +877,9 @@ apart; its own loop over `rooms[].doors[]` covers the two door rules.
   carry for its needs is excluded already: `carriable_object?` refuses anything `locked`.
 - `secondStep` on anything inside a `usb` item's `contents`, at any depth, and on any
   `tableItems` entry or anything inside one.
+- A carrier (5.5) at or above a `secondStep` object with no `id`: leg 1 of Rule D tests held
+  items by id, and the take route and the NPC-container release match a carrier by name, so a
+  bag without an id would be refused as an invented id while the player holds it.
 - An `unlock_object` task whose `targetObject` names a `secondStep` object by anything but its `id`.
 - G2: `secondStep` on a room that some room's `doors[]` entry with `connectedRoom` naming it
   marks with a `gate` (raised by `validate_lock_step.rb`), on the `startRoom`, or on the room named
@@ -995,14 +1008,14 @@ edge, and a scenario without the field drawn unchanged.
 | Re-enrolled owner | After a helpdesk re-enrolment of the owner: the player's own phone cannot approve the lock (403); verify still takes the code from the owner's `code_device`, which `GET /mfa/device` still shows; `own:<npcId>` codes are refused |
 | G2 doors | Credential and `npc` meet the gate with no `roomData` and no `unlockedRooms` write; a flag-reward door and a finished `prop_door` open with no step; `GET /room` is 403 before the pass; at an rfid door no `badge_swipe` row until the final post |
 | G2 NPC grant | An `npc` post to a gated door writes `npcStepGrants["door:<roomId>"]` and answers with `opener`; a deny, an expiry and a five-minute lapse leave the grant; the bootstrap then carries the room's `npcStepOpener` (and `secondStep` with `kind` and `owner` only, an extra authored key dropped); a second `npc` post from the same NPC reopens the live record or starts a new one; an `npc` post against a record a keycard already started writes the grant and answers `opener` as that NPC, and an `npc` post from another NPC replaces it; the open deletes the grant; an `npc` post from an NPC the checks refuse gets today's 422 and writes no grant |
-| Reach after removal, NPC briefcase (G1) | A gated archive inside an NPC's ungated briefcase, with a plain note inside the archive: it opens through both checks while the briefcase is held. After an inventory `remove` of the briefcase (and a `hide` fixture that skips the validator) a crafted `/unlock` of the archive with the right password, and of the note, is the invented-id 422 with no pips or case hint; `GET /container` for the archive is 404 "Container not found"; a take of the note answers "Item not found in scenario"; every `/mfa/*` lock call is 404; for a live record, a passed record and an opened archive alike. Nothing is written and the record is left as it was |
+| Reach after removal, NPC briefcase (G1) | A gated archive inside an NPC's ungated briefcase, with a plain note inside the archive: it opens through both checks while the briefcase is held. After an inventory `remove` of the briefcase (and a `hide` fixture that skips the validator) a crafted `/unlock` of the archive with the right password, and of the note, is the invented-id 422 with no pips or case hint; `GET /container` for the archive is 404 "Container not found"; a take of the archive answers "Item not found in scenario" (the note sits two levels down, where the finder does not reach in any case, so it tests nothing); every `/mfa/*` lock call is 404; for a live record, a passed record and an opened archive alike. Nothing is written and the record is left as it was |
 | Reach after removal, nested takeable (G1) | A takeable gated archive in a room PC: taken with `locked: true`, opened from the inventory through both checks. After an inventory `remove` it is listed in the PC's `GET /container` answer again and can be taken again, as today; with a live record a crafted `/unlock` with the right password re-answers from the record and opens nothing without the approval; with a passed record it opens in place |
-| Innermost carrier (G1) | An ungated NPC briefcase holding a takeable gated archive; the player is given the briefcase and takes the archive. (a) `remove` the briefcase: the held archive still opens through both checks and its contents ship after the pass. (b) `remove` the archive instead: it is listed in the held briefcase again, a crafted `/unlock` re-answers from its record and nothing opens without the approval. (c) `remove` both: the archive is the invented-id 422, `GET /container` 404 |
+| Innermost carrier (G1) | An ungated NPC briefcase holding a takeable gated archive; the player is given the briefcase and takes the archive. (a) `remove` the briefcase: the held archive still opens through both checks and its contents ship after the pass. (b) `remove` the archive instead: it is listed in the held briefcase again, a crafted `/unlock` re-answers from its record and nothing opens without the approval. (c) `remove` both: the archive is the invented-id 422, `GET /container` 404, and a crafted take of the archive (`POST /inventory` add, with the briefcase released and in `unlockedObjects`) answers "Item not found in scenario"; the same take while the briefcase is held, or a give of the briefcase again, passes |
 | Gated contents path (G1) | After the gated briefcase is opened and removed, every exit for an object inside it with no step of its own (`/unlock`, `GET /container`, the take routes, the inventory copy) refuses it as an invented id; the same object while the briefcase is held is served as today |
 | Sign-in desktop in place (G1) | A takeable gated archive on a sign-in PC's desktop: with a session and nothing held, it opens in place through both checks; without a session, each route gives today's scope answer, unchanged. After a copy is taken and removed, the desktop copy still opens with a session. The same for a gated file in a profile and in a share, through their session and foothold tests |
-| Refusal order (G1) | For a gone, unopened gated briefcase: `/unlock`, `GET /container` (plain branch, where `check_container_unlocked` would answer 403) and a take of an object inside it each answer the invented-id body, never a 403; a gated briefcase still in place and unopened meets today's 403 |
+| Refusal order (G1) | For a gone, unopened gated briefcase: `/unlock`, `GET /container` (plain branch, where `check_container_unlocked` would answer 403) and a take of an object inside it each answer the invented-id body, never a 403; the same for a non-takeable object inside it, whose take answers "Item not found in scenario" and never "Item is not takeable: <name>"; a gated briefcase still in place and unopened meets today's 403 |
 | Not yet released (G1) | `/unlock` on a gated object inside a container an NPC still holds, before any give or knock-out: the invented-id 422, no record |
-| Drop and pick up (G3) | A gated held briefcase with a live record: a player drop into an open room and a pick-up keep the record, its request count and `nonce`; the dropped copy is in reach (a right first factor re-answers from the record); the same after a knock-out drop's copy in `objects_added`. Rooms never lock again, so the out-of-reach drop is a crafted `player_drop` naming a room the player has not opened (`add_item_to_room!` does not test the room): that copy is out of reach |
+| Drop and pick up (G3) | A gated held briefcase with a live record: a player drop into an open room and a pick-up keep the record, its request count and `nonce`; the dropped copy is in reach (a right first factor re-answers from the record); the same after a knock-out drop's copy in `objects_added`. No route can drop into a room the player has not opened (`update_room` answers 403 "Room not accessible" for `add_object` unless `room_unlocked?` holds, `games_controller.rb:1087-1089`), so the out-of-reach case is a model test: a copy written directly into `objects_added` of a room not in `unlockedRooms` is out of reach |
 | Every carried home (G3) | A gated start item, an `itemsHeld` briefcase after a give and after a knock-out, a declared grant's item and a top-level `takeable` room object: each opens through both checks while held and is refused by Rule D once removed, as in the G1 NPC briefcase row; a gated `takeable` room object still in its room is in reach while the room is open |
 | Re-add and dedupe (G3) | A crafted add of a held gated start item answers `already: true` and leaves the record; a re-sent add on reload the same |
 | Re-add after removal (G3) | After a `remove` of a gated start item with a live record, a crafted re-add is accepted (today's start-item rule); a right first factor then re-answers from the record, opens nothing and ships nothing without the approval. The same for a passed record: the item opens, as its step had passed. The same with a crafted `source_npc_id` give of the removed briefcase |
@@ -1120,7 +1133,7 @@ and the server record):
 | B13b | Right PIN at the briefcase from the inventory; one request | `secondStep` answer; one live record, request count 1; one `mfa_challenge` row; no contents in any answer |
 | B13c | Drop the briefcase, pick it up, right PIN again | The same live record and request count; no new `mfa_challenge` row |
 | B13d | "Check phone"; approve | Briefcase open; `approvedBy: player`; `board_minutes` listed |
-| B13e | Use `courier_box` (it removes the briefcase by its id); crafted `/unlock` and `GET /container` for `gordon_briefcase`; crafted `/unlock` and a take for `board_minutes` | The invented-id 422 at both `/unlock` posts, 404 "Container not found", and "Item not found in scenario" at the take (Rule D on the briefcase's path, before any 403); nothing of the contents in any answer; the passed open stays in `unlockedObjects` |
+| B13e | Use `courier_box` (it removes the briefcase by its id); crafted `/unlock` and `GET /container` for `gordon_briefcase`; crafted `/unlock` and a take for `board_minutes` (takeable or not, the take answer is the same) | The invented-id 422 at both `/unlock` posts, 404 "Container not found", and "Item not found in scenario" at the take (Rule D on the briefcase's path, before any 403); nothing of the contents in any answer; the passed open stays in `unlockedObjects` |
 | B13f | A fresh game: B13a and B13b, then `courier_box`; crafted right PIN at `/unlock`, then `POST /mfa/prompt`, `GET /container` for `gordon_briefcase` and a take of `board_minutes` | 422, 404, 404 "Container not found" (never a 403) and "Item not found in scenario"; the live record untouched; nothing opens |
 
 **Live proof** on the real path, headless, on the keyless server: B2, B3, B6, B7, B8 and B9 for G1
@@ -1249,14 +1262,26 @@ design, so the player sees a copied card is not the owner's approval.
    - (b) **A server-only `carriedGone` list.** A flat array in `player_state` of carrier ids
      taken from `carried_step_chains` only, top-level homes only (`npc`, `start`, `grant`,
      `room`; a nested `takeable` still goes back to its container), so it is bounded by the
-     scenario and empty without the attribute. Written by the inventory `remove` (which a
-     consumed use, a plant and `remove_item` reach) and by `hide`; never by a drop, whose copy
-     stays in reach. Read by Rule D (a listed carrier fails leg 2) and by
-     `validate_item_collectible`, which refuses the re-add on every branch (start item, grant,
-     NPC give, room object) as "Item not found in scenario". Delta sync: it is never in a sync
+     scenario and empty without the attribute. A player drop is an `add_object` followed by an
+     inventory `remove` (`item-drop.js:356-389`), so the list is written by the inventory
+     `remove` only when no room's `objects_added` holds a copy with that id (a drop's
+     `add_object` lands first, `game.rb:1202`), by `hide`, and by the two server routes that
+     take an item out of the inventory without `remove`: the network jack plant
+     (`network_access.rb:262`) and the USB implant (`:516`); a pick-up of a dropped copy
+     clears the entry. Without the drop test every dropped gated carrier would be listed, and
+     the pick-up of a dropped start item (which meets the start-item branch first,
+     `games_controller.rb:3373-3382`) or of a dropped NPC or room carrier (priority 0, a room
+     location, `:3605-3615`) would be refused. The consumed use, the object plant and
+     `remove_item` reach `remove` only when the browser holds a matching item with an id
+     (`consumables.js:235-252`, `interactions.js:1087`, `apply-actions.js:275-295`), so (b)
+     also depends on that. It is read by `validate_item_collectible` only, which refuses the
+     re-add on every branch (start item, grant, NPC give, room object) as "Item not found in
+     scenario"; Rule D already fails leg 2 for a gone `npc`, `start` or `grant` carrier, so
+     reading the list there adds nothing. Delta sync: it is never in a sync
      body, never read from one, and never sent or echoed to the browser (a refused re-add uses
      the existing body), so nothing grows and is re-sent; `reset_player_state!` drops it.
-     Tests: a controller row per add path, the drop-and-pick-up row unchanged, the reset, a
+     Tests: a controller row per add path, a drop-and-pick-up row for each home (start item,
+     NPC carrier, room carrier), a jack plant and an implant row, the reset, a
      forged sync body ignored, and the section 10 goldens unchanged. Scenarios: no shipped one
      is touched (no `secondStep` today); in a gated scenario an author can no longer remove a
      top-level gated item and give the same id again, so the validator warns on a
@@ -1264,5 +1289,6 @@ design, so the player sees a copied card is not the owner's approval.
      in `game.rb` and `games_controller.rb`, both shared with the MFA and log plans.
 
    *Recommend (a) for now:* the step itself is never skipped, the gap is the engine's own for
-   every carried item, and (b) adds state for one feature. Written to (a); (b) can follow in G3
-   without changing anything else here.
+   every carried item, and (b) adds state for one feature. Written to (a); (b) can follow in G3,
+   but only with the drop rule above (the list skips a drop's copy) and the plant and implant
+   writes; nothing else here changes.
