@@ -1459,6 +1459,19 @@ export class NPCBehavior {
 
                 // Reached end of path? Choose new target
                 if (this.pathIndex >= this.currentPath.length) {
+                    if (this._stopOnArrival && this.patrolTarget?.isTemporary) {
+                        // The end of a bump's sidestep leg, not of the move: the proximity guard above
+                        // already handled being near the destination, so this is short of it. Drop the
+                        // sidestep and head for the real destination; the move keeps its owner and id,
+                        // and the arrival fires there, once.
+                        this.config.patrol.waypoints = this.config.patrol.waypoints.filter(wp => !wp.isTemporary);
+                        this.config.patrol.waypointIndex = 0;
+                        this.patrolTarget = null;
+                        this.currentPath = [];
+                        this.pathIndex = 0;
+                        this.pathFollowingActive = false;
+                        return;
+                    }
                     if (this._stopOnArrival) {
                         // NPC has arrived at its emergency destination — stop permanently
                         this._triggerGoToStayArrival();
@@ -2187,7 +2200,8 @@ export class NPCBehavior {
         this.patrolTarget = {
             x: wpDest.x,
             y: wpDest.y,
-            dwellTime: nextWaypoint.dwellTime || 0
+            dwellTime: nextWaypoint.dwellTime || 0,
+            isTemporary: !!nextWaypoint.isTemporary   // a bump's sidestep (npc-sprites.js), not a real stop
         };
 
         this.lastPatrolChange = time;
