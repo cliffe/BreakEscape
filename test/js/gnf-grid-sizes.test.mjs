@@ -81,9 +81,9 @@ test('a compact PC monitor hides the 16px username line, which no longer fits it
     assert.match(css, /\.pc-monitor\[data-compact\] \.signin-username\s*\{\s*display: none;/);
 });
 
-// Elements that set no size of their own inherit the framework's 18px GNF from .minigame-container,
+// Elements that set no size of their own inherit the framework's 16px GNF from .minigame-container,
 // which the scan above cannot see. Each of these must declare a grid size itself, and none may
-// declare an off-grid one (live run, 18 Nov: all of them drew at 18px).
+// declare an off-grid one (live run, 18 Nov: all of them drew at 18px, the old default).
 const OWN_SIZE = [
     ['password-minigame.css', '.pc-screen-area .signin-prompt'],
     ['pc-monitor.css', '.pc-monitor > .postit-note.pc-monitor-postit'],
@@ -96,7 +96,7 @@ for (const [file, sel] of OWN_SIZE) {
     test(`${file}: ${sel.replace(/\n/g, ' ')} declares its own GNF grid size`, () => {
         const rules = fontRules(file).filter((r) => r.sel === sel && !r.media);
         const sizes = rules.map((r) => r.size).filter((s) => s !== null);
-        assert.ok(sizes.length > 0, 'a base rule sets font-size (else it inherits the framework 18px)');
+        assert.ok(sizes.length > 0, 'a base rule sets font-size (else it inherits the framework 16px)');
         for (const s of sizes) assert.ok(s >= 16 && s % 8 === 0, `${sel} is ${s}px`);
     });
 }

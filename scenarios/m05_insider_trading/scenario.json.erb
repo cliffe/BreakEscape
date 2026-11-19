@@ -1335,11 +1335,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <% end %>
 <% end %>
             {
-              "_comment": "PASS 4 fix 4 (M5: now her call): recruiter_texted goes true when her ring is offered, while the player is being sent to the vault, so HaX flags the number. Single-term condition (&&-only rule). Skipped if the player has already rung her back.",
+              "_comment": "PASS 4 fix 4 (M5: now her call): recruiter_texted goes true when her ring is offered, while the player is being sent to the vault, so HaX flags the caller (the text lands at 12 s, while her 20 s ring may still be going, so the wording must hold whether she is ringing, answered, declined, queued or missed; declined and missed rings both leave a callback). Single-term condition (&&-only rule). Skipped if the player has already rung her back.",
               "eventPattern": "global_variable_changed:recruiter_texted",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 12000, "message": "That TalentStack number is the Recruiter. Hear her out if you want. Just don't give her anything.", "skipIfGlobal": "recruiter_contacted_player" }
+              "sendTimedMessage": { "delay": 12000, "message": "That TalentStack caller is the Recruiter. Answer or not, she stays on your phone and you can ring her back. Just don't give her anything.", "skipIfGlobal": "recruiter_contacted_player" }
             },
             {
               "_comment": "PASS 2 review M3: completing the collect task without the item is rejected server-side (game.rb:1179-1210). HaX hands over a real id_badge and authorises the office card on Patricia's behalf.",
