@@ -1,9 +1,10 @@
 // Voiced call mode in phone landscape (max-height 500px, the 844x390 budget): the status bar,
 // header, thread, replies and the end-call button all fit the 253px phone screen, the end-call
-// button stays visible, and call rules for screens taller than 820px are untouched. The end-call
+// button stays visible, and base call rules are untouched. The end-call
 // button rules are shared with every screen up to 820px tall (@media screen and (max-height: 820px)),
-// and calls with replies showing on 501 to 820px screens (1280x720, 800x600, portrait phones) get a
-// scrolling thread of the latest line plus the newest tell (@media (500px < height <= 820px)).
+// and calls with replies showing on screens taller than 500px (1280x720, 800x600, 1920x1080, portrait
+// phones; the phone screen stops growing at 700px) get a scrolling thread of the latest line plus the
+// newest tell (@media (height > 500px)).
 // Reads the CSS, no browser.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +39,7 @@ const all = rules(css);
 const land = all.filter(r => /max-height:\s*500px/.test(r.media));
 const V = '.phone-call-mode #conversation-view';
 const SHARED_MEDIA = '@media screen and (max-height: 820px)';
-const DESK_MEDIA = '@media (500px < height <= 820px)';
+const DESK_MEDIA = '@media (height > 500px)';
 // The end-call button rules serve every call screen up to 820px tall, so they live in one shared block
 const shared = all.filter(r => r.media === SHARED_MEDIA);
 const L = sel => { const r = land.concat(shared).find(x => x.selector.split(', ').includes(V + ' ' + sel)); assert.ok(r, 'landscape or shared rule ' + sel); return r; };
@@ -250,7 +251,7 @@ check('landscape call rules are all scoped to call mode', () => {
         assert.ok(r.selector.split(', ').every(s => s.includes('phone-call-mode')), r.selector);
     }
 });
-check('portrait and tall-desktop (over 820px) call rules are unchanged', () => {
+check('portrait and tall-desktop (over 820px) base call rules are unchanged', () => {
     const base = all.filter(r => r.media === '');
     const B = sel => base.find(r => r.selector === sel).body;
     assert.match(B('.phone-call-mode .conversation-avatar, .phone-call-mode .conversation-avatar-placeholder'), /width:\s*128px/);
@@ -260,7 +261,7 @@ check('portrait and tall-desktop (over 820px) call rules are unchanged', () => {
     assert.match(B('.phone-call-mode .call-controls'), /padding:\s*10px 0 14px/);
     assert.match(B('.phone-call-mode .conversation-header'), /padding:\s*16px/);
     assert.match(B('.phone-call-mode .call-status-bar'), /padding:\s*8px 14px/);
-    // call mode rules live only in the two exact blocks below the 820px line (nothing in the tablet block)
+    // call mode rules live only in the two exact blocks (shared end-button, taller than 500px) (nothing in the tablet block)
     assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.media !== DESK_MEDIA && r.selector.includes('phone-call-mode')));
 });
 
@@ -324,7 +325,7 @@ check('appendTellBubbles: scrollTop is unchanged when no tell was added', () => 
     assert.equal(c.scrollTop, 17);
 });
 
-// Calls on 501 to 820px screens (1280x720, 1366x657, 800x600, portrait phones). The 575px screen at
+// Calls on screens taller than 500px (1280x720, 1366x657, 800x600, 1920x1080, portrait phones). The 575px screen at
 // 1280x720 clipped the end-call button, so the button leaves the flow (shared with landscape) and the
 // thread, while replies show, is a scrolling box of the latest line plus the newest tell.
 const desk = all.filter(r => r.media === DESK_MEDIA);
@@ -333,7 +334,7 @@ const baseCall = sel => { const r = all.find(x => x.media === '' && x.selector =
 const CH = V + '.call-has-choices';
 const beats = (sel, base) => assert.ok(cmpSpec(spec(sel), spec(base)) > 0, sel + ' ' + spec(sel) + ' must beat ' + base + ' ' + spec(base));
 check('desktop-height call: the range starts exactly where the landscape block ends (no gap, no overlap)', () => {
-    assert.ok(DESK_MEDIA.includes('500px < height'), 'strict lower bound');
+    assert.ok(DESK_MEDIA.includes('height > 500px'), 'strict lower bound, no upper gap');
     assert.ok(land.length > 0 && land.every(r => r.media === '@media (max-height: 500px)'), 'landscape block is max-height 500px');
     assert.ok(desk.length >= 5);
     assert.ok(!desk.some(r => /max-height:\s*500px/.test(r.media)));

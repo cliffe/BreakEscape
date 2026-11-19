@@ -1079,12 +1079,15 @@
     }
 }
 
-/* Voiced call with replies showing, on a screen 501 to 820 px tall: the thread keeps the contact's
+/* Voiced call with replies showing, on any screen taller than 500 px (the phone screen stops growing
+   at 700 px, so the same overflow hits 1920x1080 and a 390x844 phone after a reply adds the influence
+   change line, not only 501 to 820 px): the thread keeps the contact's
    latest line (room for three lines) and, in influence calls, the newest tell trailing it, as the
    landscape block does. It scrolls (the call code scrolls it to the bottom), so a longer line or a
    second tell is reachable by scrolling up and nothing is cut off unseen. While the contact speaks
-   (no replies yet) the thread keeps its full size. Range syntax leaves no gap at 500 px. */
-@media (500px < height <= 820px) {
+   (no replies yet) the thread keeps its full size. Range syntax leaves no gap at 500 px. The end-call
+   button stays in the flow above 820 px, where the stack fits once the thread is capped. */
+@media (height > 500px) {
     .phone-call-mode #conversation-view.call-has-choices .messages-container {
         box-sizing: border-box;
         min-height: 82px;
