@@ -37,7 +37,18 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**NEWEST (night 2026-11-19), read this first.** Reviews committed: lock R10 `f2a0d0566` (0B/5M),
+**NEWEST-2 (late night 2026-11-19), read this first.** SETTLED: core (R10 `ec281cf60`, 4 nits
+left), lock (R12 `20461519b`), cracking (R4 `7566a4055`; Sonnet fixing F1/F2 minors now), priv,
+MFA, log. Skin: R10 fixes `7b4dd6309`, Sonnet R11 delta running. Core 9.1 took skin request 5
+(`d335b4f6f`). ROUND 3 page published (same artifact, key `be-ops-plan-picks-r3`, source
+scratchpad `ops_plan_picks.html`, r2 backup `ops_plan_picks_r2_backup.html`, groups in
+`r3_groups.js`): R3-1 skin 15(a), R3-2 15(b), R3-3 salt, R3-4 `common`, R3-5 carriedGone,
+R3-6 knock-out drop credential bug, R3-7 timer/object-action claim bug, R3-8 plain carried
+container bug. Bug-fix branch reviewer still not reported (p-keyring-fix head 8aac59791).
+NEXT: skin settles → cross-plan R6 (opus55; check priv `common` recipe vs cracking Q2, stale
+line cites, cli ownership), then wait for round 3 answers.
+
+**NEWEST (night 2026-11-19).** Reviews committed: lock R10 `f2a0d0566` (0B/5M),
 skin R9 `ef99e1cdc` (0B/7M), core R8 `186396c27` (0B/1M/6m), cracking R2 `fbecdc5a3` (1B/4M).
 RUNNING fixers (no commits by them): opus55 lock R10 fixer (Rule D redesign, section 15 tidy, adds
 MAJOR-1 carriedGone question); opus55 skin R9 fixer (M1 address serving → change to core request
