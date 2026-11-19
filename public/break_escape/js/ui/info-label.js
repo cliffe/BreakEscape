@@ -141,8 +141,12 @@ export function updateInfoLabel() {
         const dy = oy - py;
         if (dx * dx + dy * dy > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
-        const fromFeet = !!target && !target.doorProperties;
-        const score = angularDiff(faceX, faceY, fromFeet ? feet.x : px, fromFeet ? feet.y : py) * 1000 + Math.sqrt(dx * dx + dy * dy);
+        // Same aim as tryInteractWithNearest: a scenario object by the better of feet-to-centre and body-to-top-edge
+        let diff = angularDiff(faceX, faceY);
+        if (target && !target._isNPC && !target.doorProperties) {
+            diff = Math.min(angularDiff(faceX, faceY, feet.x, feet.y), angularDiff(faceX, target.y));
+        }
+        const score = diff * 1000 + Math.sqrt(dx * dx + dy * dy);
         if (score < bestScore) {
             bestScore = score;
             bestText  = text;
