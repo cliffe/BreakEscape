@@ -165,6 +165,26 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   on Fable. Settled in the plan: 400-byte row cap, 128 KB total; refused sign-ins logged; a play
   row cannot be a puzzle's anomaly. Log questions for the picks page are now 2 (copied-card
   identity in the door log; NPC or office-life rows): drop the other LOG questions.
+- 11:31 HANDOFF 4 (newest). State by plan:
+  CORE: R2 findings `cd7ac5f1a` (0B 1M 10m); R2 reviser running (Fable, a3b732d6aa3fe7b91), also
+  taking the skin's and privilege's requests to core. Next: commit, R3 on Opus (delta is allowed
+  on Sonnet only if nothing touches secrets; this one changes what the browser is sent, so Opus).
+  PRIVILEGE: R3 findings `4382058aa` (0B 1M 12m, verdict: delta is enough for R4); R3 reviser
+  running (Opus, a6804b381c2cc5cc0). Next: commit, R4 delta review (Fable, since it changes the
+  collect route's access answer).
+  SKIN: R2 revision `b0fa7afee` (1058 lines); R3 full review running (Opus, a967dddbf5130541a).
+  One user question left (scenario default skin, no forcing).
+  MFA: R3 full review running (Opus, a7c73074fc9a9b4d1).
+  LOG_ROWS: continuation of the R2 revision running (Opus, a325100074ccbcabb). Next: commit,
+  R3 full review on Fable.
+  CRACKING: held for BLOCK-1.
+  Rulings 11:26 to 11:31: log plan's event names win (`usb_install_overridden`,
+  `credentials_harvested`), `signin_refused` everywhere; `once:` option and stored-or-not return
+  on the helper, callers on non-saving routes save only when a row was stored; the collect route
+  answers the same for an unknown PC and one with no admin session; "Fixed" shows only on a
+  confirmed finding; technique cards need a plain item type, not `notes1`; a technique session
+  refused at the PC keyboard gets its own code; core's Panels draw the access level.
+  New user question from core: do technique sessions join the permanent `signedInPcs` list.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
