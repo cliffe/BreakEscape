@@ -73,6 +73,6 @@ test('F1: found_upload_schedule is not set by the log (it gates the operator-nam
 });
 
 test('F6: the HaX Recruiter text says she is on the phone, not that there is a number to find', () => {
-    assert.ok(erb.includes('"message": "That TalentStack call was the Recruiter. She stays on your phone, so ring her back'), 'new wording present');
+    assert.ok(erb.includes('"message": "That TalentStack caller is the Recruiter. Let it ring out and she stays on your phone'), 'new wording present');
     assert.ok(!erb.includes('That TalentStack number is the Recruiter'), 'old wording gone');
 });
