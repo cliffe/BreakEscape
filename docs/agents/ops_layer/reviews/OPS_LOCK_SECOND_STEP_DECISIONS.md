@@ -60,3 +60,9 @@
 - m3: fixtures name `test_objectives`, `test_simple_success`, `test_pin_dust`, `m01_first_contact`, `m02_ransomed_trust` and the fixed script (every lock wrong and right, `GET /container`, `filtered_room_data`), written by the core plan's capture task. The controller tests build inline scenarios, so they could not be named as fixtures.
 - m4: `lock_step_never_passes?` and `held_item_sources` listed in 5.1 and the shared-files row; unit test moved to `mfa_model_test.rb`.
 - Nits: graph uses the MFA plan's require; "never passes" label; "L1a and L1b first". Plan at 740 lines or under by trimming open-question wording.
+
+## R5 fixes (2026-11-19)
+
+- M1: owner ruling. `held_item_sources` counts a device exactly when the game lets the player hold it: room objects and `contents`, start items, and a room NPC's `itemsHeld` only when its story offers the type (`offers_item_text?`) or it is not `koImmune`. Headless records and declared grants dropped, as `held_friendface_phone` and `device_for` do not count them; widening that stays a request to the MFA plan. Unit test turned round. Dana is `koImmune` with no give, so `dana_cabinet` (B10) gets the warning and the dashed edge.
+- m1: golden script fixes room-walk order, scope ancestors open first, the `requires` item set by the test, refused locks recorded; `test_simple_success` gives room answers only.
+- Nits: lines rewrapped; `dana_cabinet` named as the lock that matches. Plan at 745 lines.
