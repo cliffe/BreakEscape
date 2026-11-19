@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e4_exec_whaling_defend_defend_complete:
-        Thandiwe Moyo: That's everything cleared, thanks. When it's money and it's in a hurry, ring her on the number you already have, or ask Yasmin.
+        Thandiwe Moyo: That's everything cleared, thanks. Money, in a hurry: ring her on the number you already have, or ask Yasmin.
     - else:
         Thandiwe Moyo: Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.
     }

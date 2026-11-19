@@ -384,7 +384,7 @@ LINES = {
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
         "You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.",
-        "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
+        "That's the inbox sorted, thanks. Whatever the sign, the move is the same: report it and let the team act.",
         'Thanks, Anjali.', 'Any time.'),
     # E17 and E19: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e17', 'defend'): (
@@ -402,7 +402,7 @@ LINES = {
         'Thanks, Tomasz.', 'Any time.'),
     ('e15', 'defend'): (
         "Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.",
-        "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it, we can't mend what we don't know about.",
+        "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it.",
         'Thanks, Nilesh.', 'Any time.'),
     # E20: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e20', 'defend'): (
@@ -411,7 +411,7 @@ LINES = {
         'Thanks, Zainab.', 'Any time.'),
     ('e9', 'defend'): (
         "Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.",
-        "That's it locked down, thanks. A different password for every account, kept in a manager, and deny what you didn't start: that's the whole of it.",
+        "That's it locked down, thanks. A different password for every account, kept in a manager, and deny anything you didn't start.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e16', 'defend'): (
         "Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk: raise a concern as facts, then sort the messages. Tell me what you're offered.",
@@ -420,12 +420,12 @@ LINES = {
     # E14: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e14', 'defend'): (
         "You're on an authorised exercise. A feed and an inbox: some posts give too much away, some messages fish for how we work. Take each as it comes.",
-        "That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are. Report anything that asks about our systems.",
+        "That's the feed and the inbox done, thanks. The tell is always what they ask for, no matter how friendly they seem. Report anything that asks about our systems.",
         'Thanks, Julian.', 'Any time.'),
     # E10: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e10', 'defend'): (
         "The kiosk has a morning of web pages, the kind that turn up while you work. For each, decide: carry on, close and report, or go the trusted way.",
-        "That's the morning sorted, thanks. The rule holds every time: no honest web page ever needs you to paste, run, install or call.",
+        "That's the morning sorted, thanks. No honest web page ever needs you to paste, run, install or call.",
         'Thanks, Niamh.', 'No bother.'),
     # E18: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
     # P1 C2 MIN-3: "come thick" (clipped from "thick and fast") -> "come fast"; P1 plain-words: "sweep" -> "an attack".

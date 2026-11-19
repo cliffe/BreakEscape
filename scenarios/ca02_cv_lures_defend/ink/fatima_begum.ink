@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e2_cv_lures_defend_defend_complete:
-        Fatima Begum: That's the inbox sorted, thanks. A real CV opens fine in the viewer, so anything that asks for more than that gets a second look from me.
+        Fatima Begum: That's the inbox sorted, thanks. A real CV just opens in the viewer. Anything that asks for more than that gets a second look from me.
     - else:
         Fatima Begum: Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.
     }

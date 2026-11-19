@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e9_passwords_defend_defend_complete:
-        Nilesh Solanki: That's it locked down, thanks. A different password for every account, kept in a manager, and deny what you didn't start: that's the whole of it.
+        Nilesh Solanki: That's it locked down, thanks. A different password for every account, kept in a manager, and deny anything you didn't start.
     - else:
         Nilesh Solanki: Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.
     }
