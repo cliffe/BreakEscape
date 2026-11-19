@@ -26,11 +26,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../../public/break_escape');
 const mjs = (f) => import(pathToFileURL(join(here, '../../public/break_escape/js/minigames/lockpicking', f)).href);
 const { LockpickingMinigamePhaser } = await mjs('lockpicking-game-phaser.js');
-const { ToolManager } = await mjs('tool-manager.js');
-const keySel = readFileSync(join(root, 'js/minigames/lockpicking/key-selection.js'), 'utf8');
-const css = readFileSync(join(root, 'css/lockpicking.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const { KeySelection } = await mjs('key-selection.js');
 const js = readFileSync(join(root, 'js/minigames/lockpicking/lockpicking-game-phaser.js'), 'utf8');
-const tm = readFileSync(join(root, 'js/minigames/lockpicking/tool-manager.js'), 'utf8');
 
 
 globalThis.Phaser = { Scale: { FIT: 3, NONE: 0, CENTER_BOTH: 1, NO_CENTER: 0 } };
@@ -57,7 +54,10 @@ function fakeLock(applied) {
         _syncObsButton: () => {},
         _fitLockZoom: () => calls.push(['zoomfit']),
         _applyLockFit: H._applyLockFit,
-        _watchLockBox: () => calls.push(['watchbox'])
+        _watchLockBox: () => calls.push(['watchbox']),
+        _placeKeyPanel: H._placeKeyPanel,
+        _scrollKeyPanelIntoView: H._scrollKeyPanelIntoView,
+        keySelectionContainer: null
     };
     return { fake, calls, scroll, scale, canvasStyle, box: document.querySelector('#phaser-game-container') };
 }
@@ -163,4 +163,56 @@ test('the feedback line sticks to the foot of the game area when the lock is tal
     assert.match(m[2], /position\s*:\s*sticky/);
     assert.match(m[2], /bottom\s*:\s*\d+px/);
     assert.doesNotMatch(m[2], /border-radius|gradient|blur/);
+});
+
+test('the key panel follows the crop after a refit (desktop panel to phone landscape and back)', () => {
+    const t = fakeLock({ fit: false, portrait: false, capped: false });
+    t.fake._portraitCameraOffset = null;
+    const ys = [];
+    t.fake.keySelectionContainer = { panelHeight: 160, y: 230, setY(v) { this.y = v; ys.push(v); } };
+    assert.equal(KeySelection.panelY(null, 160), 230);
+    at(844, 390, () => H._refitLock.call(t.fake));
+    assert.equal(t.fake.keySelectionContainer.y, 206, 'crop y 30: the labels end 4px inside the crop');
+    assert.ok(t.fake.keySelectionContainer.y + 160 <= 30 + 340 - 4);
+    at(390, 844, () => H._refitLock.call(t.fake));
+    assert.equal(t.fake.keySelectionContainer.y, 196, 'crop y 20');
+    at(1366, 768, () => H._refitLock.call(t.fake));
+    assert.equal(t.fake.keySelectionContainer.y, 230, 'back to the desktop y');
+});
+
+test('the builder and the refit share one panel position formula', () => {
+    const src = readFileSync(join(root, 'js/minigames/lockpicking/key-selection.js'), 'utf8');
+    assert.match(src, /KeySelection\.panelY\(this\.parent\._portraitCameraOffset, containerHeight\)/);
+    assert.match(js, /KeySelection\.panelY\(this\._portraitCameraOffset/);
+});
+
+test('with the key panel open the game area scrolls to its end so the sticky line cannot cover the labels', () => {
+    const area = { scrollTop: 0, scrollHeight: 463 };
+    const f = { keySelectionContainer: {}, gameContainer: area };
+    H._scrollKeyPanelIntoView.call(f);
+    assert.equal(area.scrollTop, 463);
+    area.scrollTop = 0;
+    H._scrollKeyPanelIntoView.call({ keySelectionContainer: null, gameContainer: area });
+    assert.equal(area.scrollTop, 0, 'no panel, no scroll');
+    const ki = readFileSync(join(root, 'js/minigames/lockpicking/key-insertion.js'), 'utf8');
+    assert.match(ki, /_scrollKeyPanelIntoView/, 'a longer feedback line re-scrolls');
+});
+
+test('the feedback background is solid', () => {
+    const rawCss = readFileSync(join(root, 'css/lockpicking.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const m = /(^|\})\s*\.lockpick-feedback\s*\{([^}]*)\}/.exec(rawCss);
+    assert.match(m[2], /background\s*:\s*#000\s*;/);
+});
+
+test('the zoom listener leaves a game that is in the fitted layout alone', () => {
+    const t = fakeLock({ fit: true, portrait: false, capped: true });
+    let zoomed = 0;
+    t.scale.setZoom = () => { zoomed++; };
+    t.fake._lockRoom = () => ({ w: 1900, h: 1000 });
+    at(1920, 1080, () => H._fitLockZoom.call(t.fake));
+    assert.equal(zoomed, 0, 'the FIT game is not zoomed while the refit is pending');
+    assert.equal(t.box.style.maxWidth, '1200px', 'the box is untouched');
+    t.fake._lockFitApplied = { fit: false, portrait: false, capped: false };
+    at(1920, 1080, () => H._fitLockZoom.call(t.fake));
+    assert.equal(zoomed, 1, 'a full-size game is zoomed as before');
 });
