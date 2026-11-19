@@ -64,6 +64,9 @@ export out
 heap_mb=${TEST_JS_MAX_OLD_SPACE:-2048}
 export heap_mb
 mem_mb=${TEST_JS_MEM_MB:-3072}
+case "$mem_mb" in
+  ""|*[!0-9]*) echo "test-js: TEST_JS_MEM_MB='$mem_mb' is not a whole number of MB; using 3072" >&2; mem_mb=3072 ;;
+esac
 if [ "$mem_mb" -gt 0 ] 2>/dev/null && command -v prlimit >/dev/null 2>&1; then
     :
 else
