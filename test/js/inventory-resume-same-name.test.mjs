@@ -79,13 +79,14 @@ test('items with no id on either side still match on type and name', () => {
     assert.ok(heldIds().filter(id => id === 'bandage').length === 1, 'one bandage');
 });
 
-test('a saved item with an id still matches a held start item with none (the lockpick set)', () => {
-    reset({ playerInventory: [{ type: 'lockpick', name: 'Lock Pick Kit', id: 'kevin_park_held_0' }] });
-    const before = window.inventory.items.length;
-    const start = { type: 'lockpick', name: 'Lock Pick Kit' };
-    assert.ok(isSameHeldItem({ type: 'lockpick', name: 'Lock Pick Kit', id: 'kevin_park_held_0' }, { scenarioData: start }), 'matches');
+test('a saved lockpick with an id still merges with the held start lockpick that has none', () => {
+    reset({ playerInventory: [{ type: 'lockpick', name: 'Lock Pick Kit' }, { type: 'lockpick', name: 'Lock Pick Kit', id: 'kevin_park_held_0' }] });
     processInitialInventoryItems();
-    assert.ok(window.inventory.items.length >= before, 'restore ran');
+    assert.ok(heldIds().filter(id => id === 'lockpick' || id === 'kevin_park_held_0').length === 1, 'one lockpick');
+});
+
+test('an id on one side and a lock reference on the other compare as identities', () => {
+    assert.ok(isSameHeldItem({ type: 'key', name: 'A', id: 'door1' }, { scenarioData: { type: 'key', name: 'B', opens_lock: 'door1' } }), 'same identity');
 });
 
 test('keys match on the lock they open when they carry no id', () => {
