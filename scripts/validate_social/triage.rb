@@ -271,6 +271,8 @@ module ValidateSocial
             issues << err("#{at}['#{id}'] names '#{name}', which is not declared in globalVariables; an undeclared name is silently not synced to ink")
           elsif ![true, false].include?(ctx.all_globals[name])
             issues << err("#{at}['#{id}'] names '#{name}', which must be declared as a boolean, not #{ctx.all_globals[name].inspect}")
+          elsif ctx.all_globals[name] != false
+            issues << err("#{at}['#{id}'] names '#{name}', which is declared true; it must start false, as a true is never cleared and would read caught before any round")
           end
         end
       end

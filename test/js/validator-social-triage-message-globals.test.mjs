@@ -18,7 +18,7 @@ function lintJson(json) {
     ctx = ValidateSocial::Context.new(json: json, repo_root: '.', social: json['social'], imports: nil)
     puts JSON.generate(ValidateSocial::Triage.check(ctx))`;
   const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
-  assert.equal(r.status, 0, r.stderr);
+  assert.ok(r.status === 0, r.stderr);
   return JSON.parse(r.stdout.trim().split('\n').pop());
 }
 
@@ -45,61 +45,67 @@ const errors = (out) => out.filter((s) => s.startsWith('❌'));
 const mgErrors = (out) => errors(out).filter((s) => /messageGlobals/.test(s));
 
 test('a valid mapping gives no error', { skip }, () => {
-  assert.deepEqual(mgErrors(lintJson(base({ a: 'caught_a', b: 'caught_b' }))), []);
+  assert.ok(mgErrors(lintJson(base({ a: 'caught_a', b: 'caught_b' }))).length === 0);
 });
 
 test('no option gives no messageGlobals error', { skip }, () => {
-  assert.deepEqual(mgErrors(lintJson(base(undefined))), []);
+  assert.ok(mgErrors(lintJson(base(undefined))).length === 0);
 });
 
 test('an unknown message id is an error', { skip }, () => {
   const e = mgErrors(lintJson(base({ nope: 'caught_a' })));
-  assert.equal(e.length, 1);
-  assert.match(e[0], /'nope', which is not a message id in this set/);
+  assert.ok(e.length === 1);
+  assert.ok(/'nope', which is not a message id in this set/.test(e[0]), e[0]);
 });
 
 test('a genuine (non-phish) message is an error', { skip }, () => {
   const e = mgErrors(lintJson(base({ r: 'caught_a' })));
-  assert.equal(e.length, 1);
-  assert.match(e[0], /not a phish item/);
+  assert.ok(e.length === 1);
+  assert.ok(/not a phish item/.test(e[0]), e[0]);
 });
 
 test('a non-string name is an error', { skip }, () => {
   for (const bad of [7, true, null, ['caught_a'], { x: 1 }]) {
     const e = mgErrors(lintJson(base({ a: bad })));
-    assert.equal(e.length, 1, JSON.stringify(bad));
-    assert.match(e[0], /must be a global name/);
+    assert.ok(e.length === 1, JSON.stringify(bad));
+    assert.ok(/must be a global name/.test(e[0]), e[0]);
   }
 });
 
 test('a name that is not a valid global name is an error', { skip }, () => {
   const e = mgErrors(lintJson(base({ a: 'has space' })));
-  assert.equal(e.length, 1);
-  assert.match(e[0], /must be a global name/);
+  assert.ok(e.length === 1);
+  assert.ok(/must be a global name/.test(e[0]), e[0]);
 });
 
 test('a name not declared in globalVariables is an error', { skip }, () => {
   const e = mgErrors(lintJson(base({ a: 'undeclared_name' })));
-  assert.equal(e.length, 1);
-  assert.match(e[0], /not declared in globalVariables/);
+  assert.ok(e.length === 1);
+  assert.ok(/not declared in globalVariables/.test(e[0]), e[0]);
 });
 
 test('a name declared as a number is an error', { skip }, () => {
   const e = mgErrors(lintJson(base({ a: 'not_bool' })));
-  assert.equal(e.length, 1);
-  assert.match(e[0], /must be declared as a boolean/);
+  assert.ok(e.length === 1);
+  assert.ok(/must be declared as a boolean/.test(e[0]), e[0]);
+});
+
+test('a name declared true is an error (a true is never cleared)', { skip }, () => {
+  const e = mgErrors(lintJson(base({ a: 'caught_a' }, { caught_a: true })));
+  assert.ok(e.length === 1);
+  assert.ok(/declared true; it must start false/.test(e[0]), e[0]);
 });
 
 test('two messages sharing one name is an error', { skip }, () => {
   const e = mgErrors(lintJson(base({ a: 'caught_a', b: 'caught_a' })));
-  assert.equal(e.length, 1);
-  assert.match(e[0], /more than one message/);
+  assert.ok(e.length === 1);
+  assert.ok(/more than one message/.test(e[0]), e[0]);
 });
 
 test('messageGlobals that is not an object is an error', { skip }, () => {
   for (const bad of ['caught_a', ['a'], 5]) {
     const e = mgErrors(lintJson(base(bad)));
-    assert.equal(e.length, 1, JSON.stringify(bad));
-    assert.match(e[0], /must be an object/);
+    assert.ok(e.length === 1, JSON.stringify(bad));
+    assert.ok(/must be an object/.test(e[0]), e[0]);
   }
 });
