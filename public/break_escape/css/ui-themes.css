@@ -1211,16 +1211,15 @@
 
 
 /* ===================================================================
-   Minigame tool windows: the generic ones (examine, flag station, VM
-   launcher, container, combination and cryptex locks, fingerprint kit and
-   reader) take the theme's frame. Lockpicking stays unframed. In-world devices (notebook, keypad, monitors, scanners, phone,
+   Minigame tool windows: the generic ones (examine, flag station,
+   container, combination and cryptex locks, fingerprint kit and
+   reader) take the theme's frame. Lockpicking stays unframed. In-world devices (notebook, keypad, monitors, scanners, phone, the VM launcher,
    documents, sector consoles) keep their own look. The framework tags each
    window with data-minigame (minigame-manager.js).
    =================================================================== */
 
 [data-ui-theme] .examine-minigame .minigame-game-container,
 [data-ui-theme] .minigame-container[data-minigame="flag-station"] > .minigame-game-container,
-[data-ui-theme] .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container,
 [data-ui-theme] .minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),
 [data-ui-theme] .minigame-container[data-minigame="combination"] > .minigame-game-container,
 [data-ui-theme] .minigame-container[data-minigame="cryptex"] > .minigame-game-container,
@@ -1239,11 +1238,6 @@
   image-rendering: pixelated;
 }
 
-/* VM launcher: the device face fills the whole window inside the frame (after the shared surface rule above) */
-[data-ui-theme] .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
-  background-color: var(--device-palette-face);
-}
-
 /* Examine: the card is fully opaque. The shared surface above is under 100% alpha and the
    room (a busy ward, the NPCs) showed through the text. The theme's own 9-slice frame stays;
    only the fill changes to --ui-surface-opaque (the same token the ending warning uses). */
@@ -1251,6 +1245,7 @@
   background-color: var(--ui-surface-opaque);
 }
 
+/* Examine */
 [data-ui-theme] .examine-image-box,
 [data-ui-theme] .examine-text {
   border-color: var(--ui-line);
@@ -1293,9 +1288,8 @@
   filter: grayscale(1) brightness(0.6);
 }
 
-/* VM launcher: its content colours come from the shared device palette (device-frame.css), not
-   the theme, so the launcher matches the other device windows under every theme. Only the window
-   frame above is themed. */
+/* VM launcher: a device frame (device-frame.css) with the shared device palette, so it matches the
+   other device windows under every theme. Nothing here themes it. */
 
 /* Fingerprint dusting kit: its own colour variables follow the theme */
 [data-ui-theme] .dusting-container {
