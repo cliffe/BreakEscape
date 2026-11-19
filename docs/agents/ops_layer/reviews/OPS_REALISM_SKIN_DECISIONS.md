@@ -89,3 +89,9 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 | R5-m1 to R5-m3, R5-n1, n2, n7, n8 | Written in. The skin cites the core's exposed `pending` set and `pendingKey` (core 5.3) and the renderer-drawn messages (core 5.5); `network_only` is described as a keyboard fetch with no route; W1 and W2 run on a copy with no default after K3; the Terminal's selectors for the select actions are null and `data-quiet` is carried | Agrees the two plans without a cross-plan request |
 | R5-n3, n4 (K3 JSON block, `check` params) | Skipped | The builder reads the routes from the core |
 | R4-M1, `use` key (earlier row) | The earlier note that the core's argument shape is not named is superseded: the core now names `perform(offer)` | Core 5.3 text |
+
+## Core picks follow-up (2026-11-19)
+
+- Core request 6 applied: evidence, Probe and the Confirm or Probe label, the noise line, `noise`, `noiseLimit`, `alerted`, `data-quiet`, `noisy`, the quiet or noisy split, `network_alerted` (events now eight) and `network_only` (codes now twelve) are removed from SKIN text, tests, the scenario beats and the live run. Discovery is stated as display only.
+- World-side marks: SKIN names the compromised mark and the remote-view frame as the world side's, leaves them showing, and reads marks through `compromiseMarks()` in the test snapshot and beat T7. The keyboard case needs no skin text: a click on a technique-held PC opens the remote view.
+- Scan output: Panels show a "Scanning" progress bar while a sweep or service scan runs; the Terminal prints simulated fictional scanner-style lines (`SCAN_OUTPUT_TEXT`, fixed and deterministic) over the same single request and answer. Added to the Terminal-only text list, the format test, the parity text test and the K2 screenshots.

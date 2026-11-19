@@ -65,3 +65,4 @@ entries below took a different fix from the one suggested.
 - `tells.techniques` keeps its name in both options of the pretext question.
 - Three accepted calls: ops routes still need a sweep before a scan; the unswept block lists PCs with a held session; Wi-Fi APs get no compromise mark.
 - needsSession keyboard-only: only a session at the PC's own keyboard (typed sign-in or claim) satisfies an object's `needsSession`; a technique session does not, though a click serves its desktop. Section 5.4 table and the `network_technique_session_test` row say so; the privilege plan's request is answered in cross-plan request 1.
+- Every technique use writes a `technique_used` row, a repeat of a granted use included, with `save_limit: true` so repeats are bounded by the log helper's limit. The "a repeat writes no row" rule is removed from sections 5.4, 5.6 (exact repeats), 11 and 13.
