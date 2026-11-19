@@ -428,7 +428,10 @@ She loses it in the middle. Their own records close the gap.
 // lint: call-knot
 #speaker:agent_0x99
 I've got it in front of me.
-$12.8 million still in the wallet, pending for six cells. The advances have already gone.
+// Confirm minors (m06): once the fund is decided in Satoshi's office the wallet is no longer "pending".
+{not assets_decided:
+    $12.8 million still in the wallet, pending for six cells. The advances have already gone.
+}
 Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.
 Not Ghost Protocol, the other name on that page. They're one of the cells being paid.
 -> on_fund_choices
@@ -454,6 +457,12 @@ And they've called it "The Architect's Masterpiece".
 
 === critical_choice_preview ===
 // lint: call-knot
+// Confirm minors (m06): freeze or watch is closed once the fund is decided.
+{assets_decided:
+    ~ reacted_fund = true
+    #exit_conversation
+    -> DONE
+}
 Which leaves you a choice.
 Freeze it, and the balances stop tonight. They'll know we were here the moment we do.
 Or watch it. We map every cell that draws on it, and the money reaches them.
