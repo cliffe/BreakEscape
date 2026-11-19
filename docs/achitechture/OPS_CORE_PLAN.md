@@ -32,12 +32,11 @@ never put in a log row; the alias stands in for it in both places.
 | Host with a sign-in | a room object with `lockType: "login"` (as today), which may now carry `services[]` | unchanged, plus `services` | the object's `id` |
 | Host with no sign-in | top-level `hosts.<hostId>` (new, server-only) | `{ name, network, sprite?, offWhen?, services[] }` | `<hostId>`, in one id space with objects and resources |
 | Service | `services[]` on either kind of host | `{ name, label?, port, product, version, weaknesses[]?, decoys[]? }`; `name` is unique on its host and is the service's id | `<hostId>.<serviceName>` |
-| Weakness | `services[].weaknesses[]` | `{ id, class, severity, summary?, evidence?, needs?, grants?, fixedIf? }` | finding id `<hostId>.<serviceName>.<weaknessId>` |
-| Decoy | `services[].decoys[]` | `{ id, class, severity, summary?, evidence?, falseBecause }` | finding id, same form |
-| Finding | not authored; a server record made by a check | `{ id, alias, hostId, service, class, severity, summary, status, evidence? }`, `status` is `unconfirmed`, `confirmed` or `false`; a confirmed finding also carries `needs[]`, and `fixed: true` while its weakness's `fixedIf` holds (never on an unconfirmed or false one). `alias` is a short name (`f1`, `f2`, ...) given in the order the player found them, unique in the game | finding id; the alias is for display and for typing |
+| Weakness | `services[].weaknesses[]` | `{ id, class, severity, summary?, needs?, grants?, fixedIf? }` | finding id `<hostId>.<serviceName>.<weaknessId>` |
+| Decoy | `services[].decoys[]` | `{ id, class, severity, summary?, falseBecause }` | finding id, same form |
+| Finding | not authored; a server record made by a check | `{ id, alias, hostId, service, class, severity, summary, status }`, `status` is `unconfirmed`, `confirmed` or `false`; a confirmed finding also carries `needs[]`, and `fixed: true` while its weakness's `fixedIf` holds (never on an unconfirmed or false one). `alias` is a short name (`f1`, `f2`, ...) given in the order the player found them, unique in the game | finding id; the alias is for display and for typing |
 | Technique | top-level `techniques.<techniqueId>` (new, server-only): the technique card registry | `{ name, summary?, worksOn: { class, product?, versions? } }` | `<techniqueId>` |
-| Technique card | an inventory item with `technique: "<techniqueId>"` | an item of type `technique_card`, a new plain tray type with no engine behaviour of its own (section 4.3); holding it is having the card | the item's `id` |
-| Noise | `networks.<id>.alert` (optional) | `{ after, sets }`: when the network's noise count reaches `after`, the server sets the global `sets` | the global's name |
+| Technique card | an inventory item with `technique_card: "<techniqueId>"` | an item of type `technique_card`, a new plain tray type with no engine behaviour of its own (section 4.3); holding it is having the card | the item's `id` |
 
 Enumerations:
 
@@ -48,9 +47,6 @@ Enumerations:
   forged; never an item's display name), `session: "user" | "admin"` (a session already held on
   this host, for a step up), `global: <requireGlobal form>`. An `itemType` or `global` entry
   also carries an authored `label`, the words the player is shown for it (section 4.2).
-- `evidence` (one of): `item`, `itemType`, `credential` or `global`, in the same forms, with
-  `label` under the same rule. Holding it lets the player confirm the finding without noise
-  (section 1).
 - `grants` (optional; one kind when present): `{ "session": { "account": "<npcId>", "access":
   "user" | "admin" } }`, only on a host with a sign-in; or `{ "credential": "<credentialId>" }`,
   on any host. There is no third kind. The credential must be of kind `saved_connection`; the
@@ -78,9 +74,9 @@ point. Nothing in an existing scenario can be admin, so its answers do not chang
 This plan's panels draw the level wherever a session is shown (section 5.5); the privilege
 feature supplies only the value.
 
-A technique session's record always keeps its `foothold`: it is never settled at a keyboard
-(section 5.4), a step up replaces the record in place with the same foothold, and a use through
-another foothold writes a new record carrying that one.
+A technique session's record always keeps its `foothold`: serving its desktop at the PC's own
+keyboard does not settle it (section 5.4), a step up replaces the record in place with the same
+foothold, and a use through another foothold writes a new record carrying that one.
 
 The word `access` already names something else on a sign-in PC: the object's `access` list (who
 may sign in). The two are unrelated, and validator messages say "access level" for this one.
@@ -89,7 +85,7 @@ A PC holds one session at a time (`GM:4388-4417`), so a technique session replac
 session the player held there, as any new sign-in does, and a later sign-in replaces it.
 
 Server state added (all server-owned, none a sync section): `opsDiscovered`, `opsFindings`,
-`opsUsed`, `opsNoise` (section 8). Routes added: `POST /network/scan`, `/network/check`,
+`opsUsed` (section 8). Routes added: `POST /network/scan`, `/network/check`,
 `/network/confirm`, `/network/technique` (section 6). `GET /network` gains fields on rows and
 never a new route for reading.
 
@@ -113,16 +109,12 @@ a password, an unlocked screen or a keyring credential. The network itself is ne
    version, for example "files · 445 · Brackley ShareServe 3.1". The products are invented. The
    player learns that a host is a set of listening services and that the version matters.
 3. **Check a service** (S2). Check on a tile lists findings, each with a class and a severity and
-   marked unconfirmed. Some are real, and a scenario can add decoys. A finding may name a piece of
-   evidence that would settle it ("Evidence: maintenance log, not held").
-4. **Confirm a finding** (S2). Confirm settles it, in one of two ways. With the evidence in hand
-   the control reads Confirm and is silent: the player went and found the maintenance log, the
-   manual or the person who knows. Without it the control reads Probe: the player pokes the
-   service to find out, which works but adds one to the network's noise. Either way a real
-   finding becomes confirmed and now shows what it needs, as a short list with a tick or a cross
-   against each line ("An account on this host: no"), and a decoy becomes false and shows the
-   authored reason ("The banner is old; the service was patched"). This is where the player
-   learns preconditions: the finding says what is missing before any card is tried.
+   marked unconfirmed. Some are real, and a scenario can add decoys.
+4. **Confirm a finding** (S2). Confirm settles it. A real finding becomes confirmed and now shows
+   what it needs, as a short list with a tick or a cross against each line ("An account on this
+   host: no"), and a decoy becomes false and shows the authored reason ("The banner is old; the
+   service was patched"). This is where the player learns two things: a check reports false
+   positives, and the finding says what is missing before any card is tried.
 5. **Use a technique card** (S3). Cards are things the player picks up in the world: a page in a
    contractor's folder, a file on a share, a gift from an NPC. A card's face says what it works
    on: a class, and sometimes a product and versions. The player selects a finding, then a card,
@@ -130,6 +122,17 @@ a password, an unlocked screen or a keyring credential. The network itself is ne
    is a pointer shortcut that sends the same request. If the card fits and every need is
    met, the finding's grant happens: a remote desktop opens on that host as the named account, or
    a credential lands in the keyring.
+6. **See what is held** (S3). In the world, a PC or device the player holds a technique session
+   on is drawn tinted red with a small lightning-bolt marker, and so are the other things the
+   player has compromised (section 5.5). Clicking such a PC opens its desktop through the held
+   session, in a frame marked as a remote view, with no password asked.
+
+**Discovery is a display.** On a discovery network, Sweep decides what the network view lists;
+it is not a lock. The server does not refuse remote sign-in, a desktop or a share to a host the
+player has not swept: a player who already knows a host's name (from a sticky note, an NPC, a
+saved connection in the keyring) can sign in to it without sweeping, exactly as on a network
+without discovery. The sweep is the way to learn what is there, and the ops loop's own steps
+follow it (a host is scanned from its row, so only once it is listed).
 
 **Why it is a puzzle and not trial and error.** Everything needed to choose is on screen before
 the attempt: the tile gives product and version, the finding gives class and needs, the card gives
@@ -137,33 +140,31 @@ what it works on. Picking is reading and matching three facts. The work is in th
 credential sends the player to a person, a missing item sends them to a room, a missing session
 sends them to another host first.
 
-**What guessing costs: noise.** Each network keeps a noise count, shown on its block ("Noise 2 of
-5" where the scenario sets a limit). Two things raise it by one: a Probe (a confirm made without
-the finding's evidence), and a card used where reading would have ruled it out (a card of the
-wrong class, product or version, or any card on a finding already shown false). Nothing else
-does: a sweep, a scan, a check, a confirm with evidence, and a use that is refused for an unmet
-need, an unconfirmed finding, a finding that grants nothing or a fixed service are all quiet. When the count reaches the
-network's limit the server sets a global the scenario named, once, and the block shows Alerted.
-What follows is the scenario's to author with fields that already exist: a weakness with
-`fixedIf` on that global is patched by the alarmed staff, a host with `offWhen` on it is taken
-off the network, an NPC line or an objective hangs on it. So a decoy has a price (a Probe spent
-on nothing), evidence has a value (it saves the Probe), and trying every card on every finding
-runs out of room. A network with no `alert` still counts and shows its noise but nothing
-follows, which suits a first tutorial. This is question 2, and the plan is written to its
-recommendation.
+**What guessing costs: nothing, but it is written down.** Confirming a finding and trying a card
+are free. Nothing counts attempts and nothing in the scenario reacts to them. What each action
+leaves is a log row (section 13): every sweep and every card use writes one, right or wrong, and
+a scan, a check and a confirm write one the first time for that host, service or finding. A log
+reader (the log rows feature) can then show a player, or a teacher, how much was tried. A
+scenario that wants a price on guessing builds it later with the defence work; nothing here
+blocks that.
+
+**Why decoys stay.** A decoy teaches that a check reports false positives and that Confirm is the
+step that tells them apart, which holds whether or not confirming costs anything. It also gives
+a card something it must not be tried on: a card used on a false finding is refused with its
+reason and logged.
 
 **No cost in game time.** The server has no game clock, so a sweep, a scan, a check and a confirm
-take no game minutes. Noise is the only cost.
+take no game minutes.
 
 **What failure tells the player.** One reason, the first that applies, in a fixed order: confirm
 the finding first; this finding was a false positive; there is nothing to gain here (a real
 finding that grants nothing); the service has been fixed; this card is for another class;
-another product; another version; then the first unmet need by name. The answer also says
-whether the attempt was noisy. A refusal changes nothing else.
+another product; another version; then the first unmet need by name. A refusal changes nothing
+but the log.
 
 **How it joins the rest.** A granted session behaves like a remote sign-in session: it pivots
-(N6), maps shares (N4), counts for an implant that needs a session (N10), and ends when the
-foothold is unplugged (N5). A granted credential is a keyring entry (A15). Social engineering and
+(N6), maps shares (N4), counts for an implant that needs a session (N10), opens the desktop at
+the PC's own keyboard as that account, and ends when the foothold is unplugged (N5). A granted credential is a keyring entry (A15). Social engineering and
 physical work feed the needs, and network work feeds back credentials and sessions.
 
 ## 2. What the code does today
@@ -208,8 +209,8 @@ today, `technique` here), and `offWhen` in the requireGlobal form (the model for
 | Stage | Adds | Ends playable when | Size |
 |---|---|---|---|
 | S1 (N13) | `hosts` map, `services[]`, `networks.<id>.discovery`, `POST /network/scan`, host and service rows in the view | `test_ops_scan`: a discovery network opens empty; a sweep lists its hosts; a host scan lists services; a pivot then lets a second network be swept | M |
-| S2 (N14) | `weaknesses[]`, `decoys[]`, `evidence`, `fixedIf`, `networks.<id>.alert` and the noise count, `POST /network/check` and `/confirm`, the findings panel | `test_ops_findings`: findings appear only after a check; a decoy confirms false; a real one confirms and lists its needs; a fixed weakness yields no finding; probes raise the noise count to its limit and the alert global patches a weakness. No weakness in it has `grants`, so it passes the validator at S2 and unchanged after S3 | M |
-| S3 (N15) | `techniques`, the item type `technique_card` and its field `technique`, `POST /network/technique`, `via: "technique"` sessions, the keyring proof kind `technique`, the techniques panel, the validator's grant checks (a granted credential's `connectsTo` PC must take it) | `test_ops_access`: a wrong card is refused with its reason; a card on a finding that grants nothing gets the quiet `no_grant`; the right card with needs met opens the desktop or adds the credential; unplugging ends the session | L |
+| S2 (N14) | `weaknesses[]`, `decoys[]`, `fixedIf`, `POST /network/check` and `/confirm`, the findings panel | `test_ops_findings`: findings appear only after a check; a decoy confirms false; a real one confirms and lists its needs; a fixed weakness yields no finding; a global set by the scenario patches a weakness. No weakness in it has `grants`, so it passes the validator at S2 and unchanged after S3 | M |
+| S3 (N15) | `techniques`, the item type `technique_card` and its field `technique_card`, the pretext key rename to `se_technique`, `POST /network/technique`, `via: "technique"` sessions, the keyring proof kind `technique_card`, the techniques panel, the desktop at the keyboard through a technique session with its remote-view marker, the compromised marker on world sprites, the validator's grant checks (a granted credential's `connectsTo` PC must take it) | `test_ops_access`: a wrong card is refused with its reason; a card on a finding that grants nothing gets `no_grant`; the right card with needs met opens the desktop or adds the credential; the PC then shows the marker and clicking it opens the remote view; unplugging ends the session and clears the marker | L |
 
 No field is reserved ahead of its stage. What happens to a scenario that writes a field before
 its stage is built depends on where the field sits, because the schema is closed in some places
@@ -217,15 +218,15 @@ and open in others:
 
 | Field written early | Where it sits | What catches it |
 |---|---|---|
-| `weaknesses`, `decoys` on a service; `discovery`, `alert` on a network; `technique` in a credential's `proof` | blocks this plan declares closed (`definitions.service`, a `hosts` entry), or that are closed today (`networks.<id>`, `credentials.<id>.proof`) | a schema error: unknown property |
+| `weaknesses`, `decoys` on a service; `discovery` on a network; `technique_card` in a credential's `proof` | blocks this plan declares closed (`definitions.service`, a `hosts` entry), or that are closed today (`networks.<id>`, `credentials.<id>.proof`) | a schema error: unknown property |
 | `hosts`, `techniques` at the top level | the top level is open (no `additionalProperties`) | the corpus test `test/js/validator-declared-top-level.test.mjs`, which fails for a top-level key the schema does not declare. A single scenario run through the validator gets no error from the schema |
-| `services` on a room object, `technique` on an item | `definitions.item` is open (177 properties, no `additionalProperties`) | only the unknown-key warning of `schema_unknown_key_warnings` (`VS:790-800`), and the engine ignores the field |
+| `services` on a room object, `technique_card` on an item | `definitions.item` is open (177 properties, no `additionalProperties`) | only the unknown-key warning of `schema_unknown_key_warnings` (`VS:790-800`), and the engine ignores the field |
 
 A warning is too quiet for a field that would silently do nothing, so the validator carries a
 small table of this plan's fields against the stage that builds them, modelled on
 `CredentialModel.kind_built?` (`CM:46`). While its stage is not built, each is a validator
 error naming that stage's feature id: `hosts` and `services` on an object "not built yet: N13",
-`techniques` and `technique` on an item "not built yet: N15".
+`techniques` and `technique_card` on an item "not built yet: N15".
 
 The same table carries the two weakness fields that S2's schema declares and S3 builds: until
 S3 lands, a weakness's `grants` (either kind) and `needs.session` are validator errors ("not
@@ -268,7 +269,8 @@ against (section 4.3).
 
 - `networks.<id>.discovery`: `"open"` (default, and the meaning of an absent key: every row is
   listed as today) or `"scan"` (rows are listed only once discovered). Per network, so one
-  scenario can mix both.
+  scenario can mix both. It governs the network view only: no sign-in, desktop or share route
+  reads it (section 1, "Discovery is a display").
 - `hosts.<id>`: closed block, server-only. `name` and `network` required. `offWhen` as on an
   object. No `contents`, no lock, no room: a host here is never clicked in the world. If it should
   also be a prop in a room, the prop is an ordinary object and the two are not linked by the
@@ -282,8 +284,9 @@ against (section 4.3).
 - `services[]`: at most 8 per host. `name` is an id of at most 40 characters, unique on the host. `port` is 1 to 65535,
   display only. `product` and `version` are plain text up to 40 characters. `services` on a room
   object is added to `WITHHELD_OBJECT_FIELDS` so it never rides on room data.
-- A share (`resources` entry) on a discovery network is hidden with the hosts until the sweep,
-  and is not served before it either (section 5.2).
+- A share (`resources` entry) on a discovery network is left out of the view with the hosts
+  until the sweep. `GET /container` serves it by its own rules whether or not it has been swept
+  (section 5.2).
 - A scenario has at most 64 hosts carrying services.
 
 **Why a top-level `hosts` map for hosts with no sign-in.** The alternatives were a room object
@@ -303,23 +306,14 @@ author already describes that PC.
   "weaknesses": [
     { "id": "factory_login", "class": "default_creds", "severity": "high",
       "summary": "The admin page still accepts the factory account.",
-      "evidence": { "item": "install_sheet" },
       "needs": { "item": "printer_manual" },
       "fixedIf": "printer_reset_done" }
   ],
   "decoys": [
     { "id": "old_banner", "class": "unpatched", "severity": "medium",
       "summary": "The page reports an old build number.",
-      "evidence": { "item": "maintenance_log" },
       "falseBecause": "The build number is cosmetic. The panel was updated last month." }
   ] }
-```
-
-and on the network:
-
-```json
-"office_lan": { "name": "Office LAN", "discovery": "scan",
-                "alert": { "after": 5, "sets": "office_lan_alerted" } }
 ```
 
 - The example is a whole S2 weakness: it has no `grants`, because S2 builds none (section 3).
@@ -333,34 +327,29 @@ and on the network:
   `offWhen`. Section 5.3 says what a fixed weakness does to a check, a confirm and what is shown.
 - `needs.session` is allowed only where `grants.session` is on the same host (a step up), so it
   arrives with S3.
-- `needs.item` and `evidence.item` name an item by id, and `itemType` names a type; neither
+- `needs.item` names an item by id, and `itemType` names a type; neither
   takes a display name. One entry uses one of the two. The server reads them with the
   identity-strict pattern of `credential_held_proof_holds?` (`CK:42-64`). For `item`: the
   inventory entry with that id is not forged and its id and type equal the authored
   definition. For `itemType` there is no one authored id, so the rule is: some held entry that
   is not forged, whose id is an authored item of that type and whose type equals that item's.
   `inventory_item_matching` (`NA:454-463`) is not used, because it also matches by name. The
-  type `technique_card` is refused in `itemType`, so a card never doubles as evidence or a need.
-- **Labels.** What the player is shown for a need or for evidence is, for `credential`, the
+  type `technique_card` is refused in `itemType`, so a card never doubles as a need.
+- **Labels.** What the player is shown for a need is, for `credential`, the
   credential's label, and for `item`, the item's name. A `global` names no object and an
-  `itemType` names a type, so an `evidence` or `needs` map that holds one of those also holds
+  `itemType` names a type, so a `needs` map that holds one of those also holds
   a `label` for it (plain text, 1 to 40 characters; required then, refused otherwise): `{
   "itemType": "workstation_manual", "label": "Any workstation manual" }`. A `needs` map has
   one label, so it may not hold `itemType` and `global` together. The global's name is never
   shown.
-- `needs.global` and `evidence.global` take any declared global. A global the client can write is
+- `needs.global` takes any declared global. A global the client can write is
   a soft gate: the card, the finding and the reach are enforced by the server whatever a client
   sends, but that one condition could be met by a forged sync. That is the project's rule for a
   step gated by dialogue, and the validator says so with a warning (section 9.2). An author who
   wants a hard gate uses an item or a credential.
-- `evidence` (optional, one thing) names what settles the finding quietly. Weaknesses and decoys
-  both take it, and the unconfirmed finding shows its label and whether it is held. The evidence
-  is an ordinary thing in the world whose own text tells the player what to expect: a
-  maintenance log that says the panel was updated, an installer's sheet that says the factory
-  account was left on. A finding with no `evidence` can only be probed.
-- `networks.<id>.alert` (optional): `after` is 1 to 20; `sets` is a declared global, which the
-  engine then treats as server-owned (the client cannot write it). With no `alert` the network
-  still counts noise and nothing follows.
+- A scenario that wants the player to know ahead which finding is real does it with ordinary
+  things in the world: a maintenance log that says the panel was updated, an installer's sheet
+  that says the factory account was left on. The engine does not link them to the finding.
 
 ### 4.3 S3
 
@@ -378,7 +367,7 @@ and a card, anywhere an item can be:
 
 ```json
 { "id": "card_factory", "type": "technique_card", "name": "Field note: factory accounts",
-  "technique": "factory_accounts", "takeable": true }
+  "technique_card": "factory_accounts", "takeable": true }
 ```
 
 The printer's weakness of section 4.2 gains its grant, and the credential it grants is a keyring
@@ -392,7 +381,7 @@ entry that names the finding back:
 "credentials": {
   "print_admin": { "kind": "saved_connection", "account": "npc_it_admin",
     "connectsTo": "files01",
-    "proof": { "technique": "print01.admin_page.factory_login" } }
+    "proof": { "technique_card": "print01.admin_page.factory_login" } }
 }
 ```
 
@@ -410,8 +399,8 @@ and a session grant, on a weakness of a sign-in host's service:
   type, `notes1` included, gets no tray slot and no pickup toast). A card must sit in the
   tray, so it gets a type no code reads: S3 adds
   `public/break_escape/assets/objects/technique_card.png` and its `load.image` line in
-  `core/game.js`. The validator requires an item with `technique` to have this type and an item
-  of this type to have `technique`. The build step greps `public/break_escape/js` and
+  `core/game.js`. The validator requires an item with `technique_card` to have this type and an
+  item of this type to have `technique_card`. The build step greps `public/break_escape/js` and
   `scripts/` for the new name before the first card is placed, and
   `technique-card-item.test.mjs` pins the slot and the toast (section 11.3).
 - **Placeholder art.** Until card art is made, `technique_card.png` is a byte copy of
@@ -423,10 +412,20 @@ and a session grant, on a weakness of a sign-in host's service:
   or get wrong.
 - `techniques` holds at most 32 entries, each id at most 40 characters. One technique may be
   carried by several items; a weakness may be matched by several techniques.
-- **Two meanings of one word.** `technique` is already a field of a social engineering pretext
-  line (`SC:3603`). No key collides; prose, descriptions and validator messages always say
-  "technique card" and "technique card registry" (question 4).
-- A grant of a credential names a `credentials.<id>` entry whose `proof` is `{ "technique":
+- **One word, two separate keys.** `technique` was already a field of a social engineering
+  pretext line (`SC:3603`; read by `pretext-judge.js:240` and `:258`), naming one of six
+  persuasion techniques. S3 renames that key to `se_technique` and gives the card its own key,
+  `technique_card` (on the item and as the keyring proof kind), so an author's search for either
+  finds only its own. The rename touches the six scenarios that write the pretext key
+  (`ca03_helpdesk_reset`, `ca12_visitor_tailgater`, `lab_social_engineering`, `test_dm_social`,
+  `test_social_m5_channels`, `test_social_slice`), the schema's pretext line definition,
+  `pretext-judge.js`, the social pretext validator, the JS test fixtures under
+  `test/js/fixtures/social_pretext/` and `social_role_swap/`, and the README's pretext section.
+  It is a key rename only: no line text changes, so no audio is re-voiced, and every
+  `test/js/social-*` and `validator-social-*` test passes unchanged in meaning. The nested
+  `tells.techniques` map of an NPC keeps its name. Prose, schema descriptions and validator
+  messages always say "technique card" and "technique card registry", never "technique" alone.
+- A grant of a credential names a `credentials.<id>` entry whose `proof` is `{ "technique_card":
   "<findingId>" }` (new proof kind). The validator requires the two to name each other. The
   entry's kind must be `saved_connection`: it needs no item text and opens its `connectsTo` PC
   through a foothold under that PC's own policy, so lockouts and `remote: "blocked"` on that PC
@@ -460,7 +459,7 @@ New helpers, plain Ruby: `hosts(data)` (the map); `discovery?(data, network_id)`
 kind: 'pc' | 'device', object:, network:, services: }`; `services_of(host)`; `weaknesses(data)`
 and `decoys(data)` yielding each with its host, service and finding id; `techniques(data)`;
 `technique_matches?(technique, service, weakness)` (class equal, product equal when given, version
-in list when given); `technique_items(data)` (every item carrying `technique`, with its home, found
+in list when given); `technique_items(data)` (every item carrying `technique_card`, with its home, found
 the way `rogue_device_definitions` finds devices, `NM:138`).
 
 ### 5.2 Server, S1
@@ -474,25 +473,19 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
 - A network block gains `swept` (true or false) on a discovery network, and `ops: true` when some
   host on it declares `services`. `ops` is sent only on an open network or a swept one: on an
   unswept discovery network it would say that the network holds at least one host, which is not
-  told before a sweep, and the Sweep control there is offered on `swept: false` alone. The
-  noise keys of section 5.3 are withheld from an unswept block for the same reason. The view
+  told before a sweep, and the Sweep control there is offered on `swept: false` alone. The view
   offers Scan only inside a block marked `ops`. A block of a network with no discovery and no
   services carries neither key, so its answer is the bytes it is today (section 10).
-- **Shares follow the sweep too.** `resource_admits_player?` (`NA:1580-1625`) admits an open
-  share to any held foothold whose `player_reach` includes its network, and share ids can often
-  be guessed from text in the world. Its foothold branch gains the same condition as hosts: the
-  share's network is open, or swept. The session branch is left alone: a session on that network
-  is a keyboard sign-in or a session the player earned after the sweep.
-- **Enforced, not cosmetic (question 1).** `host_reachable_through?` (`NA:1477`) gains one condition: the
-  host's network is open, or it is in `opsDiscovered.networks`. That one method is already the
-  first check of remote sign-in (`GM:3465`), the remote account tiles (`NA:919`), the foothold
-  desktop request (`NA:1510`), credential sign-in through a foothold (`credential_login.rb:201`,
-  `:238`) and the routes the keyring offers (`CK:301`, `:400`, `:450`), so each of them refuses a
-  host on an unswept discovery network with the answer it gives for a host out of reach.
-  `from_route_refusal` (`NA:1349`) gains the same condition on the target's network, so a sign-in
-  from a held desktop cannot skip the sweep either. The record is server-owned, so a client that
-  knows a PC id from a room cannot skip it. Keyboard sign-in is untouched. A swept network stays
-  swept, so no held session ever loses its route to this rule.
+- **Discovery changes the view and nothing else.** `host_reachable_through?` (`NA:1477`),
+  `from_route_refusal` (`NA:1349`) and `resource_admits_player?` (`NA:1580-1625`) are not
+  changed. Remote sign-in (`GM:3465`), the remote account tiles (`NA:919`), the foothold desktop
+  request (`NA:1510`), credential sign-in through a foothold (`credential_login.rb:201`, `:238`),
+  the keyring's routes (`CK:301`, `:400`, `:450`) and `GET /container` answer a host or share on
+  an unswept discovery network exactly as they answer one on an open network. A player who knows
+  a PC's id or a share's id from the world can use it without sweeping. So that such a sign-in
+  still shows in the view, `network_rows` on an unswept discovery network lists the host rows
+  of PCs the player holds a session on (and nothing else); the block stays `swept: false` and
+  offers Sweep, and those hosts get no Scan until the sweep.
 - **One question before any other: is the target listed for this player through this foothold?**
   `host_reachable_through?` only accepts a sign-in object, so the ops routes use a new
   `ops_listed?(foothold_id, target)`. For a network it holds when the foothold is held and the
@@ -508,8 +501,7 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   repeat check never turns a confirmed finding back to unconfirmed and never hands out a second
   alias. The answer lists every finding of that service the player now holds, each with its
   stored status and alias. Nothing tells a real one from a decoy until confirm: the answer
-  builds both from the same fields in id order, and `evidence` rides on both alike as `{ kind,
-  label, held }`.
+  builds both from the same fields in id order.
 - **A check is recorded whatever it finds.** The first check of a service adds
   `<hostId>.<serviceName>` to `opsDiscovered.services` and writes the `service_checked` row,
   even when it adds no finding (a service with no weaknesses or decoys, or whose only weakness
@@ -519,30 +511,27 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   an objective or NPC line on `service_checked` fires for every service the player checks. A
   repeat check still adds an entry and an alias for a weakness that has become unfixed since:
   it saves, answers with no `already`, and writes no second row.
-- A confirm sets `confirmed` or `false`. If the finding has `evidence` and the player holds it,
-  the confirm is quiet. Otherwise it is a probe and adds one to the noise of the host's network
-  (below). The confirmed answer adds `needs`, each as `{ kind, label, met }`. `label` is the
-  credential's label, the item's name, or the entry's own authored `label` for an `itemType`
-  or a `global` (section 4.2); `met` and `held` are computed on each `GET /network`. A repeat confirm of a settled finding answers `already: true`, is
-  quiet, and writes nothing.
+- A confirm is free. It sets `confirmed` or `false`, and the first confirm of a finding writes
+  its log row (section 13). The confirmed answer adds `needs`, each as `{ kind, label, met }`.
+  `label` is the credential's label, the item's name, or the entry's own authored `label` for an
+  `itemType` or a `global` (section 4.2); `met` is computed on each `GET /network`. A repeat
+  confirm of a settled finding answers `already: true` and writes nothing.
 - A first confirm of a weakness whose `fixedIf` has come true since the check still settles it
   as `confirmed`, so the player learns it was real, and the finding then carries `fixed: true`
-  and shows Fixed. It is quiet with or without evidence: a fixed service gives a probe nothing
-  to disturb, which matches the quiet `fixed` refusal of a card. `fixed` is computed on each
-  read and sent only on a confirmed finding. Before the confirm, a finding whose weakness is
-  fixed is sent with exactly the keys of any unconfirmed finding, and its control reads Confirm
-  or Probe by `evidence.held` like any other, so nothing on screen says it is real.
+  and shows Fixed. `fixed` is computed on each read and sent only on a confirmed finding. Before
+  the confirm, a finding whose weakness is fixed is sent with exactly the keys of any
+  unconfirmed finding, so nothing on screen says it is real.
 - Findings ride on the host row: `findings: [...]` beside `services`, present only when the
   player holds at least one finding on that host. A host with services and no findings held
   carries no `findings` key, scanned or not, so an S1 scenario's rows are the same bytes before
   and after S2 lands.
-- **No doubled noise from one click.** `api-client.js` has no retry for a failed or slow
+- **One click, one request, one log row.** `api-client.js` has no retry for a failed or slow
   request. Every action of the network screen (sweep, scan, check, confirm, use and unplug)
   goes through one `perform` path in the scene, built by this plan and shared by both
   renderers, which holds one pending guard keyed by action and target: from the press until
   the answer arrives the control is disabled and a second press with the same key makes no
-  call. Confirm and Probe are one action with one key, the finding; the key for `use` is the
-  card and the finding together. So one press is one request. `perform` adds the key to the
+  call. The key for confirm is the finding; the key for `use` is the card and the finding
+  together. So one press is one request. `perform` adds the key to the
   pending set and redraws the control as pending synchronously, before its first `await`; the
   request goes after. The existing test clicks the unplug button and checks it is disabled in
   the same tick (`test/js/network-view.test.mjs:1011-1013`), and a press that waited for a
@@ -553,32 +542,16 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   `network-view-minigame.js:829-860`), keeping the button's pending label, the notice's words
   and the markup of both; the renderer draws them from the pending set and the result
   (section 5.5), and `perform` writes no DOM. S2 adds check and confirm, S3 adds use. The
-  server counts every noisy request it validates; a client that sends more only raises its own
-  count.
+  server writes a row for every sweep and use it validates; a client that sends more only adds
+  rows to its own log.
 
   What the scene exposes to a renderer: `pending`, a `Set` of string keys that the scene owns
   and that a renderer only reads; one pure function, `pendingKey(action, target)`, that builds
-  a key, so the guard and a renderer agree on it (`sweep` and `scan` by host, `check` and the
-  shared Confirm and Probe key by finding, `use` by card and finding together, `unplug` by
-  jack); and `perform(offer)`, where `offer` is the complete `{ action, target }` a control
-  stands for, answering the server's reply or its refusal. The scene redraws the active
-  renderer whenever the set changes, so a renderer needs no timer of its own.
-- **Quiet or noisy is shown by the control and the count, nothing else.** The Confirm or Probe
-  label says which a confirm will be, and the block's noise line shows the result. Panels has
-  no separate quiet-or-noisy note on a finding or a card.
-- **Noise.** `add_noise!(network_id)` adds one to `opsNoise[network_id]`. If the network declares
-  `alert`, the count has just reached `after`, and the global is not already true, it sets the
-  global through the server-write helper that carries a server-written global back in the same
-  answer (`serverGlobals`, `GM:193-243`), so the client learns it without a reload. The `sets`
-  name joins the names `server_owned_global_name?` (`GM:187`) answers true for, so a sync body
-  cannot set or clear it. That needs a per-scenario source of names, built as the credit
-  globals' is (`GM:187-190`); the name does not go in `SERVER_OWNED_GLOBAL_NAMES`, which would
-  also hide the global from the client. The count stops rising at 99.
-- **The noise keys on a block**, stated here once. A block of an unswept discovery network
-  carries none of them. A block of an open or swept network carries `noiseLimit` whenever the
-  network declares `alert`, so a block at zero noise carries `noiseLimit` alone and the view
-  shows "Noise 0 of 5"; `noise` only when the count is above zero; and `alerted: true` only
-  once the limit has been reached. With no `alert` and no noise the block carries none.
+  a key, so the guard and a renderer agree on it (`sweep` and `scan` by host, `check` by
+  service, `confirm` by finding, `use` by card and finding together, `unplug` by jack); and
+  `perform(offer)`, where `offer` is the complete `{ action, target }` a control stands for,
+  answering the server's reply or its refusal. The scene redraws the active renderer whenever
+  the set changes, so a renderer needs no timer of its own.
 
 ### 5.4 Server, S3
 
@@ -588,7 +561,7 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
    else 404, the answer an invented id gets.
 2. The card: an inventory entry with that id that is not forged, whose id and type equal the
    authored item, and whose authored definition is of type `technique_card` and carries a
-   `technique` that is a registry key.
+   `technique_card` that is a registry key.
    The technique is read from the scenario's definition of the item, never from the inventory
    copy, as `credential_held_proof_holds?` does (`CK:42-64`). Else 404.
 3. The host is responding (403 `not_responding`).
@@ -598,7 +571,7 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
    (below) and the checks stop here.
 5. Status is `confirmed` (422 `not_confirmed`, or `false_positive`).
 6. The weakness has `grants` (422 `no_grant`). This comes before the match so that no card is
-   ever weighed, or charged noise, against a finding that has nothing to give.
+   ever weighed against a finding that has nothing to give.
 7. `fixedIf` does not hold (422 `fixed`).
 8. The match (422 `wrong_class`, `wrong_product`, `wrong_version`).
 9. Each need in the order credential, item, session, global (422 `need_unmet` with `need: {
@@ -609,23 +582,22 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
    takes a record without one as `user`. So in S3 alone a password session can feed a step up
    that needs `user`, and only a technique session can feed one that needs `admin`.
 
-Which refusals write. The first three checks and the repeat write nothing at all. Every 422
-hands the log helper a `technique_refused` row (section 13). Four are noisy, adding one to the noise and
-answering `noisy: true`: `false_positive`, `wrong_class`, `wrong_product` and `wrong_version`.
-Four are quiet: `not_confirmed`, `no_grant`, `fixed` and `need_unmet`.
+Which refusals write. The first three checks and the repeat write nothing at all: they answer
+an id the player has not earned, or a host that is down, and a row there would tell a log reader
+about something the player cannot see. Every 422 is a card use, and every card use writes a
+row: each hands the log helper a `technique_refused` row (section 13), whatever its code
+(`not_confirmed`, `false_positive`, `no_grant`, `fixed`, `wrong_class`, `wrong_product`,
+`wrong_version`, `need_unmet`). Nothing else in the state changes on a refusal.
 
-A noisy refusal's answer carries the block's new `noise`, and `alerted` and `serverGlobals` when
-that request reached the limit (section 6). Nothing else in the state changes on a refusal. A
-noisy refusal always saves, for the count. A quiet refusal is a branch that costs no save
-today, so it follows the log plan's rule for such branches and passes the helper
-`save_limit: true` (the limit, 10, is registered for `technique_refused` in the log plan's `EVENTS` list); a noisy refusal passes none. The helper keeps a stored count, per event, place and result,
-inside a five-minute window of server time, of only the calls made with the limit that stored,
-whatever the card or finding; a noisy refusal passes no limit, so it neither spends that count
-nor is stopped by it. Once the count for `technique_refused` at a place has reached ten, a call
-with the limit is dropped and answers nil until the window ends. The route saves only when the
-helper's result is `stored?`. A quiet refusal sent over and over, or sent in a scenario with no
-log source, therefore stops costing saves. Real time limits saves only; it decides nothing the
-player gains.
+A refusal is a branch that costs no save today, so it follows the log plan's rule for such
+branches and passes the helper `save_limit: true` (the limit, 10, is registered for
+`technique_refused` in the log plan's `EVENTS` list). The helper keeps a stored count, per
+event, place and result, inside a five-minute window of server time, of only the calls made
+with the limit that stored, whatever the card or finding. Once the count for
+`technique_refused` at a place has reached ten, a call with the limit is dropped and answers nil
+until the window ends. The route saves only when the helper's result is `stored?`. A refusal
+sent over and over, or sent in a scenario with no log source, therefore stops costing saves.
+Real time limits saves and rows only; it decides nothing the player gains.
 
 **Which findings take a card.** The view and the command-line skin accept a card used against
 any finding a row lists, whatever its status, by select-then-Use or by a drag in the view;
@@ -636,7 +608,7 @@ foothold already exists (or, for a credential grant, the finding was already use
 tested only after the finding, the reach and the card have passed. So a repeat never answers
 more than a first use would: with the host unlisted, the card dropped or the host off, the
 request has already been refused. A repeat answers `already: true` with the live session answer
-(or `keyringChanged: false`), writes nothing, adds no noise and writes no log row. The session
+(or `keyringChanged: false`), changes no state and writes no log row. The session
 it reports is one the desktop will serve through that same foothold, so the client's next
 request cannot be refused. A repeat is answered even when `fixedIf` has since come true: the
 player is already in, and the session is kept.
@@ -661,7 +633,7 @@ the record, so the old foothold's view no longer lists it), and a use after the 
   survives a reload and rides in `GET /scenario`. The client then calls `window.openRemoteDesktop(pcId,
   footholdId)` (`US:449`), the call the view's Open control makes today (`NV:880`).
 - **Credential.** The finding id is added to `opsUsed`. `PROOF_KINDS` (`CM:36`) gains
-  `technique`, and `credential_proof_holds?` (`CK:21`) gains `when 'technique'`: the proof holds
+  `technique_card`, and `credential_proof_holds?` (`CK:21`) gains `when 'technique_card'`: the proof holds
   when `opsUsed` includes the finding id it names. The answer carries `keyringChanged: true` and
   the client refetches `GET /keyring`. `credential_how` already answers `found` for a kind it
   does not name.
@@ -680,64 +652,120 @@ session kind, and the card can always be used again.
 
 | Reader | Where | With a technique session |
 |---|---|---|
-| `signedInPcs`, written by `start_login_session!` for every session that is not a relay or a token | `GM:4388-4417` | the PC is added, with no code change, so everything that reads the list counts a technique session for good (question 5; warning in section 9.2) |
+| `signedInPcs`, written by `start_login_session!` for every session that is not a relay or a token | `GM:4388-4417` | the PC is added, with no code change, so everything that reads the list counts a technique session for good: chains built on "a session at this PC" work however it was gained, and the validator warns the author wherever a card can stand in for a sign-in a task or proof names (section 9.2) |
 | `end_guest_session_at!`, run by every sign-in that is not a claim | `GM:4392` | a grant from across the network ends an NPC guest's session at that PC, as a remote password sign-in does. Stands: one screen holds one session |
 | `record_borrow_done!`: an NPC who borrowed the PC finishes and the player's session there is deleted | `npc_frustration.rb:391-396` | the technique session ends, as a password session would. Stands. The finding stays confirmed and the card stays held, so the player can use it again: with no session there it is a new use and grants a new session |
 | `session_identity`, `reach_session_hosts` | `GM:3243-3249`; `NA:1398-1413` | serves the desktop as the named account; pivots |
 | `session_lockable?`, and the client's `sessionLockable` | `GM:3824`; `pc-sessions.js:176` | not lockable, on both sides, with no change |
 | `session_for_client`, `pc-sessions.js` `load` and `publicSession` | `GM:3778-3791` | carry `access: "admin"` when the level is admin (above) |
-| `screen-states.js` `signedInVia` | `:38` | the PC's screen in the world keeps its locked look, because `via` is neither `password` nor `credential`. That is right under this plan's keyboard rule (below): nobody is signed in at that screen. No change |
+| `screen-states.js` `signedInVia` | `:38` | the PC's screen in the world keeps its locked look, because `via` is neither `password` nor `credential`. That is right: nobody is signed in at that screen, and the compromised marker (below) is what shows the player holds it. No change |
 | `from_route_refusal`: a held desktop as the source of a sign-in to another PC | `NA:1347-1370` | a technique session's desktop is a valid source, like any held desktop; the source's own `remote: "blocked"` is not consulted, as today. Stands |
 | `folder_route_allowed?`, `session_admits?` | `GC:3185-3197`; `GM:3260-3270` | one added line, below |
-| The keyboard branch of `desktop_request_allowed?` | `NA:1512-1516` | one added term, below |
+| The keyboard branch of `desktop_request_allowed?` | `NA:1512-1516` | serves it, no change; the click path names the foothold (below) |
+| `settle_session_at_keyboard!` | `NA:1556-1565` | one added line: a technique record is not settled, so it keeps `foothold` |
 
-**At the PC's own keyboard.** Today a request with no route is served at any PC the player can
-walk to that has a session, and a technique session would be served there too: the player would
-sit down and be that account without its password. This plan refuses it, on every host (question
-3, part (c)). The keyboard branch of `desktop_request_allowed?` gains "and the session is not a
-technique session", and `desktop_refusal` answers a code of its own, 403 `network_only`, for
-any request with no route at a PC whose session is a technique session. The code comes after
-`expired` and ahead of `off` and `unreachable`, whether or not the player can reach the PC: the
-session is the player's own, so it tells them nothing new. It cannot be `no_session`: to the
-client that code means the server holds no session at the PC.
+**At the PC's own keyboard.** A technique session is served at the PC as that account, with no
+password: the player walks up to a PC they hold through a card and sees its desktop. It stays a
+remote session the whole time. The player is looking at a desktop reached across the network,
+the record keeps its `foothold`, and unplugging still ends it.
 
-On the client, a keyboard fetch carries no route, so in `loadLoginDesktop`
-(`container-minigame.js:980-1070`) it passes the foothold, `from` and relay handlers by and
-can end a 403 in one of four places. The `expired` handler drops the copy but cannot meet a
-technique session, which has no token; the powered-off handler (`off`) keeps it. The other two
-drop it today: the
-reopened-after-a-reader handler (`fromReturn`, `:1053-1063`) and the catch-all (`:1065-1070`)
-both call `pcSessions.dropLocal`, which deletes the copy and emits `pc_signed_out` while the
-server still holds the session. So one new handler goes after the powered-off one and before
-those two: on a 403 whose reason is `network_only` it closes the screen and opens the plain
-sign-in screen (`openLoginSignIn`), with no `dropLocal`, no sign-out event and no message.
-Every path a keyboard fetch can take to that code therefore keeps the session. The foothold
-and `from` handlers are not changed: a request that names a route is never answered
-`network_only`. The handler shows no line, so `container-minigame.js` imports nothing from
-`ops-model.js` and no test's copy list grows for it; `REFUSAL_TEXT` still holds a line for the
-code, for a renderer that meets it.
+*Clicking the PC.* `interactLoginPc` and `openLoginPc` (`unlock-system.js`) ask one new
+`pc-sessions.js` reader first, `remoteViewFoothold(pcId)`: the copy's `footholdId` when the copy
+is a technique session (`via: "technique"`) and `networkLinks` still holds that foothold, else
+null. When it answers a foothold, the click calls `networkLinks.openSession(pcId, { returnTo })`,
+the trip the network view already uses to open a held desktop, which calls
+`window.openRemoteDesktop(pcId, footholdId)` (`US:449`). The request names the foothold, so the
+server judges it by the foothold branch of `desktop_request_allowed?` with its one change below,
+and `returnTo` brings the player back to the world when the desktop closes. No sign-in screen is
+shown and no password is asked. This also works on a headless host in a room and on a host whose
+policy blocks remote sign-in, because the route is the session's own foothold. A click on a PC
+with any other session, or none, takes today's path.
 
-In normal play the fetch is never sent. `heldAtKeyboard` (`pc-sessions.js:480`), false today
-only for a relay session, becomes false for a copy whose `via` is `technique` as well. Its
-fallback for a mirror without that method (`unlock-system.js:266-275`) is `has()` today, which
-is true for a relay copy; the fallback gains the same full test, relay included, by reading
-`sessions.get(pcId)` (`publicSession` carries both `via` and `relay`).
-Every keyboard decision reads it (`keyboardSession`, `openLoginPc`, `interactLoginPc`, the
-sign-in screen's `onComplete`), so the PC shows the sign-in screen without asking.
-The handler is for a client whose copy is stale. If the player then signs in at the keyboard
-with a password, the one-slot rule replaces the technique session.
+*The remote-view marker.* A desktop opened through a foothold already shows the line "Remote
+session through <link name>" (`.desktop-remote-line`, `container-minigame.js:1512`). For a
+technique session the desktop frame adds three things, all pixel art under the UI rules:
+
+- the frame takes a class `desktop-frame--remote-view`: its 2px border turns red (a colour token
+  in `ui-themes.css`, not a new skin), so the whole screen reads as someone else's machine seen
+  from outside;
+- the remote line starts with the lightning-bolt mark (below) and reads "Remote view:
+  <account display name> through <link name>", in the pixel font the line already uses; the
+  words live with the other remote-host lines in `utils/remote-host-text.js`;
+- on opening, the desktop area runs a short stepped static wipe (four frames in CSS `steps()`,
+  about 0.3 s, no smoothing) before the desktop draws, so the switch from the room to the remote
+  screen is seen happening. Under the reduced-motion setting the wipe is skipped.
+
+The same frame, line and wipe are shown however the desktop was opened (from the world or from
+the network view), so the player always knows they are viewing it remotely.
+
+*The server at the keyboard.* No refusal is added. The keyboard branch of
+`desktop_request_allowed?` (`NA:1512-1516`) serves a technique session as it serves any other
+held session, under its existing rules (the PC is reachable on foot, has a screen and is on).
+That branch is reached only by a client whose copy is stale or a request sent by hand, because a
+click with a technique copy always names the foothold. The one server change is in
+`settle_session_at_keyboard!` (`NA:1556-1565`), which today drops `foothold` from any record
+served at the keyboard except a `credential` one: it gains `return if session['via'] ==
+'technique'` beside the credential line, so a technique session served at the keyboard keeps its
+foothold and an unplug still ends it. `heldAtKeyboard` (`pc-sessions.js:480`) is unchanged: a
+technique copy counts as held at the keyboard, and the click path above simply runs before it.
+
+*Folders.* A folder request that names no route at a technique session is judged as the
+keyboard desktop is: `folder_route_allowed?` (`GC:3185-3197`) gains one line, passing a no-route
+request at a session whose `via` is `technique` only when the keyboard branch of
+`desktop_request_allowed?` would pass for that PC, else 403 `unreachable`. Without the line,
+`session_admits?` (`GM:3260-3270`) would open the folders of a blocked host under a technique
+session from anywhere. The remote desktop sends its foothold on every folder request, so the
+player's own path never meets this line.
+
+**The compromised marker in the world.** Every PC or device in a room that the player holds by
+compromise is drawn tinted red with a small lightning bolt at its top right, so the player can
+see at a glance what they own. A new client module, `systems/compromise-marks.js`, works the way
+`screen-states.js` does: event driven, never polled, applied when a room's sprites are made
+(`syncRoom` from `core/rooms.js`) and on these events:
+
+| What marks an object | Read from | Events |
+|---|---|---|
+| A technique session on a PC | `window.pcSessions`, a copy with `via: "technique"` | `pc_signed_in`, `pc_signed_out` |
+| A PC implanted with a foothold (N10) | `window.networkLinks` footholds with `via: "implant"`, by `sourceId` | `network_foothold_gained`, `network_device_unplugged` |
+| A network jack with a planted device (N1) | the same footholds with `via: "jack"`, by `sourceId` | the same |
+
+What is not marked, and why: a password, keyring credential, claim or relay session (the player
+signed in or was let in; nothing was compromised), a Wi-Fi access point the player joined (the
+access point is used, not taken over), and a share (it has no sprite). A `hosts` entry has no
+sprite in the world, so its mark is drawn in the network view instead: the host row's icon
+carries the same bolt while the player holds a technique session there. A planted jack already
+swaps to its `plantedSprite`; the mark adds the tint and bolt on top. The mark comes off when
+its source ends: an unplug, an NPC finishing a borrow, a newer sign-in that replaces the
+technique session.
+
+How it is drawn, all in the engine:
+
+- the tint is a light red multiply (`setTint(0xff8a8a)`) on the object's sprite. A sprite that
+  already carries a tint from the scenario (`apply-actions.js:377`) or an object with its own
+  `spriteVariants` keeps the author's look and gets only the bolt;
+- the bolt is a 7 by 11 pixel shape drawn from a pixel bitmap in code, as `utils/pixel-text.js`
+  draws its glyphs, in two colours (yellow with a dark outline), scaled by whole pixels with the
+  room, placed at the sprite's top right one depth above it. It needs no image file;
+- the network view's row bolt is the same bitmap drawn on a small canvas beside the row icon.
+
+The test bridge gains `window.__test.access.compromiseMarks()`, the list of `{ objectId, sources
+}` the module has applied, so a playtest can check the mark without reading pixels.
+
+**Art.** None is needed to build this. If the user later wants a drawn icon in place of the code
+bitmap, it is one 16 by 16 pixel PNG (`public/break_escape/assets/icons/compromised_bolt.png`),
+which needs the user's go-ahead before any image is generated or drawn.
 
 **How a technique session differs from a password session.**
 
 | Aspect | Password session through a foothold | Technique session |
 |---|---|---|
 | Record | `{ id, via: 'password', foothold }` | `{ id, via: 'technique', foothold, access, technique }` |
-| Lockout on that account at that PC | refused | not consulted: no sign-in is attempted (question 3) |
-| Policy `remote: "blocked"` | refused | not consulted: the way in is the service, not remote sign-in (question 3) |
+| Lockout on that account at that PC | refused | not consulted: no sign-in is attempted |
+| Policy `remote: "blocked"` | refused | not consulted through the session's own foothold: the way in is the service, not remote sign-in, and turning off remote sign-in does not fix a weak service |
 | Policy `accepts`, MFA (S8) | apply | do not apply; S8 states this from its side |
 | Lock the session | allowed | refused with no code change: `session_lockable?` (`GM:3824`) admits only `password` and routed `credential` sessions |
-| Desktop and folders at the PC's own keyboard | served, and the record drops `foothold` | refused; the sign-in screen is shown. The record is never settled, so it keeps `foothold` and an unplug still ends it |
-| The PC's screen in the world | signed-in look | locked look |
+| Desktop and folders at the PC's own keyboard | served, and the record drops `foothold` | a click opens the desktop through the session's foothold, with the remote-view marker; the record is never settled, so it keeps `foothold` and an unplug still ends it |
+| The PC's sprite in the world | signed-in look | locked look, tinted red with the bolt |
 | Source of a sign-in from its desktop to another PC | yes | yes |
 | An NPC finishes a borrow of the PC | ends | ends; the card can be used again |
 | Pivots, maps shares, counts for `needsSession` | yes | yes |
@@ -774,14 +802,14 @@ end
 
 So the exception holds only when the session at that PC was granted by a technique and came
 through the very foothold the request names. The other four terms still apply to it: the foothold
-is held and reaches the host (and, on a discovery network, the network is swept), the host is on,
-the session is not a claim, a relay or a `from` session.
+is held and reaches the host, the host is on, the session is not a claim, a relay or a `from`
+session.
 
 The predicate reads neither the level nor whether the host has a screen, so a technique session
 at admin on a headless host that blocks remote sign-in passes `desktop_request_allowed?`
 through its own foothold, and by no other route: another foothold fails the predicate, and the
-keyboard branch refuses a headless host and a technique session both. The privilege plan's
-collect action is judged by this gate and can rely on that answer.
+keyboard branch refuses a headless host as it does today. The privilege plan's collect action is
+judged by this gate and can rely on that answer.
 
 **The view offers what the server will serve, per foothold.** A row is built today with no
 foothold: `host_row(pc)` (`NA:1043`), called from `network_rows(network_id)` (`NA:873`) and from
@@ -820,14 +848,9 @@ session's own foothold. `desktop_refusal` (`NA:1036`) takes the same predicate, 
 session on a blocked host that is powered down answers `not_responding`.
 
 **Folders.** A folder request that names a foothold is judged by `desktop_request_allowed?` and
-follows the rule above. A folder request that names no route is different: `folder_route_allowed?`
-(`GC:3185-3197`) passes it at any session that is not a relay, and `session_admits?`
-(`GM:3260-3270`) then asks only that the session is held, unlocked and its route up. Left alone,
-the folders of a blocked host would open under a technique session from any foothold or none.
-`folder_route_allowed?` therefore gains one line: a request with no route at a session whose `via`
-is `technique` is refused (403 `unreachable`). The remote desktop always sends its foothold, so
-the player's own path is unaffected, and the line agrees with the keyboard rule above: with no
-route there is no technique session to use.
+follows the rule above. A folder request that names no route follows the keyboard rule: the one
+line `folder_route_allowed?` gains (under "At the PC's own keyboard") passes it only where the
+keyboard desktop would be served.
 
 What stays refused on a host whose policy blocks remote sign-in:
 
@@ -839,7 +862,7 @@ What stays refused on a host whose policy blocks remote sign-in:
 | Desktop through a foothold with no session at the PC | 403 `no_session` (`GC:3146`) |
 | Desktop through a foothold where the session is a password session made at the keyboard, a claim, or a credential session | 403 `unreachable` |
 | Desktop for a technique session, naming a different held foothold that also reaches the host | 403 `unreachable`; that foothold's view lists no session on the row and offers nothing |
-| A folder under the PC with no route, at a technique session | 403 `unreachable` |
+| A folder under the PC with no route, at a technique session, where the keyboard desktop would not be served (not on foot, headless or off) | 403 `unreachable` |
 | Desktop for a technique session after its foothold is unplugged | the session is gone (`end_sessions_through!`); 403 `no_session` |
 | Desktop for a technique session by a `from` or relay route | 403, by those branches, which this plan does not touch |
 | A sync body that writes `sessions.<pcId>.via = "technique"` | ignored: `sessions` is server-written and no sync section carries it |
@@ -854,10 +877,9 @@ the desktop, and that an unplug closes it again.
 
 - `network-view-minigame.js`: a discovery block with no rows shows Sweep; a host row not scanned
   shows Scan; a scanned row expands to service tiles; a tile shows Check, then its findings; a
-  finding shows its alias, its evidence line and Confirm (evidence held) or Probe (not held, or
-  none declared), then its status and needs, and Fixed when the finding carries `fixed`. A
-  block shows its noise line from the keys of section 5.3, and Alerted once reached. A
-  Techniques panel lists the held cards with name, summary and works-on line, from the
+  finding shows its alias and Confirm, then its status and needs, and Fixed when the finding
+  carries `fixed`. A host row the player holds a technique session on carries the bolt mark
+  beside its icon (section 5.4, "The compromised marker"). A Techniques panel lists the held cards with name, summary and works-on line, from the
   `techniques` map the server sends for held cards. Select a finding, then a card, then Use;
   every control is a focusable button, so that path works from the keyboard, and dragging a
   card onto a finding calls the same function. Wherever a panel shows a session (the host
@@ -869,8 +891,8 @@ the desktop, and that an unplug closes it again.
   action leaves on screen (a refusal line, the line after an unplug) is handed to the renderer
   to draw; the shared `perform` path never writes it into the DOM itself.
 - **Hooks for tests and for the skin.** Each ops control carries `data-action` naming the
-  move, one of `sweep`, `scan`, `check`, `confirm` (Confirm and Probe are one action; the
-  control also carries `data-quiet`), `select-finding`, `select-technique` and `use`. Each
+  move, one of `sweep`, `scan`, `check`, `confirm`, `select-finding`, `select-technique` and
+  `use`. Each
   ops row carries what it is: `data-network-id` on a block, `data-host-id` on a host row,
   `data-service` on a tile, `data-finding` (the alias) on a finding, `data-technique` on a
   card. A selector is built from those alone, for example
@@ -880,17 +902,17 @@ the desktop, and that an unplug closes it again.
 - `hostAction` (`NV:215`) keeps `responding === false` as its first test and reads the server's
   `session.openHere` flag in its second (section 5.4). `getTestState` (`NV:920`) gains, per host
   row, `scanned`, `services` and `findings`, and the session's `access`; per finding its
-  `alias`, `status`, `fixed`, `evidence`, `needs` and whether its confirm action is quiet;
-  each with the selector of its action, built from the hooks above; per block `swept`, `ops`, `noise`, `noiseLimit` and `alerted`; and
+  `alias`, `status`, `fixed` and `needs`; each with the selector of its action, built from the
+  hooks above; per block `swept` and `ops`; and
   top-level `techniques` and `selectedFinding`, so a scripted playtest can drive and read every
   step.
 - The test bridge's `window.__test.access.networkView(id)` (`systems/test-bridge/access.js:219`)
   returns the last fetched view as it stands; its doc comment and `docs/test-bridge.md` list
   only `{ id, via, name, network, hosts }`, so both gain `networks` (the blocks) and
   `techniques`, and a node test pins that the blocks come through. A playtest can then read
-  `swept`, `noise` and the rows with the view closed.
-- A new pure module `network-view/ops-model.js` holds row merging, the works-on line, need and
-  evidence labels, alias lookup (alias to finding id, technique id to the held card's item id)
+  `swept` and the rows with the view closed.
+- A new pure module `network-view/ops-model.js` holds row merging, the works-on line, need
+  labels, alias lookup (alias to finding id, technique id to the held card's item id)
   and `REFUSAL_TEXT`, the one table from a `reason` code to words, with a neutral line for a code
   it does not know. No server answer carries display text for a refusal. The module imports
   nothing and touches no DOM, so the command-line skin can import the same file. The view imports
@@ -899,14 +921,19 @@ the desktop, and that an unplug closes it again.
 - `api-client.js`: `networkScan`, `networkCheck`, `networkConfirm`, `networkTechnique`. After
   every ops success the view runs its existing `GET /network` refetch, as it does after a
   sign-in or an unplug, and redraws from that. A route's own answer holds what the click needs
-  at once (the changed row or finding, the noise line, the session to open); everything else a
+  at once (the changed row or finding, the session to open); everything else a
   move changes, in this view or another foothold's, arrives by the refetch.
 - Events through `eventDispatcher`, each also as `<name>:<id>`: `network_swept`
   (`networkId`), `network_host_scanned` (`hostId`), `network_service_checked` (`hostId`,
-  `service`), `network_finding_confirmed` (`findingId`, `status`, `quiet`),
+  `service`), `network_finding_confirmed` (`findingId`, `status`),
   `network_technique_used` (`findingId`, `techniqueId`, `grant`), `network_technique_refused`
-  (`findingId`, `reason`, `noisy`), `network_alerted` (`networkId`). A scenario hangs objectives
-  and NPC lines on these; NPC lines stay in scenario files.
+  (`findingId`, `reason`). A scenario hangs objectives and NPC lines on these; NPC lines stay in
+  scenario files.
+- `systems/compromise-marks.js` (section 5.4) and the remote-view frame of the desktop
+  (`container-minigame.js`, its CSS and `utils/remote-host-text.js`). The new module is imported
+  and installed where `screen-states.js` is, so it joins the copy list of every node test
+  harness that copies an importer (the build step greps the harnesses for `screen-states.js` to
+  find them).
 
 ### 5.6 Determinism
 
@@ -948,15 +975,15 @@ target is known to be listed for the player do the other statuses appear: 403 `n
 for a listed host that is powered down, and 422 for a refusal the player caused.
 
 Every refusal is `{ success: false, reason }` with one of the statuses and codes below, and a
-`need` or `noisy` key where the table says so. The server sends no display text: the client
+`need` key where the table says so. The server sends no display text: the client
 turns `reason` into words with `REFUSAL_TEXT` (section 5.5). The 400 comes first on every route
 and is left out of the table.
 
 **The refusal codes, in one list.** The ops routes send twelve: `bad_request` (400),
 `not_found` (404), `not_responding` (403), and with 422 `not_needed`, `not_confirmed`,
 `false_positive`, `no_grant`, `fixed`, `wrong_class`, `wrong_product`, `wrong_version` and
-`need_unmet`. The desktop route gains one, `network_only` (403, section 5.4). The thirteen
-are kept in `test/fixtures/files/ops_refusal_codes.json`; the controller tests assert that no
+`need_unmet`. The desktop route gains none. The twelve are kept in
+`test/fixtures/files/ops_refusal_codes.json`; the controller tests assert that no
 ops answer carries a code outside it, and the node test that `REFUSAL_TEXT` has a line for
 each.
 
@@ -965,23 +992,22 @@ each.
 | `/network/scan` (sweep) | `foothold`, `network_id` | the network is listed through the foothold (404 `not_found`); it is a discovery network (422 `not_needed`) | adds to `opsDiscovered.networks`; log row; answers `{ success, network: { id, swept: true, hosts: [rows] } }`, the rows being the network's host and share rows |
 | `/network/scan` (host) | `foothold`, `host_id` | the host is listed (404 `not_found`); it is responding (403 `not_responding`); it declares `services` (422 `not_needed`) | adds to `opsDiscovered.hosts`; log row; answers `{ success, host: <row with services> }` |
 | `/network/check` | `foothold`, `host_id`, `service` | the host is listed, scanned and has that service (404 `not_found`); it is responding (403 `not_responding`) | records the service as checked and adds an entry and an alias for each finding not yet held (section 5.3); log row on the first check, whatever it found; answers `{ success, hostId, service, findings: [...] }` |
-| `/network/confirm` | `foothold`, `finding_id` | the finding is held and its host listed (404 `not_found`); the host is responding (403 `not_responding`) | sets the status; adds one noise unless the evidence is held or the weakness is fixed; log row; answers `{ success, finding, quiet }`, and when it was a probe `noise`, with `alerted` and `serverGlobals` if this request reached the limit |
-| `/network/technique` | `foothold`, `finding_id`, `item_id` | section 5.4: 404 `not_found`, 403 `not_responding`, then the 422 codes in order | section 5.4. Success: `{ success, grant: "session" or "credential", session? , endedPcIds?, keyringChanged? }`. Refusal: `{ success: false, reason, need?, noisy?, noise?, alerted?, serverGlobals? }` |
+| `/network/confirm` | `foothold`, `finding_id` | the finding is held and its host listed (404 `not_found`); the host is responding (403 `not_responding`) | sets the status; log row on the first confirm; answers `{ success, finding }` |
+| `/network/technique` | `foothold`, `finding_id`, `item_id` | section 5.4: 404 `not_found`, 403 `not_responding`, then the 422 codes in order | section 5.4; a log row for every use that reaches the 422 checks, granted or refused. Success: `{ success, grant: "session" or "credential", session? , endedPcIds?, keyringChanged? }`. Refusal: `{ success: false, reason, need? }` |
 
 Responding is tested before `services` on a host scan, so a powered-down host answers the same
 whether or not it has services, and nothing about its services is told before a scan succeeds.
 A host on an open network counts as discovered and its network as swept, so `/check` works
-there after a host scan; the host scan is the one step an open network still needs. A route
-that changes the noise count carries the block's new `noise` (and `alerted`, and
-`serverGlobals` when the limit was reached) so the view need not wait for its refetch.
+there after a host scan; the host scan is the one step an open network still needs.
 
 **An exact repeat, and a stale id.** A repeat is the same request sent again with nothing
-changed in between. A repeated sweep, host scan or check answers `already: true` with the same
+changed in between. A repeated host scan or check answers `already: true` with the same
 fields (a check: the service's findings as they now stand, statuses and aliases kept); a
-repeated confirm answers `already: true`, `quiet: true` and the settled finding. None writes
-anything, adds noise or writes a log row. A repeated technique use after a success is the
-repeat of section 5.4; after a refusal it is the same refusal again, which adds noise again if
-it is a noisy one, and the log merges the row into the one before (section 13).
+repeated confirm answers `already: true` and the settled finding. None of those changes state
+or writes a log row. A repeated sweep answers `already: true` with the same rows and changes no
+state, but writes its row again, because every sweep is logged (section 13). A repeated
+technique use after a success is the repeat of section 5.4; after a refusal it is the same
+refusal again and writes another row, which the log may merge into the one before (section 13).
 
 A stale id is one that was good and is not listed any more through the foothold named: the
 foothold was unplugged, the pivot that reached the network was lost, or the id belongs to
@@ -996,15 +1022,13 @@ session a technique granted through an unplugged foothold has already ended with
 |---|---|---|
 | `hosts`, `techniques` (top level), `services` on an object | never in the bootstrap or room data | deleted by name with `networks` and `network` |
 | That a discovery network has hosts or shares, and how many | never before a sweep | the block arrives with `hosts: []` and `swept: false`, and no `ops` key |
-| Whether a guessed host, network or finding id is real | never | every ops route answers the one 404 of section 6 until the id is listed for the player; an open share on an unswept network answers as an unknown id |
+| Whether a guessed host, network or finding id is real | never, by the ops routes | every ops route answers the one 404 of section 6 until the id is listed for the player. Sign-in, the desktop and shares are not discovery-gated: a PC or share id the player knows from the world answers there as it does on an open network (section 5.2) |
 | That some host on an open or swept network declares services (`ops: true` on the block) | with the block | it says only that scanning is worth trying there; not which host, nor how many |
 | A technique session's `via` | on the host row, in the session answer and in the reloaded sessions, once granted | |
 | A session's `access` | `access: "admin"` on the host row, in the session answer and in the reloaded sessions, when the session's level is admin; no key otherwise | section 0 |
 | Log rows (section 13) | never, by this plan | stored server-side in `opsLog`; the log feature's viewer is the only reader and has its own reach check |
 | `openHere` on a session row | only in the view of the foothold a technique session came through, on a host that blocks remote sign-in | |
-| A network's `noise`, `noiseLimit`, `alerted` | on the block of an open or swept network, by the rule of section 5.3; never on an unswept block | the `alert.sets` global reaches the client as any global does, when it is set |
 | A finding's `alias` | with the finding | a counter of the player's own finds; it says nothing about what is unchecked |
-| A finding's `evidence` (kind, label, held) | after the check, on weaknesses and decoys alike | the label is a name the scenario shows elsewhere |
 | A host's `id`, `name`, `sprite`, kind | after its network is swept | `GET /network`, the sweep answer |
 | A service's `name`, `label`, `port`, `product`, `version` | after the host is scanned | `GET /network`, the scan answer |
 | That a service has weaknesses or decoys, and how many | never before a check | |
@@ -1020,7 +1044,8 @@ session a technique granted through an unplugged foothold has already ended with
 
 No-exposure tests: the bootstrap and every room answer contain no `hosts`, `techniques` or
 `services` key and none of their strings; `GET /network` before a sweep names no host of a
-discovery network and its block carries no `ops` and no noise key; before a host scan names no
+discovery network other than one the player holds a session on, and its block carries no `ops`
+key; before a host scan names no
 product or version; before a check no class or summary; before a confirm nothing differs
 between a decoy and a real finding except authored text, with the weakness fixed or not; a
 technique not held is never named; the 400 body is the same for every route and every bad
@@ -1029,10 +1054,10 @@ by what has been earned.
 
 ## 8. State and saved games
 
-Four keys in `ACCESS_STATE_DEFAULTS` (`GM:3021`), all written only by the routes in section 6,
+Three keys in `ACCESS_STATE_DEFAULTS` (`GM:3021`), all written only by the routes in section 6,
 never read from a sync body, never sent whole: the bootstrap copies a fixed list of
-`player_state` keys (the comment at `credential_login.rb:107`), and these four must not be
-added to it. The defaults are `{}`, `{}`, `[]` and `{}`: each game
+`player_state` keys (the comment at `credential_login.rb:107`), and these three must not be
+added to it. The defaults are `{}`, `{}` and `[]`: each game
 gets a shallow `dup` of the default (`GM:7576`), so a default must not hold a nested list that
 games would share. `opsDiscovered` therefore starts empty and the writer creates its three lists;
 readers treat a missing list as empty.
@@ -1042,13 +1067,12 @@ readers treat a missing list as empty.
 | `opsDiscovered` | `{ "networks": [id], "hosts": [id], "services": ["<hostId>.<serviceName>"] }`; `services` is added by S2 and lists the services checked | networks in the scenario; 64 hosts; 8 services per host, so at most 512 `services` keys, about 41 KB with two 40-character ids each | not sent; it decides which rows `GET /network` builds |
 | `opsFindings` | `{ "<findingId>": "<status><n>" }`, for example `"u3"`: one letter (`u`, `c` or `f`) and the alias number, given at the check as one more than the highest in the map | 64 hosts x 8 services x 8 entries in theory; the validator caps a scenario at 128 weaknesses plus decoys | not sent; findings ride on rows |
 | `opsUsed` | `[findingId]` | number of weaknesses | not sent |
-| `opsNoise` | `{ "<networkId>": n }`, n from 1 to 99 | networks in the scenario | not sent; `noise` rides on the block |
 
 The alias number is kept in the value because the database's JSON column does not keep key
 order, so "the order found" cannot be read back from the map itself.
 
-`opsNoise` has no reset: no route lowers it, and the alert global, once set, is not cleared by
-the engine.
+The compromised marker and the remote-view frame add no state: both are drawn from the session
+copies and footholds the client already holds.
 
 The log rows of section 13 are stored by the log helper in its own keys (`opsLog`, `opsLogSeq`),
 which that feature owns, bounds and documents; this plan adds none of its own for them.
@@ -1059,9 +1083,9 @@ is bounded by the caps above. The plan measures that answer for `test_ops_access
 discovery in the node test and the live proof. Nothing here is a client global, and no existing
 sync section changes.
 
-Reload: all four keys persist, so the view returns as it was, and a technique session comes back
-with its level (section 5.4). An unplug ends sessions but leaves all four alone: what the
-player has learnt about a network stays learnt, noise does not fade, and a network reached
+Reload: all three keys persist, so the view returns as it was, and a technique session comes back
+with its level (section 5.4) and its marker. An unplug ends sessions but leaves all three alone:
+what the player has learnt about a network stays learnt, and a network reached
 again through a new foothold or a reopened pivot shows as it was left. A reset drops them with
 the other access records. A game saved before this lands reads each as empty; with no
 `discovery` network and no services in its scenario copy, nothing changes for it. Sessions with `via: "technique"`
@@ -1077,20 +1101,19 @@ neighbouring blocks use, and every new open location carries the `x-id-map` mark
 
 | Stage | Where | Addition |
 |---|---|---|
-| S1 | `networks.<id>` (`SC:323`) | `discovery`: enum `open`, `scan` |
+| S1 | `networks.<id>` (`SC:323`) | `discovery`: enum `open`, `scan`; the description says it governs the network view only, not sign-in |
 | S1 | top level, beside `resources` (`SC:347`) | `hosts`: id map (`propertyNames` with the id pattern, `x-id-map: true`), `x-serverOnly: true`, `x-servedBy: ["GET /network", "POST /network/scan"]`. Entry: `name` (required), `network` (required, `x-ref: network`), `sprite`, `offWhen` (the same `oneOf` as a network's), `services` |
 | S1 | `definitions.item.properties`, beside `network` and `headless` (`SC:5525-5542`) | `services`, `x-serverOnly: true`, `$ref` to a new `definitions.service`. The item definition is open, so this declares the key (ending the unknown-key warning) and closes nothing |
 | S1 | `definitions.service` | `name` (id pattern, max 40), `label` (max 40), `port` (integer 1 to 65535), `product` and `version` (1 to 40 characters); `name`, `port`, `product`, `version` required; array `maxItems: 8` |
 | S2 | `definitions.service` | `weaknesses` (`maxItems: 4`, items `$ref` `definitions.weakness`) and `decoys` (`maxItems: 4`, items `$ref` `definitions.decoy`). `x-servedBy` gains `POST /network/check` and `/confirm` |
-| S2 | `definitions.weakness` (closed) | `id` (id pattern, max 40), `class` and `severity` (the enums of section 0), `summary` (max 200), `evidence`, `needs`, `grants`, `fixedIf` (the same `oneOf` as `offWhen`: a global name or the requireGlobal map); `id`, `class`, `severity` required. `grants` is not required at any stage |
-| S2 | `definitions.decoy` (closed) | `id`, `class`, `severity`, `summary`, `evidence` as on a weakness, and `falseBecause` (1 to 200 characters); `id`, `class`, `severity`, `falseBecause` required |
-| S2 | `definitions.opsEvidence` (closed) | exactly one of `item` (`x-ref: item`, an item id), `itemType` (string), `credential` (`x-ref: credential`), `global` (the requireGlobal `oneOf`), as a `oneOf` over `required`; and `label` (plain text, 1 to 40 characters), required with `itemType` or `global` and refused otherwise |
-| S2 | `definitions.opsNeeds` (closed) | `credential` (`x-ref: credential`), `item` (`x-ref: item`), `itemType` (string), `session` (enum `user`, `admin`), `global` (the requireGlobal `oneOf`), at least one of them; `item` and `itemType` not both (`not` over `required`); `label` under the same rule as on evidence. One `needs` map has one label, so the validator refuses `itemType` and `global` together in one map. The split of `item` from `itemType` is what lets the schema's reference check report a dangling item id |
+| S2 | `definitions.weakness` (closed) | `id` (id pattern, max 40), `class` and `severity` (the enums of section 0), `summary` (max 200), `needs`, `grants`, `fixedIf` (the same `oneOf` as `offWhen`: a global name or the requireGlobal map); `id`, `class`, `severity` required. `grants` is not required at any stage |
+| S2 | `definitions.decoy` (closed) | `id`, `class`, `severity`, `summary` as on a weakness, and `falseBecause` (1 to 200 characters); `id`, `class`, `severity`, `falseBecause` required |
+| S2 | `definitions.opsNeeds` (closed) | `credential` (`x-ref: credential`), `item` (`x-ref: item`), `itemType` (string), `session` (enum `user`, `admin`), `global` (the requireGlobal `oneOf`), at least one of them; `item` and `itemType` not both (`not` over `required`); `label` (plain text, 1 to 40 characters), required with `itemType` or `global` and refused otherwise. One `needs` map has one label, so the validator refuses `itemType` and `global` together in one map. The split of `item` from `itemType` is what lets the schema's reference check report a dangling item id |
 | S2 | `definitions.opsGrants` (closed) | `session` (closed: `account` with `x-ref: npc`, `access` enum `user`, `admin`, both required) or `credential` (`x-ref: credential`); `minProperties: 1`, `maxProperties: 1`. Declared in S2 so the shape is fixed once; the validator refuses the key until S3 (section 3) |
-| S2 | `networks.<id>` | `alert`: closed, `after` (integer 1 to 20) and `sets` (`x-ref: global`), both required |
 | S3 | top level | `techniques`: id map, `x-serverOnly: true`, `x-servedBy: ["GET /network"]`, `maxProperties: 32`, keys at most 40 characters. Entry: `name` (required, max 40), `summary` (max 200), `worksOn` (required; `class` required, `product`, `versions` as 1 to 8 strings) |
-| S3 | `definitions.item.properties`, beside `credential` (`SC:5158`) | `technique`: a key of the technique card registry, allowed only on an item of type `technique_card`; the description says so and names the pretext field of the same name as unrelated. It stays on the item the browser receives, as `credential` does; the registry entry it names does not |
-| S3 | `credentials.<id>.proof` (`SC:293-306`) | `technique`: a finding id, with its own pattern (three ids joined by dots), which the description states. The description's list of proof kinds gains it |
+| S3 | `definitions.item.properties`, beside `credential` (`SC:5158`) | `technique_card`: a key of the technique card registry, allowed only on an item of type `technique_card`; the description says so. It stays on the item the browser receives, as `credential` does; the registry entry it names does not |
+| S3 | `credentials.<id>.proof` (`SC:293-306`) | `technique_card`: a finding id, with its own pattern (three ids joined by dots), which the description states. The description's list of proof kinds gains it |
+| S3 | the pretext line definition (`SC:3603`) | `technique` renamed to `se_technique`, with the same enum and description; the description names the technique card as unrelated |
 
 The top level and `definitions.item` are open, so declaring a key there adds a known name and
 nothing more; section 3 says what refuses each field before its stage.
