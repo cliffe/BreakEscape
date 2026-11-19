@@ -34,12 +34,12 @@ test('no minigame close rule resizes below the hit area or removes it (B1)', () 
 });
 
 test('dusting key-end marker has no border-radius (B3)', () => {
+    // fix/dusting-find-compare draws the key marks as 7x7 pixel canvases (.dusting-key-glyph) instead of CSS boxes
     const s = read('dusting.css');
-    const line = s.split('\n').find((l) => l.startsWith('.dusting-key-end {'));
-    assert.ok(line, 'rule present');
-    assert.doesNotMatch(line, /border-radius/);
-    assert.match(line, /clip-path: polygon/);
-    assert.doesNotMatch(s, /\.dusting-key-end[^{]*\{[^}]*border-radius/);
+    const line = s.split('\n').find((l) => l.startsWith('.dusting-key-glyph {'));
+    assert.ok(line, 'pixel glyph rule present');
+    assert.match(line, /image-rendering: pixelated/);
+    assert.doesNotMatch(s, /\.dusting-key-(end|fork|glyph)[^{]*\{[^}]*border-radius/);
 });
 
 test('phone status bar keeps the battery clear of the Notepad button (A3)', () => {
@@ -148,17 +148,18 @@ test('terminal-theme phone header fits Notepad plus the status line in 350px (m1
     assert.match(rule(s, '.phone-notepad-btn'), /font-size: 16px/);
     const after = rule(s, '.phone-terminal-theme .phone-header::after');
     assert.match(after, /SECURE CHANNEL ESTABLISHED/);
-    assert.match(after, /font-size: 14px/);
+    // off-grid GNF 14px moved to VT323 18px (A7)
+    assert.match(after, /font-family: 'VT323'/);
+    assert.match(after, /font-size: 18px/);
 });
 
 test('se-overlay-close touch hit area is 44px (m2)', () => {
     assert.match(read('minigames-framework.css'), /\.se-overlay-close::after \{[^}]*inset: -11px/);
 });
 
-test('dusting key-end notch is 2px (m3)', () => {
-    const line = read('dusting.css').split('\n').find((l) => l.startsWith('.dusting-key-end {'));
-    assert.doesNotMatch(line, /3px/);
-    assert.match(line, /2px/);
+test('dusting key marks are shown at a whole-number 2x (m3)', () => {
+    const line = read('dusting.css').split('\n').find((l) => l.startsWith('.dusting-key-glyph {'));
+    assert.match(line, /width: 14px; height: 14px/, '7x7 glyph at 2x');
 });
 
 test('vm-launcher max-height is dvh with a vh fallback line before it (m4, n3)', () => {

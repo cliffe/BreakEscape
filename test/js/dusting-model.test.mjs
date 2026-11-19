@@ -187,7 +187,7 @@ test('tape grid, rating and tables', () => {
     assert.equal(ratingFor(0.4), 'Acceptable'); assert.equal(ratingFor(0.39), 'Poor');
     for (const s of Object.values(SURFACES)) { assert.ok(s.description && s.colours.length && POWDERS[s.bestPowder]); }
     for (const p of Object.values(POWDERS)) { assert.ok(p.label && p.kitLabel && p.colour); for (const t of p.tools) assert.ok(TOOLS[t]); }
-    for (const d of Object.values(DIFFICULTY)) for (const k of ['pfog', 'minCoverage', 'residueStrength', 'candidates', 'decoySamePattern', 'findHintVisible']) assert.ok(k in d);
+    for (const d of Object.values(DIFFICULTY)) for (const k of ['pfog', 'minCoverage', 'residueStrength', 'candidates', 'decoySamePattern', 'findFloor']) assert.ok(k in d);
     // Easy's decoy has a different pattern class (m08 E16: two near-identical whorls were not a
     // fair easy compare); medium keeps one same-pattern decoy, hard makes them all the same
     assert.equal(DIFFICULTY.easy.decoySamePattern, 'never');

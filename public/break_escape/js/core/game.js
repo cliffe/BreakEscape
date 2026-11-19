@@ -3028,7 +3028,7 @@ if (typeof window !== 'undefined') {
 
 // Face an in-reach object and use it (a tap, a pick from the menu, or a far tap's arrival)
 function useObjectInReach(obj) {
-    facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
+    facePlayerToward(aimX(obj), obj.y); // faces from the body to the object's top edge (E scores with aimDiff in interaction-reach.js)
     if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
     if (window.handleObjectInteraction) window.handleObjectInteraction(obj);
 }
@@ -3232,7 +3232,8 @@ function standPointDeps(player) {
     const pfm = window.pathfindingManager;
     return {
         range: INTERACTION_RANGE,
-        reachY: (o, y) => reachY(o, y),   // a tall wall-mounted object: its nearest part (interaction-reach.js)
+        reachX: (o, x) => reachX(o, x),   // a wide object: its nearest part (interaction-reach.js)
+        reachY: (o, y) => reachY(o, y),   // a tall object: its nearest part (interaction-reach.js)
         findCell: pfm?.findNearestWalkableWorldCell ? (x, y, r) => pfm.findNearestWalkableWorldCell(x, y, r) : null,
         wallClear: (p, o) => wallClearFrom(p, o),
         // Stand on the object's own side of a shared strip (UX slice 15 R2, M1)

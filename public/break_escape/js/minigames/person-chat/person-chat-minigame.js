@@ -22,7 +22,7 @@ import { splitReplyTags, partitionSlowTags, tagAction } from './person-chat-pend
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
-import { rememberNpcLine, getRememberedNpcLine, rememberShownText, rememberPlayerChoice, markClosedByExit, isExitTag, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, rememberShownText, rememberPlayerChoice, markClosedByExit, isExitTag, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty, restoredStoryShouldRestart } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -526,7 +526,9 @@ export class PersonChatMinigame extends MinigameScene {
                     stateManager: npcConversationStateManager
                 });
             } else {
-                // Otherwise, restore previous conversation state if it exists
+                // Otherwise, restore previous conversation state if it exists.
+                // Read first: a state seeded from the server on load has no position.
+                const seededFromSave = npcConversationStateManager.getNPCState(this.npcId)?.seededFromSave === true;
                 const stateRestored = npcConversationStateManager.restoreNPCState(
                     this.npcId, 
                     this.inkEngine.story
@@ -543,9 +545,12 @@ export class PersonChatMinigame extends MinigameScene {
                     // NPC's start knot instead (see PhoneChatConversation.restartAfterEnd).
                     const restoredStory = this.inkEngine.story;
                     // NPC config "restartOnRetalk": false opts out, for one-shot scenes (e.g. a final
-                    // choice with rewards) that must not replay once resolved.
-                    const storyIsFinished = this.npc.restartOnRetalk !== false && (stateRestored === 'variables-only' ||
-                        (!restoredStory.canContinue && !(restoredStory.currentChoices?.length > 0)));
+                    // choice with rewards) that must not replay once resolved, except for state
+                    // seeded from the server after a reload: it has no position to resume, so it
+                    // always restarts and the NPC's ink guards its own replay (person-chat-reopen.js).
+                    const storyIsFinished = restoredStoryShouldRestart({
+                        stateRestored, seededFromSave, restartOnRetalk: this.npc.restartOnRetalk, story: restoredStory
+                    });
                     if (storyIsFinished && this.conversation.restartAfterEnd()) {
                         console.log(`🔁 Previous conversation had ended - restarting ${this.npcId} at knot: ${this.npc.currentKnot}`);
                     } else {
@@ -714,8 +719,9 @@ export class PersonChatMinigame extends MinigameScene {
                     npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                 }
                 // Via the helper so a disableClose scene (no Esc, no x) still closes itself.
-                // Reached on re-talk to a restartOnRetalk:false NPC whose story had ended,
-                // including after a reload, when its saved ink variables are restored.
+                // Reached on re-talk to a restartOnRetalk:false NPC whose story had ended in
+                // this session, or whose restarted ink ends at once (a guard on a synced
+                // global, e.g. m01 Derek after the confrontation, once reloaded).
                 this.showConversationOverMessage('(End of conversation - press ESC to exit)');
                 console.log('🏁 Story has reached an end point');
                 return;
@@ -1090,7 +1096,16 @@ export class PersonChatMinigame extends MinigameScene {
      * move and the same choices stay on screen. Returns false when there is nothing to ask.
      */
     _askEndingBeforeChoice(choiceIndex) {
-        if (this._endingAsking) return true;
+        if (this._endingAsking) {
+            // The question is up: point the player back at it rather than eat the click silently.
+            // If it is gone without an answer (isAsking clears a lost overlay), drop the stale
+            // flag and ask again, so no click can be swallowed for good (m10 blind part 3).
+            if (window.endingCheck?.isAsking?.()) {
+                window.endingCheck.nudge?.();
+                return true;
+            }
+            this._endingAsking = false;
+        }
         const asked = this.lastResult?.choices?.[choiceIndex];
         if (!choiceAsksEnding(asked?.tags) || !window.endingCheck?.needsAnswer?.()) return false;
         this._endingAsking = true;

@@ -861,12 +861,19 @@ async function clearTransientUi() {
     return cleared;
 }
 
+/** True while a gameDisplay (read note, sign, plaque) or gameConfirm dialog is in the DOM. */
+function textOverlayOpen() {
+    return !!document.querySelector('.game-display-dialog, .game-confirm-dialog');
+}
+
 function blockedByMinigame() {
     const mg = activeMinigameSummary();
     if (mg) {
         return fail('minigame-active', {
             activeMinigame: mg,
-            hint: 'Main-world input is disabled. Drive window.__test.minigame instead.'
+            hint: `${mg.id || 'A minigame'} is open and main-world input is disabled, `
+                + 'so a player cannot reach this target either. Close it first '
+                + '(window.__test.minigame.close()) or drive window.__test.minigame.'
         });
     }
     // A modal on top of the canvas swallows pointer input just as effectively,
@@ -1634,6 +1641,10 @@ const bridge = {
         }
         // The session overlay: only its own three buttons, never the other-session links
         if (sessionOverlayShowing()) buttons = sessionOverlayButtons();
+        // The ending question (over a chat, too): its own X, Keep going and End buttons
+        const endingUp = () => !!document.getElementById?.('ending-check-overlay');
+        const endingOverlay = !sessionOverlayShowing() && endingUp() && document.getElementById('ending-check-overlay');
+        if (endingOverlay) buttons = Array.from(endingOverlay.querySelectorAll('button'));
         if (!buttons.length) return fail('blocking-ui-has-no-buttons', { blocker });
 
         let target;
@@ -1660,7 +1671,8 @@ const bridge = {
         // Escape-driven close can have opened it behind us, so resume rather than leave it up.
         const menuWasTarget = !!(target.closest && target.closest('#game-menu-overlay'));
         const menuClosed = menuWasTarget ? false : await closeStrayGameMenu();
-        const afterBlocker = detectBlockingUi();
+        // Answering the ending question over a chat leaves the chat, which is not a blocker here
+        const afterBlocker = (endingOverlay && activeMinigameSummary()) ? (endingUp() ? detectBlockingUi() : null) : detectBlockingUi();
         // The click landed on a real button, but the page can still be blocked: the overlay did
         // not close, or it revealed another (the tutorial prompt sits over the session-resume
         // overlay at startup). It used to answer ok:true with stillBlocked:true, so a caller that
@@ -1821,13 +1833,22 @@ const bridge = {
     async pressKey(key, opts) {
         // Keys 1-9, the arrows, Enter and Escape go to the overlap menu when it is the open blocking UI
         const toMenu = overlapMenuIsTheBlocker();
-        if (!toMenu) {
+        // Escape goes to a read note or confirm dialog (gameDisplay / gameConfirm) when one is the
+        // thing in front: the engine closes it through ui/modal-stack.js, as a player's Esc would.
+        // Any other key stays refused, since the dialog holds the game's keys.
+        const toOverlay = !toMenu && key === 'Escape' && !activeMinigameSummary() && textOverlayOpen();
+        if (!toMenu && !toOverlay) {
             const blocked = blockedByMinigame();
             if (blocked) return blocked;
         }
         await rawPressKey(key, opts?.holdMs);
         await sleepFrames(2);
         const result = { ok: true, key };
+        if (toOverlay) {
+            result.toOverlay = true;
+            result.stillOpen = textOverlayOpen();
+            if (result.stillOpen) result.blockingUi = detectBlockingUi();
+        }
         if (toMenu) {
             result.toMenu = true;
             const menu = interactionMenuState();

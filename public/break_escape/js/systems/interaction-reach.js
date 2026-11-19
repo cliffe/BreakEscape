@@ -12,11 +12,16 @@
  * object's horizontal span, so standing below any part of it counts as being at
  * that part. The vertical measure is the sprite's y, which keeps every
  * existing stand point valid; this only ever shortens a reach. reachY() is
- * the vertical counterpart, for objects marked "wallMounted" only.
+ * the vertical counterpart, and applies to every scenario object: a tall prop
+ * against the back wall (a 47px filing cabinet) is reached at its footprint,
+ * not its top edge, which a player's feet cannot get within 32px of.
  *
  * Doors and NPCs keep their own measures (DOOR_INTERACTION_RANGE_SQ,
  * npc-reach.js). No imports, so the node tests can load this file on its own.
  */
+
+/** Objects at least this tall (px) are reached at their footprint, not their top edge (reachY). */
+export const TALL_PROP_PX = 32;
 
 /** The x to measure reach to for `sprite`, seen from player x `fromX`. */
 export function reachX(sprite, fromX) {
@@ -39,21 +44,26 @@ export function reachX(sprite, fromX) {
 
 /**
  * The y to measure reach to for `sprite`, seen from player y `fromY`: the
- * vertical counterpart of reachX, but opt-in. Only a scenario object marked
- * `"wallMounted": true` gets it (a tall wall fixture such as a power socket
- * whose plate is high on the back wall and whose cable reaches the floor line).
- * For it, the player's y is clamped into the sprite's vertical span, so standing
- * level with any part of it counts as being at that part. Every other sprite
- * (bookcases, vending machines, doors, NPCs, anything unmarked) keeps sprite.y,
- * so their reach is unchanged. Like reachX it only ever shortens a reach: the
- * clamped point is never further from fromY than sprite.y is.
+ * vertical counterpart of reachX. The player's y is clamped into the sprite's
+ * vertical span, so standing level with any part of it counts as being at that
+ * part. A scenario object's origin is its top-left, so measuring to sprite.y
+ * put a floor-standing 47px cabinet against the back wall (m01 derek_cabinet)
+ * about 27px beyond the nearest the player's feet can reach, and the walk
+ * stopped short. This applies to every scenario object at least TALL_PROP_PX (32) tall,
+ * or marked "wallMounted"; shorter props, doors, NPCs, rotated sprites and sprites without
+ * scenario data keep sprite.y. Like reachX it only ever shortens a reach: the
+ * clamped point is never further from fromY than sprite.y is. It does not
+ * loosen the wall rule: interactionLineClear still runs the line to the base
+ * of the object, in the object's own room.
  */
 export function reachY(sprite, fromY) {
     if (!sprite || !Number.isFinite(sprite.y)) return sprite ? sprite.y : 0;
-    if (sprite._isNPC || sprite.doorProperties || sprite.scenarioData?.wallMounted !== true) return sprite.y;
+    if (sprite._isNPC || sprite.doorProperties || !sprite.scenarioData) return sprite.y;
     if (!Number.isFinite(fromY) || sprite.rotation) return sprite.y;
     const h = sprite.displayHeight ?? sprite.height ?? 0;
-    if (!(h > 0)) return sprite.y;
+    // Only a tall prop needs it: a low one (under 32px: a short box, a desk top) is near enough its top edge, and
+    // the overlap and pick logic is tuned to that measure. A "wallMounted" mark always opts in.
+    if (!(h >= TALL_PROP_PX || (h > 0 && sprite.scenarioData.wallMounted === true))) return sprite.y;
     const top = sprite.y - (sprite.originY ?? 0.5) * h;
     return Math.max(top, Math.min(fromY, top + h));
 }
@@ -76,6 +86,58 @@ export function aimX(sprite) {
     const w = sprite.displayWidth ?? sprite.width ?? 0;
     if (!(w > 0)) return sprite.x;
     return sprite.x - (sprite.originX ?? 0.5) * w + w / 2;
+}
+
+/**
+ * The y to aim the facing angle at: the vertical centre of the object, the
+ * counterpart of aimX. A scenario object's origin is its top-left, so aiming at
+ * sprite.y read a short prop's top edge as far off the player's facing (the
+ * 30px safe beside the 47px cabinet in m01). Doors, NPCs and sprites without
+ * scenario data keep sprite.y.
+ */
+export function aimY(sprite) {
+    if (!sprite || !Number.isFinite(sprite.y)) return sprite ? sprite.y : 0;
+    if (sprite._isNPC || sprite.doorProperties || !sprite.scenarioData) return sprite.y;
+    if (sprite.rotation && typeof sprite.getBounds === 'function') {
+        try {
+            const b = sprite.getBounds();
+            if (b && b.height > 0) return b.centerY ?? (b.top + b.height / 2);
+        } catch (e) { /* fall through */ }
+    }
+    const h = sprite.displayHeight ?? sprite.height ?? 0;
+    if (!(h > 0)) return sprite.y;
+    return sprite.y - (sprite.originY ?? 0.5) * h + h / 2;
+}
+
+/** Scenario objects shorter than this (px) may be aimed at from the body to the top edge (aimDiff). */
+export const BODY_AIM_MAX_PX = 40;
+
+/**
+ * How far off the player's facing a scenario object is, and the aim point that gave it (E and the E label
+ * both score with this, so they cannot disagree). The aim is the feet to the object's centre. A prop shorter
+ * than BODY_AIM_MAX_PX also gets the older body-to-top-edge aim, and the smaller angle wins: a player level
+ * with a low prop beside them faces it from the body, which the feet angle alone calls 45 degrees off. Taller
+ * props never use the body aim: its angle to a tall top edge reads almost straight up and beat a short
+ * neighbour's feet angle. Not for doors or NPCs. `facingAngle` is degrees, right 0, down 90.
+ * Returns { diff, x, y, fromX, fromY }.
+ */
+export function aimDiff(player, target, faceX, faceY, facingAngle) {
+    const c = player?.body?.center;
+    const foot = c && Number.isFinite(c.x) && Number.isFinite(c.y) ? c : { x: player.x, y: player.y };
+    const diffFrom = (x, y, fromX, fromY) => {
+        let a = Math.atan2(y - fromY, x - fromX) * 180 / Math.PI;
+        a = (a + 360) % 360;
+        let d = Math.abs(facingAngle - a);
+        if (d > 180) d = 360 - d;
+        return d;
+    };
+    const feetAim = { x: faceX, y: faceY, fromX: foot.x, fromY: foot.y };
+    feetAim.diff = diffFrom(feetAim.x, feetAim.y, feetAim.fromX, feetAim.fromY);
+    const h = target?.displayHeight ?? target?.height ?? 0;
+    if (h >= BODY_AIM_MAX_PX || !Number.isFinite(target?.y)) return feetAim;
+    const bodyAim = { x: faceX, y: target.y, fromX: player.x, fromY: player.y };
+    bodyAim.diff = diffFrom(bodyAim.x, bodyAim.y, bodyAim.fromX, bodyAim.fromY);
+    return feetAim.diff <= bodyAim.diff ? feetAim : bodyAim;
 }
 
 /**

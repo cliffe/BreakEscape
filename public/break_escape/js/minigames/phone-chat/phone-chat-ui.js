@@ -264,6 +264,8 @@ export default class PhoneChatUI {
         timer.textContent = shown;
         bar.classList.add('call-ended');
         this.elements.choicesContainer && (this.elements.choicesContainer.innerHTML = '');
+        // no replies left, so no "more choices" cue either
+        this.elements.choicesMoreCue?.classList.remove('visible');
         return true;
     }
 
@@ -603,6 +605,9 @@ export default class PhoneChatUI {
             console.warn('⚠️ Phone UI torn down; not showing the contact list');
             return;
         }
+        // Back from a thread opened with the keyboard returns focus to that contact's row
+        const returnTo = this.currentView === 'conversation' && this._threadByKeyboard ? this.currentNPCId : null;
+        this._threadByKeyboard = false;
         this.currentView = 'contact-list';
         this.currentNPCId = null;
         this.syncSkipHint();
@@ -618,6 +623,7 @@ export default class PhoneChatUI {
         this.populateContactList(phoneId);
         
         this.focusIntoPhone();
+        if (returnTo) this.focusContactRow(returnTo);
         console.log('📋 Showing contact list');
     }
 
@@ -742,6 +748,10 @@ export default class PhoneChatUI {
                 const meta = row.querySelector('.contact-meta');
                 const freshMeta = fresh.querySelector('.contact-meta');
                 if (meta && freshMeta) meta.replaceWith(freshMeta);
+                // The swapped meta may add or drop the unread badge: keep the description ids in step
+                const freshDesc = fresh.getAttribute('aria-describedby');
+                if (freshDesc) row.setAttribute('aria-describedby', freshDesc);
+                else row.removeAttribute('aria-describedby');
                 const last = row.querySelector('.contact-last-message');
                 const freshLast = fresh.querySelector('.contact-last-message');
                 if (!last || !freshLast) continue;
@@ -770,6 +780,10 @@ export default class PhoneChatUI {
      */
     populateContactList(phoneId = null) {
         const contactList = this.elements.contactList;
+        // A rebuild drops the focused row: remember it and focus its replacement
+        const active = document.activeElement;
+        const focusedId = active && contactList.contains(active) && active.classList?.contains('contact-item')
+            ? active.dataset.npcId : null;
         contactList.innerHTML = '';
         const npcs = this.listContacts(phoneId);
         
@@ -779,6 +793,8 @@ export default class PhoneChatUI {
                     <p>No contacts available</p>
                 </div>
             `;
+            // The focused contact left and none remain: keep focus inside the phone
+            if (focusedId) this.focusIntoPhone();
             return;
         }
         
@@ -794,7 +810,23 @@ export default class PhoneChatUI {
             }
         });
 
+        // The focused row's contact left the list: keep focus inside the phone
+        if (focusedId && !this.focusContactRow(focusedId)) this.focusIntoPhone();
         console.log(`📋 Populated ${npcs.length} contacts`);
+    }
+
+    /**
+     * Focus the contact row for an NPC, if the list has one.
+     * @returns {boolean} whether a row took focus
+     */
+    focusContactRow(npcId) {
+        try {
+            const rows = Array.from(this.elements?.contactList?.querySelectorAll('.contact-item') || []);
+            const row = rows.find(r => r.dataset.npcId === npcId);
+            if (!row) return false;
+            row.focus({ preventScroll: true });
+            return true;
+        } catch (e) { return false; }
     }
 
     /**
@@ -864,6 +896,19 @@ export default class PhoneChatUI {
         const contactItem = document.createElement('div');
         contactItem.className = 'contact-item';
         contactItem.dataset.npcId = npc.id;
+        // Keyboard-operable row: Tab reaches it, Enter or Space opens the thread through the
+        // same click path as the mouse. Its name is its text, which starts with the contact name.
+        contactItem.setAttribute('role', 'button');
+        contactItem.tabIndex = 0;
+        contactItem.addEventListener('keydown', (e) => {
+            if (e.target !== contactItem || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            // A thread opened this way gives focus back to its row on Back
+            this._kbOpen = true;
+            try { contactItem.click(); } finally { this._kbOpen = false; }
+        });
+        contactItem.addEventListener('click', () => { this._threadByKeyboard = !!this._kbOpen; });
         
         // Format last message preview
         let lastMessagePreview = 'No messages yet';
@@ -890,20 +935,31 @@ export default class PhoneChatUI {
             }
         }
 
+        const nameId = `contact-name-${String(npc.id).replace(/[^A-Za-z0-9_-]/g, '_')}`;
         contactItem.innerHTML = `
             <div class="contact-avatar">
-                ${avatar ? `<img src="${escHtml(avatarSrc)}" alt="${escHtml(npc.displayName)}">` : '👤'}
+                ${avatar ? `<img src="${escHtml(avatarSrc)}" alt="">` : '<span aria-hidden="true">👤</span>'}
             </div>
             <div class="contact-info">
-                <div class="contact-name">${escHtml(npc.displayName || npc.id)}</div>
-                ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
+                <div class="contact-name" id="${nameId}">${escHtml(npc.displayName || npc.id)}</div>
+                ${npcDmFields(npc).handle ? `<div class="contact-handle" id="${nameId}-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
                 <div class="contact-last-message${lastIsMissedCall ? ' missed' : ''}">${escHtml(displayDashes(lastMessagePreview))}</div>
             </div>
             <div class="contact-meta">
-                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-                <div class="contact-time">${escHtml(lastMessageTime)}</div>
+                ${unreadCount > 0 ? `<div class="unread-badge" id="${nameId}-unread">${unreadCount}<span class="contact-sr-only"> unread</span></div>` : ''}
+                <div class="contact-time" id="${nameId}-time">${escHtml(lastMessageTime)}</div>
             </div>
         `;
+        // Name = the contact name alone (the row's ::before "// " is not part of it);
+        // the preview and time are the description
+        contactItem.querySelector('.contact-last-message')?.setAttribute('id', `${nameId}-preview`);
+        contactItem.setAttribute('aria-labelledby', nameId);
+        // The role=button children are presentational, so the handle and the unread count
+        // must be named here to be heard: "preview time handle N unread"
+        const described = [`${nameId}-preview`, `${nameId}-time`];
+        if (contactItem.querySelector(`#${nameId}-handle`)) described.push(`${nameId}-handle`);
+        if (unreadCount > 0) described.push(`${nameId}-unread`);
+        contactItem.setAttribute('aria-describedby', described.join(' '));
         
         return contactItem;
     }
@@ -913,6 +969,7 @@ export default class PhoneChatUI {
      * @param {string} npcId - NPC identifier
      */
     showConversation(npcId) {
+        this._refocusChoices = false;
         if (!npcId) {
             console.error('❌ No NPC ID provided');
             return;
@@ -932,6 +989,9 @@ export default class PhoneChatUI {
 
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
+        // Only a thread opened by a keyboard press on its row returns focus to that row on Back;
+        // a bark or ring that opens a thread does not
+        if (!this._kbOpen) this._threadByKeyboard = false;
         // The thread is cleared below and redrawn from the history once that loads; a text
         // that arrives in between is part of that draw (npc-barks _foldIntoOpenThread)
         this.historyDrawn = false;
@@ -1417,6 +1477,12 @@ export default class PhoneChatUI {
         }
         if (this.isCallMode) this.elements.conversationView?.classList.add('call-has-choices');
         
+        const box = this.elements.choicesContainer;
+        // Honour the hand-off only while focus has not gone anywhere else since the pick
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const focusFree = !active || active === document.body || box.contains(active);
+        const refocus = this._refocusChoices && focusFree;
+        this._refocusChoices = false;
         this.elements.choicesContainer.innerHTML = '';
         
         choices.forEach((choice, index) => {
@@ -1430,6 +1496,13 @@ export default class PhoneChatUI {
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });
+
+        // A new reply set starts at the top: the old set may have been scrolled to its last
+        // reply, which would hide replies 1-3 and the "more choices" cue (call mode, short screens).
+        // Reset after the buttons are in: Chromium restores the old offset on the emptied box
+        // once content comes back, so a reset before the append is undone (live, 844x390)
+        box.scrollTop = 0;
+        if (refocus) box.querySelector('.choice-button')?.focus({ preventScroll: true });
 
         this.scrollToBottom();
         this.updateChoicesScrollCue();
@@ -1455,6 +1528,16 @@ export default class PhoneChatUI {
      * Clear all choice buttons
      */
     clearChoices() {
+        // A reply picked from the keyboard leaves focus on a button that is about to go:
+        // remember it so the next reply set takes focus instead of dropping it to BODY
+        const box = this.elements.choicesContainer;
+        // (keyboard picks only: a mouse pick keeps today's behaviour, where Space/Enter skip the typewriter)
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        if (box && active && box.contains(active)) {
+            let keyboard = false;
+            try { keyboard = active.matches(':focus-visible'); } catch { keyboard = false; }
+            this._refocusChoices = keyboard;
+        }
         this.elements.choicesContainer.innerHTML = '';
         this.elements.choicesMoreCue?.classList.remove('visible');
         if (this.isCallMode) this.elements.conversationView?.classList.remove('call-has-choices');
@@ -1677,6 +1760,7 @@ export default class PhoneChatUI {
 
     cleanup() {
         this.hideIncomingCall();
+        this._refocusChoices = false;
         this.stopCallTimer();
         this._chatInfluence?.destroy();
         this._chatInfluence = null;

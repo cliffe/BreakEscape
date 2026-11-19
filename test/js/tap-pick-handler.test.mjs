@@ -90,7 +90,10 @@ const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pend
     'closeInteractionMenu', 'resolveObjectField', 'worldObservations', 'TILE_SIZE', 'SPRITE_PADDING_BOTTOM_ATLAS',
     'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE', 'ARRIVAL_THRESHOLD', 'stopClickToMove',
     'menuIconsFor'];
-const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
+// These fixtures model reach as a distance to the sprite's top-left corner; a sprite flagged topLeftReach keeps
+// that measure through reachX/reachY so the overlap-walk logic is tested on its own geometry, not on the span
+const legacyOr = (fn, pos) => (s, v) => (s && s.topLeftReach ? s[pos] : fn(s, v));
+const IMPORTS = { ...tapPick, ...reachMod, reachX: legacyOr(reachMod.reachX, 'x'), reachY: legacyOr(reachMod.reachY, 'y'), openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
     'createPendingTapUse', 'aimX', 'reachX', 'reachY', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
     'withoutLeavingNpcsIfObjects', 'openHandIcon', 'jabHandIcon', 'talkIcon', 'pixelHits', 'soleHit', 'overlapStandPoint', 'overlapRetryTarget',
@@ -158,7 +161,7 @@ function world({ player, objects = [], npcs = [], doors = [], hostile = [], ko =
         get playerIsMoving() { return state.moving; },
         pendingGateWalk: { clear() {}, arm() {} },
         doorGates: { walkThroughTarget: () => null },
-        isObjectInInteractionRange: (s, from = player, range = RANGE) => !(from === player && ovr.out.has(s.id)) && Math.hypot(s.x - from.x, s.y - from.y) <= range,
+        isObjectInInteractionRange: (s, from = player, range = RANGE) => !(from === player && ovr.out.has(s.id)) && Math.hypot(IMPORTS.reachX(s, from.x) - from.x, IMPORTS.reachY(s, from.y) - from.y) <= range,   // the engine's measure: nearest part (wide or tall)
         menuIconsFor: (list) => list.map(c => (c.sprite ? { src: `icon:${c.sprite.id}` } : null)),
         stopClickToMove: () => { state.stopped = (state.stopped || 0) + 1; state.moving = false; },
         ARRIVAL_THRESHOLD: 8,
@@ -191,10 +194,19 @@ const walkedTo = (log) => log.some(l => l.startsWith('walk:'));
 test('handler M1: a tap on Sarah\'s figure over the far directory talks to her, no menu', () => {
     const player = { x: 126, y: 71 };
     const sarah = npc('sarah', 150, 60, { depth: 80 });
-    const directory = sprite('directory', 150, 20, 40, 40, { depth: 10 });
+    const directory = sprite('directory', 150, 20, 40, 40, { depth: 10, topLeftReach: true });   // far by its top edge: the point is the NPC in reach
     const w = world({ player, objects: [directory], npcs: [sarah] });
     w.tap(150, 45);                              // her head, inside the far directory's bounds
     assert.deepEqual(w.log, ['talk:sarah']);
+});
+
+test('handler M1b: the same tap with the directory measured by its footprint (40px tall, reachable) shows the Sarah/directory menu', () => {
+    const player = { x: 126, y: 71 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });
+    const directory = sprite('directory', 150, 20, 40, 40, { depth: 10 });   // 40 tall: reachY clamps into its span, so it is in reach
+    const w = world({ player, objects: [directory], npcs: [sarah] });
+    w.tap(150, 45);
+    assert.deepEqual(w.log, ['menu:sarah|directory']);
 });
 
 test('handler M1: a tap on the empty part of her frame over the far object walks to the object', () => {
@@ -430,7 +442,7 @@ test('handler R2 m1: a tap on a memo\'s pixels beside an in-reach NPC opens the 
 test('handler R2 m5: a tap a pixel off an in-reach NPC\'s outline, over a far object behind her, talks to her', () => {
     const player = { x: 126, y: 71 };
     const sarah = npc('sarah', 150, 60, { depth: 80 });                 // figure x 140-160, y 42-82
-    const board = sprite('board', 155, 20, 40, 40, { depth: 10 });      // far, drawn behind her
+    const board = sprite('board', 155, 20, 40, 40, { depth: 10, topLeftReach: true });      // far (top-left measure), drawn behind her
     const w = world({ player, objects: [board], npcs: [sarah] });
     w.tap(161, 50);
     assert.deepEqual(w.log, ['talk:sarah']);
@@ -438,6 +450,15 @@ test('handler R2 m5: a tap a pixel off an in-reach NPC\'s outline, over a far ob
     w2.tap(165, 50);                             // 5 px off: the board's
     assert.ok(walkedTo(w2.log) && !w2.log.some(l => l.startsWith('talk')), w2.log.join());
     assert.equal(w2.pendingTapUse.get()?.obj, board);
+});
+
+test('handler R2 m5b: the same board measured by its footprint is in reach, so a tap a pixel off her outline gives the Sarah/board menu', () => {
+    const player = { x: 126, y: 71 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });
+    const board = sprite('board', 155, 20, 40, 40, { depth: 10 });
+    const w = world({ player, objects: [board], npcs: [sarah] });
+    w.tap(161, 50);
+    assert.deepEqual(w.log, ['menu:sarah|board']);
 });
 
 test('handler R2 M1: a keyboard walk after a far tap never uses the object', () => {
@@ -517,8 +538,8 @@ test('handler R3 n2: a knocked-out body beside the player is not "someone" in th
 
 // ── Overlap plan: the far overlap walk, the pixel pick, hostiles and doors (handler tests 16 to 36) ──
 const diamond = (lx, ly) => Math.abs(lx - 7.5) + Math.abs(ly - 7.5) <= 8;
-const copierAt = () => sprite('copier', 100, 100, 35, 46, { depth: 10 });
-const printoutAt = () => sprite('printout', 110, 100, 16, 16, { depth: 11, shape: diamond });
+const copierAt = () => sprite('copier', 100, 100, 35, 46, { depth: 10, topLeftReach: true });
+const printoutAt = () => sprite('printout', 110, 100, 16, 16, { depth: 11, shape: diamond, topLeftReach: true });
 const doorAt = (id, x, y, extra = {}) => sprite(id, x, y, 32, 32, { doorProperties: { direction: 'north', roomId: 'r1',
     connectedRoom: 'r2', open: false }, ...extra });
 
@@ -570,8 +591,8 @@ test('overlap 20: the only spot found is the player\'s own, hits out of reach: a
 
 test('overlap 21: no spot reaches every hit: one far click on the topmost hit, walked to and used on arrival, no overlap walk', () => {
     const player = { x: 300, y: 165 };
-    const tall = sprite('tall', 100, 100, 10, 80, { depth: 0 });
-    const low = sprite('low', 100, 160, 10, 10, { depth: 5 });
+    const tall = sprite('tall', 100, 100, 10, 80, { depth: 0, topLeftReach: true });
+    const low = sprite('low', 100, 160, 10, 10, { depth: 5, topLeftReach: true });
     const w = world({ player, objects: [tall, low] });
     w.tap(105, 165);
     assert.ok(walkedTo(w.log), 'walks');
@@ -580,8 +601,19 @@ test('overlap 21: no spot reaches every hit: one far click on the topmost hit, w
     assert.ok(!w.log.some(l => l.startsWith('menu') || l.startsWith('use')));
 });
 
+test('overlap 21b: the same tall and low pair with the footprint measure: one spot reaches both, so the click is an overlap walk, not a far click', () => {
+    const player = { x: 300, y: 165 };
+    const tall = sprite('tall', 100, 100, 10, 80, { depth: 0 });     // 80 tall: reachY clamps into its span
+    const low = sprite('low', 100, 160, 10, 10, { depth: 5 });
+    const w = world({ player, objects: [tall, low] });
+    w.tap(105, 165);
+    assert.ok(walkedTo(w.log), 'walks');
+    assert.ok(w.pendingOverlapWalk.get() || w.log.some(l => l.startsWith('menu')), 'an overlap walk is armed (or the menu shows at once)');
+    assert.ok(!w.log.some(l => l.startsWith('use')), 'nothing used yet');
+});
+
 test('overlap 22b (R5 M1): a walk that ends 7 px short with one hit out of reach takes one retry step past the stand point, far enough to move', () => {
-    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10 });
+    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10, topLeftReach: true });
     const player = { x: 400, y: 115 };
     const w = world({ player, objects: [wide('a', 100), wide('b', 156)] });
     w.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }) };
@@ -674,7 +706,7 @@ test('overlap 22f2 (R3 m4): overlapReachSpan covers a wide object, a wall-mounte
     const w = world({ player });
     // A 128 px wide object, origin 0.5: its left and right edges
     const desk = sprite('desk', 300, 80, 128, 40, { originX: 0.5, originY: 0.5 });
-    assert.deepEqual(w.overlapReachSpan(desk), { left: 236, right: 364, top: 80, bottom: 80 });
+    assert.deepEqual(w.overlapReachSpan(desk), { left: 236, right: 364, top: 60, bottom: 100 });
     // A wall-mounted one gives its vertical extent too
     const board = sprite('board', 200, 100, 40, 52, { originX: 0.5, originY: 0.5, data: { wallMounted: true } });
     const wm = w.overlapReachSpan(board);
@@ -685,6 +717,15 @@ test('overlap 22f2 (R3 m4): overlapReachSpan covers a wide object, a wall-mounte
     // A walking NPC and a door are measured from their centre
     assert.equal(w.overlapReachSpan(npc('walker', 100, 100)), null);
     assert.equal(w.overlapReachSpan(doorAt('d', 10, 10)), null);
+});
+
+test('overlap 22f3: a prop under 32px tall (no wallMounted) has a span whose top equals its bottom', () => {
+    const player = { x: 0, y: 0, body: { center: { x: 0, y: 31 } } };
+    const w = world({ player });
+    const box = sprite('box', 200, 100, 30, 20, { originX: 0.5, originY: 0.5 });
+    const span = w.overlapReachSpan(box);
+    assert.ok(span, 'a span');
+    assert.equal(span.top, span.bottom, JSON.stringify(span));
 });
 
 test('overlap 22d (R2 M1): a second click within 8 px of the stand point with nothing in reach is never the toast: a step, or the far click', () => {
@@ -714,7 +755,7 @@ test('overlap 22d (R2 M1): a second click within 8 px of the stand point with no
 });
 
 test('overlap 22e (R2 n6): a retry step still waiting on the pathfinder is not dropped; it is after the grace', () => {
-    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10 });
+    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10, topLeftReach: true });
     const player = { x: 400, y: 115 };
     const w = world({ player, objects: [wide('a', 100), wide('b', 156)] });
     w.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }) };

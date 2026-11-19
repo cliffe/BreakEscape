@@ -341,10 +341,43 @@ export class LockpickingMinigamePhaser extends MinigameScene {
                  class="lockpicking-item-image">
             <div class="lockpicking-item-info">
                 <h4>${escapeItemText(displayDashes(itemName))}</h4>
-                <p>${escapeItemText(displayDashes(itemObservations))}</p>
+                ${itemObservations ? `<p>${escapeItemText(displayDashes(itemObservations))}</p>` : ''}
             </div>
         `;
         
+        // Short windows clamp the observations to two lines (lockpicking.css): the full text is
+        // in the title, and a click, tap or Enter/Space opens it in the strip. The text is a
+        // button only while it overflows (or is open): _syncObsButton keeps that current.
+        const obs = itemDisplayDiv.querySelector('.lockpicking-item-info p');
+        const heading = itemDisplayDiv.querySelector('.lockpicking-item-info h4');
+        if (heading) heading.title = heading.textContent;
+        if (obs) {
+            obs.title = obs.textContent;
+            obs.id = 'lockpicking-observations';
+            const more = document.createElement('span');
+            more.className = 'lockpicking-obs-more';
+            more.setAttribute('aria-hidden', 'true');
+            obs.insertAdjacentElement('afterend', more);
+            // As a button the observations are named by their own text (they can hold clues);
+            // aria-expanded gives the state. No aria-label or aria-describedby: they would
+            // replace the text as the name.
+            this._obsEl = obs;
+            this._obsMore = more;
+            this._obsSection = itemDisplayDiv;
+            const toggle = () => {
+                if (obs.getAttribute('role') !== 'button') return;
+                itemDisplayDiv.classList.toggle('lockpicking-info-expanded');
+                this._syncObsButton();
+            };
+            this._obsClick = toggle;
+            this._obsKey = (e) => {
+                if (obs.getAttribute('role') !== 'button') return;
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+            };
+            obs.addEventListener('click', this._obsClick);
+            obs.addEventListener('keydown', this._obsKey);
+        }
+
         // Add mode switch button if applicable
         // Mode switch row: its own full-width line under the image and name (see lockpicking.css)
         if (this.canSwitchToPickMode && this.keyMode) {
@@ -468,7 +501,9 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         
         // Adjust canvas size for mobile to crop empty space
         // Lock is positioned from x=100 to x=500, y=50 to y=350 in the 600x400 game world.
-        if (window.innerWidth <= 768) {
+        // Short windows (a landscape phone, 560px or less tall) get the same crop and Scale.FIT
+        // whatever their width: the 400px lock cannot fit under the info row, so it scales down
+        if (window.innerWidth <= 768 || window.innerHeight <= 560) {
             const isPortrait = window.innerHeight > window.innerWidth;
 
             if (isPortrait) {
@@ -490,6 +525,17 @@ export class LockpickingMinigamePhaser extends MinigameScene {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH
             };
+            // No upscaling past the crop's own 580x340 in a short landscape window (a short
+            // desktop window is wider). Phaser 3.60 reads the flat maxWidth/maxHeight (a nested
+            // scale.max is ignored). Not in portrait or a tall window: a cap there would leave
+            // the canvas at 580 wide, left-aligned in a wider box.
+            if (!isPortrait && window.innerHeight <= 560) {
+                config.scale.maxWidth = 580;
+                config.scale.maxHeight = 340;
+            }
+            // lockpicking.css lays the frame out for a fitted canvas only under this class, so
+            // a lock opened at full size and resized short later keeps its scrolling frame
+            this.gameContainer.querySelector?.('#phaser-game-container')?.classList.add('lockpicking-fit');
         }
         
         try {
@@ -500,6 +546,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             this.scene = this.game.scene.getScene('LockpickingScene');
             console.log('Phaser game created, scene:', this.scene);
             this._watchLockZoom();
+            this._watchLockBox();
+            this._watchObs();
         } catch (error) {
             console.error('Error creating Phaser game:', error);
             this.keyInsertion.updateFeedback('Error loading Phaser game: ' + error.message);
@@ -535,7 +583,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     _fitLockZoom() {
         const game = this.game;
         const box = this.gameContainer?.querySelector?.('#phaser-game-container');
-        if (!game?.scale || !box || window.innerWidth <= 768) return;
+        if (!game?.scale || !box || window.innerWidth <= 768 || window.innerHeight <= 560) return;
         const room = this._lockRoom();
         if (!room) return;
         const z = LockpickingMinigamePhaser.wholeZoom(room.w, room.h);
@@ -554,9 +602,98 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         this._lockScrollEls.forEach((el) => el.addEventListener('scroll', update, { passive: true }));
     }
 
+    // The fitted lock's box changes size without the window resizing (the feedback line goes
+    // from one line to two, the item info expands), and Phaser rereads it only every 500ms,
+    // so the pointer would map to the old canvas place for that long. Refresh on the change.
+    // Phaser 3.60's refresh() sizes from the stored parent size and only then rereads the
+    // parent, so the canvas stays one change behind: read the parent bounds first.
+    _watchLockBox() {
+        const box = this.gameContainer?.querySelector?.('#phaser-game-container');
+        if (!box || !box.classList?.contains('lockpicking-fit') || typeof ResizeObserver === 'undefined') return;
+        this._lockBoxObserver = new ResizeObserver(() => {
+            try {
+                const s = this.game?.scale;
+                if (s?.getParentBounds?.()) s.refresh();
+            } catch (e) { /* game gone */ }
+            this._syncObsButton();
+        });
+        this._lockBoxObserver.observe(box);
+    }
+
+    // The observations are a button (role, tab stop, aria-expanded; the accessible name is the
+    // observation text itself) only while they can be opened: short window and the two-line clamp hides text, or
+    // they are already open. Elsewhere they are plain text.
+    _syncObsButton() {
+        const obs = this._obsEl;
+        const sec = this._obsSection;
+        if (!obs || !sec) return;
+        const short = window.innerHeight <= 560;
+        if (!short) sec.classList.remove('lockpicking-info-expanded');
+        const expanded = sec.classList.contains('lockpicking-info-expanded');
+        const active = short && (expanded || obs.scrollHeight > obs.clientHeight + 1);
+        sec.classList.toggle('lockpicking-obs-overflow', active);
+        if (active) {
+            obs.setAttribute('role', 'button');
+            obs.tabIndex = 0;
+            obs.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            if (this._obsMore) this._obsMore.textContent = expanded ? '- LESS' : '+ MORE';
+        } else {
+            // Focus must not fall to the page when the button goes: hand it to the mode button,
+            // or the minigame's X
+            if (typeof document !== 'undefined' && document.activeElement === obs) {
+                const root = this.container || document;
+                const next = sec.querySelector('.lockpicking-mode-row button:not([disabled])')
+                    || root.querySelector?.('#minigame-close') || document.getElementById('minigame-close');
+                next?.focus?.();
+            }
+            ['role', 'aria-expanded'].forEach((a) => obs.removeAttribute(a));
+            obs.removeAttribute('tabindex');
+        }
+    }
+
+    _watchObs() {
+        if (!this._obsEl) return;
+        this._obsOnResize = () => this._syncObsButton();
+        window.addEventListener('resize', this._obsOnResize);
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => this._syncObsButton());
+        document.fonts?.ready?.then?.(() => this._syncObsButton());
+    }
+
+    // Everything the lock added outside its own DOM: the box observer, window and scroll listeners
+    _releaseLockWatchers() {
+        this._lockBoxObserver?.disconnect?.();
+        this._lockBoxObserver = null;
+        // Timers that would otherwise reach a destroyed scene
+        clearInterval(this._keySelPoll);
+        this._keySelPoll = null;
+        clearTimeout(this._keyInsertTimer);
+        this._keyInsertTimer = null;
+        clearTimeout(this.keyRetryTimer);
+        this.keyRetryTimer = null;
+        if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
+        if (this._obsOnResize) window.removeEventListener('resize', this._obsOnResize);
+        this._obsOnResize = null;
+        this._lockScrollEls?.forEach((el) => el.removeEventListener("scroll", this._lockScrollUpdate));
+        if (this._obsEl) {
+            if (this._obsClick) this._obsEl.removeEventListener('click', this._obsClick);
+            if (this._obsKey) this._obsEl.removeEventListener('keydown', this._obsKey);
+        }
+    }
+
+    // endMinigame and the displacement paths call cleanup() without complete(): release the
+    // watchers and the Phaser game there too (complete() has already done both, harmlessly)
+    cleanup() {
+        this._releaseLockWatchers();
+        if (this.game) {
+            try { this.game.destroy(true); } catch (e) { /* already gone */ }
+            this.game = null;
+        }
+        super.cleanup();
+    }
+
     _watchLockZoom() {
         this._watchLockScroll();
-        if (window.innerWidth <= 768) return;
+        if (window.innerWidth <= 768 || window.innerHeight <= 560) return;
         const fit = () => this._fitLockZoom();
         this._lockZoomOnResize = fit;
         window.addEventListener('resize', fit);
@@ -575,9 +712,11 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // this.scene, but that may not have fired by the time minigame-starters.js
         // calls us (500 ms after game creation).  Poll until the scene is ready.
         if (!this.scene) {
-            const pollId = setInterval(() => {
+            clearInterval(this._keySelPoll);
+            this._keySelPoll = setInterval(() => {
                 if (this.scene) {
-                    clearInterval(pollId);
+                    clearInterval(this._keySelPoll);
+                    this._keySelPoll = null;
                     this._doStartWithKeySelection(inventoryKeys, correctKeyId);
                 }
             }, 50);
@@ -635,8 +774,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     
     complete(success) {
         if (this.game) {
-            if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
-            this._lockScrollEls?.forEach((el) => el.removeEventListener("scroll", this._lockScrollUpdate));
+            this._releaseLockWatchers();
             this.game.destroy(true);
             this.game = null;
         }

@@ -18,7 +18,7 @@ import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
 import { interactionLineClear, wallClearFrom, sameRoomFrom, playerFeet as wallsPlayerFeet } from '../interaction-walls.js';
 // Reach runs to the nearest part of a wide object, in the game and here
-import { reachX, reachY, aimX } from '../interaction-reach.js';
+import { reachX, reachY, aimX, TALL_PROP_PX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -122,6 +122,32 @@ export function sessionOverlayUi() {
 }
 
 /**
+ * blockingUi entry for the "Before the mission ends" question (systems/ending-check.js), or
+ * null when it is not up. Reported even while a chat is open: it sits over the chat, takes the
+ * number keys and holds the ending choice until it is answered (m10 blind part 3, where a
+ * scripted run kept pressing the choice under it and saw nothing happen).
+ */
+export function endingCheckOverlayUi() {
+    const el = document.getElementById('ending-check-overlay');
+    if (!el) return null;
+    const buttons = ['ending-check-keep', 'ending-check-end']
+        .map(id => document.getElementById(id))
+        .filter(Boolean)
+        .map((b, i) => ({ index: i, id: b.id, label: (b.textContent || '').trim() }));
+    return {
+        blocking: true,
+        kind: 'ending-check-overlay',
+        tag: el.tagName,
+        id: 'ending-check-overlay',
+        classes: String(el.className || '').slice(0, 120),
+        text: (el.innerText || el.textContent || '').trim().slice(0, 500),
+        buttons,
+        hint: 'The end-of-mission question is up over the chat: the choice you picked waits for it. '
+            + 'Answer with __test.dismissBlockingUi("End the mission now") to take the choice, or "Keep going" to leave the choices as they were.'
+    };
+}
+
+/**
  * Detect DOM UI sitting on top of the canvas and eating pointer input.
  *
  * Minigames are not the only thing that can block the main world: the tutorial
@@ -136,6 +162,8 @@ export function sessionOverlayUi() {
 export function detectBlockingUi() {
     const sessionOverlay = sessionOverlayUi();
     if (sessionOverlay) return sessionOverlay;
+    const endingOverlay = endingCheckOverlayUi();
+    if (endingOverlay) return endingOverlay;
     const canvas = getCanvas();
     if (!canvas || !document.elementsFromPoint) return null;
 
@@ -697,13 +725,13 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!centres.includes(cx)) centres.push(cx);
         }
     }
-    // The same for a tall wall-mounted target: reachY measures to the nearest part of its
+    // The same for a tall target: reachY measures to the nearest part of its
     // height, so the rings are centred on a grid of points down the sprite (every x centre
-    // against every y centre), not round the top edge only. Unmarked targets keep the top edge (reachY returns sprite.y).
+    // against every y centre), not round the top edge only. Doors and NPCs keep the top edge (reachY returns sprite.y).
     const centresY = [targetY];
-    const h = target && target.scenarioData?.wallMounted === true
-        ? (target.displayHeight ?? target.height ?? 0) : 0;
-    if (h > 16) {
+    const h = target && target.scenarioData && !target._isNPC && !target.doorProperties
+        ? (target.displayHeight ?? target.height ?? 0) : 0;   // a short prop adds nothing: reachY keeps its top edge
+    if (h >= TALL_PROP_PX || (h > 0 && target.scenarioData?.wallMounted === true)) {   // the same rule as reachY (tall, or opted in by wallMounted); any other prop keeps its top edge
         const top = target.y - (target.originY ?? 0.5) * h;
         const n = Math.min(6, Math.ceil(h / 16));
         for (let i = 0; i <= n; i++) {
@@ -730,7 +758,8 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
-            const dir = quantiseDirection((target ? aimX(target) : targetX) - sx, targetY - sy); // the game faces the object's centre
+            // A click faces from the body to the object's top edge (core/game.js useObjectInReach)
+            const dir = quantiseDirection((target ? aimX(target) : targetX) - sx, targetY - sy);
             const off = interactionOffset(dir);
             // Two conditions, and PLAIN distance is the binding one. A click
             // gathers only interactables within plain range; with one it acts
@@ -817,7 +846,8 @@ export function getState({ radius, limit } = {}) {
         // The session-resume overlay covers everything, a minigame included (the
         // world loads under it and an opening briefing can open there, paused), so
         // it is reported even while a minigame is active.
-        blockingUi: (mg && !sessionOverlayShowing()) ? null : detectBlockingUi(),
+        // The ending question also sits over a chat, so it is reported with one open.
+        blockingUi: (mg && !sessionOverlayShowing()) ? endingCheckOverlayUi() : detectBlockingUi(),
         // Non-null once the end-of-mission credits overlay is up. Treat it as
         // "stop playing", never as something to wait out or dismiss -- and
         // confirm the actual outcome against the server's game record.

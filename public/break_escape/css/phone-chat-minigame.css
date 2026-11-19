@@ -121,7 +121,7 @@
 .contact-list-header h3 {
     margin: 0;
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 24px;
     color: #000;
     font-weight: normal;
 }
@@ -169,6 +169,22 @@
     background: rgba(0, 0, 0, 0.1);
 }
 
+/* Keyboard focus: the framework's 2px square ring, drawn inside the row so the list's
+   overflow does not clip it */
+.contact-item:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: -2px;
+    border-radius: 0;
+}
+
+.phone-terminal-theme .contact-item:focus-visible {
+    outline-color: #00ff41;
+}
+
+.phone-social-theme .contact-item:focus-visible {
+    outline-color: var(--dm-accent);
+}
+
 .contact-avatar {
     width: 64px;
     height: 64px;
@@ -196,7 +212,7 @@
 
 .contact-name {
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     color: #000;
     font-weight: bold;
     margin-bottom: 4px;
@@ -204,7 +220,7 @@
 
 .contact-preview {
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     color: rgba(0, 0, 0, 0.6);
     white-space: nowrap;
     overflow: hidden;
@@ -212,8 +228,8 @@
 }
 
 .contact-time {
-    font-family: 'GNF', monospace;
-    font-size: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     color: rgba(0, 0, 0, 0.5);
     margin-left: 8px;
 }
@@ -221,8 +237,8 @@
 .unread-badge {
     background: #e74c3c;
     color: #fff;
-    font-family: 'GNF', monospace;
-    font-size: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     padding: 2px 6px;
     border: 2px solid #000;
     min-width: 20px;
@@ -317,12 +333,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .npc-name {
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 16px;
     color: #000;
 }
 
@@ -392,8 +408,8 @@
 }
 
 .message-sender {
-    font-family: 'GNF', monospace;
-    font-size: 11px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     font-weight: bold;
     letter-spacing: 0.04em;
     color: rgba(0, 0, 0, 0.65);
@@ -412,7 +428,7 @@
     max-width: 85%;
     text-align: center;
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     font-style: italic;
     line-height: 1.4;
     color: rgba(0, 0, 0, 0.68);
@@ -422,10 +438,10 @@
 }
 
 .message-time {
-    font-size: 10px;
+    font-size: 18px;
     color: rgba(0, 0, 0, 0.5);
     margin-top: 4px;
-    font-family: 'GNF', monospace;
+    font-family: 'VT323', monospace;
 }
 
 /* Typing Indicator */
@@ -530,7 +546,7 @@
     border-top: 2px solid #000;
     color: #000;
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     text-align: center;
     cursor: pointer;
     animation: choicesCuePulse 1.2s ease-in-out infinite;
@@ -624,7 +640,6 @@
 
 .phone-terminal-theme {
     background: #000;
-    box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
 }
 
 .phone-terminal-theme .phone-screen {
@@ -653,7 +668,11 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.85) 100%);
+    /* Stepped hard-edged corner shading in place of a smooth radial vignette (pixel UI: no gradients) */
+    box-shadow:
+        inset 0 0 0 4px rgba(0, 0, 0, 0.75),
+        inset 0 0 0 8px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 12px rgba(0, 0, 0, 0.25);
     pointer-events: none;
     z-index: 99;
 }
@@ -676,10 +695,13 @@
 
 .phone-terminal-theme .phone-header::after {
     content: 'SECURE CHANNEL ESTABLISHED';
-    font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     color: rgba(0, 255, 65, 0.7);
-    letter-spacing: 0.1em;
+    /* VT323 is about 0.5em a character (9px at 18px). The row has 350px less Notepad (about 100px)
+       and the 4px gap: 246px. 26 characters at 0.1em spacing is 26 x 10.8 = 281px, too wide; at
+       0.02em it is 26 x 9.36 = 243px, which fits. */
+    letter-spacing: 0.02em;
 }
 
 /* Visible skip hint: a line is typing or a pause is running (hidden at choices). Pixel font, no radius. */
@@ -693,7 +715,7 @@
     border: 2px solid rgba(0, 255, 65, 0.6);
     color: #00ff41;
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.2;
     letter-spacing: 0.05em;
     pointer-events: none;
@@ -728,7 +750,7 @@
     border: none !important;
     max-width: 100%;
     padding: 2px 0;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.5;
     animation: none;
 }
@@ -765,8 +787,8 @@
     align-items: center;
     gap: 6px;
     max-width: 85%;
-    font-family: 'GNF', monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     line-height: 1.4;
     color: rgba(0, 0, 0, 0.6);
     padding: 3px 8px;
@@ -777,7 +799,7 @@
 }
 
 .message-call-row .call-row-glyph {
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .contact-last-message.missed {
@@ -791,8 +813,8 @@
     background: #2e9e4f;
     border: 2px solid #000;
     color: #fff;
-    font-family: 'GNF', monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     line-height: 1.3;
     cursor: pointer;
 }
@@ -865,7 +887,7 @@
 .phone-terminal-theme .typing-indicator::after {
     content: 'receiving_';
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     color: rgba(0, 255, 65, 0.6);
     animation: terminalBlink 0.7s step-end infinite;
 }
@@ -884,7 +906,7 @@
     color: #00ff41;
     text-align: left;
     padding: 6px 0;
-    font-size: 17px;
+    font-size: 16px;
 }
 
 .phone-terminal-theme .choice-button::before {
@@ -931,7 +953,7 @@
     content: '// ';
     font-family: 'GNF', monospace;
     color: rgba(0, 255, 65, 0.4);
-    font-size: 18px;
+    font-size: 16px;
     flex-shrink: 0;
 }
 
@@ -988,7 +1010,8 @@
     max-width: none;
     margin: 0;
     padding: 4px 8px;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     line-height: 1.25;
 }
 
@@ -997,8 +1020,8 @@
 .conversation-header .ib-infl-track { margin: 14px 8px 4px; }
 .conversation-header .ib-infl-legend,
 .conversation-header .ib-infl-change { grid-column: 1 / -1; }
-.conversation-header .ib-infl-legend { gap: 0 12px; margin-top: 2px; font-size: 12px; }
-.conversation-header .ib-infl-change { margin-top: 2px; font-size: 12px; }
+.conversation-header .ib-infl-legend { gap: 0 12px; margin-top: 2px; font-family: 'VT323', monospace; font-size: 18px; }
+.conversation-header .ib-infl-change { margin-top: 2px; font-family: 'VT323', monospace; font-size: 18px; }
 
 .conversation-header .se-chat-header .pretext-tells {
     display: none;
@@ -1012,10 +1035,219 @@
     .conversation-header { padding: 6px 12px; row-gap: 6px; }
     .conversation-avatar,
     .conversation-avatar-placeholder { width: 44px; height: 44px; }
-    .conversation-header .back-button { font-size: 20px; padding: 2px 10px; }
+    .conversation-header .back-button { font-size: 16px; padding: 2px 10px; }
     .conversation-view .choices-container { max-height: 168px; padding: 8px 10px; gap: 6px; }
-    .conversation-view .choice-button { padding: 7px 10px; font-size: 15px; line-height: 1.3; }
+    .conversation-view .choice-button { padding: 7px 10px; font-size: 16px; line-height: 1.3; }
     .conversation-view .messages-container { padding: 8px 10px; gap: 8px; }
+}
+
+/* Voiced calls on any screen up to 820 px tall (a laptop browser, 1280x720, 800x600, a portrait
+   phone): the end-call button leaves the flow, absolute at the top right of the status bar, so no
+   amount of header, thread or replies can push it below the screen. The phone-landscape block
+   below (max-height 500) relies on the same rules and sizes the rest of the stack itself.
+   "screen and" is deliberate: it makes this block's media string differ from the tablet block's
+   (max-height: 820px) above, which the test uses to tell call rules from tablet rules. Do not tidy
+   it into that block. */
+@media screen and (max-height: 820px) {
+    .phone-call-mode #conversation-view { position: relative; }
+    .phone-call-mode #conversation-view .call-status-bar {
+        box-sizing: border-box;
+        height: 36px;
+        padding: 0 52px 0 10px;
+        gap: 8px;
+        white-space: nowrap;
+        border-bottom: none;
+    }
+    .phone-call-mode #conversation-view .call-controls {
+        position: absolute;
+        top: 0;
+        right: 6px;
+        z-index: 2;
+        height: 36px;
+        margin-top: 2px;
+        align-items: center;
+        padding: 0;
+    }
+    .phone-call-mode #conversation-view .call-end-button {
+        box-sizing: border-box;
+        width: 36px;
+        height: 36px;
+        border: 2px solid #000;
+    }
+    /* Black ring outside, white border inside: readable on the red button and on the green screen */
+    .phone-call-mode #conversation-view .call-end-button:focus-visible {
+        border-color: #fff;
+        outline: 2px solid #000;
+        outline-offset: 0;
+    }
+}
+
+/* Voiced call with replies showing, on any screen taller than 500 px (the phone screen stops growing
+   at 700 px, so the same overflow hits 1920x1080 and a 390x844 phone after a reply adds the influence
+   change line, not only 501 to 820 px): the thread keeps the contact's latest line (room for three
+   lines) and, in influence calls, the tell that judges the player's last reply. The real thread order
+   is the player's line, the tell, then the contact's line (appendTellBubbles adds the tell when the
+   reply is scored, before the contact answers), so the tell shown is the one directly before the
+   contact's latest line, plus a tell that trails it (a reply with no contact line). The thread
+   scrolls (the call code scrolls it to the bottom), so a longer line or a second tell is reachable
+   by scrolling up and nothing is cut off unseen. While the contact speaks (no replies yet) the
+   thread keeps its full size. The lower bound is written 500.02px, not "min-height: 501px" or
+   range syntax: a classic media query older browsers still read, with no gap above the landscape
+   block's max-height 500px for any whole-pixel viewport. The end-call button stays in the flow above
+   820 px, where the stack fits once the thread is capped. */
+@media (min-height: 500.02px) {
+    .phone-call-mode #conversation-view.call-has-choices .messages-container {
+        box-sizing: border-box;
+        min-height: 82px;
+        max-height: 112px;
+        padding: 8px 12px;
+        justify-content: flex-start;
+        overflow-y: auto;
+    }
+    .phone-call-mode #conversation-view.call-has-choices .messages-container > :not(.call-subtitle) { display: none; }
+    .phone-call-mode #conversation-view.call-has-choices .messages-container > .call-subtitle { display: block; opacity: 1; }
+    .phone-call-mode #conversation-view.call-has-choices .messages-container > .call-subtitle:has(~ .call-subtitle) { display: none; }
+    .phone-call-mode #conversation-view.call-has-choices:has(.se-chat-header) .messages-container > .pretext-tell:has(+ .call-subtitle:last-child),
+    .phone-call-mode #conversation-view.call-has-choices:has(.se-chat-header) .messages-container > .pretext-tell:last-child {
+        display: block;
+        box-sizing: border-box;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 4px;
+        border-width: 0 0 0 2px;
+        font-size: 16px;
+        line-height: 1.3;
+        text-align: left;
+    }
+    .phone-call-mode #conversation-view.call-has-choices .messages-container > .call-subtitle.narrator { opacity: 0.75; }
+}
+
+/* Influence (pretext) calls on every screen taller than 500 px: the compact header, the 64px
+   portrait in a row with the name, in both phases. The large 128px stage portrait plus the
+   influence panel needs about 410px, more than the slot the thread and controls leave (about 295px
+   at 1280x720). Measured live after a scored reply, the large portrait still spilled 80px at
+   1920x1080 and 390x844 (the phone screen stops at 700px tall), with the influence panel over the
+   thread, so there is no taller exception. The speaking bars sit beside the name and the caption is
+   folded. Ordinary calls (no influence bar) keep the large portrait. It sits before the short-screen blocks
+   below on purpose: they have the same specificity and must come later to win. */
+@media (min-height: 500.02px) {
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header {
+        flex: 0 0 auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 10px 16px;
+        gap: 8px 12px;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info {
+        flex: 1 1 auto;
+        flex-direction: row;
+        text-align: left;
+        min-width: 0;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        box-shadow: none;
+        font-size: 24px;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .npc-name { font-size: 16px; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .npc-id-block { align-items: flex-start; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .call-caption { display: none; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .call-speaking { flex: 0 0 auto; margin-left: auto; height: 24px; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .se-chat-header { flex: 1 0 100%; min-width: 0; }
+    /* While the contact speaks (no replies yet) the thread takes the slack under the compact header,
+       so there is no empty band; with replies showing, the capped thread above applies. */
+    .phone-call-mode #conversation-view:has(.se-chat-header):not(.call-has-choices) .messages-container {
+        flex: 1 1 auto;
+        min-height: 44px;
+        max-height: none;
+        justify-content: flex-start;
+        overflow-y: auto;
+    }
+}
+
+/* Taller than 680 px there is room for a two-line tell (46px with its padding) above a three-line
+   contact line (62px) in the thread: 8 + 8 + 46 + 6 + 62 = 130, so the cap is 131px. */
+@media (min-height: 680.02px) {
+    .phone-call-mode #conversation-view.call-has-choices .messages-container { max-height: 131px; }
+}
+
+/* 681 to 820 px: the one-line legend frees about 50px, so the thread has room for a three-line tell
+   above a two-line contact line: 8 + 8 + 66 + 6 + 42 = 130 plus the thread's padding, cap 160px. */
+@media (min-height: 680.02px) and (max-height: 820px) {
+    .phone-call-mode #conversation-view.call-has-choices .messages-container { max-height: 160px; }
+}
+
+/* Short screens (501 to 680 px: a 1366x768 laptop's browser, 800x600): the replies box, the "more
+   choices" cue and the thread all have to share about 340px with the influence header, so
+   - the thread gives way first, down to two lines (44px), and scrolls to the contact's line;
+   - the replies box is border-box with a floor of one reply (64px), so the cue and at least one
+     reply stay on screen down to 501px tall;
+   - the influence legend is one line (see the 820 px rule below). */
+@media (min-height: 500.02px) and (max-height: 680px) {
+    .phone-call-mode #conversation-view.call-has-choices .messages-container {
+        flex: 0 1 auto;
+        min-height: 44px;
+    }
+    .phone-call-mode #conversation-view.call-has-choices .choices-container {
+        box-sizing: border-box;
+        min-height: 64px;
+    }
+    /* the compact header gives the thread room for a tell above Dev's line */
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header { padding: 6px 16px; gap: 4px 12px; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 48px; height: 48px; font-size: 16px; }
+}
+
+/* Up to 820 px tall the three-line influence legend is one line (it wraps by whole items only when a reached threshold makes it too long): "Wary at -40 / Refuses at -50 / Reports at -70",
+   with ": reached" added to a threshold once it is passed (the colon and state are hidden until then).
+   Colour and icon opacity are not the only cue. Taller than 820 px the full legend stays. */
+@media (min-height: 500.02px) and (max-height: 820px) {
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend {
+        flex-wrap: wrap;
+        gap: 0 8px;
+        margin: 2px 0 0;
+        font-size: 16px;
+        line-height: 16px;
+        overflow: visible;
+    }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item { white-space: nowrap; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item + .ib-infl-legend-item::before {
+        content: "/ ";
+        content: "/ " / "";
+    }
+    /* "not reached" is visually hidden, not display:none, so screen readers still hear it */
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-colon,
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-state {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+}
+
+/* Below 560 px the stack no longer fits with the change line (the tell carries the same figure), so
+   as in landscape the line goes visually hidden and stays in the page for screen readers. */
+@media (min-height: 500.02px) and (max-height: 560px) {
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-change {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 40px; height: 40px; font-size: 16px; }
 }
 
 /* Phones held sideways (about 390 px tall): the frame is about 270 px, less than the header, the
@@ -1023,18 +1255,318 @@
    tap there reached Add to Notepad. The thread gives way first and the replies take what is
    left and scroll inside the frame. */
 @media (max-height: 500px) {
-    .conversation-view .messages-container { min-height: 40px; }
+    /* Height budget at 844x390: the phone screen is about 253px. Padding and borders are counted
+       (the thread and the replies are border-box here, so min-height is the outer height).
+         phone status header   38  4 + 4 padding, 2 border, 28 row
+         chat header           46  4 + 4 padding, 2 border, 36 row (32px headshot + 2 x 2 border)
+         thread                56  16 less than before: padding 4 + 4, content 48
+         replies              112  border-box: 2 border + 4 + 4 padding = 10, content 102
+         total                252  of 253
+       Two two-line replies need 2 x 48.4 + 4 gap = 100.8 of the 102 content (a button is 4 border +
+       3 + 3 padding + 2 lines x 19.2 line-height (16px x 1.2) = 48.4), so both show with the latest
+       message above them.
+       With the "more choices" cue (25px here: 2 + 2 padding, 2 border, 19 line) the thread gives
+       way to 30px: 38 + 46 + 30 + 112 + 25 = 251.
+       SE chats add the influence bar: padding 0, border 2 + 2, one 26px row (head beside the track,
+       legend hidden, empty change line hidden) = 30px, plus the 4px row gap. The chat header is
+       4 + 36 + 4 + 30 + 4 + 2 = 80, not 46. Left: 253 - 38 - 80 = 135, so the thread is 32 and the
+       replies 102 (252): one two-line reply fully and the next partly, scrolling. With the cue the
+       thread gives way to 24 and the replies to 84: 38 + 80 + 24 + 84 + 25 = 251. */
+    .phone-header { padding-top: 4px; padding-bottom: 4px; }
+    .conversation-header { flex-wrap: wrap; padding: 4px 10px; row-gap: 4px; gap: 8px; }
+    /* The headshot shrinks to the native 32px; call mode keeps its large portrait */
+    .phone-messages-container:not(.phone-call-mode) .conversation-header .conversation-avatar,
+    .phone-messages-container:not(.phone-call-mode) .conversation-header .conversation-avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    .conversation-view .messages-container {
+        box-sizing: border-box;
+        min-height: 56px;
+        overflow-y: auto;
+        padding: 4px 10px;
+    }
+    .conversation-view:has(.choices-more-cue.visible) .messages-container { min-height: 30px; }
     .conversation-view .choices-container {
-        min-height: 0;
+        box-sizing: border-box;
+        min-height: 112px;
         flex-shrink: 1;
         overflow-y: auto;
-        max-height: none;
-        padding: 6px 10px;
+        max-height: 40vh;
+        padding: 4px 10px;
         gap: 4px;
     }
-    .conversation-view .choice-button { padding: 4px 10px; font-size: 14px; line-height: 1.2; }
-    /* Terminal theme: the empty strip keeps room for the skip hint so it never covers the typing line */
+    .conversation-view .choice-button { padding: 3px 10px; font-size: 16px; line-height: 1.2; }
+    .conversation-view .choices-more-cue { padding: 2px 12px; }
+    /* Influence bar: one tight row (label and number beside the track), no legend, the change line
+       takes no room (it stays in the page for screen readers) */
+    .conversation-header .se-chat-header .influence-bar { padding: 0 8px; }
+    /* the legend is the only text for threshold state: hidden visually, kept for screen readers */
+    .conversation-header .ib-infl-legend {
+        position: absolute; width: 1px; height: 1px; margin: 0; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+    }
+    .conversation-header .ib-infl-track { margin: 8px 8px 2px; }
+    .conversation-header .ib-infl-change:empty { display: none; }
+    .conversation-header .ib-infl-change {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .conversation-view:has(.se-chat-header) .messages-container { min-height: 32px; }
+    .conversation-view:has(.se-chat-header) .choices-container { min-height: 102px; }
+    .conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .messages-container { min-height: 24px; }
+    .conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .choices-container { min-height: 84px; }
+    /* No replies (typing, narration): no minimum, no padding or border, so no empty band */
+    .conversation-view .choices-container:empty {
+        min-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-top-width: 0;
+    }
+    /* Terminal theme: the empty strip keeps room for the skip hint so it never covers the typing line.
+       The hint is 27.2px tall (19.2 line + 4 padding + 4 border); at bottom 8px its top is 35.2px up,
+       inside the 36px strip (at 10px it poked 1.2px above it). */
     .phone-terminal-theme .conversation-view .choices-container:empty { min-height: 36px; }
+    .phone-terminal-theme .phone-skip-hint { bottom: 8px; }
+    /* Social (DM) chat header on one row: the stacked name, handle and "View profile" button came to
+       about 64px and grew the header to about 74px, which clipped the replies and hid the "more
+       choices" cue. Name and button share the row (button 32px tall, inside the 36px headshot row);
+       the handle stays in the page for screen readers but takes no room. Header stays 46px. Call mode keeps its own stacked block. */
+    .phone-social-theme:not(.phone-call-mode) .npc-id-block {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    }
+    /* min-width 0 on the flex item that holds the name block, or a long name widens it and the
+       header wraps to a second line (R4 m1); with it, the name ellipsises. */
+    .phone-social-theme:not(.phone-call-mode) .conversation-info { min-width: 0; }
+    .phone-social-theme:not(.phone-call-mode) .npc-id-block .npc-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .phone-social-theme:not(.phone-call-mode) .npc-id-block .npc-handle {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .phone-social-theme:not(.phone-call-mode) .npc-profile-link {
+        flex-shrink: 0;
+        box-sizing: border-box;
+        min-height: 32px;
+        margin-top: 0;
+        padding: 0 8px;
+        white-space: nowrap;
+    }
+    /* Voiced call mode in landscape. The id selector beats the call-mode and :has() rules above and
+       the base call rules further down.
+       The phone screen is not always 253px: the shell is min(700, max(70vh, 100vh - 125)) less 20px
+       of margin, so it is 253 at 390 tall, 242.5 at 375 and 232 at 360. The view is the screen less
+       the 38px phone status header: 215, 204.5, 194.
+         status bar            36  ON CALL, timer, and the end-call button on the same row (right)
+         header                40  2 + 2 padding, one 36px row: 32px headshot + 2 x 2 border, name, speaking bars
+         thread                44  2 border + 42 content: two 16px subtitle lines (20.8 each), scrolls
+         replies               68  border-box: 2 border + 2 + 2 padding = 6, content 62: two one-line
+                                   replies (2 x 29.2 + 2 gap = 60.4); more scroll
+         more cue              25  when shown
+       No cue: 36 + 40 + 44 + 68 = 188 (fits 194, the smallest view).
+       With the cue the thread gives way to one line (24): 36 + 40 + 24 + 68 + 25 = 193, fits 194.
+       While the contact speaks there are no replies (the box is :empty and hidden): the thread takes
+       all the free height, so a long subtitle shows from its first line.
+       Influence-bar calls (a .se-chat-header in the header): the bar (30px: 26 row + 2 x 2 border)
+       sits on the header row between the name and the speaking bars, so the header stays 40 and the
+       name ellipsises first. It fits beside the bars while the contact speaks too (measured: bar
+       130px wide of a 380px screen, name clipped). The thread is two lines (44) with the cue as well:
+       the contact's latest line and, when the last child is a tell, the newest tell under it.
+       pretext-chrome scrolls the thread to the bottom when it appends a tell, so the tell is the
+       line in view. Older tells and subtitles stay hidden; the tell stays in the accessibility tree.
+       No cue: 36 + 40 + 44 + 68 = 188 (view 194 at the smallest, so the replies grow to 74 there).
+       With the cue: 36 + 40 + 44 + 48 + 25 = 193 of 194; the replies box is 49px (content 43) at 232,
+       59.5 at 242.5, 70 at 253. One two-line reply needs 54.4, so at 232 with the cue the first reply
+       is cut by about 5px and the box scrolls.
+       The end-call button leaves the flow (absolute, top right of the status bar) so it is always
+       on screen, and it is the last control in tab order. Those rules are shared with taller
+       screens and live in the max-height 820 block above. */
+    .phone-call-mode #conversation-view .conversation-header {
+        flex: 0 0 auto;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        padding: 2px 10px;
+    }
+    .phone-call-mode #conversation-view .conversation-info {
+        flex: 1 1 auto;
+        flex-direction: row;
+        min-width: 0;
+        gap: 8px;
+        text-align: left;
+    }
+    .phone-call-mode #conversation-view .conversation-avatar,
+    .phone-call-mode #conversation-view .conversation-avatar-placeholder {
+        width: 32px;
+        height: 32px;
+        border-width: 2px;
+        box-shadow: none;
+        font-size: 16px;
+    }
+    .phone-call-mode #conversation-view .npc-id-block { align-items: flex-start; min-width: 0; }
+    .phone-call-mode #conversation-view .npc-name {
+        display: block;
+        min-width: 0;
+        max-width: 100%;
+        font-size: 16px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    /* The caption and a DM handle take no room but stay in the accessibility tree */
+    .phone-call-mode #conversation-view .call-caption,
+    .phone-call-mode #conversation-view .npc-handle {
+        display: block;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    /* Influence bar: it sits on the header row, between the name and the speaking bars, in the slot
+       the bars leave free while replies show. The bar keeps its width; the name gives way first and
+       ellipsises. */
+    .phone-call-mode #conversation-view .se-chat-header {
+        flex: 0 0 auto;
+        width: 130px;
+        min-width: 0;
+        order: 1;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info { flex: 1 1 0; min-width: 0; }
+    /* The bar stacks: label and number on top, the track below at the bar's full width. 4 (border) +
+       2 (padding) + 14 (head) + 1 (gap) + 10 (track 6 + 2 x 2 border) = 31, inside the 36px row. The
+       16px mark icons would not fit, so each threshold shows as a 2px tick across the track; the
+       words stay in the hidden legend and the number carries the sign. */
+    .phone-call-mode #conversation-view .se-chat-header .influence-bar {
+        flex-wrap: nowrap;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 1px;
+        padding: 1px 6px;
+        line-height: 1;
+    }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-head { gap: 6px; min-width: 0; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-label,
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-number { font-size: 16px; line-height: 14px; font-weight: 400; }
+    /* VT323 ships one weight: 400 keeps it crisp (no synthetic bold) */
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-track {
+        box-sizing: content-box;
+        height: 6px;
+        margin: 0;
+    }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark {
+        top: 0;
+        width: 2px;
+        height: 100%;
+        margin-left: -1px;
+        opacity: 1;
+        background: var(--ui-text-dim, #a8b2c8);
+    }
+    /* reached ticks are twice as wide, so the state is a shape cue as well as a colour one */
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark.is-reached { background: var(--ui-text, #eef1f8); width: 4px; margin-left: -2px; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark::after,
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark-icon { display: none; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container {
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
+    }
+    .phone-call-mode #conversation-view .call-speaking { flex: 0 0 auto; margin-left: auto; order: 2; }
+    .phone-call-mode #conversation-view .messages-container {
+        box-sizing: border-box;
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
+        padding: 0 8px;
+        gap: 0;
+        justify-content: flex-start;
+        overflow-y: auto;
+        white-space: normal;
+    }
+    /* Only the latest subtitle shows: tells and earlier lines are hidden. Three rules, so a browser
+       without :has() still hides the tells. The latest subtitle is display:block so it beats the
+       base "hide all but the last two children" rule: with two or more tells after the contact's
+       line (a reopened pretext call) it would otherwise be hidden and the thread would go blank. */
+    .phone-call-mode #conversation-view .messages-container > :not(.call-subtitle) { display: none; }
+    .phone-call-mode #conversation-view .messages-container > .call-subtitle { display: block; opacity: 1; }
+    .phone-call-mode #conversation-view .messages-container > .call-subtitle:has(~ .call-subtitle) { display: none; }
+    /* Influence-bar calls: the newest tell, when it is the last child (it trails the contact's line),
+       shows beneath it as compact teaching feedback. Older tells stay hidden and are display:none, so
+       only the newest tell is in the accessibility tree. After a reply the thread shows "YOU: ..."
+       plus the tell that judges it (intended). */
+    .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container > .pretext-tell:last-child {
+        display: block;
+        box-sizing: border-box;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 4px;
+        border-width: 0 0 0 2px;
+        font-size: 16px;
+        line-height: 1.3;
+        text-align: left;
+    }
+    .phone-call-mode #conversation-view .messages-container:empty { display: none; cursor: default; }
+    .phone-call-mode #conversation-view .messages-container > .call-subtitle.narrator { opacity: 0.75; }
+    /* With the "more choices" cue the thread gives way to one line so the stack fits 232px screens */
+    .phone-call-mode #conversation-view:has(.choices-more-cue.visible) .messages-container {
+        height: 24px;
+        min-height: 24px;
+        max-height: 24px;
+    }
+    /* The contact is speaking (no replies): the thread takes the free height */
+    .phone-call-mode #conversation-view:has(.choices-container:empty) .messages-container {
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 44px;
+        max-height: none;
+    }
+    .phone-call-mode #conversation-view .choices-container {
+        box-sizing: border-box;
+        flex: 1 1 auto;
+        min-height: 68px;
+        max-height: none;
+        padding: 2px 10px;
+        gap: 2px;
+        overflow-y: auto;
+    }
+    /* Influence call with the cue: when a fresh tell trails, the thread keeps both lines and the
+       replies take what is left. With no tell it stays at the one-line 24px thread above. */
+    .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible):has(.messages-container > .pretext-tell:last-child) .messages-container {
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible):has(.messages-container > .pretext-tell:last-child) .choices-container {
+        min-height: 48px;
+    }
+    .phone-call-mode #conversation-view .choices-container:empty {
+        min-height: 0;
+        padding: 0;
+    }
 }
 
 /* Render-only tell. Not part of the contact's saved history. */
@@ -1074,7 +1606,6 @@
     --dm-paper: #ffffff;
     --dm-wall: #eef0f3;
     background: #2b2f36;
-    box-shadow: 0 0 20px color-mix(in srgb, var(--dm-accent) 45%, transparent);
 }
 
 .phone-social-theme .phone-screen {
@@ -1161,8 +1692,8 @@
 
 .phone-social-theme .contact-handle,
 .phone-social-theme .npc-handle {
-    font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     letter-spacing: 0.02em;
 }
 
@@ -1187,8 +1718,8 @@
     background: transparent;
     border: 2px solid var(--dm-on-accent);
     color: var(--dm-on-accent);
-    font-family: 'GNF', monospace;
-    font-size: 13px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
     padding: 1px 8px;
     margin-top: 2px;
     cursor: pointer;
@@ -1315,6 +1846,7 @@
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: center;
+    justify-content: safe center;
     gap: 8px;
     padding: 16px;
     background: transparent;
@@ -1345,7 +1877,7 @@
 }
 
 .phone-call-mode .npc-name {
-    font-size: 26px;
+    font-size: 24px;
 }
 
 .phone-call-mode .npc-id-block {
@@ -1354,7 +1886,7 @@
 
 .phone-call-mode .call-caption {
     font-family: 'GNF', monospace;
-    font-size: 15px;
+    font-size: 16px;
     opacity: 0.65;
 }
 
@@ -1404,11 +1936,11 @@
     width: 64px;
     height: 64px;
     box-shadow: none;
-    font-size: 22px;
+    font-size: 24px;
 }
 
 .phone-call-mode .call-has-choices .npc-name {
-    font-size: 20px;
+    font-size: 16px;
 }
 
 .phone-call-mode .call-has-choices .npc-id-block {
@@ -1440,7 +1972,7 @@
 
 .phone-call-mode .call-subtitle {
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.3;
     word-wrap: break-word;
     overflow-wrap: anywhere;
@@ -1462,7 +1994,7 @@
 }
 
 .phone-call-mode .messages-container > :nth-last-child(2) {
-    font-size: 14px;
+    font-size: 16px;
     opacity: 0.5;
 }
 
@@ -1558,7 +2090,7 @@
 }
 
 .conversation-header .call-button-glyph {
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .phone-terminal-theme .conversation-header .call-button {
@@ -1641,4 +2173,14 @@
    otherwise meet the phone (centred 400px shell vs a 15px-inset X: viewport under ~490px). */
 @media (max-width: 500px) {
     [data-minigame="phone-chat"] .phone-messages-container { margin-top: 44px; }
+}
+
+/* Read by screen readers only (the unread badge's " unread") */
+.contact-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
 }

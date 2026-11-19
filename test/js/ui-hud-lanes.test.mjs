@@ -726,7 +726,7 @@ test('R2 m1: on phones held upright the pill\'s aim may wrap to two lines', () =
     assert.ok(block, 'upright phone rule');
     assert.match(block[1], /\.objectives-pill-summary \{[^}]*white-space: normal;/);
     assert.match(block[1], /\.objectives-pill-text \{[^}]*-webkit-line-clamp: 2;/);
-    assert.doesNotMatch(block[1], /border-radius|box-shadow|gradient/);
+    assert.doesNotMatch(block[1], /border-radius|box-shadow:(?!\s*none)|gradient/);
 });
 
 test('R3 m1: a toast returning from stepping aside waits until it fits whole next to the speech line', () => {
@@ -792,7 +792,10 @@ test('older bug: on short landscape phones the replies fit inside the phone fram
     const c = css('phone-chat-minigame.css');
     const block = c.match(/@media \(max-height: 500px\) \{([\s\S]*?)\n\}/);
     assert.ok(block, 'short-height rule');
-    assert.match(block[1], /\.messages-container \{ min-height: 40px; \}/, 'the thread gives way first');
-    assert.match(block[1], /\.choices-container \{[^}]*min-height: 0;[^}]*flex-shrink: 1;[^}]*overflow-y: auto;/, 'replies shrink and scroll inside the frame');
-    assert.doesNotMatch(block[1], /border-radius|box-shadow|gradient/);
+    const thread = parseInt(block[1].match(/\.conversation-view \.messages-container \{[^}]*min-height: (\d+)px;/)[1], 10);
+    const replies = block[1].match(/\.conversation-view \.choices-container \{[^}]*min-height: (\d+)px;[^}]*flex-shrink: 1;[^}]*overflow-y: auto;/);
+    assert.ok(replies, 'replies shrink and scroll inside the frame');
+    // The thread gives way before the replies do: its minimum is the smaller one.
+    assert.ok(thread < parseInt(replies[1], 10), 'the thread gives way first');
+    assert.doesNotMatch(block[1], /border-radius|box-shadow:(?!\s*none)|gradient/);
 });

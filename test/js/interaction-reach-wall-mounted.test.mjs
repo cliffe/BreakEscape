@@ -36,12 +36,13 @@ test('reachY: inside the span the player y is used, outside it the nearest edge'
     assert.equal(reachY(socket, 0), 16);
 });
 
-test('reachY: unmarked objects, NPCs, doors and missing data keep sprite.y', () => {
-    assert.equal(reachY(plain, 55), 16);
+test('reachY: an unmarked floor-standing object clamps too; NPCs, doors and missing data keep sprite.y', () => {
+    assert.equal(reachY(plain, 55), 55, 'the wallMounted mark is no longer needed');
+    assert.equal(reachY(plain, 90), 64);
     assert.equal(reachY({ ...socket, _isNPC: true }, 55), 16);
     assert.equal(reachY({ ...socket, doorProperties: {} }, 55), 16);
     assert.equal(reachY({ ...socket, scenarioData: undefined }, 55), 16);
-    assert.equal(reachY({ ...socket, scenarioData: { wallMounted: 'yes' } }, 55), 16, 'only true opts in');
+    assert.equal(reachY({ ...socket, scenarioData: { wallMounted: 'yes' } }, 55), 55, 'the mark changes nothing');
     assert.equal(reachY({ ...socket, displayHeight: 0, height: 0 }, 55), 16);
     assert.equal(reachY(socket, NaN), 16);
     assert.equal(reachY({ ...socket, rotation: 1.57 }, 55), 16);
@@ -112,9 +113,10 @@ test('isObjectInInteractionRange: a wall-mounted socket is reached where a tap w
     assert.equal(inRange(socket, 160, 50), true, 'from the right');
 });
 
-test('isObjectInInteractionRange: the same sprite unmarked is out of reach from there, as before', () => {
-    assert.equal(inRange(plain, 120, 55), false);
-    assert.equal(inRange(plain, 160, 50), false);
+test('isObjectInInteractionRange: the same sprite unmarked is reached the same way (floor-standing props too)', () => {
+    assert.equal(inRange(plain, 120, 55), true);
+    assert.equal(inRange(plain, 160, 50), true);
+    assert.equal(inRange(plain, 120, 97), false, 'still out of reach from afar');
 });
 
 test('isObjectInInteractionRange: a wall-mounted socket is still out of reach from afar', () => {
@@ -152,7 +154,7 @@ test('objectStandPoint: with reachY a stand point under a back-wall socket count
     assert.equal(inRange(socket, t.x, cy), true);
 });
 
-test('objectStandPoint: approaching a tall socket from the side, the cell level with its lower part is accepted only with reachY', () => {
+test('objectStandPoint: approaching a tall socket from the side, the cell level with its lower part is accepted only with reachY (deps given)', () => {
     const player = { x: 40, y: 70, body: { center: { x: 40, y: 101 } } };
     // Two walkable strips at sprite centre y 40-55 (feet 71-86): one 20 px left of the plate (sprite centre x 88),
     // one further along (x 100, a gap in the furniture). The aim (x 95.5) snaps to the first.
@@ -160,17 +162,18 @@ test('objectStandPoint: approaching a tall socket from the side, the cell level 
     const withY = objectStandPoint(socket, player, { range: 32, findCell, reachY: (o, y) => reachY(o, y) });
     const without = objectStandPoint(socket, player, { range: 32, findCell });
     // New measure: 20 px from the plate, inside the 28 px margin, so the aimed cell is returned as it is
-    assert.deepEqual(withY, { x: 88, y: 71 }, JSON.stringify(withY));
+    const scy = withY.y - 31;
+    assert.ok(Math.hypot(socket.x - withY.x, reachY(socket, scy) - scy) <= 28, `ends in reach by the arrival measure: ${JSON.stringify(withY)}`);
     // Old top-edge measure: that cell is 31 px from the top-left corner, over the margin, so the walk settles on another cell
     assert.notDeepEqual(without, withY, 'the old top-edge measure rejects the aimed cell');
 });
 
-test('objectStandPoint: without reachY an unmarked object is judged by its top edge, as before', () => {
+test('objectStandPoint: without reachX/reachY deps an object is judged by its position, as before', () => {
     const player = { x: 120, y: 160 };
     const findCell = (x, y) => ({ x, y });
     const a = objectStandPoint(plain, player, { range: 32, findCell });
-    const b = objectStandPoint(plain, player, { range: 32, findCell, reachY: (o, y) => reachY(o, y) });
-    assert.deepEqual(a, b, 'reachY changes nothing for an unmarked object');
+    const b = objectStandPoint({ ...plain, scenarioData: undefined }, player, { range: 32, findCell, reachY: (o, y) => reachY(o, y), reachX: (o, x) => reachX(o, x) });
+    assert.deepEqual(a, b, 'a sprite with no scenario data is measured to its position either way');
 });
 
 // ---------------------------------------------------------------------------
@@ -180,7 +183,7 @@ test('objectStandPoint: without reachY an unmarked object is judged by its top e
 test('test bridge: state.js and index.js measure y with reachY wherever they measure x with reachX', () => {
     const state = readFileSync(join(js, 'systems/test-bridge/state.js'), 'utf8');
     const index = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
-    assert.match(state, /import \{ reachX, reachY, aimX \} from '\.\.\/interaction-reach\.js'/);
+    assert.match(state, /import \{ reachX, reachY, aimX, TALL_PROP_PX \} from '\.\.\/interaction-reach\.js'/);
     assert.match(index, /import \{ reachX, reachY \} from '\.\.\/interaction-reach\.js'/);
     assert.match(state, /const ry = reachY\(sprite, py\);[\s\S]{0,80}const d = dist\(px, py, rx, ry\);/, 'describeObject');
     assert.match(state, /const ty = target \? reachY\(target, sy\) : targetY;/, 'solveStandingPointWhere');
@@ -189,16 +192,16 @@ test('test bridge: state.js and index.js measure y with reachY wherever they mea
     assert.match(index, /targetSprite \? reachY\(targetSprite, p2\.y\) : after\.y/, 'moveToNear landing check');
 });
 
-test('engine: the range checks and the E key measure y with reachY, the facing angle keeps the top edge', () => {
+test('engine: the range checks and the E key measure y with reachY, the facing angle aims at the centre (aimY)', () => {
     const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
     assert.match(src, /const dy = reachY\(obj, py\) - py;/, 'highlight');
     assert.match(src, /getInteractionDistance\(player, reachX\(sprite, player\.x\), reachY\(sprite, player\.y\)\)/, 'handleObjectInteraction');
-    assert.match(src, /consider\(reachX\(obj, px\), reachY\(obj, py\), \(\) => handleObjectInteraction\(obj\), INTERACTION_RANGE_SQ, null, obj, aimX\(obj\), obj\.y\)/, 'E key');
+    assert.match(src, /consider\(reachX\(obj, px\), reachY\(obj, py\), \(\) => handleObjectInteraction\(obj\), INTERACTION_RANGE_SQ, null, obj, aimX\(obj\), aimY\(obj\)\)/, 'E key');
     assert.match(src, /const dy = reachY\(sprite, player\.y\) - player\.y;/, 'isObjectInInteractionRange');
     const label = readFileSync(join(js, 'ui/info-label.js'), 'utf8');
-    assert.match(label, /consider\(reachX\(obj, px\), reachY\(obj, py\), text, INTERACTION_RANGE_SQ, obj, aimX\(obj\), obj\.y\)/, 'info label');
+    assert.match(label, /consider\(reachX\(obj, px\), reachY\(obj, py\), text, INTERACTION_RANGE_SQ, obj, aimX\(obj\), aimY\(obj\)\)/, 'info label');
     const game = readFileSync(join(js, 'core/game.js'), 'utf8');
-    assert.match(game, /reachY: \(o, y\) => reachY\(o, y\)/, 'walkToObjectThenUse passes reachY to objectStandPoint');
+    assert.match(game, /reachX: \(o, x\) => reachX\(o, x\),[\s\S]{0,120}reachY: \(o, y\) => reachY\(o, y\)/, 'walkToObjectThenUse passes reachY to objectStandPoint');
     assert.equal(typeof reachX, 'function');
 });
 
@@ -244,11 +247,10 @@ test('solveStandingPoint: a tall wall-mounted target is approached from beside i
     assert.ok(p.predictedDistance <= 32 * 0.9, 'and in reach by the reachY measure');
 });
 
-test('solveStandingPoint: the same sprite unmarked keeps its top-edge measure, so no walkable cell beside its lower part is chosen', () => {
+test('solveStandingPoint: the same sprite unmarked is approached from beside its lower part too', () => {
     walkOnlyLeftOfLowerPart();
     const t = tall(false);
-    // The walkable-cell search fails, so the unfiltered fallback picks a point by the top edge
     const p = solveStandingPoint(t.x, t.y, 170, 200, { x: 0, y: 0 }, t);
-    assert.ok(!p || p.y < 90, `chose ${p && p.x},${p && p.y}`);
+    assert.ok(p && p.y >= 90 && p.x < 190, `chose ${p && p.x},${p && p.y}`);
     delete window.pathfindingManager;
 });

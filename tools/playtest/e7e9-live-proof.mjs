@@ -338,7 +338,7 @@ async function main() {
         out.after = await snap(page);
         const ev = await events(page);
         out.chatted = chatRows(ev);
-        out.exchangeHeardEvents = ev.filter(e => e.n.startsWith('npc_exchange_heard')).map(e => [e.t, e.n, e.d.complete]);
+        out.exchangeHeardEvents = ev.filter(e => e.n.startsWith('npc_exchange_heard')).map(e => [e.t, e.n]);   // no complete on the event: see the needs log (out.log: exchange_heard { complete }, exchange_cut)
         out.failed = ev.filter(e => e.n.startsWith('npc_job_failed')).map(e => e.d);
         out.log = await exLog(page);
         out.drawCheck = await drawCheck(page);
@@ -381,7 +381,7 @@ async function parcel(page, out) {
     out.after = await snap(page, pair, 'office_coffee');
     const ev = await events(page);
     out.chatted = chatRows(ev, 'office_coffee');
-    out.exchangeHeardEvents = ev.filter(e => e.n.startsWith('npc_exchange_heard')).map(e => [e.t, e.n, e.d.complete]);
+    out.exchangeHeardEvents = ev.filter(e => e.n.startsWith('npc_exchange_heard')).map(e => [e.t, e.n]);   // no complete on the event: see the needs log (out.log: exchange_heard { complete }, exchange_cut)
     out.log = await exLog(page);
 }
 

@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -874,6 +874,11 @@ export function handleObjectInteraction(sprite) {
     try { window.playerPoses?.use?.(sprite); } catch (e) { /* cosmetic */ }
 
     // Emit object interaction event (for NPCs to react)
+    // A mapping on this event may start a scripted call (the duty handset's call from Ghost).
+    // The call opens after a short start delay and waits behind any minigame open by then, so
+    // an examine view or observation toast raised below would hold it back. callStartedByClick
+    // lets the final observation step stand aside for it.
+    const callWasStarting = window.npcManager?.scriptedConversationActive?.() === true;
     if (window.eventDispatcher && sprite.scenarioData) {
         window.eventDispatcher.emit('object_interacted', {
             objectType: sprite.scenarioData.type,
@@ -881,6 +886,7 @@ export function handleObjectInteraction(sprite) {
             roomId: window.currentPlayerRoom
         });
     }
+    const callStartedByClick = !callWasStarting && window.npcManager?.scriptedConversationActive?.() === true;
     
     // A chair: sit on it, or stand on it when the avatar has no seated frames (seating.js)
     if (window.seating?.trySit(sprite)) return;
@@ -2189,6 +2195,8 @@ export function handleObjectInteraction(sprite) {
     // only text or observations, opens the examine view (sprite at twice its room size, name, text).
     // Readable text, observationDisplay "gameDisplay", onInteract, keys and takeable
     // room objects keep their own handling (examine.js shouldExamine).
+    // A call this click started has the screen: no examine view or toast in front of it.
+    if (callStartedByClick && !isInventoryItem) return;
     if (shouldExamine(data, { inInventory: isInventoryItem, resolvedText, resolvedObservations })) {
         if (startExamine(sprite, { observations: resolvedObservations, text: resolvedText })) return;
     }
@@ -2258,8 +2266,9 @@ export function tryInteractWithNearest() {
         default:           facingAngle = 90;  break;
     }
 
-    function angularDiff(objX, objY) {
-        let angle = Math.atan2(objY - py, objX - px) * 180 / Math.PI;
+    // The angle is taken from (fromX, fromY): the player's centre by default (NPCs); scenario objects are scored by aimDiff
+    function angularDiff(objX, objY, fromX = px, fromY = py) {
+        let angle = Math.atan2(objY - fromY, objX - fromX) * 180 / Math.PI;
         angle = (angle + 360) % 360;
         let diff = Math.abs(facingAngle - angle);
         if (diff > 180) diff = 360 - diff;
@@ -2285,12 +2294,20 @@ export function tryInteractWithNearest() {
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
-        let score = angularDiff(faceX, faceY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        // A scenario object is scored by aimDiff (interaction-reach.js: feet to centre, or the body to the top edge of a short
+        // prop when that is the smaller angle); the label scores with the same function.
+        let aim = { x: faceX, y: faceY, fromX: px, fromY: py };
+        let aimAngle = angularDiff(faceX, faceY);
+        if (target && !npcSprite && !target.doorProperties) {
+            aim = aimDiff(player, target, faceX, faceY, facingAngle);
+            aimAngle = aim.diff;
+        }
+        let score = aimAngle * 1000 + dist; // angle to the object's aim point, range to its nearest part
         // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
+        if (score < bestScore) { bestScore = score; best = { objX: aim.x, objY: aim.y, fromX: aim.fromX, fromY: aim.fromY, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -2321,7 +2338,7 @@ export function tryInteractWithNearest() {
                 // A seat with no free place whose sitter (any of them, on a full sofa) is on it now is her, not "A chair." (interaction-reach.js
                 // seatOccupant); she is considered below. A sofa with a free place stays, and loses to her by score.
                 if (obj.seatedBy && window.seating?.isSeat(obj) && seatOccupant(obj, allNpcs(), { isKo: npcKo, isSeated: npcSeatedOn })) return;
-                consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), obj.y);
+                consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), aimY(obj));
             });
         }
 
@@ -2354,8 +2371,9 @@ export function tryInteractWithNearest() {
     }
 
     // If the best item is not roughly in the facing direction, turn toward it before interacting
-    if (angularDiff(best.objX, best.objY) > ANGLE_TOLERANCE) {
-        facePlayerToward(best.objX, best.objY);
+    if (angularDiff(best.objX, best.objY, best.fromX, best.fromY) > ANGLE_TOLERANCE) {
+        // facePlayerToward aims from the sprite centre: shift the point by the same offset the angle was taken with
+        facePlayerToward(best.objX + (px - best.fromX), best.objY + (py - best.fromY));
     }
 
     const chosen = best;

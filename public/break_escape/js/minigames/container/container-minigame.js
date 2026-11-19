@@ -338,6 +338,41 @@ export function fitContentLabels(grid) {
     if (typeof document !== 'undefined' && document.fonts?.load) document.fonts.load('16px GNF').then(fit, () => {});
 }
 
+/**
+ * The element that actually scrolls a container's contents: the nearest ancestor of the
+ * grid that overflows and scrolls (the framed game container or the minigame container; the
+ * grid itself has no overflow). Found at run time so a layout change cannot break it.
+ */
+export function scrollingAncestor(el) {
+    if (!el || typeof getComputedStyle !== 'function') return null;
+    for (let node = el.parentElement; node; node = node.parentElement) {
+        const oy = getComputedStyle(node).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+    }
+    return null;
+}
+
+/**
+ * Whether a note read on pickup was the last thing in an ordinary container, so closing the
+ * note ends in the world instead of an empty list. Desktops, shares, folders, sign-in PCs,
+ * NPC containers and takeable containers (the Take Container button) keep their own return.
+ */
+export function lastNoteClosesToWorld(containerState) {
+    if (!containerState || !containerState.itemToTake) return false;
+    if (!Array.isArray(containerState.contents) || containerState.contents.length !== 0) return false;
+    const ci = containerState.containerItem;
+    return !containerState.npcOptions
+        && !containerState.isTakeable
+        && !isNetworkScreenContainer(ci)
+        && ci?.scenarioData?.lockType !== 'login'
+        && !shouldUseDesktopModeForContainer(ci)
+        && !ci?.parentLockable
+        && !ci?.sourcePcId
+        && !ci?.scenarioData?.networkShare;
+}
+
+if (typeof window !== 'undefined') window.lastNoteClosesToWorld = lastNoteClosesToWorld;
+
 const LABEL_SEP = /[_.\-\/]/;
 const LABEL_TRAIL = /[_.\-\/\s]+$/;
 const LABEL_LINES = 3;
@@ -351,6 +386,63 @@ const iconKeyOf = (item) => String(item?.id ?? item?.name ?? '');
 export function iconFocusMark(item, byKey) {
     return item ? { key: iconKeyOf(item), byKey: byKey === true } : null;
 }
+
+// A held Enter or Space keeps firing keydown (e.repeat) after a take has moved the focus to
+// Take Container, the X or a note viewer's button. Enter would click it on every repeat; Space
+// clicks a native button on keyup. After a take started by key, one document-level capture
+// listener swallows that key's repeats (and, for Space, the keyup that ends the hold) until the
+// key is let go. One at a time, always removed: on the armed key's keyup, a fresh (non-repeat)
+// press of it, window blur, a 2s safety timeout, or the minigame closing (unless the close
+// hands over to a note viewer, which needs it to live on).
+const HELD_ENTER_TIMEOUT_MS = 2000;
+let heldEnterGuard = null;
+export function releaseHeldEnter() {
+    if (!heldEnterGuard) return;
+    const g = heldEnterGuard;
+    heldEnterGuard = null;
+    document.removeEventListener('keydown', g.down, true);
+    document.removeEventListener('keyup', g.up, true);
+    window.removeEventListener?.('blur', g.up);
+    clearTimeout(g.timer);
+}
+export function swallowHeldKey(armed = 'Enter') {
+    releaseHeldEnter();
+    const stop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    };
+    const g = {
+        down: (e) => {
+            if (e.isComposing || e.key !== armed) return;
+            if (e.repeat) {
+                stop(e);
+                // Still held: restart the timeout, so a long hold never leaks a repeat
+                // (the timeout only covers a keyup that never arrives)
+                clearTimeout(g.timer);
+                g.timer = setTimeout(() => { if (heldEnterGuard === g) releaseHeldEnter(); }, HELD_ENTER_TIMEOUT_MS);
+                g.timer?.unref?.();
+                return;
+            }
+            // A fresh press: the keyup of the held one never came (focus left the window)
+            releaseHeldEnter();
+        },
+        up: (e) => {
+            if (e && e.type === 'blur') { releaseHeldEnter(); return; }
+            if (!e || e.isComposing || e.key !== armed) return;
+            // A native button clicks on Space keyup: this one belongs to the take, not the button
+            if (armed === ' ') stop(e);
+            releaseHeldEnter();
+        },
+        timer: setTimeout(() => { if (heldEnterGuard === g) releaseHeldEnter(); }, HELD_ENTER_TIMEOUT_MS)
+    };
+    g.timer?.unref?.();
+    heldEnterGuard = g;
+    document.addEventListener('keydown', g.down, true);
+    document.addEventListener('keyup', g.up, true);
+    window.addEventListener?.('blur', g.up);
+}
+export function swallowHeldEnter() { swallowHeldKey('Enter'); }
 
 /**
  * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
@@ -1063,6 +1155,7 @@ export class ContainerMinigame extends MinigameScene {
         }
         this.taskbar?.destroy?.();
         this.pcMonitor?.destroy?.();
+        if (this.exitReason !== 'item') releaseHeldEnter();
         if (typeof super.cleanup === 'function') super.cleanup();
         this.reportNetworkExit();
     }
@@ -1706,8 +1799,6 @@ export class ContainerMinigame extends MinigameScene {
             itemImg.objectId = `container_${index}`;
             
             // Add click handler for all items (both takeable and interactive)
-            itemImg.style.cursor = 'pointer';
-            
             const shareParts = item.type === 'network_share' ? shareLabelParts(item.name) : null;
             if (shareParts) {
                 // A mapped share (4.5): its own folder, never the generic flow
@@ -1735,12 +1826,60 @@ export class ContainerMinigame extends MinigameScene {
             // a 64px cell (a 16px glyph at x4), not the grid's x2 (slice 2a review R1 M2)
             if (this.shareFolder) fitWholeScale(itemImg, 64);
 
+            // Keyboard: the slot is a button named by the item (the picture's alt is the same
+            // name); Enter or Space does what a click on the picture does. Every item is a
+            // stop in visual order, as a desktop's icons are. One with no click action
+            // (nothing to take or open) is still reachable, so its name can be read, and
+            // says it is unavailable.
+            const acts = !!(shareParts || this.offersTransfer(item) || this.isInteractiveItem(item) || item.takeable);
+            if (acts) itemImg.style.cursor = 'pointer';
+            slot.tabIndex = 0;
+            slot.setAttribute('role', 'button');
+            const slotName = label.textContent || item.name || item.type || 'Item';
+            // A share's UNC path is not in the label; the slot carries it as a tooltip and in its name
+            slot.setAttribute('aria-label', shareParts?.unc ? `${slotName}, ${shareParts.unc}` : slotName);
+            if (shareParts?.unc) slot.title = shareParts.unc;
+            // Nothing to take or open: a click on the picture does nothing, so Enter and Space
+            // stay silent too (the slot is dimmed, dashed and has no pointer cursor in CSS)
+            if (!acts) slot.setAttribute('aria-disabled', 'true');
+            slot.addEventListener('keydown', (e) => {
+                if (e.target !== slot || (e.key !== 'Enter' && e.key !== ' ')) return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.repeat || !acts) return;
+                swallowHeldKey(e.key);
+                this.openedByKey = true;
+                try { itemImg.click(); } finally { this.openedByKey = false; }
+            });
+
             slot.appendChild(itemImg);
             slot.appendChild(label);
             contentsGrid.appendChild(slot);
         });
         if (this.shareFolder) evenShareLabels(contentsGrid);
         else fitContentLabels(contentsGrid);
+        // Back from a note read on pickup: same scroll position, focus kept inside the frame
+        if (this.params?.fromReturn) {
+            const top = Number(this.params.scrollTop);
+            if (Number.isFinite(top) && top > 0) {
+                // The scroller is an ancestor, not the grid. Again after the label re-fit
+                // (next frame, and once the pixel font arrives) changes the row heights.
+                const restore = () => { const sc = scrollingAncestor(contentsGrid); if (sc) sc.scrollTop = top; };
+                restore();
+                if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(restore));
+                if (typeof document !== 'undefined' && document.fonts?.load) document.fonts.load('16px GNF').then(() => requestAnimationFrame?.(restore), () => {});
+            }
+            // A note taken by key: the slot now at its place (the next note), else the last
+            const back = this.params.slotReturn;
+            const stops = Array.from(contentsGrid.querySelectorAll('.container-content-slot'));
+            if (back && back.byKey === true && stops.length) {
+                const at = Math.max(0, Math.min(Number(back.index) || 0, stops.length - 1));
+                stops[at].focus?.({ preventScroll: true });
+            } else {
+                if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
+                contentsGrid.focus?.({ preventScroll: true });
+            }
+        }
     }
     
     populateDesktopIcons() {
@@ -1811,6 +1950,7 @@ export class ContainerMinigame extends MinigameScene {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.repeat) return;
+                swallowHeldKey(e.key);
                 // A key opened it: the Copy / Move dialog takes the focus and hands it back
                 this.openedByKey = true;
                 try { icon.click(); } finally { this.openedByKey = false; }
@@ -1878,10 +2018,25 @@ export class ContainerMinigame extends MinigameScene {
         icon.openLabel?.();
     }
 
-    /** The icon (or the desktop) that takes the focus when `slot`, a desktop icon, has just been removed. */
+    /**
+     * The element that takes the focus when `slot` has just been removed, or undefined to leave
+     * it where it is (it moved elsewhere during the server round trip). For a contents-grid
+     * item: the next item, else the one before, else Take Container, else the X. For a desktop
+     * icon: the next icon, else the one before, else the desktop. Never the body.
+     */
     focusAfterIconRemoved(slot) {
-        if (!slot?.classList?.contains('desktop-icon')) return;
         const active = document.activeElement;
+        if (slot?.classList?.contains('container-content-slot')) {
+            // A contents grid item: the next item, else the one before, else Take Container,
+            // else the X. Never the body.
+            if (active && active !== document.body && active.isConnected && !slot.contains(active)) return;
+            const sib = slot.nextElementSibling || slot.previousElementSibling;
+            if (sib?.classList?.contains('container-content-slot')) return sib;
+            const root = this.gameContainer || document;
+            return root.querySelector?.('#take-container-btn') || root.querySelector?.('#minigame-close')
+                || document.getElementById('minigame-close') || undefined;
+        }
+        if (!slot?.classList?.contains('desktop-icon')) return;
         if (active && active !== document.body && !slot.contains(active) && active !== slot) return;
         const next = slot.nextElementSibling || slot.previousElementSibling;
         const target = next?.classList?.contains('desktop-icon') ? next : slot.closest?.('.desktop-background');
@@ -2039,6 +2194,8 @@ export class ContainerMinigame extends MinigameScene {
         const { item, element } = dialog;
         this.closeTransferDialog();
         if (choice === 'cancel') return;
+        // Chosen by key: a held Enter must not go on to press the next focused button
+        if (byKey) swallowHeldKey('Enter');
         if (choice === 'open') { this.openFileInPlace(item, byKey); return; }
         if (choice === 'connect') { this.connectFromDesktop(item, element); return; }
         this.takeItem(item, element, choice);
@@ -2223,7 +2380,13 @@ export class ContainerMinigame extends MinigameScene {
                 contents: this.contents,
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
+                // Where the list was scrolled to, so the container comes back there
+                scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
+                // A note taken by key: on reopen the focus goes to the slot at this place
+                slotReturn: this.openedByKey === true && itemElement?.parentElement
+                    ? { index: Array.from(itemElement.parentElement.parentElement?.children || []).indexOf(itemElement.parentElement), byKey: true }
+                    : null,
                 // Where the note came from (a PC or a share), so the server's add finds it
                 sourceExtras: this.sourceExtras(),
                 // Preserve NPC context if in NPC mode
@@ -2428,8 +2591,21 @@ export class ContainerMinigame extends MinigameScene {
         const tempSprite = takeStandIn(item, inventoryImageKey,
             fromSignIn ? { ...this.sourceExtras(), transfer: transfer || 'move' } : {});
         
-        // Add to inventory
-        const addResult = await addToInventory(tempSprite);
+        // One take at a time per slot: a second press or click inside the server round trip
+        // would add the item twice. Cleared when the take ends so a failed one can be retried.
+        const takeSlot = itemElement?.parentElement || null;
+        if (takeSlot?.dataset) {
+            if (takeSlot.dataset.taking) return false;
+            takeSlot.dataset.taking = '1';
+        }
+        let addResult;
+        try {
+            addResult = await addToInventory(tempSprite);
+        } catch (err) {
+            if (takeSlot?.dataset) delete takeSlot.dataset.taking;
+            throw err;
+        }
+        if (takeSlot?.dataset && !(addResult && addResult.ok && !isCopy)) delete takeSlot.dataset.taking;
         // Keyring K3a (R1 m2): a file taken (copied or moved) counts as opened for an "In file" tag
         if (addResult && addResult.ok) {
             try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
@@ -2445,7 +2621,7 @@ export class ContainerMinigame extends MinigameScene {
             const focusNext = this.focusAfterIconRemoved(slot);
             slot.remove();
             if (focusNext) {
-                if (!focusNext.classList.contains('desktop-icon')) focusNext.setAttribute('tabindex', '-1');
+                if (!focusNext.classList.contains('desktop-icon') && !focusNext.classList.contains('container-content-slot') && focusNext.tagName !== 'BUTTON') focusNext.setAttribute('tabindex', '-1');
                 focusNext.focus?.({ preventScroll: true });
             }
             
@@ -2609,6 +2785,8 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
         focusReturn: extra?.focusReturn || null,
+        slotReturn: extra?.slotReturn || null,
+        scrollTop: extra?.scrollTop || 0,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
             npcId: npcOptions.npcId,
@@ -2683,13 +2861,21 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // The container reopens just below, so this toast waits for it with the
             // others. Shown now it was pulled back by the container opening and shown
             // again when it closed: "has been noted" twice (F13, engine F24).
-            window.expectPanelWithin?.(1000);
+            // The last note of an ordinary container reopens nothing, so no panel is expected
+            // and the toast must not wait for one.
+            if (!lastNoteClosesToWorld(containerState)) window.expectPanelWithin?.(1000);
+            else window.clearExpectedPanel?.();
             window.gameAlert(`${containerState.itemToTake.name} has been noted`, 'success', 'Added to Notes', 2000);
         }
         
         // A hit, the knockout screen, a conversation or a room change closed the reader
         // (containerReturnBlocked): the note above is still taken, the container stays shut
         if (!reopen) return;
+
+        // The note was the last thing in an ordinary container: nothing is left to take, so
+        // it closes to the world instead of reopening an empty list. A desktop or a network
+        // screen keeps its own return (its folder is a place, not a pile).
+        if (lastNoteClosesToWorld(containerState)) return;
 
         // A PC's sign-in desktop whose session ended while the file was open (the owner came
         // back, the screen locked, someone signed in there): the desktop was not open to
@@ -2716,7 +2902,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true, focusReturn: containerState.focusReturn || null }
+            { fromReturn: true, focusReturn: containerState.focusReturn || null, slotReturn: containerState.slotReturn || null, scrollTop: containerState.scrollTop || 0 }
         );
     } else {
         console.log('No pending container return found');

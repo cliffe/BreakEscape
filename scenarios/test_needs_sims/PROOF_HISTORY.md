@@ -821,6 +821,8 @@ Tool `tools/playtest/needs-sims-staff-room.mjs` (GL=1 for SwiftShader WebGL so t
 | Neil after an X close (S3 R4 M1) | see the S3 R4 M1 row in the SIMS-3 table | PASS | 4706 |
 | E7 regression on Sanjay and Rosa (`e7e9-live-proof.mjs e7`, COUPLED_ONLY=1) | Rosa sent, Sanjay by the coupling; office turns pictures with no bag draw; entering the kitchen, the first line heard; 1 draw, 0 drawn and not said, 0 drawn unheard, 0 past the overlap | PASS | 4708 (`e7e9/e7-g4708-*.png`) |
 
+*Note (2026-11-19, exchange-heard fix): from this fix `npc_exchange_heard` fires at the first overheard line, not at the finish. The "3 of 3 heard" and "14 to 17 s" criteria above are measured from the needs log's `exchange_heard` finish entry; the tool `needs-sims-staff-room.mjs` waits for that entry.*
+
 What the speech-lock beat now proves: with E7, a pair out of the player's earshot speaks no pool line (every turn is a picture), so it never takes the one-line speech lock, and the pair the player is listening to is never held quiet by it. The old wording (office turns blocked by an *unheard* staff line) cannot happen any more; the 2 office turns in 16 minutes of the earlier reruns (4604, 4644) came from office turns needing a listener, not from a lock. Most office coffee turns are pictures (62 of 66) because of the office pair's own chatter cooldown, not the lock (0 waits).
 
 Game 4570 (round 1's boiler run with no break after the close) was a probe race: the old `talkNeil` treated a chat that never opened as closed and used the call's own clock as the close time. The tool now needs the event.
@@ -859,6 +861,8 @@ V10 now mirrors the engine's own rules (code review R1): `grumble` needs the NPC
 | Job beat end to end with the merged job-called mapping (one onceOnly mapping ticks `hear_job_called` and sends Jodie) | PASS | Game 4950 (tool `needs-sims-staff-room.mjs job_beat`, GL): `exchange_job_called` complete, 4 of 4 heard; Jodie's locker start 14.5 s after it; `npc_used:staff_lockers` by Jodie; `job_cleared` true; lighting variant 0, minimum level 1.0 over 6 s; all seven staff-room tasks tick |
 | The upkeep icon at the lockers (S4 R3 m1) | PASS | The work picture (`icon:npc-work`) over Jodie's head at the lockers, where a blank dot was: `sr-job_beat-02-jodie-at-lockers-4950.png`, crop `crop-lockers-icon-4950.png` |
 | Jodie's reworded lines (S4 R3 m2) spoken and heard | PASS | Hub reply "Aye, sorted. Spare tube was in my locker. Cheers for flagging it." (`sr-job_beat-06-jodie-reply-4950.png`); `exchange_job_cleared` 3 of 3 heard, Jodie "Spare from my locker did it." (`sr-job_beat-05-cleared-exchange-4950.png`) |
+
+*Note (2026-11-19, exchange-heard fix): from this fix `npc_exchange_heard` fires at the first overheard line, not at the finish. The "3 of 3 heard" and "14 to 17 s" criteria above are measured from the needs log's `exchange_heard` finish entry; the tool `needs-sims-staff-room.mjs` waits for that entry.*
 
 Screenshots in the session scratchpad, `officelife-sims/s5-r1fix/`.
 

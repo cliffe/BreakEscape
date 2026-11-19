@@ -2508,7 +2508,7 @@ spoken lives outside a scenario file.
   pair: it runs the knot on a **separate** ink story instance for the NPC (never the player's
   conversation state), one line per bubble, each line spoken in its speaker's voice through the
   `TTSManager` of that speaker, speakers facing each other, the whole exchange held to the pair's
-  overlap (extended by the length of the knot, capped). When it ends, global `heard_<knot>` is set
+  overlap (extended by the length of the knot, capped). (Superseded by NPC_NEEDS_SYSTEM.md 5.6a: both now happen at the first overheard line, not at the end.) When it ends, global `heard_<knot>` is set
   (saved server-side, so once per game survives a reload) and `npc_exchange_heard:<knot>` fires.
   With no audience, the exchange stays unplayed; the pair falls back to a bark or picture chat.
 - **Order of preference** when two NPCs chat: an unplayed exchange (with audience), then a bark from

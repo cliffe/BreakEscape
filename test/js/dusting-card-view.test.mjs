@@ -123,17 +123,19 @@ test('each card has its own pick button and a separate View large button; none o
     const html = g._refButtons(false);
     assert.equal((html.match(/data-action="ref"/g) || []).length, 3);
     assert.equal((html.match(/data-action="view"/g) || []).length, 3);
-    assert.match(html, /data-action="view" data-index="1" aria-pressed="true"[^>]*>Back to my lift</);
-    assert.match(html, /data-action="view" data-index="0" aria-pressed="false" aria-label="View card 1, Jesse Tran, at full size">View large</);
+    assert.match(html, /data-action="view" data-index="1" aria-pressed="true"[^>]*>Back to my lift \(V\)</);
+    assert.match(html, /data-action="view" data-index="0" aria-pressed="false"[^>]*aria-label="View large \(V\): card 1, Jesse Tran">View large \(V\)</);
     const done = g._refButtons(true);
     assert.equal((done.match(/data-action="view"/g) || []).length, 0);
 });
 
-test('the key under the lift explains the marks and that viewing is not a pick; gone once identified', () => {
+test('the one-sentence key explains the marks with pixel glyphs; gone once identified', () => {
     const g = compareGame();
     const note = g._compareNote();
     assert.match(note, /ridge ending/);
-    assert.match(note, /press V to step through the cards\. Viewing is not a pick/);
+    assert.match(note, /each numbered mark on your lift has the same kind of mark in the same place on the card/);
+    assert.equal((note.match(/<canvas class="dusting-key-glyph"/g) || []).length, 2, 'the key marks are drawn pixels, not a rounded CSS box');
+    assert.equal((note.match(/<p /g) || []).length, 1, 'one sentence in one paragraph');
     g.identified = true;
     assert.equal(g._compareNote(), '');
 });
