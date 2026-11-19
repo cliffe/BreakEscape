@@ -461,5 +461,5 @@ test('R3 m1: closing the report redraws the chart at the restored size; R3 m2: t
     assert.match(css, /\.sh-tooltip \{[^}]*max-height: 100%;/);
     assert.match(css, /max-width: 600px\) \{[\s\S]*?\.sh-tooltip \{ font-size: 14px;/);
     assert.ok(/\.sh-tooltip \{[^}]*box-sizing: border-box;/.test(css), 'R4 m1: tooltip max-height counts its padding');
-    assert.ok(/max-height: 560px\) \{[\s\S]*?\.sh-tooltip \{ font-size: 14px;/.test(css), 'R4 m1: small type on short screens too');
+    assert.ok(/max-height: 560px\) \{[\s\S]*?\.sh-tooltip \{ font-size: 13px;/.test(css), 'R4 m1: small type on short screens too');
 });

@@ -351,8 +351,8 @@
     .sh-dzdt-panel { height: 80px; min-height: 80px; }
     /* Phone landscape is wider than 600px but only ~140px of chart: smaller, wider tooltip so the
        revealed anomaly text fits the area (review R4 m1) */
-    .sh-tooltip { font-size: 14px; line-height: 1.2; max-width: 520px; }
-    .sh-tooltip-label { font-size: 14px; }
+    .sh-tooltip { font-size: 13px; line-height: 1.1; padding: 2px 8px; max-width: 520px; }
+    .sh-tooltip-label { font-size: 13px; }
     /* Phone landscape: hint plus the 140px chart is taller than the window, so the chart column
        scrolls (pixel scrollbar) and the time axis stays reachable (review R1 m6) */
     .sh-charts { overflow-y: auto; overflow-x: hidden; }
