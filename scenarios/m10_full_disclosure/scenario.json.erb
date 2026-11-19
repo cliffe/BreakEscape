@@ -2068,7 +2068,9 @@ end
             { "eventPattern": "global_variable_changed:vector_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
             { "eventPattern": "global_variable_changed:phantom_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
             { "eventPattern": "global_variable_changed:quintero_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
-            { "eventPattern": "global_variable_changed:kowalczyk_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } }
+            { "eventPattern": "global_variable_changed:kowalczyk_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+<%# The head start has gone and the console was never used: the console can do nothing now, so the optional task is skipped (not completed, no credit) and drops out of the ending warning. Appended last so no saved once index moves. %>
+            { "eventPattern": "global_variable_changed:head_start_out", "condition": "value !== '' && !globalVars.head_start_killed", "onceOnly": true, "skipTask": "use_the_console" }
           ]
         },
 <%# --- Nightshade (RL 2.1): the table on three branches, the van on the silent one. Each copy is its own NPC; all koImmune. door_branch(): shown = triple_agent && shown_file; unshown = triple_agent; arrested = arrested && !ko_before_fate; else silent. --- %>
