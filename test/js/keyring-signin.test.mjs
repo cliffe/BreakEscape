@@ -419,7 +419,7 @@ test('8.1 a refused credential is greyed with aria-disabled (not disabled), its 
     assert.equal(grey.getAttribute('aria-disabled'), 'true');
     assert.equal(grey.disabled, false, 'aria-disabled, so the click still explains');
     assert.equal(ways[1].querySelector('.signin-cred-refused').textContent, 'HB-FIN-03: type the password.');
-    assert.equal(ways[0].querySelector('.signin-cred-refused'), null);
+    assert.ok(ways[0].querySelector('.signin-cred-refused') === null);
     assert.equal(messageText(), '', 'the error line stays empty under a policy refusal shown by the button');
     grey.click();
     await settle();
@@ -622,7 +622,7 @@ test('8.1 keyboard screen without credentials: no tags, no ways box content, unc
     setup({ declared: false });
     openKeyboard({ picker: 'accounts', tiles: TILES, keyring: [] });
     assert.deepEqual(dataUsernames(), [], 'plain keyboard tiles carry no data-username');
-    assert.equal(document.querySelector('.signin-tag'), null);
+    assert.ok(document.querySelector('.signin-tag') === null);
     assert.equal(document.querySelectorAll('.signin-tile:not(.signin-other)').length, 2);
     document.querySelector('.signin-tile').click();
     assert.equal(q('#signin-ways').hidden, true);

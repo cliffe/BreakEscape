@@ -212,7 +212,7 @@ test('Create account: panel lists the menu, Confirm waits for a pick, then both 
     assert.equal(globals.acct_freemail, true);
     m = mail(scene);
     assert.equal(m.createOpen, false);
-    assert.equal(host.querySelector('.mail-create-panel'), null);
+    assert.ok(host.querySelector('.mail-create-panel') === null);
     assert.equal(m.account.id, 'freemail');
     assert.equal(m.account.address, 'n.assurance@freemail.example');
     assert.equal(m.account.displayName, 'N. Assurance');

@@ -251,8 +251,8 @@ test('the observations are a button only while they overflow or are open, named 
 
 test('no observations: no button is made', () => {
     const strip = render('');
-    assert.equal(strip.querySelector('p'), null);
-    assert.equal(strip.querySelector('[role=button]'), null);
+    assert.ok(strip.querySelector('p') === null);
+    assert.ok(strip.querySelector('[role=button]') === null);
 });
 
 test('the real mode button: icon alt empty, label span, aria-label and title, restored after disabling', () => {
@@ -350,11 +350,11 @@ test('removing the role while the observations hold focus moves focus to the mod
             document.body.appendChild(strip);
             LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
             p.focus();
-            assert.equal(document.activeElement, p);
+            assert.ok(document.activeElement === p);
             window.innerHeight = 800;
             LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
             assert.equal(p.getAttribute('role'), null);
-            assert.equal(document.activeElement, withMode ? mode : x, withMode ? 'the mode button' : 'the X');
+            assert.ok(document.activeElement === (withMode ? mode : x), withMode ? 'the mode button' : 'the X');
             window.innerHeight = 390;
         }
     } finally { window.innerHeight = savedH; }

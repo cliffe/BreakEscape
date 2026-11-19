@@ -79,8 +79,8 @@ test('an ink thread shows its pending choices as suggested-reply chips under the
     host.querySelector('.mail-row[data-id="m_hax_mail"]').click();
     const chips = [...host.querySelectorAll('.mail-suggest-chip')];
     assert.deepEqual(chips.map((c) => c.textContent), ['Nothing yet.', 'Log attached.']);
-    assert.equal(host.querySelector('.mail-ink-own'), null, 'HaX is not a target: no judged door');
-    assert.equal(host.querySelector('.mail-followup-option'), null, 'the old "Choose a reply" list is not used for ink threads');
+    assert.ok(host.querySelector('.mail-ink-own') === null, 'HaX is not a target: no judged door');
+    assert.ok(host.querySelector('.mail-followup-option') === null, 'the old "Choose a reply" list is not used for ink threads');
     scene.cleanup();
 });
 
@@ -89,7 +89,7 @@ test('a waiting thread shows the waiting line only while its reply job is queued
     threadMail(state, 'hax_mail', { mode: 'waiting' });
     const a = open({}, state);
     a.host.querySelector('.mail-row[data-id="m_hax_mail"]').click();
-    assert.equal(a.host.querySelector('.mail-ink-waiting'), null, 'no job queued: the saved "waiting" is stale');
+    assert.ok(a.host.querySelector('.mail-ink-waiting') === null, 'no job queued: the saved "waiting" is stale');
     a.scene.cleanup();
     state.jobs.push({ jobId: 'j1', kind: 'ink', plain: true, thread: 'npc:hax_mail:agent' });
     const b = open({}, state);
@@ -104,7 +104,7 @@ test('a contact that is also a target adds "Write your own message" only once ju
     const a = open({ door: false }, closed);
     a.host.querySelector('.mail-row[data-id="m_ines_mail"]').click();
     assert.ok(a.host.querySelector('.mail-suggest-chip'));
-    assert.equal(a.host.querySelector('.mail-ink-own'), null);
+    assert.ok(a.host.querySelector('.mail-ink-own') === null);
     a.scene.cleanup();
     const opened = data.emptyMailState();
     threadMail(opened, 'ines_mail', { mode: 'choices', options: ['Happy to.'] });

@@ -222,10 +222,10 @@ test('blocked placeholder draws the frame only', () => {
     assert.equal(blocked, true);
     assert.ok(root.classList.contains('is-blocked'));
     assert.equal(root.querySelector('.lpb-address-text').textContent, 'Blocked address');
-    assert.equal(root.querySelector('.lpb-body'), null, 'no page body when blocked');
+    assert.ok(root.querySelector('.lpb-body') === null, 'no page body when blocked');
     // C-LP2: a deliberately blocked look-alike (a service is chosen) keeps the bare placeholder,
     // no start hint.
-    assert.equal(root.querySelector('.lpb-preview-empty'), null, 'no empty hint once a choice is made');
+    assert.ok(root.querySelector('.lpb-preview-empty') === null, 'no empty hint once a choice is made');
     assertDomSafe(root, 'blocked');
 });
 
@@ -235,7 +235,7 @@ test('C-LP2: the empty preview shows a start hint before any choice', () => {
     const hint = root.querySelector('.lpb-preview-empty');
     assert.ok(hint, 'the empty state has a hint element');
     assert.match(hint.textContent, /pick a service/i);
-    assert.equal(root.querySelector('.lpb-body'), null, 'still no page body');
+    assert.ok(root.querySelector('.lpb-body') === null, 'still no page body');
     assertDomSafe(root, 'empty');
 });
 
@@ -260,12 +260,12 @@ test('P3 N-7: a logo image that fails to load is removed, the region marked, and
     const seen = [];
     doc.body.addEventListener('lpb-logo-missing', (e) => seen.push(e.detail.src));
     img.dispatchEvent(new doc.defaultView.Event('error'));
-    assert.equal(regions.logo.querySelector('img'), null);
+    assert.ok(regions.logo.querySelector('img') === null);
     assert.ok(regions.logo.classList.contains('is-unavailable'));
     assert.equal(seen.length, 1);
     // the next render of the same brand draws no broken image at all
     const again = renderLandingPage({ pageDef, choices: { ...workedChoices, logo: 'crisp' }, doc: freshDoc(), logoBase: '/nope-r3/' });
-    assert.equal(again.regions.logo.querySelector('img'), null);
+    assert.ok(again.regions.logo.querySelector('img') === null);
     assert.ok(again.regions.logo.classList.contains('is-unavailable'));
 });
 

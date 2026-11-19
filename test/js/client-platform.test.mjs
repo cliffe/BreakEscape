@@ -621,7 +621,7 @@ test('a payment page that keeps coming back is blanked with a message and a link
     });
     await new Promise((r) => setTimeout(r, 30));
     assert.deepEqual(homes(w), []);
-    assert.equal(w.document.getElementById('plans'), null, 'the page is gone');
+    assert.ok(w.document.getElementById('plans') === null, 'the page is gone');
     assert.match(w.document.body.textContent, /Not available in the app/);
     assert.equal(w.document.querySelector('a').getAttribute('href'), '/app/licence-to-hack');
 });
