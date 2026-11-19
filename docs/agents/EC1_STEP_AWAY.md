@@ -1,0 +1,73 @@
+# EC1 step-away panel: handover (2026-11-19)
+
+Branch `feat/ca-ec1-step-away` in `.claude/worktrees/b-ca-ec1` (from main 4b5f65edd). Plan:
+`.claude/worktrees/p-ca-living-office/planning_notes/security_awareness_course/living_office/LIVING_OFFICE_PLAN.md`
+sections 6.2, 9 (EC1), 4.7, 11 proofs 2 and 8, 12. The first agent stopped at its context limit.
+
+## Done (commit e64e47c05)
+
+All five parts (a) to (e) are built. Plan line pointers in the runner, model and success screen all matched main
+(`episode-runner-minigame.js` :376-378, :417, :446-457, :713-715, :1067-1085; `episode-model.js:469`;
+`success-screen.js:46-49`). None was wrong.
+
+- `public/break_escape/js/minigames/episode-runner/episode-model.js`: `STEP_AWAY_READY_GLOBAL` ('kit_defend_done'),
+  `STEP_AWAY_EVENT` ('episode_step_away'), `stepAwayOn(episode)` (stepAway true, full variant, not check, debrief after
+  defend; so never a twin/brief/check), `stepAwayHeld(episode, raw)` (defend done, debrief not done, no `debriefSeen`).
+  `readState` keeps `debriefSeen: true` only in stepAway episodes. `completeStage` keeps `defendProgress` when
+  `stageId === 'defend' && stepAwayOn` (check shells and twins keep today's deletion).
+- `.../episode-runner-minigame.js`: `_triageDone` passes `defendProgress: result.answers` (stepAway only) and reopens
+  with `stepAwayAfter: 'defend'` when not facilitated. `init` sets `this.stepAwayPanel` (memory only, stripped by
+  `_reopenParams`). Dispatch branch after the pause branch -> `_renderStepAway` (heading 'Before the debrief', text
+  from 6.2, overridable by `strings.stepAway` / `strings.stepAwayHeading`). `_lookUpButton` (disabled unless
+  `globals.kit_defend_done === true`, re-checked on `global_variable_changed:kit_defend_done` via eventDispatcher.on/off,
+  wait note 'Look up is ready once your result has saved.'). `_lookUp` closes the runner then emits
+  `episode_step_away` `{ episodeId }` once; writes no state. Carry on renders the debrief, no state write.
+  `_renderPause` adds Look up when `pauseAfter === 'defend'` in an opted-in shell (e). `_renderDebrief` passes the
+  stored list as `answers` when there is no live triageResult. `cleanup` after a debrief view -> `_markDebriefSeen`
+  (one save of `debriefSeen: true`, stepAway only), which releases the hold for the close-without-Finish route; Finish
+  releases by `done` including debrief. `getTestState().episode` gained `stepAwayPanel`, `stepAwayReady`, `debriefSeen`.
+- `public/break_escape/js/ui/success-screen.js`: generic hold registry on `window.successScreenHolds` (Map),
+  `setSuccessScreenHold(id, fn)`, `successScreenHeld()`; `busy()` reads it. No new static import anywhere.
+- `public/break_escape/js/systems/episode-starter.js`: `installStepAwayHold()` runs at module load (boot) and
+  registers `episode-step-away` -> `stepAwayHoldNow()`, read live from saved state (survives reload).
+- `public/break_escape/css/episode-runner.css`: disabled `.epr-button` look (flat grey, 2px, no radius), side-by-side
+  buttons, `.epr-step-away-note`.
+- `scripts/scenario-schema.json`: `awarenessEpisode.stepAway` (boolean), `strings.stepAway`, `strings.stepAwayHeading`.
+- `scripts/validate_social/awareness.rb`: `step_away_checks` (boolean; error in a check mission or non-full variant).
+- `test/js/validator-social-awareness.test.mjs`: new case; file passes 72/72.
+
+## Open (next agent)
+
+1. **Unit tests** (none written yet for the runner): new file `test/js/social-episode-step-away.test.mjs`, copying the
+   harness of `test/js/social-episode-runner.test.mjs` (copy list lines 20-35, stubs, `deps`, `setup`, `open`) plus
+   `ui/success-screen.js` and `utils/desktop-app.js` in the copy list. Give `window.eventDispatcher` an `on/off`.
+   Cases from plan 12: panel shown when opted in and not facilitated (stage the state at defend, launch, complete
+   triage with `answers`); no panel in a twin (variant defendOnly), a facilitated run, a check shell, or with stepAway
+   absent; both buttons leave `stored()` deep-equal; event emitted once (double click); Look up disabled when
+   `kit_defend_done` false and `episode_<id>_defend_complete` true, enabled after setting the global and emitting
+   `global_variable_changed:kit_defend_done`; stored `defendProgress` after triage in stepAway, absent in a check
+   shell and in a plain full shell (today's shape); reopen after Look up shows debrief with `answers` from storage;
+   `stepAwayHoldNow()` true at defend-done, still true after Look up, false after Finish and after closing the kiosk
+   at the debrief, and `successScreenHeld()` follows; facilitated pause after defend has `.epr-look-up`, pauses after
+   other stages do not; held chain bark dropped when `kit_quiet` false: one `releaseHeldBarks` case with
+   `stillValid: () => globals.kit_quiet === true` (copy `systems/bark-release-policy.js`).
+2. Run `bin/test-js` (whole suite, includes social-*, validator-social-*, lab-physical-pentest-*, lab-ux-ui,
+   lab-gated-credit-scan); find lab_social_engineering tests by grep. Payload-scan Ruby tests (proof 8):
+   `test/models/break_escape/payload_scan_*_test.rb` on the test scenario.
+3. **Test scenario** `scenarios/test_ca_step_away` (grep `/home/cliffe/Files/Projects/Code/Hacktivity/test` first):
+   copy the awareness test shell (find via `grep -l awarenessEpisode scenarios/test_*`), set `stepAway: true`,
+   declare `kit_defend_done: false`, add a host mapping `global_variable_changed:episode_<id>_defend_complete` ->
+   set `kit_defend_done` (confirmed-save path, see `triage-starter.js:249-278`), and one on `episode_step_away`.
+4. Live proof 2 on a keyless server on :3003 from this worktree (recipe in memory `worktree-live-proof-3002.md`;
+   never db: tasks, never :3000/:3002), `window.__test.throttleFps(20)`; screenshots to
+   `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/ad8eaaeb-1d0e-460b-9802-75c392a3c39c/scratchpad/ec1/`.
+   The runner has no dark theme (light awareness skin only), so one theme.
+5. Not done, out of EC1 code: the facilitator-guide line (memory: facilitator guide last); kiosk "finished" text
+   variant is per-shell content.
+
+## Decisions to check
+
+- Close-without-Finish release is persisted as `debriefSeen: true` in the existing state global (one save, once).
+  The plan says the hold is derived from saved state and released by any close of the debrief; it names no marker.
+- `kit_defend_done` is a hard-coded engine constant, as the plan names it.
+- Look up closes the runner before emitting the event, so the host mapping fires with no minigame open.
