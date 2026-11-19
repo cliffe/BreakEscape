@@ -35,7 +35,12 @@ Work only in the worktree
   is ignored by the cracker. A crack also needs the server-held proof that the hash was collected.
   Say per fact source which existing server-visible event grants it, and what an author must do
   for a fact that today only comes from dialogue.
-- Proof renamed `dumped` to `harvested`, keyed by the sign-in PC id.
+- Proof renamed `dumped` to `harvested`, in the string form `"harvested": "<pcId>"` (as
+  `CredentialModel.proof_kind` and `check_credentials` accept), keyed by the sign-in PC id.
+- A hash record whose account has no password habit (an `accountOnly` account such as a shared
+  local admin) carries its own crack recipe on the record (the facts or weak-password class
+  that crack it). The "account needs a password habit" validator rule applies only to a hash
+  record with no recipe. Read the privilege plan's section 14 requests to S7 and answer each.
 - Delete the plan's own log row list; give a section 13 table in the log rows plan's format
   instead (event, who, where, result, detail), using `write_log_row!`.
 - Follow brief section 5: own validator file `scripts/validate_cracking.rb` hooked by one line;
