@@ -150,3 +150,14 @@ entries below took a different fix from the one suggested.
 - Req 4, 5.3 note: a throw from the unplug request no longer escapes `unplugBox` with the button disabled; the busy and wrong-jack answers of `unplugFromView` (`network-links.js:548-553`) are answers, so both hooks run for them.
 - Req 4, 11.3 `network-view-ops.test.mjs`: guard cases and `network-view.test.mjs` pass unedited with default hooks; one hook-order case (answer, refusal, throw, null; unplug before `complete(false)`; rejected press calls neither; throwing hooks; same request with and without echo).
 - Req 4, section 3 S1 row, 12.1 step 4, 12.2 scene row, 14 item 6: `perform` signature and hooks stated.
+
+## R9 fixes (2026-11-19)
+
+- M1: 5.2 and 5.3 copy `cli` by named key (range; address; protocol, service, banner; title, module, script), never whole, so `_` notes never reach `GET /network` (it runs no note stripper); `_note` case added to `network_cli_fields_test`.
+- m1: 5.2 puts the address rule in `host_row(pc, foothold_id)` (host's own network open or in `opsDiscovered.networks`); down-block held-session case added to the test; 12.1 step 3 updated.
+- m2: new `access_leak_scanner_test.rb` (extended) row in 11.2 at S1/S2 on the test-only fixture (tags, whole-token address, `protocol`, `service` word).
+- m3: skin plan (its fixer has it); skipped here.
+- n1: previous-result clear (`:834`) placed between guard and key-in in the 5.3 hook order.
+- n4: `listed` tag carries a network id (and row id for an open network's address), stated in 11.4.
+- n5: row 1374 reworded as a skip of the `connectsTo` check, not a second kind rule; skip added to 14 item 7; device-row builder named as an `address` copier (5.2, 12.1 step 3). Asking the cracking plan to say "error" is left to its fixer.
+- n2, n3: not in the instruction list; not applied.
