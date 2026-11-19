@@ -267,7 +267,7 @@ defines) whose `account` is the candidate and whose proof is `{ "harvested": "<t
 }`; a candidate without one, or with two, is a validator error (section 9). An account cached on
 several PCs (a shared local administrator) has one record per PC: collecting on any one of them is
 enough, and cracking that record gives the one password. Once that password is held, a second
-record for the same account counts as already cracked (section 14 asks the cracking plan to show it
+record for the same account counts as already cracked (section 14 relies on the cracking plan showing it
 so), so collecting the shared administrator on a second PC adds a row that reads as cracked, never a
 second puzzle for a password the player already has. The collect still records the second PC,
 because the log row reports which PCs the player harvested. The proof kind `harvested` holds once
@@ -691,7 +691,7 @@ The desktop then shows:
   that opens the cracking plan's scene for that record (`hashId` from the answer), the same scene
   the keyring's hash row opens. The username is earned by the collect (a cached account is listed
   under its username), so the panel is where the player learns how to type an `accountOnly`
-  account; section 14 asks the cracking plan to show it on the hash row too, so it stays in the
+  account; section 14 relies on the cracking plan showing it on the hash row too, so it stays in the
   keyring after the panel closes. The panel says the password comes from the crack. A collect that adds nothing says so. The panel is the feedback: the
   keyring's find toasts and Sign-ins list may not show a new row (`keyring.js:774-784`).
 
@@ -1281,96 +1281,98 @@ so when it returns false the sign-in caller calls `account_kind_admits?(pc, npc)
 there is the kind refusal and passes `kind`; true means the PC's `access` list refused, and passes
 no `kind`. A controller test covers each of the two refusals.
 
-## 14. Cross-plan requests
+## 14. What this plan relies on from other plans
 
-- **To OPS_CORE (S3).** Agreed: the step up is your weakness shape; this plan adds no other route to
-  admin except signing in with an administrator account. Your `needs.session` check calls
-  `session_access(pc_id)`: `"user"` is met by any live session (relay and claims included),
-  `"admin"` by an admin one. You store `access` on technique records only; nothing else stores it.
-  Please change your answer rule to this one: the sign-in answer, `session_for_client` and the host
-  row carry `access: "admin"` when `session_access` is admin, for any session kind, and omit the key
-  otherwise; the record's stored value is never passed through, so a technique user session sends no
-  key. "No other session carries `access`" becomes "no session of a scenario without `creds.admin` or
-  a technique grant carries `access`". S3 lands first, so you add the answer parameter. A password sign-in that replaces your technique record takes the level of the account
-  signed in with. Please run `CredentialModel.pc_admits_account?` (which carries the account-kind
-  rule) on `grants.session.account` in your validator pass. A technique admin session overrides a
-  PC's USB policy for a plant like any other admin session on that PC (section 5), but a
-  session-shaped implant (`needsSession`) takes only a session at the PC's own keyboard: a device
-  that types into a PC reaches whoever is signed in at that console, and your technique record
-  keeps its `foothold`, so the implant path refuses it with `needs_console`. Please change your
-  session-kinds table's "counts for `needsSession`: yes" cell for a technique session, and the
-  matching sentence in section 0, to "no (keyboard sessions only)". Your
-  `network_technique_session_test` row "`needsSession` for an implant refused for a technique
-  session" (your section 11 test table) answers `not_ready` at S3; once S5a lands that answer is
-  `needs_console` with the line "Nobody is signed in at this keyboard." Please have that row assert
-  `reason: "needs_console"` from S5a on (or assert only "refused, device still held" at S3 and leave
-  the reason to this plan's `admin_usb_test.rb`), so the S5a commit does not break it. Please also confirm whether your
-  added terms in `desktop_request_allowed?` let a technique admin session on a `remote: "blocked"`
-  headless host through: the collect (section 6, step 3) passes only if they do.
-- **To OPS_CRACKING (S7).** Your draft asks for an admin-dump marker "per host, per account" with a
-  proof such as `{ dumped: { host, npc } }`. This plan's side of the contract, exactly:
-  - the dump is the collect route of section 6, on a sign-in PC, not a host: the marker is keyed by
-    the sign-in PC's object id;
-  - the marker is `player_state.harvestedAccounts`, an array of `"<pcId>|<npcId>"`, server-written
-    only by the collect, grow-only, never trimmed, never sent;
-  - the proof form is `proof: { "harvested": "<pcId>" }` (a string, like `session` and `foothold`,
-    so `CredentialModel.proof_kind` reads it) on a `hash` registry entry whose `account` names
-    the account; it holds when `"<pcId>|<account>"` is in `harvestedAccounts`;
-  - a hash record whose account has no `password` habit (an `accountOnly` account, which carries
-    no habits) carries its own crack recipe, `crack: { password, facts }`: the
-    habit's class key, plus `facts` (1 to 4 intel fact ids with server-visible sources, required for
-    `guessable`; `passwordPattern` is optional and yours to check). Please read `crack` when present and the habit otherwise, add `crack` to
-    your `hash` entry schema, and apply your "account needs a `password` habit" validator rule
-    only to a record with no `crack`; your fact-reachability warning applies to the recipe's
-    pattern as it does to a habit's;
-  - please show the account's username on the hash row (as on a password row), so an account with
-    no sign-in tile stays typeable after the collect panel closes;
-  - an account cached on several PCs has one hash record per PC. Please show a hash row whose
-    account's `<npcId>.password` row the player already holds as cracked, with no Crack button,
-    so a shared administrator collected on a second PC is not a second puzzle;
-  - a collected cached account is always a hash: the collect never yields a password, and every
+Each entry names what this plan needs from another plan and the section of that plan that provides it.
+
+- **OPS_CORE_PLAN.md, sections 0 and 5.4 (S3).** The step up is the core's weakness shape; this plan
+  adds no other route to admin except signing in with an administrator account. The core's
+  `needs.session` check calls `session_access(pc_id)`: `"user"` is met by any live session (relay and
+  claims included), `"admin"` by an admin one. The core stores `access` on technique records only;
+  nothing else stores it. The details this plan builds on:
+  - The answer rule: the sign-in answer, `session_for_client` and the host row carry
+    `access: "admin"` when `session_access` is admin, for any session kind, and omit the key
+    otherwise. The record's stored value is never passed through, so a technique user session sends
+    no key. No session of a scenario without `creds.admin` or a technique grant carries `access`.
+    S3 lands first and this plan adds the answer parameter.
+  - A password sign-in that replaces a technique record takes the level of the account signed in
+    with.
+  - The core's validator pass runs `CredentialModel.pc_admits_account?` (which carries the
+    account-kind rule) on `grants.session.account`.
+  - A technique admin session overrides a PC's USB policy for a plant like any other admin session
+    on that PC (section 5). A session-shaped implant (`needsSession`) takes only a session at the
+    PC's own keyboard: a device that types into a PC reaches whoever is signed in at that console,
+    and the technique record keeps its `foothold`, so the implant path refuses it with
+    `needs_console` ("Nobody is signed in at this keyboard."). The core's session-kinds table and
+    its section 0 therefore say a technique session does not count for `needsSession`
+    ("no (keyboard sessions only)").
+  - The core's `network_technique_session_test` row for a refused implant does not assert the
+    reason, so the S5a commit does not break it; the reason is asserted in this plan's
+    `admin_usb_test.rb`. Before S5a that refusal answers `not_ready`; from S5a it is
+    `needs_console`.
+  - The core's `desktop_request_allowed?` terms let a technique admin session on a
+    `remote: "blocked"` headless host through its own foothold only; the collect (section 6,
+    step 3) passes only because they do.
+- **OPS_CRACKING_PLAN.md, sections 4, 5, 9 and 14 (S7).** The cracking plan owns the `hash` record
+  kind and the crack route and scene. This plan's side of the contract, exactly:
+  - The dump is the collect route of section 6, on a sign-in PC, not a host: the marker is keyed by
+    the sign-in PC's object id.
+  - The marker is `player_state.harvestedAccounts`, an array of `"<pcId>|<npcId>"`, server-written
+    only by the collect, grow-only, never trimmed, never sent.
+  - The proof form is `proof: { "harvested": "<pcId>" }` (a string, like `session` and `foothold`,
+    so `CredentialModel.proof_kind` reads it) on a `hash` registry entry whose `account` names the
+    account; it holds when `"<pcId>|<account>"` is in `harvestedAccounts`.
+  - A hash record whose account has no `password` habit (an `accountOnly` account, which carries no
+    habits) carries its own crack recipe, `crack: { password, facts }`: the habit's class key, plus
+    `facts` (1 to 4 intel fact ids with server-visible sources, required for `guessable`;
+    `passwordPattern` is optional and the cracking plan checks it). The cracking plan reads `crack`
+    when present and the habit otherwise, has `crack` in its `hash` entry schema, applies its
+    "account needs a `password` habit" validator rule only to a record with no `crack`, and applies
+    its fact-reachability warning to the recipe's pattern as to a habit's.
+  - The hash row shows the account's username (as a password row does), so an account with no
+    sign-in tile stays typeable after the collect panel closes.
+  - An account cached on several PCs has one hash record per PC. A hash row whose account's
+    `<npcId>.password` row the player already holds as cracked shows as cracked with no Crack
+    button, so a shared administrator collected on a second PC is not a second puzzle.
+  - A collected cached account is always a hash: the collect never yields a password, and every
     `cachedAccounts` candidate must have one such `hash` record (validator error otherwise), so a
-    scenario that does not teach cracking declares no cached accounts;
-  - S5b builds after S7: you land the `hash` kind, the crack route and scene, your crack grant and
-    your keyring row with its Crack affordance first; S5b then adds `harvested` to
-    `CredentialModel::PROOF_KINDS` and to `credential_proof_holds?`, with its validator check. You
-    no longer add the proof kind, and this plan adds no password row builder for you to share:
-    your grant builder is your own;
-  - the collect answer carries each pair's `hashId`, and the collect panel's Crack button opens
-    your scene for that id, the same entry point as your keyring row. Please confirm the scene can
-    be opened for a given hash id from outside the keyring (your section 5 says it can);
-  - the dungeon graph: please give a hash record an edge to `<npcId> password` through the crack,
-    so the `admin@<pcId>` → hash record edge of section 9 carries on to the PCs the password opens;
-  - a hash collected after a password reset (S8b) is of the scenario's password; please confirm
-    your crack grants that password, as a capture from before the reset does.
-  Please replace `dumped` with `harvested` and "host" with the sign-in PC id in your plan, drop
-  the admin-dump source's "until settled" fallback to share files only, or say why a host-level
-  marker is needed.
-  Answered in the cracking plan's section 14 ("Privilege and accounts plan (S5b)"): each request
-  above is agreed or done, and the cracking plan's two requests to this plan are the `account`
-  string and `crack.facts` changes made in sections 6 and 14 here.
-- **To OPS_MFA_HELPDESK (S8).** Agreed order: account-kind check inside your Admission step, then
-  your second step, then the session. The account-kind check lives in `pc_admits_account?`, which
-  `credential_login_checks` already calls, so your second-step re-judge picks it up: please drop
-  "adds any check" from request 4. Account kind does not change the second step: every enrolled
-  account meets the PC policy's `mfa`, `creds.mfa: false` is the only exception, and a local account
-  is not exempt. The session write stores no level: please change your Session step in 5.2 and request 1 to "the
-  level is computed by `session_access`; nothing is written". This plan writes no password row: a
-  collected account is a hash, and its password comes only through the cracking plan's grant, so
-  drop any reference to a harvest password row; the new password after a reset comes only through
-  your `<npcId>.reset` row. Lockouts and the failure counter are unchanged by this plan.
-- **To OPS_LOG_ROWS (S9).** In your 13.7 S5 rows, `credentials_harvested` loses its `hashes`
-  detail: every collected pair is a hash, so `count` alone says how many hashes a collect added
-  (your `OpsLog::EVENTS` entry, your S5 row table and your note that a hash obtained by collect is
-  counted by `hashes` all change with it).
-  `usb_install_overridden` comes from any admin session on the PC, keyboard or remote, except for a
-  session-shaped implant, which only a keyboard admin session at the grant's PC overrides; its
-  fields are unchanged. A plant the server refuses (`usb_refused` from the inventory
-  action, `needs_console` from the implant path) writes no row.
-- **To all ops plans.** One fixture folder, `test/fixtures/files/ops_unchanged/`, and one helper,
-  `bin/ops-golden-compare` (section 10), both built by the log plan's L1a, which strips each plan's
-  new empty `ACCESS_STATE_DEFAULTS` keys and freezes the clock; and one test directory for unit tests (this plan uses
-  `test/models/`).
+    scenario that does not teach cracking declares no cached accounts.
+  - S5b builds after S7. The cracking plan lands the `hash` kind, the crack route and scene, its
+    crack grant and its keyring row with its Crack affordance first; S5b then adds `harvested` to
+    `CredentialModel::PROOF_KINDS` and to `credential_proof_holds?`, with its validator check. This
+    plan adds no password row builder for the cracking plan to share: the grant builder is the
+    cracking plan's own.
+  - The collect answer carries each pair's `hashId`, and the collect panel's Crack button opens the
+    cracking plan's scene for that id, the same entry point as its keyring row. The scene can be
+    opened for a given hash id from outside the keyring.
+  - The dungeon graph gives a hash record an edge to `<npcId> password` through the crack, so the
+    `admin@<pcId>` to hash record edge of section 9 carries on to the PCs the password opens.
+  - A hash collected after a password reset (S8b) is of the scenario's password, and the crack grants
+    that password, as for a capture from before the reset.
+  - The cracking plan owns every rule on a hash record's `crack`, including `passwordPattern`, and
+    its optional NPC habit parameter `passwordDifficulty` (`easy`, `medium`, `hard`) for an NPC
+    whose account this plan collects as a hash; the `account` string and `crack.facts` are as
+    sections 4 and 6 here describe them.
+- **OPS_MFA_HELPDESK_PLAN.md, sections 5 and 14 (S8).** The order is the account-kind check inside
+  the Admission step, then the second step, then the session. The account-kind check lives in
+  `pc_admits_account?`, which `credential_login_checks` already calls, so the second-step re-judge
+  picks it up. Account kind does not change the second step: every enrolled account meets the PC
+  policy's `mfa`, `creds.mfa: false` is the only exception, and a local account is not exempt. The
+  session write stores no level: the level is computed by `session_access`, and nothing is written.
+  This plan writes no password row: a collected account is a hash, and its password comes only
+  through the cracking plan's grant, and the new password after a reset comes only through the MFA
+  plan's `<npcId>.reset` row. Lockouts and the failure counter are unchanged by this plan.
+- **OPS_LOG_ROWS_PLAN.md, section 13 (S9).** `credentials_harvested` carries `count` only: every
+  collected pair is a hash, so `count` says how many hashes a collect added. `usb_install_overridden`
+  comes from any admin session on the PC, keyboard or remote, except for a session-shaped implant,
+  which only a keyboard admin session at the grant's PC overrides; its fields are unchanged. A plant
+  the server refuses (`usb_refused` from the inventory action, `needs_console` from the implant path)
+  writes no row. (The implant exception and the no-row rule for refused plants are not yet in
+  OPS_LOG_ROWS_PLAN.md - open.)
+- **All ops plans.** One fixture folder, `test/fixtures/files/ops_unchanged/`, and one helper,
+  `bin/ops-golden-compare` (section 10), both built by the log plan's L1a (OPS_LOG_ROWS_PLAN.md,
+  sections 11 and 12), which strips each plan's new empty `ACCESS_STATE_DEFAULTS` keys and freezes
+  the clock; and one test directory for unit tests (this plan uses `test/models/`).
 
 ## 15. Decisions
 

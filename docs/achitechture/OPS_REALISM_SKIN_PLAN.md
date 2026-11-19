@@ -166,7 +166,7 @@ What already does part of the job, and what does not:
 - The core's `perform` path and its pending guard (core 5.3) already stop a second press while
   the first is out, for every action of the screen, and leave the drawing to the renderer. S6
   builds neither. It needs three small additions to `perform`, which the core makes (section 14,
-  request 4): an `echo` option, a hook after the guard accepts a press and before the request
+  item 4): an `echo` option, a hook after the guard accepts a press and before the request
   goes out, and a hook on every ending, run before the pending key is cleared. The Terminal
   renderer then sits behind that same path (section 5.2).
 - Display settings are **not** reused for the skin. A write there fires a canvas resize behind
@@ -193,9 +193,9 @@ by tests and runs that exist when it lands. Total size M.
 
 | Stage | Adds | Proved when it lands by | Size |
 |---|---|---|---|
-| K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). K1 uses `perform` as the core built it; the echo and the two hooks of section 14, request 4 are first used in K2. No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
-| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls, made from the core's `onSent` and `onEnded` hooks (section 14, request 4); the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
-| K3 Scenario fields and catalog | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts and services and the optional `realism` link on weaknesses and decoys, served by the core's answers (section 14, request 3) and declared in the schema here, with the validator (until K3 the core's closed blocks refuse `cli` and `realism`); the realism catalog's JSON schema, its validator `scripts/validate_realism_catalog.rb`, the generated index it writes, and `training_fixtures.json`, the only catalog file K3 adds, of invented entries for `test_ops_skin` (section 4.3); real entries come later, each in its own catalog task; `scripts/validate_realism_skin.rb` with every scenario check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects and catalog links on its findings | The Rails and validator tests of 11.3; the golden files with authored fields and catalog entries; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
+| K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). K1 uses `perform` as the core built it; the echo and the two hooks of section 14, item 4 are first used in K2. No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
+| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls, made from the core's `onSent` and `onEnded` hooks (section 14, item 4); the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
+| K3 Scenario fields and catalog | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts and services and the optional `realism` link on weaknesses and decoys, served by the core's answers (section 14, item 3) and declared in the schema here, with the validator (until K3 the core's closed blocks refuse `cli` and `realism`); the realism catalog's JSON schema, its validator `scripts/validate_realism_catalog.rb`, the generated index it writes, and `training_fixtures.json`, the only catalog file K3 adds, of invented entries for `test_ops_skin` (section 4.3); real entries come later, each in its own catalog task; `scripts/validate_realism_skin.rb` with every scenario check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects and catalog links on its findings | The Rails and validator tests of 11.3; the golden files with authored fields and catalog entries; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
 | K4 Live proof | The live parity runner and the docs, which change nothing a player sees (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
 ## 4. Scenario fields
@@ -358,7 +358,7 @@ finding carries catalog text.
 topic (for example `file_sharing.json`, `web.json`), all loaded together. It sits outside
 `scenarios/`, outside `public/` and outside the asset pipeline, so no static path serves it and
 no route lists it. The engine gem ships it with the rest of `config/`. It is read on the server
-only, by one loader, `lib/break_escape/realism_catalog.rb` (section 14, request 3), which reads
+only, by one loader, `lib/break_escape/realism_catalog.rb` (section 14, item 3), which reads
 every file once on first use into a frozen map from id to entry and takes another folder in
 tests. The loader never raises into a route: when a file does not parse or an id or a `module`
 appears twice, it logs a server warning and loads an empty map, so every finding of every game
@@ -496,16 +496,16 @@ S6 adds no route, no check and no state. The server-side changes are:
 - the schema entry for `networkView`, the schema rows for the `cli` objects and the `realism`
   link (section 9), and the checks in `scripts/validate_realism_skin.rb`, all at K3. Until K3
   the core's closed blocks refuse `cli` and `realism`; the core copies the fields and resolves
-  the link in its row builders from S1 and S2 (request 3 of section 14) and tests that on
+  the link in its row builders from S1 and S2 (section 14, item 3) and tests that on
   test-only fixtures;
 - the realism catalog's files, their JSON schema
   (`config/break_escape/realism_catalog.schema.json`) and its validator
   (`scripts/validate_realism_catalog.rb`), at K3 (section 4.3). The loader that reads the
-  catalog is the core's (request 3);
+  catalog is the core's (section 14, item 3);
 - a test that `networkView` reaches the bootstrap (section 7);
 - the `cli` fields, and a linked entry's fields as the finding's `cli`, riding in the core's
   existing answers beside the fields they belong to. The core's row builders copy them
-  (section 14, request 3); S6 relies on that and writes no serialiser of its own. No answer
+  (section 14, item 3); S6 relies on that and writes no serialiser of its own. No answer
   gains a field for a scenario that declares none: an absent `cli` object, or a finding with no
   link, is left out of the answer, not sent as `{}` or `null`.
 
@@ -519,7 +519,7 @@ All under `public/break_escape/js/minigames/network-view/`.
 | `view-texts.js` | constants, new | The scene's fixed texts (section 2, `UNPLUGGING_TEXT` among them), moved here so both renderers can import them. The scene re-exports them, so existing tests are unchanged |
 | `view-controls.js` | pure, new | `CONTROLS`, the private control list below, and `offers(view)`: every offer open right now, in display order; and `LOCAL_ACTIONS`, the `data-action` values that only select (below) |
 | `skin-choice.js` | new | `chooseSkin(inputs)`, pure, implementing the order of section 4; `readPick(storage)` and `writePick(storage, name)`, which touch storage only when called |
-| `network-view-minigame.js` | scene | Keeps what it has: load, refetch, the handlers (`act`, `unplugBox`, the core's calls), every event, the way back, the test snapshot, and the core's `perform` path with its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3), with the `echo` option and the `onSent` and `onEnded` hooks of section 14, request 4. New: it mounts one of two renderers, gives each `ctx.perform(offer, echo)`, which leads into that path, and sets the two hooks to call `recordSent` and `recordResult` |
+| `network-view-minigame.js` | scene | Keeps what it has: load, refetch, the handlers (`act`, `unplugBox`, the core's calls), every event, the way back, the test snapshot, and the core's `perform` path with its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3), with the `echo` option and the `onSent` and `onEnded` hooks of section 14, item 4. New: it mounts one of two renderers, gives each `ctx.perform(offer, echo)`, which leads into that path, and sets the two hooks to call `recordSent` and `recordResult` |
 | `network-view-panels.js` | renderer, new | Today's HTML and the core's, moved. Its `data-*` hooks are unchanged. It exports `DRAG_EVENTS`, the event names its drag listens for, in order, for the tests and the bridge |
 | `network-view-terminal.js` | renderer, new | Prompt, log, quick commands |
 | `terminal-grammar.js` | pure, new | `parse(line, offers, view, mode)`, `complete(line, offers, view, mode)`, `commandFor(offer, view)`, `helpFor(verb, mode)`. It reads the game verbs, the scanner command shape and the framework commands (section 5.3, "Grammar"); `mode` is the renderer's prompt mode and the framework's selected module and `TECHNIQUE`. A finding's alias is resolved with the core's alias lookup over `view`; the grammar holds no alias table of its own |
@@ -637,12 +637,12 @@ so a Panels press still logs the offer's tool line. A renderer:
 **`perform`** is the core's (core 5.3): the scene's one path for every action of this screen and
 the one way either skin causes a request. `ctx.perform(offer, echo)` passes the offer's action
 and target into it, the same pairing the delegated click listener makes today from a button's
-`data-action`, with the echo as the option of section 14, request 4. It sends to the route that
+`data-action`, with the echo as the option of section 14, item 4. It sends to the route that
 action already has; the server sees no difference, because the echo and the hooks never reach a
 request.
 
 S6 asks the core for three additions to `perform` and uses them as follows (the exact hook
-points are in section 14, request 4):
+points are in section 14, item 4):
 
 - `perform(offer, { echo })`: the echo travels with the press and is used only by the hooks.
 - `onSent(offer, echo)`, called once after the guard has accepted the press and added the key,
@@ -825,7 +825,7 @@ command; the generator's `result` lines print after the answer arrives.
 calls `recordSent(log, offer, echo)` once, from the `onSent` hook of `perform`, after the
 pending guard has accepted the press and before the request goes out, and
 `recordResult(log, offer, answer)` once, from the `onEnded` hook, when the request ends
-(section 14, request 4). Both are pure functions in `terminal-format.js` that append lines to the
+(section 14, item 4). Both are pure functions in `terminal-format.js` that append lines to the
 foothold's log (the module variable of section 5.3, keyed by foothold id). The scene calls them
 for every guarded request, from either skin and whether or not the Terminal is mounted, so the
 log is complete in every order of switches; Panels draw their own result from the same
@@ -858,7 +858,7 @@ and not `REQUEST_FAILED_TEXT`. A request that throws sets the same notice and li
 gives no reply.
 
 *Where a request ends.* `perform` ends in one place, a single `finally`-shaped path, in this
-order, on the answer, refusal and failure paths alike (the order request 4 of section 14 asks the
+order, on the answer, refusal and failure paths alike (the order section 14, item 4 asks the
 core for): `onEnded`, which calls `recordResult`, then the clear of the
 pending key (which removes the bar and re-enables the control, and in the Terminal makes the key
 no longer pending for the next typed line), then `showResult`. Because the log is written
@@ -1177,7 +1177,7 @@ browser only.
 Two things change. `GET /scenario` (the bootstrap) sends `networkView.defaultSkin`, which holds
 nothing to withhold. The core's network answers carry the authored `cli` fields, and for each
 linked finding its catalog entry's fields, beside the objects they belong to, each only once the
-player has earned that object (core 14, request 3):
+player has earned that object (section 14, item 3):
 
 | `cli` field | Served in | From when |
 |---|---|---|
@@ -1223,7 +1223,7 @@ player has earned that object (core 14, request 3):
   allow the row to arrive. A finding is printed by its alias only; its built id, which contains
   the author's weakness id, is printed by neither skin.
 - **World-side marks.** The compromised mark and the remote-view frame belong to the world
-  side (core 14, request 6). Neither skin draws, hides or restyles them; the Terminal's host
+  side (core section 14, item 6). Neither skin draws, hides or restyles them; the Terminal's host
   table shows the same marks the Panels' rows show, through the same `ops-model.js` export.
 - A refusal from an ops route arrives as a `reason` code and never as prose. Both renderers turn
   it into words with the core's `REFUSAL_TEXT` in `ops-model.js`. The one server sentence on this
@@ -1259,7 +1259,7 @@ not an id map and not free data. It is not marked `x-serverOnly`.
 The `cli` objects and the `realism` link are declared here, at K3, as rows in the same shared
 file, on the core's `networks.<id>`, `definitions.service`, `definitions.weakness` and
 `definitions.decoy`. Until K3 those blocks are closed and refuse `cli` and `realism`; the core's
-row builders copy the fields and resolve the link from S1 and S2 (section 14, request 3) and
+row builders copy the fields and resolve the link from S1 and S2 (section 14, item 3) and
 test that on test-only fixtures that do not load the schema. The `cli` rows are closed
 (`additionalProperties: false`, note pattern `^_`), have no required key, and carry a
 description naming their reader (`cli-gen/`). A `_` note is for authors only: the core copies
@@ -1758,20 +1758,20 @@ committed before its tests are run in the shared tree.
 | 1 | K1 | Save the scene's DOM for every fixture and for every recorded `ops_unchanged` view answer (under `test/js/fixtures/network-view/unchanged/`, beside the server fixtures in `test/fixtures/files/ops_unchanged/`), before any change. Move the fixtures the tests build inline into `test/js/fixtures/network-view/` only for the new tests; existing tests are not edited | the snapshots exist on the branch point |
 | 2 | K1 | `view-texts.js`, `view-controls.js`, `network-view-panels.js`; the new exports in `ops-model.js`, with the Panels drawing changed to call them; the scene mounts the Panels renderer and routes it through the core's `perform` path, with `offers()` reading the core's pending set and `pendingKey` (core 5.3); copy lists | K1 rows of 11.1; existing and core node tests unedited; `bin/test-js` whole; scripted reruns of `test_access_networks` and `test_ops_access` |
 | 3 | K2 | `skin-choice.js`; the starter passes the skin; the header switch on ops views | `network-skin-choice.test.mjs`, `network-skin-unchanged.test.mjs` |
-| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene through the `onSent` and `onEnded` hooks of `perform` that the core adds in its S1, core 5.3; section 14, request 4), `cli-gen/registry.js`, `cli-gen/scanner-output.js` and `cli-gen/framework-console.js` with the defaults of section 4.2 and their golden files, the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, `cli-gen` golden and provenance, parity and text tests |
+| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene through the `onSent` and `onEnded` hooks of `perform` that the core adds in its S1, core 5.3; section 14, item 4), `cli-gen/registry.js`, `cli-gen/scanner-output.js` and `cli-gen/framework-console.js` with the defaults of section 4.2 and their golden files, the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, `cli-gen` golden and provenance, parity and text tests |
 | 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots checked, audit clean, phone keyboard check); full suites; land K2 |
-| 6 | K3 | Schema for `networkView`, the `cli` objects and the `realism` link; `config/break_escape/realism_catalog.schema.json`, the catalog folder with `training_fixtures.json` (its only file at K3), `scripts/validate_realism_catalog.rb` and the index it writes, `docs/REALISM_CATALOG_INDEX.md`; `scripts/validate_realism_skin.rb` and its hook, the wording warning, `scripts/real_vuln_nicknames.txt`; bootstrap test; `defaultSkin`, the authored `cli` fields and the links in `test_ops_skin`, its leak collector stages and the golden files with authored fields and linked entries. The catalog loader `lib/break_escape/realism_catalog.rb` and the link resolution in the finding builder are the core's, built at its S2 (section 14, request 3) | K3 rows of 11.1 and 11.3 (the catalog validator test, the separation test and the link serving test among them); beat D1; validator output for every other scenario unchanged |
+| 6 | K3 | Schema for `networkView`, the `cli` objects and the `realism` link; `config/break_escape/realism_catalog.schema.json`, the catalog folder with `training_fixtures.json` (its only file at K3), `scripts/validate_realism_catalog.rb` and the index it writes, `docs/REALISM_CATALOG_INDEX.md`; `scripts/validate_realism_skin.rb` and its hook, the wording warning, `scripts/real_vuln_nicknames.txt`; bootstrap test; `defaultSkin`, the authored `cli` fields and the links in `test_ops_skin`, its leak collector stages and the golden files with authored fields and linked entries. The catalog loader `lib/break_escape/realism_catalog.rb` and the link resolution in the finding builder are the core's, built at its S2 (section 14, item 3) | K3 rows of 11.1 and 11.3 (the catalog validator test, the separation test and the link serving test among them); beat D1; validator output for every other scenario unchanged |
 | 7 | K4 | `tools/playtest/network-skin-parity.mjs`; the `README_scenario_design.md` feature index (N16) and `docs/ACCESS_AND_NETWORKS.md` | the K4 part of 11.6; land |
 
 | Shared file | Also touched by | This plan's part |
 |---|---|---|
-| `minigames/network-view/network-view-minigame.js` | core (S1 to S3) | K1 moves the drawing out and leaves the handlers, the `perform` path, its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3) as the core built them; K1 only reads the set. `perform`'s `echo` option and its `onSent` and `onEnded` hooks are the core's change (section 14, request 4); K2 only sets the hooks. A plan that lands after K1 adds its drawing to `network-view-panels.js` and its handler to the scene |
+| `minigames/network-view/network-view-minigame.js` | core (S1 to S3) | K1 moves the drawing out and leaves the handlers, the `perform` path, its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3) as the core built them; K1 only reads the set. `perform`'s `echo` option and its `onSent` and `onEnded` hooks are the core's change (section 14, item 4); K2 only sets the hooks. A plan that lands after K1 adds its drawing to `network-view-panels.js` and its handler to the scene |
 | `minigames/network-view/ops-model.js` | core (owner); later plans add refusal codes to `REFUSAL_TEXT` | K1 adds exports, as the core's shared-file table expects: `findingLabel`, `needLine`, `useResultText` and the line functions of section 5.2. It changes no existing export and adds no entry to `REFUSAL_TEXT` |
 | `test/fixtures/files/ops_refusal_codes.json` | core (owner) | read by parity test 5 and the format test; not edited |
 | `css/network-view-minigame.css` | core | the Terminal's rules, appended |
 | `scripts/scenario-schema.json` | every plan; core owns `definitions.service`, `definitions.weakness`, `definitions.decoy` and `networks.<id>` | one top-level block, `networkView`, and at K3 the `cli` rows on networks and services and the `realism` row on `definitions.weakness` and `definitions.decoy` (section 9); until then the core's closed blocks refuse `cli` and `realism` |
 | `scripts/validate_scenario.rb` | every plan | one require and one call of `check_realism_skin`; the ink half of the wording warning in the dialogue lint |
-| the core's network row builders (`network_rows`, the block and `host_row` in `app/models/break_escape/network_access.rb`; the finding builder of the check and confirm answers in `network_ops.rb`) and leak collector | core (owner) | none in the builders, which copy each `cli` object by its named keys only and resolve the `realism` link through the core's catalog loader, copying the entry's named keys, as request 3 of section 14 asks, so a `_` note key and a link id are never served; `test_ops_skin`'s collector entries for the `cli` strings and its linked entries' strings |
+| the core's network row builders (`network_rows`, the block and `host_row` in `app/models/break_escape/network_access.rb`; the finding builder of the check and confirm answers in `network_ops.rb`) and leak collector | core (owner) | none in the builders, which copy each `cli` object by its named keys only and resolve the `realism` link through the core's catalog loader, copying the entry's named keys, as section 14, item 3 asks, so a `_` note key and a link id are never served; `test_ops_skin`'s collector entries for the `cli` strings and its linked entries' strings |
 | `lib/break_escape/realism_catalog.rb` | core (owner, built at its S2) | none; the skin's validator calls it to read the catalog |
 | `config/break_escape/realism_catalog/`, `config/break_escape/realism_catalog.schema.json`, `scripts/validate_realism_catalog.rb` and its test, `docs/REALISM_CATALOG_INDEX.md` (generated) | none (this plan's) | created at K3; later catalog tasks add entries (append-only, section 4.3), run the catalog validator, which rewrites the index, and commit the index with the catalog |
 | `scripts/real_vuln_nicknames.txt` | none (this plan's) | created at K3, read by the real-identifier rule of section 9; beside the core's `scripts/real_product_names.txt`, which this plan reads and does not edit |
@@ -1791,27 +1791,34 @@ moves a player makes from either skin write the core's rows (`network_swept`, `h
 `technique_used`), the same whichever skin sent the request, and the live parity run (11.2)
 compares them across three games. The Terminal's scrolling log is page state, not a log row.
 
-## 14. Cross-plan requests
+## 14. What this plan relies on from other plans
 
-**Agreed with the core.** Everything the "Core:" rows of section 2 describe is stated in the core
-plan under the sections those rows cite, and its section 14, "Skin (S6)", lists what S6 relies
-on: `alias` and its lookup, `itemId` on each `techniques` entry, `ops: true` on a block, a card
-usable against any listed finding (5.4, "Which findings take a card"), the `echo` option and the `onSent` and `onEnded` hooks of 5.3 (request 4 below), the summary of the validator rules in 9.1 (request 5 below), `fixed`
-only on a confirmed finding, the "admin" tag, select-then-Use as the keyboard path, each refusal code in the file with `REFUSAL_TEXT` as the one table of words,
-S6's own exports to `ops-model.js` (12.2), and from 5.3 the one `perform` path with its pending
-guard and the set and key builder it exposes, from 5.5 the renderer-drawn action messages, and
-the world-side marks (the compromised mark and the remote-view frame), which a skin leaves
-showing and reads through `compromiseMarks()`.
+Each entry names what this plan needs from another plan and the section of that plan that
+provides it.
 
-**Requests:**
+**From the core plan (`OPS_CORE_PLAN.md`), section 14, item 6 "Skin (S6)".** Everything the
+"Core:" rows of section 2 describe is stated in the core plan under the sections those rows cite.
+The skin relies on: `alias` and its lookup, `itemId` on each `techniques` entry, `ops: true` on a
+block, a card usable against any listed finding (core 5.4, "Which findings take a card"), the
+`echo` option and the `onSent` and `onEnded` hooks of core 5.3 (item 4 below), the summary of the
+validator rules in core 9.1 (item 5 below), `fixed` only on a confirmed finding, the "admin" tag,
+select-then-Use as the keyboard path, each refusal code in the file with `REFUSAL_TEXT` as the
+one table of words, this plan's own exports to `ops-model.js` (12.2), and from core 5.3 the one
+`perform` path with its pending guard and the set and key builder it exposes, from core 5.5 the
+renderer-drawn action messages, and the world-side marks (the compromised mark and the
+remote-view frame), which a skin leaves showing and reads through `compromiseMarks()`.
 
-1. **Log rows (S9).** The live parity run compares `log_rows_for(source_id, compare: true)`
-   across the three games, as the log plan asks. No row and no route parameter names the skin.
-2. **Every plan: wording.** Every beat of a `test_ops_*` scenario's `PLAYTEST.md` names actions
-   (sweep, scan, check, confirm, use), never controls (a button, a drag, a typed line), as
-   objectives and hints do (sections 1.3 and 5.6), so one script runs in either skin.
+**Items:**
+
+1. **Log rows (`OPS_LOG_ROWS_PLAN.md`, section 5.1, "Reading").** The live parity run compares
+   `log_rows_for(source_id, compare: true)` across the three games. No row and no route
+   parameter names the skin.
+2. **Every plan: wording (`OPS_CORE_PLAN.md`, section 11.4).** Every beat of a `test_ops_*`
+   scenario's `PLAYTEST.md` names actions (sweep, scan, check, confirm, use), never controls (a
+   button, a drag, a typed line), as objectives and hints do (sections 1.3 and 5.6), so one
+   script runs in either skin.
 3. **Core: serve the `cli` display fields and resolve the `realism` link, with the answers the
-   player has earned.** The skin declares the schema rows for the `cli` objects and for
+   player has earned (`OPS_CORE_PLAN.md`, sections 5.2, 5.3 and 7).** The skin declares the schema rows for the `cli` objects and for
    `realism` at K3 (section 9); until K3 the core's closed blocks (`networks.<id>`,
    `definitions.service`, `definitions.weakness`, `definitions.decoy`) refuse both, and the
    core's list of early-write fields names both. At S2, with the check route, the core adds the
@@ -1824,7 +1831,7 @@ showing and reads through `compromiseMarks()`.
    routes answer as normal. The skin's catalog validator, run on every build, stays the hard
    gate for those faults, reading the faults the loader keeps; the core's loader test has three
    faulty folders (a cross-file id, a shared `module`, an unparseable file) and asserts the
-   empty map and the warning for each (taken by the core). The row builders in `network_access.rb` (`network_rows`, the
+   empty map and the warning for each. The row builders in `network_access.rb` (`network_rows`, the
    block, `host_row` and the device-row builder) and the one finding builder in
    `network_ops.rb` copy, unchanged and by named keys only (so a `_` note key is never served),
    beside the fields they belong to:
@@ -1855,8 +1862,8 @@ showing and reads through `compromiseMarks()`.
    answer, a linked entry's strings, read from the catalog, at the check), and fails at any
    stage on a link id or the `module` of an entry the scenario does not link. No route, check or
    refusal reads a `cli` field or a link.
-4. **Core: an echo and two hooks in `perform` (taken by the core: section 5.3, built in its S1;
-   kept here as the contract K2 depends on).** The scene's `perform` (core 5.3) becomes
+4. **Core: an echo and two hooks in `perform` (`OPS_CORE_PLAN.md`, section 5.3, built in its S1;
+   the contract K2 depends on).** The scene's `perform` (core 5.3) becomes
    `perform(offer, { echo } = {})`, and the scene gains two hook properties, `onSent(offer,
    echo)` and `onEnded(offer, answer)`, each a no-op by default. The hook points:
    - `onSent` is called once per accepted press, synchronously, after the guard has found the
@@ -1872,12 +1879,11 @@ showing and reads through `compromiseMarks()`.
      still clears the key and calls `showResult`.
    The core's guard tests run unedited; one more case shows the hook order on an answer, a
    refusal, a throw and a null answer, and that a rejected press calls neither hook.
-5. **Core: the summary of the skin's validator rules (section 9.1) (taken by the core).** The
-   core's 9.1 summary now states `realism` links all or none (every weakness and decoy has one
-   or none has, each link resolves and is used once, linked entries are of one form), names
+5. **Core: the summary of the skin's validator rules (`OPS_CORE_PLAN.md`, section 9.1).** The
+   core's 9.1 summary states that `realism` links are all or none (every weakness and decoy has
+   one or none has, each link resolves and is used once, linked entries are of one form), names
    `scripts/validate_realism_catalog.rb` for the catalog's own checks, and says there is no
-   shared finding `cli` definition; no `cliFinding` remains anywhere in the core plan, its
-   shared-file table included. Kept here as the contract K3 depends on. No core check changes.
+   shared finding `cli` definition. This is the contract K3 depends on. No core check changes.
 
 ## 15. Open questions for the user
 

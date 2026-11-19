@@ -1131,42 +1131,57 @@ saving only when `r&.stored?`. The limit of 10 is the `helpdesk_request` entry's
 No field holds a code, a number to match, an answer or a password. The only free text is
 `as.typed` on `helpdesk_request`, which the helper strips and caps.
 
-## 14. Cross-plan requests
+## 14. What this plan relies on from other plans
 
-1. **Sign-in order (S5a, S5c, S8).** Agreed; section 5.2 is written to it.
-2. **Account kind (S5c).** Agreed: kind does not change the step; `creds.mfa: false` is the
-   only exception.
-3. **Lockout key (S5c).** `AccessIdentities.lockout_key` is the one place a later slice changes
-   the key. The privilege plan keeps per-PC lockouts, so nothing changes for it.
-4. **Keyring path (S5c, S5b, S7).** One refusal with two reasons is added to
-   `attempt_credential_login!`; the privilege plan's change to `pc_admits_account?` is unaffected.
-5. **Technique cards (S3).** A session a card grants meets no second step; a password or saved
-   connection a card yields goes to the keyring, and using it does meet the step.
-6. **Recovered passwords (S5b, S7).** A harvested or cracked password is typed at sign-in and
-   meets the step; neither plan starts a session from one. The cracking plan's crack of a
-   collected hash keeps reading `creds.password` after a reset, on purpose (section 5.2).
-7. **Policy fields in the browser (S5a, S5c, any plan adding a policy field).** A policy's kind
-   is public, its answers are not (section 7); the others are asked to state it for their fields.
-8. **Log rows (S9).** Section 13 is written to the log plan's helper and to its registration of
+Each entry names what this plan needs from another plan and the section of that plan that provides it.
+
+1. **Sign-in order.** The account-kind check sits inside the Admission step, then the second
+   step, then the session, and the level of the session is computed by `session_access`, never
+   written. Provided by `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` section 3 (S5a) and section 12
+   (`attempt_login!` and `attempt_credential_login!`). Section 5.2 is written to it.
+2. **Account kind.** Kind does not change the step; `creds.mfa: false` is the only exception.
+   Provided by `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` section 5 (S5c).
+3. **Lockout key.** `AccessIdentities.lockout_key` is the one place a later slice changes the
+   key. The privilege plan keeps per-PC lockouts, so nothing changes for it
+   (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` section 1).
+4. **Keyring path.** One refusal with two reasons is added to `attempt_credential_login!`; the
+   privilege plan's change to `pc_admits_account?` is unaffected
+   (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` section 5, S5c, and section 12).
+5. **Technique cards.** A session a card grants meets no second step; a password or saved
+   connection a card yields goes to the keyring, and using it does meet the step. Provided by
+   `OPS_CORE_PLAN.md` section 4.3 (a technique yields a saved connection, never a password) and
+   section 5.4 (the table of how a technique session differs from a password session).
+6. **Recovered passwords.** A harvested or cracked password is typed at sign-in and meets the
+   step; neither plan starts a session from one. The cracking plan's crack of a collected hash
+   keeps reading `creds.password` after a reset, on purpose (section 5.2). Provided by
+   `OPS_CRACKING_PLAN.md` section 1 (a recovered password is a first factor) and section 11
+   (the hash row after a reset), and `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` section 5 (S5b: a
+   collected account is a hash, never a password).
+7. **Policy fields in the browser.** A policy's kind is public, its answers are not (section 7);
+   any plan that adds a policy field must state the same for it. `OPS_PRIVILEGE_ACCOUNTS_PLAN.md`
+   section 7 adds nothing to `policies`.
+8. **Log rows.** Section 13 is written to the log plan's helper and to its registration of
    these rows (`approver`, the shared `route` codes, `save_limit: true` on the blocked desk row
    with its limit registered in `EVENTS`, guard tests that force a `detail` value, secret
-   sources registered per stage). Nothing further is asked of S9.
-9. **Hosts (S1).** A host with no sign-in has no policy and so no second step. A headless
-   sign-in host is covered, since the pending record stores the route.
-10. **Feature scenario names.** `test_ops_mfa` covers S8b too; no `test_ops_helpdesk` is asked
-    for.
-11. **The lock plan (A25).** It calls the section 5.2 functions with its own subject and widens
-    the `/mfa/*` routes to take it. This plan builds, in S8a, what that caller relies on, so A25
-    changes none of it: the subject rules of 5.2 (the record in the caller's own map, a
+   sources registered per stage). Provided by `OPS_LOG_ROWS_PLAN.md` sections 13.2 to 13.5 and
+   13.7 (the S8 rows).
+9. **Hosts.** A host with no sign-in has no policy and so no second step. A headless sign-in
+   host is covered, since the pending record stores the route. Provided by `OPS_CORE_PLAN.md`
+   section 4.1 (S1: a host with no sign-in has no policy field).
+10. **Feature scenario names.** No other plan provides a helpdesk scenario: `test_ops_mfa`
+    covers S8b too, and no `test_ops_helpdesk` is built.
+11. **The lock plan.** `OPS_LOCK_SECOND_STEP_PLAN.md` sections 5.2, 6 and 8 call the section 5.2
+    functions with their own subject and widen the `/mfa/*` routes to take it. This plan
+    builds, in S8a, what that caller relies on, so the lock plan changes none of it: the subject rules of 5.2 (the record in the caller's own map, a
     `passed` record kept by the expiry tidy, no drop on a pass, no route re-judge, no lockout
     key, re-enrolment ignored so the step goes to the owner's authored phone and device, and
     `device_in_use?` keeping that device's code live); `numbers` taking the subject's record
     key (5.1); `mfaPrompts` and `mfaAccounts` counted per step owner across subjects (5.2,
     section 8); and in `MfaClient` the subject keys, `takeCompleted` handing out a pass answer
     for any kind, and the four `mfa_*` events emitted from `MfaClient` (browser events that never reach the log, apart from the log's own `mfa_*` rows) with `targetType` and
-    `targetId` in place of `pcId` (5.3). The lock plan is asked to use these names, to keep its
-    lock records in its own key, to register its subject kind with `device_in_use?`, and to
-    drop `ownPhone` from its lock answer. A change to those functions' signatures, to the
+    `targetId` in place of `pcId` (5.3). The lock plan uses these names, keeps its lock records
+    in its own key, registers its subject kind with `device_in_use?`, and drops `ownPhone` from
+    its lock answer. A change to those functions' signatures, to the
     pending record's fields or to the counts is checked against
     `OPS_LOCK_SECOND_STEP_PLAN.md` before it is made.
 

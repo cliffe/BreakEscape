@@ -727,7 +727,7 @@ before any test that answers 403 or 422 with the item's name: before `check_cont
 (`games_controller.rb:3119-3126`) and the scope branches' 403s at `GET /container`, before the
 take route's takeable test ("Item is not takeable: <name>", 422), "Container not unlocked" and
 room tests (`:3416-3437`) and the sign-in desktop and share take tests, in the inventory copy
-builder, in `validate_unlock`, and in the `/mfa/*` lock form's hook (section 14). So a gone,
+builder, in `validate_unlock`, and in the `/mfa/*` lock form's hook (section 14, item 2). So a gone,
 unopened briefcase answers 404 and never a 403 that tells the player it exists, and a
 non-takeable object inside it never gets the takeable answer, which carries its name: Rule D's
 refusal at a take route is the closed-list "Item not found in scenario: <item_type>" (`games_controller.rb:3406`, the type the request sent,
@@ -1277,27 +1277,41 @@ section 13.8 row table: the holder when the request carried one card or `showCar
 none when it carried several), and the step rows name the step owner. The two can differ by
 design, so the player sees a copied card is not the owner's approval.
 
-## 14. Cross-plan requests
+## 14. What this plan relies on from other plans
 
-1. **MFA plan, shared functions and state:** met by the MFA plan's 5.1, 5.2, 5.3 and section 8.
-2. **MFA plan, routes** (section 6). The four step routes accept `target_type` and
-   `target_id`; `GET /mfa/device` answers when a lock carries `kind: "code"` though no policy
-   declares a kind; `GET /mfa/phone` lists a lock request only for a named lock, never in its
-   `own=1` form. Its validator's `code_device` owner error (section 9) admits a lock's owner.
-   A held phone lists no lock request outside the pane the attempt opened (5.4), so its
-   "approving from the phone" slice needs no lock form. The lock form's subject check leaves
-   one hook before the record is read; this plan's G1 puts `carried_step_reachable?(object,
-   path)` (5.5) in it, answering the lock form's 404 when it fails, so G1 does not depend on
-   the MFA plan for its own refusal.
-3. **Log plan.** Add `door` and `object` to the `places` of the eight `mfa_*` events; register
-   the `method` detail key on `mfa_challenge` with the closed code list of section 13; allow
-   `{ npc: }` as `as` on those events; say in 5.1 that both `badge_swipe` rows are written only
-   for `method: "rfid"` (not `npc` or `flag_reward`) and the granted one after this plan's gate
-   (section 13); stage L1b carries its call site, and its refused-row condition gains `behind_closed_step?` when G1 lands (section 5.1, section 12).
-4. **Orchestrator.** Feature id A25; add `test_ops_lock_step` to the brief's feature list; correct D6's `doors[]` line.
-5. **Core, privilege and cracking plans.** A password they yield is a first factor and meets
-   the step. A plan that opens an object by its own server route uses `record_step_open!` and
-   `step_object_open?`, or the validator refuses `secondStep` on that object.
+Each entry names what this plan needs from another plan and the section of that plan that provides it.
+
+1. **`OPS_MFA_HELPDESK_PLAN.md`, sections 5.1, 5.2, 5.3 and 8: shared functions and state.**
+   The second-step functions take a subject (kind and id) and keep its pending record in the
+   caller's own map, so this plan calls them with a lock as the subject. The MFA plan's section 5.2
+   subject rules and its section 14, item 11, list the names this plan uses.
+2. **`OPS_MFA_HELPDESK_PLAN.md`, section 6 (server routes) and section 9 (validator).** The four
+   step routes accept `target_type` and `target_id`; `GET /mfa/device` answers when a lock
+   carries `kind: "code"` though no policy declares a kind; `GET /mfa/phone` lists a lock request
+   only for a named lock, never in its `own=1` form. The validator's `code_device` owner error
+   admits a lock's owner. A held phone lists no lock request outside the pane the attempt opened
+   (section 5.4 of this plan), so the "approving from the phone" slice needs no lock form. The lock
+   form's subject check leaves one hook before the record is read; this plan's G1 puts
+   `carried_step_reachable?(object, path)` (section 5.5) in it, answering the lock form's 404 when
+   it fails, so G1 does not depend on the MFA plan for its own refusal. (not yet in
+   `OPS_MFA_HELPDESK_PLAN.md` — open: its section 6 says only that the routes take a non-PC
+   subject once this plan lands, and its section 9 does not admit a lock's owner on the
+   `code_device` owner error.)
+3. **`OPS_LOG_ROWS_PLAN.md`, section 13 (log rows) and its L1b stage.** The eight `mfa_*` events
+   list `door` and `object` among their `places`; `mfa_challenge` registers the `method` detail
+   key with the closed code list of section 13 here; `{ npc: }` is allowed as `as` on those
+   events; both `badge_swipe` rows are written only for `method: "rfid"` (not `npc` or
+   `flag_reward`) and the granted one after this plan's gate (section 13 here). Stage L1b carries
+   the call site, and its refused-row condition gains `behind_closed_step?` when G1 lands
+   (sections 5.1 and 12 here).
+4. **`OPS_LAYER_BRIEF.md` (in `docs/agents/`), sections 4 and 5.** This plan is feature id A25, and
+   `test_ops_lock_step` is in the brief's feature list.
+5. **`OPS_CORE_PLAN.md` (section 14), `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (section 6) and
+   `OPS_CRACKING_PLAN.md` (section 14, "Second-step and lock plans").** A password they yield is a
+   first factor and meets the step. A plan that opens an object by its own server route uses
+   `record_step_open!` and `step_object_open?`, or the validator refuses `secondStep` on that
+   object. The core and privilege plans open no lockable object by their own routes, so they call
+   neither.
 
 **Found in existing code, not in this plan's scope** (none is changed here):
 

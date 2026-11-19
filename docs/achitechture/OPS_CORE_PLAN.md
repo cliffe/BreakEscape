@@ -1890,14 +1890,14 @@ are in flight at once, their sessions agree who goes first on each file.
 | `app/models/break_escape/network_access.rb` | the withheld lists (`:18-21`), `network_rows`, blocks, `host_row`, `desktop_request_allowed?`, `desktop_refusal` (`host_reachable_through?`, `from_route_refusal` and `resource_admits_player?` are not changed), and the `cli` copies in the block and `host_row` | S5a (what a session may do), the log feature (rows on the existing plant, unplug and join actions). This plan's new code lives in `network_ops.rb` to keep this file's diff small |
 | `lib/break_escape/network_model.rb` | new helpers only, appended | S5c may add account kinds to host records |
 | `lib/break_escape/credential_model.rb`, `app/models/break_escape/credential_keyring.rb` | `PROOF_KINDS`, one `when` | S7 builds the `hash` kind in the same catalogue; S5b adds a harvest proof |
-| `public/break_escape/js/minigames/network-view/network-view-minigame.js` | rows, panels, `hostAction`, `getTestState`; the `perform` path with its `echo` option, pending guard and no-op `onSent` and `onEnded` hooks, built in S1 with the unplug guard folded in and widened in S2 and S3 | S6 adds the second renderer, which reads the same answers through `ops-model.js`, never the DOM, and is routed through the same `perform` path, and sets the two hooks; S5a adds no badge here (section 14, request 1) |
+| `public/break_escape/js/minigames/network-view/network-view-minigame.js` | rows, panels, `hostAction`, `getTestState`; the `perform` path with its `echo` option, pending guard and no-op `onSent` and `onEnded` hooks, built in S1 with the unplug guard folded in and widened in S2 and S3 | S6 adds the second renderer, which reads the same answers through `ops-model.js`, never the DOM, and is routed through the same `perform` path, and sets the two hooks; S5a adds no badge here (section 14, item 1) |
 | `public/break_escape/js/minigames/network-view/ops-model.js` (new here) | the shared pure module, with `REFUSAL_TEXT` | S6 builds on it and adds its own exports; later plans add their refusal codes to the one table |
 | `public/break_escape/js/systems/pc-sessions.js`, `unlock-system.js`, `minigames/container/container-minigame.js`, `minigames/text-file/text-file-minigame.js` | `access` copied; the new reader `remoteViewFoothold` and the click path through `networkLinks.openSession`; `displaced()` gains one line that keeps a remote copy (section 5.4, "An NPC at the PC"), and the comments change with it: the header (`pc-sessions.js:81-87`, "ends whatever session the player holds there (password, claim, guest claim or remote)") and the `displaced()` docstring (`:737-741`, "of any kind") say that only a keyboard, claim or guest copy is displaced; `canSwitch: false` on a technique remote view of a blocked host; `heldAtKeyboard` and the `unlock-system.js` fallback do not change (a technique copy counts as held at the keyboard; `needsSession` is still not met by it, because the server's `implant_foothold!` takes only a record whose `foothold` is blank, `NA:498`); no refusal handler in `loadLoginDesktop` | S5a reads `access` on the client; S8 changes the sign-in screen; office-life work that touches `displaced()` |
 | `public/break_escape/js/systems/interactions.js` | the local `restTint(obj)` in place of the three `clearTint()` calls (`:221-223`, `:246-248`, `:277-282`); no new import, so no harness copy list changes | any plan that changes the proximity highlight |
 | `public/break_escape/js/minigames/biometrics/biometrics-minigame.js` | the same local `restTint(obj)` in place of the `clearTint()` call in `clearHighlights()` (`:319-321`); no new import | any plan that changes the fingerprint highlight |
 | `public/break_escape/js/systems/network-links.js` | one emit, `network_foothold_dropped`, at the end of `_dropFoothold` (`:294-305`) | S5 and S8 read footholds from the same module |
 | `app/models/break_escape/npc_frustration.rb` `record_borrow_done!` | the player's record is deleted only when it has neither `foothold` nor `from` (`:391-396`) | office-life and access work on borrows |
-| `public/break_escape/js/utils/remote-host-text.js`, `public/break_escape/css/ui-themes.css`, the importers of `screen-states.js`, `public/break_escape/js/core/rooms.js` | the remote-view line, the red frame class `desktop-frame--remote-view` and the wipe; the marker module is imported where `screen-states.js` is; `rooms.js` applies the room-side marks | the skin plan restyles the same screens (section 14, request 6) |
+| `public/break_escape/js/utils/remote-host-text.js`, `public/break_escape/css/ui-themes.css`, the importers of `screen-states.js`, `public/break_escape/js/core/rooms.js` | the remote-view line, the red frame class `desktop-frame--remote-view` and the wipe; the marker module is imported where `screen-states.js` is; `rooms.js` applies the room-side marks | the skin plan restyles the same screens (section 14, item 6) |
 | `app/models/break_escape/game.rb` `settle_session_at_keyboard!` | one `technique` skip | S5a and S8 change the sign-in order just above |
 | `public/break_escape/js/core/game.js`, `public/break_escape/assets/objects/` | one `load.image` line and `technique_card.png` | any plan or art pass that adds an object sprite |
 | `app/controllers/break_escape/games_controller.rb` `folder_route_allowed?` | one line | none known |
@@ -1945,7 +1945,7 @@ registered with the kind `foothold`, which the log plan adds and fills; this pla
 **The rule.** Every sweep writes a row, a repeat included, and so does every technique use: a
 grant, a repeat of a grant and every refusal past the two 404s. A host scan, a service check and
 a confirm write the first time only. There is no quiet or noisy split of refusals and no alert
-row. The log plan's list of these rows is to match the table below (section 14, request 8). No
+row. The log plan's list of these rows is to match the table below (section 14, item 8). No
 row holds a password or any secret, and no row is written from a sync merge, on a 400 or on a
 404.
 
@@ -1992,51 +1992,57 @@ These names are the log's. The client events of section 5.5 share some of the wo
 (`network_swept`) and are a separate thing: they fire in the browser for objectives and NPC
 lines and never reach the log.
 
-## 14. Cross-plan requests
+## 14. What this plan relies on from other plans
 
-Each is a statement of what this plan provides or needs, for the plan named.
+Each entry names what this plan needs from another plan and the section of that plan that provides it.
 
-1. **Privilege (S5a).** Section 0 is the contract for the access level: this plan writes it,
-   on a technique session only, and sends it; S5a adds the reader `session_access(pc_id)`,
-   points `client_access_level` at it (section 5.4), writes no level and adds no badge of its
-   own to the network view. The `needs.session` check calls the same reader once it exists.
-   A technique session at admin on a headless host that blocks remote sign-in passes
-   `desktop_request_allowed?` through its own foothold only (section 5.4), which is the gate
-   S5a's collect action is judged by. Answers to S5a's requests: (a) the answer rule is S5a's
-   own: the sign-in answer, `session_for_client` and the host row carry `access: "admin"`
-   whenever `session_access` is admin, for any session kind, and omit the key otherwise; the
-   stored value is never passed through. This plan's `client_access_level` is that rule once
-   S5a points it at `session_access` (section 5.4), and until then it returns the stored
-   value, which only a technique record has. (b) Any admin session, a technique one included,
-   overrides a PC's USB policy for a plant, as S5a states. (c) The session-type implant stays
-   keyboard-only: only a session at the PC's own keyboard, by typed sign-in or claim, satisfies
-   an object's `needsSession`. A technique session does not, although a click on the PC serves
-   its desktop through the foothold (section 5.4, table). (d) A password sign-in that replaces
-   a technique record takes the level of the account signed in with (request 3).
-2. **Privilege (S5a).** A step up is a weakness with `needs.session: "user"` and
-   `grants.session.access: "admin"` on the same host. Using it replaces the record in place and
-   keeps `foothold`. `techniques` has one shape, the matcher of section 0; the grant and the
-   host sit on the weakness. S5a adds no second shape and no other escalation route.
-3. **Privilege (S5a).** A PC holds one session, so a password sign-in replaces a technique
-   record and its `access`; a technique record always has its `foothold` (section 0).
-   Opening objects: `POST /network/technique` opens no lockable object by its own route (it
-   grants a session or a credential on a sign-in PC), so it does not call `record_step_open!`
-   or `step_object_open?`.
-4. **Account kinds (S5c) and MFA (S8).** A technique session attempts no sign-in, so lockouts,
-   `accepts`, account-kind checks and the second sign-in step do not run for it at run time.
-   The validator applies `pc_admits_account?`, with the account-kind rule once that exists, to
-   `grants.session.account`. Both plans should say this from their side. The MFA plan adds two
-   controller tests once S3 exists: a technique session on a `code` PC opens with no pending
-   record; a saved connection granted by a technique, used at that PC, answers 422
+1. **`OPS_PRIVILEGE_ACCOUNTS_PLAN.md`, section 5 (server, "S5a: the level helper") and section 14.**
+   Section 0 here is the contract for the access level: this plan writes it, on a technique
+   session only, and sends it. S5a adds the reader `session_access(pc_id)`, points
+   `client_access_level` at it (section 5.4), writes no level and adds no badge of its own to the
+   network view. The `needs.session` check calls the same reader once it exists. What this plan
+   needs from S5a:
+   - The answer rule is S5a's: the sign-in answer, `session_for_client` and the host row carry
+     `access: "admin"` whenever `session_access` is admin, for any session kind, and omit the key
+     otherwise; the stored value is never passed through. This plan's `client_access_level` is
+     that rule once S5a points it at `session_access` (section 5.4), and until then it returns the
+     stored value, which only a technique record has.
+   - Any admin session, a technique one included, overrides a PC's USB policy for a plant.
+   - The session-type implant stays keyboard-only: only a session at the PC's own keyboard, by
+     typed sign-in or claim, satisfies an object's `needsSession`. A technique session does not,
+     although a click on the PC serves its desktop through the foothold (section 5.4, table).
+   - A password sign-in that replaces a technique record takes the level of the account signed in
+     with (item 3).
+   - A technique session at admin on a headless host that blocks remote sign-in passes
+     `desktop_request_allowed?` through its own foothold only (section 5.4). That is the gate
+     S5a's collect action (its section 6) is judged by.
+2. **`OPS_PRIVILEGE_ACCOUNTS_PLAN.md`, section 5 (server, "S5a: the level helper").** A step up is
+   a weakness with `needs.session: "user"` and `grants.session.access: "admin"` on the same host.
+   Using it replaces the record in place and keeps `foothold`. `techniques` has one shape, the
+   matcher of section 0; the grant and the host sit on the weakness. S5a adds no second shape and
+   no other escalation route.
+3. **`OPS_PRIVILEGE_ACCOUNTS_PLAN.md`, section 5 (server, "S5a: the level helper").** A PC holds
+   one session, so a password sign-in replaces a technique record and its `access`; a technique
+   record always has its `foothold` (section 0). `POST /network/technique` opens no lockable
+   object by its own route (it grants a session or a credential on a sign-in PC), so it does not
+   call `record_step_open!` or `step_object_open?`.
+4. **`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (account kinds, S5c; sections 5 and 9) and
+   `OPS_MFA_HELPDESK_PLAN.md` (S8; sections 5.2 and 11).** A technique session attempts no
+   sign-in, so lockouts, `accepts`, account-kind checks and the second sign-in step do not run
+   for it at run time. The validator applies `pc_admits_account?`, with the account-kind rule once
+   that exists, to `grants.session.account`. Both plans say this from their side. The MFA plan
+   adds two controller tests once S3 exists: a technique session on a `code` PC opens with no
+   pending record; a saved connection granted by a technique, used at that PC, answers 422
    `typeToSignIn: "second_step"` with no session and no pending record, and typing the same
    account's password then answers `mfaRequired`.
-5. **Account kinds (S5c) and MFA (S8).** `host_reachable_through?` and `from_route_refusal` are
-   not changed by this plan: discovery gates no sign-in, desktop or share, so their check order
-   is as it is today, and new sign-in checks go where each plan puts them. The one change near
-   them is `desktop_request_allowed?` (section 5.4), whose `remote: "blocked"` term admits a
-   technique session through its own foothold.
-6. **Skin (S6).** The four routes and the `GET /network` fields of sections 5 to 7 are the whole
-   surface (the optional `cli` display objects are served as sections 5.2, 5.3 and
+5. **`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (account kinds, S5c) and `OPS_MFA_HELPDESK_PLAN.md` (S8,
+   section 5.2).** `host_reachable_through?` and `from_route_refusal` are not changed by this
+   plan: discovery gates no sign-in, desktop or share, so their check order is as it is today, and
+   new sign-in checks go where each plan puts them. The one change near them is
+   `desktop_request_allowed?` (section 5.4), whose `remote: "blocked"` term admits a technique
+   session through its own foothold.
+6. **`OPS_REALISM_SKIN_PLAN.md`, sections 4.2, 5.2, 5.3 and 9.** The four routes and the
+   `GET /network` fields of sections 5 to 7 are the whole surface (the optional `cli` display objects are served as sections 5.2, 5.3 and
    7 say, at the stage of the thing they belong to, copied unchanged, left out when not authored,
    and read by nothing on the server; the skin plan declares their schema rows at its K3 and owns
    the rule that a range is authored on every discovery network or on none; a finding's `cli` is
@@ -2055,50 +2061,50 @@ Each is a statement of what this plan provides or needs, for the plan named.
    skin plan builds no guard: it routes its renderer through the same path and tests the guard
    in both skins. A message an action leaves is drawn by the renderer.
    Playtest beats name actions, so the skin runs the same beats through its own hooks.
-   Please drop from the skin plan every line that names a feature this plan does not have:
-   a finding's `evidence` and the "evidence held" labels; the Probe action and the Confirm or
-   Probe label; the noise line, `noise`, `noiseLimit`, `alerted` and the Alerted mark; the
-   `data-quiet` attribute and the quiet or noisy split of a confirm; the `network_alerted`
-   event and the `noisy` field on a refusal; and the thirteenth refusal code `network_only`
-   (the codes are twelve, and a technique session at a PC's keyboard is served nothing new
-   there). The skin plan's confirm is one action with one label. Two things are not skin
+   The skin plan names no feature this plan lacks: no finding `evidence` or "evidence held"
+   labels, no Probe action or Probe label, no noise line, `noise`, `noiseLimit`, `alerted` or
+   Alerted mark, no `data-quiet` attribute or quiet or noisy split of a confirm, no
+   `network_alerted` event or `noisy` field on a refusal, and no thirteenth refusal code
+   `network_only` (the codes are twelve, and a technique session at a PC's keyboard is served
+   nothing new there). Its confirm is one action with one label. Two things are not skin
    matter: the remote-view frame and line on a desktop opened through a foothold, and the
    compromised mark on a host row, a PC sprite or a planted jack, belong to the world side
    (`desktop-frame--remote-view`, `systems/compromise-marks.js`), and a skin only has to leave
    them showing. The skin's test snapshot reads `compromiseMarks()` through the test bridge
    where it needs them.
-7. **Cracking (S7).** `grants` keeps two kinds. A weakness that yields a hash is written
-   `grants: { "credential": "<id>" }` with the hash entry's proof naming the finding. S7 widens
-   this plan's validator rule from "`saved_connection`" to "`saved_connection` or `hash`" in its
-   own build steps, with a test, and skips the `connectsTo` and policy check for a granted
-   entry of kind `hash`.
-8. **Log rows (S9).** The helper stage (L1a, with L1b) lands before S1, and this plan registers
-   and writes its own rows (section 13) under the log plan's event names. Points the log plan
-   states from its side: `from` on the two scan rows is registered with the kind `foothold`,
-   which the log plan adds and fills; the `service` lookup shows the service name as given;
-   every sweep writes a row, a repeat included, and so does every technique use (a grant, a
-   repeat of a grant with `save_limit: true`, or a refusal); a scan, a check and a confirm write the first time only; every
-   `technique_refused` row passes `save_limit: true` (limit 10 in `EVENTS`) and saves only when
-   the result is `stored?`, with no quiet or noisy split, and its `reason` list gains
+7. **`OPS_CRACKING_PLAN.md`, section 9 (validator) and section 14.** `grants` keeps two kinds. A
+   weakness that yields a hash is written `grants: { "credential": "<id>" }` with the hash
+   entry's proof naming the finding. S7 widens this plan's validator rule from
+   "`saved_connection`" to "`saved_connection` or `hash`" in its own build steps, with a test, and
+   skips the `connectsTo` and policy check for a granted entry of kind `hash`.
+8. **`OPS_LOG_ROWS_PLAN.md`, sections 13.5 (registering an event) and 13.7 (every row the other
+   plans write).** The helper stage (L1a, with L1b) lands before S1, and this plan registers and
+   writes its own rows (section 13) under the log plan's event names. The log plan states from
+   its side: `from` on the two scan rows is registered with the kind `foothold`, which the log
+   plan adds and fills; the `service` lookup shows the service name as given; every sweep writes
+   a row, a repeat included, and so does every technique use (a grant, a repeat of a grant with
+   `save_limit: true`, or a refusal); a scan, a check and a confirm write the first time only;
+   every `technique_refused` row passes `save_limit: true` (limit 10 in `EVENTS`) and saves only
+   when the result is `stored?`, with no quiet or noisy split, and its `reason` list includes
    `not_responding`; `network_swept` and `technique_used` each register `save_limit: { 'ok' =>
-   10 }` for their repeats (the six `EVENTS` lines are in section 13); `network_alerted` and the `how` detail
-   of `finding_confirmed` do not exist, so its event list and its rows for them come out; and its
-   row for `service_checked` is bounded once per service (the caller writes it on the first
-   check, by `opsDiscovered.services`), not by "a check that adds a finding".
-9. **All.** `hosts.<id>` shares one id space with objects and resources. A plan that adds another
+   10 }` for their repeats (the six `EVENTS` lines are in section 13); there is no
+   `network_alerted` event and no `how` detail on `finding_confirmed`; and its row for
+   `service_checked` is bounded once per service (the caller writes it on the first check, by
+   `opsDiscovered.services`), not by "a check that adds a finding".
+9. **All other ops plans.** `hosts.<id>` shares one id space with objects and resources. A plan that adds another
    top-level map of things on a network should join it.
-10. **All.** `ACCESS_STATE_DEFAULTS` values are copied with a shallow `dup`, so a plan that adds
+10. **All other ops plans.** `ACCESS_STATE_DEFAULTS` values are copied with a shallow `dup`, so a plan that adds
     a key gives it a flat, empty default.
-11. **All.** A route that names a host, a finding or anything else the player must first earn
+11. **All other ops plans.** A route that names a host, a finding or anything else the player must first earn
     answers an unearned id exactly as it answers an invented one (section 6).
 12. **The parked defence work (`docs/achitechture/ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`).** The
     ops loop is free to use and has no defender or alarm; the log rows of section 13 are
     what it leaves. An idea left for the defence stream to settle, not assumed here: price
     guessing by reading those rows (a run of refused `technique_refused` rows at one place).
-13. **Cracking (S7), password harvest (S5b) and the log plan.** None of them names the proof
-    kind `technique_card` today (the log plan's `technique` is a row kind, a different thing).
-    A plan that adds a proof or an item field naming a card uses `technique_card`, never
-    `technique`, which stays the pretext line key in scenario files (one of six persuasion techniques).
+13. **`OPS_CRACKING_PLAN.md` (section 4) and every other ops plan.** A proof or an item field
+    naming a technique card uses `technique_card`, as the cracking plan does. It is never
+    `technique`, which stays the pretext line key in scenario files (one of six persuasion
+    techniques); the log plan's `technique` is a row kind, a different thing.
 
 ## 15. Open questions for the user
 

@@ -1197,31 +1197,35 @@ network key; a device id; a file name or content.
 No row for `claim_login_session!`, `clone_card` or `implant_foothold!` (section 2). A real system
 records nothing for these, and the gap is the lesson.
 
-## 14. Cross-plan requests
+## 14. What this plan relies on from other plans
 
-1. **All plans that write rows:** list rows in the shape of 13.7, with Bound and Saved by columns,
-   and register events and kinds in the stage that adds the action (13.5). A branch with no save
-   of its own saves only when `r&.stored?` and is bounded by `once:` or `save_limit: true`, never
-   by merging; the limit's number goes in that event's `EVENTS` entry, never at the call. Each plan that adds a secret field registers it with `OpsLog.register_secret_source`
-   in that stage, and each function that issues a derived secret calls
-   `OpsLog.note_issued_secret` (13.2 step 2). Each `test_ops_*` scenario that asserts rows declares
-   `logSources` and a `gameClock` and calls `assert_ops_log_holds_no_secret`.
-2. **Orchestrator, ordering:** L1a and L1b land before every other ops stage, before S1; the rest
-   of the log stages (L2a, L2b, L3) land after S5c. L1b is the stage that edits `attempt_login!`,
-   `start_login_session!` and `#unlock`, so S3, S5a, S5c and S8a meet it already in place.
-3. **OPS_CORE (S1 to S3):** `technique_refused` registers `save_limit: { 'refused' => 10 }`, and
-   `network_swept` and `technique_used` each register `save_limit: { 'ok' => 10 }`. Every refusal
-   is written with `save_limit: true` (not `10`) and saves only on `r&.stored?`, with no quiet or
-   noisy split; a repeat sweep and a repeat technique use are written the same way, while the
-   first sweep and a new grant pass none and keep the route's save; a repeat of one of a source's
-   10 newest rows merges.
-4. **OPS_PRIVILEGE_ACCOUNTS (S5):** `admin_profile_read` is one per PC, profile and account; the
-   harvest detail is `count` (`{ count: 9 }`, hashes added), a collect adding at most 8 pairs;
-   S5b registers no secret source for hash values, because L1a's credential source covers every
-   keyring entry, `hash` entries included.
-5. **OPS_MFA_HELPDESK (S8):** the rows, the `approver` key, the route codes, the secret sources
-   (`creds.resetPassword` registered, no seed, recovery answers not registered) and the 10 to 99
-   matching number are taken as that plan writes them. Two changes, both taken in that plan (it names the `{ id: 'test_any' }` kind):
+Each entry names what this plan needs from another plan and the section of that plan that provides it.
+
+1. **Every plan that writes rows** (each plan's section 13): list rows in the shape of 13.7, with
+   Bound and Saved by columns, and register events and kinds in the stage that adds the action
+   (13.5). A branch with no save of its own saves only when `r&.stored?` and is bounded by
+   `once:` or `save_limit: true`, never by merging; the limit's number goes in that event's
+   `EVENTS` entry, never at the call. Each plan that adds a secret field registers it with
+   `OpsLog.register_secret_source` in that stage, and each function that issues a derived secret
+   calls `OpsLog.note_issued_secret` (13.2 step 2). Each `test_ops_*` scenario that asserts rows
+   declares `logSources` and a `gameClock` and calls `assert_ops_log_holds_no_secret`.
+2. **Build order** (`OPS_CORE_PLAN.md` section 12, build steps): L1a and L1b land before every
+   other ops stage, before S1; the rest of the log stages (L2a, L2b, L3) land after S5c. L1b is
+   the stage that edits `attempt_login!`, `start_login_session!` and `#unlock`, so S3, S5a, S5c
+   and S8a meet it already in place.
+3. **`OPS_CORE_PLAN.md` section 13 (S1 to S3):** `technique_refused` registers
+   `save_limit: { 'refused' => 10 }`, and `network_swept` and `technique_used` each register
+   `save_limit: { 'ok' => 10 }`. Every refusal is written with `save_limit: true` (not `10`) and
+   saves only on `r&.stored?`, with no quiet or noisy split; a repeat sweep and a repeat
+   technique use are written the same way, while the first sweep and a new grant pass none and
+   keep the route's save; a repeat of one of a source's 10 newest rows merges.
+4. **`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` section 13 (S5):** `admin_profile_read` is one per PC,
+   profile and account; the harvest detail is `count` (`{ count: 9 }`, hashes added), a collect
+   adding at most 8 pairs; S5b registers no secret source for hash values, because L1a's
+   credential source covers every keyring entry, `hash` entries included.
+5. **`OPS_MFA_HELPDESK_PLAN.md` section 13 (S8):** the rows, the `approver` key, the route codes,
+   the secret sources (`creds.resetPassword` registered, no seed, recovery answers not
+   registered) and the 10 to 99 matching number are as that plan writes them. Two details:
    - The helper's last argument is the switch `save_limit: false`. `helpdesk_request` registers
      `save_limit: { 'blocked' => 10 }`, and the blocked call is exactly
      `write_log_row!('helpdesk_request', as: { typed: username }, where: { kind: 'desk', id: desk_id }, result: 'blocked', detail: { 'what' => what }, save_limit: true)`,
@@ -1229,20 +1233,25 @@ records nothing for these, and the gap is the lesson.
    - Its guard tests for a second-step code, a matching number and a reset password force a
      `detail` value to the issued value in a test-only event whose kind is `{ id: 'test_any' }`
      (its lookup resolves any string, so the value passes its type rule and reaches the matcher),
-     and assert the error message starts with `secret in`, not a `typed` value: typed text is stored normalised and never reaches the matcher. The blocked and other `helpdesk_request` calls pass the `normalise_username` form (the route's own key).
-6. **OPS_LOCK_SECOND_STEP (S8c):** at a gated rfid lock the `badge_swipe` ok row is written after
-   the second-step gate (13.8), as that plan asks. Met for `approver` (not `by`) and for `as: { npc: }` only
-   when the second-step screen shows the owner, nil otherwise, never `{ account: }`; the `method` detail on `mfa_challenge` is met too (a closed list of codes,
-   each at most 16 lowercase characters, listed in that plan). Still asked: its rows use the `door` and `object` place kinds (13.5) and
-   follow 13.7; the `mfa_*` events it extends number eight.
-7. **OPS_CRACKING (S7):** writes no rows. L1a's credential source already covers every keyring
-   entry, `hash` entries included, so S7 registers only a cracked value it stores outside the
-   keyring, as a secret source.
-8. **Orchestrator:** `log_rows_for` and the key `by` (13.6) are reserved for the parked defence
-   debrief and the investigator idea; S6's parity run compares `log_rows_for(source_id, compare:
-   true)` across skins.
-9. **OPS_CORE, OPS_PRIVILEGE_ACCOUNTS, OPS_MFA_HELPDESK and OPS_LOCK_SECOND_STEP:** record
-   unchanged-scenario fixtures with L1a's mechanism (build step 1) from main before the stage's first engine edit.
+     and assert the error message starts with `secret in`, not a `typed` value: typed text is
+     stored normalised and never reaches the matcher. The blocked and other `helpdesk_request`
+     calls pass the `normalise_username` form (the route's own key). (The MFA plan does not yet
+     name the `{ id: 'test_any' }` kind — open.)
+6. **`OPS_LOCK_SECOND_STEP_PLAN.md` sections 5.1 and 13 (G1, G2):** at a gated rfid lock the
+   `badge_swipe` ok row is written after the second-step gate (13.8). Its rows use `approver`
+   (not `by`) and `as: { npc: }` only when the second-step screen shows the owner, nil
+   otherwise, never `{ account: }`; the `method` detail on `mfa_challenge` is a closed list of
+   codes, each at most 16 lowercase characters, listed in that plan. Its rows use the `door` and
+   `object` place kinds (13.5) and follow 13.7; the `mfa_*` events it extends number eight.
+7. **`OPS_CRACKING_PLAN.md` section 13 (S7):** writes no rows. L1a's credential source already
+   covers every keyring entry, `hash` entries included, so S7 registers only a cracked value it
+   stores outside the keyring, as a secret source.
+8. **`OPS_REALISM_SKIN_PLAN.md` section 11 (S6):** its parity run compares
+   `log_rows_for(source_id, compare: true)` across skins. `log_rows_for` and the key `by` (13.6)
+   are otherwise reserved for the parked defence debrief and the investigator idea.
+9. **`OPS_CORE_PLAN.md`, `OPS_PRIVILEGE_ACCOUNTS_PLAN.md`, `OPS_MFA_HELPDESK_PLAN.md` and
+   `OPS_LOCK_SECOND_STEP_PLAN.md` (each plan's section 10):** record unchanged-scenario fixtures
+   with L1a's mechanism (build step 1) from main before the stage's first engine edit.
 
 ## 15. Open questions for the user
 

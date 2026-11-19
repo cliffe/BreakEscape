@@ -927,60 +927,61 @@ secret source, and the token is not a secret and is never stored. So S7 calls no
 `OpsLog.register_secret_source`. A later change that stores a cracked value elsewhere registers
 it.
 
-## 14. Cross-plan requests
+## 14. What this plan relies on from other plans
 
-**Privilege and accounts plan (S5b).** Answers to its requests to S7:
+Each entry names what this plan needs from another plan and the section of that plan that provides it.
 
-- The `harvested` proof, a string keyed by the sign-in PC id (`"harvested": "<pcId>"`): agreed; S7
+**Privilege and accounts plan (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md`, section 4 "Scenario fields" and
+section 9 "Validator, schema and dungeon graph").**
+
+- The `harvested` proof, a string keyed by the sign-in PC id (`"harvested": "<pcId>"`). This plan
   reads it through `proof_kind` like any other proof.
-- A record's `crack` is read when present, the account's habit otherwise: done (section 4).
-- The username on the hash row: done (section 5).
-- A second record of an account already cracked shows `cracked` with no Crack button: done.
-- S5b builds after S7: agreed.
-- The scene opens for any `hashId`, so the collect panel can launch it: yes.
-- The graph edge from `admin@<pcId>` to the hash node, continuing to the password: yes (section 9).
-- After a password reset the crack yields the scenario's password: confirmed (section 5).
+- The privilege plan builds after this plan (S5b after S7).
+- The collect panel launches the crack scene for any `hashId`, which the scene already accepts.
+- Its graph edge from `admin@<pcId>` to the hash node continues to the password (section 9 of
+  this plan).
 
-Four requests to the privilege plan, all taken (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` L280-296 and
-L888-893), kept here as a record:
+Four rules the privilege plan carries so that this plan owns the recipe checks:
 
-1. **Who owns the recipe rules.** Taken: this plan owns every rule on a hash record's `crack`
-   (section 9), and the privilege plan has no `passwordPattern` requirement and points to
-   `validate_cracking.rb`.
-2. **The `reused` check.** Taken: the privilege plan points to this plan's warning in
+1. **Who owns the recipe rules.** This plan owns every rule on a hash record's `crack` (section 9).
+   The privilege plan has no `passwordPattern` requirement and points to `validate_cracking.rb`.
+2. **The `reused` check.** The privilege plan points to this plan's warning in
    `validate_cracking.rb` (no other account, registry `password` entry or capture target has an
    equal `creds.password`, section 9) and adds no check of its own.
-3. **Its example fact `it_rota_poster_seen`.** Taken: the poster is a takeable `notes` item with
+3. **Its example fact `it_rota_poster_seen`.** The poster is a takeable `notes` item with
    `revealsFacts`, so it is a server-visible source (section 5 table).
-4. **Habit parameter `passwordDifficulty`** (taken: privilege plan section 4, L283-286). Where it lists the NPC habit parameters beside
-   `passwordPattern`, add the optional `passwordDifficulty` (`easy`, `medium`, `hard`), owned and
-   validated by this plan, for an NPC whose account the privilege plan collects as a hash.
+4. **Habit parameter `passwordDifficulty`.** Where the privilege plan lists the NPC habit
+   parameters beside `passwordPattern`, it adds the optional `passwordDifficulty` (`easy`,
+   `medium`, `hard`), owned and validated by this plan, for an NPC whose account the privilege plan
+   collects as a hash.
 
-**Core plan.** The core's S3 error rule on `grants.credential` already reads as S7 needs
-(`OPS_CORE_PLAN.md`, the S3 `grants.credential` rows): from S7 the kind rule accepts a granted
-`hash` and the `connectsTo` skip applies to it; S7 skips the `connectsTo` and
-policy checks for it, and builds both, with their test. S7 adds `no_recipe` and `fact_not_held` to
-`ops_refusal_codes.json` and `REFUSAL_TEXT`, and uses the core list's `bad_request` and
-`not_found`. The core's "refusal codes, in one list" paragraph already counts these two beside its twelve
-network-route codes (and the privilege plan's three collect codes), as the core expects later
-plans to add codes (the core's "later plans add codes" row); the file holds each code any ops
-route sends.
+**Core plan (`OPS_CORE_PLAN.md`, section 9 "Validator, schema and dungeon graph" and section 6
+"Server routes").** The core's S3 `grants.credential` error rule must accept a granted `hash` in
+its kind rule and skip the `connectsTo` and policy checks for it. This plan builds both, with their
+test. This plan adds `no_recipe` and `fact_not_held` to `ops_refusal_codes.json` and
+`REFUSAL_TEXT`, and uses the core list's `bad_request` and `not_found`. The core's "refusal codes,
+in one list" paragraph counts these two beside its twelve network-route codes (and the privilege
+plan's three collect codes); the file holds each code any ops route sends.
 
-**Second-step and lock plans.** A cracked password is a first factor and meets a second step as any
-other password does. It joins the second-step plan's list of credentials that keep the authored
-value. Both this plan and the lock plan append to `FORGEABLE_ITEM_FIELDS`
-(`lib/break_escape/item_identity.rb`): this plan `revealsFacts`, the lock plan `secondStep`. Each
-change is additive, so whichever lands second keeps the other's entry.
+**Second-step and lock plan (`OPS_LOCK_SECOND_STEP_PLAN.md`, section 5 "Engine behaviour" and
+section 12 "Build steps and shared files").** A cracked password is a first factor and meets a
+second step as any other password does, keeping the authored value. Both this plan and the lock
+plan append to `FORGEABLE_ITEM_FIELDS` (`lib/break_escape/item_identity.rb`): this plan
+`revealsFacts`, the lock plan `secondStep`. Each change is additive, so whichever lands second
+keeps the other's entry.
 
-**Log rows plan.** S7 writes no rows and registers no secret source (section 13).
+**Log rows plan (`OPS_LOG_ROWS_PLAN.md`).** This plan writes no rows and registers no secret
+source (section 13). Nothing is needed from the log rows plan.
 
-**Skin plan.** The crack scene sits outside the network view and has one look. If a crack ever
-shows in the simulated command-line output, the skin plan should say what it wants. S7 can offer,
-per run, from the `POST /crack` answer only: the record label and token, the fact labels picked, a
-progress line while `running`, and the status.
+**Skin plan (`OPS_REALISM_SKIN_PLAN.md`, section 5 "Engine behaviour").** The crack scene sits
+outside the network view and has one look. If a crack ever shows in the simulated command-line
+output, the skin plan says what it wants. This plan can offer, per run, from the `POST /crack`
+answer only: the record label and token, the fact labels picked, a progress line while `running`,
+and the status.
 
-**Sync deltas plan.** Add the four state keys of section 8, and `crackFacts` (up to 64 ids, sent
-whole in each keyring answer whose `rev` changed), to its growth table when it is built.
+**Sync deltas plan (`SYNC_DELTAS_PLAN.md`) (not yet in SYNC_DELTAS_PLAN.md — open).** Its growth
+table must include the four state keys of section 8, and `crackFacts` (up to 64 ids, sent whole in
+each keyring answer whose `rev` changed), when this plan is built.
 
 **Intel and scenario authors.** A recipe fact that today comes only from dialogue, an object
 action, an OSINT page or a mail highlight needs a second, server-visible source: a takeable item
