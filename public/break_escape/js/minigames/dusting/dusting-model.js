@@ -10,9 +10,6 @@
  * @module dusting-model
  */
 
-/** Maximum brush ticks per second the UI should feed the field. */
-export const MAX_TICKS_PER_SECOND = 30;
-
 /** Fog saturates at this density (gentle: it never fully hides the ridges). */
 const FOG_MAX = 0.35;
 /** Fog ramp divisor: fog = (FP - Pfog) / FOG_RAMP. */
@@ -232,7 +229,8 @@ export class DustField {
      * Brush along a segment. Without `carry` (legacy, whole-stroke callers): ticks every ~radius/3 px on (start, end],
      * at least one per segment. With a numeric `carry` (the distance travelled since the last tick of this stroke) ticks
      * are laid only at fixed radius/3 spacing along the whole stroke, so many tiny pointermove segments lay the same
-     * powder as one long segment; a zero-length segment lays nothing. Callers cap tick rate with MAX_TICKS_PER_SECOND.
+     * powder as one long segment; a zero-length segment lays nothing. A carry above the step (after a switch to a finer brush)
+     * lays the next tick at the segment start, never behind it.
      * @param {number} x0
      * @param {number} y0
      * @param {number} x1
@@ -254,7 +252,7 @@ export class DustField {
             return undefined;
         }
         if (dist < 1e-6) return carry;
-        let d = step - carry;          // distance along this segment of the next tick
+        let d = Math.max(0, step - carry);   // distance along this segment of the next tick (never behind the segment start)
         while (d <= dist + 1e-9) {
             const t = Math.min(1, d / dist);
             this.brush(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tool);

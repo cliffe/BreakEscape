@@ -239,3 +239,47 @@ test('item 6: brush feel scales by difficulty and a held key is gentler than a d
     const src = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
     assert.ok(/const KEY_HOLD_GENTLE = 0\.4/.test(src) && /if \(keyed\) tool\.strength \*= KEY_HOLD_GENTLE/.test(src), 'held-key gentle factor wired');
 });
+
+test('m1 (R2): after a broad-to-fine switch mid-stroke every tick lies on the moved segment (t >= 0)', () => {
+    for (const d of ['easy', 'medium', 'hard']) {
+        const B = brushFeel(TOOLS.broad, d), F = brushFeel(TOOLS.fine, d), f = new DustField(128, { pfog: DIFFICULTY[d].pfog });
+        const carry = f.brushLine(30, 64, 30 + B.radius - 0.01, 64, B, 0);   // ends with a carry just under the broad step
+        assert.ok(carry > F.radius / 3, `${d}: carry ${carry.toFixed(2)} above the fine step ${(F.radius / 3).toFixed(2)}`);
+        const xs = [], orig = f.brush.bind(f);
+        f.brush = (x, y, t) => { xs.push(x); orig(x, y, t); };
+        f.brushLine(60, 64, 61, 64, F, carry);
+        assert.ok(xs.length >= 1, `${d}: a tick lands`);
+        assert.ok(xs.every(x => x >= 60 - 1e-9 && x <= 61 + 1e-9), `${d}: ticks at ${xs.map(x => x.toFixed(2)).join(',')} stay on 60..61`);
+    }
+    const src = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
+    assert.ok(/_chooseTool\(t\) \{[^}]*this\._brushCarry = 0/s.test(src), '_chooseTool resets the carry');
+});
+
+test('m2 (R2): a second pointer neither brushes nor ends the active stroke; only the stroke pointer ends it', () => {
+    const proto = DustingMinigame.prototype;
+    const acts = [];
+    const g = {
+        step: 'dust', pointerDown: false, lastPt: null, reticle: null, _touchFind: false, _brushCarry: 0, dirty: false,
+        canvas: { setPointerCapture() {}, focus() {} },
+        _canvasPos: e => ({ x: e.x, y: e.y }), _countStroke() {}, _updateNear() {}, _saveProgress() {},
+        _act(pos, from) { acts.push([pos.x, pos.y, from ? from.x : null]); }
+    };
+    const ev = (type, pointerId, x, y) => ({ type, pointerId, x, y, pointerType: 'touch', preventDefault() {} });
+    proto._onPointerDown.call(g, ev('pointerdown', 1, 10, 10));
+    assert.ok(g.pointerDown === true && g._pointerId === 1, 'first finger starts the stroke');
+    const n = acts.length;
+    proto._onPointerDown.call(g, ev('pointerdown', 2, 100, 100));
+    proto._onPointerMove.call(g, ev('pointermove', 2, 101, 101));
+    assert.ok(acts.length === n, 'second finger down and move lay nothing');
+    assert.ok(g.lastPt.x === 10 && g._pointerId === 1 && g._brushCarry === 0, 'second finger did not move lastPt or take over');
+    proto._onPointerMove.call(g, ev('pointermove', 1, 12, 10));
+    assert.ok(acts.length === n + 1 && acts[n][2] === 10, 'first finger brushes from its own last point, not from the second finger');
+    proto._onPointerUp.call(g, ev('pointerup', 2, 101, 101));
+    assert.ok(g.pointerDown === true, 'lifting the second finger leaves the stroke running');
+    proto._onPointerMove.call(g, ev('pointermove', 1, 14, 10));
+    assert.ok(acts.length === n + 2, 'first finger still brushes');
+    proto._onPointerUp.call(g, ev('pointercancel', 1, 14, 10));
+    assert.ok(g.pointerDown === false && g.lastPt === null, 'the stroke pointer ends it');
+    proto._onPointerDown.call(g, ev('pointerdown', 2, 50, 50));
+    assert.ok(g.pointerDown === true && g._pointerId === 2, 'a new stroke can start with another pointer once idle');
+});

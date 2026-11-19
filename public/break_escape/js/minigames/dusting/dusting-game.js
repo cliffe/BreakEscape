@@ -892,6 +892,7 @@ export class DustingMinigame extends MinigameScene {
         if (!TOOLS[t] || !POWDERS[this.powder].tools.includes(t)) return;
         if (this.tool !== t) this.toolStrokes = 0;
         this.tool = t; this.puffMode = false; this.advice = '';
+        this._brushCarry = 0;   // the old tool's carry can exceed the new, finer step
         if (this.step === 'dust') this._renderPanel();
         this.announce(`${TOOLS[t].label} selected.`);
     }
@@ -1189,6 +1190,8 @@ export class DustingMinigame extends MinigameScene {
     _onPointerDown(e) {
         if (!['find', 'dust', 'lift', 'examine', 'powder'].includes(this.step)) return;
         e.preventDefault();
+        if (this.pointerDown && e.pointerId !== this._pointerId) return;   // a second finger never joins or replaces the stroke
+        this._pointerId = e.pointerId;
         const pos = this._canvasPos(e);
         this.reticle = pos; this.pointerInside = true; this.pointerDown = true;
         // Touch in the Find step: dragging shows the proximity cue first; the check happens on lift (m5).
@@ -1203,6 +1206,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _onPointerMove(e) {
+        if (this.pointerDown && e.pointerId !== this._pointerId) return;
         const pos = this._canvasPos(e);
         this.pointerInside = true;
         const prev = this.reticle;
@@ -1239,6 +1243,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _onPointerUp(e) {
+        if (this.pointerDown && e && e.pointerId !== this._pointerId) return;   // only the stroke's own pointer ends it
         if (this.step === 'dust') this._saveProgress();
         if (this._touchFind && e && e.type === 'pointerup' && this.step === 'find') this._attemptFind(this.reticle);
         this._touchFind = false;
