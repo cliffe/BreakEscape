@@ -206,3 +206,11 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - n3: open-network address collector tag named `listed` in section 7 and 11.3. The review's note that the core's collector skips open-network addresses no longer holds (core now tags them `listed`), so it is not repeated.
 - Coordinator (from core review): 12.2 now places the row builders in `network_access.rb` (`network_rows`, block, `host_row`) and the finding builder in `network_ops.rb`; the core copies `cli` objects by named keys only, so `_` notes are never served; 9 and request 3 say so.
 
+
+## R11 fixes (2026-11-19)
+
+- F1: section 14 requests 4 and 5 marked as taken by the core (5.3 and 9.1; checked against the core's `onSent` and "anywhere in the scenario" text); the agreed paragraph cites 5.3 for the hooks, not 5.5; 12.1 step 4 now says the core adds the hooks in its S1 and drops the "K2 waits" sentence. Numbers kept so references still resolve.
+- F2: every token is stripped of leading and trailing `( ) [ ] { } " ' , ; .` before the credential tests; `=` pairs (no space) read like `/` pairs; `pass` added to the default-password list; failing fixtures `Default login (admin/admin)` and `admin=admin` (plus `root=toor`, `user=pass`) added, existing passing fixtures re-walked and unchanged.
+- F3: account-word clause needs a right side of 6+ characters with letter and digit, so `Service/HTTP2`, `Guest/SMB1`, `Test/IPv6` pass; `user`, `username`, `login`, `pass` need a non-space token after `:`/`=`, so `Anonymous login: allowed` passes; `password`, `passwd`, `pwd`, `secret` keep the spaced form (`Password: not required` still stops, message offers a plain form). Three-part tokens of letters only pass unless the first part is a system directory name (chose this over listing `Read/Write/Execute` as a false positive, because the brief required it to pass); passing fixtures added.
+- F4: `banner` joins the all-or-none rule over services that hold at least one finding (section 4 and the section 9 error row); chose the rule over an exemption, matching the review's first fix.
+- Nits taken as one-liners: F7 (one `/` with an empty side is a path). F5, F6, F8, F9 left for later.
