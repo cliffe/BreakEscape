@@ -371,7 +371,12 @@ export class MinigameScene {
         // Guard against stale minigame instances (e.g. a deferred showSuccess timer
         // from an NPC chat firing after a new minigame has already started).
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame !== this) {
-            console.warn('complete() called on a superseded minigame instance — ignoring', this.constructor.name);
+            // Said once per instance, so a stray call is visible in development without a
+            // repeating timer flooding the log. The call is still ignored.
+            if (!this._staleCompleteWarned) {
+                this._staleCompleteWarned = true;
+                console.warn(`complete() called on a closed or replaced minigame instance (${this.constructor.name}) - ignoring`);
+            }
             return;
         }
 
