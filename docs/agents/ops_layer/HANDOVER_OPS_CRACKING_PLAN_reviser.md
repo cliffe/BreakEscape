@@ -1,5 +1,11 @@
 # Handover: OPS_CRACKING_PLAN reviser (stopped at the 150k context limit)
 
+**Status 2026-11-19: finished by a second reviser.** Sections 6 to 15 are rewritten to match 1 to 5;
+`reviews/OPS_CRACKING_DECISIONS.md` exists. Changes beyond the notes below: a `grant_fact` flag
+reward is a third fact source (sections 2, 4, 5, 9, 11, 12); the salt model is section 15 question
+1; section 14 asks the privilege plan to fix its `account` object and add `crack.facts`. Nothing is
+open. The notes below are kept as the record of the first pass.
+
 Brief: `docs/agents/ops_layer/BRIEF_cracking_reviser.md`, plus two orchestrator updates:
 R2-2 keeps both server checks (server-granted facts, proof the hash was collected); R2-3 the
 realism look now shows simulated scanner-style and exploit-framework-style output generated from
