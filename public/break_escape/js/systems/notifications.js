@@ -72,6 +72,8 @@ export function settleAfterPanelClose(now = Date.now()) {
 }
 
 if (typeof window !== 'undefined') {
+    window.modalDialogOpened = modalDialogOpened;
+    window.modalDialogClosed = modalDialogClosed;
     window.expectContainerAfterUnlock = expectContainerAfterUnlock;
     window.expectPanelWithin = expectPanelWithin;
     window.clearExpectedPanel = clearExpectedPanel;
@@ -106,14 +108,34 @@ function setModalHold(on) {
     });
 }
 
-function modalDialogOpened() {
-    if (document.querySelectorAll('.game-confirm-overlay').length !== 1) return;   // already held by another
+// Backstop for the hold: while toasts are paused for a modal, look at the page every
+// HOLD_POLL_MS and let them go once no .game-confirm-overlay is left, whichever code removed
+// the last one (an overlay with that class that never calls the close hook, a teardown).
+let modalPoll = null;
+
+function modalDialogCount() {
+    if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return 0;
+    return document.querySelectorAll('.game-confirm-overlay').length;
+}
+
+function armModalPoll() {
+    if (modalPoll || typeof setInterval !== 'function') return;
+    modalPoll = setInterval(modalDialogClosed, HOLD_POLL_MS);
+}
+
+// The ending check (ending-check.js) has no imports and calls these two through window.
+export function modalDialogOpened() {
+    if (typeof document === 'undefined') return;
+    armModalPoll();
+    if (modalDialogCount() !== 1) return;   // already held by another
     holdRecentNotifications(Date.now(), { dismissStale: false });
     setModalHold(true);
 }
 
-function modalDialogClosed() {
-    if (!modalDialogOpen()) setModalHold(false);
+export function modalDialogClosed() {
+    if (modalDialogOpen()) return;   // another is still up: keep holding
+    setModalHold(false);
+    if (modalPoll) { clearInterval(modalPoll); modalPoll = null; }
 }
 
 function releaseHeldNotifications() {
@@ -1119,13 +1141,13 @@ export function gameDisplay(message, title = '', options = {}) {
             done = true;
             unregister();
             overlay.remove();
-            modalDialogClosed();
+            try { modalDialogClosed(); } catch (e) { /* a hold fault must never keep a dialog open */ }
             try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve();
         };
         closeBtn.addEventListener('click', finish);
         document.body.appendChild(overlay);
-        modalDialogOpened();
+        try { modalDialogOpened(); } catch (e) { /* a hold fault must never break the dialog */ }
         try { closeBtn.focus(); } catch (e) { /* best effort */ }
     });
 }
@@ -1186,7 +1208,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             if (typeof window.removeEventListener === 'function') window.removeEventListener('keyup', onKeyUp, true);
             unregister();
             overlay.remove();
-            modalDialogClosed();
+            try { modalDialogClosed(); } catch (e) { /* a hold fault must never break the dialog */ }
             // Give focus back to whatever had it (the game canvas, a minigame field).
             try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve(result);
@@ -1233,7 +1255,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         openConfirms++;
         countText(message, 1);
         document.body.appendChild(overlay);
-        modalDialogOpened();
+        try { modalDialogOpened(); } catch (e) { /* a hold fault must never break the dialog */ }
         // Focus the safe choice, so a stray Enter or Space never says yes.
         try { cancelBtn.focus(); } catch (e) { /* best effort */ }
     });

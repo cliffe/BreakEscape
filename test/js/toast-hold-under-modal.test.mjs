@@ -15,14 +15,20 @@ const dom = new JSDOM('<!doctype html><body><div id="notification-container"></d
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
+const dashesUrl = dataUrl('export const displayDashes = (s) => s;');
+const stackUrl = dataUrl(readFileSync(join(js, 'ui/modal-stack.js'), 'utf8'));   // one instance, shared below
+const { openModalCount } = await import(stackUrl);
+const E = await import(dataUrl(readFileSync(join(js, 'systems/ending-check.js'), 'utf8')
+  .split("'../utils/display-dashes.js'").join(`'${dashesUrl}'`)));
 const N = await import(dataUrl(readFileSync(join(js, 'systems/notifications.js'), 'utf8')
-  .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
-  .split("'../ui/modal-stack.js'").join(`'${dataUrl(readFileSync(join(js, 'ui/modal-stack.js'), 'utf8'))}'`)
+  .split("'../utils/display-dashes.js'").join(`'${dashesUrl}'`)
+  .split("'../ui/modal-stack.js'").join(`'${stackUrl}'`)
   .split("'../utils/overlay-open.js'").join(`'${dataUrl('export const fullScreenPanelOpen = () => false;')}'`)));
 
 const container = document.getElementById('notification-container');
 const T0 = 2_000_000;
 const DUR = 5000;
+const HOLD_POLL = 300;
 
 function start() {
   mock.timers.reset();
@@ -30,6 +36,18 @@ function start() {
   container.innerHTML = '';
   document.querySelectorAll('.game-confirm-overlay').forEach((el) => el.remove());
 }
+// After every test, pass or fail: no overlay, no modal-stack entry, no held or waiting toast and
+// no poll left for the next one (a failing test would otherwise leak a stale Esc entry).
+test.afterEach(() => {
+  try { mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'], now: T0 }); } catch (e) { /* already on */ }
+  document.querySelectorAll('.game-confirm-overlay').forEach((el) => el.remove());
+  for (let i = 0; i < 10 && openModalCount() > 0; i++) esc();
+  N.modalDialogClosed();
+  N.clearWaitingToasts();
+  mock.timers.tick(2000);   // the release poll runs and renders what was held
+  container.innerHTML = '';
+  mock.timers.reset();
+});
 const shown = () => [...container.querySelectorAll('.notification')].filter((t) => !t._toast.closing);
 const texts = () => shown().map((t) => t.textContent).join('|');
 const has = (word) => texts().includes(word);
@@ -141,5 +159,207 @@ test('gameConfirm holds toasts too, and stacked modals release only when the las
   mock.timers.tick(400);
   assert.ok(has('Behind both'), 'shown after the last modal closed');
   void answer;
+  end();
+});
+
+test('gameConfirm alone pauses an on-screen toast and resumes it on close', () => {
+  start();
+  N.gameAlert('Older toast', 'info', 'Older', DUR);
+  mock.timers.tick(2000);
+  const answer = N.gameConfirm('Sure?', 'Yes', 'No');
+  mock.timers.tick(DUR * 2);
+  assert.ok(has('Older toast'), 'paused while the confirm is open');
+  document.querySelector('.game-confirm-ok').click();
+  mock.timers.tick(2000);
+  assert.ok(has('Older toast'), 'still up 2 s after resume (3 s were left)');
+  mock.timers.tick(1600);
+  assert.ok(!has('Older toast'), 'gone once the remaining time ran out');
+  void answer;
+  end();
+});
+
+test('a toast raised just before gameConfirm is pulled back and replayed after', () => {
+  start();
+  N.gameAlert('Just before', 'success', 'Before', DUR);
+  N.gameConfirm('Sure?', 'Yes', 'No');
+  assert.ok(!has('Just before'), 'pulled back when the confirm opened');
+  document.querySelector('.game-confirm-ok').click();
+  mock.timers.tick(400);
+  assert.ok(has('Just before'), 'replayed after the confirm closed');
+  end();
+});
+
+test('closing the lower of two stacked modals leaves a paused toast paused', () => {
+  start();
+  N.gameAlert('Older toast', 'info', 'Older', DUR);
+  mock.timers.tick(2000);
+  N.gameDisplay('A note', 'Note');
+  N.gameConfirm('Sure?', 'Yes', 'No');
+  document.querySelector('.game-modal-close').click();   // the display underneath
+  mock.timers.tick(DUR * 2);
+  assert.ok(has('Older toast'), 'still paused under the confirm');
+  esc();
+  mock.timers.tick(2000);
+  assert.ok(has('Older toast'), 'resumed with its 3 s once the last one closed');
+  mock.timers.tick(1600);
+  assert.ok(!has('Older toast'), 'gone after the remaining time');
+  end();
+});
+
+test('warnings are not held by a modal', () => {
+  start();
+  N.gameDisplay('A note', 'Note');
+  N.gameAlert('Careful', 'warning', 'Warning', DUR);
+  assert.ok(has('Careful'), 'warning shows at once');
+  document.querySelector('.game-modal-close').click();
+  end();
+});
+
+test('a toast raised again under the modal restarts the paused copy and never runs it down', () => {
+  start();
+  N.gameAlert('Older toast', 'info', 'Older', DUR);
+  mock.timers.tick(2000);
+  N.gameDisplay('A note', 'Note');
+  N.gameAlert('Older toast', 'info', 'Older', DUR);
+  mock.timers.tick(DUR * 3);
+  assert.ok(has('Older toast'), 'the paused copy is still up after the modal outlasts its time');
+  assert.ok(shown().filter((t) => t.textContent.includes('Older toast')).length === 1, 'one copy only');
+  document.querySelector('.game-modal-close').click();
+  mock.timers.tick(DUR - 500);
+  assert.ok(has('Older toast'), 'full time after close');
+  end();
+});
+
+test('a toast waiting for a place under a foreign overlay stays held, then shows after it goes', () => {
+  start();
+  N.gameAlert('First', 'info', 'A', DUR);
+  N.gameAlert('Second', 'info', 'B', DUR);
+  N.gameAlert('Third', 'info', 'C', DUR);
+  assert.ok(N.waitingToastCount() === 1, 'one toast waits for a place');
+  const other = document.createElement('div');
+  other.className = 'game-confirm-overlay';   // an overlay raised without the open hook
+  document.body.appendChild(other);
+  mock.timers.tick(DUR * 3);
+  assert.ok(!has('Third'), 'the waiting toast did not show under the overlay');
+  other.remove();
+  mock.timers.tick(DUR * 3);
+  const seenAfter = has('Third');
+  mock.timers.tick(1);
+  assert.ok(seenAfter || N.waitingToastCount() === 0, 'the waiting toast came out after the overlay went');
+  end();
+});
+
+test('a hold that outlives its overlay is released when the last overlay goes without the close hook', () => {
+  start();
+  N.gameAlert('Older toast', 'info', 'Older', DUR);
+  mock.timers.tick(2000);
+  N.gameDisplay('A note', 'Note');
+  const other = document.createElement('div');
+  other.className = 'game-confirm-overlay';
+  document.body.appendChild(other);
+  document.querySelector('.game-modal-close').click();   // the display goes, the other stays
+  mock.timers.tick(DUR * 2);
+  assert.ok(has('Older toast'), 'still paused while the other overlay is up');
+  other.remove();   // gone with no hook, as a bare overlay.remove() does
+  mock.timers.tick(HOLD_POLL * 2);
+  mock.timers.tick(3200);
+  assert.ok(!has('Older toast'), 'resumed by the poll and ran out its remaining time');
+  end();
+});
+
+const OPEN_OBJECTIVE = { aims: [{ status: 'active', optional: true, tasks: [{ taskId: 'spare', title: 'Spare key', status: 'active' }] }] };
+
+test('the ending check holds toasts like the other modals and releases them on every close path', async () => {
+  for (const how of ['keep', 'x', 'esc', 'end']) {
+    start();
+    window.player = { disableMovement: false };
+    N.gameAlert('Older toast', 'info', 'Older', DUR);
+    mock.timers.tick(2000);
+    E._resetEndingCheck();
+    const answer = E.confirmEnding({ reason: 'credits' }, { manager: OPEN_OBJECTIVE, config: {} });
+    assert.ok(document.querySelector('.game-confirm-overlay') !== null, how + ': ending check is up');
+    N.gameAlert('Held hint', 'info', 'Hint', DUR);
+    mock.timers.tick(DUR * 2);
+    assert.ok(has('Older toast'), how + ': on-screen toast paused, not expired');
+    assert.ok(!has('Held hint'), how + ': new toast held');
+    if (how === 'keep') document.getElementById('ending-check-keep').click();
+    if (how === 'x') document.getElementById('ending-check-close').click();
+    if (how === 'end') document.getElementById('ending-check-end').click();
+    if (how === 'esc') window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await answer;
+    assert.ok(document.querySelector('.game-confirm-overlay') === null, how + ': overlay gone');
+    mock.timers.tick(400);
+    assert.ok(has('Held hint'), how + ': held toast shown after close');
+    mock.timers.tick(2650);
+    // 3 s were left at the open: gone 3.05 s after the close. The close hook resumes it at once;
+    // the poll alone would be up to 300 ms late.
+    assert.ok(!has('Older toast'), how + ': paused toast resumed on the close and ran out');
+    end();
+  }
+});
+
+test('with no querySelectorAll on the document a confirm still opens and resolves', async () => {
+  start();
+  const had = Object.getOwnPropertyDescriptor(document, 'querySelectorAll');
+  Object.defineProperty(document, 'querySelectorAll', { value: undefined, configurable: true });
+  let answer;
+  try {
+    answer = N.gameConfirm('Sure?', 'Yes', 'No');
+    assert.ok(document.querySelector('.game-confirm-overlay') !== null, 'dialog is up');
+    document.querySelector('.game-confirm-ok').click();
+  } finally {
+    if (had) Object.defineProperty(document, 'querySelectorAll', had); else delete document.querySelectorAll;
+  }
+  assert.ok((await answer) === true, 'resolved true');
+  end();
+});
+
+test('a fault in the hold hooks never breaks the dialog or leaves it open', async () => {
+  start();
+  const real = document.getElementById;
+  document.getElementById = () => { throw new Error('hold fault'); };
+  let answer;
+  let closed;
+  try {
+    answer = N.gameConfirm('Sure?', 'Yes', 'No');
+    closed = N.gameDisplay('A note', 'Note');
+    assert.ok(document.querySelectorAll('.game-confirm-overlay').length === 2, 'both dialogs opened despite the fault');
+    document.querySelector('.game-modal-close').click();
+    document.querySelector('.game-confirm-ok').click();
+  } finally {
+    document.getElementById = real;
+  }
+  assert.ok((await answer) === true, 'confirm resolved');
+  await closed;
+  assert.ok(document.querySelector('.game-confirm-overlay') === null, 'nothing left open');
+  end();
+});
+
+test('a toast whose focus is released under a modal stays paused until the modal closes', () => {
+  start();
+  N.gameAlert('Older toast', 'info', 'Older', DUR);
+  mock.timers.tick(2000);
+  const el = shown()[0];
+  el.dispatchEvent(new dom.window.Event('focusin', { bubbles: true }));
+  N.gameDisplay('A note', 'Note');
+  el.dispatchEvent(new dom.window.Event('focusout', { bubbles: true }));
+  mock.timers.tick(DUR * 2);
+  assert.ok(has('Older toast'), 'still up: the modal holds it though focus has gone');
+  document.querySelector('.game-modal-close').click();
+  mock.timers.tick(3200);
+  assert.ok(!has('Older toast'), 'runs out its remaining time after the modal');
+  end();
+});
+
+test('modalDialogOpened and modalDialogClosed tolerate a document without querySelectorAll', () => {
+  start();
+  const had = Object.getOwnPropertyDescriptor(document, 'querySelectorAll');
+  Object.defineProperty(document, 'querySelectorAll', { value: undefined, configurable: true });
+  try {
+    N.modalDialogOpened();
+    N.modalDialogClosed();
+  } finally {
+    if (had) Object.defineProperty(document, 'querySelectorAll', had); else delete document.querySelectorAll;
+  }
   end();
 });
