@@ -1,169 +1,312 @@
-# OPS_CRACKING_PLAN.md — S7 hashes and offline cracking (feature A21)
+# OPS_CRACKING_PLAN.md: S7 hashes and offline cracking (feature A21)
 
 Stage S7 of the ops layer (brief `docs/agents/OPS_LAYER_BRIEF.md`, outline
-`docs/achitechture/OPS_LAYER_PLAN_OUTLINE.md` S7). One build stage, size M. Planning only.
+`docs/achitechture/OPS_LAYER_PLAN_OUTLINE.md` S7). Two build stages, C1 (size S) and C2 (size M).
+Planning only.
 
 Everything here is fictional and abstract. A hash is an invented opaque token. The plan names no
 real hash format, no real tool and no real procedure. The minigame is a game move, not a technique.
 
 ## 1. What this adds and why, in play
 
-The player can obtain an account's **hash record** — an opaque token that stands for a stored,
-scrambled form of someone's password — and then run an **offline cracking** minigame that tries to
-recover the plain password from it using the **intel facts** the player already holds about that
-person (their pet's name, a birth year, a sports team, the sort of thing `se_intel_<factId>`
-globals already track).
+The player can obtain an account's **hash record**, an opaque token that stands for the stored,
+scrambled form of someone's password, and then run an **offline cracking** minigame that tries to
+recover the plain password from it using the **intel facts** the player has earned about that
+person (a pet's name, a birth year, a sports team).
 
-Three sources give a hash record:
+Three sources give a hash record, all through the existing keyring (A15):
 
-- **Admin on a host** (S5a): with admin access the player dumps stored hashes from that host.
-- **A file on a share** (N4): a carelessly stored credentials file lists a hash.
-- **A technique that yields one** (S3): optional, same keyring path.
+- **A file on a share or in a container** (N4): a carelessly stored credentials file the player
+  takes. It is an ordinary takeable `text_file` with the existing `credential` field.
+- **A technique that yields one** (S3): a weakness whose `grants.credential` names a hash record.
+- **Collecting cached sign-ins with admin on a PC** (S5b, which builds after this stage): every
+  account the collect yields is a hash, never a password. A scenario that does not teach cracking
+  declares no cached accounts.
 
-The cracking minigame shows the hash token and the facts the player holds, and lets the player
-assemble a candidate from those facts (the same slot-filling idea as `password-guesser`). The
-**server** decides the outcome from the NPC's `password` habit:
+The cracking minigame shows the hash token and the facts the player has earned, and lets the player
+pick the facts they think the password is made from. The **server** decides the outcome from the
+account's password class (the NPC's `password` habit, or a recipe on the hash record itself):
 
-- A **strong** password never yields, however many facts the player holds. The lesson: good
-  passwords are not guessable from personal facts, so cracking is a dead end — go and phish, or find
-  it reused.
-- A **guessable** password yields once the player holds the facts its pattern needs. A failed run
-  tells the player how many facts are still missing, not which — so the player keeps gathering
-  intel. The lesson: personal facts are password material.
-- A **reused** password yields when the player already holds the same person's (or a shared)
-  secret from somewhere else. The lesson: reuse turns one leak into many.
-- A **salted** hash costs more effort: the server makes the player accumulate several runs before
-  it releases the result, even when the candidate is right. The lesson: salting slows offline
-  attacks; it does not stop a guessable password.
+- A **strong** password never yields. After a couple of runs the cracker says so plainly. The
+  lesson: a good password is not built from personal facts, so cracking is a dead end; go and
+  phish, or find it reused.
+- A **guessable** password yields once the server has seen the player earn every fact it is made
+  from, and the player picks exactly those facts. While facts are still missing, a run says how
+  many, never which. The lesson: personal facts are password material.
+- A **reused** password yields when the player already holds an equal password from somewhere
+  else. The lesson: reuse turns one leak into many.
+- A **common** password (a recipe on a hash record only, for an account with no person behind it,
+  such as a shared local administrator) yields on the first run. The lesson: a default or very
+  common password falls at once.
 
-When a crack succeeds the recovered password lands in the keyring (A15) as a normal `password`
-credential for that account, so the rest of the game (sign-in, S5c) uses it exactly as a captured
-password. The teaching payoff is the contrast between the four habits and the role of salt.
+**Salt** is shown, not just counted. Unsalted records of the same password show the same token,
+and cracking one unsalted record cracks every held unsalted record with that token at once, as if
+looked up in a precomputed list. A salted record shows its own token and, once the right facts
+are picked, takes a short real-time wait on the server before it yields, alone. The lesson: salt
+stops one piece of work from opening many hashes; it does not save a guessable password. Cracking
+costs no game minutes.
+
+When a crack succeeds the recovered password lands in the keyring as a `password` entry for that
+account, so sign-in uses it exactly as a captured password, and it meets a second step (S8) like
+any other first factor.
 
 ## 2. What the code does today (verified, `file:line`)
 
-- **`password-guesser` is browser-only and not reusable as-is.** Scene
-  `public/break_escape/js/minigames/password-guesser/password-guesser-minigame.js` (258 lines) and
-  model `…/password-guesser-model.js` (339). Every row outcome (`struck`, `opens`, `missing`,
-  `holds`) is authored in the config and decided in the browser; `landedGlobal` is written client
-  side through `writeGlobal` + `stateSync.sync()` (`minigame.js:227-237`) with no server check. A
-  pattern-slot row exists only when `se_intel_<factId>` is true (`model.js:115-129`); `slotGuess`
-  (`model.js:101-104`) fills the template; `textFor` renders a row. Its config shape is pinned by an
-  awareness lint: `scripts/validate_social/awareness.rb:1298` fixes `awarenessEpisode.guess`. So the
-  guesser cannot be made server-authoritative without breaking that contract; S7 builds beside it
-  and reuses its **row vocabulary, CSS classes and `slotGuess`/`textFor` helpers** only.
-- **The keyring already reserves a `hash` kind.** `lib/break_escape/credential_model.rb:21-27`:
-  `'hash' => { built: false } # phase 3`. The validator refuses a kind whose `built` is false.
-  `KINDS` also records `connects`/`routes`; `DEFAULT_ACCEPTS` (`:30`) is the kinds a PC accepts.
-  `PROOF_KINDS` (`:36`) `session planted dropped held foothold`. `MAX_ENTRIES = 64` (`:39`).
-- **The keyring is a server-only top-level `credentials` map**, stripped from the bootstrap
-  (`credential_model.rb:14-15`; bootstrap strips `credentials` at `GM:2488`/`NA:18` per D1:132).
-  Proofs are evaluated server side in `app/models/break_escape/credential_keyring.rb`
-  (`credential_proof_holds?`, lines ~19-36).
-- **Implicit password entries already exist**, one per captured account:
-  `credential_keyring.rb:263-287` (`implicit_keyring_entries`) builds `"<npcId>.password"`,
-  `kind: 'password'`, `source: 'capture'`, and attaches the `password` secret from
-  `capture_secrets_for_client`. This is the exact path a cracked password should reuse, with a new
-  `source`.
-- **The `password` habit has no runtime reader.** Allowed values at `scripts/.../npc_habits.rb:24`;
-  `passwordPattern` is a parameter (`:29`, `:55-57`). It is read only at authoring time:
-  `scripts/validate_npc_habits.rb:253-298` (`check_password`) and `:565-598` (`password_effects`);
-  `scripts/generate_dungeon_graph.rb:427-450` (edges for `reused` and backed `guessable`); and
-  `lib/break_escape/npc_habits/clues.rb` — `backing` (`:427-497`), `parts_all_sourced?`
-  (`:500-513`), `reuse_homes` (`:516-521`). `clues.rb:9-13` states the server never uses it today.
-  Habits are **not shipped**: `SHIPPED_HABIT_KEYS = %w[screen print]` (`game.rb:7335-7345`).
-  **So S7 adds the first server-side reader of `password`.** `clues.rb` is plain requirable Ruby and
-  already encodes `reuse_homes`/`backing`, so the server reuses it rather than re-deriving.
-- **Shares and files.** A share is a top-level `resources.<id>` of kind `file_share` with a
-  `contents` list (D1:13, `SCH:347-366`); contents are served by `games#container`
-  (`GC:626-668`) only when the share is admitted, else 404 (D1:109). A hash record on a share is a
-  new content entry shape (section 4), owned by S7, that N4/S1 must admit through the same gate.
-- **Seeded rolls** exist for deterministic tokens; no server clock exists (D4 3.3), so effort is a
-  run count, not minutes.
+Short names: `CM` = `lib/break_escape/credential_model.rb`, `CK` =
+`app/models/break_escape/credential_keyring.rb`, `VS` = `scripts/validate_scenario.rb`, `SCH` =
+`scripts/scenario-schema.json`, `GAME` = `app/models/break_escape/game.rb`, `GC` =
+`app/controllers/break_escape/games_controller.rb`.
 
-## 3. Build stages (one stage, M)
+- **`password-guesser` is browser-only and not reusable as is.** Scene
+  `public/break_escape/js/minigames/password-guesser/password-guesser-minigame.js` and model
+  `password-guesser-model.js`. Every row outcome is authored config decided in the browser, and
+  `landedGlobal` is written client side with no server check. `slotGuess` (`model.js:101-104`)
+  fills an authored template with an authored word, which the cracker must never ship before a
+  grant. Its config is pinned by the awareness lint (`scripts/validate_social/awareness.rb:1296-1298`,
+  `scripts/validate_social/exercises.rb:16,81`). S7 builds beside it and reuses only its row CSS
+  classes and the `textFor` row renderer, by copying the pattern, not by importing the module.
+- **The keyring reserves a `hash` kind.** `CM:26` `'hash' => { built: false }`. The validator
+  refuses an unbuilt kind (`VS:7469`). `DEFAULT_ACCEPTS` (`CM:30`) lists the kinds a PC takes by
+  default; `PROOF_KINDS` (`CM:36`) is `session planted dropped held foothold`; `proof_kind`
+  (`CM:62-67`) counts a proof key only when its value is a present string; `MAX_ENTRIES = 64`
+  (`CM:39`).
+- **The registry entry shape is closed.** `SCH:281-310`: `credentials` is `x-serverOnly` (the
+  bootstrap strips it, `GET /keyring` serves proven entries), each entry has
+  `additionalProperties: false`, and `account` is a string, the NPC id of an account holder.
+- **Keyring rows.** `CK:77` lists `implicit_keyring_entries + registry`. `registry_keyring_entries`
+  (`CK:312-328`) has two branches: `password` and everything else, which goes to
+  `registry_connecting_entry` (`CK:345-383`); a built `hash` would land there with no token and
+  empty routes, so it needs its own branch. `implicit_keyring_entries` (`CK:266-287`) builds
+  `"<npcId>.password"` only from accounts in `player_state['seCaptures']`, attaching the password
+  only when `social.captures.revealSecret` allows; it cannot carry a cracked password and has no
+  place to record one.
+- **Client keyring readers.** `public/break_escape/js/minigames/capture-log/signin-rows.js:30,184`
+  keeps only `CONNECTING_KINDS` in the Sign-ins list, so a hash row needs new code there.
+  `public/break_escape/js/systems/keyring.js:55` tags any non-capture password `in_file`, which
+  hides it until a `foundIn` file is opened (`:344-348`) and treats it as a find waiting
+  (`:458`); `:774` `FIND_KINDS` has no `hash`. `keyring.js:752-771` `screenEntries` ignores an
+  unknown kind, and `credential_login.rb:180-181` refuses a non-connecting kind, so a hash can
+  never sign in. `tools/playtest/lib/access_leak_scanner.rb:1270` checks only `registry` entries.
+- **The `password` habit has no runtime reader.** `lib/break_escape/npc_habits.rb:24` allows
+  `strong guessable reused`; `passwordPattern` (`:29`, `:55-57`, `SCH:4422`) is **one object id**,
+  the readable clue that gives the pattern, not a list of fact ids. `SCH:4420` describes `password`
+  as "No run-time effect". The habit is read at authoring time only (`scripts/validate_npc_habits.rb`,
+  `scripts/generate_dungeon_graph.rb:427-450`, `lib/break_escape/npc_habits/clues.rb`, whose header
+  at `:9-13` says it is never used by the server). Habits are not shipped to the browser. Nothing
+  in the habit links a password to fact ids, so S7 adds that list (section 4) and does not call
+  `clues.rb` at runtime.
+- **Intel facts are browser-claimed today.** `public/break_escape/js/systems/social-intel.js`
+  `grantFact` writes `se_intel_<id> = true` through the client global writer; callers are the
+  `grant_fact` action (`systems/apply-actions.js:159-164`, reached from ink, object actions and
+  timers), mail highlights and the OSINT browser. `GAME:3067` `SERVER_OWNED_GLOBAL_NAMES` is only
+  `se_captures`, so the server stores any `se_intel_*` a sync sends. A crack cannot rest on them.
+- **Events the server already sees.** Every server-side inventory add goes through
+  `add_inventory_item!` (`GAME:719`): the inventory route (`GC:1441`), flag-reward items
+  (`process_item_reward`, `GC:4006`) and NPC gives checked against `npc_given_items`. Served
+  social-feed posts are recorded in `player_state['feedRevealed']` (`app/models/break_escape/social_feed.rb:8-11`),
+  and a post's `fact` travels with it. These are the hooks for server-granted facts (section 5).
+- **Items already prove a credential.** An item's `credential` field (`SCH:5158`) is stamped by
+  the server on take from its own definition (`GAME:772-773`); the `held` proof matches it
+  identity-strict (`CK:42-63`); `VS:7537-7558` checks the cross-reference. A share file is taken
+  through the same path (`lib/break_escape/network_access.rb:1735-1745`). A hash on a share needs no
+  new content kind.
+- **Time.** No game-minute clock exists. The server has real time: `server_now`
+  (`app/models/break_escape/npc_frustration.rb:60`), used by `credentialClock` and token expiry
+  (`CK:97-137`). `GET /keyring` sets `Cache-Control: no-store` (`GC:1879`). Server routes take a row
+  lock for read-modify-write (`CK:76`).
 
-S7 ships as one stage because the hash record, the obtain paths and the minigame are one loop and
-none is useful alone. Internally, build in this order so each step is testable:
+## 3. Build stages
 
-1. **Hash record + keyring `hash` kind** (set `built: true`, define that it does **not** connect).
-   Validator and schema accept a hash record; the player can hold one; it shows in the keyring.
-2. **Obtain paths**: a share-file content entry (N4) and the S5a admin-dump effect both grant a hash
-   record. Until S5a lands, the share path alone exercises the feature.
-3. **Crack route + minigame**: `POST /crack`, the server decision, the recovered-password grant, and
-   the new scene.
+S7 lands after S3 and before S5b (S5b's collect yields only hashes, so it needs this stage). Each
+stage is shippable and tested alone.
 
-Each step is shippable: after step 1 a scenario can hold a hash with no way to crack it (inert);
-after step 2 it can be obtained; after step 3 it can be cracked.
+| Stage | What | Size | Named test that proves it |
+|---|---|---|---|
+| C1 | `hash` kind built (`connects: false`); `crack` recipe on the record; schema; `scripts/validate_cracking.rb`; the hash keyring row (server and client, no Crack button yet); the token; the dungeon graph node and edges; the core plan's `grants.credential` rule widened to `hash` | S | `cracking_row_test.rb`: taking the share file lists a hash row with token, username and `status: "ready"`, and no password; a technique grant lists the same row |
+| C2 | `revealsFacts` on items and the server's earned-fact record; `POST /crack`; crack state; the cracked grant and its keyring entry; the `ops-cracker` scene and the Crack button on the hash row | M | `ops_crack_test.rb`: each class's outcome, refusals in order, the salted wait, the unsalted batch, a forged `se_intel_*` refused |
 
-## 4. Scenario fields (minimal JSON per concern)
+After C1 a scenario can hold a hash with no way to crack it (inert, visible). After C2 it can be
+cracked. The S5b collect is the privilege plan's stage and adds only its `harvested` proof kind;
+this plan's row, scene and route serve it unchanged.
 
-**The hash record (keyring entry, kind `hash`).** A server-only `credentials` entry. It names the
-account NPC, whether it is `salted`, and an optional crack `cost` (runs needed once the candidate is
-right; default by `salted`). The `token` shown to the player is **not authored** — the server mints
-a seeded opaque string from the account id and a scenario salt, so authors never paste a fake hash.
+## 4. Scenario fields
+
+**The hash record** is a `credentials` entry of kind `hash`. Fields: `kind`, `account` (the
+account holder's NPC id, a string, as every registry entry), `proof` (exactly one string-valued
+proof, as today), optional `salted` (boolean, default false), optional `crackSeconds` (integer 10
+to 600, salted only, default 60: the server-timed wait), and `crack` (the recipe, below). The
+token shown to the player is **not authored**: the server derives it (section 5). C1 example, a
+file on a share:
 
 ```json
 "credentials": {
   "dana_hash": {
     "kind": "hash",
-    "account": { "npc": "dana" },
+    "account": "dana",
     "salted": true,
-    "proof": { "held": { "type": "hash_record", "id": "dana_hash_file" } }
+    "proof": { "held": "dana_hash_file" },
+    "crack": { "facts": ["dana_dog_name", "dana_birth_year"] }
   }
-}
-```
-
-The `proof` reuses the existing proof vocabulary: here a `held` proof satisfied by an inventory item
-the player picked up (the file), exactly as other keyring kinds prove holding. An admin-dump source
-instead uses a proof the server writes on dump (section 14, cross-plan with S5a).
-
-**A hash on a share (N4).** A new `contents` entry kind on a `file_share`, that grants the hash
-record when the share is opened:
-
-```json
+},
 "resources": {
   "ops_share": {
     "kind": "file_share",
     "host": "fileserver",
-    "access": [ "it_admin" ],
     "contents": [
-      { "kind": "hash_file", "id": "dana_hash_file", "grants": "dana_hash", "label": "backup.creds" }
+      { "type": "text_file", "id": "dana_hash_file", "name": "backup.creds", "takeable": true,
+        "credential": "dana_hash", "text": "Exported sign-in records. Do not share." }
     ]
   }
 }
 ```
 
-**The NPC `password` habit** is authored today (unchanged): `habits.password` is
-`strong | guessable | reused` with `passwordPattern` naming the fact ids its pattern needs
-(the same `factId`s that drive `se_intel_<factId>`). S7 adds no new habit field; it adds the
-server-side **reader**.
+The file's `text` is authored flavour; it never holds the token (authors cannot know it). The token
+shows on the hash row and in the cracking scene. A technique source writes `"proof":
+{ "technique_card": "<findingId>" }` (the core plan's proof kind) and the weakness names the record
+in `grants.credential`. A collect source writes `"proof": { "harvested": "<pcId>" }` (the privilege
+plan's proof kind, S5b).
 
-A scenario with no hash record, no `hash_file` content and no crack is unchanged (section 10).
+**The recipe, `crack`.** An object with up to three keys:
+
+- `password`: the class, one of `strong`, `guessable`, `reused`, `common`. Optional when the
+  account NPC has a `password` habit (the habit's class is used); **required** when it has none (an
+  `accountOnly` account, which carries no habits). `common` exists only here, not on the habit.
+  When both are present and differ, the record's class wins for the crack and the validator warns.
+- `facts`: for `guessable`, the `social.intelFacts` ids the password is made from (1 to 4, no
+  repeats, order not significant). Required for `guessable`, refused on other classes.
+- `passwordPattern`: optional, the same meaning as the habit's parameter (the object id of the
+  readable pattern clue), so the habit validator's backing check can run on a record with no
+  habit.
+
+A record with no `crack` at all is allowed only when its account has a `password` habit whose
+class is not `guessable` (a guessable crack needs `facts`). C2 example, an `accountOnly` shared
+administrator:
+
+```json
+"deskadmin_pc01": { "kind": "hash", "account": "deskAdmin", "proof": { "harvested": "pc01" },
+                    "crack": { "password": "common" } }
+```
+
+**Facts the server can see: `revealsFacts` on an item** (C2). An optional array of
+`social.intelFacts` ids on any item definition (`definitions.item`). When the server adds that item
+to the inventory (taken, given by an NPC, or a flag reward), it records the facts as earned, and
+the client grants them through `grantFact` so the intel board agrees.
+
+```json
+{ "type": "notes", "id": "dana_vet_card", "name": "Vet reminder card", "takeable": true,
+  "text": "Biscuit is due a booster.", "revealsFacts": ["dana_dog_name"] }
+```
+
+A social-feed post's existing `fact` field is the other server-visible source; it needs no new
+field.
+
+**The NPC `password` habit** is unchanged in shape. Its schema description changes from "No
+run-time effect" to say the crack reads its class.
+
+A scenario with no `hash` record and no `revealsFacts` is unchanged (section 10).
 
 ## 5. Engine behaviour (server then client)
 
-**Server.** The hash record lives in the server-only `credentials` registry; its `token` is minted
-once per game from a seeded function of `account.npc` + a per-scenario salt, memoised in server
-state so it is stable across reloads. When a crack run arrives the server:
+### Server
 
-1. Confirms the player holds the hash record (its keyring proof holds now).
-2. Reads the account NPC's `password` habit from `scenario_data` (never shipped).
-3. Builds the "correct" candidate the habit implies, using `clues.rb`: for `guessable`, the fact ids
-   in `passwordPattern`; for `reused`, the `reuse_homes` source secret; `strong` has no recoverable
-   candidate.
-4. Compares the player's submitted candidate (fact ids, or a held-credential reference for `reused`)
-   against that, checks each referenced fact/secret is actually held, and applies the salt-cost
-   gate.
-5. On success, grants the recovered password into the keyring and returns a non-secret result.
+New module `app/models/break_escape/ops_cracking.rb` (a concern on `Game`, as `CredentialKeyring`
+is). It reads only `scenario_data`, `player_state` and the server clock.
 
-**Client.** A new scene `ops-cracker` (a `SocialOverlayScene` sibling of `password-guesser`) shows
-the hash token, the facts held, and slot rows built with the reused `slotGuess`/`textFor` helpers.
-The player assembles a candidate and presses Crack; the scene calls `POST /crack` and renders the
-server's result (running / no match / missing N facts / cracked). The scene **never computes the
-outcome** and never holds the password before the server grants it. It is launched from the keyring
-entry (a "Crack" affordance on a held `hash` record) or from an inventory tool item, both of which
-just open the scene for a given hash id.
+**The token.** Derived on each answer, never stored: an HMAC (key derived from the app's
+`secret_key_base` with a fixed purpose string, never sent) over the game id plus, for an unsalted
+record, the account's `creds.password`, or, for a salted record, the record id. The output is 24
+characters from a 32-letter alphabet, shown in groups of four. It carries no information a client
+can use: it cannot be inverted or recomputed without the server key, and it differs between games.
+Two unsalted records whose passwords are equal show the same token in the same game; salted
+records never match. This is the visible meaning of salt.
+
+**Earned facts.** A fact counts for a crack only when the server has seen the event that reveals
+it. The set is the union of:
+
+1. `player_state['earnedFacts']`: ids stamped by `add_inventory_item!` from the item definition's
+   `revealsFacts` (the server's own definition, found as `restamp_item_credential!` finds it,
+   `GAME:749-773`, never the client's item body). This covers a take, an NPC give and a flag
+   reward's item.
+2. The `revealsFacts` of items in the inventory now, read from their definitions (covers start
+   items that never passed through `add_inventory_item!`).
+3. The `fact` of every social-feed post the server has served (`feedRevealed`).
+
+A `se_intel_*` global is never read. Per source, what an author does:
+
+| Where the fact comes from today | Server-visible? | What the author does |
+|---|---|---|
+| An item the player takes, or a takeable file on a share or in a container | yes | add `revealsFacts` to the item |
+| An item an NPC hands over (ink `give_item`, NPC `itemsHeld`) | yes, the inventory route checks the NPC held it | add `revealsFacts` to the held item |
+| A flag reward | yes, if the reward is `give_item` | give an item carrying `revealsFacts` |
+| A social-feed post with `fact` | yes (`feedRevealed`) | nothing |
+| Ink dialogue, an object action or timer `grant_fact`, an OSINT browser page, a mail highlight | no, the browser grants it | for a fact a recipe needs: also have the NPC hand over an item carrying it, or put it on a takeable item or feed post. The dialogue grant may stay for the intel board |
+| A read-only poster or notice the player cannot take | no (reads are not recorded) | make it takeable, or add a takeable copy |
+
+The validator refuses a recipe fact with no server-visible source (section 9), so this is found at
+authoring time.
+
+**The class.** `crack.password` if present, else the account NPC's `habits.password`. Fails
+closed: no class (an old or hand-edited game row whose habit is gone), an unknown value, or an
+account with no `creds.password` answers `no_recipe` and records nothing.
+
+**One run** (inside `with_lock`, in `games#crack`):
+
+- **Already cracked** (the account is in `crackedAccounts`, or the keyring already serves a password
+  for it from any source): answer `cracked` again, change nothing.
+- **strong**: increment `crackRuns[hashId]` up to 2. Answer `nomatch` on the first run and
+  `infeasible` from the second.
+- **common**: yields on this run.
+- **guessable**: if the earned set does not cover `crack.facts`, answer `needMoreFacts` with
+  `missingCount` = how many recipe facts are not yet earned; the submitted pick is not compared, so
+  the answer says nothing about which earned facts matter. If the earned set covers the recipe, the
+  pick must equal `crack.facts` as a set: equal yields; any other pick answers `nomatch`.
+- **reused**: the pick is ignored. Yields when some password the keyring serves the player now
+  (capture secrets, `registry` password entries whose proof holds, cracked accounts), resolved to
+  its account's `creds.password`, equals this account's `creds.password`. Else `nomatch`.
+
+**Salt.** A yield on an unsalted record grants at once and also grants every other held, unsalted
+`hash` record whose password is equal (the same token). A yield on a salted record stamps
+`crackStarted[hashId] = server_now` (first time only) and answers `running` with
+`readyInSeconds`; a later run answers `running` until `crackSeconds` have passed, then grants that
+record alone. Repeats before the time change nothing, so replaying the request gains nothing. A
+salted wait, once started, does not need a new pick.
+
+**The grant.** Appends the account id to `player_state['crackedAccounts']`. A new builder,
+`cracked_keyring_entries`, beside `implicit_keyring_entries` (`CK:266`), lists one entry per
+cracked account: id `"<npcId>.cracked"`, `kind: "password"`, `source: "cracked"`, the account
+block with username, label "Cracked", and `password` from the scenario's `creds.password`, always
+attached (a crack recovers the plain text; there is no `revealSecret` equivalent). Where the
+capture builder already serves a password for the same account, the cracked entry is left out, so
+an account has one password row. The distinct id means the two builders never clash on
+`keyringGained` or the client's row keys. After a password reset (S8b) the crack still yields the
+scenario's password, stale on purpose: the hash was of the old one.
+
+**The hash row** (a new branch in `registry_keyring_entries`): `id`, `kind: "hash"`, `source:
+"registry"`, the account block (display name and username), `label`, `token`, `salted`, and
+`status`: `ready`, `running` (with `readyInSeconds`), `infeasible`, or `cracked`. No routes, no
+`connectsTo`, no password. When at least one hash row is listed, the keyring answer also carries
+`crackFacts`: the earned fact ids (section 7).
+
+### Client
+
+- **The scene `ops-cracker`** (`public/break_escape/js/minigames/ops-cracker/ops-cracker-minigame.js`,
+  a `SocialOverlayScene` subclass, `framework/social-overlay.js:33`) and a pure model
+  `ops-cracker-model.js`. It shows the account's headshot or an account icon, the token, the salt
+  marker, and the earned facts as pickable chips labelled from `social.intelFacts` (or the served
+  post). The player picks one to four and presses Crack. It renders the server's status only: a
+  progress bar while `running`, "N facts still missing", "No match", the in-fiction infeasible line,
+  or "Cracked" with the password from the keyring answer. It never decides an outcome and never
+  holds a password before the grant. All words come from scene strings or the scenario; no NPC
+  speaks.
+- **Launch points.** The hash row's Crack button in the Sign-ins list
+  (`capture-log/signin-rows.js`), and the privilege plan's collect panel (S5b), both calling
+  `window.MinigameFramework.startMinigame('ops-cracker', { hashId })`. No inventory tool item.
+- **Keyring.** `keyring.js` tags a `cracked` password `cracked` (not `in_file`), shows it at once
+  (no `foundIn`), and gives a hash entry a find toast ("Hash collected"). `signin-rows.js` draws hash
+  rows in their own group with the account's username, token and status, and a Crack button only
+  when `status` is `ready` or `running`; a `cracked` row shows the account's password row beside it.
+- **`revealsFacts` on the client.** When an item carrying `revealsFacts` enters the inventory, the
+  client calls `grantFact` for each id, so the intel board and notes match what the server stamped.
 
 ## 6. Server route: `POST /crack`
 
