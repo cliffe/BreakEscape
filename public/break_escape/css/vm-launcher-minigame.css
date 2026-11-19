@@ -11,7 +11,7 @@
 }
 
 .vm-launcher-description {
-    color: #888;
+    color: var(--device-palette-dim);
     margin-bottom: 15px;
     font-size: 16px;
     line-height: 1.4;
@@ -24,21 +24,21 @@
 }
 
 .vm-card {
-    background: #1a1a1a;
-    border: 2px solid #333;
+    background: var(--device-palette-face);
+    border: 2px solid var(--device-palette-edge);
     padding: 15px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    color: var(--device-palette-text);
 }
 
 .vm-card:hover {
-    border-color: #00ff00;
-    background: #1f1f1f;
+    border-color: var(--device-palette-info);
+    background: var(--device-palette-button);
 }
 
 .vm-card.selected {
-    border-color: #00ff00;
-    background: rgba(0, 255, 0, 0.1);
+    border-color: var(--device-palette-info);
+    background: var(--device-palette-button);
 }
 
 .vm-card.launching {
@@ -56,7 +56,7 @@
 }
 
 .vm-title {
-    color: #00ff00;
+    color: var(--device-palette-text);
     font-size: 16px;
     overflow-wrap: anywhere;
 }
@@ -68,31 +68,33 @@
 }
 
 .vm-status.online {
-    background: #00aa00;
-    color: #000;
+    background: var(--device-palette-face);
+    color: var(--device-palette-info);
+    border: 2px solid var(--device-palette-info);
 }
 
 .vm-status.offline {
-    background: #aa0000;
-    color: #fff;
+    background: var(--device-palette-face);
+    color: var(--device-palette-danger);
+    border: 2px solid var(--device-palette-danger);
 }
 
 .vm-status.console {
     /* a muted console tag, not a bright web-blue button (critique A30) */
-    background: #12304a;
-    color: #9ee6ff;
-    border: 2px solid #9ee6ff;
+    background: var(--device-palette-button);
+    color: var(--device-palette-text);
+    border: 2px solid var(--device-palette-edge);
 }
 
 .vm-details {
     display: flex;
     gap: 20px;
     font-size: 16px;
-    color: #aaa;
+    color: var(--device-palette-dim);
 }
 
 .vm-detail-label {
-    color: #666;
+    color: var(--device-palette-dim);
 }
 
 
@@ -104,15 +106,14 @@
 }
 
 .vm-action-btn {
-    background: #00aa00;
-    color: #fff;
-    border: 2px solid #000;
+    background: var(--device-palette-button);
+    color: var(--device-palette-text);
+    border: 2px solid var(--device-palette-edge);
     padding: 10px 20px;
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;   /* on its 8px grid */
     overflow-wrap: anywhere;
     cursor: pointer;
-    transition: background 0.2s;
 }
 
 a.vm-action-btn {
@@ -121,17 +122,20 @@ a.vm-action-btn {
 }
 
 .vm-action-btn:hover:not(:disabled) {
-    background: #00cc00;
+    border-color: var(--device-palette-info);
+    color: var(--device-palette-info);
 }
 
 .vm-action-btn:disabled {
-    background: #333;
-    color: #666;
+    background: var(--device-palette-face);
+    color: var(--device-palette-dim);
+    border-style: dashed;   /* a disabled button reads from its dashed edge as well as its dim text */
     cursor: not-allowed;
 }
 
 .vm-action-btn.launching {
-    background: #666;
+    background: var(--device-palette-face);
+    color: var(--device-palette-accent);
 }
 
 .launch-status {
@@ -142,31 +146,31 @@ a.vm-action-btn {
 }
 
 .launch-status.success {
-    color: #00ff00;
+    color: var(--device-palette-info);
 }
 
 .launch-status.error {
-    color: #ff4444;
+    color: var(--device-palette-danger);
 }
 
 .launch-status.loading {
-    color: #ffaa00;
+    color: var(--device-palette-accent);
 }
 
 .no-vms-message {
     text-align: center;
     padding: 40px;
-    color: #888;
+    color: var(--device-palette-dim);
 }
 
 .no-vms-message h4 {
-    color: #ffaa00;
+    color: var(--device-palette-accent);
     margin-bottom: 15px;
 }
 
 .standalone-instructions {
-    background: #1a1a1a;
-    border: 2px solid #333;
+    background: var(--device-palette-face);
+    border: 2px solid var(--device-palette-edge);
     padding: 15px;
     margin-top: 15px;
     font-size: 16px;
@@ -174,15 +178,15 @@ a.vm-action-btn {
 }
 
 .standalone-instructions h4 {
-    color: #00ff00;
+    color: var(--device-palette-info);
     margin-top: 0;
     margin-bottom: 10px;
 }
 
 .standalone-instructions code {
-    background: #000;
+    background: var(--device-palette-button);
     padding: 2px 6px;
-    color: #ffaa00;
+    color: var(--device-palette-accent);
 }
 
 .standalone-instructions ol {
@@ -192,14 +196,14 @@ a.vm-action-btn {
 
 .standalone-instructions li {
     margin: 8px 0;
-    color: #ccc;
+    color: var(--device-palette-text);
 }
 
 /* The scenario's note on where captured flags go: a framed panel like the
    connection instructions, with an amber edge so it reads as a hint. */
 .vm-flag-note {
-    background: #1a1a1a;
-    border: 2px solid #ffaa00;
+    background: var(--device-palette-face);
+    border: 2px solid var(--device-palette-accent);
     padding: 10px 15px;
     margin-top: 15px;
     font-family: 'VT323', monospace;
@@ -209,7 +213,7 @@ a.vm-action-btn {
 
 .vm-flag-note p {
     margin: 0;
-    color: #ffaa00;
+    color: var(--device-palette-accent);
 }
 
 /* Hacktivity mode: iframe fills the panel with no extra padding */
@@ -228,8 +232,8 @@ a.vm-action-btn {
 
 /* Rules that used to exist only in an injected <style> (removed; the stylesheet is the one source) */
 .vm-ip-display {
-    background: rgba(255, 170, 0, 0.1);
-    border: 2px solid #ffaa00;
+    background: var(--device-palette-button);
+    border: 2px solid var(--device-palette-accent);
     padding: 16px;
     margin-top: 8px;
     text-align: center;
@@ -237,7 +241,7 @@ a.vm-action-btn {
 
 .vm-ip-display .vm-detail-label {
     display: block;
-    color: #888;
+    color: var(--device-palette-dim);
     font-size: 16px;
     margin-bottom: 8px;
 }
@@ -245,7 +249,7 @@ a.vm-action-btn {
 .vm-ip-value {
     font-family: 'VT323', monospace;   /* a pixel face for the address */
     font-size: 24px;
-    color: #ffaa00;
+    color: var(--device-palette-accent);
     letter-spacing: 1px;
 }
 
