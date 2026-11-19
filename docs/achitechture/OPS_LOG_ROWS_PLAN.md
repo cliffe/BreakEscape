@@ -89,7 +89,7 @@ Each stage ships alone, with its tests.
 
 | Stage | What | Size |
 |---|---|---|
-| L1a | The helper, the event list and the caps, with no call sites; the `logSources` schema and validator; the clock stamp; the secret registry with the sources that exist today (passwords, credential values, PINs and lock codes, key material) and the guard. Unit tests over a fixture scenario and a `PUT /sync_state` controller test. Nothing is written in play yet | M |
+| L1a | The helper, the event list and the caps, with no call sites; the `logSources` schema and validator; the clock stamp; the secret registry with the sources that exist today (passwords, credential values, PINs and lock codes, key material) and the guard. Unit tests over a fixture scenario and a `PUT /sync_state` controller test. The shared unchanged-scenario mechanism (build step 8). Nothing is written in play yet | M |
 | L1b | This plan's own badge, sign-in and session rows at their call sites (13.8). Creates `test_ops_logs` (a door, a sign-in PC, a `gameClock`, `logSources`, no reader). Controller tests on a re-read game and a scripted playtest checked with `verify-run.rb --ops-log` | M |
 | L2a | `GET /log_rows`, the `ops-log` viewer and `ops_log_terminal` type (read only), its schema, sprite and lighting entries; the reader added to `test_ops_logs`; scripted playtest and live proof | M |
 | L2b | Seed rows, `anomaly.rowId`, the flag flow and its actions; validator checks on seed rows; the dungeon graph note node. | S |
@@ -224,7 +224,7 @@ helper write seeds it.
   force (`game.rb:4754-4755`) writes nothing.
   - Granted (rfid lock in force, not open, `validate_unlock` passed): `badge_swipe` `ok` inside the
     transaction (`:1280`), after the route-room refusal (`:1273-1276`), before `unlock_room!` or
-    `unlock_object!`, whose save persists it. `as` from server state: `rfid_unlock_card_answer`
+    `unlock_object!` (and after the lock plan's second-step gate, once S8c lands), whose save persists it. `as` from server state: `rfid_unlock_card_answer`
     (`game.rb:4070-4081`) at an access-list lock, or a new `rfid_requires_card(lock)` from the loop
     of `rfid_lock_passes?` (`:3997-4004`) at a requires-only lock; a copy follows section 7.
   - Refused (`:1252`): only for an rfid lock in force, in reach (a door into a room connected to
@@ -495,9 +495,9 @@ No scenario in the repo has `logSources`, so:
 7. The validator run over all scenarios reports no new errors or warnings (diff of its output
    before and after).
 8. Fixtures: this plan adds `log_unlock_refusals.json` and `log_container_cases.json` to
-   `test/fixtures/files/ops_unchanged/` (the core plan's folder), captured from main: the answers
+   `test/fixtures/files/ops_unchanged/` (built in L1a, build step 8), captured from main: the answers
    of `/unlock` and `/container` over the access model suite's cases. `bin/ops-golden-compare`,
-   the one shared helper, compares them for checks 3 and 6. This plan builds no mechanism of its own.
+   the one shared helper, compares them for checks 3 and 6.
 
 ## 11. Tests
 
@@ -685,6 +685,16 @@ logs.
    section 9, reading `ops_log_events.rb`) and the one hook line in `scripts/validate_scenario.rb`, `tools/playtest/verify-run.rb --ops-log`.
 7. Tests (section 11): helper unit tests, the `EVENTS`/`KINDS` spec with the 400-byte ceiling
    check, the secret-guard walk, the clock controller test through `PUT /sync_state`.
+8. The shared unchanged-scenario mechanism, built here because L1a and L1b land first. New files:
+   `bin/ops-golden-compare`, the folder `test/fixtures/files/ops_unchanged/`, and the rake task
+   `ops:unchanged:capture` (`lib/tasks/ops_unchanged.rake`), which writes fixtures once from main
+   before any engine change. Each fixture is JSON: a fixed script played through the real routes
+   (bootstrap, room answers, the route answers a plan names, server state). The helper compares
+   answer bodies and statuses for equality and the server state with two normalisations: it strips
+   every key of `ACCESS_STATE_DEFAULTS` that is empty in the live state and absent from the fixture
+   (so each ops plan's new empty keys need no registration), and it freezes the clock (server times,
+   token clocks) so runs match. Other ops plans add their own fixtures beside these and build no
+   second mechanism.
 
 **L1b: this plan's rows**
 
@@ -732,7 +742,7 @@ note node in `generate_dungeon_graph.rb`; a seeded anomaly in `test_ops_logs` an
 | `game.rb` | S3, S5a, S5c, S8 | `attempt_login!` and `start_login_session!`; L1b lands with L1a, before S1 (section 3) |
 | `games_controller.rb` | every plan's routes | the `set_game` and `with_game_lock` lists (`:27`, `:103`) conflict on every merge |
 | `network_access.rb` | S1 to S3, S5a | `WITHHELD_SCENARIO_KEYS` (`:18`), the implant path (`:535`) |
-| secret sources | S5b, S7, S8 | each registers its own secret fields beside its `EVENTS` lines |
+| secret sources | S7, S8 | each registers its own secret fields beside its `EVENTS` lines |
 | `config/routes.rb`, schemas, `validate_scenario.rb`, `generate_dungeon_graph.rb`, `minigames/index.js`, `interactions.js`, the two docs | most plans | append-only edits in each plan's own stage |
 
 ## 13. Log rows this feature writes

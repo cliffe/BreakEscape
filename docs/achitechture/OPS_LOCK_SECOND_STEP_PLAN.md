@@ -201,9 +201,9 @@ the step goes in the lock's `contents`. The owner's reactions are barks or ink m
 `MfaModel` gains `LOCK_KINDS = %w[push push_number_match code]`, `CODE_LOCK_TYPES = %w[password
 pin]`, `PUSH_LOCK_TYPES` (those two plus `key rfid combination cryptex biometric bluetooth
 ble`) and `lock_step(lockable)`: `{ kind:, owner: }` from a valid `secondStep` on something
-with `locked: true`, the owner falling back to a single `owner` id; else nil. This plan adds
-`lock_step_never_passes?(scenario, lockable)` and its item walk `held_item_sources` (section 9)
-to the MFA plan's `MfaModel`. The validator, graph and server read the attribute through it.
+with `locked: true`, the owner falling back to a single `owner` id; else nil. This plan adds only
+`lock_step_never_passes?(scenario, lockable)` (section 9) to the MFA plan's `MfaModel`; it reuses
+`held_item_sources` from the MFA plan's M1a. The validator, graph and server read the attribute through it.
 
 ### 5.2 Server: one gate, keyed on the object's id
 
@@ -499,14 +499,14 @@ apart; its own loop over `rooms[].doors[]` covers the two door rules.
   habit is not read. `code` has one route, the device. In the worked example `dana_cabinet`
   (`push_number_match`, Dana keeps her phone) is the lock that matches; `moira_pc`,
   `moira_locker` and `records_room` are `push` with an owner who approves when pestered, so
-  none does. Items come from `MfaModel.held_item_sources(scenario)`, a plain-Ruby walk beside
-  `device_for` that counts a device exactly when the game lets the player hold it, as
+  none does. Items come from `MfaModel.held_item_sources(scenario)`, which the MFA plan's stage
+  M1a builds (this plan reuses it), a plain-Ruby walk beside `device_for` that counts a device exactly when the game lets the player hold it, as
   `held_friendface_phone` does (`social_feed.rb:190-221`): room objects and `contents`, start
   items, and a room NPC's `itemsHeld` only when its story or record offers that type
   (`AccessWork.offers_item_text?`) or the NPC can be knocked out: not `koImmune`, not
-  `npcType: "phone"`, and no scenario `disableAttacks` (the server's own test,
-  `owner_claim.rb:73-74` and `game.rb:2050-2059`; the MFA plan's "nobody can get" test, one
-  shared helper). Headless records and declared grants are not counted,
+  `npcType: "phone"`, and no scenario `disableAttacks` (the server's knock-out gate,
+  `game.rb:2045-2059`, excludes the first two; `disableAttacks` is the client's refusal to punch,
+  `player-combat.js`, mirrored in `owner_claim.rb:73-74`). Headless records and declared grants are not counted,
   because those tests do not. The validator and the graph call the predicate. A task needs
   the lock when any task's target is the lock or sits below it (an `unlock_object` or
   `collect_items` task naming an id in the subtree, from the walk's ancestor chain) or, for
@@ -542,7 +542,7 @@ field only when a room has it. Every game gains an empty `lockSteps` on its next
 
 **Proof.** (1) A spec walks every scenario under `scenarios/` (a pure scenario walk) and
 asserts `second_step_ids` is empty for all but `test_ops_lock_step`. (2) The shared mechanism
-of the core plan's section 10: this plan adds to `test/fixtures/files/ops_unchanged/` the files
+built in the log plan's L1a: this plan adds to `test/fixtures/files/ops_unchanged/` the files
 `lock_step_unlock.json`,
 `lock_step_container.json` and `lock_step_rooms.json`, holding the `/unlock` answers, the
 `GET /container` answers and the `filtered_room_data` rooms for `test_objectives`,
@@ -553,8 +553,7 @@ each room's objects in file order, after its room and container ancestors are op
 `requires` item set in the inventory by the test (same on main and branch); a lock the scope
 refuses is recorded as refused, and locks below it as unreached. `GET /container` for each
 open container, then `filtered_room_data` for each room (`test_simple_success` has no locks
-or containers: room answers only). The core plan's capture rake task (or a named one beside
-it) writes them once from main before any change of this plan, and `bin/ops-golden-compare`
+or containers: room answers only). The log plan's rake task `ops:unchanged:capture` writes them once from main before any change of this plan, and `bin/ops-golden-compare`
 compares them in `test/controllers/break_escape/lock_step_unchanged_test.rb` after each
 stage; they cover answers, not stored state (the empty `lockSteps`). (3) The existing
 unlock, container, inventory and door suites pass with no edit.
@@ -563,11 +562,8 @@ unlock, container, inventory and door suites pass with no edit.
 
 **Unit (Ruby).** `mfa_model_test.rb`: `lock_step` for each valid and invalid shape, owner
 fallback, the two type lists; `lock_step_never_passes?` with the routes open and shut (four
-cases for `push`, two for `push_number_match` and `code`), and a device held only by a
-headless record, a declared grant, or the `itemsHeld` with no offer of a `koImmune` NPC, a
-`phone` NPC or any NPC in a `disableAttacks` scenario (each
-"never passes"), against the same item in a room object, a start item or an offering NPC's
-`itemsHeld` (takeable). `lock_second_step_test.rb`: `second_step_ids` over every authored
+cases for `push`, two for `push_number_match` and `code`), with the item walk's cases
+(`held_item_sources`) left to the MFA plan's `mfa_model_test.rb`. `lock_second_step_test.rb`: `second_step_ids` over every authored
 home, the same before and after a grant is held; Rule A (`unlock_object!` refuses a
 string in the set, `record_step_open!` raises when the step is not cleared); Rule B at each
 exit of 5.2; `resolve_unlock_target` finds the same object as `find_scenario_object` for
@@ -663,7 +659,7 @@ door tests and B11.
 |---|---|---|
 | `game.rb` | `ACCESS_STATE_DEFAULTS`; `resolve_unlock_target` behind `find_scenario_object`; `unlock_object!` (Rule A); `validate_unlock` (`resolved:`, Rule C, the shortcut); the feedback helpers; the marker at `:2999-3010`; the bootstrap allowlist (G2) | MFA plan, privilege and accounts plan, core plan |
 | `games_controller.rb` | the gate and the answer's finder in `unlock`; the plain `GET /container` branch and the path through its finders; the room-object take test; the inventory copy; the lock form in the `/mfa/*` actions | MFA plan, log plan |
-| `lib/break_escape/mfa_model.rb`, `app/models/break_escape/mfa_access.rb` | the lock constants, `lock_step`, `lock_step_never_passes?` and `held_item_sources`; the `object` and `door` subjects | MFA plan (owner) |
+| `lib/break_escape/mfa_model.rb`, `app/models/break_escape/mfa_access.rb` | the lock constants, `lock_step` and `lock_step_never_passes?` (`held_item_sources` is the MFA plan's); the `object` and `door` subjects | MFA plan (owner) |
 | `api-client.js`, `utils/lock-scope-refusal.js`, `systems/unlock-system.js` (G1) | the step in `ApiClient.unlock`; the refusal line; the cancelled guard | none in the ops plans |
 | `mfa-client.js`, the `password` scene's second pane, `authenticator-live` | subject keys, `secondStepOnly`, the lock card | MFA plan (owner) |
 | `scripts/scenario-schema.json`, `scripts/validate_scenario.rb` (the `require_relative` and run-list lines only), `scripts/generate_dungeon_graph.rb` (no require of its own; it uses the MFA plan's `mfa_model` require), `scripts/lock_key_diff.rb` | section 9; `scripts/validate_lock_step.rb` is new | every ops plan |

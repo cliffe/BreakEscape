@@ -732,17 +732,17 @@ A scenario that sets none of the new fields behaves exactly as before:
 `test_access_signin`, `test_access_sessions`, `test_access_keyring` and `test_access_social` (sign-in,
 lock, unlock, keyring sign-in, borrow "done", implant, `GET /container`, `GET /keyring`) and compares
 the server state and every answer body with JSON fixtures in the shared folder
-`test/fixtures/files/ops_unchanged/` (the core plan's folder), named `privilege_<scenario>.json`,
+`test/fixtures/files/ops_unchanged/` (built in the log rows plan's L1a), named `privilege_<scenario>.json`,
 captured from `main` before any engine change and compared by the one shared helper
-`bin/ops-golden-compare` (the core plan builds it in its first stage). This plan builds no golden
+`bin/ops-golden-compare` (the log plan's L1a builds it and owns its spec). This plan builds no golden
 mechanism of its own. The test is the first commit of S5a, before any engine change. Three rules
 keep the comparison honest:
 - `ACCESS_STATE_DEFAULTS` is filled into every game's `player_state` (`GM:7576`), so the new empty
   keys appear in the server state. The comparison removes `cachedAt` and `harvestedAccounts` and
   asserts them separately as empty. The shared helper strips the empty new keys of every ops plan
-  (section 14).
+  (its spec is in the log plan's L1a).
 - Server times (`guestSessionsAt`, the hand-over `time`, `npc_frustration.rb:545`) and token clocks
-  vary per run, so the test freezes the clock.
+  vary per run, so the shared helper freezes the clock (log plan's L1a).
 - Tile lists are part of every room answer, so they are compared too.
 
 A validator snapshot over every shipped scenario shows no new error, warning or info line.
@@ -864,7 +864,7 @@ Files this plan changes:
   `accountOnly`; the first-group readers of section 5 (`filtered_room_data`, `hasPresentNpc`,
   `npc_in_room?`, `ko_claimable_room_npc_ids`, `character_sprite_keys`) reading `account_only?`.
 - `test/fixtures/files/ops_unchanged/privilege_<scenario>.json`: this plan's unchanged-scenario
-  fixtures, compared by the core plan's `bin/ops-golden-compare` (section 10).
+  fixtures, compared by the log plan's `bin/ops-golden-compare` (section 10).
 - `scripts/validate_privilege.rb` (new): this plan's validator checks (section 9), required and run
   from `scripts/validate_scenario.rb` by one line.
 - `lib/break_escape/credential_model.rb`: `pc_admits_account?` calling `account_kind_admits?`.
@@ -896,8 +896,8 @@ Files this plan changes:
 - `attempt_login!` and `attempt_credential_login!`: S8 adds the second step after the Admission
   step (`pc_admits_account?`); this plan changes only `pc_admits_account?`.
 - `credential_model.rb`: S7 and S8 may read `pcs_accepting`; this plan changes only its admission.
-- The unchanged-scenario fixture folder and `bin/ops-golden-compare` (section 10), shared by every
-  ops plan's unchanged test.
+- The unchanged-scenario fixture folder and `bin/ops-golden-compare` (section 10), built in the log
+  plan's L1a and shared by every ops plan's unchanged test.
 - `credential_keyring.rb` row helper: S7 adds `source: "cracked"` and the `harvested` proof kind.
 - `ACCESS_STATE_DEFAULTS`, `AccessIdentities.reach`, the dungeon graph and the validator.
 
@@ -971,8 +971,8 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   `<npcId>.reset` row. Lockouts and the failure counter are unchanged by this plan.
 - **To OPS_LOG_ROWS (S9).** None: section 13 is your 13.7 S5 rows as written.
 - **To all ops plans.** One fixture folder, `test/fixtures/files/ops_unchanged/`, and one helper,
-  `bin/ops-golden-compare` (section 10), which strips each plan's new empty `ACCESS_STATE_DEFAULTS`
-  keys and freezes the clock; and one test directory for unit tests (this plan uses
+  `bin/ops-golden-compare` (section 10), both built by the log plan's L1a, which strips each plan's
+  new empty `ACCESS_STATE_DEFAULTS` keys and freezes the clock; and one test directory for unit tests (this plan uses
   `test/models/`).
 
 ## 15. Open questions for the user

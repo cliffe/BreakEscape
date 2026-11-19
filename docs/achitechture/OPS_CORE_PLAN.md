@@ -1220,7 +1220,8 @@ None. A scenario without the new fields takes the old path at every point this p
 | Schema, validator, graph | new optional properties; `check_network_ops` returns at once when there are no `hosts`, `services` or `techniques`; the graph block does not run |
 
 **The check that proves it** has four parts, all committed in build step 1, before any engine
-change, so that the "before" side is main's own output:
+change, so that the "before" side is main's own output. The helper, folder and rake task come
+from the log rows plan's stage L1a, which lands first; this plan adds its own fixtures:
 
 1. **Golden answers.** `test/controllers/break_escape/network_ops_unchanged_test.rb` plays a fixed
    script through the real routes for each scenario that declares `networks` (today
@@ -1230,9 +1231,9 @@ change, so that the "before" side is main's own output:
    without an edit): gain each foothold, sign in remotely where the scenario allows, then record
    the bootstrap, each room answer, `GET /network` per foothold, `GET /keyring` and the desktop
    answer. The recordings are JSON fixtures under `test/fixtures/files/ops_unchanged/`, written
-   once from main by a rake task and compared for equality on every run after, through the one
-   shared helper `bin/ops-golden-compare`. This folder is the shared one: other ops plans add
-   their own fixtures beside these and build no second mechanism.
+   once from main by the log plan's rake task `ops:unchanged:capture` and compared for equality on
+   every run after, through the shared helper `bin/ops-golden-compare` (its spec, including the
+   stripping of empty `ACCESS_STATE_DEFAULTS` keys and the clock freeze, is in the log plan's L1a).
 2. **Validator and graph output.** A node test, `test/js/ops-unchanged-validator.test.mjs`, runs
    the validator and the graph generator over every scenario folder and compares the validator's
    lines and the graph JSON with a snapshot taken on main. The `dungeon_graph.*` files checked in
@@ -1493,7 +1494,7 @@ the branch after each landing.
 
 | Step | Stage | Work | Proof before moving on |
 |---|---|---|---|
-| 1 | before S1 | The unchanged-behaviour fixtures and tests of section 10, parts 1 and 2, recorded on main | they pass on main |
+| 1 | before S1 | The unchanged-behaviour fixtures and tests of section 10, parts 1 and 2, recorded on main with the shared helper, folder and rake task the log plan's L1a built (this step builds none of them) | they pass on main |
 | 2 | S1 | Schema (9.1, S1 rows); `NetworkModel` helpers; `check_network_ops` S1 rules and the not-built-yet table; the two withheld-list names | unit and validator node tests; step 1 tests |
 | 3 | S1 | `network_ops.rb` with `ops_listed?`, the one 404 answer, the 400, `scan_network!` and `scan_host!`; `opsDiscovered`; the route, both controller lists, `network_scan?` in the policy and its name in the role test; the `network_swept` and `host_scanned` events and their calls; `network_rows` and block changes; the condition in `host_reachable_through?`, `from_route_refusal` and the foothold branch of `resource_admits_player?` | `network_scan_test`, `network_discovery_enforced_test`, `network_ops_indistinguishable_test`, no-exposure and delta tests; step 1 tests |
 | 4 | S1 | Client: `ops-model.js`, the scene's `perform` path and pending guard with the unplug guard folded in, Sweep and Scan in the view, the row icon, `api-client.js`, events, `getTestState`, the test bridge's `networkView` comment and test, copy lists | node tests; `bin/test-js` whole |
@@ -1553,7 +1554,8 @@ are in flight at once, their sessions agree who goes first on each file.
 New files, owned by this plan alone: `app/models/break_escape/network_ops.rb`,
 `scripts/validate_network_ops.rb`, `scripts/real_product_names.txt`,
 `public/break_escape/js/minigames/network-view/ops-model.js`, the test files of section 11, the
-three scenario folders and the `ops_unchanged` fixtures.
+three scenario folders and this plan's fixtures in `ops_unchanged` (the folder, helper and rake
+task are the log plan's).
 
 Build order: the log helper stage, then S1, S2 and S3, then the other features in the order the
 outline gives. The helper is the one thing this plan needs from another plan before it lands.

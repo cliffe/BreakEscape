@@ -123,7 +123,7 @@ Each stage ends tested and, from M1b on, playable. Letters M (multi-factor) and 
 
 | Stage | Adds | Done when | Size |
 |---|---|---|---|
-| M1a (server) | Policy `mfa: "code"`, `MfaModel`, the `code_device` item and its gate (`OWNER_BOUND_TYPES` at the three NPC-item sites), the pending second step in `attempt_login!`, the route re-judge, the lockout key functions, the five-minute closure of the code step after thirty wrong codes (`closedAt`, the `codeLocked` refusal, the `mfa_code_locked` row), the refusal of a saved connection at an MFA PC, `GET /mfa/device`, `POST /mfa/verify`, schema and validator | Controller tests: a `code` PC answers `mfaRequired` to a right password and opens a session only on a right code; the thirtieth wrong code closes the step for five minutes of server time; the device cannot be pulled from an owner who has only been met; a saved connection to that PC is refused | M |
+| M1a (server) | Policy `mfa: "code"`, `MfaModel` with `held_item_sources`, the `code_device` item and its gate (`OWNER_BOUND_TYPES` at the three NPC-item sites), the pending second step in `attempt_login!`, the route re-judge, the lockout key functions, the five-minute closure of the code step after thirty wrong codes (`closedAt`, the `codeLocked` refusal, the `mfa_code_locked` row), the refusal of a saved connection at an MFA PC, `GET /mfa/device`, `POST /mfa/verify`, schema and validator | Controller tests: a `code` PC answers `mfaRequired` to a right password and opens a session only on a right code; the thirtieth wrong code closes the step for five minutes of server time; the device cannot be pulled from an owner who has only been met; a saved connection to that PC is refused | M |
 | M1b (client) | `PcSessions` second-step handling and `completeSecondStep`, `mfa-client.js`, the sign-in screen's code pane, the `code-device` scene as a child of the sign-in screen, dungeon graph, scenario beats F1 to F6, live proof | A player signs in at a `code` PC with a device they were handed | M |
 | M2 | `mfa: "push"`, habit `approvesPrompts` with `promptPatience` resolved at read time, `POST /mfa/prompt`, the waiting pane | Pestering a low-awareness owner signs the player in; a high-awareness owner never approves | S |
 | M3 | `mfa: "push_number_match"`, `GET /mfa/phone`, `POST /mfa/approve`, the `authenticator-live` scene | A held phone approves a request; number matching defeats pestering but not a held phone | S |
@@ -225,6 +225,14 @@ New `lib/break_escape/mfa_model.rb`, no Rails, like `CredentialModel`:
 - `device_for(scenario, npc_id)`: the authored `code_device` whose `owner` is the NPC, found by
   the same walk the phone uses (room objects and their `contents`, NPC `itemsHeld`, start items;
   `social_feed.rb:201-221`).
+- `held_item_sources(scenario)`: M1a's one walk for "can the player come to hold this item", the
+  same walk as `device_for` and `held_friendface_phone` (`social_feed.rb:190-221`): room objects
+  and `contents`, start items, and a room NPC's `itemsHeld` only when its story offers that type
+  (`AccessWork.offers_item_text?`) or the NPC can be knocked out (not `koImmune`, not
+  `npcType: "phone"`, no scenario `disableAttacks`: the server's knock-out gate,
+  `game.rb:2045-2059`, excludes the first two; `disableAttacks` is the client's refusal to punch,
+  `player-combat.js`, mirrored in `owner_claim.rb:73-74`). Headless records and declared grants are
+  never counted. The validator's "nobody can get" and "push step nobody passes" checks and the lock plan's `lock_step_never_passes?` call it.
 - `code(key, game_id, device_id, window)`: six digits from an HMAC-SHA256 over
   `"<game id>|<device id>|<window>"`. `device_id` is the item's id, or `own:<npcId>` for an
   account re-enrolled onto the player's own phone (S8b).
@@ -769,11 +777,13 @@ same footing as a phone today:
   type appears anywhere in the owner's story. The server does not know whether the player
   reached the line, so a crafted inventory request can take an offered device as soon as the
   owner is met. It cannot take one the story never offers.
-- *The knock-out record* is the browser's claim (`game.rb:2008-2020`), accepted only for a met,
-  non-`koImmune` room NPC (`npc_ko_claimable?`, `game.rb:2029-2033`).
+- *The knock-out record* is the browser's claim (`game.rb:2008-2020`), accepted only for a met
+  room NPC that is not `koImmune` and not `npcType: "phone"` (`npc_ko_claimable?`,
+  `ko_claimable_room_npc_ids`, `game.rb:2029-2059`). A scenario `disableAttacks` stops the
+  client's punch (`player-combat.js`) and the reachability walk counts it (`held_item_sources`).
 - *A helpdesk request* can be posted without standing in the conversation.
 
-An author who needs a device to stay with its owner offers no give of it and sets `koImmune`;
+An author who needs a device to stay with its owner offers no give of it and sets `koImmune` (or `npcType: "phone"`, or the scenario's `disableAttacks`);
 the validator's note says which routes each device has (section 9).
 
 No-exposure tests (section 11) assert each row against captured answers, and the leak scanner
@@ -838,13 +848,13 @@ naming a `helpdesk` that does not exist.
 | Warning | Raised when |
 |---|---|
 | The policy does nothing | every account at an MFA PC is exempt |
-| A `code_device` nobody can get | it is in the `itemsHeld` of an NPC whose story offers no give of it and who is `koImmune`. The offer test is `AccessWork.offers_item_text?`, the one the server's gate uses |
-| A `code_device` that is not gated | it is a declared grant, which can be claimed at any time (`games_controller.rb:3384-3399`), or its owner's story has a `give_npc_inventory_items` tag with no type filter |
+| A `code_device` nobody can get | `MfaModel.held_item_sources` does not list it: it is in the `itemsHeld` of an NPC whose story offers no give of it and who cannot be knocked out (`koImmune`, `npcType: "phone"`, or `disableAttacks` in the scenario), or it is only a headless record or a declared grant (never counted as held). The offer test is `AccessWork.offers_item_text?`, the one the server's gate uses |
+| A `code_device` that is not gated | its owner's story has a `give_npc_inventory_items` tag with no type filter |
 | A loose owned phone | a `phone_friendface` with an `owner` sits in room `objects` or container `contents`, so it is takeable without its owner. This is the standing check behind section 10's pickup row; it runs on the rendered scenario, so it sees generated objects too |
 | **A code step that can lock for good** | a policy has `mfa: "code"` and `maxAttempts`, and an enrolled account it admits is covered by no desk whose `resets` include `password`: wrong codes count towards that PC's lockout and nothing in the scenario lifts it. An error when the dungeon graph marks that PC's sign-in as required and that account as its only key |
 | **A desk that can stop for good** | a desk has `maxTries` (authored or the default) and, for an account it serves, its grant is the only way to something: the only desk that lifts a lockout a policy's `maxAttempts` can cause, or the only source of a password or second step. Refused requests then end that account's recovery for the game. An error when the dungeon graph marks the desk's grant as the only key of a required lock. An author clears it with a second way in (open question 6) |
 | A saved connection that must be typed | a `saved_connection` to a PC whose policy sets `mfa`, for an enrolled account |
-| A push step nobody passes | every admitted owner resolves to `never` and holds no declared phone, and no other way through exists |
+| A push step nobody passes | every admitted owner resolves to `never` and `held_item_sources` lists no phone the player can hold, and no other way through exists |
 | Patience with no effect | `promptPatience` on an NPC whose habit does not resolve to `pestered` |
 | Answers the player cannot find | `verify: "questions"` where an answer appears in no readable text, feed post, document or ink line the player can reach (the reachability walk `npc_habits/clues.rb` does for password clues) |
 | A callback nobody can take | `verify: "callback"` where the owner declares no phone item |
@@ -910,7 +920,7 @@ Proof:
 
 **Unit** (`test/unit/`): `access_identities_test.rb` additions (`lockout_key` equals the string
 built today; `lockout_key_parts` round trip and malformed keys); `mfa_model_test.rb` (kinds,
-enrolment, device lookup, code for a fixed time and key, `code_state` for each of the four
+enrolment, device lookup, `held_item_sources` (a device held only by a headless record, a declared grant, or the `itemsHeld` with no offer of a `koImmune` NPC, a `phone` NPC or any NPC in a `disableAttacks` scenario is not listed; the same item in a room object, a start item or an offering NPC's `itemsHeld` is), code for a fixed time and key, `code_state` for each of the four
 windows with and without a used window, an own-phone device id changes the code, `numbers` gives three different values in a fixed order for fixed inputs,
 `prompt_habit` per level and with an authored value, `prompt_patience` bounds);
 `npc_habits_test` additions (the two keys validate, `promptPatience` bounds, expansion of an NPC

@@ -106,7 +106,7 @@ one says so under "Cross-plan requests" and the orchestrator settles it.
   (`scripts/validate_<feature>.rb`, as the core plan's `validate_network_ops.rb`), hooked into
   `validate_scenario.rb` by one line.
 - **Unchanged scenarios.** One mechanism for "an existing scenario answers as before": JSON
-  fixtures captured from main in `test/fixtures/files/ops_unchanged/` (the core plan's folder),
+  fixtures captured from main in `test/fixtures/files/ops_unchanged/` (built in the log rows plan's stage L1a),
   compared by one shared helper (`bin/ops-golden-compare`). Every plan names which fixtures it
   adds there; none builds its own golden mechanism.
 - **Refusals.** New ops routes answer refusals as `{ success: false, reason: "<code>" }` with a

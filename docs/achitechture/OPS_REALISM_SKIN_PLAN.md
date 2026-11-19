@@ -636,7 +636,8 @@ Checks that prove it, across all eight and any scenario that later declares `net
    The core plan records the `GET /network` answer of every foothold of each scenario that
    declares `networks` as golden fixtures under `test/fixtures/files/ops_unchanged/`, found by
    the key so a new scenario joins without an edit. Before K1 changes any code, a snapshot of
-   the scene's DOM for each answer is committed. The test renders each answer with a stored pick
+   the scene's DOM for each answer is committed under `test/js/fixtures/network-view/unchanged/`
+   (a JS-side snapshot, not a second server golden mechanism). The test renders each answer with a stored pick
    of `cli`, a `?net_skin=cli` URL and a scenario default of `cli` all set at once, and asserts
    that the DOM equals the snapshot byte for byte, that no `[data-skin-switch]` element exists
    and that the Terminal renderer was not mounted.
