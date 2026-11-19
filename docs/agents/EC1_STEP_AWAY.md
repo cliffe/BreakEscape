@@ -65,6 +65,56 @@ All five parts (a) to (e) are built. Plan line pointers in the runner, model and
 5. Not done, out of EC1 code: the facilitator-guide line (memory: facilitator guide last); kiosk "finished" text
    variant is per-shell content.
 
+## Second agent (2026-11-19, stopped at the context guard before live proof)
+
+Review against plan 9: no code changed; every builder pointer and the five parts hold. Verdicts:
+
+- (a) holds. `_markDebriefSeen` writes `debriefSeen: true` once (guarded by `debriefSeen`/`done.includes('debrief')`),
+  only when the debrief view was showing at `cleanup`, only in stepAway episodes. Globals sync as keyed deltas
+  (`state-sync.js:40-43`): the changed key `episode_<id>_state` goes once, then is confirmed and not re-sent. One extra
+  save at most, never on Finish (Finish puts `debrief` in `done`), never on a second close. Nothing grows.
+  Side note for the plan: a close without Finish releases the success screen but leaves `done` without `debrief`, so the
+  6.1 "debrief done" mapping never lowers `kit_quiet` on that route. Pools stay quiet until Finish. Plan decision, not EC1 code.
+- (b) holds: `STEP_AWAY_READY_GLOBAL = 'kit_defend_done'`, fixed, as plan 6.1/6.2 name it.
+- (c) holds: `_lookUp` calls `close()` then emits; the unit test records the emit with no minigame open, once on a double click.
+- (d) holds: `stepAwayOn` requires stepAway === true, not check, `variantOf === 'full'` (twins are defendOnly), debrief
+  after defend. Validator agrees (variant is required there, so no absent-variant mismatch).
+- Failed save (`triage-starter.js:235-283`): result globals are written with `deferEmit`; on `!confirmed` it returns
+  with no emit, so the `<prefix>complete` change event never fires, the mapping never sets `kit_defend_done`, and
+  Look up stays disabled (unit case "Look up is disabled while kit_defend_done is false, even with <prefix>complete true").
+
+Done:
+- `test/js/social-episode-step-away.test.mjs`, 25 cases, 25 pass (every plan 12 EC1 case and the handover list, plus copy
+  overrides, listener cleanup, Esc close, check-shell state equal with and without stepAway, success screen opening after
+  release, the kit_quiet bark drop). Copy list adds `ui/success-screen.js`, `utils/desktop-app.js`,
+  `systems/bark-release-policy.js`. No new static import in engine code, so no harness copy lists changed.
+- `scenarios/test_ca_step_away/` (name not used in Hacktivity tests): copy of test_social_episode with `stepAway: true`,
+  kit_defend_done/kit_quiet/kit_e1_out declared, the 6.1 mappings (kit_quiet up and down, kit_defend_done on the
+  confirmed complete), a step-away mapping (condition kit_defend_done, sets kit_e1_out, host bark), and the kiosk's
+  finished variant on `kit_defend_done && kit_quiet === false`. Validator `--strict-social --no-graph`: 0 errors, 6 warnings
+  (stub-fixture warnings inherited from test_social_episode, plus kit_e1_out unread).
+- Proof 8: `PAYLOAD_SCAN_ONLY=test_ca_step_away` payload_scan fresh + opened: 23 runs, 0 failures, 2 skips, no findings.
+- `bin/test-js` full suite: see the commit message of the commit that adds this section (result added there).
+
+Still open (next agent):
+1. Live proof 2 on :3003 from this worktree (`tools/playtest/start-keyless-server.sh 3003`), fresh game per case via
+   `tools/playtest/new-game.rb test_ca_step_away`, headless, `window.__test.throttleFps(20)`. Cases without kit staff:
+   panel then Look up (event, kit_e1_out true, runner closed, success screen held); reopen -> debrief with cards; carry on;
+   reload at the panel -> debrief, no panel, screen still held; close debrief without Finish -> screen opens; Finish ->
+   screen opens; facilitated (needs a second fixture or a branch-only copy with `facilitated: true`; never edit a game
+   record); failed save (block POST of the sync, check Look up disabled with `<prefix>complete` true locally); check shell
+   (ca_pre_* run to its end, saved state has no defendProgress). Screenshots (Look up enabled and disabled, facilitated
+   pause) to the scratchpad `ec1/` folder named in the brief. Stop the server after.
+2. Pixel-art UI check of the panel against the screenshots. From the CSS alone: 2px borders, no radius, the disabled
+   look is flat grey with the same frame; the runner has no X-less Cancel (Carry on is an action, the bar X closes).
+   Font of `.epr-step-away-note` inherits the runner skin (light awareness skin; check it is a pixel font).
+
+## Facilitator guide line (for the guide, written later)
+
+In a shell with the step-away panel, the pause after the defend stage has a Look up button. It turns on once the
+result has saved. Press it to close the kiosk so the group can watch the office for a minute; reopen the kiosk for the
+debrief. Press Next step instead to go straight to the debrief.
+
 ## Decisions to check
 
 - Close-without-Finish release is persisted as `debriefSeen: true` in the existing state global (one save, once).
