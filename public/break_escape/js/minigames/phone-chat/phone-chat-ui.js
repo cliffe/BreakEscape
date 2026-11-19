@@ -1475,6 +1475,9 @@ export default class PhoneChatUI {
         if (this.isCallMode) this.elements.conversationView?.classList.add('call-has-choices');
         
         this.elements.choicesContainer.innerHTML = '';
+        // A new reply set starts at the top: the old set may have been scrolled to its last
+        // reply, which would hide replies 1-3 and the "more choices" cue (call mode, short screens)
+        this.elements.choicesContainer.scrollTop = 0;
         
         choices.forEach((choice, index) => {
             const choiceButton = document.createElement('button');
