@@ -332,6 +332,8 @@ def defend_only():
     # player-sent message; drop the authored sender profile the full set carries.
     s.pop('playerSentAuth', None)
     s['outcome']['setGlobalPrefix'] = prefix
+    # messageGlobals names kit_fraud_caught, which only the full ca01 shell declares and reads
+    s['outcome'].pop('messageGlobals', None)
     strings = copy.deepcopy(EP['strings'])
     strings['brief'] = EP['_defendOnly']['brief']
     # m27: the defend-only runner never shows the flip, so drop its dead strings.
