@@ -150,3 +150,122 @@ server golden mechanism.
   ("beside the habits check"); LOCK's `find_scenario_object` change against PRIV's and CORE's
   `game.rb` edits.
 - LOCK's commit `e6d4e89ff` beyond the knock-out wording (the "defined walk order" change).
+
+## 5. Remaining checks
+
+Second reviewer, same round, covering the list in section 4. Plans read at the working tree on
+`docs/ops-layer-plan` (HEAD `27424d8de`), with a concurrent edit for Y1 to Y5 in progress; text on
+those topics was ignored. Code read: `games_controller.rb:1211-1335` (`#unlock`),
+`validate_scenario.rb:8930-8982` (the run list).
+
+Counts for this section: 0 blockers, 0 majors, 4 minors, 3 nits.
+
+Checked and clean:
+- Refusal bodies: LOG's `GET /log_rows` (LOG:307-309, closed list `invalid_object`, `not_found`);
+  PRIV's `POST /harvest_credentials` (PRIV:530-548); LOCK's lock form of the `/mfa/*` routes and
+  `/unlock` (LOCK:400-404, keeps extended bodies and says so); SKIN adds no route (SKIN:185,
+  :544, :557); the keyring sign-in's new 422 `typeToSignIn` (MFA:704-706).
+- Stage order: PRIV S5a to S5c need S3 (`access` on technique records, CORE:64-77, :606-610, which
+  reads the stored key until `session_access` exists) and L1b (`signin_refused`, whose `kind`
+  detail S5c registers, PRIV:926-928); both land earlier. PRIV S5b's hash branch is S7's to build
+  (PRIV:396, :784, :981-983), so S5b works without S7. SKIN K1 to K3 need S1 to S3, S5a's admin
+  tag (SKIN:710, :985) and `log_rows_for(..., compare: true)` (SKIN:852), which is L1a
+  (LOG:676); all earlier. No SKIN or PRIV stage depends on a later one.
+- `#unlock`: only LOG (L1b) and LOCK (G1, G2) edit it; no other plan names it. LOCK's gate sits
+  before the transaction (`games_controller.rb:1280`) and LOG's granted row inside it, so the
+  first post of a gated rfid lock writes no `badge_swipe` and the final one writes one, as
+  LOCK:695-697 says. Both plans rewrite `already_open` (`:1223-1224`): LOG for every rfid request,
+  LOCK by Rule B for a `secondStep` target. The two compose; LOCK lands second and merges.
+- `find_scenario_object`: only LOCK changes it (LOCK:218-221, :660); no other plan edits it,
+  `validate_unlock` or the inventory copy.
+- `e6d4e89ff`: the walk-order change (LOCK:544-555) is LOCK's own fixture and no other plan's
+  capture script replays the same `/unlock` answers in another order (LOG:497-500 uses the access
+  model suite's cases). One point on the capture spec: Y15.
+
+### Minors
+
+**Y9. `POST /helpdesk/request` is a new route but answers with sign-in style booleans, not a
+`reason` code.** MFA should change.
+- MFA:719: desk unknown 404 (body unstated); not met, knocked out or `what` not offered: the
+  "generic 422", which MFA:699 defines as the existing `Sign in required` body; stopped serving
+  422 `blocked: true`; rule not met 422 `refused: true, triesLeft`; an over-4 KB body is
+  "refused" with no status or body.
+- MFA:706-707 keeps the boolean style for the `/mfa/*` routes "because they extend `/login`", and
+  MFA DECISIONS records X5 for `/mfa/*` only. The helpdesk route extends no sign-in route: it is
+  a request to an NPC, and "Sign in required" is the wrong words for "this person will not help".
+- Brief section 5, Refusals: a new ops route answers `{ success: false, reason: "<code>" }` with a
+  closed list.
+Fix: MFA gives `/helpdesk/request` a closed list, for example 400 `bad_request` (missing or
+over-long params, body over 4 KB), 404 `not_found` (desk), 422 `unavailable` (not met, knocked
+out, `what` not offered), 422 `blocked`, 422 `refused` with `triesLeft`; the helpdesk form maps
+them as the network view's `REFUSAL_TEXT` does. Or MFA records a reasoned exception in its
+DECISIONS file and says so beside the table.
+
+**Y10. S5a writes `admin_profile_read` inside `GET /container`, whose scoped branches L2a then
+extracts into a shared reach check; neither plan places the row.** PRIV and LOG should change.
+- PRIV:914 and LOG:1117: the row is written in `GET /container`, `once: true`, saved only when
+  stored. PRIV's file list for `games_controller.rb` (PRIV:880-882) names only the collect route
+  and the NPC count, not `#container`, so the call site is unstated.
+- LOG:314-318 and :712-713 (L2a, after S5a): the three scoped branches of `#container`, the
+  profile branch among them, move into `container_reach_refusal(located)`, called by both
+  `/container` and `/log_rows`. LOG's check 6 (LOG:493-494) compares `/container` bodies only,
+  over the access model suite, which has no admin session; its shared-file table (LOG:743) lists
+  `games_controller.rb` for the `set_game` lists only.
+If the row goes where the profile admission is judged, the extraction carries it into the shared
+method and a `/log_rows` read of a reader in an admin-opened profile writes `admin_profile_read`;
+if it stays in `#container`, nothing says so.
+Fix: PRIV names the site (`GamesController#container`, profile branch, after `session_admits?`
+and `path_unlocked?` pass, `as` from the admin PC that `session_admits?` names) and adds
+`#container` to its file list. LOG L2a step 2 says rows stay in `#container` after
+`container_reach_refusal` returns nil, adds `#container` (S5a, L3, LOCK) to its shared-file
+table, and adds one test: `/log_rows` on a reader inside an admin-opened profile writes no row.
+
+**Y11. LOG's refused `badge_swipe` row would be written for an rfid object below a closed second
+step, which LOCK says must answer exactly as an invented id.** LOCK and LOG should change.
+- LOCK:243-251: an object below a closed step is refused by `validate_unlock` "exactly as an
+  invented id is", and `unlock_session_refusal`, `pin_cracker_feedback` and
+  `password_case_mismatch?` answer nil for it, "so the body is an invented id's".
+- LOG:230-234 (L1b): at the refusal (`games_controller.rb:1252`) a `badge_swipe` `denied` row is
+  written for an rfid lock in force, in reach (an object in an unlocked room outside an
+  unpromoted route room) with a card held. An object inside a closed gated PC meets all three, so
+  a forged post with its id writes a row (and up to ten saves per door), while an invented id
+  writes nothing. Once L2a ships, a reader shows the difference.
+Fix: LOCK adds the refused badge row to its exits table (LOCK:249-257) with "no row below a
+closed step" and a case in its "Nothing leaves or opens early" row (LOCK:592); LOG's 5.1 refused
+bullet adds "and not `behind_closed_step?`, once S8c lands".
+
+**Y12. L1b splits the lockout key by hand at two sites that MFA's "one place" rule does not
+list.** MFA should change.
+- LOG:207-210 (L1b, lands before S8a): `record_login_failure!` takes `as: { typed: }` from the
+  key's username part and `add_login_lockout!` parses the PC from the key.
+- MFA:332-341 and :1033: M1a adds `AccessIdentities.lockout_key` and `lockout_key_parts`, and
+  "every site changes to call them, and none builds or splits the string itself"; the list is
+  `attempt_login!`, `account_locked_out_at?`, `AccessWork.locked_out_at?`,
+  `lockout_pcs_for_client`, `account_login_key?`. MFA:1129 makes `lockout_key` "the one place a
+  later slice changes" (the per-lockout `scope` backlog item, PRIV S5c).
+A later change to the key's shape would leave L1b's two rows naming the wrong account or PC.
+Fix: MFA's site list (MFA:337-339 and the `game.rb` row at :1033) adds `record_login_failure!`
+and `add_login_lockout!` (the L1b row sites), each moved to `lockout_key_parts`.
+
+### Nits
+
+**Y13.** MFA:714 and :717 give `GET /mfa/device` and `GET /mfa/phone` a 403 "`no such device`" /
+"`no such phone`" and a 404 for "no policy declares a kind", with the bodies unstated; LOCK:414
+adds a 404 for an unresolved lock, body unstated. These GETs carry no sign-in, so MFA:707's
+reason does not cover them. MFA states the exact bodies (the `render_error` strings, as
+`/container` does, or codes `no_device`, `no_phone`, `not_found`); LOCK points to them.
+
+**Y14.** CORE:1548 says every plan adds its validator line "in the same place" (`:8968`, beside
+`check_credentials`), but LOCK:461-462 puts its call beside `check_npc_held_containers`
+(`:8948`), MFA:835 beside the habits check (`:8981`), PRIV:662 beside CORE's call, and LOG:685
+names no place. Each `run.call` is independent (`validate_scenario.rb:8939-8981`; MFA resolves
+habits at read time, MFA:256, so it does not need `habits_copy`), so the order does not matter
+and nothing conflicts. CORE's table says "near the other `check_*` calls; order does not matter".
+
+**Y15.** LOCK's golden script (LOCK:551-555) sets each lock's `requires` item in the inventory
+by the test before the right post. LOG L1a's capture spec (LOG:691-692) reads "a fixed script
+played through the real routes". When L1a's spec is written (Y1, Y2), it allows a named setup
+step per fixture (an inventory or state write, the same on main and branch), or LOCK says how
+the item is gained through a route.
+
+Still not checked: nothing from the section 4 list remains.
