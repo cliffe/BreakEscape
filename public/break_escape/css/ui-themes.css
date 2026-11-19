@@ -1212,7 +1212,6 @@
 
 [data-ui-theme] .examine-minigame .minigame-game-container,
 [data-ui-theme] .minigame-container[data-minigame="flag-station"] > .minigame-game-container,
-[data-ui-theme] .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container,
 [data-ui-theme] .minigame-container[data-minigame="container"] > .minigame-game-container:not(:has(.desktop-mode)),
 [data-ui-theme] .minigame-container[data-minigame="combination"] > .minigame-game-container,
 [data-ui-theme] .minigame-container[data-minigame="cryptex"] > .minigame-game-container,
@@ -1229,11 +1228,6 @@
   box-sizing: border-box;
   box-shadow: none;
   image-rendering: pixelated;
-}
-
-/* VM launcher: the device face fills the whole window inside the frame (after the shared surface rule above) */
-[data-ui-theme] .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
-  background-color: var(--device-palette-face);
 }
 
 /* Examine */
@@ -1279,9 +1273,8 @@
   filter: grayscale(1) brightness(0.6);
 }
 
-/* VM launcher: its content colours come from the shared device palette (device-frame.css), not
-   the theme, so the launcher matches the other device windows under every theme. Only the window
-   frame above is themed. */
+/* VM launcher: a device frame (device-frame.css) with the shared device palette, so it matches the
+   other device windows under every theme. Nothing here themes it. */
 
 /* Fingerprint dusting kit: its own colour variables follow the theme */
 [data-ui-theme] .dusting-container {
