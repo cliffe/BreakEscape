@@ -4223,6 +4223,11 @@
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "maxAttempts": { "type": "integer", "minimum": 1, "description": "Password locks: wrong guesses allowed before the pad locks out (client-side). Not secret: it survives the bootstrap filter." },
         "lockoutSeconds": { "type": "integer", "minimum": 1, "description": "Password locks only, opt-in: after maxAttempts wrong guesses the door pad stays shut for this many seconds, and the count survives closing and reopening the window (client-side; a page reload resets it). Not secret: it survives the bootstrap filter." },
+        "passwordHint": { "type": "string", "description": "Password locks: the hint line the door pad shows when showHint is true. doors.js reads it from the door or the connected room. Not secret: it survives the bootstrap filter, so it must not contain the answer." },
+        "showHint": { "type": "boolean", "description": "Password locks: show the Show Hint button and passwordHint on the door pad. Without it passwordHint is never displayed." },
+        "postitNote": { "type": "string", "description": "Password locks: text of a post-it note shown beside the door pad when showPostit is true." },
+        "showPostit": { "type": "boolean", "description": "Password locks: show postitNote beside the door pad." },
+        "showKeyboard": { "type": "boolean", "description": "Password locks: show the on-screen keyboard on the door pad." },
         "network": { "x-serverOnly": true, "type": "string", "x-ref": "network", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser (deleted from every room payload)." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
