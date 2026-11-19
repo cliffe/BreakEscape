@@ -723,6 +723,12 @@
     font-smooth: never;
 }
 
+.phone-terminal-theme .phone-skip-hint-cue {
+    font-size: 14px;
+    opacity: 0.8;
+    text-align: right;
+}
+
 .phone-terminal-theme .phone-skip-hint[hidden] {
     display: none;
 }

@@ -33,6 +33,14 @@ export function skipHintText() {
     return 'Space, Enter or click to skip';
 }
 
+/** Terminal typing speed: 28 ms a character, but no line takes longer than about 8 s (never under 8 ms a character). */
+export const TERMINAL_CHAR_DELAY_MS = 28;
+export const TERMINAL_LINE_MAX_MS = 8000;
+export function typewriterCharDelay(length) {
+    const n = Math.max(1, Number(length) || 1);
+    return Math.max(8, Math.min(TERMINAL_CHAR_DELAY_MS, Math.floor(TERMINAL_LINE_MAX_MS / n)));
+}
+
 /** The player's OS asks for less motion: terminal lines appear whole. */
 function prefersReducedMotion() {
     try { return globalThis.window?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true; } catch (e) { return false; }
@@ -156,6 +164,11 @@ export default class PhoneChatUI {
             hint.setAttribute('aria-hidden', 'true');
             hint.hidden = true;
             hint.textContent = skipHintText();
+            // Second line: says what the wait is for, so the player knows the choices are coming
+            const cue = document.createElement('div');
+            cue.className = 'phone-skip-hint-cue';
+            cue.textContent = 'Your reply options follow';
+            hint.appendChild(cue);
             this.container.querySelector('.phone-screen')?.appendChild(hint);
         }
         if (this.isCallMode) this._renderCallChrome();
@@ -1326,7 +1339,7 @@ export default class PhoneChatUI {
     }
 
     _typewriterMessage(text, scrollToBottom) {
-        const CHAR_DELAY = 28;
+        const CHAR_DELAY = typewriterCharDelay(text.length);
         const BLINK_DURATION = 700;
 
         const messageBubble = document.createElement('div');

@@ -288,3 +288,26 @@ test('n3: the pretext debrief path tells the phone UI to hide and restore the hi
     assert.match(src, /setOverlayOpen\?\.\(true\)[\s\S]*renderDebrief\(container/);
     assert.match(src, /onDone: \(\) => \{[\s\S]*setOverlayOpen\?\.\(false\)/);
 });
+
+test('p1: long terminal lines are capped at about 8 s; short lines keep 28 ms a character', () => {
+    const { typewriterCharDelay } = uiMod;
+    assert.ok(typewriterCharDelay(40) === 28, 'a short line keeps 28 ms');
+    assert.ok(typewriterCharDelay(285) === 28, 'at the cap boundary still 28 ms');
+    assert.ok(typewriterCharDelay(1400) * 1400 <= 11200, "a 1400 character block types in 11 s at most, not 39 s");
+    assert.ok(typewriterCharDelay(1400) < 28, 'a long block types faster than 28 ms');
+    assert.ok(typewriterCharDelay(100000) === 8, 'never faster than 8 ms a character');
+    assert.ok(typewriterCharDelay(0) === 28, 'empty text is safe');
+    assert.ok(/CHAR_DELAY = typewriterCharDelay\(text\.length\)/.test(uiSrc), 'the typewriter uses the capped delay');
+});
+
+test('p2: the terminal hint says the reply options follow', () => {
+    document.body.innerHTML = '<div id="host"></div>';
+    const ui = Object.create(UI.prototype);
+    ui.container = document.getElementById('host');
+    ui.params = { theme: 'terminal' };
+    ui.isTerminalTheme = true; ui.isSocialTheme = false; ui.isCallMode = false; ui.appChrome = false; ui.app = null;
+    ui.render();
+    const cue = document.querySelector('#phone-skip-hint .phone-skip-hint-cue');
+    assert.ok(cue !== null, 'cue line exists');
+    assert.ok(/reply options follow/i.test(cue.textContent), 'cue wording');
+});
