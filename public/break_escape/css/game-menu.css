@@ -119,7 +119,9 @@
 
 .game-menu-field select {
   font-family: 'GNF', 'Courier New', monospace;
-  font-size: 16px;
+  /* the panel is zoomed by --hud-zoom (below 1 on "Smaller"); the size is divided back so the
+     rendered text stays at least 16px and iOS Safari does not zoom on focus */
+  font-size: max(16px, calc(16px / var(--hud-zoom, 1)));
   padding: 4px 6px;
   min-width: 190px;
 }
