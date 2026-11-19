@@ -3028,7 +3028,7 @@ if (typeof window !== 'undefined') {
 
 // Face an in-reach object and use it (a tap, a pick from the menu, or a far tap's arrival)
 function useObjectInReach(obj) {
-    facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
+    facePlayerToward(aimX(obj), obj.y); // faces from the body to the object's top edge (E scores with aimDiff in interaction-reach.js)
     if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
     if (window.handleObjectInteraction) window.handleObjectInteraction(obj);
 }

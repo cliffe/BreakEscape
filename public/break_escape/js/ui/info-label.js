@@ -10,7 +10,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
-import { reachX, reachY, aimX, aimY } from '../systems/interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff } from '../systems/interaction-reach.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -121,11 +121,8 @@ export function updateInfoLabel() {
     const playerDirection = player.direction || 'down';
     const facingAngle = _directionToAngle(playerDirection);
 
-    // Feet of the player, as tryInteractWithNearest takes a scenario object's angle from them
-    const bodyC = player.body?.center;
-    const feet = bodyC && Number.isFinite(bodyC.x) && Number.isFinite(bodyC.y) ? bodyC : { x: px, y: py };
-    function angularDiff(ox, oy, fx = px, fy = py) {
-        let angle = Math.atan2(oy - fy, ox - fx) * 180 / Math.PI;
+    function angularDiff(ox, oy) {
+        let angle = Math.atan2(oy - py, ox - px) * 180 / Math.PI;
         angle = (angle + 360) % 360;
         let diff = Math.abs(facingAngle - angle);
         if (diff > 180) diff = 360 - diff;
@@ -141,10 +138,10 @@ export function updateInfoLabel() {
         const dy = oy - py;
         if (dx * dx + dy * dy > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
-        // Same aim as tryInteractWithNearest: a scenario object by the better of feet-to-centre and body-to-top-edge
+        // Same scoring as tryInteractWithNearest, from the one helper
         let diff = angularDiff(faceX, faceY);
         if (target && !target._isNPC && !target.doorProperties) {
-            diff = Math.min(angularDiff(faceX, faceY, feet.x, feet.y), angularDiff(faceX, target.y));
+            diff = aimDiff(player, target, faceX, faceY, facingAngle).diff;
         }
         const score = diff * 1000 + Math.sqrt(dx * dx + dy * dy);
         if (score < bestScore) {

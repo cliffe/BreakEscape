@@ -15,7 +15,8 @@ import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { aimX, aimY } from '../../public/break_escape/js/systems/interaction-reach.js';
+import { aimX, aimY, aimDiff, BODY_AIM_MAX_PX } from '../../public/break_escape/js/systems/interaction-reach.js';
+const OLD = process.env.EAIM_OLD_INTERACTIONS;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
@@ -49,7 +50,7 @@ const stubs = {
     '../utils/escape-html.js': 'export function escapeHtml(s){ return String(s ?? ""); }',
     './inventory-menu.js': 'export function hasTriggerOnInteract(){return false;} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
 };
-let src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+let src = readFileSync(OLD || join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, body] of Object.entries(stubs)) {
     const before = src;
     src = src.split(`'${spec}'`).join(`'${dataUrl(body)}'`);
@@ -99,6 +100,8 @@ test('E: flush south of the safe, at its right half, opens the safe and not the 
     assert.equal(pressE(110, 69), 'safe');
 });
 
+// Guard, not a regression pin: the old aim also picked the cabinet here. It stops the fix going the other
+// way, with the safe stealing the cabinet's own half.
 test('E: flush south of the cabinet opens the cabinet and not the safe', () => {
     setRoom(safe(), cabinet());
     assert.equal(pressE(94, 69), 'cabinet');
@@ -125,13 +128,15 @@ test('E: an item on a desk is not stolen by a wide wall board above and to the l
     assert.equal(pressE(140, 150), 'item');
 });
 
-test('E: a board above a desk is still picked when the player faces it and nothing nearer is in front', () => {
+test('E: standing at the desk facing up, the desk wins over the wall board above it', () => {
     const desk = obj('desk', 100, 100, 100, 50);
     const board = obj('board', 120, 58, 60, 30, { scenarioData: { id: 'board', wallMounted: true } });
     setRoom(desk, board);
-    assert.ok(['board', 'desk'].includes(pressE(150, 150)));   // either is a fair pick; the point is that it picks
+    assert.equal(pressE(150, 150), 'desk');   // the desk, nearer and just as faced; pinned so a change of rule shows
 });
 
+// Guard only: with one object dead ahead the old code also left the player where they stood. It pins that the
+// shifted facePlayerToward call below is not made when nothing needs turning.
 test('E: a lone object ahead is picked and the player is not turned when it is in front', () => {
     globalThis.__faceCalls = [];
     setRoom(safe());
@@ -178,9 +183,9 @@ let clock = 0;
 globalThis.performance = { now: () => clock };
 const { createInfoLabel, updateInfoLabel } = await import(pathToFileURL(join(ldir, 'info-label.js')).href);
 createInfoLabel();
-const labelAt = (fx, fy) => {
+const labelAt = (fx, fy, direction = 'up') => {
     window.rooms = globalThis.__testRooms;
-    window.player = standAt(fx, fy);
+    window.player = standAt(fx, fy, direction);
     clock += 150;
     updateInfoLabel();
     return classes.has('visible') ? label.textContent : null;
@@ -205,4 +210,50 @@ test('the E label agrees with E for an item on a desk', () => {
     setRoom(desk, item);
     assert.equal(pressE(140, 152), 'item');
     assert.equal(labelAt(140, 152), 'An item.');
+});
+
+// The body-to-top-edge aim is only for props under BODY_AIM_MAX_PX. Beside a tall prop it reads almost straight
+// up and beat a short neighbour's feet angle (review R1 M1).
+test('aimDiff: a prop of BODY_AIM_MAX_PX or more is aimed at from the feet only', () => {
+    const player = standAt(137, 203);
+    const tall = obj('t', 100, 130, 29, 70), short = obj('s', 132, 180, 24, 20);
+    assert.equal(BODY_AIM_MAX_PX, 40);
+    const feetOnly = (o) => aimDiff(player, o, aimX(o), aimY(o), 270);
+    assert.equal(feetOnly(obj('h40', 132, 160, 24, 40)).fromY, 203);   // feet, not the sprite centre (172)
+    const s = feetOnly(short);
+    assert.ok(s.diff < feetOnly(tall).diff);
+    assert.deepEqual([s.x, s.y], [aimX(short), aimY(short)]);
+});
+
+test('aimDiff: a short prop level with the player is aimed at from the body when that angle is smaller', () => {
+    const player = standAt(140, 80, 'left');
+    const crate = obj('c', 116, 56, 24, 24);   // under 40px, feet level with the player's, just left of them
+    const r = aimDiff(player, crate, aimX(crate), aimY(crate), 180);
+    assert.equal(r.fromY, 49);                  // the sprite centre (80 - 31)
+    assert.equal(r.y, 56);                      // the top edge
+});
+
+// A 24x20 box beside a 29x70 cabinet: standing under the box facing up, E and the label both name the box.
+// The mixed rule at 2fbc9aa41 let the cabinet's top-edge angle (straight up) win here.
+test('E and the label pick a short prop over a very tall neighbour, standing under the short one', () => {
+    const tall = obj('tall', 100, 130, 29, 70), short = obj('short', 132, 180, 24, 20);
+    tall.scenarioData.observations = 'A tall cabinet.';
+    short.scenarioData.observations = 'A box.';
+    setRoom(tall, short);
+    for (const [fx, fy] of [[137, 203], [135, 212], [145, 203]]) {
+        assert.equal(pressE(fx, fy), 'short', `E at ${fx},${fy}`);
+        assert.equal(labelAt(fx, fy), 'A box.', `label at ${fx},${fy}`);
+    }
+});
+
+
+// tap-target's safe and cabinet (the 30px safe with its feet 5.5px above the cabinet's), seen from beside the safe:
+// E picks the safe, and so must the label. A feet-only label (bd3c7f898) names the cabinet here.
+test('the E label agrees with E beside the safe, facing left (tap-target geometry)', () => {
+    const s = obj('safe', 108.5, 35.5, 24, 30), c = obj('cabinet', 79.5, 10.75, 29, 47);
+    s.scenarioData.observations = 'A safe.';
+    c.scenarioData.observations = 'A filing cabinet.';
+    setRoom(s, c);
+    assert.equal(pressE(140, 80, 'left'), 'safe');
+    assert.equal(labelAt(140, 80, 'left'), 'A safe.');
 });
