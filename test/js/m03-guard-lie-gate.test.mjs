@@ -19,7 +19,8 @@ const CREDIT = 'THE GUARD: LIED TO, AND BELIEVED';
 
 function debriefText(vars) {
     const story = new inkjs.Story(json);
-    for (const [k, v] of Object.entries(vars)) story.variablesState[k] = v;
+    // Globals the debrief ink does not declare (guard_waved_on) are simply not visible to it.
+    for (const [k, v] of Object.entries(vars)) { try { story.variablesState[k] = v; } catch (e) { /* undeclared */ } }
     const lines = [];
     for (let i = 0; i < 40 && story.canContinue; i++) lines.push(story.Continue());
     return lines.join('\n');
@@ -32,11 +33,12 @@ function creditShows(globalVars) {
 }
 
 const cases = [
-    ['lied and was believed', { guard_waved_on: true }, true],
+    ['lied and was believed', { guard_lie_believed: true }, true],
     ['never spoke to him', {}, false],
-    ['told him the truth', { guard_waved_on: true, guard_told_safetynet: true }, false],
-    ['paid him', { guard_waved_on: true, guard_bribed: true }, false],
-    ['waved on, caught later', { guard_waved_on: true, guard_detection_count: 1 }, true],
+    ['waved on but never believed (notebook mismatch, or Restart after a turn-away)', { guard_waved_on: true }, false],
+    ['told him the truth', { guard_lie_believed: true, guard_told_safetynet: true }, false],
+    ['paid him', { guard_lie_believed: true, guard_bribed: true }, false],
+    ['believed, caught later', { guard_lie_believed: true, guard_detection_count: 1 }, true],
 ];
 
 for (const [name, vars, want] of cases) {
@@ -88,5 +90,61 @@ for (const knot of ['bribe_response_low', 'trespass_warning', 'hostile_count', '
     test(`${knot} withdraws guard_waved_on`, () => {
         const tags = terryTags(knot, { mission_phase: 'act2_infiltration' });
         assert.ok(tags.some((t) => /guard_waved_on:false/.test(t)), 'expected set_global guard_waved_on false, got ' + JSON.stringify(tags));
+    });
+}
+
+
+// Route checks: drive Terry's ink through real choices and fold the set_global tags into a globals map.
+function runTerry(startKnot, vars, picks) {
+    const tj = readFileSync(join(root, 'scenarios/m03_ghost_in_the_machine/ink/m03_npc_terry_mott.json'), 'utf8');
+    const story = new inkjs.Story(tj);
+    for (const [k, v] of Object.entries(vars)) story.variablesState[k] = v;
+    const globals = {};
+    const fold = () => {
+        for (const t of story.currentTags || []) {
+            const m = /^set_global:(\w+):(true|false)$/.exec(t.trim());
+            if (m) globals[m[1]] = m[2] === 'true';
+        }
+    };
+    story.ChoosePathString(startKnot);
+    for (const pick of picks.concat([null])) {
+        for (let i = 0; i < 40 && story.canContinue; i++) { story.Continue(); fold(); }
+        if (pick === null) break;
+        const idx = story.currentChoices.findIndex((c) => pick.test(c.text));
+        assert.ok(idx >= 0, 'choice not found: ' + pick + ' in ' + JSON.stringify(story.currentChoices.map((c) => c.text)));
+        story.ChooseChoiceIndex(idx);
+    }
+    return globals;
+}
+
+const NIGHT = { mission_phase: 'act2_infiltration', player_warned: true };
+
+test('Sterling-files story that he believes sets guard_lie_believed', () => {
+    const g = runTerry('excuse_menu', { ...NIGHT, ffion_night_story: 'brushoff' }, [/Sterling asked me/, /Training programme enrolment forms/]);
+    assert.ok(g.guard_lie_believed === true, 'expected guard_lie_believed true, got ' + JSON.stringify(g));
+});
+
+test('"Notebook, files. Make your mind up" does not set guard_lie_believed', () => {
+    const g = runTerry('excuse_menu', { ...NIGHT, ffion_night_story: 'notebook' }, [/Sterling asked me/]);
+    assert.ok(g.guard_lie_believed !== true, 'he does not believe that one: ' + JSON.stringify(g));
+    assert.ok(g.guard_waved_on === true, 'he still lets the player carry on (sighting skip)');
+});
+
+test('Restart after a turn-away gives no credit', () => {
+    // Believed, then turned away (failed bribe path), then a Restart re-wave through the hub.
+    const believed = runTerry('excuse_menu', { ...NIGHT, ffion_night_story: 'brushoff' }, [/Sterling asked me/, /Training programme enrolment forms/]);
+    const away = runTerry('trespass_warning', NIGHT, []);
+    const rewave = runTerry('hub', { ...NIGHT, fight_was_reset: true }, []);
+    const globalsNow = { ...believed, ...away, ...rewave };
+    assert.ok(globalsNow.guard_waved_on === true, 'hub re-wave sets the sighting skip');
+    assert.ok(globalsNow.guard_lie_believed !== true, 'but no believed lie: ' + JSON.stringify(globalsNow));
+    assert.ok(creditShows(globalsNow) === false, 'credit must not show');
+    assert.ok(debriefText(globalsNow).includes(HAX) === false, 'debrief line must not play');
+});
+
+for (const knot of ['bribe_response_low', 'trespass_warning', 'hostile_count', 'on_lockpick_detected']) {
+    test(`${knot} clears guard_lie_believed`, () => {
+        const g = runTerry(knot, NIGHT, []);
+        assert.ok(g.guard_lie_believed === false, 'expected a clear tag, got ' + JSON.stringify(g));
     });
 }

@@ -109,7 +109,7 @@ VAR fight_was_reset = false
 }
 
 // Pass 2 blind fixes 2: the night sighting (player_spotted:terry_mott). The scenario
-// skips sightings once he has waved the player on (guard_waved_on, set in hub), been
+// skips sightings once he has waved the player on (guard_waved_on, set in hub: it only stops sightings, it does not mean he believed a lie; guard_lie_believed is set where he does), been
 // paid, been told SAFETYNET, or turned hostile, so only three cases reach here: a
 // first sighting (or one before the player answered him), a player he ordered out,
 // and a player he already threatened with the police.
@@ -298,6 +298,7 @@ Terry Mott: You got ID? Key card?
         Terry Mott: Didn't have you down as a night person.
     }
     ~ hub_quiet = true
+    #set_global:guard_lie_believed:true
     -> hub
 * [I'm new. Started this week. Still getting my permanent ID.]
     ~ guard_influence = guard_influence + 5
@@ -323,6 +324,7 @@ Terry Mott: She does ring down at odd hours. Which files?
     }
     Terry Mott: Don't make me come looking for you.
     ~ hub_quiet = true
+    #set_global:guard_lie_believed:true
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
     ~ guard_influence = guard_influence + 5
@@ -330,6 +332,7 @@ Terry Mott: She does ring down at odd hours. Which files?
     ~ guard_suspicious = true
     Terry Mott: Confidential, huh. Well, don't take too long.
     ~ hub_quiet = true
+    #set_global:guard_lie_believed:true
     -> hub
 
 === excuse_maintenance ===
@@ -343,6 +346,7 @@ Terry Mott: Who's your supervisor, then?
     Terry Mott: Fine. But I'm watching you.
     ~ guard_suspicious = true
     ~ hub_quiet = true
+    #set_global:guard_lie_believed:true
     -> hub
 * [Emergency call. The temperature sensors tripped an alert. No time for paperwork.]
     ~ guard_influence = guard_influence + 5
@@ -350,6 +354,7 @@ Terry Mott: Who's your supervisor, then?
     Terry Mott: I didn't hear about any alerts...
     ~ guard_suspicious = true
     ~ hub_quiet = true
+    #set_global:guard_lie_believed:true
     -> hub
 * [I don't have time for this. I've work to do.]
     ~ guard_influence = guard_influence - 20
@@ -591,8 +596,9 @@ Terry Mott: Ms. Sterling? She's the boss. Signs my wages, never learnt my name. 
 
 === trespass_warning ===
 #speaker:npc
-// He has turned the player away, so any earlier wave-on no longer counts as a story he believed.
+// He has turned the player away: sightings resume (guard_waved_on) and no earlier wave-on counts as a believed lie (guard_lie_believed).
 #set_global:guard_waved_on:false
+#set_global:guard_lie_believed:false
 #display:guard-hostile
 Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 * [Alright, I'm going.]
@@ -616,8 +622,9 @@ Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 // D5-12: the detection is counted in a choice-free knot, so a reopen of
 // hostile_confrontation (which owns the choices) doesn't count it twice.
 === hostile_count ===
-// He has turned the player away, so any earlier wave-on no longer counts as a story he believed.
+// He has turned the player away: sightings resume (guard_waved_on) and no earlier wave-on counts as a believed lie (guard_lie_believed).
 #set_global:guard_waved_on:false
+#set_global:guard_lie_believed:false
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
 -> hostile_confrontation
@@ -647,8 +654,9 @@ Narrator: The guard reaches for his radio.
 // hostile as the chat closes). The detection still counts, for the debrief.
 === on_lockpick_detected ===
 #speaker:npc
-// He has turned the player away, so any earlier wave-on no longer counts as a story he believed.
+// He has turned the player away: sightings resume (guard_waved_on) and no earlier wave-on counts as a believed lie (guard_lie_believed).
 #set_global:guard_waved_on:false
+#set_global:guard_lie_believed:false
 ~ guard_suspicious = true
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
