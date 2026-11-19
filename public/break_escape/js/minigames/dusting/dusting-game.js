@@ -34,6 +34,9 @@ if (!document.getElementById('dusting-css')) {
 
 const N = 128;
 
+// The footer row when _placeFoot has moved it out of the panel (phone portrait: into the body; short landscape compare: into the root).
+const MOVED_FOOT = '.dusting-body > .dusting-foot, .dusting-root > .dusting-foot';
+
 // Button labels with a long and a short form. Parts: a plain string (always shown), {x} (long mode only: display:none
 // in short landscape), {s} (short landscape only: visually hidden detail read after the visible text) or {v:[long, short]}
 // (swapped by _applyLabels). The accessible name therefore begins with the exact visible text and may add detail
@@ -407,6 +410,8 @@ export class DustingMinigame extends MinigameScene {
         // On phone portrait the action footer row is the last child of the scrolling body (see _placeFoot), outside the panel.
         const body = this.root && this.root.querySelector && this.root.querySelector('.dusting-body');
         if (body) this.addEventListener(body, 'click', e => { if (e.target.closest('.dusting-body > .dusting-foot')) onClick(e); });
+        // Short landscape compare: the row is a direct child of the scrolling .dusting-root (a different element from the body).
+        if (this.root && this.root.addEventListener) this.addEventListener(this.root, 'click', e => { if (e.target.closest('.dusting-root > .dusting-foot')) onClick(e); });
         // Compare: the magnified pair follows the card under the pointer or the keyboard focus (no re-render, so focus stays).
         const zoomTo = (e, speak) => {
             const w = e.target.closest && e.target.closest('.dusting-ref-wrap');
@@ -529,7 +534,7 @@ export class DustingMinigame extends MinigameScene {
         }[step]);
     }
 
-    /** Phone portrait (the CSS max-width: 760px rule, not short): the action footer row must be the last child of the
+    /** Short landscape compare: the row is the last child of .dusting-root, the scroller there (see dusting.css). Phone portrait (the CSS max-width: 760px rule, not short): the action footer row must be the last child of the
      *  scrolling .dusting-body, because a sticky box only pins within its parent's box and the panel ends above the forensic,
      *  status and keys blocks. Elsewhere (desktop, short landscape) the row stays at the end of the panel, where it always was.
      *  Also publishes the row's real height as --d-foot-h so the scroller's scroll-padding-bottom clears it, wrapped or not. */
@@ -541,9 +546,11 @@ export class DustingMinigame extends MinigameScene {
         if (!body || !foot) return;
         // same test as the CSS (max-width: 760px); innerWidth is the fallback where matchMedia is missing (JSDOM)
         const narrow = window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
-        const phone = narrow && !root.classList.contains('dusting-short');
-        if (phone && foot.parentNode !== body) body.appendChild(foot);
-        else if (!phone && foot.parentNode !== this.panel) this.panel.appendChild(foot);
+        const short = root.classList.contains('dusting-short');
+        const phone = narrow && !short;
+        // short landscape compare: .dusting-root is the scroller (the panel does not scroll), so the row is its last child
+        const dest = phone ? body : (short && this.step === 'compare' ? root : this.panel);
+        if (foot.parentNode !== dest) dest.appendChild(foot);
         const h = foot.offsetHeight;
         if (h && root.style && root.style.setProperty) root.style.setProperty('--d-foot-h', `${h + 6}px`);
     }
@@ -552,13 +559,13 @@ export class DustingMinigame extends MinigameScene {
     _findInPanel(selector) {
         const hit = this.panel && this.panel.querySelector(selector);
         if (hit) return hit;
-        const foot = this.root && this.root.querySelector && this.root.querySelector('.dusting-body > .dusting-foot');
+        const foot = this.root && this.root.querySelector && this.root.querySelector(MOVED_FOOT);
         return foot ? foot.querySelector(selector) : null;
     }
 
     _renderPanel() {
         const p = this.panel;
-        const oldFoot = this.root && this.root.querySelector && this.root.querySelector('.dusting-body > .dusting-foot');
+        const oldFoot = this.root && this.root.querySelector && this.root.querySelector(MOVED_FOOT);
         if (oldFoot) oldFoot.remove();   // a footer moved out of the panel is not cleared by the panel's innerHTML
         p.innerHTML = '';
         const html = {
@@ -1372,7 +1379,7 @@ export class DustingMinigame extends MinigameScene {
         if (this.step === 'compare' && this.patternOk && !this.identified && /^[1-9]$/.test(lower) && Number(lower) <= this.candidates.length) {
             e.preventDefault();
             const a = document.activeElement;   // the footer row sits in the body on phone portrait, so it counts as the panel
-            const inPanel = !!a && ((this.panel && this.panel.contains(a)) || !!(a.closest && a.closest('.dusting-body > .dusting-foot')));
+            const inPanel = !!a && ((this.panel && this.panel.contains(a)) || !!(a.closest && a.closest(MOVED_FOOT)));
             this._chooseRef(Number(lower) - 1, inPanel);
             return;
         }

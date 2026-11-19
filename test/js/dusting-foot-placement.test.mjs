@@ -70,6 +70,11 @@ for (const [kind, cases] of [['examine', examineCases], ['compare', compareCases
                 const g = frame(w, h, short, { step: kind, final: { quality: 0.7, rating: 'Fair' } });
                 setup(g);
                 put(g, html(g, kind));
+                if (short && kind === 'compare') {   // the root scrolls there: the row is the root's last child, not the panel's
+                    assert.ok(foot(g).parentNode === g.root && g.root.lastElementChild === foot(g), `${w}x${h}: last child of the root`);
+                    assert.ok(g.panel.querySelector('.dusting-foot') === null, `${w}x${h}: none left in the panel`);
+                    continue;
+                }
                 assert.ok(foot(g).parentNode === g.panel, `${w}x${h}: parent is the panel`);
                 assert.ok(g.panel.lastElementChild === foot(g), `${w}x${h}: last in the panel`);
             }
@@ -141,6 +146,8 @@ test('CSS: phone portrait sticks the row to the scrollport foot, scroll-padding 
     const sc = at('.dusting-short[data-step="compare"] .dusting-buttons.dusting-foot');
     assert.ok(/position: sticky/.test(sc) && /bottom: -6px/.test(sc) && /background: var\(--d-bg\)/.test(sc) && /border-top: 2px solid/.test(sc));
     assert.ok(/scroll-padding-bottom: var\(--d-foot-h, 50px\)/.test(at('.dusting-short[data-step="compare"]')));
+    // portrait flush rule: the body's 6px bottom padding must not sit under the row at max scroll
+    assert.ok(/margin: 8px 0 -6px/.test(phone), 'portrait row has margin-bottom -6px');
     assert.ok(!/radius|blur|gradient/.test(phone + sc + pad));
 });
 
@@ -158,7 +165,7 @@ function live(w, h, short, step, setup) {
     return g;
 }
 const footCount = g => g.root.querySelectorAll('.dusting-foot').length;
-const place = g => (foot(g).parentNode === body(g) ? 'body' : foot(g).parentNode === g.panel ? 'panel' : 'other');
+const place = g => (foot(g).parentNode === body(g) ? 'body' : foot(g).parentNode === g.panel ? 'panel' : foot(g).parentNode === g.root ? 'root' : 'other');
 
 test('_renderPanel twice at 390x844: exactly one row in the root, and it is the body\'s last child (stale row removed, _placeFoot called)', () => {
     for (const [step, setup] of [['examine', 'fresh'], ['compare', 'unnamed']]) {
@@ -264,4 +271,76 @@ test('CSS: short landscape footers keep 6px under the buttons so the focus ring 
     const at = sel => { const i = css.indexOf(sel + ' {'); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('}', i)); };
     assert.ok(/padding: 4px 0 6px/.test(at('.dusting-short[data-step="examine"] .dusting-buttons.dusting-foot')));
     assert.ok(/padding: 4px 0 6px/.test(at('.dusting-short[data-step="compare"] .dusting-buttons.dusting-foot')));
+});
+
+// ---- Live-r2 fixes: portrait flush at max scroll, short landscape compare pins to the root ----
+
+test('CSS: short compare row spans the grid rows at the end of column 2, with a sixth row of its height and margin-bottom -6px', () => {
+    const at = sel => { const i = css.indexOf(sel + ' {'); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('}', i)); };
+    const row = at('.dusting-short[data-step="compare"] > .dusting-buttons.dusting-foot');
+    assert.ok(/grid-row: 1 \/ -1/.test(row) && /grid-column: 2/.test(row) && /align-self: end/.test(row) && /margin: 4px 0 -6px/.test(row), row);
+    const root = at('.dusting-short[data-step="compare"]');
+    assert.ok(/grid-template-rows: auto auto auto auto auto calc\(var\(--d-foot-h, 50px\) - 6px\)/.test(root), 'sixth grid row reserves the row');
+    assert.ok(/overflow-y: auto/.test(root), 'the root scrolls');
+});
+
+test('short landscape compare (844x390): _renderPanel and _layout keep one row as the root\'s last child; examine stays in the panel', () => {
+    for (const setup of ['unnamed', 'named', 'matched']) {
+        const g = live(844, 390, true, 'compare', setup);
+        g._renderPanel(); g._renderPanel();
+        assert.ok(footCount(g) === 1 && place(g) === 'root' && g.root.lastElementChild === foot(g), `${setup}: root's last child`);
+        assert.ok(g.panel.querySelector('.dusting-foot') === null, `${setup}: none in the panel`);
+    }
+    const e = live(844, 390, true, 'examine', 'fresh');
+    e._renderPanel();
+    assert.ok(footCount(e) === 1 && place(e) === 'panel', 'short examine keeps the panel');
+});
+
+test('the row follows resize and step change between short compare, portrait, desktop and short examine', () => {
+    const g = live(844, 390, true, 'compare', 'unnamed');
+    g._layout(); g._renderPanel();
+    assert.ok(place(g) === 'root');
+    for (const [w, h, step, want] of [[390, 844, 'compare', 'body'], [844, 390, 'compare', 'root'], [1280, 720, 'compare', 'panel'],
+        [844, 390, 'compare', 'root'], [844, 390, 'examine', 'panel'], [844, 390, 'compare', 'root']]) {
+        window.innerWidth = w; window.innerHeight = h; g.step = step;
+        if (step === 'examine') examineCases.fresh(g); else compareCases.unnamed(g);
+        g.root.classList.toggle('dusting-short', h <= 500 && w > h);
+        g._renderPanel();
+        assert.ok(place(g) === want && footCount(g) === 1, `${w}x${h} ${step}: ${want}`);
+        g._layout();
+        assert.ok(place(g) === want && footCount(g) === 1, `${w}x${h} ${step} after _layout: ${want}`);
+    }
+});
+
+test('short compare: a click on the root-level row runs _action once; panel and body clicks are not doubled', () => {
+    const g = live(844, 390, true, 'compare', 'unnamed');
+    g.addEventListener = (t, ev, fn) => t.addEventListener(ev, fn);
+    g.gameState = { isActive: true };
+    const calls = [];
+    g._action = a => calls.push(a);
+    g._renderPanel();
+    g._bindPanel();
+    const click = el => el.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, detail: 1 }));
+    click(foot(g).querySelector('[data-action="unidentified"]'));
+    assert.ok(calls.length === 1 && calls[0] === 'unidentified', `root row once: ${calls.length}`);
+    g.panel.insertAdjacentHTML('beforeend', '<button data-action="ref">x</button>');
+    click(g.panel.querySelector('[data-action="ref"]'));
+    assert.ok(calls.length === 2, `panel click once: ${calls.length}`);
+    g._renderPanel();
+    click(foot(g).querySelector('[data-action="unidentified"]'));
+    assert.ok(calls.length === 3, `after a re-render: ${calls.length}`);
+});
+
+test('short compare: _findInPanel, _refocus and the 1 to 9 pick reach the root-level row', () => {
+    const g = live(844, 390, true, 'compare', 'named');
+    g.gameState = { isActive: true };
+    g.candidates = [{ index: 0, label: 'A' }, { index: 1, label: 'B' }];
+    g._renderPanel();
+    const b = g._findInPanel('[data-action="unidentified"]');
+    assert.ok(b !== null && b.parentNode === foot(g) && foot(g).parentNode === g.root, 'found in the root row');
+    assert.ok(g._refocus('[data-action="unidentified"]') === true && doc.activeElement === b, 'focus moved to it');
+    const picks = [];
+    g._chooseRef = (i, viaKey) => picks.push(`${i}:${viaKey}`);
+    g._onKeyDown({ key: '2', target: doc.activeElement, preventDefault() {} });
+    assert.ok(picks[0] === '1:true', `digit pick with focus in the root row: ${picks[0]}`);
 });

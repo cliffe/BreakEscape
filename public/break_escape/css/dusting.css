@@ -269,7 +269,7 @@
 @media (max-width: 760px) {
     .dusting-root:not(.dusting-short) .dusting-buttons.dusting-foot {
         display: flex; position: sticky; bottom: -6px; z-index: 3; background: var(--d-bg);
-        border-top: 2px solid var(--d-line); padding: 6px 0; margin-top: 8px;
+        border-top: 2px solid var(--d-line); padding: 6px 0; margin: 8px 0 -6px;   /* -6px: the body's bottom padding must not sit under the row at max scroll */
     }
     .dusting-root:not(.dusting-short):is([data-step="examine"], [data-step="compare"]) .dusting-body { scroll-padding-bottom: var(--d-foot-h, 64px); }
 }
@@ -281,6 +281,10 @@
     position: sticky; bottom: -6px; z-index: 3; background: var(--d-bg);
     border-top: 2px solid var(--d-line); padding: 4px 0 6px; margin-top: 4px;
 }
+/* Short compare: _placeFoot makes the row the last child of .dusting-root (the scroller, a grid). A sticky box pins only within its grid
+   area, so the row spans every row (grid-row: 1 / -1) at the end of column 2, and a sixth grid row of the row's height keeps the content
+   clear of it. margin-bottom -6px lets it pin over the root's bottom padding, as in phone portrait. */
+.dusting-short[data-step="compare"] > .dusting-buttons.dusting-foot { grid-column: 2; grid-row: 1 / -1; align-self: end; margin: 4px 0 -6px; }
 
 /* Short landscape (a phone on its side; the class is set in _layout at 500 px high or less): two columns.
    The canvas sits on the left at a whole-number scale chosen in JS (never below 1x), the title, steps and
@@ -373,7 +377,7 @@
 .dusting-short .dusting-actions .dusting-buttons { gap: 4px; }
 /* Compare screen in short landscape: the frame scrolls as a whole (the panel no longer scrolls on its own) so
    the reference cards sit right under the instructions on first view; the options and key lines are below. */
-.dusting-short[data-step="compare"] { grid-template-rows: auto auto auto auto auto; overflow-y: auto; scroll-padding-bottom: var(--d-foot-h, 50px); }
+.dusting-short[data-step="compare"] { grid-template-rows: auto auto auto auto auto calc(var(--d-foot-h, 50px) - 6px); overflow-y: auto; scroll-padding-bottom: var(--d-foot-h, 50px); }
 .dusting-short[data-step="compare"] .dusting-panel { overflow-y: visible; align-self: start; }
 .dusting-short[data-step="compare"] .dusting-refs { margin: 4px 0; gap: 6px; }
 .dusting-short .dusting-ref { padding: 4px; }
