@@ -1183,7 +1183,7 @@
 
 /* Short screens (501 to 680 px: a 1366x768 laptop's browser, 800x600): the replies box, the "more
    choices" cue and the thread all have to share about 340px with the influence header, so
-   - the thread gives way first, down to two lines (44px), and scrolls to the contact's line;
+   - the thread gives way first, down to two lines (44px; 58px from 565px tall), and scrolls to the contact's line;
    - the replies box is border-box with a floor of one reply (64px), so the cue and at least one
      reply stay on screen down to 501px tall;
    - the influence legend is one line (see the 820 px rule below). */
