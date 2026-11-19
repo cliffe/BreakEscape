@@ -273,6 +273,16 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   review running (Opus, a507d1abc5320b61a) to `OPS_MFA_HELPDESK_R4.md`, asked whether S8c should
   be split into its own plan file and for a trim list. Next: Fable reviser acts on R4 (and
   splits if recommended), then R5 delta on Opus. S8c's log requests sent to the log reviser.
+- 11:52 HANDOFF 7 (newest state by plan).
+  CORE: R3 revision `b401f3fe3` (1684 lines, accepted). R4 delta review running (Opus,
+  a14ec25a85499bccc) to `OPS_CORE_R4.md`. "ready" ends its rounds; else one fix pass + R5 delta.
+  PRIVILEGE: R5 delta review running (Fable, a6f8f5a57b1050dde).
+  SKIN: Sonnet editing pass running (a0915c731b1052170); then R4 delta on Sonnet.
+  MFA: full R4 review running (Opus, a507d1abc5320b61a).
+  LOG_ROWS: R3 reviser running (Opus, a9ce153bf9d06d65f); then R4 delta (Fable).
+  CRACKING: held for BLOCK-1.
+  When all five are at R4 or later: second cross-plan review (Fable), then the picks page
+  republish (question counts: Core 5, Privilege 7, MFA 8, Skin 1, Log 3 incl. folder-or-file).
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
