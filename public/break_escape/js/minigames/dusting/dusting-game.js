@@ -539,7 +539,9 @@ export class DustingMinigame extends MinigameScene {
         const body = root.querySelector('.dusting-body');
         const foot = root.querySelector('.dusting-foot');
         if (!body || !foot) return;
-        const phone = window.innerWidth <= 760 && !root.classList.contains('dusting-short');
+        // same test as the CSS (max-width: 760px); innerWidth is the fallback where matchMedia is missing (JSDOM)
+        const narrow = window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
+        const phone = narrow && !root.classList.contains('dusting-short');
         if (phone && foot.parentNode !== body) body.appendChild(foot);
         else if (!phone && foot.parentNode !== this.panel) this.panel.appendChild(foot);
         const h = foot.offsetHeight;
@@ -1369,7 +1371,9 @@ export class DustingMinigame extends MinigameScene {
         if (this.step === 'powder' && ['1', '2', '3'].includes(lower)) { this._choosePowder(Object.keys(POWDERS)[Number(lower) - 1]); return; }
         if (this.step === 'compare' && this.patternOk && !this.identified && /^[1-9]$/.test(lower) && Number(lower) <= this.candidates.length) {
             e.preventDefault();
-            this._chooseRef(Number(lower) - 1, !!(this.panel && this.panel.contains(document.activeElement)));
+            const a = document.activeElement;   // the footer row sits in the body on phone portrait, so it counts as the panel
+            const inPanel = !!a && ((this.panel && this.panel.contains(a)) || !!(a.closest && a.closest('.dusting-body > .dusting-foot')));
+            this._chooseRef(Number(lower) - 1, inPanel);
             return;
         }
         if (this.step === 'compare' && this.patternOk && lower === 'l' && !this._zoomShort) {

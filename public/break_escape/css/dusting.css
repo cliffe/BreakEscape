@@ -275,11 +275,11 @@
 }
 .dusting-short[data-step="examine"] .dusting-buttons.dusting-foot {
     position: sticky; bottom: 0; z-index: 3; background: var(--d-bg);
-    border-top: 2px solid var(--d-line); padding: 4px 0; margin-top: 4px;
+    border-top: 2px solid var(--d-line); padding: 4px 0 6px; margin-top: 4px;
 }
 .dusting-short[data-step="compare"] .dusting-buttons.dusting-foot {
     position: sticky; bottom: -6px; z-index: 3; background: var(--d-bg);
-    border-top: 2px solid var(--d-line); padding: 4px 0; margin-top: 4px;
+    border-top: 2px solid var(--d-line); padding: 4px 0 6px; margin-top: 4px;
 }
 
 /* Short landscape (a phone on its side; the class is set in _layout at 500 px high or less): two columns.

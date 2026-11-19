@@ -143,3 +143,125 @@ test('CSS: phone portrait sticks the row to the scrollport foot, scroll-padding 
     assert.ok(/scroll-padding-bottom: var\(--d-foot-h, 50px\)/.test(at('.dusting-short[data-step="compare"]')));
     assert.ok(!/radius|blur|gradient/.test(phone + sc + pad));
 });
+
+// ---- Driving the real paths (_renderPanel, _layout, _toggleWholeLift, the key handler), not the _placeFoot helper ----
+
+/** A game whose other draw methods are stubs, so _renderPanel and _layout run as they do live. */
+function live(w, h, short, step, setup) {
+    const g = frame(w, h, short, { step, final: { quality: 0.7, rating: 'Fair' } });
+    (step === 'examine' ? examineCases : compareCases)[setup](g);
+    Object.assign(g, {
+        canvas: { style: {}, hidden: false }, stageNote: null, keysEl: null, forensicEl: null, metrics: null, _timers: [], zoomIdx: 0,
+        _drawKeyGlyphs() {}, _applyLabels() {}, _refreshDynamic() {}, _drawZoom() {}, _updateAria() {}, _drawCard() {}, _drawReferences() {},
+        _refCards() { return doc.createDocumentFragment(); }, announce() {}
+    });
+    return g;
+}
+const footCount = g => g.root.querySelectorAll('.dusting-foot').length;
+const place = g => (foot(g).parentNode === body(g) ? 'body' : foot(g).parentNode === g.panel ? 'panel' : 'other');
+
+test('_renderPanel twice at 390x844: exactly one row in the root, and it is the body\'s last child (stale row removed, _placeFoot called)', () => {
+    for (const [step, setup] of [['examine', 'fresh'], ['compare', 'unnamed']]) {
+        const g = live(390, 844, false, step, setup);
+        g._renderPanel();
+        assert.ok(footCount(g) === 1, `${step}: one row after the first render`);
+        assert.ok(place(g) === 'body' && body(g).lastElementChild === foot(g), `${step}: row in the body, last child`);
+        g._renderPanel();
+        assert.ok(footCount(g) === 1, `${step}: still one row after the second render`);
+        assert.ok(place(g) === 'body' && body(g).lastElementChild === foot(g), `${step}: row still the body's last child`);
+        assert.ok(g.panel.querySelector('.dusting-foot') === null, `${step}: none in the panel`);
+    }
+});
+
+test('_renderPanel on desktop and short landscape leaves one row, in the panel', () => {
+    for (const [w, h, short] of [[1280, 720, false], [844, 390, true]]) {
+        const g = live(w, h, short, 'examine', 'fresh');
+        g._renderPanel(); g._renderPanel();
+        assert.ok(footCount(g) === 1 && place(g) === 'panel', `${w}x${h}`);
+    }
+});
+
+test('_layout (resize) moves the row: 390x844 body, 844x390 panel, 1280x720 panel, and back', () => {
+    const g = live(390, 844, false, 'examine', 'fresh');
+    g._layout(); g._renderPanel();
+    assert.ok(place(g) === 'body', '390x844');
+    for (const [w, h, want] of [[844, 390, 'panel'], [390, 844, 'body'], [1280, 720, 'panel'], [390, 844, 'body']]) {
+        window.innerWidth = w; window.innerHeight = h;
+        g._layout();
+        assert.ok(place(g) === want, `${w}x${h}: ${want}`);
+        assert.ok(footCount(g) === 1, `${w}x${h}: one row`);
+    }
+});
+
+test('the phone boundary: 760 wide puts the row in the body, 761 in the panel (matchMedia absent, innerWidth fallback)', () => {
+    const g = live(760, 844, false, 'examine', 'fresh');
+    g._renderPanel();
+    assert.ok(place(g) === 'body', '760');
+    window.innerWidth = 761; g._layout();
+    assert.ok(place(g) === 'panel', '761');
+});
+
+test('the phone test follows matchMedia when the browser has it', () => {
+    const g = live(390, 844, false, 'examine', 'fresh');
+    window.matchMedia = q => ({ matches: false, media: q });
+    try {
+        g._renderPanel();
+        assert.ok(place(g) === 'panel', 'matchMedia says wide: panel, though innerWidth is 390');
+        let asked = '';
+        window.matchMedia = q => { asked = q; return { matches: true }; };
+        g._layout();
+        assert.ok(place(g) === 'body' && asked === '(max-width: 760px)', 'matchMedia says phone: body');
+    } finally { delete window.matchMedia; }
+});
+
+test('desktop click on a footer button (row in the panel) runs _action once, not from both listeners', () => {
+    const g = live(1280, 720, false, 'examine', 'fresh');
+    g.addEventListener = (t, ev, fn) => t.addEventListener(ev, fn);
+    g.gameState = { isActive: true };
+    const calls = [];
+    g._action = a => calls.push(a);
+    g._renderPanel();
+    g._bindPanel();
+    foot(g).querySelector('[data-action="start"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, detail: 1 }));
+    assert.ok(calls.length === 1, 'one call');
+    // and after a re-render the new row still routes once
+    g._renderPanel();
+    foot(g).querySelector('[data-action="start"]').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, detail: 1 }));
+    assert.ok(calls.length === 2, 'one more call after a re-render');
+});
+
+test('_toggleWholeLift in portrait compare keeps focus on the new Whole lift button (it lives in the body row)', () => {
+    const g = live(390, 844, false, 'compare', 'named');
+    g._zoomShort = false; g.fullLift = false;
+    g._renderPanel();
+    g._toggleWholeLift();
+    const b = foot(g).querySelector('[data-action="fulllift"]');
+    assert.ok(g.fullLift === true, 'toggled');
+    assert.ok(b !== null && b.parentNode === foot(g) && foot(g).parentNode === body(g), 'button is in the body row');
+    assert.ok(doc.activeElement === b, 'focus is on the new button, not the page');
+});
+
+test('a 1 to 9 key with focus on the body footer row counts as focus in the panel (viaKey true); outside both it does not', () => {
+    const g = live(390, 844, false, 'compare', 'named');
+    g.gameState = { isActive: true };
+    g.candidates = [{ index: 0, label: 'A' }, { index: 1, label: 'B' }];
+    g._renderPanel();
+    const picks = [];
+    g._chooseRef = (i, viaKey) => picks.push(`${i}:${viaKey}`);
+    const press = key => g._onKeyDown({ key, target: doc.activeElement, preventDefault() {} });
+    const b = foot(g).querySelector('[data-action="unidentified"]');
+    assert.ok(b !== null && foot(g).parentNode === body(g));
+    b.focus();
+    press('2');
+    assert.ok(picks[0] === '1:true', `focus in the body row: ${picks[0]}`);
+    doc.body.insertAdjacentHTML('beforeend', '<span id="outside" tabindex="0"></span>');
+    doc.getElementById('outside').focus();
+    press('1');
+    assert.ok(picks[1] === '0:false', `focus outside: ${picks[1]}`);
+});
+
+test('CSS: short landscape footers keep 6px under the buttons so the focus ring is not clipped', () => {
+    const at = sel => { const i = css.indexOf(sel + ' {'); assert.ok(i >= 0, sel); return css.slice(i, css.indexOf('}', i)); };
+    assert.ok(/padding: 4px 0 6px/.test(at('.dusting-short[data-step="examine"] .dusting-buttons.dusting-foot')));
+    assert.ok(/padding: 4px 0 6px/.test(at('.dusting-short[data-step="compare"] .dusting-buttons.dusting-foot')));
+});
