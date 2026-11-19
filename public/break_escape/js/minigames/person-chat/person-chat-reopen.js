@@ -250,7 +250,33 @@ export function resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk })
 }
 
 /**
- * The restartOnRetalk-independent half of the above: a reopen whose first result is an
+ * Whether a person-chat reopen should restart the NPC's story at its start knot
+ * (restartAfterEnd) rather than continue the restored story.
+ *
+ * - A state seeded from the server on load (importNpcInkVariables) has variables and
+ *   no position: the server never keeps one, so there is nothing to resume and the
+ *   story must start, whatever restartOnRetalk says. Left alone it has no content and
+ *   shows only "(End of conversation)" (m01 Derek after a reload, game 9857).
+ * - Otherwise restartOnRetalk: false keeps a one-shot scene closed once it has ended
+ *   in this session, and a real saved position resumes.
+ * - Otherwise a variables-only restore (the story ended this session) or a restored
+ *   story with nothing left to continue and no choices restarts.
+ * @param {Object} opts
+ * @param {boolean|string} opts.stateRestored - what restoreNPCState returned
+ * @param {boolean} opts.seededFromSave - the restored state was seeded from the server
+ * @param {*} opts.restartOnRetalk - the NPC's restartOnRetalk setting
+ * @param {Object} opts.story - the restored inkjs Story
+ * @returns {boolean}
+ */
+export function restoredStoryShouldRestart({ stateRestored, seededFromSave, restartOnRetalk, story }) {
+    if (stateRestored === 'variables-only' && seededFromSave === true) return true;
+    if (restartOnRetalk === false) return false;
+    if (stateRestored === 'variables-only') return true;
+    return !story?.canContinue && !(story?.currentChoices?.length > 0);
+}
+
+/**
+ * The restartOnRetalk-independent half of resumedStoryHadOnlyTheEnd: a reopen whose first result is an
  * ended story with no text, no choices and no `#end_conversation`. Its tags are unread.
  * @param {Object} opts
  * @param {boolean} opts.isReopen

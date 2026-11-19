@@ -273,6 +273,11 @@ class NPCConversationStateManager {
      * conversation restores its own flags and restarts at its start knot (the
      * path a same-session re-talk takes), and phone-chat applies them with
      * applySavedInkVariables. In-session state wins.
+     *
+     * The server keeps variables only, never a story position, whether or not the
+     * story had ended, so the state is marked seededFromSave: the person-chat restart
+     * then applies whatever restartOnRetalk says (a one-shot NPC's ink must guard its
+     * own replay with a synced global). The next save in this session replaces it.
      * @param {Object} saved - { npcId: { varName: value } }
      */
     importNpcInkVariables(saved) {
@@ -280,7 +285,7 @@ class NPCConversationStateManager {
         for (const [npcId, variables] of Object.entries(saved)) {
             if (this.conversationStates.has(npcId)) continue;
             if (!variables || typeof variables !== 'object') continue;
-            this.conversationStates.set(npcId, { timestamp: 0, hasEnded: true, variables: { ...variables } });
+            this.conversationStates.set(npcId, { timestamp: 0, hasEnded: true, seededFromSave: true, variables: { ...variables } });
         }
         console.log(`🗂️ Seeded saved ink variables for ${Object.keys(saved).length} NPC(s)`);
     }
