@@ -1162,7 +1162,10 @@
        so there is no empty band; with replies showing, the capped thread above applies. */
     .phone-call-mode #conversation-view:has(.se-chat-header):not(.call-has-choices) .messages-container {
         flex: 1 1 auto;
+        min-height: 44px;
         max-height: none;
+        justify-content: flex-start;
+        overflow-y: auto;
     }
 }
 

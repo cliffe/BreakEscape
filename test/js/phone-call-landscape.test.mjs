@@ -534,6 +534,7 @@ check('speaking phase: the thread takes the slack under the compact header (no e
     const r = D(V + ':has(.se-chat-header):not(.call-has-choices) .messages-container');
     assert.match(r.body, /flex:\s*1 1 auto/);
     assert.match(r.body, /max-height:\s*none/);
+    assert.match(r.body, /overflow-y:\s*auto/, 'a short screen scrolls to the tell instead of clipping it');
     const d = doc('<div class="phone-call-mode"><div id="conversation-view" class="call-has-choices"><div class="se-chat-header"></div><div class="messages-container" id="m"></div></div></div>');
     assert.ok(!d.getElementById('m').matches(r.selector), 'not with replies showing');
 });
