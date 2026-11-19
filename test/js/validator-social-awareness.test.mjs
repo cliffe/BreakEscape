@@ -1060,3 +1060,35 @@ test('ENG-06: the assistant block is authored-only (no model field, replies are 
   ep(j).assistant = { title: 'Assist', exchanges: [{ id: 'e1', prompt: 'Q?', reply: { live: true } }] };
   expectIn(lint(j), /reply must be a literal string/);
 });
+
+// LIVING_OFFICE_PLAN.md 12: a kit_ name, officePresets, npcThoughts or stepAway is an error in a check
+// shell (stages ["check"]) and in the annual shell, and fine in a full shell.
+test('office kit: refused in a check shell and the annual shell, allowed in a full shell', { skip }, () => {
+  const kitErr = /must not have: the office kit is never added/;
+  for (const n of ['clean_check_pre.json', 'clean_check_post.json']) {
+    let j = fx(n);
+    j.globalVariables = { ...(j.globalVariables || {}), kit_quiet: false };
+    expectIn(lint(j), kitErr);
+    j = fx(n);
+    j.rooms.ep_room.npcs[0].officePresets = {};
+    expectIn(lint(j), /officePresets/);
+    j = fx(n);
+    j.rooms.ep_room.npcs[0].npcThoughts = [];
+    expectIn(lint(j), /npcThoughts/);
+    j = fx(n);
+    ep(j).stepAway = true;
+    expectIn(lint(j), /the key 'stepAway'/);
+    j = fx(n);
+    host(j).eventMappings = [{ eventPattern: 'x', condition: 'globalVars.kit_ep === 1' }];
+    expectIn(lint(j), /a kit_ name \(kit_ep\)/);
+  }
+  const annual = fx('clean_defend_only.json');
+  ep(annual).id = 'core_17_annual_2027_defend';
+  annual.rooms.ep_room.objects[0].minigameData.episodeId = 'core_17_annual_2027_defend';
+  ep(annual).stepAway = true;
+  expectIn(lint(annual), /the annual shell must not have/);
+  const full = fx('clean_full.json');
+  ep(full).stepAway = true;
+  full.globalVariables = { ...(full.globalVariables || {}), kit_quiet: false };
+  assert.equal(hits(lint(full), kitErr), 0);
+});

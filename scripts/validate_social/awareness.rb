@@ -65,6 +65,7 @@ module ValidateSocial
 
       issues.concat(kiosk_checks(kiosks, id))
       issues.concat(stage_checks(ep))
+      issues.concat(kit_free_checks(ctx, ep))
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep) && attack_artefact_stage?(ep)
       issues.concat(mistake_checks(ep))
@@ -184,6 +185,44 @@ module ValidateSocial
         end
       end
       issues
+    end
+
+    # ---- office kit: check and annual shells carry none --------------------------
+
+    KIT_KEYS = %w[officePresets npcThoughts stepAway].freeze
+    KIT_NAME = /(?<![A-Za-z0-9])kit_[A-Za-z0-9]/.freeze
+
+    # LIVING_OFFICE_PLAN.md 12: the office kit never reaches a check shell (stages ["check"]) or the
+    # annual shell, because their scores are compared across learners and over time. A kit_ name
+    # (as a key or inside any string), officePresets, npcThoughts or stepAway anywhere in the
+    # scenario is an error there.
+    def self.kit_free_checks(ctx, ep)
+      kind = if check_mission?(ep) then 'a check shell'
+             elsif ep['id'].to_s.include?('annual') then 'the annual shell'
+             end
+      return [] unless kind
+
+      found = []
+      kit_walk(ctx.json, '', found)
+      found.uniq.map do |what, path|
+        err("#{path} carries #{what}, which #{kind} must not have: the office kit is never added to check or annual shells")
+      end
+    end
+
+    def self.kit_walk(node, path, found)
+      case node
+      when Hash
+        node.each do |k, v|
+          here = path.empty? ? k.to_s : "#{path}.#{k}"
+          found << ["the key '#{k}'", here] if KIT_KEYS.include?(k.to_s)
+          found << ["the kit_ name '#{k}'", here] if k.to_s.match?(KIT_NAME)
+          kit_walk(v, here, found)
+        end
+      when Array
+        node.each_with_index { |v, i| kit_walk(v, "#{path}[#{i}]", found) }
+      when String
+        found << ["a kit_ name (#{node[KIT_NAME] && node[/kit_[A-Za-z0-9_]*/]})", path] if node.match?(KIT_NAME)
+      end
     end
 
     # ---- stages and ids ----------------------------------------------------------
