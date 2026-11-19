@@ -9,11 +9,33 @@
  * Returns the params the runner was started with, or null.
  */
 
-import { stateKey, readState } from '../minigames/episode-runner/episode-model.js';
+import { stateKey, readState, stepAwayHeld } from '../minigames/episode-runner/episode-model.js';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
 export const EPISODE_MISSING = 'This kiosk has no exercise to run.';
+export const STEP_AWAY_HOLD = 'episode-step-away';
+
+/**
+ * EC1 (d): the success screen's step-away hold. Read live from the saved episode state on each of
+ * the screen's idle polls, so it is in place from boot and after a reload with no write of its
+ * own: it holds while a stepAway episode has its defend stage done and its debrief neither
+ * finished nor closed. Registered on window.successScreenHolds (the success screen's registry)
+ * without importing that module.
+ */
+export function stepAwayHoldNow(w = win()) {
+    const episode = w.gameScenario?.social?.awarenessEpisode;
+    if (!episode || typeof episode !== 'object' || !episode.id) return false;
+    return stepAwayHeld(episode, w.gameState?.globalVariables?.[stateKey(episode.id)]);
+}
+
+export function installStepAwayHold(w = win()) {
+    if (!w || typeof w !== 'object') return;
+    if (!(w.successScreenHolds instanceof Map)) w.successScreenHolds = new Map();
+    w.successScreenHolds.set(STEP_AWAY_HOLD, () => stepAwayHoldNow(w));
+}
+
+if (typeof window !== 'undefined') installStepAwayHold(window);
 
 export function startEpisodeRunner(lockable, options = {}) {
     const w = win();

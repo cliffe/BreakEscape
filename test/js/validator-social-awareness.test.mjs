@@ -1060,3 +1060,19 @@ test('ENG-06: the assistant block is authored-only (no model field, replies are 
   ep(j).assistant = { title: 'Assist', exchanges: [{ id: 'e1', prompt: 'Q?', reply: { live: true } }] };
   expectIn(lint(j), /reply must be a literal string/);
 });
+
+test('EC1: stepAway is a boolean, for a full episode only', { skip }, () => {
+  let j = fx('clean_full.json');
+  ep(j).stepAway = true;
+  assert.ok(lint(j).length === 0);
+  ep(j).stepAway = 'yes';
+  assert.ok(hits(lint(j), /stepAway must be true or false/) === 1, String(/stepAway must be true or false/));
+  j = fx('clean_defend_only.json');
+  ep(j).stepAway = true;
+  assert.ok(hits(lint(j), /stepAway is true on a "defendOnly" episode/) === 1, String(/stepAway is true on a "defendOnly" episode/));
+  ep(j).stepAway = false;
+  assert.ok(lint(j).length === 0);
+  j = fx('clean_check_pre.json');
+  ep(j).stepAway = true;
+  assert.ok(hits(lint(j), /stepAway is true in a check mission/) === 1, String(/stepAway is true in a check mission/));
+});

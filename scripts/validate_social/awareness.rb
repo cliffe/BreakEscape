@@ -789,7 +789,21 @@ module ValidateSocial
           issues << err('oncePerLearner is true but there is no doneGlobal; the runner has nothing to read to know the learner has seen it')
         end
       end
+      issues.concat(step_away_checks(ep))
       issues
+    end
+
+    # EC1 (living office): stepAway is a boolean, and only a full episode takes the panel. In a
+    # check mission, a twin (defendOnly) or a brief episode the runner ignores it, so authoring it
+    # there is a mistake.
+    def self.step_away_checks(ep)
+      return [] unless ep.key?('stepAway')
+      v = ep['stepAway']
+      return [err('stepAway must be true or false')] unless v == true || v == false
+      return [] unless v == true
+      return [err('stepAway is true in a check mission; only a full episode takes the step-away panel')] if check_mission?(ep)
+      return [err("stepAway is true on a #{ep['variant'].inspect} episode; only a full episode takes the step-away panel")] unless ep['variant'] == 'full'
+      []
     end
 
     # ---- the defend set ----------------------------------------------------------
