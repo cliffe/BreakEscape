@@ -42,7 +42,8 @@ function fakeLock(applied) {
     const canvasStyle = { marginLeft: '9px', marginTop: '9px' };
     const scale = {
         scaleMode: 3, autoCenter: 1, zoom: 2, canvas: { style: canvasStyle },
-        displaySize: { setMax: (w, h) => calls.push(['max', w, h]) },
+        displaySize: { setMax: (w, h) => calls.push(['max', w, h]), setAspectMode: (m) => calls.push(['aspect', m]), setParent: (p) => calls.push(['parent', p]) },
+        parentSize: { width: 400, height: 300 },
         setGameSize: (w, h) => calls.push(['size', w, h]),
         getParentBounds: () => true, refresh: () => calls.push(['refresh'])
     };
@@ -84,6 +85,8 @@ test('a phone lock resized to a desktop window drops the crop and the FIT scalin
     assert.equal(t.scale.scaleMode, 0);
     assert.equal(t.scale.autoCenter, 0);
     assert.equal(t.scale.zoom, 1);
+    assert.deepEqual(t.calls.find((c) => c[0] === 'aspect'), ['aspect', 0], 'the display Size stops constraining to the parent');
+    assert.deepEqual(t.calls.find((c) => c[0] === 'parent'), ['parent', null]);
     assert.equal(t.box.classList.contains('lockpicking-fit'), false);
     assert.equal(t.fake._portraitCameraOffset, null, 'key selection reads this for its panel');
     assert.deepEqual(t.scroll.pop(), [0, 0], 'camera back to the world origin');
@@ -101,6 +104,8 @@ test('a desktop lock resized short or narrow gets the crop, FIT and the camera o
     assert.equal(t.scale.scaleMode, 3);
     assert.equal(t.scale.autoCenter, 1);
     assert.equal(t.scale.zoom, 1);
+    assert.deepEqual(t.calls.find((c) => c[0] === 'aspect'), ['aspect', 3]);
+    assert.equal(t.calls.find((c) => c[0] === 'parent')[1], t.scale.parentSize);
     assert.equal(t.box.classList.contains('lockpicking-fit'), true);
     assert.equal(t.box.classList.contains('lockpicking-zoomed'), false);
     assert.equal(t.box.style.maxWidth, '', 'the zoom width cap is cleared');

@@ -607,6 +607,11 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             scale.scaleMode = Phaser.Scale.FIT;
             scale.autoCenter = Phaser.Scale.CENTER_BOTH;
             scale.zoom = 1;
+            // The display Size was built for the boot mode: its aspect mode and parent decide
+            // how setSize constrains the canvas, so they follow the scale mode
+            scale.displaySize.setAspectMode(Phaser.Scale.FIT);
+            scale.getParentBounds?.();
+            if (scale.parentSize?.width > 0 && scale.parentSize?.height > 0) scale.displaySize.setParent(scale.parentSize);
             scale.displaySize.setMax(st.capped ? 580 : unlimited, st.capped ? 340 : unlimited);
             box.style.maxWidth = '';
             box.classList.remove('lockpicking-zoomed');
@@ -620,6 +625,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             box.classList.remove('lockpicking-fit');
             scale.scaleMode = Phaser.Scale.NONE;
             scale.autoCenter = Phaser.Scale.NO_CENTER;
+            scale.displaySize.setAspectMode(Phaser.Scale.NONE);
+            scale.displaySize.setParent(null);
             scale.displaySize.setMax(unlimited, unlimited);
             const st2 = scale.canvas?.style;
             if (st2) { st2.marginLeft = ''; st2.marginTop = ''; }
