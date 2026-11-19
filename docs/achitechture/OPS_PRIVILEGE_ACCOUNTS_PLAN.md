@@ -281,8 +281,9 @@ record carries its own crack recipe, `crack`, with the recipe's class,
 `common`, which only a recipe takes; required here, since the account has no
 habit to supply it), and `facts` for `guessable` (the cracking plan's recipe shape). The cracking
 plan owns every rule on `crack`, in its `validate_cracking.rb` (facts count and reachability, the
-optional `passwordPattern` and its backing check, the `reused` source check); this plan adds none
-of them. The cracking plan reads `crack` on the record when it is present and the habit otherwise.
+optional `passwordPattern` and its backing check, the `reused` source check, and the optional NPC
+habit parameter `passwordDifficulty`: `easy`, `medium` or `hard`, which a record's own
+`crack.difficulty` overrides); this plan adds none of them. The cracking plan reads `crack` on the record when it is present and the habit otherwise.
 The facts a recipe needs come from takeable items, share or container files, a feed post or a flag
 reward, never from a conversation or a read-only poster, because nobody stands behind the account
 and the server does not see a read. The S5c example below collects `deskAdmin` on `pc01` through

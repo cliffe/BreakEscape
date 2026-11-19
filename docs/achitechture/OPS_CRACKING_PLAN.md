@@ -950,8 +950,7 @@ L888-893), kept here as a record:
    equal `creds.password`, section 9) and adds no check of its own.
 3. **Its example fact `it_rota_poster_seen`.** Taken: the poster is a takeable `notes` item with
    `revealsFacts`, so it is a server-visible source (section 5 table).
-4. **Habit parameter `passwordDifficulty`.** A one-line request, for the privilege plan's
-   section 14 when it next changes: where it lists the NPC habit parameters beside
+4. **Habit parameter `passwordDifficulty`** (taken by the privilege plan, section 6). Where it lists the NPC habit parameters beside
    `passwordPattern`, add the optional `passwordDifficulty` (`easy`, `medium`, `hard`), owned and
    validated by this plan, for an NPC whose account the privilege plan collects as a hash.
 
