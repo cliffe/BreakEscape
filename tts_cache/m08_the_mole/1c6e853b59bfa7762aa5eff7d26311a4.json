@@ -1,0 +1,13 @@
+{
+  "key": "1c6e853b59bfa7762aa5eff7d26311a4",
+  "npc": "julian_sallow",
+  "text": "Carry your ID where it can be seen. Every classified system wants re-authentication tonight, so don't take it personally when a reader asks twice.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:09Z"
+}

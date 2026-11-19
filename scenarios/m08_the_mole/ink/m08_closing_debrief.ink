@@ -78,10 +78,9 @@ VAR phantom_hostile = false
 }
 
 Director Magnus Netherton: It's done, then. Agent 0x47. Nightshade.
-Director Magnus Netherton: A year ago Dr Okafor put a warning about him on my desk. Ideological drift, she called it.
-Director Magnus Netherton: I read it, and I sealed it. He was the best planner I had, and I did not want it to be true.
+Director Magnus Netherton: A year ago Dr Okafor warned me about him, in writing. I sealed it. He was the best planner I had, and I did not want it to be true.
 Director Magnus Netherton: Two of ours are dead in the space between what I knew and what I did.
-Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I would rather hear it than watch you swallow it.
+Director Magnus Netherton: Say it, Agent. I would rather hear it than watch you swallow it.
 -> stance
 
 === stance ===
@@ -112,7 +111,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     }
 }
 { vector_hostile or phantom_hostile:
-    Director Magnus Netherton: You hit {vector_hostile and phantom_hostile:Vector and Phantom|{vector_hostile:Vector|Phantom}} on my floor. {vector_hostile and phantom_hostile:Two innocent men.|An innocent man.} That goes in the file beside everything else.
+    Director Magnus Netherton: You hit {vector_hostile and phantom_hostile:Vector and Phantom|{vector_hostile:Vector|Phantom}} on my floor. {vector_hostile and phantom_hostile:Two innocent men.|An innocent man.}
 }
 { locker_seen_picked:
     Director Magnus Netherton: You picked a colleague's locker in front of a witness, who then told the whole floor he saw nothing.
@@ -217,14 +216,13 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 === hub ===
 + { not asked_how } [How did they get him in the first place, sir?]
     ~ asked_how = true
-    Director Magnus Netherton: Training. His own, fifteen years ago. They took a tired young idealist and they waited.
+    Director Magnus Netherton: In training, fifteen years ago. They took a tired young idealist and waited.
     Director Magnus Netherton: There may be others in this service, recruited the same way and still waiting.
     Director Magnus Netherton: I shall spend the rest of my career reading our own files.
     -> hub
 + { database_theft_understood and not asked_database } [The database. How bad is it, honestly.]
     ~ asked_database = true
     Director Magnus Netherton: As bad as it gets. Every weakness we have ever catalogued is now theirs.
-    Director Magnus Netherton: Portland, Austin, all of it was theatre, to cover the one door Nightshade left open.
     Director Magnus Netherton: Nine days ago we handed the enemy the map to every battle still coming.
     -> hub
 // PASS 5 (alignment M5, U4): a hedge, never a name. The M9 reveal stays intact.

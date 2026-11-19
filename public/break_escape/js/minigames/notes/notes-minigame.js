@@ -17,6 +17,14 @@ function setObservationText(div, text) {
 }
 
 
+// Whether a page has text below its visible part (the MORE cue). Pure.
+// lastBottom: bottom edge of the last thing on the page; visibleBottom: bottom edge of the
+// text area. Its own bottom padding and the last box's margin are blank paper: scrollHeight
+// counts them, so it is not used. Content that ends inside the padding is fully shown.
+export function moreBelow(lastBottom, visibleBottom, tolerance = 2) {
+    return lastBottom - visibleBottom > tolerance;
+}
+
 // Pixelify Sans and VT323 are self-hosted in css/fonts.css (no remote font links).
 
 // Notes Minigame Scene implementation
@@ -34,9 +42,12 @@ export class NotesMinigame extends MinigameScene {
     // Continue (A05). Every other note closes with the X or Esc alone.
     static keepsCancelButton = true;
 
-    // The X sits in the notepad's top-right corner, not out at the window's edge
+    // The X sits in the paper's top-right corner, not out at the window's edge. The art's paper
+    // ends at column 154 of 165 (the rest is shadow and transparent), so the anchor is an empty
+    // box over the paper only (.notes-minigame-page-edge)
     closeAnchor() {
-        return this.gameContainer?.querySelector?.('.notes-minigame-notepad') || this.gameContainer;
+        return this.gameContainer?.querySelector?.('.notes-minigame-page-edge')
+            || this.gameContainer?.querySelector?.('.notes-minigame-notepad') || this.gameContainer;
     }
 
     constructor(container, params) {
@@ -179,7 +190,9 @@ export class NotesMinigame extends MinigameScene {
                     pencilIcon.alt = 'Edit';
                     editBtn.appendChild(pencilIcon);
 
-                    editBtn.addEventListener('click', () => this.editObservations(observationDiv));
+                    editBtn.setAttribute('aria-label', editBtn.title);
+                    // The observation div is replaced on every page change, so find it at click time
+                    editBtn.addEventListener('click', () => this.editObservations(observationContainer.querySelector('.notes-minigame-observation')));
 
                     observationContainer.appendChild(observationDiv);
                     // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
@@ -208,7 +221,9 @@ export class NotesMinigame extends MinigameScene {
                     pencilIcon.alt = 'Edit';
                     editBtn.appendChild(pencilIcon);
 
-                    editBtn.addEventListener('click', () => this.editObservations(observationDiv));
+                    editBtn.setAttribute('aria-label', editBtn.title);
+                    // The observation div is replaced on every page change, so find it at click time
+                    editBtn.addEventListener('click', () => this.editObservations(observationContainer.querySelector('.notes-minigame-observation')));
 
                     observationContainer.appendChild(observationDiv);
                     // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
@@ -219,7 +234,32 @@ export class NotesMinigame extends MinigameScene {
         // Add content area to notepad container, then notepad container to game container
         notepadContainer.appendChild(contentArea);
         this.gameContainer.appendChild(notepadContainer);
-        
+
+        // The paper's edge, for the X (closeAnchor): invisible, over the paper only
+        const pageEdge = document.createElement('div');
+        pageEdge.className = 'notes-minigame-page-edge';
+        notepadContainer.appendChild(pageEdge);
+
+        // A page longer than the notepad scrolls inside it: a flat "more" cue at its foot says
+        // so while there is text below (the scrollbar alone is easy to miss on a phone). It is
+        // re-checked on a scroll, on a change of size of the page, the slip or the observation
+        // box (an edit that grows), and by updateDisplayedNote (Next, Previous, search).
+        const moreCue = document.createElement('div');
+        moreCue.className = 'notes-minigame-more';
+        moreCue.textContent = 'MORE \u25BC';
+        moreCue.hidden = true;
+        notepadContainer.appendChild(moreCue);
+        this._moreCue = moreCue;
+        this._contentArea = contentArea;
+        this.addEventListener(contentArea, 'scroll', () => this._syncMore(), { passive: true });
+        if (typeof window.ResizeObserver === 'function') {
+            this._moreObserver = new window.ResizeObserver(() => this._syncMore());
+            for (const el of [contentArea, textBox, contentArea.querySelector('.notes-minigame-observation-container')]) {
+                if (el) this._moreObserver.observe(el);
+            }
+        }
+        (window.requestAnimationFrame || setTimeout)(() => this._syncMore());
+
         // Create navigation buttons container (only if navigation is not hidden)
         if (!this.params.hideNavigation && !this.showsFiledPage) {
             const navContainer = document.createElement('div');
@@ -373,6 +413,15 @@ export class NotesMinigame extends MinigameScene {
         this.updateCounter();
     }
     
+    _syncMore() {
+        const area = this._contentArea;
+        if (!this._moreCue || !area) return;
+        const last = area.lastElementChild;
+        if (!last) { this._moreCue.hidden = true; return; }
+        const areaRect = area.getBoundingClientRect();
+        this._moreCue.hidden = !moreBelow(last.getBoundingClientRect().bottom, areaRect.bottom);
+    }
+
     updateDisplayedNote() {
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (!currentNote) return;
@@ -434,13 +483,13 @@ export class NotesMinigame extends MinigameScene {
                 observationDiv.style.color = '#666';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to edit observations';
-                editBtn.title = 'Edit observations';
+                if (editBtn) { editBtn.title = 'Edit observations'; editBtn.setAttribute('aria-label', editBtn.title); }
             } else {
                 setObservationText(observationDiv, '');
                 observationDiv.style.color = '#999';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to add observations';
-                editBtn.title = 'Add observations';
+                if (editBtn) { editBtn.title = 'Add observations'; editBtn.setAttribute('aria-label', editBtn.title); }
             }
             
             // Re-attach click event listener for the observation text
@@ -449,6 +498,9 @@ export class NotesMinigame extends MinigameScene {
             newObservationDiv.addEventListener('click', () => this.editObservations(newObservationDiv));
             observationDiv.parentNode.replaceChild(newObservationDiv, observationDiv);
         }
+        // A new page opens at its top, and the MORE cue follows what is now on it
+        if (this._contentArea) this._contentArea.scrollTop = 0;
+        this._syncMore();
     }
     
     parseNoteText(text) {
@@ -540,7 +592,8 @@ export class NotesMinigame extends MinigameScene {
     }
     
     editObservations(observationDiv) {
-        if (this.showsFiledPage) return;
+        if (this.showsFiledPage || !observationDiv) return;
+        if (observationDiv.querySelector('textarea')) return; // already editing
         const currentText = (observationDiv.dataset.raw ?? observationDiv.textContent).trim();
         const isPlaceholder = currentText === 'Click edit to add your observations...';
         const originalText = isPlaceholder ? '' : currentText;
@@ -747,6 +800,8 @@ export class NotesMinigame extends MinigameScene {
     }
     
     cleanup() {
+        this._moreObserver?.disconnect?.();
+        this._moreObserver = null;
         super.cleanup();
         // Read by the viewer's onComplete, which runs just after: a close by the framework
         // alone (a hit's fallback, a conversation starting) never set closedByPlayer
