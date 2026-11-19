@@ -121,3 +121,56 @@ test('values do not depend on the browser time zone', () => {
         assert.deepEqual(a, b); assert.deepEqual(a, c);
     } finally { if (saved === undefined) delete process.env.TZ; else process.env.TZ = saved; }
 });
+
+// D167 (post-release): the viewer must not name the anomaly before the player finds it.
+test('before the finding, tooltips show the raw reading only; after it, the anomaly text', () => {
+    const { points, anomaly } = setup(SD);
+    const flat = points[points.length - 1];
+    for (const p of [flat, anomaly.firstInjected]) {
+        const before = H.tooltipText(p, anomaly, false);
+        assert.equal(before.kind, 'normal');
+        assert.doesNotMatch(before.text, /ANOMALY|INJECTION|DISCONTINUITY|Flat since|impossible/);
+        assert.match(before.text, /Temperature: 28\.0°C/);
+    }
+    assert.equal(H.tooltipText(flat, anomaly, true).kind, 'anomaly');
+    assert.equal(H.tooltipText(anomaly.firstInjected, anomaly, true).kind, 'injection');
+});
+
+test('a mark is accepted near the first flat reading, with a gentle retry too early or too late', () => {
+    const { points, anomaly } = setup(SD);
+    const at = (clock) => points.find(p => H.fmtClock(p.ts) === clock);
+    assert.equal(H.judgeMark(at('22:00:00'), anomaly).kind, 'early');
+    assert.match(H.judgeMark(at('22:00:00'), anomaly).message, /^22:00:00: \d+\.\d°C\. Still moving like a real sensor reading\./);
+    assert.equal(H.judgeMark(at('23:09:00'), anomaly).kind, 'early');
+    for (const c of ['23:11:00', '23:12:06', '23:12:07', '23:20:00', '23:22:00']) {
+        assert.ok(H.judgeMark(at(c), anomaly).ok, `${c} accepted`);
+    }
+    const late = H.judgeMark(at('23:23:00'), anomaly);
+    assert.equal(late.kind, 'late');
+    assert.match(late.message, /Find where it starts/);
+    assert.equal(H.judgeMark(at('04:00:00'), anomaly).kind, 'late');
+    assert.equal(H.judgeMark(points[0], null).ok, false);
+});
+
+test('the finding choices: one right, and each wrong one gets a reason from the data', () => {
+    const { anomaly } = setup(SD);
+    assert.deepEqual(H.FINDING_CHOICES.map(c => c.id).sort(), ['cooling', 'dropout', 'written']);
+    assert.ok(H.judgeFinding('written', anomaly).ok);
+    const drop = H.judgeFinding('dropout', anomaly);
+    assert.equal(drop.ok, false);
+    assert.match(drop.message, new RegExp(`last real reading, ${anomaly.lastReal.value.toFixed(1)}°C.*28\\.0°C`));
+    const cool = H.judgeFinding('cooling', anomaly);
+    assert.equal(cool.ok, false);
+    assert.match(cool.message, new RegExp(`${H.fmtSigned(anomaly.delta)}°C in 1 second`));
+});
+
+test('compare mode reads every rack at one time, and the neutral banner names no time', () => {
+    const { cfg } = setup(SD);
+    const trend = new Map(cfg.racks.map(r => [r.id, H.buildRackTrend(r, cfg)]));
+    const after = trend.get('A1').find(p => H.fmtClock(p.ts) === '23:30:00');
+    assert.match(H.compareValuesText(after.ts, cfg.racks, trend), /Rack A1: 28\.0°C\nRack A2: 28\.0°C$/);
+    const before = trend.get('A1').find(p => H.fmtClock(p.ts) === '22:00:00');
+    const txt = H.compareValuesText(before.ts, cfg.racks, trend);
+    assert.notEqual(txt.match(/A1: ([\d.]+)/)[1], txt.match(/A2: ([\d.]+)/)[1]);
+    assert.doesNotMatch(H.compareNeutralText(4), /\d\d:\d\d|INJECTION|identical/);
+});
