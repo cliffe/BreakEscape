@@ -21,7 +21,7 @@ VAR hub_quiet = false
 - else:
     { episode_e3_helpdesk_reset_defend_complete:
         Darren Price: That's the desk covered from both seats, thanks.
-        Darren Price: Online you can find a name, a team, a staff number. None of those prove who's calling. The callback, on the number already on file, is the check that does.
+        Darren Price: A name, a team, a staff number, anyone can find those online. None of them prove who's calling. A callback on the number we already hold does.
     - else:
         { pretext_quayholt_helpdesk_reset_outcome != "":
             Darren Price: Your call to the service desk has gone through. Now take the other seat at the kiosk and cover the queue the way those calls land in real life.

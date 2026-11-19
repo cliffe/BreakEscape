@@ -25,8 +25,8 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e15_shadow_it_defend_complete:
-        Nilesh Solanki: That's the lot. If the official way's slow, tell us, don't build your own way round.
-        Nilesh Solanki: We can't mend what we don't know about. And nobody's in trouble for a workaround.
+        Nilesh Solanki: That's the lot. If the official way's slow, tell us rather than building your own way round.
+        Nilesh Solanki: Nobody's in trouble for a workaround.
     - else:
         Nilesh Solanki: Nilesh, service desk. Ask us first, we'd rather help than clean up.
         Nilesh Solanki: That slow share? Tell us and we'll fix it. We can't mend what we don't know about.

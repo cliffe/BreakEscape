@@ -23,7 +23,7 @@ VAR hub_quiet = false
 - else:
     { episode_e14_social_media_defend_complete:
         Julian Sallow: That's the lot. A well-made message is built from scraps anyone could find.
-        Julian Sallow: The fix is a setting and a pause, not shame. Nobody's in trouble for having posted them.
+        Julian Sallow: The fix is a setting and a pause. Nobody's in trouble for what they've posted.
     - else:
         { phish_df_cover_attempts > 0:
             Julian Sallow: That's how little it takes to build a convincing message out of a colleague's posts.
