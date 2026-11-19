@@ -205,7 +205,6 @@
 .epr-panel .epr-facilitator { margin: 12px 0 0; }
 .epr-facilitator-label { display: block; font-size: 14px; font-weight: 700; color: var(--aw-accent); }
 .epr-facilitator-text { display: block; font-weight: 600; }
-.epr-pause .epr-text { font-size: 16px; }
 
 @media (max-width: 767px) {
     .epr-bar { flex-wrap: wrap; }
@@ -234,7 +233,7 @@
 .epr-sbx-title { font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--aw-accent); }
 .epr-sbx-card { padding: 12px; background: #fff; border: 2px solid var(--aw-line); }
 .epr-sbx-intro { margin: 0 0 10px; font-size: 15px; color: #52606d; }
-.epr-sbx-heading { margin: 0 0 6px; font-size: 16px; color: var(--aw-accent); }
+.epr-sbx-heading { margin: 0 0 6px; padding-bottom: 4px; font-size: 16px; color: var(--aw-accent); border-bottom: 2px solid var(--aw-accent); }
 .epr-sbx-heading:focus { outline: none; }
 .epr-sbx-situation { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
 .epr-sbx-options { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }

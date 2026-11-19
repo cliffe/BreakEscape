@@ -215,7 +215,7 @@
     border: none;
     color: #8899cc;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 18px;
     line-height: 1;
     padding: 0;
     flex-shrink: 0;
@@ -587,7 +587,7 @@
 
 .lf-threat-no-match {
     color: #66cc88;
-    font-size: 16px;
+    font-size: 18px;
     letter-spacing: 0.04em;
     margin-top: 6px;
     border: 2px solid #2a6a44;
@@ -597,7 +597,7 @@
 
 .lf-threat-known-bad {
     color: #ff4444;
-    font-size: 16px;
+    font-size: 18px;
     letter-spacing: 0.04em;
     margin-top: 4px;
     border: 2px solid #cc2222;

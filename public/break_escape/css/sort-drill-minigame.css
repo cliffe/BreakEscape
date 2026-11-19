@@ -60,7 +60,7 @@
     border: 2px solid var(--sd-line);
     border-left: 6px solid var(--sd-accent);
 }
-.sd-situation { margin: 0; font-size: 16px; font-weight: 700; }
+.sd-situation { margin: 0; font-size: 24px; font-weight: 700; }
 .sd-new {
     display: inline-block;
     margin: 0 0 6px;

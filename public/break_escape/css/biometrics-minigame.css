@@ -578,7 +578,7 @@
 
 .fpr-forensic {
     margin: 0;
-    font-size: 16px;
+    font-size: 18px;
     line-height: 1.1;
     color: #7fa88a;
     border-top: 2px solid #1f6b35;
@@ -732,9 +732,9 @@
     top: 4px;
     left: 6px;
     color: #7fa88a;
-    font-size: 16px;
+    font-size: 18px;
 }
-.fpr-card-ident { font-size: 16px; color: #7fa88a; }
+.fpr-card-ident { font-size: 18px; color: #7fa88a; }
 .fpr-card.fpr-card-rejected { border-style: dashed; }
 
 .fpr-result-title {

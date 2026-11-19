@@ -128,6 +128,7 @@ const SETUP = {
     // network-view needs a held foothold; stand one in for the link's answer (no server state)
     'network-view': { pre: (p) => {
         const f = { id: 'jack_sweep', via: 'jack', name: 'Drop box: comms room', itemId: 'netlink_jack_sweep', sourceId: 'comms_port', network: { id: 'office_lan', name: 'Harbour office LAN' }, hosts: p.hosts };
+        window.__sweepSaved = { networkLinks: window.networkLinks };
         window.networkLinks = { get: () => f, view: async () => ({ ok: true, view: f }), footholds: new Map(), views: new Map() };
     } },
     'infusion-pump': { pre: () => { window.gameState.globalVariables.paper_charts_collected = true; } },
@@ -398,6 +399,8 @@ async function checkFit(page) {
             if (cs.display === 'none' || cs.visibility === 'hidden') continue;
             const r = el.getBoundingClientRect();
             if (!r.width || !r.height) continue;
+            // screen-reader-only helpers (1px boxes or clipped away) are meant to be invisible
+            if ((r.width <= 1 && r.height <= 1) || (cs.position === 'absolute' && /rect\(0(px)?,? ?0(px)?,? ?0(px)?,? ?0(px)?\)/.test(cs.clip)) || cs.clipPath === 'inset(50%)' || /(^|[-_ ])sr-only|screen-reader/.test(String(el.className))) continue;
             const ox = cs.overflowX; const oy = cs.overflowY;
             const sy = el.scrollHeight - el.clientHeight; const sx = el.scrollWidth - el.clientWidth;
             if ((oy === 'auto' || oy === 'scroll') && sy > 1) scrolls.push(`${name(el)} y+${sy}`);
@@ -477,6 +480,8 @@ async function main() {
                 unlinkSync(png);
             }
         }
+        // put back anything a scene's pre() swapped, so later scenes run against the real object
+        await page.evaluate(() => { if (window.__sweepSaved) { window.networkLinks = window.__sweepSaved.networkLinks; delete window.__sweepSaved; } });
         const byKind = {};
         for (const b of res.breaches) byKind[b.kind] = (byKind[b.kind] || 0) + 1;
         report[scene] = { inScope: SCOPE.includes(scene), open: res.open, setup: res.setup ?? null, errors: res.errors, elements: res.elements, canvasTexts: res.canvasTexts, fit: res.fit, byKind, breaches: res.breaches };

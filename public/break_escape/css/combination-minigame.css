@@ -12,7 +12,7 @@
     background: #0d1117;
     color: #c9d1d9;
     font-family: 'VT323', 'GNF', monospace;
-    font-size: 16px;
+    font-size: 18px;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -40,7 +40,7 @@
 }
 
 .combination-direction-indicator {
-    font-size: 16px;
+    font-size: 18px;
     color: #f5a623;
     font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     letter-spacing: 0.04em;
@@ -51,7 +51,7 @@
 /* How the dials work, always on screen (UX pass, 2026-11-12) */
 .combination-help {
     margin-top: 8px;
-    font-size: 16px;
+    font-size: 18px;
     color: #c9d1d9;
     text-align: center;
     max-width: 640px;
@@ -77,7 +77,7 @@
 }
 
 .combination-dial-label {
-    font-size: 16px;
+    font-size: 18px;
     color: #8899bb;
     text-transform: uppercase;
     letter-spacing: 0.06em;

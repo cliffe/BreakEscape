@@ -53,7 +53,7 @@
 .dusting-steps { list-style: none; display: flex; gap: 4px; margin: 0 0 10px; padding: 0; flex-wrap: wrap; }
 .dusting-steps li {
     flex: 1 1 90px; text-align: center; padding: 4px 6px; border: 2px solid var(--d-line);
-    color: var(--d-dim); font-size: 16px; background: var(--d-panel);
+    color: var(--d-dim); font-size: 18px; background: var(--d-panel);
 }
 .dusting-steps li.done { color: var(--d-text); border-color: #2f6b43; }
 .dusting-steps li.done::after { content: ' \2713'; }
@@ -140,9 +140,9 @@
 .dusting-refs[data-count="4"] .dusting-ref { flex: 1 1 auto; align-items: center; text-align: center; }
 .dusting-refs[data-count="4"] .dusting-ref-canvas { margin: 0 auto; }
 
-.dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 16px; line-height: 1.15; border-top: 2px solid var(--d-line); padding-top: 8px; }
-.dusting-status { min-height: 1.2em; color: var(--d-text); font-size: 16px; }
-.dusting-options { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 16px; color: var(--d-dim); }
+.dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 18px; line-height: 1.15; border-top: 2px solid var(--d-line); padding-top: 8px; }
+.dusting-status { min-height: 1.2em; color: var(--d-text); font-size: 18px; }
+.dusting-options { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 18px; color: var(--d-dim); }
 .dusting-options label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; }
 .dusting-options input { width: 20px; height: 20px; accent-color: var(--d-accent); }
 /* Pixel checkboxes (critique A17): a 2px square box, a filled square when ticked */
@@ -177,7 +177,7 @@
 .dusting-reduced-motion .dusting-hint { animation: none; outline: 3px dashed var(--d-accent); }
 
 @media (max-width: 760px) {
-    .dusting-root { font-size: 16px; padding: 8px; }
+    .dusting-root { font-size: 18px; padding: 8px; }
     .dusting-main { flex-direction: column; align-items: center; }
     .dusting-panel { width: 100%; }
 }
@@ -249,7 +249,7 @@
    controls on the right; the controls column scrolls on its own and keeps the action row pinned. */
 .dusting-short {
     display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto auto;
-    column-gap: 12px; height: calc(100dvh - 24px); overflow: hidden; padding: 6px 10px; font-size: 16px;
+    column-gap: 12px; height: calc(100dvh - 24px); overflow: hidden; padding: 6px 10px; font-size: 18px;
 }
 .dusting-short .dusting-title { grid-column: 1; grid-row: 1; margin-bottom: 4px; padding-right: 0; gap: 0 8px; }
 .dusting-short .dusting-steps { grid-column: 2; grid-row: 1; margin: 0 0 4px; flex-wrap: nowrap; padding-right: 44px; }
@@ -350,7 +350,7 @@
 .dusting-zoom-stack { flex-direction: column; flex-wrap: nowrap; }
 .dusting-zoom-pane { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 /* One line, clipped to the pane with an ellipsis (width 0 + min-width 100% keeps a long name from widening the pane and the stage column). */
-.dusting-zoom-cap { font-size: 16px; color: var(--d-dim); width: 0; min-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dusting-zoom-cap { font-size: 18px; color: var(--d-dim); width: 0; min-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .dusting-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .dusting-zoom-box { position: relative; border: 2px solid var(--d-line); line-height: 0; background: #f2f0ea; align-self: flex-start; }
 .dusting-zoom-canvas { display: block; image-rendering: pixelated; }

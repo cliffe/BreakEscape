@@ -432,9 +432,9 @@
     margin: 0.6em 0 0.3em;
 }
 
-.notes-minigame-text .note-md-h1 { font-size: 1.3em; }
-.notes-minigame-text .note-md-h2 { font-size: 1.15em; }
-.notes-minigame-text .note-md-h3 { font-size: 1em; text-decoration: underline; }
+.notes-minigame-text .note-md-h1 { font-size: 24px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+.notes-minigame-text .note-md-h2 { font-size: 24px; }
+.notes-minigame-text .note-md-h3 { font-size: 16px; text-decoration: underline; }
 
 .notes-minigame-text code,
 .notes-minigame-text .note-md-code {
