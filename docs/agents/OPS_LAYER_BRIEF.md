@@ -102,6 +102,16 @@ one says so under "Cross-plan requests" and the orchestrator settles it.
   renderer (the command-line skin) over the same data and the same server routes.
 - **Game time.** A plan that makes something cost game minutes says so under "Open questions";
   none assumes a server clock exists unless the digest shows one.
+- **Validator checks.** Each feature puts its checks in its own file
+  (`scripts/validate_<feature>.rb`, as the core plan's `validate_network_ops.rb`), hooked into
+  `validate_scenario.rb` by one line.
+- **Unchanged scenarios.** One mechanism for "an existing scenario answers as before": JSON
+  fixtures captured from main in `test/fixtures/files/ops_unchanged/` (the core plan's folder),
+  compared by one shared helper (`bin/ops-golden-compare`). Every plan names which fixtures it
+  adds there; none builds its own golden mechanism.
+- **Refusals.** New ops routes answer refusals as `{ success: false, reason: "<code>" }` with a
+  closed list of codes. A route that extends an existing one (sign-in, the desktop) may keep that
+  route's existing body and says so.
 - **Feature test scenarios**: `test_ops_scan`, `test_ops_findings`, `test_ops_access`,
   `test_ops_privilege`, `test_ops_skin`, `test_ops_crack`, `test_ops_mfa`, `test_ops_logs`, `test_ops_lock_step`.
 
