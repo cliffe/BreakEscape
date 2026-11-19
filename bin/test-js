@@ -29,6 +29,15 @@
 # Memory: each file runs with a V8 heap cap of $TEST_JS_MAX_OLD_SPACE MB (default
 # 2048), so a runaway test fails on its own instead of exhausting the machine and
 # getting the editor killed for running out of memory.
+# Hard cap: V8's heap cap does not bound memory outside the heap. A failing assert on
+# fake DOM nodes (cyclic parent/children/ownerDocument graphs) makes node's failure
+# reporter inspect and diff the whole graph, allocating typed arrays and strings
+# without limit, and the kernel OOM killer then takes down the editor. So each file
+# also runs under `prlimit --data=<TEST_JS_MEM_MB>` (RLIMIT_DATA: heap and anonymous
+# memory actually mapped; default 3072). Not --as: V8 and WebAssembly (jsdom, undici)
+# reserve many GB of address space they never use, and --as fails those tests.
+# A file that hits it dies alone with a "MEMORY CAP" line in its log and a FAIL naming it.
+# TEST_JS_MEM_MB=0 disables the cap (also skipped if prlimit is missing).
 # Exit status: 0 if every file passed, 1 if any failed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -54,18 +63,34 @@ export out
 # "imported from <tmp>/..." is a transient fixture-resolution race, not a real bug.
 heap_mb=${TEST_JS_MAX_OLD_SPACE:-2048}
 export heap_mb
+mem_mb=${TEST_JS_MEM_MB:-3072}
+if [ "$mem_mb" -gt 0 ] 2>/dev/null && command -v prlimit >/dev/null 2>&1; then
+    :
+else
+  mem_mb=0
+fi
+export mem_mb
 
 tmp=$(node -p 'require("os").tmpdir()' 2>/dev/null || echo /tmp)
 export tmp
 
 run_one() {
+  ulimit -c 0 2>/dev/null
   f=$1
   b=$(basename "$f")
   start=$(date +%s)
   attempt=1
   while :; do
-    node --max-old-space-size="$heap_mb" "$f" >"$out/$b.log" 2>&1
+    if [ "$mem_mb" -gt 0 ]; then
+      prlimit "--data=$((mem_mb * 1024 * 1024))" node --max-old-space-size="$heap_mb" "$f" >"$out/$b.log" 2>&1
+    else
+      node --max-old-space-size="$heap_mb" "$f" >"$out/$b.log" 2>&1
+    fi
     code=$?
+    if [ "$code" -ne 0 ] && [ "$mem_mb" -gt 0 ] \
+       && grep -qE "Array buffer allocation failed|JavaScript heap out of memory|ERR_WORKER_OUT_OF_MEMORY|Cannot allocate memory|std::bad_alloc|Check failed: \(result.ptr\)|Fatal error in , line 0" "$out/$b.log"; then
+      echo "MEMORY CAP: $b ran out of memory (data cap ${mem_mb} MB via TEST_JS_MEM_MB, V8 heap cap ${heap_mb} MB). Likely a failing assert comparing DOM/node objects: compare ids or booleans instead." >>"$out/$b.log"
+    fi
     if [ "$code" -ne 0 ] && [ "$attempt" -lt "${TEST_JS_RETRIES:-3}" ] \
        && grep -q "ERR_MODULE_NOT_FOUND" "$out/$b.log" \
        && grep -q "imported from ${tmp}" "$out/$b.log"; then
