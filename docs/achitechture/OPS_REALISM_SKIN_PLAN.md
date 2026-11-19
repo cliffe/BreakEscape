@@ -14,11 +14,11 @@ Words used here. A **skin** is one way of drawing the network view and taking in
 lets the player press. Each has a name in the list: `sign-in`, `open` and `observe` (their
 `data-action` values today), `unplug` (the header button, marked `data-unplug` today), and the
 core's `sweep`, `scan`, `check`, `confirm` and `use`. The core's Confirm and Probe are one
-control, `confirm`, under two labels (section 5.2). An **offer** is
-one complete request the view can make right now: a control's action plus every id the request
-needs. The list of controls and offers is private to the network-view folder. It is a drawing
-aid for two renderers of one screen; nothing outside that folder reads it, the server never sees
-it, and no other feature registers with it.
+control, `confirm`, under two labels (section 5.2). An **offer** is one complete request the view
+can make right now: a control's action plus every id the request needs. The list of controls and
+offers is private to the network-view folder. It is a drawing aid for two renderers of one
+screen; nothing outside that folder reads it, the server never sees it, and no other feature
+registers with it.
 
 ## 1. What this adds and why
 
@@ -61,7 +61,8 @@ blocked by it, and one who wants the prompt can have it on every ops network.
 
 1. **One set of requests.** A skin never adds, removes or changes a request. Whatever one skin
    can ask the server for at a given moment, the other can ask for at that moment, the bytes sent
-   are the same, and the server cannot tell which skin sent them. Each skin also shows every
+   are the same, and the server cannot tell which skin sent them. A request still waiting on
+   its answer cannot be sent again from either skin. Each skin also shows, at every step, every
    piece of text the other shows.
 2. **A renderer cannot reach the server.** Both renderers draw from the same rows and the same
    list of offers and hand a chosen offer back to the scene. Only the scene calls anything. A
@@ -86,22 +87,24 @@ describe what the core plan adds before S6 is built.
 | The view | One scene, `NetworkViewMinigame`, registered as `network-view`, drawn in the shared console window, which supplies the title bar and the X | `NV:249-253` |
 | Starter | One function starts the scene, with `title`, `footholdId`, `message` and `unplugJack` and no keyboard parameter. The view comes back from the sign-in screen and the share container through the same starter | `NV:962-976` |
 | Data | The scene never reads scenario data. Its only source is `window.networkLinks.view(footholdId)`, which wraps `GET /network` | `NV:287`, `:403-405` |
-| Controls | A delegated click listener finds `[data-action]` inside `[data-host-id]` or `[data-resource-id]`, looks the row up by id in the current rows and calls `act(row, action)`. The actions are `sign-in`, `open` and `observe`. Unplug is a second listener on `[data-unplug]` in the header, calling `unplugBox()` | `NV:314-333`, `:829-852`, `:870-896` |
+| Controls | A delegated click listener finds `[data-action]` inside `[data-host-id]` or `[data-resource-id]`, looks the row up by id in the current rows and calls `act(row, action)`. The actions are `sign-in`, `open` and `observe`. Unplug is a second listener on `[data-unplug]` in the header, calling `unplugBox()`, which guards itself with `_unplugging`, finds the button with `querySelector`, disables it, writes `UNPLUGGING_TEXT` into it and puts a refusal beside it through `setUnplugNotice` | `NV:314-333`, `:829-852`, `:870-896` |
 | Which control a row gets | `hostAction(row)` answers `not_responding`, `off`, `locked`, `open` or `sign-in`; `resourceAction(row)` answers `open`, `locked` or `observe`. `sign-in`, `open` and `observe` are pressable. A host row whose action is `locked` (a remote session that has locked) shows the lock badge and a Sign in button as well, so a locked session is never stranded. `not_responding`, `off` and a locked share are a status only | `NV:215-232`, `:687-698` |
 | Drawing | HTML strings built in the scene through `escapeHtml` and `wordsHtml` | `NV:57`, `:71`, `:621-774` |
-| Fixed text | Exported constants in the scene: `REMOTE_OFF_TEXT`, `NOT_RESPONDING_TEXT`, `NO_ROUTE_TEXT`, the down tags, `sessionKeptText`, `STALE_TEXT`, `linkOffText`, the two lock labels, `SHARE_LOCKED_TEXT`, `UNPLUG_TEXT`. A block reached through a pivot is headed "through <host>", with "(Locked)" when that session is locked | `NV:91-126`, `:626` |
+| Fixed text | Exported constants in the scene: `REMOTE_OFF_TEXT`, `NOT_RESPONDING_TEXT`, `NO_ROUTE_TEXT`, the down tags, `sessionKeptText`, `STALE_TEXT`, `linkOffText`, the two lock labels, `SHARE_LOCKED_TEXT`, `UNPLUG_TEXT`, `UNPLUGGING_TEXT` ("Unplugging...", the button's label while the request is out). A block reached through a pivot is headed "through <host>", with "(Locked)" when that session is locked | `NV:91-126`, `:626` |
 | Colours and fonts | The view's stylesheet hard-codes its colours and uses no theme token; its text is the GNF pixel font at 18px. VT323 is self-hosted and is applied by the framework stylesheet to `code`, `kbd` and `samp` only, with no size | `css/network-view-minigame.css:9-10`; `css/minigames-framework.css:27`, `:290-292`; `css/fonts.css` |
 | Stylesheets | Listed one by one in the game page; the network view's is one of them | `app/views/break_escape/games/show.html.erb:103` |
 | Refresh | Refetch every 5 s, widening to 15 s when idle; redraw only when the answer differs | `NV:86-90`, `:509-560` |
 | Events | `network_viewed` and `network_host_opened`, emitted by the scene | `NV:448-463`, `:874` |
 | Test snapshot | `getTestState()` returns `rows[]` and `networks[]`, each row with `id`, `kind`, `action` and a CSS `selector` of the form `[data-host-id="…"] [data-action]` | `NV:920-954` |
-| Core: controls | Sweep on a discovery block, Scan on an unscanned host row in an `ops` block, Check on a service tile, and on a finding either Confirm (its evidence is held) or Probe (not held, or none declared): one request, `POST /network/confirm`, under two labels. A Techniques panel lists the held cards. A use is made by selecting a finding, then a card, then Use, or by dragging a card onto a finding. Any finding a row lists takes a card, whatever its status; the server decides | core plan sections 1, 5.4 and 5.5 |
-| Core: finding | `{ id, alias, hostId, service, class, severity, summary, status, evidence? }`; `status` is `unconfirmed`, `confirmed` or `false`. `alias` (`f1`, `f2`, ...) is given by the server in the order the player found them, is unique in the game and survives a reload. `evidence` is `{ kind, label, held }`. A confirmed finding carries `needs[]`; a held finding whose weakness is now fixed shows "Fixed", worked out by the server on each read | core plan sections 0, 5.5 and 7 |
-| Core: noise | A block carries `noise` once above zero, `noiseLimit` where the scenario sets one, and `alerted`. The view shows the count, the limit, and Alerted once reached. A probe adds one; so does a card of the wrong class, product or version, or any card on a false finding | core plan sections 1, 5.4 and 7 |
+| Core: controls | Sweep on a discovery block, Scan on an unscanned host row in an `ops` block, Check on a service tile, and on a finding either Confirm (its evidence is held) or Probe (not held, or none declared): one request, `POST /network/confirm`, under two labels. A Techniques panel lists the held cards. A use is made by selecting a finding, then a card, then Use, or by dragging a card onto a finding. Select-then-Use is the keyboard path and the drag is a pointer shortcut for it. Any finding a row lists takes a card, whatever its status; the server decides. A host row with a session draws an "admin" tag when the session's `access` says so | core plan sections 1, 5.4 and 5.5 |
+| Core: hooks | Each ops control carries `data-action`: `sweep`, `scan`, `check`, `confirm` (both labels; the control also carries `data-quiet`), `select-finding`, `select-technique`, `use`. Each ops row carries `data-network-id`, `data-host-id`, `data-service`, `data-finding` (the alias) or `data-technique`. Only ops controls and rows carry them; Open, Sign in and Unplug keep the selectors they have | core plan section 5.5, "Hooks for tests and for the skin" |
+| Core: one press, one request | The view disables a Probe or Use control from the click until its answer arrives. The server counts every noisy request it validates | core plan section 5.3, "No doubled noise from one click" |
+| Core: finding | `{ id, alias, hostId, service, class, severity, summary, status, evidence? }`; `status` is `unconfirmed`, `confirmed` or `false`. `alias` (`f1`, `f2`, ...) is given by the server in the order the player found them, is unique in the game and survives a reload. `evidence` is `{ kind, label, held }`. A confirmed finding carries `needs[]`, and `fixed: true` when its weakness is now fixed; the view then shows Fixed. `fixed` is worked out on each read and is never sent on an unconfirmed finding | core plan sections 0, 5.3 and 5.5 |
+| Core: noise | A block of an open or swept network carries `noiseLimit` whenever the network declares an alert (so "Noise 0 of 5" shows before any noise), `noise` once above zero, and `alerted: true` once the limit is reached; an unswept block, or one with no alert and no noise, carries none and shows no line. A probe adds one; so does a card of the wrong class, product or version, or any card on a false finding. The core names no separate note that says an answer was quiet or noisy: the player reads it from the Confirm or Probe label before and the noise line after | core plan sections 5.3 ("The noise keys on a block") and 5.4 |
 | Core: shared module | `network-view/ops-model.js`, pure, importing nothing: row merging, the works-on line, need and evidence labels, alias lookup (alias to finding id, technique id to the held card's item id) and `REFUSAL_TEXT`, the one table from a `reason` code to words. The core expects S6 to add its own exports to this file | core plan sections 5.5 and 12.2 |
-| Core: answers | Sweep `{ network: { id, swept, hosts } }`; host scan `{ host }`; check `{ hostId, service, findings }`; confirm `{ finding, quiet }`, with `noise` when it was a probe; a use answers a session (the desktop then opens) or `keyringChanged: true`; a repeat adds `already: true`; a refusal is `{ success: false, reason, need?, noisy?, noise? }` with `reason` a code. Any answer that changed the noise count carries the block's new `noise`, and `alerted` and `serverGlobals` when it reached the limit | core plan sections 5.4 and 6 |
+| Core: answers | Sweep `{ network: { id, swept, hosts } }`; host scan `{ host }`; check `{ hostId, service, findings }`; confirm `{ finding, quiet }`, with `noise` when it was a probe; a use answers a session (the desktop then opens) or `keyringChanged: true`; a repeat adds `already: true`; a refusal is `{ success: false, reason, need?, noisy?, noise? }` with `reason` a code. There are thirteen codes, kept in `test/fixtures/files/ops_refusal_codes.json`: twelve from the ops routes (the quiet `no_grant` among them) and `network_only` from the desktop route, sent when a session made by a technique is opened with no network route to it. Any answer that changed the noise count carries the block's new `noise`, and `alerted` and `serverGlobals` when it reached the limit | core plan sections 5.4 and 6 ("The refusal codes, in one list") |
 | Core: events | Seven, each also as `<name>:<id>`: `network_swept`, `network_host_scanned`, `network_service_checked`, `network_finding_confirmed`, `network_technique_used`, `network_technique_refused`, `network_alerted` | core plan section 5.5 |
-| Core: test snapshot | `getTestState()` gains per host row `scanned`, `services`, `findings`; per finding `alias`, `status`, `evidence`, `needs` and which of Confirm or Probe its control is; per block `swept`, `ops`, `noise`, `noiseLimit`, `alerted`; top-level `techniques` and `selectedFinding`; "a selector for each control" | core plan section 5.5 |
+| Core: test snapshot | `getTestState()` gains per host row `scanned`, `services`, `findings` and the session's `access`; per finding `alias`, `status`, `fixed`, `evidence`, `needs` and whether its confirm action is quiet; each with the selector of its action, built from the hooks; per block `swept`, `ops`, `noise`, `noiseLimit`, `alerted`; top-level `techniques` and `selectedFinding` | core plan section 5.5 |
 | Display settings | `ui/display-settings.js` keeps one object in `localStorage` and copies it in memory at import. Every write rewrites the whole object and dispatches `be:display-settings-changed`, which `main.js` answers by re-running the canvas scaling. The game menu draws its selects in every game | `ui/display-settings.js:13`, `:24-34`, `:78-87`; `ui/game-menu.js:167-206` |
 | URL preview value | `?ui_theme=` is read from the page URL and beats the player's stored theme | `ui/display-settings.js:63-69` |
 | Mission config | The page passes `uiTheme` to the browser from `mission.json` | `app/views/break_escape/games/show.html.erb:263` |
@@ -123,19 +126,18 @@ What already does part of the job, and what does not:
   are and the offers list calls them. The one rule they do not carry, Sign in beside the lock
   badge on a locked session, is written into the control list (section 5.2).
 - The core's `ops-model.js` is the one shared pure module for this screen. S6 reads rows,
-  labels, aliases and refusal texts through it, adds three small text functions to it (section
-  5.2) and adds no second model.
+  labels, aliases and refusal texts through it, adds its text exports to it (section 5.2) and
+  adds no second model.
+- The core's Probe and Use buttons and the scene's unplug each stop a second press while the
+  first is out, each in its own way and each by touching the DOM. K1 replaces the three with
+  one guard in the scene that both renderers sit behind (section 5.2).
 - Display settings are **not** reused for the skin. A write there fires a canvas resize behind
   the open view, the whole-object rewrite would clobber a value written from elsewhere, and its
   menu page is drawn in every game, while the switch must appear only on an ops network. The
   skin keeps its pick under its own storage key (section 8).
 - The `ehr-terminal` minigame's stylesheet uses a different font and its own fixed palette, so
-  there is nothing in it to share beyond a flex column layout.
-- There is no console font size to inherit, and no handling of on-screen keyboards. Section 5.4
-  and 5.5 set both.
-
-There is no command-line view of the network today, no skin setting, and no scenario field about
-how the view is drawn.
+  there is nothing in it to share. There is no console font size to inherit and no handling of
+  on-screen keyboards; sections 5.4 and 5.5 set both.
 
 ## 3. Build stages
 
@@ -144,16 +146,12 @@ by tests and runs that exist when it lands. Total size M.
 
 | Stage | Adds | Proved when it lands by | Size |
 |---|---|---|---|
-| K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the three text functions added to `ops-model.js`, and any line the Panels compose inline from answer fields moved into an export both renderers call. No visible change and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with noise among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
+| K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; `perform` with the one pending-request guard, and the unplug's pending label and notice drawn by the renderer. No visible change, and no change to what a press sends apart from the guard now covering every request the view sends itself | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with noise among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
 | K2 Terminal | The skin choice and its storage; the header switch on ops views; the Terminal renderer, grammar, help and completion for every control in the list; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, reviewed before the stage lands | M |
 | K3 Scenario default | The scenario field `networkView.defaultSkin`, its schema entry, the validator checks and the wording warning | The Rails and validator tests of 11.3; beat D1 of 11.4 | S |
 | K4 Live proof | The live parity runner and the docs (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
-K2 is the stage that carries the risk, and the first that shows a player anything new: the
-switch and the Terminal appear on every ops view when it lands. So it includes the bridge, the
-feature scenario and the look checks (screenshots, the UI rules audit, the phone keyboard), and
-its own proof waits for no later stage. K4 adds a runner and documents; it changes nothing a
-player sees.
+K4 adds a runner and documents; it changes nothing a player sees.
 
 ## 4. Scenario fields
 
@@ -193,8 +191,7 @@ A view with no `ops` block skips all five and is Panels.
 The player's pick beats the scenario because the skin changes nothing about the game, and a
 player who needs buttons (a phone, a switch device, a screen reader set up for the list) must be
 able to keep them. An event organiser has no setting in this stage; the URL value covers
-previews and demos, and a per-event default would be a Hacktivity change with its own access
-tests that can be added later without touching this design.
+previews and demos.
 
 ## 5. Engine behaviour
 
@@ -209,12 +206,12 @@ All under `public/break_escape/js/minigames/network-view/`.
 
 | File | Kind | Role |
 |---|---|---|
-| `ops-model.js` | pure, the core's | Unchanged in purpose: row merging, the works-on line, need and evidence labels, alias lookup, `REFUSAL_TEXT`. S6 reads through it and, in K1, adds exports to it as the core plan expects: `findingLabel(finding)`, `needLine(need)`, `useResultText(answer)`, and one function for each line the Panels would otherwise compose inline from answer fields (the noise line of a block, the quiet or noisy note of a confirm or a refusal, the Fixed mark). The Panels renderer is changed to call them, so each such line has one source |
-| `view-texts.js` | constants, new | The scene's fixed texts (section 2), moved here so both renderers can import them. The scene re-exports them, so existing tests are unchanged |
+| `ops-model.js` | pure, the core's | Unchanged in purpose: row merging, the works-on line, need and evidence labels, alias lookup, `REFUSAL_TEXT`. S6 reads through it and, in K1, adds exports to it as the core plan expects: `findingLabel(finding)`, `needLine(need)`, `useResultText(answer)`, and one function for each line the Panels would otherwise compose inline from answer fields (the noise line of a block, the Fixed mark, the "admin" tag of a session). The Panels renderer is changed to call them, so each such line has one source. If the core adds a note that says an answer was quiet or noisy, it is one more export here and both renderers call it (section 14, request 1) |
+| `view-texts.js` | constants, new | The scene's fixed texts (section 2, `UNPLUGGING_TEXT` among them), moved here so both renderers can import them. The scene re-exports them, so existing tests are unchanged |
 | `view-controls.js` | pure, new | `CONTROLS`, the private control list below, and `offers(view)`: every offer open right now, in display order |
 | `skin-choice.js` | new | `chooseSkin(inputs)`, pure, implementing the order of section 4; `readPick(storage)` and `writePick(storage, name)`, which touch storage only when called |
-| `network-view-minigame.js` | scene | Keeps what it has: load, refetch, the handlers (`act`, `unplugBox`, the core's calls), every event, the way back, the test snapshot. New: it mounts one of two renderers, and `perform(offer)` |
-| `network-view-panels.js` | renderer, new | Today's HTML and the core's, moved. Its `data-*` hooks are unchanged |
+| `network-view-minigame.js` | scene | Keeps what it has: load, refetch, the handlers (`act`, `unplugBox`, the core's calls), every event, the way back, the test snapshot. New: it mounts one of two renderers, and `perform(offer)` with the pending-request guard. `unplugBox` stops touching the DOM |
+| `network-view-panels.js` | renderer, new | Today's HTML and the core's, moved. Its `data-*` hooks are unchanged. It exports `DRAG_EVENTS`, the event names its drag listens for, in order, for the tests and the bridge |
 | `network-view-terminal.js` | renderer, new | Prompt, log, quick commands |
 | `terminal-grammar.js` | pure, new | `parse(line, offers, view)`, `complete(line, offers, view)`, `commandFor(offer, view)`, `helpFor(verb)`. A finding's alias is resolved with the core's alias lookup over `view`; the grammar holds no alias table of its own |
 | `terminal-format.js` | pure, new | `formatListing(view)`, `formatResult(offer, answer, view)`: arrays of plain text lines |
@@ -247,23 +244,16 @@ called from `offers()` and written nowhere else. A verb together with the kind o
 names exactly one entry: `open` on a host and `open` on a share are two entries, told apart by
 the target, and hosts, shares and resources share one id space.
 
-Two rows need care.
+**`sign-in` on a locked session.** `hostAction` answers `locked` for a remote session that has
+locked, and the row then shows the lock badge and a Sign in button together (`NV:687-693`).
+`offers()` therefore yields a `sign-in` offer for a host row whose action is `sign-in` or
+`locked`. The lock badge stays a status; it is not a control.
 
-- **`sign-in` on a locked session.** `hostAction` answers `locked` for a remote session that has
-  locked, and the row then shows the lock badge and a Sign in button together (`NV:687-693`).
-  `offers()` therefore yields a `sign-in` offer for a host row whose action is `sign-in` or
-  `locked`. The lock badge stays a status; it is not a control.
-- **`confirm` has two labels and one request.** Which label a finding's control carries is the
-  core's evidence rule and is read from the finding the server sent, never worked out from the
-  inventory in the browser. The offer carries the label the Panels button shows. Both labels
-  send `POST /network/confirm` with the same `finding_id`; the server decides whether the
-  confirm was quiet. In the Terminal the offer's command uses the verb that matches its label,
-  and the other verb is not accepted for that finding (section 5.3), so the word the player
-  types says the same thing about noise as the button they would have pressed.
-
-**An offer** is `{ action, target, label, command }`. `target` holds the ids of the request:
-`{ networkId }`, `{ hostId }`, `{ hostId, service }`, `{ findingId }`, `{ findingId, techniqueId,
-itemId }`, `{ resourceId }` or `{}`.
+**An offer** is `{ action, target, label, command, pending? }`. `target` holds the ids of the
+request: `{ networkId }`, `{ hostId }`, `{ hostId, service }`, `{ findingId }`, `{ findingId,
+techniqueId, itemId }`, `{ resourceId }` or `{}`. A `confirm` offer's `label` is the one the
+server's finding gives it (Confirm or Probe), never worked out from the inventory in the
+browser. `pending: true` marks an offer whose request is out (below).
 
 **Which pairs a use may target, in both skins:** every technique the player holds a card for,
 against every finding the view lists, whatever the finding's status (`unconfirmed`, `confirmed`
@@ -274,20 +264,14 @@ worked out in the browser. The `itemId` of a use is the one the server's `techni
 carries (the first held card of that technique in id order), so two cards of one technique are
 one offer and send the same bytes from either skin.
 
-**Aliases are the server's.** A finding's `alias` arrives on the finding. Both skins show it,
-the Terminal takes it as the typed target, and the core's alias lookup in `ops-model.js` turns
-it back into the finding id for the request. S6 numbers nothing. A hint, a lab sheet or a
-teacher who says "f3" is right in both skins and after a reload.
-
 **How a later control is picked up.** Other plans add a control to the network view the way the
 code does today: a button with a `data-action` in the Panels drawing and a handler in the scene.
-Nothing asks them to register it. Three tests in this plan then fail until the control has an
-entry in `CONTROLS` and the Terminal can produce it: the source check that every `data-action`
-literal in `network-view-panels.js` is a key of `CONTROLS`; parity test 1, which presses the new
-button on that plan's fixture and finds a call no offer explains; and the text test, which finds
-the new label missing from the Terminal. The fix is one entry in the list, plus a layout in
-`terminal-format.js` if the control's answer has a new shape. A control that lives on another
-screen (a desktop, a device, a cracking minigame) is outside this view and has one look.
+Nothing asks them to register it. Three tests then fail until the control has an entry in
+`CONTROLS`: the source check that every `data-action` literal in `network-view-panels.js` is a
+key of `CONTROLS`; parity test 1, which finds a call no offer explains; and the text test,
+which finds the new label missing from the Terminal. The fix is one entry in the list, plus a
+layout in `terminal-format.js` if the answer has a new shape. A control on another screen (a
+desktop, a device, a cracking minigame) is outside this view and has one look.
 
 **The renderer contract.** A renderer is a class with `mount(root, ctx)`, `render(view, offers)`,
 `showResult(offer, answer)`, `noteChange()`, `unmount()` and `testState()`. `ctx` holds
@@ -302,18 +286,20 @@ screen (a desktop, a device, a cracking minigame) is outside this view and has o
   (Panels);
 - may keep local state that is not part of any offer: the Panels' selected finding and a drag in
   progress, the Terminal's half-typed line. Local state ends in one call of `perform` with one
-  complete offer, or in nothing.
+  complete offer, or in nothing;
+- is the only code that writes into the view's DOM. The scene draws the header switch and
+  nothing else.
 
-**`perform(offer)`** is a private method of the scene: a lookup from `action` to the handler in
-the table above, called with the offer's target. It is the same pairing the delegated click
-listener makes today from a button's `data-action`. It sends to the route that action already
-has; there is no shared route and the server sees no difference.
+**`perform(offer)`** is a private method of the scene and the one way either skin causes a
+request: a lookup from `action` to the handler in the table above, called with the offer's
+target. It is the same pairing the delegated click listener makes today from a button's
+`data-action`. It sends to the route that action already has; there is no shared route and the
+server sees no difference.
 
-- **Panels path.** Unchanged from today: a click finds the row by id and calls the handler. The
-  select-then-Use and drag gestures are the core's, and each ends by calling the technique
-  handler with a finding id and the technique's `itemId`. Select-then-Use is also the keyboard
-  path; there is no separate keyboard form of the drag. No new check is added on this path in
-  any stage, so a press sends exactly what it sends before K1.
+- **Panels path.** A click finds the row by id, builds the offer and calls `perform`. The
+  select-then-Use and drag gestures are the core's, and each ends in `perform` with a `use`
+  offer holding a finding id and the technique's `itemId`. Select-then-Use is also the keyboard
+  path; the drag is a pointer shortcut with no keyboard form of its own.
 - **Terminal path.** The grammar can only resolve a line to an offer that is in the current
   list. A line that names anything else is answered locally and sends nothing. This is what
   stops a typed line from probing for a host or a finding the view has not shown. A
@@ -321,6 +307,35 @@ has; there is no shared route and the server sees no difference.
   a row id.
 - After the handler returns, the scene passes the server's answer to `showResult`, refetches as
   it does today and calls `render`.
+
+**One press, one request: the pending guard.** The guard is in `perform`, so it holds for both
+skins and for every path, and it replaces the core's per-button disabling and the scene's
+`_unplugging` flag.
+
+- It covers the offers whose handler sends a request from this view and waits for the answer:
+  `sweep`, `scan`, `check`, `confirm`, `use` and `unplug`. `sign-in`, `open` and `observe` hand
+  over to another screen or draw locally, as today, and are not guarded.
+- A guarded offer has a key: its action and target. Every `use` offer shares one key, because
+  the Panels have one Use button and so one use can be out at a time.
+- `perform` adds the key to the scene's pending set before it calls the handler and removes it
+  when the answer or an error arrives. Called with an offer whose key is in the set, it calls
+  no handler and sends nothing.
+- While a key is in the set, `offers()` returns the offers under it with `pending: true`, and
+  the scene calls `render` when the set changes. Panels draw a pending control disabled, as the
+  core's Probe and Use buttons are drawn today. The Terminal draws its quick command disabled
+  and answers a typed line for a pending offer with the fixed line "Still waiting for the last
+  answer." (section 5.3), sending nothing.
+- The set lives in the scene, so a switch of skin while a request is out carries the guard
+  across: the other skin mounts with the control already pending.
+
+**Unplug goes through the renderer.** `unplugBox` keeps the request and what follows a success.
+It no longer looks up the button or writes a label or a notice. The pending label is the
+renderer's drawing of an `unplug` offer marked `pending`: the control reads `UNPLUGGING_TEXT`
+and is disabled, in Panels on the header button and in the Terminal on the quick command. A
+refused unplug reaches the renderer through `showResult(offer, answer)` like any other result:
+Panels put the server's sentence beside the button, where it shows today, and the Terminal
+prints it. Each skin has exactly one `[data-unplug]` element: the header button in Panels, the
+quick command in the Terminal, whose header holds only the switch and the X.
 
 **Switching.** `requestSkin` records the press (section 4), then the scene unmounts one renderer
 and mounts the other on the same rows. No request is sent, the refetch timer keeps running and
@@ -330,18 +345,14 @@ The scene draws it only when some block of the view carries `ops: true`, and rem
 refetch leaves no such block.
 
 **The names are Panels and Terminal, and Panels is the default.** "Terminal" is the word a
-learner will meet for a prompt everywhere else, and it promises nothing about a particular
-product; "Console" is already this window's name (the shared console window both skins sit in),
-so using it for one skin would give one word two meanings. "Panels" says what the first skin is
-made of without calling it the easy one. Panels is the default because it is what every
-existing ops scenario and playtest is written against, and it works on every device with no
-typing. Both names are two constants in `view-texts.js`, so a rename after the screenshot
-review is a one-line change that touches no test selector.
+learner will meet for a prompt everywhere else; "Console" is already this window's name.
+Panels is the default because every existing ops scenario and playtest is written against it
+and it works on every device with no typing. Both names are constants in `view-texts.js`, so a
+rename is a one-line change that touches no test selector.
 
 **The skin is passed in.** The starter (`NV:962-976`) works out the starting skin with
-`chooseSkin` and passes it to the scene as a parameter. The scene does not import
-`ui/display-settings.js`, and `skin-choice.js` reads `localStorage` and the URL only inside its
-functions, so a node harness needs no stub at import.
+`chooseSkin` and passes it to the scene as a parameter. `skin-choice.js` reads `localStorage`
+and the URL only inside its functions, so a node harness needs no stub at import.
 
 ### 5.3 The Terminal skin
 
@@ -377,29 +388,29 @@ the Panels' own sentences, which the Terminal prints word for word (below).
 - **Quick commands**: one button per offer for every control but `use`, in the order `offers()`
   gives, which is the order Panels draws its controls in. Each button shows the Panels label
   (Probe where the Panels button says Probe, and `Open (<who>)` with the account where the
-  Panels button has it) and, in a `<code>` element, the line it stands for. It carries the hooks the Panels control carries: the same row
-  attribute on its item (`data-host-id`, `data-resource-id` and the core's row attributes) and
-  the same `data-action` value (`sign-in`, `open`, `observe`, and so on), and Unplug keeps
-  `data-unplug`. Existing selectors of the form `[data-host-id="…"] [data-action="sign-in"]`
-  therefore find one button in either skin. Pressing a button writes its line to the log and
-  performs its offer.
+  Panels button has it) and, in a `<code>` element, the line it stands for. It carries the
+  hooks the Panels control carries: the same row attribute on its item (`data-host-id`,
+  `data-resource-id` and the core's row attributes) and the same `data-action` value, and
+  Unplug carries `data-unplug`. A selector such as `[data-host-id="…"] [data-action="sign-in"]`
+  therefore finds one button in either skin. Pressing a button writes its line to the log and
+  performs its offer. A pending offer's button is disabled; a pending Unplug reads
+  `UNPLUGGING_TEXT`.
 - **Quick commands for a use**: two presses for one offer. There is one button per held
-  technique. Pressing it writes `use <technique id> on ` into the prompt and swaps the strip for
-  one button per listed finding, labelled with its alias; pressing a finding completes the line
-  and performs the offer. An X on the strip returns to the
-  full list. This is the Terminal's form of select-then-Use.
-- **Folding**: the list wraps and scrolls. It is open when the Terminal mounts, and the player
-  can fold it away. It starts open because section 5.5 requires that nothing needs typing: on a
-  phone, with a switch device or for a learner new to a prompt, the buttons are the way in, and
-  a list hidden behind `help` would make typing the only obvious path. Each button also shows
-  the line it stands for, so the open list teaches the grammar while it is used. A player who
-  wants a bare prompt folds it with one press. Folded, the buttons
-  stay in the DOM and the bridge unfolds the list before pressing one.
+  technique, labelled with the Panels' Use label and the technique's name. Pressing it writes
+  `use <technique id> on ` into the prompt and swaps the strip for one button per listed
+  finding, labelled with its alias; pressing a finding completes the line and performs the
+  offer. An X on the strip returns to the full list. This is the Terminal's form of
+  select-then-Use.
+- **Folding**: the list wraps and scrolls. It starts open, because nothing may need typing
+  (section 5.5), and the player can fold it with one press. Folded, the strip carries the
+  `hidden` attribute, the buttons stay in the DOM, and the bridge unfolds it before pressing
+  one. `hidden` is the only way either renderer hides an element.
 - **A change while the view is open** (a refetch finds a host gone, a session ended): one line,
   `-- network changed. show lists it again --`. The log is never redrawn; the quick commands
   are.
 - Lines appear at once, with no typing effect, so there is nothing to seed and nothing for
-  reduced motion to switch off.
+  reduced motion to switch off. A table line holds one `<span>` per cell, padded with CSS and
+  not with spaces, so a cell's text is exactly the field it prints.
 
 **Targets.** A target is typed as the id the server sent: a network id, a host id, a service
 `name`, a technique id, a share or resource id. The listing prints each id in its first column
@@ -417,17 +428,23 @@ core's `ops-model.js`; the Terminal has no wording of its own for them.
 | Layout | Printed when | Fields and texts |
 |---|---|---|
 | Link lines | `show`, and on opening | the view's `message`; the link-off sentence; the stale sentence; the unplug hint of a planted box's view ("You can unplug the box at its port (...)", `NV:813`); for each block its heading, the "through <host>" note and its "(Locked)" mark |
-| Noise line | `show`, under the heading of each block that has noise; after any answer that carries `noise` | the block's count, the limit where one is sent, and the Alerted mark once `alerted` is true: the Panels' line, from the `ops-model.js` export. A block with no noise prints no line, as Panels shows none |
-| Host table `HOST NAME STATUS` | `show`; a sweep's answer | host id; the shown hostname where it differs; name; in the status column the status text Panels shows on the row (remote sign-in off, powered down, no route, the down tags, Locked), left blank for a host Panels shows only a button on; the "Session kept" line; a held session's account (the `<who>` of the Panels' Open button) and its access level where Panels show one |
+| Noise line | `show`, under the heading of each block that carries `noiseLimit` or `noise`; after any answer that carries `noise` | the block's count (zero when only the limit is sent), the limit where one is sent, and the Alerted mark once `alerted` is true: the Panels' line, from the `ops-model.js` export. A block that carries neither key prints no line, as Panels show none |
+| Host table `HOST NAME STATUS` | `show`; a sweep's answer | host id; the shown hostname where it differs; name; in the status column the status text Panels shows on the row (remote sign-in off, powered down, no route, the down tags, Locked), left blank for a host Panels shows only a button on; the "Session kept" line; a held session's account (the `<who>` of the Panels' Open button) and the "admin" tag where Panels draw it, from the same `ops-model.js` export |
 | Service table `SERVICE PORT PRODUCT VERSION` | `show` for a scanned host; a host scan's answer | service `name`, `label` when it differs, port, product, version |
 | Findings list | `show` for a checked service; a check's answer | alias, the finding label (class and severity words), `summary`, status, and the finding's evidence line exactly as Panels shows it (what would settle it quietly, and whether it is held) |
-| Finding detail | a confirm's or a probe's answer; `show` for a settled finding | alias and status; the quiet or noisy note Panels shows for that answer; for a confirmed finding each need with its label and "yes" or "no"; for a false one the `falseBecause` text; the Fixed mark for a fixed one. A probe's answer is followed by the noise line |
+| Finding detail | a confirm's or a probe's answer; `show` for a settled finding | alias and status; for a confirmed finding each need with its label and "yes" or "no"; for a false one the `falseBecause` text; the Fixed mark for one that carries `fixed`. An answer that carries `noise` is followed by the noise line, which is how either skin shows that a probe was noisy; a quiet confirm prints no noise line |
 | Technique list `TECHNIQUE WORKS ON` | `show` | technique id, `name`, `summary`, the core's works-on line |
 | Share and resource table | `show` | id, name, kind label, "on <host>", the lock label and the locked-share sentence |
 | Look | an `observe` | the resource's `observations` and the notice, as Panels shows them |
-| Use result | a use's answer | the result sentence for a session (then the desktop opens, as from Panels), for a credential (`keyringChanged`) and for `already`; on a refusal the `REFUSAL_TEXT` words for the `reason` code, with the need's label for `need_unmet`, the noisy note when the answer has `noisy: true`, and then the noise line |
-| Refusal | any other refused request | the `REFUSAL_TEXT` words for the code. The unplug refusal is the one refusal on this screen that arrives as a server sentence (`out.message`, `NV:848`); it is printed as Panels shows it, through `textContent` |
+| Use result | a use's answer | the result sentence for a session (then the desktop opens, as from Panels), for a credential (`keyringChanged`) and for `already`; on a refusal the `REFUSAL_TEXT` words for the `reason` code, with the need's label for `need_unmet`, and then the noise line when the answer carries `noise` (the four noisy codes). The quiet codes, `no_grant` among them, print their words and no noise line |
+| Pending | an `unplug` while its request is out | `UNPLUGGING_TEXT`, the Panels button's label for that state, on the quick command and as one log line |
+| Refusal | any other refused request | the `REFUSAL_TEXT` words for the code. `network_only`, the desktop route's answer to an `open` of a technique session this view has no route to, is one of these: both skins show its words and the scene then follows the core's handling (the sign-in screen, the client's copy of the session kept). The unplug refusal is the one refusal on this screen that arrives as a server sentence (`out.message`, `NV:848`); it is printed as Panels shows it, through `textContent` |
 | Alert | an answer with `alerted: true` | the noise line with the Alerted mark. The scene applies `serverGlobals` and emits `network_alerted` on its own path, the same for both skins |
+
+**Quiet or noisy.** Neither skin has wording of its own for it. The core's Panels say it with
+the Confirm or Probe label before the press and the noise line after, and the Terminal prints
+both. If the core adds a note beside a result (section 14, request 1), it is an `ops-model.js`
+export, both renderers print what it returns, and the text test holds them equal.
 
 The column headers are plain words taken from the core's field names. They copy no real tool's
 output, and no layout reproduces one: the look is a prompt, a verb and aligned tables.
@@ -448,11 +465,13 @@ state:
 | Table headers | `HOST`, `NAME`, `STATUS`, `SERVICE`, `PORT`, `PRODUCT`, `VERSION`, `TECHNIQUE`, `WORKS ON` and the headers of the findings, share and resource tables |
 | Change line | "-- network changed. show lists it again --" |
 | Help | the output of `help`: verb names, their argument forms and the verb aliases (the descriptions are the Panels' `title` texts and are not on this list) |
+| Command line | a verb from `CONTROLS` followed by ids or aliases the view lists: the `<code>` part of a quick command, the line a use button writes into the prompt, and the verb named by the strict `confirm` and `probe` answer |
 | Echo | the player's own line |
 | Parse messages | the fixed parts of the answers to a line that does not resolve (below) |
+| Pending | "Still waiting for the last answer." |
 
-A reachable host's state word, the noise count, a finding's alias and every result sentence are
-not on this list: they are Panels text and must match it.
+A reachable host's state word, the noise line, a finding's alias, `UNPLUGGING_TEXT` and every
+result sentence are not on this list: they are Panels text and must match it.
 
 **Grammar.** A line is `verb [target ...]`.
 
@@ -482,6 +501,8 @@ not on this list: they are Panels text and must match it.
   exists somewhere unseen. These answers echo the player's own text, always through
   `textContent`. A typo can never spend a sign-in attempt, add noise or trip a lockout, because
   only a line that resolves to a current offer reaches a handler.
+- A line that resolves to a pending offer prints the pending line and sends nothing. Enter on
+  an empty prompt does nothing, so a held Enter key cannot repeat the last line.
 - Tab completes the token under the cursor to the longest common prefix and lists the matches
   in the log on a second press. The manager's Tab trap runs first and steps aside only for an
   element marked `data-own-tab-cycle`, so the prompt carries that attribute while it holds text
@@ -502,8 +523,10 @@ not on this list: they are Panels text and must match it.
 | Crisp text | No text shadow, glow or scanline overlay on the log |
 
 The Terminal's rules go in the existing `css/network-view-minigame.css`, so the game page needs
-no new stylesheet link. The UI rules audit (`tools/playtest/ui-rules-audit.mjs`) does not cover
-the network view today; K2 adds the Terminal surface to it.
+no new stylesheet link. The UI rules audit (`tools/playtest/ui-rules-audit.mjs`) reports the
+network view as not audited, because the surface needs a game that has a network. K2 adds a
+network-view surface that the audit opens in a live `test_ops_skin` game after the box is
+planted, once in each skin.
 
 ### 5.5 Typed input and accessibility
 
@@ -518,32 +541,28 @@ the network view today; K2 adds the Terminal surface to it.
   in view with `scrollIntoView` when it takes focus and after each result, as the PC monitor
   frame does. Nothing reads the visual viewport. K2 checks this on a real phone or the Android
   emulator, with a screenshot of the prompt above the keyboard.
-- **Game keys.** The Terminal renderer calls `window.pauseKeyboardInput()` in `mount`. The
-  manager's own pause runs only for a scene started with `requiresKeyboardInput`, which the
-  network view is not and does not become, so the renderer makes the call. Coming back from the
-  sign-in screen mounts the renderer again and pauses again. Nothing
-  resumes on a switch back to Panels: game keys are ignored while any minigame is open, and the
-  manager resumes input when the view closes, as it does for every scene. The starter's
-  parameters do not change.
+- **Game keys.** The Terminal renderer calls `window.pauseKeyboardInput()` in `mount`, because
+  the manager's own pause runs only for a scene started with `requiresKeyboardInput`, which
+  the network view is not. Coming back from the sign-in screen mounts the renderer again and
+  pauses again. Nothing resumes on a switch back to Panels: game keys are ignored while any
+  minigame is open, and the manager resumes input when the view closes.
 
 ### 5.6 Spoken lines, objectives and hints
 
 - **Rule for authors**: text a player hears or reads about the task names the action and the
   target. "Sweep the office network." "Check the web service on the file server." It does not
-  say click, press, button, type, command, prompt or terminal about a network action.
-- **Why it works**: the action's name is the button's label in Panels and the verb in the
-  Terminal.
+  say click, press, button, type, command, prompt or terminal about a network action. The
+  action's name is the button's label in Panels and the verb in the Terminal.
 - **Control help belongs to the engine, per skin**, and is not spoken: the Terminal's first line
   and `help`; the Panels buttons' labels.
 - **Check**: a validator warning (section 9) on skin-specific wording in scenarios that use the
-  ops fields.
-- No spoken line is added or changed by this stage, so there is no voicing cost.
+  ops fields. No spoken line is added or changed by this stage, so there is no voicing cost.
 
 ### 5.7 Determinism
 
 The skin holds no state the server reads and makes no rolls. For the same view answer and the
 same offer, both skins send the same request. The Terminal's output is a function of the view
-answer, the result and the player's line. Aliases come with the view answer.
+answer, the result and the player's line.
 
 ## 6. Server routes
 
@@ -605,9 +624,9 @@ browser only.
 
 Nothing is added to `player_state`, to the sync sections or to any server answer, so the delta
 rule has nothing to judge. Findings, their aliases and the noise count are the core's server
-state and the skin keeps no copy. A reload reopens an ops view in the skin section 4 gives, with
-an empty log; `show` then lists every finding under the alias it had before. A saved game from before the feature behaves the same as
-a new one. A player who changes browser gets the scenario's default until they pick again. A
+state and the skin keeps no copy. The pending set is in memory for as long as a request is out.
+A reload reopens an ops view in the skin section 4 gives, with an empty log. A saved game from
+before the feature behaves the same as a new one. A player who changes browser gets the scenario's default until they pick again. A
 stored value that is neither `gui` nor `cli` is ignored, and blocked storage leaves the switch
 working for the page.
 
@@ -644,7 +663,7 @@ Eight scenarios declare `networks` today: `test_access_networks`, `test_access_d
 
 | Change | Effect on a scenario with no ops network |
 |---|---|
-| K1 split of the scene | None visible. Same HTML, same `data-*` hooks, same events, same `getTestState()` fields and selector values, same requests for the same presses. The `skin` field of 11.5 is added on ops views only |
+| K1 split of the scene | None visible. Same HTML, same `data-*` hooks, same events, same `getTestState()` fields and selector values, same request for a press. A second press of Unplug while the first is out is stopped by the scene's guard where `_unplugging` stopped it before. The `skin` field of 11.5 is added on ops views only |
 | Header switch | Not drawn: no block carries `ops: true` |
 | Stored pick, URL starting value, scenario default | Ignored: the view is Panels |
 | Terminal renderer | Never mounted |
@@ -664,11 +683,11 @@ Checks that prove it, across all eight and any scenario that later declares `net
 2. `test/js/network-view.test.mjs` and the core's node tests pass with no edit to an assertion
    (their copy lists gain the new files).
 3. The scripted `PLAYTEST.md` runs of every one of the eight that has one are rerun after K2
-   with a stored pick of `cli` already in the browser, and pass unchanged. The harness opens a
-   fresh browser context each run and takes `--storage-state <file>`
-   (`.claude/skills/playtest-scenario/scripts/playtest-session.js:203-205`); the file is
-   `tools/playtest/fixtures/net-skin-cli.storage.json`, added in K2, holding `be_network_skin =
-   cli` for the test server's origin.
+   with a stored pick of `cli` already in the browser, and pass unchanged. The pick is set
+   through the test bridge on the page under test: once the game has loaded, the run calls
+   `window.__test.network.storePick('cli')` (section 11.5), which writes the key with the same
+   `writePick` the switch uses, and reloads before the first beat. No file is committed and the
+   run works on whichever origin the test server has.
 4. The validator's output and the graph for every scenario are unchanged; the core's
    `ops-unchanged-validator.test.mjs` already compares them with a snapshot.
 
@@ -686,11 +705,11 @@ or control gets these checks on it.
 
 | File | Stage | Proves |
 |---|---|---|
-| `network-view-controls.test.mjs` | K1 | `offers()` for each fixture: order, targets, one offer per pressable control, every use pair, the `itemId` rule. A locked remote session yields a `sign-in` offer beside its lock status. A finding with `evidence.held` true yields a `confirm` offer labelled Confirm; one with it false, and one with no evidence, yields the same offer labelled Probe, with the same target. A settled finding yields no `confirm` offer. `CONTROLS` is well formed: each entry has one label, one verb and one description, and a verb together with a target kind names exactly one entry. Every `data-action` literal in `network-view-panels.js` is a key of `CONTROLS`, and `data-unplug` appears there once, for the `unplug` entry |
-| `network-view-panels-same.test.mjs` | K1 | Each fixture rendered by the scene as it was (output saved as a fixture string before the split) and by the Panels renderer is equal byte for byte; a press on each control records the same call before and after |
+| `network-view-controls.test.mjs` | K1 | `offers()` for each fixture: order, targets, one offer per pressable control, every use pair, the `itemId` rule. A locked remote session yields a `sign-in` offer beside its lock status. A finding with `evidence.held` true yields a `confirm` offer labelled Confirm; one with it false, and one with no evidence, yields the same offer labelled Probe, with the same target. A settled finding yields no `confirm` offer. With a key in the pending set the offers under it carry `pending: true` and no other offer does; every `use` offer shares one key. `CONTROLS` is well formed: each entry has one label, one verb and one description, and a verb together with a target kind names exactly one entry. Every `data-action` literal in `network-view-panels.js` is a key of `CONTROLS`, and `data-unplug` appears there once, for the `unplug` entry |
+| `network-view-panels-same.test.mjs` | K1 | Each fixture rendered by the scene as it was (output saved as a fixture string before the split) and by the Panels renderer is equal byte for byte; a press on each control records the same call before and after. With the unplug's answer held, the header button is disabled and reads `UNPLUGGING_TEXT`, and a refused unplug shows the server's sentence beside the button, both as the saved output has them; the scene file contains no `querySelector('[data-unplug]')` and no `setUnplugNotice` |
 | `network-skin-imports.test.mjs` | K1 | The two renderer files and the pure modules import nothing outside the allowed list and do not contain `fetch(`, `ApiClient`, `networkLinks`, `window.open` or `window.start` |
-| `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; `confirm` on a Probe finding and `probe` on a Confirm finding return the evidence line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
-| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a quiet confirm, a probe with `noise`, each of the three use outcomes, each refusal code quiet and noisy, an answer with `alerted`, `already`); every field in the table of 5.3 is printed. Noise fixtures: a block with no noise prints no noise line; one with a count and no limit; one with a count and a limit; one alerted. Evidence fixtures: held, not held, none declared. The noise line and the evidence line equal the `ops-model.js` exports' output for the same input |
+| `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; `confirm` on a Probe finding and `probe` on a Confirm finding return the evidence line and no offer; a line for a pending offer returns the pending line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
+| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a quiet confirm, a probe with `noise`, each of the three use outcomes, each of the thirteen codes in the core's `ops_refusal_codes.json` (`no_grant` with no noise line, `network_only` on an `open`), an answer with `alerted`, `already`); every field in the table of 5.3 is printed. Noise fixtures: a block with neither key prints no noise line; one with a limit and no count (zero of the limit); one with a count and no limit; one with a count and a limit; one alerted. Evidence fixtures: held, not held, none declared. The noise line and the evidence line equal the `ops-model.js` exports' output for the same input |
 | `network-skin-parity.test.mjs`, `network-skin-text.test.mjs` | K2 | Section 11.2 |
 | `network-skin-choice.test.mjs` | K2 | The order of section 4, case by case: a press beats a URL value; a URL value beats a stored pick and is not written to storage; a press with a URL value present changes the skin and writes nothing; a press with no URL value is stored; a bad stored value is ignored; blocked storage still switches; a view with no `ops` block is `gui` under every combination; the switch is drawn only with an `ops` block and removed when a refetch has none |
 | `network-skin-unchanged.test.mjs` | K2 | Section 10, check 1 |
@@ -714,8 +733,9 @@ skin shows every piece of text the other shows.
 
 The unit of the proof is the **offer** of section 5.2: one complete request the view can make,
 `{ action, target }`, where `target` holds every id the request needs. A press on Scan is one
-offer. A use is one offer per pair of a held technique and a listed finding, `{ action: "use", target: { findingId,
-techniqueId, itemId } }`, however the player put the pair together.
+offer. A use is one offer per pair of a held technique and a listed finding,
+`{ action: "use", target: { findingId, techniqueId, itemId } }`, however the player put the pair
+together.
 
 A **path** is a way of producing an offer with real input. These are all the paths there are; a
 renderer that gains another must add it to this table and to `PATHS` in the test, or test 1
@@ -729,18 +749,20 @@ fails on the unlisted control.
 | `typed` | Terminal | Type a line and press Enter | every offer |
 | `quick` | Terminal | Press a quick-command button; for a use, two presses: the card's button, then the finding's | every offer |
 
-What each skin shows beside its controls, which the text test (9) holds equal:
+What each skin shows beside its controls, which the text test (9) holds equal at every step:
 
-| Core item | Panels | Terminal |
+| Item | Panels | Terminal |
 |---|---|---|
 | Noise count and limit | on the block | the noise line under the block's heading in `show`, and after any answer that carries `noise` |
 | Alerted | on the block | the Alerted mark on the noise line, printed when an answer carries `alerted` and in every later `show` |
 | Evidence | the evidence line on the finding | the same line in the findings list |
 | Confirm or Probe | the button's label | the quick command's label and the verb of its line |
-| Quiet or noisy | the note shown with a confirm's or a refusal's result | the same note in the finding detail or the use result |
+| Quiet or noisy | the label before the press and the noise line after; a note export if the core adds one | the same |
 | Alias | on the finding | first column of the findings list; the typed target |
-| Fixed | on the finding | in the finding detail and the findings list |
+| Fixed | on a confirmed finding that carries `fixed` | in the finding detail and the findings list |
+| "admin" tag | on a host row with such a session | in the host table's status column |
 | Refusal words | `REFUSAL_TEXT` | `REFUSAL_TEXT` |
+| A request that is out | the control disabled; Unplug reads `UNPLUGGING_TEXT` | the quick command disabled; Unplug reads `UNPLUGGING_TEXT`; a typed line gets the pending line |
 
 **Node tests** (`network-skin-parity.test.mjs`), in the DOM the existing network-view test uses,
 against a fake `networkLinks`, a fake API client and fake openers that record every call. They
@@ -749,33 +771,38 @@ is covered without an edit here.
 
 1. **Every Panels path maps to an offer.** Press every `[data-action]` and `[data-unplug]`
    control. For every finding element and every card element in the DOM, do the `select` path and
-   the `drag` path (real `dragstart`, `dragover` and `drop` events); the `select` path is run
-   once with pointer events and once with focus and key presses. Each press or gesture must record exactly the call of one offer in
-   `offers(view)`. A control that records a call that no offer explains fails the test,
-   and so does an element that is draggable, a drop target or selectable and is not a card or a
-   finding.
+   the `drag` path. The drag is driven by dispatching the events named in the Panels renderer's
+   `DRAG_EVENTS`, in order, so the test follows whichever mechanism the core built (HTML drag
+   and drop, or pointer events for touch) and fails if the list is empty. The `select` path is
+   run once with pointer events and once with focus and key presses. Each press or gesture
+   must record exactly one call, and it must be the call of one offer in `offers(view)`. A
+   control that records a call that no offer explains fails the test, and so does an element
+   that is draggable, a drop target or selectable and is not a card or a finding.
 2. **Every offer has every path it should.** For each offer in the list, each path that the
    table says can produce it does produce it: the recorded call is deep-equal across `button` (or
    `select` and `drag` for a use), `typed` and `quick`. Same function, same arguments, same body.
 3. **Every Terminal path maps to an offer.** Every verb is tried against every target token the
-   grammar accepts for the fixture (ids, unique prefixes, the server's finding aliases), and every quick-command
-   button is pressed. Each either records the call of one offer in the list or records nothing
-   and prints a message. The typed line for an offer, `commandFor(offer)`, parses back to that
+   grammar accepts for the fixture (ids, unique prefixes, the server's finding aliases), and
+   every quick-command button is pressed. Each either records exactly one call, the call of
+   one offer in the list, or records nothing and prints a message. The typed line for an offer, `commandFor(offer)`, parses back to that
    offer; for a `confirm` offer that line begins `confirm` or `probe` as its label says, and
    both send the same call. A quick-command use counts as one path of two presses, and the
    first press alone records nothing.
 4. **Use pairs.** For a fixture with two held techniques and four findings (one `unconfirmed`,
-   one `confirmed`, one `false`, and one `confirmed` that carries the core's Fixed mark), all
-   eight pairs are reachable by `select`, `drag`,
-   `typed` and `quick`, and each sends that pair's `finding_id` and `item_id`. With two held
+   one `confirmed`, one `false`, and one `confirmed` that carries `fixed: true`), all eight
+   pairs are reachable by `select`, `drag`, `typed` and `quick`, and each sends that pair's `finding_id` and `item_id`. With two held
    cards of one technique there is one offer, and every path sends the `itemId` of the server's
    `techniques` entry.
-5. **Refusals are the same.** For each refusal code the core defines, a fake answer with that
-   code produces the same sentence in both skins (the text comes from `REFUSAL_TEXT`), and
-   neither skin sends a second request. A noisy refusal (`noisy: true` with `noise`) shows the
-   same note and the same noise line in both before any refetch; with `alerted` both show the
-   Alerted mark, and the scene applies `serverGlobals` once in each run. The same holds for a
-   probe's answer, and a quiet confirm shows no change of noise in either.
+5. **Refusals are the same.** For each of the thirteen codes in the core's
+   `ops_refusal_codes.json`, a fake answer with that code produces the same sentence in both
+   skins (the text comes from `REFUSAL_TEXT`), and neither skin sends a second request. The
+   file is read, not copied, so a code a later plan adds is walked too. `network_only` is
+   answered to an `open` offer; after it both skins have shown its words and the scene has
+   made the same calls. A noisy refusal (`noisy: true` with `noise`) shows the same noise line
+   in both before any refetch; a quiet one, `no_grant` among them, shows none in either. With
+   `alerted` both show the Alerted mark, and the scene applies `serverGlobals` once in each
+   run. The same holds for a probe's answer, and a quiet confirm shows no change of noise in
+   either.
 6. **Nothing typed can reach past the list.** Typed lines that name a host, finding or card from
    another fixture, a well-formed id that is not listed, or a finding not yet checked record no
    call.
@@ -792,28 +819,59 @@ is covered without an edit here.
    text field is a unique marker string (names, labels, summaries, evidence labels, need labels,
    `falseBecause`, the unplug refusal's message) are run in both skins through one sequence: the
    opening render, then each offer of the fixture in `offers()` order with the same fake answer
-   in both, a refetch answer after each, and for each ops route one refusal per code and one
-   `already`. After every step the text then on show is added to that skin's set: for the
-   Terminal the log's new lines and the quick commands; for Panels the view's DOM and any toast
-   or notice the scene raised, read from the test's toast capture, so a result sentence shown
-   outside the view counts as Panels text. The two sets are compared at the end, in two
-   directions:
-   - every piece of text in the Panels set, apart from the entries of `PANELS_ONLY_TEXT`, is in
-     the Terminal set;
-   - every token of the Terminal set is a marker that is also in the Panels set, a fixed
-     sentence that is also in the Panels set, the id of a listed row, or an entry of
-     `TERMINAL_ONLY_TEXT` (section 5.3).
+   in both, a refetch answer after each, for each ops route one refusal per code and one
+   `already`, and one unplug whose answer is held and then refused. The two skins are compared
+   **at every step**, never as a total over the run, so text that one skin shows at the wrong
+   moment fails at that moment.
+
+   Two comparisons per step:
+   - **Result.** Straight after `showResult`, before the refetch: the Terminal's pieces are the
+     log lines that step added, less the echo; the Panels' pieces are those in the view after
+     `showResult` that were not there before it, plus any toast or notice the scene raised,
+     read from the test's toast capture.
+   - **State.** After the refetch and its `render`: the test runs `show` in the Terminal (a
+     local verb, so no request) and takes that output and the unfolded quick commands; the
+     Panels' pieces are the whole view. While the held unplug is out, this comparison is also
+     run once, and both must show `UNPLUGGING_TEXT` on a disabled control.
+
+   One extraction rule, written once in the test file and used for both skins:
+   - A **piece** is the text of an element that has at least one direct text node that is not
+     blank: its whole `textContent`, so a phrase with an inline child is one piece and the
+     child is not counted again. A Terminal table cell is one `<span>` and so one piece; any
+     other log line is one piece; a quick command gives two, its label and its `<code>` line.
+   - The `title` of a control is a piece. So is an `aria-label` on an element with no text. No
+     other attribute counts.
+   - An element that is `hidden`, or inside one, gives no pieces. The quick commands are
+     unfolded for the comparison; a separate assertion checks that a folded strip is `hidden`.
+   - Case is kept. Runs of white space become one space and the ends are trimmed. Nothing else
+     is normalised.
+
+   Each comparison runs in two directions:
+   - every Panels piece, apart from the entries of `PANELS_ONLY_TEXT`, equals a Terminal piece
+     of that step;
+   - every Terminal piece of that step equals a Panels piece of that step, or is the id of a
+     listed row, or matches an entry of `TERMINAL_ONLY_TEXT` (section 5.3).
 
    `PANELS_ONLY_TEXT` lives in the test file and holds the section headings that the Terminal
    replaces with table headers. `TERMINAL_ONLY_TEXT` is the exported list of section 5.3, and
    the test also fails if the Terminal prints one of its entries that the list in the plan does
-   not name. Button labels are in neither list: a label appears in the Terminal as the quick
-   command's label. Finding aliases, noise lines, evidence lines and the Alerted mark are in
-   neither list: they are the server's or the Panels' text and must be in both sets. The
-   fixtures include a block with noise below its limit, an alerted block, a finding with held
-   evidence, one with evidence not held, one with none, a locked remote session and a planted
-   box's view with its unplug hint. An entry added to either list needs its reason stated in
-   the commit.
+   not name. Button labels and `title` texts are in neither list: they appear in the Terminal
+   as the quick commands' labels and titles. Finding aliases, noise lines, evidence lines, the
+   Alerted mark, the Fixed mark, the "admin" tag and `UNPLUGGING_TEXT` are in neither list:
+   they are the server's or the Panels' text and must match at every step. The fixtures
+   include a block at zero noise with a limit, one below its limit, an alerted block, a
+   finding with held evidence, one with evidence not held, one with none, a fixed one, a
+   locked remote session, an admin session and a planted box's view with its unplug hint. An
+   entry added to either list needs its reason stated in the commit.
+10. **One press, one request.** With the fake answer of a guarded offer held unresolved, each
+    of these records no second call: in Panels a second click on the same control, and for a
+    use a second press of Use and a drag of any card onto any finding; in the Terminal a
+    second Enter on the same line, a second press of the quick command, and the other path
+    (typed then quick, quick then typed). The same holds across a switch: press in one skin,
+    switch while the answer is held, press in the other. It is run for `sweep`, `scan`,
+    `check`, `confirm` under each label, `use` and `unplug`. An offer under a different key
+    (a scan of another host) still sends while the first is held. Once the answer resolves,
+    or the request fails, the key is cleared and an offer still in the list sends again.
 
 **Live run** (`tools/playtest/network-skin-parity.mjs`, stage K4), on the real path. This is the
 feature's live proof, not a playtest of a mission.
@@ -823,23 +881,27 @@ feature's live proof, not a playtest of a mission.
 2. Drive one sequence in each through `window.__test.network.run(offer, { path })` (section
    11.5), which uses real input. Across the three games the sequence uses every path at least
    once: A makes one use by `select` and one by `drag`; B makes one use by `typed` and one by
-   `quick`.
+   `quick`; C calls `network.run` with no `path`, which takes the simplest path of whichever
+   skin it is in at that step.
 3. Record only the requests the view's actions send: `POST` requests to `/network/*`, the
-   sign-in route and the share route, as method, path and body with the game id removed, and
-   their answers. The view's timed `GET /network` refetch is left out, because it interleaves
-   differently in each game. The three recordings must be equal.
+   sign-in route and the share route. The view's timed `GET /network` refetch is left out,
+   because it interleaves differently in each game. The requests (method, path and body, with
+   the game id removed from the path) must be equal across the three games exactly. The
+   answers are compared after one normaliser, `normaliseAnswer` in the runner, has removed the
+   keys that differ between fresh games for reasons that have nothing to do with the skin
+   (record ids, times, sign-in tokens). The keys it removes are one list at the top of the
+   runner, filled in from a first recording when the runner is written; a key is added to it
+   only with its reason beside it, and no ops field (`finding`, `alias`, `status`, `noise`,
+   `noiseLimit`, `alerted`, `quiet`, `noisy`, `reason`, `need`, `already`) may be on it.
 4. At the end read each game's server record and compare these keys only: `footholds`,
    `sessions`, `opsDiscovered`, `opsFindings` (aliases included), `opsUsed`, `opsNoise`, the
    global the alert sets, the keyring's entries, and the log rows. The rows are read with the
    log feature's comparison form, `log_rows_for(source_id, compare: true)`, for each log source
    `test_ops_skin` declares; it returns each row without its times, in order, and the three
-   arrays per source must be equal. Globals set by office life, timers and NPC needs depend on wall-clock time and are not
-   compared.
+   arrays per source must be equal. Globals set by office life, timers and NPC needs depend on
+   wall-clock time and are not compared.
 5. Any difference fails the run. The core makes no rolls, so three fresh games answer alike with
    no seed handling.
-
-The run may also be pointed at `test_ops_scan`, `test_ops_findings` and `test_ops_access` with
-`--scenario`. That is optional and is not part of finishing S6.
 
 Missions are playtested once, in whichever skin the run uses. The node tests above are what
 show the other skin gives the same game, on every build.
@@ -871,10 +933,10 @@ server's record.
 
 | Beat | What happens | Server record afterwards |
 |---|---|---|
-| T1 | Plant the box; the view opens in the starting skin with the header switch; the block shows no host and no noise | foothold held |
-| T2 | Terminal run only, before any sweep: a mistyped verb, an invented host id, and the real id of the file server, whose network is not yet swept. Each prints a message; the last two print the same one | unchanged; no request sent |
-| T3 | Sweep the network, then scan the file server. Terminal run only: `signin` on the host with remote sign-in off prints the status sentence its Panels row shows | as `test_ops_scan` records; no request for the typed line |
-| T4 | Check the service: three findings, each under the alias the server gave. The first real finding's control reads Confirm; the other two read Probe. Confirm the first (quiet, no noise shown). Probe the decoy (false, with its reason; noise 1 of 3). The second real finding is left unconfirmed. Terminal run only: `confirm` typed on that finding prints its evidence line and sends nothing | as `test_ops_findings` records: two findings settled, one not; `opsNoise` 1 |
+| T1 | Plant the box; the view opens in the starting skin with the header switch; the block shows no host and no noise line | foothold held |
+| T2 | Terminal run only, before any sweep: a mistyped verb (`scna`), which prints the nearest verb; then `scan` with an invented host id and `scan` with the real id of the file server, whose network is not yet swept. Both `scan` lines print the same message, the unlisted-target answer with an empty list of what `scan` can be used on | unchanged; no request sent |
+| T3 | Sweep the network: the block now shows its noise line at zero of three. Then scan the file server. Terminal run only: `signin` on the host with remote sign-in off prints the status sentence its Panels row shows | as `test_ops_scan` records; no request for the typed line |
+| T4 | Check the service: three findings, each under the alias the server gave. The first real finding's control reads Confirm; the other two read Probe. Confirm the first (quiet; noise still 0 of 3). Probe the decoy (false, with its reason; noise 1 of 3). The second real finding is left unconfirmed. Terminal run only: `confirm` typed on that finding prints its evidence line and sends nothing | as `test_ops_findings` records: two findings settled, one not; `opsNoise` 1 |
 | T5 | Use a card on the decoy (refused `false_positive`, noisy; noise 2 of 3) and on the unconfirmed finding (refused `not_confirmed`, quiet; noise unchanged). Then probe that finding (confirmed; noise 3 of 3, Alerted) | the same refusal codes and sentences in both runs; `opsNoise` 3; the alert global set; the `network_alerted` event fired once |
 | T6 | Switch skin; the same hosts, service, findings under the same aliases, statuses, noise count, Alerted mark and cards are shown; switch back | unchanged; no request sent |
 | T7 | Use the first card on its finding (Panels: select then Use; Terminal: typed). Use the second (Panels: drag; Terminal: quick commands) | a session at the stated access; a keyring entry |
@@ -904,9 +966,10 @@ Added to `systems/test-bridge/` as `window.__test.network` in K2.
 
 | Call | Returns or does |
 |---|---|
-| `network.state()` | `{ skin, hasSwitch, footholdId, status, offers: [{ action, target, label, command }] }`, the same in both skins apart from `skin`. A `confirm` offer's `label` is Confirm or Probe |
-| `network.run(offer, { path })` | Performs the offer with real input by the named path of section 11.2 (`button`, `select`, `drag`, `typed`, `quick`); with no `path`, the simplest one for the active skin. Resolves with the server's answer. Rejects when the path does not belong to the active skin or the offer is not in the list |
+| `network.state()` | `{ skin, hasSwitch, footholdId, status, offers: [{ action, target, label, command, pending? }] }`, the same in both skins apart from `skin`. A `confirm` offer's `label` is Confirm or Probe |
+| `network.run(offer, { path })` | Performs the offer with real input by the named path of section 11.2 (`button`, `select`, `drag`, `typed`, `quick`); with no `path`, the simplest one for the active skin (`button` or `select` in Panels, `typed` in the Terminal). The `drag` path dispatches the Panels renderer's `DRAG_EVENTS`. Resolves with the server's answer. Rejects when the path does not belong to the active skin, the offer is not in the list, or the offer is pending |
 | `network.skin()` / `network.setSkin(name)` | Reads the skin; changes it by pressing the header switch |
+| `network.storePick(name)` | Writes the player's stored pick with `writePick`, the function the switch calls, and presses nothing. It works on any view and with no view open, so a run can set a pick before opening a scenario that has no switch (section 10, check 3) |
 | `network.log()` | The Terminal log as lines (empty in Panels) |
 | `network.type(line)` | Types a line into the prompt and presses Enter, for lines that are not offers (the Terminal-only parts of T2 to T4) |
 
@@ -922,16 +985,16 @@ What keeps existing playtests working:
 - A view with no `ops` block is always Panels (section 10), and a fresh headless profile has no
   stored pick, so existing runs are untouched in both ways.
 - `__test.minigame.getState()` returns the same fields in both skins (`rows`, `networks`, each
-  row's `id`, `kind`, `action`, `selector`, and the core's additions: findings with alias,
-  status, evidence and the Confirm or Probe mark, blocks with `noise`, `noiseLimit` and
-  `alerted`, `techniques`). On a view with an `ops` block it also has `skin`, the one field S6
+  row's `id`, `kind`, `action`, `selector`, and the core's additions: a session's `access`,
+  findings with alias, status, `fixed`, evidence and the quiet mark of the confirm action,
+  blocks with `noise`, `noiseLimit` and `alerted`, `techniques`). On a view with an `ops` block it also has `skin`, the one field S6
   adds; a view with no `ops` block returns exactly today's fields. The core's top-level
   `selectedFinding` is always `null` in the Terminal, which has no selection. In the Terminal
   each selector resolves to the quick-command button, which carries the same hooks.
-- Selectors must name the action where a row can hold more than one control. In a block marked
-  `ops`, a host row can hold Scan as well as Sign in, so `[data-host-id="…"] [data-action]`
-  would match more than one element in either skin; section 14, request 1 asks the core to give
-  each control's selector in such a block its `data-action` value. Rows in a block with no
+- Selectors name the action where a row can hold more than one control. In a block marked
+  `ops`, a host row can hold Scan as well as Sign in, and the core builds each ops control's
+  selector from its row hook and its `data-action` value (`[data-host-id="…"]
+  [data-action="scan"]`), so it matches one element in either skin. Rows in a block with no
   `ops` mark keep today's selector value, so the snapshot of an existing scenario is the same.
 - `clickControl('Sign in')` matches by exact label, then prefix, then substring. A quick command
   reads "Sign in" followed by its line, so the prefix match applies and takes the first one, the
@@ -951,7 +1014,9 @@ All on a keyless server from the worktree, with fresh games made in that run.
   T and W beats through the real client path; screenshots of both skins at desktop and phone
   widths, among them a block with noise, an alerted block and a finding under each of Confirm
   and Probe; a screenshot of the prompt above an on-screen keyboard; the UI rules audit over
-  the Terminal surface; the access leak scanner over the captured responses.
+  the network-view surface of a live `test_ops_skin` game, in each skin (section 5.4); a
+  double press of Probe and of Enter on a `probe` line, each on a throttled connection, adding
+  one noise and not two; the access leak scanner over the captured responses.
 - **K3**: beat D1.
 - **K4**: the live parity run of 11.2, and the leak scanner over its captured responses.
 
@@ -963,17 +1028,18 @@ committed before its tests are run in the shared tree.
 | Step | Stage | Work | Proof before moving on |
 |---|---|---|---|
 | 1 | K1 | Save the scene's DOM for every fixture and for every recorded `ops_unchanged` view answer, before any change. Move the fixtures the tests build inline into `test/js/fixtures/network-view/` only for the new tests; existing tests are not edited | the snapshots exist on the branch point |
-| 2 | K1 | `view-texts.js`, `view-controls.js`, `network-view-panels.js`; the new exports in `ops-model.js`, with the Panels drawing changed to call them; the scene mounts the Panels renderer and gains `perform`; copy lists | K1 rows of 11.1; existing and core node tests unedited; `bin/test-js` whole; scripted reruns of `test_access_networks` and `test_ops_access` |
+| 2 | K1 | `view-texts.js`, `view-controls.js`, `network-view-panels.js`; the new exports in `ops-model.js`, with the Panels drawing changed to call them; the scene mounts the Panels renderer and gains `perform` with the pending guard; `unplugBox` stops touching the DOM; copy lists | K1 rows of 11.1; existing and core node tests unedited; `bin/test-js` whole; scripted reruns of `test_access_networks` and `test_ops_access` |
 | 3 | K2 | `skin-choice.js`; the starter passes the skin; the header switch on ops views | `network-skin-choice.test.mjs`, `network-skin-unchanged.test.mjs` |
 | 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js`, the rules in `network-view-minigame.css`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, parity and text tests |
-| 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; the storage-state file of section 10; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots reviewed, audit clean, phone keyboard check); full suites; land K2 |
+| 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots reviewed, audit clean, phone keyboard check); full suites; land K2 |
 | 6 | K3 | Schema, validator checks, wording warning, bootstrap test; `defaultSkin` in `test_ops_skin` | K3 rows of 11.3; beat D1; validator output for every other scenario unchanged |
 | 7 | K4 | `tools/playtest/network-skin-parity.mjs`; the `README_scenario_design.md` feature index (N16) and `docs/ACCESS_AND_NETWORKS.md` | the K4 part of 11.6; land |
 
 | Shared file | Also touched by | This plan's part |
 |---|---|---|
-| `minigames/network-view/network-view-minigame.js` | core (S1 to S3). The core's shared-file table also expects a session's access level to be drawn on a row by the privilege feature; see request 3 | K1 moves the drawing out and leaves the handlers. A plan that lands after K1 adds its drawing to `network-view-panels.js` and its handler to the scene |
+| `minigames/network-view/network-view-minigame.js` | core (S1 to S3); the privilege feature may add session badges | K1 moves the drawing out, leaves the handlers and replaces the core's per-button disabling with the pending guard. A plan that lands after K1 adds its drawing to `network-view-panels.js` and its handler to the scene |
 | `minigames/network-view/ops-model.js` | core (owner); later plans add refusal codes to `REFUSAL_TEXT` | K1 adds exports, as the core's shared-file table expects: `findingLabel`, `needLine`, `useResultText` and the line functions of section 5.2. It changes no existing export and adds no entry to `REFUSAL_TEXT` |
+| `test/fixtures/files/ops_refusal_codes.json` | core (owner) | read by parity test 5 and the format test; not edited |
 | `css/network-view-minigame.css` | core | the Terminal's rules, appended |
 | `scripts/scenario-schema.json` | every plan | one top-level block |
 | `scripts/validate_scenario.rb` dialogue lint, `scripts/validate_network_ops.rb` | core (owner of the second), every plan | two warnings |
@@ -983,65 +1049,64 @@ committed before its tests are run in the shared tree.
 | JS test harness copy lists | every plan that adds a module | the seven new modules |
 
 Not touched: `ui/display-settings.js`, `ui/game-menu.js`, the game page's stylesheet list, any
-server model or controller.
+server model or controller. No file is added under `tools/playtest/` except the K4 runner.
 
 ## 13. Log rows
 
 This feature writes no log row and registers no event with the log feature. It adds no move, a
-switch of skin is not a game action, and the server cannot tell which skin sent a request, so
-there is nothing of its own to record.
+switch of skin is not a game action, and the server cannot tell which skin sent a request.
 
-The moves a player makes from either skin are the core's, and they write the core's rows, named
-as the core names them: `network_swept`, `host_scanned`, `service_checked`, `finding_confirmed`
-(a Confirm and a Probe both write this one, told apart by its `how` detail, `quiet` or `probe`),
-`network_alerted`, `technique_refused` and `technique_used`. Each row is the same whichever skin
-sent the request, because the request is. The live parity run (11.2) asserts it by comparing
-the rows of three games.
-
-The Terminal displays none of these rows. Log rows do not reach the browser through the network
-view in either skin; reading them is the log feature's viewer. The Terminal's own scrolling log
-is a record of what was typed and answered on this trip, held in the page, and is not a log
-row.
+The moves a player makes from either skin are the core's and write the core's rows
+(`network_swept`, `host_scanned`, `service_checked`, `finding_confirmed`, `network_alerted`,
+`technique_refused`, `technique_used`), the same whichever skin sent the request. The live
+parity run (11.2) asserts it by comparing the rows of three games. The Terminal displays none
+of these rows; its own scrolling log is page state, not a log row.
 
 ## 14. Cross-plan requests
 
-What this plan relies on, already stated in the core plan: `alias` on every finding and the
-alias lookup in `ops-model.js`; `itemId` on each `techniques` entry; `ops: true` on a block;
-`REFUSAL_TEXT` as the one table of refusal words; a card usable against any listed finding,
-whatever its status; `noise`, `noiseLimit` and `alerted` on a block, and `quiet`, `noisy` and
-`noise` on answers; S6 adding its own exports to `ops-model.js`.
+**Agreed with the core**, and stated in the core plan under the section named:
 
-Requests:
+| What this plan relies on | Core plan section |
+|---|---|
+| `alias` on every finding and the alias lookup; `itemId` on each `techniques` entry; `ops: true` on a block; a card usable against any listed finding, whatever its status | 14, "Skin (S6)"; 5.4, "Which findings take a card" |
+| `data-action` on every ops control and the row hooks `data-network-id`, `data-host-id`, `data-service`, `data-finding`, `data-technique`, with each control's selector built from them | 5.5, "Hooks for tests and for the skin" |
+| `fixed: true`, sent only on a confirmed finding | 5.3 |
+| The "admin" tag drawn in Panels from a session's `access` | 5.5 |
+| Select-then-Use as the keyboard path, the drag as a pointer shortcut for the same request | 1 and 5.5 |
+| The noise keys on a block | 5.3, "The noise keys on a block" |
+| The thirteen refusal codes in `ops_refusal_codes.json`, and `REFUSAL_TEXT` as the one table of words | 6, "The refusal codes, in one list"; 5.5 |
+| S6 adding its own exports to `ops-model.js` | 12.2 |
 
-1. **Core: hooks on its controls.** The core's buttons carry `data-action` values `sweep`,
-   `scan`, `check`, `confirm` (for both the Confirm and the Probe label) and `use`, on elements
-   marked `data-network-id`, `data-host-id`, `data-service`, `data-finding-id` and
-   `data-technique-id`. In a block marked `ops`, each control's `selector` in `getTestState()`
-   names its action (`[data-host-id="…"] [data-action="scan"]`), so a selector matches one
-   element where a row holds several controls. Rows in other blocks keep today's selector
-   value. The core plan says "a selector for each control" and names none of these.
-2. **Core: name the Fixed field.** A held finding whose weakness is fixed "shows Fixed", worked
-   out on each read, and `status` stays `confirmed`. The core should name the field that
-   carries it on a finding in `GET /network` (for example `fixed: true`), so both renderers
-   and the fixtures of parity test 4 read one name.
-3. **Core and privilege (S5a): who draws a session's access level.** The server sends `access:
-   "admin"` on a host row. The core's shared-file table says the privilege feature adds session
-   badges to the view; the privilege plan does not mention the network view. Whichever plan
-   draws the level in Panels does so in `network-view-panels.js` with its words in
-   `ops-model.js`, and adds the same words to the Terminal's host table in the same change; the
-   text test fails otherwise. Until one does, neither skin shows it.
-4. **Core: one sentence on gestures.** Its section 5.4 lets a card be dropped on or used
-   against any listed finding; its section 1 says a card is dragged "to a confirmed finding".
-   The core should make section 1 agree, and say that select-then-Use is the keyboard path, as
-   this plan's parity test 1 assumes.
-5. **Log rows (S9).** The live parity run compares `log_rows_for(source_id, compare: true)`
+**Requests:**
+
+1. **Core: say how Panels show that an answer was quiet or noisy.** The core's client section
+   draws the Confirm or Probe label and the noise line, and names no note beside a result,
+   although the answers carry `quiet` and `noisy`. This plan needs one of two statements in
+   the core's section 5.5. Either "Panels show no such note; the label and the noise line say
+   it", which is what this plan is written to. Or the note's words, held in one export of
+   `ops-model.js`, `noiseNote(answer)`, which takes a confirm or technique answer and returns
+   the words, or an empty string when there is nothing to say. Both renderers would call it,
+   the Terminal would print what it returns in the finding detail and the use result, and
+   parity test 9 would hold the two equal with no other change here. A note composed inline
+   in the Panels drawing is the one outcome this plan cannot take.
+2. **Core: the pending guard moves into the scene in K1.** For information, with one thing to
+   confirm. The core disables a Probe or Use control from the click until its answer arrives.
+   K1 keeps that behaviour and moves its cause: `perform` holds the pending set and the Panels
+   renderer draws a pending control disabled (section 5.2). The core's node test for a control
+   disabled while its request is pending should assert the disabled control and the single
+   recorded call, not a flag on the button, so it passes unedited after K1.
+3. **Log rows (S9).** The live parity run compares `log_rows_for(source_id, compare: true)`
    across the three games, as the log plan asks. No row and no route parameter names the skin.
-6. **Every plan: wording.** Objectives, hints and spoken lines in the `test_ops_*` scenarios
+4. **Every plan: wording.** Objectives, hints and spoken lines in the `test_ops_*` scenarios
    name actions and targets, never controls (5.6).
 
 For information, and asking nothing: a plan that adds a control to the network view after S6
-lands will see the three tests named in 5.2 fail until the control has an entry in `CONTROLS`.
-A plan that adds a refusal code adds its words to `REFUSAL_TEXT` and both skins show them.
+lands will see the three tests named in 5.2 fail until the control has an entry in `CONTROLS`,
+and says in the same change whether the control's request is guarded. A plan that adds a
+refusal code adds it to `ops_refusal_codes.json` and its words to `REFUSAL_TEXT`, and both
+skins show them. A plan that draws something new on a row (a badge, a tag) puts its words in
+`ops-model.js` and adds them to the Terminal's table in the same change, or parity test 9
+fails.
 
 ## 15. Open questions for the user
 

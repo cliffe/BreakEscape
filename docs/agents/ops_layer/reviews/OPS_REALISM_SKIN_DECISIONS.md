@@ -56,3 +56,20 @@ Design calls made beyond the findings, for challenge:
   Terminal's scrolling log is page state, not a log row.
 - The exact path of the storage-state file (`tools/playtest/fixtures/net-skin-cli.storage.json`)
   is a proposal; nothing in the repo was checked for an existing fixtures folder there.
+
+## Round 3
+
+Acted on as suggested: R3-M2, R3-m5, R3-m6, R3-n1, R3-n2, R3-n3, R3-n4, R3-n5. Fixed
+differently or declined:
+
+| Finding | What was done, and why |
+|---|---|
+| R3-M1, pending guard | One guard in the scene's `perform`, keyed by action and target, with every `use` under one key because Panels have one Use button. It covers `sweep`, `scan`, `check`, `confirm`, `use` and `unplug`, wider than core's Probe and Use, so no request the view sends itself can double. `sign-in`, `open` and `observe` hand over to another screen and stay unguarded. A whole-view lock was rejected: it would stop a scan of a second host while the first is out, which core's Panels allow. The Terminal's typed answer is a new `TERMINAL_ONLY_TEXT` line, since a disabled Panels button has no sentence to borrow. New parity test 10 |
+| R3-m1, `unplugBox` | As suggested, plus: the Terminal header has no Unplug button, so each skin has exactly one `[data-unplug]` (the header button in Panels, the quick command in the Terminal). The `_unplugging` flag is replaced by the same pending set |
+| R3-m2, quiet or noisy note | Core (sections 5.3 to 5.5) names no note: Panels say it with the Confirm or Probe label and the noise line. The note is removed from the layouts and the item table; the skin is written to "no note". Request 1 asks core to state that, or to export `noiseNote(answer)` from `ops-model.js`, which both renderers would then call |
+| R3-m3, drag events | Not sent to core as a request. After K1 the Panels renderer is this plan's file, so it exports `DRAG_EVENTS` and test 1 and the bridge dispatch those, whichever mechanism core built |
+| R3-m4, storage state | By orchestrator ruling, not the reviewer's run-time storage-state file: a bridge call `network.storePick(name)` wraps the `writePick` the switch uses, then a reload. Display settings were not used because the skin keeps its own storage key (section 2) |
+| Requests 2 and 4 (Fixed field, gestures) | Withdrawn: core now states both. Requests 1 (hooks) and 3 (access tag) are listed as agreed, with core's section names. Core's hook names are `data-finding` and `data-technique`, not the `-id` forms the old request used |
+| Coordinator note, `network_only` and `no_grant` | Both covered by reading core's `ops_refusal_codes.json` in parity test 5 and the format test. `network_only` is treated as reachable from this view only by an `open` on a stale row; that reading of core 5.4 is an assumption for the next reviewer to check |
+| Noise at zero | Not a finding. Core's noise-keys rule shows "Noise 0 of N" on a swept block with a limit, so the Terminal's "no noise, no line" rule became "neither key, no line", and beats T3 and T4 show 0 of 3 |
+| Trim list | All seven items cut. The plan is still over the 1000-line target after the additions; see the handover note |
