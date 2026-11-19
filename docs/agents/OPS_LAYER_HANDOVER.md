@@ -52,6 +52,13 @@ still running tests. When it passes, send the hash to AC0 (LIVE AC0 socket) for 
 Core R8 fixes DONE (1996 lines; n6 declined, log key stays `technique`). NEXT SKIN ROUND must
 adopt: range on every discovery network or none (validator), `cli.hosts` keys plain strings ≤64
 chars, `cli` schema rows declared at K3 (core refuses `cli` until then).
+LATER (night): lock R10 fixed `9441dcce0` (1268; opus55 R11 delta running); skin R9 fixed
+`7461ad773` (1584; Sonnet aligning skin with core: K3 owns cli schema, range rule, cli.hosts
+keys); cracking R2 fixed `4edaa255b` (824; opus55 R3 delta running; Sonnet applying its priv
+requests + cachedAccounts shape check); opus55 applying skin requests 3 (address serving) and 4
+(perform hooks) to core, NOT the "core declares cli schema" clause. PENDING for core after that:
+cracking's request "S7 makes core `connectsTo` warning skip hashes". Then skin R10 delta, core R9
+delta, cross-plan R6.
 ROUND 3 picks additions: the existing-code gap from cracking R2 B1 (games_controller.rb 3384-3399:
 a client can claim a timer/object-action item at any time with no trigger check); add to the
 bug-fix branch? Then: apply skin's new core requests to core, deltas, cross-plan R6.
