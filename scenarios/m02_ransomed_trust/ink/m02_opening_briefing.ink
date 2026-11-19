@@ -210,6 +210,7 @@ Agent HaX: Ransomware Incorporated encrypted the access control server along wit
 Agent HaX: Kim can authorise you all she likes. It won't move a single reader.
 
 * [So a badge is worthless.]
+    Agent HaX: A badge is a bit of card with your name on it. It proves a human being vouched for you. That's all it does tonight.
     -> security_routes
 
 * [Then how does anyone get through their own doors?]

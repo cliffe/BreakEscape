@@ -36,7 +36,7 @@ test('Kim exit: alternative line shows only when the player holds no keys', () =
 
 test('briefing: trimmed lines are gone and the key facts remain', () => {
     const t = ink('m02_opening_briefing.json');
-    for (const gone of ['chalkboard', 'Half the NHS', 'genuinely booked', 'still in the wires', 'bit of card']) {
+    for (const gone of ['chalkboard', 'Half the NHS', 'genuinely booked', 'still in the wires']) {
         assert.ok(t.includes(gone) === false, `${gone} removed`);
     }
     for (const kept of ['Forty-seven people', 'Ghost', 'Recover the decryption keys and bring', 'Dr. Sarah Kim', 'Gary Whitlock', 'Ghost may have had help']) {
