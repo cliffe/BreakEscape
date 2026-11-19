@@ -112,6 +112,7 @@ export function confirmOpenObjectives(deps = {}) {
     return ids;
 }
 let showing = null;            // the open modal's promise, shared by a second asker
+let finishOpen = null;         // answers the open modal (finish(endNow)), while it is up
 let held = null;               // { proceed, reason } after "Keep going" from a late trigger
 let watching = false;
 
@@ -158,6 +159,7 @@ export function _resetEndingCheck() {
     held = null;
     watching = false;
     showing = null;
+    finishOpen = null;
     writeHeldRecord(null);
     const doc = typeof document !== 'undefined' ? document : null;
     doc?.getElementById(ENDING_CHECK_ID)?.remove();
@@ -169,15 +171,46 @@ export function _resetEndingCheck() {
  * caller can keep its ordinary synchronous path when the answer is plainly yes.
  */
 export function endingNeedsAnswer(deps = {}) {
-    if (showing) return true;
+    if (endingIsAsking()) return true;
     if (!endingCheckEnabled(deps.config)) return false;
     const open = openOptionalObjectives(deps.manager);
     return open.length > 0 && !open.every((o) => isConfirmed(o.taskId));
 }
 
-/** Whether the question is up now (another trigger raised it and it is not answered yet). */
+/**
+ * Whether the question is up now (another trigger raised it and it is not answered yet).
+ * A question whose overlay has left the page without an answer (some other code removed it)
+ * is answered "Keep going" here, so a stale promise can never leave every later ending
+ * choice waiting on a modal nobody can see (m10 blind part 3).
+ */
 export function endingIsAsking() {
-    return showing !== null;
+    if (showing === null) return false;
+    const doc = typeof document !== 'undefined' ? document : null;
+    if (doc && !doc.getElementById(ENDING_CHECK_ID)) {
+        console.warn('[ending-check] the question\'s overlay is gone without an answer: treating it as "Keep going"');
+        if (finishOpen) finishOpen(false);
+        else showing = null;
+        return showing !== null;
+    }
+    return true;
+}
+
+/**
+ * Draw the player's eye back to the open question (a choice clicked, or its number pressed,
+ * while it is up): focus "Keep going" and pulse the frame. Returns whether it is up.
+ */
+export function nudgeEndingCheck() {
+    if (!endingIsAsking()) return false;
+    const doc = document;
+    const overlay = doc.getElementById(ENDING_CHECK_ID);
+    try { doc.getElementById('ending-check-keep')?.focus(); } catch (e) { /* jsdom without focus */ }
+    const dialog = overlay?.querySelector('.ending-check-dialog');
+    if (dialog) {
+        dialog.classList.remove('ending-check-nudge');
+        void dialog.offsetWidth;   // restart the animation
+        dialog.classList.add('ending-check-nudge');
+    }
+    return true;
 }
 
 /**
@@ -201,8 +234,9 @@ export function confirmEnding(opts = {}, deps = {}) {
     if (opts.persist) writeHeldRecord(opts.persist);
 
     showing = new Promise((resolve) => {
-        openModal(open, (endNow) => {
+        finishOpen = openModal(open, (endNow) => {
             showing = null;
+            finishOpen = null;
             if (endNow) {
                 confirmTasks(open.map((o) => o.taskId));
                 writeHeldRecord(null);
@@ -405,6 +439,7 @@ function openModal(open, done) {
     };
     w?.addEventListener('keydown', keyHandler, true);
     try { keep.focus(); } catch (e) { /* jsdom without focus */ }
+    return finish;
 }
 
 if (typeof window !== 'undefined') {
@@ -415,6 +450,7 @@ if (typeof window !== 'undefined') {
         endHeld: endHeldEnding,
         needsAnswer: endingNeedsAnswer,
         isAsking: endingIsAsking,
+        nudge: nudgeEndingCheck,
         openOptional: openOptionalObjectives,
         enabled: endingCheckEnabled,
         registerRebuilder: registerHoldRebuilder,

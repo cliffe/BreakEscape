@@ -1592,7 +1592,7 @@ end
 #
 # 2. unlock_object tasks whose target object has a lockType that is not in the known set
 #    of types that emit the 'item_unlocked' event.  Standard lock types (password, pin,
-#    rfid, bluetooth, key) all call unlockTarget() which emits the event.  Custom minigame
+#    rfid, bluetooth, key, biometric) all call unlockTarget() which emits the event.  Custom minigame
 #    lock types may not — the validator warns so the author can verify or fix the minigame.
 #
 # 3. collect_items tasks that match notes-family items (type: notes, notes2, …) where the
@@ -1637,7 +1637,8 @@ def check_objectives_wiring(json_data, base_dir)
   # Lock types guaranteed to emit 'item_unlocked' via unlockTarget() or their own emit.
   # Standard types call unlockTarget() in unlock-system.js.
   # Extended types have explicit window.eventDispatcher.emit('item_unlocked', …) calls.
-  standard_unlock_types  = %w[password pin rfid bluetooth key].freeze
+  # biometric: the fingerprint reader's accepted path calls unlockTarget() (unlock-system.js, case 'biometric').
+  standard_unlock_types  = %w[password pin rfid bluetooth key biometric].freeze
   # ransomware_display is intentionally absent: the object stays locked (ransom is never
   # paid), so it completes tasks via completesTask + task_completed_by_npc, not item_unlocked.
   # Use a manual task type and set completesTask on the scenario object instead.

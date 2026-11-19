@@ -148,7 +148,9 @@ test('terminal-theme phone header fits Notepad plus the status line in 350px (m1
     assert.match(rule(s, '.phone-notepad-btn'), /font-size: 16px/);
     const after = rule(s, '.phone-terminal-theme .phone-header::after');
     assert.match(after, /SECURE CHANNEL ESTABLISHED/);
-    assert.match(after, /font-size: 14px/);
+    // off-grid GNF 14px moved to VT323 18px (A7)
+    assert.match(after, /font-family: 'VT323'/);
+    assert.match(after, /font-size: 18px/);
 });
 
 test('se-overlay-close touch hit area is 44px (m2)', () => {
