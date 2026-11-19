@@ -186,7 +186,7 @@ by tests and runs that exist when it lands. Total size M.
 |---|---|---|---|
 | K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). K1 uses `perform` as the core built it; the echo and the two hooks of section 14, request 4 are first used in K2. No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
 | K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls, made from the core's `onSent` and `onEnded` hooks (section 14, request 4); the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
-| K3 Scenario fields | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts, services, weaknesses and decoys, served by the core's answers and declared in the core's schema (section 14, request 3); `scripts/validate_realism_skin.rb` with every check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects | The Rails and validator tests of 11.3; the golden files with authored fields; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
+| K3 Scenario fields | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts, services, weaknesses and decoys, served by the core's answers (section 14, request 3) and declared in the schema here, with the validator (until K3 the core's closed blocks refuse `cli`); `scripts/validate_realism_skin.rb` with every check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects | The Rails and validator tests of 11.3; the golden files with authored fields; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
 | K4 Live proof | The live parity runner and the docs, which change nothing a player sees (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
 ## 4. Scenario fields
@@ -304,9 +304,10 @@ previews and demos.
 
 S6 adds no route, no check and no state. The server-side changes are:
 
-- the schema entry for `networkView`, and the checks in `scripts/validate_realism_skin.rb`
-  (section 9). The schema entries for the `cli` objects are the core's, added with the serving
-  of request 3 (section 14); S6 adds only the validator rules for them;
+- the schema entry for `networkView`, the schema rows for the `cli` objects (section 9), and the
+  checks in `scripts/validate_realism_skin.rb`, all at K3. Until K3 the core's closed blocks
+  refuse `cli`; the core copies the fields in its row builders from S1 and S2 (request 3 of
+  section 14) and tests that on a test-only fixture;
 - a test that `networkView` reaches the bootstrap (section 7);
 - the `cli` fields riding in the core's existing answers beside the fields they belong to. The
   core's row builders copy them (section 14, request 3); S6 relies on that and writes no
@@ -1015,17 +1016,18 @@ ignored, and blocked storage leaves the switch working for the page.
 `enum: ["gui", "cli"]` and a description naming its reader (`skin-choice.js`). It is structure,
 not an id map and not free data. It is not marked `x-serverOnly`.
 
-The `cli` objects are the core's schema entries, in the same shared file, added by the core with
-its serving of them (section 14, request 3); S6 writes no schema entry for them and adds only the
-validator rules below. For reference, the core's entries are closed (`additionalProperties:
-false`, note pattern `^_`), have no required key, and carry a description naming their reader
-(`cli-gen/`):
+The `cli` objects are declared here, at K3, as rows in the same shared file, on the core's
+`networks.<id>`, `definitions.service`, `definitions.weakness` and `definitions.decoy`. Until K3
+those blocks are closed and refuse `cli`; the core's row builders copy the fields from S1 and S2
+(section 14, request 3) and test that on a test-only fixture that does not load the schema. The
+rows are closed (`additionalProperties: false`, note pattern `^_`), have no required key, and
+carry a description naming their reader (`cli-gen/`):
 
-| In the core's | `cli` properties |
+| On | `cli` properties |
 |---|---|
-| `networks.<id>` (closed today) | `range` (string, IPv4 CIDR pattern, max 18); `hosts`, an id map (`x-id-map: true`, keys the host id pattern) of closed objects with one property `address` (string, dotted IPv4 pattern) |
-| the core's `definitions.service` | `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`), `banner` (1 to 80 characters) |
-| the core's `definitions.weakness` and `definitions.decoy`, one shared `definitions.cliFinding` | `title` (1 to 80 characters), `module` (`^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, max 80), `script` (`^[a-z][a-z0-9-]{0,39}$`) |
+| `networks.<id>` | `range` (string, IPv4 CIDR pattern, max 18); `hosts`, an id map (`x-id-map: true`, keys plain strings of 1 to 64 characters, so a room-object id such as `kit_deviceA` or `P1` fits) of closed objects with one property `address` (string, dotted IPv4 pattern) |
+| `definitions.service` | `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`), `banner` (1 to 80 characters) |
+| `definitions.weakness` and `definitions.decoy`, one shared `definitions.cliFinding` | `title` (1 to 80 characters), `module` (`^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, max 80), `script` (`^[a-z][a-z0-9-]{0,39}$`) |
 
 They inherit the server-only marks of the objects they sit in (`networks`, `hosts` and
 `services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already name
@@ -1045,6 +1047,7 @@ the validator already has.
 | Error | An `address` on a network with no `range`, outside the range, equal to its network or broadcast address, or used twice anywhere in the scenario |
 | Error | Two services of one host with the same `port`, whatever their `protocol`, so `-p` names one service |
 | Error | A key of `cli.hosts` that is not a host (a `hosts` entry or a sign-in object) on that network |
+| Error | Range all or none: on a scenario's discovery networks, one has a `range` and another has none. Either every discovery network has a range or none does; otherwise a range's presence would mark which networks hold content |
 | Error | A `module` used twice in the scenario, or one beginning `simulated/` (the default's prefix) |
 | Error | Uneven authoring on one service: one of `title`, `module` or `script` is set on some of its weaknesses and decoys and not on the others, which would tell a decoy from a weakness before a confirm |
 | Error | A decoy's form differs from a weakness's on one service: the authored `module` paths of its weaknesses and decoys do not all share the same first segment (`auxiliary` against `exploit`) and the same number of segments |
@@ -1336,7 +1339,7 @@ show the other skin gives the same game, on every build.
 |---|---|---|
 | `test/models/break_escape/network_view_bootstrap_test.rb` | K3 | `networkView` reaches the bootstrap unchanged; a scenario without it has no such key |
 | `test/controllers/break_escape/network_skin_blind_test.rb` | K2 | Each network and ops route gives the same answer and writes the same state with and without a `skin` or `net_skin` parameter, so no route reads one |
-| Validator tests | K3 | Each check of section 9, with one passing and one failing scenario fragment per error and per warning. Among the failing fragments: a decoy whose `cli.module` is missing beside an authored one on its weakness; a decoy module under `exploit/` beside a weakness under `auxiliary/scanner/`; a decoy title holding `patched`; a decoy script `smb-bait-check`; two services on port 53 (`tcp` and `udp`) on one host; one address on two networks; two overlapping ranges; a banner with a tab and one with `é`; `\x31\xc0`; `%41%42`; `0xdeadbeef`; `<b>x</b>`; a 16-digit hex run; `QWxhZGRpbjpvcGVuIHNlc2FtZQ==`; `admin:admin`; `root/toor`; `password=letmein`; `8.8.8.8` in a banner; `http://intranet`; `www.brackley.com`; `shareserve.com`; and under option 2 `cve_2017_0144`, `CVE-2017-0144` and `exploit/windows/smb/ms17_010_x` (or, under option 1, a banner whose version differs from the service's `version`). Passing fragments include a banner naming `files.local` and one with `10.20.0.15`. The example of section 4.2 passes with no error and no warning. The graph is the same with and without the block and the `cli` objects |
+| Validator tests | K3 | Each check of section 9, with one passing and one failing scenario fragment per error and per warning. Among the failing fragments: a decoy whose `cli.module` is missing beside an authored one on its weakness; a decoy module under `exploit/` beside a weakness under `auxiliary/scanner/`; a decoy title holding `patched`; a decoy script `smb-bait-check`; two services on port 53 (`tcp` and `udp`) on one host; one address on two networks; two overlapping ranges; one discovery network with a `range` beside one with none; a `cli.hosts` key of 65 characters; a banner with a tab and one with `é`; `\x31\xc0`; `%41%42`; `0xdeadbeef`; `<b>x</b>`; a 16-digit hex run; `QWxhZGRpbjpvcGVuIHNlc2FtZQ==`; `admin:admin`; `root/toor`; `password=letmein`; `8.8.8.8` in a banner; `http://intranet`; `www.brackley.com`; `shareserve.com`; and under option 2 `cve_2017_0144`, `CVE-2017-0144` and `exploit/windows/smb/ms17_010_x` (or, under option 1, a banner whose version differs from the service's `version`). Passing fragments include a banner naming `files.local` and one with `10.20.0.15`. The example of section 4.2 passes with no error and no warning. The graph is the same with and without the block and the `cli` objects |
 | `cli` serving (core's leak collector) | K3 | `test_ops_skin`'s collector stages the `cli` strings: the range on the view block from the first answer, an address on its open network from the first answer, an address on the discovery network only after the sweep (including the held-session PC's), a service's `cli` only after the host scan, a finding's `cli` only after the check, with the same keys on the decoy as on the weakness; none in the bootstrap or a room answer; a scenario with no `cli` data gives answers with no `cli` key |
 | `tools/playtest` shell test | K2 | `session-start.sh` gives the same session tag with and without `--net-skin` |
 
@@ -1454,7 +1457,7 @@ committed before its tests are run in the shared tree.
 | 3 | K2 | `skin-choice.js`; the starter passes the skin; the header switch on ops views | `network-skin-choice.test.mjs`, `network-skin-unchanged.test.mjs` |
 | 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene through the `onSent` and `onEnded` hooks of `perform` that the core added for section 14, request 4; if the core has not added them when K2 starts, K2 waits for that change rather than editing `perform` itself), `cli-gen/registry.js`, `cli-gen/scanner-output.js` and `cli-gen/framework-console.js` with the defaults of section 4.2 and their golden files, the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, `cli-gen` golden and provenance, parity and text tests |
 | 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots checked, audit clean, phone keyboard check); full suites; land K2 |
-| 6 | K3 | Schema for `networkView` (the `cli` entries are the core's), `scripts/validate_realism_skin.rb` and its hook, wording warning, bootstrap test; `defaultSkin` and the authored `cli` fields in `test_ops_skin`, its leak collector stages and the authored-field golden files | K3 rows of 11.1 and 11.3; beat D1; validator output for every other scenario unchanged |
+| 6 | K3 | Schema for `networkView` and for the `cli` objects, `scripts/validate_realism_skin.rb` and its hook, wording warning, bootstrap test; `defaultSkin` and the authored `cli` fields in `test_ops_skin`, its leak collector stages and the authored-field golden files | K3 rows of 11.1 and 11.3; beat D1; validator output for every other scenario unchanged |
 | 7 | K4 | `tools/playtest/network-skin-parity.mjs`; the `README_scenario_design.md` feature index (N16) and `docs/ACCESS_AND_NETWORKS.md` | the K4 part of 11.6; land |
 
 | Shared file | Also touched by | This plan's part |
@@ -1463,7 +1466,7 @@ committed before its tests are run in the shared tree.
 | `minigames/network-view/ops-model.js` | core (owner); later plans add refusal codes to `REFUSAL_TEXT` | K1 adds exports, as the core's shared-file table expects: `findingLabel`, `needLine`, `useResultText` and the line functions of section 5.2. It changes no existing export and adds no entry to `REFUSAL_TEXT` |
 | `test/fixtures/files/ops_refusal_codes.json` | core (owner) | read by parity test 5 and the format test; not edited |
 | `css/network-view-minigame.css` | core | the Terminal's rules, appended |
-| `scripts/scenario-schema.json` | every plan; core owns `definitions.service`, `definitions.weakness`, `definitions.decoy` and `networks.<id>` | one top-level block, `networkView`; the `cli` properties and `definitions.cliFinding` are the core's (section 14, request 3) |
+| `scripts/scenario-schema.json` | every plan; core owns `definitions.service`, `definitions.weakness`, `definitions.decoy` and `networks.<id>` | one top-level block, `networkView`, and at K3 the `cli` rows and `definitions.cliFinding` (section 9); until then the core's closed blocks refuse `cli` |
 | `scripts/validate_scenario.rb` | every plan | one require and one call of `check_realism_skin`; the ink half of the wording warning in the dialogue lint |
 | the core's network row builders (`network_ops.rb`) and leak collector | core (owner) | none in the builders, which copy the `cli` objects as request 3 of section 14 asks; `test_ops_skin`'s collector entries for the `cli` strings |
 | `systems/test-bridge/index.js`, `tools/playtest/session-start.sh`, `tools/playtest/ui-rules-audit.mjs` | possibly core; none known for the others | one namespace; one option; one surface |
@@ -1502,9 +1505,10 @@ showing and reads through `compromiseMarks()`.
    (sweep, scan, check, confirm, use), never controls (a button, a drag, a typed line), as
    objectives and hints do (sections 1.3 and 5.6), so one script runs in either skin.
 3. **Core: declare and serve the `cli` display fields with the answers the player has earned.**
-   The core's schema declares the `cli` objects of section 9 (S6 writes no schema entry for
-   them and adds only its validator rules), and its row builders copy them, unchanged, beside
-   the fields they belong to:
+   The skin declares the schema rows for the `cli` objects at K3 (section 9); until K3 the
+   core's closed blocks refuse `cli`. The core copies the fields at S1 and S2, with its test on a
+   test-only fixture, and its row builders copy them, unchanged, beside the fields they belong
+   to:
    - `networks.<id>.cli.range`, as `cli.range` on the view's block for that network;
    - `networks.<id>.cli.hosts.<hostId>.address`, as `address` on the host's row, with the row,
      whenever the core lists that row as discovered: on an open network (`discovery: "open"` or

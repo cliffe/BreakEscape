@@ -180,3 +180,9 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - n3: no bar for a pending check, confirm or use, on purpose.
 - n4: `help` gives each mode's meaning of `check`.
 
+## Aligned with core (2026-11-19)
+
+- The skin owns the `cli` schema rows, landing with the validator at K3; until K3 the core's closed blocks refuse `cli`, and the core copies the fields at S1/S2 with its test on a test-only fixture. K3, 5.1, 9, 12 and request 3 of section 14 now say so.
+- New validator rule in section 9: every discovery network has a `range` or none does; failing fixture added to the 11.3 validator list.
+- `cli.hosts` keys are plain strings of 1 to 64 characters (fits `kit_deviceA`, `P1`), replacing the host id pattern; a 65-character key is a failing fixture.
+
