@@ -569,16 +569,36 @@ export class DustingMinigame extends MinigameScene {
     _htmlExamine() {
         const d = this.data;
         const best = this.objectId ? bestLiftFromObject(this.objectId) : null;
-        const prior = best ? `<p class="dusting-note">Lifted before: ${Math.round(best.quality * 100)}%. Dust again for a cleaner lift?</p>` : '';
         // textVariants / observationVariants apply here as everywhere else (m08 E5)
         const observations = resolveObjectField(d, 'observations', null);
         const text = resolveObjectField(d, 'text', null);
-        return `
+        const head = `
             <h3>${escapeHtml(d.name || 'Surface')}</h3>
             ${observations ? `<p>${escapeHtml(observations)}</p>` : ''}
             ${text ? `<p class="dusting-quote">${escapeHtml(text)}</p>` : ''}
-            <p class="dusting-surface-line"><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>
-            ${prior}
+            <p class="dusting-surface-line"><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>`;
+        if (this.resume) {
+            return `${head}
+            <p class="dusting-note">You were part way through dusting this. Pick up where you left off?</p>
+            <div class="dusting-buttons">
+                <button class="dusting-btn dusting-primary" data-action="resume">Resume dusting</button>
+                <button class="dusting-btn" data-action="start">Start again</button>
+                <button class="dusting-btn" data-action="use-normally">Use normally</button>
+            </div>`;
+        }
+        if (best) {
+            // A lift is already on file: that is the main view. Dusting again is the secondary choice.
+            const who = best.identified ? ` Identified as ${escapeHtml(best.ownerName || best.owner)}.` : '';
+            return `${head}
+            <h3 class="dusting-lift-head">Lift on file</h3>
+            <p class="dusting-note" data-lift-result>Lifted: ${Math.round(best.quality * 100)}%, ${escapeHtml(best.rating || ratingFor(best.quality))}.${who}</p>
+            <div class="dusting-buttons">
+                <button class="dusting-btn dusting-primary" data-action="close">Keep this lift</button>
+                <button class="dusting-btn" data-action="start">Dust again</button>
+                <button class="dusting-btn" data-action="use-normally">Use normally</button>
+            </div>`;
+        }
+        return `${head}
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="start">Dust for prints</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>

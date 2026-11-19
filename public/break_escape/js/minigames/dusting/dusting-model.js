@@ -632,3 +632,112 @@ export function zoomPlanBeside({ side, rootW, cards, budgetH, maxS = 6 }) {
     return p;
 }
 export const ZOOM_MAX_H_SHORT = 128;
+
+// ---------------------------------------------------------------------------------------------
+// Resume after a reload (D183 item 3): per-viewer localStorage only, never synced to the server.
+// One small entry per object being dusted: the step, powder, tool, a quality estimate and the powder
+// and fog fields downsampled to PROGRESS_GRID x PROGRESS_GRID bytes-as-numbers. Every storage call is
+// wrapped, so a missing or throwing localStorage just means no resume.
+// ---------------------------------------------------------------------------------------------
+export const PROGRESS_GRID = 16;
+export const PROGRESS_SCALE = 16;          // stored value = passes * 16, capped at 255
+export const PROGRESS_MAX_ENTRIES = 8;     // oldest entries beyond this are pruned
+export const PROGRESS_MAX_CHARS = 2400;    // a stored entry above this is refused (a full one is about 1.3k)
+const PROGRESS_PREFIX = 'breakEscape.dusting.';
+const PROGRESS_INDEX = 'breakEscape.dusting.index';
+const PROGRESS_STEPS = ['powder', 'dust'];
+
+export function progressKey(gameId, objectId) {
+    return `${PROGRESS_PREFIX}${String(gameId == null ? 'local' : gameId)}.${String(objectId)}`;
+}
+
+function defaultStorage() {
+    try { return typeof window !== 'undefined' && window.localStorage ? window.localStorage : null; } catch (e) { return null; }
+}
+
+/** Mean of each block of a size x size Float32 grid, scaled and capped to 0..255 ints, as a plain array. */
+export function downsampleField(arr, size, grid = PROGRESS_GRID) {
+    const out = new Array(grid * grid), b = Math.floor(size / grid);
+    for (let gy = 0; gy < grid; gy++) {
+        for (let gx = 0; gx < grid; gx++) {
+            let sum = 0;
+            for (let y = 0; y < b; y++) for (let x = 0; x < b; x++) sum += arr[(gy * b + y) * size + gx * b + x];
+            out[gy * grid + gx] = Math.max(0, Math.min(255, Math.round((sum / (b * b)) * PROGRESS_SCALE)));
+        }
+    }
+    return out;
+}
+
+/** Writes the downsampled values back into a field array (blocky, which is fine for a resume). */
+export function upsampleInto(arr, size, vals, grid = PROGRESS_GRID) {
+    const b = Math.floor(size / grid);
+    for (let y = 0; y < size; y++) {
+        const gy = Math.min(grid - 1, Math.floor(y / b));
+        for (let x = 0; x < size; x++) arr[y * size + x] = vals[gy * grid + Math.min(grid - 1, Math.floor(x / b))] / PROGRESS_SCALE;
+    }
+}
+
+export function packProgress({ step, powder, tool, quality }, field) {
+    return {
+        v: 1, step, powder, tool, q: Math.round((Number(quality) || 0) * 100) / 100, t: Date.now(),
+        p: downsampleField(field.P, field.size), f: downsampleField(field.FP, field.size)
+    };
+}
+
+function validProgress(o) {
+    const n = PROGRESS_GRID * PROGRESS_GRID;
+    const grid = a => Array.isArray(a) && a.length === n && a.every(v => Number.isInteger(v) && v >= 0 && v <= 255);
+    return !!o && typeof o === 'object' && o.v === 1 && PROGRESS_STEPS.includes(o.step)
+        && typeof o.powder === 'string' && !!POWDERS[o.powder] && (o.tool === null || typeof o.tool === 'string')
+        && grid(o.p) && grid(o.f);
+}
+
+/** Saves the entry; false when storage is missing, throws, or the entry is over the size bound. */
+export function saveProgress(gameId, objectId, entry, storage = defaultStorage()) {
+    if (!storage || objectId == null || !validProgress(entry)) return false;
+    try {
+        const text = JSON.stringify(entry);
+        if (text.length > PROGRESS_MAX_CHARS) return false;
+        const key = progressKey(gameId, objectId);
+        storage.setItem(key, text);
+        let index = [];
+        try { index = JSON.parse(storage.getItem(PROGRESS_INDEX) || '[]'); } catch (e) { index = []; }
+        if (!Array.isArray(index)) index = [];
+        index = index.filter(k => k !== key); index.push(key);
+        while (index.length > PROGRESS_MAX_ENTRIES) { try { storage.removeItem(index.shift()); } catch (e) { /* ignore */ } }
+        storage.setItem(PROGRESS_INDEX, JSON.stringify(index));
+        return true;
+    } catch (e) { return false; }
+}
+
+export function loadProgress(gameId, objectId, storage = defaultStorage()) {
+    if (!storage || objectId == null) return null;
+    try {
+        const raw = storage.getItem(progressKey(gameId, objectId));
+        if (!raw || raw.length > PROGRESS_MAX_CHARS) return null;
+        const o = JSON.parse(raw);
+        return validProgress(o) ? o : null;
+    } catch (e) { return null; }
+}
+
+/** Removes the entry (a finished lift). Safe with storage missing or throwing. */
+export function clearProgress(gameId, objectId, storage = defaultStorage()) {
+    if (!storage || objectId == null) return;
+    const key = progressKey(gameId, objectId);
+    try { storage.removeItem(key); } catch (e) { /* ignore */ }
+    try {
+        const index = JSON.parse(storage.getItem(PROGRESS_INDEX) || '[]');
+        if (Array.isArray(index)) storage.setItem(PROGRESS_INDEX, JSON.stringify(index.filter(k => k !== key)));
+    } catch (e) { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Hint nudge (D183 item 5): after NUDGE_MISSES failed checks, or NUDGE_IDLE_MS without finding it,
+// the Hint button is shown and highlighted with the label "Stuck? Try Hint".
+// ---------------------------------------------------------------------------------------------
+export const NUDGE_MISSES = 3;
+export const NUDGE_IDLE_MS = 20000;
+export const NUDGE_TEXT = 'Stuck? Try Hint';
+export function hintNudgeDue({ misses = 0, idleMs = 0, found = false } = {}) {
+    return !found && (misses >= NUDGE_MISSES || idleMs >= NUDGE_IDLE_MS);
+}
