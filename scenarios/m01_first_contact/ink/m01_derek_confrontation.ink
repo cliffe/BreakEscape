@@ -30,6 +30,12 @@ VAR sudo_flag_submitted = false
 // ================================================
 
 === start ===
+// One-shot: once the confrontation is over, re-talk ends at once ("End of conversation").
+// In-session restartOnRetalk:false does this; after a reload the engine restarts here
+// (the server keeps no story position), so the synced global guards the replay.
+{derek_confronted:
+    -> END
+}
 // Check if player has accessed the ENTROPY encrypted archive (has the full picture)
 {not entropy_reveal_read:
     -> insufficient_evidence
