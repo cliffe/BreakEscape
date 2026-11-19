@@ -125,3 +125,14 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - R8-n2: `REQUEST_FAILED_TEXT` note moved out of the table cell to a line under the table.
 - R8-n3: the first `recordSent` creates the log, which holds the opening line and the cap from creation; format test covers it.
 
+## Round 2 picks (2026-11-19)
+
+- R2-3, header: a "generator" (pure, one file per simulated tool, formats output only) is defined.
+- R2-3, 1.1 and 1.2: the Terminal simulates nmap-style and Metasploit-style consoles over the same single requests; game verbs stay accepted.
+- R2-3, 1.3: rule 1 now holds game information equal in both skins, console dress Terminal-only; new rule 4 sets the simulation limits (no real host, payload, shellcode or credential; labels only; nothing beyond the lab sheet).
+- R2-3, 2: notes that the core's service and finding fields cover every default, and that no address, protocol or banner field exists today.
+- R2-3, 3: K2 builds the registry and both generators on defaults; K3 becomes "Scenario fields" with the `cli` display fields and `scripts/validate_realism_skin.rb`.
+- SKIN-2 and R2-3, 4: 4.1 states no forcing and the default in the scenario; 4.2 adds the optional `cli` fields (network range and host addresses, service protocol/service/banner, weakness and decoy title/module/script) with generic defaults and a JSON example.
+- R2-3, 5.1: `cli` fields ride in the core's answers (core request 3); S6 adds no serialiser.
+- R2-3, 5.2: `cli-gen/registry.js`, `cli-gen/scanner-output.js`, `cli-gen/framework-console.js` added; the control list's Terminal lines are now tool-shaped; the control list stays the one table and the generators only format.
+

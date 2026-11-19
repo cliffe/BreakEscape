@@ -18,7 +18,9 @@ core's `sweep`, `scan`, `check`, `confirm` and `use`. `confirm` has one label, C
 can make right now: a control's action plus every id the request needs. The list of controls and
 offers is private to the network-view folder. It is a drawing aid for two renderers of one
 screen; nothing outside that folder reads it, the server never sees it, and no other feature
-registers with it.
+registers with it. A **generator** is a pure function, one per simulated tool and each in its own
+file, that turns an answer the server already sent into the lines that tool's console would print.
+Generators only format output: they choose no control, make no request and hold no state.
 
 ## 1. What this adds and why
 
@@ -34,19 +36,26 @@ S6 gives that screen a second face, on those networks only. A view that holds at
 the server marks `ops: true` gains a switch in its header between:
 
 - **Panels** (`gui`): the rows, tiles, cards and buttons as the core draws them.
-- **Terminal** (`cli`): a prompt and a scrolling log. The player types `sweep`, reads a table of
-  hosts, types `scan files01`, reads a table of services, types `check files01 web`, reads the
-  findings, types `confirm f2` and reads the finding settle, types
-  `use <technique> on f2`, and so on. Results are laid out in the manner of scanner and
-  framework tools, with invented products and no real tool's commands or output. Nothing real
-  runs: each line is one of the requests the buttons make, sent to the same server route, and
-  the text is a different drawing of the same answer.
+- **Terminal** (`cli`): a prompt and a scrolling log that simulate two real consoles. The
+  player types `nmap -sn office_lan` and reads host lines in the form a network scanner prints
+  them, types `nmap -sV files01` and reads a `PORT STATE SERVICE VERSION` table, types
+  `nmap --script vuln -p 445 files01` and reads the script report of what the check found. Then
+  `msfconsole` opens an exploit-framework prompt, modelled on Metasploit: `search`, `use` a
+  module, `info`, `show options`, `set TECHNIQUE <card>`, `check` (which confirms the finding)
+  and `run`, which ends in "session opened" when the technique works. The game's own short verbs
+  (`sweep`, `scan`, `check`, `confirm`, `use <card> on f2`) are accepted as well. Nothing real
+  runs: each typed command is parsed into one of the requests the buttons make, sent to the same
+  server route, and the console text is a different drawing of the same answer.
 
-A sweep and a service scan show the same single request and answer in both skins. In Panels,
-a progress bar labelled "Scanning" shows while the request runs. The Terminal prints
-simulated, fictional scanner-style output (invented banner and progress lines, no real
-tool's text) as soon as the request is sent, then the answer's table. The output is drawn, not
-a second request, and it carries nothing the answer holds, only the id of the target the view lists.
+A sweep and a service scan are the same single request and answer in both skins. In Panels, a
+progress bar labelled "Scanning" shows while the request is out. The Terminal prints the
+simulated scanner's start line as soon as the request is sent, then, when the answer lands, the
+full report built from it: host lines, the port table with service names and versions, and the
+script output for a check. Every name in that output (a service word such as `microsoft-ds`, a
+banner, a host address, a module path) is either written by the scenario's author for that
+service or weakness or is a generic default built from the fields the core already sends, so a
+scenario written before this feature still prints complete output. The output is drawn, not a
+second request.
 
 The player can switch at any time, in the middle of a task, and loses nothing: the hosts found,
 the findings and the sessions held all live on the server. A finding is `f2` in
@@ -62,23 +71,35 @@ picked elsewhere. Scenarios that exist today therefore look exactly as they do n
 ### 1.2 What it teaches
 
 Panels teaches the shape of the work (find hosts, find services, check them, use what you find).
-The Terminal adds the reading skill: picking the two lines that matter out of a scan table, and
-getting used to a prompt, a verb and a target. A learner who is put off by a prompt is never
-blocked by it, and one who wants the prompt can have it on every ops network.
+The Terminal adds the reading skill and the tools' vocabulary: a learner types the command shapes
+they will meet on a real lab machine (a ping sweep, a version scan, a script scan, the
+framework's `use`, `set` and `run`), reads output laid out as those tools lay it out, and picks
+the two lines that matter out of a port table. That makes the step to a VM lab shorter, while
+everything stays inside the game. A learner who is put off by a prompt is never blocked by it,
+and one who wants the prompt can have it on every ops network.
 
-### 1.3 The three design rules
+### 1.3 The four design rules
 
 1. **One set of requests.** A skin never adds, removes or changes a request. Whatever one skin
    can ask the server for at a given moment, the other can ask for at that moment, the bytes sent
    are the same, and the server cannot tell which skin sent them. A request still waiting on
    its answer cannot be sent again from either skin. Each skin also shows, at every step, every
-   piece of text the other shows.
+   piece of game information the other shows: the alias, status, needs, refusal words and every
+   field the Panels print. The Terminal adds console dress (prompts, column headers, the tools'
+   framing lines and the author's display names), and nothing the player needs to win is only
+   in that dress.
 2. **A renderer cannot reach the server.** Both renderers draw from the same rows and the same
    list of offers and hand a chosen offer back to the scene. Only the scene calls anything. A
    test fails the build if a renderer file names any of the ways out listed in section 5.2
    (the API client, `network-links.js`, `fetch`, `window.open*`, `window.start*`).
 3. **Text about the game never names a control.** Spoken lines, objectives and hints say what to
    do ("sweep the office network"), never how one skin does it ("click Sweep", "type sweep").
+4. **It stays a simulation.** Nothing runs against a real host and nothing leaves the game's own
+   routes. The output holds no working payload, no shellcode, no real credential and no option
+   that would configure one. Module paths, banners and addresses are labels the author writes,
+   validated as plain text (section 9). Generators format the answer and the author's labels;
+   they never invent exploit content, and a scenario's console text teaches no attack step
+   beyond what its lab sheet already covers.
 
 Rule 1 is what lets the feature ship without mission playtests of its own: a mission that is
 solvable in one skin is solvable in the other because the requests, the server and the text shown
@@ -141,6 +162,14 @@ What already does part of the job, and what does not:
 - The `ehr-terminal` minigame's stylesheet uses a different font and its own fixed palette, so
   there is nothing in it to share. There is no console font size to inherit and no handling of
   on-screen keyboards; sections 5.4 and 5.5 set both.
+- The core already sends, for a scanned service, `name`, `label`, `port`, `product` and
+  `version`, and for a checked finding `class`, `severity` and `summary`. Those are enough for
+  every generator's default output. The core's validator already keeps `product` invented
+  (`scripts/real_product_names.txt`) and warns on a `summary` that reads as a procedure; the
+  skin's own display fields reuse both rules (section 9) instead of adding second lists.
+- Networks today carry `name`, `offWhen` and `wifi` and nothing address-like
+  (`scripts/scenario-schema.json`, `properties.networks`, server-only). No host, network or
+  service has an address, a protocol or a banner, so those are new optional fields (section 4).
 
 ## 3. Build stages
 
@@ -150,23 +179,91 @@ by tests and runs that exist when it lands. Total size M.
 | Stage | Adds | Proved when it lands by | Size |
 |---|---|---|---|
 | K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
-| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls; the Terminal renderer, grammar, help and completion for every control in the list; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
-| K3 Scenario default | The scenario field `networkView.defaultSkin`, its schema entry, the validator checks and the wording warning | The Rails and validator tests of 11.3; beat D1 of 11.4 | S |
+| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls; the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
+| K3 Scenario fields | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts, services, weaknesses and decoys, served by the core's answers (section 14, request 3); their schema entries; `scripts/validate_realism_skin.rb` with every check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects | The Rails and validator tests of 11.3; the golden files with authored fields; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
 | K4 Live proof | The live parity runner and the docs, which change nothing a player sees (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
 ## 4. Scenario fields
 
-One optional top-level block, added in K3, written `{ "networkView": { "defaultSkin": "cli" } }`.
-It is not a secret and is sent to the browser.
+All added in K3, all optional. A scenario with none of them behaves as it did, and an ops
+scenario with none of them prints the default console output described at the end of this
+section.
+
+### 4.1 The scenario's default skin
+
+One top-level block, written `{ "networkView": { "defaultSkin": "cli" } }`. It is not a secret
+and is sent to the browser.
 
 | Field | Values | Meaning |
 |---|---|---|
 | `networkView.defaultSkin` | `"gui"` (default) or `"cli"` | The skin an ops view opens in for a player who has not picked one |
 
-The block is closed (`additionalProperties: false`, `_` note keys allowed). No other stage's
-fields change. The field has no effect on a view with no `ops` block. Whether a scenario may also
-force a skin, and whether the default belongs here or in `mission.json` beside `ui_theme`, is
-open question 1; this plan is written to its recommendation.
+The block is closed (`additionalProperties: false`, `_` note keys allowed). It has no effect on a
+view with no `ops` block. A scenario cannot force a skin: it sets a default and the player's pick
+wins. The default lives in the scenario rather than in `mission.json` beside `ui_theme`, because
+it concerns the scenario's network and is validated with it.
+
+### 4.2 Console display fields (`cli`)
+
+One optional closed object named `cli` on four things the core already declares. Every field in
+it is display text for the Terminal only: no server check reads it, Panels never show it, and it
+changes no answer the game gives. Each is served with the thing it belongs to, at the moment the
+core already serves that thing (section 7), never earlier.
+
+| Where | Field | Shape | Printed as | Default when absent |
+|---|---|---|---|---|
+| `networks.<id>.cli` | `range` | IPv4 CIDR inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, prefix /16 to /30 | the sweep target and the "addresses scanned" count of the sweep summary | the network id; the summary counts hosts up only |
+| `networks.<id>.cli.hosts.<hostId>` | `address` | dotted IPv4 inside `range` (so `range` is required with it), unique on the network | `(<address>)` after the host id in a scan report, and an accepted typed target | no address: the host id alone |
+| a service's `cli` | `protocol` | `"tcp"` or `"udp"` | the `<port>/<protocol>` cell | `tcp` |
+| a service's `cli` | `service` | a lower-case word, `^[a-z][a-z0-9-]{0,23}$`, such as `microsoft-ds` or `http` | the `SERVICE` cell | the service's `name` |
+| a service's `cli` | `banner` | plain text, 1 to 80 characters | a `\|_banner: <text>` line under the port row | no banner line |
+| a weakness's or decoy's `cli` | `title` | plain text, 1 to 80 characters | the finding's title in the script report and in the framework's `search`, `info` and `use` lines | the finding label words of `ops-model.js` (class and severity) and the service's label or name |
+| a weakness's or decoy's `cli` | `module` | a path label, `^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, at most 80 characters, unique in the scenario | the framework's module path in `search`, `use`, `info` and the prompt | `simulated/<class>/<alias>`, for example `simulated/default_creds/f2` |
+| a weakness's or decoy's `cli` | `script` | `^[a-z][a-z0-9-]{0,39}$` | the script name heading the finding in the script report | `<service word>-<class with _ as ->`, for example `microsoft-ds-default-creds` |
+
+Host addresses sit under the network rather than on the host, because a sign-in host is a room
+object and room objects ride in the bootstrap, while `networks` is already server-only and the
+address belongs to the network's range. Weakness and decoy carry the same three keys and the same
+defaults, so before a confirm the console tells a decoy from a weakness by nothing but the
+author's text, as the Panels do. The validator refuses a service whose weaknesses and decoys
+author a field unevenly (section 9), because an authored module on the weaknesses beside a
+default one on the decoy would give the decoy away.
+
+Every authored string is a label. It names no real product (the core's
+`scripts/real_product_names.txt` list applies to `banner` and `title`), carries no real advisory
+or bulletin identifier, no command, flag, path to a real file, payload or credential, and is
+written as plain text that the Terminal sets with `textContent`.
+
+A minimal example, one network and one service with a weakness and a decoy:
+
+```json
+{
+  "networks": {
+    "office_lan": { "name": "Office network", "cli": {
+      "range": "10.20.0.0/24", "hosts": { "files01": { "address": "10.20.0.15" } } } }
+  },
+  "hosts": { "files01": { "name": "File server", "network": "office_lan", "services": [
+    { "name": "files", "port": 445, "product": "Brackley ShareServe", "version": "3.1",
+      "cli": { "service": "microsoft-ds", "banner": "Brackley ShareServe ready" },
+      "weaknesses": [ { "id": "guest_share", "class": "default_creds", "severity": "high",
+        "cli": { "title": "ShareServe guest account left enabled",
+                 "module": "auxiliary/scanner/brackley/shareserve_guest_login",
+                 "script": "shareserve-guest" } } ],
+      "decoys": [ { "id": "old_banner", "class": "unpatched", "severity": "medium",
+        "falseBecause": "The banner is old; the build is patched.",
+        "cli": { "title": "ShareServe 3.1 out-of-date build",
+                 "module": "exploit/brackley/shareserve_old_build",
+                 "script": "shareserve-build" } } ] } ] } }
+}
+```
+
+**What a scenario with none of these fields prints.** The same commands work and the output has
+every section, filled from the core's fields: a sweep of `office_lan` prints `Nmap scan report
+for files01` and `Host is up.` per host, ending `Nmap done: 1 host up`; a version scan prints
+`445/tcp  open  files  Brackley ShareServe 3.1`; a script scan prints a `files-default-creds`
+script heading over the finding's alias, status, label and summary; the framework lists the
+finding as `simulated/default_creds/f2` with the label words as its title. No address and no
+banner line appear.
 
 **Which skin an ops view is drawn in**, first that applies:
 
@@ -191,8 +288,15 @@ previews and demos.
 
 ### 5.1 Server
 
-Nothing. S6 adds no route, no model code and no state. The only server-side changes are the
-schema entry for `networkView` and a test that the block reaches the bootstrap (section 7).
+S6 adds no route, no check and no state. The server-side changes are:
+
+- the schema entries for `networkView` and the `cli` objects, and the checks in
+  `scripts/validate_realism_skin.rb` (section 9);
+- a test that `networkView` reaches the bootstrap (section 7);
+- the `cli` fields riding in the core's existing answers beside the fields they belong to. The
+  core's row builders copy them (section 14, request 3); S6 relies on that and writes no
+  serialiser of its own. No answer gains a field for a scenario that declares none: an absent
+  `cli` object is left out of the answer, not sent as `{}` or `null`.
 
 ### 5.2 Client: the parts
 
@@ -207,31 +311,46 @@ All under `public/break_escape/js/minigames/network-view/`.
 | `network-view-minigame.js` | scene | Keeps what it has: load, refetch, the handlers (`act`, `unplugBox`, the core's calls), every event, the way back, the test snapshot, and the core's `perform(offer)` path with its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3). New: it mounts one of two renderers and gives each `ctx.perform(offer)`, which leads into that path |
 | `network-view-panels.js` | renderer, new | Today's HTML and the core's, moved. Its `data-*` hooks are unchanged. It exports `DRAG_EVENTS`, the event names its drag listens for, in order, for the tests and the bridge |
 | `network-view-terminal.js` | renderer, new | Prompt, log, quick commands |
-| `terminal-grammar.js` | pure, new | `parse(line, offers, view)`, `complete(line, offers, view)`, `commandFor(offer, view)`, `helpFor(verb)`. A finding's alias is resolved with the core's alias lookup over `view`; the grammar holds no alias table of its own |
-| `terminal-format.js` | pure, new | `formatListing(view)`, `formatResult(offer, answer, view)`: arrays of plain text lines |
+| `terminal-grammar.js` | pure, new | `parse(line, offers, view, mode)`, `complete(line, offers, view, mode)`, `commandFor(offer, view)`, `helpFor(verb, mode)`. It reads the game verbs, the scanner command shape and the framework commands (section 5.3, "Grammar"); `mode` is the renderer's prompt mode and the framework's selected module and `TECHNIQUE`. A finding's alias is resolved with the core's alias lookup over `view`; the grammar holds no alias table of its own |
+| `terminal-format.js` | pure, new | `recordSent`, `recordResult`, the log helper, and `formatListing(view)` for `show`. It asks the registry which generator formats an offer and adds no tool wording of its own |
+| `cli-gen/registry.js` | pure, new | `GENERATORS`, a frozen map from a control's action to one generator module (`sweep`, `scan` and `check` to the scanner, `confirm` and `use` to the framework), and `generatorFor(action)`. Actions with no entry (`sign-in`, `open`, `observe`, `unplug`) are printed by `terminal-format.js` in the plain layouts of section 5.3 |
+| `cli-gen/scanner-output.js` | pure, new | The simulated network scanner, modelled on nmap: `started(offer, view)` and `result(offer, answer, view)` for a sweep, a version scan and a script scan |
+| `cli-gen/framework-console.js` | pure, new | The simulated exploit framework, modelled on Metasploit: `started` and `result` for `check` (a confirm) and `run` (a use), and the local listings `search`, `info`, `showOptions` and `sessions`, each a function of the view alone |
+
+Each generator file exports the same shape: `id`, `started(offer, view)`, `result(offer, answer,
+view)` and `TEMPLATES`, the frozen list of every fixed string it can print. Each returns an array
+of lines; a line is an array of `{ text, cls? }` spans, where `cls` is one of a closed set of
+CSS classes (`prompt`, `head`, `ok`, `bad`, `note`). A generator imports only `ops-model.js`,
+`view-texts.js` and its own defaults; it never reads the DOM, storage, the clock or a random
+source. A later tool (a password cracker's console, for instance) is one new file and one
+registry entry; nothing else changes.
 
 S6 adds no second model: no second set of rows, no alias scheme, and no copy of a label or a
-refusal text. Its own pure code is the control list, the grammar and the layouts.
+refusal text. Its own pure code is the control list, the grammar, the plain layouts and the
+generators.
 
 **The control list** is one table in `view-controls.js`, keyed by the control's name. For every
 control but `unplug` the name is the button's `data-action` value; `unplug` is the list's name
 for the header button the Panels mark `data-unplug`.
 
-| `action` | Drawn on | Panels label | Terminal line | The scene's handler |
+| `action` | Drawn on | Panels label | Terminal line (`commandFor`) | The scene's handler |
 |---|---|---|---|---|
-| `sweep` | a discovery block not yet swept | Sweep | `sweep [<network id>]` | the core's sweep call, `network_id` |
-| `scan` | an unscanned host row in an `ops` block | Scan | `scan <host id>` | the core's scan call, `host_id` |
-| `check` | a service tile | Check | `check <host id> <service name>` | the core's check call |
-| `confirm` | an unconfirmed finding | Confirm | `confirm <alias>` | the core's confirm call, `finding_id` |
-| `use` | a held technique and a listed finding | Use | `use <technique id> on <alias>` | the core's technique call, `finding_id` and `item_id` |
+| `sweep` | a discovery block not yet swept | Sweep | `nmap -sn <range or network id>` | the core's sweep call, `network_id` |
+| `scan` | an unscanned host row in an `ops` block | Scan | `nmap -sV <host id>` | the core's scan call, `host_id` |
+| `check` | a service tile | Check | `nmap -sV --script vuln -p <port> <host id>` | the core's check call |
+| `confirm` | an unconfirmed finding | Confirm | `msf > use <module>; check` | the core's confirm call, `finding_id` |
+| `use` | a held technique and a listed finding | Use | `msf > use <module>; set TECHNIQUE <technique id>; run` | the core's technique call, `finding_id` and `item_id` |
 | `sign-in` | a host row whose action is `sign-in` or `locked` | Sign in | `signin <host id>` | `act(row, 'sign-in')` |
 | `open` | a host row with a held session | Open | `open <host id>` | `act(row, 'open')` |
 | `open` | a share row | Open | `open <share id>` | `act(row, 'open')` |
 | `observe` | any other resource row | Look | `look <resource id>` | `act(row, 'observe')` |
 | `unplug` | the header of a planted box's view | Unplug | `unplug` | `unplugBox()` |
 
-Each entry holds the label, the Terminal verb, the kind of row it is drawn on and a one-line
-description used as the button's `title` and as the `help` text. The conditions in the "Drawn
+Each entry holds the label, the game verb (`sweep`, `scan`, `check`, `confirm`, `use`,
+`signin`, `open`, `look`, `unplug`), the tool line `commandFor` writes, the kind of row it is
+drawn on and a one-line description used as the button's `title` and as the `help` text. The
+generators are not in the list and do not decide which controls exist: the list draws the
+buttons and accepts the commands, and the generators only format what comes back. The conditions in the "Drawn
 on" column are the ones the scene and the core use today (`hostAction`, `resourceAction`, the
 block's `ops` and `swept`, the row's `scanned`, the finding's `status`),
 called from `offers()` and written nowhere else. A verb together with the kind of its target
@@ -265,7 +384,8 @@ to register it. Three tests fail until it has an entry in `CONTROLS`: the source
 and the text test, which finds the new label missing from the Terminal. In the Terminal the test
 snapshot's selectors for those two (and for `use`, which is two presses) are null, and the
 skin-blind test must not require them. The fix is one entry in
-the list, plus a layout in `terminal-format.js` if the answer has a new shape. A plan that adds
+the list, plus a plain layout in `terminal-format.js` or a registry entry and generator file in
+`cli-gen/` if the answer has a new shape. A plan that adds
 a refusal code adds it to `ops_refusal_codes.json` and its words to `REFUSAL_TEXT`. One that
 draws something new on a row (a badge, a tag) puts its words in `ops-model.js` and in the
 Terminal's table in the same change, or test 9 fails. A control on another screen (a desktop, a
