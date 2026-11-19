@@ -25,7 +25,7 @@ for (const rel of [
     'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
-    'systems/awareness-measure.js', 'systems/global-writer.js',
+    'systems/awareness-measure.js', 'systems/global-writer.js', 'systems/triage-starter.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js',
     'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-scoring.js', 'systems/phish-rules.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
@@ -69,7 +69,11 @@ window.gameAlert = () => {};
 const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { MinigameFramework: FW } = await load('minigames/framework/minigame-manager.js');
 const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js');
-const { EpisodeRunnerMinigame } = await load('minigames/episode-runner/episode-runner-minigame.js');
+const { EpisodeRunnerMinigame, _resetDefendReemitsForTests } = await load('minigames/episode-runner/episode-runner-minigame.js');
+const { _resetTriageStarterForTests } = await load('systems/triage-starter.js');
+const { renderDebrief: realRenderDebrief } = await load('minigames/episode-runner/debrief-view.js');
+const { buildTriageMessages } = await load('minigames/inbox-triage/triage-messages.js');
+const { scoreTriage } = await load('minigames/inbox-triage/triage-scoring.js');
 const { startEpisodeRunner, stepAwayHoldNow, STEP_AWAY_HOLD } = await load('systems/episode-starter.js');
 const SS = await load('ui/success-screen.js');
 const { releaseHeldBarks } = await load('systems/bark-release-policy.js');
@@ -678,6 +682,218 @@ test('EC1 6.1: a check shell closes with the same state with or without stepAway
     }
     assert.ok(isDeepStrictEqual(shapes[1], shapes[0]));
     assert.ok(('debriefSeen' in shapes[1]) === false);
+});
+
+// ── gate B fixes: D3 hold, D1 rescoring on reopen, D2 re-emit ────────────────
+
+const DEFEND_COMPLETE = 'episode_e1_fixture_defend_complete';
+
+test('gate B D3: the hold also holds at the triage result (stage defend, defend complete true)', () => {
+    const ep = fullEpisode();
+    const key = M.stateKey(ep.id);
+    const atDefend = { v: 1, done: [...ATTACK_DONE] };
+    // the defend round saved, the learner reloaded before Continue: stage still defend
+    assert.ok(M.stepAwayHeld(ep, atDefend, { [DEFEND_COMPLETE]: true }) === true);
+    assert.ok(M.stepAwayHeld(ep, atDefend, { [DEFEND_COMPLETE]: false }) === false);
+    assert.ok(M.stepAwayHeld(ep, atDefend, {}) === false);
+    assert.ok(M.stepAwayHeld(ep, atDefend) === false, 'no globals: as before');
+    // through the starter's live read and the success screen's registry
+    setup(ep, { [key]: atDefend, [DEFEND_COMPLETE]: true });
+    assert.ok(stepAwayHoldNow() === true);
+    assert.ok(SS.successScreenHeld() === true);
+    window.gameState.globalVariables[DEFEND_COMPLETE] = false;
+    assert.ok(stepAwayHoldNow() === false);
+    // released by debrief done or debriefSeen, even with the done global still true
+    const complete = { [DEFEND_COMPLETE]: true };
+    assert.ok(M.stepAwayHeld(ep, { ...atDefend, debriefSeen: true }, complete) === false);
+    assert.ok(M.stepAwayHeld(ep, { v: 1, done: [...ATTACK_DONE, 'defend', 'debrief'] }, complete) === false);
+    assert.ok(M.stepAwayHeld(ep, { v: 1, done: [...ATTACK_DONE, 'defend', 'debrief'], debriefSeen: true }, complete) === false);
+    // defend done keeps holding as before
+    assert.ok(M.stepAwayHeld(ep, { v: 1, done: [...ATTACK_DONE, 'defend'] }, {}) === true);
+    // never for a non-stepAway episode, a twin or a check shell
+    for (const other of [fullEpisode({ stepAway: undefined }), fullEpisode({ stepAway: false }), twinEpisode(), checkEpisode({ stepAway: true })]) {
+        const globals = { [`episode_${other.id}_defend_complete`]: true };
+        assert.ok(M.stepAwayHeld(other, { v: 1, done: other.variant === 'defendOnly' ? ['brief'] : [...ATTACK_DONE] }, globals) === false, other.id);
+    }
+});
+
+test('gate B D3: a reload on the triage result opens the defend launch, the result restores, Continue shows the panel', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE], defendProgress: CLEANED }, [DEFEND_COMPLETE]: true, kit_defend_done: true });
+    open(ep);
+    assert.ok(epState().stage === 'defend');
+    assert.ok(epState().stepAwayPanel === false);
+    click('.epr-launch');
+    assert.ok(scene() === 'inbox-triage');
+    cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0.5, verifyCount: 0, answers: ANSWERS.map((a) => ({ ...a })) };
+    cur().complete(true);
+    assert.ok(scene() === 'episode-runner');
+    assert.ok(epState().stage === 'debrief');
+    assert.ok(epState().stepAwayPanel === true);
+    assert.ok(q('.epr-look-up') !== null);
+});
+
+// D1: a set with truth. m1 phish trusted (wrong), m2 genuine reported (full marks live), m3 genuine
+// trusted, m4 phish reported with its tell.
+const truthSet = () => ({
+    id: 'fixture_inbox', scoringProfile: 'awareness', outcome: { setGlobalPrefix: 'episode_e1_fixture_defend_', passPercent: 0 },
+    messages: [
+        { id: 'm1', from: 'Bank <help@bank-secure.example>', subject: 'Verify now', body: 'Click here.', truth: { isPhish: true, flags: ['sender'] } },
+        { id: 'm2', from: 'Laptop Team <it@fixture.example>', subject: 'Your laptop', body: 'Ready for pick-up.', truth: { isPhish: false, flags: [] } },
+        { id: 'm3', from: 'Sam <sam@fixture.example>', subject: 'Lunch', body: 'Noon?', truth: { isPhish: false, flags: [] } },
+        { id: 'm4', from: 'Pay <pay@fixture-pay.example>', subject: 'Invoice', body: 'Open it.', truth: { isPhish: true, flags: ['sender'] } }
+    ]
+});
+const TRUTH_STORED = [
+    { id: 'm1', verdict: 'trust', flags: [], ms: 500 },
+    { id: 'm2', verdict: 'report', flags: [], ms: 600 },
+    { id: 'm3', verdict: 'trust', flags: [], ms: 300 },
+    { id: 'm4', verdict: 'report', flags: ['sender'], ms: 700 }
+];
+/** The live result the triage minigame hands over (inbox-triage-minigame.js _buildResult). */
+function liveResult(set, kept) {
+    const { messages } = buildTriageMessages(set, { mailState: window.mailState, social: window.gameScenario.social, globals: window.gameState.globalVariables });
+    const s = scoreTriage({ messages, answers: kept, profile: 'awareness' });
+    const { perMessage, ...rest } = s;
+    return { setId: set.id, ...rest, answers: perMessage.map((pm) => {
+        const a = kept.find((x) => x.id === pm.id) || {};
+        const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0, isPhish: pm.isPhish === true };
+        if (a.action) out.action = a.action;
+        return out;
+    }) };
+}
+const realDeps = { ...deps, renderDebrief(container, opts) { calls.debrief.push(opts); return realRenderDebrief(container, opts); } };
+const cardIds = () => [...cur().container.querySelectorAll('article.aw-card')].map((n) => n.dataset.messageId);
+const summaryText = () => cur().container.querySelector('.aw-summary')?.textContent ?? null;
+
+test('gate B D1: a reopened debrief has the same cards and summary as the live one (report on a genuine item is not wrong)', () => {
+    const ep = fullEpisode();
+    const set = truthSet();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE] }, kit_defend_done: true });
+    window.gameScenario.social.triageSets = [set];
+    open(ep, { deps: realDeps });
+    click('.epr-launch');
+    const result = liveResult(set, TRUTH_STORED);
+    cur().gameResult = { ...result, verifyCount: 0 };
+    cur().complete(true);
+    click('.epr-carry-on');
+    const liveCards = cardIds();
+    const liveSummary = summaryText();
+    assert.ok(liveSummary !== null && liveSummary.length > 0);
+    assert.ok(isDeepStrictEqual(liveCards, ['m1']), 'live: only the trusted phish is reviewed');
+    assert.ok(result.answers.find((a) => a.id === 'm2').score === 100, 'report on a genuine item scores full marks live');
+    const before = structuredClone(stored(ep.id));
+
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep, { deps: realDeps });
+    assert.ok(epState().stage === 'debrief');
+    assert.ok(calls.debrief.at(-1).result.answers.length === 4);
+    assert.ok(isDeepStrictEqual(cardIds(), liveCards));
+    assert.ok(summaryText() === liveSummary);
+    // the player state gained no field and no write
+    assert.ok(isDeepStrictEqual(stored(ep.id), before));
+    assert.ok(isDeepStrictEqual(Object.keys(stored(ep.id)).sort(), Object.keys(before).sort()));
+
+    // not vacuous: the stored verdicts alone (no scoring) review m2 as well
+    const bare = document.createElement('div');
+    const v = realRenderDebrief(bare, { result: { ...before.defend, answers: before.defendProgress }, set });
+    const bareCards = [...bare.querySelectorAll('article.aw-card')].map((n) => n.dataset.messageId);
+    v?.destroy?.();
+    assert.ok(bareCards.includes('m2'));
+    assert.ok(bareCards.length === 2);
+});
+
+test('gate B D1: a reopen with no stored answers falls back to the stored figures', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 40, reportRate: 0.25, verifyCount: 0 } } });
+    open(ep);
+    const shown = calls.debrief.at(-1).result;
+    assert.ok(isDeepStrictEqual(shown.answers, []));
+    assert.ok(shown.percent === 40);
+});
+
+test('gate B D1: a non-stepAway episode reopened at the debrief shows what it did before (stored figures, empty list)', () => {
+    const plain = fullEpisode({ stepAway: undefined });
+    setup(plain, { [M.stateKey(plain.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 50, reportRate: 0.5, verifyCount: 0 }, defendProgress: CLEANED } });
+    window.gameScenario.social.triageSets = [truthSet()];
+    open(plain);
+    const shown = calls.debrief.at(-1).result;
+    assert.ok(isDeepStrictEqual(shown.answers, []));
+    assert.ok(shown.percent === 50);
+    assert.ok(shown.reportRate === 0.5);
+    assert.ok(('phishTotal' in shown) === false, 'nothing rescored');
+});
+
+const flush = async () => { for (let i = 0; i < 6; i += 1) await new Promise((r) => setTimeout(r, 0)); };
+const atDefendComplete = (ep, extra = {}) => {
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE] }, [DEFEND_COMPLETE]: true, ...extra });
+    _resetDefendReemitsForTests();
+    _resetTriageStarterForTests();
+    window.stateSync = { syncConfirmed: async () => true };
+};
+const mapDone = () => window.eventDispatcher.on(`global_variable_changed:${DEFEND_COMPLETE}`, () => { window.gameState.globalVariables.kit_defend_done = true; });
+
+test('gate B D2: complete true and kit_defend_done false re-emits the complete event once', async () => {
+    const ep = fullEpisode();
+    atDefendComplete(ep);
+    mapDone();
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 1);
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`)[0].data.value === true);
+    assert.ok(window.gameState.globalVariables.kit_defend_done === true);
+    // reopening emits nothing more
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 1);
+    delete window.stateSync;
+});
+
+test('gate B D2: no second emit on the same page even when no mapping sets the global', async () => {
+    const ep = fullEpisode();
+    atDefendComplete(ep);
+    open(ep);
+    await flush();
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 1);
+    delete window.stateSync;
+});
+
+test('gate B D2: no emit when kit_defend_done is already true, complete is false, or the sync is unconfirmed', async () => {
+    const ep = fullEpisode();
+    atDefendComplete(ep, { kit_defend_done: true });
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 0, 'kit_defend_done already true');
+
+    atDefendComplete(ep, { [DEFEND_COMPLETE]: false });
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 0, 'complete false');
+
+    atDefendComplete(ep);
+    window.stateSync = { syncConfirmed: async () => false };
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 0, 'unconfirmed save');
+    delete window.stateSync;
+});
+
+test('gate B D2: a plain shell and a twin never re-emit', async () => {
+    for (const other of [fullEpisode({ stepAway: undefined }), twinEpisode()]) {
+        const prefix = `episode_${other.id}_defend_complete`;
+        setup(other, { [M.stateKey(other.id)]: { v: 1, done: other.variant === 'defendOnly' ? ['brief'] : [...ATTACK_DONE] }, [prefix]: true });
+        _resetDefendReemitsForTests();
+        _resetTriageStarterForTests();
+        window.stateSync = { syncConfirmed: async () => true };
+        open(other);
+        await flush();
+        assert.ok(named(`global_variable_changed:${prefix}`).length === 0, other.id);
+    }
+    delete window.stateSync;
 });
 
 test('EC1: no console errors across the cases', () => {
