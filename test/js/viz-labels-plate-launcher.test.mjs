@@ -69,3 +69,10 @@ test('launcher text colours reach 4.5:1 on the face and the button fill', () => 
     assert.ok(ratio(pal[bg], pal[fg]) >= 4.5, `${fg} on ${bg}: ${ratio(pal[bg], pal[fg]).toFixed(1)}`);
   }
 });
+
+test('the themes do not override the launcher content colours', () => {
+  const themes = readFileSync(join(root, 'css/ui-themes.css'), 'utf8');
+  assert.doesNotMatch(themes, /\[data-ui-theme\] \.vm-card/);
+  assert.doesNotMatch(themes, /\[data-ui-theme\] \.vm-launcher-description/);
+  assert.match(launcherCss, /\.vm-launcher \{[^}]*background:\s*var\(--device-palette-face\)/);
+});
