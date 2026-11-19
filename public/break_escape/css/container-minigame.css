@@ -153,7 +153,7 @@
     padding: 15px;
     box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     color: #333;
     max-width: 260px;
 }
@@ -565,7 +565,7 @@
     color: white;
     padding: 4px 8px;
     /* border-radius: 4px; */
-    font-size: 18px;
+    font-size: 16px;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
@@ -681,7 +681,7 @@
     align-items: center;
     gap: 8px 12px;
     margin: 0 0 10px 0;
-    font-size: 18px;
+    font-size: 16px;
     color: #ecf0f1;
 }
 
