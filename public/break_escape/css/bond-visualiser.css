@@ -497,6 +497,11 @@
    under) it takes the window less a margin. */
 #bv-credits-overlay #bv-cr-label.bv-cr-label {
   box-sizing: border-box;
+  /* A flat plate behind the credits so the text never sits on busy map pixels: a solid
+     colour (no alpha, blur or gradient) with a 2px border in the visualiser's gold. */
+  background: #000;
+  border: 2px solid var(--bv-gold-dim, #7a6500);
+  padding: 8px 16px;
   /* % of the fixed overlay (the label's containing block), not 100vw, which
      counts a page scrollbar */
   max-width: calc(100% - 440px);
@@ -553,7 +558,7 @@
 @media (max-width: 900px) {
   /* side panels are hidden here, so the centre is the whole width */
   .bv-cr-card-line { max-width: none; }
-  #bv-credits-overlay #bv-cr-label.bv-cr-label { max-width: 100%; padding: 0 10%; }
+  #bv-credits-overlay #bv-cr-label.bv-cr-label { max-width: calc(100% - 20px); padding: 8px 10%; }
 }
 
 /* Short windows (phone landscape) and narrow ones (phone portrait): the closing card
