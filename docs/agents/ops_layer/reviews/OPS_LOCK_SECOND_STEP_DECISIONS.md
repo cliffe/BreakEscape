@@ -40,3 +40,14 @@
 - n1: adopted in the live proof. n2: section 2 client paragraph, 5.2 subject table, section 7, section 4 owner rules, merged test rows done.
 - Unreviewed items checked: validator sites (new `scripts/validate_lock_step.rb`, run list `:8948`, door loop `:8058-8065`, world room path `game.rb:153-159`, task reads `:1602`/`:1719`); the "graph marks needed" rule rewritten (graph computes no reachability); graph edge from the owner's NPC node.
 - Not yet done: M1, m5, m7, request 1 trim, Q8 trim; see handover.
+
+## R3 fixes (2026-11-19)
+
+- M1: adopted. Section 10 proof 2 now adds `lock_step_unlock.json`, `lock_step_container.json`, `lock_step_rooms.json` to `ops_unchanged/`, compared by `bin/ops-golden-compare` in `lock_step_unchanged_test.rb`; own capture script dropped.
+- m1: adopted. Both door rules live in `validate_lock_step.rb` with its own `doors[]` loop; `validate_scenario.rb` gets the require and run-list line only.
+- m2: adopted. `MfaModel.lock_step_never_passes?(scenario, lockable)` in `lib/break_escape/mfa_model.rb`, called by validator and graph; graph requires `mfa_model`; owner node gets the room edge, or none for a headless record.
+- m3: adopted. A task needs the lock when its target is the lock or anywhere below it (error); rooms: any task target in the room.
+- m4: picked the self-resolving form (`resolved: nil` calls `resolve_unlock_target`), as simpler than a rule about when no gated object can be involved; `/unlock` passes `resolved:`.
+- m5: adopted. Section 6 states the kept bodies; no new `{ success: false, reason }` answer.
+- Nits: beats renamed B1-B11 (B unused before); MFA stages written M1a to M3 and log stages L1a, L1b; n3 `<record key>`; n4 `alreadyOpen` by Rule B; n5 room NPCs and headless records; n6 `tableItems` warning added; n7 stays as request 3.
+- Plan trimmed to 729 lines by shortening open-question wording.
