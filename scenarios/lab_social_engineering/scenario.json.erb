@@ -1006,7 +1006,11 @@
           "team": { "value": "finance", "grade": "identity" }
         },
         "lines": {
-          "open_buddy": { "blanks": { "intern": "intern", "team": "team" },
+          <%# The opener's two blanks fill independently (lab post-release M2): a player who
+              prepared only the name, or only the team, still opens, and the line states just
+              what they have. optionalBlanks tells the judge to skip the empty blank's claim
+              rather than read it as a wrong value; the ink shows the matching partial label. %>
+          "open_buddy": { "blanks": { "intern": "intern", "team": "team" }, "optionalBlanks": true,
                           "claims": [ { "fact": "intern", "from": "blank:intern" }, { "fact": "team", "from": "blank:team" } ] },
           <%# lab1: the repair names the right team value (finance) so pretext-judge credits it
               (the claim credit + the candour modifier); since 5e0bf9934 a repair with no

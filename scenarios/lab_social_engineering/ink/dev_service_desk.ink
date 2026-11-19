@@ -56,7 +56,16 @@ Service desk, Dev speaking. What can I do for you?
 // Each reaction is passed the say id as well as the band, so Dev answers the technique
 // (urgency, borrowed authority) and the band (wary, refusing) in his own voice, not with
 // one stock team line each turn (item 7). The team acknowledgement shows once (team_checked).
+// The opener speaks only the facts the card carried: each fact fills independently, so a
+// player who prepared only the name, or only the team, still has an opener, and it leaves
+// out what they don't have (lab post-release M2). pretext-judge skips the empty blank's
+// claim, so the call stays fair. The != "" guards are the 1299b48d9 resume fix: a reload
+// with empty re-picks keeps the saved blanks, and the variant for what survived still shows.
 + { not team_repaired and not team_checked and pretext_intern_name != "" and pretext_team_name != "" } [I'm helping {pretext_intern_name}, your new starter in {pretext_team_name}.]
+    -> reaction(pretext_say("open_buddy"), "open_buddy")
++ { not team_repaired and not team_checked and pretext_intern_name != "" and pretext_team_name == "" } [I'm helping {pretext_intern_name}, one of your new starters.]
+    -> reaction(pretext_say("open_buddy"), "open_buddy")
++ { not team_repaired and not team_checked and pretext_intern_name == "" and pretext_team_name != "" } [I'm helping a new starter in your {pretext_team_name} team.]
     -> reaction(pretext_say("open_buddy"), "open_buddy")
 + { team_checked and pretext_team_value == "accounts" and not team_repaired } [Sorry, my mistake. She's in Finance.]
     ~ team_repaired = true
