@@ -43,6 +43,8 @@ export function typewriterCharDelay(totalChars) {
 
 /** A whole batch (typing plus the "typing" pauses and gaps between lines) aims to finish in about 15 s. */
 export const TERMINAL_BATCH_TOTAL_MS = 15000;
+/** The cursor blink after each terminal line: part of the pauses, so it shrinks with them. */
+export const TERMINAL_BLINK_MS = 700;
 /**
  * Factor to multiply the pauses by so a batch of `lines` lines and `totalChars` characters,
  * with `pauseMs` of pauses in all, fits the total budget. 1 for a short batch; never under 0.15,
@@ -1379,7 +1381,7 @@ export default class PhoneChatUI {
 
     _typewriterMessage(text, scrollToBottom) {
         const CHAR_DELAY = typewriterCharDelay(this._blockChars || text.length);
-        const BLINK_DURATION = 700;
+        const BLINK_DURATION = this.scalePause(TERMINAL_BLINK_MS);
 
         const messageBubble = document.createElement('div');
         messageBubble.className = 'message-bubble npc';

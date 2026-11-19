@@ -970,7 +970,6 @@ export class PhoneChatMinigame extends MinigameScene {
             if (i < accumulatedMessages.length - 1) await delay(this._scaledPause(INTER_MESSAGE_MS));
         }
         this._resetSkip();
-        this.ui?.setBlockChars?.(0);
         this._pendingNpcMessages = [];
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)
@@ -1095,19 +1094,11 @@ export class PhoneChatMinigame extends MinigameScene {
         return !!box && box.getClientRects().length > 0;
     }
 
-    /**
-     * Type one story line into the open thread and record it. A line written as the
-     * player's ("You: …", or tagged #speaker:player) goes in as a player bubble with the
-     * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced, except in a voiced call (F17).
-     * @param {string} raw - the line as the ink printed it
-     * @param {number} typingDelayMs
-     * @param {string|null} [delivery] - the line's #delivery: note, spoken on a voiced call
-     * @returns {Promise<boolean>} false if the conversation was closed meanwhile
-     */
     /** One time budget for a batch: typing speed and the pauses between lines share it (see phone-chat-ui.js). */
     _setBatchBudget(messages, typingMs, gapMs) {
         const lines = messages.map(m => String(m).trim()).filter(Boolean);
-        const pauses = lines.length * typingMs + Math.max(0, lines.length - 1) * gapMs;
+        // the 700 ms cursor blink after each typed line (TERMINAL_BLINK_MS in the UI) counts as a pause too
+        const pauses = lines.length * (typingMs + 700) + Math.max(0, lines.length - 1) * gapMs;
         this.ui?.setBlockChars?.(lines.reduce((n, m) => n + m.length, 0), pauses);
     }
 
@@ -1121,6 +1112,15 @@ export class PhoneChatMinigame extends MinigameScene {
         return this.ui?.scalePause ? this.ui.scalePause(ms) : ms;
     }
 
+    /**
+     * Type one story line into the open thread and record it. A line written as the
+     * player's ("You: …", or tagged #speaker:player) goes in as a player bubble with the
+     * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced, except in a voiced call (F17).
+     * @param {string} raw - the line as the ink printed it
+     * @param {number} typingDelayMs
+     * @param {string|null} [delivery] - the line's #delivery: note, spoken on a voiced call
+     * @returns {Promise<boolean>} false if the conversation was closed meanwhile
+     */
     async _showStoryLine(raw, typingDelayMs, delivery = null) {
         // A thread closed (or swapped for another contact) during the await is no longer
         // this typeout's: its untyped lines were flushed to the right history on close
@@ -1450,7 +1450,6 @@ export class PhoneChatMinigame extends MinigameScene {
             if (i < accumulatedMessages.length - 1) await delay(this._scaledPause(INTER_MESSAGE_MS));
         }
         this._resetSkip();
-        this.ui?.setBlockChars?.(0);
         this._pendingNpcMessages = [];
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)

@@ -304,12 +304,12 @@ test('p1: a whole batch types in about 12 s at most; short batches keep 28 ms a 
 
 test('p1b: pauses shrink so a whole batch (typing plus pauses) is about 15 s at most', () => {
     const { batchPauseScale, typewriterCharDelay } = uiMod;
-    const lines = 12, chars = 800, pauses = lines * 1000 + (lines - 1) * 400;
+    const lines = 12, chars = 800, pauses = lines * (1000 + 700) + (lines - 1) * 400;
     const total = (sc) => typewriterCharDelay(chars) * chars + pauses * sc;
     const sc = batchPauseScale(chars, pauses);
     assert.ok(pauses + typewriterCharDelay(chars) * chars > 25000, 'the unscaled long batch is far over budget');
     assert.ok(sc < 1 && sc >= 0.15, 'long batch pauses scale down but not to nothing: ' + sc);
-    assert.ok(total(sc) <= 15100, 'scaled batch fits 15 s: ' + total(sc));
+    assert.ok(total(sc) <= 16000, 'scaled batch fits 15 s: ' + total(sc));
     assert.ok(batchPauseScale(60, 2 * 1000 + 400) === 1, 'a short batch keeps its pauses');
     assert.ok(batchPauseScale(500, 0) === 1, 'no pauses is safe');
     assert.ok(batchPauseScale(0, 5000) === 1, 'no text is safe');
@@ -327,7 +327,8 @@ test('p1b: pauses shrink so a whole batch (typing plus pauses) is about 15 s at 
     assert.ok(ui.scalePause(1000) === 1000, 'cleared budget leaves pauses alone');
     assert.ok(/_setRepliesCue\(lastResult/.test(mgSrc) && (mgSrc.match(/_setRepliesCue\(lastResult, accumulatedTags\)/g) || []).length === 2, 'both paths set the cue');
     assert.ok(/setBlockChars\?\.\(0\);\s*this\.ui\?\.setRepliesExpected\?\.\(false\)/.test(mgSrc), '_resetSkip clears the budget and cue');
-    assert.ok(batchPauseScale(800, 16400, false) === 0.15 || batchPauseScale(800, 16400, false) > batchPauseScale(800, 16400, true), 'no typing time leaves more for pauses');
+    assert.ok(batchPauseScale(800, 16400, false) === (15000 / 16400), 'no typing time leaves more for pauses');
+    assert.ok(/lines\.length \* \(typingMs \+ 700\)/.test(mgSrc) && /scalePause\(TERMINAL_BLINK_MS\)/.test(uiSrc), 'the cursor blink is inside the budget');
     assert.ok(/_scaledPause\(TYPING_DELAY_MS\)/.test(mgSrc) && /_scaledPause\(INTER_MESSAGE_MS\)/.test(mgSrc), 'the minigame scales both pauses');
 });
 
