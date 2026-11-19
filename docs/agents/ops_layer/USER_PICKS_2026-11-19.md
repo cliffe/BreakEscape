@@ -1,0 +1,86 @@
+# Ops layer: the user's picks (2026-11-19)
+
+The user's answers to the picks page (41 questions). The user's own words are quoted. Where
+the user asked to discuss or for more context, the orchestrator's reading is marked as such and
+the question goes back to the user on the picks page. Everything else is a ruling.
+
+## Blocking
+
+- **BLOCK-1**: a. Retry the cracking reviser once on `sonnet-cvp` with the same brief.
+- **BLOCK-2** (forged intel facts and cracking): user: "How does this hand over a password? They
+  still need to collect the correct information. The server side cracker should only find the
+  password from the cracker if the right information was collected." Orchestrator reading: option
+  b (the facts the cracker reads are server-granted, recorded only when the server sees the
+  event that reveals them), together with c (the crack also needs the server-held proof that the
+  hash was collected). Goes back for confirmation.
+- **BLOCK-3**: a. Accept the mix of time models for now.
+- **BLOCK-4** (the network view's private control list): user asked for more context. User's
+  example: "For a scan, the simple movie mode might just show a progress bar, with "scanning",
+  while the realism mode can show an output that matches a simulated nmap terminal output."
+  Goes back with context.
+
+## Shared
+
+- **SHARED-1**: a. Not now: log it and nothing else. User: "OK add that as an idea to the parked
+  plan" (staff and defender reactions go in `ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`).
+- **SHARED-2**: a. Yes, for accounts marked admin.
+- **SHARED-3**: c. **Always a hash.** User: "Is a cached hash the most accurate? Do they need
+  root/admin to collect that? We could have a click to crack button from there. If the scenario
+  doesn't want to cover it we can just not enable cached creds? Want to be educationally
+  accurate." Ruling: a collected cached account is always a hash; collecting needs admin on that
+  PC; the collected hash offers a crack action (S7); a scenario that does not teach cracking does
+  not enable cached credentials. So S5b depends on S7 and builds after it.
+- **SHARED-4**: a. A row for every sweep and every technique use; other actions first time only.
+
+## Core
+
+- **CORE-2**: b. **Display only** (the plan was written to enforced): discovery changes what the
+  network view shows; the server does not refuse remote sign-in to an unswept host.
+- **CORE-4**: e. **Free, but logged.** The evidence, noise count and alert fields come out. User:
+  "This can come later, add as an unsettled idea to the defence stream."
+- **CORE-5**: a. Yes, it ignores both.
+- **CORE-8**: a. Count it, and warn the author.
+- **CORE-11**: a. Keep the word under a separate key, and always write technique card. User:
+  "se_technique and technique_card" (the key names).
+- **CORE-12**: b. **Serve the desktop at the PC's own keyboard as that account, with no
+  password** (the plan was written to refuse). User: "When clicking on the PC, transition to the
+  remote session automatically, but with some visual indication that you are viewing it
+  remotely. Any hacked PCs or devices should have a visual indicator for the player, for example
+  tinted red with lightning bolts."
+
+## Privilege and accounts
+
+- **PRIV-2**: a. **PRIV-5**: a. **PRIV-6**: a. **PRIV-8**: a. **PRIV-9**: a. **PRIV-10**: a.
+- **PRIV-7**: b. **Any admin session on the PC overrides** the planting policy (the plan was
+  written to keyboard only). An admin session on a PC whose service is off still does not
+  override; a locked admin session never overrides.
+
+## MFA and helpdesk
+
+- **MFA-4**: a. **MFA-6**: a. **MFA-7**: a.
+- **MFA-8**: b. **A helpdesk's try limit lifts after five minutes of server time**, as the code
+  step does (the plan was written to "stays for the game").
+
+## Realism skin
+
+- **SKIN-2**: a. No forcing: the scenario sets a default and the player's pick wins.
+
+## Cracking
+
+- **CRACK-1**: a. **CRACK-3**: a. **CRACK-4**: a.
+
+## Second step on any lock (S8c)
+
+- **LOCK-1** (NPC-granted unlock and the step): user asked for further explanation and context.
+  Goes back with context. The plan stays at option a meanwhile.
+- **LOCK-2**: a. **LOCK-4**: a. **LOCK-5**: a. **LOCK-6**: a. **LOCK-8**: a.
+- **LOCK-3**: a. Password and PIN locks only take a typed code; other types take the push kinds.
+  User: "Have fingerprint biometrics, bluetooth proxy lock, rfid fob, all been considered in
+  terms of how they combine with the keyring? I.e. no issues with these concepts all
+  co-existing?" A coexistence audit answers this.
+- **LOCK-7**: no answer. The plan's default stands for now (refused; a file inside a carried
+  container is fine) and the question goes back.
+
+## Log rows
+
+- **LOG-1**: a. **LOG-4**: a. **LOG-6**: a. **LOG-7**: a.
