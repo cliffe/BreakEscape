@@ -1053,7 +1053,7 @@ events there, one line per event, in the build stage that adds the action:
 EVENTS = {
   'signin_ok'       => { label: 'SIGN_IN',   places: %w[pc],      results: %w[ok], detail: { 'method' => %w[password credential], 'route' => %w[keyboard foothold from relay] } },
   'network_swept'   => { label: 'NET_SWEEP', places: %w[network], results: %w[ok], detail: { 'from' => { id: 'foothold' } } },
-  'credentials_harvested' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 9 }, 'hashes' => { count: 9 } } },
+  'credentials_harvested' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 9 } } },
   'signin_refused'  => { label: 'SIGN_IN',   places: %w[pc],      results: %w[denied blocked], save_limit: { 'denied' => 10, 'blocked' => 10 } },
   'badge_swipe'     => { label: 'BADGE',     places: %w[door object], results: %w[ok denied], save_limit: { 'denied' => 10 } },
   # ...
@@ -1126,8 +1126,8 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
 | S3 | `technique_refused` | nil | `host`, `pc` | refused | `finding` (alias), `technique` (`{ id: 'technique' }`), `reason` (the closed list of 422 codes) | merged repeats; a quiet refusal also `save_limit: true`, 10 per host (registered for `refused`) | a noisy refusal: the route's own save, `save_limit: false`. A quiet refusal saves nothing today: `save!` only when `r&.stored?`, written with `save_limit: true` |
 | S3 | `technique_used` | `{ account: }` for a session grant, nil for a credential grant | `host`, `pc` | ok | `finding`, `technique`, `grant` (`session`, `credential`), `access` (`user`, `admin`; session grants only) | one per grant (caller: a repeat with `already: true` writes nothing) | `POST /network/technique` |
 | S5a | `admin_profile_read` | `{ account: }` (the session's) | `pc` | ok | `profile` (`{ id: 'profile' }`) | `once: true`: one per PC, profile and account | `GET /container`, which saves nothing of its own: `save!` only when `r&.stored?` |
-| S5a | `usb_install_overridden` | `{ account: }` | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and plant proof, which already save (`network_access.rb:535`) |
-| S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count`, `hashes` (`{ count: 9 }`: pairs added, and how many of them are hashes) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
+| S5a | `usb_install_overridden` | `{ account: }` (any admin session on the PC, at its keyboard or remote) | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and plant proof, which already save (`network_access.rb:535`) |
+| S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count` (`{ count: 9 }`: hashes added; a collect always yields hashes) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
 | S8a | `mfa_challenge` | `{ account: }` | `pc` | ok | `route` (the shared route codes, below) | merged repeats | the save that stores the pending record |
 | S8a | `mfa_code_ok` | `{ account: }` | `pc` | ok | none | one per sign-in | the save that writes the session |
 | S8a | `mfa_code_wrong` | `{ account: }` | `pc` | fail | none | merged repeats; S8's three code caps | the save that stores the counts |
@@ -1154,7 +1154,7 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
   with `mfa_challenge` (`keyboard`, `foothold`, `from`, `relay`) and never names the machine.
 - **S6 (the command-line skin) and S7 (offline cracking) write no rows.** A skin adds no moves;
   cracking happens on the attacker's own machine. Obtaining a hash is logged where it happens:
-  `credentials_harvested` (its `hashes` count) or `share_folder_opened` (13.8).
+  `credentials_harvested` or `share_folder_opened` (13.8).
 
 ### 13.8 This plan's rows
 
