@@ -703,7 +703,7 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
     const centresY = [targetY];
     const h = target && target.scenarioData && !target._isNPC && !target.doorProperties
         ? (target.displayHeight ?? target.height ?? 0) : 0;   // a short prop adds nothing: reachY keeps its top edge
-    if (h >= TALL_PROP_PX) {   // the same rule as reachY; a shorter prop keeps its top edge
+    if (h >= TALL_PROP_PX || (h > 0 && target.scenarioData?.wallMounted === true)) {   // the same rule as reachY (tall, or opted in by wallMounted); any other prop keeps its top edge
         const top = target.y - (target.originY ?? 0.5) * h;
         const n = Math.min(6, Math.ceil(h / 16));
         for (let i = 0; i <= n; i++) {

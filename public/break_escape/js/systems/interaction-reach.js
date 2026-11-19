@@ -61,7 +61,7 @@ export function reachY(sprite, fromY) {
     if (sprite._isNPC || sprite.doorProperties || !sprite.scenarioData) return sprite.y;
     if (!Number.isFinite(fromY) || sprite.rotation) return sprite.y;
     const h = sprite.displayHeight ?? sprite.height ?? 0;
-    // Only a tall prop needs it: a low one (a 40px box, a desk top) is near enough its top edge, and
+    // Only a tall prop needs it: a low one (under 32px: a short box, a desk top) is near enough its top edge, and
     // the overlap and pick logic is tuned to that measure. A "wallMounted" mark always opts in.
     if (!(h >= TALL_PROP_PX || (h > 0 && sprite.scenarioData.wallMounted === true))) return sprite.y;
     const top = sprite.y - (sprite.originY ?? 0.5) * h;

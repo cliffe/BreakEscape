@@ -192,6 +192,11 @@ test('test bridge: state.js and index.js measure y with reachY wherever they mea
     assert.match(index, /targetSprite \? reachY\(targetSprite, p2\.y\) : after\.y/, 'moveToNear landing check');
 });
 
+test('test bridge: the stand-point sampler opts in on wallMounted exactly as reachY does', () => {
+    const state = readFileSync(join(js, 'systems/test-bridge/state.js'), 'utf8');
+    assert.match(state, /if \(h >= TALL_PROP_PX \|\| \(h > 0 && target\.scenarioData\?\.wallMounted === true\)\)/);
+});
+
 test('engine: the range checks and the E key measure y with reachY, the facing angle keeps the top edge', () => {
     const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
     assert.match(src, /const dy = reachY\(obj, py\) - py;/, 'highlight');
