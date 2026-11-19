@@ -51,6 +51,7 @@ Complete the task from the global, never from the overlay closing: an NPC's `eve
 
 ### Optional Properties
 
+- `outcome.messageGlobals`: `{ "<messageId>": "<globalName>" }`. On save, each listed message writes its global `true` when the learner caught it (the scorer's own test: a phish answered Report, Delete or Verify), else `false`. Written with `deferEmit` before `<prefix>complete` in the same batch, so a mapping on complete sees them. Best round: a later, lower round never turns a `true` back to `false`. Declare each name as a boolean in `globalVariables`; the lint rejects unknown ids, non-phish ids, non-string or undeclared names, and a name shared by two messages. A reopen and the episode runner's complete re-emit send the true globals first. Sets without it behave as before.
 - `minigameData.conclusionTaskId`: the task the result completes, so a reopen can repair a save that never reached the server
 - `minigameData.stage`: `pre` or `post`, for a set whose prefix has a `{stage}` token
 - `minigameData.skin`: `"awareness"` turns on the awareness behaviours (see below); leave it out for the plain round

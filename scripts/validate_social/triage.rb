@@ -115,7 +115,7 @@ module ValidateSocial
       issues << err("#{where} has a 'mailbox' field; a set holds its own messages inline and has no mailbox") if set.key?('mailbox')
       issues.concat(enum_checks(set, where))
       issues << err("#{where}.title is empty") if set.key?('title') && blank?(set['title'])
-      issues.concat(outcome_checks(set, where, episode_set: episode_set_ids(ctx).include?(set['id'])))
+      issues.concat(outcome_checks(set, where, episode_set: episode_set_ids(ctx).include?(set['id']), ctx: ctx))
       universe = flag_universe(set, where, issues)
       issues.concat(chip_checks(set, universe, where))
       issues.concat(wording_checks(set, universe, where))
@@ -215,7 +215,7 @@ module ValidateSocial
       sid.is_a?(String) && !sid.empty? ? Set[sid] : Set.new
     end
 
-    def self.outcome_checks(set, where, episode_set: false)
+    def self.outcome_checks(set, where, episode_set: false, ctx: nil)
       issues = []
       o = set['outcome']
       unless o.is_a?(Hash)
@@ -236,12 +236,47 @@ module ValidateSocial
           end
         end
       end
+      issues.concat(message_globals_checks(set, o, where, ctx)) if o.key?('messageGlobals')
       pp = o['passPercent']
       if !pp.is_a?(Integer) || pp.negative? || pp > 100
         issues << err("#{where}.outcome.passPercent must be a whole number from 0 to 100")
       elsif pp.zero? && !episode_set && %w[training mission].include?(set['stage'])
         issues << warn_("#{where}.outcome.passPercent is 0 on a #{set['stage']} set; every round would count as a pass and 'Try again' would never be offered. " \
                         '0 is for check sets (pre, post)')
+      end
+      issues
+    end
+
+    # outcome.messageGlobals: { "<messageId>": "<globalName>" }. On save each listed message writes its
+    # global true when the verdict caught it (Report, Delete or Verify on a phish), else false, and a
+    # later round never clears a true. The ids must be phish in this set and the names declared booleans.
+    def self.message_globals_checks(set, outcome, where, ctx)
+      mg = outcome['messageGlobals']
+      at = "#{where}.outcome.messageGlobals"
+      return [err("#{at} must be an object of message id to global name")] unless mg.is_a?(Hash)
+
+      msgs = Mail.hash_list(set['messages']).to_h { |m| [m['id'], m] }
+      issues = []
+      mg.each do |id, name|
+        m = msgs[id]
+        if m.nil?
+          issues << err("#{at} lists '#{id}', which is not a message id in this set")
+        elsif m.dig('truth', 'isPhish') != true || m['kind'] == 'choice'
+          issues << err("#{at} lists '#{id}', which is not a phish item; only a phish can be caught, so the global would always be false")
+        end
+        if !name.is_a?(String) || !name.match?(GLOBAL_NAME_RE)
+          issues << err("#{at}['#{id}'] must be a global name (letters, digits and underscores), not #{name.inspect}")
+        elsif ctx
+          if !ctx.all_globals.key?(name)
+            issues << err("#{at}['#{id}'] names '#{name}', which is not declared in globalVariables; an undeclared name is silently not synced to ink")
+          elsif ![true, false].include?(ctx.all_globals[name])
+            issues << err("#{at}['#{id}'] names '#{name}', which must be declared as a boolean, not #{ctx.all_globals[name].inspect}")
+          end
+        end
+      end
+      names = mg.values.grep(String)
+      names.select { |n| names.count(n) > 1 }.uniq.each do |n|
+        issues << err("#{at} gives '#{n}' to more than one message; each message needs its own global")
       end
       issues
     end

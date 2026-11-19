@@ -26,6 +26,14 @@ export const PROFILES = ['analyst', 'awareness'];
 export const VERDICTS = ['trust', 'report', 'delete', 'verify'];
 export const NONE_CHIP = 'none';
 
+/**
+ * The scorer's notion of a phish caught: answered Report, Delete or Verify (a Trust is a miss).
+ * scoreTriage's phishCaught and the outcome.messageGlobals writes both use it.
+ */
+export function isCaughtVerdict(verdict) {
+    return verdict === 'report' || verdict === 'delete' || verdict === 'verify';
+}
+
 /** 05 "Round score and bands". Authored bands on the set replace these. */
 export const DEFAULT_BANDS = [
     { min: 85, headline: 'Well done: you caught the phish and knew why' },
@@ -377,7 +385,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
             // Verify (or a verify-style action, such as Ring back) catches the phish: it scores
             // like Report and the card calls it sound. It is not a report, so reportCount stays
             // Report only (05 "Extensions for the awareness episodes").
-            if (verdict === 'report' || verdict === 'delete' || verdict === 'verify') phishCaught += 1;
+            if (isCaughtVerdict(verdict)) phishCaught += 1;
             if (verdict === 'report') reportCount += 1;
             if (verdict === 'verify') phishVerified += 1;
             flagsCaught += caughtUnits;

@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: triage message globals",
+  "description": "Fixture for the triage option outcome.messageGlobals: a three-message inbox (two phish, one real) where one phish is listed, and a checker NPC that says whether it counted as caught. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

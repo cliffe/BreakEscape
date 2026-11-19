@@ -56,7 +56,7 @@
   "setPieces": {
     "_note": "ca01 layer-3 recall. kit_ca01_notice is the corkboard notice on the payments board (an EARLIER, separate case, so it reads true after both a catch and a miss; consistent with Agnieszka's 'a different case, one that got through' bark). Sprite/type notice_board1 (42x31 preloaded corkboard), wallMounted on the back wall. TODO(dressing): the back wall of room_aw_brightwell is crowded (windows at cols 1 and 7, a small frame at col 3, the wide RANGE board at cols 5-6), so position {3.5,1.25} sits just left of RANGE above Agnieszka's walk target {4,3}; the exact tile and clearance from the col-3 frame are provisional until the dressing pass and live proof 9 confirm it (real bespoke board-notice art is still approved-but-ungenerated).",
     "ca01_recall_fallback": {
-      "globals": { "kit_ca01_host_said": false },
+      "globals": { "kit_ca01_host_said": false, "kit_fraud_caught": false },
       "objects": [
         {
           "type": "notice_board1",
@@ -73,7 +73,7 @@
       ]
     },
     "ca01_recall": {
-      "globals": { "kit_ca01_host_said": false },
+      "globals": { "kit_ca01_host_said": false, "kit_fraud_caught": false },
       "objects": [
         {
           "type": "notice_board1",

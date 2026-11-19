@@ -3570,7 +3570,7 @@
         "outcome": {
           "type": "object",
           "required": ["setGlobalPrefix", "passPercent"],
-          "properties": {"setGlobalPrefix": {"type": "string"}, "passPercent": {"type": "integer", "minimum": 0, "maximum": 100}},
+          "properties": {"setGlobalPrefix": {"type": "string"}, "passPercent": {"type": "integer", "minimum": 0, "maximum": 100}, "messageGlobals": {"type": "object", "description": "{ messageId: globalName }. On save each listed phish message writes its global true when the learner caught it (Report, Delete or Verify), else false; a later round never clears a true. The lint checks the ids and the declared boolean names.", "additionalProperties": {"type": "string"}}},
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },

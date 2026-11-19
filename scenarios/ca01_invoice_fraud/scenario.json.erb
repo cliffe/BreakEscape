@@ -83,7 +83,8 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca01",
-    "kit_ca01_host_said": false
+    "kit_ca01_host_said": false,
+    "kit_fraud_caught": false
   },
   "chatter": {
     "kit_brightwell": {
@@ -123,7 +124,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e1_invoice_fraud_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e1_lookalike_bank": "kit_fraud_caught"
+          }
         },
         "messages": [
           {

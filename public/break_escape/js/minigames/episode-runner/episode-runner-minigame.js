@@ -587,7 +587,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (g[`${prefix}complete`] !== true || g[STEP_AWAY_READY_GLOBAL] === true) return;
         let run = null;
         try {
-            run = this.deps.reemitDone({ prefix, stillNeeded: () => this.globals?.[STEP_AWAY_READY_GLOBAL] !== true });
+            run = this.deps.reemitDone({ prefix, set: this.defendSet || null, stillNeeded: () => this.globals?.[STEP_AWAY_READY_GLOBAL] !== true });
         } catch (e) {
             console.error('[episode] could not re-emit the defend round:', e);
             return;
