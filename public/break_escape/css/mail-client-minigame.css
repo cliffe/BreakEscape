@@ -235,7 +235,7 @@
     font-family: var(--se-font-readable);
     color: var(--ui-text, #e7ecf6);
 }
-.mail-checklist-banner { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+.mail-checklist-banner { margin: 0 0 4px; padding-bottom: 4px; font-size: 16px; font-weight: 600; border-bottom: 2px solid currentColor; }
 .mail-checklist-banner.landed { color: var(--ui-success, #6ee08f); }
 .mail-checklist-banner.not-landed { color: var(--ui-danger, #ff7a6b); }
 .mail-checklist-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }

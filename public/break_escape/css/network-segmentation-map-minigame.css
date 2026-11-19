@@ -32,7 +32,7 @@
 
 .nsm-status-badge {
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     color: #ff4444;
     border: 2px solid #ff4444;
     padding: 2px 10px;
@@ -287,7 +287,7 @@
     align-items: center;
     gap: 8px;
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     color: #888899;
 }
 
@@ -358,7 +358,7 @@
 
 .nsm-sever-hint {
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.15;
     color: #9aa0b8;
     flex: 0 1 560px;

@@ -78,7 +78,7 @@
     border: 2px solid #333333;
     color: #555555;
     font-family: inherit;
-    font-size: 18px;
+    font-size: 16px;
     cursor: not-allowed;
     padding: 6px 8px;
     text-align: center;
@@ -122,7 +122,7 @@
     border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     padding: 2px 7px;
     letter-spacing: 0.03em;
@@ -134,7 +134,7 @@
     border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     padding: 2px 10px;
     letter-spacing: 0.03em;
@@ -261,7 +261,7 @@
     border: 2px solid #44aa44;
     color: #88ee88;
     font-family: inherit;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     padding: 6px 16px;
     letter-spacing: 0.03em;
@@ -272,7 +272,7 @@
     border: 2px solid #445566;
     color: #8899bb;
     font-family: inherit;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     padding: 6px 16px;
     letter-spacing: 0.03em;
