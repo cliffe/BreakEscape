@@ -1231,6 +1231,11 @@
   image-rendering: pixelated;
 }
 
+/* VM launcher: the device face fills the whole window inside the frame (after the shared surface rule above) */
+[data-ui-theme] .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
+  background-color: var(--device-palette-face);
+}
+
 /* Examine */
 [data-ui-theme] .examine-image-box,
 [data-ui-theme] .examine-text {
@@ -1274,14 +1279,9 @@
   filter: grayscale(1) brightness(0.6);
 }
 
-/* VM launcher */
-[data-ui-theme] .vm-launcher-description { color: var(--ui-text-dim); }
-[data-ui-theme] .vm-card {
-  background: var(--ui-surface-raised);
-  border-color: var(--ui-line);
-}
-[data-ui-theme] .vm-card:hover,
-[data-ui-theme] .vm-card.selected { border-color: var(--ui-accent); }
+/* VM launcher: its content colours come from the shared device palette (device-frame.css), not
+   the theme, so the launcher matches the other device windows under every theme. Only the window
+   frame above is themed. */
 
 /* Fingerprint dusting kit: its own colour variables follow the theme */
 [data-ui-theme] .dusting-container {
