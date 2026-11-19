@@ -12,6 +12,8 @@ VAR greeted = false
 
 === start ===
 { greeted:
+    // Return greeting: reuses his voiced cooler chatter line (same text, no #delivery tag, so the same cached audio).
+    Graham Whitfield: Quarter close. Nobody speak to me.
     -> hub
 }
 ~ greeted = true
