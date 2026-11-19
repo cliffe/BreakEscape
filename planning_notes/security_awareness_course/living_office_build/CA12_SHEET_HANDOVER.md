@@ -1,6 +1,6 @@
 # ca12 build sheet rewrite: handover (continues)
 
-Status: the rewrite of `CA12_BUILD.md` has NOT started. The previous agent read the inputs and verified the engine facts below, then hit the context limit. A fresh agent writes the sheet in place from this note plus the two round 2 review files (paths in the orchestrator's brief). Write the sheet section by section with Edit, standalone, no review/round references, file:line for each mechanism, dialogue appendix at the end with exact lines and the count.
+Status (2026-11-19): DONE. `CA12_BUILD.md` rewritten in place from this note (round 3 sheet). Extra calls made while writing: Julian walks home at the look-up (J2) so the sofa use cell is free; knot re-entry replays the reply (door) or goes to the stub (screen), so no blank re-entry; fallback set piece declares the two choice globals for the shared ink VARs; fallback host copy uses a fixed door line (same text as H1b's last branch); conceptPanel cuts sentences 3 and 4 (4 to 5 sentences, 94 to 140 words); break-reminder preload is one line in core/game.js (notes6 precedent). Earlier status: the rewrite had NOT started. The previous agent read the inputs and verified the engine facts below, then hit the context limit. A fresh agent writes the sheet in place from this note plus the two round 2 review files (paths in the orchestrator's brief). Write the sheet section by section with Edit, standalone, no review/round references, file:line for each mechanism, dialogue appendix at the end with exact lines and the count.
 
 Paths: `OK` = `planning_notes/phishing_and_social_engineering/awareness/office_kit.py`; `T` = `test/js/social-awareness-office-kit.test.mjs`; `NM` = `public/break_escape/js/systems/npc-manager.js`; `NB` = `public/break_escape/js/systems/npc-behavior.js`.
 
@@ -44,4 +44,4 @@ Taken from the round 2 review, not re-read (re-check before citing): suspend set
 
 ## Files touched
 
-This note only. `CA12_BUILD.md` is unchanged at d50c504b5.
+This note and `CA12_BUILD.md`.
