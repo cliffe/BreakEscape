@@ -79,3 +79,11 @@ Plan: `docs/achitechture/OPS_CRACKING_PLAN.md`. Review: `OPS_CRACKING_R1.md`.
 - n5 fixed: section 14's privilege requests marked taken (privilege plan L280-296, L888-893, commit 79ce67a33), kept as a record; one line on the core code count going from twelve to fourteen.
 - n6 fixed: the case is named as a transient Hacktivity error on a flag lock, rolled back before rewards run; test reworded.
 - Coordinator nit fixed: the core's `grants.credential` `connectsTo`/policy check is called "the core's S3 error rule" (core L1381) in section 9, the C1 test rows, section 12 and section 14, not a warning.
+
+## R4 fixes (2026-11-19)
+
+- F1 fixed: section 5 says the stamp does its own `ALWAYS_ALLOWED`/`DECOR_CUPS` type check (the skips live in `restamp_item_credential!`) and runs inside the not-already-held branch of `add_inventory_item!` before its `save!`; a test row says a duplicate add earns nothing new.
+- F2 fixed: sections 9 and 14 cite the core's S3 rows and the refusal-code paragraph by name instead of line number (they had moved to L1386/L1393, L1181, L1841, skin L627); the kind rule that adds `hash` is now named as a second change.
+- F3 fixed: the `passwordPattern` backing check takes the account's room NPC (an `accountOnly` one included) and is skipped when none has `creds.password`.
+- F4 not applied: it needs a new validator warning, not a one-line change; the loss is a missed fact, never a wrongly granted one.
+- F5 fixed: one sentence in section 5 says `Api::GamesController#inventory` is unrouted and passes no `fact_source`.

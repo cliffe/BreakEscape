@@ -295,14 +295,18 @@ it. The set is the union of:
      (`@collectible_location[:type] == 'grant'`), `process_item_reward` passes true, and so does the
      playtest seeder's replay of a flag's `give_item` reward (`tools/playtest/new-game.rb:416`).
      The facts are read from the copy the add stores, `(item['scenarioData'] || item)['revealsFacts']`,
-     after the existing notepad and decor-cup skips, and never by looking a definition up by the
-     item's `id`. That copy is always one the server built: the scenario object
+     by a type check of its own (the stamp refuses `ALWAYS_ALLOWED` and `DECOR_CUPS` types itself;
+     the existing skips for them sit inside `restamp_item_credential!` and cover only the
+     credential). The stamp runs inside the not-already-held branch of `add_inventory_item!`,
+     before its existing `save!`, so one save covers the item and its facts and a rejected duplicate
+     add earns nothing. It never looks a definition up by the item's `id`. That copy is always one the server built: the scenario object
      (`canonical_inventory_item`, `GC:3315-3333`), an NPC's held item (`GAME:1135`), the player's
      held copy (`GAME:1154`) or a station's item (`GC:4003`); every client body loses
      `revealsFacts` on the way in (`FORGEABLE_ITEM_FIELDS`, below). So an NPC drop stored under a
      client-chosen id carries only the facts of the item the NPC really held. This covers a take,
      an NPC give and a flag reward's item. The same drop path can re-stamp a `credential` through
      the id lookup; this rule does not depend on that being fixed.
+   - `Api::GamesController#inventory` is unrouted and passes no `fact_source`, so it stamps nothing.
    - by `process_flag_rewards`, for each `grant_fact` reward of a flag the server has just accepted
      (section 4), under the save it already makes (`GC:3987-3989`), through one model method,
      `Game#stamp_earned_facts!(ids)`, which writes only ids that name a `social.intelFacts` entry.
@@ -574,7 +578,8 @@ Its rules, each an error unless marked:
 - `crack.passwordPattern` gets the habit validator's checks (`scripts/validate_npc_habits.rb`,
   using `lib/break_escape/npc_habits/clues.rb` at authoring time only, as its header allows), with
   the same severities: an error when the pattern names no object (as `:135-138`); a warning when
-  the pattern does not back the password (as `:267-277`); a warning on `passwordPattern` with a
+  the pattern does not back the password (as `:267-277`; the password comes from the account's room
+  NPC, an `accountOnly` one included, and the check is skipped when none has `creds.password`); a warning on `passwordPattern` with a
   class other than `guessable` (as `:257-258`). The crack's yield rests on `crack.facts`, not on
   the readable clue, so an unbacked clue weakens the teaching but does not break the puzzle.
 - Warning: a `reused` crack whose `creds.password` equals no other account's, no registry
@@ -591,7 +596,8 @@ Its rules, each an error unless marked:
 Inside `check_credentials`, only two changes: the unbuilt-kind message at `VS:7469` no longer
 fires for `hash`, because `CM:26` becomes `'hash' => { built: true, connects: false }`, and the
 comments there say so. `connects: false` keeps `DEFAULT_ACCEPTS` as it is: a hash never signs in.
-The core's S3 error rule on `grants.credential` (`OPS_CORE_PLAN.md` L1381: an error when the
+The core's S3 error rule on `grants.credential` (`OPS_CORE_PLAN.md`, the S3 validator row "`grants.credential` whose `connectsTo` PC blocks remote
+sign-in", with its kind rule, the row that adds `hash` when built: both change; an error when the
 granted entry's `connectsTo` PC blocks remote sign-in or its policy does not accept
 `saved_connection`) accepts a granted entry of kind `hash` from S7 and skips the `connectsTo` and
 policy checks for it, since a hash has no `connectsTo` and is never offered to a sign-in. S7 makes
@@ -689,7 +695,8 @@ scenario asserting none:
   `crackStarted`, `crackedAccounts` or `flag_rewards_claimed`, a `set_global` reward of
   `se_intel_<id>`, a client-reported ink `grant_fact`. A declared-grant item carrying
   `revealsFacts`, posted to the inventory with no source, is added and earns no fact. A notepad
-  posted with a fact item's id earns nothing. An `add_object` carrying `revealsFacts` stores the
+  posted with a fact item's id earns nothing. A duplicate add of a held fact item earns nothing new
+  and saves once. An `add_object` carrying `revealsFacts` stores the
   item without it. A forged NPC drop: an NPC the player has met and knocked out holds an id-less
   `notes` item; the client sends `add_object` with that item's type and name, a fact item's `id`,
   `sourceNpcId` and `sourceType: "npc_defeated"`, then takes that id; the take earns no fact,
@@ -823,11 +830,12 @@ L888-893), kept here as a record:
    `revealsFacts`, so it is a server-visible source (section 5 table).
 
 **Core plan.** The core's S3 error rule on `grants.credential` already reads as S7 needs
-(`OPS_CORE_PLAN.md` L1381): from S7 it accepts a granted `hash` and skips the `connectsTo` and
-policy checks for it; S7 builds that, with its test. S7 adds `no_recipe` and `fact_not_held` to
+(`OPS_CORE_PLAN.md`, the S3 `grants.credential` rows): from S7 the kind rule accepts a granted
+`hash` and the `connectsTo` skip applies to it; S7 skips the `connectsTo` and
+policy checks for it, and builds both, with their test. S7 adds `no_recipe` and `fact_not_held` to
 `ops_refusal_codes.json` and `REFUSAL_TEXT`, and uses the core list's `bad_request` and
-`not_found`. The core's count of twelve codes (its L1169, and the skin plan's L614) becomes
-fourteen with S7, as the core expects later plans to add codes (its L1828).
+`not_found`. The core's count of twelve codes (the core's "refusal codes, in one list" paragraph, and the skin plan's matching text) becomes
+fourteen with S7, as the core expects later plans to add codes (the core's "later plans add codes" row).
 
 **Second-step and lock plans.** A cracked password is a first factor and meets a second step as any
 other password does. It joins the second-step plan's list of credentials that keep the authored
