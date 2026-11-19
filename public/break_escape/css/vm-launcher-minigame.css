@@ -2,9 +2,13 @@
  * VM Launcher Minigame Styles
  */
 
+/* The face is painted on the whole window, so the area inside the frame (content and the post-it's slot) is one colour */
+.minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
+    background: var(--device-palette-face);
+}
+
 .vm-launcher {
     padding: 15px;
-    background: var(--device-palette-face);
     color: var(--device-palette-text);
     font-family: 'GNF', monospace;
     max-height: min(400px, calc(100vh - 110px));   /* fallback where dvh is unsupported */

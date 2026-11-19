@@ -1231,6 +1231,11 @@
   image-rendering: pixelated;
 }
 
+/* VM launcher: the device face fills the whole window inside the frame (after the shared surface rule above) */
+[data-ui-theme] .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
+  background-color: var(--device-palette-face);
+}
+
 /* Examine */
 [data-ui-theme] .examine-image-box,
 [data-ui-theme] .examine-text {

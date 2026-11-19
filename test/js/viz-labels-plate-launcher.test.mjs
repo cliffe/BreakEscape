@@ -36,41 +36,82 @@ test('every Press Start 2P canvas font is on the 8px grid with no weight keyword
   assert.doesNotMatch(js, /(18|20)px "Press Start 2P"/);
 });
 
-test('CCTV room label is fitted left of the REC tag, hidden when it will not fit', () => {
-  const src = /function fitLabelText[\s\S]*?\n}\n/.exec(js)[0] + /function cctvLabelMaxW[\s\S]*?\n}\n/.exec(js)[0];
-  const { fit, maxW } = new Function(`const PIX = 4; ${src}; return { fit: fitLabelText, maxW: cctvLabelMaxW };`)();
+test('CCTV room label is fitted left of the REC tag; REC gives way before the name does', () => {
+  const src = ['fitLabelText', 'cctvLabelMaxW', 'cctvCellLabel'].map(n => new RegExp(`function ${n}[\\s\\S]*?\\n}\\n`).exec(js)[0]).join('');
+  const { fit, maxW, cell } = new Function(`const PIX = 4; ${src}; return { fit: fitLabelText, maxW: cctvLabelMaxW, cell: cctvCellLabel };`)();
   const m = t => t.length * 8;
   const room = maxW(160, 8);
   assert.equal(room, 160 - 16 - 40 - 4);
-  assert.equal(fit(m, 'MAIN OFFICE AREA', room), '', 'a 160px cell hides the long room name');
   assert.equal(fit(m, 'SERVER', room), 'SERVER');
   assert.ok(fit(m, 'MAIN OFFICE AREA', maxW(400, 8)) === 'MAIN OFFICE AREA', 'a wide cell keeps it');
-  assert.match(js, /fitLabelText\(t => _visCtx\.measureText\(t\)\.width, feed\.label, cctvLabelMaxW\(w, fontPx\)\)/);
+  assert.deepEqual(cell(m, 'SERVER', 160, 8), { text: 'SERVER', rec: true }, 'fits beside REC: both drawn');
+  // a 168px phone cell: 16 glyphs = 128px, beside-REC room is 108px, alone room is 152px
+  assert.deepEqual(cell(m, 'MAIN OFFICE AREA', 168, 8), { text: 'MAIN OFFICE AREA', rec: false }, 'REC dropped, name kept');
+  assert.deepEqual(cell(m, 'CONFERENCE ROOM', 168, 8), { text: 'CONFERENCE ROOM', rec: false });
+  assert.deepEqual(cell(m, 'A VERY LONG ROOM NAME INDEED', 168, 8), { text: '', rec: true }, 'too long even alone: name hidden, REC kept');
+  assert.match(js, /cctvCellLabel\(t => _visCtx\.measureText\(t\)\.width, feed\.label, w, fontPx\)/);
+  assert.match(js, /if \(recOn && cellRec\)/);
 });
 
-test('MITRE labels are drawn only when the ring spacing and the panel allow', () => {
-  const src = /function mitreLabelsFit[\s\S]*?\n}\n/.exec(js)[0];
-  const fit = new Function(`${src}; return mitreLabelsFit;`)();
+test('the MOTION tag stays below the CAM/time header row and inside its cell', () => {
+  const src = /function motionTagPos[\s\S]*?\n}\n/.exec(js)[0];
+  const pos = new Function(`const PIX = 4; ${src}; return motionTagPos;`)();
+  const x = 100, y = 50, w = 168, fontPx = 8, tw = 48, header = y + 8 + fontPx; // header baseline
+  const high = pos(x + 40, y + 6, x, y, w, fontPx, tw); // box top near the cell top
+  assert.ok(high.y - fontPx >= header, `glyph top ${high.y - fontPx} is below the header baseline ${header}`);
+  const normal = pos(x + 40, y + 60, x, y, w, fontPx, tw);
+  assert.equal(normal.y, y + 60 - 8, 'a box well down the cell keeps the usual two-pixel-unit lift');
+  const right = pos(x + w - 10, y + 60, x, y, w, fontPx, tw);
+  assert.ok(right.x + tw <= x + w - 8, 'right edge inside the cell');
+  const left = pos(x - 20, y + 60, x, y, w, fontPx, tw);
+  assert.ok(left.x >= x + 8, 'left edge inside the cell');
+  for (const r of [high, normal, right, left]) assert.ok(Number.isInteger(r.x) && Number.isInteger(r.y));
+  assert.match(js, /motionTagPos\(bx, by, x, y, w, fontPx, _visCtx\.measureText\('MOTION'\)\.width\)/);
+});
+
+test('MITRE labels: full names, else 3-letter codes, else none', () => {
+  const src = ['mitreLabelsFit', 'mitreLabelMode'].map(n => new RegExp(`function ${n}[\\s\\S]*?\\n}\\n`).exec(js)[0]).join('');
+  const codes = /const MITRE_CODES = (\[[^\]]*\]);/.exec(js)[1];
+  const mode = new Function(`const MITRE_CODES = ${codes}; ${src}; return mitreLabelMode;`)();
   const m = t => t.length * 8;
   const tac = ['RECON','RESOURCE','INITIAL','EXEC','PERSIST','PRIV-ESC','DEFENSE','CRED','DISCOVERY','LATERAL','COLLECT','C2','EXFIL','IMPACT'];
-  assert.equal(fit(m, tac, 300, 200, 80, 100, 400), false, 'R=80: 36px spacing is under a 5-letter label');
-  assert.equal(fit(m, tac, 300, 200, 30, 260, 80), false, 'phone ring is far too tight');
-  assert.equal(fit(m, tac, 300, 200, 120, 100, 400), true, 'wide ring inside a wide panel');
-  assert.equal(fit(m, tac, 300, 200, 120, 190, 220), false, 'spacing fine but labels leave the panel');
-  assert.match(js, /if \(active && showTactics\)/);
+  const cds = JSON.parse(codes.replace(/'/g, '"'));
+  assert.equal(cds.length, tac.length);
+  assert.equal(new Set(cds).size, cds.length, 'codes are distinct');
+  cds.forEach((c, i) => assert.ok(c.length <= 3 && tac[i].startsWith(c[0]), `${c} for ${tac[i]}`));
+  assert.equal(mode(m, tac, 300, 200, 120, 100, 400), 'full', 'wide ring: 5-letter names');
+  assert.equal(mode(m, tac, 300, 200, 80, 100, 400), 'code', 'R=80: 36px spacing is under 44 but over 28');
+  assert.equal(mode(m, tac, 300, 200, 30, 260, 80), 'none', 'phone ring is far too tight');
+  assert.equal(mode(m, tac, 300, 200, 120, 190, 220), 'none', 'spacing fine but even codes leave the panel');
+  assert.equal(mode(m, tac, 300, 200, 80, 224, 150), 'none', 'codes fit the spacing but not the panel');
+  assert.match(js, /tacticMode!=='none'/);
+  assert.match(js, /tacticMode==='code'\?MITRE_CODES\[i\]/);
 });
 
-test('city labels skip any that would sit on one already drawn', () => {
+test('city labels are drawn after the dots and pulses, and keep a gap from each other', () => {
   const src = /function boxesOverlap[\s\S]*?\n}\n/.exec(js)[0];
   const ov = new Function(`${src}; return boxesOverlap;`)();
   assert.equal(ov({ x: 0, y: 0, w: 56, h: 8 }, { x: 40, y: 4, w: 64, h: 8 }), true);
   assert.equal(ov({ x: 0, y: 0, w: 56, h: 8 }, { x: 56, y: 0, w: 64, h: 8 }), false);
   assert.equal(ov({ x: 0, y: 0, w: 56, h: 8 }, { x: 10, y: 8, w: 64, h: 8 }), false);
+  assert.match(js, /const LABEL_GAP = 2;/);
+  const gap = Number(/const LABEL_GAP = (\d+);/.exec(js)[1]);
+  assert.ok(gap >= 2);
+  // the padded box makes labels 1px apart collide, and 2px apart pass
+  const padded = (x, w) => ({ x, y: 0, w: w + gap, h: 8 + gap });
+  assert.equal(ov(padded(0, 56), padded(57, 64)), true, '1px apart is too close');
+  assert.equal(ov(padded(0, 56), padded(58, 64)), false, '2px apart is allowed');
+  assert.match(js, /w:Math\.ceil\(lw\)\+LABEL_GAP,h:MIN_LABEL_PX\+LABEL_GAP/);
   assert.match(js, /cityBoxes\.some\(b=>boxesOverlap\(b,box\)\)/);
+  // the fillText happens in a second loop that follows the pulses loop
+  const pulses = js.indexOf('for (const p of mapPulses)');
+  const second = js.indexOf('for (const l of cityLabels)');
+  assert.ok(pulses > 0 && second > pulses, 'labels drawn after the pulses');
+  assert.doesNotMatch(js.slice(js.indexOf('const cityBoxes'), pulses), /fillText\(city\[0\]/, 'not drawn in the city loop');
 });
 
 test('8px canvas text is drawn at whole-pixel origins', () => {
-  for (const re of [/fillText\(t\.slice\(0,5\),Math\.round\(tx-8\),Math\.round\(ty-4\)\)/, /fillText\('MOTION', Math\.round\(bx\), Math\.round\(by - PIX \* 2\)\)/, /Math\.round\(col1X\+col1W\/2\),Math\.round\(c1y\+40\)/, /_visCtx\.fillText\(city\[0\],lx,ly\)/]) assert.match(js, re);
+  for (const re of [/MITRE_CODES\[i\]:t\.slice\(0,5\),Math\.round\(tx-8\),Math\.round\(ty-4\)\)/, /const tx = Math\.round\(Math\.max\(x \+ pad/, /Math\.round\(col1X\+col1W\/2\),Math\.round\(c1y\+40\)/, /_visCtx\.fillText\(l\.name,l\.lx,l\.ly\)/, /lx=Math\.round\(lx\)/]) assert.match(js, re);
 });
 
 test('SIEM panel titles reach 4.5:1 on the panel background and the plate fallback matches its token', () => {
@@ -143,5 +184,18 @@ test('the themes do not override the launcher content colours', () => {
   const themes = readFileSync(join(root, 'css/ui-themes.css'), 'utf8');
   assert.doesNotMatch(themes, /\[data-ui-theme\] \.vm-card/);
   assert.doesNotMatch(themes, /\[data-ui-theme\] \.vm-launcher-description/);
-  assert.match(launcherCss, /\.vm-launcher \{[^}]*background:\s*var\(--device-palette-face\)/);
+});
+
+test('the launcher face is painted on the whole window, in every theme, so there is no band', () => {
+  const themes = readFileSync(join(root, 'css/ui-themes.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const win = /\.minigame-container\[data-minigame="vm-launcher"\] > \.minigame-game-container \{([^}]*)\}/.exec(launcherCss);
+  assert.ok(win, 'window rule in the launcher stylesheet');
+  assert.match(win[1], /background:\s*var\(--device-palette-face\)/);
+  const th = /\[data-ui-theme\] \.minigame-container\[data-minigame="vm-launcher"\] > \.minigame-game-container \{([^}]*)\}/.exec(themes);
+  assert.ok(th, 'matching themed rule');
+  assert.match(th[1], /background-color:\s*var\(--device-palette-face\)/);
+  // it comes after the shared themed surface rule, so it wins at equal specificity
+  assert.ok(themes.lastIndexOf('data-minigame="vm-launcher"] > .minigame-game-container {') > themes.indexOf('background-color: var(--ui-surface)'));
+  // the inner launcher div no longer carries the face (it would end above the post-it slot)
+  assert.doesNotMatch(/\.vm-launcher \{[^}]*\}/.exec(launcherCss)[0], /background/);
 });

@@ -61,6 +61,9 @@ function boxesOverlap(a, b) {
     return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
 
+// Empty space kept between two map city labels, so neighbours never read as one word
+const LABEL_GAP = 2;
+
 /** Width left for a CCTV room label in a cell: the cell less both pads and the REC dot and word. Pure. */
 function cctvLabelMaxW(cellW, fontPx) {
     const pad = PIX * 2;
@@ -68,13 +71,37 @@ function cctvLabelMaxW(cellW, fontPx) {
 }
 
 /**
- * Whether the MITRE ring labels may be drawn: neighbours round the ring must be at least a label
- * apart (plus 4px) and every label must stay inside the panel. Otherwise none are drawn and the
- * dots carry the wheel. Pure: measure(txt) gives the drawn width in px.
+ * What to draw at a CCTV cell: { text, rec }. The room name beside the REC tag when it fits there;
+ * otherwise the room name alone with REC dropped (REC is decoration); otherwise nothing but REC.
+ * Decided from the cell width only, so nothing jumps while REC blinks. Pure.
  */
-function mitreLabelsFit(measure, tactics, cx, cy, R, panelX, panelW) {
-    const n = tactics.length;
-    const labels = tactics.map(t => t.slice(0, 5));
+function cctvCellLabel(measure, label, cellW, fontPx) {
+    const beside = fitLabelText(measure, label, cctvLabelMaxW(cellW, fontPx));
+    if (beside) return { text: beside, rec: true };
+    const alone = fitLabelText(measure, label, cellW - PIX * 4);
+    return alone ? { text: alone, rec: false } : { text: '', rec: true };
+}
+
+/**
+ * Where the CCTV MOTION tag goes: its baseline is kept below the CAM/time header row, and its
+ * left edge inside the cell. Whole pixels. Pure: textW is the drawn width of "MOTION".
+ */
+function motionTagPos(bx, by, x, y, w, fontPx, textW) {
+    const pad = PIX * 2;
+    const ty = Math.round(Math.max(by - PIX * 2, y + pad + fontPx * 2 + PIX));
+    const tx = Math.round(Math.max(x + pad, Math.min(bx, x + w - pad - textW)));
+    return { x: tx, y: ty };
+}
+
+const MITRE_CODES = ['REC','RES','INI','EXE','PER','PRV','DEF','CRE','DIS','LAT','COL','C2','EXF','IMP'];
+
+/**
+ * Whether a set of MITRE ring labels may be drawn: neighbours round the ring must be at least a
+ * label apart (plus 4px) and every label must stay inside the panel. Pure: measure(txt) gives the
+ * drawn width in px.
+ */
+function mitreLabelsFit(measure, labels, cx, cy, R, panelX, panelW) {
+    const n = labels.length;
     const widest = Math.max(...labels.map(l => measure(l)));
     if ((2 * Math.PI * R) / n < widest + 4) return false;
     return labels.every((l, i) => {
@@ -82,6 +109,13 @@ function mitreLabelsFit(measure, tactics, cx, cy, R, panelX, panelW) {
         const lx = cx + Math.cos(a) * R - 8;
         return lx >= panelX + 2 && lx + measure(l) <= panelX + panelW - 2;
     });
+}
+
+/** 'full' (5-letter names), else 'code' (3-letter codes), else 'none'. Pure. */
+function mitreLabelMode(measure, tactics, cx, cy, R, panelX, panelW) {
+    if (mitreLabelsFit(measure, tactics.map(t => t.slice(0, 5)), cx, cy, R, panelX, panelW)) return 'full';
+    if (mitreLabelsFit(measure, MITRE_CODES, cx, cy, R, panelX, panelW)) return 'code';
+    return 'none';
 }
 
 // ── Module-level DOM/canvas refs ──────────────────────────────────────────
@@ -1021,22 +1055,23 @@ function drawCyberMap(data, wave, W, H, audio) {
     attackArcs=attackArcs.filter(a=>a.progress<1.0||!a._impacted||(mapFrame-(a._doneFrame||mapFrame))<8);
     attackArcs.forEach(a=>{ if(a._impacted&&!a._doneFrame) a._doneFrame=mapFrame; });
 
-    const cityBoxes=[]; // label boxes already drawn this frame
+    const cityBoxes=[]; // label boxes kept this frame
+    const cityLabels=[]; // drawn after the dots, arcs and pulses so nothing covers them
     for (const city of CITIES) {
         const [cx2,cy2]=latLonToXY(city[1],city[2],W,H);
         const col=REGION_COLS[city[3]]||'#00FF41';
         const isActive=attackArcs.some(a=>(Math.abs(a.x1-cx2)<8&&Math.abs(a.y1-cy2)<8)||(Math.abs(a.x2-cx2)<8&&Math.abs(a.y2-cy2)<8));
         pixDot(cx2,cy2,isActive?PIX*3:PIX*2,isActive?'#FFFFFF':col);
         if (isActive) {
-            _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle=col;
+            _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`;
             const lw=_visCtx.measureText(city[0]).width;
             // beside the dot, or to its left when that would run off the canvas; hidden when neither fits
             let lx=null;
             if (cx2+PIX*2+lw<=W) lx=cx2+PIX*2; else if (cx2-PIX*2-lw>=0) lx=cx2-PIX*2-lw;
             if (lx!==null) {
                 lx=Math.round(lx); const ly=Math.round(cy2-PIX*2);
-                const box={x:lx,y:ly-MIN_LABEL_PX,w:Math.ceil(lw),h:MIN_LABEL_PX};
-                if (!cityBoxes.some(b=>boxesOverlap(b,box))) { cityBoxes.push(box); _visCtx.fillText(city[0],lx,ly); } // skipped when it would sit on another label
+                const box={x:lx,y:ly-MIN_LABEL_PX,w:Math.ceil(lw)+LABEL_GAP,h:MIN_LABEL_PX+LABEL_GAP}; // padded so neighbours keep a gap
+                if (!cityBoxes.some(b=>boxesOverlap(b,box))) { cityBoxes.push(box); cityLabels.push({name:city[0],lx,ly,col}); } // skipped when it would sit on another label
             }
         }
     }
@@ -1047,6 +1082,8 @@ function drawCyberMap(data, wave, W, H, audio) {
         for (let a=0;a<360;a+=8) { const rad=a*Math.PI/180; _visCtx.fillStyle=p.col; _visCtx.fillRect(Math.round((p.x+Math.cos(rad)*p.r)/PIX)*PIX, Math.round((p.y+Math.sin(rad)*p.r)/PIX)*PIX, PIX, PIX); }
         _visCtx.globalAlpha=1;
     }
+    _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`;
+    for (const l of cityLabels) { _visCtx.fillStyle=l.col; _visCtx.fillText(l.name,l.lx,l.ly); }
     if (bass>0.72) { _visCtx.fillStyle=`rgba(255,60,0,${(bass-0.72)*0.25})`; _visCtx.fillRect(0,0,W,H); }
     _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle='rgba(255,215,0,0.6)'; _visCtx.textAlign='right';
     const mapTitle=fitLabelText(t=>_visCtx.measureText(t).width,'BREAK ESCAPE // GLOBAL THREAT MAP',W-PIX*4); // hidden on a narrow map
@@ -1216,7 +1253,7 @@ function drawSIEM(data, W, H, audio) {
     const tcx=col3X+col3W/2, tcy=tacticY+tacticH/2+4;
     const tcR=Math.min(col3W,tacticH)*0.38;
     _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`;
-    const showTactics=mitreLabelsFit(t=>_visCtx.measureText(t).width,tactics,tcx,tcy,tcR,col3X,col3W);
+    const tacticMode=mitreLabelMode(t=>_visCtx.measureText(t).width,tactics,tcx,tcy,tcR,col3X,col3W);
     tactics.forEach((t,i)=>{
         const angle=(i/tactics.length)*Math.PI*2-Math.PI/2;
         const tx=tcx+Math.cos(angle)*tcR, ty=tcy+Math.sin(angle)*tcR;
@@ -1227,7 +1264,7 @@ function drawSIEM(data, W, H, audio) {
         _visCtx.fillRect(Math.round((tx-3)/PIX)*PIX, Math.round((ty-3)/PIX)*PIX, PIX*2, PIX*2);
         _visCtx.strokeStyle=active?'#FF6600':'#110400'; _visCtx.lineWidth=1;
         _visCtx.beginPath(); _visCtx.moveTo(tcx,tcy); _visCtx.lineTo(tx,ty); _visCtx.stroke();
-        if (active && showTactics) { _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle='#FF6600'; _visCtx.fillText(t.slice(0,5),Math.round(tx-8),Math.round(ty-4)); }
+        if (active && tacticMode!=='none') { _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle='#FF6600'; _visCtx.fillText(tacticMode==='code'?MITRE_CODES[i]:t.slice(0,5),Math.round(tx-8),Math.round(ty-4)); }
     });
     _visCtx.font='8px "Press Start 2P"'; _visCtx.fillStyle=`rgba(255,102,0,${0.3+avg*0.7})`; _visCtx.textAlign='center';
     _visCtx.fillText(String(siemRuleHits['CRITICAL']+siemRuleHits['HIGH']).padStart(4,'0'),Math.round(tcx),Math.round(tcy+4));
@@ -1463,7 +1500,8 @@ function drawCCTV(data, W, H, audio) {
                 _visCtx.fillRect(dx > 0 ? cx : cx - PIX, dy > 0 ? cy : cy - k, PIX, k);
             });
             _visCtx.font = `${fontPx}px "Press Start 2P"`;
-            _visCtx.fillText('MOTION', Math.round(bx), Math.round(by - PIX * 2));
+            const mp = motionTagPos(bx, by, x, y, w, fontPx, _visCtx.measureText('MOTION').width);
+            _visCtx.fillText('MOTION', mp.x, mp.y);
             if (t - cctvLastMotionLog > 10) { cctvLastMotionLog = t; addLog(`> MOTION: ${feed.label}`, 'alert'); }
         }
 
@@ -1480,11 +1518,13 @@ function drawCCTV(data, W, H, audio) {
         const fits = camW + _visCtx.measureText(stamp).width + pad * 3 + fontPx * 2 <= w;
         text(fits ? stamp : stamp.slice(11), x + w - pad, y + pad + fontPx, '#E0FFE8'); // time only on a narrow feed
         _visCtx.textAlign = 'left';
+        let cellRec = true; // REC gives way to a room name that will not fit beside it
         if (feed) { // fitted to the room left of the REC tag (reserved even while it blinks off); hidden when it will not fit
-            const lbl = fitLabelText(t => _visCtx.measureText(t).width, feed.label, cctvLabelMaxW(w, fontPx));
-            if (lbl) text(lbl, x + pad, y + h - pad, '#E0FFE8');
+            const cl = cctvCellLabel(t => _visCtx.measureText(t).width, feed.label, w, fontPx);
+            cellRec = cl.rec;
+            if (cl.text) text(cl.text, x + pad, y + h - pad, '#E0FFE8');
         }
-        if (recOn) {
+        if (recOn && cellRec) {
             _visCtx.fillStyle = '#FF003C';
             _visCtx.fillRect(x + w - pad - fontPx * 4 - PIX * 2, y + h - pad - fontPx + 1, fontPx - 1, fontPx - 1);
             _visCtx.textAlign = 'right'; text('REC', x + w - pad, y + h - pad, '#FF003C'); _visCtx.textAlign = 'left';
