@@ -1064,15 +1064,15 @@ test('ENG-06: the assistant block is authored-only (no model field, replies are 
 test('EC1: stepAway is a boolean, for a full episode only', { skip }, () => {
   let j = fx('clean_full.json');
   ep(j).stepAway = true;
-  assert.deepEqual(lint(j), []);
+  assert.ok(lint(j).length === 0);
   ep(j).stepAway = 'yes';
-  expectIn(lint(j), /stepAway must be true or false/);
+  assert.ok(hits(lint(j), /stepAway must be true or false/) === 1, String(/stepAway must be true or false/));
   j = fx('clean_defend_only.json');
   ep(j).stepAway = true;
-  expectIn(lint(j), /stepAway is true on a "defendOnly" episode/);
+  assert.ok(hits(lint(j), /stepAway is true on a "defendOnly" episode/) === 1, String(/stepAway is true on a "defendOnly" episode/));
   ep(j).stepAway = false;
-  assert.deepEqual(lint(j), []);
+  assert.ok(lint(j).length === 0);
   j = fx('clean_check_pre.json');
   ep(j).stepAway = true;
-  expectIn(lint(j), /stepAway is true in a check mission/);
+  assert.ok(hits(lint(j), /stepAway is true in a check mission/) === 1, String(/stepAway is true in a check mission/));
 });

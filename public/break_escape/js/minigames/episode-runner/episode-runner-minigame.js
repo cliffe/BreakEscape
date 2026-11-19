@@ -139,7 +139,7 @@ const LAUNCH_FAILED = 'That did not open. Close this window and try the kiosk ag
 // heading and line (the end-to-end shells give their own time).
 const STEP_AWAY_COPY = Object.freeze({
     heading: 'Before the debrief',
-    text: 'Look up to see what a case like this one looks like here. It takes about 20 seconds, and your place is saved.',
+    text: 'Look up from the kiosk to see how a case like this plays out here. It takes about 20 seconds, and your place is saved.',
     lookUp: 'Look up',
     carryOn: 'Carry on',
     wait: 'Look up is ready once your result has saved.'

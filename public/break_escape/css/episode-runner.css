@@ -198,7 +198,7 @@
    side; the wait line shows only while Look up is disabled. */
 .epr-step-away .epr-button + .epr-button,
 .epr-pause .epr-look-up { margin-left: 8px; }
-.epr-step-away-note { margin: 10px 0 0; font-size: 14px; color: #52606d; }
+.epr-step-away-note { margin: 10px 0 0; font-size: 16px; color: #52606d; }
 .epr-step-away-note[hidden] { display: none; }
 
 /* Facilitated mode (11 N5, P7-I): the group prompt and the pause between stages. Large
