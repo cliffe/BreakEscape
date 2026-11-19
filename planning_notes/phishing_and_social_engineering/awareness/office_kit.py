@@ -192,11 +192,12 @@ def kit_globals(kit, row, prefix=None):
     if row.get('stepAway'):
         g[out_global(row)] = False
     g.update(_subst(copy.deepcopy(_set_piece(kit, row).get('globals', {})), prefix, row))
-    if row.get('keyMessage'):
-        # The hub-first host layer-2 "said once" flag (plan 6.6). Full shells get it from their set
-        # piece's globals; a tier-S twin has no set piece, so the key message is where it rides in.
-        # setdefault keeps the set-piece position for full shells (byte-identical), adds it for twins.
+    if row.get('hostLine'):
+        # The hub-first host layer-2 "said once" flag (plan 6.6), declared only for a row whose shell
+        # has a host line (the explicit hostLine field; keyMessage is a different thing). Set pieces
+        # no longer hard-code it. setdefault keeps its position if a set piece still declares it.
         g.setdefault(f"kit_{row['ep']}_host_said", False)
+    if row.get('keyMessage'):
         g[KEY_GLOBAL] = False
     return g
 
@@ -590,8 +591,11 @@ def _fields(a, b, skip=()):
 def reverts(old, new):
     """Kit-owned records the regeneration keeps (matched by id, mappings by _map_id) but whose fields it
     would change: a hand edit to a condition, delay, position or any other field is reverted without
-    the guard refusing. A kit-data edit shows up here too, so the caller warns and does not refuse
-    (hand_written lists what would be erased outright). Returns readable strings."""
+    the guard refusing. Covers kit NPC fields and mappings, kit objects and timers (every field), kit
+    global values, host mappings, the kit's chatter pool lines (per NPC id) and the kit_ entries of
+    outcome.messageGlobals. Not covered: the host's other fields and any record that is not kit-owned.
+    A kit-data edit shows up here too, so the caller warns and does not refuse (hand_written lists what
+    would be erased outright). Returns readable strings."""
     out = []
     new_npcs = {n['id']: n for n in new['npcs']}
     for n in old['npcs']:
@@ -609,6 +613,10 @@ def reverts(old, new):
     out += [f'global {k} value {old["globals"][k]!r} -> {new["globals"][k]!r}'
             for k in old['globals'] if k in new['globals'] and old['globals'][k] != new['globals'][k]]
     out += _mapping_changes('host', old['mappings'], new['mappings'])
+    oc, nc = old['scenario'].get('chatter', {}), new['scenario'].get('chatter', {})
+    out += [f'chatter pool {k} changed' for k in oc if k in nc and oc[k] != nc[k]]
+    om, nm = old.get('messageGlobals', {}), new.get('messageGlobals', {})
+    out += [f'messageGlobals {k} value {om[k]!r} -> {nm[k]!r}' for k in om if k in nm and om[k] != nm[k]]
     return out
 
 

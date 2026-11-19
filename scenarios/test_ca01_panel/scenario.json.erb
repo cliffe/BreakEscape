@@ -84,7 +84,6 @@
     "kit_caught": false,
     "kit_ep": "ca01",
     "kit_ca01_out": false,
-    "kit_ca01_walk": false,
     "kit_ca01_agn_there": false,
     "kit_ca01_done": false,
     "kit_ca01_host_said": false,
@@ -1013,9 +1012,6 @@
                   "y": 3
                 },
                 "speed": 90
-              },
-              "setGlobal": {
-                "kit_ca01_walk": true
               }
             },
             {
@@ -1026,14 +1022,6 @@
                 "kit_ca01_agn_there": true
               },
               "bark": "That notice on the wall is from last spring. A redirect that went through, and the supplier was left waiting to be paid."
-            },
-            {
-              "eventPattern": "global_variable_changed:kit_ca01_agn_there",
-              "condition": "value === true",
-              "onceOnly": true,
-              "setGlobal": {
-                "kit_ca01_walk": false
-              }
             },
             {
               "eventPattern": "global_variable_changed:kit_ca01_agn_there",
@@ -1090,7 +1078,7 @@
           "chatter": {
             "kit_brightwell": {
               "lines": [
-                "Morning, all.",
+                "Anyone for a brew?",
                 "Tea round shortly?",
                 "Kettle's just boiled."
               ],

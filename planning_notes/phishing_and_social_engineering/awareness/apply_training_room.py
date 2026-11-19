@@ -534,7 +534,11 @@ def kit(outdir, allow_drop=()):
         sys.exit('--kit needs an output folder: apply_training_room.py --kit <outdir> [--allow-drop <shell>]... '
                  '(nothing is written into scenarios/)')
     allow_drop = set(allow_drop)
-    unknown = allow_drop - {r['id'] for r in office_kit.load_rows() if office_kit.tier_of(r) != 'none'}
+    rows_all = office_kit.load_rows()
+    fixtures = allow_drop & {r['id'] for r in rows_all if r.get('fixture')}
+    if fixtures:
+        sys.exit('--allow-drop names a fixture shell, which --kit skips (its chain is hand-authored): ' + ', '.join(sorted(fixtures)))
+    unknown = allow_drop - {r['id'] for r in rows_all if office_kit.tier_of(r) != 'none'}
     if unknown:
         sys.exit('--allow-drop names no kit shell: ' + ', '.join(sorted(unknown)))
     plan = []

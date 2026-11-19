@@ -357,6 +357,12 @@ def shell_text(name):
     return open(os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')).read()
 
 
+def twin_shell_with_mg():
+    sc = twin_shell()
+    sc['social']['triageSets'][0]['outcome']['messageGlobals'] = {'m_own': 'own_global'}
+    return sc
+
+
 def dumped(sc):
     return json.dumps(sc, indent=2, ensure_ascii=False) + '\n'
 
@@ -684,6 +690,64 @@ class RegenerateTheChain(unittest.TestCase):
             r = subprocess.run(exe + [out, '--allow-drop', 'test_ca01_panel', '--allow-drop', 'ca01_invoice_fraud'],
                                capture_output=True, text=True, cwd=tempfile.gettempdir())
             self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_allow_drop_cli_refuses_a_fixture_shell(self):
+        # review m2: test_ca_office_kit is a tiered fixture row that --kit skips, so naming it did nothing
+        exe = [sys.executable, os.path.join(HERE, 'apply_training_room.py'), '--repo', REPO, '--kit']
+        with tempfile.TemporaryDirectory() as out:
+            r = subprocess.run(exe + [out, '--allow-drop', 'test_ca_office_kit'], capture_output=True, text=True,
+                               cwd=tempfile.gettempdir())
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('--allow-drop names a fixture shell', r.stderr + r.stdout)
+            self.assertEqual(os.listdir(out), [])
+
+    def test_host_line_flag_comes_from_the_hostline_field_only(self):
+        # review m7: kit_<ep>_host_said rides on hostLine, not on keyMessage
+        kit = ok.load_kit('brightwell_foods')
+        with_line = ok.build(kit, row(keyMessage='e1_lookalike_bank', hostLine=True), 'p_', 's')
+        self.assertEqual(with_line['globals'].get('kit_ca01_host_said'), False)
+        self.assertIn('kit_ca01_host_said', with_line['globals'])
+        key_only = ok.build(kit, row(keyMessage='e1_lookalike_bank'), 'p_', 's')
+        self.assertNotIn('kit_ca01_host_said', key_only['globals'])
+        self.assertIn('kit_key_caught', key_only['globals'])
+        line_only = ok.build(kit, row(hostLine=True), 'p_', 's')       # a host line with no key message (a ca00-style row)
+        self.assertIn('kit_ca01_host_said', line_only['globals'])
+        self.assertNotIn('kit_key_caught', line_only['globals'])
+
+    def test_host_line_rows_keep_their_shells_byte_identical(self):
+        by_id = {r['id']: r for r in ok.load_rows()}
+        for name in ('ca01_invoice_fraud', 'test_ca01_panel', 'ca01_invoice_fraud_defend'):
+            r = by_id[name]
+            self.assertIs(r.get('hostLine'), True, name)
+            text = shell_text(name)
+            self.assertIn('"kit_ca01_host_said": false', text, name)
+            # the set pieces no longer hard-code it: the row is the one source
+            self.assertNotIn('kit_ca01_host_said', json.dumps(ok.load_kit(r['company'])['setPieces']), name)
+            self.assertEqual(atr.kit_text(text, ok.load_kit(r['company']), r, name), text, name)
+
+    def test_stale_kit_message_globals_entry_is_filtered_when_the_set_has_its_own(self):
+        # review m4: an old kit_ entry beside the shell's own entry must not survive into the splice
+        r = row(keyMessage='e1_lookalike_bank', attack=True, stepAway=True)
+        kit = ok.load_kit('brightwell_foods')
+        sc = twin_shell()
+        sc['social']['triageSets'][0]['outcome']['messageGlobals'] = {'m_own': 'own_global', 'e1_old_message': 'kit_key_caught'}
+        new = atr.kit_text(dumped(sc), kit, r, 'x', allow_drop=True)
+        mg = json.loads(new)['social']['triageSets'][0]['outcome']['messageGlobals']
+        self.assertEqual(mg, {'m_own': 'own_global', 'e1_lookalike_bank': 'kit_key_caught'})
+        self.assertEqual(json.dumps(json.loads(new)), json.dumps(ok.apply_kit(twin_shell_with_mg(), kit, r)))
+
+    def test_reverts_covers_chatter_pool_and_message_globals(self):
+        kit = ok.load_kit('brightwell_foods')
+        r = row(keyMessage='e1_lookalike_bank')
+        want = ok.build(kit, r, 'p_', 's')
+        mine = copy.deepcopy(want)
+        pool = next(iter(mine['scenario']['chatter']))
+        mine['scenario']['chatter'][pool]['lines'] = ['Hand edit.']
+        mine['messageGlobals'] = {'e1_lookalike_bank': 'kit_other'}
+        got = ok.reverts(mine, want)
+        self.assertIn(f'chatter pool {pool} changed', got)
+        self.assertTrue(any(g.startswith('messageGlobals e1_lookalike_bank') for g in got), got)
+        self.assertEqual(ok.reverts(want, want), [])
 
     def test_reverts_warning_lists_a_hand_edit_and_stays_quiet_otherwise(self):
         import contextlib

@@ -219,6 +219,24 @@ test('V3: an arrival mapping that filters out needs walks (data.owner !== \'need
     assertNot(check(s), 'V3: eventMapping');
 });
 
+test('V3: the owner filter skips the warning only as a whole && term, not as part of an || or a negation (review m5)', { skip }, () => {
+    const mk = (cond) => scenario({ npcs: [worker(), { id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:gary', condition: cond, setGlobal: { x: true } }] }] });
+    assertNot(check(mk("globalVars.a === true && data.owner !== 'needs'")), 'V3: eventMapping');
+    assertHas(check(mk("data.owner !== 'needs' || globalVars.a === true")), 'V3: eventMapping');
+    assertHas(check(mk("!(data.owner !== 'needs')")), 'V3: eventMapping');
+    assertHas(check(mk("data.owner !== 'needs_x'")), 'V3: eventMapping');
+});
+
+test('V3b: a knot bark, a message bark and a globalVars[...] condition are checked too (review m6)', { skip }, () => {
+    const mk = (cond, extra) => scenario({ npcs: [{ id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:x', condition: cond, setGlobal: { walk: false }, ...extra }] }] });
+    assertHas(check(mk('globalVars.walk === true', { knot: 'hello' })), 'V3b');
+    assertHas(check(mk('globalVars.walk === true', { message: 'Hi.' })), 'V3b');
+    assertHas(check(mk("globalVars['walk'] === true", { bark: 'Hi.' })), 'V3b');
+    assertNot(check(mk('globalVars.walk === true', { knot: 'hello', conversationMode: true })), 'V3b');
+});
+
 test('V3b: a bark whose condition reads a global its own mapping sets warns; a different global does not', { skip }, () => {
     const mk = (cond, set) => scenario({ npcs: [{ id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
         eventMappings: [{ eventPattern: 'npc_arrived:x', condition: cond, setGlobal: set, bark: 'Hello there.' }] }] });

@@ -118,7 +118,14 @@ const isKitMapping = (m) => Object.keys(m.setGlobal || {}).some((k) => k.startsW
 const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x)
   ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
 // ERB-templated scenarios (test_ca* fixtures with <% %>) are not JSON and carry no generated kit: skipped
-const tryShell = (n) => { try { return readShell(n); } catch (e) { return null; } };
+// A shell that is not ERB must parse: a kit shell broken enough not to parse fails the run here instead of
+// dropping out of the list (review m6). Only a file with an ERB tag is skipped.
+const tryShell = (n) => {
+  try { return readShell(n); } catch (e) {
+    if (readFileSync(join(scenarios, n, 'scenario.json.erb'), 'utf8').includes('<%')) return null;
+    throw new Error(`${n}: scenario.json.erb does not parse: ${e.message}`);
+  }
+};
 const kitShellNames = () => readdirSync(scenarios, { withFileTypes: true })
   .filter((d) => d.isDirectory() && /^(ca\d\d_|test_ca)/.test(d.name))
   .map((d) => d.name)

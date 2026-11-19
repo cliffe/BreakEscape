@@ -463,6 +463,17 @@ module ValidateOfficeLife
 
   # ── V3 ──────────────────────────────────────────────────────────────────────────────────────
 
+  # The condition is, or has as a top-level && term, `data.owner !== 'needs'`. A match inside an `||`
+  # or a negation does not filter anything, so it must not skip the warning.
+  OWNER_TERM = /\A\s*\(*\s*data\.owner\s*!==?\s*['"]needs['"]\s*\)*\s*\z/.freeze
+
+  def self.owner_filtered?(cond)
+    c = cond.to_s
+    return false if c.include?('||')   # any alternative may let a needs walk through
+
+    c.split('&&').any? { |t| t =~ OWNER_TERM }
+  end
+
   def self.check_npc_arrived(w, issues)
     needs_ids = w.npcs.select { |_r, n| needs_npc?(n) }.map { |_r, n| n['id'] }.to_set
     w.mappings.each do |m, owner|
@@ -470,7 +481,7 @@ module ValidateOfficeLife
       next unless pat.is_a?(String)
 
       # a condition that already filters out needs walks (data.owner !== 'needs') is the fix this warns about
-      next if m['condition'].to_s =~ /data\.owner\s*!==?\s*['"]needs['"]/
+      next if owner_filtered?(m['condition'])
 
       if pat == 'npc_arrived:*' && !needs_ids.empty?
         issues << "⚠️ WARNING: office life V3: eventMapping '#{pat}'#{owner ? " on '#{owner}'" : ''} listens for any arrival, " \
@@ -490,7 +501,10 @@ module ValidateOfficeLife
   # then, so the line is dropped (ca01's Agnieszka bark was cut after 0.3 s). Warn on that.
   def self.check_bark_self_cancel(w, issues)
     w.mappings.each do |m, owner|
-      next unless m['bark'].is_a?(String) && m['condition'].is_a?(String) && m['setGlobal'].is_a?(Hash)
+      # a bark, a `message` bark or a knot bark all go through _barkStillValid (npc-manager.js);
+      # a conversation-mode mapping opens a conversation instead
+      shows = %w[bark message knot].any? { |k| m[k].is_a?(String) } && !m['conversationMode']
+      next unless shows && m['condition'].is_a?(String) && m['setGlobal'].is_a?(Hash)
 
       clash = globals_in(m['condition']) & m['setGlobal'].keys
       next if clash.empty?
@@ -612,7 +626,8 @@ module ValidateOfficeLife
   end
 
   def self.globals_in(text)
-    text.to_s.scan(/globalVars\.([A-Za-z0-9_]+)/).flatten
+    t = text.to_s
+    t.scan(/globalVars\.([A-Za-z0-9_]+)/).flatten + t.scan(/globalVars\[\s*['"]([A-Za-z0-9_]+)['"]\s*\]/).flatten
   end
 
   # [why] if a mapping's trigger is office life: its event, or a global its condition reads.
