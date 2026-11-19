@@ -8,3 +8,9 @@ Findings not acted on as suggested, one line each.
 - **B2 option (a) (per-PC local admin password).** Not used: the plan models the hardened case as one `local` account per PC, which needs no second password store and keeps `creds.password` the only authored password.
 - **M3 (carry `access` across rebuilds with a same-NPC guard).** Not needed: the level of password, credential and claim sessions is computed from the account on each read, so nothing is carried; ruling A also drops the same-NPC condition.
 - **n1-n3.** All three applied (keyringRev in every answer; S5c order stated; no domain lockout line needed since domain lockout is dropped).
+
+## Round 2
+
+- **M5 (send `access` also for every technique record).** Declined in favour of the orchestrator's ruling: answers carry `access: "admin"` only when the computed level is admin, for any session kind, and omit it otherwise; the stored value is never passed through. OPS_CORE is asked to adopt the same rule (section 14).
+- **m2 (`cacheOwner: false` opt-out).** Not used: the plan takes the stricter option, the owner is collectable only when listed, with a validator info line; the choice is question 7.
+- **n2 (one unit-test directory).** Not settled here: left as a cross-plan request to all ops plans; this plan keeps `test/models/`.
