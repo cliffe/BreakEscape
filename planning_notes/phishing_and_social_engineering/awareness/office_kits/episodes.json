@@ -33,6 +33,20 @@
           "agnieszka_duda": { "voice": null, "chatterLines": ["Long week.", "Any biscuits left?"] }
         }
       }
+    },
+    {
+      "id": "ca01_invoice_fraud",
+      "handAuthored": true,
+      "tier": "O",
+      "company": "brightwell_foods",
+      "ep": "ca01",
+      "ambient": [
+        "agnieszka_duda",
+        "gwen_pritchard"
+      ],
+      "setPiece": "ca01_recall_fallback",
+      "attack": true,
+      "stepAway": false
     }
   ]
 }

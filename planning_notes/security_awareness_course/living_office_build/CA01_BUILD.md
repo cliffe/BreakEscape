@@ -30,9 +30,12 @@ Run tools from `planning_notes/phishing_and_social_engineering/awareness/` (abbr
 
 **Committed course shell `scenarios/ca01_invoice_fraud` = the FALLBACK form (stepAway false, no chain).
 The PANEL build goes in a test scenario `scenarios/test_ca01_panel` (not in the course collection).**
-Reason: the EC1 step-away panel engine code is **not on this branch** (GATE_A.md run 5: "this branch
-has no panel"), so a chain gated on `episode_step_away` would never fire in production. This matches
-the task's fallback instruction. **Before creating `test_ca01_panel`, grep the Hacktivity repo's
+Correction (2026-11-19): the EC1 step-away panel engine code **IS on this branch** — EC1
+(`feat/ca-ec1-step-away`, 3f834cb72) merged in at 75053e188 and passed its pre-merge suite (T242),
+so a chain gated on `episode_step_away` is live here. We keep this layout anyway for the pilot: the
+course shell `ca01_invoice_fraud` is the FALLBACK form (stepAway false, no chain) and the panel build
+is `scenarios/test_ca01_panel`, outside the course collection. This matches the task's fallback
+instruction. **Before creating `test_ca01_panel`, grep the Hacktivity repo's
 `test/` for that name** (memory: Hacktivity fixtures load BE test scenarios).
 
 ## ca01 facts (verified)

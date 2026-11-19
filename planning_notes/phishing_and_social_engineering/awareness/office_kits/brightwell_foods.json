@@ -53,5 +53,42 @@
       "chatterLines": ["Long week.", "Any biscuits left?", "Just need a top-up."]
     }
   },
-  "setPieces": {}
+  "setPieces": {
+    "_note": "ca01 layer-3 recall. kit_ca01_notice is the missing-payment notice on the payments board. TODO(dressing): real board-notice art is approved but not yet generated; sprite notes4 is a placeholder and the position {4,2} (back wall) with Agnieszka's walk target {4,3} are provisional until the dressing pass and live proof 9 confirm the board tile and a free floor tile in front of it.",
+    "ca01_recall_fallback": {
+      "globals": { "kit_ca01_host_said": false },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "kit_ca01_notice",
+          "name": "Missing-payment notice",
+          "sprite": "notes4",
+          "position": { "x": 4, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_defend_done",
+          "observations": "A printed notice on the payments board: a supplier payment went to the wrong account and is being chased with the bank."
+        }
+      ]
+    },
+    "ca01_recall": {
+      "globals": { "kit_ca01_host_said": false },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "kit_ca01_notice",
+          "name": "Missing-payment notice",
+          "sprite": "notes4",
+          "position": { "x": 4, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "{out}",
+          "observations": "A printed notice on the payments board: a supplier payment went to the wrong account and is being chased with the bank."
+        }
+      ],
+      "staff": {
+        "agnieszka_duda": { "needs": { "caffeine": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 100 } } }
+      }
+    }
+  }
 }
