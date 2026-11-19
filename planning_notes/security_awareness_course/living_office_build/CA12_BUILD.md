@@ -395,7 +395,7 @@ Gate C runs on a keyless server from the worktree, fresh game, headless, `window
 
 Reviewer: Sonnet 5.5, text-only (the lines are not in ink yet). Judged against the owner's goals (fun, immersion, to the point, natural, no repetition), the five ca01 rounds (`CA01_DIALOGUE_EDITS.md`), the existing ca12 ink (Lorna: short, warm, plain; Delphine: polite, procedural, "Right you are", "I'd rather sign you in") and the chain in Part 2. Section 3 is untouched; edits below are proposals for the orchestrator to merge. Counts stay at 13 (inline conditionals count as one line, as in ca01).
 
-**Totals: 4 keep, 9 edit, 3 gaps filled (door labels, screen labels, one H1 fallback), 2 chain/design flags.**
+**Totals: 0 keep, 13 edit (S1 and S2 count as two lines each: caught and not caught), plus 3 gaps filled (door labels, screen labels, the H1 fallback) and 1 design flag (item 8).**
 
 ### Findings that cross lines
 
@@ -418,7 +418,7 @@ Reviewer: Sonnet 5.5, text-only (the lines are not in ink yet). Judged against t
 | S2 not caught | "Long day drawing. Good to see a friendly face on the way out." | Edit | `Long day drawing. Nearly time for tea.` "On the way out" assumes the learner is leaving; the line is neutral otherwise. |
 | H1 | Lorna's nested outcome line | Edit (rewrite, see below) | Replace the nested conditional with a three-way door branch (plus empty fallback) and an inline screen clause. Cuts the triage angle. |
 | H2 | "Sign them in and walk them up, and lock your screen before you step away. Costs nothing, and there's no stranger loose on the floor." | Edit | `If someone you don't know turns up on the floor, walk them back to the desk. And lock your screen when you step away. It only takes a second.` Her existing defend-complete line already says "signs people in and walks them up", so the old H2 restates it; "no stranger loose on the floor" is dramatic and not true after "reception". The new wording is about what a colleague does, not a result. |
-| C1 | Thandiwe bark: "Just grabbing five on the sofa. Left everything up, I'll only be a sec." | Edit | `Right, that's me back.` (11 chars, reads in a second, fits a return.) "Left everything up" hands the learner the answer before the choice. **(departure):** `Back in five, just the sofa.` Do not say "left it up". |
+| C1 | Thandiwe bark: "Just grabbing five on the sofa. Left everything up, I'll only be a sec." | Edit | `Right, that's me back.` (4 words, fits a return.) "Left everything up" hands the learner the answer before the choice. **(departure):** `Back in five, just the sofa.` Do not say "left it up". |
 | A1 | Player: "Your screen's still unlocked." | Edit | `You left your screen unlocked, Thandiwe.` Matches the return timing (past tense) and names her so it reads as addressed. |
 | A2 | "Oh — good shout, thanks. One click and it's locked. Easy to forget when you're only nipping off." | Edit | `Oh, good shout. Locked. Easy to do when you've only nipped off.` Em dash to comma; "one click and it's locked" duplicates "locked"; "thanks" and "good shout" double up. Keeps the non-blame clause. |
 | A3 | Player "[Say nothing]"; Thandiwe: "Right, back in five." | Edit | Player `[Leave it]` (distinct from the door's say-nothing); Thandiwe `Right, back to it.` **(departure):** keep `Right, back in five.` |
@@ -430,7 +430,7 @@ Reviewer: Sonnet 5.5, text-only (the lines are not in ink yet). Judged against t
 
 ### H1 and H2, merged form
 
-Declare `kit_ca12_door_choice`, `kit_ca12_screen_choice`, `kit_ca12_done`, `kit_ca12_host_said`, `kit_defend_done` in Lorna's ink. Gate: `{ kit_defend_done && (kit_ca12_done || kit_ca12_door_choice == "") && not kit_ca12_host_said }` is wrong for a no-panel run; use `kit_defend_done && not kit_ca12_host_said` and rely on the empty branch below, but in the panel build the builder keeps `kit_ca12_done` in the gate so the early re-talk reaches the existing line instead.
+Declare `kit_ca12_door_choice`, `kit_ca12_screen_choice`, `kit_ca12_done`, `kit_ca12_host_said`, `kit_defend_done` in Lorna's ink. Gate: panel build `kit_defend_done && kit_ca12_done && not kit_ca12_host_said` (an early re-talk reaches her existing defend-complete line); fallback build `kit_defend_done && not kit_ca12_host_said`, which lands in the empty-answer branch.
 
 ```
 Lorna Easton: {
