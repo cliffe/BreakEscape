@@ -276,7 +276,8 @@ export class InfluenceBar {
             this.legendItems = c.thresholds.map((t) => {
                 const li = el('li', 'ib-infl-legend-item');
                 li.dataset.threshold = t.id;
-                li.appendChild(el('span', 'ib-infl-legend-name', `${titleCase(t.id)} at ${t.at}:`));
+                li.appendChild(el('span', 'ib-infl-legend-name', `${titleCase(t.id)} at ${t.at}`));
+                li.appendChild(el('span', 'ib-infl-legend-colon', ':'));
                 li.appendChild(document.createTextNode(' '));
                 const state = el('span', 'ib-infl-legend-state');
                 li.appendChild(state);

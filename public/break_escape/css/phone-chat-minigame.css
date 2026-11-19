@@ -1133,9 +1133,7 @@
    - the thread gives way first, down to two lines (44px), and scrolls to the contact's line;
    - the replies box is border-box with a floor of one reply (64px), so the cue and at least one
      reply stay on screen down to 501px tall;
-   - the three-line influence legend becomes one line of text (names and thresholds, "reached"
-     added when a threshold is passed), about 20px instead of 70px. Colour and icon opacity are not
-     the only cue. */
+   - the influence legend is one line (see the 820 px rule below). */
 @media (min-height: 500.02px) and (max-height: 680px) {
     .phone-call-mode #conversation-view.call-has-choices .messages-container {
         flex: 0 1 auto;
@@ -1145,6 +1143,16 @@
         box-sizing: border-box;
         min-height: 64px;
     }
+    /* the compact header gives the thread room for a tell above Dev's line */
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header { padding: 6px 16px; gap: 4px 12px; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 48px; height: 48px; font-size: 16px; }
+}
+
+/* Up to 820 px tall the three-line influence legend is one line: "Wary at -40 / Refuses at -50 / Reports at -70",
+   with ": reached" added to a threshold once it is passed (the colon and state are hidden until then).
+   Colour and icon opacity are not the only cue. Taller than 820 px the full legend stays. */
+@media (min-height: 500.02px) and (max-height: 820px) {
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend {
         flex-wrap: nowrap;
         gap: 0 8px;
@@ -1155,11 +1163,9 @@
         overflow: hidden;
     }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item { white-space: nowrap; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item + .ib-infl-legend-item::before { content: "/ "; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-colon,
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-state { display: none; }
-    /* the compact header gives the thread room for a tell above Dev's line */
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header { padding: 6px 16px; gap: 4px 12px; }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 48px; height: 48px; font-size: 16px; }
 }
 
 /* Below 560 px the stack no longer fits with the change line (the tell carries the same figure), so

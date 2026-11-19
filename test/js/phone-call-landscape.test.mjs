@@ -44,6 +44,7 @@ const SHARED_MEDIA = '@media screen and (max-height: 820px)';
 const DESK_MEDIA = '@media (min-height: 500.02px)';
 const TALL_MEDIA = '@media (min-height: 680.02px)';
 const SHORT_MEDIA = '@media (min-height: 500.02px) and (max-height: 680px)';
+const LEGEND_MEDIA = '@media (min-height: 500.02px) and (max-height: 820px)';
 // The end-call button rules serve every call screen up to 820px tall, so they live in one shared block
 const shared = all.filter(r => r.media === SHARED_MEDIA);
 const L = sel => { const r = land.concat(shared).find(x => x.selector.split(', ').includes(V + ' ' + sel)); assert.ok(r, 'landscape or shared rule ' + sel); return r; };
@@ -453,14 +454,14 @@ check('short-screen call (501 to 680px): the thread gives way to 44px and the re
         assert.ok(need <= view, vw + 'x' + vh + ': view ' + view + ' needs ' + need);
     }
 });
-check('desktop-height call: height budget at 1280x720 with the legend shown (status header counted, end button on screen)', () => {
+check('tall call: height budget at 821px with the full three-line legend (status header counted, end button on screen)', () => {
     const header = 238;          // measured live: 64px portrait row, influence bar with three legend lines and a change line
     const need = PHONE_HEADER + STATUS + header + px(D(CH + ' .messages-container').body, 'min-height') + 82 + CUE_H;
-    assert.ok(need <= screenAt(720), 'screen ' + screenAt(720) + ' needs ' + need);
+    assert.ok(need <= screenAt(821), 'screen ' + screenAt(821) + ' needs ' + need);
     assert.match(L('.call-controls').body, /position:\s*absolute/, 'the button is out of the flow');
 });
-check('short-screen call (501 to 680px): the legend is one line of text, not hidden, with a word for each threshold', () => {
-    const rs = all.filter(r => r.media === SHORT_MEDIA);
+check('call up to 820px tall: the legend is one line of text, not hidden, "Name at N / Name at N", with ": reached" once passed', () => {
+    const rs = all.filter(r => r.media === LEGEND_MEDIA);
     const legend = rs.find(r => r.selector === V + ' .se-chat-header .ib-infl-legend');
     assert.ok(legend, 'a short-screen legend rule');
     assert.match(legend.body, /flex-wrap:\s*nowrap/);
@@ -469,6 +470,10 @@ check('short-screen call (501 to 680px): the legend is one line of text, not hid
     beats(legend.selector, '.conversation-header .ib-infl-legend');
     const state = rs.find(r => /ib-infl-legend-state/.test(r.selector));
     assert.ok(state && /:not\(\.is-reached\)/.test(state.selector) && /display:\s*none/.test(state.body), '"reached" shows only once a threshold is passed');
+    assert.match(state.selector, /ib-infl-legend-colon/, 'the colon goes with it, so no dangling colon');
+    const sep = rs.find(r => /legend-item \+ \.ib-infl-legend-item::before/.test(r.selector));
+    assert.ok(sep && /content:\s*"\/ "/.test(sep.body), 'items are separated by a slash, which VT323 renders');
+    assert.ok(!all.some(r => r.media === SHORT_MEDIA && /ib-infl-legend/.test(r.selector)), 'the legend rules live in the 820px block only');
     assert.ok(!all.some(r => r.media === '' && /ib-infl-legend/.test(r.selector) && /clip/.test(r.body)), 'the legend is not clipped on tall screens');
     assert.ok(!rs.some(r => /align-self/.test(r.body)), 'no stretch hack: the legend gives the bar its width');
 });
