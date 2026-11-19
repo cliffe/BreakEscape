@@ -307,7 +307,7 @@ export class DustingMinigame extends MinigameScene {
                 <ol class="dusting-steps" aria-label="Steps">
                     ${STEPS.map((s, i) => `<li data-step="${s}"><span class="dusting-step-num">${i + 1}</span> ${STEP_NAMES[s]}</li>`).join('')}
                 </ol>
-                <div class="dusting-body" data-region="dusting-body">
+                <div class="dusting-body pixel-scroll" data-region="dusting-body">
                 <div class="dusting-main">
                     <div class="dusting-stage">
                         <canvas class="dusting-canvas" width="${N}" height="${N}" tabindex="0" role="img" aria-label=""></canvas>
@@ -363,14 +363,15 @@ export class DustingMinigame extends MinigameScene {
         this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; if (this.nearPrint) this._clearNear(); } });
         this.addEventListener(this.panel, 'click', e => {
             const el = e.target.closest('[data-action]');
-            if (el && !el.disabled) this._action(el.dataset.action, el.dataset);
+            // a click with detail 0 comes from the keyboard (Enter or Space on a focused button); a pointer click has detail 1 or more
+            if (el && !el.disabled) this._action(el.dataset.action, el.dataset, e.detail === 0);
         });
         // Compare: the magnified pair follows the card under the pointer or the keyboard focus (no re-render, so focus stays).
         const zoomTo = (e, speak) => {
             const w = e.target.closest && e.target.closest('.dusting-ref-wrap');
             const b = w && w.querySelector('[data-index]');
             const i = b ? Number(b.dataset.index) : NaN;
-            if (!Number.isInteger(i) || this.step !== 'compare' || this.identified || this.zoomIdx === i) return;
+            if (this._refocusing || !Number.isInteger(i) || this.step !== 'compare' || this.identified || this.zoomIdx === i) return;
             this.zoomIdx = i;
             this._drawZoom();
             if (speak && this._zoomSpeech) this.announce(this._zoomSpeech);   // the card's words only; the lift was read on entering compare
@@ -508,6 +509,8 @@ export class DustingMinigame extends MinigameScene {
             host.appendChild(slotCanvas(host.dataset.slot, Number(host.dataset.scale || 2)));
         });
         this._zoomShort = this.root.classList.contains('dusting-short');
+        // the reference cards are DOM-built: candidate names are set with textContent, never parsed as markup
+        p.querySelectorAll('.dusting-refs').forEach(host => host.appendChild(this._refCards(host.dataset.done === '1')));
         if (this.step === 'compare' && this.patternOk) this._drawReferences();
         // The pair stands in for the lift in the stage column (non-short screens); in short landscape it is in the panel.
         const inStage = this._zoomInStage(this._zoomShort);
@@ -666,7 +669,7 @@ export class DustingMinigame extends MinigameScene {
             return `${head}<p class="dusting-feedback good">Match: ridge detail agrees at the ${this.print.pattern === 'arch' ? 'ridge flow' : this.print.deltas.length > 1 ? 'core and both deltas' : 'core and the delta'}. The numbered tags mark the same ridge detail on both cards.</p>
                 <p>This is ${escapeHtml(this.ownerName)}'s print.</p>
                 ${this._zoomShort ? this._zoomHtml() : ''}
-                <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(true)}</div>
+                <div class="dusting-refs" data-count="${this.candidates.length}" data-done="1"></div>
                 <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
         }
         const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
@@ -675,7 +678,7 @@ export class DustingMinigame extends MinigameScene {
             <p class="dusting-feedback" data-dyn="feedback"></p>
             ${this._zoomShort ? this._zoomHtml() : ''}
             ${this._compareNote()}
-            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
+            <div class="dusting-refs" data-count="${this.candidates.length}" data-done="0"></div>
             <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
     }
 
@@ -710,29 +713,61 @@ export class DustingMinigame extends MinigameScene {
         return `<button class="dusting-btn" data-action="fulllift" aria-pressed="${!!this.fullLift}" aria-keyshortcuts="L">Whole lift (L)</button>`;
     }
 
-    _refButtons(done) {
-        // Picking and viewing are separate controls: the card button picks, "View large" only shows the
-        // card at the lift's size in the big frame (F26 follow-up), so viewing never counts as a pick.
-        return this.candidates.map(c => {
+    /** The reference cards as DOM (a fragment): each card's button picks, "View large" only shows the card at the lift's size
+     *  in the big frame (F26 follow-up), so viewing never counts as a pick. Names go in with textContent. */
+    _refCards(done) {
+        const mk = (tag, cls, text) => {
+            const e = document.createElement(tag);
+            if (cls) e.className = cls;
+            if (text !== undefined) e.textContent = text;
+            return e;
+        };
+        const frag = document.createDocumentFragment();
+        for (const c of this.candidates) {
             const viewing = !done && this.viewing === c.index;
             // The match state is drawn as text under the name (a touch screen shows no title). After the match every other card
             // reads "not a match" too, so no card is left unlabelled.
             const state = done && c.correct ? 'match' : (c.rejected || (done && this.identified)) ? 'not a match' : '';
-            const view = done ? '' : `
-                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
-            return `
-            <div class="dusting-ref-wrap">
-            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${state ? ', ' + state : ''}" title="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${state ? ', ' + state : ''}">
-                <canvas class="dusting-ref-canvas" data-ref="${c.index}" width="${N}" height="${N}"></canvas>
-                <span class="dusting-ref-caption"><span class="dusting-ref-name">${c.index + 1}. ${escapeHtml(c.label)}</span>${state ? ` <span class="dusting-ref-tag" data-state="${state === 'match' ? 'match' : 'no'}">(${state})</span>` : ''}</span>
-            </button>${view}
-            </div>`;
-        }).join('');
+            const wrap = mk('div', 'dusting-ref-wrap');
+            const btn = mk('button', 'dusting-ref');
+            btn.dataset.action = 'ref';
+            btn.dataset.index = String(c.index);
+            if (c.rejected || done) btn.disabled = true;
+            if (c.rejected) btn.setAttribute('data-rejected', '1');
+            if (viewing) btn.setAttribute('data-viewing', '1');
+            if (done && c.correct) btn.setAttribute('data-match', '1');
+            const label = `Reference card ${c.index + 1}: ${c.label}${state ? ', ' + state : ''}`;
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
+            const cv = mk('canvas', 'dusting-ref-canvas');
+            cv.dataset.ref = String(c.index);
+            cv.width = N; cv.height = N;
+            const cap = mk('span', 'dusting-ref-caption');
+            cap.appendChild(mk('span', 'dusting-ref-name', `${c.index + 1}. ${c.label}`));
+            if (state) {
+                cap.appendChild(document.createTextNode(' '));
+                const tag = mk('span', 'dusting-ref-tag', `(${state})`);
+                tag.dataset.state = state === 'match' ? 'match' : 'no';
+                cap.appendChild(tag);
+            }
+            btn.append(cv, cap);
+            wrap.appendChild(btn);
+            if (!done) {
+                const v = mk('button', 'dusting-btn dusting-view', viewing ? 'Back to my lift (V)' : 'View large (V)');
+                v.dataset.action = 'view';
+                v.dataset.index = String(c.index);
+                v.setAttribute('aria-pressed', String(viewing));
+                v.setAttribute('aria-label', viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${c.label}`);
+                wrap.appendChild(v);
+            }
+            frag.appendChild(wrap);
+        }
+        return frag;
     }
 
     // ------------------------------------------------------------------ actions
 
-    _action(action, ds = {}) {
+    _action(action, ds = {}, viaKey = false) {
         switch (action) {
             case 'start': this._setStep('find'); break;
             case 'use-normally': this.gameResult = { cancelled: true, useNormally: true }; this._resultSent = true; super.complete(false); break;
@@ -746,7 +781,7 @@ export class DustingMinigame extends MinigameScene {
             case 'back-dust': this._setStep('dust'); break;
             case 'peel': this._peel(); break;
             case 'pattern': this._choosePattern(ds.pattern); break;
-            case 'ref': this._chooseRef(Number(ds.index)); break;
+            case 'ref': this._chooseRef(Number(ds.index), viaKey); break;
             case 'view': this._viewCard(Number(ds.index)); break;
             case 'fulllift': this._toggleWholeLift(); break;
             case 'unidentified': this.identified = false; this._finish(); break;
@@ -882,7 +917,7 @@ export class DustingMinigame extends MinigameScene {
         this._viewCard(nextView(this.viewing, this.candidates.length));
     }
 
-    _chooseRef(i) {
+    _chooseRef(i, viaKey = false) {
         const c = this.candidates[i];
         if (!c || c.rejected) return;
         if (this.viewing !== null) { this.viewing = null; this.dirty = true; this._updateAria(); this._drawCard(); }
@@ -893,6 +928,7 @@ export class DustingMinigame extends MinigameScene {
             this._drawCard();
             this.forensicEl.textContent = `${FORENSIC.compare} ${FORENSIC_MATCH}`;
             this.announce(`Match. This is ${this.ownerName}'s print. The numbered tags mark the same ridge detail on both cards.`);
+            if (viaKey) this._refocus('[data-action="finish"]');
         } else {
             c.rejected = true;
             this.zoomIdx = i;   // the zoom stays on the rejected card, now with its numbers and X marks
@@ -902,7 +938,28 @@ export class DustingMinigame extends MinigameScene {
                 : mismatchReason(diff, this.liftFeatures, c.features);
             this._renderPanel();
             this.announce(this.message);
+            if (viaKey) this._refocusAfterPick(i);
         }
+    }
+
+    /** The re-render replaces the panel, so a keyboard player's focus would fall to the page. Put it back on a control (a mouse
+     *  pick never gets here). The picked card is disabled once rejected, so focus goes to the next open card after it, else
+     *  "Log as unidentified". The zoom is left alone (the rejected card stays on show) and the live message is not overwritten. */
+    _refocusAfterPick(i) {
+        const n = this.candidates.length;
+        for (let k = 1; k <= n; k++) {
+            const c = this.candidates[(i + k) % n];
+            if (c && !c.rejected && this._refocus(`.dusting-ref[data-index="${c.index}"]`)) return;
+        }
+        this._refocus('[data-action="unidentified"]');
+    }
+
+    _refocus(selector) {
+        const b = this.panel && this.panel.querySelector(selector);
+        if (!b || b.disabled || !b.focus) return false;
+        this._refocusing = true;
+        try { b.focus(); } finally { this._refocusing = false; }
+        return true;
     }
 
     _buildResult() {
@@ -1719,7 +1776,9 @@ export class DustingMinigame extends MinigameScene {
             const S = zoomScale(side, avail, ZOOM_MAX_H_SHORT);
             return { side, S, W: side * S, stacked: false, limited: false };
         }
-        const rootW = this.root.clientWidth || (this.wide ? 960 : 360);
+        // the body's inner width (its own scrollbar is excluded) plus the root's horizontal padding, as the old root.clientWidth was
+        const body = this.root.querySelector('.dusting-body');
+        const rootW = (body && body.clientWidth ? body.clientWidth + (this.root.clientWidth - body.offsetWidth) : this.root.clientWidth) || (this.wide ? 960 : 360);
         const budgetH = zoomBudgetH(window.innerHeight || 720, this._zoomChrome());
         let p;
         if (this.wide) {

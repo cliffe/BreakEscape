@@ -47,8 +47,9 @@
 }
 
 /* The named scroll region: everything under the steps. In a frame capped to the screen (800x600, phone portrait) it is the only
-   part that scrolls. Short landscape lays the frame out as a grid and scrolls its own columns, so the body drops out of the box tree there. */
-.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+   part that scrolls. Its 6px padding is cancelled by the -6px margin (the outer size is unchanged) and gives a focus ring (3px
+   at offset 2px) room, because overflow clips at the padding edge; the frame's own padding is 8px or more. Short landscape lays the frame out as a grid and scrolls its own columns, so the body drops out of the box tree there. */
+.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px; margin: -6px; }
 .dusting-short .dusting-body { display: contents; }
 
 /* padding-right keeps the title clear of the X in the frame's corner (critique A14) */
@@ -98,7 +99,9 @@
 .dusting-btn:focus-visible, .dusting-jar:focus-visible, .dusting-pattern:focus-visible, .dusting-ref:focus-visible,
 .dusting-options input:focus-visible { outline: 3px solid var(--d-accent); outline-offset: 2px; }
 .dusting-btn:disabled, .dusting-ref[data-rejected] { opacity: 0.55; cursor: not-allowed; }
-.dusting-ref:disabled:not([data-rejected]) { cursor: default; border-color: var(--d-accent); }
+.dusting-ref:disabled:not([data-rejected]) { cursor: default; }
+/* After the match only the matched card is framed in the accent; the other (untried) cards stay on the line colour */
+.dusting-ref[data-match] { border-color: var(--d-accent); }
 .dusting-primary { background: #0e3b1b; border-color: var(--d-accent); color: #eaffef; }
 .dusting-btn[aria-pressed="true"], .dusting-jar[aria-pressed="true"] { border-color: var(--d-accent); background: #0e3b1b; }
 /* Accent on the pressed jar's #0e3b1b fails in the cyberpunk theme (4.39:1): body text colour there only */
@@ -230,13 +233,13 @@
 }
 
 /* Phone portrait (not short): one 44 px bar stays pinned. Only the primary button (Lift, or Peel and mount) is sticky; the
-   wrappers use display: contents so it sticks to the foot of the scrolling frame while the meters and the other buttons stay
+   wrappers use display: contents so it sticks to the foot of the scrolling body while the meters and the other buttons stay
    in flow. DOM order is untouched, so Tab order is unchanged. */
 @media (max-width: 760px) {
     .dusting-root:not(.dusting-short) .dusting-actions, .dusting-root:not(.dusting-short) .dusting-buttons { display: contents; }
     .dusting-root:not(.dusting-short) .dusting-meters { border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 8px; }
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary {
-        position: sticky; bottom: 0; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
+        position: sticky; bottom: -6px; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
         margin: 4px 0; background: var(--d-bg); border-color: var(--d-accent);
     }
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #0e3b1b; }
@@ -246,7 +249,8 @@
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-btn:not(.dusting-primary) { margin: 4px 6px 4px 0; }
     /* a focused control scrolled into view stops above the pinned bar (44 px + margin), as in short landscape */
     .dusting-root:not(.dusting-short) .dusting-body { scroll-padding-bottom: 52px; }
-    /* the pinned primary sits flush with the frame foot, so its focus ring is drawn inside it (same colour and width) */
+    /* the pinned primary sits 2px above the frame foot (the body's 6px padding is the most it can overhang the frame's 8px
+       padding), so its focus ring is drawn inside it (same colour and width) */
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:focus-visible { outline-offset: -5px; }
 }
 
@@ -368,7 +372,8 @@
 .dusting-hc .dusting-zoom-tag { border-color: #fff; }
 
 /* Compare screen on a desktop-sized frame (1280x720): a smaller key note and tighter rows so the options and
-   key lines at the foot fit without the frame scrolling (live proof r1: scrollHeight 693 against 660). */
+   key lines at the foot fit (live proof r1: scrollHeight 693 against 660). The status line repeats the feedback line, so it is
+   visually hidden here (still in the tree as the live region); with a very long candidate name the body may still scroll a little. */
 @media (min-width: 761px) {
     .dusting-root:not(.dusting-short)[data-step="compare"] { padding-top: 8px; padding-bottom: 8px; }
     .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-stage-note { font-size: 16px; line-height: 1.1; }
@@ -380,6 +385,9 @@
     .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel > p:not(.dusting-result) { clear: both; }
     .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel p { margin-bottom: 4px; }
     .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-refs { margin: 4px 0; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-status {
+        position: absolute; width: 1px; height: 1px; min-height: 0; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
 }
 
 /* Comparing: the forensic line is not needed while choosing (it comes back with the match), so the frame is a line shorter. */

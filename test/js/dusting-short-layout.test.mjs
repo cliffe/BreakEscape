@@ -351,7 +351,7 @@ test('M2: phone portrait pins only the primary button; short landscape and deskt
     assert.ok(i >= 0, 'portrait pin block exists');
     const m = [css.slice(i, css.indexOf('/* Short landscape (a phone on its side;', i))];
     assert.match(m[0], /\.dusting-buttons \{ display: contents; \}/);
-    assert.match(m[0], /\.dusting-primary \{[^}]*position: sticky;[^}]*bottom: 0;[^}]*z-index: 3;[^}]*width: 100%;[^}]*background: var\(--d-bg\)/);
+    assert.match(m[0], /\.dusting-primary \{[^}]*position: sticky;[^}]*bottom: -6px;[^}]*z-index: 3;[^}]*width: 100%;[^}]*background: var\(--d-bg\)/);
     assert.match(m[0], /min-height: 44px/);
     assert.match(m[0], /\.dusting-primary:disabled \{ opacity: 1/);
     assert.doesNotMatch(m[0], /\.dusting-btn:not\(\.dusting-primary\) \{[^}]*sticky/);

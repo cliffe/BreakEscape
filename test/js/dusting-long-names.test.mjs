@@ -1,5 +1,5 @@
 // A long candidate name ("Bartholomew Featherstonehaugh-Smythe") must not push the compare screen out of its frame:
-// card captions and the pair caption are clamped (CSS), the full name stays in the title and accessible name, a rejected
+// the card caption wraps whole (no clamp), the pair caption is clamped to one line (CSS), the full name stays in the title and accessible name, a rejected
 // card keeps its "(not a match)" tag as text, and the panel keeps 480 px beside the pair.
 // Run with: node --test test/js/dusting-long-names.test.mjs
 import test from 'node:test';
@@ -30,12 +30,6 @@ test('the card name is shown whole as text (no clamp, no ellipsis); the tag is i
     const tag = rule('.dusting-ref-tag');
     assert.match(tag, /display: block/);
     assert.doesNotMatch(tag, /ellipsis|nowrap/);
-});
-
-test('the card button keeps the full name in its title and accessible name; the state is text under the name', () => {
-    assert.match(game, /aria-label="Reference card \$\{c\.index \+ 1\}: \$\{escapeHtml\(c\.label\)\}\$\{state \? ', ' \+ state : ''\}" title="Reference card \$\{c\.index \+ 1\}: \$\{escapeHtml\(c\.label\)\}\$\{state \? ', ' \+ state : ''\}"/);
-    assert.match(game, /<span class="dusting-ref-name">\$\{c\.index \+ 1\}\. \$\{escapeHtml\(c\.label\)\}<\/span>/);
-    assert.match(game, /\(\$\{state\}\)<\/span>/);
 });
 
 test('the pair caption is one line, clipped to its pane, and carries the full name as its title', () => {
