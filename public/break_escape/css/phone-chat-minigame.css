@@ -1256,14 +1256,13 @@
         order: 1;
     }
     .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info { flex: 0 1 auto; }
-    .phone-call-mode #conversation-view .call-speaking { order: 2; }
     .phone-call-mode #conversation-view .se-chat-header .influence-bar { flex-wrap: nowrap; }
     .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container {
         height: 44px;
         min-height: 44px;
         max-height: 44px;
     }
-    .phone-call-mode #conversation-view .call-speaking { flex: 0 0 auto; margin-left: auto; }
+    .phone-call-mode #conversation-view .call-speaking { flex: 0 0 auto; margin-left: auto; order: 2; }
     .phone-call-mode #conversation-view .messages-container {
         box-sizing: border-box;
         height: 44px;
