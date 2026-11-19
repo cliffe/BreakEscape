@@ -16,3 +16,11 @@
 - Y13: MFA states the 403 and 404 bodies of `/mfa/device` and `/mfa/phone` in the `{ success: false, error }` style; LOCK points to them.
 - Y14: no change (nit; nothing conflicts).
 - Y15: LOG L1a capture spec and LOCK golden script: answers come through real routes, test setup may seed the inventory directly, identically on main and branch.
+
+## Cross-plan R4 fixes (2026-11-19)
+
+- Z2 (LOG): the golden mechanism is now L1a build step 1 (capture from main before the `game.rb` edits), with its own helper spec (match, mismatch fails, empty-key strip, clock freeze); L1a is size L; steps renumbered 2 to 8.
+- Z4 (LOG, LOCK): LOCK says G1 edits the refused-row branch of `#unlock` so the closed-step refusal (`behind_closed_step?`) returns before L1b's `badge_swipe` row; listed in LOCK's shared files; new test row (rfid object below a closed step writes no row); LOG's bullet points to it.
+- Z6 (LOG): `#container` and the refused-row branch added to LOG's shared-file table; a test that `GET /log_rows` writes no `admin_profile_read` row.
+- Z8 (LOG, LOCK): L1a mechanism sentence rewritten; LOG cross-plan request 9 added (CORE, PRIV, MFA, LOCK use L1a's mechanism); LOCK request 3 notes the `behind_closed_step?` condition.
+- Z9 (SKIN): K1 build row names `test/js/fixtures/network-view/unchanged/` beside `test/fixtures/files/ops_unchanged/`.

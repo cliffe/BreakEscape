@@ -89,7 +89,7 @@ Each stage ships alone, with its tests.
 
 | Stage | What | Size |
 |---|---|---|
-| L1a | The helper, the event list and the caps, with no call sites; the `logSources` schema and validator; the clock stamp; the secret registry with the sources that exist today (passwords, credential values, PINs and lock codes, key material) and the guard. Unit tests over a fixture scenario and a `PUT /sync_state` controller test. The shared unchanged-scenario mechanism (build step 8). Nothing is written in play yet | M |
+| L1a | The helper, the event list and the caps, with no call sites; the `logSources` schema and validator; the clock stamp; the secret registry with the sources that exist today (passwords, credential values, PINs and lock codes, key material) and the guard. Unit tests over a fixture scenario and a `PUT /sync_state` controller test. The shared unchanged-scenario (golden) mechanism, its helper spec and its first captures, built first, from main before any engine edit (build step 1). Nothing is written in play yet | L |
 | L1b | This plan's own badge, sign-in and session rows at their call sites (13.8). Creates `test_ops_logs` (a door, a sign-in PC, a `gameClock`, `logSources`, no reader). Controller tests on a re-read game and a scripted playtest checked with `verify-run.rb --ops-log` | M |
 | L2a | `GET /log_rows`, the `ops-log` viewer and `ops_log_terminal` type (read only), its schema, sprite and lighting entries; the reader added to `test_ops_logs`; scripted playtest and live proof | M |
 | L2b | Seed rows, `anomaly.rowId`, the flag flow and its actions; validator checks on seed rows; the dungeon graph note node. | S |
@@ -231,8 +231,9 @@ helper write seeds it.
     an unlocked room, or an object in an unlocked room outside an unpromoted route room), with an
     rfid card or clone held in server state (`held_rfid_cards`, `game.rb:3951`; `:4054-4061`).
     `badge_swipe` `denied`, no identity, `save_limit: true` (10 registered), saving when
-    `r&.stored?`. Once S8c lands, its guard runs first and writes no row for an object below a
-    closed second step, which answers as an invented id.
+    `r&.stored?`, and only when not `behind_closed_step?(path)`: once S8c lands, the lock plan (G1)
+    edits this branch so the closed-step refusal returns before the row, and an object below a
+    closed second step answers as an invented id with no row.
 
 **L3 call sites:** `plant_device!` (`net_link_up`), `unplug_device!` (`net_link_down`),
 `join_network!` on success (`net_wifi_join`); each saves after the call (`network_access.rb:282`,
@@ -496,11 +497,15 @@ No scenario in the repo has `logSources`, so:
 7. The validator run over all scenarios reports no new errors or warnings (diff of its output
    before and after).
 8. Fixtures: this plan adds `log_unlock_refusals.json` and `log_container_cases.json` to
-   `test/fixtures/files/ops_unchanged/` (built in L1a, build step 8), captured from main: the answers
+   `test/fixtures/files/ops_unchanged/` (built in L1a, build step 1, before the engine edits), captured from main: the answers
    of `/unlock` and `/container` over the access model suite's cases. `bin/ops-golden-compare`,
    the one shared helper, compares them for checks 3 and 6.
 
 ## 11. Tests
+
+**Golden helper, L1a** (`test/lib/ops_golden_compare_test.rb`, written with build step 1): an
+identical run matches; a changed body, status or state value fails; an empty `ACCESS_STATE_DEFAULTS`
+key absent from the fixture is stripped, a non-empty one fails; runs at different wall times match.
 
 **Server unit, L1a** (`test/models/break_escape/ops_log_test.rb`):
 
@@ -632,7 +637,9 @@ desktop without a session, and a reader on a share without one; a reader under a
 answers while its session is held and 404 after the session is locked or ended; a reader through
 a foothold route answers with the route and 404 without it; a room-gated reader answers from any
 position, including rows written later; `rev` unchanged; `no-store`;
-`assert_ops_log_holds_no_secret` over every response body.
+`assert_ops_log_holds_no_secret` over every response body. A reader inside a profile opened by an
+admin account: `GET /log_rows` answers and the log has no `admin_profile_read` row, while
+`GET /container` on the same profile writes one.
 
 **Validator and schema:** one fixture per error and warning in section 9; every event in
 `ops_log_events.rb` passes the schema's name pattern; the reader example in 4.2 validates clean.
@@ -670,33 +677,32 @@ logs.
 
 **L1a: the helper, no call sites**
 
-1. `lib/break_escape/ops_log_events.rb`: `EVENTS` (empty; L1b, L3 and each
+1. The shared unchanged-scenario mechanism, first: later steps edit `game.rb`, which changes what
+   main answers. New files: `bin/ops-golden-compare`, the folder `test/fixtures/files/ops_unchanged/`
+   and the rake task `ops:unchanged:capture` (`lib/tasks/ops_unchanged.rake`), run on main before the
+   `game.rb` edits of steps 3 to 5; the same run captures this plan's fixtures (section 10, check 8).
+   A fixture is JSON: a fixed script played through the real routes (bootstrap, room answers, the
+   route answers a plan names, server state); test setup may seed the inventory directly, identically
+   on main and branch. The helper compares answer bodies and statuses for equality and server state
+   with two normalisations: it strips every `ACCESS_STATE_DEFAULTS` key that is empty in the live
+   state and absent from the fixture (so new empty keys need no registration), and it freezes the
+   clock (server times, token clocks). Other ops plans add fixtures beside these, no second mechanism.
+2. `lib/break_escape/ops_log_events.rb`: `EVENTS` (empty; L1b, L3 and each
    sibling add their own), `KINDS` with this plan's kinds, the four detail rule types (13.5).
-2. `app/models/break_escape/ops_log.rb`: `write_log_row!`, `OpsLog::Result`, the checks, the
+3. `app/models/break_escape/ops_log.rb`: `write_log_row!`, `OpsLog::Result`, the checks, the
    once-set and save counter, merging, eviction by class, the caps and the `maxRows` clamp
    (13.2); `log_rows_for` and its compare form. `game.rb`: include the concern.
-3. The secret registry (`register_secret_source`, `note_issued_secret`, `OpsLog::Current`) with
+4. The secret registry (`register_secret_source`, `note_issued_secret`, `OpsLog::Current`) with
    L1a's own sources, the one matcher, the guard and its switch, `OpsLog.with_clock`, and
    `assert_ops_log_holds_no_secret` (13.2 step 2).
-4. The clock stamp in `game.rb`: the seed in `initialize_player_state` (`:7517`), the gated line
+5. The clock stamp in `game.rb`: the seed in `initialize_player_state` (`:7517`), the gated line
    in `merge_scenario_clock!` (`:5846-5899`), the writer in `prepare_bootstrap_state!` and
    `bootstrap_state_needs_write?`.
-5. `network_access.rb:18`: add `logSources` to `WITHHELD_SCENARIO_KEYS`.
-6. `scripts/scenario-schema.json` (`logSources`), `scripts/validate_log_rows.rb` (the checks of
+6. `network_access.rb:18`: add `logSources` to `WITHHELD_SCENARIO_KEYS`.
+7. `scripts/scenario-schema.json` (`logSources`), `scripts/validate_log_rows.rb` (the checks of
    section 9, reading `ops_log_events.rb`) and the one hook line in `scripts/validate_scenario.rb`, `tools/playtest/verify-run.rb --ops-log`.
-7. Tests (section 11): helper unit tests, the `EVENTS`/`KINDS` spec with the 400-byte ceiling
+8. Tests (section 11): helper unit tests, the `EVENTS`/`KINDS` spec with the 400-byte ceiling
    check, the secret-guard walk, the clock controller test through `PUT /sync_state`.
-8. The shared unchanged-scenario mechanism, built here because L1a and L1b land first. New files:
-   `bin/ops-golden-compare`, the folder `test/fixtures/files/ops_unchanged/`, and the rake task
-   `ops:unchanged:capture` (`lib/tasks/ops_unchanged.rake`), which writes fixtures once from main
-   before any engine change. Each fixture is JSON: a fixed script played through the real routes
-   (every captured answer comes through a route; test setup may seed the inventory directly, identically on main and branch) (bootstrap, room answers, the route answers a plan names, server state). The helper compares
-   answer bodies and statuses for equality and the server state with two normalisations: it strips
-   every key of `ACCESS_STATE_DEFAULTS` that is empty in the live state and absent from the fixture
-   (so each ops plan's new empty keys need no registration), and it freezes the clock (server times,
-   token clocks) so runs match. Other ops plans add their own fixtures beside these and build no
-   second mechanism.
-
 **L1b: this plan's rows**
 
 1. `ops_log_events.rb`: register the `badge_*`, `signin_*` and `session_*` events.
@@ -741,7 +747,7 @@ note node in `generate_dungeon_graph.rb`; a seeded anomaly in `test_ops_logs` an
 |---|---|---|
 | `lib/break_escape/ops_log_events.rb` | every plan that writes rows | each adds its own lines to `EVENTS` and `KINDS` in its own stage, one line per event |
 | `game.rb` | S3, S5a, S5c, S8 | `attempt_login!` and `start_login_session!`; L1b lands with L1a, before S1 (section 3) |
-| `games_controller.rb` | every plan's routes | the `set_game` and `with_game_lock` lists (`:27`, `:103`) conflict on every merge |
+| `games_controller.rb` | every plan's routes | the `set_game` and `with_game_lock` lists (`:27`, `:103`) conflict on every merge; `#container` (`:626`) is edited by the privilege plan (S5a), L3 and the lock plan; the refused-row branch of `#unlock` (`:1236-1252`) by L1b and G1 |
 | `network_access.rb` | S1 to S3, S5a | `WITHHELD_SCENARIO_KEYS` (`:18`), the implant path (`:535`) |
 | secret sources | S7, S8 | each registers its own secret fields beside its `EVENTS` lines |
 | `config/routes.rb`, schemas, `validate_scenario.rb`, `generate_dungeon_graph.rb`, `minigames/index.js`, `interactions.js`, the two docs | most plans | append-only edits in each plan's own stage |
@@ -1226,6 +1232,8 @@ records nothing for these, and the gap is the lesson.
 8. **Orchestrator:** `log_rows_for` and the key `by` (13.6) are reserved for the parked defence
    debrief and the investigator idea; S6's parity run compares `log_rows_for(source_id, compare:
    true)` across skins.
+9. **OPS_CORE, OPS_PRIVILEGE_ACCOUNTS, OPS_MFA_HELPDESK and OPS_LOCK_SECOND_STEP:** record
+   unchanged-scenario fixtures with L1a's mechanism (build step 1) from main before the stage's first engine edit.
 
 ## 15. Open questions for the user
 

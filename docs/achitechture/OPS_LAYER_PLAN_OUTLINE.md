@@ -140,7 +140,8 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
 
 ## 5. Suggested order
 
-The log helper comes first: stages L1a (the helper and the event list, no rows of its own) and
+The log helper comes first: stages L1a (the shared unchanged-scenario check, captured from main
+before any engine change, then the helper and the event list, no rows of its own) and
 L1b (the badge, sign-in and session rows of features already built) of the log rows plan land
 before any other stage, so each feature can write its rows as it is built and the sign-in methods
 already carry their rows before S3, S5 and S8 edit them. Then S1, S2, S3 (the core loop), S5a

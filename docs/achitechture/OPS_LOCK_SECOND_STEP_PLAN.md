@@ -248,7 +248,7 @@ server:
 
 | Exit | The `secondStep` object itself | An object below a closed step |
 |---|---|---|
-| `/unlock` (`games_controller.rb:1211-1335`) | the gate, in the order below; the answer's `contents` come from the object the gate resolved | `validate_unlock` refuses it first, beside `unlock_scope_refused?` (`game.rb:4688-4691`): the generic 422, before the log plan's refused `badge_swipe` row (L1b) is written, so a swipe here writes no row. `pin_cracker_feedback`, `password_case_mismatch?` (`game.rb:4793`, `:4808`) and `unlock_session_refusal` (`:4214`) answer nil for it, so the body is an invented id's |
+| `/unlock` (`games_controller.rb:1211-1335`) | the gate, in the order below; the answer's `contents` come from the object the gate resolved | `validate_unlock` refuses it first, beside `unlock_scope_refused?` (`game.rb:4688-4691`): the generic 422. The same refusal branch (`games_controller.rb:1236-1252`) writes the log plan's refused `badge_swipe` row (L1b); G1 edits it so the closed-step refusal (`behind_closed_step?(path)`) returns before that row is written, and a swipe here writes no row. `pin_cracker_feedback`, `password_case_mismatch?` (`game.rb:4793`, `:4808`) and `unlock_session_refusal` (`:4214`) answer nil for it, so the body is an invented id's |
 | Room payload marker (`game.rb:2999-3010`) | matched by id only | nothing to do: the filter drops a closed object's `contents` (`:7226-7232`) |
 | `GET /container`, plain (`games_controller.rb:672-680`, `check_container_unlocked` `:3119-3126`) | tested by id only | 404 "Container not found", as an invented id |
 | `GET /container` scope branches (`:641-669`), take from a share (`network_access.rb:1720-1732`) or from a sign-in desktop (`games_controller.rb:3510`) | `path_unlocked?` or the path test, by id already | refused already: a `secondStep` object is locked, so a closed one fails the path test |
@@ -586,6 +586,7 @@ passes" edge, and a scenario without the field drawn unchanged.
 | Wrong first factor | Today's 422 body, byte for byte; `lockSteps` empty; no log row |
 | Right first factor | 200 `secondStep` body; no `contents`; `unlockedObjects` unchanged; one `mfa_challenge` row, stored (a malformed log call raises in tests) |
 | Nothing leaves or opens early | Fixtures: a room PC, an archive nested in it, an archive under a sign-in PC, one in a held declared grant, and inside the closed PC a `locked: false` folder, a plain-locked archive and a takeable gated archive. After the right first factor and after every refused `/mfa/*` call, `/unlock`, `GET /container` (by id and by name), `GET /room`, every take route, the inventory copy and a bootstrap ship none of the contents' ids, names or text. The three inner objects, posted by id and by name (the folder with `method: "unlocked"`, the archive with its right password), get the invented-id 422 (no pips, no case hint) and write nothing. After the PC opens they open as plain objects, and the takeable archive is taken with `locked: true` and no `contents`, then meets the gate from the inventory |
+| Refused swipe below a closed step | An rfid object below a closed step, swiped with a held card: the invented-id 422 and no `badge_swipe` row; with the step open, the same swipe writes today's `denied` row |
 | Copied source (fixture that skips the validator) | A held habit stick holding a `secondStep` folder with a file inside: the file, reached through the stick's fresh copy, is refused by `/unlock`, `GET /container` and the take routes until the folder's step opens, then served |
 | Twin names (fixture that skips the validator) | A plain lock whose name equals a `secondStep` object's name, then one whose name equals its id: opening the plain lock ships nothing of the other, by any exit. With that name in `unlockedObjects`, a post of it to the gated object with no password is refused, and one with `method: "flag_reward"` and no claimed flag is refused |
 | Finders disagree (fixture that skips the validator) | A scenario where `find_object_in_scenario` and `find_scenario_object` pick different objects for one posted name: the `/unlock` answer ships the contents of the object the gate resolved only |
@@ -658,7 +659,7 @@ door tests and B11.
 | Shared file | This plan's edit | Also edited by |
 |---|---|---|
 | `game.rb` | `ACCESS_STATE_DEFAULTS`; `resolve_unlock_target` behind `find_scenario_object`; `unlock_object!` (Rule A); `validate_unlock` (`resolved:`, Rule C, the shortcut); the feedback helpers; the marker at `:2999-3010`; the bootstrap allowlist (G2) | MFA plan, privilege and accounts plan, core plan |
-| `games_controller.rb` | the gate and the answer's finder in `unlock`; the plain `GET /container` branch and the path through its finders; the room-object take test; the inventory copy; the lock form in the `/mfa/*` actions | MFA plan, log plan |
+| `games_controller.rb` | the gate and the answer's finder in `unlock`; the plain `GET /container` branch and the path through its finders; the room-object take test; the inventory copy; the lock form in the `/mfa/*` actions; the refused-row branch of `unlock` (L1b's `badge_swipe` row), edited to return before the row behind a closed step | MFA plan, log plan |
 | `lib/break_escape/mfa_model.rb`, `app/models/break_escape/mfa_access.rb` | the lock constants, `lock_step` and `lock_step_never_passes?` (`held_item_sources` is the MFA plan's); the `object` and `door` subjects | MFA plan (owner) |
 | `api-client.js`, `utils/lock-scope-refusal.js`, `systems/unlock-system.js` (G1) | the step in `ApiClient.unlock`; the refusal line; the cancelled guard | none in the ops plans |
 | `mfa-client.js`, the `password` scene's second pane, `authenticator-live` | subject keys, `secondStepOnly`, the lock card | MFA plan (owner) |
@@ -707,7 +708,7 @@ and no badge row, repeats write nothing, and the final post writes the one `badg
 3. **Log plan.** Add `door` and `object` to the `places` of the eight `mfa_*` events; register
    the `method` detail key on `mfa_challenge` with the closed code list of section 13; allow
    `{ npc: }` as `as` on those events; say in 5.1's granted `badge_swipe` bullet that the row is
-   written after this plan's gate (section 13); stage L1b carries its call site.
+   written after this plan's gate (section 13); stage L1b carries its call site, and its refused-row condition gains `behind_closed_step?` when G1 lands (section 5.1, section 12).
 4. **Orchestrator.** Feature id A25; add `test_ops_lock_step` to the brief's feature list; correct D6's `doors[]` line.
 5. **Core, privilege and cracking plans.** A password they yield is a first factor and meets
    the step. A plan that opens an object by its own server route uses `record_step_open!` and
