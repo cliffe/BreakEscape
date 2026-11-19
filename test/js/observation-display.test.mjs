@@ -127,10 +127,10 @@ test('observation only (not readable): <em> line alone, no note', () => {
   assert.equal(notes.length, 0);
 });
 
-test('without observationDisplay the alert message keeps its old form', () => {
+test('without observationDisplay the alert message is the plain observation', () => {
   const { shown, alerts } = run({ type: 'generic', name: 'Lamp', observations: 'It is warm.' });
   assert.equal(shown.length, 0);
-  assert.match(alerts[0][0], /^Lamp Observations: It is warm\./);
+  assert.ok(alerts[0][0].trim() === 'It is warm.', 'body: ' + alerts[0][0]);
 });
 
 test('onInteract.confirmationText + display gameDisplay: same layout as the fixed branch', async () => {

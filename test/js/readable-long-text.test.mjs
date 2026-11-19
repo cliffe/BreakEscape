@@ -90,11 +90,11 @@ test('long text opens the gameDisplay modal, not the toast', () => {
   assert.ok(alerts.length === 0, 'no 5 s toast');
 });
 
-test('short text keeps the toast exactly as before', () => {
+test('short text stays a toast with the plain text as its body', () => {
   const { shown, toasts: alerts } = run(mon('Baseline readings.'));
   assert.ok(shown.length === 0, 'no modal');
   assert.ok(alerts.length === 1, 'one toast');
-  assert.ok(alerts[0][0] === 'Bedside Monitor Text: Baseline readings.\n', 'message unchanged: ' + alerts[0][0]);
+  assert.ok(alerts[0][0] === 'Baseline readings.', 'plain body: ' + alerts[0][0]);
   assert.ok(alerts[0][1] === 'info' && alerts[0][2] === 'Bedside Monitor' && alerts[0][3] === 5000, 'args unchanged');
 });
 
@@ -183,4 +183,28 @@ test('observation identical to the text counts once and shows once', () => {
   assert.ok(b.shown[0].body === chars(130), 'shown once, plain: ' + b.shown[0].body);
   const c = run(mon(chars(76), { observations: chars(75) + 'b' }));
   assert.ok(c.shown.length === 1, 'different pieces still add up');
+});
+
+test('toast body: observation then text on its own line, no labels, no repeated name', () => {
+  const { toasts } = run(mon('Reads steady.', { observations: 'A grey monitor.' }));
+  assert.ok(toasts.length === 1, 'one toast');
+  assert.ok(toasts[0][0].trim() === 'A grey monitor.\nReads steady.', 'body: ' + toasts[0][0]);
+  assert.ok(!/Observations:|Text:/.test(toasts[0][0]), 'no labels');
+  assert.ok(toasts[0][0].indexOf('Bedside Monitor') === -1, 'name not repeated');
+  assert.ok(toasts[0][2] === 'Bedside Monitor', 'title is the name');
+});
+
+test('toast body: identical observation and text show once', () => {
+  const { toasts } = run(mon('Same words.', { observations: 'Same words.' }));
+  assert.ok(toasts[0][0].trim() === 'Same words.', 'once: ' + toasts[0][0]);
+});
+
+test('toast body: observation only is the observation alone', () => {
+  const { toasts } = run({ id: 'lamp', type: 'generic', name: 'Lamp', observations: 'It is warm.' });
+  assert.ok(toasts[0][0].trim() === 'It is warm.', 'body: ' + toasts[0][0]);
+});
+
+test('long-text rule counts what the toast shows: 120 observation chars and text of 1 char is a modal, identical 120 is a toast', () => {
+  assert.ok(run(mon('b', { observations: chars(120) })).shown.length === 1, 'obs + text over 120');
+  assert.ok(run(mon(chars(120), { observations: chars(120) })).shown.length === 0, 'identical counted once');
 });
