@@ -12,6 +12,13 @@ VAR topic_zero_day_philosophy = false
 VAR topic_ethics = false
 VAR recruitment_discussed = false
 VAR night_confrontation_ready = false
+VAR victoria_decision_reached = false // Synced scenario global: set when she gives the player the final choice, so a reload resumes at that choice, not at the confession
+// Synced scenario globals read only to decide whether "Not yet" still has something to point at.
+VAR whiteboard_decoded = false
+VAR roster_decoded = false
+VAR directive_decoded = false
+VAR exec_wing_night = false
+VAR night_explored = false
 VAR confront_held = false // set when the player backs out of her final choice; the next talk resumes at the decision
 VAR victoria_night_opened = false // Synced scenario global: set in each opening choice of the night confrontation, so a reload mid-scene resumes at the_reckoning
 VAR victoria_fate = "" // Synced scenario global: Sterling's fate (recruited/arrested/escaped/ko); also set to ko by her npc_ko mapping
@@ -88,6 +95,9 @@ VAR cloner_deflection = ""
 }
 { night_confrontation_ready:
     // Reload resume: the story position is not saved; the opening choices set this synced global.
+    { victoria_decision_reached:
+        -> confrontation_decision
+    }
     { victoria_night_opened:
         -> the_reckoning
     }
@@ -761,6 +771,7 @@ Victoria Sterling: So decide what you actually want from the next thirty seconds
 -> confrontation_decision
 
 === confrontation_decision ===
+~ victoria_decision_reached = true
 // P1: the deal needs the drive from her desk. Without it she declines once.
 + {usb_seen or lore_directive_found} [I have your Phase 2 directive. Give me the Architect and I'll fight for a deal. Not immunity. #ending_check]
     -> confrontation_recruit
@@ -770,7 +781,8 @@ Victoria Sterling: So decide what you actually want from the next thirty seconds
     -> confrontation_arrest
 + [Go. I've got what I need off your servers. You're just the signature now. #ending_check]
     -> confrontation_escape
-+ [Not yet. There's something I want to finish first.]
+// Only while something optional is still open (whiteboard, roster, the drive once found, Danny).
++ {(night_explored and not whiteboard_decoded) or (exec_wing_night and (not roster_decoded or danny_fate == "")) or ((usb_seen or lore_directive_found) and not directive_decoded)} [Not yet. There's something I want to finish first.]
     ~ confront_held = true
     Narrator: Sterling hasn't left.
     ~ idle_quiet = true
