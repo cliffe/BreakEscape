@@ -352,7 +352,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         },
         {
           "taskId": "submit_ssh_flag",
-          "title": "Unlock the ENTROPY encrypted archive",
+          "title": "Unlock the ENTROPY encrypted archive (enter the decryption key at the archive)",
           "type": "submit_flags",
           "targetFlags": ["shatter_server:flag_1"],
           "targetCount": 1,
@@ -457,7 +457,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "tasks": [
         {
           "taskId": "submit_launch_code",
-          "title": "Enter the launch authorisation code",
+          "title": "Enter the launch authorisation code on Derek's launch device",
           "type": "submit_flags",
           <%# flag_3 (launch authorisation) is only accepted at the launch device
               taken from Derek at the finale; the drop-site echoes a hint for it.
@@ -749,7 +749,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "derek_office_locked_seen": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "That door's locked. A lockpick or a spare key would get you in."
+                "message": "That door's locked. A lockpick or a spare key would get you in. Patricia kept her things in the manager's office, so start there."
               }
             },
             {
@@ -2173,7 +2173,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "requires": "0419",
           "maxAttempts": 3,
           "lockoutSeconds": 30,
-          "postitNote": "Anniversary",
+          "postitNote": "Anniversary\n(Lisa's card, break room bin)",
           "showPostit": true,
           "observations": "Derek's personal workstation, password locked",
           "contents": [
@@ -2350,7 +2350,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "id": "flag_station_dropsite",
           "name": "SAFETYNET Drop-Site Terminal",
           "takeable": false,
-          "observations": "Secure SAFETYNET terminal for submitting intercepted intelligence and VM flags captured from the ENTROPY attack server (172.16.0.2) with the IT Audit Station (Kali).",
+          "observations": "Secure SAFETYNET terminal for submitting intercepted intelligence and VM flags captured from the ENTROPY attack server (172.16.0.2) with the IT Audit Station (Kali). It takes the traversal and deployment flags itself; the archive key and the launch code are recognised here but entered at the archive and the launch device.",
           "acceptsVms": ["shatter_server"],
           "acceptsVmLabels": { "shatter_server": "ENTROPY attack server (172.16.0.2)" },
           "flags": ["shatter_server:flag_2", "shatter_server:flag_4"],
