@@ -1423,9 +1423,11 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 1500, "message": "Print's lifted off his mug. You didn't match it, but the vault reader will tell you whose it is. North of the server room." }
             },
 <% ["Locked Filing Cabinet", "Torres' Briefcase"].each do |nm| %>
+<%# The data.objectType !== 'vm-launcher' guard is redundant at runtime (a cabinet is never a launcher)
+    but tells the validator this text and the Bludit text cannot stack. %>
             {
               "eventPattern": "object_interacted",
-              "condition": "data.objectName === <%= nm.to_json.gsub('"', '\\"') %> && globalVars.lockpicking_guide_offered !== true",
+              "condition": "data.objectName === <%= nm.to_json.gsub('"', '\\"') %> && data.objectType !== 'vm-launcher' && globalVars.lockpicking_guide_offered !== true",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true },
               "sendTimedMessage": { "delay": 1500, "message": "Pin tumbler. Your picks will do it. Want the guide?" }

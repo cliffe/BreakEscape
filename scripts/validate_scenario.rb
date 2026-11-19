@@ -5416,6 +5416,8 @@ def check_stacked_timed_texts(json_data)
         next unless m.is_a?(Hash) && m['sendTimedMessage'].is_a?(Hash)
         d = m['sendTimedMessage']['delay']
         next unless d.is_a?(Numeric) && m['eventPattern'].is_a?(String)
+        # a mapping's own delayMs holds the whole action back, so it adds to the text's delay
+        d += m['delayMs'] if m['delayMs'].is_a?(Numeric) && m['delayMs'] > 0
         entries[m['eventPattern']] << { delay: d, msg: m['sendTimedMessage']['message'], cond: m['condition'], who: who,
                                        sets: m['setGlobal'].is_a?(Hash) ? m['setGlobal'].keys : [] }
       end
