@@ -3627,6 +3627,7 @@
           }
         },
         "blanks": {"type": "object", "additionalProperties": {"type": "string"}, "maxProperties": 2},
+        "optionalBlanks": {"type": "boolean", "description": "The line's blanks fill independently: a blank the player left unfilled is not stated, so its claim is skipped rather than judged a mismatch (06 §5). Pair with ink choice variants that speak only the filled facts."},
         "repairs": {"type": "string"},
         "doublesDown": {"type": "string"},
         "extra": {"type": "number"},
