@@ -69,6 +69,27 @@ test('the MOTION tag stays below the CAM/time header row and inside its cell', (
   assert.match(js, /motionTagPos\(bx, by, x, y, w, fontPx, _visCtx\.measureText\('MOTION'\)\.width\)/);
 });
 
+test('the clamped MOTION tag keeps clear of the box brackets on short cells', () => {
+  const src = /function motionTagPos[\s\S]*?\n}\n/.exec(js)[0];
+  const pos = new Function(`const PIX = 4; ${src}; return motionTagPos;`)();
+  const hit = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3];
+  let clampedSeen = 0;
+  for (const fontPx of [8, 16]) for (const h of [80, 100, 108, 140]) for (const w of fontPx === 8 ? [168, 240] : [240, 320]) // 16px text only appears on wide windows
+    for (const mid of [0.51, 0.75, 1]) for (const dx of [-1, 0, 1]) {
+    const x = 100, y = 50, tw = fontPx * 6, k = 12, PIX = 4;
+    const bw = w * (0.18 + mid * 0.15), bh = h * (0.25 + mid * 0.2);
+    const bx = x + w * 0.5 + dx * w * 0.2 - bw / 2, by = y + h * 0.55 - h * 0.08 - bh / 2;
+    const p = pos(bx, by, x, y, w, fontPx, tw);
+    const tag = [p.x, p.y - fontPx, tw, fontPx];
+    if (by - 8 < y + 8 + fontPx * 2 + 4) clampedSeen++; else continue;
+    const arms = [[bx, by, k, PIX], [bx, by, PIX, k], [bx + bw - k, by, k, PIX], [bx + bw - PIX, by, PIX, k]];
+    for (const a of arms.slice(0, 2)) assert.ok(!hit(tag, a), `tag ${tag} hits left arm ${a} (h=${h} font=${fontPx} w=${w} mid=${mid})`);
+    assert.ok(Number.isInteger(p.x) && Number.isInteger(p.y));
+    assert.ok(p.x >= x + 8 && p.x + tw <= x + w - 8, 'inside the cell');
+  }
+  assert.ok(clampedSeen > 10, 'the clamp case is exercised');
+});
+
 test('MITRE labels: full names, else 3-letter codes, else none', () => {
   const src = ['mitreLabelsFit', 'mitreLabelMode'].map(n => new RegExp(`function ${n}[\\s\\S]*?\\n}\\n`).exec(js)[0]).join('');
   const codes = /const MITRE_CODES = (\[[^\]]*\]);/.exec(js)[1];
@@ -79,11 +100,15 @@ test('MITRE labels: full names, else 3-letter codes, else none', () => {
   assert.equal(cds.length, tac.length);
   assert.equal(new Set(cds).size, cds.length, 'codes are distinct');
   cds.forEach((c, i) => assert.ok(c.length <= 3 && tac[i].startsWith(c[0]), `${c} for ${tac[i]}`));
-  assert.equal(mode(m, tac, 300, 200, 120, 100, 400), 'full', 'wide ring: 5-letter names');
-  assert.equal(mode(m, tac, 300, 200, 80, 100, 400), 'code', 'R=80: 36px spacing is under 44 but over 28');
+  assert.equal(mode(m, tac, 300, 600, 200, 0, 800), 'full', 'wide ring: whole names (76px spacing needs R 170)');
+  assert.equal(mode(m, tac, 300, 200, 120, 100, 400), 'code', 'R=120: whole names do not fit, never cut to 5 letters');
+  assert.equal(mode(m, tac, 300, 200, 80, 100, 400), 'code', 'R=80: 36px spacing is under 76 but over 28');
   assert.equal(mode(m, tac, 300, 200, 30, 260, 80), 'none', 'phone ring is far too tight');
   assert.equal(mode(m, tac, 300, 200, 120, 190, 220), 'none', 'spacing fine but even codes leave the panel');
   assert.equal(mode(m, tac, 300, 200, 80, 224, 150), 'none', 'codes fit the spacing but not the panel');
+  assert.doesNotMatch(js, /t\.slice\(0,\s*5\)/, 'no tactic name is sliced');
+  const drawn = (rIn) => { const mm = mode(m, tac, 300, 600, rIn, 0, 800); return mm === 'full' ? tac : mm === 'code' ? cds : []; };
+  for (const r of [40, 60, 80, 120, 160, 169, 171, 200, 300]) for (const l of drawn(r)) assert.ok(tac.includes(l) || cds.includes(l), `${l} at R=${r} is a whole name or a code`);
   assert.match(js, /tacticMode!=='none'/);
   assert.match(js, /tacticMode==='code'\?MITRE_CODES\[i\]/);
 });
@@ -111,7 +136,7 @@ test('city labels are drawn after the dots and pulses, and keep a gap from each 
 });
 
 test('8px canvas text is drawn at whole-pixel origins', () => {
-  for (const re of [/MITRE_CODES\[i\]:t\.slice\(0,5\),Math\.round\(tx-8\),Math\.round\(ty-4\)\)/, /const tx = Math\.round\(Math\.max\(x \+ pad/, /Math\.round\(col1X\+col1W\/2\),Math\.round\(c1y\+40\)/, /_visCtx\.fillText\(l\.name,l\.lx,l\.ly\)/, /lx=Math\.round\(lx\)/]) assert.match(js, re);
+  for (const re of [/MITRE_CODES\[i\]:t,Math\.round\(tx-8\),Math\.round\(ty-4\)\)/, /const tx = Math\.round\(Math\.max\(x \+ pad/, /Math\.round\(col1X\+col1W\/2\),Math\.round\(c1y\+40\)/, /_visCtx\.fillText\(l\.name,l\.lx,l\.ly\)/, /lx=Math\.round\(lx\)/]) assert.match(js, re);
 });
 
 test('SIEM panel titles reach 4.5:1 on the panel background and the plate fallback matches its token', () => {

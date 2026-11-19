@@ -88,8 +88,15 @@ function cctvCellLabel(measure, label, cellW, fontPx) {
  */
 function motionTagPos(bx, by, x, y, w, fontPx, textW) {
     const pad = PIX * 2;
-    const ty = Math.round(Math.max(by - PIX * 2, y + pad + fontPx * 2 + PIX));
-    const tx = Math.round(Math.max(x + pad, Math.min(bx, x + w - pad - textW)));
+    const floorY = y + pad + fontPx * 2 + PIX;
+    const clamped = by - PIX * 2 < floorY; // the lift would put it on the header, so it sits beside the box
+    const ty = Math.round(Math.max(by - PIX * 2, floorY));
+    let want = bx;
+    if (clamped) { // past the 3-unit bracket arm, not under it; left of the box when the right edge is short
+        want = bx + PIX * 4;
+        if (want + textW > x + w - pad && bx - PIX - textW >= x + pad) want = bx - PIX - textW;
+    }
+    const tx = Math.round(Math.max(x + pad, Math.min(want, x + w - pad - textW)));
     return { x: tx, y: ty };
 }
 
@@ -111,9 +118,9 @@ function mitreLabelsFit(measure, labels, cx, cy, R, panelX, panelW) {
     });
 }
 
-/** 'full' (5-letter names), else 'code' (3-letter codes), else 'none'. Pure. */
+/** 'full' (whole tactic names, never cut), else 'code' (3-letter codes), else 'none'. Pure. */
 function mitreLabelMode(measure, tactics, cx, cy, R, panelX, panelW) {
-    if (mitreLabelsFit(measure, tactics.map(t => t.slice(0, 5)), cx, cy, R, panelX, panelW)) return 'full';
+    if (mitreLabelsFit(measure, tactics, cx, cy, R, panelX, panelW)) return 'full';
     if (mitreLabelsFit(measure, MITRE_CODES, cx, cy, R, panelX, panelW)) return 'code';
     return 'none';
 }
@@ -1264,7 +1271,7 @@ function drawSIEM(data, W, H, audio) {
         _visCtx.fillRect(Math.round((tx-3)/PIX)*PIX, Math.round((ty-3)/PIX)*PIX, PIX*2, PIX*2);
         _visCtx.strokeStyle=active?'#FF6600':'#110400'; _visCtx.lineWidth=1;
         _visCtx.beginPath(); _visCtx.moveTo(tcx,tcy); _visCtx.lineTo(tx,ty); _visCtx.stroke();
-        if (active && tacticMode!=='none') { _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle='#FF6600'; _visCtx.fillText(tacticMode==='code'?MITRE_CODES[i]:t.slice(0,5),Math.round(tx-8),Math.round(ty-4)); }
+        if (active && tacticMode!=='none') { _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle='#FF6600'; _visCtx.fillText(tacticMode==='code'?MITRE_CODES[i]:t,Math.round(tx-8),Math.round(ty-4)); }
     });
     _visCtx.font='8px "Press Start 2P"'; _visCtx.fillStyle=`rgba(255,102,0,${0.3+avg*0.7})`; _visCtx.textAlign='center';
     _visCtx.fillText(String(siemRuleHits['CRITICAL']+siemRuleHits['HIGH']).padStart(4,'0'),Math.round(tcx),Math.round(tcy+4));
