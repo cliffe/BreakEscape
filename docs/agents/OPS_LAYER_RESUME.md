@@ -135,6 +135,20 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   LOG-2 from the picks page at the next republish unless the user answered it.
   Then: second cross-plan review once five plans are through R2 revision; outline build order
   (L1a first) and status paragraph; picks page Core group from core section 15.
+- 11:24 HANDOFF 3. Core second pass committed `cbdc20507` (1573 lines; read-through unfinished,
+  list in `ops_layer/HANDOVER_OPS_CORE_PLAN_reviser.md`, handed to the reviewer). Running now:
+  core R2 full review (Opus, a21da12d7a5e9f614) to `reviews/OPS_CORE_R2.md`; SKIN R2 reviser
+  (Fable, a52d2d62dc9256530); privilege R3 review (Fable, a72d93621e59cfc2a); MFA R2 reviser
+  (Fable, afce605ac16c1e685); log rows R2 reviser (Opus, aa64722898cd48cd2), which was also sent
+  core's request 8 (place kind `pc`, `network_alerted`, detail keys `finding`, `how`, `grant`,
+  drop `from` if over the cap) and privilege's request for a "row already logged" lookup.
+  Core keeps the log plan's event names (`network_swept`, `host_scanned`, ...). Core reviser
+  choices left for the reviewer to attack: optional `grants`, noise per request, 404 for a card
+  not held, `notes1` placeholder sprite, `needs.item` split into `item`/`itemType`.
+  Picks page still to update in one republish: Core group now 4 questions (discovery enforced or
+  display only; cost of the loop, noise recommended; technique session against sign-in rules; the
+  word `technique`); Privilege group now 7 (adds admin tile, remote USB override, owner
+  collectable); drop LOG-2.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
