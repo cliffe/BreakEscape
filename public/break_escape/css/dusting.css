@@ -34,7 +34,7 @@
     display: flex; flex-direction: column;   /* title and steps stay put; .dusting-body scrolls (the frame itself never does) */
     align-self: center;
     max-height: calc(100dvh - 24px);
-    overflow-y: auto;
+    overflow: hidden;
     width: min(960px, 96vw);
     background: var(--d-bg);
     border: 2px solid var(--d-accent);

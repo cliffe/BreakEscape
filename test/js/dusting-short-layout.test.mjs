@@ -351,7 +351,7 @@ test('M2: phone portrait pins only the primary button; short landscape and deskt
     assert.ok(i >= 0, 'portrait pin block exists');
     const m = [css.slice(i, css.indexOf('/* Short landscape (a phone on its side;', i))];
     assert.match(m[0], /\.dusting-buttons \{ display: contents; \}/);
-    assert.match(m[0], /\.dusting-primary \{[^}]*position: sticky;[^}]*bottom: -8px;[^}]*z-index: 3;[^}]*width: 100%;[^}]*background: var\(--d-bg\)/);
+    assert.match(m[0], /\.dusting-primary \{[^}]*position: sticky;[^}]*bottom: 0;[^}]*z-index: 3;[^}]*width: 100%;[^}]*background: var\(--d-bg\)/);
     assert.match(m[0], /min-height: 44px/);
     assert.match(m[0], /\.dusting-primary:disabled \{ opacity: 1/);
     assert.doesNotMatch(m[0], /\.dusting-btn:not\(\.dusting-primary\) \{[^}]*sticky/);
@@ -364,7 +364,7 @@ test('M2: phone portrait pins only the primary button; short landscape and deskt
 test('m1: portrait scroll-padding clears the pinned bar and the pinned primary has an inset focus ring', () => {
     const i = css.indexOf('/* Phone portrait (not short): one 44 px bar');
     const blk = css.slice(i, css.indexOf('/* Short landscape (a phone on its side;', i));
-    assert.match(blk, /\.dusting-root:not\(\.dusting-short\) \{ scroll-padding-bottom: 52px; \}/);
+    assert.match(blk, /\.dusting-root:not\(\.dusting-short\) \.dusting-body \{ scroll-padding-bottom: 52px; \}/);
     assert.match(blk, /\.dusting-primary:focus-visible \{ outline-offset: -5px; \}/);
     assert.doesNotMatch(blk, /:focus-visible \{[^}]*outline:/, 'colour and width stay with the shared focus rule');
 });
