@@ -83,11 +83,11 @@ test('behaviour: a MinigameScene subclass with keepsTextTail returns the tail in
     try { ({ MinigameScene } = await import(pathToFileURL(join(js, 'minigames/framework/base-minigame.js')))); }
     catch (e) { assert.fail('base-minigame.js failed to import: ' + e.message); }
     const text = Array.from({ length: 150 }, (_, i) => `MSG ${i + 1} hello there`).join('\n');
-    const mk = (tail) => {
+    const mk = (tail, body = text) => {
         const C = class extends MinigameScene {};
         if (tail) C.keepsTextTail = true;
         const o = Object.create(C.prototype);
-        o.container = { innerText: text };
+        o.container = { innerText: body };
         o.params = {}; o.gameState = { isActive: true };
         o.getTestControlElements = () => []; o.getTestFieldElements = () => [];
         return o.getTestState();
@@ -97,12 +97,20 @@ test('behaviour: a MinigameScene subclass with keepsTextTail returns the tail in
     assert.equal(tail.textKeeps, 'tail');
     assert.ok(head.text.startsWith('MSG 1 '));
     assert.ok(!('textKeeps' in head));
+
+    // Emoji at the cut, through the real scene (the cut lands mid-emoji on both ends).
+    const emoji = 'a' + '\u{1F600}'.repeat(2000);
+    const eTail = mk(true, emoji).text, eHead = mk(false, emoji).text;
+    assert.ok(!/^[\uDC00-\uDFFF]/.test(eTail.slice(TEXT_TAIL_MARK.length)), 'tail starts on a whole emoji');
+    assert.ok(eTail.length <= TEXT_LIMIT);
+    assert.ok(!/[\uD800-\uDBFF]$/.test(eHead), 'head ends on a whole emoji');
+    assert.ok(eHead.length <= TEXT_LIMIT);
 });
 
 test('a cut never splits an emoji: no lone surrogate at either end', () => {
     const tail = cappedText('text', 'a' + '\u{1F600}'.repeat(2000), TEXT_LIMIT, 'tail').text;
     assert.ok(!/^[\uDC00-\uDFFF]/.test(tail.slice(TEXT_TAIL_MARK.length)));
-    const head = cappedText('text', '\u{1F600}'.repeat(2000)).text;
+    const head = cappedText('text', 'a' + '\u{1F600}'.repeat(2000)).text;
     assert.ok(!/[\uD800-\uDBFF]$/.test(head));
     const base = readFileSync(join(js, 'minigames/framework/base-minigame.js'), 'utf8');
     assert.match(base, /tailCut\(fullText, 2000 - TEXT_TAIL_MARK\.length\)/);

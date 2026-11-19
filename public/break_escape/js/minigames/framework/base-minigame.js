@@ -555,7 +555,7 @@ export class MinigameScene {
             // import). A notes overlay also carries the note's own text as noteContent.
             // A chat or thread scene (static keepsTextTail = true) keeps the END of the
             // text instead, since its newest lines are last: the text then starts with
-            // the marker below and the reply adds textKeeps: 'tail'. Total stays 2000.
+            // the marker below and the reply adds textKeeps: 'tail'. Total is at most 2000.
             ...(fullText.length > 2000 && this.constructor.keepsTextTail
                 ? { text: TEXT_TAIL_MARK + tailCut(fullText, 2000 - TEXT_TAIL_MARK.length),
                     textTruncated: true, textLength: fullText.length, textKeeps: 'tail' }
