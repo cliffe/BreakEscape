@@ -258,7 +258,7 @@ export function checkObjectInteractions() {
 
             // Use simple radial distance from player centre (matches visual highlight zone)
             const dx = reachX(obj, px) - px; // nearest part of a wide object (interaction-reach.js)
-            const dy = reachY(obj, py) - py; // and of a tall wall-mounted one
+            const dy = reachYSeated(obj, player, window.seating?.currentSeat?.()) - py; // and of a tall wall-mounted one; a seated player reaches the desk PC they face
             const distanceSq = dx * dx + dy * dy;
 
             // In range and no wall between (interaction-walls.js)
@@ -1747,7 +1747,7 @@ export function handleObjectInteraction(sprite) {
         if (!player) return;
         
         // Measure distance with direction-based offset
-        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), reachY(sprite, player.y));
+        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), reachYSeated(sprite, player, window.seating?.currentSeat?.()));
         
         if (distanceSq > INTERACTION_RANGE_SQ) {
             console.log('INTERACTION_OUT_OF_RANGE', { 
@@ -2283,6 +2283,8 @@ export function tryInteractWithNearest() {
     // everything but a better-aimed NPC, which the label (info-label.js) decides the same way
     let bestPc = null;
     let bestPcScore = Infinity;
+    let bestNpc = null; // the best NPC apart: a better-aimed colleague beats the PC even when a mug scored best overall
+    let bestNpcScore = Infinity;
     const seatedOn = window.seating?.currentSeat?.() || null;
 
     // Ids of the objects in reach: an owner on the move from her own PC among them gives way (review R2 m1)
@@ -2311,8 +2313,9 @@ export function tryInteractWithNearest() {
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        const pick = { objX: aim.x, objY: aim.y, fromX: aim.fromX, fromY: aim.fromY, handleFn, npc: !!npcSprite };
+        const pick = { objX: aim.x, objY: aim.y, fromX: aim.fromX, fromY: aim.fromY, handleFn };
         if (isSeatedDeskPc(seatedOn, npcSprite ? null : target, aimAngle) && score < bestPcScore) { bestPcScore = score; bestPc = pick; }
+        if (npcSprite && score < bestNpcScore) { bestNpcScore = score; bestNpc = pick; }
         if (score < bestScore) { bestScore = score; best = pick; }
     }
 
@@ -2344,7 +2347,7 @@ export function tryInteractWithNearest() {
                 // A seat with no free place whose sitter (any of them, on a full sofa) is on it now is her, not "A chair." (interaction-reach.js
                 // seatOccupant); she is considered below. A sofa with a free place stays, and loses to her by score.
                 if (obj.seatedBy && window.seating?.isSeat(obj) && seatOccupant(obj, allNpcs(), { isKo: npcKo, isSeated: npcSeatedOn })) return;
-                consider(reachX(obj, px), reachYSeated(obj, py, seatedOn), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), aimY(obj));
+                consider(reachX(obj, px), reachYSeated(obj, player, seatedOn), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), aimY(obj));
             });
         }
 
@@ -2371,7 +2374,7 @@ export function tryInteractWithNearest() {
     // NPCs last, once every object in reach is known (inReachIds)
     npcsToConsider.forEach(sprite => consider(sprite.x, sprite.y, () => tryInteractWithNPC(sprite), INTERACTION_RANGE_SQ, sprite));
 
-    if (bestPc && seatedPcWins(bestPcScore, bestScore, !!best?.npc)) best = bestPc;
+    if (bestPc) best = seatedPcWins(bestPcScore, bestNpcScore) ? bestPc : bestNpc; // the PC, or the NPC that is better aimed than it
 
     if (!best) {
         if (seatedOn) window.seating.standUp(); // nothing else in reach: E stands up
@@ -2503,7 +2506,8 @@ export function isObjectInInteractionRange(sprite, from = undefined, range = INT
     const player = from ?? window.player;
     if (!player || !sprite) return false;
     const dx = reachX(sprite, player.x) - player.x;
-    const dy = reachY(sprite, player.y) - player.y; // a tall wall-mounted object: its nearest part
+    // a tall wall-mounted object: its nearest part; the desk PC a seated player faces: its footprint
+    const dy = reachYSeated(sprite, player, player === window.player ? window.seating?.currentSeat?.() : null) - player.y;
     const distSq = dx * dx + dy * dy;
     if ((sprite._isNPC ? seatedNpcReachDistSq(player, sprite, npcReachDistSq(player, sprite, distSq)) : distSq) > range * range) return false;
     return interactionLineClear(player, sprite);
