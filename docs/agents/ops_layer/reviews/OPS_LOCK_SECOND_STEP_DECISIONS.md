@@ -66,3 +66,9 @@
 - M1: owner ruling. `held_item_sources` counts a device exactly when the game lets the player hold it: room objects and `contents`, start items, and a room NPC's `itemsHeld` only when its story offers the type (`offers_item_text?`) or it is not `koImmune`. Headless records and declared grants dropped, as `held_friendface_phone` and `device_for` do not count them; widening that stays a request to the MFA plan. Unit test turned round. Dana is `koImmune` with no give, so `dana_cabinet` (B10) gets the warning and the dashed edge.
 - m1: golden script fixes room-walk order, scope ancestors open first, the `requires` item set by the test, refused locks recorded; `test_simple_success` gives room answers only.
 - Nits: lines rewrapped; `dana_cabinet` named as the lock that matches. Plan at 745 lines.
+
+## R6 fixes (2026-11-19, orchestrator; review rounds end here)
+
+- m1: the knock-out branch now uses the server's full test (not `koImmune`, not `npcType: "phone"`, no scenario `disableAttacks`; `owner_claim.rb:73-74`, `game.rb:2050-2059`), with unit cases for each. The MFA plan's matching helper text (its line 841) has the same gap: passed to the cross-plan R3 fix list.
+- n1: walk order defined (breadth-first along connections in file order, objects in file order); locks below a refused ancestor recorded as unreached.
+- n2: lines 542 and 620 rewrapped; "story or record". Plan at 751 lines; the 745 cap was an orchestrator target, not a rule.

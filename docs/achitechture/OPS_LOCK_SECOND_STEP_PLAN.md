@@ -502,9 +502,11 @@ apart; its own loop over `rooms[].doors[]` covers the two door rules.
   none does. Items come from `MfaModel.held_item_sources(scenario)`, a plain-Ruby walk beside
   `device_for` that counts a device exactly when the game lets the player hold it, as
   `held_friendface_phone` does (`social_feed.rb:190-221`): room objects and `contents`, start
-  items, and a room NPC's `itemsHeld` only when its story offers that type
-  (`AccessWork.offers_item_text?`) or the NPC is not `koImmune` (the MFA plan's "nobody can
-  get" test, one shared helper). Headless records and declared grants are not counted,
+  items, and a room NPC's `itemsHeld` only when its story or record offers that type
+  (`AccessWork.offers_item_text?`) or the NPC can be knocked out: not `koImmune`, not
+  `npcType: "phone"`, and no scenario `disableAttacks` (the server's own test,
+  `owner_claim.rb:73-74` and `game.rb:2050-2059`; the MFA plan's "nobody can get" test, one
+  shared helper). Headless records and declared grants are not counted,
   because those tests do not. The validator and the graph call the predicate. A task needs
   the lock when any task's target is the lock or sits below it (an `unlock_object` or
   `collect_items` task naming an id in the subtree, from the walk's ancestor chain) or, for
@@ -539,15 +541,17 @@ field only when a room has it. Every game gains an empty `lockSteps` on its next
 (`game.rb:7576`), never sent.
 
 **Proof.** (1) A spec walks every scenario under `scenarios/` (a pure scenario walk) and
-asserts `second_step_ids` is empty for all but `test_ops_lock_step`. (2) The shared mechanism of the core plan's section 10: this plan adds
-to `test/fixtures/files/ops_unchanged/` the files `lock_step_unlock.json`,
+asserts `second_step_ids` is empty for all but `test_ops_lock_step`. (2) The shared mechanism
+of the core plan's section 10: this plan adds to `test/fixtures/files/ops_unchanged/` the files
+`lock_step_unlock.json`,
 `lock_step_container.json` and `lock_step_rooms.json`, holding the `/unlock` answers, the
 `GET /container` answers and the `filtered_room_data` rooms for `test_objectives`,
 `test_simple_success` (the Hacktivity fixtures), `test_pin_dust`, `m01_first_contact` and
 `m02_ransomed_trust`. The fixed script, through the real routes: every lock posted once
-wrong and once right, in room-walk order from the start room, after its room and container
-ancestors are open, the lock's `requires` item set in the inventory by the test (same on main
-and branch); a lock the scope refuses is recorded as refused. `GET /container` for each
+wrong and once right, breadth-first from the start room along room connections in file order,
+each room's objects in file order, after its room and container ancestors are open, the lock's
+`requires` item set in the inventory by the test (same on main and branch); a lock the scope
+refuses is recorded as refused, and locks below it as unreached. `GET /container` for each
 open container, then `filtered_room_data` for each room (`test_simple_success` has no locks
 or containers: room answers only). The core plan's capture rake task (or a named one beside
 it) writes them once from main before any change of this plan, and `bin/ops-golden-compare`
@@ -560,7 +564,8 @@ unlock, container, inventory and door suites pass with no edit.
 **Unit (Ruby).** `mfa_model_test.rb`: `lock_step` for each valid and invalid shape, owner
 fallback, the two type lists; `lock_step_never_passes?` with the routes open and shut (four
 cases for `push`, two for `push_number_match` and `code`), and a device held only by a
-headless record, a declared grant, or a `koImmune` NPC's `itemsHeld` with no offer (each
+headless record, a declared grant, or the `itemsHeld` with no offer of a `koImmune` NPC, a
+`phone` NPC or any NPC in a `disableAttacks` scenario (each
 "never passes"), against the same item in a room object, a start item or an offering NPC's
 `itemsHeld` (takeable). `lock_second_step_test.rb`: `second_step_ids` over every authored
 home, the same before and after a grant is held; Rule A (`unlock_object!` refuses a
@@ -617,7 +622,8 @@ phone), Priya (owns a code device her ink hands over), Dana (high awareness, `ko
 phone in her `itemsHeld`, no give in her ink). Locks: `moira_pc` (`password`, `push`)
 holding `audit_zip` (`password`, `push_number_match`, Gordon); `moira_locker` (`pin`,
 `push`; in Moira's `unlockable` for the crafted-post test only); `priya_safe` (`pin`,
-`code`); `dana_cabinet` (`password`, `push_number_match`, off the critical path); in G2 `records_room` (`rfid`, `push`, Moira). The scenario declares
+`code`); `dana_cabinet` (`password`, `push_number_match`, off the critical path); in G2
+`records_room` (`rfid`, `push`, Moira). The scenario declares
 `logSources` and a `gameClock` so rows can be read, and every beat that asserts rows calls
 `assert_ops_log_holds_no_secret`.
 
