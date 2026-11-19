@@ -13,11 +13,25 @@
    bezel (the patch panel on its title and footer, the rogue AP as padding). Size the content, not
    the frame. */
 
+:root {
+    /* The device palette, one source for every in-world device window (device frame, patch panel,
+       rogue AP, VM launcher). Text on the face is at least 4.5:1: text 13.4, dim 7.1, accent 11.7,
+       info 11.7, danger 9.4 (on the button fill: 10.7, 5.7, 9.3, 9.3, 7.5). */
+    --device-palette-edge: #8a96aa;
+    --device-palette-face: #1b212e;
+    --device-palette-button: #283246;
+    --device-palette-text: #e6ebf2;
+    --device-palette-dim: #a3adbf;
+    --device-palette-accent: #ffd866;
+    --device-palette-info: #9ee6ff;
+    --device-palette-danger: #ffb3a8;
+}
+
 .device-frame {
-    --device-frame-edge: #8a96aa;
-    --device-frame-face: #1b212e;
+    --device-frame-edge: var(--device-palette-edge);
+    --device-frame-face: var(--device-palette-face);
     --device-frame-art: url('/break_escape/assets/ui/devices/device_frame_b.png');
-    --device-frame-text: #e6ebf2;
+    --device-frame-text: var(--device-palette-text);
     /* Clear space between the art's bezel and the content: the 9-slice leaves 4px of face, and
        6px more keeps text and controls off the recess line. Title, footer and padded content use it. */
     --device-frame-gap: 6px;
