@@ -55,9 +55,23 @@
 #   --submit-flag FLAG_ID  record a VM flag as submitted the way POST /flags does, with no VM:
 #                          Game#submit_flag, the station's flagRewards (give_item,
 #                          unlock_door, emit_event; set_global/unlock_object applied
-#                          straight to the state) and submit_flags task progress. FLAG_ID is
-#                          vm:flag_N, vm-flagN or station:vm-flagN. Repeatable. Unknown ids
-#                          abort and list the flags. Hacktivity scoring is skipped.
+#                          straight to the state) and submit_flags task progress. Repeatable.
+#                          Unknown ids abort and list the flags. Hacktivity scoring is skipped.
+#                          FLAG_ID is one of:
+#                            <vm>:flag_N     the reference form, N counting from 1
+#                            <vm>-flagN      the same flag, dash spelling
+#                            <station>:<vm>-flagN   a flag as one station names it (targetFlags)
+#                          <vm> is the VM name the scenario passes to flags_for_vm or
+#                          vm_flags_json, which is also the key of its top-level "flags"
+#                          object. It is NOT the title of a vm_object, and it need not be
+#                          the VM the player attacks. Examples, from the scenario files:
+#                            m01_first_contact: shatter_server:flag_1 (its "flags" key is
+#                              "shatter_server"; its one vm_object is "kali", the attacker box)
+#                            m10_full_disclosure: bunker_monitor:flag_1 and
+#                              bunker_monitor:flag_2 (its "flags" keys are bunker_monitor,
+#                              release_host and core_host; its vm_object is "attack_vm")
+#                          Read the prefix from the scenario's own "flags" object; the
+#                          script prints the known ids when one is unknown.
 #   --seed-full-cloner     (test_access_networks only) put an rfid_cloner item holding 50
 #                          made-up EM4100 cards (about 9.5 KB, under the 64 KB cap) into this
 #                          game's inventory, the shape an old save written by update_saved_cards
@@ -330,7 +344,7 @@ if complete_opts.any? || flag_opts.any?
   resolve = ->(ref) { ref.is_a?(String) && ref.match?(/\A[^:]+:flag_\d+\z/) ? (flag_index[ref] || g.resolve_flag_ref(ref)) : ref }
   bad = flag_opts.reject { |f| flag_index.key?(f) }
   if bad.any?
-    abort "--submit-flag: unknown flag id(s) #{bad.join(', ')}. Known (vm:flag_N / vm-flagN):\n  " +
+    abort "--submit-flag: unknown flag id(s) #{bad.join(', ')}. Known (<vm>:flag_N, <vm>-flagN):\n  " +
           flag_index.keys.select { |k| k.include?(':flag_') }.map { |k| "#{k} (#{k.sub(':flag_', '-flag')})" }.join("\n  ")
   end
 
