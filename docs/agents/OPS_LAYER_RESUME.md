@@ -190,6 +190,12 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   (Opus, since it touches sign-in checks). Rulings: the wrong-code limit is a user question (new
   MFA question 5) and no scenario may be stranded by it; the remembered code is tied to its
   device; helpdesk rows record the typed username the same way for known and unknown accounts.
+- 11:36. Log rows R2 revision complete, committed `4ff0372e6` (1249 lines; helper returns a
+  result with `stored?`, `once:` over a 256-digest set `opsLogOnce`, merge over the 10 newest
+  rows, ids capped at 40 characters and account names at 32, row cap 400 bytes). R3 full review
+  running (Fable, a725b16c039f7b813) to `reviews/OPS_LOG_ROWS_R3.md`, asked for a trim list. The
+  40-character cap and the final row names were sent to the core and privilege revisers. Still
+  open for the cracking plan when it is unheld: remove its stale row list.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
