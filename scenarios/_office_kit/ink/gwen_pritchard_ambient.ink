@@ -6,7 +6,7 @@ VAR kit_key_caught = false
 { kit_defend_done:
     { kit_ep == "ca01": -> ca01 }
 }
-Gwen Pritchard: Morning. Grab a coffee if you need one.
+Gwen Pritchard: Hello, love. Grab a coffee if you need one.
 -> bye
 
 === ca01 ===
