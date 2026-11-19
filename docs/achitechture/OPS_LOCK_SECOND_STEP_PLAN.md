@@ -1,6 +1,6 @@
 # Ops layer: a second step on any lock (A25)
 
-Stages G1 and G2. Needs stages M1a to M3 of `OPS_MFA_HELPDESK_PLAN.md` (the "MFA plan") and
+Stages G1, G2 and G3. Needs stages M1a to M3 of `OPS_MFA_HELPDESK_PLAN.md` (the "MFA plan") and
 stages L1a (the helper) and L1b (B11's `badge_swipe` row) of `OPS_LOG_ROWS_PLAN.md` (the "log plan"). Pointers are `file:line`; `game.rb` is
 `app/models/break_escape/game.rb`, `games_controller.rb` is
 `app/controllers/break_escape/games_controller.rb`, JS paths are under `public/break_escape/js/`.
@@ -27,6 +27,10 @@ stay on the server the whole time.
 knock-out) the pane gains "Check phone": the phone shows the archive's request with three
 numbers; the player picks the one the archive showed. A wrong pick cancels the request and costs
 the password again. For a `code` lock the player types the code showing on the owner's device.
+
+**A carried briefcase.** Gordon hands the player his briefcase. Its PIN is on a sticky note,
+but the case still asks Gordon's phone before it opens, wherever the player carries it, and
+once it has left the player's hands no crafted request opens it.
 
 What it teaches: a second step can guard one object as well as a sign-in; it is only as good as
 the person or device holding it; number matching removes the fatigue route; taking the device
@@ -143,8 +147,11 @@ quality is the client's, `:1006-1044`), so on those the second step is the only 
 
 | Stage | Adds | Done when | Size |
 |---|---|---|---|
-| G1 | `secondStep` on a locked object with a `password` or `pin` lock (a plain PC, a safe, an archive), all three kinds; the id-keyed gate, the single "is it open" test and the rule for everything below a closed step; `lockSteps`; the lock form of the `/mfa/*` routes; the step handled once in `ApiClient.unlock`; the pane for a lock; schema, validator, graph, `test_ops_lock_step` | A player types an archive's right password, gets no contents and opens nothing inside it by any route, has the owner's phone approve, and only then sees the files | M |
+| G1 | `secondStep` on a locked object with a `password` or `pin` lock (a plain PC, a safe, an archive), all three kinds; the id-keyed gate, the single "is it open" test, the rule for everything below a closed step and the reach test for a carried gated object (Rule D, 5.5: G1 already places a step in a container an NPC carries and on a nested `takeable`); `lockSteps`; the lock form of the `/mfa/*` routes; the step handled once in `ApiClient.unlock`; the pane for a lock; schema, validator, graph, `test_ops_lock_step` | A player types an archive's right password, gets no contents and opens nothing inside it by any route, has the owner's phone approve, and only then sees the files | M |
 | G2 | `secondStep` on a room (a door), and on `key`, `rfid`, `combination`, `cryptex`, `biometric`, `bluetooth` and `ble` locks, push kinds only; the door-opener rules of 5.3; the cancelled-step guard in `notifyServerUnlock` and `unlockTarget` | An rfid door stays shut after the right card until the request is approved, and `roomData` is in the last answer only | S |
+| G3 | `secondStep` on a top-level item the player carries (5.5): an NPC's `itemsHeld` entry, a start item, a declared grant's item, a `takeable` room object; `secondStep` in the client-forged field list; the carried-item validator rules. Lock types `password` and `pin`, all three kinds; once G2 has landed, G2's types too, push kinds only | A player handed a gated briefcase opens it only through both checks, carrying it or after dropping it in reach; once it has left the inventory and every open room, no route opens it or ships anything inside it, and dropping and picking it up never resets its request count | S |
+
+G3 needs G1 only, and lands after G1, before or after G2.
 
 Not planned: a step on a `flag` lock (the unlock submits to Hacktivity and is undone on an
 error), on a `login` PC (its policy owns that step, MFA plan), and on the lock types that
@@ -173,6 +180,15 @@ never open through `/unlock` (`ransomware_display`, `network_architecture`, `ala
   "requires": ["records_card"], "secondStep": { "kind": "push", "owner": "moira" } }
 ```
 
+**G3.** The same attribute on an item the player carries, here an NPC's held briefcase:
+
+```json
+"itemsHeld": [{ "type": "briefcase", "id": "gordon_briefcase", "name": "Gordon's briefcase",
+  "locked": true, "lockType": "pin", "requires": "…", "owner": "gordon", "droppable": true,
+  "secondStep": { "kind": "push" },
+  "contents": [{ "type": "notes", "id": "board_minutes", "name": "Board minutes", "text": "…" }] }]
+```
+
 | Field | Values | Meaning |
 |---|---|---|
 | `secondStep` | object | After the lock's own check passes, the lock asks its owner before it opens. Absent: the lock is exactly as today |
@@ -181,18 +197,19 @@ never open through `/unlock` (`ransomware_display`, `network_architecture`, `ala
 
 **Where it may sit.** G1: a room object or a `contents` entry at any depth (in a plain
 container, under a sign-in PC, in a profile, a share, a held declared grant or a container an
-NPC carries), with `locked: true`, an `id`, and `lockType` `password` or `pin`. Not on a
-top-level item the player can carry (an NPC's `itemsHeld` entry, a start item, a `takeable`
-room object): open question 7. A `takeable` object nested in `contents` may carry it: it can be
-taken only once every step above it is open, its inventory copy keeps `locked: true` and
-loses its `contents` (`games_controller.rb:3328-3331`, `game.rb:7229-7232`), and opening it
-from the inventory meets the gate as anywhere else. Never inside a `usb` item's `contents`
-(a held stick is served as a fresh copy) and never on or inside a `tableItems` entry (no
-finder walks them). G2: a room with `locked: true` that is neither the start room nor an
+NPC carries), with `locked: true`, an `id`, and `lockType` `password` or `pin`. A `takeable`
+object nested in `contents` may carry it: it can be taken only once every step above it is
+open, its inventory copy keeps `locked: true` and loses its `contents`
+(`games_controller.rb:3328-3331`, `game.rb:7229-7232`), and opening it from the inventory meets
+the gate as anywhere else. G3: also on a top-level item the player can carry, by the rules of
+5.5: an NPC's `itemsHeld` entry, a start item, a declared grant's item, or a `takeable` room
+object. Never inside a
+`usb` item's `contents` (a held stick is served as a fresh copy) and never on or inside a
+`tableItems` entry (no finder walks them). G2: a room with `locked: true` that is neither the start room nor an
 awareness world room. Never a `doors[]` entry.
 
-**Kinds per lock type** (open question 3): `password` and `pin` take all three kinds (objects
-in G1, rooms in G2); `key`, `rfid`, `combination`, `cryptex`, `biometric`, `bluetooth` and
+**Kinds per lock type** (open question 2): `password` and `pin` take all three kinds (objects
+in G1 and G3, rooms in G2); `key`, `rfid`, `combination`, `cryptex`, `biometric`, `bluetooth` and
 `ble` take the push kinds only (G2).
 
 The owner rules are the MFA plan's (its 5.2), with one addition: the owner needs no `creds`,
@@ -276,7 +293,7 @@ call. The object's own `text` and `observations` are not behind the gate, as tod
    has a path), `room_data` for a door (no path; Rule C reads objects only). The unit tests'
    string calls work unedited. `/unlock` passes `resolved:` so the lookup runs once.
 2. **The first factor.** `validate_unlock` runs as today, with Rule C on the resolved path
-   first. For a resolved object that carries `secondStep` and is not open by Rule B, it judges
+   first, then Rule D (5.5) for a carried gated object. For a resolved object that carries `secondStep` and is not open by Rule B, it judges
    the first factor with the "already open" shortcut (`game.rb:4695-4698`) turned off, so a
    posted name or alias that some other open put in the list proves nothing. A wrong first
    factor takes today's refusal branch and answers byte for byte as today.
@@ -288,8 +305,9 @@ call. The object's own `text` and `observations` are not behind the gate, as tod
    (`room_unlocked?` for a door), when the lock's record is marked `passed`, or when the method
    is `flag_reward` and `flag_reward_unlocks_object?` holds for the resolved object
    (`game.rb:4732-4735`). **The `npc` method does not skip it**: the browser asserts that
-   method, so an NPC's `unlockable` or `unlockDoor` stands in for the first factor only (open
-   question 1). Otherwise:
+   method, so an NPC's `unlockable` or `unlockDoor` stands in for the first factor (the card,
+   key, PIN or password) only and the step is still due, even when that NPC is the step's owner; the validator warns
+   (section 9). Of the methods, only a claimed flag reward skips it. Otherwise:
    - a live record that has not passed is answered again from the record, with no write and no
      log row (repeating the first factor, or reloading, costs no save and cannot reset the
      request count). The one exception is the NPC grant (5.3): an accepted `npc` post for a
@@ -316,7 +334,8 @@ Only the gate writes a record, after a valid first factor, so the step cannot be
 a pass is spent by the open. The `secondStep` answer confirms the first factor, as a real
 second prompt does; for `biometric`, `bluetooth` and `ble`, whose first factor the server takes
 on trust (`game.rb:4652-4657`), the step is the part the server enforces. The second post
-judges reach, so the `/mfa/*` routes need none.
+judges reach, so the `/mfa/*` routes need no reach test of their own, except Rule D for a
+carried object (5.5).
 
 **What a subject supplies.** The shared functions take `{ kind: 'object' | 'door', id: }`;
 the MFA plan's subject-rules table (its 5.2) sets what a non-sign-in subject does. The
@@ -326,7 +345,7 @@ lock-only values:
 |---|---|
 | Record | `lockSteps["object:<id>"]` or `["door:<roomId>"]` (the key `PinDust` uses, `pin_dust.rb:77-80`): the pending record's fields plus `'passed'?` |
 | Code compared against | the owner's own `code_device` item, always, never `own:<npcId>` |
-| Phone that may approve | the owner's held phone only; a lock's routes never read `accountResets` (open question 8) |
+| Phone that may approve | the owner's held phone only; a lock's routes never read `accountResets` (open question 6) |
 
 Shared and unchanged: the five-minute record life, the gap between requests and their cap, the
 owner's patience `mfaPrompts[npcId]` (worn down by sign-in and lock requests alike), the
@@ -373,7 +392,7 @@ nothing the browser has not been told: the `secondStep` answer to that `npc` pos
 get no grant: no client posts `npc` for an object (section 2), and a crafted one is refused at
 the gate as before.
 
-Ways a door opens, and whether each meets the step (open question 2):
+Ways a door opens, and whether each meets the step (open question 1):
 
 | Opener | Path | Meets the step? |
 |---|---|---|
@@ -412,7 +431,8 @@ No new scene and no new module.
   (`minigame-starters.js:613-616`, `:672-673`). `MfaClient.cancelFeedback(error)` does both, so
   no caller writes its own line or tone. Neither counts an attempt nor emits
   `door_unlock_failed`.
-- **The wait for a conversation lives in `MfaClient.runLockStep`.** For a request whose
+- **The wait for a conversation lives in `MfaClient.runLockStep`.** The pane does not open over
+  a chat: a pane over a talking NPC would hide the conversation that caused it. For a request whose
   `method` is `npc` (the person chat's `handleUnlockDoor`, `person-chat-conversation.js:447`;
   the ink `unlock_door` action in `chat-helpers.js:99-121`, shared by the person and phone
   chats; an `eventMappings[].unlockDoor`, `npc-manager.js:1886-1893`, fired under any scene or
@@ -599,7 +619,7 @@ No new scene and no new module.
   lock as a card with the lock's name and the owner's headshot. **A held phone opened from
   the inventory lists no lock request**: a pending lock request is approved only from the
   pane the unlock attempt opened, by the owner or by the player on the owner's phone while
-  that pane is up (open question 4). The pane that comes back after a child is a new
+  that pane is up (open question 3). The pane that comes back after a child is a new
   instance; it asks `MfaClient.takeCompleted(subject)` first (for a lock, the pass answer a
   child received, handed out once), and on a pass calls `finishLock(subject)`. A child forced
   shut clears it, as for sign-in.
@@ -610,6 +630,81 @@ No new scene and no new module.
 - **Events** `mfa_required`, `mfa_prompt_sent`, `mfa_approved` and `mfa_failed` are emitted by
   `MfaClient`, as for sign-in, with `targetType` and `targetId` in place of `pcId`, so a
   scenario maps the owner's bark the same way. A lock never touches `pc-sessions.js`.
+
+### 5.5 Carried items
+
+A gated object is **carried** when it, or an object above it, is an NPC's top-level `itemsHeld`
+entry, a start item, a declared grant's item or a `takeable` object. The walk that builds
+`second_step_ids` also builds `Game#carried_step_ids`, the carried ones, keeping for each the
+outermost carried object above or at it (from the scenario only, memoised the same way). G1
+places a step inside a container an NPC carries, inside a held declared grant and on a nested
+`takeable`, so Rule D below lands in G1; G3 adds the top-level placements (an NPC's held
+briefcase, a start item, a grant's item, a `takeable` room object) and their validator rules
+(section 9).
+
+**Where the state lives.** Every inventory path stores or resolves the object's authored id,
+and the server never resolves an inventory copy for `/unlock`. `find_scenario_object`
+(`game.rb:4867-4916`) walks rooms (the scenario copy, ignoring `objects_removed`), profiles,
+shares, held grants (`held_grant_items`, `:4969-4980`, only while held), held USB sticks,
+released NPC containers (`released_npc_containers`, `:4945-4959`, the scenario copy once a give
+or knock-out record releases it) and start items (`:4909-4914`, the authored copy);
+`find_container_in_scenario` (`games_controller.rb:3000-3025`) walks the same homes. So the
+record `lockSteps["object:<id>"]` and the id in `unlockedObjects` follow the item through
+every move. No copy holds step state, no inventory path writes, moves or resets a record, and
+nothing is added to `player_state` for carried items: the inventory copy carries only the
+public `secondStep` it already has (section 7).
+
+**Every inventory path.**
+
+| Path | Where | The step on the move | Risk and answer |
+|---|---|---|---|
+| Start inventory | `game.rb:7532-7555` (a filtered copy); a re-add is always valid (`games_controller.rb:3373-3382`) | the copy keeps `locked` and `secondStep`; `contents` and `requires` stripped | a crafted re-add of a held item answers `already: true` (`:1416-1425`); the same record either way |
+| Pick-up from a room | `POST /inventory` add (`games_controller.rb:1400-1452`), `validate_item_collectible` (`:3335-3491`), `canonical_inventory_item` (`:3315-3333`, a server copy, `locked` cleared by id only); the room records `objects_removed` (`game.rb:1225-1262`) | kept | none new |
+| Pick-up from a container | the same route; the container tested by id, or by name when it has none (`:3424-3430`); one level into a room object (`:3660-3666`); released NPC containers (`:3688-3695`) | kept | for a gated container Rule B replaces the name test (5.2) |
+| An NPC's give in ink | `chat-helpers.js:126` to `NPCGameBridge.giveItem` to `addToInventory` (`systems/inventory.js:753`, posting `source_npc_id`, `:856`); server priority 0.5 (`games_controller.rb:3617-3640`), then `record_npc_gift!` (`game.rb:817-834`) | kept (the scenario copy, filtered) | before the give the item resolves nowhere, so no record can start early |
+| A declared grant (action `give_item`) | `apply-actions.js:249-266`; the grant branch (`games_controller.rb:3384-3400`); `contents` stripped (`:3324-3327`) | kept | resolves only while held |
+| Taking from an NPC's inventory | the NPC-mode container (`container-minigame.js:2380-2400`, `:2579-2650`), the same add route with `source_npc_id`; no separate pickpocket route | kept | a click on a locked item still in the NPC's hands goes to the unlock path (`:2302-2304`) and resolves nothing: the invented-id 422 |
+| Knock-out drop | `add_object`, NPC branch (`game.rb:1077-1138`): the full held definition, authored id, into the room's `objects_added` | on the server only; the room filter drops a locked object's `contents` (`:7226-7232`) | picked up through priority 0 (`games_controller.rb:3605-3615`), then the canonical copy: none new |
+| Player drop | `item-drop.js` (`add_object` with `player_drop`, then an inventory remove); the server needs `droppable: true` and stores the held copy under the same id (`game.rb:1143-1167`) | kept | neither the drop nor the pick-up touches `lockSteps`: the request count never resets |
+| Put in a container | no route stores a held item in a container | | none |
+| NPC carry (needs) | `carriable_object?` (`game.rb:1365-1376`) refuses `locked`, `lockType`, `requires` and `contents` | never carried | none |
+| Removed, consumed, planted, hidden | `remove_item` (`apply-actions.js:274-293`), `consumables.js`, the inventory `remove` (`games_controller.rb:1454-1460`, `remove_inventory_item!` at `game.rb:845-850`, by id with no other check) and `hide` (`:1462-1473`) | the item leaves; its record stays under its id | **stale reach**: the released-container and start-item walks still resolve the item after it has gone. Rule D |
+| Card copier | `clone_card` (`games_controller.rb:1655`) copies keycards into `saved_cards`, not inventory objects | | a keycard inside a gated case is taken only once the case is open, by id |
+| Copy transfer (sign-in desktop, share) | `record_copied_item!` (`game.rb:4258`; `games_controller.rb:1448`) | one id, two copies | the copies share one record and one `unlockedObjects` entry (below) |
+| Reload and bootstrap | `GET /scenario` sends `client_inventory` (`game.rb:1774-1783`, `filter_inventory_for_client!` at `:1902-1922`); the stored copy keeps `locked: true` after an open, and a reopen goes through `/unlock` "already open" by id | `secondStep` kept; `lockSteps` server-only | none new |
+| Dedupe | `inventory_includes?` by id, else type and name (`game.rb:704-717`) | | a gated item always has an id (section 9) |
+| A client-built object | a client-added object gets a fresh id and loses `FORGEABLE_ITEM_FIELDS` (`lib/break_escape/item_identity.rb:28-32`, `game.rb:1183-1196`) | | `secondStep` joins that list (below) |
+
+**Rule D, reach.** For an id in `carried_step_ids`, `Game#carried_step_reachable?(object)` is
+true when its outermost carried object is held in the server inventory (`ItemIdentity.held_in?`
+by id, client-added items excluded as `held_grant_items` excludes them, `game.rb:4975`), or a
+room the player has open (in `unlockedRooms`, or the start room) holds a copy with that id in
+its `objects_added` (a player or knock-out drop), or it is still in its authored place and that
+place is open today: a room object not in its room's `objects_removed`, in a room the player
+has open, or a nested `takeable` neither held nor dropped whose containers above are all open
+by id (Rule B for a gated one). An NPC-held item that no give or knock-out has released is
+never in reach. When the test fails the object is refused as an invented id, and the refusal
+comes from the closed lists only: the generic 422 at `/unlock` (beside Rule C in
+`validate_unlock`, so no first factor is judged and no feedback helper answers), 404 "Container
+not found" at `GET /container`, "Item not found in scenario" at the take routes (`games_controller.rb:3406`),
+and the `/mfa/*` 404 for the lock form, so a pane left up after the item has gone closes as an
+expiry. Nothing is written, and the record stays as it was. Rule D is read after Rule C and
+only for ids in `carried_step_ids`; an object with no step, carried or not, resolves exactly as
+today.
+
+**Copies share one step.** A gated file a sign-in desktop or a share lets the player copy
+(`transfer` `copy` or `both`, the default) leaves one copy in place and one in the inventory,
+both under one id. They share one record and one `unlockedObjects` entry, so passing the step on
+one opens both. The validator warns on such a file (section 9).
+
+**A client-built object.** `secondStep` joins `ItemIdentity::FORGEABLE_ITEM_FIELDS`, so an
+object the client adds loses it, and it gets a fresh server id in any case: a client cannot
+make a gated item or borrow a gated id.
+
+**Opening from the inventory.** A click on a gated item in the inventory runs its lock's pad
+and, after a right first factor, the pane of 5.4, as anywhere else. After a reload the player
+gives the first factor again: a live record reopens the same pane with the same number, a
+passed one opens the item.
 
 ## 6. Server routes
 
@@ -627,7 +722,7 @@ name-matching finder is never used here. With a lock as subject, in order:
 
 | Route | Checks | Answer |
 |---|---|---|
-| all four below | the target resolves by id, carries `secondStep` and is not open (else 404) | |
+| all four below | the target resolves by id, carries `secondStep` and is not open, and a carried target passes Rule D (5.5) (else 404) | |
 | the three posts | `lockSteps` holds a live record that has not passed, of the right kind (else generic 422). No route re-judge and no lockout | |
 | `POST /mfa/verify` (`code`) | owner's code step not closed (422 `codeLocked`, `retryIn`); six digits; `MfaModel.code_state` | Stale: 422, no write. Wrong: `tries` and `mfaAccounts[owner].wrong` move, 422 `mfaIncorrect: true`; the fifth drops the record and adds `expired: true`. Right: `passed` set, `{ success: true, stepPassed: true, targetType, targetId }` |
 | `POST /mfa/prompt` | gap since the last request (422 `tooSoon`); under the cap (else record dropped, 422 `expired`) | The owner's decision as for sign-in. Not approved: `{ success: false, approved: false, promptsSent, waiting? }`. Approved: `mfaPrompts[owner] = 0`, `passed` set, the pass answer plus `approvedBy: "owner"` |
@@ -642,8 +737,9 @@ lock still needs. All are inside the game lock and `no-store`.
 
 ## 7. What reaches the browser, and what never does
 
-`secondStep` (`kind`, `owner`) is public, with the object as authored or, for a room, in the
-bootstrap door fields (G2, `kind` and `owner` only). For a door an NPC has opened toward its
+`secondStep` (`kind`, `owner`) is public, with the object as authored (on a carried item, in
+its inventory copy too) or, for a room, in the bootstrap door fields (G2, `kind` and `owner`
+only). For a door an NPC has opened toward its
 step, the opener's NPC id comes back in that `secondStep` answer (`opener`) and, after a
 reload, as the room's `npcStepOpener`: the player saw that NPC open the door, so it tells them
 nothing new. After a right first factor the browser learns only that, and for
@@ -663,11 +759,13 @@ top-level `{}`:
 | `npcStepGrants` (G2) | `{ "door:<roomId>" => npcId }` | One entry per gated door; written by the gate on an accepted `npc` first factor, deleted by the open | Never as state. The bootstrap derives each room's `npcStepOpener` from it (5.3); the `secondStep` answer carries `opener`. Not read from a sync body |
 
 A passed record the player never spends stays for the rest of the game and survives reloads,
-within the one-per-lock bound (open question 5). An NPC grant also stays until its door opens,
+within the one-per-lock bound (open question 4). An NPC grant also stays until its door opens,
 so the player can always retry. `reset_player_state!` drops `lockSteps` and `npcStepGrants`
 with the other access keys (`game.rb:3019-3020`). `mfaPrompts` and `mfaAccounts` gain one entry
 per lock owner who is not an account. `unlockedObjects` grows by one id per opened lock, as
-today. Nothing is added to synced state; answers carry single changed values. **Reload:** 5.4.
+today. Carried items add no key: a carried item's step is its `object:<id>` record, which no
+inventory path writes or moves (5.5), and `carried_step_ids` is derived from the scenario.
+Nothing is added to synced state; answers carry single changed values. **Reload:** 5.4.
 **Old games:** a saved scenario without the attribute has an empty `second_step_ids`, so the
 gate never fires and the lock form of each `/mfa/*` route answers 404.
 
@@ -699,8 +797,16 @@ apart; its own loop over `rooms[].doors[]` covers the two door rules.
   lock, or a type that never opens through `/unlock`.
 - `code` on a lock type outside `CODE_LOCK_TYPES`; until G2 lands, any `secondStep` on a room
   or on a type outside those two.
-- A top-level carried item with `secondStep` (4, "Where it may sit"): an `itemsHeld` entry, a
-  start item, a `takeable` room object.
+- Until G3 lands, `secondStep` on a top-level carried item (4, "Where it may sit"): an NPC's
+  `itemsHeld` entry, a start item, a declared grant's item, a `takeable` room object. From G3
+  these may carry it, and the following carried-item errors take that rule's place; they apply
+  to a nested `takeable` from G1. `secondStep` on a key or card (`opens_lock`, `key_id`,
+  `keyPins`, `card_id`, or type `key` or `keycard`): a first factor never carries a second
+  step. On a `usb` item. On a consumable (`consumable: true`, a positive `healAmount`, or a type
+  `consumables.js` heals by default, `DEFAULT_HEAL_BY_TYPE` at `:47-58`), which leaves the
+  inventory when used. On a hideable device (a `hideable` block,
+  `lib/break_escape/hiding_spots.rb:64-76`), which leaves it when hidden. An item an NPC could
+  carry for its needs is excluded already: `carriable_object?` refuses anything `locked`.
 - `secondStep` on anything inside a `usb` item's `contents`, at any depth, and on any
   `tableItems` entry or anything inside one.
 - An `unlock_object` task whose `targetObject` names a `secondStep` object by anything but its `id`.
@@ -738,7 +844,10 @@ apart; its own loop over `rooms[].doors[]` covers the two door rules.
 `eventMappings[].unlockDoor`: "the step still applies; the NPC replaces the first factor
 only". A `secondStep` object with its own `text`: "shipped before the step; put it in
 `contents`". The same for a gated room object's `tableItems`, which ship before the step (the
-filter removes only `contents`, `game.rb:7280-7287`). `scripts/lock_key_diff.rb` adds `secondStep` to `REQ_KEYS`, its output unchanged
+filter removes only `contents`, `game.rb:7280-7287`). A `secondStep` object a sign-in desktop
+or a share lets the player copy (`transfer` `copy` or `both`, or no `transfer`, whose default
+is `both`): "a copy shares this step: passing it on one copy opens every copy" (5.5).
+`scripts/lock_key_diff.rb` adds `secondStep` to `REQ_KEYS`, its output unchanged
 for a scenario without the field.
 
 **Dungeon graph.** `generate_dungeon_graph.rb` draws a lock as `lock_<id>` from its parent in
@@ -754,8 +863,10 @@ A scenario without the field draws exactly as before.
 ## 10. Effect on existing scenarios
 
 None. No scenario carries `secondStep` today, and each change is behind it: the gate returns
-when `lock_step` is nil; Rules A, B and C, the shortcut turned off and the answer's finder act
-only on ids in `second_step_ids`, which is empty; `resolve_unlock_target` finds what
+when `lock_step` is nil; Rules A, B, C and D, the shortcut turned off and the answer's finder
+act only on ids in `second_step_ids` (Rule D on its subset `carried_step_ids`), which is empty;
+`secondStep` joining `FORGEABLE_ITEM_FIELDS` strips a field no shipped item has; a plain locked
+carried item resolves and opens exactly as today; `resolve_unlock_target` finds what
 `find_scenario_object` found, plus the path; the `/mfa/*` lock form answers 404; each client
 branch fires only on `secondStep: true` or `second_step_cancelled`; the bootstrap copies the
 field only when a room has it. Every game gains an empty `lockSteps` and an empty
@@ -821,6 +932,13 @@ edge, and a scenario without the field drawn unchanged.
 | Re-enrolled owner | After a helpdesk re-enrolment of the owner: the player's own phone cannot approve the lock (403); verify still takes the code from the owner's `code_device`, which `GET /mfa/device` still shows; `own:<npcId>` codes are refused |
 | G2 doors | Credential and `npc` meet the gate with no `roomData` and no `unlockedRooms` write; a flag-reward door and a finished `prop_door` open with no step; `GET /room` is 403 before the pass; at an rfid door no `badge_swipe` row until the final post |
 | G2 NPC grant | An `npc` post to a gated door writes `npcStepGrants["door:<roomId>"]` and answers with `opener`; a deny, an expiry and a five-minute lapse leave the grant; the bootstrap then carries the room's `npcStepOpener` (and `secondStep` with `kind` and `owner` only, an extra authored key dropped); a second `npc` post from the same NPC reopens the live record or starts a new one; an `npc` post against a record a keycard already started writes the grant and answers `opener` as that NPC, and an `npc` post from another NPC replaces it; the open deletes the grant; an `npc` post from an NPC the checks refuse gets today's 422 and writes no grant |
+| Reach after removal (G1) | A gated archive inside an NPC's briefcase and a nested takeable gated archive: each opens through both checks while held. After an inventory `remove` (and, for the NPC's case, a `hide` fixture that skips the validator) a crafted `/unlock` with the right password is the invented-id 422 with no pips or case hint, `GET /container` is 404 "Container not found", the take routes answer "Item not found in scenario" and every `/mfa/*` lock call is 404, for a live record, a passed record and an opened archive alike; nothing is written and the record is left as it was |
+| Not yet released (G1) | `/unlock` on a gated object inside a container an NPC still holds, before any give or knock-out: the invented-id 422, no record |
+| Drop and pick up (G3) | A gated held briefcase with a live record: a player drop into an open room and a pick-up keep the record, its request count and `nonce`; the dropped copy is in reach (a right first factor re-answers from the record); the same after a knock-out drop's copy in `objects_added`; a drop into a room the player then cannot enter is out of reach |
+| Every carried home (G3) | A gated start item, an `itemsHeld` briefcase after a give and after a knock-out, a declared grant's item and a `takeable` room object: each opens through both checks while held and is refused by Rule D once removed, as in the G1 row; a gated `takeable` room object still in its room is in reach while the room is open |
+| Re-add and dedupe (G3) | A crafted add of a held gated start item answers `already: true` and leaves the record; a re-sent add on reload the same |
+| Client-built object (G3) | An `add_object` with no source carrying `secondStep` and a gated object's id: stored with a fresh id and no `secondStep`; `second_step_ids` and `carried_step_ids` unchanged; the gated object's record untouched |
+| Copies (G3) | A gated file copied from a sign-in desktop (`transfer: "copy"`): one record for both copies; passing the step on the inventory copy opens the desktop copy too |
 
 **JS** (`second-step-lock.test.mjs`, plain `node`). No new module: the tests depend on the
 MFA plan's stage M1b having put `mfa-client.js` and its scenes on every harness copy list.
@@ -887,6 +1005,11 @@ the `pin` pad keeps its state beneath the pane and plays no reject sound on the 
 posts as today. A grep spec asserts that nothing in `public/break_escape/js/` posts to
 `/unlock` except `ApiClient.unlock` and `MfaClient.finishLock`.
 
+Carried items: a gated item opened from the inventory opens the pane over the `pin` pad, and
+the player's X leaves it locked with no `item_unlocked`; a gated held item after a reload (the
+stored copy keeps `locked: true` and `secondStep`) reopens the same pane and number from a live
+record; a drop and pick-up between two right PINs keeps the pane's request count.
+
 **Feature scenario** `scenarios/test_ops_lock_step/`. Cast: Moira (low awareness, approves
 when pestered, patience 3, keeps her phone), Gordon (high awareness; his ink hands over his
 phone), Priya (owns a code device her ink hands over), Dana (high awareness, `koImmune: true`,
@@ -895,7 +1018,10 @@ holding `audit_zip` (`password`, `push_number_match`, Gordon); `moira_locker` (`
 `push`; in Moira's `unlockable` for the crafted-post test only); `priya_safe` (`pin`,
 `code`); `dana_cabinet` (`password`, `push_number_match`, off the critical path); in G2
 `records_room` (`rfid`, `push`, Moira), which Gordon's ink also opens with
-`#unlock_door:records_room` followed by a `#give_item` in the same knot. The scenario declares
+`#unlock_door:records_room` followed by a `#give_item` in the same knot; in G3
+`gordon_briefcase` (`pin`, `push`, Gordon, `droppable: true`, in Gordon's `itemsHeld`, given
+by a `#give_item` in a later knot), and a `courier_box` whose `triggerOnInteract` runs a
+`remove_item` action on the briefcase. The scenario declares
 `logSources` and a `gameClock` so rows can be read, and every beat that asserts rows calls
 `assert_ops_log_holds_no_secret`.
 
@@ -920,9 +1046,15 @@ and the server record):
 | B12c | Use the door | No conversation; the pane opens at once with no toast, with the same request count; no new `mfa_challenge`; no `door_unlocked_by_npc` yet (the step has not passed) |
 | B12d | Reload with the pane up; use the door again | Bootstrap door carries `npcStepOpener: gordon`; the pane reopens on the same live record |
 | B12e | "Send again" until Moira (the owner, elsewhere) approves | Door sprite opens at once from the answer, with no second click; `door_unlocked` fires; `door_unlocked_by_npc` fires once (`retry: true`) and the scenario's mapped global is set once; `unlockedRooms` gains it; record and grant deleted; `mfa_prompt_approved` with `approver: owner`; no `badge_swipe` row (an NPC, not a card) |
+| B13a (G3) | After B7 (Gordon's phone held). Gordon's ink gives `gordon_briefcase` | In the inventory with `locked: true` and `secondStep`, no `contents`; `lockSteps` has no briefcase record |
+| B13b | Right PIN at the briefcase from the inventory; one request | `secondStep` answer; one live record, request count 1; one `mfa_challenge` row; no contents in any answer |
+| B13c | Drop the briefcase, pick it up, right PIN again | The same live record and request count; no new `mfa_challenge` row |
+| B13d | "Check phone"; approve | Briefcase open; `approvedBy: player`; `board_minutes` listed |
+| B13e | Use `courier_box` (it removes the briefcase); crafted `/unlock` and `GET /container` for `gordon_briefcase` and `board_minutes` | The invented-id 422 and 404 "Container not found"; nothing of the contents in any answer |
+| B13f | A fresh game: B13a and B13b, then `courier_box`; crafted right PIN at `/unlock`, then `POST /mfa/prompt` | 422, then 404; the live record untouched; nothing opens |
 
 **Live proof** on the real path, headless, on the keyless server: B2, B3, B6, B7, B8 and B9 for G1
-with screenshots of the pane in each frame; B11 and B12a to B12e for G2. The proof uses the test scenario and
+with screenshots of the pane in each frame; B11 and B12a to B12e for G2; B13a to B13f for G3. The proof uses the test scenario and
 edits no game record. Judge each beat by the server record: the `unlock_object` action emits
 `object_remotely_unlocked` before it posts (`apply-actions.js:200`), so a refused gated
 object can look open on screen.
@@ -936,14 +1068,18 @@ section 6, rows) with tests, then client (5.4) with JS tests, then schema, valid
 the feature scenario, B1 to B10 and the live proof. G2 adds 5.3 (the bootstrap allowlist, the
 `doors.js` `doorProperties` fields, the three `getLockRequirementsForDoor` copies and
 `npcStepGrants`), the other lock types with their early-success sites (5.4), the NPC wait and
-retry, the door tests, B11 and B12a to B12e.
+retry, the door tests, B11 and B12a to B12e. G1 also builds `carried_step_ids` and Rule D (5.5)
+with the server rules. G3, after G1 and either side of G2, lifts the validator's carried-item
+refusal for its carried-item errors (section 9), adds `secondStep` to `FORGEABLE_ITEM_FIELDS`,
+the G3 controller and JS tests, the briefcase and B13a to B13f.
 
 | Shared file | This plan's edit | Also edited by |
 |---|---|---|
-| `game.rb` | `ACCESS_STATE_DEFAULTS`; `resolve_unlock_target` behind `find_scenario_object`; `unlock_object!` (Rule A); `validate_unlock` (`resolved:`, Rule C, the shortcut); the feedback helpers; the marker at `:2999-3010`; the bootstrap allowlist and `npcStepOpener` in `filtered_scenario_for_bootstrap` (G2) | MFA plan, privilege and accounts plan, core plan |
-| `games_controller.rb` | the gate and the answer's finder in `unlock`; the plain `GET /container` branch and the path through its finders; the room-object take test; the inventory copy; the lock form in the `/mfa/*` actions; the refused-row branch of `unlock` (L1b's `badge_swipe` row), edited to return before the row behind a closed step | MFA plan, log plan |
+| `game.rb` | `ACCESS_STATE_DEFAULTS`; `resolve_unlock_target` behind `find_scenario_object`; `unlock_object!` (Rule A); `validate_unlock` (`resolved:`, Rule C, the shortcut); the feedback helpers; the marker at `:2999-3010`; the bootstrap allowlist and `npcStepOpener` in `filtered_scenario_for_bootstrap` (G2); `carried_step_ids` and `carried_step_reachable?` (Rule D) | MFA plan, privilege and accounts plan, core plan |
+| `games_controller.rb` | the gate and the answer's finder in `unlock`; the plain `GET /container` branch and the path through its finders; the room-object take test; Rule D at `GET /container` and the take routes; the inventory copy; the lock form in the `/mfa/*` actions; the refused-row branch of `unlock` (L1b's `badge_swipe` row), edited to return before the row behind a closed step | MFA plan, log plan |
 | `lib/break_escape/mfa_model.rb`, `app/models/break_escape/mfa_access.rb` | the lock constants, `lock_step` and `lock_step_never_passes?` (`held_item_sources` is the MFA plan's); the `object` and `door` subjects | MFA plan (owner) |
 | `api-client.js`, `utils/lock-scope-refusal.js`, `systems/unlock-system.js` (G1; G2 adds the early-success sites, the access-list branches, the `getLockRequirementsForDoor` fields and the NPC retry in `handleUnlock`) | the step in `ApiClient.unlock` (including the sixth argument `{ fromDoor }` handed to `runLockStep` and never posted); the refusal line; the cancelled guard | none in the ops plans |
+| `lib/break_escape/item_identity.rb` (G3) | `secondStep` in `FORGEABLE_ITEM_FIELDS` | none in the ops plans |
 | `systems/doors.js` (G2) | `secondStep` and `npcStepOpener` in `doorProperties` | none in the ops plans |
 | `systems/minigame-starters.js`, `minigames/biometrics/fingerprint-reader-minigame.js`, `minigames/ble-scanner/ble-scanner-minigame.js`, `minigames/rfid/rfid-minigame.js` (G2) | the gated-lock skips of 5.4 (toasts, `expectContainerAfterUnlock`, `expectPanelWithin`, `applyBlePairEffects`); the copier's cancel branch | none in the ops plans |
 | `systems/npc-game-bridge.js`, `minigames/helpers/chat-helpers.js`, `minigames/person-chat/person-chat-conversation.js` (G2) | `secondStepCancelled` from `unlockDoor`; no failure line for it | none in the ops plans |
@@ -996,7 +1132,9 @@ design, so the player sees a copied card is not the owner's approval.
    `target_id`; `GET /mfa/device` answers when a lock carries `kind: "code"` though no policy
    declares a kind; `GET /mfa/phone` lists a lock request only for a named lock, never in its
    `own=1` form. Its validator's `code_device` owner error (section 9) admits a lock's owner.
-   Its "approving from the phone" slice is where lock requests would join (question 4).
+   Its "approving from the phone" slice is where lock requests would join (question 3). The
+   lock form of the `/mfa/*` routes calls `carried_step_reachable?` (or takes a hook for it)
+   before it reads the record, and answers its 404 when that fails (5.5).
 3. **Log plan.** Add `door` and `object` to the `places` of the eight `mfa_*` events; register
    the `method` detail key on `mfa_challenge` with the closed code list of section 13; allow
    `{ npc: }` as `as` on those events; say in 5.1 that both `badge_swipe` rows are written only
@@ -1007,57 +1145,40 @@ design, so the player sees a copied card is not the owner's approval.
    the step. A plan that opens an object by its own server route uses `record_step_open!` and
    `step_object_open?`, or the validator refuses `secondStep` on that object.
 
-**Found in existing code, not in this plan's scope** (neither is changed here; each goes to
-`docs/IDEAS_BACKLOG.md` when this plan lands):
+**Found in existing code, not in this plan's scope** (none is changed here):
 
-- A keycard carrying a keyring `credential` still signs in after revocation; the keyring test
-  never reads revoked ids (`credential_keyring.rb:42-64`, against `game.rb:4019-4021`). Owner:
-  the keyring (A15) work.
-- The validator counts `fob` and `rfid` item types as cards (`scripts/validate_scenario.rb:2321`);
-  the engine accepts only `keycard` (`game.rb:4045`, `unlock-system.js:89-90`). Owner: the
-  validator.
+- Fixed outside this plan, on its own branch with tests: a keycard carrying a keyring
+  `credential` still signed in after revocation; the keyring test never read revoked ids
+  (`credential_keyring.rb:42-64`, against `game.rb:4019-4021`). Owner: the keyring (A15) work.
+- Fixed outside this plan, on the same branch: the validator counted `fob` and `rfid` item
+  types as cards (`scripts/validate_scenario.rb:2321`); the engine accepts only `keycard`
+  (`game.rb:4045`, `unlock-system.js:89-90`). Owner: the validator.
+- Open: a plain locked carried item that has left the inventory still resolves for `/unlock`
+  and `GET /container` (`released_npc_containers` and the start-item walk do not test that it
+  is held, `game.rb:4945-4959`, `:4909-4914`), so a crafted request can open one the player no
+  longer has. Rule D (5.5) covers gated items only.
 
 ## 15. Open questions for the user
 
-1. **Should an NPC-granted unlock skip the step?** An NPC opens a lock when the browser says
-   the conversation got there; the server cannot check that. (a) No: the step is still due
-   and the NPC replaces the first factor only; the validator warns. (b) Yes, always. (c) Yes,
-   only when that NPC is the step's owner. *Recommend (a).* No client posts `npc` for an
-   object today (only doors). Under (b) or (c) any player who has met the NPC can skip the
-   step with a crafted request. A flag reward skips it in every option. Written to (a), the
-   step due even when the NPC is its owner (5.4). What each answer costs: the NPC grant, the
-   bootstrap `npcStepOpener`, the `npcStepOpener` field in `doorProperties` and the three
-   `getLockRequirementsForDoor` returns, the `handleUnlock` retry and B12b to B12d exist only
-   under (a); under (b) or (c) all of it drops. If less is wanted under (a), the cut options
-   are: keep the opener in client memory only (no server key, no bootstrap edit, no B12d),
-   which loses only the retry after a reload, where the player can ask the NPC again; and
-   leave out the `showAccessRefusal` cancel branch and the live-copier branch (5.4), which guard
-   paths no current caller reaches, until a caller needs them.
-9. **Should the pane wait until the conversation closes?** (a) Yes: for an `npc` request the
-   pane opens only when no scene is open and no chat return is pending (5.4). (b) No: it opens
-   at once over the chat. *Recommend (a):* a pane over a talking NPC hides the conversation
-   that caused it. Written to (a).
-2. **Should a door's step be hard-enforced against a propped door (G2)?** A propped door
+1. **Should a door's step be hard-enforced against a propped door (G2)?** A propped door
    skips the step (5.3), and propping is best-effort, so a crafted client can prop a gated
    door. (a) Accept it: an author who needs it hard-enforced gives that door no `prop_door`
    workaround. (b) The validator refuses `secondStep` on a room a `prop_door` targets.
    *Recommend (a):* it keeps a real social-engineering route open. Written to (a).
-3. **Which lock types take a typed code?** (a) `password` and `pin` only; other types take
+2. **Which lock types take a typed code?** (a) `password` and `pin` only; other types take
    push kinds. (b) Also `rfid`, `biometric`, `bluetooth` and `ble`, through the code-only pane.
    (c) As (b), and no push on `key` locks. *Recommend (a)* for the first build: the lock
    already has somewhere to type. Written to (a).
-4. **Can a held phone show lock requests with no prompt open?** (a) No: a request is approved
+3. **Can a held phone show lock requests with no prompt open?** (a) No: a request is approved
    only from the pane the unlock attempt opened. (b) Yes: the phone's own menu lists waiting
    requests; this needs the same for sign-in, a later MFA slice. *Recommend (a).* Written to (a).
-5. **Does a passed approval lapse?** It lingers only if the automatic second post fails.
+4. **Does a passed approval lapse?** It lingers only if the automatic second post fails.
    (a) It waits for a right first factor. (b) It lapses after five minutes. *Recommend (a):*
    it only spares a step already done. Written to (a).
-6. **Stages.** (a) G1, then G2. (b) One stage. (c) G1 only until a mission wants a door that
-   asks its owner. *Recommend (a):* G1 covers both examples; G2 touches every pad. Written to (a).
-7. **A step on something the player carries** (a briefcase an NPC hands over, a start item).
-   (a) Refused for now; a file inside a carried container is fine. (b) Allow it, after
-   auditing every inventory copy path. *Recommend (a).* Written to (a).
-8. **Does a helpdesk re-enrolment of the owner carry to the owner's locks?** (a) No: a lock's
+5. **Stages.** (a) G1, then G2 (G3 after G1). (b) One stage. (c) G1 only until a mission wants
+   a door that asks its owner. *Recommend (a):* G1 covers both examples; G2 touches every pad.
+   Written to (a).
+6. **Does a helpdesk re-enrolment of the owner carry to the owner's locks?** (a) No: a lock's
    step always goes to the phone and code device the scenario gives the owner. (b) Yes: the
    lock form gains `own=1` and verify compares against `own:<npcId>`. *Recommend (a):* a work
    sign-in reset reaching a private safe is odd fiction. Written to (a).

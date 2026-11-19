@@ -121,3 +121,19 @@
 - n3: the bootstrap adds `npcStepOpener` only for a room not in `unlockedRooms`.
 - n4: `opener` wording fixed: the grant's value, also on a re-answer from any method.
 - Open questions 1 and 9 left open and undecided.
+
+## Round 2 picks (2026-11-19)
+
+- R2-4 a: 5.2 step 4 states the `npc` method never skips the step (NPC stands in for the first factor only, even as owner; only a claimed flag reward skips); question 1 and its cut options removed from section 15.
+- R2-10 a: 5.4 states the pane does not open over a chat; question 9 removed.
+- R2-5 b: new 5.5 "Carried items" with the inventory-path audit table, `carried_step_ids`, Rule D (`carried_step_reachable?`), shared record for copies, `secondStep` in `FORGEABLE_ITEM_FIELDS`, opening from the inventory; question 7 removed.
+- R2-5 b: Rule D lands in G1, not G3, because G1 already allows a step inside an NPC-carried container and on a nested takeable (same reach gap); G3 adds only the top-level carried placements. Orchestrator may challenge.
+- R2-5 b: stage table gains G3 (after G1, either side of G2; `password`/`pin`, then G2's types once G2 lands); header says G1, G2 and G3; section 1 gains the briefcase example; section 4 gains a G3 JSON example and placement text.
+- R2-5 b: refusals from the closed lists only (generic 422, 404 "Container not found", "Item not found in scenario", `/mfa/*` 404); section 6 route table and 5.2 step 2 read Rule D.
+- R2-5 b: section 9 replaces the carried-item refusal with "until G3" plus the carried-item errors (key or card, `usb`, consumable, hideable) and a copy-transfer warning.
+- R2-5 b: sections 7, 8 and 10 state no new state key, nothing in synced `player_state`, shipped scenarios unchanged.
+- R2-5 b: section 11 gains seven controller rows (G1 reach after removal, not yet released; G3 drop and pick-up, every home, re-add, client-built, copies), a node paragraph, the briefcase and courier box in the feature scenario, beats B13a to B13f, and the live proof list.
+- R2-5 b: section 12 order and shared files (`game.rb`, `games_controller.rb`, new `item_identity.rb` row owned by this plan, since no ops plan edits it; the handover's request to the core plan dropped).
+- R2-5 b: section 14 request 2 gains the `/mfa/*` reach call; a new "Open" line notes the existing reach gap for plain carried items, with no scope change.
+- R2-11 a: section 14 marks both existing-code bugs as fixed outside this plan on their own branch.
+- Section 15 renumbered 1 to 6 (old 2, 3, 4, 5, 6, 8); in-body references updated (sections 4, 5.2, 5.3, 5.4, 8, 14).
