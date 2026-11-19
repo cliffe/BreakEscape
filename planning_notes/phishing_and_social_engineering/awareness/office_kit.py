@@ -352,11 +352,11 @@ def is_kit_member(m):
 
 
 def is_kit_mapping(m):
-    """A host mapping is kit-owned when its setGlobal key, knot or condition names a kit_ global."""
+    """A host mapping is kit-owned when its setGlobal key, knot (knot or targetKnot) or condition names a kit_ global."""
     sg = m.get('setGlobal')
     if isinstance(sg, dict) and any(str(k).startswith('kit_') for k in sg):
         return True
-    return bool(KIT_NAME.search(str(m.get('condition', '')))) or bool(KIT_NAME.search(str(m.get('knot', ''))))
+    return bool(KIT_NAME.search(str(m.get('condition', '')))) or bool(KIT_NAME.search(str(m.get('knot', ''))) or KIT_NAME.search(str(m.get('targetKnot', ''))))
 
 
 # top-level keys the kit owns whole; `chatter` is shared with the shell, so only its kit_ keys are the kit's

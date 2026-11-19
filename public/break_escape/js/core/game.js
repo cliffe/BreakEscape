@@ -850,7 +850,7 @@ export function preload() {
     // (one fetch instead of two).
     this.load.image('pc1_locked', 'objects/pc1_locked.png');
     // ca12's break reminder: Thandiwe's screen left on a break notice while she steps away.
-    // PLACEHOLDER art (a tinted pc1, scripts-free hand edit); real prop art waits on the owner (CA12_BUILD part 8 Q6).
+    // PLACEHOLDER art (a tinted pc1 with a cup mark, a hand edit of pc1.png); real prop art waits on the owner (CA12_BUILD part 8 Q6).
     // Preloaded so the swap shows at 0 s with a cold cache (core/rooms.js loads variant keys on demand otherwise).
     this.load.image('pc1_break', 'objects/pc1_break.png');
     this.load.image('pc3_locked', 'objects/pc3_locked.png');

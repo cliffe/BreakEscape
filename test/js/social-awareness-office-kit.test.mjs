@@ -113,7 +113,7 @@ const hostOf = (sc) => {
 // mirrors office_kit.KIT_NAME: a kit_ name, not the tail of another (skit_x, payload_kit_x)
 const KIT_NAME = /(?<![A-Za-z0-9_])kit_/;
 const isKitMapping = (m) => Object.keys(m.setGlobal || {}).some((k) => k.startsWith('kit_')) ||
-  KIT_NAME.test(String(m.condition || '')) || KIT_NAME.test(String(m.knot || ''));
+  KIT_NAME.test(String(m.condition || '')) || KIT_NAME.test(String(m.knot || '')) || KIT_NAME.test(String(m.targetKnot || ''));
 // key-order independent, so the tool's export and the shell compare by content
 const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x)
   ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
@@ -288,7 +288,7 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
       const extra = Object.keys(m).filter((k) => !ALLOWED_MAPPING_FIELDS.includes(k));
       assert.deepEqual(extra, [], where(`${who} mapping on ${m.eventPattern} has fields outside the allow-list`));
       assert.ok(Object.keys(m.setGlobal || {}).every((k) => k.startsWith('kit_')), where(`${who} sets only kit_ globals`));
-      if (m.knot) assert.ok(m.bark, where('knot only beside bark'));
+      if (m.knot || m.targetKnot) assert.ok(m.bark, where('knot only beside bark'));
       if (m.setVisible !== undefined) assert.ok(who.startsWith('kit_'), where('setVisible only on a kit_ NPC'));
       assert.ok(!String(m.condition || '').includes('||'), where('no || in a condition'));
     }
@@ -407,23 +407,80 @@ test('ca01 twin: tier S kit (staff, pool, stubs) with the conceptPanel, and no c
   }
 });
 
-// ca12: the break-reminder look the set piece swaps the PC to is preloaded (a cold cache shows it at 0 s)
-test('pc1_break is preloaded in game.js, the file exists and matches pc1.png in size', () => {
+// every sprite variant any kit prop can swap to is preloaded in game.js (a cold cache shows it at 0 s), the file
+// exists, and a variant that is a tinted copy of a base prop matches the base's size
+const kitFiles = () => readdirSync(join(AW, 'office_kits')).filter((f) => f.endsWith('.json') && f !== 'episodes.json');
+const readKit = (f) => JSON.parse(readFileSync(join(AW, 'office_kits', f), 'utf8'));
+const collect = (v, key, out = []) => {
+  if (Array.isArray(v)) v.forEach((x) => collect(x, key, out));
+  else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if (k === key) out.push(x); collect(x, key, out); }
+  return out;
+};
+test('every spriteVariants key in every kit is preloaded in game.js and its file exists', () => {
   const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
-  assert.match(game, /this\.load\.image\('pc1_break', 'objects\/pc1_break\.png'\)/);
+  const keys = new Set();
+  for (const f of kitFiles()) for (const list of collect(readKit(f), 'spriteVariants')) for (const v of list) keys.add(v.value);
+  assert.ok(keys.has('pc1_break') && keys.has('pc1_locked'), 'the ca12 variants are found');
+  for (const key of keys) {
+    const m = game.match(new RegExp(`this\\.load\\.image\\('${key}', '([^']+)'\\)`));
+    assert.ok(m, `${key} is preloaded in game.js`);
+    assert.ok(existsSync(join(root, 'public/break_escape/assets', m[1])), `${key}: ${m[1]} exists`);
+  }
   const png = (f) => readFileSync(join(root, 'public/break_escape/assets/objects', f));
   const dims = (b) => [b.readUInt32BE(16), b.readUInt32BE(20)];
   assert.deepEqual(dims(png('pc1_break.png')), dims(png('pc1.png')));
 });
 
-// a set piece's own NPC (ca12's visitor) is a kit record: hidden at boot via behavior.initiallyHidden, no `person`
-test('set-piece NPCs hidden at boot carry behavior.initiallyHidden and no person; ca12 shells carry the visitor', () => {
+// a set piece's own NPC (a hidden visitor) is a kit record: behavior.initiallyHidden, no `person`, an _office_kit story
+test('every set-piece NPC in every kit is a hidden record with no person, and is present in its shells', () => {
+  let seen = 0;
+  for (const f of kitFiles()) {
+    for (const [name, sp] of Object.entries(readKit(f).setPieces || {})) {
+      for (const npc of sp.npcs || []) {
+        seen += 1;
+        const who = `${f} ${name} ${npc.id}`;
+        assert.ok(npc.behavior?.initiallyHidden === true, `${who}: initiallyHidden`);
+        assert.ok(!('person' in npc), `${who}: no person`);
+        assert.equal(npc.currentKnot, 'start', who);
+        assert.match(npc.storyPath, /^scenarios\/_office_kit\/ink\//, who);
+      }
+    }
+  }
+  assert.ok(seen >= 2, 'set-piece NPCs found');
   for (const n of ['ca12_visitor_tailgater', 'test_ca12_fallback']) {
-    const npcs = readShell(n).rooms.training_room.npcs;
-    const v = npcs.find((x) => x.id === 'kit_camila_ospina');
-    assert.ok(v, `${n}: visitor present`);
-    assert.equal(v.behavior?.initiallyHidden, true, n);
-    assert.ok(!('person' in v), `${n}: no person on a set-piece NPC`);
+    assert.ok(readShell(n).rooms.training_room.npcs.some((x) => x.id === 'kit_camila_ospina'), `${n}: visitor present`);
   }
   assert.ok(!readShell('ca12_visitor_tailgater_defend').rooms.training_room.npcs.some((x) => x.id === 'kit_camila_ospina'));
+});
+
+// the fallback build's layers: layer 1 points at the host, layer 0 is in the debrief
+test('test_ca12_fallback keeps the layer 1 pointer and layer 0 passage', () => {
+  const sc = readShell('test_ca12_fallback');
+  assert.equal(sc.scenario_id, 'test_ca12_fallback');
+  assert.match(sc.social.awarenessEpisode.strings.conceptPanel.text, /have a word with Lorna\.$/);
+  const deb = JSON.stringify(sc.social.awarenessEpisode.strings) + JSON.stringify(sc.social.awarenessEpisode.debrief);
+  assert.match(deb, /To a real attacker/);
+});
+
+// a bark's targetKnot must name a real knot in the NPC's own ink (a missing knot only fails at runtime)
+test('every mapping targetKnot in every kit shell names a knot in its NPC ink', () => {
+  let checked = 0;
+  for (const n of kitShellNames()) {
+    const sc = tryShell(n);
+    if (!sc) continue;
+    for (const room of Object.values(sc.rooms || {})) {
+      for (const npc of room.npcs || []) {
+        for (const m of npc.eventMappings || []) {
+          if (!m.targetKnot) continue;
+          const inkPath = join(root, String(npc.storyPath).replace(/\.json$/, '.ink'));
+          assert.ok(existsSync(inkPath), `${n} ${npc.id}: ${npc.storyPath} has an .ink source`);
+          const ink = readFileSync(inkPath, 'utf8');
+          const re = new RegExp(`^\\s*={2,}\\s*(function\\s+)?${m.targetKnot}\\b`, 'm');
+          assert.ok(re.test(ink), `${n} ${npc.id}: targetKnot ${m.targetKnot} is a knot in ${inkPath}`);
+          checked += 1;
+        }
+      }
+    }
+  }
+  assert.ok(checked >= 2, 'targetKnot mappings found (ca12 has ca12_screen and ca12_door)');
 });
