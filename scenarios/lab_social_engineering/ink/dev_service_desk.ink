@@ -114,7 +114,16 @@ Service desk, Dev speaking. What can I do for you?
     -> desk
 }
 { said == "repair_team":
-    Finance, right you are. New intern, that'll be Sofia then. What's she after?
+    // Same as M1 on the opener: only name Sofia if the player actually stated the
+    // intern. A team-only Accounts player repairs to Finance with the name blank empty,
+    // so naming her here would have Dev supply a fact the player never gave (lab
+    // post-release M1, R2). Fall to the generic voiced line. The judge's +20 and the
+    // on-screen "Corrected" tell still fire, so the candour correction still lands.
+    { pretext_intern_name != "":
+        Finance, right you are. New intern, that'll be Sofia then. What's she after?
+    - else:
+        Right, bear with me a sec.
+    }
     -> desk
 }
 { not team_checked:
