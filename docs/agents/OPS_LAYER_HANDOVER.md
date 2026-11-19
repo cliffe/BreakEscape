@@ -37,8 +37,11 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-| Plan | Lines | Round state | Next |
-|---|---|---|---|
+**14:18 London: the 5-hour usage limit (resets 15:10) failed all four running agents below
+(core R6 review, privilege R7 fixer, lock R8 delta, skin R6 fixes). Nothing was written. After
+15:10 relaunch each with the same brief (or SendMessage to resume). Main checkout is in a stalled
+rebase (AC0, 14:20): work in worktrees only.**
+
 The user answered the 41-question picks page on 2026-11-19; rulings in
 `docs/agents/ops_layer/USER_PICKS_2026-11-19.md`. Plans revised to them, then reviewed again.
 
@@ -153,10 +156,11 @@ lockable object, in addition to the sign-in policy, push as the main case" is mi
 
 ## 6. Work owed that no agent is doing
 
-1. **Round 2 picks page**, once the running reviews land: republish the same artifact
-   (https://claude.ai/artifact/NJ3CMZUUG6wKE2S9VtEg5e; source `ops_plan_picks.html` in the session
-   scratchpad; `const GROUPS` at about line 102, localStorage key `be-ops-plan-picks-v1`: use a new
-   key or new ids so old answers do not prefill). Questions, each with context:
+1. **Round 2 picks page: PUBLISHED 14:25** at https://claude.ai/artifact/Kovtq5LNnBVNGrAYttEg97
+   (the round 1 artifact was deleted). Source `ops_plan_picks.html` in the session scratchpad
+   (round 1 copy `ops_plan_picks_r1_backup.html`), key `be-ops-plan-picks-r2`, ids R2-1..R2-11
+   (R2-10 approval prompt waits for the chat to close; R2-11 fix the two existing-code bugs).
+   Waiting on the user's pasted answers. Questions asked:
    - BLOCK-1 follow-up: the relay command was blocked; allow it, run it yourself, or leave.
    - BLOCK-2 confirm: cracker reads only server-granted facts and needs server proof the hash
      was collected (options b and c together).
