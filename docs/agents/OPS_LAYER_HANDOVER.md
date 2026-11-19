@@ -61,6 +61,10 @@ cracking's request "S7 makes core `connectsTo` warning skip hashes". Then skin R
 delta, cross-plan R6.
 Priv took cracking requests (1390). CROSS-PLAN R6 must check: priv lists `common` among recipe
 classes; cracking Q2 asks about `common` in the habit enum (rec no). Same list or different?
+SECOND existing-code bug (cracking R3 M1, game.rb 1135-1137 + 765-770): a forged NPC knock-out
+drop of a held item with no id keeps the client's id, and the restamp then finds another item's
+definition by that id, so it can re-stamp `credential` and mint a `held` proof. Ask on round 3
+alongside the trigger gap (add to bug-fix branch?).
 ROUND 3 picks additions: the existing-code gap from cracking R2 B1 (games_controller.rb 3384-3399:
 a client can claim a timer/object-action item at any time with no trigger check); add to the
 bug-fix branch? Then: apply skin's new core requests to core, deltas, cross-plan R6.
