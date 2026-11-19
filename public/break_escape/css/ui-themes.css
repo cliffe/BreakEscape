@@ -1203,9 +1203,9 @@
 
 
 /* ===================================================================
-   Minigame tool windows: the generic ones (examine, flag station, VM
-   launcher, container, combination and cryptex locks, fingerprint kit and
-   reader) take the theme's frame. Lockpicking stays unframed. In-world devices (notebook, keypad, monitors, scanners, phone,
+   Minigame tool windows: the generic ones (examine, flag station,
+   container, combination and cryptex locks, fingerprint kit and
+   reader) take the theme's frame. Lockpicking stays unframed. In-world devices (notebook, keypad, monitors, scanners, phone, the VM launcher,
    documents, sector consoles) keep their own look. The framework tags each
    window with data-minigame (minigame-manager.js).
    =================================================================== */

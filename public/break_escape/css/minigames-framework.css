@@ -64,6 +64,7 @@
     .patch-panel-title,
     .rogue-ap-title-text,
     .rogue-ap-heading,
+    .vm-launcher-title,
     .console-title,
     .pin-minigame-title,
     .pin-minigame-attempts-title,
@@ -410,9 +411,10 @@
     flex-shrink: 0;
 }
 
-/* The framed tool windows (container, combination, cryptex, flag station; the VM launcher is a device frame now) scroll
+/* The framed tool windows (container, combination, cryptex, flag station) scroll
    inside their frame when a short screen cannot hold their content, so the frame always
-   wraps it (slice 7 R1; the flag station and VM launcher from critique A29) */
+   wraps it (slice 7 R1; the flag station from critique A29). The VM launcher is a device
+   frame (device-frame.css) and is not in this list. */
 .minigame-container[data-minigame="flag-station"] > .minigame-game-container,
 .minigame-container[data-minigame="container"] > .minigame-game-container,
 .minigame-container[data-minigame="combination"] > .minigame-game-container,

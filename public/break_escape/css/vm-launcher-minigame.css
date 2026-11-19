@@ -51,6 +51,7 @@
 /* The post-it and the footer row sit inside the frame, clear of the bezel */
 .vm-launcher-frame > .postit-note {
     top: 0;
+    white-space: pre-line; /* two-line notes (user / password) keep their line break */
     align-self: flex-start;
     margin: 8px var(--device-frame-gap) var(--device-frame-gap);
 }
