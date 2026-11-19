@@ -210,3 +210,16 @@ test('touch run steps say tap, not click, in the inventory step and elsewhere', 
     const inv = t.steps.find(s => s.title === 'Inventory');
     assert.ok(/\bClick\b/.test(inv.instruction), 'desktop inventory still says Click');
 });
+
+test('mouse run in a narrow window gets mobile steps worded for a pointer', async () => {
+    const t = await launch({ ua: WIN_UA, width: 700, height: 800, coarse: false, fine: true }, fakePanel(false));
+    const by = (title) => t.steps.find(s => s.title === title);
+    assert.ok(by('Hold to Walk'), 'mobile step set on a narrow mouse window');
+    const text = t.steps.map(s => s.instruction + ' ' + s.objective).join(' | ');
+    assert.ok(!/finger/i.test(text), 'no finger wording on a mouse run');
+    assert.ok(!/\btap(ping)? (the screen|Punch)\b/i.test(text) && !/^Tapping/.test(by('Combat Mode').instruction), 'combat step is not worded for touch');
+    assert.ok(/pointer/.test(by('Hold to Walk').instruction), 'hold to walk follows the pointer');
+    assert.ok(by('Movement').instruction.startsWith('Click or tap'), 'movement says Click or tap');
+    assert.ok(/\bClick\b/.test(by('Inventory').instruction), 'inventory says Click');
+    assert.ok(/^Click Punch/.test(by('Combat Mode').objective), 'combat objective says Click Punch');
+});

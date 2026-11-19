@@ -276,8 +276,10 @@ export class TutorialManager {
                 },
                 {
                     title: 'Combat Mode',
-                    instruction: 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.',
-                    objective: 'Tap Punch, then hold Block',
+                    instruction: tap
+                        ? 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.'
+                        : 'Clicking the ground always walks or interacts. To fight, use the buttons at the bottom right: click Punch (click again quickly for jab, jab, cross) and hold Block to guard.',
+                    objective: (tap ? 'Tap' : 'Click') + ' Punch, then hold Block',
                     checkComplete: () => this.playerToggledCombatMode && this.playerAttackedInCombatMode
                 }
             ];
