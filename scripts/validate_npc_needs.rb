@@ -855,9 +855,9 @@ module ValidateNpcNeeds
       end
       as = o['position'].is_a?(String) && o['position'].start_with?('as-type:') ? o['position'].sub('as-type:', '') : nil
       t = if as then find.call(as)
-          elsif o['sprite'].is_a?(String) then find.call(o['sprite']) || find.call(o['type'])
-          else find.call(o['type'])
-          end
+      elsif o['sprite'].is_a?(String) then find.call(o['sprite']) || find.call(o['type'])
+      else find.call(o['type'])
+      end
       out[o['id']] = t ? [t['x'].to_f + (t['width'].to_f / 2), t['y'].to_f - (t['height'].to_f / 2)] : nil if o['id']
     end
     out
