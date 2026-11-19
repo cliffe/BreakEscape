@@ -542,8 +542,7 @@ test('R3 m1: a stale onComplete does nothing; the current one re-enables and cle
         assert.equal(parent.keyInserting, false);
         assert.equal(btn.disabled, false);
         // the "why" tooltip is gone; the button's own name comes back (icon-only in short landscape)
-        assert.ok(!btn.title || btn.title === btn.modeLabel, 'why-title cleared, own name restored');
-        assert.doesNotMatch(btn.title || '', /Not while/);
+        assert.equal(btn.title, 'Switch to Lockpicking', 'why-title cleared, own name restored');
     } finally { t.restore(); }
 });
 test('R3 m2: the disabled CSS beats the themed button and avoids opacity', () => {

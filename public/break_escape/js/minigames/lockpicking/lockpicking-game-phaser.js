@@ -345,6 +345,26 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             </div>
         `;
         
+        // Short windows clamp the observations to two lines (lockpicking.css): the full text is
+        // in the title, and a click, tap or Enter/Space opens it in the strip
+        const obs = itemDisplayDiv.querySelector('.lockpicking-item-info p');
+        const heading = itemDisplayDiv.querySelector('.lockpicking-item-info h4');
+        if (heading) heading.title = heading.textContent;
+        if (obs) {
+            obs.title = obs.textContent;
+            obs.tabIndex = 0;
+            obs.setAttribute('role', 'button');
+            obs.setAttribute('aria-expanded', 'false');
+            const toggle = () => {
+                const open = itemDisplayDiv.classList.toggle('lockpicking-info-expanded');
+                obs.setAttribute('aria-expanded', open ? 'true' : 'false');
+            };
+            obs.addEventListener('click', toggle);
+            obs.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+            });
+        }
+
         // Add mode switch button if applicable
         // Mode switch row: its own full-width line under the image and name (see lockpicking.css)
         if (this.canSwitchToPickMode && this.keyMode) {
@@ -488,10 +508,15 @@ export class LockpickingMinigamePhaser extends MinigameScene {
                 this._portraitCameraOffset = { x: 0, y: 30 };
             }
 
+            // max: no upscaling past the crop's own 580x340 (a short desktop window is wider)
             config.scale = {
                 mode: Phaser.Scale.FIT,
-                autoCenter: Phaser.Scale.CENTER_BOTH
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                max: { width: 580, height: 340 }
             };
+            // lockpicking.css lays the frame out for a fitted canvas only under this class, so
+            // a lock opened at full size and resized short later keeps its scrolling frame
+            this.gameContainer.querySelector?.('#phaser-game-container')?.classList.add('lockpicking-fit');
         }
         
         try {
@@ -502,6 +527,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             this.scene = this.game.scene.getScene('LockpickingScene');
             console.log('Phaser game created, scene:', this.scene);
             this._watchLockZoom();
+            this._watchLockBox();
         } catch (error) {
             console.error('Error creating Phaser game:', error);
             this.keyInsertion.updateFeedback('Error loading Phaser game: ' + error.message);
@@ -554,6 +580,18 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         this._lockScrollUpdate = update;
         this._lockScrollEls = [this.gameContainer, this.container].filter(Boolean);
         this._lockScrollEls.forEach((el) => el.addEventListener('scroll', update, { passive: true }));
+    }
+
+    // The fitted lock's box changes size without the window resizing (the feedback line goes
+    // from one line to two, the item info expands), and Phaser rereads it only every 500ms,
+    // so the pointer would map to the old canvas place for that long. Refresh on the change.
+    _watchLockBox() {
+        const box = this.gameContainer?.querySelector?.('#phaser-game-container');
+        if (!box || !box.classList?.contains('lockpicking-fit') || typeof ResizeObserver === 'undefined') return;
+        this._lockBoxObserver = new ResizeObserver(() => {
+            try { this.game?.scale?.refresh?.(); } catch (e) { /* game gone */ }
+        });
+        this._lockBoxObserver.observe(box);
     }
 
     _watchLockZoom() {
@@ -637,6 +675,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     
     complete(success) {
         if (this.game) {
+            this._lockBoxObserver?.disconnect?.();
+            this._lockBoxObserver = null;
             if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
             this._lockScrollEls?.forEach((el) => el.removeEventListener("scroll", this._lockScrollUpdate));
             this.game.destroy(true);
