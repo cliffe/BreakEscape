@@ -18,8 +18,12 @@ export function cappedText(key, value, limit = TEXT_LIMIT, keep = 'head') {
     // keep: 'tail' is for chat threads, where the newest lines are last. The text opens
     // with TEXT_TAIL_MARK and is still `limit` long; the reply adds `${key}Keeps: 'tail'`.
     if (keep === 'tail') {
-        return { [key]: TEXT_TAIL_MARK + full.slice(full.length - (limit - TEXT_TAIL_MARK.length)),
+        let tail = full.slice(full.length - (limit - TEXT_TAIL_MARK.length));
+        if (/^[\uDC00-\uDFFF]/.test(tail)) tail = tail.slice(1); // do not start on half an emoji
+        return { [key]: TEXT_TAIL_MARK + tail,
             [`${key}Truncated`]: true, [`${key}Length`]: full.length, [`${key}Keeps`]: 'tail' };
     }
-    return { [key]: full.slice(0, limit), [`${key}Truncated`]: true, [`${key}Length`]: full.length };
+    let head = full.slice(0, limit);
+    if (/[\uD800-\uDBFF]$/.test(head)) head = head.slice(0, -1); // nor end on half of one
+    return { [key]: head, [`${key}Truncated`]: true, [`${key}Length`]: full.length };
 }

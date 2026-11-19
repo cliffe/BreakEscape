@@ -39,7 +39,7 @@ test('the notes overlay uses the note limit, and the base overlay marks its cut'
     const notes = readFileSync(join(js, 'minigames/notes/notes-minigame.js'), 'utf8');
     assert.match(notes, /\.\.\.cappedText\('noteContent', this\.noteContent \|\| '', NOTE_LIMIT\),/);
     const base = readFileSync(join(js, 'minigames/framework/base-minigame.js'), 'utf8');
-    assert.match(base, /: \{ text: fullText\.slice\(0, 2000\),\s*\.\.\.\(fullText\.length > 2000 \? \{ textTruncated: true, textLength: fullText\.length \} : \{\}\) \}\),/);
+    assert.match(base, /: \{ text: headCut\(fullText, 2000\),\s*\.\.\.\(fullText\.length > 2000 \? \{ textTruncated: true, textLength: fullText\.length \} : \{\}\) \}\),/);
     assert.equal(TEXT_LIMIT, 2000, 'the base overlay writes the same limit out by hand');
 });
 
@@ -81,7 +81,7 @@ test('behaviour: a MinigameScene subclass with keepsTextTail returns the tail in
     globalThis.window = globalThis.window || {};
     let MinigameScene;
     try { ({ MinigameScene } = await import(pathToFileURL(join(js, 'minigames/framework/base-minigame.js')))); }
-    catch (e) { return; } // DOM-only imports: the source checks above cover it
+    catch (e) { assert.fail('base-minigame.js failed to import: ' + e.message); }
     const text = Array.from({ length: 150 }, (_, i) => `MSG ${i + 1} hello there`).join('\n');
     const mk = (tail) => {
         const C = class extends MinigameScene {};
@@ -97,4 +97,13 @@ test('behaviour: a MinigameScene subclass with keepsTextTail returns the tail in
     assert.equal(tail.textKeeps, 'tail');
     assert.ok(head.text.startsWith('MSG 1 '));
     assert.ok(!('textKeeps' in head));
+});
+
+test('a cut never splits an emoji: no lone surrogate at either end', () => {
+    const tail = cappedText('text', 'a' + '\u{1F600}'.repeat(2000), TEXT_LIMIT, 'tail').text;
+    assert.ok(!/^[\uDC00-\uDFFF]/.test(tail.slice(TEXT_TAIL_MARK.length)));
+    const head = cappedText('text', '\u{1F600}'.repeat(2000)).text;
+    assert.ok(!/[\uD800-\uDBFF]$/.test(head));
+    const base = readFileSync(join(js, 'minigames/framework/base-minigame.js'), 'utf8');
+    assert.match(base, /tailCut\(fullText, 2000 - TEXT_TAIL_MARK\.length\)/);
 });
