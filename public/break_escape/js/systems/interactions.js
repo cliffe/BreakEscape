@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
+import { reachX, reachY, aimX, aimY, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -2258,8 +2258,9 @@ export function tryInteractWithNearest() {
         default:           facingAngle = 90;  break;
     }
 
-    function angularDiff(objX, objY) {
-        let angle = Math.atan2(objY - py, objX - px) * 180 / Math.PI;
+    // The angle is taken from (fromX, fromY): the player's centre by default, the feet for a scenario object
+    function angularDiff(objX, objY, fromX = px, fromY = py) {
+        let angle = Math.atan2(objY - fromY, objX - fromX) * 180 / Math.PI;
         angle = (angle + 360) % 360;
         let diff = Math.abs(facingAngle - angle);
         if (diff > 180) diff = 360 - diff;
@@ -2285,12 +2286,16 @@ export function tryInteractWithNearest() {
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
-        let score = angularDiff(faceX, faceY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        // A scenario object is aimed at from the feet to its centre: from the sprite centre (about 31px up) a short prop's
+        // top edge read far off the facing and lost to a taller neighbour (m01 safe beside the cabinet)
+        const fromFeet = !!target && !npcSprite && !target.doorProperties;
+        const from = fromFeet ? footOf(player) : { x: px, y: py };
+        let score = angularDiff(faceX, faceY, from.x, from.y) * 1000 + dist; // angle to the object's centre, range to its nearest part
         // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
+        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, fromX: from.x, fromY: from.y, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -2321,7 +2326,7 @@ export function tryInteractWithNearest() {
                 // A seat with no free place whose sitter (any of them, on a full sofa) is on it now is her, not "A chair." (interaction-reach.js
                 // seatOccupant); she is considered below. A sofa with a free place stays, and loses to her by score.
                 if (obj.seatedBy && window.seating?.isSeat(obj) && seatOccupant(obj, allNpcs(), { isKo: npcKo, isSeated: npcSeatedOn })) return;
-                consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), obj.y);
+                consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), aimY(obj));
             });
         }
 
@@ -2354,8 +2359,9 @@ export function tryInteractWithNearest() {
     }
 
     // If the best item is not roughly in the facing direction, turn toward it before interacting
-    if (angularDiff(best.objX, best.objY) > ANGLE_TOLERANCE) {
-        facePlayerToward(best.objX, best.objY);
+    if (angularDiff(best.objX, best.objY, best.fromX, best.fromY) > ANGLE_TOLERANCE) {
+        // facePlayerToward aims from the sprite centre: shift the point by the same offset the angle was taken with
+        facePlayerToward(best.objX + (px - best.fromX), best.objY + (py - best.fromY));
     }
 
     const chosen = best;
