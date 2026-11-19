@@ -12,10 +12,12 @@ for the architecture and for play.
 
 ## What this plan can rely on
 
-The ops layer outline defines its new moves (scan, check, confirm, technique cards, escalate,
-harvest, crack) as data with `needs`, `effects`, `time` and `noise`, behind one server route, for
-the player only. This plan opens that registry to other actors and brings the older built moves
-into it.
+The ops layer outline builds scan, check, technique cards, privilege, cracking and MFA as separate
+features with their own server routes, for the player only, with no shared model of moves (user,
+2026-11-19). The game has not treated actions as a separate idea so far. This plan is where that
+idea would come in, if a rival NPC or a team needs it: S0 below would define moves as data and
+bring both the ops layer features and the older built moves under it. Whether that is the right
+shape is the first thing for this plan to decide.
 
 ## Stages
 
@@ -26,7 +28,7 @@ into it.
 - Define an **actor**: the player, a teammate (S10) or a rival NPC (S12). Every technique is
   performed by an actor; state that today belongs to "the player" (footholds, sessions, keyring)
   becomes per actor, with the player as the default actor so nothing existing changes.
-- Bring three built moves into the ops layer's registry without changing behaviour: plant a drop
+- Bring three built moves under the new model without changing behaviour: plant a drop
   box (N1), remote sign-in (N2), implant (N10). This proves actors against working features.
 - **Test:** unit tests of needs and effects evaluation; the N1, N2 and N10 test scenarios and
   `demo_access_tour` pass unchanged. Size M.

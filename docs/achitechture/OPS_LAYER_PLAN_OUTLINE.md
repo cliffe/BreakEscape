@@ -3,7 +3,10 @@
 Status: outline, 2026-11-19. Each stage below gets its own full plan (and review rounds) before it
 is built. The action model with actors, the team of characters and the defence game (stages S0,
 S10 and S12) moved to `ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, to be planned later; stage numbers
-here are unchanged, so S0, S10 and S12 are simply absent. Nothing here is scheduled until the m01 to m10 release is out (user pick Q8).
+here are unchanged, so S0, S10 and S12 are simply absent. Each stage here is built as its own
+feature with its own server routes, as N1 to N12 were; a shared model of moves as data is not
+needed yet (user, 2026-11-19) and belongs to the other outline. Nothing here is scheduled until
+the m01 to m10 release is out (user pick Q8).
 
 Source: the user's picks on the access and network proposals page (2026-11-18), building on what
 `docs/ACCESS_AND_NETWORKS.md` documents as built (A1 to A17, N1 to N12).
@@ -41,9 +44,9 @@ team of characters are in the other outline. Real VMs stay available: a host can
 ```
  scenario JSON                          server (authoritative)                 client
  ─────────────                          ──────────────────────                 ──────
- hosts / services / weaknesses ─┐       technique registry (data)              skin: GUI | CLI
- techniques (data)              ├────►  POST /ops/act {technique,         ◄─── both call the same
-                                │            target, args}                     ops API
+ hosts / services / weaknesses ─┐       one route per feature                  skin: GUI | CLI
+ technique cards                ├────►  (scan, check, use a card,         ◄─── both call the same
+                                │         escalate, crack ...)                 routes
  policies (mfa, laps, ...)     ─┘       ├ checks needs (reach, creds,
                                         │   items, privilege, room)
                                         ├ applies effects (foothold, session,
@@ -65,26 +68,18 @@ Rules every stage keeps (from standing project rules):
 
 Sizes: S, M, L. Each stage is shippable and testable alone; later stages only add.
 
-**The seam for the later plan.** New moves (scan, check, confirm, technique cards, escalate,
-harvest, crack) are defined as data, each with `needs`, `effects`, `time` and `noise`, and all go
-through one server route. The player is the only one who performs them and state stays where it is
-today (the player's footholds, sessions and keyring). Built moves (N1, N2, N10) are left alone.
-That is all the actor plan needs from this one: a registry it can later open to other actors.
-
 ### S1. Hosts, services and discovery — pick B1
-- The technique registry and the single ops route (see the seam above), with **scan** as its first
-  entry.
 - Extend hosts (today a sign-in object with `host`, or `headless`) with `services[]`
   (name, port, product, version) and allow hosts with no sign-in at all.
-- A **scan** technique on a reachable network: hosts first, then services. Unscanned hosts and
+- A **scan** on a reachable network: hosts first, then services. Unscanned hosts and
   services are withheld by the server.
 - The network view (abstract GUI skin) shows scanned hosts and service tiles.
-- **Test:** unit tests of needs and effects evaluation; `test_ops_scan`: scan reveals only reachable hosts; a pivot (N6) reveals more. Size M.
+- **Test:** `test_ops_scan`: scan reveals only reachable hosts; a pivot (N6) reveals more. Size M.
 
 ### S2. Weaknesses and findings — pick B2
 - `services[].weaknesses[]`: `class` (`default_creds`, `unpatched`, `misconfig`, `weak_auth`,
   `cleartext`), `severity`, `needs`, `grants`, `fixedIf`.
-- A **check** technique turns a service into findings; a scenario can add decoy findings that a
+- A **check** turns a service into findings; a scenario can add decoy findings that a
   **confirm** step shows to be false.
 - **Test:** `test_ops_findings`: findings appear only after a check; decoys confirm false. Size M.
 
@@ -101,8 +96,8 @@ That is all the actor plan needs from this one: a registry it can later open to 
   scenarios. Size S.
 
 ### S5. Privilege, cached credentials, local and domain accounts — picks A5, A6, A4
-- S5a **Privilege levels** on sessions (`user`, `admin`); admin-only techniques (read other
-  profiles, dump cached credentials, install despite USB policy). Escalation is a technique.
+- S5a **Privilege levels** on sessions (`user`, `admin`); admin-only actions (read other
+  profiles, dump cached credentials, install despite USB policy). Escalating from user to admin is a step the scenario defines on a weakness or a technique card.
 - S5b **Cached credentials**: when an NPC signs in at a PC on its routine, the server records it;
   admin on that PC lets the player harvest that account into the keyring.
 - S5c **Local vs domain accounts**: a domain host; a shared local admin password across PCs; a
@@ -112,8 +107,9 @@ That is all the actor plan needs from this one: a registry it can later open to 
 
 ### S6. Realism skin — pick Q2
 - A setting switches the network view between the abstract GUI and a command-line simulation.
-  Both call the same ops API; the CLI is a parser from commands to techniques plus a text renderer.
-- **Test:** parser unit tests (command to technique call); a parity test that drives one action
+  Both call the same server routes; the CLI is a parser from commands to those calls plus a text
+  renderer.
+- **Test:** parser unit tests (command to route call); a parity test that drives one action
   script through both adapters and compares the server state and the deltas. No separate
   playtests (the user's requirement). Size M.
 
@@ -133,14 +129,14 @@ That is all the actor plan needs from this one: a registry it can later open to 
 - **Test:** `test_ops_mfa`. Size M each.
 
 ### S9. Log rows — pick C1 (P3)
-- Every technique writes a log row automatically (it all goes through one route), plus badge and
+- Each new feature's route writes a log row through one shared helper, plus badge and
   sign-in events already emitted. Rows feed the log-filter minigame. The defence game in the other
   outline reads the same rows.
 - **Test:** each `test_ops_*` scenario asserts its rows. Size S to M.
 
 ### S11. VM or game backing — pick Q3
 - `backing: "game"` (default) or `backing: { "vm": ..., "flags": [...] }` on a host. A VM-backed
-  host shows the VM launcher and its techniques are replaced by submitting the VM flags; the rest
+  host shows the VM launcher and its scan, check and technique card steps are replaced by submitting the VM flags; the rest
   of the chain (footholds, sessions, keyring) is shared.
 - Pilot: an m01 game alternative alongside its VM version, after release. SecGen work routes to
   opus48.
@@ -155,6 +151,6 @@ credential effects.
 ## 6. Open questions for the stage plans
 
 1. CLI skin fidelity: which commands, and how close to real tools' output it gets.
-2. Whether techniques cost game time on the needs clock (patch windows need it, and so will the rival).
-3. How a VM-backed host's flags map to the effects a game-backed technique would grant.
+2. Whether a scan, a check or a technique card costs game time on the needs clock (patch windows need it, and so will the rival).
+3. How a VM-backed host's flags map to the effects a game-backed technique card would grant.
 4. Where the terminology rule ends up (Q6, to be decided).
