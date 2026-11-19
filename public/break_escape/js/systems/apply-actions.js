@@ -259,6 +259,8 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                     };
                     console.log('[applyActions] give_item:', action.item.name);
                     const give = Promise.resolve(window.addToInventory(itemSprite));
+                    // Say it once the slot exists: the station window's reward line goes with the window
+                    give.then(res => window.announceItemGain?.(action.item, res)).catch(() => {});
                     give.action = action;
                     gives.push(give);
                 }

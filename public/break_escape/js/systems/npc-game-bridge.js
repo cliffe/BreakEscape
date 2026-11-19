@@ -299,6 +299,9 @@ export class NPCGameBridge {
       // Play item pickup sound (same as picking up world items or taking from containers)
       if (window.playUISound) window.playUISound('item');
 
+      // The toast outlives the chat: held while it is open, shown when it closes
+      window.announceItemGain?.(item, addResult);
+
       // Notes-family gifts have no inventory slot (inventory.js skips them), so
       // put them in the notepad the way reading a note in the world does,
       // and fire their onRead, or the player never sees what they were given.
