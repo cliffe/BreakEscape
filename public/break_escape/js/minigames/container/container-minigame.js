@@ -387,11 +387,14 @@ export function iconFocusMark(item, byKey) {
     return item ? { key: iconKeyOf(item), byKey: byKey === true } : null;
 }
 
-// A held Enter keeps firing keydown (e.repeat) after a take has moved the focus to Take
-// Container, the X or a note viewer's button, and would click it. After a take started by
-// Enter, one document-level capture listener swallows those repeats until Enter is let go.
-// One at a time, always removed: on Enter keyup, window blur, a safety timeout, or the
-// minigame closing (unless the close hands over to a note viewer, which needs it to live on).
+// A held Enter or Space keeps firing keydown (e.repeat) after a take has moved the focus to
+// Take Container, the X or a note viewer's button. Enter would click it on every repeat; Space
+// clicks a native button on keyup. After a take started by key, one document-level capture
+// listener swallows that key's repeats (and, for Space, the keyup that ends the hold) until the
+// key is let go. One at a time, always removed: on the armed key's keyup, a fresh (non-repeat)
+// press of it, window blur, a 2s safety timeout, or the minigame closing (unless the close
+// hands over to a note viewer, which needs it to live on).
+const HELD_ENTER_TIMEOUT_MS = 2000;
 let heldEnterGuard = null;
 export function releaseHeldEnter() {
     if (!heldEnterGuard) return;
@@ -402,17 +405,28 @@ export function releaseHeldEnter() {
     window.removeEventListener?.('blur', g.up);
     clearTimeout(g.timer);
 }
-export function swallowHeldEnter() {
+export function swallowHeldKey(armed = 'Enter') {
     releaseHeldEnter();
+    const stop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    };
     const g = {
         down: (e) => {
-            if (e.key !== 'Enter' || !e.repeat) return;
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
+            if (e.isComposing || e.key !== armed) return;
+            if (e.repeat) { stop(e); return; }
+            // A fresh press: the keyup of the held one never came (focus left the window)
+            releaseHeldEnter();
         },
-        up: (e) => { if (!e || e.type === 'blur' || e.key === 'Enter') releaseHeldEnter(); },
-        timer: setTimeout(() => releaseHeldEnter(), 10000)
+        up: (e) => {
+            if (e && e.type === 'blur') { releaseHeldEnter(); return; }
+            if (!e || e.isComposing || e.key !== armed) return;
+            // A native button clicks on Space keyup: this one belongs to the take, not the button
+            if (armed === ' ') stop(e);
+            releaseHeldEnter();
+        },
+        timer: setTimeout(() => releaseHeldEnter(), HELD_ENTER_TIMEOUT_MS)
     };
     g.timer?.unref?.();
     heldEnterGuard = g;
@@ -420,6 +434,7 @@ export function swallowHeldEnter() {
     document.addEventListener('keyup', g.up, true);
     window.addEventListener?.('blur', g.up);
 }
+export function swallowHeldEnter() { swallowHeldKey('Enter'); }
 
 /**
  * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
@@ -1824,7 +1839,7 @@ export class ContainerMinigame extends MinigameScene {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.repeat || !acts) return;
-                if (e.key === 'Enter') swallowHeldEnter();
+                swallowHeldKey(e.key);
                 this.openedByKey = true;
                 try { itemImg.click(); } finally { this.openedByKey = false; }
             });
@@ -1927,6 +1942,7 @@ export class ContainerMinigame extends MinigameScene {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.repeat) return;
+                swallowHeldKey(e.key);
                 // A key opened it: the Copy / Move dialog takes the focus and hands it back
                 this.openedByKey = true;
                 try { icon.click(); } finally { this.openedByKey = false; }
@@ -2170,6 +2186,8 @@ export class ContainerMinigame extends MinigameScene {
         const { item, element } = dialog;
         this.closeTransferDialog();
         if (choice === 'cancel') return;
+        // Chosen by key: a held Enter must not go on to press the next focused button
+        if (byKey) swallowHeldKey('Enter');
         if (choice === 'open') { this.openFileInPlace(item, byKey); return; }
         if (choice === 'connect') { this.connectFromDesktop(item, element); return; }
         this.takeItem(item, element, choice);
@@ -2759,6 +2777,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
         focusReturn: extra?.focusReturn || null,
+        slotReturn: extra?.slotReturn || null,
         scrollTop: extra?.scrollTop || 0,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',

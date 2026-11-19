@@ -527,9 +527,13 @@
 .container-content-slot[aria-disabled="true"]:hover {
     cursor: default;
     transform: none;
-    opacity: 0.6;
     border-style: dashed;
     border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Only the picture is dimmed: the label and the focus ring stay at full strength */
+.container-content-slot[aria-disabled="true"] .container-content-item {
+    opacity: 0.6;
 }
 
 .container-content-item {
