@@ -596,6 +596,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             this._fitLockZoom();
         }
         this._syncObsButton();
+        this._scrollKeyPanelIntoView();
     }
 
     // Phaser's canvas size, scale mode, camera crop and the CSS class all follow the layout
@@ -637,6 +638,24 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         }
         const off = this._portraitCameraOffset;
         this.scene?.cameras?.main?.setScroll?.(off ? off.x : 0, off ? off.y : 0);
+        this._placeKeyPanel();
+    }
+
+    // The key-selection panel follows the camera crop: a refit changes the crop, so its y is set
+    // again by the same formula the builder used
+    _placeKeyPanel() {
+        const c = this.keySelectionContainer;
+        if (!c || typeof c.setY !== 'function') return;
+        c.setY(KeySelection.panelY(this._portraitCameraOffset, c.panelHeight || 160));
+    }
+
+    // With the key panel open the labels sit at the foot of the 600x400 lock, where the sticky
+    // feedback line would cover them on a 1024 to 1366 wide desktop. Scroll the game area to its
+    // end so the line sits below the canvas, in its own place, and nothing is covered.
+    _scrollKeyPanelIntoView() {
+        const area = this.gameContainer;
+        if (!this.keySelectionContainer || !area) return;
+        area.scrollTop = area.scrollHeight;
     }
 
     // The largest whole-number zoom at which the 600x400 lock fits the room it has (A09): 1 when
@@ -668,6 +687,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const game = this.game;
         const box = this.gameContainer?.querySelector?.('#phaser-game-container');
         if (!game?.scale || !box || window.innerWidth <= 768 || window.innerHeight <= 560) return;
+        // The layout the game is in decides, not the window: a refit is pending after a resize
+        if (this._lockFitApplied?.fit) return;
         const room = this._lockRoom();
         if (!room) return;
         const z = LockpickingMinigamePhaser.wholeZoom(room.w, room.h);

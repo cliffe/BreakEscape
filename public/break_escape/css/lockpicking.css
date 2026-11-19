@@ -2,7 +2,7 @@
 
 /* Lockpicking feedback styling */
 .lockpick-feedback {
-    background: rgba(0, 0, 0, 0.8);
+    background: #000;   /* solid: the line can sit over the canvas */
     color: #00ff00;
     padding: 10px 15px;
     border: 2px solid #00ff00;
