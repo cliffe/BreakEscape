@@ -64,7 +64,7 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
 | Plan | Draft | R1 | R2 | R3 | R4 | R5 |
 |---|---|---|---|---|---|---|
 | OPS_CORE | `bd350990a` | R1 `724275ed2` + R1b `4f043a33e`; revised `17c6a3d16`; second reviser pass running (Fable, a1bcf6813a084bbe1) | next: full R2 on Opus | | | |
-| OPS_PRIVILEGE_ACCOUNTS | `9f5216ba8` | 3B 12M; revised `86e8bc159` | 0B 5M 9m `5bac3cbe4`; reviser running (Opus, a6da98267bbaa0c17) | | | |
+| OPS_PRIVILEGE_ACCOUNTS | `9f5216ba8` | 3B 12M; revised `86e8bc159` | 0B 5M 9m `5bac3cbe4`; revised `10aa30ea8` (929 lines) | full review running (Fable, a72d93621e59cfc2a) to `OPS_PRIVILEGE_ACCOUNTS_R3.md`; 7 user questions in section 15, cross-plan requests to CORE, CRACKING, MFA, LOG_ROWS go to the next cross-plan review | | |
 | OPS_REALISM_SKIN | `1f9fc50e3` | 1B 5M; revised `b40e9c1eb` | 0B 2M 11m `97f5538f8`; reviser NOT launched, waits for core second pass | | | |
 | OPS_CRACKING | `5e88e7aff` | 4B 9M `46649f23f`; reviser HELD (opus48 safeguard stop; user picks on BLOCK-1) | | | | |
 | OPS_MFA_HELPDESK | `6995773a9` | 0B 7M; revised `1ac5579be` | 0B 2M 11m `850c0d087`; reviser running (Fable, afce605ac16c1e685) | | | |
