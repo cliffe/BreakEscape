@@ -457,3 +457,210 @@ export function seatOccupant(seat, npcSprites, deps = {}) {
 export function occupantUnderTap(seat, npcsUnderTap, deps) {
     return seatOccupants(seat, npcsUnderTap, deps).find(n => deps.npcOnFigure(n)) || null;
 }
+
+// ---------------------------------------------------------------------------------------------------------
+// The E pick (pickInteractable). E (interactions.js tryInteractWithNearest) and the E label (ui/info-label.js)
+// both call it, so what the label names is what E acts on. It lives here, with no imports, so the node tests
+// load it alone: what needs the engine (the wall test, the NPC body reach, the range constants) comes in
+// through `deps`.
+// ---------------------------------------------------------------------------------------------------------
+
+/** The seat an NPC is sitting on now (seating.js keeps it on her behaviour), or null */
+export function seatedChairOf(npcSprite) {
+    const chair = npcSprite?.npcId ? W().npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat?.chair : null;
+    return chair && !chair.destroyed && chair.active !== false ? chair : null;
+}
+
+/** She is on this seat now, not just holding its reservation */
+export function npcSeatedOn(npcSprite, seat) {
+    return seatedChairOf(npcSprite) === seat;
+}
+
+// Floor point under place `i` of a sofa or bench (seating.js placeFoot)
+function placeFootPoint(chair, places, i) {
+    return { x: chair.x + places[i][0], y: chair.y + chair.height };
+}
+
+function distSqTo(player, pt) {
+    return (pt.x - player.x) ** 2 + (pt.y - player.y) ** 2;
+}
+
+// The player's foot point (body centre, as interaction-walls playerFeet): the sprite sits about 25 px above it
+function footOf(player) {
+    const c = player?.body?.center;
+    return c && Number.isFinite(c.x) && Number.isFinite(c.y) ? c : { x: player.x, y: player.y };
+}
+
+// How much nearer (px) the player's feet must be to a free place's foot than to her own place's foot before E sits
+// there instead of talking to her: standing on or close beside her always talks.
+const FREE_PLACE_MARGIN = 10;
+// A sofa whose sitter wins E sits behind everything else in score, past the widest aim term (180 deg x 1000)
+const SOFA_SITTER_PENALTY = 400000;
+/** Added to the score of a seat that is not the one the player sits on, and of an NPC who is leaving: E prefers anything else */
+export const SEAT_PENALTY = 30000;
+
+/**
+ * The player is clearly nearer a free place of her sofa or bench than her own place (E there sits, not talks).
+ * Takes the nearest free place, so it holds for any number of places.
+ */
+export function nearerFreePlace(player, npcSprite) {
+    const chair = seatedChairOf(npcSprite);
+    const b = chair ? W().npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat : null;
+    const places = b?.seat?.places;
+    if (!places || !places[b.place]) return false;
+    const taken = chair._places || {};
+    const free = places.map((_, i) => i).filter(i => !taken[i]);
+    if (!free.length) return false;
+    const feet = footOf(player);
+    const d = (i) => Math.sqrt(distSqTo(feet, placeFootPoint(chair, places, i)));
+    return Math.min(...free.map(d)) + FREE_PLACE_MARGIN < d(b.place);
+}
+
+/**
+ * A seated NPC is reached from her seat, counted with her centre (the seat's reach is the one the
+ * player sees, and the seat can hide her from the centre). A one-place chair counts its nearest
+ * edge; a sofa or bench counts her own place's foot only, so its far end does not reach her.
+ * Used by E, the label, the talk icon and the tap, so the screen shows what E does.
+ */
+export function seatedNpcReachDistSq(player, npcSprite, distSq) {
+    const chair = seatedChairOf(npcSprite);
+    if (!chair) return distSq;
+    const b = W().npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat;
+    const places = b?.seat?.places;
+    if (nearerFreePlace(player, npcSprite)) return Infinity; // the free place is the player's: E sits, so no icon, tap or talk for her
+    if (places && places[b.place]) return Math.min(distSq, distSqTo(player, placeFootPoint(chair, places, b.place)));
+    const dx = reachX(chair, player.x) - player.x;
+    const dy = reachY(chair, player.y) - player.y;
+    return Math.min(distSq, dx * dx + dy * dy);
+}
+
+/**
+ * The nearest thing E would act on: the pick behind tryInteractWithNearest, and the label's. Score is angular
+ * closeness (primary, x1000) plus distance; a chair other than the player's own, and an NPC walking away, take
+ * +SEAT_PENALTY; a seated player's desk computer wins unless an NPC is better aimed (seatedPcWins).
+ *
+ * @param {object} player
+ * @param {object} deps
+ * @param {object} deps.rooms - the rooms map (objects, doorSprites, npcSprites)
+ * @param {number} deps.range - INTERACTION_RANGE
+ * @param {number} deps.rangeSq - INTERACTION_RANGE_SQ
+ * @param {function(object, object, number): number} deps.npcReachDistSq - npc-reach.js
+ * @param {function(object, object): boolean} deps.lineClear - interaction-walls.js interactionLineClear
+ * @returns {?{kind: 'object'|'door'|'npc', target: object, objX: number, objY: number, fromX: number, fromY: number, score: number}}
+ *   objX/objY/fromX/fromY: the aim point and the point it is aimed from (E turns the player by them)
+ */
+export function pickInteractable(player, deps) {
+    const { rooms, range, rangeSq: INTERACTION_RANGE_SQ, lineClear } = deps;
+    const reachNpc = deps.npcReachDistSq;
+    const INTERACTION_RANGE = range;
+    const px = player.x;
+    const py = player.y;
+    const facingAngle = directionAngle(player.direction || 'down'); // Phaser: right 0, down 90, left 180, up 270
+
+    // The angle is taken from (fromX, fromY): the player's centre by default (NPCs); scenario objects are scored by aimDiff
+    function angularDiff(objX, objY, fromX = px, fromY = py) {
+        let angle = Math.atan2(objY - fromY, objX - fromX) * 180 / Math.PI;
+        angle = (angle + 360) % 360;
+        let diff = Math.abs(facingAngle - angle);
+        if (diff > 180) diff = 360 - diff;
+        return diff;
+    }
+
+    let best = null;
+    let bestScore = Infinity;
+    // The best desk computer in front of a seated player (isSeatedDeskPc), kept apart: it wins over everything but a better-aimed NPC
+    let bestPc = null;
+    let bestPcScore = Infinity;
+    let bestNpc = null; // the best NPC apart: a better-aimed colleague beats the PC even when a mug scored best overall
+    let bestNpcScore = Infinity;
+    const seatedOn = W().seating?.currentSeat?.() || null;
+
+    // Ids of the objects in reach: an owner on the move from her own PC among them gives way (review R2 m1)
+    const inReachIds = [];
+
+    function consider(kind, objX, objY, rangeSq, npcSprite = null, target = npcSprite, faceX = objX, faceY = objY, entity = target) {
+        const dx = objX - px;
+        const dy = objY - py;
+        const plainSq = dx * dx + dy * dy;
+        const npcSq = npcSprite ? reachNpc(player, npcSprite, plainSq) : plainSq;
+        const distSq = npcSprite ? seatedNpcReachDistSq(player, npcSprite, npcSq) : npcSq; // clearly nearer the free place of a sofa she shares, it returns Infinity: E is for the sofa
+        if (distSq > rangeSq) return;
+        if (target && !lineClear(player, target)) return; // wall between
+        if (target && !npcSprite) inReachIds.push(objectIdOf(target));
+        const dist = Math.sqrt(distSq);
+        // A scenario object is scored by aimDiff (feet to centre, or the body to the top edge of a short prop when that is the smaller angle)
+        let aim = { x: faceX, y: faceY, fromX: px, fromY: py };
+        let aimAngle = angularDiff(faceX, faceY);
+        if (target && !npcSprite && !target.doorProperties) {
+            aim = aimDiff(player, target, faceX, faceY, facingAngle);
+            aimAngle = aim.diff;
+        }
+        let score = aimAngle * 1000 + dist; // angle to the object's aim point, range to its nearest part
+        // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
+        // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
+        if (target && !npcSprite && W().seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : SEAT_PENALTY;
+        if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += SEAT_PENALTY; // so does someone walking away (q55 d)
+        const pick = { kind, target: entity, objX: aim.x, objY: aim.y, fromX: aim.fromX, fromY: aim.fromY, score };
+        if (isSeatedDeskPc(seatedOn, npcSprite ? null : target, aimAngle) && score < bestPcScore) { bestPcScore = score; bestPc = pick; }
+        if (npcSprite && score < bestNpcScore) { bestNpcScore = score; bestNpc = pick; }
+        if (score < bestScore) { bestScore = score; best = pick; }
+    }
+
+    // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
+    // Anchor to the floor of the tile and use a larger range to compensate for the vertical offset.
+    const SIDE_DOOR_RANGE_SQ = INTERACTION_RANGE_SQ * 4; // 2x radius
+    const SIDE_DOOR_Y_OFFSET = INTERACTION_RANGE / 2;    // half-tile down to floor level
+
+    const npcsToConsider = [];
+    let npcList = null;
+    const allNpcs = () => npcList || (npcList = Object.values(rooms).flatMap(r => r.npcSprites || []));
+    const npcKo = (n) => !!W().npcHostileSystem?.isNPCKO?.(n.npcId);
+    const sittersOn = (seat) => allNpcs().filter(n => n.active !== false && !npcKo(n) && npcSeatedOn(n, seat));
+    // A sofa with sitters, the player clearly nearer a free place than every one of their places (E sits there). Any number of places:
+    // one sitter the player is not clearly away from keeps E for her.
+    const sofaFreePlaceWins = (seat) => {
+        if (!seat._places) return false;
+        const sitters = sittersOn(seat);
+        return sitters.length > 0 && sitters.every(n => nearerFreePlace(player, n));
+    };
+    // A sitter on this sofa that E would talk to: in her reach, and the player not clearly nearer a free place
+    const sofaSitterTalkFirst = (seat) => !!seat._places && sittersOn(seat).some(n => !nearerFreePlace(player, n)
+        && seatedNpcReachDistSq(player, n, reachNpc(player, n, (n.x - px) ** 2 + (n.y - py) ** 2)) <= INTERACTION_RANGE_SQ);
+    Object.values(rooms).forEach(room => {
+        if (room.objects) {
+            Object.values(room.objects).forEach(obj => {
+                if (!obj.active || !obj.interactable || !obj.visible) return;
+                if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
+                // A seat with no free place whose sitter (any of them, on a full sofa) is on it now is her, not "A chair." (seatOccupant);
+                // she is considered below. A sofa with a free place stays, and loses to her by score.
+                if (obj.seatedBy && W().seating?.isSeat(obj) && seatOccupant(obj, allNpcs(), { isKo: npcKo, isSeated: npcSeatedOn })) return;
+                consider('object', reachX(obj, px), reachYSeated(obj, player, seatedOn), INTERACTION_RANGE_SQ, null, obj, aimX(obj), aimY(obj));
+            });
+        }
+
+        if (room.doorSprites) {
+            Object.values(room.doorSprites).forEach(door => {
+                if (!door.active || !door.doorProperties) return;
+                const dir = door.doorProperties.direction;
+                if (dir === 'east' || dir === 'west') {
+                    consider('door', door.x, door.y + SIDE_DOOR_Y_OFFSET, SIDE_DOOR_RANGE_SQ, null, null, door.x, door.y + SIDE_DOOR_Y_OFFSET, door); // doors: no wall test, as before
+                } else {
+                    consider('door', door.x, door.y, INTERACTION_RANGE_SQ, null, null, door.x, door.y, door);
+                }
+            });
+        }
+
+        if (room.npcSprites) {
+            room.npcSprites.forEach(sprite => {
+                if (!sprite.active || !sprite._isNPC || !sprite.visible) return;
+                if (sprite.npcId && W().npcHostileSystem && W().npcHostileSystem.isNPCKO(sprite.npcId)) return;
+                npcsToConsider.push(sprite);
+            });
+        }
+    });
+    // NPCs last, once every object in reach is known (inReachIds)
+    npcsToConsider.forEach(sprite => consider('npc', sprite.x, sprite.y, INTERACTION_RANGE_SQ, sprite));
+
+    if (bestPc) best = seatedPcWins(bestPcScore, bestNpcScore) ? bestPc : bestNpc; // the PC, or the NPC that is better aimed than it
+    return best;
+}
