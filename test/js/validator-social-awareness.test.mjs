@@ -1092,9 +1092,9 @@ test('office kit: refused in a check shell and the annual shell, allowed in a fu
   ep(lookalike).id = 'mannual_x';
   lookalike.rooms.ep_room.objects[0].minigameData.episodeId = 'mannual_x';
   ep(lookalike).stepAway = true;
-  assert.equal(hits(lint(lookalike), /the annual shell must not have/), 0);
+  assert.ok(hits(lint(lookalike), /the annual shell must not have/) === 0);
   const full = fx('clean_full.json');
   ep(full).stepAway = true;
   full.globalVariables = { ...(full.globalVariables || {}), kit_quiet: false };
-  assert.equal(hits(lint(full), kitErr), 0);
+  assert.ok(hits(lint(full), kitErr) === 0);
 });

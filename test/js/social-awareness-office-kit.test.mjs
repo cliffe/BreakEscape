@@ -65,8 +65,8 @@ const PIN_MSG = 'A pinned file changed. Changing a pin needs the owner\'s yes (L
   'do not edit the fixture to make this pass.';
 
 test('pin: the pinned set is the 28 checks, the annual shell and the room_aw_* maps', () => {
-  assert.equal(pins.checkShells.length, 28);
-  assert.deepEqual(pinnedShells(), [...pins.checkShells, ...pins.annualShells].sort());
+  assert.ok(pins.checkShells.length === 28);
+  assert.ok(JSON.stringify(pinnedShells()) === JSON.stringify([...pins.checkShells, ...pins.annualShells].sort()));
 });
 
 test('pin: every pinned file is byte-identical to HEAD at the start of the kit work', () => {
@@ -79,7 +79,7 @@ test('pin: every pinned file is byte-identical to HEAD at the start of the kit w
     else if (now[f] !== h) changed.push(f);
   }
   for (const f of Object.keys(now)) if (!(f in pins.files)) added.push(f);
-  assert.deepEqual({ changed, missing, added }, { changed: [], missing: [], added: [] },
+  assert.ok(changed.length === 0 && missing.length === 0 && added.length === 0,
     `${PIN_MSG}\nchanged: ${changed.join(', ') || 'none'}\nmissing: ${missing.join(', ') || 'none'}\nadded: ${added.join(', ') || 'none'}`);
 });
 
@@ -92,5 +92,5 @@ test('pin: pinned shells carry no kit_ name, no officePresets, no npcThoughts an
     if (text.includes('"npcThoughts"')) bad.push(`${name}: npcThoughts`);
     if (text.includes('"stepAway"')) bad.push(`${name}: stepAway`);
   }
-  assert.deepEqual(bad, [], `${PIN_MSG}\n${bad.join('\n')}`);
+  assert.ok(bad.length === 0, `${PIN_MSG}\n${bad.join('\n')}`);
 });
