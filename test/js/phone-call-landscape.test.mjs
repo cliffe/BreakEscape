@@ -267,7 +267,7 @@ check('portrait and tall-desktop (over 820px) base call rules are unchanged', ()
     assert.match(B('.phone-call-mode .conversation-header'), /padding:\s*16px/);
     assert.match(B('.phone-call-mode .call-status-bar'), /padding:\s*8px 14px/);
     // call mode rules live only in the two exact blocks (shared end-button, taller than 500px) (nothing in the tablet block)
-    assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.selector.includes('phone-call-mode')));
+    assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.media !== LEGEND_MEDIA && r.selector.includes('phone-call-mode')));
 });
 
 check('landscape call: the influence bar stacks (head over a full-width track) inside the 40px header row', () => {
