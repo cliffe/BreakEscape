@@ -244,30 +244,34 @@ export class TutorialManager {
         if (!collapseObjectives) this.restoreObjectivesPanel();
 
         // Define tutorial steps based on device type
+        // Wording follows the run: touch-first devices are told to tap, never click
+        const tap = this.touchFirst;
         if (this.isMobile) {
             this.steps = [
                 {
                     title: 'Movement',
-                    instruction: 'Click or tap on the ground where you want to move. Your character will walk to that position.',
-                    objective: 'Try moving around by clicking different locations',
+                    instruction: (tap ? 'Tap' : 'Click or tap') + ' on the ground where you want to move. Your character will walk to that position.',
+                    objective: 'Try moving around by ' + (tap ? 'tapping' : 'clicking') + ' different locations',
                     checkComplete: () => this.playerMoved
                 },
                 {
                     title: 'Hold to Walk',
-                    instruction: 'Press and hold anywhere on the ground to keep walking toward your finger. Drag around to steer your character.',
+                    instruction: tap
+                        ? 'Touch and hold anywhere on the ground to keep walking toward your finger. Drag around to steer your character.'
+                        : 'Press and hold anywhere on the ground to keep walking toward the pointer. Drag around to steer your character.',
                     objective: 'Hold down and drag to walk continuously',
                     checkComplete: () => this.playerUsedHoldWalk
                 },
                 {
                     title: 'Interaction',
-                    instruction: 'Click or tap on objects, items, or characters to interact with them.',
+                    instruction: (tap ? 'Tap' : 'Click or tap') + ' on objects, items, or characters to interact with them.',
                     objective: 'Look for highlighted objects you can interact with',
                     checkComplete: () => this.playerInteracted
                 },
                 {
                     title: 'Inventory',
-                    instruction: 'Your inventory is at the bottom of the screen. Click on items like the Notepad to use them.',
-                    objective: 'Click on the Notepad in your inventory to open it',
+                    instruction: 'Your inventory is at the bottom of the screen. ' + (tap ? 'Tap' : 'Click') + ' on items like the Notepad to use them.',
+                    objective: (tap ? 'Tap' : 'Click') + ' the Notepad in your inventory to open it',
                     checkComplete: () => this.playerClickedInventoryItem
                 },
                 {
@@ -331,8 +335,9 @@ export class TutorialManager {
         if (!collapseObjectives && this.hasObjectives()) {
             this.steps.push({
                 title: 'Objectives',
-                instruction: 'The objectives panel in the top-left corner tracks your current tasks. Click the panel header to expand and collapse it.',
-                objective: 'Expand and collapse the objectives panel by clicking it',
+                instruction: 'The objectives panel in the top-left corner tracks your current tasks. ' +
+                    (tap ? 'Tap' : 'Click') + ' the panel header to expand and collapse it.',
+                objective: 'Expand and collapse the objectives panel by ' + (tap ? 'tapping' : 'clicking') + ' it',
                 checkComplete: () => this.playerToggledObjectives
             });
         }
@@ -713,6 +718,8 @@ export class TutorialManager {
      * Notify tutorial that the player toggled the objectives panel
      */
     notifyObjectivesToggled() {
+        // The player's own toggle: the panel is theirs now, so the end of the run leaves it alone
+        this.collapsedObjectives = false;
         if (this.active) {
             this.playerToggledObjectives = true;
         }

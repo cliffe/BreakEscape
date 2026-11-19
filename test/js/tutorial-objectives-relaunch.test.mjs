@@ -71,7 +71,8 @@ function fakePanel(collapsed) {
     return {
         isCollapsed: collapsed, userToggles: 0,
         setCollapsed(c) { this.isCollapsed = !!c; },
-        toggleCollapse() { this.userToggles++; this.isCollapsed = !this.isCollapsed; }
+        // Like the real panel: a player toggle tells the tutorial manager
+        toggleCollapse() { this.userToggles++; this.isCollapsed = !this.isCollapsed; this.tm?.notifyObjectivesToggled(); }
     };
 }
 // device: { ua, width, height, coarse, fine }
@@ -149,10 +150,63 @@ test('finishing or skipping a phone run restores only what the tutorial collapse
     assert.ok(panel.isCollapsed === true, 'player collapse stays after complete');
 });
 
-test('a player who reopens the panel mid-run is not collapsed again at the end', async () => {
+test('a player who opens then closes the panel mid-run keeps it closed at the end', async () => {
+    for (const end of ['complete', 'skip']) {
+        const panel = fakePanel(false);
+        const t = await launch(PHONE, panel);
+        panel.tm = t;
+        assert.ok(panel.isCollapsed === true, 'collapsed by the run (' + end + ')');
+        panel.toggleCollapse(); // player opens it
+        assert.ok(panel.isCollapsed === false, 'player opened it (' + end + ')');
+        panel.toggleCollapse(); // player closes it again
+        assert.ok(panel.isCollapsed === true, 'player closed it (' + end + ')');
+        t[end]();
+        assert.ok(panel.isCollapsed === true, 'left closed after ' + end);
+    }
+});
+
+test('phone landscape 844x390 touch collapses the panel and drops the step', async () => {
     const panel = fakePanel(false);
-    const t = await launch(PHONE, panel);
-    panel.isCollapsed = false; // player reopened it
-    t.complete();
-    assert.ok(panel.isCollapsed === false, 'left open');
+    const t = await launch({ ua: PHONE_UA, width: 844, height: 390, coarse: true, fine: false }, panel);
+    assert.ok(panel.isCollapsed === true, 'collapsed on the short landscape phone');
+    assert.ok(hasObjStep(t) === false, 'no objectives step');
+});
+
+test('touch screen 800x1280 collapses the panel', async () => {
+    const panel = fakePanel(false);
+    const t = await launch({ ua: PHONE_UA, width: 800, height: 1280, coarse: true, fine: false }, panel);
+    assert.ok(panel.isCollapsed === true, 'collapsed under 900 wide');
+    assert.ok(hasObjStep(t) === false, 'no objectives step');
+});
+
+test('mouse window 800x700 gets desktop steps, an open panel and the objectives step', async () => {
+    const panel = fakePanel(false);
+    const t = await launch({ ua: WIN_UA, width: 800, height: 700, coarse: false, fine: true }, panel);
+    assert.ok(/W, A, S, D/.test(t.steps[0].instruction), 'desktop steps');
+    assert.ok(panel.isCollapsed === false, 'panel left open');
+    assert.ok(hasObjStep(t) === true, 'objectives step kept');
+});
+
+test('objectives step says Tap on an iPad and Click with a mouse', async () => {
+    const ipad = await launch(IPAD, fakePanel(false));
+    const ob = ipad.steps.find(s => s.title === 'Objectives');
+    assert.ok(/\bTap\b/.test(ob.instruction), 'iPad instruction says Tap');
+    assert.ok(!/click/i.test(ob.instruction + ' ' + ob.objective), 'iPad step has no click wording');
+    const desk = await launch(DESKTOP, fakePanel(false));
+    const od = desk.steps.find(s => s.title === 'Objectives');
+    assert.ok(/\bClick\b/.test(od.instruction), 'desktop instruction says Click');
+});
+
+test('touch run steps say tap, not click, in the inventory step and elsewhere', async () => {
+    for (const device of [PHONE, IPAD]) {
+        const t = await launch(device, fakePanel(false));
+        const inv = t.steps.find(s => s.title === 'Inventory');
+        assert.ok(/\bTap\b/.test(inv.instruction), 'inventory instruction says Tap');
+        assert.ok(/\bTap\b/.test(inv.objective), 'inventory objective says Tap');
+        const text = t.steps.map(s => s.instruction + ' ' + s.objective).join(' | ');
+        assert.ok(!/click/i.test(text), 'no click wording on a touch run');
+    }
+    const t = await launch(DESKTOP, fakePanel(false));
+    const inv = t.steps.find(s => s.title === 'Inventory');
+    assert.ok(/\bClick\b/.test(inv.instruction), 'desktop inventory still says Click');
 });
