@@ -37,7 +37,8 @@ test('the card name is clamped to two lines, one line once a tag follows it', ()
 });
 
 test('the card button keeps the full name in its title and accessible name; the tag stays text', () => {
-    assert.match(game, /aria-label="Reference card \$\{c\.index \+ 1\}: \$\{escapeHtml\(c\.label\)\}\$\{c\.rejected \? ', not a match' : ''\}" title="\$\{c\.index \+ 1\}\. \$\{escapeHtml\(c\.label\)\}\$\{c\.rejected \? ' \(not a match\)' : ''\}"/);
+    assert.match(game, /aria-label="Reference card \$\{c\.index \+ 1\}: \$\{escapeHtml\(c\.label\)\}\$\{c\.rejected \? ', not a match' : ''\}\$\{done && c\.correct \? ', match' : ''\}" title="Reference card \$\{c\.index \+ 1\}: \$\{escapeHtml\(c\.label\)\}\$\{c\.rejected \? ', not a match' : ''\}\$\{done && c\.correct \? ', match' : ''\}"/);
+    // the name says "match" too (not only the visible tag), and the title carries the same words, so no double read
     assert.match(game, /<span class="dusting-ref-name">\$\{c\.index \+ 1\}\. \$\{escapeHtml\(c\.label\)\}<\/span>/);
     assert.match(game, /<span class="dusting-ref-tag">\(not a match\)<\/span>/);
     assert.match(game, /<span class="dusting-ref-tag">\(match\)<\/span>/);
