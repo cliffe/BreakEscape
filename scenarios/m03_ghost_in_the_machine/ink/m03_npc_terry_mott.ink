@@ -591,6 +591,8 @@ Terry Mott: Ms. Sterling? She's the boss. Signs my wages, never learnt my name. 
 
 === trespass_warning ===
 #speaker:npc
+// He has turned the player away, so any earlier wave-on no longer counts as a story he believed.
+#set_global:guard_waved_on:false
 #display:guard-hostile
 Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 * [Alright, I'm going.]
@@ -614,6 +616,8 @@ Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 // D5-12: the detection is counted in a choice-free knot, so a reopen of
 // hostile_confrontation (which owns the choices) doesn't count it twice.
 === hostile_count ===
+// He has turned the player away, so any earlier wave-on no longer counts as a story he believed.
+#set_global:guard_waved_on:false
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1
 -> hostile_confrontation
@@ -643,6 +647,8 @@ Narrator: The guard reaches for his radio.
 // hostile as the chat closes). The detection still counts, for the debrief.
 === on_lockpick_detected ===
 #speaker:npc
+// He has turned the player away, so any earlier wave-on no longer counts as a story he believed.
+#set_global:guard_waved_on:false
 ~ guard_suspicious = true
 ~ guard_hostile = true
 ~ guard_detection_count = guard_detection_count + 1

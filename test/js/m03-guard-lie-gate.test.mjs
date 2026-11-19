@@ -69,3 +69,24 @@ test('hub sets guard_waved_on after a believed story', () => {
 test('hub does not set guard_waved_on when Terry ordered the player out', () => {
     assert.ok(terryWaved(true) === false, 'ordered-out re-entry must not count as believed');
 });
+
+// A wave-on is withdrawn when he turns the player away (failed bribe, favour refused, caught picking, hostile).
+function terryTags(knot, vars, choice) {
+    const tj = readFileSync(join(root, 'scenarios/m03_ghost_in_the_machine/ink/m03_npc_terry_mott.json'), 'utf8');
+    const story = new inkjs.Story(tj);
+    for (const [k, v] of Object.entries(vars)) story.variablesState[k] = v;
+    story.ChoosePathString(knot);
+    const tags = [];
+    for (let i = 0; i < 30 && story.canContinue; i++) {
+        story.Continue();
+        for (const t of story.currentTags || []) tags.push(t);
+    }
+    return tags;
+}
+
+for (const knot of ['bribe_response_low', 'trespass_warning', 'hostile_count', 'on_lockpick_detected']) {
+    test(`${knot} withdraws guard_waved_on`, () => {
+        const tags = terryTags(knot, { mission_phase: 'act2_infiltration' });
+        assert.ok(tags.some((t) => /guard_waved_on:false/.test(t)), 'expected set_global guard_waved_on false, got ' + JSON.stringify(tags));
+    });
+}
