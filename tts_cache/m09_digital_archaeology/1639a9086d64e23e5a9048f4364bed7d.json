@@ -1,0 +1,13 @@
+{
+  "key": "1639a9086d64e23e5a9048f4364bed7d",
+  "npc": "closing_debrief",
+  "text": "Mr Lawson's file is with Analysis. The letters went in the feed, and nobody has warned Teresa Villanueva.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T08:30:38Z"
+}
