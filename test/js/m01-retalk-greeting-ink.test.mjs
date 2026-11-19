@@ -29,8 +29,8 @@ function leave(story, label) {
 }
 
 const cases = [
-    { name: 'Graham', file: 'm01_npc_graham_whitfield.json', greeting: /^Graham Whitfield: Graham, finance/, ret: 'Graham Whitfield: Quarter close. Nobody speak to me.', leave: "I'll leave you to it.", bye: /Only joking/ },
-    { name: 'Fatima', file: 'm01_npc_fatima_begum.json', greeting: /^Fatima Begum: Sorry, I'm halfway/, ret: 'Fatima Begum: Three interviews today. Three!', leave: "Don't let me keep you.", bye: /I only press the buttons/ }
+    { name: 'Graham', file: 'm01_npc_graham_whitfield.json', greeting: /^Graham Whitfield: Graham, finance/, ret: "Graham Whitfield: You again. Still quarter close, I'm afraid.", leave: "I'll leave you to it.", bye: /Only joking/ },
+    { name: 'Fatima', file: 'm01_npc_fatima_begum.json', greeting: /^Fatima Begum: Sorry, I'm halfway/, ret: 'Fatima Begum: Back again? I really am up to my neck in CVs.', leave: "Don't let me keep you.", bye: /I only press the buttons/ }
 ];
 
 for (const c of cases) {

@@ -108,7 +108,7 @@ test('Fatima: closed before the tag was read, the second talk restarts and plays
     assert.equal(shown.ended, 0);
     assert.equal(shown.accumulated.length, 1, 'the restarted knot is displayed');
     // The state was saved after the greeting (greeted = true), so the restart plays her return line, not the greeting.
-    assert.match(shown.accumulated[0], /Three interviews today/, 'her return line is shown again');
+    assert.match(shown.accumulated[0], /Back again\? I really am up to my neck in CVs/, 'her return line is shown again');
     assert.deepEqual(conv.engine.story.currentChoices.map(c => c.text), ["Don't let me keep you."], 'and her choice is back');
 });
 
