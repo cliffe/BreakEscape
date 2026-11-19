@@ -1,5 +1,5 @@
 // Dusting D183 item 2: re-interacting with a surface that already has a lift opens the lift result as the main view
-// ("Keep this lift" primary, "Dust again" secondary); a surface with no lift keeps "Dust for prints".
+// (the lift result is the main view, X keeps it, "Dust again" secondary); a surface with no lift keeps "Dust for prints".
 // Run with: node --max-old-space-size=2048 test/js/dusting-reopen.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,7 +36,9 @@ test('a Good lift on file: the lift result is the main view and Dust again is se
     window.gameState.biometricSamples.push({ sourceObjectId: 'panel_b', quality: 0.78, rating: 'Good', owner: 'Margaret Sorensen', identified: false });
     const html = examineGame('panel_b')._htmlExamine();
     const b = buttons(html);
-    assert.ok(b[0].primary && b[0].action === 'close' && b[0].label === 'Keep this lift', 'primary is Keep this lift');
+    assert.ok(!b.some(x => x.primary), 'no primary button: the lift result is the main view, X closes and keeps it');
+    assert.ok(!html.includes('data-action="close"'), 'no Close beside the X (A16)');
+    assert.ok(html.includes('The lift is kept.'), 'says the lift is kept');
     const again = b.find(x => x.action === 'start');
     assert.ok(again && !again.primary && again.label === 'Dust again', 'Dust again is not primary');
     assert.ok(html.includes('Lifted: 78%, Good.'), 'result line shows percent and rating');

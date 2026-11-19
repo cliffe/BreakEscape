@@ -599,8 +599,8 @@ export class DustingMinigame extends MinigameScene {
             return `${head}
             <h3 class="dusting-lift-head">Lift on file</h3>
             <p class="dusting-note" data-lift-result>Lifted: ${Math.round(best.quality * 100)}%, ${escapeHtml(best.rating || ratingFor(best.quality))}.${who}</p>
+            <p class="dusting-note">The lift is kept. Close with X, or dust again for a better one.</p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-primary" data-action="close">Keep this lift</button>
                 <button class="dusting-btn" data-action="start">Dust again</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>
             </div>`;
@@ -821,7 +821,6 @@ export class DustingMinigame extends MinigameScene {
             case 'start': this._clearProgress(); this.resume = null; this._setStep('find'); break;
             case 'resume': this._resumeDusting(); break;
             case 'use-normally': this._clearProgress(); this.gameResult = { cancelled: true, useNormally: true }; this._resultSent = true; super.complete(false); break;
-            case 'close': this.complete(false); break;
             case 'hint': this.hintOn = true; this.dirty = true; this.announce('The ring marks where the print is.'); break;
             case 'powder': this._choosePowder(ds.powder); break;
             case 'tool': this._chooseTool(ds.tool); break;
