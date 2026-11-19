@@ -406,3 +406,24 @@ test('ca01 twin: tier S kit (staff, pool, stubs) with the conceptPanel, and no c
     assert.ok(!readFileSync(join(scenarios, n, 'scenario.json.erb'), 'utf8').includes('conceptPanel'), n);
   }
 });
+
+// ca12: the break-reminder look the set piece swaps the PC to is preloaded (a cold cache shows it at 0 s)
+test('pc1_break is preloaded in game.js, the file exists and matches pc1.png in size', () => {
+  const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
+  assert.match(game, /this\.load\.image\('pc1_break', 'objects\/pc1_break\.png'\)/);
+  const png = (f) => readFileSync(join(root, 'public/break_escape/assets/objects', f));
+  const dims = (b) => [b.readUInt32BE(16), b.readUInt32BE(20)];
+  assert.deepEqual(dims(png('pc1_break.png')), dims(png('pc1.png')));
+});
+
+// a set piece's own NPC (ca12's visitor) is a kit record: hidden at boot via behavior.initiallyHidden, no `person`
+test('set-piece NPCs hidden at boot carry behavior.initiallyHidden and no person; ca12 shells carry the visitor', () => {
+  for (const n of ['ca12_visitor_tailgater', 'test_ca12_fallback']) {
+    const npcs = readShell(n).rooms.training_room.npcs;
+    const v = npcs.find((x) => x.id === 'kit_camila_ospina');
+    assert.ok(v, `${n}: visitor present`);
+    assert.equal(v.behavior?.initiallyHidden, true, n);
+    assert.ok(!('person' in v), `${n}: no person on a set-piece NPC`);
+  }
+  assert.ok(!readShell('ca12_visitor_tailgater_defend').rooms.training_room.npcs.some((x) => x.id === 'kit_camila_ospina'));
+});
