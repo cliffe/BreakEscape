@@ -98,6 +98,7 @@ module ValidateOfficeLife
     w = World.build(json)
     issues = []
     check_npc_arrived(w, issues)                         # V3
+    check_bark_self_cancel(w, issues)                    # V3b
     check_chatter_repeats(w, issues)                     # V7
     check_pool_credentials(w, issues)                    # V11
     check_pool_gates(w, issues)                          # V12
@@ -468,6 +469,9 @@ module ValidateOfficeLife
       pat = m['eventPattern']
       next unless pat.is_a?(String)
 
+      # a condition that already filters out needs walks (data.owner !== 'needs') is the fix this warns about
+      next if m['condition'].to_s =~ /data\.owner\s*!==?\s*['"]needs['"]/
+
       if pat == 'npc_arrived:*' && !needs_ids.empty?
         issues << "⚠️ WARNING: office life V3: eventMapping '#{pat}'#{owner ? " on '#{owner}'" : ''} listens for any arrival, " \
                   "and #{needs_ids.to_a.sort.join(', ')} ha#{needs_ids.size == 1 ? 's' : 've'} needs; needs walks fire npc_arrived too, so it fires on every coffee run."
@@ -477,6 +481,23 @@ module ValidateOfficeLife
 
       issues << "⚠️ WARNING: office life V3: eventMapping '#{pat}'#{owner ? " on '#{owner}'" : ''} listens for an arrival of " \
                 "'#{id}', which has needs; its needs walks also fire npc_arrived, so the mapping can fire on a coffee run."
+    end
+  end
+
+  # V3b. A bark held behind a minigame, and one already on screen (npc-world-bubbles _tickSays, every
+  # 250 ms), is re-checked by running the mapping's condition again against live globals
+  # (npc-manager.js _barkStillValid). A condition that reads a global the same mapping sets is false by
+  # then, so the line is dropped (ca01's Agnieszka bark was cut after 0.3 s). Warn on that.
+  def self.check_bark_self_cancel(w, issues)
+    w.mappings.each do |m, owner|
+      next unless m['bark'].is_a?(String) && m['condition'].is_a?(String) && m['setGlobal'].is_a?(Hash)
+
+      clash = globals_in(m['condition']) & m['setGlobal'].keys
+      next if clash.empty?
+
+      issues << "⚠️ WARNING: office life V3b: eventMapping '#{m['eventPattern']}'#{owner ? " on '#{owner}'" : ''} has a bark whose " \
+                "condition reads #{clash.sort.join(', ')}, which the same mapping sets. The condition is re-checked while the bark " \
+                'shows or waits, so the bubble is dropped as stale; move the write to another mapping or drop the term.'
     end
   end
 

@@ -10,6 +10,11 @@ Row fields are described in the _note of episodes.json. `prefix` is always the s
 setGlobalPrefix and `state_global` its episode_<id>_state, read from the shell by the caller
 (see shell_ids), never built here.
 
+Ownership: every kit-owned record (a kit NPC, object, timer, global, chatter pool or host mapping, and
+its conditions, delays and other fields) is regenerated from the kit data. A hand edit to one in a shell
+is reverted by the next --kit run; apply_training_room.py warns (reverts()) and refuses to erase a
+record the kit data does not produce (hand_written()). Make changes in the set piece in the kit file.
+
 CLI (nothing writes into the repo):
   office_kit.py [--repo <checkout>] export <shell folder>   print the kit-owned members as JSON
 """
@@ -572,6 +577,52 @@ def hand_written(old, new):
         mine = old.get(key, {})
         lost += [f'{key} {i}' for i in (list(mine) if isinstance(mine, dict) else [r.get('id') for r in mine]) if i not in have]
     return lost
+
+
+def _fields(a, b, skip=()):
+    return sorted(k for k in set(a) | set(b) if k not in skip and a.get(k) != b.get(k))
+
+
+def reverts(old, new):
+    """Kit-owned records the regeneration keeps (matched by id, mappings by _map_id) but whose fields it
+    would change: a hand edit to a condition, delay, position or any other field is reverted without
+    the guard refusing. A kit-data edit shows up here too, so the caller warns and does not refuse
+    (hand_written lists what would be erased outright). Returns readable strings."""
+    out = []
+    new_npcs = {n['id']: n for n in new['npcs']}
+    for n in old['npcs']:
+        t = new_npcs.get(n['id'])
+        if t is None:
+            continue
+        out += [f"npc {n['id']} field {f}" for f in _fields(n, t, skip=('eventMappings',))]
+        out += _mapping_changes(f"npc {n['id']}", n.get('eventMappings', []), t.get('eventMappings', []))
+    for kind, key in (('object', 'objects'), ('timer', 'timers')):
+        by_id = {x.get('id'): x for x in new[key]}
+        for x in old[key]:
+            t = by_id.get(x.get('id'))
+            if t is not None:
+                out += [f"{kind} {x.get('id')} field {f}" for f in _fields(x, t)]
+    out += [f'global {k} value {old["globals"][k]!r} -> {new["globals"][k]!r}'
+            for k in old['globals'] if k in new['globals'] and old['globals'][k] != new['globals'][k]]
+    out += _mapping_changes('host', old['mappings'], new['mappings'])
+    return out
+
+
+def _mapping_changes(who, old_ms, new_ms):
+    out = []
+    groups = {}
+    for m in new_ms:
+        groups.setdefault(_map_id(m), []).append(m)
+    seen = {}
+    for m in old_ms:
+        i = _map_id(m)
+        k = seen.get(i, 0)
+        seen[i] = k + 1
+        cands = groups.get(i, [])
+        if k < len(cands):
+            out += [f"{who} mapping on {m.get('eventPattern')} (sets {sorted(m.get('setGlobal') or {})}) field {f}"
+                    for f in _fields(m, cands[k])]
+    return out
 
 
 def main():

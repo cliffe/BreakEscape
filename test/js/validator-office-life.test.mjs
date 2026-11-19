@@ -213,6 +213,21 @@ test('V3: npc_arrived:* warns when any NPC has needs', { skip }, () => {
     assertNot(check(scenario({ npcs: [watcher] })), 'V3');
 });
 
+test('V3: an arrival mapping that filters out needs walks (data.owner !== \'needs\') does not warn (wrap-fix m9)', { skip }, () => {
+    const s = scenario({ npcs: [worker(), { id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:gary', condition: "data.owner !== 'needs'", setGlobal: { x: true } }] }] });
+    assertNot(check(s), 'V3: eventMapping');
+});
+
+test('V3b: a bark whose condition reads a global its own mapping sets warns; a different global does not', { skip }, () => {
+    const mk = (cond, set) => scenario({ npcs: [{ id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:x', condition: cond, setGlobal: set, bark: 'Hello there.' }] }] });
+    assertHas(check(mk('globalVars.walk === true', { walk: false, there: true })), 'V3b: eventMapping \'npc_arrived:x\' on \'still\' has a bark whose condition reads walk');
+    assertNot(check(mk('globalVars.out === true', { walk: false, there: true })), 'V3b');
+    assertNot(check(scenario({ npcs: [{ id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:x', condition: 'globalVars.walk === true', setGlobal: { walk: false } }] }] })), 'V3b');   // no bark: not at risk
+});
+
 // ── V4 ─────────────────────────────────────────────────────────────────────────────────────
 
 test('V4: an attackable needs NPC in a campaign mission warns; disableAttacks and koImmune clear it', { skip }, () => {

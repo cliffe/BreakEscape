@@ -53,7 +53,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Invoice fraud: finished",
-        "body": "You've seen both sides of invoice fraud and worked through the payments inbox. That's this episode finished. The debrief goes through each one."
+        "body": "You've seen both sides of invoice fraud and worked through the payments inbox. That's this episode finished. The debrief stays on the kiosk if you want another look."
       },
       "tasks": [
         {
@@ -410,7 +410,7 @@
         "stepAway": "Look up from the kiosk to see how a case like this plays out here. It takes a few seconds, and your place is saved.",
         "conceptPanel": {
           "heading": "Where that email leads",
-          "text": "To a real attacker, the change you sent to the payments inbox is a supplier payment redirected to an account they control. One believable email is all it takes to move a scheduled run. Within hours the money is drawn out and moved on through other accounts, long before the real supplier rings to ask where their payment is. The call back you just practised is what breaks that chain. Ring a number you already hold before any change to a payee, and the new details never reach the file.\n\nWhen a change like this is saved instead, the run pays the wrong account (£6,412.80 on this invoice), and finance spend the next fortnight chasing the bank and the real supplier to put it right."
+          "text": "To a real attacker, the change you sent to the payments inbox is a supplier payment redirected to an account they control. One believable email is all it takes to move a scheduled run. Within hours the money is drawn out and moved on through other accounts, long before the real supplier rings to ask where their payment is. The call back in this exercise is what breaks that chain. Ring a number you already hold before any change to a payee, and the new details never reach the file.\n\nWhen a change like this is saved instead, the run pays the wrong account (£6,412.80 on this invoice), and finance spend the next fortnight chasing the bank and the real supplier to put it right."
         }
       },
       "debrief": {
@@ -936,7 +936,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca01_agn_there",
-              "condition": "value === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca01_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
               "delayMs": 4000,
               "setGlobal": {
@@ -1020,13 +1020,20 @@
             },
             {
               "eventPattern": "npc_arrived:kit_agnieszka_duda",
-              "condition": "globalVars.kit_ca01_walk === true && data.owner !== 'needs' && globalVars.kit_quiet === true",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca01_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
               "setGlobal": {
-                "kit_ca01_walk": false,
                 "kit_ca01_agn_there": true
               },
               "bark": "That notice on the wall is from last spring. A redirect that went through, and the supplier was left waiting to be paid."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca01_agn_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca01_walk": false
+              }
             },
             {
               "eventPattern": "global_variable_changed:kit_ca01_agn_there",

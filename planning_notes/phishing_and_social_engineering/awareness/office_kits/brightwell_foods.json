@@ -73,7 +73,7 @@
       ]
     },
     "ca01_recall": {
-      "_note": "The ca01 chain, written once here so --kit regenerates it (wrap review M3). Look up sets {out}: Gwen and Agnieszka stop their needs, Agnieszka walks to the notice (4,3) after 1 s, says her line on arrival, Adaeze answers 4 s after that and sets kit_ca01_done, and Gwen resumes then. Every bark carries kit_quiet === true, so a line held across a kiosk reopen is dropped on release (plan 4.5). kit_ca01_t_done is the timer fallback: if the walk is blocked and Agnieszka never arrives, 12 s after {out} it sets kit_ca01_done anyway, and both colleagues resume on it. The two lines in the barks are fixed text that went through five dialogue rounds.",
+      "_note": "The ca01 chain, written once here so --kit regenerates it (wrap review M3). Look up sets {out}: Gwen and Agnieszka stop their needs, Agnieszka walks to the notice (4,3) after 1 s, says her line on arrival, Adaeze answers 4 s after that and sets kit_ca01_done, and Gwen resumes then. The bark conditions never read a global their own mapping writes (stillValid re-runs the condition every 250 ms, so that would cancel the bubble). Every bark carries kit_quiet === true, so a line held across a kiosk reopen is dropped on release (plan 4.5). kit_ca01_t_done is the timer fallback: if the walk is blocked and Agnieszka never arrives, 12 s after {out} it sets kit_ca01_done anyway, and both colleagues resume on it. The two lines in the barks are fixed text that went through five dialogue rounds.",
       "globals": { "kit_{chain}_walk": false, "kit_{chain}_agn_there": false, "kit_{chain}_done": false, "kit_ca01_host_said": false },
       "timers": [
         { "id": "kit_{chain}_t_done", "startOnGlobal": "{out}", "delayMs": 12000, "condition": "!globalVars.kit_{chain}_done", "setGlobal": { "kit_{chain}_done": true } }
@@ -81,7 +81,7 @@
       "mappings": [
         {
           "eventPattern": "global_variable_changed:kit_{chain}_agn_there",
-          "condition": "value === true && globalVars.kit_quiet === true",
+          "condition": "value === true && globalVars.{out} === true && globalVars.kit_quiet === true",
           "onceOnly": true,
           "delayMs": 4000,
           "setGlobal": { "kit_{chain}_done": true },
@@ -110,9 +110,10 @@
             { "eventPattern": "global_variable_changed:{out}", "condition": "value === true", "onceOnly": true, "delayMs": 1000,
               "patrolOverride": { "targetTile": { "x": 4, "y": 3 }, "speed": 90 }, "setGlobal": { "kit_{chain}_walk": true } },
             { "eventPattern": "npc_arrived:kit_agnieszka_duda",
-              "condition": "globalVars.kit_{chain}_walk === true && data.owner !== 'needs' && globalVars.kit_quiet === true",
-              "onceOnly": true, "setGlobal": { "kit_{chain}_walk": false, "kit_{chain}_agn_there": true },
+              "condition": "data.owner !== 'needs' && globalVars.{out} === true && globalVars.kit_quiet === true",
+              "onceOnly": true, "setGlobal": { "kit_{chain}_agn_there": true },
               "bark": "That notice on the wall is from last spring. A redirect that went through, and the supplier was left waiting to be paid." },
+            { "eventPattern": "global_variable_changed:kit_{chain}_agn_there", "condition": "value === true", "onceOnly": true, "setGlobal": { "kit_{chain}_walk": false } },
             { "eventPattern": "global_variable_changed:kit_{chain}_agn_there", "condition": "value === true", "onceOnly": true, "delayMs": 3000, "needs": "resume" },
             { "eventPattern": "global_variable_changed:kit_{chain}_done", "condition": "value === true", "onceOnly": true, "needs": "resume" }
           ]

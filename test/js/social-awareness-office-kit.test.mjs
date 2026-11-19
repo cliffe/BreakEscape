@@ -117,11 +117,13 @@ const isKitMapping = (m) => Object.keys(m.setGlobal || {}).some((k) => k.startsW
 // key-order independent, so the tool's export and the shell compare by content
 const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x)
   ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
+// ERB-templated scenarios (test_ca* fixtures with <% %>) are not JSON and carry no generated kit: skipped
+const tryShell = (n) => { try { return readShell(n); } catch (e) { return null; } };
 const kitShellNames = () => readdirSync(scenarios, { withFileTypes: true })
-  .filter((d) => d.isDirectory() && /^(ca\d\d_|test_ca_office_kit)/.test(d.name))
+  .filter((d) => d.isDirectory() && /^(ca\d\d_|test_ca)/.test(d.name))
   .map((d) => d.name)
   .filter((n) => existsSync(join(scenarios, n, 'scenario.json.erb')) &&
-    readShell(n).rooms.training_room.npcs.some((x) => x.id.startsWith('kit_'))); // not payloadKit ids such as ca02's
+    tryShell(n)?.rooms?.training_room?.npcs?.some((x) => x.id.startsWith('kit_')) === true); // not payloadKit ids such as ca02's
 
 test('kit: every non-fixture kit row has its shell, and the shell holds exactly what the tool exports', () => {
   const rows = kitRows.filter((x) => !x.fixture);
@@ -188,6 +190,7 @@ test('kit: each kit row matches its shell (stepAway, ambient ids, kit_ep)', () =
 test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell that carries a kit', () => {
   const names = kitShellNames();
   assert.ok(names.includes('test_ca_office_kit'));
+  assert.ok(names.includes('test_ca01_panel'), 'the panel build carries the real chain and must be in the glob (wrap review M2)');
   const gate = JSON.stringify({ kit_quiet: false });
   for (const name of names) {
     const sc = readShell(name);
@@ -227,6 +230,130 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
       const finished = (kiosk.observationVariants || []).map((v) => v.condition);
       assert.ok(finished.includes('globalVars.kit_defend_done === true && globalVars.kit_quiet === false'), where('kiosk finished text keys on the kit'));
     }
+  }
+});
+
+// ---- plan 4.5 chain rules ----------------------------------------------------------------------
+// A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
+const ALLOWED_MAPPING_FIELDS = ['eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'needs', 'patrolOverride', 'setVisible'];
+const globalsRead = (cond) => [...String(cond || '').matchAll(/globalVars\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
+// the gate A fixture (test_ca_office_kit) is a hand-built probe with its own targetKnot chain: not held to the generated-chain rules
+const chainShells = () => kitShellNames().filter((n) => readShell(n).social.awarenessEpisode.stepAway === true && !kitRows.find((r) => r.id === n)?.fixture);
+const allKitMappings = (sc) => {
+  const tr = sc.rooms.training_room;
+  const host = (hostOf(sc).eventMappings || []).filter(isKitMapping).map((m) => ({ m, who: 'host', host: true }));
+  const staff = tr.npcs.filter((n) => n.id.startsWith('kit_')).flatMap((n) => (n.eventMappings || []).map((m) => ({ m, who: n.id, host: false })));
+  return [...host, ...staff];
+};
+
+test('kit chain: a bark\'s condition never reads a global its own mapping sets (stillValid would cancel it)', () => {
+  // npc-manager _barkStillValid re-runs the condition against live globals every 250 ms while the bark
+  // shows or waits; ca01's arrival bark needed kit_ca01_walk and set it false, so it was cut after 0.3 s.
+  let barks = 0;
+  for (const name of kitShellNames()) {
+    const sc = readShell(name);
+    for (const { m, who } of allKitMappings(sc)) {
+      if (!m.bark) continue;
+      barks += 1;
+      const own = Object.keys(m.setGlobal || {});
+      const clash = globalsRead(m.condition).filter((g) => own.includes(g));
+      assert.deepEqual(clash, [], `${name}: ${who} bark on ${m.eventPattern} reads ${clash} which its own mapping sets`);
+    }
+  }
+  assert.ok(barks >= 3, 'compared the chain barks');
+});
+
+test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)', () => {
+  const names = chainShells();
+  assert.ok(names.includes('test_ca01_panel') && names.includes('ca01_invoice_fraud') === false);
+  for (const name of names) {
+    const sc = readShell(name);
+    const row = kitRows.find((r) => r.id === name);
+    const ep = sc.globalVariables.kit_ep;
+    const out = Object.keys(sc.globalVariables).filter((k) => /^kit_[a-z0-9]+_out$/.test(k));
+    assert.ok(out.length === 1, `${name}: one kit_<ep>_out global`);
+    const outG = out[0];
+    const where = (m) => `${name}: ${m}`;
+    const maps = allKitMappings(sc);
+    const staffMaps = maps.filter((x) => !x.host);
+    // allow-list of fields, kit_ writes only, knot only beside bark, setVisible only on a kit_ NPC
+    for (const { m, who } of maps) {
+      const extra = Object.keys(m).filter((k) => !ALLOWED_MAPPING_FIELDS.includes(k));
+      assert.deepEqual(extra, [], where(`${who} mapping on ${m.eventPattern} has fields outside the allow-list`));
+      assert.ok(Object.keys(m.setGlobal || {}).every((k) => k.startsWith('kit_')), where(`${who} sets only kit_ globals`));
+      if (m.knot) assert.ok(m.bark, where('knot only beside bark'));
+      if (m.setVisible !== undefined) assert.ok(who.startsWith('kit_'), where('setVisible only on a kit_ NPC'));
+      assert.ok(!String(m.condition || '').includes('||'), where('no || in a condition'));
+    }
+    // at most two chain barks, each gated on kit_quiet and on the out global, at least 4 s apart is a timing proof
+    const barks = staffMaps.filter((x) => x.m.bark);
+    assert.ok(barks.length >= 1 && barks.length <= 2, where(`1 or 2 chain barks, found ${barks.length}`));
+    for (const { m, who } of barks) {
+      assert.ok(/globalVars\.kit_quiet === true/.test(m.condition || ''), where(`${who} bark needs kit_quiet === true`));
+      assert.ok(globalsRead(m.condition).includes(outG), where(`${who} bark needs ${outG} (plan 4.5)`));
+    }
+    // the only episode_step_away mapping is the host's, and it sets only the out global
+    const steps = maps.filter((x) => x.m.eventPattern === 'episode_step_away');
+    assert.ok(steps.length === 1 && steps[0].host, where('one step-away mapping, on the host'));
+    assert.deepEqual(Object.keys(steps[0].m.setGlobal), [outG], where('step-away sets only the out global'));
+    // every staff mapping listens on the out global, a kit_ global, or a chain event, with the out global in its condition
+    const chainEvents = /^(npc_returned_post|workstation_owner_\w+|npc_use_failed|conversation_closed|npc_arrived:[\w]+|npc_use_started:[\w]+)/;
+    for (const { m, who } of staffMaps) {
+      const ev = m.eventPattern;
+      if (ev === `global_variable_changed:${outG}` || /^global_variable_changed:kit_/.test(ev)) continue;
+      assert.ok(chainEvents.test(ev), where(`${who} mapping event ${ev} is not a chain event`));
+      assert.ok(globalsRead(m.condition).includes(outG), where(`${who} mapping on ${ev} needs ${outG} in its condition`));
+      if (/^npc_arrived/.test(ev)) {
+        assert.ok(m.onceOnly === true && /data\.owner !== 'needs'/.test(m.condition), where(`${who} arrival mapping is onceOnly and filters needs walks`));
+      }
+    }
+    // nothing kit-owned reads kit_attack_done in a reveal/off/timer start
+    for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith('kit_'))) {
+      assert.ok(!o.interactionWarning, where(`${o.id} has no interactionWarning`));
+      if (o.revealOnGlobal) assert.ok(/^kit_/.test(o.revealOnGlobal) && o.revealOnGlobal !== 'kit_attack_done', where(`${o.id} reveal`));
+    }
+    // timers: only kit_ ids, started on a kit_ global (not kit_attack_done), writing only kit_ globals / set_global / emit_event kit_<ep>_
+    for (const t of (sc.timers || []).filter((x) => String(x.id).startsWith('kit_'))) {
+      assert.ok(/^kit_/.test(t.startOnGlobal || '') && t.startOnGlobal !== 'kit_attack_done', where(`timer ${t.id} start`));
+      assert.ok(Object.keys(t.setGlobal || {}).every((k) => k.startsWith('kit_')), where(`timer ${t.id} sets kit_ only`));
+      for (const a of t.actions || []) {
+        const ok = (a.type === 'set_global' && String(a.name || a.global || '').startsWith('kit_')) ||
+          (a.type === 'emit_event' && String(a.event_name || '').startsWith(`kit_${ep}_`));
+        assert.ok(ok, where(`timer ${t.id} action ${a.type}`));
+      }
+    }
+    // partner suspended at the look-up and resumed: every suspender resumes, and someone suspends on the out global
+    const suspenders = new Set(staffMaps.filter((x) => x.m.needs === 'suspend').map((x) => x.who));
+    assert.ok(suspenders.size >= 1, where('a kit NPC suspends needs at the look-up'));
+    for (const who of suspenders) assert.ok(staffMaps.some((x) => x.who === who && x.m.needs === 'resume'), where(`${who} is resumed`));
+    assert.ok(staffMaps.some((x) => x.m.needs === 'suspend' && x.m.eventPattern === `global_variable_changed:${outG}`), where('suspend on the out global'));
+    // a patrolOverride walk ends with a resume for that NPC
+    for (const { m, who } of staffMaps) if (m.patrolOverride) assert.ok(suspenders.has(who) && staffMaps.some((x) => x.who === who && x.m.needs === 'resume'), where(`${who} walk ends in resume`));
+    // layer 1 pointer to the host, layer 0 for an attack-half shell
+    const deb = JSON.stringify(sc.social.awarenessEpisode.strings) + JSON.stringify(sc.social.awarenessEpisode.debrief);
+    // TODO (HANDOVER_fix_batch2): layer 1 pointer assertion, the text sits outside awarenessEpisode.strings/debrief
+    if (row && row.attack) assert.ok(/To a real attacker/.test(deb), where('layer 0 passage in the debrief'));
+    // no ambient displayName (full or first name) in the social block
+    for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_') && x.displayName)) {
+      const social = JSON.stringify(sc.social);
+      assert.ok(!social.includes(n.displayName) && !social.includes(n.displayName.split(' ')[0]), where(`${n.displayName} appears in social`));
+    }
+    // the shared stub diverts on kit_defend_done and kit_ep
+    for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_'))) {
+      const ink = readFileSync(join(root, n.storyPath.replace(/\.json$/, '.ink')), 'utf8');
+      assert.ok(/kit_defend_done/.test(ink) && /kit_ep/.test(ink), where(`${n.id} stub diverts on kit_defend_done and kit_ep`));
+    }
+    assert.ok(sc.globalVariables.kit_ep === (row ? row.ep : ep), where('kit_ep is the row\'s episode'));
+  }
+});
+
+test('kit chain: only a shell with the step-away panel has a chain, an out global or a timer', () => {
+  for (const name of kitShellNames()) {
+    const sc = readShell(name);
+    if (sc.social.awarenessEpisode.stepAway === true) continue;
+    assert.ok(!Object.keys(sc.globalVariables).some((k) => /^kit_.*_out$/.test(k)), `${name}: an out global without stepAway`);
+    assert.ok(!(sc.timers || []).some((t) => String(t.id).startsWith('kit_')), `${name}: a kit timer without stepAway`);
+    for (const { m } of allKitMappings(sc)) assert.ok(!m.patrolOverride && !m.needs, `${name}: a chain mapping without stepAway`);
   }
 });
 

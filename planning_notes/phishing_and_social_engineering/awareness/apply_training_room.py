@@ -430,12 +430,26 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     expect = office_kit.apply_kit(old, kit, row, host_id=host_id)
     prefix, state_global = office_kit.shell_ids(old, row)
     b = office_kit.build(kit, row, prefix, state_global)
-    lost = office_kit.hand_written(office_kit.kit_owned(old, host_id), b)
+    mine = office_kit.kit_owned(old, host_id)
+    lost = office_kit.hand_written(mine, b)
     if lost and not allow_drop:
         raise WouldDropHandWrittenContent(
             f"{shell}: --kit would drop hand-written kit content it cannot regenerate: " + '; '.join(lost)
             + ". Move it into the kit data (the set piece's staff patches, mappings, globals, timers, objects) "
-            + "or pass --allow-drop to erase it on purpose.")
+            + f"or pass --allow-drop {shell} to erase it on purpose.")
+    if lost:
+        print(f"{shell}: --allow-drop {shell}: DROPPING " + str(len(lost)) + ' item(s):', file=sys.stderr)
+        for item in lost:
+            print('  - ' + item, file=sys.stderr)
+    # Records the regeneration keeps by id but rewrites: a hand edit to a condition, delay or field is
+    # reverted without a refusal (kit data changes show here too, so this warns and does not refuse).
+    changed = office_kit.reverts(mine, b)
+    if changed:
+        print(f"{shell}: WARNING, --kit rewrites {len(changed)} kit-owned field(s) from the kit data. Expected "
+              "after a kit-data edit; a hand edit made in the shell is reverted (move it into the kit data):",
+              file=sys.stderr)
+        for item in changed:
+            print('  ~ ' + item, file=sys.stderr)
     is_kit = lambda e: office_kit.is_kit_member(e)  # noqa: E731
 
     # host mappings (deepest first, so the spans above are re-found afterwards)
@@ -466,7 +480,8 @@ def kit_text(text, kit, row, shell, allow_drop=False):
         text = _splice_object(text, oc, lambda k: k == 'messageGlobals',
                               [('messageGlobals', b['messageGlobals'])] if b.get('messageGlobals') else [])
     else:    # the shell's own non-kit entries stay; the kit's are merged in as apply_kit does
-        mg = {**own_mg[0], **b.get('messageGlobals', {})}
+        # (old kit_ entries are dropped first, as office_kit.strip_kit does: wrap-fix review m4)
+        mg = {**{k: v for k, v in own_mg[0].items() if not str(v).startswith('kit_')}, **b.get('messageGlobals', {})}
         text = _splice_object(text, oc, lambda k: k == 'messageGlobals', [('messageGlobals', mg)])
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
@@ -511,12 +526,17 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     return text
 
 
-def kit(outdir, allow_drop=False):
+def kit(outdir, allow_drop=()):
     """Splice the kit into every tiered row's shell, writing patched copies into outdir (required: the
     tool never writes into scenarios/). Every text is built (and every row checked) before any file is
     written, so a failure on a later shell leaves the earlier ones untouched."""
     if not outdir:
-        sys.exit('--kit needs an output folder: apply_training_room.py --kit <outdir> (nothing is written into scenarios/)')
+        sys.exit('--kit needs an output folder: apply_training_room.py --kit <outdir> [--allow-drop <shell>]... '
+                 '(nothing is written into scenarios/)')
+    allow_drop = set(allow_drop)
+    unknown = allow_drop - {r['id'] for r in office_kit.load_rows() if office_kit.tier_of(r) != 'none'}
+    if unknown:
+        sys.exit('--allow-drop names no kit shell: ' + ', '.join(sorted(unknown)))
     plan = []
     for row in office_kit.load_rows():
         if office_kit.tier_of(row) == 'none':
@@ -535,7 +555,7 @@ def kit(outdir, allow_drop=False):
             sys.exit(f'episodes.json row {name} has no shell at {path}')
         text = open(path).read()
         try:
-            new = kit_text(text, office_kit.load_kit(row['company']), row, name, allow_drop=allow_drop)
+            new = kit_text(text, office_kit.load_kit(row['company']), row, name, allow_drop=name in allow_drop)
         except WouldDropHandWrittenContent as e:
             sys.exit(str(e))
         plan.append((name, path, text, new))
@@ -550,9 +570,16 @@ def kit(outdir, allow_drop=False):
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == '--kit':
-        rest = sys.argv[2:]
-        allow = '--allow-drop' in rest
-        rest = [a for a in rest if a != '--allow-drop']
+        rest, allow = [], []
+        args = iter(sys.argv[2:])
+        for a in args:
+            if a == '--allow-drop':     # per shell: --allow-drop <shell>, repeatable; never the whole run
+                shell = next(args, None)
+                if not shell or shell.startswith('-'):
+                    sys.exit('--allow-drop needs a shell name (repeatable): --allow-drop <shell>')
+                allow.append(shell)
+            else:
+                rest.append(a)
         kit(rest[0] if rest else None, allow_drop=allow)
         return
     if len(sys.argv) > 1 and sys.argv[1] == '--refresh':
