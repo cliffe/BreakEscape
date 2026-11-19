@@ -97,3 +97,15 @@
 - m5: BLE `completesTask`/`onPairSetGlobal` move after `success: true` on a gated lock via `applyBlePairEffects`.
 - m6: B12 split into B12a to B12e (Gordon's ink opens, Moira owns; give_item child; X; retry; reload; approve) on a fresh game.
 - Nits: n1 keyring wording; n2 backlog destination and owners; n3 kind/owner only; n4 clone-outside-access-list opens alone.
+
+## R8 fixes (2026-11-19)
+
+- m1: the retry from the door posts `npc` directly for `doorProperties.connectedRoom` and calls `unlockTarget` with the answer, so the sprite opens; `door_unlocked_by_npc` does not fire on a retry; bridge change stays at its `catch`. LOCK 5.4, JS rows, B12c, B12e.
+- m2: `MfaClient.runLockStep` is the one writer of `npcStepOpener` (scenario room and every sprite from `_findAllDoorSpritesForRoom`); JS row added. Differs from the review in one detail: `ApiClient.unlock` already spreads its fifth arg `extra` into the body, so the fromDoor flag is a new sixth arg, never posted. LOCK 5.4.
+- m3: the gate writes the grant on any accepted `npc` post for a gated door, also on a re-answer from a live record (one small write, no row, no count); `opener` is the grant after the write; server-only, never in a sync body. LOCK 5.2 step 4, 5.3, G2 NPC grant row.
+- m4: pane opens at once when the first check is clear and no chat return pending, toast only when not clear; the door retry passes `fromDoor` and skips the wait. LOCK 5.4, B12c.
+- m5: `runLockStep` serialised, one pane at a time, later requests queued and re-checking clear; JS row added. LOCK 5.4.
+- n1: `playerIsKnockedOut` added to clear; null `startMinigame` is a silent cancel. LOCK 5.4.
+- n2: fallback and its JS row cut (both server checks are static); the retry has no refusal path. LOCK 5.4.
+- n3: section 10 names `npcStepGrants`. n4: LOG section 11 badge bullet left (review says no contradiction; not in this file set). n5: reworded. LOCK 5.4.
+- n6: not cut. Cost of each answer and the cut options added to open question 1; the wait-for-conversation question added as 9 so it stays open (decision belongs to the user).

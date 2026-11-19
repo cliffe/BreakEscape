@@ -292,14 +292,17 @@ call. The object's own `text` and `observations` are not behind the gate, as tod
    question 1). Otherwise:
    - a live record that has not passed is answered again from the record, with no write and no
      log row (repeating the first factor, or reloading, costs no save and cannot reset the
-     request count). This is the lock caller's own logic: it reads `kind` and `nonce` from the
+     request count). The one exception is the NPC grant (5.3): an accepted `npc` post for a
+     door writes it here too, as one small write with no row and no request count, whenever the
+     grant is absent or names another NPC. This is the lock caller's own logic: it reads `kind` and `nonce` from the
      record and recomputes the number with the MFA plan's pure
      `numbers(key, game_id, <record key>, npc_id, record['nonce'])`;
    - else the shared challenge function writes a new record, adds 1 to
      `mfaAccounts[owner].started`, writes `mfa_challenge` and saves.
    The answer is 200 `{ success: false, secondStep: true, kind, targetType, targetId, npcId,
    number?, opener? }`, `targetId` being the object's id, `npcId` the step's owner and `opener`
-   the NPC whose `npc` post reached the gate (doors only, 5.3). Nothing is unlocked; no
+   the grant's value after any write above, which is the NPC whose `npc` post reached the gate
+   (doors only, 5.3), also on a re-answer. Nothing is unlocked; no
    `contents`, no `roomData`.
 5. **The step** runs on the `/mfa/*` routes with the lock as subject (section 6). On a pass
    the shared function returns `:passed` and drops nothing; the lock caller sets `passed` on
@@ -355,11 +358,16 @@ The rfid direct-card and clone branches need neither field: their toasts already
 enough there.
 
 **NPC grant.** When the gate accepts an `npc` first factor for a gated door, it writes
-`npcStepGrants["door:<roomId>"] = npcId` in the same save as the record, and deletes it when
-`record_step_open!` opens the door. It is what lets the player retry the step without the
-conversation (5.4). It holds nothing the browser has not been told: the `secondStep` answer to
-that `npc` post carries `opener: npcId`, and the client sets `doorProperties.npcStepOpener` from
-it at once. A deny, an expiry or a closed pane drop `lockSteps`' record, never the grant. Objects
+`npcStepGrants["door:<roomId>"] = npcId` and deletes it when `record_step_open!` opens the
+door. A new record is saved with the grant in the same save. On a re-answer from a live record
+(a keycard started it, then an NPC's ink posts `npc`) the gate still writes the grant when it is
+absent or names another NPC: one small write, no row, no request count, so a reload finds the
+client and server agreeing. The grant is server-only state: it is never in a sync body and
+nothing re-sends it; the browser learns it as a delta, in the answer and, after a reload, the
+bootstrap. It is what lets the player retry the step without the conversation (5.4). It holds
+nothing the browser has not been told: the `secondStep` answer to that `npc` post carries
+`opener`, the grant's value after the write, and the client sets `npcStepOpener` from it at once
+(5.4 names the writer). A deny, an expiry or a closed pane drop `lockSteps`' record, never the grant. Objects
 get no grant: no client posts `npc` for an object (section 2), and a crafted one is refused at
 the gate as before.
 
@@ -411,15 +419,26 @@ No new scene and no new module.
   `window.pendingConversationReturn` is null (set when a chat suspends itself for its own child,
   the NPC inventory at `npc-game-bridge.js:384` or the card copier at `chat-helpers.js:434`, and
   cleared by `minigame-manager.js:429-433` and `:455-474`); and `window.gameConfirmOpen?.()` is
-  not true. It checks every `MinigameFramework.CHAT_RETURN_SETTLE_MS` (400 ms,
-  `minigame-manager.js:446`) and opens on the second clear check in a row, so the 100 ms
-  container reopen and a chat coming back are not taken for clear. It does not listen for
+  not true; `window.playerIsKnockedOut?.()` must also be falsy. It checks at once. If the first
+  check is clear and no chat return is pending (nothing was ever open), the pane opens
+  immediately with no toast. Otherwise it re-checks every
+  `MinigameFramework.CHAT_RETURN_SETTLE_MS` (400 ms, `minigame-manager.js:446`) and opens on
+  the second clear check in a row, so the 100 ms container reopen and a chat coming back are
+  not taken for clear. A request that passes `{ fromDoor: true }` (the retry below, which has
+  no conversation by definition) skips the wait and checks once. A null return from
+  `startMinigame` (it refuses while the player is knocked out) is a silent cancel
+  (`closedByPlayer: true`), so the request's promise always settles. It does not listen for
   `conversation_closed:<npcId>`: `cleanup()` emits that (`person-chat-minigame.js:2117-2127`)
   when the chat suspends for a child too, and the phone ringer skips it on some paths
-  (`phone-ringer-dom.js:486-537`). While it waits, `MfaClient` shows the UI toast "Second step
-  pending. It opens when you finish here." once (engine UI text, not an NPC line). The wait has
-  no timeout; a reload drops it, and the retry below picks it up. Every other method opens the
-  pane at once, over its own pad or copier or alone.
+  (`phone-ringer-dom.js:486-537`). When the first check is not clear, `MfaClient` shows the UI
+  toast "Second step pending. It opens when you finish here." once (engine UI text, not an NPC
+  line). The wait has no timeout; a reload drops it, and the retry below picks it up. Every
+  other method opens the pane at once, over its own pad or copier or alone.
+- **One pane at a time.** `runLockStep` is serialised: a request made while another is waiting
+  or has its pane open is queued behind that one's settlement (pass or cancel), and re-runs the
+  clear check before it opens. Two `#unlock_door` tags in one knot, or a tag plus an
+  event-mapping `unlockDoor`, therefore give two panes in turn. A pane is never ended to make
+  room for another, so no door reports "Not approved." that the player did not cause.
 - **What each caller does with it.** The pads that call `lockScopeRefusal` (`password`, `pin`,
   `combination`, `cryptex`, `flag-station`) already close a recognised refusal as cancelled with
   no attempt counted and no reject sound; `second_step_cancelled` joins that table, and the line
@@ -435,7 +454,8 @@ No new scene and no new module.
   `validate_unlock` for a locked object is `flag_reward`, which the gate skips. All of this is
   inactive for an answer without `secondStep: true`, and G1 lands it whole.
 - **No success before the final answer.** The client knows a lock is gated from the
-  `secondStep` field it already holds (section 7, and 5.3 for doors), so nothing new is sent. On
+  `secondStep` field it already holds (section 7, and 5.3 for doors); nothing new is sent for
+  this, and the door fields are 5.3's. On
   a gated lock nothing says "opened", plays a release sound or completes a task until the final
   answer has `success: true`; a cancel follows the cancel rule. A lock without the field behaves
   as today. The sites:
@@ -488,7 +508,8 @@ No new scene and no new module.
     the late call passes `autoOpen: true`: the player has done nothing since approving, so a
     gated container opens as it would from a direct card.
 - **An NPC's door unlock.** All three `npc` posts (above) wait for the conversation as
-  described. On a pass the door opens through the caller's existing success branch. A cancel no
+  described. On a pass the door opens through the caller's existing success branch (the bridge's
+  own success path for the chat and event-mapping callers). A cancel no
   longer becomes a failure: `NPCGameBridge.unlockDoor`'s `catch` (`npc-game-bridge.js:165-174`)
   returns `{ success: false, secondStepCancelled: true, roomId, npcId }` for a
   `second_step_cancelled` error in place of `error: error.message`. `chat-helpers.js:104-117` and
@@ -499,15 +520,34 @@ No new scene and no new module.
   conversation is open: the player's X on the pane, a deny, an expiry, a reload during the wait
   or with the pane up, or a knock-out. Each leaves the door shut and `npcStepGrants` holding the
   opener (5.3), and `doorProperties.npcStepOpener` set, from the `secondStep` answer at once or
-  from the bootstrap after a reload. The next interaction with that door retries the step
-  without the conversation: in `handleUnlock` (`unlock-system.js:973`), after `lockRequirements`
-  (`:992-994`) and the client-sees-unlocked check (`:1014-1031`), a door whose
-  `lockRequirements` carry both `secondStep` and `npcStepOpener` calls
-  `NPCGameBridge.unlockDoor(roomId, npcStepOpener)` (`npc-game-bridge.js:78`) in place of its
-  lock-type branch. The server judges the `npc` claim with today's checks and the gate answers
-  from the live record (same pane, same number) or starts a new challenge. If the NPC check now
-  refuses, the client clears `npcStepOpener` and runs the lock-type branch as today. The NPC's
-  grant stays best-effort, as any `npc` post is today; the step stays server-checked.
+  from the bootstrap after a reload.
+  - **Who writes the field.** One writer: `MfaClient.runLockStep`, on a `secondStep` answer
+    that carries `opener` and `targetType: 'door'`, sets
+    `window.gameScenario.rooms[targetId].npcStepOpener` and the field on every sprite from
+    `NPCGameBridge._findAllDoorSpritesForRoom(targetId)` (`npc-game-bridge.js:184`). The `npc`
+    post has no sprite of its own, and zero, one or two sprites may lead to the room. A sprite
+    built later reads the field from `gameScenario.rooms` (5.3), as does the scenario fallback
+    of `getLockRequirementsForDoor`.
+  - **The retry.** The next interaction with that door retries the step without the
+    conversation: in `handleUnlock` (`unlock-system.js:973`), after `lockRequirements`
+    (`:992-994`) and the client-sees-unlocked check (`:1014-1031`), a door whose
+    `lockRequirements` carry both `secondStep` and `npcStepOpener` posts directly, in place of
+    its lock-type branch:
+    `ApiClient.unlock('door', unlockTargetId(lockable, 'door'), npcStepOpener, 'npc', {}, { fromDoor: true })`.
+    The sixth argument is new, is handed to `runLockStep` and is never posted (the fifth,
+    `extra`, is spread into the body). The target is `doorProperties.connectedRoom`, the locked
+    room (`unlockTargetId`, `unlock-system.js:55-58`); `doorProperties.roomId` is the room the
+    sprite sits in. On `success` it calls `unlockTarget(lockable, 'door', lockable.layer,
+    response)` as the other branches do, so the sprite opens from the answer's `roomData` and
+    `door_unlocked` fires; on `secondStepCancelled` it does nothing. It does not go through
+    `NPCGameBridge.unlockDoor`, whose success path never calls `unlockTarget`. The retry does
+    not fire `door_unlocked_by_npc` (the NPC is not there, so no bark keyed on it plays at the
+    door), and the bridge change stays limited to its `catch`. The server judges the `npc`
+    claim with today's checks and the gate answers from the live record (same pane, same
+    number) or starts a new challenge. The NPC's grant stays best-effort, as any `npc` post is
+    today; the step stays server-checked. Both server checks are static (the mapping check has
+    no encounter test, and `encounteredNPCs` only grows), so a claim accepted once is not
+    refused later and the retry has no fallback path.
 - **The pane** is the second pane of the `password` scene. A `password` lock swaps to it in
   place. Any other pad (or the card copier) stays open beneath and the scene opens over it as a
   child with `secondStepOnly: true`; with no pad (key, lockpick, a direct card, a copy played
@@ -681,8 +721,10 @@ when `lock_step` is nil; Rules A, B and C, the shortcut turned off and the answe
 only on ids in `second_step_ids`, which is empty; `resolve_unlock_target` finds what
 `find_scenario_object` found, plus the path; the `/mfa/*` lock form answers 404; each client
 branch fires only on `secondStep: true` or `second_step_cancelled`; the bootstrap copies the
-field only when a room has it. Every game gains an empty `lockSteps` on its next initialise
-(`game.rb:7576`), never sent.
+field only when a room has it. Every game gains an empty `lockSteps` and an empty
+`npcStepGrants` on its next initialise (`game.rb:7576`), never sent. The grants are written
+only behind `lock_step`, and the bootstrap adds `npcStepOpener` only from them, so an existing
+scenario's bootstrap is unchanged.
 
 **Proof.** (1) A spec walks every scenario under `scenarios/` (a pure scenario walk) and
 asserts `second_step_ids` is empty for all but `test_ops_lock_step`. (2) The shared mechanism
@@ -741,7 +783,7 @@ edge, and a scenario without the field drawn unchanged.
 | Phone and ids | `GET /mfa/phone` with no lock named, or `own=1`, lists no lock request; with a lock named and the phone not held, 403; held with no live record, an empty list. A step route given the gated object's `name` in place of its id answers 404 |
 | Re-enrolled owner | After a helpdesk re-enrolment of the owner: the player's own phone cannot approve the lock (403); verify still takes the code from the owner's `code_device`, which `GET /mfa/device` still shows; `own:<npcId>` codes are refused |
 | G2 doors | Credential and `npc` meet the gate with no `roomData` and no `unlockedRooms` write; a flag-reward door and a finished `prop_door` open with no step; `GET /room` is 403 before the pass; at an rfid door no `badge_swipe` row until the final post |
-| G2 NPC grant | An `npc` post to a gated door writes `npcStepGrants["door:<roomId>"]` and answers with `opener`; a deny, an expiry and a five-minute lapse leave the grant; the bootstrap then carries the room's `npcStepOpener` (and `secondStep` with `kind` and `owner` only, an extra authored key dropped); a second `npc` post from the same NPC reopens the live record or starts a new one; the open deletes the grant; an `npc` post from an NPC the checks refuse gets today's 422 and writes no grant |
+| G2 NPC grant | An `npc` post to a gated door writes `npcStepGrants["door:<roomId>"]` and answers with `opener`; a deny, an expiry and a five-minute lapse leave the grant; the bootstrap then carries the room's `npcStepOpener` (and `secondStep` with `kind` and `owner` only, an extra authored key dropped); a second `npc` post from the same NPC reopens the live record or starts a new one; an `npc` post against a record a keycard already started writes the grant and answers `opener` as that NPC, and an `npc` post from another NPC replaces it; the open deletes the grant; an `npc` post from an NPC the checks refuse gets today's 422 and writes no grant |
 
 **JS** (`second-step-lock.test.mjs`, plain `node`). No new module: the tests depend on the
 MFA plan's stage M1b having put `mfa-client.js` and its scenes on every harness copy list.
@@ -773,12 +815,19 @@ NPC doors (the clock and `MinigameFramework` stubbed): an ink knot with `#unlock
 `#give_item` opens the pane only after the NPC inventory and the chat are both shut and
 `pendingConversationReturn` is null for two checks; the same with the card copier opened from
 the chat; a phone-chat `unlock_door`; an event-mapping `unlockDoor` fired while a container is
-open (the pane waits for it). The waiting toast shows once. A cancel reaches the bridge as
+open (the pane waits for it). The waiting toast shows once, and only when the first check is
+not clear: with nothing open the pane opens at once with no toast. While the player is
+knocked out the request waits and never calls `startMinigame`; a null return from it settles
+as a silent cancel. Two `npc` requests under one chat give two panes in turn and no "Not
+approved."; the second re-checks clear before it opens. A cancel reaches the bridge as
 `secondStepCancelled: true` and neither chat caller shows "Failed to unlock". With
-`npcStepOpener` set, `handleUnlock` on the door calls `unlockDoor(roomId, opener)` and not the
-lock-type branch; after a refusal it clears the field and runs the lock-type branch. A door
-built from bootstrap data with `secondStep` and `npcStepOpener` has both in
-`lockRequirements` from every exit of `getLockRequirementsForDoor` before its room loads.
+`npcStepOpener` set, `handleUnlock` on the door posts `npc` for `doorProperties.connectedRoom`
+with `{ fromDoor: true }` and not the lock-type branch; after a pass, `unlockTarget` runs once
+with the answer's `roomData` and `door_unlocked_by_npc` does not fire; after a cancel nothing
+runs. After an `npc` post answered with `opener`, both the loaded sprite's and a later-built
+sprite's `lockRequirements` carry `npcStepOpener`. A door built from bootstrap data with
+`secondStep` and `npcStepOpener` has both in `lockRequirements` from every exit of
+`getLockRequirementsForDoor` before its room loads.
 
 One caller per kind of handling: the `password` pad swaps panes and counts no attempt;
 the `pin` pad keeps its state beneath the pane and plays no reject sound on the player's X; a
@@ -818,9 +867,9 @@ and the server record):
 | B11 (G2) | Right card at `records_room`; pester until approved | `roomData` only in the last answer; `unlockedRooms` gains the room then; `mfa_challenge` after the first card, one `badge_swipe` after the last post only |
 | B12a (G2) | A fresh game (B11 has opened the room). Talk to Gordon; his ink runs `#unlock_door:records_room` then `#give_item` (his inventory opens from the chat). Close the inventory, then the chat | No pane while the chat or inventory is up; the "Second step pending" toast once; the pane opens after both are shut. `lockSteps["door:records_room"]` live, `npcStepGrants` names Gordon, one `mfa_challenge` with `method: npc` |
 | B12b | Close the pane with X | No tone, no line, no "Failed to unlock". Door shut; record still live; grant kept |
-| B12c | Use the door | No conversation; the pane reopens with the same request count; no new `mfa_challenge` |
+| B12c | Use the door | No conversation; the pane opens at once with no toast, with the same request count; no new `mfa_challenge`; no `door_unlocked_by_npc` |
 | B12d | Reload with the pane up; use the door again | Bootstrap door carries `npcStepOpener: gordon`; the pane reopens on the same live record |
-| B12e | "Send again" until Moira (the owner, elsewhere) approves | Door opens; `unlockedRooms` gains it; record and grant deleted; `mfa_prompt_approved` with `approver: owner`; no `badge_swipe` row (an NPC, not a card) |
+| B12e | "Send again" until Moira (the owner, elsewhere) approves | Door sprite opens at once from the answer, with no second click; `door_unlocked` fires; `unlockedRooms` gains it; record and grant deleted; `mfa_prompt_approved` with `approver: owner`; no `badge_swipe` row (an NPC, not a card) |
 
 **Live proof** on the real path, headless, on the keyless server: B2, B3, B6, B7, B8 and B9 for G1
 with screenshots of the pane in each frame; B11 and B12a to B12e for G2. The proof uses the test scenario and
@@ -926,7 +975,18 @@ design, so the player sees a copied card is not the owner's approval.
    only when that NPC is the step's owner. *Recommend (a).* No client posts `npc` for an
    object today (only doors). Under (b) or (c) any player who has met the NPC can skip the
    step with a crafted request. A flag reward skips it in every option. Written to (a), the
-   step due even when the NPC is its owner (5.4).
+   step due even when the NPC is its owner (5.4). What each answer costs: the NPC grant, the
+   bootstrap `npcStepOpener`, the `npcStepOpener` field in `doorProperties` and the three
+   `getLockRequirementsForDoor` returns, the `handleUnlock` retry and B12b to B12d exist only
+   under (a); under (b) or (c) all of it drops. If less is wanted under (a), the cut options
+   are: keep the opener in client memory only (no server key, no bootstrap edit, no B12d),
+   which loses only the retry after a reload, where the player can ask the NPC again; and
+   leave out the `showAccessRefusal` cancel branch and the live-copier branch (5.4), which guard
+   paths no current caller reaches, until a caller needs them.
+9. **Should the pane wait until the conversation closes?** (a) Yes: for an `npc` request the
+   pane opens only when no scene is open and no chat return is pending (5.4). (b) No: it opens
+   at once over the chat. *Recommend (a):* a pane over a talking NPC hides the conversation
+   that caused it. Written to (a).
 2. **Should a door's step be hard-enforced against a propped door (G2)?** A propped door
    skips the step (5.3), and propping is best-effort, so a crafted client can prop a gated
    door. (a) Accept it: an author who needs it hard-enforced gives that door no `prop_door`
