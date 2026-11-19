@@ -123,7 +123,9 @@
      rendered text stays at least 16px and iOS Safari does not zoom on focus */
   font-size: max(16px, calc(16px / var(--hud-zoom, 1)));
   padding: 4px 6px;
-  min-width: 190px;
+  min-width: min(190px, 100%);
+  max-width: 100%;
+  text-overflow: ellipsis;
 }
 
 .game-menu-note {
