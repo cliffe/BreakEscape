@@ -513,7 +513,7 @@
           "needsSpeed": 90,
           "chatterCooldownMin": 5,
           "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } },
-          "chatter": { "kit_brightwell": ["Morning, all.", "Tea round shortly?"] }
+          "chatter": { "kit_brightwell": { "lines": ["Morning, all.", "Tea round shortly?"], "requireGlobal": { "kit_quiet": false } } }
         },
         {
           "id": "kit_agnieszka_duda",
@@ -531,7 +531,7 @@
           "needsSpeed": 90,
           "chatterCooldownMin": 5,
           "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
-          "chatter": { "kit_brightwell": ["Long week.", "Any biscuits left?"] }
+          "chatter": { "kit_brightwell": { "lines": ["Long week.", "Any biscuits left?"], "requireGlobal": { "kit_quiet": false } } }
         }
       ],
       "objects": [
