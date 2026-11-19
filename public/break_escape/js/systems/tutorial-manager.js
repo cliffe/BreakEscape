@@ -65,6 +65,13 @@ function isTouchFirst() {
     }
 }
 
+// The phone layout of ui/hud-lanes.js (isCompactViewport): there the objectives panel is a
+// sheet over the map, so the tutorial panel and it compete for space. Wider screens, touch
+// or not, have room for both. Inlined so this module needs no new import.
+function isCompactHud() {
+    return window.innerWidth < 900 || window.innerHeight <= 500;
+}
+
 // Same selector the game's key handler (core/player.js) uses for "a control has the focus"
 const FOCUSABLE_CONTROL = 'button, input, textarea, select, a[href], [contenteditable]:not([contenteditable="false"])';
 
@@ -102,6 +109,8 @@ export class TutorialManager {
         this.promptOpen = false;
         this.stepReady = false;
         this.keyHandler = null;
+        // True while the panel is collapsed by this tutorial (not by the player)
+        this.collapsedObjectives = false;
 
         // Track player actions for tutorial progression
         this.playerMoved = false;
@@ -229,6 +238,11 @@ export class TutorialManager {
         this.isMobile = this.detectMobile();
         this.touchFirst = isTouchFirst();
 
+        // Collapse the objectives panel only where it would crowd the tutorial (the compact
+        // phone layout); the objectives step then goes, since the panel is out of the way
+        const collapseObjectives = this.isMobile && isCompactHud();
+        if (!collapseObjectives) this.restoreObjectivesPanel();
+
         // Define tutorial steps based on device type
         if (this.isMobile) {
             this.steps = [
@@ -264,8 +278,6 @@ export class TutorialManager {
                 }
             ];
 
-            // Don't add objectives step on mobile since the objectives panel is stacked under the tutorial and would be difficult to interact with - players can learn about it on desktop or discover it on their own
-            
         } else {
             this.steps = [
                 {
@@ -312,15 +324,17 @@ export class TutorialManager {
                 }
             ];
 
-            // Only add objectives step if scenario has objectives
-            if (this.hasObjectives()) {
-                this.steps.push({
-                    title: 'Objectives',
-                    instruction: 'The objectives panel in the top-left corner tracks your current tasks. Click the panel header to expand and collapse it.',
-                    objective: 'Expand and collapse the objectives panel by clicking it',
-                    checkComplete: () => this.playerToggledObjectives
-                });
-            }
+        }
+
+        // Only add objectives step if scenario has objectives and the panel stays open
+        // (on a compact phone the panel is collapsed below, so the step is dropped there)
+        if (!collapseObjectives && this.hasObjectives()) {
+            this.steps.push({
+                title: 'Objectives',
+                instruction: 'The objectives panel in the top-left corner tracks your current tasks. Click the panel header to expand and collapse it.',
+                objective: 'Expand and collapse the objectives panel by clicking it',
+                checkComplete: () => this.playerToggledObjectives
+            });
         }
 
         // Scenarios with attacks disabled have no combat to teach (see attacksDisabled() in player-combat.js)
@@ -328,13 +342,25 @@ export class TutorialManager {
             this.steps = this.steps.filter(step => step.title !== 'Combat Mode');
         }
 
-        // Collapse objectives panel on mobile so it doesn't obscure the tutorial
-        if (this.isMobile && window.objectivesPanel && !window.objectivesPanel.isCollapsed) {
-            window.objectivesPanel.toggleCollapse();
+        // Collapse objectives panel on a compact phone so it doesn't obscure the tutorial.
+        // setCollapsed keeps this out of the player's own toggle record and the Objectives step
+        if (collapseObjectives && window.objectivesPanel && !window.objectivesPanel.isCollapsed) {
+            window.objectivesPanel.setCollapsed(true);
+            this.collapsedObjectives = true;
         }
 
         this.createTutorialOverlay();
         this.showStep(0);
+    }
+
+    /**
+     * Reopen the objectives panel if this tutorial collapsed it. A panel the player
+     * collapsed (or reopened) themselves is left as it is.
+     */
+    restoreObjectivesPanel() {
+        if (!this.collapsedObjectives) return;
+        this.collapsedObjectives = false;
+        if (window.objectivesPanel?.isCollapsed) window.objectivesPanel.setCollapsed(false);
     }
 
     /**
@@ -555,6 +581,7 @@ export class TutorialManager {
         this.active = false;
         this.markCompleted();
         this.removeKeyHandler();
+        this.restoreObjectivesPanel();
 
         if (this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
@@ -588,6 +615,7 @@ export class TutorialManager {
         this.active = false;
         this.markCompleted();
         this.removeKeyHandler();
+        this.restoreObjectivesPanel();
 
         if (this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
