@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: awareness step-away panel (EC1)",
+  "description": "Fixture for EC1, the step-away panel: the awareness episode shell with stepAway true, the kit_defend_done mapping and one step-away mapping. Stub content. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}
