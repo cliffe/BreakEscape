@@ -29,7 +29,9 @@ const code = readFileSync(join(js, 'ui/info-label.js'), 'utf8')
     .replace("'../utils/display-dashes.js'", "'./display-dashes.js'")
     .replace("'../utils/pc-observations.js'", "'./pc-observations.js'")
     .replace("'../systems/interaction-walls.js'", "'./walls.js'")
-    .replace("'../systems/interaction-reach.js'", "'./reach.js'");
+    .replace("'../systems/interaction-reach.js'", "'./reach.js'")
+    .replace("'../systems/npc-reach.js'", "'./npc-reach.js'");
+writeFileSync(join(dir, 'npc-reach.js'), 'export function npcReachDistSq(p, s, d){return s.__reachSq ?? d;}');
 writeFileSync(join(dir, 'info-label.js'), code);
 
 const classes = new Set();
