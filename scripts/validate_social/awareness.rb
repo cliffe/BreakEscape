@@ -199,8 +199,8 @@ module ValidateSocial
     # scenario is an error there.
     def self.kit_free_checks(ctx, ep)
       kind = if check_mission?(ep) then 'a check shell'
-             elsif ep['id'].to_s.match?(ANNUAL_ID) then 'the annual shell'
-             end
+      elsif ep['id'].to_s.match?(ANNUAL_ID) then 'the annual shell'
+      end
       return [] unless kind
 
       found = []
