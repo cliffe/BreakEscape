@@ -36,6 +36,39 @@ const V = '.phone-call-mode #conversation-view';
 const L = sel => { const r = land.find(x => x.selector.split(', ').includes(V + ' ' + sel)); assert.ok(r, 'landscape rule ' + sel); return r; };
 const px = (body, prop) => parseFloat(body.match(new RegExp('(?:^|[\\s;])' + prop + ':\\s*([\\d.]+)px'))[1]);
 
+// Selector specificity as [ids, classes, elements]. :has()/:not()/:is() count their most specific argument.
+function spec(sel) {
+    const t = [0, 0, 0];
+    let i = 0;
+    while (i < sel.length) {
+        const c = sel[i];
+        if (c === '#') { t[0]++; i++; while (/[\w-]/.test(sel[i] || '')) i++; }
+        else if (c === '.') { t[1]++; i++; while (/[\w-]/.test(sel[i] || '')) i++; }
+        else if (c === '[') { t[1]++; i = sel.indexOf(']', i) + 1; }
+        else if (c === ':') {
+            const m = sel.slice(i).match(/^::?[\w-]+/);
+            const name = m[0];
+            i += name.length;
+            let arg = null;
+            if (sel[i] === '(') {
+                let d = 1, j = i + 1;
+                while (j < sel.length && d) { if (sel[j] === '(') d++; else if (sel[j] === ')') d--; j++; }
+                arg = sel.slice(i + 1, j - 1);
+                i = j;
+            }
+            if (name.startsWith('::')) t[2]++;
+            else if (/^:(has|not|is)$/.test(name)) {
+                const best = arg.split(',').map(spec).sort(cmpSpec).pop();
+                best.forEach((v, k) => { t[k] += v; });
+            } else if (name !== ':where') t[1]++;
+        }
+        else if (/[a-z]/i.test(c)) { t[2]++; while (/[\w-]/.test(sel[i] || '')) i++; }
+        else i++;
+    }
+    return t;
+}
+const cmpSpec = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+
 const phoneHeader = 4 * 2 + 2 + 28;                       // 38
 // The shell is min(700, max(70vh, 100vh - 125)) less 20px of screen margin
 const screenAt = vh => Math.round((Math.min(700, Math.max(0.7 * vh, vh - 125)) - 20) * 100) / 100;
@@ -54,18 +87,32 @@ const cueH = 2 + 2 + 2 + 19;                              // landscape cue
 const LH = (has, rest) => { const r = land.find(x => x.selector.split(', ').includes(V + has + ' ' + rest)); assert.ok(r, 'landscape rule ' + has + ' ' + rest); return r; };
 const CUE = ':has(.choices-more-cue.visible)', SE = ':has(.se-chat-header)', SPEAK = ':has(.choices-container:empty)';
 const threadCue = px(LH(CUE, '.messages-container').body, 'height');
-check('landscape call: stack fits every phone screen height (253, 242.5, 232), with and without the cue', () => {
+const SEH = ':has(.se-chat-header)';
+const threadSE = px(LH(SE, '.messages-container').body, 'height');
+const threadSECue = px(LH(SE + CUE, '.messages-container').body, 'height');
+const seCueMin = px(LH(SE + CUE, '.choices-container').body, 'min-height');
+check('landscape call: stack fits every phone screen height (253, 242.5, 232), normal and influence calls, with and without the cue', () => {
     assert.deepEqual(SCREENS.map(([vh]) => screenAt(vh)), [253, 242.5, 232]);
     assert.equal(statusH, 36);
     assert.equal(headerH, 40);
     assert.equal(threadH, 44);
-    for (const [vh, screen] of SCREENS) {
-        const plain = phoneHeader + statusH + headerH + threadH + repliesMin;
-        const cue = phoneHeader + statusH + headerH + threadCue + repliesMin + cueH;
-        assert.ok(plain <= screen, `${vh}: no cue ${plain} > ${screen}`);
-        assert.ok(cue <= screen, `${vh}: cue ${cue} > ${screen}`);
-    }
+    assert.equal(threadSE, 44, 'influence thread holds a subtitle line and a tell line');
+    assert.equal(threadSECue, 44, 'the cue does not shrink the influence thread');
     assert.ok(threadCue >= 24, 'one subtitle line (2 border + 20.8)');
+    const stacks = {
+        'normal, no cue': [threadH, repliesMin, 0],
+        'normal, cue': [threadCue, repliesMin, cueH],
+        'influence, no cue': [threadSE, repliesMin, 0],     // the bar is on the header row: header stays 40
+        'influence, cue': [threadSECue, seCueMin, cueH]
+    };
+    for (const [vh, screen] of SCREENS) {
+        for (const [name, [t, r, c]] of Object.entries(stacks)) {
+            const total = phoneHeader + statusH + headerH + t + r + c;
+            assert.ok(total <= screen, `${vh} ${name}: ${total} > ${screen}`);
+        }
+    }
+    assert.ok(seCueMin >= 35, 'at least one one-line reply (35.2) at the smallest screen');
+    assert.ok(repliesMin >= 2 * 29.2 + 2 + 4 + 2, 'normal replies hold two one-line replies');
 });
 check('landscape call: speaking state (no replies) gives the thread the free height', () => {
     const r = LH(SPEAK, '.messages-container');
@@ -76,32 +123,62 @@ check('landscape call: speaking state (no replies) gives the thread the free hei
     assert.ok(order.indexOf(V + SPEAK + ' .messages-container') > order.indexOf(V + SE + ' .messages-container'));
     assert.ok(order.indexOf(V + SPEAK + ' .messages-container') > order.indexOf(V + CUE + ' .messages-container'));
 });
-check('landscape call: influence-bar header wraps to a second row and fits every screen', () => {
-    assert.match(LH(SE, '.conversation-header').body, /flex-wrap:\s*wrap/);
-    const rowGap = px(LH(SE, '.conversation-header').body, 'row-gap');
-    const seHeader = 2 * Number(pads[1]) + 36 + rowGap + 30;   // 2 + 2, row 36, row-gap, 30px bar
-    assert.ok(seHeader <= 80, String(seHeader));
-    const seThread = px(LH(SE, '.messages-container').body, 'height');
-    const seCue = px(LH(SE + CUE, '.choices-container').body, 'min-height');
-    for (const [vh, screen] of SCREENS) {
-        const total = phoneHeader + statusH + seHeader + seThread + seCue + cueH;
-        assert.ok(total <= screen, `${vh}: SE with cue ${total} > ${screen}`);
-    }
-    assert.ok(seCue >= 35, 'at least one one-line reply (35.2) at the smallest screen');
-    assert.ok(phoneHeader + statusH + seHeader + seThread + repliesMin <= 253, 'no cue at 253');
+check('landscape call: influence bar sits on the header row (no wrap), name ellipsises first, bar fits the 36px row', () => {
+    const bar = L('.se-chat-header');
+    assert.match(bar.body, /flex:\s*1 1 150px/);
+    assert.match(bar.body, /min-width:\s*0/);
+    assert.match(LH(SEH, '.conversation-info').body, /flex:\s*0 1 auto/);
+    assert.ok(!land.some(x => x.selector.includes(SE) && x.selector.includes('.conversation-header') && /flex-wrap:\s*wrap/.test(x.body)), 'header never wraps');
+    assert.match(hdr.body, /flex-wrap:\s*nowrap/);
+    // bar: 26px row + 2 x 2 border = 30, inside the 36px headshot row
+    assert.ok(26 + 4 <= headerH - 2 * Number(pads[1]));
 });
-check('landscape call: only the latest call-subtitle shows; tells cannot hide it; narrator stays dimmed', () => {
-    const hide = land.find(x => x.selector.includes(':not(.call-subtitle)'));
-    assert.ok(hide && /display:\s*none/.test(hide.body));
-    assert.ok(hide.selector.includes('.call-subtitle:has(~ .call-subtitle)'));
+const T = V + ' .messages-container > ';
+const bySel = sel => land.find(x => x.selector.split(', ').includes(sel));
+const baseHide = all.find(r => r.media === '' && /nth-last-child/.test(r.selector) && /display:\s*none/.test(r.body));
+check('landscape call: the latest call-subtitle is display:block and outranks the base nth-last-child hide rule (M1)', () => {
+    assert.ok(baseHide, 'base rule found');
+    const shown = bySel(T + '.call-subtitle');
+    assert.ok(shown && /display:\s*block/.test(shown.body));
+    assert.ok(cmpSpec(spec(shown.selector), spec(baseHide.selector)) > 0, `${spec(shown.selector)} vs ${spec(baseHide.selector)}`);
+    // the older-subtitle rule beats the block rule, so only the latest shows
+    const older = bySel(T + '.call-subtitle:has(~ .call-subtitle)');
+    assert.ok(older && /display:\s*none/.test(older.body));
+    assert.ok(cmpSpec(spec(older.selector), spec(shown.selector)) > 0);
+});
+check('landscape call: tells are hidden by a plain rule and :has() rules are split out (n1)', () => {
+    const hide = bySel(T + ':not(.call-subtitle)');
+    assert.ok(hide && /display:\s*none/.test(hide.body), 'tell hiding has no :has() in it');
+    assert.ok(!/:has/.test(hide.selector));
+    for (const r of land) {
+        if (/display:\s*none/.test(r.body) && /:not\(\.call-subtitle\)/.test(r.selector)) {
+            assert.ok(r.selector.split(', ').length === 1 && !/:has/.test(r.selector), r.selector);
+        }
+    }
     assert.ok(!land.some(x => x.selector.includes(V) && /:last-child|:nth-last-child/.test(x.selector) && /display:\s*none/.test(x.body)), 'no :last-child hiding');
     assert.match(L('.messages-container > .call-subtitle.narrator').body, /opacity:\s*0\.75/);
+});
+check('landscape call: only the newest trailing tell shows in influence calls; older tells stay hidden', () => {
+    const tell = land.find(x => x.selector.includes(SEH) && x.selector.includes(':last-child:not(.call-subtitle)'));
+    assert.ok(tell && /display:\s*block/.test(tell.body));
+    const hide = bySel(T + ':not(.call-subtitle)');
+    assert.ok(cmpSpec(spec(tell.selector), spec(hide.selector)) > 0, 'beats the tell hiding rule');
+    assert.ok(cmpSpec(spec(tell.selector), spec(baseHide.selector)) > 0);
+    // only the last child: an older tell never matches :last-child
+    assert.ok(!/nth-last-child|:nth-child/.test(tell.selector));
+    assert.doesNotMatch(tell.body, /border-radius|blur\(|gradient/);
+    // an empty thread (CALLING, NO ANSWER, CALL ENDED) collapses
+    const empty = bySel(L('.messages-container').selector.replace('.messages-container', '.messages-container:empty'));
+    assert.ok(empty && /display:\s*none/.test(empty.body));
 });
 check('landscape call: caption and DM handle stay in the accessibility tree; name ellipsises', () => {
     const r = land.find(x => x.selector.includes(V + ' .call-caption'));
     assert.ok(r && r.selector.includes(V + ' .npc-handle'));
     assert.match(r.body, /clip:\s*rect\(0 0 0 0\)/);
     assert.match(r.body, /position:\s*absolute/);
+    assert.match(r.body, /display:\s*block/, 'beats the base .call-has-choices .call-caption display:none');
+    const baseCap = all.find(x => x.media === '' && /call-has-choices \.call-caption/.test(x.selector) && /display:\s*none/.test(x.body));
+    assert.ok(baseCap && cmpSpec(spec(r.selector.split(', ')[0]), spec(baseCap.selector.split(', ')[0])) > 0);
     assert.doesNotMatch(r.body, /display:\s*none/);
     assert.ok(!land.some(x => x.selector.includes(V) && /call-caption/.test(x.selector) && /display:\s*none/.test(x.body)));
     const n = L('.npc-name');

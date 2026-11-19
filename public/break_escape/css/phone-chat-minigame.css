@@ -1158,9 +1158,17 @@
        With the cue the thread gives way to one line (24): 36 + 40 + 24 + 68 + 25 = 193, fits 194.
        While the contact speaks there are no replies (the box is :empty and hidden): the thread takes
        all the free height, so a long subtitle shows from its first line.
-       Influence-bar calls (a .se-chat-header in the header) wrap the bar onto a second row: padding
-       2 + 2, row 36, row-gap 4, bar 30 = 74. The thread is one line (24) and the replies give way:
-       74 + 36 + 24 + 25 = 159 before the replies, which keep 56 at 215, 45 at 204.5, 35 at 194.
+       Influence-bar calls (a .se-chat-header in the header): the bar (30px: 26 row + 2 x 2 border)
+       sits on the header row between the name and the speaking bars, so the header stays 40 and the
+       name ellipsises first. It fits beside the bars while the contact speaks too (measured: bar
+       130px wide of a 380px screen, name clipped). The thread is two lines (44) with the cue as well:
+       the contact's latest line and, when the last child is a tell, the newest tell under it.
+       pretext-chrome scrolls the thread to the bottom when it appends a tell, so the tell is the
+       line in view. Older tells and subtitles stay hidden; the tell stays in the accessibility tree.
+       No cue: 36 + 40 + 44 + 68 = 188 (view 194 at the smallest, so the replies grow to 74 there).
+       With the cue: 36 + 40 + 44 + 48 + 25 = 193 of 194; the replies box is 49px (content 43) at 232,
+       59.5 at 242.5, 70 at 253. One two-line reply needs 54.4, so at 232 with the cue the first reply
+       is cut by about 5px and the box scrolls.
        The end-call button leaves the flow (absolute, top right of the status bar) so it is always
        on screen, and it is the last control in tab order. */
     .phone-call-mode #conversation-view { position: relative; }
@@ -1230,6 +1238,7 @@
     /* The caption and a DM handle take no room but stay in the accessibility tree */
     .phone-call-mode #conversation-view .call-caption,
     .phone-call-mode #conversation-view .npc-handle {
+        display: block;
         position: absolute;
         width: 1px;
         height: 1px;
@@ -1239,15 +1248,20 @@
         clip: rect(0 0 0 0);
         white-space: nowrap;
     }
-    /* Influence bar: it takes a full-width second row */
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header {
-        flex-wrap: wrap;
-        row-gap: 4px;
+    /* Influence bar: it sits on the header row, between the name and the speaking bars, in the slot
+       the bars leave free while replies show. The name ellipsises first. */
+    .phone-call-mode #conversation-view .se-chat-header {
+        flex: 1 1 150px;
+        min-width: 0;
+        order: 1;
     }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info { flex: 0 1 auto; }
+    .phone-call-mode #conversation-view .call-speaking { order: 2; }
+    .phone-call-mode #conversation-view .se-chat-header .influence-bar { flex-wrap: nowrap; }
     .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container {
-        height: 24px;
-        min-height: 24px;
-        max-height: 24px;
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
     }
     .phone-call-mode #conversation-view .call-speaking { flex: 0 0 auto; margin-left: auto; }
     .phone-call-mode #conversation-view .messages-container {
@@ -1261,11 +1275,28 @@
         overflow-y: auto;
         white-space: normal;
     }
-    /* Only the latest subtitle shows: tells and earlier lines are hidden, so a tell bubble after the
-       contact's line cannot hide it */
-    .phone-call-mode #conversation-view .messages-container > :not(.call-subtitle),
+    /* Only the latest subtitle shows: tells and earlier lines are hidden. Three rules, so a browser
+       without :has() still hides the tells. The latest subtitle is display:block so it beats the
+       base "hide all but the last two children" rule: with two or more tells after the contact's
+       line (a reopened pretext call) it would otherwise be hidden and the thread would go blank. */
+    .phone-call-mode #conversation-view .messages-container > :not(.call-subtitle) { display: none; }
+    .phone-call-mode #conversation-view .messages-container > .call-subtitle { display: block; opacity: 1; }
     .phone-call-mode #conversation-view .messages-container > .call-subtitle:has(~ .call-subtitle) { display: none; }
-    .phone-call-mode #conversation-view .messages-container > .call-subtitle { opacity: 1; }
+    /* Influence-bar calls: the newest tell, when it comes after the contact's line, shows beneath it
+       as compact teaching feedback. Older tells stay hidden. It is still in the accessibility tree
+       (aria-live) either way. */
+    .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container > :last-child:not(.call-subtitle) {
+        display: block;
+        box-sizing: border-box;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 4px;
+        border-width: 0 0 0 2px;
+        font-size: 16px;
+        line-height: 1.3;
+        text-align: left;
+    }
+    .phone-call-mode #conversation-view .messages-container:empty { display: none; cursor: default; }
     .phone-call-mode #conversation-view .messages-container > .call-subtitle.narrator { opacity: 0.75; }
     /* With the "more choices" cue the thread gives way to one line so the stack fits 232px screens */
     .phone-call-mode #conversation-view:has(.choices-more-cue.visible) .messages-container {
@@ -1289,8 +1320,14 @@
         gap: 2px;
         overflow-y: auto;
     }
+    /* Influence call with the cue: the thread keeps both lines, the replies take what is left */
+    .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .messages-container {
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
+    }
     .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .choices-container {
-        min-height: 35px;
+        min-height: 48px;
     }
     .phone-call-mode #conversation-view .choices-container:empty {
         min-height: 0;

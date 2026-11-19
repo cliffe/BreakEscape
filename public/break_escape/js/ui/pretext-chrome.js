@@ -209,6 +209,8 @@ export function appendTellBubbles(container, lines) {
     const have = container.querySelectorAll('.pretext-tell').length;
     const list = lines || [];
     for (let i = have; i < list.length; i++) container.appendChild(tellBubble(list[i]));
+    // Show the newest tell: a short thread (landscape call mode) keeps the latest line in view
+    if (list.length > have) container.scrollTop = container.scrollHeight;
 }
 
 /**
