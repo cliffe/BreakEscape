@@ -13,7 +13,8 @@ Three stages that turn a foothold on a machine into a proper hold over an organi
 desktop and the profiles made for it. An admin session on a PC can do three more things there: open
 the profiles of the other accounts that use that PC, collect the credentials that PC has cached
 (S5b), and, while the admin session is not locked, install a device the PC's USB policy would
-refuse, as a real administrator can change a machine's device policy from wherever they sign in. Under S5a alone the accounts "that use the PC" are its
+refuse, as a real administrator can change a machine's device policy from wherever they sign in (a
+device that types into the PC still needs someone signed in at its keyboard). Under S5a alone the accounts "that use the PC" are its
 owner, so an unowned PC has no other profiles to open until S5b declares cached accounts.
 
 The player gets admin in two ways: by signing in with an administrator account (one the scenario
@@ -93,7 +94,7 @@ called from `interactions.js:1056`, so a refused item never leaves the tray. The
 same table (`access_work.rb:1265`, `npc-needs.js:321`) for NPCs' own sticks; a player's privilege
 does not touch it. The implant path takes only a keyboard session: it refuses a foothold, relay or
 `from` session (`network_access.rb:498`, and `:501` through `remote_route_session?`, defined at
-`:1544-1546`) and, by ruling, accepts a locked one (`:502`). The plant proof has no session condition at all: it records any plant
+`:1544-1546`) and, by design (the comment at `:502`), accepts a locked one. The plant proof has no session condition at all: it records any plant
 the policy accepts (`capture_proofs.rb:46-53`). The client's session mirror keeps a session locked
 during play, with `locked: true` beside whatever else it already held (`pc-sessions.js:198-200`).
 
@@ -179,10 +180,11 @@ as every other reader. One opt-in account marker, `creds.admin: true`, so that s
 administrator account gives admin. Two admin gates: the profiles of the accounts that use the PC,
 and installing a device the USB policy refuses at the three places the policy is read (implant
 path, plant proof, client `plantRefusal`), for any unlocked admin session on that PC whose service
-is on. Answers carry `access: "admin"` when the level is admin; the core
-plan's step up reads the level through this helper. S5a does not need S3: the administrator account
-gives a real admin session through the real sign-in route. S3 lands first, and the core plan adds
-the `access:` keyword to `login_session_answer` (section 5). The first commit of S5a is the
+is on (a device that needs a session still takes only a session at the PC's own keyboard).
+Answers carry `access: "admin"` when the level is admin; the core
+plan's step up reads the level through this helper. S5a does not need S3 to work: the administrator
+account gives a real admin session through the real sign-in route. It is ordered after S3 so that
+the `access:` keyword the core plan adds to `login_session_answer` already exists (section 5). The first commit of S5a is the
 unchanged-scenario test (section 10).
 
 **S5b: cached credentials (M).** A declared list of cache candidates on each sign-in PC
@@ -240,16 +242,18 @@ candidates only, and its collect control is on its remote desktop.
     "cachedAccounts": [ { "npc": "alexT" }, { "npc": "kemiA" } ] }
 ] } },
 "credentials": {
-  "hotDesk_priyaN": { "kind": "hash", "account": { "npc": "priyaN" },
-                      "proof": { "harvested": { "pc": "hotDesk" } } },
-  "hotDesk_samO":   { "kind": "hash", "account": { "npc": "samO" },
-                      "proof": { "harvested": { "pc": "hotDesk" } } },
-  "alexPc_alexT":   { "kind": "hash", "account": { "npc": "alexT" },
-                      "proof": { "harvested": { "pc": "alexPc" } } },
-  "alexPc_kemiA":   { "kind": "hash", "account": { "npc": "kemiA" },
-                      "proof": { "harvested": { "pc": "alexPc" } } }
+  "hotdesk_priyan": { "kind": "hash", "account": { "npc": "priyaN" }, "proof": { "harvested": "hotDesk" } },
+  "hotdesk_samo":   { "kind": "hash", "account": { "npc": "samO" },   "proof": { "harvested": "hotDesk" } },
+  "alexpc_alext":   { "kind": "hash", "account": { "npc": "alexT" },  "proof": { "harvested": "alexPc" } },
+  "alexpc_kemia":   { "kind": "hash", "account": { "npc": "kemiA" },  "proof": { "harvested": "alexPc" } }
 }
 ```
+
+Registry ids follow the registry's id pattern (lowercase letters, digits and `_`,
+`credential_model.rb:40`); a hash id needs no fixed relationship to the PC or NPC ids, and the
+names above only make the example readable. The proof is a string like the registry's other proof
+kinds (`session`, `foothold`): its value is the PC id, and the account comes from the entry's
+`account.npc`.
 
 The hot desk has no owner: `priyaN` is cached from the start and `samO` only after a borrow, so
 `samO` must carry a `borrow_session` workaround whose `pc` resolves (through `find_login_pc`, as the
@@ -258,12 +262,31 @@ once signed in there are cached from the start.
 
 A cached account is always a hash. Each candidate needs exactly one `hash` record in the
 `credentials` registry (the cracking plan's record kind, with whatever other fields that plan
-defines) whose `account.npc` is the candidate and whose proof is `{ "harvested": { "pc": "<that PC's
-id>" } }`; a candidate without one, or with two, is a validator error (section 9). An account
-cached on several PCs (a shared local administrator) has one record per PC: collecting on any one
-of them is enough, and cracking that record gives the one password. The proof kind `harvested`
-holds once the collect has recorded that PC and account. `cachedAccounts` is valid only in a build
-that has S7; a scenario that does not teach cracking leaves it out.
+defines) whose `account.npc` is the candidate and whose proof is `{ "harvested": "<that PC's id>"
+}`; a candidate without one, or with two, is a validator error (section 9). An account cached on
+several PCs (a shared local administrator) has one record per PC: collecting on any one of them is
+enough, and cracking that record gives the one password. Once that password is held, a second
+record for the same account counts as already cracked (section 14 asks the cracking plan to show it
+so), so collecting the shared administrator on a second PC adds a row that reads as cracked, never a
+second puzzle for a password the player already has. The collect still records the second PC,
+because the log row reports which PCs the player harvested. The proof kind `harvested` holds once
+the collect has recorded that PC and account. `cachedAccounts` is valid only in a build that has
+S7; a scenario that does not teach cracking leaves it out.
+
+**How a cached hash is cracked.** The cracking plan cracks a hash from its account's `password`
+habit. A person's account has one; an `accountOnly` account (S5c) has no habits at all, so its hash
+record carries its own crack recipe, `crack`, with the same two keys as the habit: `password`
+(`guessable`, `reused` or `strong`) and, for `guessable`, `passwordPattern` (the object that gives
+the pattern). Section 14 asks the cracking plan to read `crack` on the record when it is present and
+the habit otherwise, and to apply its "account needs a `password` habit" check only to a record
+with no `crack`. The facts a recipe needs come from finds and items (a note, a file, a poster),
+never from a conversation, because nobody stands behind the account. The S5c example below collects
+`deskAdmin` on `pc01` through this record:
+
+```json
+"deskadmin_pc01": { "kind": "hash", "account": { "npc": "deskAdmin" }, "proof": { "harvested": "pc01" },
+                    "crack": { "password": "guessable", "passwordPattern": "it_rota_poster" } }
+```
 
 **S5c.** On `creds`: `accountKind` (`local` or `domain`), `localTo` (array of sign-in PC ids,
 required for `local`), `domain` (string, required for `domain`). On a sign-in PC: `domain`. On a
@@ -364,26 +387,65 @@ The validator warns on same-name top-level items that only an admin session brin
 
 **S5a: the USB override.** `AccessWork.plant_refused?(data, obj, item, admin: false)` returns false
 when `admin` is true; every other caller is unchanged, so the NPC-side readers
-(`access_work.rb:1265`) keep the policy. The two player-side server sites pass the same predicate:
-- the implant path (`network_access.rb:509`): `admin: session_admin?(pc_id)`;
-- the plant proof (`capture_proofs.rb:52`): `admin: session_admin?(found[:object]['id'])` when the
-  target is a sign-in PC, else false.
+(`access_work.rb:1265`) keep the policy. The player-side server sites pass:
+- the implant path (`network_access.rb:509`): `admin: keyboard_admin?(pc_id)` (only a keyboard
+  session reaches that line, so this equals `session_admin?` there);
+- the plant proof (`capture_proofs.rb:52`) and the remove check below: `admin:
+  session_admin?(found[:object]['id'])` when the target is a sign-in PC, `keyboard_admin?` in its
+  place when the object needs a session (next paragraph), else false.
 So the override needs an unlocked admin session on that PC whose service is on, however it was
 reached: a typed or keyring sign-in with an administrator account, a remote credential session of
 one, or a technique step up to admin. A relay session and a claim are never admin (step 5), so
-they never override. A locked session still takes an implant the policy allows (the existing
-ruling) but has no level, so a locked admin session does not override.
+they never override. A locked session still takes an implant the policy allows (by design, the
+comment at `network_access.rb:502`) but has no level, so a locked admin session does not override.
 
-The implant path keeps its own rule about which session takes a session-shaped implant (a blank
-`foothold`, not a relay or `from` session, `network_access.rb:498-501`); that rule is about the
-implant, not the policy, and this plan leaves it as it is. So a session-shaped implant is still
-installed only through a keyboard session, and the policy override there comes from a keyboard
-admin session. A remote admin session's override shows at the plant proof and in the client: a
-stick the policy refuses leaves the tray and the plant is recorded while the player holds remote
-admin on that PC. This matches a real administrator changing device policy from wherever they
-sign in, and it means a foothold with admin disarms that PC's USB lesson: an author whose USB
-lesson must hold gives that PC no admin path, and the dungeon graph's `admin@<pcId>` nodes
-(section 9) show which PCs have one.
+**A device that needs a session takes only the keyboard.** The implant path keeps its own rule
+about which session takes a session-shaped implant (a blank `foothold`, not a relay or `from`
+session, `network_access.rb:498-501`); that rule is about the implant, not the policy, and this plan
+keeps it. A device that types into a PC reaches whoever is signed in at that keyboard, and a remote
+or technique session is not at that console. So an object whose `triggerOnInteract` holds a
+`grant_foothold` action with `needsSession` (`apply-actions.js:441-449`) is satisfied only by a
+session at the PC's own keyboard, and the policy override for it comes only from a keyboard admin
+session. One helper states this, `keyboard_admin?(pc_id)`: `session_admin?(pc_id)` and the session
+has a blank `foothold` and is not `remote_route_session?`. The plant proof's predicate (above) is
+`keyboard_admin?` for a `needsSession` object and `session_admin?` for any other.
+
+Today a remote session meets that rule as `implant_not_ready` (`:498`, `:501`), which
+`network-links.js:498-501` keeps quiet. S5a gives it a reason of its own: when the PC has a live
+session that is a foothold, relay or `from` session and so cannot take the device, the implant path
+answers `{ success: false, reason: "needs_console", error: <line> }`, the line being "Nobody is
+signed in at this keyboard." `not_ready` keeps every other case (no session at all, as for a
+dropped device whose save has not yet arrived). `network-links.js` handles `needs_console` beside
+`usb_refused` (`:483-487`): a toast with the server's line and a `network_device_refused` event with
+that reason, never the quiet path. The item stays in the tray, because the implant path refuses
+before it copies the device.
+
+Any other plant takes the override from any admin session. A remote admin session's override
+shows at the plant proof and in the client: a stick the policy refuses leaves the tray and the
+plant is recorded while the player holds remote admin on that PC. This matches a real administrator
+changing device policy from wherever they sign in, and it means a foothold with admin disarms that
+PC's USB lesson for non-session devices: an author whose USB lesson must hold gives that PC no admin
+path, and the dungeon graph's `admin@<pcId>` nodes (section 9) show which PCs have one.
+
+**A lapsed override never costs the item.** A remote admin session can end with no client event: a
+token session expires on the server clock (step 2), an NPC unplugs a foothold, an outage drops a
+route. A player at the PC with a stale mirror then plants a stick the policy refuses. Today the
+inventory `remove` action (`games_controller.rb:1454-1460`) calls `record_planted_item!`, which
+answers false for a policy refusal (`capture_proofs.rb:52`), and then removes the item anyway. S5a
+puts a check in that branch before both calls: when `used_on` is present, a new
+`Game#plant_policy_refusal(item_id, used_on)` finds the held item and the target object as
+`record_planted_item!` does, and answers the USB refusal line when the object takes the item, the
+policy refuses it, and the admin predicate above is false; otherwise nil. A line means the action
+answers `422 { success: false, reason: "usb_refused", error: <line> }` and returns, so nothing is
+removed and nothing is recorded. On the client, `interactions.js:1081-1088` today removes the item
+from the tray before the answer and fires `triggerOnInteract` first. For a plant that passes
+`plantRefusal` only through the override (the policy refuses the item with `admin: false`), the
+client instead sends the remove first and waits: on success it removes the item from the tray and
+fires `triggerOnInteract`; on `usb_refused` it keeps the item, shows the server's line through
+`gameAlert` and emits `usb_refused:<objectId>` as the local refusal does. `sendInventoryRemove`
+gains an option, `withBody: true`, that resolves the refusal body instead of `false`; its other
+callers are unchanged. A plant the policy accepts without admin keeps today's order, so an existing
+scenario plays exactly as before.
 
 **S5b: the cached set.** `cached_accounts_at(pc)` answers the account NPCs cached at the PC now, in
 `cachedAccounts` order: each candidate without `after`, and each `after: "borrow"` candidate whose
@@ -417,8 +479,11 @@ validator's caps (section 9) are an authoring limit on top.
 
 **S5b: the `harvested` proof.** S5b adds `harvested` to `CredentialModel::PROOF_KINDS`
 (`credential_model.rb:36`) and one branch to `credential_proof_holds?` (`credential_keyring.rb:21-36`):
-`{ "harvested": { "pc": "<pcId>" } }` on a registry entry whose `account.npc` names the account
-holds when `"<pcId>|<account.npc>"` is in `harvestedAccounts`. Nothing else in the keyring changes:
+`{ "harvested": "<pcId>" }` on a registry entry whose `account.npc` names the account holds when
+`"<pcId>|<account.npc>"` is in `harvestedAccounts`. The value is a string, so `proof_kind`
+(`credential_model.rb:62-67`, which accepts only string values) reads it unchanged and
+`check_credentials` (`validate_scenario.rb:7523-7525`) sees a known kind; the schema adds
+`harvested` (string) to the proof properties (`scenario-schema.json:293-305`). Nothing else in the keyring changes:
 the registry already lists an entry once its proof holds (`registry_keyring_entries`,
 `credential_keyring.rb:312-328`), and the hash record's row, its token and its crack affordance are
 the cracking plan's. S5b adds no password row and no keyring row source. The password reaches the
@@ -502,7 +567,7 @@ person is in the office and talks to the player, so hiding the tile hides nothin
 ordinary `local` or `domain` account also keeps its tiles, and because the tile list already
 follows `pc_admits_account?`, a player who compares PCs can see where such an account may sign in.
 That is the same exposure as an `access` list today and is accepted: the lesson is about the
-password collected, and a hardened PC still shows only its own accounts. The tile list holds
+hash collected and cracked, and a hardened PC still shows only its own accounts. The tile list holds
 nothing the room answer does not already allow (no `accountKind`, `localTo`, `domain` or
 `admin`).
 
@@ -524,26 +589,36 @@ The desktop then shows:
 - a "Cached accounts" control, only for admin. It posts to the collect route, then calls the
   keyring's `refresh()` (`keyring.js:436`). Its result opens a small panel listing each collected
   account with its headshot (the answer's `portrait`, or the generic picture when it is null, as
-  for an `accountOnly` one), its display name, the word "hash", and a Crack button that opens the
-  cracking plan's scene for that record (`hashId` from the answer), the same scene the keyring's
-  hash row opens. The panel says the account's username is on the keyring row and the password
-  comes from the crack. A collect that adds nothing says so. The panel is the feedback: the
+  for an `accountOnly` one), its display name, its username, the word "hash", and a Crack button
+  that opens the cracking plan's scene for that record (`hashId` from the answer), the same scene
+  the keyring's hash row opens. The username is earned by the collect (a cached account is listed
+  under its username), so the panel is where the player learns how to type an `accountOnly`
+  account; section 14 asks the cracking plan to show it on the hash row too, so it stays in the
+  keyring after the panel closes. The panel says the password comes from the crack. A collect that adds nothing says so. The panel is the feedback: the
   keyring's find toasts and Sign-ins list may not show a new row (`keyring.js:774-784`).
 
 `plantRefusal(heldItems, objectData, scenario, { admin })` (`pc-policy.js:67`) lets every item
-through when `admin` is true. `interactions.js:1056` passes `admin: sessionAdmin(pcId)`, one
-function in `pc-sessions.js` that mirrors the server predicate: the mirror entry has `access ===
-"admin"` and is not `locked`. It covers remote, relay and technique entries alike, since only the
-server decides which carry `access`. Power reaches the client through `access`: an answer that
+through when `admin` is true. `interactions.js:1056` has no PC id in hand, only the object's id
+(`sprite.scenarioData.id`), so it passes `admin: sessionAdmin(objectId)`, one function in
+`pc-sessions.js` that mirrors the server predicate: the mirror entry for that id has `access ===
+"admin"` and is not `locked`. A governed object that is not a sign-in PC has no mirror entry, so the
+answer is false, matching the server's "else false". It covers remote, relay and technique entries
+alike, since only the server decides which carry `access`. For an object that needs a session
+(its `triggerOnInteract` holds a `grant_foothold` with `needsSession`), `interactions.js` passes
+`admin: keyboardAdmin(objectId)` instead: `sessionAdmin` and the entry is a keyboard session (no
+`foothold`, `relay` or `from` on it). So a player holding only remote admin still sees the authored
+USB refusal line for a BadUSB, as today, and never meets the server's `needs_console` refusal on an
+honest client. Power reaches the client through `access`: an answer that
 follows power-off has no `access`, so the entry is cleared, and the desktop's 403, which carries no
 session, also drops `access` from that PC's entry when its `serverReason` is `'off'` or
 `'not_responding'` (`pc-sessions.js:509-547`, `:665-667`).
 
 When the two disagree (a tampered client, or a mirror not yet updated after a session ended, such
-as a borrow hand-over or a lost route) the server wins: the plant proof records nothing
-(`capture_proofs.rb:52` answers false without a message), so the item leaves the tray with no plant
-recorded, as a client that skips `plantRefusal` meets today. The next room answer corrects the
-mirror.
+as a borrow hand-over, an expired token or a lost route) the server wins and the player keeps the
+item: the inventory `remove` action refuses with `usb_refused` before it removes or records
+anything, and the client, which waited for that answer because the plant rested on the override,
+keeps the item in the tray and shows the server's line (section 5, "A lapsed override never costs
+the item"). The next room answer corrects the mirror.
 
 No client code decides privilege. The client learns about account kinds only through the existing
 `notPermitted` refusal and through which tiles a PC shows (above).
@@ -588,7 +663,7 @@ Policy and game lookup: `GamePolicy#harvest_credentials?` (the same rule as `key
 name added to `DEVICE_ACTIONS`, and `harvest_credentials` added to the `before_action :set_game`
 list in `games_controller.rb`, so the route is authorised and finds its game.
 
-Answer: `200 { success: true, harvested: [ { npcId, displayName, portrait, avatar, hashId } ],
+Answer: `200 { success: true, harvested: [ { npcId, displayName, username, portrait, avatar, hashId } ],
 held: [ ... same shape ], keyringRev }`, where `harvested` is what this call added, `held` is every
 account collected at this PC so far, `portrait` and `avatar` are built as `login_account_tiles`
 builds them (`GM:3876-3881`; null for an `accountOnly` account, which the allow-list leaves no
@@ -600,15 +675,19 @@ plan defines, and a password only through a successful crack. `Cache-Control: no
 keyring route.
 
 `POST /login` gains no param; its step-6 refusal also covers an account-kind mismatch. The implant
-action gains no param; it reads `session_admin?` for the PC it already checks.
+action gains no param; it reads `keyboard_admin?` for the PC it already checks, and adds one reason,
+`needs_console`, to its closed list (section 5). The inventory `remove` action gains no param; it
+adds the refusal `422 { success: false, reason: "usb_refused", error }` for a plant the USB policy
+refuses with no admin override, in place of today's silent removal.
 
 ## 7. What reaches the browser, and what never does
 
 **Reaches the browser.**
 - `access: "admin"` on an admin session's entry (sign-in answer, session mirror entries in the
   bootstrap and room answers, network host row); absent for every other session.
-- The collect answer: account ids, display names, `portrait` and `avatar` keys, and each pair's
-  `hashId`, for accounts the player has collected. No secret. On a PC with `loginPicker: "known"`
+- The collect answer: account ids, display names, usernames, `portrait` and `avatar` keys, and each
+  pair's `hashId`, for accounts the player has collected. No secret: a username is what the
+  collected cache is listed under, and the player needs it to type an account that has no tile. On a PC with `loginPicker: "known"`
   or `false` this is by design the first place an unmet account's name and picture appear.
 - A collected account's hash record, in the keyring from the first `GET /keyring` after the
   collect, with its token as the cracking plan defines. Never its password: that reaches the
@@ -622,8 +701,8 @@ action gains no param; it reads `session_admin?` for the PC it already checks.
   digits, `.` and `-`, at most 32 characters, the validator applies the same rule, and the client
   shows it, like every display name in the collect panel, through `textContent` only.
 - Sign-in tiles, unchanged shape, on each PC where the account may sign in (section 5); an
-  `accountOnly` account's username and display name only in a session answer, a collect answer or
-  a keyring row.
+  `accountOnly` account's display name only in a session answer, a collect answer or a keyring row,
+  and its username only in a collect answer or (once the cracking plan shows it) its hash row.
 
 **Never reaches the browser.**
 - `cachedAccounts` on a PC: added to `WITHHELD_OBJECT_FIELDS` (`network_access.rb:21`), so it is
@@ -667,9 +746,11 @@ the unlock answer.
 Neither is trimmed, because the `harvested` hash proof reads `harvestedAccounts`, and losing a
 `cachedAt` entry would un-cache an account. Both are bounded at run time by the scenario's declared
 pairs, since the server writes only a pair `cached_accounts_at` or the borrow step accepts, and the
-writers add a pair only when it is absent. On top, the validator caps `cachedAccounts` at 8 per PC
-and the declared pairs at 64 per scenario, so in a valid scenario each list holds at most 64 strings
-of under 140 bytes, about 9 KB at worst. A scenario that reaches a game without passing the
+writers add a pair only when it is absent. On top, the validator caps `cachedAccounts` at 8 per PC,
+and every declared pair has its own `hash` record in the credentials registry, which already allows
+at most 64 entries (`MAX_ENTRIES`, `credential_model.rb:39`). So in a valid scenario the declared
+pairs number at most 64 less the scenario's other registry entries, and each list holds at most 64
+strings of under 140 bytes, about 9 KB at worst. A scenario that reaches a game without passing the
 validator is still bounded by its own declared lists. Neither is read from a sync body or sent.
 
 What the player sees is the hash record's keyring row, which
@@ -698,13 +779,19 @@ required and run from `scripts/validate_scenario.rb` by one line beside the core
 `check_access_model` or `check_credentials`):
 - `cachedAccounts`: each `npc` is an account holder; no duplicates; the PC is a sign-in PC; the
   owner may be listed (that is how it becomes collectable). Each candidate has exactly one `hash`
-  credential whose `account.npc` is the candidate and whose proof is `{ "harvested": { "pc": <this
-  PC's id> } }`, else error ("cached accounts are hashes: author one hash record per PC and
-  account"). Those records count toward the registry's existing cap. An `after: "borrow"` candidate on a PC
+  credential whose `account.npc` is the candidate and whose proof is `{ "harvested": "<this PC's
+  id>" }`, else error ("cached accounts are hashes: author one hash record per PC and account").
+  Those records count toward the registry's existing cap of 64 entries, which is the only cap on
+  declared pairs. A candidate that is an `accountOnly` account (or any account with no
+  `habits.password`) needs `crack` on its hash record, else error ("an account with no password
+  habit needs a crack recipe on its hash record"); a `crack` whose `password` is `guessable` names a
+  `passwordPattern` that is a world object or item id, never an NPC, else error. The cracking plan's
+  own checks on a recipe (facts reachable, a `reused` source that exists) then apply to `crack` as
+  they do to a habit. An `after: "borrow"` candidate on a PC
   with an `owner` or on a headless PC, error (the engine never performs that borrow,
   `performable?`). An `after: "borrow"` candidate
   needs a `borrow_session` workaround whose `pc` resolves through `find_login_pc`'s rule to this
-  PC's id, else error. At most 8 per PC and 64 declared pairs per scenario, else error.
+  PC's id, else error. At most 8 per PC, else error.
 - Info line for each owned PC an admin path reaches whose list does not name the owner: "owner not
   collectable here", so an author sees the choice.
 - A cached account the PC cannot otherwise admit is allowed (info line: "collect-only on this PC").
@@ -758,6 +845,15 @@ password text in any label.
 A scenario that sets none of the new fields behaves exactly as before:
 - **S5a.** No account has `creds.admin` and no technique session exists, so `session_access` never
   answers admin, no session answer gains `access`, and every admin branch is a guard not taken.
+  Two refusals are new in every scenario but reachable only where an honest client never goes: the
+  inventory `remove` action refuses a plant the USB policy refuses (today it removes the item
+  silently, and only a client that skipped `plantRefusal` sends one). The implant path answers
+  `needs_console` where it answered `not_ready` for a live non-keyboard session; on a PC whose
+  policy allows the device, an honest player plugging a BadUSB in while holding only a remote
+  session now sees "Nobody is signed in at this keyboard." where today nothing happens. That is the
+  one visible change in an existing scenario, it grants and records nothing, and the unchanged
+  test expects `needs_console` in place of `not_ready` for that one answer and nothing else. The golden sequences add one plant the
+  policy allows, which must answer and record as before.
 - **S5b.** No `cachedAccounts` and no admin, so the collect route answers 422 `reason: "not_admin"` and
   `cachedAt`, `harvestedAccounts` stay empty. `record_borrow_done!` adds nothing without a declared
   candidate. No registry entry has a `harvested` proof, so the keyring lists the same rows, in the
@@ -806,10 +902,15 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   refused under user; the plant proof allowed under a remote admin password session (through a
   foothold, and `from` another desktop); at both sites refused under a locked admin session and a
   relay session; refused under any admin session on a PC whose service is off; a session-shaped
-  implant still refused (`implant_not_ready`) for a remote session, admin or not, so the implant's
-  own session rule is unchanged; NPC-side `usb_habit_refused?` unchanged under player admin. S3:
-  the plant proof allowed under a technique admin session and refused under a technique user
-  session.
+  implant refused with `needs_console` and its line for a remote or technique session, admin or
+  not, with the device still held, and `not_ready` kept for a PC with no session at all; the plant
+  proof for a `needsSession` object refused under a remote admin session and allowed under a
+  keyboard one; NPC-side `usb_habit_refused?` unchanged under player admin. Lapsed override: a
+  token admin session past its expiry, a foothold admin session after the foothold is unplugged, and
+  one whose route an outage drops each plant a blocked stick through the inventory `remove`
+  action and get 422 `usb_refused` with the policy's line, the item still in the inventory and no
+  `plantedItems` entry; a plant the policy accepts is removed and recorded as today. S3: the plant
+  proof allowed under a technique admin session and refused under a technique user session.
 - `cached_accounts_test.rb`. S5b: listed start candidates cached, an unlisted owner not; an `after:
   "borrow"` candidate cached only after an accepted "done" at that PC, not after a "done" at another
   PC, a dwell-refused early "done" or a resent one; a `cut: true` "done" does cache (accepted
@@ -824,8 +925,10 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   `<npcId>.password` row appears for it; the `harvested` proof holds for the collected PC and not
   for another PC listing the same account; an account both captured and collected keeps its one
   capture password row beside the hash record; a crack through S7's route on a collected hash
-  grants the password (the real path end to end). S8: a cracked administrator password still meets
-  the PC policy's second step.
+  grants the password (the real path end to end); a hash record with `crack` on an `accountOnly`
+  account cracks from that recipe; the shared local administrator collected on a second PC after
+  its password is held adds a pair whose hash row reads as cracked. S8: a cracked administrator
+  password still meets the PC policy's second step.
 - `pc_admits_account_test.rb`. S5c, before the delegation: the two definitions answer alike over
   every PC and account of the shipped scenarios. After it, the truth table is asserted against the
   one body in `account_kind_test.rb`.
@@ -842,7 +945,7 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
 **Controller** (`test/controllers/harvest_credentials_test.rb`, S5b): each refusal of section 6 in
 order, each asserting nothing was written; an unknown id and a real PC id with no session give
 the same status and body once the echoed id is replaced; a route the desktop would refuse is
-refused alike; the success answer with `keyringRev`, `portrait`, `hashId`, no password, no hash
+refused alike; the success answer with `keyringRev`, `username`, `portrait`, `hashId`, no password, no hash
 token and `Cache-Control: no-store`; the repeat answer; hostile `pc_id` values (non-string, 41 characters, 10 KB, another
 game's PC id).
 
@@ -856,10 +959,17 @@ entry that still held `access`, true for a `remote` entry with `access: "admin"`
 relay entry (which never carries it); a later answer for the same PC with no `access` (the PC gone
 off) clears it from the entry and `sessionAdmin` is then false; after a desktop 403 with reason
 `off` for that PC, `sessionAdmin` is false and a refused stick stays in the tray; a stick refused
-for a `remote` user entry shows the policy's refusal message and stays in the tray; the desktop
+for a `remote` user entry shows the policy's refusal message and stays in the tray; `keyboardAdmin`
+is false for a `remote`, relay or `from` admin entry, so a BadUSB (`needsSession`) on a blocked PC
+under remote admin shows the USB refusal line and stays in the tray; `sessionAdmin` takes the
+object's id and is false for a governed object with no mirror entry; a plant that rests on the
+override waits for the remove answer, and a 422 `usb_refused` keeps the item, shows the server's
+line, emits `usb_refused:<objectId>` and fires no `triggerOnInteract`; a plant the policy accepts
+without admin keeps today's order; `network-links.js` shows a toast and emits
+`network_device_refused` for `needs_console`; the desktop
 shows the marker and the collect control only for admin; the collect calls `keyring.refresh()`,
-the panel uses the answer's `portrait`, shows "hash" and a Crack button that opens the cracking
-scene with the answer's `hashId`; `plantRefusal` with `admin`; a
+the panel uses the answer's `portrait`, shows the username, "hash" and a Crack button that opens
+the cracking scene with the answer's `hashId`; `plantRefusal` with `admin`; a
 session with an `npcId` the client never loaded renders; hostile display names and a hostile
 `domain` value rendered as text. A new module is added to every copy list that copies the module
 importing it (grep `test/js` for the importer's name before finishing).
@@ -872,16 +982,20 @@ adds only its own fields):
   `borrow_session` workaround names it; the owned PC listing its owner as a candidate; one `hash`
   record with a `harvested` proof per candidate, each crackable through the cracking plan's
   facts, which the scenario places for the player to find.
-- S5c adds: three PCs sharing the `accountOnly` `deskAdmin`; `lab1` with its own `accountOnly`
-  administrator; a domain with its administrator and two domain PCs.
+- S5c adds: three PCs sharing the `accountOnly` `deskAdmin`, each listing it in `cachedAccounts`
+  with a `hash` record per PC that carries `crack` (a `guessable` recipe whose pattern is a poster
+  the player finds in the IT room); `lab1` with its own `accountOnly` administrator, cached and
+  recorded the same way with a `strong` recipe; a domain with its administrator and two domain PCs.
 Each stage ships `mission.json`, a regenerated graph and `PLAYTEST.md`.
 
 **Scripted playtest** through `window.__test`, per stage:
 - S5a: sign in as the user, see no other profile and no collect; sign in as the administrator, see
   the owner's profile; plant a refused stick at the keyboard under admin; lock the screen and see
   the same stick refused; sign in to the same PC remotely as the administrator from another
-  desktop, walk to it and plant a second refused stick, which is accepted; turn the PC's service
-  off and see a third refused.
+  desktop, walk to it and plant a second refused stick, which is accepted; try a BadUSB there under
+  the same remote admin session and see the USB refusal line with the device still held; let a
+  token admin session expire without a client update, plant a refused stick and see the server's
+  refusal with the stick still in the tray; turn the PC's service off and see a third refused.
 - S5b: collect on the owned PC and on the hot desk; make the borrow candidate's need fail until
   its frustration reaches the workaround's `at` level (the counted fails after which `choose_run!`
   hands a workaround over, `npc_frustration.rb:526-547`), using the same steps as the borrow in
@@ -890,9 +1004,10 @@ Each stage ships `mission.json`, a regenerated graph and `PLAYTEST.md`.
   `not_admin`), Switch user, sign in as the
   administrator, collect again and get the new account as a hash; press Crack in the collect panel,
   crack it with the facts found, and sign in as that account elsewhere.
-- S5c: collect `deskAdmin`'s hash on `pc01`, crack it from its keyring row, use the password on
-  `pc02` as admin, typed (no tile); fail on `lab1` with it; sign in as the domain administrator on
-  both domain PCs.
+- S5c: find the IT room poster, collect `deskAdmin`'s hash on `pc01` (its username shows in the
+  collect panel), crack it from its keyring row with the poster's facts, use the password on
+  `pc02` as admin, typed (no tile); collect on `pc02` and see its row already cracked; fail on
+  `lab1` with it; sign in as the domain administrator on both domain PCs.
 Assert both sides: `access`, hash records and cracked password rows in the browser, and no
 password in any collect answer; `sessions`, `cachedAt`, `harvestedAccounts` on the server.
 
@@ -905,7 +1020,8 @@ Order: S5a (after S3), S5b (after S5a and S7), S5c. Each step commits its own fi
 tests run.
 
 Files this plan changes:
-- `app/models/break_escape/game.rb`: `session_access`, `session_admin?`, `account_admin_at?`,
+- `app/models/break_escape/game.rb`: `session_access`, `session_admin?`, `keyboard_admin?`,
+  `plant_policy_refusal`, `account_admin_at?`,
   `admin_profiles_at`, `pc_present_accounts`; the admin branches in `login_desktop_contents`,
   `find_login_item`, `session_admits?`, `scope_admitted_by_session?`; `access` parameter in
   `login_session_answer` and `session_for_client`; `cached_accounts_at`,
@@ -920,25 +1036,33 @@ Files this plan changes:
 - `lib/break_escape/credential_model.rb`: `pc_admits_account?` calling `account_kind_admits?`;
   `harvested` added to `PROOF_KINDS`.
 - `lib/break_escape/access_work.rb`: `admin:` keyword on `plant_refused?`.
-- `app/models/break_escape/network_access.rb`: implant call site; `cachedAccounts` in
-  `WITHHELD_OBJECT_FIELDS`.
-- `app/models/break_escape/capture_proofs.rb`: plant proof call site.
+- `app/models/break_escape/network_access.rb`: implant call site; the `needs_console` refusal in
+  place of `implant_not_ready` at `:498` and `:501` when a live non-keyboard session is there;
+  `cachedAccounts` in `WITHHELD_OBJECT_FIELDS`.
+- `app/models/break_escape/capture_proofs.rb`: plant proof call site, with `keyboard_admin?` for a
+  `needsSession` object.
 - `app/models/break_escape/npc_frustration.rb`: `record_borrow_done!` writes `cachedAt`.
 - `app/models/break_escape/credential_keyring.rb`: the `harvested` branch in
   `credential_proof_holds?`.
 - `lib/break_escape/access_identities.rb`: `account_kind_admits?`, `account_only?`; `reach` for
   collected accounts. `lib/break_escape/npc_habits.rb`: `expand!` skips `account_only?`.
-- `app/controllers/break_escape/games_controller.rb`, `config/routes.rb`: the collect route;
+- `app/controllers/break_escape/games_controller.rb`, `config/routes.rb`: the `plant_policy_refusal`
+  check at the top of the inventory `remove` branch (`games_controller.rb:1454-1460`), before
+  `record_planted_item!` and `remove_inventory_item!`; the collect route;
   `harvest_credentials` added to the `set_game` list and to `with_game_lock`; `hasNPCs` and the NPC
   count (`games_controller.rb:527`, `:603`) reading `account_only?`; `#container` writes
   `admin_profile_read` in its profile branch, after the reach check passes and the contents are served.
 - `app/policies/break_escape/game_policy.rb`: the `harvest_credentials?` method;
   `test/unit/break_escape/policy_test.rb` adds the action to `DEVICE_ACTIONS`.
 - The network host row's serialiser (the core plan's), for the `access` rule.
-- `scripts/scenario-schema.json`, `scripts/generate_dungeon_graph.rb`; `scripts/validate_scenario.rb`
-  gains one `require_relative` and one call line only.
-- Client: `pc-sessions.js` (`sessionAdmin`), `pc-policy.js`, `interactions.js`, the desktop view
-  and collect panel, `keyring.js` call, and a call that opens the cracking plan's scene for a
+- `scripts/scenario-schema.json` (the section 9 fields, `harvested` (string) in the credential
+  proof properties at `:293-305`, and `crack` on a `hash` entry if the cracking plan has not added
+  it), `scripts/generate_dungeon_graph.rb`; `scripts/validate_scenario.rb` gains one
+  `require_relative` and one call line only.
+- Client: `pc-sessions.js` (`sessionAdmin`, `keyboardAdmin`), `pc-policy.js`, `interactions.js`
+  (the predicate per object and the wait on an override plant), `apply-actions.js`
+  (`sendInventoryRemove`'s `withBody` option), `network-links.js` (`needs_console`), the desktop
+  view and collect panel, `keyring.js` call, and a call that opens the cracking plan's scene for a
   `hashId`.
 - `docs/ACCESS_AND_NETWORKS.md` and the `README_scenario_design.md` feature index (A18 to A20).
 
@@ -996,9 +1120,12 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   a technique grant carries `access`". S3 lands first, so you add the answer parameter. A password sign-in that replaces your technique record takes the level of the account
   signed in with. Please run `CredentialModel.pc_admits_account?` (which carries the account-kind
   rule) on `grants.session.account` in your validator pass. A technique admin session overrides a
-  PC's USB policy for a plant like any other admin session on that PC (section 5); a session-shaped
-  implant still needs a keyboard session, so your technique record keeping its `foothold` keeps it
-  off that path. Please also confirm whether your
+  PC's USB policy for a plant like any other admin session on that PC (section 5), but a
+  session-shaped implant (`needsSession`) takes only a session at the PC's own keyboard: a device
+  that types into a PC reaches whoever is signed in at that console, and your technique record
+  keeps its `foothold`, so the implant path refuses it with `needs_console`. Please change your
+  session-kinds table's "counts for `needsSession`: yes" cell for a technique session, and the
+  matching sentence in section 0, to "no (keyboard sessions only)". Please also confirm whether your
   added terms in `desktop_request_allowed?` let a technique admin session on a `remote: "blocked"`
   headless host through: the collect (section 6, step 3) passes only if they do.
 - **To OPS_CRACKING (S7).** Your draft asks for an admin-dump marker "per host, per account" with a
@@ -1007,9 +1134,20 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
     the sign-in PC's object id;
   - the marker is `player_state.harvestedAccounts`, an array of `"<pcId>|<npcId>"`, server-written
     only by the collect, grow-only, never trimmed, never sent;
-  - the proof form is `proof: { "harvested": { "pc": "<pcId>" } }` on a `hash` registry entry whose
-    `account.npc` names the account; it holds when `"<pcId>|<account.npc>"` is in
-    `harvestedAccounts`;
+  - the proof form is `proof: { "harvested": "<pcId>" }` (a string, like `session` and `foothold`,
+    so `CredentialModel.proof_kind` reads it) on a `hash` registry entry whose `account.npc` names
+    the account; it holds when `"<pcId>|<account.npc>"` is in `harvestedAccounts`;
+  - a hash record whose account has no `password` habit (an `accountOnly` account, which carries
+    no habits) carries its own crack recipe, `crack: { password, passwordPattern }`, the same two
+    keys as the habit. Please read `crack` when present and the habit otherwise, add `crack` to
+    your `hash` entry schema, and apply your "account needs a `password` habit" validator rule
+    only to a record with no `crack`; your fact-reachability warning applies to the recipe's
+    pattern as it does to a habit's;
+  - please show the account's username on the hash row (as on a password row), so an account with
+    no sign-in tile stays typeable after the collect panel closes;
+  - an account cached on several PCs has one hash record per PC. Please show a hash row whose
+    account's `<npcId>.password` row the player already holds as cracked, with no Crack button,
+    so a shared administrator collected on a second PC is not a second puzzle;
   - a collected cached account is always a hash: the collect never yields a password, and every
     `cachedAccounts` candidate must have one such `hash` record (validator error otherwise), so a
     scenario that does not teach cracking declares no cached accounts;
@@ -1043,7 +1181,9 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   (your `OpsLog::EVENTS` entry, your S5 row table and your note that a hash obtained by collect is
   counted by `hashes` all change with it).
   `usb_install_overridden` now comes from any admin session on the PC, keyboard or remote, not only
-  a keyboard one; its fields are unchanged.
+  a keyboard one, except for a session-shaped implant, which only a keyboard admin session
+  overrides; its fields are unchanged. A plant the server refuses (`usb_refused` from the inventory
+  action, `needs_console` from the implant path) writes no row.
 - **To all ops plans.** One fixture folder, `test/fixtures/files/ops_unchanged/`, and one helper,
   `bin/ops-golden-compare` (section 10), both built by the log plan's L1a, which strips each plan's
   new empty `ACCESS_STATE_DEFAULTS` keys and freezes the clock; and one test directory for unit tests (this plan uses
@@ -1051,7 +1191,17 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
 
 ## 15. Open questions for the user
 
-None open.
+**Q1. Which admin session may plant a device that needs a session (a BadUSB on a USB-blocked PC)?**
+Any admin session overrides the USB policy for an ordinary plant. A session-shaped implant is
+different: it gives a foothold through whoever is signed in.
+- (a) Keyboard only (recommended, and what the plan describes). A device that types into a PC
+  reaches whoever is signed in at that keyboard, and a remote or technique session is not at that
+  console. A player holding only remote admin sees the USB refusal line in the client, and a
+  tampered or stale client gets `needs_console` ("Nobody is signed in at this keyboard.").
+- (b) Any admin session takes the implant. This follows "any admin session overrides" to the
+  letter, but it needs the implant path's session rule (`network_access.rb:498-501`) widened to
+  remote and technique sessions in this plan and the core plan, and it teaches a less accurate
+  model of what a plugged-in device reaches.
 
 **Defaults this plan settles** (not user choices):
 - An account with no `accountKind` is unscoped, as every account is today: any other default would

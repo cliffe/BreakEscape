@@ -38,3 +38,18 @@ Findings not acted on as suggested, one line each.
 - **PRIV-7 b (any admin session overrides USB).** Applied: `keyboard_admin?` and the client `keyboardAdmin` replaced by `session_admin?` / `sessionAdmin` at the implant path, plant proof and `plantRefusal`; off-PC and locked sessions still never override; the implant path's own keyboard-session rule is unchanged; tests and the S5a playtest beat updated; S9 told.
 - **SHARED-2 a (admin sign-in gives admin).** Already written; the question's rationale moved into section 5.
 - **PRIV-2, 5, 6, 8, 9, 10 a.** Already written; each question's reasoning moved into the body (cache candidates and borrow, no game-minute cost, domain lockout in section 1, sign-in tiles in S5c, owner collectable only when listed) and section 15 left with defaults only.
+
+## R6 fixes (2026-11-19)
+
+- **B1.** Fixed on the cracking side: a hash record may carry `crack: { password, passwordPattern }` for an account with no password habit; `accountOnly` keeps no habits; validator requires `crack` for such a candidate and refuses an NPC as its pattern source; S5c example, test scenario, playtest and harvest test show it; section 14 asks S7 to read `crack` and apply its habit rule only without one.
+- **M1.** Proof is the string form `{ "harvested": "<pcId>" }` (checked: `proof_kind` at `credential_model.rb:62-67` reads only strings); every example, validator line, schema/file list and the S7 request updated.
+- **M2.** Session-shaped implant stays keyboard-only: new `keyboard_admin?` / `keyboardAdmin` used for `needsSession` objects at the plant proof and in `plantRefusal`; implant path answers `needs_console` with a line instead of the quiet `not_ready` (checked `network-links.js:483-501`) for a live non-keyboard session; core plan asked to change its technique `needsSession: yes` cell; section 15 Q1 offers (a) keyboard only, recommended, (b) any admin session.
+- **M3.** Checked: the inventory `remove` branch (`games_controller.rb:1454-1460`) removes even when `record_planted_item!` refuses, and the client removes before the answer. New `plant_policy_refusal` check at the top of that branch answers 422 `usb_refused` before anything is removed or recorded; the client waits for the answer on override plants and keeps the item; tests for token expiry, unplug and outage added.
+- **m1.** Registry ids lowercased; note that hash ids need no fixed tie to PC or NPC ids.
+- **m2.** `username` added to the collect answer and panel; S7 asked to show it on the hash row; section 7 corrected.
+- **m3.** Second PC's record for an already-cracked account shows as cracked (S7 request); the collect still records the pair for the log row.
+- **m4.** Separate 64-pair cap dropped; the registry's 64-entry cap is the only bound, stated in sections 8 and 9.
+- **n1.** "password collected" now "hash collected and cracked".
+- **n2.** `sessionAdmin` takes the object's id; a governed non-PC object has no mirror entry and answers false.
+- **n2b.** Both "ruling" phrases replaced with "by design, the comment at `:502`".
+- **n3.** S5a now says it is ordered after S3 so the `access:` answer parameter exists.
