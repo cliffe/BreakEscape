@@ -259,3 +259,14 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - n7: request 5 marked taken by the core: its 9.1 already states all three points and the core plan has no `cliFinding` left; leftover mentions only in `HANDOVER_OPS_SKIN_catalog.md` (historical, not edited).
 - n8: default-form row reads `<class>` from the core's `class` enum in the schema.
 - n9: separation test applies the default `auxiliary/scanner/<word>/<class>_f<n>` exemption.
+
+## R13 fixes (2026-11-19)
+
+- m1 (orchestrator ruling): the catalog validator compares with the committed index before rewriting; a removed or renamed id or changed form is an error and the index is not rewritten; only additions and link changes update it; test covers the command line and asserts the index is untouched.
+- m2 (orchestrator ruling): the catalog validator enforces a `module` first segment of `auxiliary`, `exploit` or `post`; new Catalog row and failing fragment (`shareserve`); the index records only that word.
+- m3: chose the plan's existing lean (index test fails with "rerun scripts/validate_realism_catalog.rb"); the task that adds or changes a `realism` link runs that command and commits the index; stated in 4.3 beside "Who opens it" (output holds no catalog text).
+- m4 (orchestrator ruling): same-file duplicate ids are the validator's duplicate-key parse alone; loader paragraph and row reworded; core unchanged; request 3 says three refusing folders.
+- m5 (orchestrator ruling): a catalog fault gives a linking scenario one error naming the catalog file, "catalog task: fix the catalog"; scenario fixers leave it; index-mismatch and append-only faults are test failures only.
+- n1: catalog ids are read by the telltale and `real_product_names.txt` rows.
+- n2: separation test treats the index as a scenario file expecting zero hits, with the `public/` check on its scenario paths.
+- n3: "Changed from the core's current text" clause dropped from request 3.
