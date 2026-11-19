@@ -331,7 +331,11 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     for (const { m, who } of staffMaps) if (m.patrolOverride) assert.ok(suspenders.has(who) && staffMaps.some((x) => x.who === who && x.m.needs === 'resume'), where(`${who} walk ends in resume`));
     // layer 1 pointer to the host, layer 0 for an attack-half shell
     const deb = JSON.stringify(sc.social.awarenessEpisode.strings) + JSON.stringify(sc.social.awarenessEpisode.debrief);
-    // TODO (HANDOVER_fix_batch2): layer 1 pointer assertion, the text sits outside awarenessEpisode.strings/debrief
+    // layer 1 pointer: the "have a word with <host>" sentence lives in strings.conceptPanel.text. A chain shell
+    // (the panel build) leaves it out because the chain does the inviting; the committed fallback shell keeps it.
+    const panelText = sc.social.awarenessEpisode.strings.conceptPanel.text;
+    assert.ok(!/have a word with/.test(panelText), where('a chain shell invites through the chain, not the panel text'));
+    assert.match(readShell('ca01_invoice_fraud').social.awarenessEpisode.strings.conceptPanel.text, /Before you leave, take a look around the office and have a word with Adaeze\.$/, 'the fallback shell keeps the layer 1 pointer');
     if (row && row.attack) assert.ok(/To a real attacker/.test(deb), where('layer 0 passage in the debrief'));
     // no ambient displayName (full or first name) in the social block
     for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_') && x.displayName)) {
