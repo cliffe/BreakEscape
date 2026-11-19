@@ -103,7 +103,7 @@ export function flagHistoryHtml(submitted, recognised, esc) {
         rows.push(`
             <li class="flag-history-item flag-recognised" title="${esc(r.note || '')}">
                 <span class="flag-value">${esc(r.flag)}</span>
-                <span class="flag-check flag-recognised-tag">Key recognised, use it elsewhere</span>
+                <span class="flag-check flag-recognised-tag">Valid key, use elsewhere</span>
             </li>
         `);
     }

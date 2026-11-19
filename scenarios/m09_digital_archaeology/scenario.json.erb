@@ -513,6 +513,8 @@ hax_maps << text_map("global_variable_changed:notebook_read", "value === true &&
 # re-points at the thread (text, not voiced; each once).
 hax_maps << text_map("game_loaded", "globalVars.tesseract_call_done && !globalVars.start_debrief",
                      "Task Force Null is on the ground. When you're done here, open our thread and say \"Bring me in.\"", msg_delay: 20000)
+hax_maps << text_map("game_loaded", "globalVars.tesseract_call_done && !globalVars.start_debrief && !globalVars.albion_notified",
+                     "His notice is in our thread too, to send or to hold.", msg_delay: 26000)
 
 rec_maps = []
 rec_maps << { "eventPattern" => "room_entered:restricted_cage", "setGlobal" => { "in_cage" => true }, "cooldown" => 0 }

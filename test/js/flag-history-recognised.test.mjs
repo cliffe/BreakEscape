@@ -20,7 +20,7 @@ test('a recognised key flag shows in the list, not as a tick', () => {
     assert.doesNotMatch(html, /No flags submitted yet/);
     assert.match(html, /flag\{key\}/);
     assert.match(html, /flag-recognised/);
-    assert.match(html, /Key recognised, use it elsewhere/);
+    assert.match(html, /Valid key, use elsewhere/);
     assert.match(html, /title="Decryption Key validated"/);
     assert.doesNotMatch(html, /DONE/);
 });
