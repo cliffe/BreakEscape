@@ -131,6 +131,8 @@ export function updateInfoLabel() {
 
     let bestScore = Infinity;
     let bestText  = null;
+    // E from a chair reaches what is around it (interactions.js skips the occupied seat), so the label does too
+    const seatedOn = window.seating?.currentSeat?.() || null;
 
     function consider(ox, oy, text, rangeSq, target = null, faceX = ox, faceY = oy) {
         if (!text) return;
@@ -155,6 +157,7 @@ export function updateInfoLabel() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
+                if (seatedOn && obj === seatedOn) return;
                 let text = resolveObjectField(
                     obj.scenarioData,
                     'observations',

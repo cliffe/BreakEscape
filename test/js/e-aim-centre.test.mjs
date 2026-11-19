@@ -257,3 +257,16 @@ test('the E label agrees with E beside the safe, facing left (tap-target geometr
     assert.equal(pressE(140, 80, 'left'), 'safe');
     assert.equal(labelAt(140, 80, 'left'), 'A safe.');
 });
+
+// Seated at a desk (m02 it_department): the chair under the player scores aimDiff 0, so a label with no seat
+// skip named the player's own chair while E (which skips the occupied seat) opened the mug.
+test('E and the label both skip the seat the player is sitting on', () => {
+    const chair = obj('chair', 130, 150, 24, 30, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
+    const mug = obj('mug', 118, 140, 12, 14, { scenarioData: { id: 'mug', observations: 'A mug.' } });
+    setRoom(chair, mug);
+    window.seating = { currentSeat: () => chair, isSeat: (o) => o === chair, standUp() {} };
+    try {
+        assert.equal(pressE(142, 170, 'up'), 'mug');
+        assert.equal(labelAt(142, 170, 'up'), 'A mug.');
+    } finally { delete window.seating; }
+});
