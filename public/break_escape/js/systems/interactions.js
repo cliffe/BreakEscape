@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant, isSeatedDeskPc, seatedPcWins } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -2279,6 +2279,10 @@ export function tryInteractWithNearest() {
     // No hard cone cutoff — avoids false negatives caused by fake-perspective coordinate mismatches.
     let best = null;
     let bestScore = Infinity;
+    // The best desk computer in front of a seated player (interaction-reach.js isSeatedDeskPc), kept apart: it wins over
+    // everything but a better-aimed NPC, which the label (info-label.js) decides the same way
+    let bestPc = null;
+    let bestPcScore = Infinity;
     const seatedOn = window.seating?.currentSeat?.() || null;
 
     // Ids of the objects in reach: an owner on the move from her own PC among them gives way (review R2 m1)
@@ -2307,7 +2311,9 @@ export function tryInteractWithNearest() {
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: aim.x, objY: aim.y, fromX: aim.fromX, fromY: aim.fromY, handleFn }; }
+        const pick = { objX: aim.x, objY: aim.y, fromX: aim.fromX, fromY: aim.fromY, handleFn, npc: !!npcSprite };
+        if (isSeatedDeskPc(seatedOn, npcSprite ? null : target, aimAngle) && score < bestPcScore) { bestPcScore = score; bestPc = pick; }
+        if (score < bestScore) { bestScore = score; best = pick; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -2364,6 +2370,8 @@ export function tryInteractWithNearest() {
     });
     // NPCs last, once every object in reach is known (inReachIds)
     npcsToConsider.forEach(sprite => consider(sprite.x, sprite.y, () => tryInteractWithNPC(sprite), INTERACTION_RANGE_SQ, sprite));
+
+    if (bestPc && seatedPcWins(bestPcScore, bestScore, !!best?.npc)) best = bestPc;
 
     if (!best) {
         if (seatedOn) window.seating.standUp(); // nothing else in reach: E stands up
