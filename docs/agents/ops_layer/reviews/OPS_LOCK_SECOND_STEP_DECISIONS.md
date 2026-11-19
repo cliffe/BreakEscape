@@ -72,3 +72,13 @@
 - m1: the knock-out branch now uses the server's full test (not `koImmune`, not `npcType: "phone"`, no scenario `disableAttacks`; `owner_claim.rb:73-74`, `game.rb:2050-2059`), with unit cases for each. The MFA plan's matching helper text (its line 841) has the same gap: passed to the cross-plan R3 fix list.
 - n1: walk order defined (breadth-first along connections in file order, objects in file order); locks below a refused ancestor recorded as unreached.
 - n2: lines 542 and 620 rewrapped; "story or record". Plan at 751 lines; the 745 cap was an orchestrator target, not a rule.
+
+## Lock types audit (2026-11-19)
+
+- 1. NPC ink unlock on a gated lock: the pane never opens over the conversation; the step stays pending and the pane opens when it closes; walking away loses nothing. The NPC replaces the first factor only, the step is due even when the NPC is its owner (question 1 stays open). LOCK 5.4, JS test row, playtest beat B12.
+- 2. Success before the server answers (Bluetooth, both rfid branches, key and lockpick toasts): on a gated lock no "opened" toast or release sound until the final answer has `success: true`. The client knows from the public `secondStep` field it already holds; nothing new is sent. LOCK 5.4, JS test row.
+- 3. Card copier open when the pane appears: a cancel reports `second_step_cancelled`, not `denied`/`wrong_card`, and emits no `door_unlock_failed`. LOCK 5.4 and the JS test row.
+- 4. LOG: `badge_swipe` ok is keyed on the method used (`rfid`, a card presented), not the lock type; an NPC opening an rfid door writes none. LOG 5.1 bullet, row table, test; LOCK section 13 agrees.
+- 5. Cloned card at a gated door: the badge row names the card holder, the step rows name the step owner; the two may differ by design. LOCK section 13.
+- 6. LOCK section 2 gains a short paragraph: keyring read only by sign-in; card, fingerprint and Bluetooth are separate first factors; fingerprint and Bluetooth/BLE are browser-trusted, so the step is the only server-checked part.
+- 7. Two existing-code findings (keycard keyring credential survives revocation; validator counts `fob`/`rfid` item types the engine ignores) listed in LOCK section 14 as outside this plan's scope.
