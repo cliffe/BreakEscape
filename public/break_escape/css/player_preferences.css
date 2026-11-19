@@ -338,10 +338,6 @@ h1 {
   h1 {
     font-size: 24px;
   }
-
-  .form-control {
-    font-size: 14px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -813,3 +809,9 @@ body.shell-picker {
   font-weight: bold;
 }
 .shell-picker .field-error { color: var(--ui-danger); }
+
+/* In the in-game modal the box is zoomed by --hud-zoom (below 1 on "Smaller"); the size is
+   divided back so the rendered text stays at least 16px and iOS Safari does not zoom on focus */
+.player-preferences-modal-content .form-control {
+  font-size: max(16px, calc(16px / var(--hud-zoom, 1)));
+}

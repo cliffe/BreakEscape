@@ -215,9 +215,18 @@
 .tri-jump { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
 .tri-jump-select {
     min-height: 44px;
+    /* full width of the pane (the label sits on its own line above), long option text is cut
+       with an ellipsis where the browser supports it; the full text is the select's title */
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
     max-width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-family: var(--se-font-readable);
-    font-size: 15px;
+    font-size: 16px;
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);

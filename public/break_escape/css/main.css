@@ -1,4 +1,11 @@
 /* Main game styles */
+/* iOS Safari zooms the page when a focused text control computes under 16px, and a control
+   with no size of its own falls back to the browser's 13.33px. :where() keeps this at zero
+   specificity so any deliberate size (VT323 18px or larger, GNF 16, 24, 32) still wins. */
+:where(input, select, textarea) {
+    font-size: 16px;
+}
+
 body {
     margin: 0;
     padding: 0;
