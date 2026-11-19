@@ -341,3 +341,20 @@ test('validator: a Tiled-claimed machine places its queue cells from the claimed
     const pos = needsCheck(mk([{ ...cooler('placed', [{ dx: 0, dy: -7 }]), position: { x: 6, y: 5 } }]));
     assert.ok(pos.some(s => s.includes("'placed' affordance.queue cell 1 (tile 6,-3) lies outside room 'ops' in 'hall'")), pos.join('\n'));
 });
+
+test('validator: Tiled claims follow scenario order, a positioned object still reserves, and as-type claims by the named type', { skip }, () => {
+    const npc = { id: 'ann', needsHome: { room: 'ops', x: 4, y: 4 }, needs: { thirst: { decayPerMin: 5, urgentAt: 40 } } };
+    const m = (id, extra) => ({ id, type: 'water_cooler', affordance: { satisfies: 'thirst', capacity: 2, queue: { cells: [{ dx: 0, dy: -1 }] } }, ...extra });
+    const run = objects => needsCheck({ rooms: { ops: { type: 'room_hq_ops', objects, npcs: [npc] } } });
+    const unresolved = (out, id) => out.some(s => s.includes(`'${id}' affordance.queue: the object's position could not be resolved`));
+    // a positioned cooler listed first takes the one Tiled cooler, so the unpositioned one finds none
+    const first = run([m('placed', { position: { x: 5, y: 5 } }), m('late', {})]);
+    assert.ok(unresolved(first, 'late'), first.join('\n'));
+    assert.ok(!unresolved(first, 'placed'));
+    // as-type names the Tiled type to claim, whatever the object's own type
+    const as = run([m('borrower', { type: 'no_such_thing', position: 'as-type:water_cooler' })]);
+    assert.ok(!unresolved(as, 'borrower'), as.join('\n'));
+    // a sprite with no Tiled match falls back to the object's type
+    const spr = run([m('skinned', { sprite: 'no_such_sprite' })]);
+    assert.ok(!unresolved(spr, 'skinned'), spr.join('\n'));
+});

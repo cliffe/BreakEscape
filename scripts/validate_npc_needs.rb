@@ -892,10 +892,12 @@ module ValidateNpcNeeds
       tiled = !positioned?(o)
       if tiled
         # No scenario position: the engine uses the claimed Tiled object's pixel centre, so do the
-        # same (approach cell, then each offset, snapped to the 8 px grid) and take the tile it is in
+        # same (approach cell, then each offset, snapped to the 8 px grid) and take the tile it is in.
+        # Not modelled: walkability, duplicate-cell dropping, a scenario sprite's own size, and a
+        # position with only one axis (the engine overrides per axis); a table with no Tiled table
         centre = (claims[o.room] ||= tiled_claims(room))[o.id]
         if centre.nil?
-          issues << "ℹ️ NPC needs: #{where}: the object's position could not be resolved (no Tiled '#{o.data['sprite'].is_a?(String) ? o.data['sprite'] : o.data['type']}' object in the '#{room['type']}' map to claim), so its queue cell geometry is not checked."
+          issues << "ℹ️ NPC needs: #{where}: the object's position could not be resolved (no unclaimed Tiled object matches it in the '#{room['type']}' map, or it is nested in another object), so its queue cell geometry is not checked."
           next
         end
         ax = snap_px(centre[0] + (uf['dx'].is_a?(Numeric) ? uf['dx'] : 0) * 32)
