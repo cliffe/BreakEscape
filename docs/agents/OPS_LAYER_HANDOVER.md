@@ -44,17 +44,14 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 | `OPS_REALISM_SKIN_PLAN.md` (S6, N16) | 1037 | Done | As above |
 | `OPS_LOG_ROWS_PLAN.md` (S9, A24) | 1251 | Done; stages L1a, L1b, L2a, L2b, L3 | As above |
 | `OPS_MFA_HELPDESK_PLAN.md` (S8a/b, A22, A23) | 1201 | Done, plus the shared-subject edits for S8c | As above |
-| `OPS_LOCK_SECOND_STEP_PLAN.md` (S8c, A25) | about 745 | R5 findings `191deb59f` (1 major: `held_item_sources` counts phones and NPC items the game would not let the player hold); Sonnet fix pass "Lock plan R5 fixes" running, uncommitted | Commit plan and DECISIONS → R6 short delta (Sonnet if validator and graph only, Opus if it touches the access path) → done when nothing above minor |
+| `OPS_LOCK_SECOND_STEP_PLAN.md` (S8c, A25) | 747 | Done: R6 found nothing above minor, fixed `e6d4e89ff` | As above |
 | `OPS_CRACKING_PLAN.md` (S7, A21) | 357 | First draft `5e88e7aff`, R1 findings `46649f23f`, unrevised | **Held** for the user's answer to BLOCK-1 on the picks page |
 
-If a new session finds `OPS_LOCK_SECOND_STEP_PLAN.md` modified with no newer commit, the R5 fix
-pass finished or stopped: read the diff against the R5 findings, commit both files by explicit path,
-and launch R6.
-
-Cross-plan R2 (`CROSS_PLAN_R2.md`, X1 to X26) is settled: X3 dropped (the lock answers again from
-its own record with numbers and nonce), the lock's n7 stays as its cross-plan request 3, the rest
-fixed. After the lock plan settles: one short cross-plan R3 delta (the lock plan against the others,
-and the `/log_rows` refusal-code change).
+Cross-plan R2 (`CROSS_PLAN_R2.md`, X1 to X26) and R3 (`CROSS_PLAN_R3.md`, Y1 to Y15, decisions in
+`CROSS_PLAN_R3_DECISIONS.md`, fixes `c6d80bf4c` and `8286ad26c`) are settled. R3 moved the shared
+golden mechanism (`bin/ops-golden-compare`, `ops_unchanged/`, the capture rake task) into the log
+plan's L1a and gave `MfaModel.held_item_sources` to MFA M1a. R3 found nothing above one major, now
+fixed, so no R4. Planning is complete apart from cracking.
 
 ## 4. Model routing from here
 
