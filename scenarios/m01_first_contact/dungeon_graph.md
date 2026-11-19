@@ -73,10 +73,10 @@ flowchart TD
   main_office_area("Main Office")
   door_it_room["IT Department<br/>PIN lock"]
   it_room("IT Department")
-  door_derek_office["Derek Lawson — Operations<br/>Key lock"]
-  derek_office("Derek Lawson — Operations")
-  door_server_room["Server Room — Authorised Access Only<br/>RFID lock"]
-  server_room("Server Room — Authorised Access Only")
+  door_derek_office["Derek Lawson, Operations<br/>Key lock"]
+  derek_office("Derek Lawson, Operations")
+  door_server_room["Server Room: Authorised Access Only<br/>RFID lock"]
+  server_room("Server Room: Authorised Access Only")
   reception_area("Reception Area")
   reception_desk_phone{"Reception Desk Phone"}
   npc_sarah_o_brien{"Sarah O'Brien"}
@@ -96,10 +96,10 @@ flowchart TD
   lock_pick_kit{"Lock Pick Kit"}
   lock_patricia_briefcase["Patricia Briefcase"]
   server_room_keycard{"Server Room Keycard"}
-  manager_office("Patricia Wells — Manager")
+  manager_office("Patricia Wells, Manager")
   derek_s_office_key{"Derek's Office Key"}
   cyberchef_workstation{"CyberChef Workstation"}
-  kevin_office("Kevin Park — IT")
+  kevin_office("Kevin Park, IT")
   lock_kevin_s_workstation["Kevin's Workstation<br/>Password lock"]
   out_of_office_note{"Out of Office Note"}
   personal_notes_safe{"Personal Notes - Safe"}
@@ -120,7 +120,7 @@ flowchart TD
   hallway_east("Hallway East")
   conference_room("Conference Room")
   hallway_west("Hallway West")
-  maya_office("Maya Chen — Research")
+  maya_office("Maya Chen, Research")
 
   door_main_office_area --> main_office_area
   door_it_room --> it_room
@@ -277,10 +277,10 @@ flowchart TD
   main_office_area("Main Office")
   door_it_room["IT Department<br/>PIN lock"]
   it_room("IT Department")
-  door_derek_office["Derek Lawson — Operations<br/>Key lock"]
-  derek_office("Derek Lawson — Operations")
-  door_server_room["Server Room — Authorised Access Only<br/>RFID lock"]
-  server_room("Server Room — Authorised Access Only")
+  door_derek_office["Derek Lawson, Operations<br/>Key lock"]
+  derek_office("Derek Lawson, Operations")
+  door_server_room["Server Room: Authorised Access Only<br/>RFID lock"]
+  server_room("Server Room: Authorised Access Only")
   reception_area("Reception Area")
   reception_desk_phone{"Reception Desk Phone"}
   npc_sarah_o_brien{"Sarah O'Brien"}
@@ -300,10 +300,10 @@ flowchart TD
   lock_pick_kit{"Lock Pick Kit"}
   lock_patricia_briefcase["Patricia Briefcase"]
   server_room_keycard{"Server Room Keycard"}
-  manager_office("Patricia Wells — Manager")
+  manager_office("Patricia Wells, Manager")
   derek_s_office_key{"Derek's Office Key"}
   cyberchef_workstation{"CyberChef Workstation"}
-  kevin_office("Kevin Park — IT")
+  kevin_office("Kevin Park, IT")
   lock_kevin_s_workstation["Kevin's Workstation<br/>Password lock"]
   out_of_office_note{"Out of Office Note"}
   personal_notes_safe{"Personal Notes - Safe"}
@@ -324,7 +324,7 @@ flowchart TD
   hallway_east("Hallway East")
   conference_room("Conference Room")
   hallway_west("Hallway West")
-  maya_office("Maya Chen — Research")
+  maya_office("Maya Chen, Research")
   aim_establish_access{{"Establish Access"}}
   aim_survey_offices{{"Survey the Scene"}}
   aim_build_the_case{{"Build the Case"}}
@@ -414,8 +414,7 @@ flowchart TD
   main_office_area -.-> aim_survey_offices
   door_it_room -.-> aim_survey_offices
   door_it_room -.-> aim_build_the_case
-  derek_s_office_key -.-> aim_build_the_case
-  lock_pick_kit -.-> aim_build_the_case
+  door_derek_office -.-> aim_build_the_case
   door_derek_office -.-> aim_search_derek_office
   derek_office -.-> aim_capture_technical_evidence
   lock_derek_computer -.-> aim_search_derek_office
@@ -478,11 +477,11 @@ flowchart TD
   it_room["IT Department<br/>(locked)"]
   hallway_west("Hallway West")
   hallway_east("Hallway East")
-  manager_office("Patricia Wells — Manager")
-  kevin_office("Kevin Park — IT")
-  maya_office("Maya Chen — Research")
-  derek_office["Derek Lawson — Operations<br/>(locked)"]
-  server_room["Server Room — Authorised Access Only<br/>(locked)"]
+  manager_office("Patricia Wells, Manager")
+  kevin_office("Kevin Park, IT")
+  maya_office("Maya Chen, Research")
+  derek_office["Derek Lawson, Operations<br/>(locked)"]
+  server_room["Server Room: Authorised Access Only<br/>(locked)"]
 
   reception_area --> main_office_area
   main_office_area --> hallway_west
@@ -536,11 +535,11 @@ flowchart TD
   it_room["IT Department<br/>(locked)"]
   hallway_west("Hallway West")
   hallway_east("Hallway East")
-  manager_office("Patricia Wells — Manager")
-  kevin_office("Kevin Park — IT")
-  maya_office("Maya Chen — Research")
-  derek_office["Derek Lawson — Operations<br/>(locked)"]
-  server_room["Server Room — Authorised Access Only<br/>(locked)"]
+  manager_office("Patricia Wells, Manager")
+  kevin_office("Kevin Park, IT")
+  maya_office("Maya Chen, Research")
+  derek_office["Derek Lawson, Operations<br/>(locked)"]
+  server_room["Server Room: Authorised Access Only<br/>(locked)"]
   rc_reception_desk_phone_1{"Reception Desk Phone"}
   rc_obj2_2{"Building Directory"}
   rc_obj3_3{"Visitor Sign-In Log"}
@@ -596,7 +595,7 @@ flowchart TD
   rc_obj53_53{"Derek's Office Key"}
   rc_obj54_54{"Patricia's Investigation Notes"}
   rc_cyberchef_workstation_55{"CyberChef Workstation"}
-  rc_obj56_56{"Patricia's Note — CyberChef"}
+  rc_obj56_56{"Patricia's Note: CyberChef"}
   rc_obj57_57{"ENTROPY Infiltration Timeline"}
   rc_patricia_desk_phone_58{"Patricia's Desk Phone"}
   rc_obj59_59{"Termination Letter"}
@@ -625,7 +624,7 @@ flowchart TD
   rc_vm_launcher_intro_linux_82{"IT Audit Station (Kali)"}
   rc_flag_station_dropsite_83{"SAFETYNET Drop-Site Terminal"}
   rc_entropy_encrypted_archive_84[["ENTROPY Encrypted Archive"]]
-  rc_obj85_85{"Operation Shatter: Architect's Authorization"}
+  rc_obj85_85{"Operation Shatter: Architect's Authorisation"}
   rc_obj86_86{"ENTROPY Network Architecture"}
   rc_obj87_87{"Operation Shatter Target Database"}
 

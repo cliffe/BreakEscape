@@ -243,6 +243,12 @@
       "optional": false
     },
     {
+      "id": "keypad_reset_slip",
+      "label": "Keypad Reset Slip",
+      "kind": "item",
+      "optional": true
+    },
+    {
       "id": "lock_records_cupboard",
       "label": "Records Cupboard<br/>PIN lock",
       "kind": "lock",
@@ -385,6 +391,12 @@
       "label": "Sealed Hatch",
       "kind": "lock",
       "optional": false
+    },
+    {
+      "id": "lock_maintenance_slip",
+      "label": "Lock Maintenance Slip",
+      "kind": "item",
+      "optional": true
     },
     {
       "id": "keypad_face_plate",
@@ -709,6 +721,16 @@
     },
     {
       "from": "security_office",
+      "to": "keypad_reset_slip",
+      "soft": true
+    },
+    {
+      "from": "keypad_reset_slip",
+      "to": "lock_lock_records_cupboard",
+      "soft": true
+    },
+    {
+      "from": "security_office",
       "to": "lock_records_cupboard",
       "soft": false
     },
@@ -906,6 +928,16 @@
       "from": "operator_s_duty_sheet",
       "to": "lock_sealed_hatch",
       "soft": false
+    },
+    {
+      "from": "server_hall",
+      "to": "lock_maintenance_slip",
+      "soft": true
+    },
+    {
+      "from": "lock_maintenance_slip",
+      "to": "door_core",
+      "soft": true
     },
     {
       "from": "gallery",
