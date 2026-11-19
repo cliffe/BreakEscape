@@ -88,7 +88,8 @@ if (typeof window !== 'undefined') {
 // Read from the page, not counted: an overlay removed by anything other than its own close
 // (a test or a scene teardown wiping the body) must never leave toasts held for good.
 export function modalDialogOpen() {
-    return typeof document !== 'undefined' && !!document.querySelector('.game-confirm-overlay');
+    return typeof document !== 'undefined' && typeof document.querySelector === 'function'
+        && !!document.querySelector('.game-confirm-overlay');
 }
 
 function anyPanelOpen() {
