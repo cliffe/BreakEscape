@@ -182,7 +182,7 @@ test('a mark at the cliff unlocks ANNOTATE; the report asks before it tells; a w
     annotateBtn().fire('click');
     const modal = fakeDoc.querySelector('.sh-modal');
     assert.ok(modal);
-    assert.equal(fakeDoc.querySelector('.sh-modal-confirm-btn'), null, 'no confirm before the finding');
+    assert.ok(fakeDoc.querySelector('.sh-modal-confirm-btn') === null, 'no confirm before the finding');
     assert.doesNotMatch(modal.textContent, /physically impossible|Injection timestamp|Zero-variance/);
     assert.match(modal.textContent, /Marked:2026-03-20 23:13:00/);
     const choices = all(modal, '.sh-choice-btn');
@@ -190,7 +190,7 @@ test('a mark at the cliff unlocks ANNOTATE; the report asks before it tells; a w
 
     choices.find(c => c.dataset.choice === 'dropout').fire('click');
     assert.match(fakeDoc.querySelector('.sh-choice-feedback').textContent, /last real reading/);
-    assert.equal(fakeDoc.querySelector('.sh-modal-confirm-btn'), null);
+    assert.ok(fakeDoc.querySelector('.sh-modal-confirm-btn') === null);
     assert.equal(scene._revealed, false);
     assert.deepEqual(globalsSet, {}, 'nothing set on a wrong choice');
 });
@@ -207,7 +207,7 @@ test('the right choice reveals the finding and the line; confirm fires the same 
     assert.match(modal.textContent, /Injection timestamp: 23:12:07/);
     const confirm = fakeDoc.querySelector('.sh-modal-confirm-btn');
     assert.equal(confirm.textContent, '[CONFIRM: MARK AS INJECTION EVENT AT 23:12]');
-    assert.equal(fakeDoc.activeElement, confirm, 'focus moves to confirm for keyboard players');
+    assert.ok(fakeDoc.activeElement === confirm, 'focus moves to confirm for keyboard players');
     scene.complete = () => {};
     confirm.fire('click');
     assert.deepEqual(globalsSet, { historian_flatline_found: true });
@@ -303,11 +303,11 @@ test('R2 M1: one X. The report has none; the scene X closes the report and keeps
     scene.complete = () => { completed++; };
     hitAt(scene, '23:12:07').fire('click');
     annotateBtn().fire('click');
-    assert.equal(fakeDoc.querySelector('.sh-modal-cancel-btn'), null, 'no lone [CANCEL] on the question');
-    assert.equal(fakeDoc.querySelector('.sh-modal-close'), null, 'no second X in the report');
+    assert.ok(fakeDoc.querySelector('.sh-modal-cancel-btn') === null, 'no lone [CANCEL] on the question');
+    assert.ok(fakeDoc.querySelector('.sh-modal-close') === null, 'no second X in the report');
     assert.notEqual(sceneX().style.visibility, 'hidden', 'the scene X stays');
     scene.closeByPlayer();
-    assert.equal(fakeDoc.querySelector('.sh-modal'), null, 'the scene X closes the report');
+    assert.ok(fakeDoc.querySelector('.sh-modal') === null, 'the scene X closes the report');
     assert.equal(completed, 0, 'the viewer stays open');
     assert.equal(scene._annotateUnlocked, true);
     assert.ok(scene._markTs !== null, 'the mark is kept');
@@ -367,13 +367,13 @@ test('R1 m7: closing the report returns focus to ANNOTATE (or the chart before a
     const scene = open();
     hitAt(scene, '23:12:07').fire('click');
     annotateBtn().fire('click');
-    assert.equal(fakeDoc.activeElement, fakeDoc.querySelector('.sh-choice-btn'));
+    assert.ok(fakeDoc.activeElement === fakeDoc.querySelector('.sh-choice-btn'), 'focus on the first choice');
     scene.handleEscapeKey();
-    assert.equal(fakeDoc.activeElement, annotateBtn());
+    assert.ok(fakeDoc.activeElement === annotateBtn(), 'focus returns to annotate button');
     annotateBtn().fire('click');
     assert.ok(fakeDoc.querySelector('.sh-modal'), 'reopens after Esc');
     scene.closeByPlayer();
-    assert.equal(fakeDoc.activeElement, annotateBtn());
+    assert.ok(fakeDoc.activeElement === annotateBtn(), 'focus returns to annotate button');
 });
 
 test('R1 m8: a ruled-out choice says so in text and for assistive tech, in a readable colour', () => {
@@ -404,7 +404,7 @@ test('R1 m9: COMPARE open at the reveal switches the banner; Esc during the ques
     hitAt(s2, '23:12:07').fire('click');
     annotateBtn().fire('click');
     assert.equal(s2.handleEscapeKey(), true, 'Esc closes the report');
-    assert.equal(fakeDoc.querySelector('.sh-modal'), null);
+    assert.ok(fakeDoc.querySelector('.sh-modal') === null);
     assert.equal(s2.handleEscapeKey(), false, 'a second Esc is left to close the scene');
 
     const calls = [];
@@ -444,4 +444,20 @@ test('R2 m1: the chart SVG is out of the flow, so a redraw while the report is o
     assert.match(rule[1], /position:\s*absolute/);
     assert.match(rule[1], /inset:\s*0/);
     assert.doesNotMatch(css, /\.sh-modal-close/, 'no report X styles left');
+});
+
+test('R3 m1: closing the report redraws the chart at the restored size; R3 m2: the phone tooltip fits the chart area', () => {
+    const scene = open();
+    hitAt(scene, '23:12:07').fire('click');
+    annotateBtn().fire('click');
+    let draws = 0;
+    const real = scene._renderChart.bind(scene);
+    scene._renderChart = () => { draws++; real(); };
+    scene.handleEscapeKey();
+    assert.ok(draws === 1, 'one redraw when the report-open class comes off');
+    scene.handleEscapeKey();
+    assert.ok(draws === 1, 'no redraw when no report was open');
+    const css = readFileSync(join(here, '../../public/break_escape/css/scada-historian-minigame.css'), 'utf8');
+    assert.match(css, /\.sh-tooltip \{[^}]*max-height: 100%;/);
+    assert.match(css, /max-width: 600px\) \{[\s\S]*?\.sh-tooltip \{ font-size: 14px;/);
 });

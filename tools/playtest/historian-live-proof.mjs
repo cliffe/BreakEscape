@@ -215,6 +215,18 @@ if (MODE === 'pointer') {
     const red = await hasRedLine(); await shot(page, 'b09-revealed-chart');
     const chartH = await page.evaluate(() => Math.round(document.getElementById('sh-chart-area').getBoundingClientRect().height));
     results.push({ name: `chart height back to normal after the report closes (R2 m1): ${chartH}px`, ok: VW > 600 ? chartH > 250 : chartH <= 300, chartH });
+    const axis = await page.evaluate(() => { const t = [...document.querySelectorAll('#sh-chart-area svg text')]; const hs = t.map(e => e.getBoundingClientRect().height); const a = document.getElementById('sh-chart-area').getBoundingClientRect(); return { n: t.length, minH: Math.round(Math.min(...hs)), maxH: Math.round(Math.max(...hs)), lowestLabelBottom: Math.round(Math.max(...t.map(e => e.getBoundingClientRect().bottom))), areaBottom: Math.round(a.bottom) }; });
+    results.push({ name: 'axis labels not squashed after CANCEL (R3 m1): ' + JSON.stringify(axis), ok: axis.minH >= 8 && axis.lowestLabelBottom <= axis.areaBottom + 1, ...axis });
+    // R3 m2: the revealed anomaly tooltip must sit inside the chart area, last line included
+    {
+      const i = await pointAt('2026-03-20T23:40:00'); const sx = i.rect.w / i.W, sy = i.rect.h / i.H;
+      const x = i.rect.l + i.xSvg * sx, y = i.rect.t + (i.PADtop + i.plotH - ((i.value - Y_MIN) / (Y_MAX - Y_MIN)) * i.plotH) * sy;
+      await page.mouse.move(x, y); await page.waitForTimeout(300);
+      const tt = await page.evaluate(() => { const e = document.querySelector('.sh-tooltip'); const a = document.getElementById('sh-chart-area').getBoundingClientRect(); const r = e.getBoundingClientRect(); return { text: e.textContent.slice(-60), shown: getComputedStyle(e).display !== 'none', clipped: e.scrollHeight > e.clientHeight + 1, top: Math.round(r.top - a.top), bottomGap: Math.round(a.bottom - r.bottom), h: Math.round(r.height), areaH: Math.round(a.height), fs: getComputedStyle(e).fontSize }; });
+      await shot(page, 'b09b-tooltip');
+      results.push({ name: 'anomaly tooltip fits the chart area (R3 m2): ' + JSON.stringify(tt), ok: tt.shown && !tt.clipped && tt.top >= 0 && tt.bottomGap >= -1, ...tt });
+      await page.mouse.move(2, 2); await page.waitForTimeout(150);
+    }
     await page.getByText(/ANNOTATE FINDING/).first().click(); await page.waitForTimeout(400);
     return { ok: red && !!(await page.$('.sh-modal-confirm-btn')), red };
   });

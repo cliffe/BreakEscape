@@ -184,6 +184,8 @@
     white-space: pre-wrap;
     line-height: 1.5;
     max-width: 360px;
+    max-height: 100%;   /* never taller than the chart area, which clips it */
+    overflow: hidden;
 }
 .sh-tooltip-anomaly { color: #f5a623; border-color: #f5a623; }
 .sh-tooltip-injection { color: #ff8888; border-color: #ff4040; }
@@ -354,6 +356,10 @@
 /* Phones: channel list above the chart, the progress bar under the hint, the range
    buttons wrap (critique B SH1) */
 @media (max-width: 600px) {
+    /* The revealed anomaly text is about 10 lines: smaller type so it fits the short chart area */
+    .sh-tooltip { font-size: 14px; line-height: 1.3; }
+    .sh-tooltip-label { font-size: 14px; }
+
     .sh-body {
         flex-direction: column;
         overflow-y: auto;

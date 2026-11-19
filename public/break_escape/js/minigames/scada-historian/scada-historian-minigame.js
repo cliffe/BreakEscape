@@ -88,7 +88,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._plot            = null;  // geometry of the last chart render
         this._completionFired = false;
         // Already confirmed in an earlier visit: start with the finding made (D167 R1 m5)
-        // The key comes from the scenario's completion actions (R2 m3)
+        // The key comes from the scenario's completion actions (R2 m3); the first set_global with value true decides
         const doneKey = this._completionActions.find(a => a && a.type === 'set_global' && a.value === true)?.key;
         if (doneKey && window.gameState?.globalVariables?.[doneKey]) this._revealed = true;
         this._srTimer         = null;  // debounce for the screen-reader reading announcement
@@ -943,7 +943,11 @@ export class ScadaHistorianMinigame extends MinigameScene {
     _closeAnnotateModal(returnFocus = true) {
         if (this._annotateOverlay) this._annotateOverlay.remove();
         this._annotateOverlay = null;
-        document.querySelector?.('.sh-charts')?.classList?.remove('report-open');
+        const charts = document.querySelector?.('.sh-charts');
+        const wasOpen = !!charts?.classList?.contains?.('report-open');
+        charts?.classList?.remove('report-open');
+        // The column shrinks back, so redraw at the restored size or the axis labels stay squashed
+        if (wasOpen) this._renderChart();
         this._hideSceneX(false);
         // Keyboard players land back on the button that opened the report, or on the chart
         if (returnFocus) {
