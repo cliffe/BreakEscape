@@ -37,7 +37,17 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**NEWEST-4, read this first.** ALL SEVEN PLANS AND THE CROSS-PLAN CHECK SETTLED (`dd7dc92ea`;
+**NEWEST-5, read this first.** Round 3 answered and recorded (`f5ee445a0`, picks file "Round 3";
+brief rule 4 changed: real ids allowed only in a separate realism catalog). RUNNING: opus55 skin
+reviser (realism catalog outside scenarios/ linked by plain id; no "(simulated)" mark; new core
+requests in skin section 14 → apply to core after); opus55 cracking (salt confirmed, `common`
+recipe-only, optional author difficulty design); Sonnet lock (R3-5 wording only, R3-8 extend
+Rule D to plain carried containers as a final stage); opus55 bug fix in worktree
+`.claude/worktrees/p-knockout-drop` branch `fix/knockout-drop-item-id` from main 98284ca85 (R3-6;
+hash → AC0 train). R3-7 noted only (timer/object-action claims not trigger-checked). NEXT: commit
+each, apply skin's core requests, deltas (opus55 for skin catalog serving), cross-plan delta.
+
+**NEWEST-4.** ALL SEVEN PLANS AND THE CROSS-PLAN CHECK SETTLED (`dd7dc92ea`;
 R7 nits left: CRACK:419/:720 "any source", PRIV keyringRev test row, CORE:2005 "thirteenth").
 Nothing running. Waiting on round 3 answers; then apply them (Sonnet per plan, opus55 delta where
 security), and act on R3-6/7/8 bug picks (new small branch → AC0 train).
