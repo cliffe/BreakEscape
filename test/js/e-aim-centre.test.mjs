@@ -277,7 +277,7 @@ const seatedAt = (chair) => { window.seating = { currentSeat: () => chair, isSea
 const deskScene = (pcType = 'pc') => {
     const chair = obj('chair', 130, 150, 24, 30, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
     const mug = obj('mug', 138, 138, 12, 14, { scenarioData: { id: 'mug', observations: 'A mug.' } });
-    const pc = obj('pc', 120, 120, 30, 30, { scenarioData: { id: 'pc', type: pcType, observations: 'A workstation.' } });
+    const pc = obj('pc', 124, 95, 34, 27, { scenarioData: { id: 'pc', type: pcType, observations: 'A workstation.' } });
     setRoom(chair, mug, pc);
     return chair;
 };

@@ -10,7 +10,7 @@ import { resolveObjectField } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
-import { reachX, reachY, aimX, aimY, aimDiff, isSeatedDeskPc, seatedPcWins } from '../systems/interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff, isSeatedDeskPc, seatedPcWins, reachYSeated } from '../systems/interaction-reach.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -178,7 +178,7 @@ export function updateInfoLabel() {
                 }
                 // A sign-in PC with a sticky note picture says so (slice 9.2 B)
                 if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
-                consider(reachX(obj, px), reachY(obj, py), text, INTERACTION_RANGE_SQ, obj, aimX(obj), aimY(obj));
+                consider(reachX(obj, px), reachYSeated(obj, py, seatedOn), text, INTERACTION_RANGE_SQ, obj, aimX(obj), aimY(obj));
             });
         }
 

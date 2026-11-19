@@ -152,6 +152,22 @@ export function isDeskComputer(sprite) {
 }
 
 /**
+ * reachY for the E reach test, with one addition: a seated player reaches the desk computer at its footprint, like
+ * a tall prop (a 27px monitor on Gary's desk is 48px from the seat by its top edge, beyond the 32px reach, but sits
+ * right in front of him). Standing, or any other object, is plain reachY.
+ */
+export function reachYSeated(sprite, fromY, seated) {
+    if (seated && isDeskComputer(sprite) && Number.isFinite(fromY) && Number.isFinite(sprite.y) && !sprite.rotation) {
+        const h = sprite.displayHeight ?? sprite.height ?? 0;
+        if (h > 0) {
+            const top = sprite.y - (sprite.originY ?? 0.5) * h;
+            return Math.max(top, Math.min(fromY, top + h));
+        }
+    }
+    return reachY(sprite, fromY);
+}
+
+/**
  * Seated at a desk, E and the E label prefer its computer. There is no seat-to-desk link in the scenarios, so
  * "the seat's desk PC" is a computer the player can already reach (the callers' reach and wall tests) that lies
  * in front of the way they face: `diff` is its aimDiff, and a PC behind the chair is some other desk's. A seated
