@@ -513,6 +513,7 @@ export class DustingMinigame extends MinigameScene {
         this._renderPanel();
         this._updateAria();
         this.dirty = true;
+        if (step === 'examine') this._scrollToTop();   // the panel opens at its title, never part way down
         if (['find', 'dust', 'lift'].includes(step)) this.canvas.focus({ preventScroll: true });
         this.announce({
             examine: 'Examine the surface.',
@@ -522,6 +523,12 @@ export class DustingMinigame extends MinigameScene {
             lift: 'Step 4, lift. Press the tape down, then peel and mount.',
             compare: 'Step 5, compare. Name the pattern, then pick the matching card.'
         }[step]);
+    }
+
+    /** Put the frame, its scrolling body and the game area back at scrollTop 0 (the title and steps in view). */
+    _scrollToTop() {
+        const body = this.root.querySelector('.dusting-body');
+        for (const el of [this.root, body, this.container]) if (el) el.scrollTop = 0;
     }
 
     _renderPanel() {
@@ -587,7 +594,7 @@ export class DustingMinigame extends MinigameScene {
         if (this.resume) {
             return `${head}
             <p class="dusting-note">You were part way through dusting this. Pick up where you left off?</p>
-            <div class="dusting-buttons">
+            <div class="dusting-buttons dusting-foot">
                 <button class="dusting-btn dusting-primary" data-action="resume">Resume dusting</button>
                 <button class="dusting-btn" data-action="start">Start again</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>
@@ -600,13 +607,13 @@ export class DustingMinigame extends MinigameScene {
             <h3 class="dusting-lift-head">Lift on file</h3>
             <p class="dusting-note" data-lift-result>Lifted: ${Math.round(best.quality * 100)}%, ${escapeHtml(best.rating || ratingFor(best.quality))}.${who}</p>
             <p class="dusting-note">The lift is kept. Close with X, or dust again for a better one.</p>
-            <div class="dusting-buttons">
+            <div class="dusting-buttons dusting-foot">
                 <button class="dusting-btn" data-action="start">Dust again</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>
             </div>`;
         }
         return `${head}
-            <div class="dusting-buttons">
+            <div class="dusting-buttons dusting-foot">
                 <button class="dusting-btn dusting-primary" data-action="start">Dust for prints</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>
             </div>`;
@@ -710,7 +717,7 @@ export class DustingMinigame extends MinigameScene {
             return `${head}<p>What pattern is your lift? Look for the core (middle) and the triangles where ridges meet.</p>
                 <div class="dusting-patterns">${btns}</div>
                 <p class="dusting-feedback" data-dyn="feedback"></p>
-                <div class="dusting-buttons">
+                <div class="dusting-buttons dusting-foot">
                     <button class="dusting-btn" data-action="unidentified">Log as unidentified</button>
                 </div>`;
         }
@@ -719,7 +726,7 @@ export class DustingMinigame extends MinigameScene {
                 <p>This is ${escapeHtml(this.ownerName)}'s print.</p>
                 ${this._zoomShort ? this._zoomHtml() : ''}
                 <div class="dusting-refs" data-count="${this.candidates.length}" data-done="1"></div>
-                <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
+                <div class="dusting-buttons dusting-foot">${this._wholeLiftButton()}<button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
         }
         const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
             ? ` It opens to the ${this.print.canonical.opens}.` : '';
@@ -728,7 +735,7 @@ export class DustingMinigame extends MinigameScene {
             ${this._zoomShort ? this._zoomHtml() : ''}
             ${this._compareNote()}
             <div class="dusting-refs" data-count="${this.candidates.length}" data-done="0"></div>
-            <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
+            <div class="dusting-buttons dusting-foot">${this._wholeLiftButton()}<button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
     }
 
     /** The magnified lift and card pair; it is drawn by _drawZoom. The lift pane is turned upright to the card's frame. */

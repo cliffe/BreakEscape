@@ -578,3 +578,46 @@ test('m2 budget: short dust feedback has 16 px lines and the Clarity gap is 0, s
     assert.match(rule('.dusting-short[data-step="dust"] .dusting-actions .dusting-feedback'), /font-size: 16px; line-height: 16px/);
     assert.match(rule('.dusting-short[data-step="dust"] .dusting-actions .dusting-meter:nth-child(2)'), /margin-bottom: 0/);
 });
+
+// Phone actions (390x844 and 844x390): the next-step buttons stay in view and the panel opens at its title.
+test('examine and compare button rows carry the footer class, and the footer CSS sticks them on phones only', () => {
+    for (const action of ['resume', 'start', 'unidentified', 'finish']) {
+        const rows = src.split('\n').filter(l => l.includes(`data-action="${action}"`) || l.includes('_wholeLiftButton()}'));
+        assert.ok(rows.length > 0, `source has ${action} rows`);
+    }
+    const foot = (src.match(/class="dusting-buttons dusting-foot"/g) || []).length;
+    assert.ok(foot === 6, `six footer rows (3 examine, 3 compare), got ${foot}`);
+    assert.ok(/<div class="dusting-buttons dusting-foot">\s*<button class="dusting-btn" data-action="start">Dust again/.test(src), 'Dust again row is a footer');
+    assert.ok(/<div class="dusting-buttons dusting-foot">\s*<button class="dusting-btn dusting-primary" data-action="start">Dust for prints/.test(src), 'Dust for prints row is a footer');
+    assert.ok(/<div class="dusting-buttons dusting-foot">\s*<button class="dusting-btn dusting-primary" data-action="resume">/.test(src), 'Resume row is a footer');
+    const phone = css.match(/@media \(max-width: 760px\) \{\s*\.dusting-root:not\(\.dusting-short\) \.dusting-buttons\.dusting-foot \{[^}]*\}/);
+    assert.ok(!!phone, 'phone portrait footer rule exists');
+    assert.ok(/position: sticky/.test(phone[0]) && /bottom: -6px/.test(phone[0]) && /display: flex/.test(phone[0]), 'portrait footer is a sticky flex row at the body foot');
+    assert.ok(/background: var\(--d-bg\)/.test(phone[0]) && /border-top: 2px solid/.test(phone[0]), 'portrait footer is opaque with a 2px rule');
+    const short = rule('.dusting-short[data-step="examine"] .dusting-buttons.dusting-foot');
+    assert.ok(/position: sticky/.test(short) && /bottom: 0/.test(short), 'short landscape examine footer sticks to the panel foot');
+    assert.ok(!/radius|blur|gradient/.test(phone[0] + short), 'footer rules use no radius, blur or gradient');
+    assert.ok(css.indexOf('.dusting-buttons.dusting-foot') > css.indexOf('.dusting-root:not(.dusting-short) .dusting-buttons { display: contents'), 'footer rule comes after the display: contents rule it overrides');
+});
+
+test('390x844 and 844x390 pick the layouts the footer rules target (portrait long, landscape short)', () => {
+    const p = layoutAt(390, 844, 'examine');
+    assert.ok(p.short === false, 'portrait is not short, so the max-width: 760px footer rule applies');
+    const l = layoutAt(844, 390, 'examine');
+    assert.ok(l.short === true, 'landscape is short, so the examine footer rule applies');
+    const d = layoutAt(1280, 720, 'examine');
+    assert.ok(d.short === false, 'desktop is not short');
+});
+
+test('opening the examine step resets the frame, body and game area to scrollTop 0', () => {
+    const mk = () => ({ scrollTop: 77 });
+    const body = mk(), rootEl = mk(), cont = mk();
+    const g = Object.create(DustingMinigame.prototype);
+    Object.assign(g, { root: { scrollTop: 77, querySelector: s => (s === '.dusting-body' ? body : null) }, container: cont });
+    g._scrollToTop();
+    assert.ok(g.root.scrollTop === 0, 'frame at 0');
+    assert.ok(body.scrollTop === 0, 'body at 0');
+    assert.ok(cont.scrollTop === 0, 'game area at 0');
+    assert.ok(/if \(step === 'examine'\) this\._scrollToTop\(\)/.test(src), '_setStep resets the scroll on examine');
+    assert.ok(rootEl.scrollTop === 77, 'unrelated element untouched');
+});

@@ -260,6 +260,20 @@
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:focus-visible { outline-offset: -5px; }
 }
 
+/* Action footer (examine and compare rows, class .dusting-foot): on phones the next step stays in view without scrolling.
+   Phone portrait: the row sticks to the foot of the scrolling body (the content above scrolls; the frame never does).
+   Short landscape, examine step: it sticks to the foot of the panel, which scrolls on its own. Desktop is unchanged. */
+@media (max-width: 760px) {
+    .dusting-root:not(.dusting-short) .dusting-buttons.dusting-foot {
+        display: flex; position: sticky; bottom: -6px; z-index: 3; background: var(--d-bg);
+        border-top: 2px solid var(--d-line); padding: 6px 0; margin-top: 8px;
+    }
+}
+.dusting-short[data-step="examine"] .dusting-buttons.dusting-foot {
+    position: sticky; bottom: 0; z-index: 3; background: var(--d-bg);
+    border-top: 2px solid var(--d-line); padding: 4px 0; margin-top: 4px;
+}
+
 /* Short landscape (a phone on its side; the class is set in _layout at 500 px high or less): two columns.
    The canvas sits on the left at a whole-number scale chosen in JS (never below 1x), the title, steps and
    controls on the right; the controls column scrolls on its own and keeps the action row pinned. */
