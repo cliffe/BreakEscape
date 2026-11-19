@@ -12,6 +12,52 @@ heading "The habit to keep" is used). See episode-model.js awarenessSettings and
 """
 
 import re
+import sys
+from pathlib import Path
+
+
+_REPO = None
+
+
+def repo_root():
+    """Repository root for a generator or the splice tool: --repo <path> (removed from sys.argv),
+    else the checkout this script sits in. No environment variable: a stale BREAKESCAPE_REPO could
+    point a worktree run at the main checkout. The resolved root is printed once per run."""
+    global _REPO
+    if _REPO is not None:
+        return _REPO
+    argv = sys.argv[1:]
+    repo = None
+    if '--repo' in argv:
+        i = argv.index('--repo')
+        if i + 1 >= len(argv):
+            sys.exit('--repo needs a path')
+        repo = argv[i + 1]
+        del argv[i:i + 2]
+        sys.argv[1:] = argv
+    _REPO = str(Path(repo).resolve()) if repo else str(Path(__file__).resolve().parents[3])
+    print(f'repo root: {_REPO}')
+    return _REPO
+
+
+def hand_authored_ids():
+    """Shell folder names that episodes.json marks handAuthored: generators must not write them.
+    Read from <repo root>/AW/office_kits/episodes.json; a missing or unreadable file stops the run."""
+    import json
+    path = Path(repo_root()) / 'planning_notes' / 'phishing_and_social_engineering' / 'awareness' / 'office_kits' / 'episodes.json'
+    try:
+        rows = json.loads(path.read_text()).get('episodes', [])
+        return {r['id'] for r in rows if r.get('handAuthored')}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:
+        sys.exit(f'cannot read {path}: {e}')
+
+
+def required_out_dir(script):
+    """The output folder argument, required: there is no default into the repo's scenarios/."""
+    argv = sys.argv[1:]
+    if not argv or argv[0].startswith('-'):
+        sys.exit(f'usage: {script} [--repo <checkout>] <out_dir>   (the output folder is required)')
+    return argv[0]
 
 AWARENESS_RULE_OF_THUMB_TEXT = (
     "When a message pressures you to move money, grant access, sign in or read back a code, "

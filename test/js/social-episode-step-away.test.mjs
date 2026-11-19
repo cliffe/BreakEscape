@@ -70,7 +70,7 @@ const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { MinigameFramework: FW } = await load('minigames/framework/minigame-manager.js');
 const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js');
 const { EpisodeRunnerMinigame, _resetDefendReemitsForTests } = await load('minigames/episode-runner/episode-runner-minigame.js');
-const { _resetTriageStarterForTests, persistTriageResult } = await load('systems/triage-starter.js');
+const { _resetTriageStarterForTests, persistTriageResult, startInboxTriageMinigame } = await load('systems/triage-starter.js');
 const { renderDebrief: realRenderDebrief } = await load('minigames/episode-runner/debrief-view.js');
 const { buildTriageMessages } = await load('minigames/inbox-triage/triage-messages.js');
 const { scoreTriage } = await load('minigames/inbox-triage/triage-scoring.js');
@@ -919,6 +919,61 @@ test('gate B D2: a plain shell and a twin never re-emit', async () => {
         await flush();
         assert.ok(named(`global_variable_changed:${prefix}`).length === 0, other.id);
     }
+    delete window.stateSync;
+});
+
+// ── outcome.messageGlobals on the EC1 defend path ───────────────────────────
+
+const withMessageGlobals = () => {
+    const set = defendSet();
+    set.outcome.messageGlobals = { m1: 'kit_m1_caught', m2: 'kit_m2_caught' };
+    window.gameScenario.social.triageSets = [set];
+    window.gameState.globalVariables.kit_m1_caught = false;
+    window.gameState.globalVariables.kit_m2_caught = false;
+    return set;
+};
+
+test('messageGlobals: the runner\'s defend round (real starter) sets the global on the first save, before complete', async () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE] } });
+    _resetTriageStarterForTests();
+    withMessageGlobals();
+    const realStart = deps.startTriage;
+    deps.startTriage = (lockable, options) => startInboxTriageMinigame(lockable, options);
+    delete window.stateSync;
+    try {
+        open(ep);
+        click('.epr-launch');
+        assert.ok(scene() === 'inbox-triage');
+        cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0.5, verifyCount: 0, answers: ANSWERS.map((a) => ({ ...a })) };
+        cur().complete(true);
+        await flush();
+        const g = window.gameState.globalVariables;
+        assert.ok(g.kit_m1_caught === true, 'm1 reported');
+        assert.ok(g.kit_m2_caught === false, 'm2 not caught');
+        assert.ok(g.episode_e1_fixture_defend_complete === true);
+        const order = events.map((e) => e.name);
+        const iM = order.indexOf('global_variable_changed:kit_m1_caught');
+        const iC = order.indexOf('global_variable_changed:episode_e1_fixture_defend_complete');
+        assert.ok(iM >= 0 && iC > iM, 'the message global is emitted before complete');
+        assert.ok(order.indexOf('global_variable_changed:kit_m2_caught') === -1, 'unchanged false is not emitted');
+    } finally { deps.startTriage = realStart; }
+});
+
+test('messageGlobals: the Gate B D2 re-emit hands the defend set to the starter, so a reopen carries the true global first', async () => {
+    const ep = fullEpisode();
+    atDefendComplete(ep, { [DEFEND_COMPLETE]: true });
+    withMessageGlobals();
+    window.gameState.globalVariables.kit_m1_caught = true;
+    mapDone();
+    open(ep);
+    await flush();
+    const order = events.map((e) => e.name);
+    const iM = order.indexOf('global_variable_changed:kit_m1_caught');
+    const iC = order.indexOf(`global_variable_changed:${DEFEND_COMPLETE}`);
+    assert.ok(iM >= 0 && iC > iM, 'true message global, then complete');
+    assert.ok(window.gameState.globalVariables.kit_m1_caught === true);
+    assert.ok(window.gameState.globalVariables.kit_defend_done === true);
     delete window.stateSync;
 });
 

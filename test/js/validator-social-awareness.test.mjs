@@ -1061,6 +1061,44 @@ test('ENG-06: the assistant block is authored-only (no model field, replies are 
   expectIn(lint(j), /reply must be a literal string/);
 });
 
+// LIVING_OFFICE_PLAN.md 12: a kit_ name, officePresets, npcThoughts or stepAway is an error in a check
+// shell (stages ["check"]) and in the annual shell, and fine in a full shell.
+test('office kit: refused in a check shell and the annual shell, allowed in a full shell', { skip }, () => {
+  const kitErr = /must not have: the office kit is never added/;
+  for (const n of ['clean_check_pre.json', 'clean_check_post.json']) {
+    let j = fx(n);
+    j.globalVariables = { ...(j.globalVariables || {}), kit_quiet: false };
+    expectIn(lint(j), kitErr);
+    j = fx(n);
+    j.rooms.ep_room.npcs[0].officePresets = {};
+    expectIn(lint(j), /officePresets/);
+    j = fx(n);
+    j.rooms.ep_room.npcs[0].npcThoughts = [];
+    expectIn(lint(j), /npcThoughts/);
+    j = fx(n);
+    ep(j).stepAway = true;
+    expectIn(lint(j), /the key 'stepAway'/);
+    j = fx(n);
+    host(j).eventMappings = [{ eventPattern: 'x', condition: 'globalVars.kit_ep === 1' }];
+    expectIn(lint(j), /a kit_ name \(kit_ep\)/);
+  }
+  const annual = fx('clean_defend_only.json');
+  ep(annual).id = 'core_17_annual_2027_defend';
+  annual.rooms.ep_room.objects[0].minigameData.episodeId = 'core_17_annual_2027_defend';
+  ep(annual).stepAway = true;
+  expectIn(lint(annual), /the annual shell must not have/);
+  // only a whole word "annual" in the id counts: "mannual_x" is an ordinary full shell
+  const lookalike = fx('clean_defend_only.json');
+  ep(lookalike).id = 'mannual_x';
+  lookalike.rooms.ep_room.objects[0].minigameData.episodeId = 'mannual_x';
+  ep(lookalike).stepAway = true;
+  assert.ok(hits(lint(lookalike), /the annual shell must not have/) === 0);
+  const full = fx('clean_full.json');
+  ep(full).stepAway = true;
+  full.globalVariables = { ...(full.globalVariables || {}), kit_quiet: false };
+  assert.ok(hits(lint(full), kitErr) === 0);
+});
+
 test('EC1: stepAway is a boolean, for a full episode only', { skip }, () => {
   let j = fx('clean_full.json');
   ep(j).stepAway = true;
@@ -1075,4 +1113,27 @@ test('EC1: stepAway is a boolean, for a full episode only', { skip }, () => {
   j = fx('clean_check_pre.json');
   ep(j).stepAway = true;
   assert.ok(hits(lint(j), /stepAway is true in a check mission/) === 1, String(/stepAway is true in a check mission/));
+});
+
+test('living office: stepAway in a kit shell with no mapping that sets kit_defend_done is a warning', { skip }, () => {
+  const lookUp = /no eventMapping sets kit_defend_done/;
+  const j = fx('clean_full.json');
+  ep(j).stepAway = true;
+  // no kit_ globals: not a kit shell, nothing to say
+  assert.ok(hits(lint(j), lookUp) === 0);
+  j.globalVariables = { ...(j.globalVariables || {}), kit_defend_done: false, kit_quiet: false };
+  assert.ok(hits(lint(j), lookUp) === 1, lint(j).join('\n'));
+  // the warning names the event it did find (here a mistyped one setting another kit_ global)
+  const typo = structuredClone(j);
+  host(typo).eventMappings = [...(host(typo).eventMappings || []), { eventPattern: 'global_variable_changed:episode_e1_stub_defnd_complete', onceOnly: true, setGlobal: { kit_quiet: true } }];
+  assert.ok(hits(lint(typo), /events that set other kit_ globals: global_variable_changed:episode_e1_stub_defnd_complete/) === 1, lint(typo).join('\n'));
+  host(j).eventMappings = [
+    ...(host(j).eventMappings || []),
+    { eventPattern: 'global_variable_changed:episode_e1_stub_defend_complete', condition: 'value === true', onceOnly: true, setGlobal: { kit_defend_done: true } },
+  ];
+  assert.ok(hits(lint(j), lookUp) === 0, lint(j).join('\n'));
+  // without stepAway the lint stays quiet even with no mapping
+  const k = fx('clean_full.json');
+  k.globalVariables = { ...(k.globalVariables || {}), kit_defend_done: false };
+  assert.ok(hits(lint(k), lookUp) === 0);
 });

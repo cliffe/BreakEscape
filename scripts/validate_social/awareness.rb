@@ -65,6 +65,7 @@ module ValidateSocial
 
       issues.concat(kiosk_checks(kiosks, id))
       issues.concat(stage_checks(ep))
+      issues.concat(kit_free_checks(ctx, ep))
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep) && attack_artefact_stage?(ep)
       issues.concat(mistake_checks(ep))
@@ -184,6 +185,45 @@ module ValidateSocial
         end
       end
       issues
+    end
+
+    # ---- office kit: check and annual shells carry none --------------------------
+
+    KIT_KEYS = %w[officePresets npcThoughts stepAway].freeze
+    ANNUAL_ID = /(^|_)annual(_|$)/.freeze
+    KIT_NAME = /(?<![A-Za-z0-9])kit_[A-Za-z0-9]/.freeze
+
+    # LIVING_OFFICE_PLAN.md 12: the office kit never reaches a check shell (stages ["check"]) or the
+    # annual shell, because their scores are compared across learners and over time. A kit_ name
+    # (as a key or inside any string), officePresets, npcThoughts or stepAway anywhere in the
+    # scenario is an error there.
+    def self.kit_free_checks(ctx, ep)
+      kind = if check_mission?(ep) then 'a check shell'
+      elsif ep['id'].to_s.match?(ANNUAL_ID) then 'the annual shell'
+      end
+      return [] unless kind
+
+      found = []
+      kit_walk(ctx.json, '', found)
+      found.uniq.map do |what, path|
+        err("#{path} carries #{what}, which #{kind} must not have: the office kit is never added to check or annual shells")
+      end
+    end
+
+    def self.kit_walk(node, path, found)
+      case node
+      when Hash
+        node.each do |k, v|
+          here = path.empty? ? k.to_s : "#{path}.#{k}"
+          found << ["the key '#{k}'", here] if KIT_KEYS.include?(k.to_s)
+          found << ["the kit_ name '#{k}'", here] if k.to_s.match?(KIT_NAME)
+          kit_walk(v, here, found)
+        end
+      when Array
+        node.each_with_index { |v, i| kit_walk(v, "#{path}[#{i}]", found) }
+      when String
+        found << ["a kit_ name (#{node[KIT_NAME] && node[/kit_[A-Za-z0-9_]*/]})", path] if node.match?(KIT_NAME)
+      end
     end
 
     # ---- stages and ids ----------------------------------------------------------
@@ -790,6 +830,7 @@ module ValidateSocial
         end
       end
       issues.concat(step_away_checks(ep))
+      issues.concat(step_away_look_up_checks(ctx, ep))
       issues
     end
 
@@ -804,6 +845,36 @@ module ValidateSocial
       return [err('stepAway is true in a check mission; only a full episode takes the step-away panel')] if check_mission?(ep)
       return [err("stepAway is true on a #{ep['variant'].inspect} episode; only a full episode takes the step-away panel")] unless ep['variant'] == 'full'
       []
+    end
+
+    # Living office: the panel's Look up button reads kit_defend_done, which only a host eventMapping can
+    # set (setGlobal on the defend-complete event). A kit shell (one that declares a kit_ global) with
+    # stepAway true and no such mapping would leave Look up disabled for ever. Shells with no kit_ globals
+    # are left alone: without the kit the panel has nothing to look up.
+    def self.step_away_look_up_checks(ctx, ep)
+      return [] unless ep['stepAway'] == true
+      gv = ctx.json['globalVariables']
+      return [] unless gv.is_a?(Hash) && gv.keys.any? { |k| k.to_s.start_with?('kit_') }
+
+      sets = []
+      events = []   # eventPatterns of mappings that set any kit_ global, named in the warning
+      walk = lambda do |node|
+        case node
+        when Hash
+          if node['eventPattern'] && node['setGlobal'].is_a?(Hash)
+            sets << node['setGlobal']
+            events << node['eventPattern'] if node['setGlobal'].keys.any? { |k| k.to_s.start_with?('kit_') }
+          end
+          node.each_value { |v| walk.call(v) }
+        when Array
+          node.each { |v| walk.call(v) }
+        end
+      end
+      walk.call(ctx.json['rooms'])
+      return [] if sets.any? { |h| h.key?('kit_defend_done') }
+
+      found = events.uniq.empty? ? 'none' : events.uniq.join(', ')
+      [warn_("stepAway is true but no eventMapping sets kit_defend_done; the panel's Look up button would stay disabled (events that set other kit_ globals: #{found})")]
     end
 
     # ---- the defend set ----------------------------------------------------------

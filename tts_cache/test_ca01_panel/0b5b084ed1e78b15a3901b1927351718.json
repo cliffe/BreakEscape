@@ -1,0 +1,13 @@
+{
+  "key": "0b5b084ed1e78b15a3901b1927351718",
+  "npc": "kit_agnieszka_duda",
+  "text": "That notice on the wall is from last spring. A redirect that went through, and the supplier was left waiting to be paid.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_ca01_panel",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:53:30Z"
+}

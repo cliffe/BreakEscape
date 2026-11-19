@@ -942,7 +942,11 @@
       "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
       "noBlameLine": "Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one. A miss here just shows where to look next time.",
       "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email using the route in the box below.",
-      "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
+      "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+      "conceptPanel": {
+        "heading": "If one gets through",
+        "text": "If a change like the one here is saved to the supplier file, the run pays the wrong account, and finance spend the next fortnight chasing the bank and the real supplier to put it right."
+      }
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e1_invoice_fraud_defend), which has no OSINT, write or flip stage. P7-J copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are simply never shown).",

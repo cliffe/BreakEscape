@@ -1,0 +1,129 @@
+{
+  "company": "brightwell_foods",
+  "_note": "Real course values (plan 4.3). Sources carry no position: with no position an object binds to the drawn prop of its type on the room's Tiled map (rooms.js findMatchFor :261-284, applyScenarioObjectPosition :2495). The test fixture test_ca_office_kit keeps the gate-A placeholder positions and shortened timings through the `override` on its episodes.json row. Pool lines: awareness level, nothing that blames anyone.",
+  "scenario": { "npcThoughts": false },
+  "pool": {
+    "key": "kit_brightwell",
+    "lines": ["Busy inbox today.", "Kettle's on in a sec.", "Audit week again."],
+    "requireGlobal": { "kit_quiet": false }
+  },
+  "sources": [
+    {
+      "type": "coffee_station",
+      "id": "kit_coffee",
+      "name": "Coffee station",
+      "sprite": "coffee_station1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "The office coffee station. Staff drift over for a top-up.",
+      "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": -1 }, "capacity": 2, "chatter": "pool" }
+    },
+    {
+      "type": "water_cooler",
+      "id": "kit_cooler",
+      "name": "Water cooler",
+      "sprite": "water_cooler1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "A water cooler by the far wall.",
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": -1 } }
+    }
+  ],
+  "staff": {
+    "gwen_pritchard": {
+      "displayName": "Gwen Pritchard",
+      "spriteSheet": "gwen_pritchard",
+      "voice": { "name": "Sulafat", "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 3, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 3, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } },
+      "chatterLines": ["Anyone for a brew?", "Tea round shortly?", "Kettle's just boiled."]
+    },
+    "agnieszka_duda": {
+      "displayName": "Agnieszka Duda",
+      "spriteSheet": "agnieszka_duda",
+      "voice": { "name": "Callirrhoe", "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 6, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 6, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
+      "chatterLines": ["Long week.", "Any biscuits left?", "Just need a top-up."]
+    }
+  },
+  "setPieces": {
+    "_note": "ca01 layer-3 recall. kit_ca01_notice is the payments team's taped notice on the back wall (an EARLIER, separate case, so it reads true after both a catch and a miss; consistent with Agnieszka's 'a different case, one that got through' bark). Sprite notes6 (14x18 taped paper notice, preloaded) on type notice_board1, wallMounted on the back wall. Placement (R3 dressing, 2026-11-19): the back wall of room_aw_brightwell has no gap wide enough for the 42x31 corkboard (window 36-76, RANGE 96-126, BRIGHTWELL sign 146-210, chart 226-270, side walls slant in; every gap is about 20-24 px), so the notice is the 14x18 taped paper in the 20 px gap between RANGE and the sign: x 129-143, y 22-40 (position {4.03125, 0.6875}, the same wall height as other boards), directly above Agnieszka's walk target {4,3}. Real bespoke board-notice art is still approved-but-ungenerated.",
+    "ca01_recall_fallback": {
+      "globals": {},
+      "objects": [
+        {
+          "type": "notice_board1",
+          "id": "kit_ca01_notice",
+          "name": "Payments team notice",
+          "sprite": "notes6",
+          "wallMounted": true,
+          "position": { "x": 4.03125, "y": 0.6875 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_defend_done",
+          "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
+        }
+      ]
+    },
+    "ca01_recall": {
+      "_note": "The ca01 chain, written once here so --kit regenerates it (wrap review M3). Look up sets {out}: Gwen and Agnieszka stop their needs, Agnieszka walks to the notice (4,3) after 1 s, says her line on arrival, Adaeze answers 4 s after that and sets kit_ca01_done, and Gwen resumes then. The bark conditions never read a global their own mapping writes (stillValid re-runs the condition every 250 ms, so that would cancel the bubble). Every bark carries kit_quiet === true, so a line held across a kiosk reopen is dropped on release (plan 4.5). kit_ca01_t_done is the timer fallback: if the walk is blocked and Agnieszka never arrives, 12 s after {out} it sets kit_ca01_done anyway, and both colleagues resume on it. The two lines in the barks are fixed text that went through five dialogue rounds.",
+      "globals": { "kit_{chain}_agn_there": false, "kit_{chain}_done": false },
+      "timers": [
+        { "id": "kit_{chain}_t_done", "startOnGlobal": "{out}", "delayMs": 12000, "condition": "!globalVars.kit_{chain}_done", "setGlobal": { "kit_{chain}_done": true } }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_{chain}_agn_there",
+          "condition": "value === true && globalVars.{out} === true && globalVars.kit_quiet === true",
+          "onceOnly": true,
+          "delayMs": 4000,
+          "setGlobal": { "kit_{chain}_done": true },
+          "bark": "One call to confirm the new details, and the money never moves. Saves a lot of phoning round afterwards."
+        }
+      ],
+      "objects": [
+        {
+          "type": "notice_board1",
+          "id": "kit_ca01_notice",
+          "name": "Payments team notice",
+          "sprite": "notes6",
+          "wallMounted": true,
+          "position": { "x": 4.03125, "y": 0.6875 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "{out}",
+          "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
+        }
+      ],
+      "staff": {
+        "agnieszka_duda": {
+          "needs": { "caffeine": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 100 } },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:{out}", "condition": "value === true", "onceOnly": true, "needs": "suspend" },
+            { "eventPattern": "global_variable_changed:{out}", "condition": "value === true", "onceOnly": true, "delayMs": 1000,
+              "patrolOverride": { "targetTile": { "x": 4, "y": 3 }, "speed": 90 } },
+            { "eventPattern": "npc_arrived:kit_agnieszka_duda",
+              "condition": "data.owner !== 'needs' && globalVars.{out} === true && globalVars.kit_quiet === true",
+              "onceOnly": true, "setGlobal": { "kit_{chain}_agn_there": true },
+              "bark": "That notice on the wall is from last spring. A redirect that went through, and the supplier was left waiting to be paid." },
+            { "eventPattern": "global_variable_changed:kit_{chain}_agn_there", "condition": "value === true", "onceOnly": true, "delayMs": 3000, "needs": "resume" },
+            { "eventPattern": "global_variable_changed:kit_{chain}_done", "condition": "value === true", "onceOnly": true, "needs": "resume" }
+          ]
+        },
+        "gwen_pritchard": {
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:{out}", "condition": "value === true", "onceOnly": true, "needs": "suspend" },
+            { "eventPattern": "global_variable_changed:kit_{chain}_done", "condition": "value === true", "onceOnly": true, "needs": "resume" }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: CA office kit (Brightwell)",
+  "description": "Gate A fixture for the awareness living-office kit: the awareness episode shell (full variant) in the Brightwell training room, with two ambient staff, coffee/cooler sources, a kiosk-quiet-gated chatter pool, and the kit_ globals + host mappings. Stub content. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}
