@@ -525,7 +525,7 @@ test('R3 m1: pointerup clearing the flag mid-insertion, then a second keyway cli
         assert.equal(parent.keyInsertTween, null);
     } finally { t.restore(); }
 });
-test('R3 m1: a stale onComplete does nothing; the current one re-enables and clears the title', () => {
+test('R3 m1: a stale onComplete does nothing; the current one re-enables and clears the why-title', () => {
     const t = captureTimers();
     try {
         const { parent, tweens, btn } = insertionRig();
@@ -541,7 +541,8 @@ test('R3 m1: a stale onComplete does nothing; the current one re-enables and cle
         tweens[1].cfg.onComplete();
         assert.equal(parent.keyInserting, false);
         assert.equal(btn.disabled, false);
-        assert.ok(!btn.title, 'title cleared');
+        // the "why" tooltip is gone; the button's own name comes back (icon-only in short landscape)
+        assert.equal(btn.title, 'Switch to Lockpicking', 'why-title cleared, own name restored');
     } finally { t.restore(); }
 });
 test('R3 m2: the disabled CSS beats the themed button and avoids opacity', () => {
