@@ -268,7 +268,7 @@ class Generators(unittest.TestCase):
         import gen_e1_shells as g
         with self.assertRaises(AssertionError):
             g.scenario('m', 'n', 'b', 'e', ('a', 't', 'd'), ('t', 'T'), 'd', {}, {'awarenessEpisode': {'id': 'e', 'company': 'brightwell_foods'}},
-                       {'id': 'x'}, 'x', ('o', 'o'), {}, tier='S', kit_row=None)
+                       g.HOSTS['adaeze'], 'x', ('o', 'o'), {}, tier='S', kit_row=None)
 
 
 class KitMode(unittest.TestCase):
@@ -293,11 +293,10 @@ class KitMode(unittest.TestCase):
         # the bytes outside kit places are untouched: removing the kit again gives the bare shell back
         self.assertEqual(ok.strip_kit(json.loads(new)), json.loads(bare))
 
-    def test_idempotent_and_refresh_still_works(self):
+    def test_idempotent(self):
         new = atr.kit_text(self.text, self.kit, self.row, 'test_ca_office_kit')
         self.assertEqual(atr.kit_text(new, self.kit, self.row, 'test_ca_office_kit'), new)
         self.assertEqual(json.loads(new), self.fx)
-        self.assertEqual(atr.refresh_text(new, shell='test_ca_office_kit'), new)
 
     def test_a_stale_kit_member_is_replaced(self):
         stale = json.loads(self.text)

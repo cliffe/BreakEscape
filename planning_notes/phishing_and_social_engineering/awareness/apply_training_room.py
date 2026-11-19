@@ -436,6 +436,16 @@ def kit_text(text, kit, row, shell):
         tl = _try_member(text, root, 'timers')
         if tl and json.loads(text[tl[0]:tl[1]]) == []:
             text = _splice_object(text, root, lambda k: k == 'timers', [])
+    for key in ('resources', 'roles'):   # kit-owned entries are removed; the kit data adds none yet
+        mem = _try_member(text, _root(text), key)
+        if mem:
+            if text[mem[0]] == '{':
+                text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), [])
+            else:
+                text = _splice_array(text, mem[0], is_kit, [])
+            mem = _try_member(text, _root(text), key)
+            if not json.loads(text[mem[0]:mem[1]]):
+                text = _splice_object(text, _root(text), lambda k, key=key: k == key, [])
     adds = list(b['scenario'].items()) + ([('timers', b['timers'])] if b['timers'] and not tl else [])
     text = _splice_object(text, _root(text), lambda k: k in office_kit.KIT_TOP_KEYS, adds)
     assert json.loads(text) == expect, f'{shell}: kit splice differs from office_kit.apply_kit'

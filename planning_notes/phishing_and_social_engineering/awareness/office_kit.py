@@ -288,10 +288,12 @@ def strip_kit(sc, host_id=None):
         if not sc['timers']:
             del sc['timers']
     for key in ('resources', 'roles'):
-        if key in sc:
+        if isinstance(sc.get(key), dict):      # keyed by id
+            sc[key] = {k: v for k, v in sc[key].items() if not str(k).startswith('kit_')}
+        elif isinstance(sc.get(key), list):
             sc[key] = [r for r in sc[key] if not is_kit_member(r)]
-            if not sc[key]:
-                del sc[key]
+        if key in sc and not sc[key]:
+            del sc[key]
     sc['social']['awarenessEpisode'].pop('stepAway', None)
     return sc
 
