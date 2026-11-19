@@ -28,7 +28,7 @@ VAR hub_quiet = false
     { kit_defend_done && not kit_ca01_host_said:
         { kit_fraud_caught:
             { kit_caught:
-                Adaeze Okafor: The moment that one was flagged, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
+                Adaeze Okafor: The moment that bank-details email was flagged, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
             - else:
                 Adaeze Okafor: You stopped the bank-change email, so Harlow got paid the right way. A few of the others are worth a second look, and the debrief goes through them, so have a read before you go.
             }
