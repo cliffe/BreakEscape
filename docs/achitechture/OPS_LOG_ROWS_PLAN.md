@@ -96,7 +96,11 @@ Each stage ships alone, with its tests.
 | L3 | Network rows and the share folder row (`share_folder_opened`); needs shares (slice 9.3a, built), not S1 | S |
 
 L1a lands before every other ops stage, so siblings write and test rows from their first commit.
-L1b lands before the stages that edit the sign-in methods (S3, S5a, S5c, S8) and before L2a.
+L1b lands with L1a, before S1, so it is in place before the stages that edit the sign-in methods
+(S3, S5a, S5c, S8) and before L2a. The rest of the log stages (L2a, L2b, L3) land after S7. Where a
+sibling stage and L1b ever touch the same method in the same week, whichever lands second merges
+into the other's edit. `signin_ok` sits after the second-step check of the mfa plan and after the
+`via: 'technique'` skip of the core plan, so L1b is correct whichever order they land in.
 
 ## 4. Scenario fields
 
@@ -300,9 +304,9 @@ One new route. The helper adds no route of its own; every write rides on an exis
 - On `set_game` (`games_controller.rb:27`) and authorised like `keyring`. Not under
   `with_game_lock`: it reads only.
 - Checks, in order:
-  1. `object_id` is present and at most 64 characters, else 400 `{ error: 'Invalid object' }`.
+  1. `object_id` is present and at most 64 characters, else 400 `{ success: false, reason: 'invalid_object' }`.
   2. The object exists, is an `ops_log_terminal` with an `id` and a `logSource` that is declared,
-     else 404 `{ error: 'Not found' }`. The same answer for every one of these, so the route does
+     else 404 `{ success: false, reason: 'not_found' }` (the route's closed list is `invalid_object` and `not_found`). The same answer for every one of these, so the route does
      not map the scenario.
   3. The player has reached it. `located = @game.login_scope_of(object_id)`
      (`game.rb:3176-3204`) gives the object, its room, its scope (nil, a sign-in PC, a profile or
@@ -416,7 +420,8 @@ dependency that the concern also requires. `ops_log_terminal` joins the
 object type enum. `scripts/minigame-data-schemas.json` gains the `ops_log_terminal` entry
 (section 4.2); the `log_filter_terminal` entry is unchanged.
 
-**Validator** (`scripts/validate_scenario.rb`), errors:
+**Validator** (its checks live in their own file `scripts/validate_log_rows.rb`, hooked into
+`scripts/validate_scenario.rb` by one line), errors:
 
 - `logSources` in a scenario with no `gameClock` (section 4.2).
 - A source id not matching `^[a-z][a-z0-9_]{0,39}$`; an empty `events`; an unknown event or
@@ -489,6 +494,10 @@ No scenario in the repo has `logSources`, so:
    `container_reach_refusal` (section 6), over the access model suite's container cases.
 7. The validator run over all scenarios reports no new errors or warnings (diff of its output
    before and after).
+8. Fixtures: this plan adds `log_unlock_refusals.json` and `log_container_cases.json` to
+   `test/fixtures/files/ops_unchanged/` (the core plan's folder), captured from main: the answers
+   of `/unlock` and `/container` over the access model suite's cases. `bin/ops-golden-compare`,
+   the one shared helper, compares them for checks 3 and 6. This plan builds no mechanism of its own.
 
 ## 11. Tests
 
@@ -608,6 +617,9 @@ re-read game (`Game.find(id).player_state`), never the in-memory object, so a mi
   saves; opening it again as the same account writes nothing and does not save; another account
   opening it writes its own row; a refused open writes nothing. With two sessions that both admit
   the share, the row names the account of the one signed in first, on every open.
+- `session_admits?(scope)` and `!session_admitting(scope).nil?` answer alike for every scope, held
+  session and lock state the access model suite builds (run over that suite's cases), including
+  the admin branch once the privilege plan has added it.
 - A card copy and an implanted foothold write nothing.
 - In development, a call site forced to make a malformed call (a test-only stub of its detail)
   makes the route fail and leaves the game row unchanged on a re-read: no grant without its row.
@@ -669,8 +681,8 @@ logs.
    in `merge_scenario_clock!` (`:5846-5899`), the writer in `prepare_bootstrap_state!` and
    `bootstrap_state_needs_write?`.
 5. `network_access.rb:18`: add `logSources` to `WITHHELD_SCENARIO_KEYS`.
-6. `scripts/scenario-schema.json` (`logSources`), `scripts/validate_scenario.rb` (reads
-   `ops_log_events.rb`), `tools/playtest/verify-run.rb --ops-log`.
+6. `scripts/scenario-schema.json` (`logSources`), `scripts/validate_log_rows.rb` (the checks of
+   section 9, reading `ops_log_events.rb`) and the one hook line in `scripts/validate_scenario.rb`, `tools/playtest/verify-run.rb --ops-log`.
 7. Tests (section 11): helper unit tests, the `EVENTS`/`KINDS` spec with the 400-byte ceiling
    check, the secret-guard walk, the clock controller test through `PUT /sync_state`.
 
@@ -708,7 +720,8 @@ note node in `generate_dungeon_graph.rb`; a seeded anomaly in `test_ops_logs` an
 
 1. `ops_log_events.rb`: `net_*` and `share_folder_opened`; `KINDS` entries for `jack`, `ap`, `share`.
 2. `network_access.rb` calls (5.1); `games_controller.rb#container`: the `share_folder_opened`
-   call, `once: true`, with its `r&.stored?` save; `Game#session_admitting(scope)`.
+   call, `once: true`, with its `r&.stored?` save; `Game#session_admitting(scope)`, with `session_admits?(scope)` rewritten as
+   `!session_admitting(scope).nil?`.
 3. `test_ops_logs`: a jack, an access point and a share with a folder; tests; docs.
 
 **Files other plans also touch:**
@@ -716,8 +729,8 @@ note node in `generate_dungeon_graph.rb`; a seeded anomaly in `test_ops_logs` an
 | File | Also touched by | Where they meet |
 |---|---|---|
 | `lib/break_escape/ops_log_events.rb` | every plan that writes rows | each adds its own lines to `EVENTS` and `KINDS` in its own stage, one line per event |
-| `game.rb` | S3, S5a, S5c, S8 | `attempt_login!` and `start_login_session!`; L1b lands first (section 3) |
-| `games_controller.rb` | every plan's routes | the `set_game` and `with_game_lock` lists (`:27`, `:103`) conflict on every merge; S5a also edits `#container` after `container_reach_refusal` is extracted in L2a |
+| `game.rb` | S3, S5a, S5c, S8 | `attempt_login!` and `start_login_session!`; L1b lands with L1a, before S1 (section 3) |
+| `games_controller.rb` | every plan's routes | the `set_game` and `with_game_lock` lists (`:27`, `:103`) conflict on every merge |
 | `network_access.rb` | S1 to S3, S5a | `WITHHELD_SCENARIO_KEYS` (`:18`), the implant path (`:535`) |
 | secret sources | S5b, S7, S8 | each registers its own secret fields beside its `EVENTS` lines |
 | `config/routes.rb`, schemas, `validate_scenario.rb`, `generate_dungeon_graph.rb`, `minigames/index.js`, `interactions.js`, the two docs | most plans | append-only edits in each plan's own stage |
@@ -829,7 +842,7 @@ over 400 bytes, so the run-time check never fires.
    network's `psk`; and the capture `secret` fields (`CAPTURE_SECRET_KEYS`). The `requires` of a
    key lock names an item, and of a `biometric`, `bluetooth` or `rfid` lock a person, a device or
    cards (`CARD_REFERENCE_LOCK_TYPES`, `game.rb:7304`); none is registered. Each sibling registers
-   its own fields in the stage that adds them (hashes in S5b; reset passwords in S8b). S8 authors
+   its own fields in the stage that adds them (reset passwords in S8b; S5b registers nothing for hashes, since L1a's credential source already covers every keyring entry, `hash` entries included). S8 authors
    no seed, and recovery answers are not registered, since no row has a field for one. A derived value that is never stored,
    such as a second-step code or a matching number, is registered by the function that issues it
    with `OpsLog.note_issued_secret(value)`, held in `OpsLog::Current` (an
@@ -1128,7 +1141,7 @@ Sources match these by prefix: `badge_*`, `signin_*`, `session_*`, `net_*`, `sha
 
 | Event | Who (`as`) | Where | When | Result | Detail | Bound | Saved by |
 |---|---|---|---|---|---|---|---|
-| `badge_swipe` | holder's own keycard: `{ npc: holder }`; a copy: the holder when the request carried one card, none when several, always the holder with `showCardHolder` (question 1); a card with no single holder: `{ card: id }` | `door`, `object` | `#unlock`, rfid lock in force, target not open, `validate_unlock` passed (5.1) | ok | none | one per unlock | the unlock's save |
+| `badge_swipe` | holder's own keycard: `{ npc: holder }`; a copy: the holder when the request carried one card, none when several, always the holder with `showCardHolder` (question 1); a card with no single holder: `{ card: id }` | `door`, `object` | `#unlock`, rfid lock in force, target not open, `validate_unlock` passed (5.1), and the lock's second step, if any, has passed (at a gated lock the row is written after the second-step gate, by the final post only; the first right card writes `mfa_challenge`, not this row) | ok | none | one per unlock | the unlock's save |
 | `badge_swipe` | none | `door`, `object` | `#unlock` refusal: rfid lock in force, target in reach, an rfid card held (5.1) | denied | none | merged repeats; `save_limit: true`, 10 per door | `save!` only when `r&.stored?` |
 | `signin_ok` | `{ account: }` | `pc` | `start_login_session!`, `via` `password` or `credential` | ok | `method` (`password`, `credential`), `route` (shared codes, 13.7) | one per sign-in | both callers |
 | `signin_fail` | `{ typed: }` | `pc` | `record_login_failure!` | fail | none | merged repeats; `maxAttempts` | the method's save |
@@ -1145,7 +1158,9 @@ Code lines and branch detail for each row are in 5.1.
 
 **`share_folder_opened` records opening a folder, never a file** (question 3). When several
 sessions admit a share, the row names the account of the session signed in first, through
-`session_admitting(scope)`, a new sibling of `session_admits?` that returns the admitting PC id.
+`session_admitting(scope)`, which returns the admitting PC id. `session_admits?(scope)` is
+`!session_admitting(scope).nil?`, so the admin branch the privilege plan adds and the line the core
+plan adds apply to both from one rule in one place.
 
 Claimed sessions (`via: 'claim'`) write no sign-in row but do write `session_end` and
 `session_lock`: an account signing out with no sign-in before it is the trace a careful defender
@@ -1167,15 +1182,17 @@ records nothing for these, and the gap is the lesson.
    in that stage, and each function that issues a derived secret calls
    `OpsLog.note_issued_secret` (13.2 step 2). Each `test_ops_*` scenario that asserts rows declares
    `logSources` and a `gameClock` and calls `assert_ops_log_holds_no_secret`.
-2. **Orchestrator, ordering:** L1a lands before the first stage of every other ops plan; L1b lands
-   before the S3, S5a, S5c and S8 stages that edit `attempt_login!` and `start_login_session!`.
+2. **Orchestrator, ordering:** L1a and L1b land before every other ops stage, before S1; the rest
+   of the log stages (L2a, L2b, L3) land after S7. L1b is the stage that edits `attempt_login!`,
+   `start_login_session!` and `#unlock`, so S3, S5a, S5c and S8a meet it already in place.
 3. **OPS_CORE (S1 to S3):** `technique_refused` registers `save_limit: { 'refused' => 10 }`; a
    quiet refusal is written with `save_limit: true` (not `10`) and saves only on `r&.stored?`, a
    noisy one passes none (the default `false`) and keeps the route's save; a repeat of one of a source's 10 newest rows
    merges.
 4. **OPS_PRIVILEGE_ACCOUNTS (S5):** `admin_profile_read` is one per PC, profile and account; the
    harvest detail is `count` and `hashes`, each `{ count: 9 }`, a collect adding at most 8 pairs;
-   S5b registers hash values as a secret source.
+   S5b registers no secret source for hash values, because L1a's credential source covers every
+   keyring entry, `hash` entries included.
 5. **OPS_MFA_HELPDESK (S8):** the rows, the `approver` key, the route codes, the secret sources
    (`creds.resetPassword` registered, no seed, recovery answers not registered) and the 10 to 99
    matching number are taken as that plan writes them. Two changes remain in that plan:
@@ -1187,12 +1204,14 @@ records nothing for these, and the gap is the lesson.
      `detail` value to the issued value in a test-only event whose kind is `{ id: 'test_any' }`
      (its lookup resolves any string, so the value passes its type rule and reaches the matcher),
      and assert the error message starts with `secret in`, not a `typed` value: typed text is stored normalised and never reaches the matcher. The blocked and other `helpdesk_request` calls pass the `normalise_username` form (the route's own key).
-6. **OPS_LOCK_SECOND_STEP (S8c):** met for `approver` (not `by`) and for `as: { npc: }` only
+6. **OPS_LOCK_SECOND_STEP (S8c):** at a gated rfid lock the `badge_swipe` ok row is written after
+   the second-step gate (13.8), as that plan asks. Met for `approver` (not `by`) and for `as: { npc: }` only
    when the second-step screen shows the owner, nil otherwise, never `{ account: }`; the `method` detail on `mfa_challenge` is met too (a closed list of codes,
    each at most 16 lowercase characters, listed in that plan). Still asked: its rows use the `door` and `object` place kinds (13.5) and
    follow 13.7; the `mfa_*` events it extends number eight.
-7. **OPS_CRACKING (S7):** writes no rows, and registers any hash or cracked value it stores as a
-   secret source.
+7. **OPS_CRACKING (S7):** writes no rows. L1a's credential source already covers every keyring
+   entry, `hash` entries included, so S7 registers only a cracked value it stores outside the
+   keyring, as a secret source.
 8. **Orchestrator:** `log_rows_for` and the key `by` (13.6) are reserved for the parked defence
    debrief and the investigator idea; S6's parity run compares `log_rows_for(source_id, compare:
    true)` across skins.
