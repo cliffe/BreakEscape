@@ -32,6 +32,18 @@ leaving everything else in the file byte for byte:
        python3 apply_training_room.py [--repo <checkout>] --refresh           # in place
        python3 apply_training_room.py [--repo <checkout>] --refresh <outdir>  # patched copies to <outdir>
 
+Kit mode (living office, LIVING_OFFICE_PLAN.md 4.4): splice the office kit's content into every shell
+whose episodes.json row has a tier (a hand-authored shell, or a generated one you want to patch):
+
+       python3 apply_training_room.py [--repo <checkout>] --kit           # in place
+       python3 apply_training_room.py [--repo <checkout>] --kit <outdir>  # patched copies to <outdir>
+
+Old kit-owned members (office_kit ownership by name) are removed and the current ones inserted as
+text; every other byte of the file is left alone. The result is loaded and must equal
+office_kit.apply_kit() of the old shell, so the only differences are kit-owned places. A shell with no
+tiered row is skipped; a row for a shell that does not exist is an error. The kiosk's finished text
+is a hand edit and is not touched.
+
 The host is found by id (the NPC whose storyPath is its own shell's ink) and its position
 replaced by structure, so room NPCs that also carry a position (kit staff) do not matter.
 """
@@ -44,6 +56,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
+import office_kit  # noqa: E402
 
 REPO = awareness_deploy.repo_root()   # --repo <path>, else this script's own checkout
 
@@ -305,7 +318,156 @@ def refresh(outdir):
         print('wrote', dest, '' if new != text else '(unchanged)')
 
 
+# ---- kit mode ------------------------------------------------------------------
+
+def _members_full(text, i):
+    """Like _members but also yields the key's start: (key, key_start, value_start, value_end)."""
+    i = _ws(text, i + 1)
+    while text[i] != '}':
+        ks = i
+        key, i = _DEC.raw_decode(text, i)
+        i = _ws(text, i)
+        i = _ws(text, i + 1)
+        vs = i
+        _, i = _DEC.raw_decode(text, i)
+        yield key, ks, vs, i
+        i = _ws(text, i)
+        if text[i] == ',':
+            i = _ws(text, i + 1)
+
+
+def _line_indent(text, pos):
+    return text[text.rfind('\n', 0, pos) + 1:pos]
+
+
+def _rebuild(text, start, pieces, pad, close_pad):
+    """Replace the object or array whose bracket is at `start` with its kept member texts and the new
+    ones, one per line at `pad`. Returns the new text; unchanged when `pieces` equals the old pieces."""
+    end = _DEC.raw_decode(text, start)[1]
+    opener, closer = text[start], text[end - 1]
+    if not pieces:
+        body = opener + closer
+    else:
+        body = opener + '\n' + pad + (',\n' + pad).join(pieces) + '\n' + close_pad + closer
+    return text[:start] + body + text[end:]
+
+
+def _splice_object(text, start, drop, add):
+    """Object at `start`: drop members whose key satisfies `drop`, append (key, value) pairs `add`.
+    Kept members keep their own text. Returns new text."""
+    kept, olds = [], []
+    first_key = None
+    for key, ks, vs, ve in _members_full(text, start):
+        first_key = ks if first_key is None else first_key
+        s = text[ks:ve]
+        olds.append(s)
+        if not drop(key):
+            kept.append(s)
+    pad = _line_indent(text, first_key) if first_key is not None else _line_indent(text, start).rstrip() + '  '
+    if first_key is None:
+        pad = ' ' * (len(_line_indent(text, start)) - len(_line_indent(text, start).lstrip()) + 2)
+    close_pad = _line_indent(text, start)
+    close_pad = close_pad[:len(close_pad) - len(close_pad.lstrip())]
+    fresh = [json.dumps(k) + ': ' + _indented(v, len(pad)) for k, v in add]
+    pieces = kept + fresh
+    if pieces == olds:
+        return text
+    return _rebuild(text, start, pieces, pad, close_pad)
+
+
+def _splice_array(text, start, drop, add):
+    """Array at `start`: drop elements satisfying `drop(parsed)`, append the values in `add`."""
+    kept, olds = [], []
+    first = None
+    for a, b in _elements(text, start):
+        first = a if first is None else first
+        s = text[a:b]
+        olds.append(s)
+        if not drop(json.loads(s)):
+            kept.append(s)
+    ind = _line_indent(text, start)
+    close_pad = ind[:len(ind) - len(ind.lstrip())]
+    pad = _line_indent(text, first) if first is not None else close_pad + '  '
+    pad = pad[:len(pad) - len(pad.lstrip())] if first is not None and pad.strip() else pad
+    fresh = [_indented(v, len(pad)) for v in add]
+    pieces = kept + fresh
+    if pieces == olds:
+        return text
+    return _rebuild(text, start, pieces, pad, close_pad)
+
+
+def _try_member(text, obj_start, key):
+    hits = [(a, b) for k, a, b in _members(text, obj_start) if k == key]
+    assert len(hits) <= 1, f'{key!r}: {len(hits)} matches'
+    return hits[0] if hits else None
+
+
+def kit_text(text, kit, row, shell):
+    """Splice the kit into one shell's text. Returns the new text."""
+    old = json.loads(text)
+    host_id = office_kit._find_host(old)['id']
+    expect = office_kit.apply_kit(old, kit, row, host_id=host_id)
+    prefix, state_global = office_kit.shell_ids(old)
+    b = office_kit.build(kit, row, prefix, state_global)
+    is_kit = lambda e: office_kit.is_kit_member(e)  # noqa: E731
+
+    # host mappings (deepest first, so the spans above are re-found afterwards)
+    ha, _ = find_host_span(text, host_id, shell)
+    em = _member(text, ha, 'eventMappings')
+    text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'])
+    # room npcs and objects
+    tr = _training_room(text)
+    text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'])
+    tr = _training_room(text)
+    text = _splice_array(text, _member(text, tr, 'objects')[0], is_kit, b['objects'])
+    # social.awarenessEpisode.stepAway
+    social = _member(text, _root(text), 'social')[0]
+    epa = _member(text, social, 'awarenessEpisode')[0]
+    text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] else [])
+    # globals
+    gv = _member(text, _root(text), 'globalVariables')[0]
+    text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()))
+    # top-level keys: npcThoughts, chatter, officePresets, and the kit's timers
+    root = _root(text)
+    tl = _try_member(text, root, 'timers')
+    if tl:
+        text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'])
+        root = _root(text)
+        tl = _try_member(text, root, 'timers')
+        if tl and json.loads(text[tl[0]:tl[1]]) == []:
+            text = _splice_object(text, root, lambda k: k == 'timers', [])
+    adds = list(b['scenario'].items()) + ([('timers', b['timers'])] if b['timers'] and not tl else [])
+    text = _splice_object(text, _root(text), lambda k: k in office_kit.KIT_TOP_KEYS, adds)
+    assert json.loads(text) == expect, f'{shell}: kit splice differs from office_kit.apply_kit'
+    return text
+
+
+def kit(outdir):
+    for row in office_kit.load_rows():
+        if office_kit.tier_of(row) == 'none':
+            continue
+        name = row['id']
+        path = os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')
+        if not os.path.exists(path):
+            sys.exit(f'episodes.json row {name} has no shell at {path}')
+        text = open(path).read()
+        new = kit_text(text, office_kit.load_kit(row['company']), row, name)
+        dest = path
+        if outdir:
+            d = os.path.join(outdir, name)
+            os.makedirs(d, exist_ok=True)
+            dest = os.path.join(d, 'scenario.json.erb')
+        elif new == text:
+            continue
+        with open(dest, 'w') as f:
+            f.write(new)
+        print('wrote', dest, '' if new != text else '(unchanged)')
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--kit':
+        kit(sys.argv[2] if len(sys.argv) > 2 else None)
+        return
     if len(sys.argv) > 1 and sys.argv[1] == '--refresh':
         refresh(sys.argv[2] if len(sys.argv) > 2 else None)
         return

@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
+import office_kit  # noqa: E402
 
 REPO = awareness_deploy.repo_root()
 FRAG = json.load(open(f'{REPO}/planning_notes/phishing_and_social_engineering/awareness/e1/defend.json'))
@@ -263,7 +264,9 @@ def success_screen(title, body):
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
-             kiosk_obs, ending, extra=None):
+             kiosk_obs, ending, extra=None, tier='none', kit_row=None):
+    """tier is the office-kit tier (LIVING_OFFICE_PLAN.md 4.4): 'none' adds nothing and leaves the
+    output byte-identical; any other tier needs kit_row, the episodes.json row, which must carry that tier."""
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -305,6 +308,10 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     tr['npcs'] = [host_npc(host, done, task[0], ink_path)]
     tr['objects'] = [kiosk(ep_id, kiosk_obs)]
     sc['rooms'] = {'training_room': tr}
+    if tier != 'none':
+        assert kit_row and office_kit.tier_of(kit_row) == tier, f'{mission}: tier {tier!r} needs its episodes.json row'
+        sc = office_kit.apply_kit(sc, office_kit.load_kit(kit_row['company']), kit_row, host_id=host['id'])
+        sc = office_kit.patch_kiosk(sc, kit_row)
     return sc
 
 
@@ -317,6 +324,7 @@ def defend_only():
     ep_id = 'e1_invoice_fraud_defend'
     prefix = f'episode_{ep_id}_defend_'
     done = f'{prefix}complete'
+    row = office_kit.row_for(mission)   # None until the shell has a kit row: tier 'none', output unchanged
     s = clean_set('e1_payments_inbox')
     # C2-m23: the defend-only shell has no write/flip stage, so it never replays a
     # player-sent message; drop the authored sender profile the full set carries.
@@ -356,7 +364,8 @@ def defend_only():
         HOSTS['adaeze'], 'adaeze_okafor',
         ("A touch-screen kiosk showing Brightwell's payments inbox. Six messages are waiting.",
              "A touch-screen kiosk showing Brightwell's payments inbox. That's this one finished."),
-        success_screen('Payments inbox done', "That's this episode finished. The debrief goes through each one."))
+        success_screen('Payments inbox done', "That's this episode finished. The debrief goes through each one."),
+        tier=office_kit.tier_of(row), kit_row=row)
     meta = {
         'display_name': 'Invoice fraud: spot it',
         'description': "An awareness episode of about 8 minutes for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
@@ -437,7 +446,8 @@ def check(pair, stage):
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, 'Sort the ten messages at the training kiosk.', aim, task, done,
-                  globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
+                  globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra,
+                  tier='none')   # checks never carry the kit (plan 4.4)
     meta = {
         'display_name': display,
         'description': desc,
