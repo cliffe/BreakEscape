@@ -742,8 +742,11 @@ during the walk home (exists). Player-facing behaviour:
   exchange counts as heard when the player overheard at least one of its lines (each line checked
   at the chat's radius for its speaker), whether it played to the end or was cut (the pair breaks
   up: a use or queue that ends, a player conversation, a knock-out). Heard: the global
-  `heard_<knot>` is set (saved, so once per game survives a reload) and `npc_exchange_heard:<knot>`
-  fires with `complete` true (played to the end) or false (a heard cut); it is never played again,
+  `heard_<knot>` is set the moment the first overheard line plays (not at the finish), so a reload
+  during the exchange or in the gap after its last line does not play it again; the running
+  exchange keeps going, since the flag is read only when an exchange is chosen. The flag is saved,
+  so once per game survives a reload. `npc_exchange_heard:<knot>` still fires at the finish
+  with `complete` true (played to the end) or false (a heard cut); it is never played again,
   so the lines after a heard cut are lost. No line reached the player (cut, or played to the end to
   an empty room, logged `exchange_unheard { knot, of }`): unplayed, and a later meeting in earshot
   plays it from the start; a meeting plays at most one exchange either way. With the start gate the

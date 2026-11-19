@@ -523,3 +523,54 @@ test('validator: an exchange longer than EXCHANGE_MAX_MS is a warning; a short o
     // the fixture long lines also raise the 40-character bubble error (validator-exchange-line-length.test.mjs); not this test's point
     assert.deepEqual(issues.filter(s => s.includes('ex_') && !s.includes('a bubble holds')).length, 1, issues.join('\n'));
 });
+
+// Heard from the first overheard line (a reload during or just after an exchange must not replay it)
+test('first line: heard_<knot> is set at once and the exchange still plays to the end', () => {
+    const o = office();
+    o.until(() => o.exLines().length === 1, 20000, 'the first line');
+    assert.equal(o.globals.heard_ex_parcel, true, 'set at the first overheard line');
+    assert.equal(o.emitted('npc_exchange_heard:').length, 0, 'the event still waits for the finish');
+    o.sys.step(40000);
+    assert.equal(o.exLines().length, LINES.length, 'plays to the end');
+    const heard = o.emitted('npc_exchange_heard:ex_parcel');
+    assert.equal(heard.length, 1);
+    assert.equal(heard[0].data.complete, true);
+    assert.equal(o.evs('exchange_heard').length, 1);
+    assert.equal(o.evs('exchange_cut').length, 0);
+});
+
+test('reload after the first line (mid-exchange): a fresh session built from the saved globals does not replay it', () => {
+    const o = office();
+    o.until(() => o.exLines().length === 1, 20000, 'the first line');
+    const p = office({ globals: { ...o.globals } });   // the reload: the exchange never reached its finish
+    p.sys.step(60000);
+    assert.equal(p.exLines().length, 0, 'not played again');
+    assert.equal(p.emitted('npc_exchange_heard:ex_parcel').length, 0);
+});
+
+test('reload in the gap after the last line: not played again', () => {
+    const o = office();
+    o.until(() => o.exLines().length === LINES.length, 60000, 'the last line');
+    assert.equal(o.emitted('npc_exchange_heard:').length, 0, 'the finish has not run yet');
+    const p = office({ globals: { ...o.globals } });
+    p.sys.step(60000);
+    assert.equal(p.exLines().length, 0);
+});
+
+test('no line overheard: the flag is not set at any point, and a later meeting in earshot plays from line 1', () => {
+    let hearing = false;
+    const o = office({ hears: () => hearing });
+    o.sys._speechUntil = 8000;
+    hearing = true;
+    o.until(() => o.evs('exchange_started').length === 1, 20000, 'the start');
+    hearing = false;
+    o.until(() => o.exLines().length >= 1, 20000, 'a line');
+    assert.equal(o.globals.heard_ex_parcel, undefined);
+    o.sys.step(40000);
+    assert.equal(o.globals.heard_ex_parcel, undefined);
+    hearing = true;
+    o.meetAgain();
+    o.sys.step(60000);
+    assert.equal(o.exLines()[LINES.length].data.lineId, 'ex_parcel:0');
+    assert.equal(o.globals.heard_ex_parcel, true);
+});

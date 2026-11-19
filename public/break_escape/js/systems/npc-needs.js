@@ -3103,6 +3103,15 @@ export class NPCNeedsSystem {
         if (!c.queue && B.job && B.job.useUntil < end) B.job.useUntil = end;
     }
 
+    /** Record an exchange as heard: the session set and the saved scalar global heard_<knot>. Idempotent. */
+    _markExchangeHeard(knot) {
+        if (this._exPlayed.has(knot)) return;
+        this._exPlayed.add(knot);
+        if (typeof this.world.setGlobal === 'function') {
+            try { this.world.setGlobal(`heard_${knot}`, true); } catch (e) { /* keep the session flag */ }
+        }
+    }
+
     /**
      * The exchange ends, played to the end (`complete`) or cut short (`reason`: the pair broke up;
      * a hush cannot cut it, since _startExchange clears the chat's hush). The rule for heard (E9,
@@ -3122,10 +3131,7 @@ export class NPCNeedsSystem {
         if (!complete) this._log(ex.ownerId, 'exchange_cut', { knot: ex.knot, reason, line: ex.i, of: ex.lines.length, heardLines: ex.heardLines, heard });
         else if (!heard) this._log(ex.ownerId, 'exchange_unheard', { knot: ex.knot, of: ex.lines.length });
         if (!heard) return;
-        this._exPlayed.add(ex.knot);
-        if (typeof this.world.setGlobal === 'function') {
-            try { this.world.setGlobal(`heard_${ex.knot}`, true); } catch (e) { /* keep the session flag */ }
-        }
+        this._markExchangeHeard(ex.knot);   // idempotent: already set at the first overheard line
         this._log(ex.ownerId, 'exchange_heard', { knot: ex.knot, complete });
         this._emit(`npc_exchange_heard:${ex.knot}`, { knot: ex.knot, ownerId: ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId, complete });
     }
@@ -4552,7 +4558,13 @@ export class NPCNeedsSystem {
                 // lock, since cutting an exchange line would break the exchange)
                 c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot, faint: exHears && !h.overheard };
                 c.ex.i++;
-                if (h.overheard) c.ex.heardLines++;
+                if (h.overheard) {
+                    c.ex.heardLines++;
+                    // Heard from the first line the player overhears, not at the finish: a reload during the
+                    // exchange or in the gap after its last line must not play it again (5.6a). The running
+                    // exchange is not affected: _exchangeHeard is only read when choosing an exchange.
+                    if (c.ex.heardLines === 1) this._markExchangeHeard(c.ex.knot);
+                }
                 this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, radius: this._chatRadius(c, l.speakerId) });
                 const pa = this.world.npcPos(partnerId);
                 if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
