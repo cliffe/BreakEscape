@@ -29,11 +29,12 @@ person or the object holding it; number matching removes the fatigue route; a se
 already open, a stolen session token, or access gained through a weakness in a service is not
 asked for a second factor at all.
 
-**Which ways in meet the second step.** A typed password and a saved connection do. That
-includes a password the player cracked from a hash or collected from a machine they control:
-it is used through the ordinary typed or keyring sign-in. A session token, a help invite, a
-claim of a screen someone left open, and a session granted by a technique card (N15) do not:
-none of them runs the sign-in checks.
+**Which ways in meet the second step.** A typed password does, wherever the player got it: read
+off a note, cracked from a hash, collected from a machine they control, or issued by the
+helpdesk. A session token, a help invite, a claim of a screen someone left open, and a session
+granted by a technique card (N15) do not: none of them proves a password. A saved connection
+stores a password, so it may not skip the step: at a PC that asks for one it is refused, and the
+player is told to sign in by typing.
 
 **S8b, helpdesk recovery (A23, lower priority).** A helpdesk NPC can reset an account's password
 or move its second factor to the caller, after checking who is asking under a rule the scenario
@@ -63,6 +64,7 @@ Design rules both stages keep:
 |---|---|---|
 | Typed sign-in | Order: PC found; route branch (`from`, foothold, keyboard: reach, off, remote blocked); lockout key (`"<pcId>\|<username>"`, built inline) checked before the password; account lookup; password equals `creds.password`; PC admits account; failures cleared; `start_login_session!`; answer. Failure goes to `record_login_failure!` | `app/models/break_escape/game.rb:3444-3503` |
 | Lockout count | `loginFailures[key]`, lockout at policy `maxAttempts`, never expires | `game.rb:4333-4378` |
+| Lockout key | The string `"<pcId>\|<username>"`, with no shared builder. Built in `attempt_login!`, in `account_locked_out_at?` (asked by the keyring sign-in, the claim and the guest paths) and in `AccessWork.locked_out_at?` (NPC frustration and feed posts; plain Ruby with no `Game`). Split apart in `lockout_pcs_for_client` and `account_login_key?` | `game.rb:3483`, `:3580`, `:3591`, `:4323`; `lib/break_escape/access_work.rb:1393`; `normalise_username` at `lib/break_escape/access_identities.rb:54` |
 | Session write | One place, record `{id, via, credential?, foothold?, from?, relay?}` | `game.rb:4388-4418` |
 | Sign-in answer | `npcId, username, displayName, via, portrait, avatar` plus route fields | `game.rb:4433-4461` |
 | Keyring sign-in | Nine ordered steps; `saved_connection` honours lockouts, `token` and `assist_invite` do not | `app/models/break_escape/credential_login.rb:22-89`; kinds at `lib/break_escape/credential_model.rb:21-27` |
@@ -75,7 +77,7 @@ Design rules both stages keep:
 | Access state | Server-owned keys in `ACCESS_STATE_DEFAULTS`; none read from a sync body, none sent; a reset drops them | `game.rb:3021-3059` |
 | Held item proof | Inventory entry whose `type`, `id` (and stored field) equal the authored definition, and not `client_forged?` | `app/models/break_escape/credential_keyring.rb:42-64` |
 | NPC phone | Item `type: "phone_friendface"` with `owner`. `held_friendface_phone(npc_id)` reads the server's inventory and counts only a phone the scenario declares with that owner; `phonesTaken` records a phone leaving its NPC | `app/models/break_escape/social_feed.rb:186-246`; `games_controller.rb:1722-1730` |
-| NPC-sourced items | Three places decide whether an item leaves an NPC, and all three apply the "story offers it, or knocked out" rule to the phone type only: the direct add from `itemsHeld` (every other type needs only that the NPC was met), the pickup of a stored drop, and the room add with no source. `npc_room_drop_allowed?` and `npc_offers_item?` are generic over the type | `games_controller.rb:3442-3448`, `:3464-3475`; `game.rb:1169-1174`, `:2152-2158`; `social_feed.rb:257-259` |
+| NPC-sourced items | Three places decide whether an item leaves an NPC, and all three apply the "story offers it, or knocked out" rule to the phone type only: the direct add from `itemsHeld` (every other type needs only that the NPC was met), the pickup of a room item that names an `owner`, and the room add with no source. The pickup test was written for stored NPC drops, but an authored room object and the player's own drop are found as the same kind of room item, so it runs on those too. `npc_room_drop_allowed?` and `npc_offers_item?` are generic over the type | `games_controller.rb:3442-3448`, `:3464-3475`, `:3605-3613`, `:3643-3651`; `game.rb:1169-1174`, `:2152-2158`; `social_feed.rb:257-259` |
 | Knock-out record | Claimed by the browser's sync; accepted only for a met room NPC that is not `koImmune` | `game.rb:2008-2033` |
 | Forged item fields | A client-built item may not carry `owner` | `games_controller.rb:3304-3306` |
 
@@ -99,12 +101,15 @@ expiry in real minutes (`credential_keyring.rb:114-125`), the frustration floors
   role label (default `'attacker'`, `:77`) returned in its result `{approvedAt, sent, mode}`
   (`:445-452`); `init` always draws the attacker's controls and builds a timeline from params
   (`:106-170`); the card builder draws Approve and Deny as `aria-hidden` spans, not buttons
-  (`:408-429`). Six scenarios use it (`ca06_texts_and_qr`, `ca06_texts_and_qr_defend`,
-  `ca09_passwords`, `ca09_passwords_defend`, `ca_pre_general_v2_ab`, `ca_post_general_v2_ba`),
-  and so does the episode runner (`minigames/episode-runner/episode-runner-minigame.js`). A
-  phone the player approves on needs different `init`, `start` and cards, so **S8a adds a
-  subclass scene, `authenticator-live`,** and leaves the shared scene's paths alone
-  (section 5.3).
+  (`:408-429`). It extends `SocialOverlayScene` (`:65`). One scenario drives it today:
+  `ca03_helpdesk_reset`, through the `mfa` block of its episode
+  (`scenarios/ca03_helpdesk_reset/scenario.json.erb:160`, `:174`) and the episode runner
+  (`minigames/episode-runner/`, `episode-model.js:518-547`), in decision mode (a `choice`),
+  where the phone starts hidden (`:129-131`). `startAuthenticatorDevice`
+  (`minigame-starters.js:1334-1350`) serves a phone placed as a room object; no scenario places
+  one. The awareness scenarios that mention an authenticator do so in prose only. A phone the
+  player approves on needs different cards and no attacker controls, so **S8a adds a subclass
+  scene, `authenticator-live`** (section 5.3).
 - **`dual-auth`** (`minigames/dual-auth/dual-auth-minigame.js`). A two-person authorisation panel
   for one mission: two PIN pads, each PIN read from the lock's `minigameData` in the browser
   (`:15-18`), each correct PIN sets a global (`:203-209`). It is a lock on a room object, not a
@@ -140,7 +145,14 @@ expiry in real minutes (`credential_keyring.rb:114-125`), the frustration floors
   `returnTo.params` merged over them (`:14-30`, `:102-106`, `:540-566`, `:616-636`). The parent
   that comes back is a new instance, so anything it must remember travels in `returnTo.params`
   or lives outside the scene. If the child does not end normally the parent is released: its
-  `onComplete` runs once and it does not reopen (`:641-655`).
+  `onComplete` runs once, as `(false, { aborted: true, viaChild: true })`, and it does not
+  reopen (`:641-655`).
+- **Which X is a normal exit.** The framework's own X and Esc call `closeByPlayer()`, which
+  completes with success false (`minigames/framework/base-minigame.js:125-133`, `:319-341`), so a
+  child closed that way releases its parent. A `SocialOverlayScene` turns the framework X off
+  (`disableClose`, `framework/social-overlay.js:24-27`) and draws its own; with the default
+  `closeMode` that X calls `close()`, which completes with success true (`:127-142`), so the
+  parent reopens.
 
 ## 3. Build stages in order
 
@@ -148,16 +160,23 @@ Each stage ends tested and, from M1b on, playable. Letters M (multi-factor) and 
 
 | Stage | Adds | Done when | Size |
 |---|---|---|---|
-| M1a (server) | Policy `mfa: "code"`, `MfaModel`, the `code_device` item and its gate (`OWNER_BOUND_TYPES` at the three NPC-item sites), the pending second step in `attempt_login!`, the route re-judge, `login_lockout_key`, `GET /mfa/device`, `POST /mfa/verify`, schema and validator | Controller tests: a `code` PC answers `mfaRequired` to a right password and opens a session only on a right code; the device cannot be pulled from an owner who has only been met | M |
+| M1a (server) | Policy `mfa: "code"`, `MfaModel`, the `code_device` item and its gate (`OWNER_BOUND_TYPES` at the three NPC-item sites), the pending second step in `attempt_login!`, the route re-judge, the lockout key functions, the refusal of a saved connection at an MFA PC, `GET /mfa/device`, `POST /mfa/verify`, schema and validator | Controller tests: a `code` PC answers `mfaRequired` to a right password and opens a session only on a right code; the device cannot be pulled from an owner who has only been met; a saved connection to that PC is refused | M |
 | M1b (client) | `PcSessions` second-step handling and `completeSecondStep`, `mfa-client.js`, the sign-in screen's code pane, the `code-device` scene as a child of the sign-in screen, dungeon graph, scenario beats F1 to F6, live proof | A player signs in at a `code` PC with a device they were handed | M |
 | M2 | `mfa: "push"`, habit `approvesPrompts` with `promptPatience` resolved at read time, `POST /mfa/prompt`, the waiting pane | Pestering a low-awareness owner signs the player in; a high-awareness owner never approves | S |
 | M3 | `mfa: "push_number_match"`, `GET /mfa/phone`, `POST /mfa/approve`, the `authenticator-live` scene | A held phone approves a request; number matching defeats pestering but not a held phone | S |
-| M4 | `credential_login_checks` factored out of `attempt_credential_login!`; `saved_connection` takes the second step; `token` and `assist_invite` skip it | A saved connection to an MFA PC stops at the second step; a session token does not | S |
 | H1 | `helpdesks`, `creds.recovery`, `creds.resetPassword`, `POST /helpdesk/request` for `what: "password"`, lockouts cleared on a grant, the `helpdesk-request` form, the keyring entry | The player locks an account out, wins a reset with typed answers and signs in at the locked PC with the issued password | M |
 | H2 | `what: "mfa"` (re-enrolment onto the player's own phone) and `verify: "callback"` | A re-enrolled account's second step is answered from the "My phone" button on the sign-in screen | S |
 
-M1a to M4 are S8a. H1 and H2 are S8b; H1 needs none of S8a, H2 needs M1b to M3. M4 rests on the
-route re-judge M1a builds: M1a writes it for typed routes, M4 adds the keyring branch.
+M1a to M3 are S8a. H1 and H2 are S8b; H1 needs none of S8a, H2 needs M1b to M3. Each stage
+registers its own log events and writes and asserts its own rows (section 13).
+
+**Later slices** (named here, not designed):
+
+- *The second step for saved connections.* A saved connection to an MFA PC would stop at the
+  second step and finish as a keyring sign-in, in place of the refusal in section 5.2.
+- *Approving from the phone with no sign-in screen open.* A held phone's own menu would list
+  waiting sign-in requests, so the player could close the sign-in screen, walk off and approve
+  later.
 
 ## 4. Scenario fields
 
@@ -253,8 +272,12 @@ New `lib/break_escape/mfa_model.rb`, no Rails, like `CredentialModel`:
 - `device_for(scenario, npc_id)`: the authored `code_device` whose `owner` is the NPC, found by
   the same walk the phone uses (room objects and their `contents`, NPC `itemsHeld`, start items;
   `social_feed.rb:201-221`).
-- `code(key, game_id, device_id, generation, window)`: six digits from an HMAC-SHA256 over
-  `"<game id>|<device id>|<generation>|<window>"`.
+- `code(key, game_id, device_id, window)`: six digits from an HMAC-SHA256 over
+  `"<game id>|<device id>|<window>"`. `device_id` is the item's id, or `own:<npcId>` for an
+  account re-enrolled onto the player's own phone (S8b).
+- `code_state(typed, codes, used_window, window)`: `:right` when the typed code is the current or
+  previous window's and that window is later than `used_window`; `:stale` when it equals the code
+  of any of the last four windows but is not right (already used, or too old); else `:wrong`.
 - `numbers(key, game_id, pc_id, npc_id, nonce)`: for number matching. One HMAC over those four
   values gives the right two digit number, two different wrong ones, and the order of the three
   on the phone. `nonce` is the count of second steps started for that account in this game
@@ -264,7 +287,7 @@ New `lib/break_escape/mfa_model.rb`, no Rails, like `CredentialModel`:
   `PROMPT_PRESETS[NpcHabits.level_of(npc, scenario)]`, else `never`. `prompt_patience(npc)`:
   the authored `habits.promptPatience` if an integer 2 to 9, else 3.
 - `STEP_SECONDS = 60`, `PENDING_SECONDS = 300`, `PROMPT_GAP_SECONDS = 2`, `MAX_PROMPTS = 20`,
-  `MAX_CODE_TRIES = 5`.
+  `MAX_CODE_TRIES = 5`, `MAX_CODE_WRONG_TOTAL = 30`.
 
 **Habits are resolved when read, not written at load.** `NpcHabits.expand!` writes each preset
 into the saved scenario, and fixtures and tests pin that output for every NPC with an
@@ -284,13 +307,11 @@ New `lib/break_escape/helpdesk_model.rb` (S8b): `desks(scenario)`, `desk_for_npc
 application's own secret (`Rails.application.key_generator.generate_key('break_escape/mfa')`), so
 nothing secret is stored in the game row and the browser cannot compute a code. The server accepts
 the current window and the one before it, so a code read at second 59 still works. This window
-is the only place the feature's behaviour depends on real time: the pending record's expiry and
-the gap between requests also read the server's clock, but only to tidy up and to slow a script,
-and no outcome a player sees turns on them. Whether an owner approves is a count, never a roll,
-and no outcome depends on a code's digits, so a scripted run repeats: it reads the code from the
-device route as a player would. Unit tests fix the time. Nothing on the server pauses with the
-game; a pending record that runs out while a menu is open costs the player nothing but typing
-the password again.
+is the only place a player-visible outcome depends on real time; the pending record's expiry and
+the gap between requests read the server's clock only to tidy up and to slow a script. A
+scripted run reads the code from the device route as a player would, so it repeats. Unit tests
+fix the time. Nothing on the server pauses with the game; a pending record that runs out while a
+menu is open costs the player the password step again and nothing else.
 
 ### 5.2 Server
 
@@ -300,26 +321,37 @@ New concern `app/models/break_escape/mfa_access.rb`, included in `Game` as `Netw
 **The sign-in order.** `attempt_login!` (`game.rb:3444`) runs, in the order agreed across the
 ops plans:
 
-1. PC found; the route branch (reach, off, remote blocked).
-2. Lockout check, on the key from `login_lockout_key` (below).
-3. Account lookup; the typed password equals `effective_password(npc)` (S8b; `creds.password`
-   until a reset).
-4. PC admission, `pc_admits_account?`. The privilege plan's account-kind check (A20) sits here.
-5. **The second step.** If `mfa_step_for(pc, npc)` is not `none`, write the pending record and
-   return the `mfaRequired` answer. No session exists yet and the failure counter is not
-   cleared.
-6. Failures cleared; `start_login_session!`, at the access level the account carries (the
-   privilege plan owns the level); the answer.
+- **Route.** PC found; the route branch (reach, off, remote blocked).
+- **Lockout.** On the key from `AccessIdentities.lockout_key` (below).
+- **Password.** Account lookup; the typed password equals `effective_password(npc)` (S8b;
+  `creds.password` until a reset).
+- **Admission.** `pc_admits_account?`. The privilege plan's account-kind check (A20) sits here.
+- **The second step, after admission.** If `mfa_step_for(pc, npc)` is not `none`, write the
+  pending record, save, and return the `mfaRequired` answer. No session exists yet and the
+  failure counter is not cleared.
+- **Session.** Failures cleared; `start_login_session!`, at the access level the account
+  carries (the privilege plan owns the level); the answer.
 
-Step 5 goes between today's lines 3492 and 3494. `start_login_session!` (`game.rb:4388`) stays
-the only writer of a session.
+The second step goes between today's lines 3492 and 3494. `start_login_session!`
+(`game.rb:4388`) stays the only writer of a session.
 
-**The lockout key.** Today the key is built inline as `"#{pc['id']}|#{normalised}"`
-(`game.rb:3482`, and again in `account_locked_out_at?`, `:3576-3581`). M1a moves that into one
-helper, `login_lockout_key(pc, username)`, returning the same string, plus
-`login_lockout_keys_for(npc)` (every key held in `loginFailures` or `loginLockouts` for that
-account). Every route in this plan calls the helpers and never builds the key itself, so the
-privilege plan can change how a domain account's lockout is scoped in one place.
+**The lockout key.** M1a adds two module functions to `AccessIdentities`
+(`lib/break_escape/access_identities.rb`, plain Ruby, beside `normalise_username`), so code with
+a `Game` and code without one call the same thing:
+
+- `AccessIdentities.lockout_key(pc_id, username)` returns `"<pcId>|<normalised username>"`, the
+  string built today.
+- `AccessIdentities.lockout_key_parts(key)` returns `[pc_id, username]`, or nil for a malformed
+  key.
+
+Every site changes to call them, and none builds or splits the string itself: `attempt_login!`
+(`game.rb:3483`), `account_locked_out_at?` (`:3580`), `AccessWork.locked_out_at?`
+(`access_work.rb:1393`), `lockout_pcs_for_client` (`:3591`) and `account_login_key?` (`:4323`).
+`Game#login_lockout_keys_for(npc)` (every key in `loginFailures` or `loginLockouts` whose
+username part is that account's) is built on `lockout_key_parts`. This plan's own callers are
+the wrong-code count, the lockout test in the second-step routes and the helpdesk's unlock. H1
+uses the functions too, so whichever of M1a and H1 is built first adds them. A later slice that
+scopes a lockout differently changes `lockout_key` and nothing else.
 
 `mfa_step_for(pc, npc)` is `none` when:
 
@@ -332,7 +364,7 @@ privilege plan can change how a domain account's lockout is scoped in one place.
 - (kind `code`) the scenario declares no device for the account and it has not been re-enrolled.
   The validator makes this an error, so it fails open only in a scenario that did not validate.
 
-**Ways in that never reach step 5.** A claim (`claim_login_session!`, `claim_guest_session!`)
+**Ways in that never reach the second step.** A claim (`claim_login_session!`, `claim_guest_session!`)
 opens a session someone else signed in to, and both refuse a foothold, so neither can be used
 remotely to skip the step. A session granted by a technique card runs none of the sign-in
 checks. `token` and `assist_invite` skip the step as they skip lockouts
@@ -341,65 +373,67 @@ checks. `token` and `assist_invite` skip the step as they skip lockouts
 **Ways in that do.** A typed password from any source: read off a post-it, cracked from a hash,
 collected from a machine, or issued by the helpdesk. The keyring's `password` kind is one of
 these: it is `connects: false` (`credential_model.rb:22`), so the client types it into
-`POST /login` and it needs no flag of its own. Of the connecting kinds only `saved_connection`
-meets the step: its `CredentialModel::KINDS` entry gains `mfa: true`, and in
-`attempt_credential_login!` the step sits after step 8b (ended or expired) and before step 9
-(the session write).
+`POST /login` and it needs no flag of its own.
 
-**Pending record.** `player_state['mfaPending'][pcId] = { 'id' => npcId, 'kind', 'via' =>
-'password' | 'credential', 'credential'?, 'foothold'?, 'from'?, 'relay'?, 'n' => 0, 'tries' =>
-0, 'nonce', 'at' => server seconds, 'last' => 0 }`. One per PC; a new first step at that PC
-overwrites it. It expires after `PENDING_SECONDS`; expired records are dropped whenever the map
-is read or written, so abandoned attempts do not pile up. Writing one adds 1 to
-`mfaAccounts[npcId].started`, which is the `nonce`.
+**A saved connection is refused at an MFA PC.** `saved_connection` is the one connecting kind
+that stands for a password, so its `CredentialModel::KINDS` entry gains `mfa: true`. In
+`attempt_credential_login!`, after the ended and expired checks and before the session write
+(`credential_login.rb:59-70`), a kind with that flag is refused when `mfa_step_for(pc, npc)` is
+not `none`: 422 `{ success: false, typeToSignIn: true }`, no session, no pending record, nothing
+counted. The client shows "This PC asks for a second step. Sign in by typing the password." The
+refusal sits after the lockout check, so a locked account still answers as locked. Because it
+asks `mfa_step_for`, an exempt account's saved connection and the unlock of the player's own
+locked session still work. This is what stops the keyring being a way round the step until the
+later slice gives a saved connection a second step of its own.
+
+**Pending record.** `player_state['mfaPending'][pcId] = { 'id' => npcId, 'kind', 'foothold'?,
+'from'?, 'relay'?, 'n' => 0, 'tries' => 0, 'nonce', 'at' => server seconds, 'last' => 0 }`. One
+per PC; a new first step at that PC overwrites it. It expires after `PENDING_SECONDS`; expired
+records are dropped whenever the map is read or written, so abandoned attempts do not pile up.
+Writing one adds 1 to `mfaAccounts[npcId].started`, which is the `nonce`.
 
 **Every second-step route judges the first step's route again.** The player can unplug a
-foothold, drop the planted device that proves a saved connection, or be removed from a PC's
-access list between the two steps. `second_step_refusal(pc, pending)` returns the refusal the
-first step would now give, or nil:
-
-- `via: 'password'`: `typed_route_refusal(pc, foothold:, from:)`, which is the route branch of
-  `attempt_login!` moved into a method both callers use, then `pc_admits_account?`.
-- `via: 'credential'`: `credential_login_checks(pc, cred_id, route)`, which is steps 2 to 8b of
-  `attempt_credential_login!` (`credential_login.rb:28-70`: a held and proven credential, its
-  own PC, the route its kind allows, the policy accepts the kind, the access list, the lockout,
-  ended, expired) moved into one method returning a refusal or the judged entry.
-  `attempt_credential_login!` calls it too, so there is one copy, and it is where the privilege
-  plan adds any account-kind check for the keyring path.
-
-When the step passes, the session is written as the first step would have written it: `via:
-'password'` with the stored foothold or `from`; or `via: 'credential'` with the credential id
-and the stored route, and the answer carries `route` as today's does
-(`credential_login.rb:83-87`). `stamp_token_clock!` never applies, since a token is never
-pending.
+foothold or be removed from a PC's access list between the two steps.
+`second_step_refusal(pc, pending)` returns the refusal the first step would now give, or nil:
+`typed_route_refusal(pc, foothold:, from:)`, which is the route branch of `attempt_login!` moved
+into a method both callers use, then `pc_admits_account?`. When the step passes, the session is
+written as the first step would have written it: `via: 'password'` with the stored foothold or
+`from`.
 
 **Getting the device: the server gate.** The code is only as well guarded as the device, so the
-device enters the server's inventory under the same rule as an NPC's phone, enforced at every
-place that rule lives today. All three places test `type == FRIENDFACE_PHONE`; M1a replaces that
-test with membership of one list, `MfaModel::OWNER_BOUND_TYPES = ['phone_friendface',
-'code_device']`, so the two item types cannot drift apart:
+device leaves its owner under the same rule as an NPC's phone. Three places test
+`type == FRIENDFACE_PHONE` today; M1a replaces that test with membership of one list,
+`MfaModel::OWNER_BOUND_TYPES = ['phone_friendface', 'code_device']`, so the two item types
+cannot drift apart. The rule is about an item leaving an NPC, so each site applies it only to an
+item that came from one:
 
 | Path | Today (phone only) | With the list |
 |---|---|---|
 | Direct add from an NPC's `itemsHeld` (`games_controller.rb:3464-3475`) | Refused unless the NPC's story offers the phone or the server holds the NPC as knocked out. Every other held type needs only that the NPC was met | A `code_device` is refused on the same test, asked as `npc_offers_item?(npc_id, 'code_device')` (the generic form `friendface_phone_offered?` already wraps, `social_feed.rb:257-259`) or `npc_defeated?(npc_id)` |
-| Pickup of a stored room drop that names an `owner` (`games_controller.rb:3442-3448`) | Asks `npc_room_drop_allowed?` again, for saves made before the rule | Same question for a `code_device` |
-| Room add with no source (`game.rb:1169-1174`) | A phone enters a room only as an NPC drop or a player drop | Same for a `code_device`, so no client can mint one in a room |
+| Pickup of a room item that names an `owner` (`games_controller.rb:3442-3448`) | Asks `npc_room_drop_allowed?` again, for saves made before the rule. Runs on every room item with an `owner` | Asked only of a **stored NPC drop**: `find_accessible_item` marks an item it found in `objects_added` (`location: { type: 'room', added: true }`), and the test is skipped when the item's id is in `droppedItems` (the player dropped it). An authored room object and the player's own drop fall under the ordinary room rule |
+| Room add with no source (`game.rb:1169-1174`) | A phone enters a room only as an NPC drop or a player drop | Same for a `code_device`, so no client can mint one in a room. Correct as it stands: an authored room object never passes through this method, and a player drop is already let through |
 
-`npc_room_drop_allowed?` (`game.rb:2152-2158`) is already generic over the item type and needs no
-edit. A client-built item cannot carry `owner` (`games_controller.rb:3304-3306`), so a device
-cannot be forged in the inventory request either. A device the scenario places in a room object
-or a container is not NPC-sourced: it is collected under the ordinary room and container rules,
-and the container's lock is its gate.
+The first site is reached only for an item found in an NPC's `itemsHeld`, so it needs no
+narrowing. `npc_room_drop_allowed?` (`game.rb:2152-2158`) is generic over the item type and
+needs no edit; an NPC drop is checked with it when it is stored (`game.rb:1122`), so skipping the
+pickup test for the other two kinds of room item loses nothing. A client-built item cannot carry
+`owner` (`games_controller.rb:3304-3306`), so a device cannot be forged in the inventory request
+either. A device the scenario places loose in a room, in a room object or in a container is not
+NPC-sourced: it is collected under the ordinary room and container rules, whether or not its
+owner has been met, and a container's lock is its gate. A player who drops a device can pick it
+up again.
 
-So a player obtains a device in exactly four ways, each decided by the server: the owner's story
-gives it (the give tag is in the story, and the owner has been met); the owner is recorded as
-knocked out; the scenario left it somewhere the player can reach; or it is a start item. Meeting
-the owner is not enough.
+So a player obtains a device in four ways: the owner's story gives it (a give tag for the type
+is in the owner's story, and the owner has been met); the owner is recorded as knocked out; the
+scenario left it somewhere the player can reach; or it is a start item. Meeting the owner is not
+enough.
 
-The knock-out record itself comes from the browser's sync (`game.rb:2008-2020`) and is accepted
-only for a met room NPC that is not `koImmune` (`npc_ko_claimable?`, `game.rb:2029-2033`). Combat
-runs in the browser, so "steal after a knock-out" is best-effort, as it already is for a phone. An
-author who wants a device to be won only in conversation sets `koImmune` on its owner.
+Two of those are best-effort, as they already are for a phone. The offer test
+(`npc_offers_item?`, `social_feed.rb:265-273`) passes when the give appears anywhere in the
+owner's story; it does not know whether the player reached that line. The knock-out record comes
+from the browser's sync (`game.rb:2008-2020`) and is accepted only for a met room NPC that is not
+`koImmune` (`npc_ko_claimable?`, `game.rb:2029-2033`). An author who wants a device to be won
+only in conversation sets `koImmune` on its owner.
 
 **Holding the device.** `held_code_device(npc_id)` is the proof every code route uses. It follows
 `credential_held_proof_holds?` (`credential_keyring.rb:42-64`): an inventory entry, unwrapped from
@@ -407,24 +441,33 @@ author who wants a device to be won only in conversation sets `koImmune` on its 
 `ItemIdentity.client_forged?`.
 
 **Code.** `GET /mfa/device` serves the current code only while `held_code_device` holds for the
-device asked about. `POST /mfa/verify` compares the typed code with the device's code for the
+device asked about, with `used: true` when the owner's account has already used that window, so
+the device can say "wait for the next code". `POST /mfa/verify` compares the typed code with the device's code for the
 pending account in constant time. The server does not ask whether the player holds the device at
 verify time: knowing the current code is the proof, and the only way a code reaches the browser
-is the device route. Three limits apply to a typed code:
+is the device route. `MfaModel.code_state` sorts a typed code three ways:
 
-- **Used once.** A right code records `mfaAccounts[npcId].used = window`; a code from that window or an
-  earlier one is then refused for that account, at every PC. One integer per account.
-- **Five wrong codes per attempt.** `MAX_CODE_TRIES = 5` wrong codes (`tries` on the pending
-  record) drop the record, and
-  the password must be typed again. This cap does not depend on the policy, so a policy with no
-  `maxAttempts` still cannot be guessed through.
-- **The shared lockout counter.** A wrong code is also a failed sign-in: it goes through
-  `record_login_failure!` on the account's `login_lockout_key`, so `maxAttempts` covers both
-  steps.
-  One exception keeps a slow typist from losing an account for the rest of the game (lockouts
-  never expire, `game.rb:4344-4350`): a code equal to the code of either of the two windows
-  before the accepted pair is answered `codeExpired: true`, counts towards neither limit, and
-  the pane asks for the current code.
+- **Right.** The current or previous window's code, from a window not yet used. It records
+  `mfaAccounts[npcId].used = window`, so a code works once for that account, at every PC.
+- **Stale.** A code that was right once: already used, or from one of the two windows before the
+  accepted pair. Answered `stale: "used"` or `stale: "expired"` and counted nowhere, so a slow
+  typist, or a player signing in at two PCs within a minute, never walks towards a lockout
+  (lockouts never expire, `game.rb:4344-4350`). The pane asks for the next code.
+- **Wrong.** Anything else. Three counts bound guessing:
+  - per attempt: `MAX_CODE_TRIES = 5` (`tries` on the pending record) drops the record, and the
+    password must be typed again;
+  - per PC: a wrong code goes through `record_login_failure!` on the account's lockout key, so
+    a policy's `maxAttempts` covers both steps;
+  - per account: `mfaAccounts[npcId].wrong` counts every wrong code at any PC. At
+    `MAX_CODE_WRONG_TOTAL = 30` the account's code step is closed for the rest of the game:
+    `/mfa/verify` answers 422 `codeLocked: true` whatever is typed. This holds where a policy
+    sets no `maxAttempts` and where several PCs each give their own allowance. Only a
+    second-factor reset at a helpdesk (S8b) returns the count to 0. Thirty mistyped codes for
+    one account is far beyond honest play.
+
+For a re-enrolled account the server compares against the own-phone code
+(`device_id` `own:<npcId>`). The old device still shows its own code when opened from the
+inventory, and that code no longer verifies.
 
 **Push.** `POST /mfa/prompt` sends one request and answers at once. In order: the pending record
 is a push kind and live; at least `PROMPT_GAP_SECONDS` since `last` (else `tooSoon`); `n` below
@@ -473,49 +516,55 @@ and the ink only paces it.
 
 A grant writes `accountResets[npcId]` with `'password' => true` or `'mfa' => true`:
 
-- **Password.** `effective_password(npc)` returns `creds.resetPassword` once reset, else
-  `creds.password`. Only `attempt_login!` (`game.rb:3486-3487`) changes to call it. The old
-  password then fails at sign-in. Other readers of `creds.password` keep the authored value on
-  purpose: a post-it (`game.rb:3425`) and an earlier capture (`game.rb:2697`) are now out of
-  date, as they would be. The keyring lists a new implicit entry `<npcId>.reset` (kind
+- **Password.** `Game#effective_password(npc)`, a public reader defined in `helpdesk_access.rb`,
+  returns `creds.resetPassword` once `accountResets[npcId].password` is set, else
+  `creds.password`. It is the account's password as the organisation's machines hold it now.
+  `attempt_login!` (`game.rb:3486-3487`) changes to call it, so the old password fails at
+  sign-in. The privilege plan's collect action calls the same reader, so a harvest made after a
+  reset yields the new password. Readers of things written before the reset keep the authored
+  value on purpose: a post-it (`game.rb:3425`) and an earlier capture (`game.rb:2697`) are out
+  of date, as they would be. The keyring lists a new implicit entry `<npcId>.reset` (kind
   `password`) built beside the captured-account entries (`credential_keyring.rb:263-285`), so
   the credential arrives by the keyring path the other plans use.
 - **A password reset unlocks the account.** Lockouts never expire, and a locked key is refused
   before the password is read (`game.rb:3483`), so without this the usual story (guess, lock
   the account, ring the desk) would end with a password that cannot be typed. The grant deletes
   every `login_lockout_keys_for(npc)` entry from `loginFailures` and `loginLockouts`, at every
-  PC. The granting answer carries `lockoutPcIds`, the fresh `lockout_pcs_for_client` list
-  (`game.rb:3586-3592`), and the client reseeds its "lockout seen" marks from it; a reload
-  reads the same list.
-- **Second factor.** The account's device generation goes from 0 to 1, so codes from the old
-  device stop verifying, and the account's second step moves to the player's own phone:
-  `GET /mfa/device` with `npc_id` serves the new code with no item, and push requests wait for
-  `POST /mfa/approve` with no held-phone check. The player needs no phone item; section 5.3
-  gives the screen. A second-factor reset does not clear lockouts.
+  PC. The granting answer carries `lockoutPcIds`, the fresh `lockout_pcs_for_client` list, and
+  the client reseeds its "lockout seen" marks from it; a reload reads the same list.
+- **Second factor.** The account's second step moves to the player's own phone:
+  `GET /mfa/device` with `npc_id` serves the own-phone code with no item, verify compares
+  against it, and push requests wait for `POST /mfa/approve` with no held-phone check. The
+  player needs no phone item; section 5.3 gives the screen. It returns `mfaAccounts[npcId].wrong`
+  to 0 and does not clear lockouts.
+- **A request for something already granted** passes the same checks and gets the same body
+  again, so a lost answer can be retried. It writes nothing and clears nothing: lockouts earned
+  after a reset stay.
 
 ### 5.3 Client
 
 **Session mirror (`systems/pc-sessions.js`).** The mirror stays the only writer of client
 session state.
 
-- `signIn` and `signInWithCredential` test `body.mfaRequired === true` before their
-  `success === false` test. They record the step in `MfaClient` and return `{ ok: false, reason:
-  'mfa_required', mfa, number, ownPhone, pcId }`. No `pc_signin_failed` is emitted;
-  `mfa_required` is.
-- New public `completeSecondStep(pcId, body, via)`. The answers of `/mfa/verify`, an approved
+- `signIn` tests `body.mfaRequired === true` before its `success === false` test. It records
+  the step in `MfaClient` and returns `{ ok: false, reason: 'mfa_required', mfa, npcId, number,
+  ownPhone, pcId }`. No `pc_signin_failed` is emitted; `mfa_required` is.
+- `signInWithCredential` maps the 422 `typeToSignIn` refusal to the reason `type_to_sign_in`
+  in its existing catch branch (`pc-sessions.js:525-541`), and the screen shows the line in 5.2.
+- New public `completeSecondStep(pcId, body)`. The answers of `/mfa/verify`, an approved
   `/mfa/prompt` and `/mfa/approve` are the normal sign-in answer, and this method does with
-  them exactly what `signIn` does with its own (`pc-sessions.js:555-562`): build the session
-  (with the credential, token and route fields when `via` is `credential`), `_replace`,
-  `_dropEnded(body.endedPcIds, pcId, body.tokenExpiredPcIds)`, and the same `pc_signed_in`
-  event. No other module writes the mirror.
+  them exactly what `signIn` does with its own (`pc-sessions.js:555-562`): build the session,
+  `_replace`, `_dropEnded(body.endedPcIds, pcId, body.tokenExpiredPcIds)`, and the same
+  `pc_signed_in` event. No other module writes the mirror.
 - A refused second step emits `pc_signin_failed` with a new reason: `mfa_wrong_code`,
-  `mfa_code_expired`, `mfa_cancelled` or `mfa_expired`; `locked_out` as today.
+  `mfa_code_locked`, `mfa_cancelled` or `mfa_expired`; `locked_out` as today. A stale code
+  emits nothing: it is not a failure.
 
 **`systems/mfa-client.js` (new).** Calls the five `/mfa/*` routes and hands every sign-in answer
 to `completeSecondStep`. It holds, in memory only, what a reopened sign-in screen needs:
-`pendingFor(pcId)` (kind, number, `ownPhone`, the credential id if the first step was a keyring
-sign-in, and which lesson to teach afterwards), `lastRead` (the code a device scene showed
-last) and `takeCompleted(pcId)` (a session the second step just opened, handed out once).
+`pendingFor(pcId)` (kind, `npcId`, number, `ownPhone`, and which lesson to teach afterwards),
+`lastRead` (the last code a device scene showed that was not marked `used`) and
+`takeCompleted(pcId)` (a session a child scene just opened, handed out once).
 
 **Sign-in screen** (the `password` scene on the PC monitor).
 
@@ -525,50 +574,59 @@ last) and `takeCompleted(pcId)` (a session the second step just opened, handed o
   "Send again" (`POST /mfa/prompt`). Failures show `attemptsLeft` as the password pane does.
 - What runs today on `result.ok` runs when the second step succeeds and not before:
   `teachAfter` with the lesson noted at the first step (`in_file` for a typed sign-in from a
-  file tile, the credential's kind for a keyring sign-in), then `signInAccepted(session)`.
-- **Buttons to the thing the player holds.** The code pane shows "Use <item name>" for each
-  `code_device` in the inventory. The push pane shows "Check <owner>'s phone" for each held
-  `phone_friendface` that has an owner. Either pane shows "My phone" when the answer said
-  `ownPhone: true`. The pane does not know which device belongs to the account; a wrong
-  owner's device simply shows a code that fails.
+  file tile), then `signInAccepted(session)`.
+- **Buttons to the thing the player holds.** The `mfaRequired` answer names the account's
+  `npcId` (the player has just proved its password, so this tells them nothing new). The code
+  pane shows "Use <item name>" only for a held `code_device` whose `owner` is that NPC; the push
+  pane shows "Check <owner>'s phone" only for that NPC's held `phone_friendface`. Either pane
+  shows "My phone" instead when the answer said `ownPhone: true`. So the pane never leads the
+  player to a device whose code would count as wrong.
 - **Each button opens its scene as a child of the sign-in screen**, by the manager's parent and
   child hand-over (section 2.4): the screen sets `suspended: true` on its own params and starts
-  the child with `returnTo: { sceneType: 'password', params: {} }`. A child started this way
-  always ends as a normal exit, X included, so the sign-in screen always comes back.
+  the child with `returnTo: { sceneType: 'password', params: {} }`. Both child scenes are
+  `SocialOverlayScene`s with the default `closeMode`, so their X is a normal exit and the
+  sign-in screen comes back (below).
 - **The screen that comes back is a new instance.** Its `init` asks `MfaClient` first:
   `takeCompleted(pcId)` returns a session when the child approved the request, and the screen
   runs the accepted path at once; else `pendingFor(pcId)` puts it straight on the second pane,
-  with the code field filled from `lastRead` (not submitted: the player presses Verify, and a
-  stale code is answered "that code has expired"); else the password pane, with a "request
-  cancelled" line if the child denied.
+  with the code field filled from `lastRead` (not submitted: the player presses Verify); else
+  the password pane, with a "request cancelled" line if the child denied.
+- **A child that is forced shut** (a hit, a knock-out, a forced conversation) does not end
+  normally, so the framework releases the sign-in screen with `onComplete(false, { viaChild:
+  true })`. The screen's starter treats that as a quiet close: no toast, no reject sound, no
+  `pc_signin_failed`. It clears `takeCompleted(pcId)`, so a session note can never be picked up
+  by a later visit to the PC; the mirror already holds any session the child opened.
 - **Closing the screen does not cancel the attempt.** X leaves the server's pending record to
   expire and `MfaClient` keeps its note, so opening the PC again within five minutes returns to
   the second pane. If the record has gone, the first verify or prompt is refused and the screen
   falls back to the password pane. The same holds when another minigame displaces the sign-in
-  screen, for example the player opening the device straight from the inventory.
+  screen.
 
-**`code-device` scene (new).** A small device frame from `device-frame.css`, the owner's headshot
-and name, six digits in VT323 and a bar that drains to the end of the window. It calls
-`GET /mfa/device` on open and when the bar empties, and notes each code in `MfaClient.lastRead`.
-Opened from the sign-in screen's button (as a child) or from the inventory item (alone). With
-`own: true` it draws the player's phone frame and asks by `npc_id`. New, because no existing
-scene shows a value the server changes over time.
+**`code-device` scene (new).** `CodeDeviceMinigame extends SocialOverlayScene`, started with
+`socialOverlayParams()` so the framework's X is off, and it draws the steel X of its device
+frame, wired to `requestClose()`. It keeps the default `closeMode`, so X completes with success
+true: as a child it returns the player to the sign-in screen, and alone it just closes. The
+frame is the small device from `device-frame.css`, with the owner's headshot and name, six
+digits in VT323 and a bar that drains to the end of the window. It calls `GET /mfa/device` on
+open and when the bar empties. A code marked `used` is drawn greyed with "Wait for the next
+code" and is not noted; any other code goes to `MfaClient.lastRead`. Opened from the sign-in
+screen's button (as a child) or from the inventory item (alone). With `own: true` it draws the
+player's phone frame and asks by `npc_id`. New, because no existing scene shows a value the
+server changes over time.
 
 **`authenticator-live` scene (new, a subclass).** `AuthenticatorLiveMinigame extends
-AuthenticatorMinigame`, registered under its own name. It overrides `init`, `start` and the card
-builder: cards come from `GET /mfa/phone`, each with real Approve and Deny buttons (for number
-matching, three number buttons), and a tap calls `POST /mfa/approve` through `MfaClient`. The
-only edit to the parent class is to move the phone shell (`authenticator-minigame.js:129-149`)
-into a method `_buildPhoneShell()` that both call, producing the same DOM as today. `mode`,
-`choice`, the timeline, `_appendCard` and `closeResult` in the parent are not edited, and the
-`authenticator` scene name keeps its meaning for the six awareness scenarios and the episode
-runner. Opened three ways: from the push pane's phone button (child); from "My phone" (child,
-`own: true`); and from a held NPC phone's own menu, as a "Sign-in requests" entry beside its
-Friendface entry, drawn when any shipped policy has a push kind.
-
-**Approving with no sign-in screen open.** A player may close the sign-in screen, walk off, and
-approve later on the held phone. The approve answer still goes through `completeSecondStep`, so
-the mirror has the session, and a toast names the PC that is now signed in.
+AuthenticatorMinigame`, registered under its own name. The parent's `init`
+(`authenticator-minigame.js:106-170`) stays the one entry, and its body is split into two
+methods it calls in today's order: `_buildPhoneShell()` (the phone, `:129-149`) and
+`_buildAttackerParts()` (the intro, the choice panel, Send and the controls row). The subclass
+calls `super.init()` as normal and overrides `_buildAttackerParts()` to draw nothing, plus
+`start` and the card builder: cards come from `GET /mfa/phone`, each with real Approve and Deny
+buttons (for number matching, three number buttons), and a tap calls `POST /mfa/approve`
+through `MfaClient`. The parent produces the same DOM as today in every mode; `mode`, `choice`,
+the timeline, `_appendCard` and `closeResult` are not edited. The live scene has no `choice`, so
+the parent's `requestClose` lock (`:437-441`) never applies and its X is the overlay's normal
+exit. Opened two ways, both as a child of the sign-in screen: from the push pane's phone
+button, and from "My phone" (`own: true`).
 
 **`helpdesk-request` scene (new, S8b).** A paper request form in the shared frame: username
 field, a choice of what is asked for, one text field per `questionLabels` entry, Send. Opened by
@@ -596,7 +654,10 @@ digits depend on server time and a server key, and decide nothing but equality.
 
 | Point | Default | Why |
 |---|---|---|
-| A wrong code and the lockout | Counts on the same counter as a wrong password, plus the fixed cap of five per attempt | One rule to teach; the cap holds where a policy sets no `maxAttempts` |
+| A wrong code and the lockout | Counts on the same counter as a wrong password, plus fixed caps of five per attempt and thirty per account | One rule to teach; the fixed caps hold where a policy sets no `maxAttempts` |
+| A code that was right once (used, or just expired) | Answered as stale and never counted | Reading a code a moment late is not a guess |
+| A saved connection to an MFA PC | Refused, with a line telling the player to type the password | A stored password must not skip the step; its own second step is a later slice |
+| Talking an owner into reading out a code or tapping a number | Not possible. Holding the device or the phone is the only route | A code and an approval are credentials, and the cheat policy has the server hard-enforce those. The pretext judge runs in the browser, so the server could not check such a conversation |
 | How a careless owner decides | A fixed count (`promptPatience`, default 3), never a chance | Runs repeat, and it is easy to author |
 | Presets for the new habit | Low `pestered`; medium, high and no level `never` | Only clearly careless staff give in; an author sets `pestered` with a higher patience for a middling one |
 | Fatigue across attempts | The count carries across attempts and PCs and resets on approval | The owner is one person with one phone; a per-attempt count would make the request cap decide instead of the habit |
@@ -616,22 +677,23 @@ All under `/games/:id`, in `GamesController`. Each action name goes on the `set_
 existing rule: 404 unknown thing, 403 out of reach, 422 a refusal the player caused. Every
 answer is `Cache-Control: no-store`. The generic refusal is the existing `Sign in required` body.
 
-`POST /login` and the keyring sign-in keep their parameters. Their one new answer, when a second
-step is due (locked, as today): status 200, `{ success: false, mfaRequired: true, mfa: "<kind>",
-pcId, number?, ownPhone? }`. `number` is present only for `push_number_match`; `ownPhone` only
-for a re-enrolled account. No session exists yet.
+`POST /login` keeps its parameters. Its one new answer, when a second step is due (locked, as
+today): status 200, `{ success: false, mfaRequired: true, mfa: "<kind>", pcId, npcId, number?,
+ownPhone? }`. `number` is present only for `push_number_match`; `ownPhone` only for a
+re-enrolled account. No session exists yet. The keyring sign-in keeps its parameters too; its
+one new answer is the 422 `typeToSignIn` refusal of a saved connection (section 5.2).
 
 "Route still holds" below is `second_step_refusal` (section 5.2); it answers as the first step
-would. "Lockout" is the account's `login_lockout_key` (422 `lockedOut`).
+would. "Lockout" is the account's lockout key at that PC (422 `lockedOut`).
 
 | Route | Params | Checks in order | Writes and answer |
 |---|---|---|---|
-| `GET /mfa/device` | `item_id`, or `npc_id` for a re-enrolled account | A policy declares an `mfa` kind (else 404). `item_id`: `held_code_device` holds for that item (else 403 `no such device`, the same body whether the item is unknown, not held, forged or another type). `npc_id`: `accountResets[npc].mfa` (else the same 403) | No write. `{ deviceId, displayName, code, secondsLeft }` |
-| `POST /mfa/verify` (locked) | `pc_id`, `code` | PC found (404). Pending record for the PC, kind `code`, live (else generic 422). Route still holds. Lockout. `code` is six digits (else generic 422, not counted). Equals a code of the two windows before the accepted pair: 422 `codeExpired: true`, not counted. Window already used for this account, or not the current or previous window's code: wrong | Wrong: `tries += 1`; `record_login_failure!`; answer as a wrong password plus `mfaIncorrect: true`; at `MAX_CODE_TRIES` the record is dropped and the answer adds `expired: true`. Right: `mfaAccounts[npc].used` set, failures cleared, record dropped, session written, the normal sign-in answer |
+| `GET /mfa/device` | `item_id`, or `npc_id` for a re-enrolled account | A policy declares an `mfa` kind (else 404). `item_id`: `held_code_device` holds for that item (else 403 `no such device`, the same body whether the item is unknown, not held, forged or another type). `npc_id`: `accountResets[npc].mfa` (else the same 403) | No write. `{ deviceId, displayName, code, secondsLeft, used? }`. `used` is true when the device's account has already used this window. For a re-enrolled account the `item_id` form still serves the old device's own code, which no longer verifies |
+| `POST /mfa/verify` (locked) | `pc_id`, `code` | PC found (404). Pending record for the PC, kind `code`, live (else generic 422). Route still holds. Lockout. Account's wrong-code total at `MAX_CODE_WRONG_TOTAL` (422 `codeLocked: true`). `code` is six digits (else generic 422, not counted). Then `MfaModel.code_state` | Stale: 422 `stale: "used"` or `"expired"`, no write. Wrong: `tries += 1`; `mfaAccounts[npc].wrong += 1`; `record_login_failure!`; answer as a wrong password plus `mfaIncorrect: true`; at `MAX_CODE_TRIES` the record is dropped and the answer adds `expired: true`. Right: `mfaAccounts[npc].used` set, failures cleared, record dropped, session written, the normal sign-in answer |
 | `POST /mfa/prompt` (locked) | `pc_id` | PC found. Pending record, push kind, live (else generic 422). Route still holds. Lockout. Gap since `last` (else 422 `tooSoon: true, retryAfterS`). `n < MAX_PROMPTS` (else record dropped, 422 `expired: true`) | Counts, then the decision in 5.2. Not approved: `{ success: false, approved: false, promptsSent, waiting? }`. Approved: `mfaPrompts[npc] = 0`, record dropped, session written, the normal sign-in answer plus `approvedBy: "owner"` |
 | `GET /mfa/phone` | `npc_id` (that NPC's held phone), or `own=1` (the player's own) | `npc_id`: `held_friendface_phone(npc_id)` (else 403 `no such phone`). `own`: at least one account has `accountResets[...].mfa` (else the same 403) | No write. `{ requests: [{ pcId, host, username, n, numbers? }] }`: live push records for that owner's account, or for every re-enrolled account; at most one per PC. `numbers` is the three choices from `MfaModel.numbers`, in its order, none marked |
 | `POST /mfa/approve` (locked) | `pc_id`, `number?`, `deny?` | PC found. Pending record, push kind, live (else generic 422). Phone held for the pending account, or account re-enrolled (else 403). Route still holds. `deny`, or a wrong or missing `number` for number matching: record dropped, `{ success: false, cancelled: true }` | Right: record dropped, `mfaPrompts[npc] = 0`, session written, the normal sign-in answer plus `approvedBy: "player"` |
-| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points) | The checks in 5.2. Desk unknown: 404. NPC not met or knocked out, `what` not offered: generic 422. Stopped serving: 422 `blocked: true`. Unknown username or rule not met: tries counted, 422 `refused: true, triesLeft` | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A repeat of a granted request answers the same body again, so a lost answer can be retried |
+| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points) | The checks in 5.2. Desk unknown: 404. NPC not met or knocked out, `what` not offered: generic 422. Stopped serving: 422 `blocked: true`. Unknown username or rule not met: tries counted, 422 `refused: true, triesLeft` | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A request for something already granted passes the same checks, answers the same body with the current `lockoutPcIds`, writes nothing and clears nothing |
 
 A refused second step never says more than the first step already did: the `mfaRequired` answer
 itself tells the player the password was right, as a real second prompt does.
@@ -663,14 +725,22 @@ server until earned.
 | `mfaPending`, `mfaAccounts`, `accountResets`, `helpdeskTries` | Never | All of it |
 
 **What the server hard-enforces, and what is best-effort.** Hard: a code is served only against
-a held, authored, unforged device; the device leaves its owner only on a story offer or a
-knock-out record; an approval needs the held phone or a re-enrolment; a helpdesk grant under
+a held, authored, unforged device; a device cannot be minted or forged; a typed code is checked
+on the server and guessing is bounded per attempt, per PC and per account; an approval needs the
+held phone or a re-enrolment; a saved connection cannot skip the step; a helpdesk grant under
 `questions` or `callback`; the reset password. Best-effort, as the cheat policy allows for
-combat and dialogue: the knock-out record is the browser's claim (accepted only for a met,
-non-`koImmune` room NPC), so a forged one yields that NPC's device or phone, as it already does
-for a phone; and a helpdesk request can be posted without standing in the conversation. An
-author who needs a device to be won in conversation sets `koImmune` on its owner; the validator
-says so (section 9).
+combat and dialogue, and on the same footing as a phone today:
+
+- *The story offer.* A device leaves a met owner when a give for its type appears anywhere in
+  that owner's story. The server does not know whether the player reached the line, so a crafted
+  inventory request can take an offered device as soon as the owner is met. It cannot take one
+  the story never offers.
+- *The knock-out record* is the browser's claim, accepted only for a met, non-`koImmune` room
+  NPC.
+- *A helpdesk request* can be posted without standing in the conversation.
+
+An author who needs a device to stay with its owner offers no give of it and sets `koImmune`;
+the validator's notes say which routes each device has (section 9).
 
 No-exposure tests (section 11) assert each row against captured answers, and the leak scanner
 (`tools/playtest/lib/access_leak_scanner.rb`) gains lines for a code, a `recovery` map and a
@@ -687,7 +757,7 @@ them.
 |---|---|---|---|
 | `mfaPending` | `{ pcId => record }` | One record per sign-in PC. Expired records are dropped on every read and write of the map | Never. Route answers carry only the one changed value (`promptsSent`, `approved`) |
 | `mfaPrompts` | `{ npcId => count }` | One integer per account | Never |
-| `mfaAccounts` | `{ npcId => { 'started' => n, 'used' => window } }` | Two integers per account | Never |
+| `mfaAccounts` | `{ npcId => { 'started' => n, 'used' => window, 'wrong' => n } }` | Three integers per account | Never |
 | `accountResets` | `{ npcId => { 'password'?, 'mfa'? } }` | One per account | Never; the keyring answer lists the new entry through its existing `rev` digest, so an unchanged keyring is not re-sent |
 | `helpdeskTries` | `{ "deskId\|username" => n }`, username normalised and at most 64 code points | Account keys bounded by authoring; non-account keys capped at 200, oldest dropped, as `loginFailures` does (`game.rb:4357-4364`) | Never; `triesLeft` rides on the refusal |
 
@@ -736,6 +806,12 @@ Warnings:
   the one the server's gate uses;
 - a `code_device` held by an owner whose story does offer it and who is not `koImmune`: a note
   that a knock-out also yields it, and that `koImmune` closes that;
+- a `code_device` owner whose story has a `give_npc_inventory_items` tag with no type filter: it
+  offers every held item, the device among them;
+- a `code_device` listed as a declared grant: a grant can be claimed at any time
+  (`games_controller.rb:3384-3399`), so the device is not gated at all;
+- a `saved_connection` to a PC whose policy sets `mfa`, for an enrolled account: the connection
+  will be refused there and the player must type the password;
 - push kind where every admitted owner resolves to `never` and holds no declared phone, and no
   other way through exists;
 - `promptPatience` set on an NPC whose habit does not resolve to `pestered`;
@@ -762,12 +838,13 @@ scenario without the fields is unchanged. Tests: `test/js/dungeon-graph-mfa.test
 | Change | Effect when the new fields are absent |
 |---|---|
 | `attempt_login!` and `attempt_credential_login!` call `mfa_step_for` | Returns `none`: same path, same answer, same state writes |
-| Route branch moved to `typed_route_refusal`; steps 2 to 8b moved to `credential_login_checks`; key built by `login_lockout_key` | Pure moves: same checks in the same order with the same answers and the same key string |
+| Route branch moved to `typed_route_refusal`; the lockout key built and split by the two `AccessIdentities` functions at five sites | Pure moves: same checks in the same order with the same answers and the same key string |
 | `KINDS` gains an `mfa` flag | Read only when a policy sets `mfa` |
-| `OWNER_BOUND_TYPES` replaces the phone-type test at three sites | A phone is judged as today. No existing scenario has a `code_device`, so nothing else is caught |
+| `OWNER_BOUND_TYPES` replaces the phone-type test at three sites | A phone held by an NPC, dropped by one or added with no source is judged as today. No existing scenario has a `code_device` |
+| The pickup test runs only on a stored NPC drop | The one case that changes is a phone with an `owner` authored loose in a room, or dropped by the player, whose owner neither offers it nor is knocked out: it becomes takeable. No shipped scenario authors a loose owned phone (proof 6), and a player holds a phone only after an offer or a knock-out, which already pass the test |
 | `NpcHabits`: two accepted keys, per-parameter check; `PRESETS` untouched | `expand!` writes exactly what it writes today for every NPC that authors neither key. The preset for the new habit is never written; it is read at request time |
 | `effective_password` | Returns `creds.password` unless `accountResets` names the account |
-| `authenticator` scene: phone shell moved into `_buildPhoneShell()` | Same DOM. Every other path of the scene is unedited; the live scene is a separate registered name no existing scenario uses |
+| `authenticator` scene: `init` body split into `_buildPhoneShell()` and `_buildAttackerParts()` | Same DOM in every mode, proved by snapshot (proof 5). The live scene is a separate registered name no existing scenario uses |
 | `PcSessions`: `mfaRequired` test before the `success === false` test | An answer without `mfaRequired` takes today's path |
 | Bootstrap `helpdeskForms` | Added only when a desk exists |
 | Five `ACCESS_STATE_DEFAULTS` keys | Empty maps in every game; never sent |
@@ -787,55 +864,67 @@ Proof:
    `helpdesk` on its ask, so its grant stays the client global it is today
    (`scenarios/ca03_helpdesk_reset/scenario.json.erb:760-772`).
 4. The validator over every scenario shows no new error or warning line.
-5. The authenticator is unchanged for its six users: the existing `authenticator` node tests and
-   the episode-runner tests pass unedited; a new node test builds the scene with each of the six
-   scenarios' authored params (`ca06_texts_and_qr`, `ca06_texts_and_qr_defend`,
-   `ca09_passwords`, `ca09_passwords_defend`, `ca_pre_general_v2_ab`, `ca_post_general_v2_ba`)
-   and asserts the container's HTML equals a snapshot taken before the shell was moved; and
-   scripted reruns of `ca06_texts_and_qr` and `ca09_passwords` reach and finish the scene.
-6. Controller cases for the existing phone rule (offer, no offer, knock-out, stored drop,
-   sourceless room add) pass unedited after the type list replaces the type test.
+5. The authenticator is unchanged for its real user. A new node test,
+   `authenticator-snapshot.test.mjs`, is committed **before** `init` is split, and asserts the
+   container's HTML after `init` equals a stored snapshot for three sets of params: the `mfa`
+   block of `ca03_helpdesk_reset`'s episode (decision mode, phone hidden); a timeline set
+   `{ pushes, approvesAt }`; and the fixtures of `test/js/social-reuse-authenticator.test.mjs`.
+   The four existing `social-authenticator*` and `social-reuse-authenticator` node tests and the
+   episode-runner tests pass unedited, and a scripted rerun of `ca03_helpdesk_reset` reaches and
+   finishes the scene.
+6. Controller cases for the existing phone rule (offer, no offer, knock-out, stored NPC drop,
+   sourceless room add) pass unedited. A scan of every scenario finds no `phone_friendface` with
+   an `owner` authored as a loose room object, so the narrowed pickup test changes no shipped
+   scenario.
 7. Scripted reruns of `test_access_signin`, `test_access_keyring` and `test_access_habits`.
 
 ## 11. Tests
 
-**Unit** (`test/unit/`): `mfa_model_test.rb` (kinds, enrolment, device lookup, code for a fixed
-time and key, previous window accepted, the one before answered as expired, generation changes
-the code, `numbers` gives three different values in a fixed order for fixed inputs,
+**Unit** (`test/unit/`): `access_identities_test.rb` additions (`lockout_key` equals the string
+built today; `lockout_key_parts` round trip and malformed keys); `mfa_model_test.rb` (kinds,
+enrolment, device lookup, code for a fixed time and key, `code_state` for each of the four
+windows with and without a used window, an own-phone device id changes the code, `numbers` gives three different values in a fixed order for fixed inputs,
 `prompt_habit` per level and with an authored value, `prompt_patience` bounds);
 `npc_habits_test` additions (the two keys validate, `promptPatience` bounds, expansion of an NPC
 without them unchanged); `helpdesk_model_test.rb` (normalising, `needs`, code point caps).
 
 **Controller** (`test/controllers/break_escape/`): `mfa_code_test.rb`, `mfa_device_gate_test.rb`,
 `mfa_push_test.rb`, `mfa_phone_test.rb`, `mfa_keyring_test.rb`, `helpdesk_request_test.rb`,
-`mfa_absent_test.rb`, and per-role access cases for each of the six policy methods.
+`mfa_absent_test.rb`, and per-role access cases for each of the six policy methods. Each file
+also asserts the log rows its actions write (section 13).
 
 - *Device gate:* an inventory add of a `code_device` from an owner who has been met but offers
   nothing is refused; accepted when the story offers it; accepted after a knock-out record;
-  refused for a `koImmune` owner with a forged knock-out; a stored drop naming the owner is
-  refused on pickup without offer or knock-out; a room add of a `code_device` with no source is
-  refused; a client-built item with `owner` is refused; a device in a container is collected
-  under the container's own rule.
+  refused for a `koImmune` owner with a forged knock-out; a device authored loose in a room,
+  owner never met, is picked up; the player drops it and picks it up again; a stored NPC drop
+  of a device its owner does not offer is refused on pickup; a room add of a `code_device` with
+  no source is refused; a client-built item with `owner` is refused; a device in a container is
+  collected under the container's own rule.
 - *Code:* device route refused without the item, with a forged item, with another type's id;
   another owner's device gives a code that fails; verify with no pending record; a right code
-  opens the session; the same code is refused at a second PC; five wrong codes drop the record
-  with no `maxAttempts`; wrong codes reach the policy lockout and a right code is then refused;
-  a code two windows old answers `codeExpired` and counts nowhere; exempt account skips the
-  step; unlocking the account's own locked session asks no second step, another account at
-  that PC does.
+  opens the session; the same code at a second PC answers `stale: "used"`, the device route
+  says `used: true`, and no counter moves; a code two windows old answers `stale: "expired"`
+  and counts nowhere; five wrong codes drop the record with no `maxAttempts`; thirty wrong codes
+  across attempts and PCs close the account's code step, and a right code is then refused;
+  wrong codes reach the policy lockout; exempt account skips the step; unlocking the account's
+  own locked session asks no second step, another account at that PC does.
 - *Route re-judge:* typed sign-in over a foothold, then the foothold unplugged, then verify:
   refused as the first step would be. The account removed from the access list between steps:
-  refused. Saved connection: pending, then the proving device dropped, then verify: refused;
-  with the proof intact the session is `via: credential` and the answer carries `route`.
+  refused.
+- *Saved connection (`mfa_keyring_test.rb`):* to a `code`, a `push` and a number matching PC,
+  each refused with `typeToSignIn`, with no session, no pending record and no counter moved;
+  refused the same way over a foothold; a locked-out account answers `lockedOut`; an exempt
+  account's saved connection signs in; a saved connection to a PC with no `mfa` is unchanged.
 - *Push:* `pestered` approves on exactly the patience count and the count survives a new
   attempt; requests caught on a held phone do not raise the count; `never` at `MAX_PROMPTS`;
   number match never approved by an owner; a knocked-out owner approves nothing; `tooSoon`.
 - *Phone:* approve refused without the phone; the three numbers are stable for one attempt and
   differ for the next; wrong number cancels; deny cancels; own-phone list refused with no
   re-enrolled account.
-- *Ways round:* token skips, saved connection does not; claim skips.
+- *Ways round:* a token and a claim skip the step; a saved connection is refused (above).
 - *Helpdesk:* unknown user and wrong answers give the same body; `maxTries`; retry of a granted
-  request; old password refused and reset password accepted; an account locked out at two PCs
+  request gets the same body and leaves a lockout earned since the grant in place; a
+  second-factor grant reopens a code step closed at thirty wrong codes; old password refused and reset password accepted; an account locked out at two PCs
   is unlocked at both by a password grant and `lockoutPcIds` shrinks; a second-factor grant
   leaves lockouts alone; desk NPC not met refused; hostile text in `answers` and `username`
   (long, HTML, control characters) is cut and cleaned before any use, echoed in no answer, and
@@ -846,8 +935,10 @@ without them unchanged); `helpdesk_model_test.rb` (normalising, `needs`, code po
 `mfa-signin-pane.test.mjs` (pane swap, no reject sound, `teachAfter` only after the second
 step, reopened instance resumes from `MfaClient`, completed session accepted on reopen),
 `mfa-child-handover.test.mjs` (against the real minigame manager: the sign-in screen suspends,
-the child ends by X, the screen reopens; both child scenes), `code-device.test.mjs`,
-`authenticator-live.test.mjs`, the authenticator snapshot test of section 10, the existing
+the child ends by X, the `password` scene reopens on the second pane, for each of the two child
+scenes; a forced close of the child releases the screen once, with no failure event and no
+completed note left behind), `code-device.test.mjs` (a `used` code is greyed and not noted),
+`authenticator-live.test.mjs`, `authenticator-snapshot.test.mjs` (section 10), the existing
 authenticator and episode-runner tests unedited, `helpdesk-request.test.mjs`,
 `validator-mfa.test.mjs`, `dungeon-graph-mfa.test.mjs`.
 
@@ -858,25 +949,26 @@ authenticator and episode-runner tests unedited, `helpdesk-request.test.mjs`,
 | F1 | Right password at a `code` PC | No session; `mfaPending` has the PC |
 | F2 | Device route before holding the device; a crafted inventory add of the met owner's device | 403; add refused; no code in any captured answer so far |
 | F3 | Owner hands the device over; "Use device" on the code pane; Verify | Session `via: password`; pending gone; `mfaAccounts.used` set |
-| F4 | Same code typed at a second `code` PC within the minute | Refused; a fresh code after the window turns is accepted |
+| F4 | Same code typed at a second `code` PC within the minute | Answered as used; no counter moves; a fresh code after the window turns is accepted |
 | F5 | Drop the device in the room; ask the device route again | 403 |
-| F6 | Second owner's device found in a drawer; exempt service account at the same PC | Session after the code; exempt session with no second step |
+| F6 | Second owner's device left loose on a desk, its owner never met; exempt service account at the same PC | Session after the code; exempt session with no second step |
 | F7 | Lock the F3 session, then unlock with the password, device no longer held | Session unlocked; no pending record |
 | F8 | Sign in to the `code` PC over the foothold; unplug the foothold; type a right code | Refused as out of reach; no session |
 | F9 | `push` PC, low-awareness owner, three requests | Approved on the third; `mfaPrompts` back to 0 |
 | F10 | `push` PC, high-awareness owner, requests to the cap | Never approved; attempt expired |
 | F11 | Take the high-awareness owner's phone; "Check phone" on the pane; approve | Session; `approvedBy: player`; the pane's screen reopens signed in |
-| F12 | Start a push sign-in, close the screen, open the held phone from the inventory, approve | Session; the browser's mirror shows it; toast |
+| F12 | On the code pane, open the device and close it with X; on the push pane, open the phone and close it with X | Sign-in screen back on its second pane both times; pending record still live; no failure recorded |
 | F13 | Number matching, owner holds phone | Never approved |
 | F14 | Number matching with the held phone, wrong then right number | Cancelled, then session |
-| F15 | Session token to an MFA PC; saved connection to it | Token session at once; saved connection stops at the step, then signs in `via: credential` |
+| F15 | Session token to an MFA PC; saved connection to it | Token session at once; saved connection refused with `typeToSignIn`, no session and no pending record; typing the same account's password reaches the second step |
 | F16 | Guess an account's password to the lockout; helpdesk, wrong answers to `maxTries` for another account | `loginLockouts` has the key; `helpdeskTries` at the cap; `blocked` |
 | F17 | Helpdesk, right answers found on a feed post and a document, for the locked account | `accountResets` password; lockout gone; keyring lists the entry; old password refused; sign-in at the once-locked PC |
 | F18 | Helpdesk re-enrols a second factor (callback rule, phone held); "My phone" on the code pane | Old device's code refused; own-phone code accepted |
 
 **Scripted playtest** through `window.__test`, each beat checked twice: what the browser was sent
 (captured answers scanned for codes, the `recovery` map and passwords not yet earned) and what
-the server recorded (the column above, read by the verify script). Codes are read from the
+the server recorded (the column above and the beat's log rows from section 13, read by the
+verify script). Codes are read from the
 device route, so the run does not depend on the clock; F4's wait for the window is the one
 place it reads the route's `secondsLeft`.
 
@@ -887,7 +979,7 @@ reopened sign-in screen and the request form, plus a reload in the middle of F9.
 
 ## 12. Build steps and shared files
 
-Order: M1a, M1b, M2, M3, M4, then H1, H2. Each stage: model and unit tests, server and
+Order: M1a, M1b, M2, M3, then H1, H2. The log plan's helper lands before M1a. Each stage: model and unit tests, server and
 controller tests, client and JS tests, validator, schema and graph, the scenario beats, scripted
 run, live proof, then the two docs (`README_scenario_design.md` feature index rows A22 and A23,
 and `docs/ACCESS_AND_NETWORKS.md`) in the same change as the stage that completes the feature.
@@ -902,36 +994,53 @@ Shared files (re-read just before editing, own block only, explicit paths):
 
 | File | This plan's edit | Also touched by |
 |---|---|---|
-| `app/models/break_escape/game.rb` | `attempt_login!` step 5, `typed_route_refusal`, `login_lockout_key`, `effective_password`, the sourceless room-add test (`:1171`), five state keys | S5a, S5c (sign-in order, lockout scope), S3 (sessions) |
-| `credential_login.rb`, `credential_model.rb` | `credential_login_checks` factored out, the step before the session write; `mfa` flag on kinds | S5b, S7 (keyring), S5c (account kind on the keyring path) |
+| `app/models/break_escape/game.rb` | `attempt_login!` second step, `typed_route_refusal`, the four lockout key sites, `login_lockout_keys_for`, the sourceless room-add test (`:1171`), five state keys | S5a, S5c (sign-in order, lockout scope), S3 (sessions) |
+| `lib/break_escape/access_identities.rb`, `access_work.rb` | `lockout_key`, `lockout_key_parts`; `locked_out_at?` calls them | S5c if a later slice rescopes lockouts |
+| `app/models/break_escape/ops_log.rb` | this plan's entries in `OpsLog::EVENTS` | every plan that writes rows |
+| `credential_login.rb`, `credential_model.rb` | the saved-connection refusal before the session write; `mfa` flag on kinds | S5b, S7 (keyring), S5c (account kind on the keyring path) |
 | `credential_keyring.rb` | implicit `<npcId>.reset` entry | S5b, S7 |
-| `games_controller.rb`, `config/routes.rb`, `game_policy.rb` | six routes, `set_game` list, six policy methods, the two NPC-item gate sites (`:3443`, `:3470`) | every plan |
+| `games_controller.rb`, `config/routes.rb`, `game_policy.rb` | six routes, `set_game` list, six policy methods, the two NPC-item gate sites (`:3443`, `:3470`), the `added` mark in `find_accessible_item` | every plan |
 | `lib/break_escape/npc_habits.rb`, `scripts/validate_npc_habits.rb` | two accepted keys, per-parameter check | S7 (reads `password` habit) |
 | `scripts/scenario-schema.json`, `validate_scenario.rb`, `generate_dungeon_graph.rb` | blocks named in section 9 | every plan |
 | `minigames/password/password-minigame.js`, `systems/pc-sessions.js` | second pane, child hand-over, resume on reopen; `mfaRequired` handling, `completeSecondStep` | S5c if it changes the sign-in screen |
-| `minigames/authenticator/authenticator-minigame.js` | `_buildPhoneShell()` extracted, nothing else | none |
+| `minigames/authenticator/authenticator-minigame.js` | `init` body split into `_buildPhoneShell()` and `_buildAttackerParts()`, nothing else | none |
 | `systems/pretext-judge.js` | open the request form on a granted ask that names a desk | none |
 | `minigames/index.js`, `minigame-starters.js`, JS harness copy lists | three scenes, `mfa-client.js` | S6, S7 |
 
-## 13. Log rows this feature writes (for S9)
+## 13. Log rows this feature writes
 
-Columns as the log plan sets them: event, who, where, when, with optional result and detail.
-"Who" is the account's NPC id and username. Detail values are short codes, never free text.
+Every row goes through the log plan's helper, `write_log_row!(event, as:, where:, result:,
+detail:)`, which lands before M1a. Each stage registers its events in `OpsLog::EVENTS` and
+asserts its rows in its controller tests and scenario beats. In every row `as` is
+`{ account: username }` for the account being signed in to or asked about, and `where` is
+`{ kind: 'pc', id: }` or `{ kind: 'desk', id: }`. Event names are snake_case. "When" names the
+model method and branch.
 
-| Event | Who | Where | When | Result | Detail |
-|---|---|---|---|---|---|
-| `mfa_challenge` | account | PC id | A right first step meets a second step | | route code: `keyboard`, `foothold`, `from`, `credential` |
-| `mfa_code` | account | PC id | `POST /mfa/verify` | `ok`, `wrong`, `expired` | |
-| `mfa_prompt_sent` | account | PC id | Each `POST /mfa/prompt` | | request number |
-| `mfa_prompt_approved` | account | PC id | Approval by either path | | `by`: `owner`, `held_phone`, `own_phone` |
-| `mfa_prompt_denied` | account | PC id | Deny or wrong number on a phone | | |
-| `mfa_expired` | account | PC id | Request cap or code cap reached | | `prompts` or `codes` |
-| `helpdesk_request` | account asked about (none for an unknown username) | desk id | `POST /helpdesk/request` | `granted`, `refused`, `blocked` | `what`; desk NPC id |
-| `account_password_reset`, `account_mfa_reenrolled` | account | desk id | A grant | | desk NPC id |
+The helper never saves. Each call sits in a model method, inside the game lock, on a branch
+that changes `player_state` and saves it afterwards, so the row is stored by that save. The one
+branch that changes nothing else is marked in the table and saves for the row itself.
 
-No row carries a code, a number to match, an answer, a password, or a typed username that is not
-an account. A run of `mfa_prompt_sent` rows for one account in a short time is the trace a
-defender would look for; up to 20 can be written per attempt, two seconds apart.
+| Event | Where | When | Result | Detail | Bound | Saved by | Stage |
+|---|---|---|---|---|---|---|---|
+| `mfa_challenge` | pc | `attempt_login!`, the second-step branch | `ok` | `route`: `keyboard`, `foothold`, `from` | merged repeats | the save that stores the pending record | M1a |
+| `mfa_code_ok` | pc | `MfaAccess` verify, right code | `ok` | none | one per sign-in | the save that writes the session | M1a |
+| `mfa_code_wrong` | pc | verify, wrong code | `fail` | none | merged repeats; the three code caps | the save that stores the counts | M1a |
+| `mfa_prompt_sent` | pc | prompt, each counted request | `ok` | none | merged repeats; 20 per attempt | the save that stores `n` | M2 |
+| `mfa_prompt_approved` | pc | prompt (owner approves) or approve (player) | `ok` | `by`: `owner`, `held_phone`, `own_phone` | one per sign-in | the save that writes the session | M2, M3, H2 |
+| `mfa_prompt_denied` | pc | approve, Deny or a wrong number | `denied` | none | one per attempt | the save that drops the record | M3 |
+| `mfa_expired` | pc | verify or prompt, the per-attempt cap reached | `expired` | none | one per attempt | the save that drops the record | M1a, M2 |
+| `helpdesk_request` | desk | `request_helpdesk!`, after the desk, its NPC and `what` are checked | `granted`, `refused`, `blocked` | `what`: `password`, `mfa`; `agent`: the desk NPC's id | merged repeats; `maxTries` | granted and refused: the save that stores the grant or the tries. **Blocked changes nothing else, so that branch calls `save!` for the row** | H1 |
+| `account_password_reset`, `account_mfa_reenrolled` | desk | `request_helpdesk!`, the first grant of each | `ok` | `agent` | once per account | the save that stores the grant | H1, H2 |
+
+The helper merges an exact repeat of a source's newest row into that row's count, so a run of
+`mfa_prompt_sent` to one owner at one PC is one row with a count, which is why the row carries
+no request number. That run is the trace a defender would look for. A `helpdesk_request` for a
+username that is no account is written with `as: nil`: the typed name is never stored. A stale
+code, a refused route, a closed code step and a repeat of a granted request change nothing and
+write no row.
+
+No `detail` value and no other field holds a code, a number to match, an answer, a password or
+a typed username that is not an account.
 
 ## 14. Cross-plan requests
 
@@ -942,27 +1051,35 @@ defender would look for; up to 20 can be written per attempt, two seconds apart.
 2. **Account kind and the second step (S5c), as agreed.** Account kind does not change the
    second step. Every enrolled account meets the PC policy's `mfa`; `creds.mfa: false` is the
    only exception, and `MfaModel.enrolled?` reads nothing else.
-3. **Lockout key (S5c).** This plan adds `login_lockout_key(pc, username)` and
-   `login_lockout_keys_for(npc)` and calls them everywhere it touches a lockout (wrong codes,
-   the second-step routes, the helpdesk's unlock). If the privilege plan scopes a domain
-   account's lockout differently, it should change those two helpers and nothing in this plan
-   needs to move. Whichever plan builds first adds the helpers.
-4. **Keyring path (S5c, S5b, S7).** `credential_login_checks` becomes the one copy of steps 2
-   to 8b of the keyring sign-in. Any account-kind check on that path belongs in it, so the
-   second-step re-judge picks it up.
+3. **Lockout key (S5c).** This plan adds `AccessIdentities.lockout_key(pc_id, username)` and
+   `lockout_key_parts(key)` and moves every site that builds or splits the key onto them
+   (section 5.2). `lockout_key` is the one place a later slice changes the key, for example to
+   scope a domain account's lockout differently. The privilege plan keeps per-PC lockouts, so
+   nothing changes for it now.
+4. **Keyring path (S5c, S5b, S7).** This plan adds one check to `attempt_credential_login!`,
+   after the ended and expired checks: a saved connection is refused at a PC that asks for a
+   second step. It leaves the rest of that method alone, so the privilege plan's change to
+   `pc_admits_account?` is unaffected. The second step for saved connections is a later slice.
 5. **Technique cards (S3).** A session granted by a technique card runs no sign-in checks, so
    it meets no second step. This plan relies on that and the core plan states it. A technique
    that yields a password, or a saved connection, puts a credential in the keyring, and using
    that credential does meet the step.
 6. **Recovered passwords (S5b, S7).** A harvested or cracked password is used through the
-   ordinary typed or keyring sign-in and meets the second step. Neither plan should start a
-   session directly from a recovered password.
+   ordinary typed sign-in and meets the second step. Neither plan should start a session
+   directly from a recovered password. For the privilege plan's collect action this plan
+   provides `Game#effective_password(npc)` (H1): the account's current password, which is
+   `creds.resetPassword` after a helpdesk reset and `creds.password` before. A harvest reads it,
+   so one made after a reset yields the new password. Until H1 lands the collect action reads
+   `creds.password`.
 7. **Policy fields in the browser (S5a, S5c, any plan adding a policy field).** `policies` ship
    in the bootstrap as authored. The rule this plan follows, and asks the others to state for
    their own fields: a policy's kind is public, its answers are not.
-8. **Log rows (S9).** The helper must accept a row written before any session exists (every row
-   in section 13 up to the approval) and the detail codes listed there. S9 to say whether a run
-   of `mfa_prompt_sent` rows should be stored as one row with a count.
+8. **Log rows (S9).** Section 13 uses the helper as the log plan defines it. Three places where
+   this plan's registration differs from the log plan's summary of these rows, for S9 to copy:
+   `mfa_prompt_approved` has a third `by` code, `own_phone`; `mfa_prompt_sent` has no `request`
+   detail, so that a run merges into one row; and `mfa_challenge` has no `credential` detail
+   while a saved connection is refused. A `helpdesk_request` for an unknown username passes
+   `as: nil`.
 9. **Hosts (S1).** A host with no sign-in has no policy and so no second step. A headless
    sign-in host is covered, since the pending record stores the route.
 10. **Feature scenario names.** `test_ops_mfa` covers S8b too; no `test_ops_helpdesk` is asked
@@ -985,29 +1102,24 @@ are settled in section 5.5.
    until a sign-in is waiting.
    (c) Build a server game clock first and tick the code on game minutes.
    *Recommend (a).* The server already uses real time for token expiry, a stale code costs the
-   player nothing (it is answered as expired, not wrong), and scripted runs read the code from
+   player nothing (it is answered as stale, not wrong), and scripted runs read the code from
    the device so they do not depend on the clock. (b) is the fallback if the user wants no real
    time anywhere in the ops layer.
-2. **Should a careful owner react to being pestered** (report it, lock the account, warn the
-   desk)? (a) Not now: only the log rows are written. (b) A scenario-set reaction after N
-   requests. *Recommend (a);* reactions belong with the parked defence work, and the event
-   `mfa_prompt_sent:<npcId>` already lets a scenario voice a bark.
-3. **Can the player talk an owner into reading out a code or tapping a number?** The pretext
-   judge runs in the browser, so the server could not check it. (a) No: holding the device or
-   the phone is the route. (b) Yes, best-effort, as a dialogue-gated step with a sanity check
-   (owner met, not knocked out). *Recommend (a)* for S8a, since a code is a credential and the
-   policy is to hard-enforce those; (b) could return with a server-checked pretext route.
-4. **Borrowing: can the player give a device or phone back, and does the owner notice it is
+2. **Should NPCs react to what the player does to their account?** Two cases: a careful owner
+   who is pestered with requests (report it, lock the account, warn the desk), and an owner
+   whose password was reset (cannot sign in, grows frustrated, rings the desk). (a) Not now:
+   only the log rows are written, and the event `mfa_prompt_sent:<npcId>` lets a scenario voice
+   a bark. (b) Scenario-set reactions: one after N requests, and the owner's next sign-in at
+   their own PC failing and feeding the existing frustration model. *Recommend (a);* reactions
+   belong with the parked defence work.
+3. **Borrowing: can the player give a device or phone back, and does the owner notice it is
    gone?** Today nothing hands an item from the player to an NPC; the player can only drop it
    in a room, after which the device route refuses (beat F5). (a) No engine rule: "borrowed"
    means the owner's story lends it, and putting it back is a drop. (b) Add an ink tag that
    returns an owner-bound item to its owner, so a scenario can script "hand it back before she
    notices". (c) As (b), plus the owner noticing after a set time. *Recommend (a) now and (b)
    as a small follow-up* if the first scenarios want it; (c) belongs with the defence work.
-5. **Does the real owner react to being reset** (cannot sign in, grows frustrated, rings the
-   desk)? (a) Not now. (b) The owner's next sign-in at their own PC fails and feeds the
-   existing frustration model. *Recommend (a),* for the same reason as question 2.
-6. **Is S8b worth a typed form?** (a) A typed form: the player types the answers they found,
+4. **Is S8b worth a typed form?** (a) A typed form: the player types the answers they found,
    and the server checks them. (b) Choices picked in dialogue: easier to play, but the right
    answer is on screen among a few and can be found by trying within `maxTries`. *Recommend
    (a):* typing is what makes finding the facts matter.
