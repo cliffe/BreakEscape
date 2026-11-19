@@ -61,3 +61,17 @@ the places where the plan took a different fix.
 | Lock plan R1b M2 (cross-plan) | Applied, recommended option: re-enrolment is sign-in only. Other subjects use the owner's authored `code_device` and `phone_friendface`; push case 1, the re-enrolled approve branch, the `npc_id`/`own=1` route forms and `own:<npcId>` apply to `pc` only. New `device_in_use?(npc_id)` keeps an old device's code live while another subject names its owner; with no such subject (all of S8a) the device answers `enrolled: false` as before | Without `device_in_use?`, a work sign-in reset would blank the device the owner's locks need. The lock plan is asked (request 11) to drop `ownPhone` from its lock answer and register its kind with `device_in_use?`. Whether a re-enrolment should carry to locks stays the lock plan's open question to put to the user; this plan implements its recommended answer |
 | Log plan section 14, item 5 | Applied: the helper's switch is `save_limit: true` (default `false`); the blocked desk call passes `true` and the limit of 10 is `helpdesk_request`'s `save_limit: { 'blocked' => 10 }` in `EVENTS`. M1a and M3 guard tests force a `detail` value in a test-only event to the noted code or number. Supersedes the R5-N1 to N6 note on guard tests via `typed` | Log plan now registers limits per result and stores typed text as typed, never matched against secrets |
 | Lock plan R1b M3, passed-record life | Not decided here: the tidy keeps a `passed` record indefinitely and leaves lapsing to the caller | The lock plan's question 5 (does a pass lapse) is still open; keeping `passed` in the tidy works under either answer |
+
+Cross-plan round 2 (`CROSS_PLAN_R2.md`), items naming this plan.
+
+| Finding | What the plan does | Why |
+|---|---|---|
+| X3 | Nothing added | The lock plan answers from its own record with `numbers(...)` and the record's nonce, and dropped the request |
+| X5 | The `/mfa/*` routes keep the `/login` boolean refusal style (`codeLocked`, `stale`, `refused`); one line says so beside the refusal bodies | They extend sign-in, which brief section 5 allows |
+| X7, X10, X11, X15 | Applied: file table lists the lockout key sites by name; no level is written; `MfaClient` events never reach the log; `EVENTS` is in `ops_log_events.rb` | As found |
+| X16 | Harvest collect keeps `creds.password` after a reset; both `effective_password` sentences removed; a collect after a reset yields the old password | Agrees with the privilege plan |
+| X20 | Confirmed: all checks in `scripts/validate_mfa.rb`, hooked by one line | Brief rule |
+| X21 | Desk field `needs` renamed `minCorrect` (schema, validator, examples, tests) | `needs` is a map on a weakness in the core plan |
+| X22 | `helpdesks` added to `WITHHELD_SCENARIO_KEYS` (`network_access.rb:18`) in the file table, tested by the hostile-input scan | Server-only field must not reach the bootstrap |
+| X24 | Unchanged-scenario proof uses `test/fixtures/files/ops_unchanged/` and `bin/ops-golden-compare`; the separate goldens are dropped | Brief section 5 |
+| X26 | Two controller tests added once S3 exists: technique session on a `code` PC opens with no pending record; a technique-granted saved connection answers `mfaRequired` | Closes the technique-session gap |

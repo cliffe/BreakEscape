@@ -187,7 +187,7 @@ requests (it cannot be taken, so only the habit decides).
 ```json
 {
   "helpdesks": { "it_desk": {
-    "npc": "leila", "verify": "questions", "questions": ["staff_id", "manager"], "needs": 2,
+    "npc": "leila", "verify": "questions", "questions": ["staff_id", "manager"], "minCorrect": 2,
     "maxTries": 3, "resets": ["password", "mfa"],
     "questionLabels": { "staff_id": "Staff number", "manager": "Line manager" }
   }},
@@ -203,7 +203,7 @@ requests (it cannot be taken, so only the habit decides).
 |---|---|---|
 | `helpdesks.<id>.npc` | room NPC id | Who the desk is. One NPC may serve one desk |
 | `verify` | `"none"`, `"questions"`, `"callback"` | The rule. `none` grants to anyone who asks. `questions` compares typed answers. `callback` grants only while the player holds the account owner's phone |
-| `questions`, `needs` | ids, integer | Which `creds.recovery` keys the desk asks, and how many must be right (default: all) |
+| `questions`, `minCorrect` | ids, integer | Which `creds.recovery` keys the desk asks, and how many must be right (default: all) |
 | `maxTries` | integer 1 to 9, default 3 | Refused requests for one account before the desk stops serving that account for the rest of the game |
 | `resets` | subset of `["password", "mfa"]` | What this desk will do |
 | `questionLabels` | plain text, at most 40 code points each | Field labels on the request form. Not secret |
@@ -315,8 +315,8 @@ ops plans:
 - **The second step, after admission.** If `mfa_step_for(pc, npc)` is not `none`, write the
   pending record, save, and return the `mfaRequired` answer. No session exists yet and the
   failure counter is not cleared.
-- **Session.** Failures cleared; `start_login_session!`, at the access level the account
-  carries (the privilege plan owns the level); the answer.
+- **Session.** Failures cleared; `start_login_session!`, which writes no access level (the level
+  is computed by `session_access`, which the privilege plan owns); the answer.
 
 The second step goes between today's lines 3492 and 3494. `start_login_session!`
 (`game.rb:4388`) stays the only writer of a session.
@@ -493,7 +493,7 @@ desk has not stopped serving this username (`helpdeskTries` at `maxTries`; that 
 rest of the game, so the validator applies the rule it applies to a code step that can lock for
 good: a warning where a desk with `maxTries` is an account's only way back in, and an error
 where the dungeon graph marks that grant as the only key of a required lock, section 9); the
-username is an account; the rule holds (`none`: always; `questions`: at least `needs` normalised answers equal
+username is an account; the rule holds (`none`: always; `questions`: at least `minCorrect` normalised answers equal
 the account's `creds.recovery` values; `callback`: the player holds the account owner's phone).
 An unknown username and wrong answers take the same counted refusal with the same body, so the
 route cannot be used to list accounts. The typed username is normalised with
@@ -510,9 +510,10 @@ A grant writes `accountResets[npcId]` with `'password' => true` or `'mfa' => tru
 - **Password.** `Game#effective_password(npc)`, a public reader defined in `helpdesk_access.rb`,
   returns `creds.resetPassword` once `accountResets[npcId].password` is set, else
   `creds.password`. `attempt_login!` (`game.rb:3486-3487`) changes to call it, so the old
-  password fails at sign-in, and the privilege plan's collect action calls it too. Readers of
-  things written before the reset keep the authored value on purpose: a post-it
-  (`game.rb:3425`) and an earlier capture (`game.rb:2697`) are out of date, as they would be.
+  password fails at sign-in. Readers of things written before the reset keep the authored value
+  on purpose: a post-it (`game.rb:3425`), an earlier capture (`game.rb:2697`) and the privilege
+  plan's harvest collect (`creds.password`) are out of date, as they would be. A collect after a
+  reset therefore yields the old password, which no longer signs in.
   The keyring lists a new implicit entry `<npcId>.reset` (kind `password`) built beside the
   captured-account entries (`credential_keyring.rb:263-285`).
 - **A password reset unlocks the account.** Lockouts never expire, and a locked key is refused
@@ -702,7 +703,8 @@ today): status 200, `{ success: false, mfaRequired: true, mfa: "<kind>", pcId, n
 ownPhone? }`. `number` is present only for `push_number_match`; `ownPhone` only for a
 re-enrolled account. No session exists yet. The keyring sign-in keeps its parameters too; its
 one new answer is the 422 `{ success: false, typeToSignIn: "second_step" | "password_changed" }`
-refusal of a saved connection (section 5.2).
+refusal of a saved connection (section 5.2). The `/mfa/*` routes keep the sign-in route's
+boolean refusal style (`codeLocked`, `stale`, `refused`) because they extend `/login`.
 
 "Route still holds" below is `second_step_refusal` (section 5.2); it answers as the first step
 would. "Lockout" is the account's lockout key at that PC (422 `lockedOut`).
@@ -745,7 +747,7 @@ PC makes; whatever satisfies the check stays on the server until earned.
 | The number to match | In the `mfaRequired` answer (the player's own sign-in screen) and, among three choices, in `GET /mfa/phone` to a player holding the phone | Never marked as the right one on the phone |
 | `habits.approvesPrompts`, `promptPatience`, `awareness`, the `mfaPrompts` counts | Never. The client learns only `approved` true or false per request, and `promptsSent` for its own attempt | All of it |
 | `creds.recovery`, `creds.resetPassword` | `resetPassword` once, in the granting answer and then as the keyring entry's secret | The `recovery` map is never sent, and a refusal does not say which answers were right. The facts themselves are in the world by design (a feed post, a document, a line of dialogue) and reach the browser when those do |
-| `helpdesks` | `questionLabels`, `resets` and the desk's NPC id, as `helpdeskForms` in the bootstrap, only when a desk exists | `verify`, `needs`, `maxTries`, the `questions` ids |
+| `helpdesks` | `questionLabels`, `resets` and the desk's NPC id, as `helpdeskForms` in the bootstrap, only when a desk exists | `verify`, `minCorrect`, `maxTries`, the `questions` ids |
 | `code_device` item | Type, id, name, `owner` (an NPC id, as a phone carries) | Nothing secret is on the item |
 | `mfaPending`, `mfaAccounts`, `accountResets`, `helpdeskTries` | Never | All of it |
 
@@ -819,8 +821,8 @@ value, so `mfa_step_for` is `none` everywhere, every `/mfa/*` route answers 404 
 - `helpdesk` (a desk id) on a pretext ask, in `#/definitions/socialPretextAsk` (reached from
   `:3725-3729`).
 
-**Validator.** New `scripts/validate_mfa.rb`, called from `validate_scenario.rb` beside the
-habits check, reading `MfaModel` and `HelpdeskModel`. `scripts/validate_npc_habits.rb` gains the
+**Validator.** New `scripts/validate_mfa.rb` holds every check of this plan, hooked into
+`validate_scenario.rb` by one line beside the habits check, reading `MfaModel` and `HelpdeskModel`. `scripts/validate_npc_habits.rb` gains the
 two habit keys and the per-parameter check.
 
 Errors: unknown `mfa` value; kind `code` on a policy whose PCs admit an enrolled account with no
@@ -828,7 +830,7 @@ Errors: unknown `mfa` value; kind `code` on a policy whose PCs admit an enrolled
 is not an account; push kind where an admitted enrolled account's NPC has `phone: false`;
 `approvesPrompts` or `promptPatience` invalid or on a non-room NPC; a helpdesk `npc` that is not a
 room NPC or serves two desks; a `questions` id missing from any account's `recovery` that the desk
-could be asked about; `needs` above the number of questions; `resets` naming `password` when no
+could be asked about; `minCorrect` above the number of questions; `resets` naming `password` when no
 account has `resetPassword`; a `resetPassword` value that appears in any ink (the rule
 `creds.password` already has); `resetPassword` equal to the account's `password`; a pretext ask
 naming a `helpdesk` that does not exist.
@@ -878,8 +880,10 @@ Proof:
 
 1. `test/controllers/break_escape/mfa_absent_test.rb` replays the existing sign-in and keyring
    controller cases against their fixtures with time frozen and asserts each answer is
-   byte-equal to a golden copy, and that the five new keys stay empty. The golden answers are
-   captured on the base commit and committed before any change of this plan.
+   byte-equal to its fixture in `test/fixtures/files/ops_unchanged/`, compared by
+   `bin/ops-golden-compare`, and that the five new keys stay empty. The fixtures are captured
+   from main and committed before any change of this plan; this plan builds no golden mechanism
+   of its own.
 2. The habits fixtures and tests pass unedited
    (`test/fixtures/format_8c/test_access_habits.old.loaded.json`, `test/unit/npc_habits_test.rb`,
    `test/models/break_escape/npc_habits_loader_test.rb`), and a new case asserts the saved
@@ -910,7 +914,7 @@ enrolment, device lookup, code for a fixed time and key, `code_state` for each o
 windows with and without a used window, an own-phone device id changes the code, `numbers` gives three different values in a fixed order for fixed inputs,
 `prompt_habit` per level and with an authored value, `prompt_patience` bounds);
 `npc_habits_test` additions (the two keys validate, `promptPatience` bounds, expansion of an NPC
-without them unchanged); `helpdesk_model_test.rb` (normalising, `needs`, code point caps).
+without them unchanged); `helpdesk_model_test.rb` (normalising, `minCorrect`, code point caps).
 
 **Controller** (`test/controllers/break_escape/`): `mfa_code_test.rb`, `mfa_device_gate_test.rb`,
 `mfa_push_test.rb`, `mfa_phone_test.rb`, `mfa_keyring_test.rb`, `helpdesk_request_test.rb`,
@@ -925,6 +929,8 @@ The feature scenario's beats are each asserted in a controller case too. Cases n
 | Code | Device route refused with a forged item and with another type's id; another owner's device gives a code that fails; verify with no pending record; a code two windows old answers `stale: "expired"` and counts nowhere; five wrong codes drop the record with no `maxAttempts`; wrong codes reach the policy lockout; a re-enrolled account's old device answers `enrolled: false` with no code |
 | Code step closure | Thirty wrong codes across attempts and PCs close the step; a right code is then refused with `retryIn`; one `mfa_code_locked` row exists; with time moved on `CODE_CLOSED_SECONDS` a right code is accepted and the count starts from 0; a second-factor grant reopens it at once |
 | Route re-judge | The account removed from the access list between steps is refused |
+| Technique sessions (`mfa_keyring_test.rb`, added once S3 exists) | A technique session on a `code` PC opens with no pending record. A saved connection granted by a technique, signed in at that PC, answers `mfaRequired` |
+| Withheld key | The hostile-input scan finds no `helpdesks` key, desk NPC id or `maxTries` in the scenario sent to the browser |
 | Saved connection (`mfa_keyring_test.rb`) | Refused with `typeToSignIn: "second_step"` at a `push` and a number matching PC and over a foothold, with no session, pending record or counter moved; a locked-out account answers `lockedOut`; an exempt account's saved connection signs in; at a PC with no `mfa`, a saved connection is unchanged before a password reset, refused with `typeToSignIn: "password_changed"` after it, and works again once the new password has been typed at any PC |
 | Push | The count survives a new attempt; requests caught on a held phone do not raise it; a knocked-out owner approves nothing; `tooSoon` |
 | Phone | Approve refused without the phone; the three numbers are stable for one attempt and differ for the next; deny cancels; own-phone list refused with no re-enrolled account |
@@ -1014,9 +1020,10 @@ Shared files (re-read just before editing, own block only, explicit paths):
 
 | File | This plan's edit | Also touched by |
 |---|---|---|
-| `app/models/break_escape/game.rb` | `attempt_login!` second step, `typed_route_refusal`, the four lockout key sites, `login_lockout_keys_for`, the sourceless room-add test (`:1171`), five state keys | S5a, S5c (sign-in order, lockout scope), S3 (sessions) |
+| `app/models/break_escape/game.rb` | `attempt_login!` second step, `typed_route_refusal`, the lockout key sites (`attempt_login!`, `account_locked_out_at?`, `lockout_pcs_for_client`, `account_login_key?`; the fifth is in `access_work.rb`), `login_lockout_keys_for`, the sourceless room-add test (`:1171`), five state keys | S5a, S5c (sign-in order, lockout scope), S3 (sessions) |
+| `app/models/break_escape/network_access.rb` | `helpdesks` added to `WITHHELD_SCENARIO_KEYS` (`:18`), so the scenario sent to the browser never carries it; the desk reaches the client only as `helpdeskForms`. Test: the hostile-input scan | S1, S5a |
 | `lib/break_escape/access_identities.rb`, `access_work.rb` | `lockout_key`, `lockout_key_parts`; `locked_out_at?` calls them | S5c if a later slice rescopes lockouts |
-| `app/models/break_escape/ops_log.rb` | this plan's entries in `OpsLog::EVENTS` | every plan that writes rows |
+| `lib/break_escape/ops_log_events.rb` | this plan's entries in `OpsLog::EVENTS` | every plan that writes rows |
 | `credential_login.rb`, `credential_model.rb` | the two saved-connection refusals before the session write; `password` flag on the kind | S5b, S7 (keyring), S5c (account kind on the keyring path) |
 | `credential_keyring.rb` | implicit `<npcId>.reset` entry | S5b, S7 |
 | `games_controller.rb`, `config/routes.rb`, `game_policy.rb` | six routes, `set_game` list, six policy methods, the two NPC-item gate sites (`:3443`, `:3470`), the `added` mark in `find_accessible_item` | every plan |
@@ -1116,8 +1123,8 @@ No field holds a code, a number to match, an answer or a password. The only free
 5. **Technique cards (S3).** A session a card grants meets no second step; a password or saved
    connection a card yields goes to the keyring, and using it does meet the step.
 6. **Recovered passwords (S5b, S7).** A harvested or cracked password is typed at sign-in and
-   meets the step; neither plan starts a session from one. The collect action calls
-   `Game#effective_password(npc)` once H1 lands, and reads `creds.password` until then.
+   meets the step; neither plan starts a session from one. The collect action keeps reading
+   `creds.password` after a reset, on purpose (section 5.2).
 7. **Policy fields in the browser (S5a, S5c, any plan adding a policy field).** A policy's kind
    is public, its answers are not (section 7); the others are asked to state it for their fields.
 8. **Log rows (S9).** Section 13 is written to the log plan's helper and to its registration of
@@ -1136,7 +1143,7 @@ No field holds a code, a number to match, an answer or a password. The only free
     `device_in_use?` keeping that device's code live); `numbers` taking the subject's record
     key (5.1); `mfaPrompts` and `mfaAccounts` counted per step owner across subjects (5.2,
     section 8); and in `MfaClient` the subject keys, `takeCompleted` handing out a pass answer
-    for any kind, and the four `mfa_*` events emitted from `MfaClient` with `targetType` and
+    for any kind, and the four `mfa_*` events emitted from `MfaClient` (browser events that never reach the log, apart from the log's own `mfa_*` rows) with `targetType` and
     `targetId` in place of `pcId` (5.3). The lock plan is asked to use these names, to keep its
     lock records in its own key, to register its subject kind with `device_in_use?`, and to
     drop `ownPhone` from its lock answer. A change to those functions' signatures, to the
