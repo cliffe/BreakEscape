@@ -160,6 +160,11 @@ export function pickDecoyMarks(liftFeatures, decoy, count) {
         const f = { pattern: decoy.pattern, opens: decoy.canonical.opens, marks };
         if (!compareFeatures(liftFeatures, f).match) return marks;
     }
+    // No alternative differed: a card with fewer marks leaves some lift mark without a partner, so it can never match.
+    for (let n = count - 1; n >= 0; n--) {
+        const marks = n ? ringPick(pool, centre, n, 0, singularOf(decoy)) : [];
+        if (!compareFeatures(liftFeatures, { pattern: decoy.pattern, opens: decoy.canonical.opens, marks }).match) return marks;
+    }
     return first || [];
 }
 
@@ -189,4 +194,131 @@ export function mismatchReason(diff, lift, card) {
     const where = `${spotWords(m.dx, m.dy)} ${REF_WORDS[lift.pattern] || 'the core'}`;
     const there = diff.there ? `that card has ${TYPE_WORDS[diff.there.type]} there` : 'that card has no marked detail there';
     return `No match: same pattern, but the minutiae differ. Your lift has ${TYPE_WORDS[m.type]} ${where}; ${there}.`;
+}
+
+/**
+ * Tags for a card's marks in the magnified compare view. The lift's marks are numbered 1..n. A card mark
+ * takes the number of the lift mark it pairs with (same type, within SAME_SPOT in the core-relative frame,
+ * the test compareFeatures uses), each lift mark pairing once; a mark with no partner is tagged 'X'. The
+ * owner's card carries the lift's marks, so it gets 1..n in order; a decoy shows X where it differs.
+ * @param {{type:string, dx:number, dy:number}[]} liftMarks
+ * @param {{type:string, dx:number, dy:number}[]} cardMarks
+ * @returns {{lift:string[], card:string[], paired:number}}
+ */
+export function pairMarkTags(liftMarks, cardMarks) {
+    const taken = new Set();
+    const card = cardMarks.map(c => {
+        let best = -1, bd = SAME_SPOT;
+        liftMarks.forEach((l, i) => {
+            const d = Math.hypot(c.dx - l.dx, c.dy - l.dy);
+            if (!taken.has(i) && l.type === c.type && d < bd) { bd = d; best = i; }
+        });
+        if (best < 0) return 'X';
+        taken.add(best);
+        return String(best + 1);
+    });
+    return { lift: liftMarks.map((_, i) => String(i + 1)), card, paired: taken.size };
+}
+
+/**
+ * Square crop (canvas px, whole numbers) centred on a print's reference point, so both prints of a pair
+ * line up round it. It may reach past the canvas edge when the reference point is near it; the caller clips.
+ * @param {{x:number,y:number}} centre @param {number} side
+ */
+export function cropAround(centre, side) {
+    return { x: Math.round(centre.x - side / 2), y: Math.round(centre.y - side / 2), side };
+}
+
+/**
+ * Crop side that holds every mark of every print in the pair, each kept `pad` px inside, centred on that
+ * print's reference point. Even, at least `min`; the max leaves room for the widest ring (MAX_R_WIDE).
+ * @param {{marks:{x:number,y:number}[], centre:{x:number,y:number}}[]} sets
+ */
+export function cropSide(sets, pad = 10, min = 48, max = 120) {
+    let need = 0;
+    for (const { marks, centre } of sets) {
+        for (const m of marks) need = Math.max(need, 2 * Math.max(Math.abs(m.x - centre.x), Math.abs(m.y - centre.y)));
+    }
+    return Math.max(min, Math.min(max, 2 * Math.ceil((need + 2 * pad) / 2)));
+}
+
+/**
+ * A crop for a limited plan: the largest side up to `maxSide` (even), with its centre moved off the reference point to the
+ * middle of the marks' bounding box, so every mark (glyph radius 3 plus `pad`) lies inside. If the marks still do not fit
+ * `maxSide`, the side is widened to hold them: showing every mark the player is told to check beats a tidy layout.
+ * The offset is the same for the lift and the cards (the upright frame), whole numbers.
+ * @param {{marks:{x:number,y:number}[], centre:{x:number,y:number}}[]} sets @param {number} maxSide
+ * @returns {{side:number, ox:number, oy:number}}
+ */
+export function fitCropToMarks(sets, maxSide, pad = 4) {
+    let x0 = 0, x1 = 0, y0 = 0, y1 = 0, any = false;
+    for (const { marks, centre } of sets) {
+        for (const m of marks) {
+            const dx = m.x - centre.x, dy = m.y - centre.y;
+            if (!any) { x0 = x1 = dx; y0 = y1 = dy; any = true; }
+            x0 = Math.min(x0, dx); x1 = Math.max(x1, dx); y0 = Math.min(y0, dy); y1 = Math.max(y1, dy);
+        }
+    }
+    if (!any) return { side: maxSide, ox: 0, oy: 0 };
+    const need = Math.max(x1 - x0, y1 - y0) + 2 * (pad + 3) + 1;   // +1: the centre offset is rounded
+    const side = Math.max(maxSide, 2 * Math.ceil(need / 2));
+    return { side, ox: Math.round((x0 + x1) / 2), oy: Math.round((y0 + y1) / 2) };
+}
+
+/**
+ * A mark's place in the upright card frame: the reference point plus its core-relative offset (dx, dy). The lift is
+ * rotated on the surface, so its own x, y are not comparable with a card's; these are.
+ * @param {{dx:number, dy:number}[]} marks @param {{x:number,y:number}} centre
+ */
+export function uprightMarks(marks, centre) {
+    return marks.map(m => ({ ...m, x: centre.x + m.dx, y: centre.y + m.dy }));
+}
+
+/**
+ * Turn a lift upright: a copy of an n x n RGBA image rotated by -rotation (radians) about `centre`, the inverse of the
+ * generator's canonical -> final turn, so a mark at centre + R(rotation)(dx, dy) lands at centre + (dx, dy). Nearest
+ * neighbour by inverse mapping (no smoothing); pixels that fall outside the source take `bg` ([r, g, b]).
+ * @param {Uint8ClampedArray|number[]} src @param {number} n @param {{x:number,y:number}} centre
+ * @param {number} rotation @param {number[]} bg
+ * @returns {Uint8ClampedArray}
+ */
+export function rotateUpright(src, n, centre, rotation, bg = [0, 0, 0]) {
+    const out = new Uint8ClampedArray(n * n * 4);
+    const cs = Math.cos(rotation), sn = Math.sin(rotation);
+    for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+            const rx = x - centre.x, ry = y - centre.y;
+            const sx = Math.round(centre.x + cs * rx - sn * ry), sy = Math.round(centre.y + sn * rx + cs * ry);
+            const o = (y * n + x) * 4;
+            if (sx < 0 || sy < 0 || sx >= n || sy >= n) { out[o] = bg[0]; out[o + 1] = bg[1]; out[o + 2] = bg[2]; out[o + 3] = 255; continue; }
+            const i = (sy * n + sx) * 4;
+            out[o] = src[i]; out[o + 1] = src[i + 1]; out[o + 2] = src[i + 2]; out[o + 3] = src[i + 3];
+        }
+    }
+    return out;
+}
+
+/**
+ * Pixel offsets of a mark glyph at 1x: a ring (radius 3) for a ridge ending, a 7 x 7 square outline for a fork.
+ * Drawn with fillRect and scaled by a whole number, so the glyph is never antialiased.
+ */
+export function markGlyph(type) {
+    const out = [];
+    if (type === 'bifurcation') {
+        for (let i = -3; i <= 3; i++) out.push([i, -3], [i, 3], [-3, i], [3, i]);
+    } else {
+        for (const [x, y] of [[-1, -3], [0, -3], [1, -3], [-1, 3], [0, 3], [1, 3], [-3, -1], [-3, 0], [-3, 1], [3, -1], [3, 0], [3, 1],
+            [-2, -2], [2, -2], [-2, 2], [2, 2]]) out.push([x, y]);
+    }
+    return out;
+}
+
+/**
+ * Spoken description of a print's marks for the magnified view: no counts and no verdict. With `numbered`
+ * the lift's marks carry their tag numbers.
+ * @returns {string} e.g. '1, a fork above and to the right of the centre; 2, a ridge ending below the centre'
+ */
+export function describeMarks(marks, pattern, numbered) {
+    const ref = REF_WORDS[pattern] || 'the core';
+    return marks.map((m, i) => `${numbered ? `${i + 1}, ` : ''}${TYPE_WORDS[m.type]} ${spotWords(m.dx, m.dy)} ${ref}`).join('; ');
 }

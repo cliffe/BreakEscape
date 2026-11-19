@@ -91,7 +91,8 @@ test('completed: heard once, heard_<knot> set, npc_exchange_heard complete, no r
     assert.equal(o.exLines().length, LINES.length);
     const heard = o.emitted('npc_exchange_heard:ex_parcel');
     assert.equal(heard.length, 1);
-    assert.equal(heard[0].data.complete, true);
+    assert.equal(heard[0].data.complete, undefined, 'the event carries no complete flag');
+    assert.equal(o.evs('exchange_heard')[0].complete, true);
     assert.equal(o.globals.heard_ex_parcel, true);
     assert.equal(o.evs('exchange_cut').length, 0);
     o.meetAgain();
@@ -123,7 +124,7 @@ test('root cause: lines held up by the speech lock keep the pair at the cooler u
     o.sys.step(60000);
     assert.equal(o.exLines().length, LINES.length, 'every line played');
     assert.equal(o.evs('exchange_cut').length, 0, 'not cut');
-    assert.equal(o.emitted('npc_exchange_heard:ex_parcel')[0]?.data.complete, true);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
     assert.equal(o.globals.heard_ex_parcel, true);
 });
 
@@ -156,7 +157,8 @@ test('cut by a player conversation after a heard line: heard (complete false), n
     assert.equal(cut[0].heardLines, 2);
     const heard = o.emitted('npc_exchange_heard:ex_parcel');
     assert.equal(heard.length, 1);
-    assert.equal(heard[0].data.complete, false);
+    assert.equal(heard[0].data.complete, undefined);
+    assert.equal(o.evs('exchange_heard')[0].complete, false, 'the log still tells a cut from a complete');
     assert.equal(o.globals.heard_ex_parcel, true);
     o.w.setChat(null);
     o.sys.step(30000);
@@ -400,7 +402,7 @@ test('room change: the player leaves after the first line, the pair plays on to 
     o.sys.step(40000);
     assert.equal(o.exLines().length, LINES.length);
     assert.deepEqual(o.exLines().map(e => e.data.overheard), [true, false, false, false]);
-    assert.equal(o.emitted('npc_exchange_heard:ex_parcel')[0]?.data.complete, true);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
     assert.equal(o.globals.heard_ex_parcel, true);
 });
 
@@ -435,7 +437,7 @@ test('hush: a hush from an earlier bark does not cut the exchange after its firs
     o.sys.step(40000);
     assert.equal(o.evs('exchange_cut').length, 0, 'not hushed');
     assert.equal(o.exLines().length, LINES.length, 'every line played');
-    assert.equal(o.emitted('npc_exchange_heard:ex_parcel')[0]?.data.complete, true);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
     assert.equal(o.globals.heard_ex_parcel, true);
 });
 
@@ -522,4 +524,155 @@ test('validator: an exchange longer than EXCHANGE_MAX_MS is a warning; a short o
     assert.ok(!issues.some(s => s.includes("'ex_short' runs")), 'the short knot is fine');
     // the fixture long lines also raise the 40-character bubble error (validator-exchange-line-length.test.mjs); not this test's point
     assert.deepEqual(issues.filter(s => s.includes('ex_') && !s.includes('a bubble holds')).length, 1, issues.join('\n'));
+});
+
+// Heard from the first overheard line (a reload during or just after an exchange must not replay it)
+test('first line: heard_<knot> is set at once and the exchange still plays to the end', () => {
+    const o = office();
+    o.until(() => o.exLines().length === 1, 20000, 'the first line');
+    assert.equal(o.globals.heard_ex_parcel, true, 'set at the first overheard line');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'the event goes out with the flag');
+    assert.equal(o.evs('exchange_heard').length, 0, 'the log waits for the finish');
+    o.sys.step(40000);
+    assert.equal(o.exLines().length, LINES.length, 'plays to the end');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'still one event');
+    assert.equal(o.evs('exchange_heard')[0].complete, true);
+    assert.equal(o.evs('exchange_heard').length, 1);
+    assert.equal(o.evs('exchange_cut').length, 0);
+});
+
+test('reload after the first line (mid-exchange): a fresh session built from the saved globals does not replay it', () => {
+    const o = office();
+    o.until(() => o.exLines().length === 1, 20000, 'the first line');
+    const p = office({ globals: { ...o.globals } });   // the reload: the exchange never reached its finish
+    p.sys.step(60000);
+    assert.equal(p.exLines().length, 0, 'not played again');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'the event went out before the reload');
+    assert.equal(p.emitted('npc_exchange_heard:ex_parcel').length, 0, 'and is not sent twice');
+});
+
+test('reload while the last line is still showing: not played again', () => {
+    const o = office();
+    o.until(() => o.exLines().length === LINES.length, 60000, 'the last line');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'the event went out at the first line');
+    assert.equal(o.evs('exchange_heard').length, 0, 'the finish has not run yet');
+    const p = office({ globals: { ...o.globals } });
+    p.sys.step(60000);
+    assert.equal(p.exLines().length, 0);
+});
+
+test('no line overheard: the flag is not set at any point, and a later meeting in earshot plays from line 1', () => {
+    let hearing = false;
+    const o = office({ hears: () => hearing });
+    o.sys._speechUntil = 8000;
+    hearing = true;
+    o.until(() => o.evs('exchange_started').length === 1, 20000, 'the start');
+    hearing = false;
+    o.until(() => o.exLines().length >= 1, 20000, 'a line');
+    assert.equal(o.globals.heard_ex_parcel, undefined);
+    o.sys.step(40000);
+    assert.equal(o.globals.heard_ex_parcel, undefined);
+    hearing = true;
+    o.meetAgain();
+    o.sys.step(60000);
+    assert.equal(o.exLines()[LINES.length].data.lineId, 'ex_parcel:0');
+    assert.equal(o.globals.heard_ex_parcel, true);
+});
+
+test('sync: one heard line writes exactly one heard_<knot> key through setGlobal; later lines and the finish do not write it again', () => {
+    const o = office();
+    const writes = [];
+    const inner = o.w.world.setGlobal;
+    o.w.world.setGlobal = (name, value) => { writes.push([name, value]); inner(name, value); };
+    o.sys.step(40000);
+    assert.equal(o.exLines().length, LINES.length);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'finished');
+    assert.deepEqual(writes, [['heard_ex_parcel', true]], 'one scalar write, no list or whole-map write');
+    o.meetAgain();
+    o.sys.step(60000);
+    assert.equal(writes.length, 1, 'not again at the next meeting');
+});
+
+test('sync: a heard cut writes heard_<knot> once (line 1), not again at the finish; one event', () => {
+    const o = office();
+    const writes = [];
+    const inner = o.w.world.setGlobal;
+    o.w.world.setGlobal = (name, value) => { writes.push([name, value]); inner(name, value); };
+    o.until(() => o.exLines().length === 1, 30000, 'line one');
+    // pinned at line 1, before the cut: the old code wrote and emitted only at the finish
+    assert.deepEqual(writes, [['heard_ex_parcel', true]], 'written at line 1');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'event at line 1');
+    assert.equal(o.evs('exchange_cut').length, 0, 'no cut yet');
+    o.until(() => o.exLines().length === 2, 30000, 'two lines');
+    o.w.setChat('bob');
+    o.sys.step(NEEDS_TICK_MS * 2);
+    assert.equal(o.evs('exchange_cut').length, 1);
+    assert.deepEqual(writes, [['heard_ex_parcel', true]]);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
+});
+
+test('first overheard line is the second: no flag or event after line 1, both on line 2, in order', () => {
+    let hearing = true;
+    const o = office({ hears: () => hearing });
+    o.sys._speechUntil = 8000;   // the first line waits for the speech lock...
+    o.until(() => o.evs('exchange_started').length === 1, 20000, 'the start');
+    hearing = false;             // ...the player is out of earshot for it...
+    o.until(() => o.exLines().length === 1, 20000, 'line one');
+    assert.equal(o.exLines()[0].data.overheard, false);
+    assert.equal(o.globals.heard_ex_parcel, undefined, 'no flag after an unheard line 1');
+    assert.equal(o.emitted('npc_exchange_heard:').length, 0, 'no event after an unheard line 1');
+    hearing = true;              // ...and back in earshot for the rest
+    o.until(() => o.exLines().length === 2, 20000, 'line two');
+    assert.equal(o.exLines()[1].data.lineId, 'ex_parcel:1');
+    assert.equal(o.globals.heard_ex_parcel, true, 'flag at line 2');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'one event at line 2');
+    const emits = o.w.calls.emits;
+    const chatted = emits.findIndex(e => e.name.startsWith('npc_chatted:') && e.data.lineId === 'ex_parcel:1');
+    const overheard = emits.findIndex(e => e.name.startsWith('npc_overheard:') && e.data.lineId === 'ex_parcel:1');
+    const heardAt = emits.findIndex(e => e.name === 'npc_exchange_heard:ex_parcel');
+    assert.ok(chatted >= 0 && chatted < overheard && overheard < heardAt, 'npc_chatted, npc_overheard, then npc_exchange_heard');
+    o.sys.step(40000);
+    assert.equal(o.exLines().length, LINES.length, 'plays to the end');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'still one event');
+});
+
+test('knot already in _exPlayed before line 1: line 1 gives no event and no write', () => {
+    const o = office();
+    const writes = [];
+    const inner = o.w.world.setGlobal;
+    o.w.world.setGlobal = (name, value) => { writes.push([name, value]); inner(name, value); };
+    // line 1 can play in the same tick as the start, so mark the knot from the start's own log entry
+    const log = o.sys._log.bind(o.sys);
+    o.sys._log = (npc, ev, extra) => { if (ev === 'exchange_started') o.sys._exPlayed.add('ex_parcel'); return log(npc, ev, extra); };
+    o.until(() => o.exLines().length === 1, 30000, 'line one');
+    assert.equal(o.exLines()[0].data.overheard, true, 'line 1 is heard');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 0, 'no event');
+    assert.deepEqual(writes, [], 'no write');
+    // and no event at a later line either
+    o.sys.step(40000);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 0, 'no event at a later line');
+    assert.deepEqual(writes, [], 'no write at a later line');
+});
+
+// ── validator: a binding that reads data.complete (EXCHANGE_HEARD R2 m3) ─────
+
+test('validator: a npc_exchange_heard mapping that reads data.complete is a warning; one without is not', { skip: skipRuby }, () => {
+    const scenario = {
+        globalVariables: { heard_ex_a: false },
+        rooms: { office: { type: 'room_office', objects: [], npcs: [
+            { id: 'ann', voice: {}, eventMappings: [
+                { eventPattern: 'npc_exchange_heard:ex_a', condition: 'data.complete === true', completeTask: 't1' },
+                { eventPattern: 'npc_exchange_heard:ex_a', completeTask: 't2' },
+                { eventPattern: 'npc_chatted:cooler', condition: 'data.complete === true', completeTask: 't3' },
+                // data.completed is a different word: no hit for it
+                { eventPattern: 'npc_exchange_heard:ex_a', condition: 'data.completed === true', completeTask: 't4' }
+            ] },
+            { id: 'bob', voice: {} }
+        ] } }
+    };
+    const issues = ruby('puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))', JSON.stringify(scenario));
+    const hits = issues.filter(s => s.includes('reads data.complete'));
+    assert.equal(hits.length, 1, issues.join('\n'));
+    assert.match(hits[0], /WARNING/);
+    assert.match(hits[0], /NPC 'ann' mapping 'npc_exchange_heard:ex_a'/);
 });

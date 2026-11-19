@@ -9,7 +9,7 @@ Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has o
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 18 (7 optional) |
+| Total tasks | 18 (8 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 8 |
 | AND-gate convergences | 1 |
@@ -468,24 +468,27 @@ flowchart TD
   rc_substation_map_19{"147-Substation Wall Map"}
   rc_shift_handover_sheet_20{"Shift Handover Sheet"}
   rc_ops_floor_workstation_21{"Abandoned Operator Workstation"}
-  rc_vm_launcher_attack_terminal_22{"Field Console (Kali)"}
-  rc_flag_station_safetynet_relay_23{"SAFETYNET Relay Terminal"}
-  rc_scada_backup_server_24{"SCADA Backup Server"}
-  rc_rack_cabling_note_25{"Cabling Survey Note"}
-  rc_npc_elena_rodriguez_26("Elena Rodriguez")
-  rc_crisis_control_system_27[["Cascade Control System"]]
-  rc_obj28_28{"Sequence Abort Confirmation"}
-  rc_cascade_countdown_display_29{"Cascade Countdown Display"}
-  rc_casualty_projection_30{"Signed Casualty Projection"}
-  rc_npc_dr_james_mercer_31("Dr. James Mercer")
-  rc_genhall_first_aid_kit_32{"First Aid Kit"}
-  rc_maintenance_log_33{"Plant Maintenance Log"}
-  rc_backup_transfer_switch_34{"Backup Power Transfer Switch"}
-  rc_genset_control_panel_35{"Genset Control Panel"}
-  rc_vault_trunk_runs_36{"Trunk Cable Runs"}
-  rc_tomb_gamma_dossier_37{"Recovered Site Reference -- 'Tomb Gamma'"}
-  rc_mole_intercept_evidence_38{"Intercepted Mail -- Deployment Confirmed"}
-  rc_npc_thomas_park_39("Thomas Park")
+  rc_ops_cooler_22{"Water Cooler"}
+  rc_npc_adaeze_okafor_23("Adaeze Okafor")
+  rc_npc_gwen_pritchard_24("Gwen Pritchard")
+  rc_vm_launcher_attack_terminal_25{"Field Console (Kali)"}
+  rc_flag_station_safetynet_relay_26{"SAFETYNET Relay Terminal"}
+  rc_scada_backup_server_27{"SCADA Backup Server"}
+  rc_rack_cabling_note_28{"Cabling Survey Note"}
+  rc_npc_elena_rodriguez_29("Elena Rodriguez")
+  rc_crisis_control_system_30[["Cascade Control System"]]
+  rc_obj31_31{"Sequence Abort Confirmation"}
+  rc_cascade_countdown_display_32{"Cascade Countdown Display"}
+  rc_casualty_projection_33{"Signed Casualty Projection"}
+  rc_npc_dr_james_mercer_34("Dr. James Mercer")
+  rc_genhall_first_aid_kit_35{"First Aid Kit"}
+  rc_maintenance_log_36{"Plant Maintenance Log"}
+  rc_backup_transfer_switch_37{"Backup Power Transfer Switch"}
+  rc_genset_control_panel_38{"Genset Control Panel"}
+  rc_vault_trunk_runs_39{"Trunk Cable Runs"}
+  rc_tomb_gamma_dossier_40{"Recovered Site Reference -- 'Tomb Gamma'"}
+  rc_mole_intercept_evidence_41{"Intercepted Mail -- Deployment Confirmed"}
+  rc_npc_thomas_park_42("Thomas Park")
 
   security_checkpoint --> operations_floor
   operations_floor --> server_room
@@ -513,29 +516,32 @@ flowchart TD
   operations_floor --> rc_substation_map_19
   operations_floor --> rc_shift_handover_sheet_20
   operations_floor --> rc_ops_floor_workstation_21
-  server_room --> rc_vm_launcher_attack_terminal_22
-  server_room --> rc_flag_station_safetynet_relay_23
-  server_room --> rc_scada_backup_server_24
-  server_room --> rc_rack_cabling_note_25
-  server_room --> rc_npc_elena_rodriguez_26
-  scada_control --> rc_crisis_control_system_27
-  rc_crisis_control_system_27 --> rc_obj28_28
-  scada_control --> rc_cascade_countdown_display_29
-  scada_control --> rc_casualty_projection_30
-  scada_control --> rc_npc_dr_james_mercer_31
-  generator_room --> rc_genhall_first_aid_kit_32
-  generator_room --> rc_maintenance_log_33
-  generator_room --> rc_backup_transfer_switch_34
-  generator_room --> rc_genset_control_panel_35
-  cable_vault --> rc_vault_trunk_runs_36
-  cable_vault --> rc_tomb_gamma_dossier_37
-  cable_vault --> rc_mole_intercept_evidence_38
-  cable_vault --> rc_npc_thomas_park_39
+  operations_floor --> rc_ops_cooler_22
+  operations_floor --> rc_npc_adaeze_okafor_23
+  operations_floor --> rc_npc_gwen_pritchard_24
+  server_room --> rc_vm_launcher_attack_terminal_25
+  server_room --> rc_flag_station_safetynet_relay_26
+  server_room --> rc_scada_backup_server_27
+  server_room --> rc_rack_cabling_note_28
+  server_room --> rc_npc_elena_rodriguez_29
+  scada_control --> rc_crisis_control_system_30
+  rc_crisis_control_system_30 --> rc_obj31_31
+  scada_control --> rc_cascade_countdown_display_32
+  scada_control --> rc_casualty_projection_33
+  scada_control --> rc_npc_dr_james_mercer_34
+  generator_room --> rc_genhall_first_aid_kit_35
+  generator_room --> rc_maintenance_log_36
+  generator_room --> rc_backup_transfer_switch_37
+  generator_room --> rc_genset_control_panel_38
+  cable_vault --> rc_vault_trunk_runs_39
+  cable_vault --> rc_tomb_gamma_dossier_40
+  cable_vault --> rc_mole_intercept_evidence_41
+  cable_vault --> rc_npc_thomas_park_42
 
   class security_checkpoint,operations_floor room
   class server_room,scada_control,generator_room,cable_vault lock
-  class rc_badge_printer_1,rc_crisis_control_system_27 container
-  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_nfs_field_guide_10,rc_m07_ssh_field_guide_11,rc_m07_privesc_field_guide_12,rc_hollis_server_badge_14,rc_generator_maintenance_key_17,rc_situation_board_18,rc_substation_map_19,rc_shift_handover_sheet_20,rc_ops_floor_workstation_21,rc_vm_launcher_attack_terminal_22,rc_flag_station_safetynet_relay_23,rc_scada_backup_server_24,rc_rack_cabling_note_25,rc_obj28_28,rc_cascade_countdown_display_29,rc_casualty_projection_30,rc_genhall_first_aid_kit_32,rc_maintenance_log_33,rc_backup_transfer_switch_34,rc_genset_control_panel_35,rc_vault_trunk_runs_36,rc_tomb_gamma_dossier_37,rc_mole_intercept_evidence_38 item
-  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_ray_hollis_13,rc_npc_the_architect_15,rc_npc_director_magnus_netherton_16,rc_npc_elena_rodriguez_26,rc_npc_dr_james_mercer_31,rc_npc_thomas_park_39 npc
+  class rc_badge_printer_1,rc_crisis_control_system_30 container
+  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_nfs_field_guide_10,rc_m07_ssh_field_guide_11,rc_m07_privesc_field_guide_12,rc_hollis_server_badge_14,rc_generator_maintenance_key_17,rc_situation_board_18,rc_substation_map_19,rc_shift_handover_sheet_20,rc_ops_floor_workstation_21,rc_ops_cooler_22,rc_vm_launcher_attack_terminal_25,rc_flag_station_safetynet_relay_26,rc_scada_backup_server_27,rc_rack_cabling_note_28,rc_obj31_31,rc_cascade_countdown_display_32,rc_casualty_projection_33,rc_genhall_first_aid_kit_35,rc_maintenance_log_36,rc_backup_transfer_switch_37,rc_genset_control_panel_38,rc_vault_trunk_runs_39,rc_tomb_gamma_dossier_40,rc_mole_intercept_evidence_41 item
+  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_ray_hollis_13,rc_npc_the_architect_15,rc_npc_director_magnus_netherton_16,rc_npc_adaeze_okafor_23,rc_npc_gwen_pritchard_24,rc_npc_elena_rodriguez_29,rc_npc_dr_james_mercer_34,rc_npc_thomas_park_42 npc
   class node_start start
 ```

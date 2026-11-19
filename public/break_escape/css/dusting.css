@@ -79,6 +79,7 @@
 }
 .dusting-feedback { min-height: 1.2em; color: #ffd75e; }
 .dusting-feedback.good { color: var(--d-accent); }
+.dusting-keys { color: var(--d-dim); }
 .dusting-estimate { color: var(--d-text); }
 .dusting-result .dusting-result-value { color: var(--d-accent); }
 
@@ -182,16 +183,29 @@
 }
 
 /* F26: legend for the marked minutiae on the lift and the reference cards */
-.dusting-legend { font-size: 0.92em; }
-.dusting-key-end, .dusting-key-fork { display: inline-block; width: 9px; height: 9px; border: 2px solid #ff5a6a; vertical-align: -1px; margin: 0 2px; }
-.dusting-key-end { clip-path: polygon(0 2px, 2px 2px, 2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px)); }  /* pixel-stepped corners, no radius */
-.dusting-hc .dusting-key-end, .dusting-hc .dusting-key-fork { border-color: #fff; }
+.dusting-legend { font-size: 16px; line-height: 1.2; }
+/* The mark key glyphs are 7 x 7 canvases drawn from markGlyph, shown at a whole-number 2x with no smoothing */
+.dusting-key-glyph { display: inline-block; width: 14px; height: 14px; image-rendering: pixelated; vertical-align: -2px; margin: 0 2px; }
 /* F26 follow-up: each card has a separate View large button; the card on show in the big frame is outlined */
 .dusting-ref-wrap { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
-.dusting-view { font-size: 0.85em; padding: 3px 8px; }
+/* Cap each card at REF_CARD_W (144) so a long label ("2. Femi Adeyemi (not a match)") wraps at word boundaries inside the card
+   instead of widening it and pushing the row onto a second line. The four-card grid sizes its own columns. */
+.dusting-refs:not([data-count="4"]) .dusting-ref-wrap { flex: 0 0 144px; max-width: 144px; min-width: 0; }
+.dusting-ref > span { overflow-wrap: anywhere; min-width: 0; }
+/* Card captions are clamped: the name runs to two lines at most, then an ellipsis (the full name is the button's title and
+   accessible name). A rejected or matched card puts its tag on its own line and gives the name one line, so a caption never
+   passes two lines and a long name cannot push the cards onto a second row or past the frame. */
+.dusting-ref-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.dusting-ref-name:not(:last-child) { display: block; white-space: nowrap; text-overflow: ellipsis; }
+.dusting-ref-tag { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* Cards in one row share the tallest card's height, so a wrapped label never leaves its View button lower than the rest */
+.dusting-refs:not([data-count="4"]) .dusting-ref { flex: 1 1 auto; }
+.dusting-view { font-size: 0.85em; padding: 3px 8px; overflow-wrap: anywhere; }
 .dusting-view[aria-pressed="true"] { border-color: var(--d-accent); }
 .dusting-ref[data-viewing] { border-color: var(--d-accent); outline: 2px solid var(--d-accent); }
-.dusting-stage-note { margin-top: 8px; font-size: 0.92em; }
+.dusting-canvas[hidden] { display: none; }
+.dusting-stage-note { margin-top: 8px; font-size: 16px; }
+.dusting-stage-note[hidden] { display: none; }
 .dusting-stage-note p { margin: 0 0 6px; }
 
 /* Phone portrait and narrow screens: the meters and the action buttons sit in normal flow at the foot of the panel.
@@ -326,6 +340,26 @@
 .dusting-short .dusting-ref { padding: 4px; }
 .dusting-short .dusting-stage-note { font-size: 16px; }
 .dusting-short .dusting-btn, .dusting-short .dusting-jar, .dusting-short .dusting-pattern, .dusting-short .dusting-ref { min-height: 36px; padding: 4px 8px; }
+/* A capped 144px card holds its 128px canvas with even 4px padding (8px sides would leave 4px on the right only) */
+.dusting-short .dusting-refs:not([data-count="4"]) .dusting-ref { padding: 4px; }
+
+/* Compare: the lift and one card magnified side by side (whole-number scale, no smoothing). Tags are text with a 2px box. */
+.dusting-zoom { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.dusting-zoom[hidden] { display: none; }
+/* Stacked: the lift above the card, each pane its own row (the card pane is captioned "Card") */
+.dusting-zoom-stack { flex-direction: column; flex-wrap: nowrap; }
+.dusting-zoom-pane { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* One line, clipped to the pane with an ellipsis (width 0 + min-width 100% keeps a long name from widening the pane and the stage column). */
+.dusting-zoom-cap { font-size: 18px; color: var(--d-dim); width: 0; min-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dusting-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.dusting-zoom-box { position: relative; border: 2px solid var(--d-line); line-height: 0; background: #f2f0ea; align-self: flex-start; }
+.dusting-zoom-canvas { display: block; image-rendering: pixelated; }
+.dusting-zoom-tag {
+    position: absolute; box-sizing: border-box; min-width: 20px; height: 20px; padding: 0 3px; text-align: center;
+    font: 20px/16px 'VT323', 'GNF', monospace; color: #fff; background: #000; border: 2px solid #ffd23f;
+}
+.dusting-zoom-tag[data-none] { border-style: dashed; border-color: #ff5a6a; color: #ff5a6a; }
+.dusting-hc .dusting-zoom-tag { border-color: #fff; }
 
 /* Compare screen on a desktop-sized frame (1280x720): a smaller key note and tighter rows so the options and
    key lines at the foot fit without the frame scrolling (live proof r1: scrollHeight 693 against 660). */
@@ -334,4 +368,13 @@
     .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-stage-note { font-size: 16px; line-height: 1.1; }
     .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-forensic { margin-top: 6px; padding-top: 6px; }
     .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-options label { min-height: 32px; }
+    /* Heading and the lift's quality share a row, and the panel's rows sit 4 px apart, so the cards, a two-line "No match" message and
+       the buttons fit a 660 px frame with three cards (the live proof for check 25 needed about 60 px). */
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel > h3 { float: left; margin: 0 16px 0 0; line-height: 24px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel > p:not(.dusting-result) { clear: both; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-panel p { margin-bottom: 4px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-refs { margin: 4px 0; }
 }
+
+/* Comparing: the forensic line is not needed while choosing (it comes back with the match), so the frame is a line shorter. */
+.dusting-root:not(.dusting-short)[data-step="compare"]:not(.dusting-matched) .dusting-forensic { display: none; }

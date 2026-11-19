@@ -222,7 +222,11 @@ export class KeySelection {
         const containerHeight = keyHeight + labelHeight + spacing + padding + 10; // +50 for title
         
         // Create container for key selection - positioned in the middle but below pins
-        const keySelectionContainer = scene.add.container(0, 230);
+        // A cropped canvas (phone or short window) shows only world y offset..offset+340: lift the
+        // panel so its labels and arrows end inside the crop (4px clear of the bottom edge)
+        const crop = this.parent._portraitCameraOffset;
+        const panelY = crop ? Math.min(230, crop.y + 340 - containerHeight - 4) : 230;
+        const keySelectionContainer = scene.add.container(0, panelY);
         keySelectionContainer.setDepth(1000); // High z-index to appear above everything
         
         // Add background - interactive to block clicks from reaching underlying scene objects

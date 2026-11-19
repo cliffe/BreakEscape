@@ -14,9 +14,10 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
-    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns
+    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
+    zoomPlanBeside, ZOOM_STATUS_MAX_H, ZOOM_CHROME_H
 } from './dusting-model.js';
-import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS } from './print-features.js';
+import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide, fitCropToMarks, markGlyph, describeMarks, uprightMarks, rotateUpright } from './print-features.js';
 import { ART_SLOTS, SURFACE_SLOT, preloadArt, onArtLoaded, drawSlot, artRect, hasArt, slotCanvas, refreshSlotCanvases } from './dusting-art.js';
 import { displayNameForOwner, bestLiftFromObject } from '../../systems/biometric-samples.js';
 import { displayDashes } from '../../utils/display-dashes.js';
@@ -50,7 +51,8 @@ const LIFT_READY = ['Lift (L)'];
 export const SHORT_LANDSCAPE_MAX_H = 500;
 /** Height the title, frame padding and canvas border take in the two-column layout. */
 export const SHORT_LANDSCAPE_CHROME = 100;
-// Does the dusting panel fit the window height? The container pads 12 px top and bottom.
+// Does the dusting panel fit the window height? Unused by the game now (the cards are always 1x beside the
+// magnified pair); kept exported for the compare-fit test.
 export function refCardsFit(root, viewportHeight, pad = 24) {
     if (!root || typeof root.getBoundingClientRect !== 'function' || !viewportHeight) return true;
     return root.getBoundingClientRect().height + pad <= viewportHeight;
@@ -63,7 +65,7 @@ export function nextView(current, count) {
 }
 const STEPS = ['find', 'powder', 'dust', 'lift', 'compare'];
 const STEP_NAMES = { find: 'Find', powder: 'Powder', dust: 'Dust', lift: 'Lift', compare: 'Compare' };
-const HINT_AFTER_MS = 15000;
+const NEAR_TEXT = 'Faint ridges catch the light here.';
 const KEY_TICK_MS = 70;
 const STORE_HC = 'breakEscape.dusting.highContrast';
 const STORE_STEADY = 'breakEscape.dusting.steadyHand';
@@ -249,6 +251,8 @@ export class DustingMinigame extends MinigameScene {
         this.candidates = [];
         this.correctIndex = -1;
         this.viewing = null; // F26 follow-up: index of the card shown at full size in place of the lift
+        this.fullLiftBy = null; // 'L' when the player asked for the whole lift, 'view' when V brought it
+        this.fullLift = false; // compare on a non-short screen: true brings the lift canvas back in place of the magnified pair
         this.peelStart = 0;
         this.foundAt = 0;
         this._resultSent = false;
@@ -315,7 +319,7 @@ export class DustingMinigame extends MinigameScene {
                 <div class="dusting-options">
                     <label><input type="checkbox" class="dusting-opt-hc"> High contrast</label>
                     <label><input type="checkbox" class="dusting-opt-steady"> Steady hand (gentler powder)</label>
-                    <span class="dusting-keys">Keys: arrows move, Space acts, Shift = big steps</span>
+                    <span class="dusting-keys" data-keys>Keys: arrows move, Space acts, Shift = big steps</span>
                 </div>
             </div>`;
         this.root = this.gameContainer.querySelector('.dusting-root');
@@ -326,6 +330,7 @@ export class DustingMinigame extends MinigameScene {
         this.stageNote = this.root.querySelector('.dusting-stage-note');
         this.statusEl = this.root.querySelector('.dusting-status');
         this.forensicEl = this.root.querySelector('.dusting-forensic');
+        this.keysEl = this.root.querySelector('[data-keys]');
         this.root.querySelector('.dusting-object').textContent = displayDashes(this.data.name || 'Surface');
         this.img = this.ctx.createImageData(N, N);
         this.hcBox = this.root.querySelector('.dusting-opt-hc');
@@ -353,17 +358,29 @@ export class DustingMinigame extends MinigameScene {
         this.addEventListener(cv, 'pointermove', e => this._onPointerMove(e));
         this.addEventListener(cv, 'pointerup', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointercancel', e => this._onPointerUp(e));
-        this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; } });
+        this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; if (this.nearPrint) this._clearNear(); } });
         this.addEventListener(this.panel, 'click', e => {
             const el = e.target.closest('[data-action]');
             if (el && !el.disabled) this._action(el.dataset.action, el.dataset);
         });
+        // Compare: the magnified pair follows the card under the pointer or the keyboard focus (no re-render, so focus stays).
+        const zoomTo = (e, speak) => {
+            const w = e.target.closest && e.target.closest('.dusting-ref-wrap');
+            const b = w && w.querySelector('[data-index]');
+            const i = b ? Number(b.dataset.index) : NaN;
+            if (!Number.isInteger(i) || this.step !== 'compare' || this.identified || this.zoomIdx === i) return;
+            this.zoomIdx = i;
+            this._drawZoom();
+            if (speak && this._zoomSpeech) this.announce(this._zoomSpeech);   // the card's words only; the lift was read on entering compare
+        };
+        this.addEventListener(this.panel, 'pointerover', e => zoomTo(e, false));
+        this.addEventListener(this.panel, 'focusin', e => zoomTo(e, true));
         this.addEventListener(document, 'keydown', e => this._onKeyDown(e));
         this.addEventListener(document, 'keyup', e => this._onKeyUp(e));
         this.addEventListener(window, 'resize', () => this._layout());
         this.addEventListener(this.hcBox, 'change', () => {
             this.highContrast = this.hcBox.checked; writeStore(STORE_HC, this.highContrast);
-            this.root.classList.toggle('dusting-hc', this.highContrast); this.dirty = true;
+            this.root.classList.toggle('dusting-hc', this.highContrast); this.dirty = true; this._drawKeyGlyphs();
         });
         this.addEventListener(this.steadyBox, 'change', () => {
             this.steady = this.steadyBox.checked; writeStore(STORE_STEADY, this.steady);
@@ -385,16 +402,30 @@ export class DustingMinigame extends MinigameScene {
         const maxPx = short
             ? Math.min(window.innerHeight - SHORT_LANDSCAPE_CHROME, window.innerWidth * 0.45, 512)
             : Math.min(window.innerHeight * 0.52, window.innerWidth * 0.86, 512);
-        this.scale = Math.max(1, Math.min(this.step === 'compare' ? 3 : 4, Math.floor(maxPx / N)));
+        const capScale = this.step !== 'compare' ? 4 : 3;
+        this.scale = Math.max(1, Math.min(capScale, Math.floor(maxPx / N)));
         this.canvas.style.width = `${N * this.scale}px`;
-        if (this.stageNote) this.stageNote.style.maxWidth = `${N * this.scale}px`;
         this.canvas.style.height = `${N * this.scale}px`;
+        // Comparing on a non-short screen: the magnified pair takes the lift's place in the stage column
+        // (My whole lift, View large and L bring the lift back).
+        this.canvas.hidden = this._zoomInStage(short);
         this.wide = window.innerWidth >= 760;
+        if (this.step === 'compare' && this.patternOk && this.panel) {
+            // the pair sits in the stage column, or in the panel in short landscape; moving between them re-renders
+            if (this._zoomShort !== undefined && this._zoomShort !== short) this._renderPanel(); else this._drawZoom();
+        }
+        this._zoomShort = short;
+    }
+
+    /** True while the magnified pair stands in for the lift canvas (compare, pattern named, not short, whole lift not asked for). */
+    _zoomInStage(short) {
+        return this.step === 'compare' && !!this.patternOk && !short && !this.fullLift;
     }
 
     _later(fn, ms) {
         const t = setTimeout(() => { this._timers = this._timers.filter(x => x !== t); fn(); }, ms);
         this._timers.push(t);
+        return t;
     }
 
     cleanup() {
@@ -474,13 +505,27 @@ export class DustingMinigame extends MinigameScene {
         p.querySelectorAll('[data-slot]').forEach(host => {
             host.appendChild(slotCanvas(host.dataset.slot, Number(host.dataset.scale || 2)));
         });
+        this._zoomShort = this.root.classList.contains('dusting-short');
         if (this.step === 'compare' && this.patternOk) this._drawReferences();
-        // The compare key sits under the lift, where there is room, so the panel fits a 1000 px window.
+        // The pair stands in for the lift in the stage column (non-short screens); in short landscape it is in the panel.
+        const inStage = this._zoomInStage(this._zoomShort);
+        this.canvas.hidden = inStage;
         if (this.stageNote) {
-            const note = this.step === 'compare' ? this._compareNote() : '';
-            this.stageNote.innerHTML = note;
-            this.stageNote.hidden = !note;
+            this.stageNote.innerHTML = inStage ? this._zoomHtml() : '';
+            this.stageNote.hidden = !inStage;
         }
+        this.root.classList.toggle('dusting-matched', !!this.identified);
+        if (this.keysEl) {
+            let keys = 'Keys: arrows move, Space acts, Shift = big steps';
+            if (this.step === 'compare' && this.patternOk) {
+                const n = this.candidates.length, whole = this._zoomShort ? '' : (this.identified ? 'L whole lift' : ', L whole lift');
+                keys = this.identified ? `Keys: ${whole}` : `Keys: 1 to ${n} picks a card, V views it large${whole}`;
+            }
+            this.keysEl.textContent = keys;
+            this.keysEl.hidden = keys === 'Keys: ';   // nothing to list after the match in short landscape
+        }
+        this._drawKeyGlyphs();
+        if (this.step === 'compare' && this.patternOk) this._drawZoom();
         this._applyLabels();
         this._refreshDynamic();
     }
@@ -514,12 +559,18 @@ export class DustingMinigame extends MinigameScene {
             </div>`;
     }
 
+    /** The one-line key for the Find step: controls, what to look for (by difficulty), and when the hint arrives. */
+    _findKeyLine() {
+        const look = this.diff.findFloor === 0 ? 'Look for a small patch of curved ridges in the beam.' : 'Look for a dotted patch.';
+        return `Move the torch with the mouse or arrow keys. ${look} Click or Space: check. H: hint (after ${Math.round(this.diff.hintAfterMs / 1000)} seconds).`;
+    }
+
     _htmlFind() {
         return `
             <h3>Find the print</h3>
             <p>Hold the light low across the surface. Where residue catches the light you will see a small patch
-            of fine curved ridges. Long straight streaks are only reflections.
-            Click on the patch, or move the light with the arrow keys and press Space.</p>
+            of fine curved ridges. Long straight streaks are only reflections.</p>
+            <p class="dusting-keys">${this._findKeyLine()}</p>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-hint" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
@@ -612,22 +663,49 @@ export class DustingMinigame extends MinigameScene {
         if (this.identified) {
             return `${head}<p class="dusting-feedback good">Match: ridge detail agrees at the ${this.print.pattern === 'arch' ? 'ridge flow' : this.print.deltas.length > 1 ? 'core and both deltas' : 'core and the delta'}. The numbered tags mark the same ridge detail on both cards.</p>
                 <p>This is ${escapeHtml(this.ownerName)}'s print.</p>
+                ${this._zoomShort ? this._zoomHtml() : ''}
                 <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(true)}</div>
-                <div class="dusting-buttons"><button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
+                <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
         }
         const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
             ? ` It opens to the ${this.print.canonical.opens}.` : '';
         return `${head}<p>That is ${/^[aeiou]/i.test(this.print.pattern) ? 'an' : 'a'} ${PATTERN_INFO[this.print.pattern].label.toLowerCase()}, marked on the card.${opens} Check the class first: rule out any card with a different pattern${this.print.pattern === 'loop' ? ' or a loop that opens the other way' : ''}.</p>
-            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
-            <div class="dusting-buttons"><button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
+            ${this._zoomShort ? this._zoomHtml() : ''}
+            ${this._compareNote()}
+            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
+            <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
     }
 
-    /** The marks key and the View large hint, shown under the lift while the player compares. */
+    /** The magnified lift and card pair; it is drawn by _drawZoom. The lift pane is turned upright to the card's frame. */
+    _zoomHtml() {
+        return `<div class="dusting-zoom" data-zoom>
+                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap" title="Your lift (turned upright)">Your lift (turned upright)<span class="dusting-sr" data-zmarks></span></span><div class="dusting-zoom-box" data-zbox="lift"></div></div>
+                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap" data-zcap>Card</span><div class="dusting-zoom-box" data-zbox="card"></div></div>
+            </div>`;
+    }
+
+    /** One sentence: what to check and the mark key (pixel glyphs, drawn by _drawKeyGlyphs). Gone once identified. */
     _compareNote() {
         if (!this.patternOk || this.identified || !this.liftMarks || !this.liftMarks.length) return '';
-        return `<p class="dusting-legend">Minutiae are marked round ${REF_WORDS[this.print.pattern] || 'the core'} on every card (green + core, triangle delta): <span class="dusting-key-end" aria-hidden="true"></span> ridge ending, <span class="dusting-key-fork" aria-hidden="true"></span> fork. The matching card has the same marks in the same places.</p>
-            <p class="dusting-legend">To see a card as large as your lift, use its View large button, or press V to step through the cards. Viewing is not a pick: click the card itself, or press its number, to choose it.</p>`;
+        return `<p class="dusting-legend">Check that each numbered mark on your lift has the same kind of mark in the same place on the card: <canvas class="dusting-key-glyph" data-key="ending" width="7" height="7" aria-hidden="true"></canvas> ridge ending, <canvas class="dusting-key-glyph" data-key="bifurcation" width="7" height="7" aria-hidden="true"></canvas> fork.</p>`;
+    }
+
+    /** Draw the mark key glyphs from markGlyph at 1x (CSS shows them at a whole-number 2x, no smoothing). */
+    _drawKeyGlyphs() {
+        if (!this.panel || !this.panel.querySelectorAll) return;
+        this.panel.querySelectorAll('canvas[data-key]').forEach(cv => {
+            const c = cv.getContext('2d');
+            c.clearRect(0, 0, 7, 7);
+            c.fillStyle = this.highContrast ? '#ffffff' : '#ff5a6a';
+            for (const [x, y] of markGlyph(cv.dataset.key)) c.fillRect(x + 3, y + 3, 1, 1);
+        });
+    }
+
+    /** "My whole lift" / "Back to the pair": only where the pair stands in for the lift (not short landscape). */
+    _wholeLiftButton() {
+        if (this._zoomShort) return '';
+        return `<button class="dusting-btn" data-action="fulllift" aria-pressed="${!!this.fullLift}" aria-keyshortcuts="L">Whole lift (L)</button>`;
     }
 
     _refButtons(done) {
@@ -636,12 +714,12 @@ export class DustingMinigame extends MinigameScene {
         return this.candidates.map(c => {
             const viewing = !done && this.viewing === c.index;
             const view = done ? '' : `
-                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to your lift' : `View card ${c.index + 1}, ${escapeHtml(c.label)}, at full size`}">${viewing ? 'Back to my lift' : 'View large'}</button>`;
+                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
             return `
             <div class="dusting-ref-wrap">
-            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}">
+            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}${done && c.correct ? ', match' : ''}" title="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}${done && c.correct ? ', match' : ''}">
                 <canvas class="dusting-ref-canvas" data-ref="${c.index}" width="${N}" height="${N}"></canvas>
-                <span>${c.index + 1}. ${escapeHtml(c.label)}${c.rejected ? ' (not a match)' : ''}${done && c.correct ? ' (match)' : ''}</span>
+                <span><span class="dusting-ref-name">${c.index + 1}. ${escapeHtml(c.label)}</span>${c.rejected ? ' <span class="dusting-ref-tag">(not a match)</span>' : ''}${done && c.correct ? ' <span class="dusting-ref-tag">(match)</span>' : ''}</span>
             </button>${view}
             </div>`;
         }).join('');
@@ -665,6 +743,7 @@ export class DustingMinigame extends MinigameScene {
             case 'pattern': this._choosePattern(ds.pattern); break;
             case 'ref': this._chooseRef(Number(ds.index)); break;
             case 'view': this._viewCard(Number(ds.index)); break;
+            case 'fulllift': this._toggleWholeLift(); break;
             case 'unidentified': this.identified = false; this._finish(); break;
             case 'finish': this._finish(); break;
             default: break;
@@ -739,12 +818,15 @@ export class DustingMinigame extends MinigameScene {
         const actual = this.print.pattern;
         if (pt === actual) {
             this.patternOk = true;
+            this._layout();   // the lift drops to 2x to make room for the magnified pair
             // Drop the last wrong guess's "Not a whorl..." before the candidate list opens (m05 M4)
             this.message = '';
             this._buildCandidates();
             this._renderPanel();
             this._drawCard();
-            this.announce(`Correct: ${/^[aeiou]/.test(actual) ? 'an' : 'a'} ${PATTERN_INFO[actual].label.toLowerCase()}. Core and delta marked. Now pick the matching reference card.`);
+            // the lift's marks are described once, here; a card's are described when it takes focus
+            const liftWords = (this.liftMarks && this.liftMarks.length) ? ` Your lift, turned upright: ${describeMarks(this.liftMarks, actual, true)}.` : '';
+            this.announce(`Correct: ${/^[aeiou]/.test(actual) ? 'an' : 'a'} ${PATTERN_INFO[actual].label.toLowerCase()}. Core and delta marked. Now pick the matching reference card.${liftWords}`);
             return;
         }
         this.message = `Not ${/^[aeiou]/.test(pt) ? 'an' : 'a'} ${PATTERN_INFO[pt].label.toLowerCase()}. ${PATTERN_INFO[pt].why} Look at the core and the triangles on your lift, then try again.`;
@@ -760,6 +842,13 @@ export class DustingMinigame extends MinigameScene {
         if (this.step !== 'compare' || !this.patternOk || this.identified) return;
         const c = Number.isInteger(i) ? this.candidates[i] : null;
         this.viewing = c && this.viewing !== i ? i : null;
+        if (this.viewing !== null) {
+            // V drives the pair too; the card shows in the big frame. Remember whether L or V brought the lift canvas back.
+            this.zoomIdx = this.viewing;
+            if (!this.fullLift) { this.fullLift = true; this.fullLiftBy = 'view'; }
+        } else if (this.fullLiftBy === 'view') {
+            this.fullLift = false; this.fullLiftBy = null;   // viewing ended: the pair returns unless the player asked for the whole lift
+        }
         this._renderPanel();
         this._drawCard();
         this._updateAria();
@@ -767,6 +856,20 @@ export class DustingMinigame extends MinigameScene {
         this.announce(v
             ? `Showing card ${v.index + 1}, ${v.label}, at full size. Press V for the next card.`
             : 'Showing your lift.');
+    }
+
+    /** Swap the magnified pair and the whole lift in the stage column (non-short screens). Showing the pair again drops any card on show. */
+    _toggleWholeLift() {
+        if (this.step !== 'compare' || !this.patternOk || this._zoomShort) return;
+        this.fullLift = !this.fullLift;
+        this.fullLiftBy = this.fullLift ? 'L' : null;
+        if (!this.fullLift) this.viewing = null;
+        this._renderPanel();
+        this._drawCard();
+        this._updateAria();
+        const b = this.panel.querySelector('[data-action="fulllift"]');
+        if (b && b.focus) b.focus({ preventScroll: true });
+        this.announce(this.fullLift ? 'Showing your whole lift.' : 'Showing the magnified pair.');
     }
 
     /** V steps the big frame through lift, card 1, card 2, ... and back to the lift. */
@@ -778,6 +881,7 @@ export class DustingMinigame extends MinigameScene {
         const c = this.candidates[i];
         if (!c || c.rejected) return;
         if (this.viewing !== null) { this.viewing = null; this.dirty = true; this._updateAria(); this._drawCard(); }
+        if (this.fullLift) { this.fullLift = false; this.fullLiftBy = null; }   // the pair comes back for the result
         if (c.correct) {
             this.identified = true;
             this._renderPanel();
@@ -786,6 +890,7 @@ export class DustingMinigame extends MinigameScene {
             this.announce(`Match. This is ${this.ownerName}'s print. The numbered tags mark the same ridge detail on both cards.`);
         } else {
             c.rejected = true;
+            this.zoomIdx = i;   // the zoom stays on the rejected card, now with its numbers and X marks
             const diff = compareFeatures(this.liftFeatures, c.features);
             this.message = diff.match
                 ? 'No match: the ridge endings and forks near the core sit in different places. Compare them card by card.'
@@ -918,6 +1023,13 @@ export class DustingMinigame extends MinigameScene {
             c.marks = c.correct ? card : pickDecoyMarks(this.liftFeatures, c.print, count);
             c.features = featuresOf(c.print, c.marks);
         }
+        // One crop side for the whole step, from the upright offsets of the lift and every card, so the panes never
+        // resize as the player moves between cards (the owner's pair is not the tightest crop).
+        this._zoomSets = [
+            { marks: uprightMarks(lift, this.print.centre), centre: this.print.centre },
+            ...this.candidates.map(c => ({ marks: uprightMarks(c.marks, c.print.centre), centre: c.print.centre }))
+        ];
+        this.zoomSide = cropSide(this._zoomSets);
     }
 
     // ------------------------------------------------------------------ input
@@ -934,6 +1046,8 @@ export class DustingMinigame extends MinigameScene {
         e.preventDefault();
         const pos = this._canvasPos(e);
         this.reticle = pos; this.pointerInside = true; this.pointerDown = true;
+        // Touch in the Find step: dragging shows the proximity cue first; the check happens on lift (m5).
+        this._touchFind = e.pointerType === 'touch' && this.step === 'find';
         try { this.canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointers can't be captured */ }
         this.canvas.focus({ preventScroll: true });
         this._countStroke();
@@ -950,9 +1064,37 @@ export class DustingMinigame extends MinigameScene {
         if (this.pointerDown) this._act(pos, this.lastPt || prev);
         this.lastPt = this.pointerDown ? pos : null;
         this.dirty = true;
+        this._updateNear();
     }
 
-    _onPointerUp() {
+    /** Find step: say once per approach that the torch is close to the print (visible text and aria-live), clear it on leaving. */
+    _updateNear() {
+        if (this.step !== 'find' || this.found || !this.pointerInside) return;
+        const near = nextNearState(!!this.nearPrint, this.print.mask, N, this.reticle.x, this.reticle.y, this.diff.nearRadius);
+        if (near === !!this.nearPrint) return;
+        this.nearPrint = near;
+        if (!near) { this._clearNear(); return; }
+        // The status line is both the visible text and the live region. A message spoken in the last second
+        // (a "Nothing there") is not cut off: the cue waits for it.
+        const wait = 1000 - (performance.now() - (this._saidAt || -1e9));
+        if (wait <= 0) this.announce(NEAR_TEXT);
+        else if (!this._nearTimer) {
+            this._nearTimer = this._later(() => {
+                this._nearTimer = null;
+                if (this.nearPrint && this.step === 'find' && !this.found) this.announce(NEAR_TEXT);
+            }, wait);
+        }
+    }
+
+    _clearNear() {
+        this.nearPrint = false;
+        if (this._nearTimer) { clearTimeout(this._nearTimer); this._timers = this._timers.filter(x => x !== this._nearTimer); this._nearTimer = null; }
+        if (this.statusEl && this.statusEl.textContent === NEAR_TEXT) this.statusEl.textContent = '';
+    }
+
+    _onPointerUp(e) {
+        if (this._touchFind && e && e.type === 'pointerup' && this.step === 'find') this._attemptFind(this.reticle);
+        this._touchFind = false;
         this.pointerDown = false;
         this.lastPt = null;
     }
@@ -980,7 +1122,7 @@ export class DustingMinigame extends MinigameScene {
 
     /** One brush/press/mark at pos; with `from`, a continuous stroke from there. */
     _act(pos, from) {
-        if (this.step === 'find') { if (!from) this._attemptFind(pos); return; }
+        if (this.step === 'find') { if (!from && !this._touchFind) this._attemptFind(pos); return; }
         if (this.step === 'dust') {
             if (this.puffMode) { this.field.puff(pos.x, pos.y, PUFF_RADIUS); this.field.puff(pos.x, pos.y, PUFF_RADIUS); }
             else {
@@ -1015,6 +1157,7 @@ export class DustingMinigame extends MinigameScene {
             this.pointerInside = true;
             if (this.spaceHeld || this.stickyBrush) this._act(this.reticle, old);
             this.dirty = true;
+            this._updateNear();
             return;
         }
         if ((k === ' ' || k === 'Enter') && !nativeControl && canvasStep) {
@@ -1043,8 +1186,15 @@ export class DustingMinigame extends MinigameScene {
             this._chooseRef(Number(lower) - 1);
             return;
         }
+        if (this.step === 'compare' && this.patternOk && lower === 'l' && !this._zoomShort) {
+            e.preventDefault();
+            if (e.repeat) return;   // holding L must not flicker the view
+            this._toggleWholeLift();
+            return;
+        }
         if (this.step === 'compare' && this.patternOk && !this.identified && lower === 'v') {
             e.preventDefault();
+            if (e.repeat) return;   // holding V must not spin through the cards
             this._cycleView();
             return;
         }
@@ -1088,6 +1238,7 @@ export class DustingMinigame extends MinigameScene {
             return;
         }
         this.found = true;
+        this._clearNear();
         this.foundAt = performance.now();
         this.message = 'Found it: a latent print.';
         this._refreshDynamic();
@@ -1220,6 +1371,7 @@ export class DustingMinigame extends MinigameScene {
 
     announce(msg) {
         if (!msg || !this.statusEl) return;
+        this._saidAt = performance.now();
         this.statusEl.textContent = '';
         // a changed text node is what a screen reader notices
         this.statusEl.textContent = msg;
@@ -1541,8 +1693,163 @@ export class DustingMinigame extends MinigameScene {
         c.restore();
     }
 
-    /** A reference card (ink on pale card) with its core, deltas and marks, on a 128 x 128 context. */
-    _paintReference(c, cand) {
+    /** Which card the magnified pair shows: after the match the owner's, else the hovered/focused/viewed one (a rejected card stays), else the first open. */
+    _zoomIndex() {
+        if (this.identified) return this.correctIndex;
+        const has = i => Number.isInteger(i) && this.candidates[i];
+        if (has(this.zoomIdx)) return this.zoomIdx;
+        if (has(this.viewing)) return this.viewing;
+        return this.candidates.findIndex(c => !c.rejected);
+    }
+
+    /**
+     * The pair's size, the same for every card: the side is fixed for the step (zoomSide), so hovering never resizes a pane.
+     * Short landscape keeps the pair in the panel at 2x or more. Elsewhere zoomPlan picks side by side or stacked (lift above
+     * the card) from the real width of the stage column and the height left in the window.
+     */
+    _zoomLayout(inPanel) {
+        const side = this.zoomSide || 48;
+        if (inPanel) {
+            const avail = Math.floor(((this.panel.clientWidth || 340) - 12) / 2) - 4;
+            const S = zoomScale(side, avail, ZOOM_MAX_H_SHORT);
+            return { side, S, W: side * S, stacked: false, limited: false };
+        }
+        const rootW = this.root.clientWidth || (this.wide ? 960 : 360);
+        const budgetH = zoomBudgetH(window.innerHeight || 720, this._zoomChrome());
+        let p;
+        if (this.wide) {
+            // beside the panel: it keeps one row of cards plus the button row, and a 3x pair never squeezes it under 420 px
+            p = zoomPlanBeside({ side, rootW, cards: this.candidates.length, budgetH });
+        } else {
+            p = zoomPlan({ side, availW: rootW - 16 - 4, budgetH, maxS: 2 });   // the 8 px padding either side of the content
+        }
+        if (p.limited) {
+            // last resort: a smaller crop, its centre moved onto the marks (or the crop widened) so every mark still shows
+            const fit = fitCropToMarks(this._zoomSets, p.side);
+            return { ...p, side: fit.side, W: 2 * fit.side, ox: fit.ox, oy: fit.oy };
+        }
+        return p;
+    }
+
+    /**
+     * Height of the frame outside the main row, measured (frame scroll height less the main row), with room kept for a
+     * status line of up to three lines so a long mark list never grows the budget. Falls back to ZOOM_CHROME_H.
+     */
+    _zoomChrome() {
+        const main = this.root.querySelector && this.root.querySelector('.dusting-main');
+        const total = this.root.scrollHeight, mh = main ? main.offsetHeight : 0;
+        if (!total || !mh) return ZOOM_CHROME_H;
+        const sh = this.statusEl ? (this.statusEl.offsetHeight || 0) : 0;
+        const chrome = total - mh + Math.max(0, ZOOM_STATUS_MAX_H - sh);
+        return Math.max(120, Math.min(320, chrome));
+    }
+
+    /**
+     * The lift and one card cropped round their reference point and drawn at the same whole-number scale (no
+     * smoothing). The lift is turned upright (a nearest-neighbour copy rotated back about its reference point), so a mark
+     * sits where its partner sits on the card. The lift's marks are numbered 1..n. The card's marks are shape only while
+     * choosing; once the card is rejected (or after the match) they take the paired number, or X. Glyphs are 1x pixels
+     * scaled up, tags are HTML text. Nothing here counts pairs or gives a verdict aloud.
+     */
+    _drawZoom() {
+        const host = this.root.querySelector('[data-zoom]');
+        if (!host) return;
+        const cand = this.candidates[this._zoomIndex()];
+        host.hidden = !cand;
+        if (!cand) return;
+        const reveal = cand.rejected === true || this.identified === true;
+        const lm = this.liftMarks || [], cm = cand.marks || [];
+        const inPanel = this.root.classList.contains('dusting-short');
+        const { side, S, W, stacked, ox = 0, oy = 0 } = this._zoomLayout(inPanel);
+        host.dataset.stack = stacked ? '1' : '';
+        host.classList.toggle('dusting-zoom-stack', stacked);
+        // upright positions (centre + the core-relative offsets), the same frame for both panes
+        const liftPts = uprightMarks(lm, this.print.centre), cardPts = uprightMarks(cm, cand.print.centre);
+        const tags = pairMarkTags(lm, cm);
+        const ref = document.createElement('canvas');
+        ref.width = N; ref.height = N;
+        this._paintReference(ref.getContext('2d'), cand, true);
+        const dark = this.cardDark;
+        const liftBg = dark ? '#0a0f0c' : '#f2f0ea';
+        const pane = (key, src, print, pts, labels, col, bg, cross) => {
+            const box = host.querySelector(`[data-zbox="${key}"]`);
+            box.textContent = '';
+            const crop = cropAround({ x: print.centre.x + ox, y: print.centre.y + oy }, side);
+            const cv = document.createElement('canvas');
+            cv.className = 'dusting-zoom-canvas'; cv.width = cv.height = W;
+            cv.style.width = cv.style.height = `${W}px`;
+            cv.setAttribute('aria-hidden', 'true');
+            const c = cv.getContext('2d');
+            c.imageSmoothingEnabled = false;
+            c.fillStyle = bg; c.fillRect(0, 0, W, W);
+            // the crop may reach past the canvas edge: draw only the part of the source that exists
+            const sx = Math.max(0, crop.x), sy = Math.max(0, crop.y), ex = Math.min(N, crop.x + side), ey = Math.min(N, crop.y + side);
+            if (ex > sx && ey > sy) c.drawImage(src, sx, sy, ex - sx, ey - sy, (sx - crop.x) * S, (sy - crop.y) * S, (ex - sx) * S, (ey - sy) * S);
+            // a light dashed crosshair through the reference point (2 px lines, whole pixels), so "same place" reads
+            c.fillStyle = cross;
+            const q = { x: Math.round((print.centre.x - crop.x) * S), y: Math.round((print.centre.y - crop.y) * S) };
+            for (let t = 0; t < W; t += 8) { c.fillRect(t, q.y - 1, 4, 2); c.fillRect(q.x - 1, t, 2, 4); }
+            // glyphs: 1x pixels on a side x side layer, scaled by the whole number S
+            const ov = document.createElement('canvas');
+            ov.width = ov.height = side;
+            const oc = ov.getContext('2d');
+            oc.fillStyle = col;
+            for (const m of pts) {
+                const gx = Math.round(m.x - crop.x), gy = Math.round(m.y - crop.y);
+                for (const [ox, oy] of markGlyph(m.type)) oc.fillRect(gx + ox, gy + oy, 1, 1);
+            }
+            c.drawImage(ov, 0, 0, side, side, 0, 0, W, W);
+            box.appendChild(cv);
+            if (!labels) return;
+            const placed = [];
+            pts.forEach((m, i) => {
+                const gx = (Math.round(m.x - crop.x)) * S, gy = (Math.round(m.y - crop.y)) * S;
+                if (gx < 0 || gy < 0 || gx >= W || gy >= W) return;
+                let left = Math.max(0, Math.min(W - 24, gx + 4 * S)), top = Math.max(0, gy - 3 * S - 20);
+                for (let k = 0; k < 8 && placed.some(r => Math.abs(r.left - left) < 24 && Math.abs(r.top - top) < 22); k++) top = (top + 22) % Math.max(22, W - 22);
+                placed.push({ left, top });
+                const t = document.createElement('span');
+                t.className = 'dusting-zoom-tag'; t.textContent = labels[i];
+                if (labels[i] === 'X') t.dataset.none = '1';
+                t.style.left = `${left}px`; t.style.top = `${top}px`;
+                box.appendChild(t);
+            });
+        };
+        pane('lift', this._uprightLift(liftBg), this.print, liftPts, tags.lift, dark ? '#ffd23f' : '#b00020', liftBg, dark ? '#00ff41' : '#0a8f3c');
+        pane('card', ref, cand.print, cardPts, reveal ? tags.card : null, '#b00020', '#f2f0ea', '#0a8f3c');
+
+        this._zoomTags = { lift: tags.lift, card: reveal ? tags.card : [] };
+        this._zoomInfo = { side, S, W, stacked, ox, oy, canvases: { lift: W, card: W } };
+        const cap = `Card ${cand.index + 1}: ${cand.label}`;
+        const capEl = host.querySelector('[data-zcap]');
+        capEl.textContent = cap;
+        capEl.title = cap;   // the caption is clipped to its pane with an ellipsis: the full name is the title and the text content
+        // the lift's marks again for a screen reader (spoken once on naming the pattern); textContent only
+        const zm = host.querySelector('[data-zmarks]');
+        if (zm) zm.textContent = lm.length ? `. Marks: ${describeMarks(lm, this.print.pattern, true)}` : '';
+        // in words, marks only: no counts, no verdict. Only the card's words are spoken on a focus change.
+        this._zoomSpeech = `${cap}: ${describeMarks(cm, cand.pattern, false)}.`;
+    }
+
+    /** The mounted lift turned upright about its reference point (cached per mounted card). With no rotation it is the lift itself. */
+    _uprightLift(bgHex) {
+        const rot = this.print.transform ? this.print.transform.rotation : 0;
+        if (!rot) return this.cardCanvas;
+        if (this._uprightFor === this.cardCanvas && this._uprightBg === bgHex && this._uprightCv) return this._uprightCv;
+        const src = this.cardCanvas.getContext('2d').getImageData(0, 0, N, N);
+        // outside the turned print: the lift's own background, which is what the lift canvas shows at its corner
+        // (the dark panel colour round a card PNG), else the theme's lift colour
+        const bg = src.data[3] === 255 ? [src.data[0], src.data[1], src.data[2]] : [1, 3, 5].map(i => parseInt(bgHex.slice(i, i + 2), 16));
+        const out = rotateUpright(src.data, N, this.print.centre, rot, bg);
+        const cv = document.createElement('canvas');
+        cv.width = cv.height = N;
+        cv.getContext('2d').putImageData(new ImageData(out, N, N), 0, 0);
+        this._uprightFor = this.cardCanvas; this._uprightBg = bgHex; this._uprightCv = cv;
+        return cv;
+    }
+
+    /** A reference card (ink on pale card) with its core, deltas and marks, on a 128 x 128 context. `bare` leaves them off (the zoom draws its own). */
+    _paintReference(c, cand, bare = false) {
         const d = c.createImageData(N, N);
         const bgc = [242, 240, 234], ink = [27, 27, 27];
         const p = cand.print;
@@ -1551,6 +1858,7 @@ export class DustingMinigame extends MinigameScene {
             d.data[j] = bgc[0] + (ink[0] - bgc[0]) * a; d.data[j + 1] = bgc[1] + (ink[1] - bgc[1]) * a; d.data[j + 2] = bgc[2] + (ink[2] - bgc[2]) * a; d.data[j + 3] = 255;
         }
         c.putImageData(d, 0, 0);
+        if (bare) return;
         if (this.patternOk && !this.identified) this._drawCardSingulars(c, p);
         if (this.patternOk && !this.identified && cand.marks) this._drawMarks(c, cand.marks, '#b00020');
     }
@@ -1562,16 +1870,9 @@ export class DustingMinigame extends MinigameScene {
             const p = cand.print;
             this._paintReference(c, cand);
             if (this.identified && cand.correct) this._drawMatchTags(c, p, this._matches().map(m => m.ref), '#b00020', false);
-            const s = this.wide && this.candidates.length <= 2 ? 2 : 1;
+            const s = 1;   // the magnified pair shows the detail, so the cards stay at 1x
             cv.style.width = `${N * s}px`; cv.style.height = `${N * s}px`;
         });
-        // Two cards at 2x put the panel's foot ~21 px below a 1000 px window (m08
-        // confirmation N1): drop them to 1x when the panel doesn't fit the height.
-        if (!refCardsFit(this.root, window.innerHeight)) {
-            this.panel.querySelectorAll('.dusting-ref-canvas').forEach(cv => {
-                cv.style.width = `${N}px`; cv.style.height = `${N}px`;
-            });
-        }
     }
 
     // ------------------------------------------------------------------ test bridge
@@ -1595,6 +1896,11 @@ export class DustingMinigame extends MinigameScene {
             canLift: this.metrics.coverage >= this.diff.minCoverage,
             found: this.found,
             hintVisible: this.hintReady,
+            nearPrint: !!this.nearPrint,
+            zoomIndex: this.patternOk && this.candidates.length ? this._zoomIndex() : null,
+            zoomTags: this._zoomTags || { lift: [], card: [] },
+            zoomInfo: this._zoomInfo || null,
+            fullLift: this.fullLift,
             patternChosen: this.patternOk,
             identified: this.identified,
             viewing: this.viewing,
@@ -1623,7 +1929,7 @@ DustingMinigame.prototype._setStep = function (step) {
     baseSetStep.call(this, step);
     if (step === 'find' && !this.hintReady && !this._hintTimer) {
         this._hintTimer = true;
-        this._later(() => { this.hintReady = true; if (this.step === 'find') this._renderPanel(); }, HINT_AFTER_MS);
+        this._later(() => { this.hintReady = true; if (this.step === 'find') this._renderPanel(); }, this.diff.hintAfterMs);
     }
 };
 

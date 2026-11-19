@@ -28,25 +28,25 @@
     },
     {
       "id": "door_derek_office",
-      "label": "Derek Lawson — Operations<br/>Key lock",
+      "label": "Derek Lawson, Operations<br/>Key lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "derek_office",
-      "label": "Derek Lawson — Operations",
+      "label": "Derek Lawson, Operations",
       "kind": "room",
       "optional": false
     },
     {
       "id": "door_server_room",
-      "label": "Server Room — Authorised Access Only<br/>RFID lock",
+      "label": "Server Room: Authorised Access Only<br/>RFID lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "server_room",
-      "label": "Server Room — Authorised Access Only",
+      "label": "Server Room: Authorised Access Only",
       "kind": "room",
       "optional": false
     },
@@ -166,7 +166,7 @@
     },
     {
       "id": "manager_office",
-      "label": "Patricia Wells — Manager",
+      "label": "Patricia Wells, Manager",
       "kind": "room",
       "optional": false
     },
@@ -184,7 +184,7 @@
     },
     {
       "id": "kevin_office",
-      "label": "Kevin Park — IT",
+      "label": "Kevin Park, IT",
       "kind": "room",
       "optional": false
     },
@@ -310,7 +310,7 @@
     },
     {
       "id": "maya_office",
-      "label": "Maya Chen — Research",
+      "label": "Maya Chen, Research",
       "kind": "room",
       "optional": false
     }
