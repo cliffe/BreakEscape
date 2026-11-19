@@ -693,6 +693,14 @@ export const minigameBridge = {
      * control, not a call into the minigame.
      */
     async _pick(index, choices) {
+        // The ending question takes the keys and holds the choice: report it, do not press into it.
+        // (state.js endingCheckOverlayUi reports it in getState().blockingUi.)
+        if (typeof document !== 'undefined' && document.getElementById('ending-check-overlay')) {
+            return fail('ending-check-overlay-up', {
+                hint: 'The end-of-mission question is up over the chat and holds this choice. Answer it with '
+                    + '__test.dismissBlockingUi("End the mission now") to take the choice, or "Keep going" to leave the choices as they were.'
+            });
+        }
         if (index < 9) return this.pressKey(String(index + 1));
         const mg = current();
         const buttons = mg?.ui?.getChoiceButtons?.() || [];

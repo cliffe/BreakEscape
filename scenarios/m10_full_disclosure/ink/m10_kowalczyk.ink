@@ -23,7 +23,7 @@ VAR kow_cracker_asked = false
 VAR kow_from_peel = false
 
 === function kow_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and not wren_at_core and ending == ""
+~ return clue_door_log and clue_bench_log and whodunit_live and accused == "" and not wren_at_core and ending == ""
 
 // Arakawa is beside her in every bunker room unless he is at the blast door,
 // down, or sent back.

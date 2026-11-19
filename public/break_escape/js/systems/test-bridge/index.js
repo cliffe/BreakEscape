@@ -1634,6 +1634,10 @@ const bridge = {
         }
         // The session overlay: only its own three buttons, never the other-session links
         if (sessionOverlayShowing()) buttons = sessionOverlayButtons();
+        // The ending question (over a chat, too): its own X, Keep going and End buttons
+        const endingUp = () => !!document.getElementById?.('ending-check-overlay');
+        const endingOverlay = !sessionOverlayShowing() && endingUp() && document.getElementById('ending-check-overlay');
+        if (endingOverlay) buttons = Array.from(endingOverlay.querySelectorAll('button'));
         if (!buttons.length) return fail('blocking-ui-has-no-buttons', { blocker });
 
         let target;
@@ -1660,7 +1664,8 @@ const bridge = {
         // Escape-driven close can have opened it behind us, so resume rather than leave it up.
         const menuWasTarget = !!(target.closest && target.closest('#game-menu-overlay'));
         const menuClosed = menuWasTarget ? false : await closeStrayGameMenu();
-        const afterBlocker = detectBlockingUi();
+        // Answering the ending question over a chat leaves the chat, which is not a blocker here
+        const afterBlocker = (endingOverlay && activeMinigameSummary()) ? (endingUp() ? detectBlockingUi() : null) : detectBlockingUi();
         // The click landed on a real button, but the page can still be blocked: the overlay did
         // not close, or it revealed another (the tutorial prompt sits over the session-resume
         // overlay at startup). It used to answer ok:true with stillBlocked:true, so a caller that

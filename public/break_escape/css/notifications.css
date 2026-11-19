@@ -423,6 +423,15 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     background-clip: padding-box;
 }
 
+/* A choice clicked while the question is up (ending-check.js nudgeEndingCheck): two hard steps, no easing. */
+.ending-check-dialog.ending-check-nudge {
+    animation: ending-check-nudge 0.4s steps(2, jump-none) 2;
+}
+@keyframes ending-check-nudge {
+    0% { transform: translateX(-4px); }
+    100% { transform: translateX(4px); }
+}
+
 /* Each theme's own tint at full opacity (--ui-surface-opaque, ui-themes.css). */
 [data-ui-theme] .game-confirm-dialog.ending-check-dialog {
     background-color: var(--ui-surface-opaque, #0a0a14);
