@@ -1559,7 +1559,7 @@ come from the log rows plan's stage L1a; that plan's stages L1a and L1b are both
    object listed while the foothold is held and gone after the unplug.
 5. **Pretext verdicts.** A node test, `test/js/pretext-verdicts-unchanged.test.mjs`, runs
    `pretext-judge.js` over every pretext line of the six scenarios of section 4.3 and records each
-   verdict and its reason keys. It stays although this plan no longer changes that file: the MFA
+   verdict and its reason keys. This plan does not change that file; the MFA
    plan edits `pretext-judge.js`, and this snapshot shows that the core's S3 leaves verdicts
    alone. Step 1 writes the snapshot from main; after S3 the same run must
    match it exactly, and the validator lines of part 2 for those six scenarios must be unchanged.
