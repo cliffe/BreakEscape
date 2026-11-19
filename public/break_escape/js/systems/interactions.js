@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, aimY, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -2286,19 +2286,15 @@ export function tryInteractWithNearest() {
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
-        // A scenario object is aimed at from the feet to its centre. From the sprite centre (about 31px up) to its top edge, a
-        // short prop read far off the facing and lost to a taller neighbour (m01 safe beside the cabinet). That older
-        // aim still counts when it is the better of the two: a player level with a low prop beside them faces it from
-        // the body, and the feet-to-centre angle alone would call it 45 degrees off. The smaller angle wins.
+        // A scenario object is scored by aimDiff (interaction-reach.js: feet to centre, or the body to the top edge of a short
+        // prop when that is the smaller angle); the label scores with the same function.
         let aim = { x: faceX, y: faceY, fromX: px, fromY: py };
+        let aimAngle = angularDiff(faceX, faceY);
         if (target && !npcSprite && !target.doorProperties) {
-            const foot = footOf(player);
-            const feetAim = { x: faceX, y: faceY, fromX: foot.x, fromY: foot.y };
-            const bodyAim = { x: faceX, y: target.y, fromX: px, fromY: py };
-            const d = (a) => angularDiff(a.x, a.y, a.fromX, a.fromY);
-            aim = d(feetAim) <= d(bodyAim) ? feetAim : bodyAim;
+            aim = aimDiff(player, target, faceX, faceY, facingAngle);
+            aimAngle = aim.diff;
         }
-        let score = angularDiff(aim.x, aim.y, aim.fromX, aim.fromY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        let score = aimAngle * 1000 + dist; // angle to the object's aim point, range to its nearest part
         // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
