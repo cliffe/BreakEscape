@@ -576,9 +576,12 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   check, refusal, confirm or card reads a link or a `cli` field.
 - **The catalog loader** (`lib/break_escape/realism_catalog.rb`, built at S2 with the check
   route). It reads every `config/break_escape/realism_catalog/*.json` file once, on first use,
-  into a frozen map from catalog id to entry, and refuses to load (it raises) when an id or a
-  `module` appears twice across the files; the skin plan's catalog validator test runs on every
-  build, so such a catalog fails the suite before it ships. The finding builder calls the loader
+  into a frozen map from catalog id to entry. It never raises into a route: when a file does not
+  parse, or an id or a `module` appears twice across the files, it logs one server warning
+  naming the file and the fault (never catalog text) and loads an empty map, so every linked
+  finding is built without `cli` and the check and confirm routes answer as normal. It keeps the
+  fault list for the skin plan's catalog validator, which reports each fault as an error; that
+  validator's test runs on every build, so such a catalog fails the suite before it ships. The finding builder calls the loader
   only for a finding with a link, so a scenario with no links never reads it. A missing folder
   loads as an empty map, since the skin plan creates the folder at its K3, after S2. It takes
   another folder in tests. No route serves the map or a file of it; the finding builder, the
@@ -1577,7 +1580,7 @@ scripted playtest and the live proof run on the real routes in a real browser.
 | `network_model_test.rb` (extended) | S1 | `hosts`, `discovery?`, `hosts_on` (both kinds, sorted by id, a `hosts` entry with an unknown network left out), `services_of` reading at most 8 |
 | same | S2 | finding ids; `weaknesses` and `decoys` reading at most 4 each; a malformed entry skipped, never raised on |
 | same | S3 | `technique_matches?` for class only, class and product, class, product and version, and each near miss; `technique_items` finding a card in a room, a container, an NPC's items, a share and the start inventory |
-| `realism_catalog_test.rb` | S2 | the loader on a test-only catalog folder under `test/fixtures/realism_catalog/` (invented entries only): every file read into one map, from id to entry, frozen (an attempt to change an entry raises); the files read once, on first use, and not again on a second lookup; a second folder of two files sharing an id, and one of two entries sharing a `module`, each refusing to load; a missing folder loading as an empty map; a lookup of an unknown id answering nil. No route serves the map: the routes file names no catalog path and `GET /network` with every link authored carries no link id and no entry the scenario does not link |
+| `realism_catalog_test.rb` | S2 | the loader on a test-only catalog folder under `test/fixtures/realism_catalog/` (invented entries only): every file read into one map, from id to entry, frozen (an attempt to change an entry raises); the files read once, on first use, and not again on a second lookup; a second folder of two files sharing an id, one of two entries sharing a `module`, and one with a file that does not parse, each loading as an empty map with one server warning naming the file and the fault (no catalog string in it) and the fault in the loader's fault list, never raising; a check of a linked finding with that folder answering as normal with no `cli` key; a missing folder loading as an empty map; a lookup of an unknown id answering nil. No route serves the map: the routes file names no catalog path and `GET /network` with every link authored carries no link id and no entry the scenario does not link |
 | `credential_model_test.rb` (extended) | S3 | `proof_kind` answers `technique_card`; a proof with `technique_card` and a second key is malformed |
 | `scenario_schema_test.rb` (runs as is) | S1 to S3 | every new open location carries its mark |
 | `break_escape/policy_test.rb` (extended) | S1 to S3 | the four new policy methods, added to `DEVICE_ACTIONS` as each stage adds its action, so every role the test walks is asserted for each |
