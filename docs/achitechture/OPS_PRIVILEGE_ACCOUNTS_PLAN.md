@@ -276,20 +276,24 @@ S7; a scenario that does not teach cracking leaves it out.
 
 **How a cached hash is cracked.** The cracking plan cracks a hash from its account's `password`
 habit. A person's account has one; an `accountOnly` account (S5c) has no habits at all, so its hash
-record carries its own crack recipe, `crack`, with the habit's two keys: `password`
-(`guessable`, `reused` or `strong`) and, for `guessable`, `passwordPattern` (the object that gives
-the pattern). A `guessable` recipe also carries `facts`, 1 to 4 intel fact ids with server-visible
-sources (the cracking plan's recipe shape); the validator refuses it without them. Section 14 asks the cracking plan to read `crack` on the record when it is present and
-the habit otherwise, and to apply its "account needs a `password` habit" check only to a record
-with no `crack`. The facts a recipe needs come from finds and items (a note, a file, a poster),
-never from a conversation, because nobody stands behind the account. The S5c example below collects
-`deskAdmin` on `pc01` through this record:
+record carries its own crack recipe, `crack`, with the habit's class key,
+`password` (`strong`, `guessable`, `reused` or `common`; required here, since the account has no
+habit to supply it), and `facts` for `guessable` (the cracking plan's recipe shape). The cracking
+plan owns every rule on `crack`, in its `validate_cracking.rb` (facts count and reachability, the
+optional `passwordPattern` and its backing check, the `reused` source check); this plan adds none
+of them. The cracking plan reads `crack` on the record when it is present and the habit otherwise.
+The facts a recipe needs come from takeable items, share or container files, a feed post or a flag
+reward, never from a conversation or a read-only poster, because nobody stands behind the account
+and the server does not see a read. The S5c example below collects `deskAdmin` on `pc01` through
+this record; the rota poster is a takeable item that carries the fact:
 
 ```json
 "deskadmin_pc01": { "kind": "hash", "account": "deskAdmin", "proof": { "harvested": "pc01" },
-                    "crack": { "password": "guessable", "passwordPattern": "it_rota_poster",
-                               "facts": ["it_rota_poster_seen"] } }
+                    "crack": { "password": "guessable", "facts": ["it_rota_poster_seen"] } }
 ```
+
+with the item in the IT room: `{ "type": "notes", "id": "it_rota_poster", "name": "Rota poster",
+"takeable": true, "revealsFacts": ["it_rota_poster_seen"] }`.
 
 **S5c.** On `creds`: `accountKind` (`local` or `domain`), `localTo` (array of sign-in PC ids,
 required for `local`), `domain` (string, required for `domain`). On a sign-in PC: `domain`. On a
@@ -884,10 +888,8 @@ required and run from `scripts/validate_scenario.rb` by one line beside the core
   Those records count toward the registry's existing cap of 64 entries, which is the only cap on
   declared pairs. A candidate that is an `accountOnly` account (or any account with no
   `habits.password`) needs `crack` on its hash record, else error ("an account with no password
-  habit needs a crack recipe on its hash record"); a `crack` whose `password` is `guessable` names a
-  `passwordPattern` that is a world object or item id, never an NPC, else error. The cracking plan's
-  own checks on a recipe (facts reachable, a `reused` source that exists) then apply to `crack` as
-  they do to a habit. An `after: "borrow"` candidate on a PC
+  habit needs a crack recipe on its hash record"). This plan checks nothing else on `crack`: the facts, an optional
+  `passwordPattern` and a `reused` source are all checked by `validate_cracking.rb`. An `after: "borrow"` candidate on a PC
   with an `owner` or on a headless PC, error (the engine never performs that borrow,
   `performable?`). An `after: "borrow"` candidate
   needs a `borrow_session` workaround whose `pc` resolves through `find_login_pc`'s rule to this
@@ -1129,8 +1131,8 @@ adds only its own fields):
   record with a `harvested` proof per candidate, each crackable through the cracking plan's
   facts, which the scenario places for the player to find.
 - S5c adds: three PCs sharing the `accountOnly` `deskAdmin`, each listing it in `cachedAccounts`
-  with a `hash` record per PC that carries `crack` (a `guessable` recipe whose pattern is a poster
-  the player finds in the IT room); `lab1` with its own `accountOnly` administrator, cached and
+  with a `hash` record per PC that carries `crack` (a `guessable` recipe whose fact is on a takeable
+  rota poster item the player finds in the IT room); `lab1` with its own `accountOnly` administrator, cached and
   recorded the same way with a `strong` recipe; a domain with its administrator and two domain PCs.
 Each stage ships `mission.json`, a regenerated graph and `PLAYTEST.md`.
 
@@ -1153,7 +1155,7 @@ Each stage ships `mission.json`, a regenerated graph and `PLAYTEST.md`.
   `not_admin`), Switch user, sign in as the
   administrator, collect again and get the new account as a hash; press Crack in the collect panel,
   crack it with the facts found, and sign in as that account elsewhere.
-- S5c: find the IT room poster, collect `deskAdmin`'s hash on `pc01` (its username shows in the
+- S5c: take the IT room poster, collect `deskAdmin`'s hash on `pc01` (its username shows in the
   collect panel), crack it from its keyring row with the poster's facts, use the password on
   `pc02` as admin, typed (no tile); collect on `pc02` and see its row already cracked; fail on
   `lab1` with it; sign in as the domain administrator on both domain PCs.
@@ -1301,9 +1303,9 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
     so `CredentialModel.proof_kind` reads it) on a `hash` registry entry whose `account` names
     the account; it holds when `"<pcId>|<account>"` is in `harvestedAccounts`;
   - a hash record whose account has no `password` habit (an `accountOnly` account, which carries
-    no habits) carries its own crack recipe, `crack: { password, passwordPattern, facts }`: the
-    habit's two keys, plus `facts` (1 to 4 intel fact ids with server-visible sources, required for
-    `guessable`). Please read `crack` when present and the habit otherwise, add `crack` to
+    no habits) carries its own crack recipe, `crack: { password, facts }`: the
+    habit's class key, plus `facts` (1 to 4 intel fact ids with server-visible sources, required for
+    `guessable`; `passwordPattern` is optional and yours to check). Please read `crack` when present and the habit otherwise, add `crack` to
     your `hash` entry schema, and apply your "account needs a `password` habit" validator rule
     only to a record with no `crack`; your fact-reachability warning applies to the recipe's
     pattern as it does to a habit's;

@@ -88,3 +88,10 @@ Findings not acted on as suggested, one line each.
 - Request 1: every hash example and the `account.npc` wording in sections 6, 9 and 14 now use `"account": "<npcId>"` (a string, as `scripts/scenario-schema.json` requires); `cachedAccounts` entries keep their `{ "npc": ... }` form.
 - Request 2: the `deskadmin_pc01` recipe example now carries `crack.facts` (`it_rota_poster_seen`, illustrative id), and the recipe text in sections 6 and 14 names `facts` (1 to 4 intel fact ids, required for `guessable`).
 - Answers to the S7 requests: the section 14 S7 entry now says each is answered in the cracking plan's section 14.
+
+## Cracking requests applied (2026-11-19, part 2)
+
+- Request 1: the validator no longer requires `passwordPattern` on a guessable `crack`; section 6 and the validator rule point to `validate_cracking.rb`, which owns every rule on `crack`. Recipe class list now includes `common` and says `password` is required on a habitless record.
+- Request 2: no `reused` check of its own; the validator rule and section 6 point to the cracking plan's warning in `validate_cracking.rb`.
+- Request 3: the S5c poster example is now a takeable `notes` item with `revealsFacts: ["it_rota_poster_seen"]`; the recipe example drops `passwordPattern`; stage and playtest lines say "take" the poster. The S7 request text calls `passwordPattern` optional.
+- `cachedAccounts` check: entries are `{ npc }` on the PC only; the cracking plan reads hash records from the registry (`account` is an NPC id string), never `cachedAccounts`, so no change was needed.
