@@ -88,7 +88,7 @@ VAR hax_suspect = ""
 + {outer_lock_open and not flag4_submitted and not hax_box_asked} [His box.] -> box_topic
 // Puzzle chains P1: only once the cut has fallen to the player, so it never goes round Wendell's choice or Voltage's scene.
 + {power_room_entered and cut_by_hand and not gallery_shutter_cut and phone_voice_is_hax} [Talk me through the shutter.] -> shutter_topic
-+ {clue_door_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
++ {clue_door_log and clue_bench_log and whodunit_live and not wren_at_core and accused == ""} [I know who WREN is.] -> accuse
 // Alignment m12: recalls after the accusation, and gone once past the gallery stair.
 + {officer_out == "malhotra" and clue_alibi and not gallery_open} [Bring Malhotra back.] -> recall_malhotra
 + {officer_out == "quintero" and clue_bench_log and not gallery_open} [Bring Quintero back.] -> recall_quintero

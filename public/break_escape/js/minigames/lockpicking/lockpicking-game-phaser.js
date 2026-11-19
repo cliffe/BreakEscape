@@ -341,7 +341,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
                  class="lockpicking-item-image">
             <div class="lockpicking-item-info">
                 <h4>${escapeItemText(displayDashes(itemName))}</h4>
-                <p>${escapeItemText(displayDashes(itemObservations))}</p>
+                ${itemObservations ? `<p>${escapeItemText(displayDashes(itemObservations))}</p>` : ''}
             </div>
         `;
         

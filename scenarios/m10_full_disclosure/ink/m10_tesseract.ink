@@ -236,9 +236,12 @@ Dr Adrian Tesseract: All four. Good. Now it's my turn.
     - backdoor_channel_live and not backdoor_closed:
         ~ tess_loose = "backdoor"
         agent_0x99: His backdoor's still open. The console in the hall closes it.
-    - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
+    - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log and clue_bench_log:
         ~ tess_loose = "wren"
         agent_0x99: We still haven't named WREN.
+    - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
+        ~ tess_loose = "wren"
+        agent_0x99: We never read the bench log in the workshop.
     - whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
         ~ tess_loose = "wren"
         agent_0x99: We never read the office's door log.
@@ -252,8 +255,10 @@ Dr Adrian Tesseract: All four. Good. Now it's my turn.
     {
     - tess_loose != "backdoor" and backdoor_channel_live and not backdoor_closed:
         agent_0x99: His backdoor's still open. The console in the hall closes it.
-    - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
+    - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log and clue_bench_log:
         agent_0x99: We still haven't named WREN.
+    - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "" and clue_door_log:
+        agent_0x99: We never read the bench log in the workshop.
     - tess_loose != "wren" and whodunit_live and not wren_held and not kowalczyk_ko and not wren_at_core and accused == "":
         agent_0x99: We never read the office's door log.
     - tess_loose != "sheet" and not casualty_sheet_read:
