@@ -615,6 +615,7 @@ This laptop object will be placed at the next available `pc` slot in the room te
 | `readable` | optional | `true` enables the "Read" interaction |
 | `text` | optional | Body text shown when the player reads the item. In the notebook (`notes` items) it renders a markdown subset: `#` headings, `**bold**`, `*italic*`, `` `code` ``, `- ` bullets, fenced code and tables (a header row, then a `\|---\|---\|` row; `:` sets alignment). Backslash-escape a literal `\|`, `*`, `` ` `` or `\\`. Everything else shows as typed (`js/utils/note-markdown.js`) |
 | `textVariants` | optional | Runtime readable-text overrides. Same format/rules as `observationVariants`; first matching condition is used. |
+| `readDisplay` | optional | `"gameDisplay"` shows a fixed readable object's text in a modal (a copy still goes to notes unless `addToNotes` is `false`). Without it, a fixed readable room object that has no reader of its own (not a `text_file`, notes-family item, phone, container or takeable item, and no `observationDisplay` of `"gameDisplay"`) shows its text in a 5-second toast, except long text (observation plus text over 120 characters, or more than 3 lines; an observation identical to the text counts once) which opens in the same modal so it can be read. `"readDisplay": "toast"` keeps the toast whatever the length |
 | `collection_group` | optional | Tag used for objective `collect_items` task tracking |
 | `important` | optional | `true` marks item as important in inventory |
 | `isEndGoal` | optional | `true` marks item as the scenario's win condition |
