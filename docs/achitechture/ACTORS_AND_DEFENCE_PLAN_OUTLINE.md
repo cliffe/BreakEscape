@@ -1,7 +1,7 @@
 # Actors and defence: plan outline
 
 Status: outline, 2026-11-19, parked. To be fleshed out and planned later (user, 2026-11-19). Split
-out of `OPS_LAYER_PLAN_OUTLINE.md`, whose stage numbers these keep (S0, S10, S12).
+out of `OPS_LAYER_PLAN_OUTLINE.md`, whose stage numbers these keep (S0, S4, S10, S12).
 
 Source: the user's picks of 2026-11-18. Pick E1: a rival hacker NPC should be able to play the game
 dynamically using the same techniques as the player, which could be the basis for multiplayer
@@ -32,6 +32,16 @@ shape is the first thing for this plan to decide.
   box (N1), remote sign-in (N2), implant (N10). This proves actors against working features.
 - **Test:** unit tests of needs and effects evaluation; the N1, N2 and N10 test scenarios and
   `demo_access_tour` pass unchanged. Size M.
+
+### S4. Patch windows from office life — pick B4
+- Parked here (user, 2026-11-19) because it belongs with the defence work: it is one case of the
+  organisation's defensive position being updated and changed during play, which S12b does from
+  the player's side. Plan the two together, so a patch by a staff routine and a fix made at the
+  defender console are the same change.
+- An IT admin NPC routine sets a weakness's `fixedIf` global on a schedule (needs clock). Patched
+  weaknesses stop granting; held sessions are kept (as outages do, N7).
+- **Test:** extend `test_ops_access` with a timed patch; office-life regression on the needs
+  scenarios. Size S.
 
 ### S10. Team of characters — pick E1 (team)
 - A scenario can field several player characters, each with a starting kit (lockpicks, a BadUSB,

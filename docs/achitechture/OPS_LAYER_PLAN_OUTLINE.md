@@ -2,10 +2,10 @@
 
 Status: outline, 2026-11-19. Each stage below gets its own full plan (and review rounds) before it
 is built. Two groups of stages are parked in their own outlines, to be planned later: the action
-model with actors, the team of characters and the defence game (S0, S10, S12) in
-`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, and hosts backed by a VM or by the game (S11) in
+model with actors, patch windows, the team of characters and the defence game (S0, S4, S10, S12)
+in `ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, and hosts backed by a VM or by the game (S11) in
 `VM_OR_GAME_BACKING_PLAN_OUTLINE.md`. Stage numbers here are unchanged, so this outline runs S1 to
-S9 with S0 and S10 to S12 absent. Each stage here is built as its own
+S9 with S0, S4 and S10 to S12 absent. Each stage here is built as its own
 feature with its own server routes, as N1 to N12 were; a shared model of moves as data is not
 needed yet (user, 2026-11-19) and belongs to the other outline. Nothing here is scheduled until
 the m01 to m10 release is out (user pick Q8).
@@ -80,7 +80,10 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
 
 ### S2. Weaknesses and findings — pick B2
 - `services[].weaknesses[]`: `class` (`default_creds`, `unpatched`, `misconfig`, `weak_auth`,
-  `cleartext`), `severity`, `needs`, `grants`, `fixedIf`.
+  `cleartext`), `severity`, `needs`, `grants`, `fixedIf`. `fixedIf` is a plain condition on a
+  global, so a scenario can mark a weakness fixed from a story beat. Staff patching on a schedule,
+  and anything else that changes the organisation's defences during play, is parked with the
+  defence work (S4 in the other outline).
 - A **check** turns a service into findings; a scenario can add decoy findings that a
   **confirm** step shows to be false.
 - **Test:** `test_ops_findings`: findings appear only after a check; decoys confirm false. Size M.
@@ -90,12 +93,6 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
   through the existing remote sign-in desktop, or a credential into the keyring (A15).
 - **Test:** `test_ops_access`: wrong card fails with a reason; right card with its needs met gives
   the stated access; unplugging the foothold (N5) ends it. Size L.
-
-### S4. Patch windows from office life — pick B4
-- An IT admin NPC routine sets a weakness's `fixedIf` global on a schedule (needs clock). Patched
-  weaknesses stop granting; held sessions are kept (as outages do, N7).
-- **Test:** extend `test_ops_access` with a timed patch; office-life regression on the needs
-  scenarios. Size S.
 
 ### S5. Privilege, cached credentials, local and domain accounts — picks A5, A6, A4
 - S5a **Privilege levels** on sessions (`user`, `admin`); admin-only actions (read other
@@ -138,12 +135,12 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
 
 ## 5. Suggested order
 
-S1, S2, S3 (the core loop), then S4, S5, S6, S8a, S7, S9, S8b. B6 sniffing and
+S1, S2, S3 (the core loop), then S5, S6, S8a, S7, S9, S8b. B6 sniffing and
 B7 Wi-Fi handshake (both P3) slot in after S7, since both reuse the cracking minigame or the
 credential effects.
 
 ## 6. Open questions for the stage plans
 
 1. CLI skin fidelity: which commands, and how close to real tools' output it gets.
-2. Whether a scan, a check or a technique card costs game time on the needs clock (patch windows need it, and so will the rival).
+2. Whether a scan, a check or a technique card costs game time on the needs clock (the parked patch windows and rival would both need it).
 3. Where the terminology rule ends up (Q6, to be decided).
