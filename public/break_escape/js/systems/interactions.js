@@ -830,6 +830,10 @@ function gameDisplayParts(data, sprite, observations, text) {
  */
 const LONG_TOAST_TEXT_CHARS = 120;
 const LONG_TOAST_TEXT_LINES = 3;
+// An observation identical to the text is one piece: counted and shown once.
+function toastObs(observations, text) {
+    return String(observations || '').trim() === String(text || '').trim() ? null : observations;
+}
 function isLongToastText(observations, text) {
     const all = [observations, text].filter(Boolean).join('\n');
     return all.length > LONG_TOAST_TEXT_CHARS || all.split('\n').length > LONG_TOAST_TEXT_LINES;
@@ -2228,13 +2232,16 @@ export function handleObjectInteraction(sprite) {
                 data.readable ? resolvedText : null);
             window.gameDisplay(body, title, { html: true });
         } else if (data.readable && resolvedText && data.readDisplay !== 'toast' && window.gameDisplay &&
-                   isLongToastText(resolvedObservations, resolvedText)) {
+                   isLongToastText(toastObs(resolvedObservations, resolvedText), resolvedText)) {
             // Long readable text would be clipped in the 5 s toast: the readDisplay layout instead.
             // The notes copy was already decided by the readable branch above.
-            const { body, title } = gameDisplayParts(data, sprite, resolvedObservations, resolvedText);
+            const { body, title } = gameDisplayParts(data, sprite,
+                toastObs(resolvedObservations, resolvedText), resolvedText);
             window.gameDisplay(body, title, { html: true });
         } else {
-            window.gameAlert(message, 'info', data.name, 5000);
+            // whole: a readable object's text is never cut to the phone's two lines
+            window.gameAlert(message, 'info', data.name, 5000,
+                data.readable && resolvedText ? { whole: true } : undefined);
         }
     }
 }
