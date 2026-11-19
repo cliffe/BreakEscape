@@ -680,7 +680,7 @@ export class DustingMinigame extends MinigameScene {
     /** The magnified lift and card pair; it is drawn by _drawZoom. The lift pane is turned upright to the card's frame. */
     _zoomHtml() {
         return `<div class="dusting-zoom" data-zoom>
-                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap">Your lift (turned upright)<span class="dusting-sr" data-zmarks></span></span><div class="dusting-zoom-box" data-zbox="lift"></div></div>
+                <div class="dusting-zoom-pane"><span class="dusting-zoom-cap" title="Your lift (turned upright)">Your lift (turned upright)<span class="dusting-sr" data-zmarks></span></span><div class="dusting-zoom-box" data-zbox="lift"></div></div>
                 <div class="dusting-zoom-pane"><span class="dusting-zoom-cap" data-zcap>Card</span><div class="dusting-zoom-box" data-zbox="card"></div></div>
             </div>`;
     }
