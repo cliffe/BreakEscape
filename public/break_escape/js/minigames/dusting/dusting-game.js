@@ -1192,6 +1192,7 @@ export class DustingMinigame extends MinigameScene {
         try { this.canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointers can't be captured */ }
         this.canvas.focus({ preventScroll: true });
         this._countStroke();
+        this._brushCarry = 0;   // a new stroke: spacing restarts (the tick below covers the start)
         this._act(pos, null);
         this.lastPt = pos;
         this.dirty = true;
@@ -1271,7 +1272,7 @@ export class DustingMinigame extends MinigameScene {
                 const tool = brushFeel(TOOLS[this.tool], this.difficultyId);
                 // a held key ticks in place every KEY_TICK_MS, so it lays powder more gently than a moving stroke
                 if (keyed) tool.strength *= KEY_HOLD_GENTLE;
-                if (from) this.field.brushLine(from.x, from.y, pos.x, pos.y, tool); else this.field.brush(pos.x, pos.y, tool);
+                if (from) this._brushCarry = this.field.brushLine(from.x, from.y, pos.x, pos.y, tool, this._brushCarry || 0); else this.field.brush(pos.x, pos.y, tool);
             }
             this.dirty = true;
         } else if (this.step === 'lift') {
@@ -1307,12 +1308,13 @@ export class DustingMinigame extends MinigameScene {
             e.preventDefault();
             if (this.step === 'find') { if (!e.repeat) this._attemptFind(this.reticle); return; }
             if (this.step === 'dust' && k === 'Enter') {
-                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) this._countStroke(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); if (this.metrics) this._refreshDynamic(); }
+                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) { this._brushCarry = 0; this._countStroke(); } else if (this.step === 'dust') this._saveProgress(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); if (this.metrics) this._refreshDynamic(); }
                 return;
             }
             if (this.step === 'dust' || this.step === 'lift') {
                 if (!this.spaceHeld) {
                     this.spaceHeld = true;
+                    this._brushCarry = 0;
                     this._countStroke();
                     this._act(this.reticle, null);
                     clearInterval(this._keyTimer);

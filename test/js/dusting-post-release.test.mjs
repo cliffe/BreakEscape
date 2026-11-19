@@ -146,9 +146,10 @@ test('item 6: keyboard path (12 px arrow steps, the Shift size) lays a polyline 
     while (rows < 14) {
         let x = dir > 0 ? b.x - 2 : b.x + b.w + 2;
         const end = dir > 0 ? b.x + b.w + 2 : b.x - 2;
+        let carry = 0;
         while ((end - x) * dir > 0) {
             const nx = x + dir * Math.min(12, Math.abs(end - x));
-            f.brushLine(x, y, nx, y, tool);   // what _act(reticle, old) does on each held-Space arrow press
+            carry = f.brushLine(x, y, nx, y, tool, carry);   // what _act(reticle, old) does on each held-Space arrow press
             x = nx;
         }
         rows++; dir = -dir; y += tool.radius * 2;
@@ -158,20 +159,53 @@ test('item 6: keyboard path (12 px arrow steps, the Shift size) lays a polyline 
     assert.ok(rows <= 10, `${rows} keyboard rows to unlock Lift`);
 });
 
-test('item 6: short polyline steps (arrow keys) never lay less powder than one mouse stroke, and stay within 2.1x of it', () => {
-    // brushLine lays at least one tick per segment, so segments shorter than radius/3 over-lay a little (about 1.1x to 1.9x
-    // measured). Never below 1x (keys are never harder than the mouse), never past 2.1x (no runaway fog from a held arrow).
+test('M1: 1, 2, 4 and 12 px pointermove steps with a carried distance lay 0.9x to 1.2x the powder and fog of a one-segment stroke', () => {
+    // brushLine(..., carry) lays ticks at fixed radius/3 spacing along the whole stroke, so slow drags (1 to 2 logical px per event
+    // at a 2x to 4x display scale) no longer over-lay powder or max out fog.
     for (const id of Object.keys(TOOLS)) for (const d of ['easy', 'medium', 'hard']) {
-        const tool = brushFeel(TOOLS[id], d), sum = f => f.P.reduce((a, v) => a + v, 0);
-        const straight = new DustField(128); straight.brushLine(20, 64, 100, 64, tool);
-        const base = sum(straight);
-        for (const step of [4, 12]) {
-            const f = new DustField(128);
-            for (let x = 20; x < 100; x += step) f.brushLine(x, 64, Math.min(100, x + step), 64, tool);
-            const ratio = sum(f) / base;
-            assert.ok(ratio >= 0.97 && ratio <= 2.1, `${id}/${d} ${step}px steps lay ${ratio.toFixed(2)}x a straight stroke`);
+        const tool = brushFeel(TOOLS[id], d), pfog = DIFFICULTY[d].pfog;
+        const sum = f => f.P.reduce((a, v) => a + v, 0), fog = f => { let t = 0; for (let i = 0; i < f.FP.length; i++) t += f.fog(i); return t; };
+        const stroke = step => {
+            const f = new DustField(128, { pfog });
+            f.brush(30, 64, tool);   // the pointerdown tick
+            let carry = 0;
+            for (let x = 30; x < 90; x += step) carry = f.brushLine(x, 64, Math.min(90, x + step), 64, tool, carry);
+            return f;
+        };
+        const one = stroke(60), baseP = sum(one), baseF = fog(one);
+        for (const step of [1, 2, 4, 12]) {
+            const f = stroke(step), rp = sum(f) / baseP;
+            assert.ok(rp >= 0.9 && rp <= 1.2, `${id}/${d} ${step}px steps lay ${rp.toFixed(3)}x the powder of one segment`);
+            if (baseF > 0.5) {
+                const rf = fog(f) / baseF;
+                assert.ok(rf >= 0.9 && rf <= 1.2, `${id}/${d} ${step}px steps give ${rf.toFixed(3)}x the fog of one segment`);
+            } else assert.ok(fog(f) <= baseF + 0.5, `${id}/${d} ${step}px steps fog ${fog(f).toFixed(3)} vs ${baseF.toFixed(3)}`);
         }
+        // a slow 1 px drag never maxes the centre pixel's fog on one stroke
+        const slow = stroke(1);
+        assert.ok(slow.fog(64 * 128 + 60) <= one.fog(64 * 128 + 60) + 0.05, `${id}/${d} slow centre fog ${slow.fog(64 * 128 + 60).toFixed(3)}`);
     }
+});
+
+test('M1: a zero-length mid-stroke segment lays nothing and leaves the carry unchanged', () => {
+    const tool = brushFeel(TOOLS.fine, 'medium'), f = new DustField(128);
+    const c = f.brushLine(40, 40, 40, 40, tool, 1.25);
+    assert.ok(c === 1.25, `carry ${c}`);
+    assert.ok(f.P.reduce((a, v) => a + v, 0) === 0, 'no powder from a zero-length segment');
+    // carry is the distance since the last tick: with step radius/3, a 1 px segment from carry 0 lays none, the tick falls later
+    const step = tool.radius / 3, g = new DustField(128);
+    let carry = 0, ticksAt = -1;
+    for (let i = 1; i <= 40 && ticksAt < 0; i++) {
+        carry = g.brushLine(i - 1, 10, i, 10, tool, carry);
+        if (g.P.reduce((a, v) => a + v, 0) > 0) ticksAt = i;
+    }
+    assert.ok(ticksAt === Math.ceil(step), `first tick after ${ticksAt} px, step ${step.toFixed(2)}`);
+});
+
+test('M1: the game resets the brush carry on pointerdown, Space and Enter brushing start, and carries it in _act', () => {
+    const src = readFileSync(join(pub, 'js/minigames/dusting/dusting-game.js'), 'utf8');
+    assert.ok((src.match(/this\._brushCarry = 0/g) || []).length >= 3, 'three reset sites');
+    assert.ok(/this\._brushCarry = this\.field\.brushLine\(from\.x, from\.y, pos\.x, pos\.y, tool, this\._brushCarry \|\| 0\)/.test(src), 'carry passed through _act');
 });
 
 test('item 6: brush feel scales by difficulty and a held key is gentler than a drag', () => {

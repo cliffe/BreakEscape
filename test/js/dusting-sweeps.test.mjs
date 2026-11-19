@@ -30,7 +30,7 @@ function strokesToLift(toolId, diff, gap) {
     let y = b.y, dir = 1, strokes = 0;
     while (strokes < 60) {
         const x0 = b.x - 2, x1 = b.x + b.w + 2;
-        if (dir > 0) f.brushLine(x0, y, x1, y, tool); else f.brushLine(x1, y, x0, y, tool);
+        if (dir > 0) f.brushLine(x0, y, x1, y, tool, 0); else f.brushLine(x1, y, x0, y, tool, 0);   // carry mode, as the game
         dir = -dir; strokes++;
         y += gap; if (y > b.y + b.h) y = b.y + ((y - b.y) % gap);
         if (f.metrics(print).coverage >= min) return { strokes, rows: Math.ceil(b.h / gap) };

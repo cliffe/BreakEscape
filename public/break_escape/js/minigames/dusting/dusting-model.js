@@ -229,24 +229,38 @@ export class DustField {
     }
 
     /**
-     * Brush along a segment with ticks every ~radius/3 px so a fast stroke leaves no gaps.
-     * Ticks fall on (start, end] so chained segments of one stroke do not double-count the join;
-     * a zero-length segment gives a single tick. Callers cap tick rate with MAX_TICKS_PER_SECOND.
+     * Brush along a segment. Without `carry` (legacy, whole-stroke callers): ticks every ~radius/3 px on (start, end],
+     * at least one per segment. With a numeric `carry` (the distance travelled since the last tick of this stroke) ticks
+     * are laid only at fixed radius/3 spacing along the whole stroke, so many tiny pointermove segments lay the same
+     * powder as one long segment; a zero-length segment lays nothing. Callers cap tick rate with MAX_TICKS_PER_SECOND.
      * @param {number} x0
      * @param {number} y0
      * @param {number} x1
      * @param {number} y1
      * @param {{radius:number, strength:number, fogRate?:number}} tool
+     * @param {number} [carry] Distance since the last tick; start a stroke at 0.
+     * @returns {number|undefined} The new carry when `carry` was given.
      */
-    brushLine(x0, y0, x1, y1, tool) {
+    brushLine(x0, y0, x1, y1, tool, carry) {
         const dist = Math.hypot(x1 - x0, y1 - y0);
-        if (dist < 1e-6) { this.brush(x1, y1, tool); return; }
         const step = Math.max(1, tool.radius / 3);
-        const n = Math.max(1, Math.ceil(dist / step));
-        for (let k = 1; k <= n; k++) {
-            const t = k / n;
-            this.brush(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tool);
+        if (carry === undefined) {
+            if (dist < 1e-6) { this.brush(x1, y1, tool); return undefined; }
+            const n = Math.max(1, Math.ceil(dist / step));
+            for (let k = 1; k <= n; k++) {
+                const t = k / n;
+                this.brush(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tool);
+            }
+            return undefined;
         }
+        if (dist < 1e-6) return carry;
+        let d = step - carry;          // distance along this segment of the next tick
+        while (d <= dist + 1e-9) {
+            const t = Math.min(1, d / dist);
+            this.brush(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tool);
+            d += step;
+        }
+        return Math.max(0, dist - (d - step));   // distance past the last tick (carry + dist when none was laid)
     }
 
     /**
