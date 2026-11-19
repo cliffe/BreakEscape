@@ -42,6 +42,9 @@ of characters, a defender console, staff patching on a schedule) and
 - The server decides everything that grants something (a finding, a session, a credential, a
   privilege, a hash). The browser never receives a secret it has not earned. Say, per field, what
   reaches the browser and when.
+- Cheat resistance (the user's policy): the server hard-enforces secrets, keys, credentials and
+  forged items. Steps gated only by dialogue, and tailgating, may stay best-effort with a sanity
+  check. No written standalone policy exists in the repo; this line is it for these plans.
 - Synced `player_state` must not grow and be re-sent: changes go as deltas. Say what state each
   feature adds, how big it can get, and how it is sent.
 - Deterministic: seeded rolls only.
@@ -111,6 +114,8 @@ Code digests with `file:line` pointers, written by Haiku readers on 2026-11-19, 
 - `D3_minigames_logs_ui.md`: the minigame framework, UI rules, cracking and log related minigames,
   settings, test tooling.
 - `D4_npc_items_phones_helpdesk.md`: NPC items, phones, game time, habits, pretext calls, NPC PC use.
+- `D5b_schema_validator_tests.md`: scenario format rules, validator structure, the delta plan,
+  test layout. It corrects two pointers in D5 and settles that outages use `offWhen`.
 - `D5_conventions_state_tooling.md`: the slice plan template, state and delta rules, scenario format
   rules, validator, schema, graph, cheat resistance, tests, process rules.
 
