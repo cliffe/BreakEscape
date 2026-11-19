@@ -111,7 +111,7 @@ test('m3 and n3: one near timer, cleared with the cue; the lift is described onc
 });
 
 test('B1: the panel keeps one row of cards, so 2, 3 and 4 cards never wrap at 1280x720 and 1000x700 (root 956)', () => {
-    assert.equal(M.comparePanelMin(2), 330);
+    assert.equal(M.comparePanelMin(2), 480);   // the panel is never under PANEL_MIN_W (480)
     assert.equal(M.comparePanelMin(3), 3 * 144 + 2 * 10 + 32);
     assert.equal(M.comparePanelMin(4), 600);
     for (const [cards, innerH] of [[2, 720], [2, 700], [3, 720], [3, 700], [4, 720], [4, 700]]) {
