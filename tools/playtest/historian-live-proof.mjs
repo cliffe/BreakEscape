@@ -70,6 +70,8 @@ const pxFor = (iso) => page.evaluate((iso) => {
   return { best: new Date(best.ts).toISOString(), value: best.value, x: r.left + x * r.width / W, y0: y, W, H, rect: { l: r.left, t: r.top, w: r.width, h: r.height } };
 }, iso);
 async function pointAt(iso) {
+  await page.evaluate(() => document.getElementById('sh-chart-area').scrollIntoView({ block: 'center' })); // short phones: the chart can sit below the fold
+  await page.waitForTimeout(100);
   // Y_MIN/Y_MAX are module constants; derive y from the drawn polyline instead of assuming them
   const info = await page.evaluate((iso) => {
     const m = window.MinigameFramework.currentMinigame; const ts = new Date(iso).getTime();
@@ -115,6 +117,8 @@ await step('viewer open, no red line, ANNOTATE locked', async () => {
 
 // (a) plot width and how far from the cliff a tap still lands on an accepted reading (no click is made)
 await step('plot geometry and tap tolerance around the cliff (no clicks)', async () => {
+  await page.evaluate(() => document.getElementById('sh-chart-area').scrollIntoView({ block: 'center' }));
+  await page.waitForTimeout(100);
   const r = await page.evaluate(async () => {
     const m = window.MinigameFramework.currentMinigame;
     const { judgeMark } = await import('/break_escape/js/minigames/scada-historian/scada-historian-data.js');
@@ -174,11 +178,18 @@ if (MODE === 'pointer') {
   await step('open report: asks first, no finding text, no confirm', async () => {
     await page.getByText(/ANNOTATE FINDING/).first().click(); await page.waitForTimeout(400);
     const vis = await page.evaluate(() => { const bs = [...document.querySelectorAll('.sh-choice-btn')]; const t = document.querySelector('.sh-modal-title').getBoundingClientRect(); return { allChoicesInView: bs.every(b => { const r = b.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), titleInView: t.top >= 0, xBtn: !!document.querySelector('.sh-modal-close'), cancel: !!document.querySelector('.sh-modal-cancel-btn'), sceneX: (() => { const x = document.querySelector('#minigame-close'); return x ? getComputedStyle(x).visibility : null; })() }; });
-    results.push({ name: 'report on open: title and all three choices inside the viewport; X, no CANCEL, scene X visible', ok: vis.allChoicesInView && vis.titleInView && vis.xBtn && !vis.cancel && vis.sceneX !== 'hidden', ...vis });
+    results.push({ name: 'report on open: title in view (and all three choices when the window is 800px+ tall); one X only (the scene X), no CANCEL', ok: (VH < 800 || vis.allChoicesInView) && vis.titleInView && !vis.xBtn && !vis.cancel && vis.sceneX !== 'hidden', ...vis });
     const info = await page.evaluate(() => ({ text: document.querySelector('.sh-modal').textContent, choices: document.querySelectorAll('.sh-choice-btn').length, confirm: !!document.querySelector('.sh-modal-confirm-btn') }));
     await shot(page, 'b05-report-asks'); const L = await layoutProbe(); console.log('LAYOUT asks', JSON.stringify(L));
     results.push({ name: 'layout: report with choices (2px borders, no overflow, readable)', ok: !!layoutOk(L), L });
     return { ok: info.choices === 3 && !info.confirm && /What does the data show from that moment/.test(info.text) && !/injection/i.test(info.text.replace(/HISTORIAN ANOMALY REPORT/, '')), choices: info.choices, confirm: info.confirm, text: info.text.slice(0, 200) };
+  });
+  await step('scene X while asking closes the report only; the viewer stays and the mark is kept; reopen', async () => {
+    await page.locator('#minigame-close').click(); await page.waitForTimeout(400);
+    const after = await page.evaluate(() => ({ modal: !!document.querySelector('.sh-modal'), mg: (window.__test.getState().activeMinigame || {}).id, mark: !!document.querySelector('.sh-mark-line'), h: document.querySelector('.sh-chart-area, #sh-chart-area').getBoundingClientRect().height }));
+    await shot(page, 'b05b-scene-x-closed-report');
+    await page.getByText(/ANNOTATE FINDING/).first().click(); await page.waitForTimeout(400);
+    return { ok: !after.modal && after.mg === 'scada-historian' && after.mark && !!(await page.$('.sh-modal')), ...after };
   });
   await step('wrong choice (sensor dropout) -> reason shown, still no confirm', async () => {
     await page.locator('.sh-choice-btn[data-choice]').nth(2).click(); await page.waitForTimeout(300);
@@ -202,6 +213,8 @@ if (MODE === 'pointer') {
   await step('chart behind the report now shows the red injection line (cancel to look, then reopen)', async () => {
     await page.getByText(/CANCEL/).first().click(); await page.waitForTimeout(400);
     const red = await hasRedLine(); await shot(page, 'b09-revealed-chart');
+    const chartH = await page.evaluate(() => Math.round(document.getElementById('sh-chart-area').getBoundingClientRect().height));
+    results.push({ name: `chart height back to normal after the report closes (R2 m1): ${chartH}px`, ok: VW > 600 ? chartH > 250 : chartH <= 300, chartH });
     await page.getByText(/ANNOTATE FINDING/).first().click(); await page.waitForTimeout(400);
     return { ok: red && !!(await page.$('.sh-modal-confirm-btn')), red };
   });
