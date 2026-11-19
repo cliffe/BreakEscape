@@ -773,9 +773,10 @@
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7);
 }
 
-/* The text display modal (gameDisplay: readDisplay and observationDisplay "gameDisplay", the
-   examine view's fallback) is an opaque card too; the dim sits on the overlay behind it. */
-[data-ui-theme] .game-confirm-dialog.game-display-dialog {
+/* The shared popup card (gameConfirm, and the text display modal gameDisplay: readDisplay and
+   observationDisplay "gameDisplay", the examine view's fallback) is opaque; the dim sits on the
+   overlay behind it. */
+[data-ui-theme] .game-confirm-dialog {
   background: var(--ui-surface-opaque);
   background-clip: padding-box;
 }

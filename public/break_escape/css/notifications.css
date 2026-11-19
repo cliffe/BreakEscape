@@ -25,11 +25,13 @@
     padding: 15px 48px 15px 20px;
     margin-bottom: 10px;
     box-shadow: none;
-    /* The slide eases, the opacity does not: a toast fading in (or out) at half strength let
-       the room show through its text. It appears and goes whole. */
-    transition: transform 0.3s ease;
+    /* No fade and no vertical slide: a toast fading at half strength let the room show through
+       its text, and a toast that is opaque from its first frame but starts 20 px up would paint
+       over the toast above it (10 px gap) and the HUD buttons. It appears whole, in place
+       (transform: none also cannot overflow the container's right gutter on a phone). */
+    transition: none;
     opacity: 0;
-    transform: translateY(-20px);
+    transform: none;
     /* A toast is not modal and nothing happens when its body is clicked, so clicks pass
        through to the game (and the pause menu's centre check, and the test bridge's
        blocking-ui hit test, see the canvas). Only the close x takes clicks. At 900x700 a
@@ -42,7 +44,7 @@
 
 .notification.show {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
 }
 
 /* Stepped aside while a finished-task line needs the toast lane (ui/hud-lanes.js, review R2 M4);
