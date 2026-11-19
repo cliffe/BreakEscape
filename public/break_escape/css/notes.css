@@ -142,7 +142,7 @@
     right: 0;
     bottom: 0;
     padding: 0 12% 8% 18%;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.5;
     color: #333;
     background: transparent;
@@ -260,7 +260,7 @@
     font-family: 'GNF', monospace;
     font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
     color: #666;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.4;
     text-align: left;
     min-height: 30px;
@@ -379,7 +379,7 @@
     width: calc(100% - 20px); /* Account for padding */
     min-height: 60px;
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.4;
     color: #666;
     border: 4px solid #3498db;
@@ -403,7 +403,7 @@
     border: 4px solid #27ae60;
     padding: 8px 16px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .notes-minigame-save-btn:hover {
@@ -416,7 +416,7 @@
     border: 4px solid #7f8c8d;
     padding: 8px 16px;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .notes-minigame-cancel-btn:hover {
@@ -432,9 +432,16 @@
     margin: 0.6em 0 0.3em;
 }
 
-.notes-minigame-text .note-md-h1 { font-size: 1.3em; }
-.notes-minigame-text .note-md-h2 { font-size: 1.15em; }
-.notes-minigame-text .note-md-h3 { font-size: 1em; text-decoration: underline; }
+.notes-minigame-text .note-md-h1 { font-size: 24px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+.notes-minigame-text .note-md-h2 { font-size: 24px; }
+.notes-minigame-text .note-md-h3 { font-size: 16px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+
+/* Narrow window: 24px GNF headings wrap to three lines in the ~135px column, so h1 and h2 drop to 16px (both keep a 2px rule) */
+@media (max-width: 480px) {
+    .notes-minigame-text .note-md-h1,
+    .notes-minigame-text .note-md-h2 { font-size: 16px; text-transform: uppercase; }
+    .notes-minigame-text .note-md-h2 { padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+}
 
 .notes-minigame-text code,
 .notes-minigame-text .note-md-code {

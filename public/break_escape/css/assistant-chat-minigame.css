@@ -32,7 +32,7 @@
 
 .ac-title {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     /* The header sits on the dark overlay backdrop, not on a light section panel, so the
        dark-green .ac-root ink was near-invisible (E13 F-6). Light title here. */
     color: #f4f8f6;
