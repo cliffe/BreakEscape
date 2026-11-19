@@ -39,20 +39,23 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 | Plan | Lines | Round state | Next |
 |---|---|---|---|
-| `OPS_CORE_PLAN.md` (S1 to S3, N13 to N15) | 1732 | Done: five or more rounds, cross-plan R2 fixes in | Nothing unless a cross-plan check asks |
-| `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (S5a/b/c, A18 to A20) | 1055 | Done, cross-plan fixes `bc53a7f5b` | As above |
-| `OPS_REALISM_SKIN_PLAN.md` (S6, N16) | 1037 | Done | As above |
-| `OPS_LOG_ROWS_PLAN.md` (S9, A24) | 1251 | Done; stages L1a, L1b, L2a, L2b, L3 | As above |
-| `OPS_MFA_HELPDESK_PLAN.md` (S8a/b, A22, A23) | 1201 | Done, plus the shared-subject edits for S8c | As above |
-| `OPS_LOCK_SECOND_STEP_PLAN.md` (S8c, A25) | 747 | Done: R6 found nothing above minor, fixed `e6d4e89ff` | As above |
-| `OPS_CRACKING_PLAN.md` (S7, A21) | 357 | First draft `5e88e7aff`, R1 findings `46649f23f`, unrevised | **Held** for the user's answer to BLOCK-1 on the picks page |
+The user answered the 41-question picks page on 2026-11-19; rulings in
+`docs/agents/ops_layer/USER_PICKS_2026-11-19.md`. Plans revised to them, then reviewed again.
 
-Cross-plan R2 (`CROSS_PLAN_R2.md`, X1 to X26) and R3 (`CROSS_PLAN_R3.md`, Y1 to Y15, decisions in
-`CROSS_PLAN_R3_DECISIONS.md`, fixes `c6d80bf4c` and `8286ad26c`) are settled. R3 moved the shared
-golden mechanism (`bin/ops-golden-compare`, `ops_unchanged/`, the capture rake task) into the log
-plan's L1a and gave `MfaModel.held_item_sources` to MFA M1a. R3 had one major (Y1), so a short R4
-delta over those two fix commits follows (`CROSS_PLAN_R4.md`); if it finds nothing above minor,
-planning is complete apart from cracking.
+| Plan | Lines | Round state | Next |
+|---|---|---|---|
+| `OPS_CORE_PLAN.md` | 1771 | Revised to picks (display-only discovery, free loop, remote desktop at the keyboard, compromise marks, keys `technique_card`/`se_technique`, every technique use logged, needsSession keyboard-only) | **Opus review `OPS_CORE_R6.md` running** (diff `a7b31abad..HEAD`) → fix → Sonnet delta |
+| `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` | 1215 | Picks (always a hash, any admin session overrides planting); R6 1B/3M fixed `68382fce1`; R7 0B/2M `02d623ef4` | **Opus R7 fixer running** (remove_item waits, needs-session keyed on grant's pc, needs_console question) → Sonnet delta R8 |
+| `OPS_LOCK_SECOND_STEP_PLAN.md` | 953 | Lock types audit applied; R7 0B/5M fixed `def243b4a` | **Opus R8 delta review running** → fix → Sonnet delta |
+| `OPS_REALISM_SKIN_PLAN.md` | 1031 | Removed loop features dropped; scan progress bar and fictional terminal output added `70952c6db` | **Sonnet R6 delta review running** → fix if needed |
+| `OPS_MFA_HELPDESK_PLAN.md` | 1178 | Picks applied (helpdesk stop lifts after 5 min) `7e0b6c703`; no open questions | Done unless a check asks |
+| `OPS_LOG_ROWS_PLAN.md` | 1278 | Cross-plan R4 fixes; harvest row counts hashes; badge rows keyed on card used | Done unless a check asks |
+| `OPS_CRACKING_PLAN.md` | 357 | First draft. sonnet-cvp retry was **blocked by the auto-mode permission classifier** ("Unauthorized Access") before it ran | User to choose: allow the relay command, run it themselves, or leave at first draft. Brief ready: `docs/agents/ops_layer/BRIEF_cracking_reviser.md` |
+
+Cross-plan R2, R3 and R4 are settled (R4 found nothing above minor). After the current plan
+reviews settle: one more short cross-plan delta over the picks revisions.
+Also committed: `LOCK_TYPES_COEXISTENCE.md` (the user's LOCK-3 question: all lock types coexist
+with the keyring; two existing-code bugs out of scope, listed in the lock plan section 14).
 
 ## 4. Model routing from here
 
@@ -150,23 +153,29 @@ lockable object, in addition to the sign-in policy, push as the main case" is mi
 
 ## 6. Work owed that no agent is doing
 
-1. **Cracking plan**, once the user answers BLOCK-1: revise for R1, rename proof `dumped` to
-   `harvested` keyed by the sign-in PC id, delete its log row list, follow brief section 5
-   (own validator file, shared goldens, refusal codes), register with the log module only cracked
-   values stored outside the keyring. Its conflicts are listed in `CROSS_PLAN_R2.md` section 3.
-2. **Picks page**: published at Version 2 with 41 questions
-   (https://claude.ai/artifact/NJ3CMZUUG6wKE2S9VtEg5e, localStorage key `be-ops-plan-picks-v1`,
-   source in the session scratchpad as `ops_plan_picks.html`). Republish only if questions change,
-   for example after lock R6 or the cracking revision.
-3. **Brief section 8**: the "Fable reviews Opus" rule is stale; replace with the routing in
-   section 4 of this note. **Outline status paragraph** at the top still reads as on the first day.
-4. Housekeeping: the worktree `.claude/worktrees/docs-access-networks` can be cleared now Train 211
-   has landed (move, never `rm`).
+1. **Round 2 picks page**, once the running reviews land: republish the same artifact
+   (https://claude.ai/artifact/NJ3CMZUUG6wKE2S9VtEg5e; source `ops_plan_picks.html` in the session
+   scratchpad; `const GROUPS` at about line 102, localStorage key `be-ops-plan-picks-v1`: use a new
+   key or new ids so old answers do not prefill). Questions, each with context:
+   - BLOCK-1 follow-up: the relay command was blocked; allow it, run it yourself, or leave.
+   - BLOCK-2 confirm: cracker reads only server-granted facts and needs server proof the hash
+     was collected (options b and c together).
+   - BLOCK-4 re-asked: one private control table drawn by both skins vs a list per skin.
+   - LOCK-1 re-asked: NPC unlock on a gated door (a step still due, recommended; b skip; c owner only).
+   - LOCK-7 re-asked: a step on a carried item (refused for now, recommended).
+   - CORE pretext key: rename `technique` to `se_technique` in six shipped SE scenarios with the old
+     key still read (a), or keep `technique` (b). The user's note named the keys; option a said no rename.
+   - PRIV implant: session-type implants keyboard-only (recommended) vs any admin session.
+   - PRIV needs_console: accept the new visible message in test_access_networks and demo_access_tour.
+   - MFA helpdesk: a request made over a PC needs an open session there; in person none.
+   - Anything new from the running reviews.
+2. **Two existing-code bugs** found by the lock types audit (keycard credential still signs in after
+   revocation; validator counts fob/rfid as cards): reported to the user; not ops-plan work.
+3. Housekeeping: `.claude/worktrees/docs-access-networks` is on `fix/access-validator-followups` with
+   uncommitted dungeon-graph edits; probably another session's. Leave it.
 
 ## 7. Waiting on the user
 
-- BLOCK-1 to BLOCK-4 and the rest of the picks page. Nothing else is blocked on them except the
-  cracking plan.
-- Whether the review routing in section 4 suits them.
+- The cracking route (above). Everything else proceeds on recommendations until round 2.
 - Outside this stream, already reported: the sis01 and sis02 log terminal tints its anomaly row
   (`log-filter-minigame.css:336-342`).
