@@ -78,6 +78,7 @@ const DEVICES = [
     { name: 'Smart Lock', mac: 'AA:BB:CC:00:11:33', rssi: -71, type: 'lock' }
 ];
 const PARAMS = {
+    'network-view': { title: 'Network link', footholdId: 'jack_sweep', hosts: null },
     'pin': { title: 'Keypad', correctPin: '1234', pinLength: 4, maxAttempts: 3 },
     'biometrics': { title: 'Fingerprint kit' },
     'fingerprint-reader': { title: 'Fingerprint reader', requires: 'someone', lockable: { name: 'Door' } },
@@ -115,7 +116,20 @@ const PARAMS = {
 // working state before the start (pre) or drive the scene into it after (post), so the sweep
 // and the shots cover the screen players use (review R1 M2).
 const BLE = [['Smart Lock', 'AA:BB:CC:00:11:33', ['180f', 'fff0'], true], ['Office Printer', 'AA:BB:CC:00:11:22', ['1800'], false]];
+const NV_HOSTS = [
+    { id: 'door_box', kind: 'pc', name: 'Door controller', host: 'HB-DOOR-01', sprite: 'network_rack1', headless: true, remoteSignIn: true },
+    { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, remoteSignIn: true,
+        session: { username: 'lfox', displayName: 'Lena Fox', via: 'password', remote: true } },
+    { id: 'ledger_archive', kind: 'file_share', name: 'Ledger-Archive', host: 'HB-FS01', open: false },
+    { id: 'print_queue', kind: 'printer', name: 'Office print queue', host: 'HB-PRN-01', open: true, observations: 'Three payslips wait.' }
+];
+PARAMS['network-view'].hosts = NV_HOSTS;
 const SETUP = {
+    // network-view needs a held foothold; stand one in for the link's answer (no server state)
+    'network-view': { pre: (p) => {
+        const f = { id: 'jack_sweep', via: 'jack', name: 'Drop box: comms room', itemId: 'netlink_jack_sweep', sourceId: 'comms_port', network: { id: 'office_lan', name: 'Harbour office LAN' }, hosts: p.hosts };
+        window.networkLinks = { get: () => f, view: async () => ({ ok: true, view: f }), footholds: new Map(), views: new Map() };
+    } },
     'infusion-pump': { pre: () => { window.gameState.globalVariables.paper_charts_collected = true; } },
     'ncsc-brief': {
         pre: (p) => { window.gameState.globalVariables[p?.lockable?.scenarioData?.gateVar || 'warranty_checklist_complete'] = true; },
