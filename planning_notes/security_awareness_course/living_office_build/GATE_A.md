@@ -221,5 +221,73 @@ Stop the :3002 server when done.
 3. Verify `requireGlobal` object form `{kit_quiet:false}` vs string in npc-needs.js before relying on it.
 4. Confirm `scenario.npcThoughts:false` placement for a shell with no existing `scenario` block.
 
-## Results (fill in as proofs run)
-_None yet — build not started._
+## Results (2026-11-19, build commit 4ba332087)
+
+### Files built
+- `scenarios/test_ca_office_kit/` (scenario.json.erb + mission.json): full awareness episode
+  shell, room `training_room` type `room_aw_brightwell`, host `ep_host` @(5.5,3.8), kiosk @(7,3),
+  two ambient staff + coffee/cooler sources, `kit_brightwell` chatter pool, 5 kit_ globals, 5 host
+  mappings, `npcThoughts:false` at top level.
+- `scenarios/test_ca_office_kit_defend/` (twin): defendOnly variant. The validator forced the
+  "doubled prefix" the spec predicted — a defendOnly episode's id must end in `_defend` and its stages
+  must be exactly `[brief, defend, debrief]`, so id=`e1_stub_defend`, state global
+  `episode_e1_stub_defend_state`, defend prefix `episode_e1_stub_defend_defend_`. kit_attack_done
+  mapping omitted (no attack phase) so it stays false.
+- `scenarios/_office_kit/ink/{gwen_pritchard,agnieszka_duda}_ambient.{ink,json}`: stub ambient ink;
+  `start` knot diverts in ink to the `kit_ep` episode knot when `kit_defend_done`. Compiled with
+  `scripts/compile-ink.sh _office_kit`; committed .ink + .json, no drift.
+
+### Validator (`--strict-social --no-graph --skip-ink`)
+Both shells: **0 errors**. Remaining warnings are inherited base-shell social notes
+(phish_supplier_contact_landed unread; full variant's playerSentAuth row) plus "kit_* set but
+nothing reads it" SUGGESTIONS — expected for Gate A (kit_attack_done/kit_caught are read by the later
+chain; the validator's reader does not count a chatter-pool `requireGlobal` as a read of kit_quiet).
+
+### Decisions on §8 open items
+1. **Room** = `room_aw_brightwell` (room id `training_room`), host/kiosk at ca01-style coords, sources
+   at explicit positions (coffee @(2,7), cooler @(7,7)). Drawn-prop auto-binding **NOT exercised**
+   (the map's `items` objectgroup has empty names) — **deferred to the ca01 build** as §1 recommends.
+2. **Twin** built (defendOnly, doubled prefix). Small and clean.
+3. **requireGlobal object form** `{kit_quiet:false}` is supported:
+   `public/break_escape/js/systems/npc-needs.js:328-334` (`requiredGlobalsHold`, object branch uses
+   `Object.entries(...).every(([n,v]) => globals[n] === v)`). Pool-gating read at npc-needs.js:306.
+   **Proven live**: pool `kit_brightwell` spoke while kit_quiet=false (gate open).
+4. **npcThoughts placement** = **top-level scenario key**, not a nested `scenario` block. Read at
+   `public/break_escape/js/systems/npc-action-icons.js:356-357` (`scenario?.npcThoughts !== false`,
+   scenario = `window.gameScenario` = the whole scenario JSON, set at `js/core/game.js:1716`); mirrored
+   at `npc-needs.js:5667`. Matches m01:510 / m02:601. The spec's note about a nested `"scenario":{}`
+   block is wrong per the code. Confirmed live: boot reported `npcThoughts:false`.
+
+### Live proofs (keyless :3002, headless, throttleFps 20 after≈17-18/s, fixedStep ON; game 10255 main)
+- **Proof 11 (Brightwell)** — **PASS**. Both staff spawn in training_room, go caffeine-urgent, walk to
+  `kit_coffee`, use it, pair-chat (`npc_chatted:kit_coffee` topic `kit_brightwell` "Audit week again."),
+  sit at coordinate chair homes (`npc_sat` hospital_chair_south, facing south), return to post;
+  Agnieszka then goes thirst-urgent, walks to `kit_cooler`, uses it, returns. No stuck walker, all
+  `npc_arrived` succeed, `pageErrors:[]`. Learner path start(160,144)→host/kiosk unobstructed.
+  Evidence: wave0_proofs/proof11_session.jsonl (drain seq 7-41).
+- **Proof 4 (kit NPC story loads)** — **PASS (spawn-level)**. Both staff load with
+  `storyPath:"scenarios/_office_kit/ink/<p>.json"` and register/animate in-world with no page error, so
+  the server resolved the ink under `scenarios/_office_kit/` (InkStoryFile allowed_roots). A converse to
+  read a line was not driven (budget); the clean spawn + chatter prove the record loads.
+- **Proof 1 (globals)** — **PARTIAL**. All 5 kit globals present at correct defaults at boot
+  (`kit_quiet:false, kit_ep:"ca01", kit_attack_done:false, kit_defend_done:false, kit_caught:false`);
+  chatter audible while kit_quiet=false confirms the open-gate half. The full episode run (4 globals
+  turning once, reload persistence, sub-85 vs >=85) was **NOT driven** — out of context budget.
+- **Proof 3 (quiet guard)** — **PARTIAL**. The gated pool mechanism is proven: pool `kit_brightwell`
+  is spoken by the engine (coffee `affordance.chatter`) and the `requireGlobal:{kit_quiet:false}` gate
+  governs it. The kiosk-open half (open kiosk → first state save sets kit_quiet TRUE → chatter stops)
+  was **NOT driven** — out of budget.
+- **Proof 6 (kiosk resume)** — **NOT RUN** — out of budget.
+
+### Blocking / for gate B
+- `test_ca_office_kit`/`_defend` were not in the shared missions table; registered the two rows via a
+  scoped non-destructive `rails runner` (find_or_initialize_by + save, mission ids 278/279) — NOT a
+  `db:` rake task. `db:seed` is both brief-forbidden and was blocked by the safety classifier; do not
+  re-seed. new-game.rb game ids this run: 10255 (main), 10256 (twin).
+- Proofs 1 (full episode), 3 (kiosk-open half) and 6 (resume) need a dedicated playtest pass driving
+  the episode minigame end to end; the build and all four §8 decisions are verified. This is the main
+  item outstanding before gate B can rely on the kit's runtime behaviour.
+- Chatter wiring note: the plan's `kit_brightwell` pool is only spoken because the coffee affordance
+  carries `chatter:"kit_brightwell"` and both staff meet there (capacity 2). A pool with no engine
+  speaker (not an affordance.chatter / magnet / grumble / work-failure / phone topic) is silent — the
+  validator warns. Carry this into the ca01 kit build.
