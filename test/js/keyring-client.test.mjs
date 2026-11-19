@@ -907,7 +907,7 @@ test('find toasts reach the DOM as text: a label with markup is not parsed', asy
     answers({ entries: [], rev: 'r0' }, { entries: [evil], rev: 'r1' });
     await kr.prime();
     await kr.refresh(); await settle();
-    assert.equal(document.querySelector('.notification img, .notification b'), null, 'no element from author text');
+    assert.ok(document.querySelector('.notification img, .notification b') === null, 'no element from author text');
     assert.match(document.body.textContent, /Saved connection found: <img src=x onerror="window.pwned=1">.rdp for <b>Bob<\/b> on HB-FIN-02\./);
 });
 

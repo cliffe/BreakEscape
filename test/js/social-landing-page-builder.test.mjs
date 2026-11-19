@@ -311,7 +311,7 @@ test('concept cards show behind a "What is this?" button and toggle (N7 display)
     assert.equal(cardBtn.getAttribute('aria-expanded'), 'true');
     assert.match(domainRow.querySelector('.cc-text').textContent, /ledgerwall/);
     // five-habits is reserved for step 6 and never shown here
-    assert.equal(s.container.querySelector('[data-focus="card:five-habits"]'), null);
+    assert.ok(s.container.querySelector('[data-focus="card:five-habits"]') === null);
 });
 
 test('Esc is a normal exit that saves the draft and emits no failure', () => {
@@ -336,7 +336,7 @@ test('the awareness profile edits only brand, domain and padlock, with the rest 
     assert.equal(b.choices.wording, 'w_formal');
     assert.deepEqual(b.choices.fields, ['email', 'password']);
     // and the homograph domain is hidden below the student profile
-    assert.equal(s.container.querySelector('[data-focus="domain:d_homo"]'), null);
+    assert.ok(s.container.querySelector('[data-focus="domain:d_homo"]') === null);
     assert.ok(s.container.querySelector('[data-focus="domain:d_letter"]'));
 });
 
@@ -361,7 +361,7 @@ test('P3 N-7: when the brand\'s logo image fails to load, the score panel leaves
     const img = s.container.querySelector('.lpb-logo-img');
     img.dispatchEvent(new window.Event('error'));
     assert.equal(logoLine(), null);
-    assert.equal(s.container.querySelector('.lpb-logo-img'), null);
+    assert.ok(s.container.querySelector('.lpb-logo-img') === null);
 });
 
 test('P4-4: the giveaway count names every giveaway it counts, including the two no score row shows', () => {

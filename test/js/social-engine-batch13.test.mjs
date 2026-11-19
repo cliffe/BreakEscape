@@ -188,14 +188,14 @@ test('item 2: the debrief recaps the report: facts, a required one left out, the
         ['Tuesday lunchtime', 'The east stairwell']);
     assert.match(box.querySelector('.aw-concern-recap-missing').textContent, /An outside offer for a copy of the plans/);
     assert.match(box.querySelector('.aw-concern-recap-conclusion').textContent, /‘He is selling us out’/);
-    assert.equal(box.querySelector('.aw-concern-recap-no-conclusion'), null);
+    assert.ok(box.querySelector('.aw-concern-recap-no-conclusion') === null);
     assert.deepEqual(view.getState().concernRecap, { facts: 2, missing: 1, conclusion: true });
 });
 
 test('item 2: no conclusion gets the positive line; strings override every line; absent draws nothing', () => {
     let { host } = debrief({ concernRecap: { facts: ['Tuesday lunchtime'], missing: [], conclusion: '' } });
     assert.ok(host.querySelector('.aw-concern-recap-no-conclusion'));
-    assert.equal(host.querySelector('.aw-concern-recap-missing'), null);
+    assert.ok(host.querySelector('.aw-concern-recap-missing') === null);
     ({ host } = debrief({ concernRecap: { facts: ['Tuesday lunchtime'], missing: ['Offer'], conclusion: 'Guilty' },
         strings: { concernRecapHeading: 'What you filed', concernRecapMissing: 'Missing: {missing}',
             concernRecapConclusion: 'Verdict left in: {conclusion}' } }));
@@ -203,9 +203,9 @@ test('item 2: no conclusion gets the positive line; strings override every line;
     assert.equal(host.querySelector('.aw-concern-recap-missing').textContent, 'Missing: Offer');
     assert.equal(host.querySelector('.aw-concern-recap-conclusion').textContent, 'Verdict left in: Guilty');
     ({ host } = debrief({ concernRecap: { facts: ['A'], missing: [], conclusion: '' }, strings: { concernRecapNoConclusion: '' } }));
-    assert.equal(host.querySelector('.aw-concern-recap-no-conclusion'), null, "'' drops the line");
+    assert.ok(host.querySelector('.aw-concern-recap-no-conclusion') === null, "'' drops the line");
     const plain = debrief({});
-    assert.equal(plain.host.querySelector('.aw-concern-recap'), null, 'no recap, no section');
+    assert.ok(plain.host.querySelector('.aw-concern-recap') === null, 'no recap, no section');
     assert.equal('concernRecap' in plain.view.getState(), false, 'getState unchanged without it');
 });
 
@@ -304,7 +304,7 @@ test('item 4: a send-off shows under "Episode finished" straight after Finish, n
     FW.forceCloseMinigame();
     startEpisodeRunner(kiosk(ep.id), { deps });
     assert.ok(cur().container.querySelector('.epr-finished'));
-    assert.equal(cur().container.querySelector('.epr-send-off'), null, 'a reopen shows no send-off');
+    assert.ok(cur().container.querySelector('.epr-send-off') === null, 'a reopen shows no send-off');
 });
 
 test('item 4: strings.sendOff replaces the line and an empty string drops it', () => {
@@ -314,7 +314,7 @@ test('item 4: strings.sendOff replaces the line and an empty string drops it', (
     runToDebrief(episode({ concernForm: cfConfig(), strings: { sendOff: '' } }));
     rclick('.stub-finish');
     assert.ok(cur().container.querySelector('.epr-finished'));
-    assert.equal(cur().container.querySelector('.epr-send-off'), null);
+    assert.ok(cur().container.querySelector('.epr-send-off') === null);
 });
 
 // ── item 3 and item 6: the inbox ─────────────────────────────────────────────────

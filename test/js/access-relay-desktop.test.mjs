@@ -189,7 +189,7 @@ test('the start panel has one Disconnect (no Switch user, Sign out or Lock) and 
     setup();
     await relayDesktopOpen();
     assert.ok(document.getElementById('pc-start-disconnect'), 'Disconnect is offered');
-    for (const id of ['switch', 'signout', 'lock']) assert.equal(document.getElementById(`pc-start-${id}`), null, `${id} is not offered`);
+    for (const id of ['switch', 'signout', 'lock']) assert.ok(document.getElementById(`pc-start-${id}`) === null, `${id} is not offered`);
     assert.match(document.body.textContent, /Shared drives are not mapped over remote assist\./);
     assert.equal(document.querySelectorAll('.pc-start-share').length, 0, 'no share is listed');
 });
