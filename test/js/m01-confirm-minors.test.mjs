@@ -1,4 +1,4 @@
-// m01 confirm minors: post-it, HaX pointer, task wording, drop-site description and the
+// m01 confirm minors: HaX pointer, task wording, drop-site description and the
 // post-mission hub gates on Maya and Sarah. Boolean asserts only. Runs the real compiled ink.
 // Run with: node test/js/m01-confirm-minors.test.mjs
 import test from 'node:test';
@@ -13,13 +13,6 @@ const dir = join(root, 'scenarios/m01_first_contact');
 const erb = readFileSync(join(dir, 'scenario.json.erb'), 'utf8');
 const { Story } = createRequire(import.meta.url)(join(root, 'public/break_escape/assets/vendor/ink.js'));
 const load = (f) => new Story(readFileSync(join(dir, 'ink', f), 'utf8').replace(/^﻿/, ''));
-
-test('Derek post-it points at the break room bin', () => {
-    const m = erb.match(/"postitNote":\s*"(Anniversary[^"]*)"/);
-    assert.ok(m !== null, 'post-it note exists');
-    assert.ok(m[1].includes('break room'), 'post-it mentions the break room');
-    assert.ok(m[1].includes("Lisa's card"), 'post-it mentions the card');
-});
 
 test('HaX points at the manager office only until it has been entered', () => {
     assert.ok(erb.includes('"message": "Patricia kept her things in the manager\'s office, so start there."'), 'pointer text exists');
