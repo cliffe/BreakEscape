@@ -65,3 +65,14 @@ Findings not acted on as suggested, one line each.
 - **n1.** "authored" dropped from the USB refusal line (the Q1 text now describes the toast instead).
 - **n2.** S9 request states the `usb_install_overridden` rule as it is.
 - **n3.** `plant_policy_refusal` names `record_planted_item!`'s early returns (`capture_proofs.rb:32`, `:39`), with a server test.
+
+## R8 fixes (2026-11-19)
+
+- **m1.** "Item not held" added to `plant_policy_refusal`'s nil cases, so a retried gated remove answers success and records nothing more; server test (two identical gated removes) and JS test (both attempts fail, then success fires `triggerOnInteract` once); reload-before-retry stated as a known limit; no new synced state.
+- **m2.** In-flight guard now holds the object id and the item id; the item is left out of `requiresItem` matching and the `remove_item` pick until the answer; JS test for a second object asking for the same item.
+- **m3.** `objectData` passed in the opts from both `interactions.js` calls and threaded through `confirm_action`; admin choice in one helper, `plantAdmin(objectData)` in `pc-sessions.js`, used by both callers; listed in section 12; JS test that both callers agree on a `sam_dock`-shaped object.
+- **m4.** Validator test goes in `test/js/validator-privilege.test.mjs`, the repo's convention for `scripts/validate_*.rb` (cf. `validator-capture-log.test.mjs`); rows for the `remove_item` warning (governed second, governed first, ungoverned second), the two-PC warning, and one per section 9 error.
+- **n1.** S5a build row now lists the five places the policy is read.
+- **n2.** Client reads only `error`; the route's `message` refusals and 500 `rescue` text never reach a toast; a 5xx after the retry is the generic network line.
+- **n3.** First grant stated as depth-first in list order, conditions ignored as in `removes_item?`; took the optional validator warning for one object whose grants name two different PCs, with server and validator tests.
+- **n4.** One clause: `give_item` promises from a resumed list never reach the first call's `gives`, and the timer dispatcher (the only reader) never makes a gated remove.

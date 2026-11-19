@@ -178,8 +178,9 @@ alone.
 `"user"` or nil (no live session) for every kind of session, read through the same validity checks
 as every other reader. One opt-in account marker, `creds.admin: true`, so that signing in with an
 administrator account gives admin. Two admin gates: the profiles of the accounts that use the PC,
-and installing a device the USB policy refuses at the three places the policy is read (implant
-path, plant proof, client `plantRefusal`), for any unlocked admin session on that PC whose service
+and installing a device the USB policy refuses at the five places the policy is read (implant
+path, plant proof, the inventory `remove` check `plant_policy_refusal`, client `plantRefusal` and
+the client's `remove_item` pick), for any unlocked admin session on that PC whose service
 is on (a device that needs a session still takes only a session at the PC's own keyboard).
 Answers carry `access: "admin"` when the level is admin; the core
 plan's step up reads the level through this helper. S5a does not need S3 to work: the administrator
@@ -412,7 +413,11 @@ the object itself. Every shipped BadUSB is a separate socket whose grant sits in
 `reception_pc` (`scenarios/demo_access_tour/scenario.json.erb:455-475`). One walk finds it on each
 side: `CaptureModel.session_grant_pc(obj)` on the server and `sessionGrantPc(objectData)` in
 `pc-policy.js`, both recursing into `confirm_action` `onConfirm` as `CaptureModel.removes_item?`
-does (`capture_model.rb:400-414`), and answering the first such grant's `pc`, or nil. Such a
+does (`capture_model.rb:400-414`), and answering the first such grant's `pc`, or nil. "First" is
+depth-first in list order on both sides, and a grant with a `condition` counts, as `removes_item?`
+ignores conditions (the client skips an action whose condition is false, `apply-actions.js:142-145`;
+the walk does not). The validator warns on one object whose `needsSession` grants name two
+different PCs. Such a
 device is satisfied only by a session at that PC's own keyboard, and the policy override for it
 comes only from a keyboard admin session there. One helper states this, `keyboard_admin?(pc_id)`:
 `session_admin?(pc_id)` and the session has a blank `foothold` and is not `remote_route_session?`.
@@ -451,8 +456,11 @@ answers false for a policy refusal (`capture_proofs.rb:52`), and then removes th
 puts a check in that branch before both calls: when `used_on` is present, a new
 `Game#plant_policy_refusal(item_id, used_on)` finds the held item and the target object as
 `record_planted_item!` does, early returns included (a hideable item, a client-forged item,
-`capture_proofs.rb:32`, `:39`, an object that does not take the item), so it never refuses a
-remove that the plant proof would not have judged. It answers the USB refusal line when the object
+`capture_proofs.rb:32`, `:39`, an object that does not take the item, and an item the server no
+longer holds, `:43`, which is the retry of a remove it already did), so it never refuses a
+remove that the plant proof would not have judged. A retried gated remove therefore answers
+success, removes nothing and records nothing more, which is what lets the retry after a lost
+answer heal the tray. It answers the USB refusal line when the object
 takes the item, the policy refuses it, and the admin predicate above is false; otherwise nil. A line
 means the action answers `422 { success: false, reason: "usb_refused", error: <line> }` and returns,
 so nothing is removed and nothing is recorded.
@@ -473,25 +481,54 @@ fire-and-forget send.
 
 - **`consumesItem`.** For a gated remove, the client sends the remove first and waits, and fires
   `triggerOnInteract` and removes the item from the tray only on success.
-- **`remove_item`.** It first picks the item: among held matches of its own list, the first one the
-  object's policy accepts under the same `admin` value as `plantRefusal`, else the first match (so a
+- **The admin value and the object's data.** `applyActions` receives only `source`, `gameId` and
+  `objectId`, and the client has no lookup from a scenario id to object data. Both `interactions.js`
+  calls (`:1080`, `:1095`) therefore pass `objectData` (the sprite's `scenarioData`) in the opts, and
+  the `confirm_action` branch threads it on to `onConfirm` (`apply-actions.js:425`). The `admin`
+  value comes from one helper in `pc-sessions.js`, `plantAdmin(objectData)`: `keyboardAdmin` of
+  `sessionGrantPc(objectData)` when a grant is found, else `sessionAdmin(objectData.id)`.
+  `interactions.js` (for `plantRefusal` and `gatedRemove`) and `apply-actions.js` (for the pick and
+  `gatedRemove`) both call it, so the two cannot drift.
+- **`remove_item`.** It first picks the item: among held matches of its own list, not in
+  `plantsInFlight` (below), the first one the
+  object's policy accepts under `plantAdmin(objectData)`, else the first match (so a
   player holding two matching items, one refused and one accepted, spends the accepted one, the one
   `plantRefusal` let through, `pc-policy.js:71-78`). When that remove is gated, `applyActions`
   stops the list at that action: it sends the remove and waits, and on success removes the item from
-  the tray and runs the rest of the list (`applyActions(rest, opts)`). Actions before it have already
+  the tray and runs the rest of the list (`applyActions(rest, opts)`, a new call, so a `give_item`
+  promise from the rest never reaches the first call's returned `gives`; only the timer dispatcher
+  reads those, and a timer passes no `objectId`, so it never makes a gated remove). Actions before it have already
   run, so the validator warns when a `remove_item` on a USB-governed object is not the first action
   of its list. An object with no `policy` and no workstation fields is never gated, so the
   `remove_item` order is unchanged for it.
 - **The answer.** `sendInventoryRemove` gains an option, `withBody: true`, that resolves `true` on
   success, the refusal body on a refusal that has one, and `false` after the retried network failure
-  or a refusal with no body; its other callers are unchanged. On anything other than success the
+  or a refusal with no body; its other callers are unchanged. The client reads only `error` from a
+  refusal body: the route's other refusals carry `message`, and its `rescue` answers 500 with
+  `message: "Inventory error: ..."`, so raw exception text never reaches a toast, and a 5xx after
+  the retry counts as a network failure (the generic line), not as a refusal that has one. On
+  anything other than success the
   item stays in the tray and nothing after it runs: on `usb_refused` the client shows the server's
   line through `gameAlert` and emits `usb_refused:<objectId>` as the local refusal does; on another
   refusal it shows the server's `error` when there is one; on a network failure it shows "That did
   not go through. Try again." The player can try again at once, because the item is still held.
-- **One request at a time.** From the send until the answer, the object's id is in a client set,
-  `plantsInFlight`; a further interact with that object, and a `remove_item` for it, does nothing
-  (a console line only). The id leaves the set on every answer, failure included.
+  The server side of that retry is safe: `sendInventoryRemove` already retries once on a network
+  error or 5xx (`apply-actions.js:42-63`), and a remove of an item the server no longer holds
+  answers `{ success: true }` (`games_controller.rb:1454-1460`; `remove_inventory_item!` is a
+  `reject!`, `game.rb:845-850`) and records nothing, because `record_planted_item!` answers false
+  for an item not held (`capture_proofs.rb:43`).
+  **Known limit.** If the answer to a remove the server did process is lost twice and the player
+  reloads before trying again, the item is gone from the server and the plant may be recorded, but
+  the object's `triggerOnInteract` (a `set_global`, a `grant_foothold`) never ran. This needs two
+  lost requests in a row and then a reload before the retry, and no new `player_state` is added for
+  it.
+- **One request at a time.** From the send until the answer, both the object's id and the item's
+  id are in client sets (`plantsInFlight` for objects and a sibling for items). A further interact
+  with that object, and a `remove_item` for it, does nothing (a console line only). While the item
+  id is in its set, it is left out of `requiresItem` matching (`interactions.js:1050-1053`) and out
+  of the `remove_item` pick, so another object that takes the same item sees the "not held" path
+  and sends nothing: one server plant never runs two objects' actions. Both leave their sets on
+  every answer, failure included.
 
 No shipped scenario has a gated remove: the `remove_item` objects (`wall_port` in
 `test_capture_log`, `network_port` in `test_remove_item`, the bin in `test_wearable`) carry no
@@ -881,6 +918,8 @@ required and run from `scripts/validate_scenario.rb` by one line beside the core
   on a USB-governed object, warn: a gated remove stops its list there and waits (section 5), so the
   actions before it run even when the server refuses the plant. No shipped `remove_item` object is
   governed, so no shipped scenario gets it.
+- One object whose `needsSession` grants (found by the walk of section 5) name two different PCs,
+  warn: the engine judges only the first.
 - Every check here that asks whether a PC admits an account uses `CredentialModel.pc_admits_account?`
   (`validate_scenario.rb:7583`), which carries the account-kind rule.
 - A `hash` credential with a `harvested` proof: the PC is a sign-in PC and `account.npc` is in its
@@ -974,9 +1013,12 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   not, with the device still held, and `not_ready` kept for a PC with no session at all; the plant
   proof for a `needsSession` object refused under a remote admin session and allowed under a
   keyboard one, with the grant nested in a `confirm_action` and naming another PC, and judged by
-  that PC's session (`session_grant_pc` finds it there and answers nil for no grant); a
-  `plant_policy_refusal` of nil for a hideable item, a client-forged item and an object that does
-  not take the item; the same lapsed-override refusal through an object that takes the item by a
+  that PC's session (`session_grant_pc` finds it there and answers nil for no grant, and answers
+  the first grant's PC, depth-first in list order, when two name different PCs); a
+  `plant_policy_refusal` of nil for a hideable item, a client-forged item, an object that does
+  not take the item and an item not held; two identical gated removes under an admin session
+  (the retry of a remove whose answer was lost): the first answers 200 and records one
+  `plantedItems` entry, the second answers 200, removes nothing and leaves one entry; the same lapsed-override refusal through an object that takes the item by a
   confirm's `remove_item`; NPC-side `usb_habit_refused?` unchanged under player admin. Lapsed override: a
   token admin session past its expiry, a foothold admin session after the foothold is unplugged, and
   one whose route an outage drops each plant a blocked stick through the inventory `remove`
@@ -1047,6 +1089,11 @@ refused and one accepted, `remove_item` removes the accepted one; another refusa
 failure each keep the item with their line (the server's `error`, else "That did not go through.
 Try again."); a second interact, and a second `remove_item`, while the object is in
 `plantsInFlight` sends nothing and fires nothing, and the object leaves the set on a failure; a
+second object asking for the same item while it is in flight sees the "not held" path and sends
+nothing; when both attempts fail the item stays and the next try succeeds and fires
+`triggerOnInteract` once; `plantAdmin` gives the same answer to `interactions.js` and
+`apply-actions.js` for a `sam_dock`-shaped object (a grant inside a confirm naming another PC) and
+for an object with no grant; a
 remove that is not gated (an ungoverned `wall_port`-style object) keeps today's order and
 fire-and-forget send; `network-links.js` shows a toast and emits
 `network_device_refused` for `needs_console`; the desktop
@@ -1056,6 +1103,15 @@ the cracking scene with the answer's `hashId`; `plantRefusal` with `admin`; a
 session with an `npcId` the client never loaded renders; hostile display names and a hostile
 `domain` value rendered as text. A new module is added to every copy list that copies the module
 importing it (grep `test/js` for the importer's name before finishing).
+
+**Validator** (`test/js/validator-privilege.test.mjs`, new). The repo tests each `scripts/validate_*.rb`
+file from `test/js/validator-<name>.test.mjs` (for example `validator-capture-log.test.mjs` for
+`validate_capture_log.rb`): it runs `check_privilege` through `ruby -e` on a fixture scenario and
+asserts on the returned lines. One fixture per error and warning of section 9, and a clean one.
+For the `remove_item` warning: a governed object with `remove_item` second in an `onConfirm`
+(warn), the same object with it first (no warning), and an ungoverned object with it second (no
+warning). For the two-PC warning: an object whose `needsSession` grants name two different PCs
+(warn) and one whose grants name the same PC twice (no warning).
 
 **Feature scenario** `test_ops_privilege`, grown per stage (the schema is closed, so each stage
 adds only its own fields):
@@ -1149,11 +1205,12 @@ Files this plan changes:
   proof properties at `:293-305`, and `crack` on a `hash` entry if the cracking plan has not added
   it), `scripts/generate_dungeon_graph.rb`; `scripts/validate_scenario.rb` gains one
   `require_relative` and one call line only.
-- Client: `pc-sessions.js` (`sessionAdmin`, `keyboardAdmin`), `interactions.js`
-  (the predicate per object, the wait on a gated `consumesItem` plant and the `plantsInFlight`
-  guard), `pc-policy.js` (`sessionGrantPc`, `gatedRemove`), `apply-actions.js`
-  (`sendInventoryRemove`'s `withBody` option; the `remove_item` action's item pick and its wait on
-  a gated remove), `network-links.js` (`needs_console`), the desktop
+- Client: `pc-sessions.js` (`sessionAdmin`, `keyboardAdmin`, `plantAdmin`), `interactions.js`
+  (`objectData` in the opts of both calls, the predicate per object via `plantAdmin`, the wait on a
+  gated `consumesItem` plant and the `plantsInFlight` and item guards), `pc-policy.js`
+  (`sessionGrantPc`, `gatedRemove`), `apply-actions.js`
+  (`objectData` threaded through `confirm_action`; `sendInventoryRemove`'s `withBody` option; the
+  `remove_item` action's item pick and its wait on a gated remove), `network-links.js` (`needs_console`), the desktop
   view and collect panel, `keyring.js` call, and a call that opens the cracking plan's scene for a
   `hashId`.
 - `docs/ACCESS_AND_NETWORKS.md` and the `README_scenario_design.md` feature index (A18 to A20).
