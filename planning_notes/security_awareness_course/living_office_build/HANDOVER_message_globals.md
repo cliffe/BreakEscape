@@ -1,5 +1,8 @@
 # Handover: triage outcome.messageGlobals
 
+> **DONE (19 Nov).** The work this handover describes is finished and recorded in GATE_B.md. Kept for history.
+
+
 Done (all in the worktree b-ca-lo-build, committed together):
 - triage-scoring.js: exported isCaughtVerdict (report/delete/verify); scoreTriage uses it.
 - triage-starter.js: messageGlobalPairs; saveRound writes one boolean per listed message before complete (deferEmit), sticky true; eventsFor emits them before complete; doneNames (reopen) and reemitTriageComplete (takes ctx.set) re-emit true ones first.
