@@ -84,10 +84,10 @@ async function pointAt(iso) {
 }
 // Y range of the chart: read it from the module source constants through a probe (24 to 40 deg C in the drawn axis labels)
 const Y_MIN = 24, Y_MAX = 42;
-async function clickReading(iso, how = 'mouse') {
+async function clickReading(iso, how = 'mouse', dx = 0) {
   const i = await pointAt(iso);
   const sx = i.rect.w / i.W, sy = i.rect.h / i.H;
-  const x = i.rect.l + i.xSvg * sx;
+  const x = i.rect.l + i.xSvg * sx + dx;
   const y = i.rect.t + (i.PADtop + i.plotH - ((i.value - Y_MIN) / (Y_MAX - Y_MIN)) * i.plotH) * sy;
   if (how === 'tap') await page.touchscreen.tap(x, y); else { await page.mouse.move(x, y); await page.waitForTimeout(150); await page.mouse.click(x, y); }
   await page.waitForTimeout(250);
@@ -130,7 +130,7 @@ await step('plot geometry and tap tolerance around the cliff (no clicks)', async
       if (!el || el.tagName !== 'rect') { out.push({ d, none: true }); continue; }
       const rx = +el.getAttribute('x'); let best = null;
       for (const p of m._visible) { const x = PAD.left + ((p.ts - startTs) / tsRange) * plotW; const k = Math.min(Math.abs(x - 2 - rx), Math.abs(x - 3 - rx)); if (!best || k < best.k) best = { k, p }; }
-      const v = judgeMark(best.p, an);
+      const v = judgeMark(best.p, an, { pxPerMs: plotW / tsRange, rangeStartTs: startTs });
       out.push({ d, t: new Date(best.p.ts).toISOString().slice(11, 19), ok: v.ok });
     }
     const acc = out.filter(o => o.ok).map(o => o.d);
@@ -161,12 +161,20 @@ if (MODE === 'pointer') {
     const r = await clickReading(T.late, tap); const h = await hint(); const a = await annotateEnabled(); await shot(page, 'b03-late');
     return { ok: /already like this before/.test(h.text) && h.retry && !(await markLine()) && (!a || a.disabled || !a.active), clicked: r, hint: h.text };
   });
-  await step(`mark in the window (23:12) -> mark line, ANNOTATE unlocks`, async () => {
-    const r = await clickReading(T.cliff, tap); const h = await hint(); const a = await annotateEnabled(); await shot(page, 'b04-marked');
-    return { ok: /Marked 23:1/.test(h.text) && h.found && await markLine() && a && a.active && !a.disabled, clicked: r, hint: h.text, annotate: a, redLineStill: await hasRedLine() };
+  await step('1h range: the cliff is off the chart, a late mark says to widen the range', async () => {
+    await page.locator('.sh-range-btn[data-hours="1"]').click(); await page.waitForTimeout(300);
+    const r = await clickReading('2026-03-21T06:00:00', tap); const h = await hint(); await shot(page, 'b03b-late-1h');
+    await page.locator('.sh-range-btn[data-hours="12"]').click(); await page.waitForTimeout(300);
+    return { ok: /widen the range/.test(h.text) && !/Find where it starts/.test(h.text) && h.retry, clicked: r, hint: h.text };
+  });
+  await step(`mark in the window (23:12; touch: tapped ${argv.touch ? '+10px right of' : 'on'} the cliff) -> mark line, ANNOTATE unlocks`, async () => {
+    const r = await clickReading(T.cliff, tap, argv.touch ? 10 : 0); const h = await hint(); const a = await annotateEnabled(); await shot(page, 'b04-marked');
+    return { ok: /Marked 23:/.test(h.text) && h.found && await markLine() && a && a.active && !a.disabled, clicked: r, hint: h.text, annotate: a, redLineStill: await hasRedLine() };
   });
   await step('open report: asks first, no finding text, no confirm', async () => {
     await page.getByText(/ANNOTATE FINDING/).first().click(); await page.waitForTimeout(400);
+    const vis = await page.evaluate(() => { const bs = [...document.querySelectorAll('.sh-choice-btn')]; const t = document.querySelector('.sh-modal-title').getBoundingClientRect(); return { allChoicesInView: bs.every(b => { const r = b.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), titleInView: t.top >= 0, xBtn: !!document.querySelector('.sh-modal-close'), cancel: !!document.querySelector('.sh-modal-cancel-btn'), sceneX: (() => { const x = document.querySelector('#minigame-close'); return x ? getComputedStyle(x).visibility : null; })() }; });
+    results.push({ name: 'report on open: title and all three choices inside the viewport; X, no CANCEL, scene X visible', ok: vis.allChoicesInView && vis.titleInView && vis.xBtn && !vis.cancel && vis.sceneX !== 'hidden', ...vis });
     const info = await page.evaluate(() => ({ text: document.querySelector('.sh-modal').textContent, choices: document.querySelectorAll('.sh-choice-btn').length, confirm: !!document.querySelector('.sh-modal-confirm-btn') }));
     await shot(page, 'b05-report-asks'); const L = await layoutProbe(); console.log('LAYOUT asks', JSON.stringify(L));
     results.push({ name: 'layout: report with choices (2px borders, no overflow, readable)', ok: !!layoutOk(L), L });
@@ -175,6 +183,7 @@ if (MODE === 'pointer') {
   await step('wrong choice (sensor dropout) -> reason shown, still no confirm', async () => {
     await page.locator('.sh-choice-btn[data-choice]').nth(2).click(); await page.waitForTimeout(300);
     const info = await page.evaluate(() => ({ fb: document.querySelector('.sh-choice-feedback').textContent, confirm: !!document.querySelector('.sh-modal-confirm-btn'), wrong: document.querySelectorAll('.sh-choice-btn.wrong').length, g: (window.gameState.globalVariables || {}).historian_flatline_found }));
+    results.push({ name: 'after a wrong choice the choices and feedback are still in view', ok: await page.evaluate(() => { const bs = [...document.querySelectorAll('.sh-choice-btn'), document.querySelector('.sh-choice-feedback')]; return bs.every(b => { const r = b.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }); }) });
     await shot(page, 'b06-wrong-choice'); { const L = await layoutProbe(); console.log('LAYOUT wrong', JSON.stringify(L)); results.push({ name: 'layout: report after a wrong choice', ok: !!layoutOk(L), L }); }
     return { ok: /36\.5/.test(info.fb) && !info.confirm && info.wrong === 1 && !info.g, ...info };
   });
@@ -182,7 +191,7 @@ if (MODE === 'pointer') {
     await page.locator('.sh-choice-btn[data-choice]').nth(0).click(); await page.waitForTimeout(300);
     const info = await page.evaluate(() => ({ fb: document.querySelector('.sh-choice-feedback').textContent, confirm: !!document.querySelector('.sh-modal-confirm-btn') }));
     await shot(page, 'b07-wrong-choice-2');
-    return { ok: /cannot change/i.test(info.fb) && !info.confirm, ...info };
+    return { ok: /cannot cool/i.test(info.fb) && !info.confirm, ...info };
   });
   await step('right choice (written, not measured) -> finding revealed, confirm appears', async () => {
     await page.locator('.sh-choice-btn[data-choice]').nth(1).click(); await page.waitForTimeout(400);
