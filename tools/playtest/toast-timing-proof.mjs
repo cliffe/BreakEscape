@@ -1,6 +1,6 @@
 // Live proof: item toasts after an ink give_item (Ffion's badge) and a give_item reward, and a
 // task toast, all raised while a panel is open, appear once, promptly after it closes.
-//   node tools/playtest/toast-timing-proof.mjs <gameId> <port>
+//   FLAG1=<a m03 flag string from the game's flags> node tools/playtest/toast-timing-proof.mjs <gameId> <port>
 // Drive only a game id new-game.rb printed in this run. Headless, setFPS(20), fixed steps on.
 import { createRequire } from 'node:module';
 const REPO_ROOT = new URL('../../', import.meta.url).pathname;
@@ -84,6 +84,23 @@ await t(4000);
 out.rewardToasts = (await log()).slice(before).map(x => ({ title: x.title, text: x.text, afterCloseMs: x.at - closeB }));
 out.invAfterReward = await inv();
 await t(7000);
+
+// C. task-tick toast raised while a chat is open: held, then shown once after it closes
+await page.evaluate(() => window.MinigameFramework.startMinigame('person-chat', null, { npcId: 'ffion_rees', title: 'Ffion Rees' }));
+await t(2500);
+const beforeC = (await log()).length;
+out.taskTick = await page.evaluate(() => {
+  const om = window.objectivesManager;
+  om.showTaskCompleteNotification({ title: 'Proof task tick' });
+  return { chatOpen: !!window.MinigameFramework.currentMinigame };
+});
+await t(2000);
+out.taskDuringChat = (await log()).slice(beforeC).map(x => x.text);
+const closeC = await now();
+await page.evaluate(() => window.__test.minigame.close());
+await t(4000);
+out.taskToasts = (await log()).slice(beforeC).map(x => ({ title: x.title, text: x.text, afterCloseMs: x.at - closeC }));
+await t(1000);
 
 out.all = await log();
 console.log(JSON.stringify(out, null, 1));
