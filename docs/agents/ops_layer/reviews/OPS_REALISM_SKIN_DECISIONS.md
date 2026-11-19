@@ -115,3 +115,13 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - R7-n1: bar described as sharing the border and square ends of `.minigame-button`, not as a button.
 - R7-n2: "Knocking on the usual doors" replaced by "Trying the usual routes".
 
+## R8 fixes (2026-11-19)
+
+- R8-m1: for a guarded request only `recordSent` writes the echo and only `recordResult` writes the result; the Terminal renderer writes just the echo and reply of local lines, and its `showResult` is redraw and scroll. Older sentences (Enter, button press, switch paragraph, pending row) reworded.
+- R8-m2: ruling taken: a failed unplug shows the existing `NV:850` sentence in both looks; every other failure shows `REQUEST_FAILED_TEXT` in both. Null-answer steps added to the text test (sweep, check, confirm, use, unplug) and the format test; `unplugBox` also sets the notice on a thrown request.
+- R8-m3: one ending order stated (`recordResult`, clear key and bar, then `showResult`) on all three paths; both functions do nothing once the trip's log is dropped; late-call test added to the format test.
+- R8-m4: the three switch orders, the mount-adds-no-line check and the guard-rejected check moved to `network-skin-parity.test.mjs`; the format test keeps the pure cases. Test 9 result comparison now drops the echo and the scan lines.
+- R8-n1: deny-list sentence reworded; `sweep` and `scan` noted as allowed.
+- R8-n2: `REQUEST_FAILED_TEXT` note moved out of the table cell to a line under the table.
+- R8-n3: the first `recordSent` creates the log, which holds the opening line and the cap from creation; format test covers it.
+

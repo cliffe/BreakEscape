@@ -321,10 +321,11 @@ so it holds for both skins, every path and a switch between them; parity test 10
   line "Still waiting for the last answer." (section 5.3), sending nothing.
 - The set lives in the scene, so a switch of skin while a request is out carries the guard
   across: the other skin mounts with the control already pending. The answer is drawn by
-  whichever renderer is mounted when it arrives, through its `showResult`; the Terminal prints
-  such a result with no echo line before it. The Terminal's log is written by the scene, not by
-  the renderer, so it stays complete whichever skin is showing (the scan output rule of section
-  5.3 sets how).
+  whichever renderer is mounted when it arrives, through its `showResult`. For the Terminal that
+  is a redraw and scroll with no log write: the log already holds the echo (written when the
+  press was sent) and the result lines (written by `recordResult`). A guarded request's log
+  lines are written by the scene, not by the renderer, so the log stays complete whichever skin
+  is showing (the scan output rule of section 5.3 sets how).
 
 **Unplug's messages** are drawn by the renderer, as the core has them (core 5.5); `unplugBox`
 touches no DOM. A `pending` `unplug` offer is drawn as a disabled control reading
@@ -375,9 +376,14 @@ the Panels' own sentences, which the Terminal prints word for word (below).
 - **Log**: `role="log"`, `aria-live="polite"`, pixel scrollbar, capped at 300 lines (oldest
   dropped). It is kept for the length of the trip in a module variable keyed by foothold id, so
   coming back from a sign-in screen shows the same log; it is dropped when the trip ends. It is
-  never saved or synced.
+  never saved or synced. The first `recordSent` of the trip creates the log (a scene that has
+  never mounted the Terminal creates it too), and from creation it holds the opening line and
+  the 300-line cap, so a first Terminal mount after Panels-only play shows "Type help, or pick a
+  command below." followed by the earlier echoes and results in order.
 - **Prompt**: one real `<input type="text">` with a visible label, `autocomplete="off"`,
-  `autocapitalize="off"`, `spellcheck="false"`. Enter runs the line. Up and down walk the trip's
+  `autocapitalize="off"`, `spellcheck="false"`. Enter runs the line: a line that resolves to an
+  offer is handed to `perform` as the echo, and a local line is handled as the log rule of
+  section 5.3 says. Up and down walk the trip's
   command history (20 entries).
 - **Quick commands**: one button per offer for every control but `use`, in the order `offers()`
   gives, which is the order Panels draws its controls in. Each button shows the Panels label
@@ -387,8 +393,8 @@ the Panels' own sentences, which the Terminal prints word for word (below).
   carries the hooks the Panels control carries: the same row attribute on its item
   (`data-host-id`, `data-resource-id` and the core's row attributes) and the same `data-action`
   value, and Unplug carries `data-unplug`, so `[data-host-id="…"] [data-action="sign-in"]`
-  finds one button in either skin. Pressing a button writes its line to the log and performs
-  its offer. A pending offer's button is disabled; a pending Unplug reads `UNPLUGGING_TEXT`.
+  finds one button in either skin. Pressing a button hands its line to `perform` as the echo,
+  and `perform` performs its offer. A pending offer's button is disabled; a pending Unplug reads `UNPLUGGING_TEXT`.
 - **Quick commands for a use**: two presses for one offer. There is one button per held
   technique, labelled with the Panels' Use label and the technique's name. Pressing it writes
   `use <technique id> on ` into the prompt and swaps the strip for one button per listed
@@ -429,7 +435,7 @@ core's `ops-model.js`; the Terminal has no wording of its own for them.
 | Technique list `TECHNIQUE WORKS ON` | `show` | technique id, `name`, `summary`, the core's works-on line |
 | Share and resource table; Look | `show`; an `observe` | id, name, kind label, "on <host>", the lock label and the locked-share sentence; for a look, the resource's `observations` and the notice, as Panels shows them |
 | Use result | a use's answer | the result sentence for a session (then the desktop opens, as from Panels), for a credential (`keyringChanged`) and for `already`; on a refusal the `REFUSAL_TEXT` words for the `reason` code, with the need's label for `need_unmet`. A use that opens a desktop opens it as the core draws it, with the remote-view frame and line, which the Terminal leaves as they are |
-| Pending | an `unplug` while its request is out | `UNPLUGGING_TEXT`, the Panels button's label for that state, on the quick command and as one log line |
+| Pending | an `unplug` while its request is out | `UNPLUGGING_TEXT`, the Panels button's label for that state, on the quick command (the log holds only the echo, written by `recordSent`) |
 | Refusal | any other refused request | the `REFUSAL_TEXT` words for the code, for the twelve codes. The unplug refusal is the one refusal on this screen that arrives as a server sentence (`out.message`, `NV:848`); it is printed as Panels shows it, through `textContent` |
 
 **Scan output.** A sweep and a service scan are one request and one answer in both skins. While
@@ -447,8 +453,12 @@ foothold's log (the module variable of section 5.3, keyed by foothold id). The s
 for every guarded request, from either skin and whether or not the Terminal is mounted, so the
 log is complete in every order of switches; Panels draw their own result from the same
 `recordResult` call, through `showResult`. A press the guard rejects reaches neither function.
-The Terminal renderer only draws the log: a mount, a redraw or a refetch while a key is pending
-prints nothing. `echo` is the player's typed line, or for a quick command or a Panels press the
+For a guarded request the echo is written only by `recordSent` and the result only by
+`recordResult`; the Terminal renderer writes neither, and its `showResult` is a redraw and
+scroll with no log write. The renderer writes only the echo and reply of a local line (`help`,
+`show`, `clear`, a typo, an unknown or ambiguous word, a rejected press, the "Still waiting"
+reply, and any other line that sends nothing), through the same log helper. A mount, a redraw or
+a refetch while a key is pending prints nothing. `echo` is the player's typed line, or for a quick command or a Panels press the
 command line the offer stands for, so the log reads the same from every input: `> sweep lan_a`
 comes first, then the scan lines. `recordSent` writes the scan lines for `sweep` and `scan`
 only; every other request writes just the echo.
@@ -456,12 +466,23 @@ only; every other request writes just the echo.
 *How a request ends.* A refusal is an answer: `recordResult` prints the Refusal row's words (and
 Panels show the same words), and no failure line. A network failure, meaning the request threw
 or the client gave no reply, reaches `showResult` as `answer = null`. The core has no generic
-failure sentence (the only one in the scene is the unplug-specific one at `NV:850`, which
-`unplugBox` keeps as it is), so `REQUEST_FAILED_TEXT` is added to `view-texts.js`, the single
-line `No reply came back. Nothing finished.`. Panels draw it as the notice on the control's row
-and the Terminal prints it as one log line, in place of a table. In all three endings the scene
-clears the pending key, which removes the bar and re-enables the control, and in the Terminal
-the key stops being pending for the next typed line.
+failure sentence (the only one in the scene is the unplug-specific one at `NV:850`, "The port
+did not respond. Try again."), so `REQUEST_FAILED_TEXT` is added to `view-texts.js`, the single
+line `No reply came back. Nothing finished.`. Every failed request shows it in both looks,
+Panels as the notice on the control's row and the Terminal as one log line, in place of a table.
+The one exception is a failed unplug (`answer = null`): both looks show the existing unplug
+sentence, which `unplugBox` keeps, the header notice in Panels and one log line in the Terminal,
+and not `REQUEST_FAILED_TEXT`. A request that throws sets the same notice and line as one that
+gives no reply.
+
+*Where a request ends.* `perform` ends in one place, a single `finally`-shaped path, in this
+order, on the answer, refusal and failure paths alike: `recordResult`, then the clear of the
+pending key (which removes the bar and re-enables the control, and in the Terminal makes the key
+no longer pending for the next typed line), then `showResult`. Because the log is written
+first, a redraw the clear triggers already sees the new lines. The unplug that ends the trip runs the same
+path before `complete(false)`. Both functions do nothing when the foothold's log is gone (the
+trip ended and the log was dropped), so a late `recordResult` writes nothing and creates no
+entry.
 
 *Skin switches.* The scan lines were printed once, when the request was sent, and a switch never
 prints them again. A skin mounted while a key is pending shows its waiting state without new
@@ -474,7 +495,7 @@ its table or line once, and Panels draw their result once.
 
 The lines come from the fixed list `SCAN_OUTPUT_TEXT` in `terminal-format.js`, in the manner of
 a scanner but copying no real tool's text, naming only invented tools, and containing no real
-word for a scanning technique. They are drawn, never requested: they add no request, wait for no
+word for a scanning technique (`sweep` and `scan` are the game's own verbs and are allowed). They are drawn, never requested: they add no request, wait for no
 second answer, are chosen by the verb alone (the same lines every time, nothing random, no timer
 past the request's own wait), and use no field of the answer. The only variable in them is
 `{target}`, the id of the offer's own target as the view lists it (never the text the player
@@ -482,8 +503,9 @@ typed): `recordSent` reads it from the resolved offer and it is set as plain tex
 on the same answer, and the player who skips the output loses nothing.
 
 `SCAN_OUTPUT_TEXT`, with the fixed verb that chooses each list. All are invented, hold no
-digit, flag, port number, protocol word, real tool name or version, start with or contain no
-real tool name or word for a scanning technique, and read as plainly simulated:
+digit, flag, port number, protocol word, real tool name or version, and read as plainly
+simulated: none starts with or contains a real tool name or a real word for a scanning
+technique.
 
 | Verb | Lines, in order |
 |---|---|
@@ -502,13 +524,14 @@ state:
 
 | Entry | Text |
 |---|---|
-| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt mark `>`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; the scan output lines of `SCAN_OUTPUT_TEXT`; the player's own echoed line (`REQUEST_FAILED_TEXT` is in `view-texts.js` and Panels show it too, so it is not on this list) |
+| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt mark `>`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; the scan output lines of `SCAN_OUTPUT_TEXT`; the player's own echoed line |
 | Table headers | `HOST`, `NAME`, `STATUS`, `SERVICE`, `PORT`, `PRODUCT`, `VERSION`, `TECHNIQUE`, `WORKS ON` and the headers of the findings, share and resource tables |
 | Help | the output of `help`: verb names, their argument forms and the verb aliases (the descriptions are the Panels' `title` texts and are not on this list) |
 | Command line | a verb from `CONTROLS` followed by ids or aliases the view lists: the `<code>` part of a quick command, and the line a use button writes into the prompt |
 | Parse messages | the fixed parts of the answers to a line that does not resolve (below) |
 
-A reachable host's state word, a finding's alias, `UNPLUGGING_TEXT` and every
+`REQUEST_FAILED_TEXT` is shared with Panels and is not on this list. A reachable host's state
+word, a finding's alias, `UNPLUGGING_TEXT` and every
 result sentence are not on this list: they are Panels text and must match it.
 
 **Grammar.** A line is `verb [target ...]`.
@@ -724,9 +747,9 @@ or control gets these checks on it.
 | `network-view-controls.test.mjs` | K1 | `offers()` for each fixture: order, targets, one offer per pressable control, every use pair, the `itemId` rule. A locked remote session yields a `sign-in` offer beside its lock status. An unconfirmed finding yields a `confirm` offer labelled Confirm. A settled finding yields no `confirm` offer. With a key in the pending set the offers under it carry `pending: true` and no other offer does; each `use` pair has its own key. `CONTROLS` is well formed: each entry has one label, one verb and one description, and a verb together with a target kind names exactly one entry. Every `data-action` literal in `network-view-panels.js` is a key of `CONTROLS` or an entry of `LOCAL_ACTIONS` (`select-finding`, `select-technique`), no value is in both, and `data-unplug` appears there once, for the `unplug` entry |
 | `network-view-panels-same.test.mjs` | K1 | Each fixture rendered by the scene as it was (output saved as a fixture string before the split) and by the Panels renderer is equal byte for byte; a press on each control records the same call before and after. With the unplug's answer held, the header button is disabled and reads `UNPLUGGING_TEXT`, and a refused unplug shows the server's sentence beside the button, both as the saved output has them; the scene file contains no `querySelector('[data-unplug]')` and no `setUnplugNotice` |
 | `network-skin-imports.test.mjs` | K1 | The two renderer files and the pure modules import nothing outside the allowed list and do not contain `fetch(`, `ApiClient`, `networkLinks`, `window.open` or `window.start` |
-| `network-view-panels.test.mjs` | K2 | The "Scanning" bar: it shows on the block row for a pending `sweep` offer and on the host row for a pending `scan` offer, on no other offer (check, confirm, use, unplug), and is removed when the answer lands, when the request is refused and when it fails (`answer = null`), each its own case, and the pending key is cleared in all three; the bar has `role="progressbar"` with no value and the row `aria-busy`; its label is `SCANNING_TEXT` ("Scanning"); a failure draws `REQUEST_FAILED_TEXT` on the row. A node DOM test cannot evaluate a media query, so the reduced-motion rule is a CSS-text assertion: the `@media (prefers-reduced-motion: reduce)` block of `network-view-minigame.css` sets `animation: none` for the bar; the bar's CSS has no radius and a 2px border |
+| `network-view-panels.test.mjs` | K2 | The "Scanning" bar: it shows on the block row for a pending `sweep` offer and on the host row for a pending `scan` offer, on no other offer (check, confirm, use, unplug), and is removed when the answer lands, when the request is refused and when it fails (`answer = null`), each its own case, and the pending key is cleared in all three; the bar has `role="progressbar"` with no value and the row `aria-busy`; its label is `SCANNING_TEXT` ("Scanning"); a failure draws `REQUEST_FAILED_TEXT` on the row (a failed unplug draws the unplug sentence as the header notice, and `unplugBox` sets it on a thrown request too). A node DOM test cannot evaluate a media query, so the reduced-motion rule is a CSS-text assertion: the `@media (prefers-reduced-motion: reduce)` block of `network-view-minigame.css` sets `animation: none` for the bar; the bar's CSS has no radius and a 2px border |
 | `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; a verb that is not in `CONTROLS` returns the nearest-verb message and no offer; a line for a pending offer returns the pending line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
-| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a confirm, each of the three use outcomes, each code in the core's `ops_refusal_codes.json`, so twelve today, `already`); every field in the table of 5.3 is printed. Scan output, by calling `recordSent` and `recordResult` on a log: a sweep and a service scan write their echo line and `SCAN_OUTPUT_TEXT` lines at `recordSent`, before any answer, and the lines stay; the table is written at `recordResult`, directly after those lines, once; a refusal writes the Refusal row's words and no failure line and no table; a failure (`answer = null`) writes `REQUEST_FAILED_TEXT` and no table; the same lines on every run; a quick-command press, a Panels press and a typed line each write the echo `> sweep <id>` before the lines; `{target}` is the resolved id from the view, set as plain text; a typed line with markup, or a 10,000 character target, that resolves to nothing writes no scan lines and calls neither function; a press the guard rejects calls neither function; and the one request and one answer are unchanged by them. The three switch orders, each with the scan lines counted once and a table, refusal words or failure line at the end: (1) press in Terminal, switch to Panels, back while pending; (2) press in Terminal, switch to Panels, answer lands in Panels, back to Terminal; (3) press in Panels, switch to Terminal while pending, answer lands. A mount, redraw or refetch while pending adds no line. Deny list, run on the templates with `{target}` removed (the substituted ids hold digits): no line of `SCAN_OUTPUT_TEXT` or `REQUEST_FAILED_TEXT` contains a digit, a `-` or `--` flag token, the words `http`, `ssh`, `ftp`, `smb`, `tcp`, `udp`, `icmp`, `dns`, `rdp`, `arp`, `ping`, `port`, `traceroute`, `telnet` or `nc`, or the name of a real scanner, framework or fetch tool (at least `nmap`, `masscan`, `zmap`, `metasploit`, `msfconsole`, `hydra`, `nikto`, `netcat`, `nessus`, `openvas`, `wireshark`, `tcpdump`, `curl`, `wget`, `burp`, `sqlmap`, `gobuster`, `enum4linux`, `hashcat`, `john`), matched as whole words without regard to case, plus a substring match for the longer names. The deny list cannot catch a new real tool, so a snapshot assertion also requires `SCAN_OUTPUT_TEXT` and `REQUEST_FAILED_TEXT` to equal the lists in this plan, and any edit to the lines needs an edit to the plan |
+| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a confirm, each of the three use outcomes, each code in the core's `ops_refusal_codes.json`, so twelve today, `already`); every field in the table of 5.3 is printed. Scan output, by calling `recordSent` and `recordResult` on a log: a sweep and a service scan write their echo line and `SCAN_OUTPUT_TEXT` lines at `recordSent`, before any answer, and the lines stay; the table is written at `recordResult`, directly after those lines, once; a refusal writes the Refusal row's words and no failure line and no table; a failure (`answer = null`) writes `REQUEST_FAILED_TEXT` and no table; the same lines on every run; a quick-command press, a Panels press and a typed line each write the echo `> sweep <id>` before the lines; `{target}` is the resolved id from the view, set as plain text; a typed line with markup, or a 10,000 character target, that resolves to nothing writes no scan lines and calls neither function; a press the guard rejects calls neither function; and the one request and one answer are unchanged by them. A failed request (`answer = null`) of each of `sweep`, `scan`, `check`, `confirm` and `use` writes `REQUEST_FAILED_TEXT` and no table, and a failed `unplug` writes the unplug sentence of `NV:850` and not `REQUEST_FAILED_TEXT`. A late `recordResult` or `recordSent` after the trip ends (the log dropped) writes nothing and leaves no log entry. The log is created by the first `recordSent`, holds the opening line and the 300-line cap from creation, and lists earlier echoes and results in order after the opening line. The switch-order cases (which need the scene, both renderers and a held fake answer) are in `network-skin-parity.test.mjs`, not here. Deny list, run on the templates with `{target}` removed (the substituted ids hold digits): no line of `SCAN_OUTPUT_TEXT` or `REQUEST_FAILED_TEXT` contains a digit, a `-` or `--` flag token, the words `http`, `ssh`, `ftp`, `smb`, `tcp`, `udp`, `icmp`, `dns`, `rdp`, `arp`, `ping`, `port`, `traceroute`, `telnet` or `nc`, or the name of a real scanner, framework or fetch tool (at least `nmap`, `masscan`, `zmap`, `metasploit`, `msfconsole`, `hydra`, `nikto`, `netcat`, `nessus`, `openvas`, `wireshark`, `tcpdump`, `curl`, `wget`, `burp`, `sqlmap`, `gobuster`, `enum4linux`, `hashcat`, `john`), matched as whole words without regard to case, plus a substring match for the longer names. The deny list cannot catch a new real tool, so a snapshot assertion also requires `SCAN_OUTPUT_TEXT` and `REQUEST_FAILED_TEXT` to equal the lists in this plan, and any edit to the lines needs an edit to the plan |
 | `network-skin-parity.test.mjs`, `network-skin-text.test.mjs` | K2 | Section 11.2 |
 | `network-skin-choice.test.mjs` | K2 | The order of section 4, case by case: a press beats a URL value; a URL value beats a stored pick and is not written to storage; a press with a URL value present changes the skin and writes nothing; a press with no URL value is stored; a bad stored value is ignored; blocked storage still switches; a view with no `ops` block is `gui` under every combination; the switch is drawn only with an `ops` block and removed when a refetch has none |
 | `network-skin-unchanged.test.mjs` | K2 | Section 10, check 1 |
@@ -774,8 +797,13 @@ request is sent (`recordSent`), and keeps them. The test checks the bar is prese
 the offer is pending and gone after an answer, a refusal or a failure; the lines appear once and
 stay; the table follows them after an answer; a refusal writes its words and a failure writes
 `REQUEST_FAILED_TEXT`, each instead of the table; and a skin switch mid-request shows the other
-skin's waiting state without new log lines, in the three orders listed for
-`network-terminal-format.test.mjs`, the answer rendered once.
+skin's waiting state without new log lines, the answer rendered once. This is proved in the
+parity harness, in three switch orders, each with the scan lines counted once and a table,
+refusal words or failure line at the end: (1) press in Terminal, switch to Panels, back while
+pending; (2) press in Terminal, switch to Panels, answer lands in Panels, back to Terminal; (3)
+press in Panels, switch to Terminal while pending, answer lands. The same file checks that a
+mount, redraw or refetch while pending adds no line, and that a press the guard rejects calls
+neither `recordSent` nor `recordResult`.
 
 **Node tests** (`network-skin-parity.test.mjs`), in the DOM the existing network-view test uses,
 against a fake `networkLinks`, a fake API client and fake openers that record every call. They
@@ -826,13 +854,15 @@ is covered without an edit here.
    `falseBecause`, the unplug refusal's message) are run in both skins through one sequence: the
    opening render, then each offer of the fixture in `offers()` order with the same fake answer
    in both, a refetch answer after each, for each ops route one refusal per code and one
-   `already`, and one unplug whose answer is held and then refused. The two skins are compared
+   `already`, one unplug whose answer is held and then refused, and a null-answer step
+(`answer = null`) for each of `sweep`, `check`, `confirm`, `use` and `unplug`: the first four
+show `REQUEST_FAILED_TEXT` in both skins and the unplug shows the `NV:850` sentence in both. The two skins are compared
    **at every step**, never as a total over the run, so text that one skin shows at the wrong
    moment fails at that moment.
 
    Two comparisons per step:
    - **Result.** Straight after `showResult`, before the refetch: the Terminal's pieces are the
-     log lines that step added, less the echo; the Panels' pieces are those in the view after
+     log lines that step added, less the echo and the `SCAN_OUTPUT_TEXT` lines (`recordSent` adds both at send time, before `showResult`); the Panels' pieces are those in the view after
      `showResult` that were not there before it, plus any toast or notice the scene raised,
      read from the test's toast capture.
    - **State.** After the refetch and its `render`: the test runs `show` in the Terminal (a
