@@ -283,6 +283,14 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   CRACKING: held for BLOCK-1.
   When all five are at R4 or later: second cross-plan review (Fable), then the picks page
   republish (question counts: Core 5, Privilege 7, MFA 8, Skin 1, Log 3 incl. folder-or-file).
+- 11:53. LOG_ROWS R3 revision committed `b5e43b4c6` (1268 lines; sections 13 and 11 not re-read).
+  R4 review running (Fable, ad1f8c88a66ac2edb) to `OPS_LOG_ROWS_R4.md`: delta + consistency read
+  + trim list + a "sibling X must change A to B" list. Next: one Opus reviser pass, then R5.
+  Log plan renames siblings must adopt at their next edit: `merge_limit` -> `save_limit`
+  (stored counter `opsLogSaves`), detail `by` -> `approver`, shared `route` list (`keyboard`,
+  `foothold`, `from`, `relay`), `share_file_read` -> `share_folder_opened`, counts as
+  `{ count: <=9 }`, `from` uses kind `foothold`, quiet `technique_refused` `save_limit: 10`,
+  blocked helpdesk branch `save_limit: 10` per desk. Log user questions now 3.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
