@@ -335,7 +335,7 @@
     flex: 1 1 auto;
     min-width: 180px;
     font-family: var(--se-font-readable);
-    font-size: 15px;
+    font-size: 16px;
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);
@@ -559,7 +559,7 @@
     max-width: 100%;
     min-width: 0;
     font-family: var(--se-font-readable);
-    font-size: 15px;
+    font-size: 16px;
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);
