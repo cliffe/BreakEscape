@@ -145,9 +145,42 @@ test('HTML in long text stays escaped', () => {
   assert.ok(b.startsWith('<em>'), 'only the wrapper em is HTML');
 });
 
-test('readDisplay gameDisplay is untouched and short object without text never modals', () => {
+test('readDisplay gameDisplay is untouched; a long non-readable observation never modals', () => {
   const rd = run(mon(chars(300), { readDisplay: 'gameDisplay' }));
   assert.ok(rd.shown.length === 1 && rd.toasts.length === 0, 'readDisplay path');
   const obs = run({ id: 'x', type: 'generic', name: 'Lamp', observations: chars(300), readable: false });
   assert.ok(obs.shown.length === 0, 'non-readable long observation unchanged (no modal)');
+});
+
+test('the readable toast carries whole: true, a non-readable observation toast does not', () => {
+  const r = run(mon('Baseline readings.'));
+  assert.ok(r.toasts.length === 1 && JSON.stringify(r.toasts[0][4]) === '{"whole":true}', 'readable toast is whole');
+  const o = run({ id: 'x', type: 'generic', name: 'Lamp', observations: 'A lamp.', readable: false });
+  assert.ok(o.toasts.length === 1 && o.toasts[0][4] === undefined, 'plain observation toast has no options');
+});
+
+test('long text on a non-readable object stays a toast (needs data.readable)', () => {
+  const { shown, toasts } = run({ id: 'x', type: 'generic', name: 'Lamp', readable: false, text: chars(300) });
+  assert.ok(shown.length === 0 && toasts.length === 1, 'toast, no modal');
+});
+
+test('observationDisplay gameDisplay plus long readable text gives exactly one modal', () => {
+  const { shown, toasts } = run(mon(chars(300), { observations: 'Seen.', observationDisplay: 'gameDisplay' }));
+  assert.ok(shown.length === 1 && toasts.length === 0, 'one modal, no toast');
+});
+
+test('a takeable long readable object is unaffected', () => {
+  const { shown } = run(mon(chars(300), { takeable: true }));
+  assert.ok(shown.length === 0, 'no modal for a takeable object');
+});
+
+test('observation identical to the text counts once and shows once', () => {
+  const same = chars(76);
+  const a = run(mon(same, { observations: same }));
+  assert.ok(a.shown.length === 0 && a.toasts.length === 1, '76 + 76 is one piece, stays a toast');
+  const b = run(mon(chars(130), { observations: '  ' + chars(130) + ' ' }));
+  assert.ok(b.shown.length === 1, 'long single piece opens the modal');
+  assert.ok(b.shown[0].body === chars(130), 'shown once, plain: ' + b.shown[0].body);
+  const c = run(mon(chars(76), { observations: chars(75) + 'b' }));
+  assert.ok(c.shown.length === 1, 'different pieces still add up');
 });
