@@ -27,7 +27,12 @@ export const HISTORIAN_FALLBACK = {
 };
 
 export const DEFAULT_HINT =
-    'Hover over a point, or click it, to inspect it. Mark the moment the data stops behaving like a real sensor.';
+    'Hover or tap a reading to inspect it. Click it (or Enter) to mark the moment the data stops behaving like a real sensor.';
+
+// How close to the first falsified reading a mark must be to count (D167). A little
+// early is fine (the cliff is one pixel wide at 12 hours); well into the flat part is not.
+export const MARK_EARLY_MS = 2 * 60000;
+export const MARK_LATE_MS  = 10 * 60000;
 
 const ts = (s) => (s ? new Date(s).getTime() : NaN);
 
@@ -146,11 +151,15 @@ export function fmtGap(ms) {
 
 // ── Text shown to the player ─────────────────────────────────────────────
 
-export function tooltipText(point, anomaly) {
-    const head = `${fmtFull(point.ts)}${point.isInjectionStart ? ' ← INJECTION START' : ''}\n`
+/**
+ * Tooltip for one reading. Until the player has made the finding (revealed false)
+ * it shows the raw reading only, so the chart does not name the anomaly for them.
+ */
+export function tooltipText(point, anomaly, revealed = true) {
+    const head = `${fmtFull(point.ts)}${revealed && point.isInjectionStart ? ' ← INJECTION START' : ''}\n`
                + `Temperature: ${point.value.toFixed(1)}°C\n`
                + `dZ/dt: ${point.dzdt.toFixed(3)} °C/min`;
-    if (!point.isInjected || !anomaly) return { kind: 'normal', text: head };
+    if (!revealed || !point.isInjected || !anomaly) return { kind: 'normal', text: head };
     const { lastReal, delta, gapMs } = anomaly;
     if (point.isInjectionStart) {
         return {
@@ -168,6 +177,61 @@ export function tooltipText(point, anomaly) {
             + `  Δ = ${fmtSigned(delta)}°C in ${fmtGap(gapMs)}:\n`
             + `  a physically impossible cooling rate.`,
     };
+}
+
+/** Every rack's reading at one time, for the tooltip in COMPARE RACKS mode. */
+export function compareValuesText(ts, racks, trendData) {
+    const lines = [fmtFull(ts)];
+    for (const rack of racks) {
+        const p = (trendData.get(rack.id) || []).find(q => q.ts === ts);
+        if (p) lines.push(`${rack.label || rack.id}: ${p.value.toFixed(1)}°C`);
+    }
+    return lines.join('\n');
+}
+
+/** Compare banner before the finding: what the view is, not what it shows. */
+export function compareNeutralText(rackCount) {
+    return `All ${rackCount} racks drawn together. Hover or tap a time to read every rack at that moment.`;
+}
+
+/**
+ * Judge the reading the player marked as "the moment the data stops behaving like a
+ * real sensor". ok: within MARK_EARLY_MS before to MARK_LATE_MS after the first
+ * falsified reading. Otherwise a gentle retry hint.
+ */
+export function judgeMark(point, anomaly) {
+    const reading = `${fmtClock(point.ts)}: ${point.value.toFixed(1)}°C.`;
+    if (!anomaly) return { ok: false, kind: 'none', message: `${reading} Nothing here stops behaving like a real sensor.` };
+    const start = anomaly.firstInjected.ts;
+    if (point.ts < start - MARK_EARLY_MS) {
+        return { ok: false, kind: 'early', message: `${reading} Still moving like a real sensor reading. The moment is later.` };
+    }
+    if (point.ts > start + MARK_LATE_MS) {
+        return { ok: false, kind: 'late', message: `${reading} Not moving, but it was already like this before. Find where it starts.` };
+    }
+    return { ok: true, kind: 'ok',
+        message: `Marked ${fmtClock(point.ts)}. Now say what the data shows: press [ANNOTATE FINDING] on the left.` };
+}
+
+export const FINDING_QUESTION = 'What does the data show from that moment?';
+
+/** The report's choices. Exactly one is right; the others get a reason from the data. */
+export const FINDING_CHOICES = [
+    { id: 'cooling', label: 'Real cooling: the cells cooled to a steady temperature.' },
+    { id: 'written', label: 'Written, not measured: the value jumped, then never varied by even 0.1°C.' },
+    { id: 'dropout', label: 'Sensor dropout: the sensor failed and the historian is holding its last good value.' },
+];
+
+export function judgeFinding(choiceId, anomaly) {
+    if (choiceId === 'written') return { ok: true, message: '' };
+    if (!anomaly) return { ok: false, message: 'Look at the trend again.' };
+    const { lastReal, firstInjected, delta, gapMs } = anomaly;
+    if (choiceId === 'dropout') {
+        return { ok: false, message: `A held value would sit at the last real reading, ${lastReal.value.toFixed(1)}°C. `
+            + `This line sits at ${firstInjected.value.toFixed(1)}°C. Try again.` };
+    }
+    return { ok: false, message: `Cells cannot change ${fmtSigned(delta)}°C in ${fmtGap(gapMs)}, and a real sensor `
+        + 'never reads the same to 0.1°C for hours. Try again.' };
 }
 
 export function compareBannerText(anomaly, rackCount) {

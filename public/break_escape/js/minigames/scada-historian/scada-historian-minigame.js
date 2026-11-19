@@ -8,10 +8,14 @@
  *   normalBase, noisePeriodMinutes, noiseAmplitude → organic pre-injection trace
  *   injectionTimestamp, injectedValue              → perfect flat post-injection trace
  *
- * Completion: player hovers a falsified point for 3 s (a progress bar shows under
- *             the chart), hovers the injection-start point, or clicks any falsified
- *             point → ANNOTATE FINDING unlocks → modal confirm → completionActions
- *             fired → complete(true)
+ * Completion (D167: the player makes the finding, the viewer does not hand it over):
+ *   1. The chart draws raw readings only. The player marks the moment the data stops
+ *      behaving like a real sensor (click, tap, or Enter on the keyboard cursor);
+ *      judgeMark accepts a mark near the first falsified reading, else a gentle retry.
+ *   2. ANNOTATE FINDING opens the report, which asks what the data shows. A wrong
+ *      choice gets a reason from the data; the right one reveals the finding, the
+ *      injection line and the anomaly tooltips, and the confirm button fires
+ *      completionActions → complete(true).
  *
  * Times, values, deltas and durations in the tooltip, banner and report all come
  * from scada-historian-data.js, which reads minigameData and the drawn points.
@@ -21,7 +25,8 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import {
     TIME_RANGES, DEFAULT_HINT, parseHistorianConfig, buildRackTrend, findAnomaly,
-    tooltipText, compareBannerText, reportContent, fmtClock,
+    tooltipText, compareBannerText, compareNeutralText, compareValuesText, reportContent,
+    judgeMark, judgeFinding, FINDING_QUESTION, FINDING_CHOICES, fmtFull,
 } from './scada-historian-data.js';
 
 // Rack colour palette: A1 bright amber, A2 gold, A3 yellow, A4 pale amber
@@ -30,15 +35,15 @@ const RACK_COLOURS = ['#f5a623', '#d4a017', '#e8d44d', '#f0c87a'];
 const INJECT_COLOUR = '#ffcc44';
 // dZ/dt trace
 const DZDT_COLOUR = '#00c5cd';
-// Injection transition line
+// Injection transition line (drawn only once the player has made the finding)
 const INJECT_LINE_COLOUR = '#ff4040';
+// The player's accepted mark and the keyboard cursor
+const MARK_LINE_COLOUR = '#aabbdd';
+const CURSOR_COLOUR = '#556688';
 
 // Y-axis fixed domain per spec (prevents cherry-picking)
 const Y_MIN = 24;
 const Y_MAX = 42;
-
-// How long a falsified point must be inspected before the finding unlocks
-const INSPECT_MS = 3000;
 
 export class ScadaHistorianMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
@@ -74,10 +79,13 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._dzDtActive      = false;
         this._timeRangeHours  = this._defaultRangeHours;
         this._annotateUnlocked = false;
+        this._revealed        = false; // the player has chosen the right finding in the report
+        this._markTs          = null;  // the reading the player marked, once accepted
+        this._cursorIdx       = null;  // keyboard cursor, an index into this._visible
+        this._visible         = [];    // the primary rack's points in the current window
+        this._plot            = null;  // geometry of the last chart render
         this._completionFired = false;
         this._progressFired   = new Set();
-        this._hoverTimer      = null;
-        this._leaveTimer      = null;
         this._trendData       = new Map(); // rackId → [{ts, value, dzdt, isInjected, isTransition}]
 
         // DOM refs set in start()
@@ -89,7 +97,6 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._infoBanner = null;
         this._hintEl     = null;
         this._hintText2  = null;
-        this._progressEl = null;
     }
 
     // ── Lifecycle ──────────────────────────────────────────────────────────
@@ -104,7 +111,6 @@ export class ScadaHistorianMinigame extends MinigameScene {
     }
 
     cleanup() {
-        this._cancelInspect();
         super.cleanup();
     }
 
@@ -170,10 +176,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._annotateBtn.addEventListener('click', () => {
             if (this._annotateUnlocked) this._openAnnotateModal();
         });
-        this._openedAt = Date.now();
         left.appendChild(this._annotateBtn);
         this._annotateNote = this._el('div', 'sh-annotate-note');
-        this._annotateNote.textContent = 'Inspect the chart to find something to annotate.';
+        this._annotateNote.textContent = 'Mark the moment on the chart first.';
         left.appendChild(this._annotateNote);
         body.appendChild(left);
 
@@ -220,16 +225,13 @@ export class ScadaHistorianMinigame extends MinigameScene {
         // Charts area
         const charts = this._el('div', 'sh-charts pixel-scroll');
 
-        // Hint line at the top of the chart (the framework's Close button covers the bottom),
-        // with a progress bar while a falsified point is inspected
+        // Hint line at the top of the chart (the framework's Close button covers the bottom);
+        // it carries the retry hints, so screen readers hear them
         this._hintEl = this._el('div', 'sh-hint');
+        this._hintEl.setAttribute?.('aria-live', 'polite');
         this._hintText2 = this._el('span', 'sh-hint-text');
         this._hintText2.textContent = displayDashes(this._hintText);
-        const bar = this._el('span', 'sh-hint-progress');
-        this._progressEl = this._el('span', 'sh-hint-progress-fill');
-        bar.appendChild(this._progressEl);
         this._hintEl.appendChild(this._hintText2);
-        this._hintEl.appendChild(bar);
         charts.appendChild(this._hintEl);
 
         // Info banner (hidden until dZ/dt first enabled)
@@ -246,6 +248,11 @@ export class ScadaHistorianMinigame extends MinigameScene {
         // Main chart
         const chartArea = this._el('div', 'sh-chart-area');
         chartArea.id = 'sh-chart-area';
+        // Keyboard: Left/Right move a reading cursor, Enter or Space marks it
+        chartArea.tabIndex = 0;
+        chartArea.setAttribute?.('role', 'application');
+        chartArea.setAttribute?.('aria-label', 'Temperature trend. Left and Right arrows step through readings; Enter marks one.');
+        chartArea.addEventListener('keydown', (e) => this._onChartKey(e));
         this._tooltip = this._el('div', 'sh-tooltip');
         this._tooltip.style.display = 'none';
         chartArea.appendChild(this._tooltip);
@@ -360,8 +367,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
         axisG.appendChild(xAxis);
         svg.appendChild(axisG);
 
-        // Injection vertical line
-        if (this._injectionTs >= startTs && this._injectionTs <= endTs) {
+        // Injection vertical line: only once the player has made the finding (D167)
+        if (this._revealed && this._injectionTs >= startTs && this._injectionTs <= endTs) {
             const x = PAD.left + ((this._injectionTs - startTs) / tsRange) * plotW;
             const injLine = this._svgEl('line');
             injLine.setAttribute('x1', x); injLine.setAttribute('x2', x);
@@ -408,7 +415,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
                 const poly = this._svgEl('polyline');
                 poly.setAttribute('points', postPoints.map(p => toXY(p).join(',')).join(' '));
                 poly.setAttribute('fill', 'none');
-                poly.setAttribute('stroke', INJECT_COLOUR);
+                // Same colour as the real readings until the finding is made
+                poly.setAttribute('stroke', this._revealed ? INJECT_COLOUR : colour);
                 poly.setAttribute('stroke-width', '2');
                 tracesG.appendChild(poly);
             }
@@ -423,6 +431,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
         const primaryPoints = primaryRack ? this._trendData.get(primaryRack) : null;
         if (primaryPoints) {
             const visible = primaryPoints.filter(p => p.ts >= startTs && p.ts <= endTs);
+            this._visible = visible;
+            if (this._cursorIdx !== null) this._cursorIdx = Math.min(this._cursorIdx, visible.length - 1);
             let startHit = null;
             visible.forEach((p, i) => {
                 const x = PAD.left + ((p.ts - startTs) / tsRange) * plotW;
@@ -446,6 +456,25 @@ export class ScadaHistorianMinigame extends MinigameScene {
             if (startHit) hitsG.appendChild(startHit);
         }
         svg.appendChild(hitsG);
+
+        this._plot = { startTs, endTs, tsRange, PAD, plotW, plotH, W, H };
+        // The player's accepted mark, and the keyboard cursor (under the hit targets' events: no fill)
+        const xAt = (t) => PAD.left + ((t - startTs) / tsRange) * plotW;
+        const vLine = (x, colour, dash) => {
+            const l = this._svgEl('line');
+            l.setAttribute('x1', x); l.setAttribute('x2', x);
+            l.setAttribute('y1', PAD.top); l.setAttribute('y2', PAD.top + plotH);
+            l.setAttribute('stroke', colour); l.setAttribute('stroke-width', '2');
+            if (dash) l.setAttribute('stroke-dasharray', dash);
+            l.setAttribute('pointer-events', 'none');
+            svg.appendChild(l);
+            return l;
+        };
+        if (this._markTs !== null && this._markTs >= startTs && this._markTs <= endTs) {
+            vLine(xAt(this._markTs), MARK_LINE_COLOUR).classList?.add('sh-mark-line');
+        }
+        const cur = this._cursorIdx !== null ? this._visible[this._cursorIdx] : null;
+        if (cur) vLine(xAt(cur.ts), CURSOR_COLOUR, '2,2').classList?.add('sh-cursor-line');
 
         chartArea.insertBefore(svg, this._tooltip);
         this._chartSvg = svg;
@@ -488,8 +517,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
         yLbl.textContent = 'dZ/dt';
         svg.appendChild(yLbl);
 
-        // Injection line
-        if (this._injectionTs >= startTs && this._injectionTs <= endTs) {
+        // Injection line, once the finding is made
+        if (this._revealed && this._injectionTs >= startTs && this._injectionTs <= endTs) {
             const x = pPAD.left + ((this._injectionTs - startTs) / tsRange) * plotW;
             const injLine = this._svgEl('line');
             injLine.setAttribute('x1', x); injLine.setAttribute('x2', x);
@@ -523,8 +552,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
                 poly.setAttribute('stroke-width', '2');
                 svg.appendChild(poly);
             }
-            // Post-injection: thick zero line with subtle glow
-            if (postPoints.length >= 2) {
+            // Post-injection: thick zero line with subtle glow once revealed, plain before
+            if (postPoints.length >= 2 && this._revealed) {
                 const glowPoly = this._svgEl('polyline');
                 glowPoly.setAttribute('points', postPoints.map(p => toXY(p).join(',')).join(' '));
                 glowPoly.setAttribute('fill', 'none');
@@ -532,6 +561,8 @@ export class ScadaHistorianMinigame extends MinigameScene {
                 glowPoly.setAttribute('stroke-width', '4');
                 glowPoly.setAttribute('stroke-opacity', '0.25');
                 svg.appendChild(glowPoly);
+            }
+            if (postPoints.length >= 2) {
                 const solidPoly = this._svgEl('polyline');
                 solidPoly.setAttribute('points', postPoints.map(p => toXY(p).join(',')).join(' '));
                 solidPoly.setAttribute('fill', 'none');
@@ -549,7 +580,12 @@ export class ScadaHistorianMinigame extends MinigameScene {
     _showTooltip(e, point, rackId, chartArea) {
         if (!this._tooltip) return;
         this._focusRackId = rackId;
-        const { kind, text } = tooltipText(point, this._anomalyFor(rackId));
+        let kind = 'normal', text;
+        if (this._compareMode && !(this._revealed && point.isInjected)) {
+            text = compareValuesText(point.ts, this._racksConfig, this._trendData);
+        } else {
+            ({ kind, text } = tooltipText(point, this._anomalyFor(rackId), this._revealed));
+        }
         this._tooltip.className = kind === 'injection' ? 'sh-tooltip sh-tooltip-injection'
                                 : kind === 'anomaly'   ? 'sh-tooltip sh-tooltip-anomaly'
                                 : 'sh-tooltip';
@@ -572,73 +608,36 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._tooltip.style.top  = Math.max(0, top)  + 'px';
     }
 
+    /** Hover shows the reading only; it no longer unlocks anything (D167). */
     _onPointHover(e, point, rackId, chartArea) {
         this._showTooltip(e, point, rackId, chartArea);
-        if (this._annotateUnlocked) return;
-        if (!point.isInjected) { this._cancelInspect(); return; }
-        if (point.isInjectionStart) { this._unlockAnnotate(); return; }
-        // Moving along the flat line keeps the same inspection going
-        if (this._leaveTimer) { clearTimeout(this._leaveTimer); this._leaveTimer = null; }
-        if (!this._hoverTimer) {
-            this._hoverTimer = setTimeout(() => { this._hoverTimer = null; this._unlockAnnotate(); }, INSPECT_MS);
-            this._setProgress(true);
-        }
     }
 
     _onPointLeave() {
         if (this._tooltip) this._tooltip.style.display = 'none';
-        if (this._hoverTimer && !this._leaveTimer) {
-            // A short grace so stepping to the next point doesn't restart the count
-            this._leaveTimer = setTimeout(() => this._cancelInspect(), 300);
-        }
     }
 
-    /** Click (or tap) a point: an alternative to hovering for three seconds. */
+    /** Click, tap or Enter on a reading: mark it as the moment the data stops being real. */
     _onPointSelect(e, point, rackId, chartArea) {
         this._showTooltip(e, point, rackId, chartArea);
-        if (point.isInjected) {
-            this._unlockAnnotate(true);
-        } else if (!this._annotateUnlocked && this._hintText2) {
-            this._hintText2.textContent = `${fmtClock(point.ts)}: ${point.value.toFixed(1)}\u00b0C. `
-                + 'Still moving like a real sensor reading. Keep looking.';
-        }
+        this._markReading(point, rackId);
     }
 
-    _cancelInspect() {
-        if (this._hoverTimer) { clearTimeout(this._hoverTimer); this._hoverTimer = null; }
-        if (this._leaveTimer) { clearTimeout(this._leaveTimer); this._leaveTimer = null; }
-        this._setProgress(false);
+    _markReading(point, rackId) {
+        if (this._annotateUnlocked) return; // a mark is already accepted
+        const verdict = judgeMark(point, this._anomalyFor(rackId));
+        if (this._hintText2) this._hintText2.textContent = verdict.message;
+        if (this._hintEl) this._hintEl.classList.toggle('retry', !verdict.ok);
+        if (!verdict.ok) return;
+        this._markTs = point.ts;
+        this._unlockAnnotate();
+        this._renderChart();
     }
 
-    _setProgress(running) {
-        const fill = this._progressEl;
-        if (!fill) return;
-        if (running) {
-            fill.style.transition = 'none';
-            fill.style.width = '0%';
-            void fill.offsetWidth; // restart the transition
-            fill.style.transition = `width ${INSPECT_MS}ms linear`;
-            fill.style.width = '100%';
-            if (this._hintText2) this._hintText2.textContent = 'Inspecting this reading...';
-        } else if (!this._annotateUnlocked) {
-            fill.style.transition = 'none';
-            fill.style.width = '0%';
-            if (this._hintText2 && this._hintText2.textContent === 'Inspecting this reading...') {
-                this._hintText2.textContent = displayDashes(this._hintText);
-            }
-        }
-    }
-
-    _unlockAnnotate(force = false) {
+    _unlockAnnotate() {
         if (this._annotateUnlocked) return;
-        // Guard: ignore spurious hover events fired during initial render (<1s after open)
-        if (!force && this._openedAt && Date.now() - this._openedAt < 1000) return;
         this._annotateUnlocked = true;
-        if (this._hoverTimer) { clearTimeout(this._hoverTimer); this._hoverTimer = null; }
-        if (this._leaveTimer) { clearTimeout(this._leaveTimer); this._leaveTimer = null; }
-        if (this._progressEl) { this._progressEl.style.transition = 'none'; this._progressEl.style.width = '100%'; }
-        if (this._hintEl) this._hintEl.classList.add('found');
-        if (this._hintText2) this._hintText2.textContent = 'Finding ready: press [ANNOTATE FINDING] on the left.';
+        if (this._hintEl) { this._hintEl.classList.remove('retry'); this._hintEl.classList.add('found'); }
         if (this._annotateNote) this._annotateNote.textContent = 'Ready to annotate.';
         if (this._annotateBtn) {
             this._annotateBtn.disabled = false;
@@ -646,6 +645,48 @@ export class ScadaHistorianMinigame extends MinigameScene {
             this._annotateBtn.classList.add('active');
             this._annotateBtn.textContent = '[ANNOTATE FINDING >]';
         }
+    }
+
+    // ── Keyboard cursor on the chart ────────────────────────────────────────
+
+    _onChartKey(e) {
+        const steps = { ArrowLeft: -1, ArrowRight: 1, PageUp: -60, PageDown: 60 };
+        if (e.key in steps && this._cursorIdx === null) {
+            this._moveCursor(0, true); // the first arrow press puts the cursor on the first reading
+        } else if (e.key in steps) {
+            this._moveCursor(steps[e.key] * (e.shiftKey && Math.abs(steps[e.key]) === 1 ? 10 : 1));
+        } else if (e.key === 'Home' || e.key === 'End') {
+            this._moveCursor(0, true, e.key === 'End');
+        } else if (e.key === 'Enter' || e.key === ' ') {
+            const p = this._cursorIdx !== null ? this._visible[this._cursorIdx] : null;
+            if (p) this._markReading(p, this._primaryRackId());
+        } else {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    _primaryRackId() {
+        return this._compareMode ? this._racksConfig[0].id : [...this._selectedRacks][0];
+    }
+
+    /** Move the keyboard cursor by delta readings (or to the start/end), redraw, show its tooltip. */
+    _moveCursor(delta, absolute = false, toEnd = false) {
+        const n = this._visible.length;
+        if (!n) return;
+        if (absolute) this._cursorIdx = toEnd ? n - 1 : 0;
+        else this._cursorIdx = Math.max(0, Math.min(n - 1, (this._cursorIdx ?? 0) + delta));
+        this._renderChart();
+        const chartArea = document.getElementById('sh-chart-area');
+        const p = this._visible[this._cursorIdx];
+        if (!chartArea || !p || !this._plot) return;
+        const { startTs, tsRange, PAD, plotW, plotH, W, H } = this._plot;
+        const rect = chartArea.getBoundingClientRect();
+        const x = PAD.left + ((p.ts - startTs) / tsRange) * plotW;
+        const y = PAD.top + plotH - ((p.value - Y_MIN) / (Y_MAX - Y_MIN)) * plotH;
+        const at = { clientX: rect.left + x * (rect.width / W), clientY: rect.top + y * (rect.height / H) };
+        this._showTooltip(at, p, this._primaryRackId(), chartArea);
     }
 
     // ── Toolbar interactions ────────────────────────────────────────────────
@@ -714,13 +755,18 @@ export class ScadaHistorianMinigame extends MinigameScene {
     _showCompareBanner() {
         if (!this._bannerEl) return;
         this._bannerEl.innerHTML = '';
+        if (!this._revealed) {
+            // Before the finding the banner says what the view is, not what it shows (D167)
+            this._bannerEl.textContent = compareNeutralText(this._racksConfig.length);
+            this._bannerEl.style.display = 'block';
+            return;
+        }
         const warn = this._el('span', 'sh-banner-warn');
         warn.textContent = '! SYSTEMATIC INJECTION DETECTED';
         this._bannerEl.appendChild(warn);
         this._bannerEl.appendChild(document.createTextNode('\n  ' +
             compareBannerText(this._anomalyFor(this._focusRackId), this._racksConfig.length)));
         this._bannerEl.style.display = 'block';
-        this._unlockAnnotate(true);
     }
 
     // ── Annotate modal ─────────────────────────────────────────────────────
@@ -738,30 +784,85 @@ export class ScadaHistorianMinigame extends MinigameScene {
         modal.appendChild(title);
 
         const rack = this._racksConfig.find(r => r.id === this._focusRackId) || this._racksConfig[0];
-        const { rows, confirmLabel } = reportContent(this._anomalyFor(rack.id), this._cfg, this._sd, rack);
-        for (const [k, v] of rows) {
+        const anomaly = this._anomalyFor(rack.id);
+        const { rows, confirmLabel } = reportContent(anomaly, this._cfg, this._sd, rack);
+        const addRow = (k, v) => {
             const row = this._el('div', 'sh-modal-row');
             const key = this._el('div', 'sh-modal-key'); key.textContent = k;
             const val = this._el('div', 'sh-modal-val'); val.style.whiteSpace = 'pre-wrap'; val.textContent = displayDashes(v);
             row.appendChild(key); row.appendChild(val);
             modal.appendChild(row);
+        };
+        // Until the player picks the right finding, only the variable and their own mark show;
+        // the written finding and the confirm button come after (D167)
+        const asking = !!anomaly && !this._revealed;
+        if (asking) {
+            addRow(rows[0][0], rows[0][1]);
+            if (this._markTs !== null) addRow('Marked:', fmtFull(this._markTs));
+        } else {
+            for (const [k, v] of rows) addRow(k, v);
+        }
+
+        let firstFocus = null;
+        if (asking) {
+            const q = this._el('div', 'sh-modal-question');
+            q.textContent = FINDING_QUESTION;
+            modal.appendChild(q);
+            const feedback = this._el('div', 'sh-choice-feedback');
+            feedback.setAttribute?.('aria-live', 'polite');
+            for (const choice of FINDING_CHOICES) {
+                const btn = this._el('button', 'sh-choice-btn');
+                btn.dataset.choice = choice.id;
+                btn.textContent = choice.label;
+                btn.addEventListener('click', () => this._chooseFinding(choice.id, btn, feedback, anomaly));
+                modal.appendChild(btn);
+                firstFocus = firstFocus || btn;
+            }
+            modal.appendChild(feedback);
         }
 
         const buttons = this._el('div', 'sh-modal-buttons');
-        const confirmBtn = this._el('button', 'sh-modal-confirm-btn');
-        confirmBtn.textContent = confirmLabel;
-        confirmBtn.addEventListener('click', () => { this._closeAnnotateModal(); this._onComplete(); });
+        if (!asking) {
+            const confirmBtn = this._el('button', 'sh-modal-confirm-btn');
+            confirmBtn.textContent = confirmLabel;
+            confirmBtn.addEventListener('click', () => { this._closeAnnotateModal(); this._onComplete(); });
+            buttons.appendChild(confirmBtn);
+            firstFocus = confirmBtn;
+        }
         const cancelBtn = this._el('button', 'sh-modal-cancel-btn');
         cancelBtn.textContent = '[CANCEL]';
         cancelBtn.addEventListener('click', () => this._closeAnnotateModal());
-        buttons.appendChild(confirmBtn);
         buttons.appendChild(cancelBtn);
         modal.appendChild(buttons);
+        this._modalFirstFocus = firstFocus;
 
         overlay.appendChild(modal);
         charts.appendChild(overlay);
         this._annotateOverlay = overlay;
         this._hideSceneX(true);
+        this._modalFirstFocus?.focus?.();
+    }
+
+    /** A choice in the report: a wrong one explains itself; the right one reveals the finding. */
+    _chooseFinding(choiceId, btn, feedback, anomaly) {
+        const verdict = judgeFinding(choiceId, anomaly);
+        if (!verdict.ok) {
+            btn.classList.add('wrong');
+            feedback.textContent = displayDashes(verdict.message);
+            return;
+        }
+        this._reveal();
+        // Reopen the report with the finding written in and the confirm button
+        this._closeAnnotateModal();
+        this._openAnnotateModal();
+    }
+
+    /** The player has made the finding: the chart may now name it. */
+    _reveal() {
+        if (this._revealed) return;
+        this._revealed = true;
+        if (this._compareMode) this._showCompareBanner();
+        this._renderChart();
     }
 
     _closeAnnotateModal() {

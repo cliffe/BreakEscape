@@ -279,7 +279,7 @@
 }
 .sh-modal-cancel-btn:hover { background: #223355; color: #aabbdd; }
 
-/* ── Hint line and inspection progress (sis02 playtests: the finding was hard to discover) ── */
+/* ── Hint line (sis02 playtests: the finding was hard to discover; D167: the player marks it) ── */
 .sh-hint {
     flex-shrink: 0;
     display: flex;
@@ -293,21 +293,33 @@
     line-height: 1.4;
 }
 .sh-hint-text { flex: 1; }
-.sh-hint-progress {
-    width: 90px;
-    height: 8px;
-    border: 2px solid #445566;
-    background: #000000;
-    flex-shrink: 0;
-}
-.sh-hint-progress-fill {
-    display: block;
-    height: 100%;
-    width: 0%;
-    background: #f5a623;
-}
 .sh-hint.found { color: #88ee88; border-bottom-color: #44aa44; }
-.sh-hint.found .sh-hint-progress-fill { background: #44aa44; }
+.sh-hint.retry { color: #f5a623; border-bottom-color: #f5a623; }
+/* Keyboard focus on the chart (arrow keys step through readings, Enter marks one) */
+.sh-chart-area:focus { outline: none; }
+.sh-chart-area:focus-visible { outline: 2px solid #f5a623; outline-offset: -2px; }
+
+/* ── Report: what does the data show? (D167). Choice buttons share the range-button look ── */
+.sh-modal-question { color: #ffffff; font-size: 18px; margin: 12px 0 8px; }
+.sh-choice-btn {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 6px;
+    padding: 6px 10px;
+    background: #1a233a;
+    border: 2px solid #445566;
+    border-radius: 0;
+    color: #8899bb;
+    font-family: inherit;
+    font-size: 18px;
+    line-height: 1.3;
+    text-align: left;
+    cursor: pointer;
+}
+.sh-choice-btn:hover, .sh-choice-btn:focus-visible { background: #223355; color: #ffffff; border-color: #f5a623; outline: none; }
+.sh-choice-btn.wrong { color: #667788; border-color: #333333; }
+.sh-choice-feedback { min-height: 1.3em; color: #f5a623; font-size: 18px; line-height: 1.3; margin-top: 4px; }
 .sh-annotate-note {
     margin-top: 6px;
     font-size: 16px;
