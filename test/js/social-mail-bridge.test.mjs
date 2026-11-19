@@ -203,7 +203,7 @@ test('A5/F4: Esc on the checklist after a miss closes the client in one press, n
     // Esc with the checklist on top: it now closes the whole client, matching the Close button
     // (lab R4 F4/A5), rather than popping back to the inbox and needing a second press.
     document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-    assert.equal(host.querySelector('.mail-checklist'), null, 'checklist dismissed');
+    assert.ok(host.querySelector('.mail-checklist') === null, 'checklist dismissed');
     assert.equal(scene.gameState.isActive, false, 'the client closed in one press');
     scene.cleanup();
 });
@@ -276,9 +276,9 @@ test('a failed send offers Edit & resend, which dismisses the checklist, keeping
     const { scene, host } = openClient();
     scene._handleComposeSend(message({ attachment: null, attachmentKind: null }));
     assert.ok(host.querySelector('.mail-checklist'));
-    assert.equal(host.querySelector('.mail-checklist-done'), null, 'no Done on a failed send');
+    assert.ok(host.querySelector('.mail-checklist-done') === null, 'no Done on a failed send');
     host.querySelector('.mail-checklist-edit').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-    assert.equal(host.querySelector('.mail-checklist'), null, 'dismissed');
+    assert.ok(host.querySelector('.mail-checklist') === null, 'dismissed');
 });
 
 test('a landed send offers Done, not Edit & resend, and notes a reply may come', () => {
@@ -286,7 +286,7 @@ test('a landed send offers Done, not Edit & resend, and notes a reply may come',
     const { scene, host } = openClient();
     scene._handleComposeSend(message());
     assert.ok(host.querySelector('.mail-checklist-banner.landed'));
-    assert.equal(host.querySelector('.mail-checklist-edit'), null, 'no Edit & resend after a landing');
+    assert.ok(host.querySelector('.mail-checklist-edit') === null, 'no Edit & resend after a landing');
     assert.ok(host.querySelector('.mail-checklist-done'), 'Done button shown');
     const reply = host.querySelector('.mail-checklist-reply');
     assert.ok(reply, 'a reply-pending line is shown');
@@ -294,7 +294,7 @@ test('a landed send offers Done, not Edit & resend, and notes a reply may come',
     // so the student knows the wait is expected and not a dead end.
     assert.match(reply.textContent, /on its way|ticks off when it arrives/i);
     host.querySelector('.mail-checklist-done').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-    assert.equal(host.querySelector('.mail-checklist'), null, 'Done dismisses the panel');
+    assert.ok(host.querySelector('.mail-checklist') === null, 'Done dismisses the panel');
 });
 
 test('a failed send does not promise a reply (N3): no reply-pending line under "It did not land"', () => {
@@ -302,7 +302,7 @@ test('a failed send does not promise a reply (N3): no reply-pending line under "
     const { scene, host } = openClient();
     scene._handleComposeSend(message({ attachment: null, attachmentKind: null }));
     assert.ok(host.querySelector('.mail-checklist-banner.not-landed'), 'the send did not land');
-    assert.equal(host.querySelector('.mail-checklist-reply'), null, 'no reply-pending line on a non-landing send');
+    assert.ok(host.querySelector('.mail-checklist-reply') === null, 'no reply-pending line on a non-landing send');
 });
 
 test('a non-target recipient is stored in Sent but never judged or delivered', () => {
@@ -313,7 +313,7 @@ test('a non-target recipient is stored in Sent but never judged or delivered', (
     assert.ok(rec, 'kept in Sent');
     assert.equal(rec.landed, null);
     assert.equal(scheduler.state.jobs.length, 0, 'no delivery job');
-    assert.equal(host.querySelector('.mail-checklist'), null, 'no checklist');
+    assert.ok(host.querySelector('.mail-checklist') === null, 'no checklist');
 });
 
 // ── J-1 / N-6: the open check gates the data-only text job ───────────────────
@@ -384,7 +384,7 @@ test('withReply: the verdict is held until the delivery job runs, then the check
     scene.params.checklistTiming = 'withReply';
     scene._handleComposeSend(message());
     // Held, not shown: the Sent record keeps the composed message for the rebuild.
-    assert.equal(host.querySelector('.mail-checklist'), null, 'no checklist before the reply');
+    assert.ok(host.querySelector('.mail-checklist') === null, 'no checklist before the reply');
     const rec = scheduler.state.mailboxes.guest.messages.find((m) => m.folder === 'sent');
     assert.ok(rec.pendingMessage, 'the composed message is kept on the record');
     // judgePending is deliberately not persisted by the scheduler (the job queue is the

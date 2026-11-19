@@ -289,8 +289,8 @@ test('the console opens scrolled to the top, focus on the region not the Step co
     assert.ok(root.classList.contains('epr-gs-root'));
     assert.equal(root.scrollTop, 0, 'opens at the top, not the foot');
     assert.equal(root.getAttribute('tabindex'), '-1');
-    assert.equal(document.activeElement, root, 'focus is the scroll region');
-    assert.notEqual(document.activeElement, root.querySelector('.epr-gs-step'), 'not the Step button at the foot');
+    assert.ok(document.activeElement === root, 'focus is the scroll region');
+    assert.ok(document.activeElement !== root.querySelector('.epr-gs-step'), 'not the Step button at the foot');
 });
 
 test('an uncollected fact leaves its slot struck through as not found, naming no guess', () => {
@@ -386,7 +386,7 @@ test('lines come from config.strings and params.note over the defaults; text is 
     assert.equal(root.querySelector('.epr-gs-off').textContent, 'Stop');
     assert.equal(root.querySelector('.epr-gs-note').textContent, 'My note.', 'params.note (strings.guessNote) wins over config.note');
     assert.equal(root.querySelector('[data-panel="common"] .epr-gs-heading').textContent, 'Obvious');
-    assert.equal(root.querySelector('.epr-gs-text b'), null);
+    assert.ok(root.querySelector('.epr-gs-text b') === null);
     assert.equal(root.querySelector('.epr-gs-text').textContent, '<b>x</b>');
     root.querySelector('.epr-gs-all').click();
     assert.equal(root.querySelector('[data-row="reuse"] .epr-gs-status').textContent, 'IN');
@@ -486,7 +486,7 @@ test('a run that did not land shows the did-not-land flip, with no aftermath', (
     assert.equal(window.gameState.globalVariables.guess_fixture_landed, false);
     assert.equal(epState().stage, 'flip');
     const flip = cur().container.querySelector('.aw-flip');
-    assert.equal(flip.querySelector('.aw-flip-aftermath'), null);
+    assert.ok(flip.querySelector('.aw-flip-aftermath') === null);
     assert.equal(flip.querySelector('.aw-missed').textContent, 'It did not open.');
 });
 

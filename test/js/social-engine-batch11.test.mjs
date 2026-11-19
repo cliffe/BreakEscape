@@ -196,8 +196,8 @@ test('item 11: sandboxRecap and assistantRecap render their sections; absent ren
 });
 test('item 11: no recap sections when the lists are empty (defend-only unaffected)', () => {
     const { c } = debrief();
-    assert.equal(c.querySelector('.aw-sandbox-recap'), null);
-    assert.equal(c.querySelector('.aw-assistant-recap'), null);
+    assert.ok(c.querySelector('.aw-sandbox-recap') === null);
+    assert.ok(c.querySelector('.aw-assistant-recap') === null);
 });
 
 // ── model helpers ────────────────────────────────────────────────────────────────

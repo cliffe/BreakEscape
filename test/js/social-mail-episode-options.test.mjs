@@ -202,7 +202,7 @@ test('layout phone adds the frame class; no layout leaves the client unchanged',
     assert.equal(phone.scene.getTestState().mail.narrow, true);
     phone.scene.cleanup();
     const plain = open();
-    assert.equal(plain.host.querySelector('.mail-client--phone'), null);
+    assert.ok(plain.host.querySelector('.mail-client--phone') === null);
     assert.equal('layout' in plain.scene.getTestState().mail, false);
     plain.scene.cleanup();
 });

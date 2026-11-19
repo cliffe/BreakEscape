@@ -196,7 +196,7 @@ test('initial focus lands on the first radio, not the disabled Confirm (t-2)', (
     assert.ok(first, 'a radio exists');
     assert.ok(document.activeElement && document.activeElement.matches('.auth-choice-radio'),
         `focus should be on a radio, was ${document.activeElement && document.activeElement.className}`);
-    assert.equal(document.activeElement, first, 'the first radio specifically');
+    assert.ok(document.activeElement === first, 'the first radio specifically');
     scene.close();
 });
 

@@ -76,7 +76,7 @@ test('a reply picked from the keyboard hands focus to the first reply of the nex
     ui.clearChoices();                     // the pick clears the set; focus would drop to BODY
     document.activeElement = null;
     ui.addChoices([{ text: 'c' }, { text: 'd' }]);
-    assert.equal(document.activeElement, box.children[0]);
+    assert.ok(document.activeElement === box.children[0]);
 });
 
 test('focus is left alone when it was not on a reply', () => {
@@ -86,7 +86,7 @@ test('focus is left alone when it was not on a reply', () => {
     document.activeElement = elsewhere;
     ui.clearChoices();
     ui.addChoices([{ text: 'b' }]);
-    assert.equal(document.activeElement, elsewhere);
+    assert.ok(document.activeElement === elsewhere);
 });
 
 test('a mouse pick does not move focus to the next set (Space/Enter keep skipping)', () => {
@@ -97,7 +97,7 @@ test('a mouse pick does not move focus to the next set (Space/Enter keep skippin
     ui.clearChoices();
     document.activeElement = null;
     ui.addChoices([{ text: 'c' }]);
-    assert.equal(document.activeElement, null);
+    assert.ok(document.activeElement === null);
 });
 
 test('a keyboard pick does not pull focus back once the player has moved elsewhere', () => {
@@ -109,7 +109,7 @@ test('a keyboard pick does not pull focus back once the player has moved elsewhe
     const endButton = { focus() {} };
     document.activeElement = endButton;    // Tab to the end-call button during the typewriter
     ui.addChoices([{ text: 'b' }]);
-    assert.equal(document.activeElement, endButton);
+    assert.ok(document.activeElement === endButton);
 });
 
 test('opening another conversation clears a pending hand-off', () => {

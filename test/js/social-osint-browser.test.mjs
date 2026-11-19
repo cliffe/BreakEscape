@@ -129,7 +129,7 @@ test('selecting a block collects its fact once: global, note, sync, badge; a dec
 test('pinHints off by default: no visible pin affordance on blocks', () => {
     setGlobals();
     const s = open();
-    assert.equal(s.container.querySelector('.ob-pin'), null);
+    assert.ok(s.container.querySelector('.ob-pin') === null);
     // the screen-reader hint is still present for assistive tech
     assert.ok(s.container.querySelector('#ob-hint-add'));
 });
@@ -147,7 +147,7 @@ test('pinHints on: each not-yet-noted block shows a visible Pin, replaced by Not
     pick(s, 'row_pierce');
     const pierce = block(s, 'row_pierce');
     assert.ok(pierce.classList.contains('is-noted'));
-    assert.equal(pierce.querySelector('.ob-pin'), null, 'a pinned block shows Noted, not Pin');
+    assert.ok(pierce.querySelector('.ob-pin') === null, 'a pinned block shows Noted, not Pin');
     assert.match(pierce.textContent, /Noted/);
 });
 
@@ -379,9 +379,9 @@ test('arrow keys move along the sites strip; every control is reachable by Tab (
     const btns = [...s.container.querySelectorAll('.ob-site')];
     btns[0].focus();
     btns[0].dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
-    assert.equal(document.activeElement, btns[1]);
+    assert.ok(document.activeElement === btns[1]);
     btns[1].dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
-    assert.equal(document.activeElement, btns[0]);
+    assert.ok(document.activeElement === btns[0]);
     for (const el of s.container.querySelectorAll('button, a[href]')) assert.ok(!(el.tabIndex > 0));
 });
 
@@ -611,7 +611,7 @@ test('9.2 C: hostile post text and dates render as plain text, never markup', ()
     feed.apply('pierce', { ...feedAnswer(0, 'feed_evil', hostile), post: { id: 'feed_evil', text: hostile, date: '<i>today</i>', note: '<script>x</script>' } });
     const s = open({ start: 'social.pierce', feed });
     const b = block(s, 'feed_evil');
-    assert.equal(b.querySelector('img, b, i, script'), null);
+    assert.ok(b.querySelector('img, b, i, script') === null);
     assert.ok(b.textContent.includes(hostile));
     assert.ok(b.textContent.includes('<i>today</i>'));
     assert.equal(window.__pwned, undefined);
@@ -633,12 +633,12 @@ test('C3: a thread draws under its post, oldest first; the replier\'s profile li
     const replies = [...s.container.querySelectorAll('.ob-thread .ob-reply')].map((r) => r.getAttribute('data-post'));
     assert.deepEqual(replies, ['hamp_re', 'pierce_answer']);
     assert.equal(block(s, 'pierce_answer'), null, 'the answer is not a block of its own');
-    assert.equal(s.container.querySelector('.ob-reply-to'), null, 'no "Replied to" line in a thread');
+    assert.ok(s.container.querySelector('.ob-reply-to') === null, 'no "Replied to" line in a thread');
     s = open({ start: 'social.hampshire', feed });
     const own = s.container.querySelector('.ob-reply-own');
     assert.ok(own, 'the reply is listed on its replier\'s profile');
     assert.match(own.querySelector('.ob-reply-to').textContent, /^Replied to /);
-    assert.equal(own.querySelector('.ob-thread'), null);
+    assert.ok(own.querySelector('.ob-thread') === null);
     assert.ok(!text(s).includes('The shared drive is down again today.'), 'the thread post is not repeated');
 });
 
@@ -647,7 +647,7 @@ test('C3: a stand-in feed with no repliesFor draws posts with no thread', () => 
     const feed = { postsFor: () => [{ id: 'feed_pierce_1', text: 'The shared drive is down again today.' }] };
     const s = open({ start: 'social.pierce', feed });
     assert.ok(block(s, 'feed_pierce_1'));
-    assert.equal(s.container.querySelector('.ob-thread'), null);
+    assert.ok(s.container.querySelector('.ob-thread') === null);
 });
 
 test('C3: a reply arriving re-renders the open thread poster\'s profile; reply text is plain text', () => {
@@ -663,12 +663,12 @@ test('C3: a reply arriving re-renders the open thread poster\'s profile; reply t
         const feed = feedFor();
         feed.apply('pierce', { ...feedAnswer(0, 'feed_pierce_1', 'The shared drive is down again today.'), seq: 1 });
         const s = open({ start: 'social.pierce', feed });
-        assert.equal(s.container.querySelector('.ob-thread'), null);
+        assert.ok(s.container.querySelector('.ob-thread') === null);
         const hostile = '<b>bold</b> reply <img src=x onerror="window.__pwned2=1">';
         feed.apply('hampshire', replyAnswer(0, 2, 'hamp_re', hostile, 'feed_pierce_1', 'pierce', 'pierce', 'hampshire'));
         const r = s.container.querySelector('.ob-thread .ob-reply');
         assert.ok(r, 'drawn without closing the browser');
-        assert.equal(r.querySelector('.ob-text b, .ob-text img, .ob-text *'), null, 'the headshot is the only image');
+        assert.ok(r.querySelector('.ob-text b, .ob-text img, .ob-text *') === null, 'the headshot is the only image');
         assert.ok(r.textContent.includes(hostile));
         assert.equal(window.__pwned2, undefined);
         s.cleanup();
@@ -720,7 +720,7 @@ test('reactions: each chip is a button outside the post block, named with the re
     const s = open({ start: 'social.pierce', feed: rxFeed() });
     const r = row(s, 'feed_pierce_1');
     assert.ok(r, 'a row under the post');
-    assert.equal(r.closest('.ob-block'), null, 'never inside the post button');
+    assert.ok(r.closest('.ob-block') === null, 'never inside the post button');
     assert.equal(r.parentElement.className, 'ob-blocks', 'a sibling in ob-blocks');
     const chips = [...r.querySelectorAll('.ob-reaction')];
     assert.deepEqual(chips.map((c) => c.getAttribute('data-key')), ['like', 'sad'], 'key order');
@@ -782,7 +782,7 @@ test('reactions: a click opens the chip (data-open, one layer); a second click c
     assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
     assert.deepEqual(layers(s), ['reaction-names']);
     tap(sad, 'touch');
-    assert.equal(document.activeElement, sad, 'still focused');
+    assert.ok(document.activeElement === sad, 'still focused');
     assert.equal(sad.hasAttribute('data-open'), false);
     assert.equal(names(s, 'feed_pierce_1'), '', 'pointer focus does not keep the line up');
     assert.deepEqual(layers(s), []);
@@ -826,7 +826,7 @@ test('reactions: a re-render does not turn pointer focus into keyboard focus', (
         tap(chip(s, 'feed_pierce_1', 'sad'));
         feed.apply('lord', { ...feedAnswer(0, 'feed_lord_1', 'Back from leave.'), person: 'lord', seq: 4, reactions: [rx('feed_pierce_1', 'lord', 'sad')] });
         const sad = chip(s, 'feed_pierce_1', 'sad');
-        assert.equal(document.activeElement, sad, 'focus came back to the new chip');
+        assert.ok(document.activeElement === sad, 'focus came back to the new chip');
         assert.ok(sad.hasAttribute('data-open'), 'still open after the re-render');
         tap(sad);
         assert.equal(names(s, 'feed_pierce_1'), '');
@@ -929,12 +929,12 @@ test('reactions: focus and an open names line survive npc_reacted and npc_posted
         click(like);
         // npc_posted: a new post on Pierce's profile
         feed.apply('pierce', { ...feedAnswer(1, 'feed_pierce_2', 'Friday at last.'), seq: 5 });
-        assert.equal(document.activeElement, chip(s, 'feed_pierce_1', 'like'));
+        assert.ok(document.activeElement === chip(s, 'feed_pierce_1', 'like'));
         assert.ok(chip(s, 'feed_pierce_1', 'like').hasAttribute('data-open'));
         // npc_reacted: a reaction carried by a post on another profile
         feed.apply('lord', { ...feedAnswer(0, 'feed_lord_1', 'Back from leave.'), person: 'lord', seq: 6, reactions: [rx('feed_pierce_2', 'lord', 'laugh')] });
         assert.ok(chip(s, 'feed_pierce_2', 'laugh'), 'drawn by the npc_reacted re-render');
-        assert.equal(document.activeElement, chip(s, 'feed_pierce_1', 'like'));
+        assert.ok(document.activeElement === chip(s, 'feed_pierce_1', 'like'));
         assert.ok(chip(s, 'feed_pierce_1', 'like').hasAttribute('data-open'));
         assert.deepEqual(layers(s), ['reaction-names']);
         s.cleanup();
@@ -972,13 +972,13 @@ test('reactions: a missing icon draws the label; counts show; a stand-in feed wi
     const img = chip(s, 'feed_pierce_1', 'sad').querySelector('img');
     img.dispatchEvent(new window.Event('error'));
     const sad = chip(s, 'feed_pierce_1', 'sad');
-    assert.equal(sad.querySelector('img'), null);
+    assert.ok(sad.querySelector('img') === null);
     assert.equal(sad.querySelector('.ob-reaction-label').textContent, 'Sad');
     assert.equal(sad.querySelector('.ob-reaction-count').textContent, '2');
     s._renderMain();
-    assert.equal(chip(s, 'feed_pierce_1', 'sad').querySelector('img'), null, 'remembered across a re-render');
+    assert.ok(chip(s, 'feed_pierce_1', 'sad').querySelector('img') === null, 'remembered across a re-render');
     assert.equal(chip(s, 'feed_pierce_1', 'sad').querySelector('.ob-reaction-label').textContent, 'Sad');
     const plain = open({ start: 'social.pierce', feed: { postsFor: () => [{ id: 'feed_pierce_1', text: 'The shared drive is down again today.' }] } });
     assert.ok(block(plain, 'feed_pierce_1'));
-    assert.equal(plain.container.querySelector('.ob-reactions'), null);
+    assert.ok(plain.container.querySelector('.ob-reactions') === null);
 });
