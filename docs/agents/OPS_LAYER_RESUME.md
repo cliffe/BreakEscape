@@ -196,6 +196,22 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   running (Fable, a725b16c039f7b813) to `reviews/OPS_LOG_ROWS_R3.md`, asked for a trim list. The
   40-character cap and the final row names were sent to the core and privilege revisers. Still
   open for the cracking plan when it is unheld: remove its stale row list.
+- 11:40 HANDOFF 5 (newest; supersedes the per-plan state in HANDOFF 4).
+  CORE: R2 revision `04dea0645` (1693 lines; card type `technique_card`, 403 `network_only`,
+  five user questions). R3 full review running (Opus, a5602a169d22f00d5), asked for a trim list.
+  PRIVILEGE: R3 revision `e6a0ae290` (~1005 lines). R4 delta review running (Fable,
+  acc0a60bf053918a6) to `OPS_PRIVILEGE_ACCOUNTS_R4.md`; if nothing above nit, the plan stops.
+  SKIN: R3 findings `7d796e106` (0B 2M 6m). R3 reviser running (Fable, a42923e147f234204).
+  Next: commit, R4 delta review on Sonnet (no secrets or access checks in the skin).
+  MFA: R3 reviser running (Fable, ae5fc3a0e8a84cb43). Next: commit, R4 delta on Opus.
+  LOG_ROWS: R3 full review running (Fable, a725b16c039f7b813). Its next reviser must also change
+  the 13.7 cell that says `/network/technique` saves on every 422 (core saves a quiet refusal
+  only when `stored?`).
+  CRACKING: held for BLOCK-1; when unheld it must also rename proof `dumped` to `harvested`
+  keyed by sign-in PC id, and remove its stale log row list.
+  After the R4 rounds: second cross-plan review (Fable) over the five plans; picks page
+  republish (Core 5 questions, Privilege 7 with changed 1 and 5, MFA 5, Skin 1, Log 2); outline
+  build order and status paragraph.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
