@@ -21,3 +21,8 @@ Branch feat/ca-living-office-build. Commits: 105cbcacb (M1), 1f4f0d3d1 (M3, item
 - The auto-mode classifier blocks `rm -rf`; use new scratch dir names.
 - Resume on an NPC that is not suspended is a no-op (npc-needs.js control), so the double resume (3 s after agn_there, and on done) is safe.
 - Held barks drop when the mapping condition no longer holds, so after a mid-chain reopen the Adaeze mapping may not set kit_ca01_done; the timer fallback is what completes the chain then.
+
+## Done (verification pass, code 1f4f0d3d1, no code changes)
+- Tests: bin/test-js 886/888 files (m01-decode-task as expected; validator-social-indicators failed under load, passes 6/6 alone). office-kit-quiet-and-stub 10/10, triage-message-globals 13/13, validator-social-triage-message-globals 12/12, test_office_kit.py 49 OK, test_apply_training_room.py 10 OK.
+- Live proof on :3003 (mission 278 with the panel build): (a) catch, game 10409, PASS; (b) mid-chain reopen, 10410, PASS (Adaeze bark lost by design, 12 s timer completes, kit_quiet false); (c) blocked walk, 10411, PASS (4 emits swallowed, timer done at ~12.1 s, both colleagues resumed); (d) miss, 10412, PASS (kit_key_caught false, MISS host lines). Details: scratchpad ca01_live/wrap_fixes/RESULTS.md.
+- Finding for review minor m1 (not fixed): Agnieszka's chain bark leaves npcWorldBubbles.says after about 0.25 s (game 10439); Adaeze's stays about 8.7 s.
