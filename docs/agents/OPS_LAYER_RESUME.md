@@ -13,6 +13,15 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
 - 10:50. Six planners launched in the background, each writing one file in `docs/achitechture/`
   and not committing: OPS_PRIVILEGE_ACCOUNTS (Opus), OPS_CRACKING (Opus), OPS_LOG_ROWS (Opus),
   OPS_MFA_HELPDESK (Fable), OPS_CORE (Fable), OPS_REALISM_SKIN (Fable).
+- 10:45. First drafts: PRIVILEGE and CRACKING (Opus) were each stopped by the safety classifier
+  with nothing written, and LOG_ROWS ran out of context; each left a handover note in
+  `docs/agents/ops_layer/`. Relaunched: LOG_ROWS on Opus, PRIVILEGE and CRACKING on `opus48`
+  (the one retry AGENTS.md allows), all three from their notes with narrow-read, write-early
+  briefs. CORE, SKIN and MFA (Fable) still on their first run.
+- Model-routing note: task type "ops-layer plan drafting (privilege/cached credentials; hash
+  cracking minigame)" was stopped on Opus 5.5 while reading keyring and session code; no plan
+  text existed yet. If `opus48` is stopped too: Haiku gathers the context, then the narrow
+  residue goes to the user as a `sonnet-cvp` offer.
 - The user's quota resets at 12:00 (2026-11-19): run agents in parallel, do not hold back.
 
 ## Next steps
