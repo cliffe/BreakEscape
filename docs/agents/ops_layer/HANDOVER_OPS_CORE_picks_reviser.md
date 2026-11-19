@@ -51,7 +51,61 @@ Z1 (L1a and L1b built before S1). Edit tool only; no commit; record outcomes in
 - 9.1: `evidence`, `opsEvidence`, `alert` removed; `technique_card` item field and proof kind;
   pretext line rename row added; discovery description note.
 
-## Open (not yet done)
+## Done in pass 2 (second agent, stopped at context limit)
+
+- Open items 1 (9.2), 2 (9.3), 3 (section 10, now five check parts incl. pretext verdict
+  snapshot and the compromise marker as the one intended visible change in the five jack/implant
+  scenarios), 4 (section 11 whole: unit, controller, node, all three playtests, live proof) are
+  DONE. 5.4 gained `utils/compromise-bolt.js` (shared bitmap, no imports) and the art line now
+  says "later polish item needing the user's yes". 4.3 names `scripts/validate_social/pretext.rb`
+  and `pretext-judge.js:276`.
+- Item 5 (12.1) PARTLY: Z1 build-order paragraph and the closing "Build order" paragraph in 12.2
+  are done. STILL TO DO in 12.1 table: step 1 (add section 10 part 5 pretext snapshot; say L1a
+  and L1b are on main); step 3 (drop "the condition in `host_reachable_through?`,
+  `from_route_refusal` and ... `resource_admits_player?`", test name
+  `network_discovery_display_test`); step 6 (drop evidence, `add_noise!`, `opsNoise`, `alert`,
+  `network_alerted`, noise on blocks; test `network_ops_free_test` replaces `network_noise_test`);
+  step 7 (drop Probe, evidence, noise line); step 9 (add the pretext rename and
+  `validator-social-pretext-key.test.mjs`); step 10 (drop noise; refusals always
+  `save_limit: true`; `network_ops_free_test`); step 11 (replace keyboard refusal/`network_only`
+  handler with the `settle_session_at_keyboard!` skip; tests `container-network-only` ->
+  blocked-host test only); step 12 (drop "`via` test in `heldAtKeyboard`"; add
+  `remoteViewFoothold` click path, remote-view frame/line/wipe, `compromise-marks.js`,
+  `compromise-bolt.js`, row bolt; tests `pc-remote-view-click`, `desktop-remote-view`,
+  `compromise-marks`). 12.2: `game.rb` row "four keys" -> three, drop "server-owned global
+  names"; `network_access.rb` row drop `host_reachable_through?`, `from_route_refusal`,
+  `resource_admits_player?`; `pc-sessions.js` row rewrite (remoteViewFoothold, no heldAtKeyboard
+  change, no `network_only` handler; add `remote-host-text.js`, `ui-themes.css`,
+  `screen-states.js` importers, `core/rooms.js`); `verify-run.rb` "four names ... 25 lines" ->
+  three, 20; add the six SE scenarios, `pretext-judge.js`, `validate_social/pretext.rb`, schema
+  pretext line; new files list add `compromise-marks.js`, `compromise-bolt.js`.
+- Items 6 to 10 NOT started (sections 13, 14, 15, final grep, decisions lines).
+- NEW orchestrator ruling to apply: the session-type implant (`needsSession`) stays
+  keyboard-only: only a keyboard session (typed sign-in or claim) satisfies it; a technique
+  session does NOT, even though clicking the PC serves its desktop. Change the 5.4 table cell
+  (grep `needsSession`, about plan line 650-660) and any sentence saying otherwise (section 11
+  `network_technique_session_test` row says "`needsSession` for an implant": make it "refused");
+  evidence in `docs/agents/ops_layer/reviews/OPS_PRIVILEGE_ACCOUNTS_R6.md` M2. Record it in the
+  decisions lines.
+- Other orchestrator rulings for item 8/10: do NOT rename `tells.techniques` (plan already says
+  it keeps its name in 4.3; section 15 question 4 just goes); a service scan still needs the
+  sweep; unswept block lists PCs with a held session; Wi-Fi APs get no mark; bolt drawn in code,
+  optional 16x16 icon a later polish item needing the user's yes. Each gets a "## Picks
+  2026-11-19" line in `reviews/OPS_CORE_DECISIONS.md` (not yet written).
+- Privilege plan section 14 to S3 (lines ~988-1003): answer rule (`access: "admin"` whenever
+  `session_access` is admin, any session kind; stored value never passed through) is already
+  how `client_access_level` works once pointed at `session_access`; confirm it in request 1.
+  Its USB note: any admin session (technique too) overrides planting; the session-type implant
+  needs a keyboard session. Confirm desktop_request_allowed? passes technique admin on a blocked
+  headless host through its own foothold (already in request 1). No other plan names proof kind
+  `technique`; skin plan (lines 99, 103, 105, 668, 939) still names `data-quiet`, noise,
+  `network_only`, Probe: request 6 must list these.
+- Ambiguity left for the orchestrator: whether "only the new keys use se_technique" means the
+  pretext line key `technique` should NOT be renamed in the six shipped scenarios. Sections 0 to
+  11 keep the rename (as part 1 wrote it); if the orchestrator meant no rename, 4.3, 9.1, 9.2, 10
+  (row and part 5), 11.3 (two tests) and 11.2 part 3 exception must come out.
+
+## Open (as first listed; see above for status)
 
 1. 9.2 validator tables (around plan lines 1140 to 1190): remove rows naming `evidence`,
    `alert`, `alert.sets`, `alert.after`, "Decoys on a network with no alert"; change
