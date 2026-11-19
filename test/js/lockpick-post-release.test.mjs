@@ -194,8 +194,37 @@ test('with the key panel open the game area scrolls to its end so the sticky lin
     area.scrollTop = 0;
     H._scrollKeyPanelIntoView.call({ keySelectionContainer: null, gameContainer: area });
     assert.equal(area.scrollTop, 0, 'no panel, no scroll');
-    const ki = readFileSync(join(root, 'js/minigames/lockpicking/key-insertion.js'), 'utf8');
-    assert.match(ki, /_scrollKeyPanelIntoView/, 'a longer feedback line re-scrolls');
+});
+
+test('a feedback line re-scrolls the game area to its end while the key panel exists, and only then', async () => {
+    const { KeyInsertion } = await mjs('key-insertion.js');
+    // scrollTop clamps to scrollHeight - clientHeight, as a browser does
+    let top = 0;
+    const area = { scrollHeight: 463, clientHeight: 400, get scrollTop() { return top; }, set scrollTop(v) { top = Math.max(0, Math.min(v, this.scrollHeight - this.clientHeight)); } };
+    const parent = { feedback: { textContent: '' }, keySelectionContainer: {}, gameContainer: area, _scrollKeyPanelIntoView: H._scrollKeyPanelIntoView };
+    KeyInsertion.prototype.updateFeedback.call({ parent }, 'Select a key to use');
+    assert.equal(parent.feedback.textContent, 'Select a key to use');
+    assert.equal(area.scrollTop, area.scrollHeight - area.clientHeight, 'at the end of the scroll');
+    area.scrollTop = 0;
+    parent.keySelectionContainer = null;
+    KeyInsertion.prototype.updateFeedback.call({ parent }, 'Apply tension first');
+    assert.equal(parent.feedback.textContent, 'Apply tension first');
+    assert.equal(area.scrollTop, 0, 'no panel, no scroll');
+});
+
+test('the key panel builder stores the container before it asks for the scroll', () => {
+    const seen = [];
+    const parent = {
+        scene: anything(), pinCount: 4, pins: [], lockConfig: anything(), keyOps: anything(), tensionWrench: null, keyData: { cuts: [1, 2, 3, 4] },
+        _scrollKeyPanelIntoView() { seen.push(this.keySelectionContainer); }
+    };
+    const keys = [0, 1, 2].map((i) => ({ id: 'k' + i, name: 'Key ' + i, cuts: [1, 2, 3, 4], pinCount: 4 }));
+    const savedPhaser = globalThis.Phaser;
+    globalThis.Phaser = { ...savedPhaser, Geom: { Rectangle: Object.assign(function () {}, { Contains: () => true }) } };
+    try { new KeySelection(parent).createKeySelectionUI(keys, 'k0'); } finally { globalThis.Phaser = savedPhaser; }
+    assert.equal(seen.length, 1, 'the scroll is requested once');
+    assert.ok(seen[0], 'keySelectionContainer is already set when the scroll runs');
+    assert.equal(seen[0], parent.keySelectionContainer);
 });
 
 test('the feedback background is solid', () => {
