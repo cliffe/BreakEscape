@@ -36,7 +36,7 @@ const stubs = {
     './apply-actions.js': 'export function applyActions(){}',
     '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? obj[key] : undefined; }',
     '../utils/flag-lock.js': 'export function isRemoteFlagLock(){return false;} export function remoteFlagLockMessage(){return "";}',
-    './npc-reach.js': 'export function npcReachDistSq(p, s, d){return d;}',
+    './npc-reach.js': 'export function npcReachDistSq(p, s, d){return s.__reachSq ?? d;}',
     './examine.js': 'export function shouldExamine(){return false;} export function startExamine(){return false;}',
     './combat-input.js': 'export function showPastTalkingToast(){}',
     './consumables.js': 'export function shouldConsumeOnInteract(){return false;} export function useConsumable(){}',
@@ -477,4 +477,45 @@ test('seatedPcWins: the PC loses only to a better-aimed NPC', () => {
     assert.equal(seatedPcWins(5000, 4000), false, 'a better-aimed NPC');
     assert.equal(seatedPcWins(5000, 6000), true, 'a worse-aimed NPC');
     assert.equal(seatedPcWins(Infinity, Infinity), false, 'no PC');
+});
+
+// Review R2 m3: the label measures an NPC's reach as E does (isObjectInInteractionRange), so an NPC reachable only from
+// his own chair edge (here a stubbed static-body reach, __reachSq) is named by the label and opened by E, not passed over.
+test('seated, an NPC in reach only through his chair edge: the label and E pick the same target', () => {
+    const chair = obj('chair', 130, 150, 24, 27, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
+    const pc = obj('pc', 150, 99, 24, 27, { scenarioData: { id: 'pc', type: 'pc', observations: 'A workstation.' } });  // about 19 degrees off
+    setRoom(chair, pc);
+    const room = globalThis.__testRooms.r;
+    const npc = { x: 142, y: 90, active: true, visible: true, _isNPC: true, npcId: 'n1', scenarioData: undefined, __reachSq: 400 };  // 49 px away, dead ahead
+    seatedAt(chair);
+    try {
+        window.npcManager = { getNPC: () => ({ observations: 'A colleague.' }) };
+        room.npcSprites = [npc];
+        let stoodUp = 0;
+        window.seating.standUp = () => { stoodUp++; };
+        assert.equal(labelAt(142, 170, 'up'), 'A colleague.', 'the label names the NPC E can reach');
+        // E talks to him: no object picked and it did not fall through to standing up (tryInteractWithNPC is module-local)
+        assert.equal(pressESeated(142, 170, 'up').id, undefined, 'E did not pick the PC');
+        assert.equal(stoodUp, 0, 'E found a target');
+        npc.__reachSq = 4000;                         // out of reach for both
+        assert.equal(labelAt(142, 170, 'up'), 'A workstation.', 'out of reach: the PC');
+        assert.equal(pressESeated(142, 170, 'up').id, 'pc');
+    } finally { delete window.seating; delete window.npcManager; delete room.npcSprites; }
+});
+
+test('seated, an NPC who has just left this PC gives way to it in the label as in E', () => {
+    const chair = obj('chair', 130, 150, 24, 27, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
+    const pc = obj('pc', 150, 99, 24, 27, { scenarioData: { id: 'pc', type: 'pc', observations: 'A workstation.' } });
+    setRoom(chair, pc);
+    const room = globalThis.__testRooms.r;
+    const npc = { x: 146, y: 120, active: true, visible: true, _isNPC: true, npcId: 'n1', scenarioData: undefined, body: { velocity: { x: 50, y: 0 } } };
+    seatedAt(chair);
+    try {
+        window.npcManager = { getNPC: () => ({ observations: 'A colleague.' }) };
+        room.npcSprites = [npc];
+        assert.equal(labelAt(142, 170, 'up'), 'A colleague.', 'no record of him leaving: better aimed than the PC');
+        window.workstationState = { leftBy: (id, who) => id === 'pc' && who === 'n1' };
+        assert.equal(labelAt(142, 170, 'up'), 'A workstation.', 'on the move from this PC: the PC');
+        assert.equal(pressESeated(142, 170, 'up').id, 'pc');
+    } finally { delete window.seating; delete window.npcManager; delete window.workstationState; delete room.npcSprites; }
 });
