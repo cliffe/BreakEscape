@@ -504,3 +504,39 @@ test('V12: a gate on a security pool (login_aloud, usb_refused, work_fail_*, wk_
     for (const t of ['login_aloud', 'usb_refused', 'work_fail_down', 'wk_share_login']) assertHas(out, `chatter '${t}' is gated by requireGlobal`);
     assertNot(out, "chatter 'coffee' is gated by requireGlobal");
 });
+
+// ── V13 ────────────────────────────────────────────────────────────────────────────────────
+
+test('V13: an NPC pool that escapes the scenario pool gate is an error; a matching gate is not', { skip }, () => {
+    const gate = { kit_quiet: false };
+    const s = scenario({ npcs: [
+        worker({ id: 'plain', chatter: { coffee: ['Fresh pot.'] } }),
+        worker({ id: 'nogate', chatter: { coffee: { lines: ['Fresh pot.'] } } }),
+        worker({ id: 'other', chatter: { coffee: { lines: ['Fresh pot.'], requireGlobal: { calm: true } } } }),
+        worker({ id: 'good', chatter: { coffee: { lines: ['Fresh pot.'], requireGlobal: gate } } }),
+        worker({ id: 'free', chatter: { cooler: ['Not gated at scenario level.'] } })
+    ], extra: {
+        globalVariables: { kit_quiet: false, calm: true },
+        chatter: { coffee: { lines: ['Mugs.'], requireGlobal: gate }, cooler: ['Hello.'] }
+    } });
+    const out = check(s);
+    const errs = out.filter(l => l.includes('V13'));
+    assert.ok(errs.every(l => l.startsWith('❌ ERROR')) === true, errs.join('\n'));
+    assertHas(out, "V13: NPC 'plain' chatter 'coffee' escapes");
+    assertHas(out, "V13: NPC 'nogate' chatter 'coffee' escapes");
+    assertHas(out, "V13: NPC 'other' chatter 'coffee' escapes");
+    assert.ok(!has(out, "V13: NPC 'good'") === true);
+    assert.ok(!has(out, "V13: NPC 'free'") === true);
+});
+
+test('V13: an NPC pool under a kit_ key needs requireGlobal { kit_quiet: false }', { skip }, () => {
+    const s = scenario({ npcs: [
+        worker({ id: 'bad', chatter: { kit_a: ['Line.'] } }),
+        worker({ id: 'wrong', chatter: { kit_b: { lines: ['Line.'], requireGlobal: { kit_quiet: true } } } }),
+        worker({ id: 'ok', chatter: { kit_c: { lines: ['Line.'], requireGlobal: { kit_quiet: false } } } })
+    ], extra: { globalVariables: { kit_quiet: false } } });
+    const out = check(s);
+    assertHas(out, "V13: NPC 'bad' chatter 'kit_a' is a kit pool");
+    assertHas(out, "V13: NPC 'wrong' chatter 'kit_b' is a kit pool");
+    assert.ok(!has(out, "V13: NPC 'ok'") === true);
+});

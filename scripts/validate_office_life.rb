@@ -12,6 +12,7 @@
 #   V8  sync budget (section 7)          sync_budget_lines(json) info; warning above a cap
 #   V11 chatter pool line that names a credential              warning (secrets belong in priority mutters only)
 #   V12 chatter pool requireGlobal naming a global not in globalVariables, a gate value of the wrong type, or a gate on a security pool   warning
+#   V13 an NPC chatter pool that escapes its scenario pool's requireGlobal gate, or a kit_ pool without {kit_quiet:false}   error
 #   V10 pools, exchanges and calls nothing can trigger (check_v10, below V8; warnings only)
 #
 # V6 is the rake task app:break_escape:tts:office_lines (BreakEscape::TtsOfficeLines) and V9 is
@@ -100,6 +101,7 @@ module ValidateOfficeLife
     check_chatter_repeats(w, issues)                     # V7
     check_pool_credentials(w, issues)                    # V11
     check_pool_gates(w, issues)                          # V12
+    check_pool_gate_leaks(w, issues)                     # V13
     check_sync_budget(w, issues)                         # V8 (warnings above a cap)
     if campaign?(scenario_id, campaign)
       check_story_npcs_leave(w, issues)                  # V2
@@ -829,6 +831,36 @@ module ValidateOfficeLife
         issues << "⚠️ WARNING: office life V12: #{who} chatter '#{topic}' is gated by requireGlobal, but '#{topic}' carries a security window " \
                   '(a spoken login, a refused USB, a work failure or a workaround start). While the gate is closed the line is not said, ' \
                   'the student never hears it, and the window can close silently. Leave this pool ungated.'
+      end
+    end
+  end
+
+  # ── V13: an NPC's own pool must carry the scenario pool's gate (error) ──────────────────────
+  # npc-needs.js chatterPool gates the scenario pool and the NPC's own pool separately. A scenario
+  # pool shut by requireGlobal does not shut an NPC pool under the same key, so a plain-array (or
+  # ungated, or differently gated) NPC pool speaks anyway. Found in the living-office gate A proof.
+  # Also: any NPC pool under a "kit_" key must be gated by { kit_quiet: false }.
+  KIT_QUIET_GATE = { 'kit_quiet' => false }.freeze
+
+  def self.check_pool_gate_leaks(w, issues)
+    scen = w.json['chatter']
+    scen = {} unless scen.is_a?(Hash)
+    w.npcs.each do |_r, n|
+      next unless n['chatter'].is_a?(Hash)
+
+      n['chatter'].each do |topic, pool|
+        own_gate = pool.is_a?(Hash) ? pool['requireGlobal'] : nil
+        base = scen[topic]
+        base_gate = base.is_a?(Hash) ? base['requireGlobal'] : nil
+        if base_gate && own_gate != base_gate
+          issues << "❌ ERROR: office life V13: NPC '#{n['id']}' chatter '#{topic}' escapes the scenario pool's gate. The scenario pool " \
+                    "has requireGlobal #{base_gate.to_json}, but this pool #{own_gate ? "has #{own_gate.to_json}" : 'is not in object form with a requireGlobal'}, " \
+                    'so it speaks while the scenario pool is shut. Use { "lines": [...], "requireGlobal": <the same gate> }.'
+        end
+        next unless topic.to_s.start_with?('kit_') && own_gate != KIT_QUIET_GATE
+
+        issues << "❌ ERROR: office life V13: NPC '#{n['id']}' chatter '#{topic}' is a kit pool without requireGlobal " \
+                  '{ "kit_quiet": false }, so it speaks while the kit is quiet.'
       end
     end
   end
