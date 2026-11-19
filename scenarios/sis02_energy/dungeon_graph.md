@@ -15,7 +15,7 @@ Saturday 21 March 2026, 06:30. Albion Energy Storage, on the Trent near Newark: 
 | AND-gate convergences | 1 |
 | Rooms | 3 |
 | Puzzle graph nodes / edges | 37 / 39 |
-| Story graph nodes / edges | 11 / 11 |
+| Story graph nodes / edges | 11 / 10 |
 
 ## Critical Path
 
@@ -200,7 +200,6 @@ flowchart TD
   aim_conduct_walkdown -.-> aim_initiate_esd
   aim_contact_marcus_investigate -.-> aim_isolate_network
   aim_contact_marcus_investigate -.-> aim_nis_notification
-  aim_verify_anomaly -.-> aim_trent_water_notification
   aim_initiate_esd --> aim_andgate_post_incident_debrief
   aim_isolate_network --> aim_andgate_post_incident_debrief
   aim_andgate_post_incident_debrief --> aim_post_incident_debrief
@@ -329,7 +328,6 @@ flowchart TD
   aim_conduct_walkdown -.-> aim_initiate_esd
   aim_contact_marcus_investigate -.-> aim_isolate_network
   aim_contact_marcus_investigate -.-> aim_nis_notification
-  aim_verify_anomaly -.-> aim_trent_water_notification
   aim_initiate_esd --> aim_andgate_post_incident_debrief
   aim_isolate_network --> aim_andgate_post_incident_debrief
   aim_andgate_post_incident_debrief --> aim_post_incident_debrief
@@ -447,25 +445,26 @@ flowchart TD
   rc_npc_helen_marsh_15("Helen Marsh")
   rc_obj16_16{"Battery Hall Access Badge"}
   rc_npc_priya_s_17("Priya S.")
-  rc_npc_marcus_webb_18("Marcus Webb")
-  rc_npc_tom_hadley_19("Tom Hadley")
-  rc_analog_thermometer_20{"Local Dial Gauge: Rack A2"}
-  rc_esd_pushbutton_21{"ESD Station: Inside Battery Hall 1"}
-  rc_rack_status_panel_22{"Battery Rack Status Panels (Digital)"}
-  rc_hydrogen_detector_23{"H₂ Gas Detector Panel"}
-  rc_hall1_suppression_panel_24{"Fire Suppression Control Panel"}
-  rc_hall1_safety_sign_25{"Battery Hall Safety Sign"}
-  rc_hmi_eng_02_26{"HMI-ENG-02 Engineering Workstation"}
-  rc_jump_server_rack_27{"Jump Server Rack (JS-ALBION-01)"}
-  rc_jump_server_cable_28{"Jump Server Ethernet Cable"}
-  rc_sis_config_panel_29{"SIS Configuration Panel"}
-  rc_engineering_filing_cabinet_30[["Filing Cabinet: ICS Documentation"]]
-  rc_obj31_31{"SIS Safety Requirements Specification (extract)"}
-  rc_obj32_32{"Deferred Patch Risk Assessment"}
-  rc_obj33_33{"Filing Cabinet Key"}
-  rc_obj34_34{"Engineering Laptop"}
-  rc_obj35_35{"IT/OT Boundary Rules Document"}
-  rc_trent_shared_server_access_extract_36{"Shared File Server Access Extract (Albion / Trent Water)"}
+  rc_npc_helen_marsh_radio_18("Helen Marsh (radio)")
+  rc_npc_marcus_webb_19("Marcus Webb")
+  rc_npc_tom_hadley_20("Tom Hadley")
+  rc_analog_thermometer_21{"Local Dial Gauge: Rack A2"}
+  rc_esd_pushbutton_22{"ESD Station: Inside Battery Hall 1"}
+  rc_rack_status_panel_23{"Battery Rack Status Panels (Digital)"}
+  rc_hydrogen_detector_24{"H₂ Gas Detector Panel"}
+  rc_hall1_suppression_panel_25{"Fire Suppression Control Panel"}
+  rc_hall1_safety_sign_26{"Battery Hall Safety Sign"}
+  rc_hmi_eng_02_27{"HMI-ENG-02 Engineering Workstation"}
+  rc_jump_server_rack_28{"Jump Server Rack (JS-ALBION-01)"}
+  rc_jump_server_cable_29{"Jump Server Ethernet Cable"}
+  rc_sis_config_panel_30{"SIS Configuration Panel"}
+  rc_engineering_filing_cabinet_31[["Filing Cabinet: ICS Documentation"]]
+  rc_obj32_32{"SIS Safety Requirements Specification (extract)"}
+  rc_obj33_33{"Deferred Patch Risk Assessment"}
+  rc_obj34_34{"Filing Cabinet Key"}
+  rc_obj35_35{"Engineering Laptop"}
+  rc_obj36_36{"IT/OT Boundary Rules Document"}
+  rc_trent_shared_server_access_extract_37{"Shared File Server Access Extract (Albion / Trent Water)"}
 
   scada_control_room --> battery_hall_1
   scada_control_room --> engineering_workshop
@@ -486,30 +485,31 @@ flowchart TD
   scada_control_room --> rc_npc_helen_marsh_15
   rc_npc_helen_marsh_15 --> rc_obj16_16
   scada_control_room --> rc_npc_priya_s_17
-  scada_control_room --> rc_npc_marcus_webb_18
-  scada_control_room --> rc_npc_tom_hadley_19
-  battery_hall_1 --> rc_analog_thermometer_20
-  battery_hall_1 --> rc_esd_pushbutton_21
-  battery_hall_1 --> rc_rack_status_panel_22
-  battery_hall_1 --> rc_hydrogen_detector_23
-  battery_hall_1 --> rc_hall1_suppression_panel_24
-  battery_hall_1 --> rc_hall1_safety_sign_25
-  engineering_workshop --> rc_hmi_eng_02_26
-  engineering_workshop --> rc_jump_server_rack_27
-  engineering_workshop --> rc_jump_server_cable_28
-  engineering_workshop --> rc_sis_config_panel_29
-  engineering_workshop --> rc_engineering_filing_cabinet_30
-  rc_engineering_filing_cabinet_30 --> rc_obj31_31
-  rc_engineering_filing_cabinet_30 --> rc_obj32_32
-  engineering_workshop --> rc_obj33_33
+  scada_control_room --> rc_npc_helen_marsh_radio_18
+  scada_control_room --> rc_npc_marcus_webb_19
+  scada_control_room --> rc_npc_tom_hadley_20
+  battery_hall_1 --> rc_analog_thermometer_21
+  battery_hall_1 --> rc_esd_pushbutton_22
+  battery_hall_1 --> rc_rack_status_panel_23
+  battery_hall_1 --> rc_hydrogen_detector_24
+  battery_hall_1 --> rc_hall1_suppression_panel_25
+  battery_hall_1 --> rc_hall1_safety_sign_26
+  engineering_workshop --> rc_hmi_eng_02_27
+  engineering_workshop --> rc_jump_server_rack_28
+  engineering_workshop --> rc_jump_server_cable_29
+  engineering_workshop --> rc_sis_config_panel_30
+  engineering_workshop --> rc_engineering_filing_cabinet_31
+  rc_engineering_filing_cabinet_31 --> rc_obj32_32
+  rc_engineering_filing_cabinet_31 --> rc_obj33_33
   engineering_workshop --> rc_obj34_34
   engineering_workshop --> rc_obj35_35
-  engineering_workshop --> rc_trent_shared_server_access_extract_36
+  engineering_workshop --> rc_obj36_36
+  engineering_workshop --> rc_trent_shared_server_access_extract_37
 
   class scada_control_room room
   class battery_hall_1,engineering_workshop lock
-  class rc_hmi_ops_01_1,rc_duty_officer_desk_6,rc_engineering_filing_cabinet_30 container
-  class rc_obj2_2,rc_obj3_3,rc_historian_trend_viewer_4,rc_incident_response_folder_5,rc_obj7_7,rc_nis_notification_form_8,rc_alarm_panel_9,rc_esd_station_hall_door_10,rc_esd_station_console_11,rc_obj12_12,rc_control_room_extinguisher_13,rc_network_architecture_diagram_14,rc_obj16_16,rc_analog_thermometer_20,rc_esd_pushbutton_21,rc_rack_status_panel_22,rc_hydrogen_detector_23,rc_hall1_suppression_panel_24,rc_hall1_safety_sign_25,rc_hmi_eng_02_26,rc_jump_server_rack_27,rc_jump_server_cable_28,rc_sis_config_panel_29,rc_obj31_31,rc_obj32_32,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_trent_shared_server_access_extract_36 item
-  class rc_npc_helen_marsh_15,rc_npc_priya_s_17,rc_npc_marcus_webb_18,rc_npc_tom_hadley_19 npc
+  class rc_hmi_ops_01_1,rc_duty_officer_desk_6,rc_engineering_filing_cabinet_31 container
+  class rc_obj2_2,rc_obj3_3,rc_historian_trend_viewer_4,rc_incident_response_folder_5,rc_obj7_7,rc_nis_notification_form_8,rc_alarm_panel_9,rc_esd_station_hall_door_10,rc_esd_station_console_11,rc_obj12_12,rc_control_room_extinguisher_13,rc_network_architecture_diagram_14,rc_obj16_16,rc_analog_thermometer_21,rc_esd_pushbutton_22,rc_rack_status_panel_23,rc_hydrogen_detector_24,rc_hall1_suppression_panel_25,rc_hall1_safety_sign_26,rc_hmi_eng_02_27,rc_jump_server_rack_28,rc_jump_server_cable_29,rc_sis_config_panel_30,rc_obj32_32,rc_obj33_33,rc_obj34_34,rc_obj35_35,rc_obj36_36,rc_trent_shared_server_access_extract_37 item
+  class rc_npc_helen_marsh_15,rc_npc_priya_s_17,rc_npc_helen_marsh_radio_18,rc_npc_marcus_webb_19,rc_npc_tom_hadley_20 npc
   class node_start start
 ```
