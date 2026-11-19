@@ -60,7 +60,7 @@ test('the world menu and the HUD label go through it (the far-object menu line i
     // D27: no "walk over and use it" entry; an out-of-reach thing under the tap is walked to, never listed
     assert.doesNotMatch(game, /function farObjectCandidate|Walk over and use it/);
     const label = readFileSync(join(js, 'ui/info-label.js'), 'utf8');
-    assert.match(label, /worldObservations\(obj\.scenarioData, text, window\.pcSessions\)/);
+    assert.match(label, /worldObservations\(t\.scenarioData, text, window\.pcSessions\)/);
 });
 
 test('the desktop and its taskbar no longer print the PC\'s observations', () => {
