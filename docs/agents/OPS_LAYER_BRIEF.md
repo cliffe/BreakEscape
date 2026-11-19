@@ -103,7 +103,7 @@ one says so under "Cross-plan requests" and the orchestrator settles it.
 - **Game time.** A plan that makes something cost game minutes says so under "Open questions";
   none assumes a server clock exists unless the digest shows one.
 - **Feature test scenarios**: `test_ops_scan`, `test_ops_findings`, `test_ops_access`,
-  `test_ops_privilege`, `test_ops_skin`, `test_ops_crack`, `test_ops_mfa`, `test_ops_logs`.
+  `test_ops_privilege`, `test_ops_skin`, `test_ops_crack`, `test_ops_mfa`, `test_ops_logs`, `test_ops_lock_step`.
 
 ## 6. Inputs
 

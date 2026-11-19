@@ -146,7 +146,7 @@ Note: `validate_unlock` grants access "whatever is sent" when the door or object
 
 ### 4.1 Doors and rooms
 - Room `locked`, `lockType`, `requires`, `keyPins` (schema `:4161-4247`).
-- `doors[]` entries carry their own lock fields (schema `:4173`; `game.rb:2400-2455` builds the per-room payload).
+- Door lock fields live on the room itself (`locked`, `lockType`, `requires` and so on, schema around `:4171`), not on `doors[]` entries; `game.rb:2400-2455` builds the per-room payload. (Corrected by the orchestrator, 2026-11-19.)
 - Door entry resolves lockType from its own field, else the connected room (per `docs/achitechture/SCENARIO_FORMAT_HARDENING_PLAN.md:231`, a plan, not checked against code).
 
 ### 4.2 Containers and objects
