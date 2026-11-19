@@ -2,6 +2,11 @@
 #
 #   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <mission> [flag_hints.xml] [--imports=none|latest|<file.json>]
 #
+# From a git worktree, use tools/playtest/new-game.sh instead, with the same
+# arguments and without the bin/rails prefix. It sets BUNDLE_PATH to the main
+# checkout's vendor/bundle, because a worktree has none. Or set BUNDLE_PATH
+# yourself. Plain bin/rails does not find the gems there.
+#
 # <mission> is the scenario name ("m02_ransomed_trust") or the numeric id.
 #
 # Flags come from a SecGen flag-hints XML, seeded BEFORE save! so the scenario

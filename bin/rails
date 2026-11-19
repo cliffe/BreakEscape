@@ -6,20 +6,6 @@ ENGINE_ROOT = File.expand_path("..", __dir__)
 ENGINE_PATH = File.expand_path("../lib/break_escape/engine", __dir__)
 APP_PATH = File.expand_path("../test/dummy/config/application", __dir__)
 
-# A git worktree has no .bundle/config and no vendor/bundle, so Bundler cannot find
-# the gems unless BUNDLE_PATH is set. When it is unset and this checkout has no
-# vendor/bundle, use the main checkout's (the parent of the shared git dir).
-unless ENV["BUNDLE_PATH"] || File.directory?(File.expand_path("../vendor/bundle", __dir__))
-  main_bundle = begin
-    common_dir = IO.popen(["git", "-C", File.expand_path("..", __dir__), "rev-parse",
-                           "--path-format=absolute", "--git-common-dir"], err: File::NULL, &:read).to_s.strip
-    File.join(File.dirname(common_dir), "vendor", "bundle") if File.basename(common_dir) == ".git"
-  rescue SystemCallError
-    nil
-  end
-  ENV["BUNDLE_PATH"] = main_bundle if main_bundle && File.directory?(main_bundle)
-end
-
 # Set up gems listed in the Gemfile.
 ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __dir__)
 require "bundler/setup" if File.exist?(ENV["BUNDLE_GEMFILE"])
