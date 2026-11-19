@@ -362,3 +362,19 @@ Keyless server on :3002 from this worktree, started and stopped by this run (PID
 - **f. Finish, close kiosk, Gwen after defend: PASS, with deviations.** Because of the end screen after the reload, the kiosk opened the episode runner at the debrief (`run5b.log`). Then one debrief Finish, kiosk X closed (no success overlay, as it had already shown), and Gwen Pritchard printed "Good spot on that invoice" with "See you later." as the choice, `kit_ep` ca01. Debrief Finish left `kit_quiet` false, as run 4 noted. Logs: `gate_a_run5/out/run5c.log`. Screenshot: `gate_a_run5/out/run5c-gwen-ca01.png`.
 
 Open question from c: the end-of-mission screen after a reload at the triage result, before the debrief. Decide whether that is a bug (a client or server conclusion that fires before the debrief) or expected resume behaviour.
+
+## Results, run 6 (2026-11-19, partial)
+
+Keyless server on :3004 from this worktree (PID 2118326, checked free with ss before start, stopped by PID at the end). Headless, throttle 20, fixedStep on. Scenario test_ca_office_kit, full shell, step-away panel steps dropped. One fresh game per item: 10289 for item d, 10290 for item e. Script: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/ad8eaaeb-1d0e-460b-9802-75c392a3c39c/scratchpad/gate_a_run6/case_run6b.jsonl`, built from the ec1 case3 script by `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/ad8eaaeb-1d0e-460b-9802-75c392a3c39c/scratchpad/gate_a_run6/build_case_b.py`.
+
+- **d. Quiet guard: PASS, with the known pre-save gap.** Game 10289 (`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/ad8eaaeb-1d0e-460b-9802-75c392a3c39c/scratchpad/gate_a_run6/run1_quiet.log`, output `run1_quiet.out`). Six 90 s windows after the first save (Start): OSINT, Write menu, Write with mail open, Flip, Defend menu, debrief. In every window: zero `npc_chatted`, zero `npc_overheard`, zero other chat or bark events in the drained log, zero toasts, `kit_quiet` true. Staff kept moving in every window (npc_arrived, npc_sat, npc_used, npc_left_post, npc_returned_post). The held-line queues (`npcWorldBubbles.chatterVoice` and `chatterMust`) read 0 at every snapshot.
+  - Recorded in the brief, before the first save: "Audit week again.", `npc_chatted:kit_coffee`, Gwen to Agnieszka, `overheard: true`, `playerDistance` 72, seq 24 at t 18.1 s. `kit_quiet` was false then. This is the known gap (plan 6.7) and matches the run 2 line. Game 10290 gave the same events at seq 24 and 25. Keyless, so nothing was voiced. Whether it would be voiced in production is untested here.
+  - Bark check method: event names matched against `chatted`, `bark`, `overheard` in the drain, plus the toast capture. No bubble DOM check.
+
+- **e. Kiosk close and resume: PASS.** Game 10290 (`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/ad8eaaeb-1d0e-460b-9802-75c392a3c39c/scratchpad/gate_a_run6/run2_close.log`, output `run2_close.out`). Three X closes (`.epr-kiosk-close`), each reopened with `interact ep_kiosk`:
+  - C1, between stages (Write menu): saved stage `write`, reopened at `write`.
+  - C2, mid-stage (Flip, send held): saved stage `flip`, reopened at `flip`, sent record still in `episode_e1_stub_state`.
+  - C3, between stages (Defend menu): saved stage `defend`, reopened at `defend`.
+  - Held queues 0 at every close. Input works while closed: walk up 400 ms then down moved the player each time (y 141.1 to 96.6 and back, 154.2 to 102.1 and back, 162.1 to 102.7 and back).
+  - Game 10289 also passed C1 (`write`) and C3 (`defend`). Its C2 did not run: the kiosk X sits under the nested mail client, so the close found no X. That was a script choice, not a game result, so C2 moved to the Flip stage for game 10290.
+- **Corroboration (both games):** debrief Finish gave no success overlay, and the X close afterwards showed the success overlay with `kit_quiet` false.
