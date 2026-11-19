@@ -62,13 +62,15 @@ writeFileSync(join(dir, 'pc-observations.js'), readFileSync(join(js, 'utils/pc-o
 writeFileSync(join(dir, 'walls.js'), 'export const interactionLineClear = () => true;');
 writeFileSync(join(dir, 'reach-real.js'), readFileSync(new URL('../../public/break_escape/js/systems/interaction-reach.js', import.meta.url), 'utf8'));
 writeFileSync(join(dir, 'reach.js'), "export * from './reach-real.js'; export const reachX = o => o.x; export const reachY = o => o.y; export const reachYSeated = o => o.y; export const aimX = o => o.x; export const aimY = o => o.y; export const aimDiff = () => ({ diff: 0 });");
+writeFileSync(join(dir, 'npc-reach.js'), 'export function npcReachDistSq(p, s, d){return s.__reachSq ?? d;}');
 writeFileSync(join(dir, 'info-label.js'), readFileSync(join(js, 'ui/info-label.js'), 'utf8')
     .replace("'../utils/constants.js'", "'./constants.js'")
     .replace("'../utils/conditional-text.js'", "'./conditional-text.js'")
     .replace("'../utils/display-dashes.js'", "'./display-dashes.js'")
     .replace("'../utils/pc-observations.js'", "'./pc-observations.js'")
     .replace("'../systems/interaction-walls.js'", "'./walls.js'")
-    .replace("'../systems/interaction-reach.js'", "'./reach.js'"));
+    .replace("'../systems/interaction-reach.js'", "'./reach.js'")
+    .replace("'../systems/npc-reach.js'", "'./npc-reach.js'"));
 
 const classes = new Set();
 const label = { id: 'hud-info-label', textContent: '', setAttribute() {},

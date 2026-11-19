@@ -116,7 +116,7 @@ export async function loadHarness({ oldInteractions = process.env.EPICK_OLD, old
 
 // ---- scene builders ------------------------------------------------------------------------------------
 export const obj = (id, x, y, w, h, extra = {}) => ({ x, y, width: w, height: h, displayWidth: w, displayHeight: h, originX: 0, originY: 0,
-    active: true, interactable: true, visible: true, scenarioData: { id, observations: 'obs ' + id, ...(extra.scenarioData || {}) }, ...extra, });
+    active: true, interactable: true, visible: true, ...extra, scenarioData: { id, observations: 'obs ' + id, ...(extra.scenarioData || {}) } });
 export const npc = (id, x, y, extra = {}) => ({ x, y, active: true, visible: true, _isNPC: true, npcId: id, scenarioData: undefined, ...extra });
 export const door = (id, x, y, direction = 'north') => ({ id, x, y, active: true, doorProperties: { direction, door_sign: 'door ' + id } });
 
