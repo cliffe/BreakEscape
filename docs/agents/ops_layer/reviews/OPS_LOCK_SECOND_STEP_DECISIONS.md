@@ -177,3 +177,11 @@
 - R3-8 a: new 5.5 paragraph "Plain carried containers (G4)": trigger, closed-list refusals, bounded `carried_step_chains` (one entry per such carrier, nested takeables have none, single memoised walk).
 - R3-8 a: section 11 gains three G4 rows (legitimate flows: give, start item, nested container in a held briefcase, dropped item in an unlocked room; chain table bound; shipped scenarios).
 - R3-8 a: shipped scenarios touched, from a grep of `scenarios/`: `test_unlock_gaps` (start cryptex bag, courier bag), `ceo_exfil` (reception tablet), `test_social_m5_channels` (m5 terminal); their critical paths must still pass. Section 10 states the G4 exception.
+
+## Round 3 delta fixes (2026-11-19)
+
+- Major 1: an id-less plain carrier (the `ceo_exfil` tablet) gets no chain entry and keeps today's best-effort behaviour; stated in 5.5 "Plain carried containers", in the shipped-scenarios paragraph and in the G4 test rows ("none for a carrier with no `id`", shipped row).
+- Major 1 (ruling): validator warning in section 9 for a plain carried container (NPC `itemsHeld` or start item, with a lock or `contents`) that has no `id`, with its own spec; the error for a gated carrier without an id is unchanged. G4 row in the build section not changed beyond the tests.
+- Minor 1: the Rule D reach paragraph ends "(From G4 the trigger also includes plain carriers, below.)"; section 10 names the G4 trigger as well.
+- Minor 2: G4 fixture row gains a takeable `usb` stick with `contents` after a plant (`network_access.rb:262`, `:516`); a later `GET /container` is refused.
+- Nit 1: section 10 names the five `ops_unchanged` scenarios (`test_objectives`, `test_simple_success`, `test_pin_dust`, `m01_first_contact`, `m02_ransomed_trust`).

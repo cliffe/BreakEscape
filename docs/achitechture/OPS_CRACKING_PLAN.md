@@ -160,7 +160,7 @@ collect yields only hashes, so it needs this stage). S7 depends on no later stag
 
 | Stage | What | Size | Named test that proves it |
 |---|---|---|---|
-| C1 | `hash` kind built (`connects: false`); `crack` recipe on the record, with `difficulty` and its table `lib/break_escape/crack_difficulty.rb`; schema; `scripts/validate_cracking.rb` and `validate_cracking_test.rb`; the hash keyring row (server and client, no Crack button yet); the token; the dungeon graph node and edges; the core plan's `grants.credential` rule widened to `hash` | S | `cracking_row_test.rb`: taking the share file lists a hash row with token, username and `status: "ready"`, and no password; a technique grant lists the same row |
+| C1 | `hash` kind built (`connects: false`); `crack` recipe on the record, with `difficulty` and its table `lib/break_escape/crack_difficulty.rb`, and the optional NPC habit parameter `passwordDifficulty`; schema; `scripts/validate_cracking.rb` and `validate_cracking_test.rb`; the hash keyring row (server and client, no Crack button yet); the token; the dungeon graph node and edges; the core plan's `grants.credential` rule widened to `hash` | S | `cracking_row_test.rb`: taking the share file lists a hash row with token, username and `status: "ready"`, and no password; a technique grant lists the same row |
 | C2 | `revealsFacts` on items, the `grant_fact` flag reward, and the server's earned-fact record; `POST /crack`; crack state; the cracked grant and its keyring entry; the `ops-cracker` scene and the Crack button on the hash row | M | `ops_crack_test.rb`: each class's outcome, refusals in order, the salted wait, the unsalted batch, a forged `se_intel_*` refused |
 
 After C1 a scenario can hold a hash with no way to crack it (inert, visible). After C2 it can be
@@ -240,16 +240,28 @@ field the author writes on the record wins.
   in `crack.facts`, each earned through a server-visible source, and an exact pick. The fact count
   is an authoring expectation, checked by a validator warning (section 9); the server reads only
   the authored `crack.facts`.
-- **Resolution.** `salted` is the record's own value when written, else the difficulty's, else
-  false. `crackSeconds` is the record's own value when written, else the difficulty's when the
-  record resolves salted, else 60. One table, `lib/break_escape/crack_difficulty.rb`, with
-  `CrackDifficulty.resolve(record)` returning `{ salted, crack_seconds }`, serves the server and
-  the validator, so they cannot disagree.
-- **Where it lives.** On the hash record's recipe only, not on the NPC `password` habit. The habit
-  says what kind of password a person has (`strong`, `guessable`, `reused`); difficulty says how
-  hard this stored copy is to work on, and two records of one account (an old unsalted export and
-  a salted store) can differ. It is also the record's recipe that adds `common`, so the habit's
-  shape, its validator and its other readers stay as they are.
+- **Resolution.** The grade is the record's own `crack.difficulty` when written, else the account
+  NPC's `passwordDifficulty` (below), else none. `salted` is the record's own value when written,
+  else the grade's, else false. `crackSeconds` is the record's own value when written, else the
+  grade's when the record resolves salted, else 60. One table,
+  `lib/break_escape/crack_difficulty.rb`, with `CrackDifficulty.resolve(record, npc)` returning
+  `{ salted, crack_seconds }` (`npc` is the account's NPC, or nil for an `accountOnly` account),
+  serves the server and the validator, so they cannot disagree. For an unknown grade (from the
+  record or from the NPC), `resolve` returns nil: the keyring row lister lists no hash row for
+  that record (no token, no `salted` marker) and `POST /crack` answers `no_recipe`, so a
+  hand-edited row never shows a shared unsalted token.
+- **Where it lives.** Two places, both author-side. On the hash record's recipe, `crack.difficulty`
+  grades that one stored copy, and two records of one account (an old unsalted export and a salted
+  store) can differ. A person's account is graded through its hash record like any other: a
+  `strong` or `reused` habit needs nothing else, and a `guessable` habit also needs `facts` on the
+  recipe; an `accountOnly` account also needs `crack.password`. To grade a person's password once,
+  for every record of that account, write `passwordDifficulty` (`easy`, `medium` or `hard`) in the
+  NPC's `habits` beside `passwordPattern`. It is a habit **parameter**, not a habit: it joins
+  `NpcHabits::PARAMETERS` (`lib/break_escape/npc_habits.rb:29`, now `%w[passwordPattern]`), which
+  `NpcHabits.sources` already skips (`:114`), so no habit reader changes and the list of habits
+  (`strong`, `guessable`, `reused`) stays as it is. A record's own `crack.difficulty` wins over
+  the NPC's `passwordDifficulty`. Neither supplies facts: they come only from the authored
+  `crack.facts`. The record's recipe is also what adds `common`.
 - **It stays server-side.** `credentials` is stripped from the bootstrap and no answer carries the
   value. The player meets its effects: the salt marker, the wait, and how many facts are missing.
 
@@ -312,7 +324,8 @@ timer (directly, or on an item it hands over), by an OSINT page, by a mail highl
 ignores it.
 
 **The NPC `password` habit** is unchanged in shape. Its schema description changes from "No
-run-time effect" to say the crack reads its class.
+run-time effect" to say the crack reads its class. The one addition is the optional habits
+parameter `passwordDifficulty` (section 4), which is not a habit and is read only to grade a crack.
 
 A scenario with no `hash` record, no `revealsFacts` and no `grant_fact` reward is unchanged
 (section 10).
@@ -590,7 +603,7 @@ section, so a sync that sends one is ignored, and none is sent to the browser as
 
 Feed-post facts and start-item facts are not copied in: the server reads them from
 `feedRevealed` and `scenario_data`. `crack.difficulty` adds no key: it is resolved from
-`scenario_data` on each answer. A saved game from before C2 has no flag facts stamped, which
+`scenario_data` on each answer, and so is the NPC's `passwordDifficulty`. A saved game from before C2 has no flag facts stamped, which
 loses nothing, since no shipped scenario has a `grant_fact` reward. The token is never stored. The
 password is never stored: the cracked keyring entry reads `creds.password` from the scenario each
 time.
@@ -647,6 +660,13 @@ Its rules, each an error unless marked:
 - `crackSeconds` only on a record that resolves salted (its own `salted: true`, or a `medium` or
   `hard` difficulty with no `salted: false`), and within 10 to 600.
 - `crack.difficulty` is one of `easy`, `medium`, `hard`; any other value is refused.
+- `habits.passwordDifficulty` (checked in `scripts/validate_npc_habits.rb`, beside the
+  `passwordPattern` checks) is one of `easy`, `medium`, `hard`; any other value is an error. A
+  warning when the NPC has no `password` habit: "passwordDifficulty has no effect without a
+  password habit".
+- Warning: a `difficulty` (the record's, or its account's `passwordDifficulty`) on a record whose
+  class is `strong`: "difficulty has no effect on a strong password; it is a dead end at every
+  grade". The band warning above stays silent for it.
 - Warning: a `guessable` recipe whose number of `facts` is outside its difficulty's band (`easy` 1,
   `medium` 2, `hard` 3 or 4): "difficulty `hard` expects 3 or 4 facts; this recipe has 1". A
   warning, not an error, because the author's list is the override. No warning on a record with no
@@ -668,7 +688,8 @@ that change, with a test showing a technique-granted hash raises no such error.
 **Schema** (`scripts/scenario-schema.json`). The hash fields (`salted`, `crackSeconds`, `crack`) go
 in the closed registry entry (`SCH:281-310`), with `crack` a closed object of `password` (enum
 `strong guessable reused common`), `facts`, `passwordPattern` and `difficulty` (enum
-`easy medium hard`, its description giving the defaults table). `revealsFacts` (array of strings)
+`easy medium hard`, its description giving the defaults table). The habits object gains
+`passwordDifficulty` (the same enum) beside `passwordPattern` (`SCH:4422`). `revealsFacts` (array of strings)
 goes in `definitions.item`. `grant_fact` joins the `flagReward` type enum (`SCH:5750`) with a `fact`
 string. The habit's `password` description (`SCH:4420`) says the crack reads its class.
 
@@ -719,7 +740,10 @@ record; an `easy` record lists `salted: false`; no keyring answer body contains 
 
 **C1, `test/unit/crack_difficulty_test.rb`.** `CrackDifficulty.resolve` for each value with no
 overrides (the table's defaults), with `salted` written each way, with `crackSeconds` written, with
-no difficulty (false, 60), and `easy` with `salted: true` (salted, 60).
+no difficulty (false, 60), and `easy` with `salted: true` (salted, 60). The NPC argument: no record
+difficulty and an NPC `passwordDifficulty: "hard"` resolves as `hard`; a record `easy` with an NPC
+`hard` resolves as `easy`; neither gives the no-difficulty defaults; an unknown value (record or
+NPC) returns nil.
 
 **C1, `test/unit/validate_cracking_test.rb`** (built as `test/unit/validate_plant_hiding_test.rb`
 is). One minimal scenario per rule, each asserting the error or warning appears, and a clean
@@ -727,7 +751,7 @@ scenario asserting none:
 
 - `account` that is not an account holder; no resolvable class; a `guessable` crack with 0, 5 or
   repeated facts; `facts` on a non-guessable class; the class-mismatch warning.
-- `crackSeconds` without `salted`, and below 10 or above 600; `connectsTo` on a hash;
+- `crackSeconds` on a record that does not resolve salted, and below 10 or above 600; `connectsTo` on a hash;
   `accepts: ["hash"]` on a policy.
 - The core's S3 error rule on `grants.credential` accepts a granted `hash` and raises no
   `connectsTo` or policy error for it.
@@ -739,6 +763,11 @@ scenario asserting none:
   `crackSeconds` on a `hard` record with no `salted` key clean; on a `hard` record with
   `salted: false` refused. A `crack` holding only `difficulty` on an account whose habit is
   `guessable`: refused (a guessable crack needs `facts`).
+- `passwordDifficulty`: an unknown value is an error in `validate_npc_habits.rb`; `hard` on an NPC
+  with no `password` habit warns; `crackSeconds` on a record with no `difficulty` whose NPC has
+  `passwordDifficulty: "hard"` and no `salted` key is clean; a `hard` `passwordDifficulty` on a
+  `guessable` account with a record of 1 fact warns with the band message; a `difficulty` on a
+  `strong` record warns, with no band warning.
 
 **C2 rows in `validate_cracking_test.rb`.**
 
@@ -790,7 +819,10 @@ scenario asserting none:
   waits 120 s, and with `crackSeconds: 30` waits 30 s. A `hard` `guessable` record answers
   `needMoreFacts` until all its authored facts are earned, exactly as one with no difficulty. A
   `hard` `strong` record answers `nomatch` then `infeasible`. A hand-edited game row with an
-  unknown `crack.difficulty` answers `no_recipe` and writes no state. The unsalted batch (one yield grants
+  unknown `crack.difficulty`, or an unknown `passwordDifficulty` on the account's NPC, answers
+  `no_recipe` and writes no state, and the keyring lists no hash row for it. A record with no
+  difficulty whose NPC has `passwordDifficulty: "hard"` waits 120 s; the same record with
+  `crack.difficulty: "easy"` is unsalted (the record wins). The unsalted batch (one yield grants
   every held record with the same token); two parallel posts grant once; a game whose habit has
   gone answers `no_recipe`.
 - The keyring digest: for a scenario with no hash row, `rev` equals the value captured before C2;
@@ -834,7 +866,8 @@ browser: crack the guessable account and sign in with the cracked password.
 ## 12. Build steps and shared files
 
 C1, in order: the golden fixtures captured; `CM:26` flips `hash` to built;
-`lib/break_escape/crack_difficulty.rb` and `crack_difficulty_test.rb`; schema fields;
+`lib/break_escape/crack_difficulty.rb` and `crack_difficulty_test.rb`; `passwordDifficulty` added to
+`NpcHabits::PARAMETERS` and to `validate_npc_habits.rb`; schema fields;
 `scripts/validate_cracking.rb`, its two hook lines and `validate_cracking_test.rb` (C1 rows); the
 hash branch in `registry_keyring_entries` with the token; the client row in `keyring.js` and
 `signin-rows.js` (no Crack button yet) and their JS tests; graph node edges and the graph test; the
@@ -906,7 +939,7 @@ it.
 - The graph edge from `admin@<pcId>` to the hash node, continuing to the password: yes (section 9).
 - After a password reset the crack yields the scenario's password: confirmed (section 5).
 
-Three requests to the privilege plan, all taken (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` L280-296 and
+Three requests to the privilege plan, all taken, and a fourth for its next edit (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` L280-296 and
 L888-893), kept here as a record:
 
 1. **Who owns the recipe rules.** Taken: this plan owns every rule on a hash record's `crack`
@@ -917,6 +950,10 @@ L888-893), kept here as a record:
    equal `creds.password`, section 9) and adds no check of its own.
 3. **Its example fact `it_rota_poster_seen`.** Taken: the poster is a takeable `notes` item with
    `revealsFacts`, so it is a server-visible source (section 5 table).
+4. **Habit parameter `passwordDifficulty`.** A one-line request, for the privilege plan's
+   section 14 when it next changes: where it lists the NPC habit parameters beside
+   `passwordPattern`, add the optional `passwordDifficulty` (`easy`, `medium`, `hard`), owned and
+   validated by this plan, for an NPC whose account the privilege plan collects as a hash.
 
 **Core plan.** The core's S3 error rule on `grants.credential` already reads as S7 needs
 (`OPS_CORE_PLAN.md`, the S3 `grants.credential` rows): from S7 the kind rule accepts a granted

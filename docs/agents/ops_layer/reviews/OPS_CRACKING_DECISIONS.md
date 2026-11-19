@@ -97,3 +97,12 @@ Plan: `docs/achitechture/OPS_CRACKING_PLAN.md`. Review: `OPS_CRACKING_R1.md`.
 - Section 9: validator rules (enum, `crackSeconds` against resolved salt, fact-band warning), schema enum, graph edge label "crack (hard)".
 - Sections 3, 10, 11, 12: C1 row, unchanged-scenario note, `crack_difficulty_test.rb` and test rows in the row, validator and route tests, feature scenario record per difficulty, build step and new-file list.
 - No section 14 request: the privilege plan's examples need no change, since difficulty is optional.
+
+## Round 3 delta fixes (2026-11-19)
+
+- Placement (user: difficulty "when specifying the password"): optional habits parameter `passwordDifficulty` (`easy`/`medium`/`hard`) beside `passwordPattern` in `NpcHabits::PARAMETERS` (`lib/break_escape/npc_habits.rb:29`, skipped by `sources` at `:114`); validated in `validate_npc_habits.rb`, added to the schema habits object and to C1 (built with S7). Not a habit: the habit list stays strong/guessable/reused.
+- `CrackDifficulty.resolve(record, npc)`: the record's `crack.difficulty` first, then the NPC's `passwordDifficulty`, then none. Facts still come only from the authored `facts`. Test rows added (resolver, validator, route, game-row cases).
+- Cross-plan: a fourth request to the privilege plan recorded in section 14 of this plan (one line, for its next edit); the privilege plan itself not edited in this pass.
+- Minor 1: "Where it lives" now says a person's account is graded on its hash record (`guessable` also needs `facts`, `accountOnly` needs `crack.password`) and names the habit-side default.
+- Minor 2: the validator test row now reads "`crackSeconds` on a record that does not resolve salted", matching the resolution rule.
+- Nit 1: `resolve` returns nil for an unknown value (record or NPC); the keyring row lister lists no hash row and `POST /crack` answers `no_recipe`. Added a validator warning for a difficulty on a `strong` record (no band warning), with a test.
