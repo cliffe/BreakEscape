@@ -37,7 +37,23 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**LATEST (late 2026-11-19), read this first.** Round 2 applied. Commits: core/priv/MFA picks
+**NEWEST (night 2026-11-19), read this first.** Reviews committed: lock R10 `f2a0d0566` (0B/5M),
+skin R9 `ef99e1cdc` (0B/7M), core R8 `186396c27` (0B/1M/6m), cracking R2 `fbecdc5a3` (1B/4M).
+RUNNING fixers (no commits by them): opus55 lock R10 fixer (Rule D redesign, section 15 tidy, adds
+MAJOR-1 carriedGone question); opus55 skin R9 fixer (M1 address serving → change to core request
+3; M2 perform hook → new core request; M3 cli validator; M4 no-innerHTML test; M5 unique targets;
+M6 decoy labels; M7 restated 15(a)); Sonnet core R8 fixer (cli schema rows move to skin K3; range
+kept, skin validator to own "every discovery network has a range or none" rule: ADD TO NEXT SKIN
+ROUND; leak collector; cli.hosts key pattern); opus55 cracking R2 fixer (B1 no facts from
+timer/object-action item adds; revealsFacts in FORGEABLE_ITEM_FIELDS; crackFacts inside
+keyring_rev; grant_fact in process_flag_rewards; validator tests).
+Bug-fix branch `p-keyring-fix` now has 3 commits (8aac59791 head, from the reviewer); reviewer
+still running tests. When it passes, send the hash to AC0 (LIVE AC0 socket) for a train.
+ROUND 3 picks additions: the existing-code gap from cracking R2 B1 (games_controller.rb 3384-3399:
+a client can claim a timer/object-action item at any time with no trigger check); add to the
+bug-fix branch? Then: apply skin's new core requests to core, deltas, cross-plan R6.
+
+**LATEST (late 2026-11-19).** Round 2 applied. Commits: core/priv/MFA picks
 `30e757197`; cracking revised `c22d57701` (619 lines; facts from item revealsFacts via
 canonical_inventory_item, served feed posts, grant_fact flag rewards; orchestrator verified only
 process_flag_rewards writes flag_rewards_claimed and /api controller is unrouted); priv answers
