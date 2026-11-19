@@ -89,21 +89,23 @@ const CUE = ':has(.choices-more-cue.visible)', SE = ':has(.se-chat-header)', SPE
 const threadCue = px(LH(CUE, '.messages-container').body, 'height');
 const SEH = ':has(.se-chat-header)';
 const threadSE = px(LH(SE, '.messages-container').body, 'height');
-const threadSECue = px(LH(SE + CUE, '.messages-container').body, 'height');
-const seCueMin = px(LH(SE + CUE, '.choices-container').body, 'min-height');
+const TELL = ':has(.messages-container > .pretext-tell:last-child)';
+const threadSECue = px(LH(SE + CUE + TELL, '.messages-container').body, 'height');
+const seCueMin = px(LH(SE + CUE + TELL, '.choices-container').body, 'min-height');
 check('landscape call: stack fits every phone screen height (253, 242.5, 232), normal and influence calls, with and without the cue', () => {
     assert.deepEqual(SCREENS.map(([vh]) => screenAt(vh)), [253, 242.5, 232]);
     assert.equal(statusH, 36);
     assert.equal(headerH, 40);
     assert.equal(threadH, 44);
     assert.equal(threadSE, 44, 'influence thread holds a subtitle line and a tell line');
-    assert.equal(threadSECue, 44, 'the cue does not shrink the influence thread');
+    assert.equal(threadSECue, 44, 'a trailing tell keeps the influence thread at two lines with the cue');
     assert.ok(threadCue >= 24, 'one subtitle line (2 border + 20.8)');
     const stacks = {
         'normal, no cue': [threadH, repliesMin, 0],
         'normal, cue': [threadCue, repliesMin, cueH],
         'influence, no cue': [threadSE, repliesMin, 0],     // the bar is on the header row: header stays 40
-        'influence, cue': [threadSECue, seCueMin, cueH]
+        'influence, cue, no tell': [threadCue, repliesMin, cueH],   // the plain cue rule (24px thread) applies
+        'influence, cue, tell': [threadSECue, seCueMin, cueH]
     };
     for (const [vh, screen] of SCREENS) {
         for (const [name, [t, r, c]] of Object.entries(stacks)) {
@@ -125,9 +127,13 @@ check('landscape call: speaking state (no replies) gives the thread the free hei
 });
 check('landscape call: influence bar sits on the header row (no wrap), name ellipsises first, bar fits the 36px row', () => {
     const bar = L('.se-chat-header');
-    assert.match(bar.body, /flex:\s*1 1 150px/);
-    assert.match(bar.body, /min-width:\s*0/);
-    assert.match(LH(SEH, '.conversation-info').body, /flex:\s*0 1 auto/);
+    // the bar keeps its width (never squeezed by a long name); the name's info block gives way
+    assert.match(bar.body, /flex:\s*0 0 auto/);
+    assert.match(bar.body, /(?:^|[\s;])width:\s*130px/);
+    const info = LH(SEH, '.conversation-info').body;
+    assert.match(info, /flex:\s*1 1 0/);
+    assert.match(info, /min-width:\s*0/);
+    assert.match(L('.npc-name').body, /display:\s*block/, 'the name is a block so it can ellipsise inside .npc-id-block');
     assert.ok(!land.some(x => x.selector.includes(SE) && x.selector.includes('.conversation-header') && /flex-wrap:\s*wrap/.test(x.body)), 'header never wraps');
     assert.match(hdr.body, /flex-wrap:\s*nowrap/);
     // bar: 26px row + 2 x 2 border = 30, inside the 36px headshot row
@@ -159,7 +165,7 @@ check('landscape call: tells are hidden by a plain rule and :has() rules are spl
     assert.match(L('.messages-container > .call-subtitle.narrator').body, /opacity:\s*0\.75/);
 });
 check('landscape call: only the newest trailing tell shows in influence calls; older tells stay hidden', () => {
-    const tell = land.find(x => x.selector.includes(SEH) && x.selector.includes(':last-child:not(.call-subtitle)'));
+    const tell = land.find(x => x.selector.includes(SEH) && x.selector.includes('.pretext-tell:last-child'));
     assert.ok(tell && /display:\s*block/.test(tell.body));
     const hide = bySel(T + ':not(.call-subtitle)');
     assert.ok(cmpSpec(spec(tell.selector), spec(hide.selector)) > 0, 'beats the tell hiding rule');
@@ -250,6 +256,38 @@ check('portrait and desktop call rules are unchanged', () => {
     assert.match(B('.phone-call-mode .call-status-bar'), /padding:\s*8px 14px/);
     // nothing for call mode lives in the 820px (tablet) block
     assert.ok(!all.some(r => /max-height:\s*820px/.test(r.media) && r.selector.includes('phone-call-mode')));
+});
+
+// appendTellBubbles scrolls the thread to the newest tell, and leaves it alone when nothing was added
+globalThis.document = {
+    createElement: () => {
+        const el = { children: [], dataset: {}, className: '', style: {}, appendChild(c) { el.children.push(c); return c; }, setAttribute() {} };
+        return el;
+    }
+};
+const { appendTellBubbles } = await import('../../public/break_escape/js/ui/pretext-chrome.js');
+const fakeThread = () => {
+    const c = { tells: 0, scrollTop: 0, scrollHeight: 500, querySelectorAll: () => ({ length: c.tells }), appendChild() { c.tells++; } };
+    return c;
+};
+check('appendTellBubbles: scrollTop goes to scrollHeight after a new tell', () => {
+    const c = fakeThread();
+    appendTellBubbles(c, ['one']);
+    assert.equal(c.tells, 1);
+    assert.equal(c.scrollTop, c.scrollHeight);
+    c.scrollHeight = 900;
+    appendTellBubbles(c, ['one', 'two']);
+    assert.equal(c.tells, 2);
+    assert.equal(c.scrollTop, 900);
+});
+check('appendTellBubbles: scrollTop is unchanged when no tell was added', () => {
+    const c = fakeThread();
+    c.tells = 2; c.scrollTop = 17;
+    appendTellBubbles(c, ['one', 'two']);
+    appendTellBubbles(c, []);
+    appendTellBubbles(c, undefined);
+    assert.equal(c.tells, 2);
+    assert.equal(c.scrollTop, 17);
 });
 
 console.log(`\n${pass} checks passed`);

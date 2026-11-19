@@ -1228,6 +1228,7 @@
     }
     .phone-call-mode #conversation-view .npc-id-block { align-items: flex-start; min-width: 0; }
     .phone-call-mode #conversation-view .npc-name {
+        display: block;
         min-width: 0;
         max-width: 100%;
         font-size: 16px;
@@ -1249,13 +1250,15 @@
         white-space: nowrap;
     }
     /* Influence bar: it sits on the header row, between the name and the speaking bars, in the slot
-       the bars leave free while replies show. The name ellipsises first. */
+       the bars leave free while replies show. The bar keeps its width; the name gives way first and
+       ellipsises. */
     .phone-call-mode #conversation-view .se-chat-header {
-        flex: 1 1 150px;
+        flex: 0 0 auto;
+        width: 130px;
         min-width: 0;
         order: 1;
     }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info { flex: 0 1 auto; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info { flex: 1 1 0; min-width: 0; }
     .phone-call-mode #conversation-view .se-chat-header .influence-bar { flex-wrap: nowrap; }
     .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container {
         height: 44px;
@@ -1281,10 +1284,11 @@
     .phone-call-mode #conversation-view .messages-container > :not(.call-subtitle) { display: none; }
     .phone-call-mode #conversation-view .messages-container > .call-subtitle { display: block; opacity: 1; }
     .phone-call-mode #conversation-view .messages-container > .call-subtitle:has(~ .call-subtitle) { display: none; }
-    /* Influence-bar calls: the newest tell, when it comes after the contact's line, shows beneath it
-       as compact teaching feedback. Older tells stay hidden. It is still in the accessibility tree
-       (aria-live) either way. */
-    .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container > :last-child:not(.call-subtitle) {
+    /* Influence-bar calls: the newest tell, when it is the last child (it trails the contact's line),
+       shows beneath it as compact teaching feedback. Older tells stay hidden and are display:none, so
+       only the newest tell is in the accessibility tree. After a reply the thread shows "YOU: ..."
+       plus the tell that judges it (intended). */
+    .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container > .pretext-tell:last-child {
         display: block;
         box-sizing: border-box;
         max-width: 100%;
@@ -1319,13 +1323,14 @@
         gap: 2px;
         overflow-y: auto;
     }
-    /* Influence call with the cue: the thread keeps both lines, the replies take what is left */
-    .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .messages-container {
+    /* Influence call with the cue: when a fresh tell trails, the thread keeps both lines and the
+       replies take what is left. With no tell it stays at the one-line 24px thread above. */
+    .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible):has(.messages-container > .pretext-tell:last-child) .messages-container {
         height: 44px;
         min-height: 44px;
         max-height: 44px;
     }
-    .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .choices-container {
+    .phone-call-mode #conversation-view:has(.se-chat-header):has(.choices-more-cue.visible):has(.messages-container > .pretext-tell:last-child) .choices-container {
         min-height: 48px;
     }
     .phone-call-mode #conversation-view .choices-container:empty {
