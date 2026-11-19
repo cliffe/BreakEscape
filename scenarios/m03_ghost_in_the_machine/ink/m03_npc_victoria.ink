@@ -17,6 +17,8 @@ VAR victoria_decision_reached = false // Synced scenario global: set when she gi
 VAR whiteboard_decoded = false
 VAR roster_decoded = false
 VAR directive_decoded = false
+VAR exec_wing_night = false
+VAR night_explored = false
 VAR confront_held = false // set when the player backs out of her final choice; the next talk resumes at the decision
 VAR victoria_night_opened = false // Synced scenario global: set in each opening choice of the night confrontation, so a reload mid-scene resumes at the_reckoning
 VAR victoria_fate = "" // Synced scenario global: Sterling's fate (recruited/arrested/escaped/ko); also set to ko by her npc_ko mapping
@@ -780,7 +782,7 @@ Victoria Sterling: So decide what you actually want from the next thirty seconds
 + [Go. I've got what I need off your servers. You're just the signature now. #ending_check]
     -> confrontation_escape
 // Only while something optional is still open (whiteboard, roster, the drive once found, Danny).
-+ {not whiteboard_decoded or not roster_decoded or ((usb_seen or lore_directive_found) and not directive_decoded) or danny_fate == ""} [Not yet. There's something I want to finish first.]
++ {(night_explored and not whiteboard_decoded) or (exec_wing_night and (not roster_decoded or danny_fate == "")) or ((usb_seen or lore_directive_found) and not directive_decoded)} [Not yet. There's something I want to finish first.]
     ~ confront_held = true
     Narrator: Sterling hasn't left.
     ~ idle_quiet = true
