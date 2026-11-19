@@ -277,6 +277,7 @@ check('landscape call: the influence bar stacks (head over a full-width track) i
     assert.match(L('.se-chat-header .ib-infl-mark-icon').body, /display:\s*none/);
     // reached ticks differ in shape, not only colour
     assert.match(L('.se-chat-header .ib-infl-mark.is-reached').body, /width:\s*4px/);
+    assert.match(L('.se-chat-header .ib-infl-mark.is-reached').body, /margin-left:\s*-2px/);
     // the legend (threshold state in words) is visually hidden but stays readable to screen readers
     const legend = land.find(x => /\.ib-infl-legend\b/.test(x.selector));
     assert.ok(legend, 'a landscape legend rule exists');
