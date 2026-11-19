@@ -1371,7 +1371,7 @@ Errors:
 | S2 | `itemType` or `global` in a `needs` map with no `label`, or a `label` with neither; `itemType` and `global` together in one `needs` map; `itemType: "technique_card"` |
 | S3 | An item with `technique_card` whose type is not `technique_card`, or an item of that type with no `technique_card` |
 | S3 | `grants.session` on a `hosts` entry; `grants.session.account` that is not an account holder, or that the host's `access` list does not admit (the schema already refuses `grants` with both kinds or with neither) |
-| S3 | `grants.credential` whose `connectsTo` PC blocks remote sign-in or whose policy does not accept `saved_connection` (the granted entry could never be used) |
+| S3 | `grants.credential` whose `connectsTo` PC blocks remote sign-in or whose policy does not accept `saved_connection` (the granted entry could never be used). From S7 the rule also accepts a granted entry of kind `hash`, and skips the `connectsTo` and policy checks for it, since a hash has no `connectsTo` and is never offered to a sign-in (cracking plan, with its test) |
 | S1 to S3 | A field of this plan whose stage is not built yet (the table of section 3) |
 | S1 | A `hosts` entry whose `sprite` names no PNG in `assets/objects/` |
 | S2 | A `needs` entry that names nothing: an unknown credential id, an item id or type no item has, an item named only by display name, an undeclared global |
