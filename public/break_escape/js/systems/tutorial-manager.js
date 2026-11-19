@@ -15,6 +15,37 @@ const TUTORIAL_DECLINED_GLOBAL = 'engine_tutorial_declined';
 
 // Shown under the objective when a step is done. Words, not colour, carry the meaning.
 const TUTORIAL_READY_TEXT = 'Done. Press Continue (or Enter).';
+// Touch-first devices have no Enter key to press
+const TUTORIAL_READY_TEXT_TOUCH = 'Done. Press Continue.';
+
+// Dialogs that hold the keyboard while shown. Most are built once and hidden, so the
+// check below counts only the ones actually rendered. The tutorial's own panel and
+// prompt are left out on purpose (this is the same list as ui/hud-lanes.js DIALOG_SELECTORS).
+const OTHER_DIALOG_SELECTOR = '[aria-modal="true"], .game-confirm-overlay, #password-modal, ' +
+    '#player-preferences-modal, .ending-check-overlay, .success-screen-overlay';
+
+function isShown(el) {
+    if (!el) return false;
+    try {
+        if (typeof el.checkVisibility === 'function') return !!el.checkVisibility({ checkVisibilityCSS: true });
+        if (el.style && el.style.display === 'none') return false;
+        const cs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(el) : null;
+        return !(cs && (cs.display === 'none' || cs.visibility === 'hidden'));
+    } catch (e) {
+        return true;
+    }
+}
+
+/** True on a touch-first device: coarse primary pointer and no fine pointer to fall back on. */
+function isTouchFirst() {
+    try {
+        const mm = window.matchMedia;
+        if (typeof mm !== 'function') return false;
+        return !!mm.call(window, '(pointer: coarse)').matches && !mm.call(window, '(any-pointer: fine)').matches;
+    } catch (e) {
+        return false;
+    }
+}
 
 // Same selector the game's key handler (core/player.js) uses for "a control has the focus"
 const FOCUSABLE_CONTROL = 'button, input, textarea, select, a[href], [contenteditable]:not([contenteditable="false"])';
@@ -337,7 +368,12 @@ export class TutorialManager {
         if ((window.openModalCount?.() || 0) > 0) return true;
         if (window.gameConfirmOpen?.()) return true;
         if (this.promptOpen) return true;
-        if (document.querySelector?.('[aria-modal="true"], .game-confirm-overlay')) return true;
+        if (window.gameMenu?.isOpen) return true;
+        if (document.querySelectorAll) {
+            for (const dialog of document.querySelectorAll(OTHER_DIALOG_SELECTOR)) {
+                if (isShown(dialog)) return true;
+            }
+        }
         const target = event?.target;
         return !!(target && typeof target.closest === 'function' && target.closest(FOCUSABLE_CONTROL));
     }
@@ -357,14 +393,14 @@ export class TutorialManager {
 
     /**
      * Put the Continue button into its "ready" state: the words under the objective, a frame
-     * on the button and a short cue. The cue class is dropped after 3 steps by CSS
-     * (animation ends); under prefers-reduced-motion the CSS never animates.
+     * on the button and a short cue. The class stays so the frame stays; only the cue
+     * animation ends, after 3 steps, in CSS. Under prefers-reduced-motion it never animates.
      */
     setStepReady(nextButton) {
         this.stepReady = true;
         nextButton.classList.add('tutorial-next-ready');
         const ready = this.tutorialOverlay?.querySelector('.tutorial-ready');
-        if (ready) ready.textContent = TUTORIAL_READY_TEXT;
+        if (ready) ready.textContent = isTouchFirst() ? TUTORIAL_READY_TEXT_TOUCH : TUTORIAL_READY_TEXT;
     }
 
     clearStepReady() {
@@ -484,19 +520,22 @@ export class TutorialManager {
      * Skip the tutorial
      */
     skip() {
-        if (confirm('Are you sure you want to skip the tutorial?')) {
-            this.active = false;
-            this.markCompleted();
-            this.removeKeyHandler();
+        if (!confirm('Are you sure you want to skip the tutorial?')) {
+            // Cancelled: do not leave Skip focused, or Enter would reopen this confirm
+            this.tutorialOverlay?.querySelector('.tutorial-skip')?.blur?.();
+            return;
+        }
+        this.active = false;
+        this.markCompleted();
+        this.removeKeyHandler();
 
-            if (this.tutorialOverlay) {
-                document.body.removeChild(this.tutorialOverlay);
-                this.tutorialOverlay = null;
-            }
+        if (this.tutorialOverlay) {
+            document.body.removeChild(this.tutorialOverlay);
+            this.tutorialOverlay = null;
+        }
 
-            if (this.onComplete) {
-                this.onComplete();
-            }
+        if (this.onComplete) {
+            this.onComplete();
         }
     }
 
