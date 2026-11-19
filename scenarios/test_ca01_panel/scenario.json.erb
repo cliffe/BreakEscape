@@ -380,9 +380,10 @@
         "noBlameLine": "Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one. A miss here just shows where to look next time.",
         "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email using the route in the box below.",
         "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "stepAway": "Look up from the kiosk to see how a case like this plays out here. It takes a few seconds, and your place is saved.",
         "conceptPanel": {
           "heading": "Where that email leads",
-          "text": "To a real attacker, the change you sent to the payments inbox is a redirected supplier payment. One believable email is enough to move a scheduled run to an account they control, and the money is passed on through other accounts within hours, long before the genuine supplier rings to ask where it is. What breaks that chain is the habit you just practised: a call back on a number you already hold before any change to a payee, so the new details are never saved. The notice on the payments board is that redirected run landing.\n\nWhen a change like this one is saved to the supplier file, the run pays the wrong account, and the finance team lose the afternoon to the bank and the real supplier while recent changes are re-checked. Supplier bank details are not personal data, so a case like this is likely not reportable to the ICO."
+          "text": "To a real attacker, the change you sent to the payments inbox is a supplier payment redirected to an account they control. One believable email is all it takes to move a scheduled run. Within hours the money is drawn out and moved on through other accounts, long before the real supplier rings to ask where their payment is. The call back you just practised, on a number you already hold before any change to a payee, is what breaks that chain: the new details never reach the file, and the run pays the right account.\n\nIf a change like this is saved instead, the run pays the wrong account, and finance spend the next fortnight chasing the bank and the real supplier to put it right."
         }
       },
       "debrief": {
@@ -913,7 +914,7 @@
               "setGlobal": {
                 "kit_ca01_done": true
               },
-              "bark": "One call to confirm the details first, and it never moves. That beats a fortnight chasing the bank."
+              "bark": "One call to confirm the new details, and the money never moves. Beats a fortnight on the phone to the bank."
             }
           ]
         },
@@ -997,7 +998,7 @@
                 "kit_ca01_walk": false,
                 "kit_ca01_agn_there": true
               },
-              "bark": "That's the one up on the board - a payment that landed in the wrong account. Finance are still clawing it back from the bank."
+              "bark": "That's the one up on the board. Money went to the wrong account, and the real supplier's still waiting to be paid."
             },
             {
               "eventPattern": "global_variable_changed:kit_ca01_agn_there",

@@ -945,7 +945,7 @@
       "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
       "conceptPanel": {
         "heading": "If one gets through",
-        "text": "When a change like the one here is saved to the supplier file, the run pays the wrong account, and the finance team lose the afternoon to the bank and the real supplier while recent changes are re-checked. Supplier bank details are not personal data, so a case like this is likely not reportable to the ICO."
+        "text": "If a change like the one here is saved to the supplier file, the run pays the wrong account, and finance spend the next fortnight chasing the bank and the real supplier to put it right."
       }
     },
     "_defendOnly": {

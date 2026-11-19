@@ -9,7 +9,7 @@ Gwen Pritchard: Morning. Grab a coffee if you need one.
 -> bye
 
 === ca01 ===
-Gwen Pritchard: Good spot on that invoice. Phone the supplier next time too.
+Gwen Pritchard: Good spot on that invoice. That one would've sailed straight through.
 -> bye
 
 // Every knot ends on this choice: a knot that prints its line and ends at DONE with no

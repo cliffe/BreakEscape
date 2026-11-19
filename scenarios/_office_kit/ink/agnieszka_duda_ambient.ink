@@ -9,7 +9,7 @@ Agnieszka Duda: Hiya. The water cooler's over there if you need it.
 -> bye
 
 === ca01 ===
-Agnieszka Duda: Nice work flagging that one. Reporting it helps the whole floor.
+Agnieszka Duda: Nice one, catching that. Saved the whole floor a headache.
 -> bye
 
 // Every knot ends on this choice: a knot that prints its line and ends at DONE with no
