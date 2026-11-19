@@ -31,6 +31,7 @@
 .minigame-container > .dusting-game-container { max-height: none; margin: auto 0; }
 
 .dusting-root {
+    display: flex; flex-direction: column;   /* title and steps stay put; .dusting-body scrolls (the frame itself never does) */
     align-self: center;
     max-height: calc(100dvh - 24px);
     overflow-y: auto;
@@ -44,6 +45,11 @@
     padding: 12px 16px;
     box-sizing: border-box;
 }
+
+/* The named scroll region: everything under the steps. In a frame capped to the screen (800x600, phone portrait) it is the only
+   part that scrolls. Short landscape lays the frame out as a grid and scrolls its own columns, so the body drops out of the box tree there. */
+.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.dusting-short .dusting-body { display: contents; }
 
 /* padding-right keeps the title clear of the X in the frame's corner (critique A14) */
 .dusting-title { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; padding-right: 44px; }
@@ -192,12 +198,12 @@
    instead of widening it and pushing the row onto a second line. The four-card grid sizes its own columns. */
 .dusting-refs:not([data-count="4"]) .dusting-ref-wrap { flex: 0 0 144px; max-width: 144px; min-width: 0; }
 .dusting-ref > span { overflow-wrap: anywhere; min-width: 0; }
-/* Card captions are clamped: the name runs to two lines at most, then an ellipsis (the full name is the button's title and
-   accessible name). A rejected or matched card puts its tag on its own line and gives the name one line, so a caption never
-   passes two lines and a long name cannot push the cards onto a second row or past the frame. */
-.dusting-ref-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
-.dusting-ref-name:not(:last-child) { display: block; white-space: nowrap; text-overflow: ellipsis; }
-.dusting-ref-tag { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* Card captions show the whole name as text (a touch screen has no title tooltip): it wraps inside the card, never clipped, and
+   a rejected or matched card puts its state on its own line under the name. The frame's body scrolls, so a longer card cannot
+   push the frame past the screen. */
+.dusting-ref-name { display: block; overflow-wrap: anywhere; }
+.dusting-ref-tag { display: block; overflow-wrap: anywhere; }
+.dusting-ref-tag[data-state="match"] { color: var(--d-accent); }
 /* Cards in one row share the tallest card's height, so a wrapped label never leaves its View button lower than the rest */
 .dusting-refs:not([data-count="4"]) .dusting-ref { flex: 1 1 auto; }
 .dusting-view { font-size: 0.85em; padding: 3px 8px; overflow-wrap: anywhere; }
@@ -230,7 +236,7 @@
     .dusting-root:not(.dusting-short) .dusting-actions, .dusting-root:not(.dusting-short) .dusting-buttons { display: contents; }
     .dusting-root:not(.dusting-short) .dusting-meters { border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 8px; }
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary {
-        position: sticky; bottom: -8px; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
+        position: sticky; bottom: 0; z-index: 3; width: 100%; box-sizing: border-box; min-height: 44px;
         margin: 4px 0; background: var(--d-bg); border-color: var(--d-accent);
     }
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #0e3b1b; }
@@ -239,7 +245,7 @@
     .dusting-hc:not(.dusting-short) .dusting-actions .dusting-primary:not(:disabled) { background: #fff; color: #000; }
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-btn:not(.dusting-primary) { margin: 4px 6px 4px 0; }
     /* a focused control scrolled into view stops above the pinned bar (44 px + margin), as in short landscape */
-    .dusting-root:not(.dusting-short) { scroll-padding-bottom: 52px; }
+    .dusting-root:not(.dusting-short) .dusting-body { scroll-padding-bottom: 52px; }
     /* the pinned primary sits flush with the frame foot, so its focus ring is drawn inside it (same colour and width) */
     .dusting-root:not(.dusting-short) .dusting-actions .dusting-primary:focus-visible { outline-offset: -5px; }
 }

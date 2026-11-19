@@ -307,6 +307,7 @@ export class DustingMinigame extends MinigameScene {
                 <ol class="dusting-steps" aria-label="Steps">
                     ${STEPS.map((s, i) => `<li data-step="${s}"><span class="dusting-step-num">${i + 1}</span> ${STEP_NAMES[s]}</li>`).join('')}
                 </ol>
+                <div class="dusting-body" data-region="dusting-body">
                 <div class="dusting-main">
                     <div class="dusting-stage">
                         <canvas class="dusting-canvas" width="${N}" height="${N}" tabindex="0" role="img" aria-label=""></canvas>
@@ -320,6 +321,7 @@ export class DustingMinigame extends MinigameScene {
                     <label><input type="checkbox" class="dusting-opt-hc"> High contrast</label>
                     <label><input type="checkbox" class="dusting-opt-steady"> Steady hand (gentler powder)</label>
                     <span class="dusting-keys" data-keys>Keys: arrows move, Space acts, Shift = big steps</span>
+                </div>
                 </div>
             </div>`;
         this.root = this.gameContainer.querySelector('.dusting-root');
@@ -713,13 +715,16 @@ export class DustingMinigame extends MinigameScene {
         // card at the lift's size in the big frame (F26 follow-up), so viewing never counts as a pick.
         return this.candidates.map(c => {
             const viewing = !done && this.viewing === c.index;
+            // The match state is drawn as text under the name (a touch screen shows no title). After the match every other card
+            // reads "not a match" too, so no card is left unlabelled.
+            const state = done && c.correct ? 'match' : (c.rejected || (done && this.identified)) ? 'not a match' : '';
             const view = done ? '' : `
                 <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
             return `
             <div class="dusting-ref-wrap">
-            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}${done && c.correct ? ', match' : ''}" title="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}${done && c.correct ? ', match' : ''}">
+            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${state ? ', ' + state : ''}" title="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${state ? ', ' + state : ''}">
                 <canvas class="dusting-ref-canvas" data-ref="${c.index}" width="${N}" height="${N}"></canvas>
-                <span><span class="dusting-ref-name">${c.index + 1}. ${escapeHtml(c.label)}</span>${c.rejected ? ' <span class="dusting-ref-tag">(not a match)</span>' : ''}${done && c.correct ? ' <span class="dusting-ref-tag">(match)</span>' : ''}</span>
+                <span class="dusting-ref-caption"><span class="dusting-ref-name">${c.index + 1}. ${escapeHtml(c.label)}</span>${state ? ` <span class="dusting-ref-tag" data-state="${state === 'match' ? 'match' : 'no'}">(${state})</span>` : ''}</span>
             </button>${view}
             </div>`;
         }).join('');
@@ -1737,7 +1742,9 @@ export class DustingMinigame extends MinigameScene {
      */
     _zoomChrome() {
         const main = this.root.querySelector && this.root.querySelector('.dusting-main');
-        const total = this.root.scrollHeight, mh = main ? main.offsetHeight : 0;
+        // The frame is capped and the body scrolls inside it, so the content height is the frame's own chrome plus the body's scroll height.
+        const body = this.root.querySelector('.dusting-body');
+        const total = body && body.clientHeight ? this.root.clientHeight - body.clientHeight + body.scrollHeight : this.root.scrollHeight, mh = main ? main.offsetHeight : 0;
         if (!total || !mh) return ZOOM_CHROME_H;
         const sh = this.statusEl ? (this.statusEl.offsetHeight || 0) : 0;
         const chrome = total - mh + Math.max(0, ZOOM_STATUS_MAX_H - sh);
