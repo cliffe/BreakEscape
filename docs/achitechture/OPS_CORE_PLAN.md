@@ -1178,7 +1178,7 @@ Every refusal is `{ success: false, reason }` with one of the statuses and codes
 turns `reason` into words with `REFUSAL_TEXT` (section 5.5). The 400 comes first on every route
 and is left out of the table.
 
-**The refusal codes, in one list.** The ops routes send twelve: `bad_request` (400),
+**The refusal codes, in one list.** The network routes of this plan send twelve: `bad_request` (400),
 `not_found` (404), `not_responding` (403), and with 422 `not_needed`, `not_confirmed`,
 `false_positive`, `no_grant`, `fixed`, `wrong_class`, `wrong_product`, `wrong_version` and
 `need_unmet`. The desktop route gains none. The file
