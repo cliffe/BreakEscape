@@ -773,6 +773,14 @@
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7);
 }
 
+/* The shared popup card (gameConfirm, and the text display modal gameDisplay: readDisplay and
+   observationDisplay "gameDisplay", the examine view's fallback) is opaque; the dim sits on the
+   overlay behind it. */
+[data-ui-theme] .game-confirm-dialog {
+  background: var(--ui-surface-opaque);
+  background-clip: padding-box;
+}
+
 [data-ui-theme] .tutorial-prompt-modal::before,
 [data-ui-theme] .tutorial-panel::before {
   display: none;
@@ -1228,6 +1236,13 @@
   box-sizing: border-box;
   box-shadow: none;
   image-rendering: pixelated;
+}
+
+/* Examine: the card is fully opaque. The shared surface above is under 100% alpha and the
+   room (a busy ward, the NPCs) showed through the text. The theme's own 9-slice frame stays;
+   only the fill changes to --ui-surface-opaque (the same token the ending warning uses). */
+[data-ui-theme] .examine-minigame .minigame-game-container {
+  background-color: var(--ui-surface-opaque);
 }
 
 /* Examine */

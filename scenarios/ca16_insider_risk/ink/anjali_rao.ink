@@ -32,12 +32,12 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e16_insider_risk_defend_complete:
-        Anjali Rao: That's them handled. Your login is you, offers get reported, and an honest concern that turns out to be nothing is never a failure.
+        Anjali Rao: That's them handled. Your login is you, offers get reported, and a concern that comes to nothing is never a failure.
         Anjali Rao: Nobody's in trouble for being approached, and nobody's a suspect for having a hard week.
     - else:
         Anjali Rao: Anjali Rao, information security. This week someone's leaving and there's a bit of talk going round. You're not here to catch anyone.
-        Anjali Rao: Keep your login yours, tell me what gets offered to you, and if something genuinely gives you pause, bring me the facts, not a theory.
-        Anjali Rao: Start at the kiosk: make this week's calls first, then raise a concern and sort the messages. You are not being asked to investigate anyone.
+        Anjali Rao: Keep your login yours, tell me what gets offered to you, and if something gives you pause, bring me the facts rather than a theory.
+        Anjali Rao: Start at the kiosk: make this week's calls first, then raise a concern and sort the messages.
     }
 }
 + [Thanks, Anjali.]

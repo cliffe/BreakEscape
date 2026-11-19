@@ -1,0 +1,13 @@
+{
+  "key": "c9b06306e184fb1d5dded5f57d1d5fb3",
+  "npc": "darren_price",
+  "text": "A name, a team, a staff number, anyone can find those online. None of them prove who's calling. A callback on the number we already hold does.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:46:59Z"
+}

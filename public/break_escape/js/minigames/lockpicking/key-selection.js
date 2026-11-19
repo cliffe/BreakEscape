@@ -224,9 +224,9 @@ export class KeySelection {
         // Create container for key selection - positioned in the middle but below pins
         // A cropped canvas (phone or short window) shows only world y offset..offset+340: lift the
         // panel so its labels and arrows end inside the crop (4px clear of the bottom edge)
-        const crop = this.parent._portraitCameraOffset;
-        const panelY = crop ? Math.min(230, crop.y + 340 - containerHeight - 4) : 230;
+        const panelY = KeySelection.panelY(this.parent._portraitCameraOffset, containerHeight);
         const keySelectionContainer = scene.add.container(0, panelY);
+        keySelectionContainer.panelHeight = containerHeight;   // the refit repositions it with this
         keySelectionContainer.setDepth(1000); // High z-index to appear above everything
         
         // Add background - interactive to block clicks from reaching underlying scene objects
@@ -417,6 +417,14 @@ export class KeySelection {
         renderKeyPage();
         
         this.parent.keySelectionContainer = keySelectionContainer;
+        this.parent._scrollKeyPanelIntoView?.();
+    }
+
+    // World y of the panel: 230 on the full lock, lifted inside a cropped canvas (phone or short
+    // window) so its labels and arrows end 4px clear of the crop's bottom edge. The panel builder
+    // and the refit share this.
+    static panelY(crop, containerHeight = 160) {
+        return crop ? Math.min(230, crop.y + 340 - containerHeight - 4) : 230;
     }
     
 }

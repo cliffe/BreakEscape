@@ -509,6 +509,12 @@ ring_c = "globalVars.ledger_read_heard && globalVars.cage_opened && !globalVars.
 # was read later), so the choice in HaX's hub (topic 11) is live now and the player is told where it is.
 hax_maps << text_map("global_variable_changed:notebook_read", "value === true && globalVars.nightshade_file_held && !globalVars.hand_matched",
                      "That's the scan. You've got both in front of you. Open our chat, pick \"The hand on Nightshade's file,\" and tell me what you see.", msg_delay: 2000)
+# Blind confirm m09 minor: report_to_netherton has no world trigger, so a reload after the call
+# re-points at the thread (text, not voiced; each once).
+hax_maps << text_map("game_loaded", "globalVars.tesseract_call_done && !globalVars.start_debrief",
+                     "Task Force Null is on the ground. When you're done here, open our thread and say \"Bring me in.\"", msg_delay: 20000)
+hax_maps << text_map("game_loaded", "globalVars.tesseract_call_done && !globalVars.start_debrief && !globalVars.albion_notified",
+                     "His notice is in our thread too, to send or to hold.", msg_delay: 26000)
 
 rec_maps = []
 rec_maps << { "eventPattern" => "room_entered:restricted_cage", "setGlobal" => { "in_cage" => true }, "cooldown" => 0 }
@@ -2180,6 +2186,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "locked": true,
       "lockType": "password",
       "passwordHint": "No code to find. Finish the ledger and take the Recruiter's call; HaX opens this door after it.",
+      "showHint": true,
       "requires": "<%= office_code %>",
       "connections": {
         "east": "restricted_stacks"
@@ -2516,6 +2523,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "locked": true,
       "lockType": "password",
       "passwordHint": "The catalogue's coded line is a Vigenere cipher keyed to this bay's word. The shelf marks chart by the keypad has the word.",
+      "showHint": true,
       "requires": "<%= salvage_code %>",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.44,

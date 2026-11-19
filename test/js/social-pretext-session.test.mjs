@@ -366,6 +366,26 @@ test('a mid-call reload that does re-pick blanks still takes the new picks', asy
     assert.deepEqual(handle.session.blanks, CARD, 'a non-empty re-pick on resume replaces the saved blanks');
 });
 
+// A PARTIAL re-pick on resume merges over the saved blanks rather than replacing them (lab
+// post-release m3): only one fact's held intel has come back, so the card re-picks that one,
+// and the fact that is still missing must be kept from the saved session. Without the merge
+// the surviving fact is wiped, the spoken opener and the judge disagree on what was stated,
+// and an already-filled opener loses a fact on reload.
+test('a mid-call reload with a partial re-pick keeps the fact that did not come back', async () => {
+    const { service } = setup({ start: -10 });
+    const saved = new P.PretextSession({ callId: CALL, character: 'dev', npcId: 'dev_service_desk', channel: 'phone' });
+    saved.blanks = { ...CARD };
+    P.persistSession(saved);
+
+    // Only the intern's held intel is back, so the resumed card hands over just that blank.
+    const engine = { story: { variablesState: { _defaultGlobalVariables: new Map(), $() {} }, BindExternalFunction() {}, bindExternalFunction() {} }, bindExternalFunction() {} };
+    const minigame = { params: { pretextCallId: CALL, blanks: { intern: { value: 'lord_full', label: 'Sofia Lord' } } }, inkEngine: engine, npcId: 'dev_service_desk',
+        ui: {}, complete() {}, gameResult: {} };
+    const handle = await quiet(() => P.attachPretext(minigame, { chat: 'phone', judge }));
+    assert.deepEqual(handle.session.blanks, CARD, 'the team that did not come back is kept, not wiped');
+    assert.deepEqual(P.loadSession(CALL).blanks, CARD, 'and the persisted session keeps both facts');
+});
+
 test('finalise on a reported call hands the outcome line to the chat to speak (voiced call)', async () => {
     const { service } = setup({ start: -10 });
     globals()[`pretext_${CALL}_state`] = null;
