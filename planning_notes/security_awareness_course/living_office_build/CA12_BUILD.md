@@ -411,7 +411,7 @@ H-a  { "eventPattern": "global_variable_changed:kit_ca12_door_choice",
        "onceOnly": true, "delayMs": 500,
        "patrolOverride": { "targetTile": <tile beside the desks tile>, "speed": 90 } }
 H-b  { "eventPattern": "npc_arrived:lorna_easton",
-       "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
+       "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && !globalVars.kit_ca12_done",
        "onceOnly": true, "setGlobal": { "kit_ca12_host_there": true } }
 H-c1 { "eventPattern": "global_variable_changed:kit_ca12_host_there",
        "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
@@ -557,7 +557,7 @@ New text:
 
 - In `scenario.json.erb` the quoted pretext is written with escaped straight quotes inside the JSON string: `a friendly \"she said to come straight up\" is often all it takes`. Use the same in the fragment `AW/e12/defend.json` if the twin's layer 1 ever gains a quote (it has none now).
 - The passage reads the same whether the learner looked up or carried on, and whether it is read before or after the scene: it never points at the scene.
-- "she said to come straight up" matches Camila's A4. "Client list" appears once in the panel (layer 0) and once in H1b; layer 1 says "a screen sat unlocked", so the two layers do not repeat each other.
+- "she said to come straight up" matches Camila's A4. "Client list" appears once, in the panel (layer 0); layer 1 says "a screen sat unlocked", so the two layers do not repeat each other.
 - One time figure (an afternoon). No money, no number, no notification or legal-duty claim, no blame.
 - The heading "What these visitors relied on" stays: the passage still opens on what the visitors relied on.
 - **Fallback build only:** append `Before you leave, take a look around the office and have a word with Lorna.` as `ca01_invoice_fraud` does; the panel build leaves it out because the chain does the inviting.
