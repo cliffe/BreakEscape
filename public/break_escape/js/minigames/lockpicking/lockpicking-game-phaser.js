@@ -603,6 +603,10 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const scale = game.scale;
         const unlimited = Number.MAX_VALUE;
         if (st.fit) {
+            // The class first: the CSS re-lays the box out, and Phaser reads the box's size next
+            box.style.maxWidth = '';
+            box.classList.remove('lockpicking-zoomed');
+            box.classList.add('lockpicking-fit');
             this._portraitCameraOffset = { x: 0, y: st.portrait ? 20 : 30 };
             scale.scaleMode = Phaser.Scale.FIT;
             scale.autoCenter = Phaser.Scale.CENTER_BOTH;
@@ -613,9 +617,6 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             scale.getParentBounds?.();
             if (scale.parentSize?.width > 0 && scale.parentSize?.height > 0) scale.displaySize.setParent(scale.parentSize);
             scale.displaySize.setMax(st.capped ? 580 : unlimited, st.capped ? 340 : unlimited);
-            box.style.maxWidth = '';
-            box.classList.remove('lockpicking-zoomed');
-            box.classList.add('lockpicking-fit');
             scale.setGameSize(580, 340);
             if (!this._lockBoxObserver) this._watchLockBox();
         } else {
