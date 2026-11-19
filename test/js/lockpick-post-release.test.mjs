@@ -213,6 +213,7 @@ test('the zoom listener leaves a game that is in the fitted layout alone', () =>
     assert.equal(zoomed, 0, 'the FIT game is not zoomed while the refit is pending');
     assert.equal(t.box.style.maxWidth, '1200px', 'the box is untouched');
     t.fake._lockFitApplied = { fit: false, portrait: false, capped: false };
+    t.fake._lockRoom = () => ({ w: 700, h: 450 });   // zoom 1 against the game's 2
     at(1920, 1080, () => H._fitLockZoom.call(t.fake));
     assert.equal(zoomed, 1, 'a full-size game is zoomed as before');
 });
