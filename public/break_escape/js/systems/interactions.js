@@ -851,7 +851,7 @@ export function examineHeldItem(sprite) {
     if (startExamine(sprite, { observations, text })) return true;
     const data = sprite.scenarioData;
     const name = data.name || sprite.name || '';
-    const message = observations ? `${name} Observations: ${observations}\n` : name;
+    const message = observations || name;
     if (data.observationDisplay === 'gameDisplay' && window.gameDisplay) {
         const { body, title } = gameDisplayParts(data, sprite, observations, null);
         window.gameDisplay(body, title, { html: true });
@@ -1860,9 +1860,10 @@ export function handleObjectInteraction(sprite) {
 
     const { observations: resolvedObservations, text: resolvedText } = examineTextFor(sprite);
 
-    let message = `${data.name || sprite.name} `;
+    // Toast body: the observation, then the text on its own line. The toast title is the name.
+    let message = '';
     if (resolvedObservations) {
-        message += `Observations: ${resolvedObservations}\n`;
+        message += `${resolvedObservations}\n`;
     }
     
     // SE pretext call (06 N5, 00 S10): a desk phone carrying a callId opens
@@ -2024,7 +2025,7 @@ export function handleObjectInteraction(sprite) {
             }
         }
     } else if (data.readable && resolvedText) {
-        message += `Text: ${resolvedText}\n`;
+        if (toastObs(resolvedObservations, resolvedText) !== null) message += `${resolvedText}\n`;
 
         // All notes-family items (notes, notes2, notes3, ...) use the notes minigame.
         // They go to notepad (autoAddToNotes in the minigame), never to inventory UI.
@@ -2167,7 +2168,7 @@ export function handleObjectInteraction(sprite) {
                         data.readable ? resolvedText : null);
                     window.gameDisplay(body, title, { html: true });
                 } else {
-                    window.gameAlert(message, 'info', data.name, 5000);
+                    window.gameAlert(message.trim() || data.name, 'info', data.name, 5000);
                 }
             }
         };
@@ -2240,7 +2241,7 @@ export function handleObjectInteraction(sprite) {
             window.gameDisplay(body, title, { html: true });
         } else {
             // whole: a readable object's text is never cut to the phone's two lines
-            window.gameAlert(message, 'info', data.name, 5000,
+            window.gameAlert(message.trim() || data.name, 'info', data.name, 5000,
                 data.readable && resolvedText ? { whole: true } : undefined);
         }
     }
