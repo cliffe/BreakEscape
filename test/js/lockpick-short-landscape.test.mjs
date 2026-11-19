@@ -211,21 +211,20 @@ test('the observations are a button only while they overflow or are open, named 
         p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
         assert.equal(open(), false);
         // overflows: a button whose name is its own text (no aria-label, no aria-describedby),
-        // with a visually hidden action after it
-        sh = 72; sync();
+                sh = 72; sync();
         assert.equal(p.getAttribute('role'), 'button');
         assert.equal(p.tabIndex, 0);
         assert.equal(p.getAttribute('aria-expanded'), 'false');
         assert.equal(p.hasAttribute('aria-label'), false, 'aria-label would replace the text as the name');
         assert.equal(p.hasAttribute('aria-describedby'), false);
-        assert.equal(p.textContent, long + ' Show more.', 'name from content: the text, then the action');
+        assert.equal(p.textContent, long, 'the name is the text itself');
         assert.equal(strip.querySelector('.lockpicking-obs-more').textContent, '+ MORE');
         assert.equal(strip.classList.contains('lockpicking-obs-overflow'), true);
         p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
         assert.equal(open(), true);
         assert.equal(p.getAttribute('aria-expanded'), 'true');
         assert.equal(p.hasAttribute('aria-label'), false);
-        assert.equal(p.textContent, long + ' Show less.');
+        assert.equal(p.textContent, long);
         assert.equal(strip.querySelector('.lockpicking-obs-more').textContent, '- LESS');
         p.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
         assert.equal(open(), false);
@@ -242,7 +241,6 @@ test('the observations are a button only while they overflow or are open, named 
         window.innerHeight = 800; sync();
         assert.equal(open(), false);
         assert.equal(p.getAttribute('role'), null);
-        assert.equal(p.textContent, long, 'plain text again: no hidden action');
         // cleanup removes the listeners
         sh = 72; window.innerHeight = 390; sync();
         LockpickingMinigamePhaser.prototype._releaseLockWatchers.call(fake);
@@ -320,14 +318,11 @@ test('the box observer refreshes Phaser on a size change and is disconnected on 
     } finally { delete globalThis.ResizeObserver; }
 });
 
-test('the "+ MORE" plate covers the whole 24px line and the hint is visually hidden', () => {
+test('the "+ MORE" plate covers the whole 24px line', () => {
     const more = rule(short.body, '.lockpicking-item-section.lockpicking-obs-overflow .lockpicking-obs-more');
     assert.match(more, /line-height\s*:\s*24px/);
     assert.match(more, /(^|[;\s])height\s*:\s*24px/);
     assert.match(more, /background\s*:\s*#000/);
-    const hint = rule(short.body, '.lockpicking-obs-hint');
-    assert.match(hint, /position\s*:\s*absolute/);
-    assert.match(hint, /clip\s*:\s*rect\(0 0 0 0\)/);
 });
 
 test('removing the role while the observations hold focus moves focus to the mode button, else the X', () => {

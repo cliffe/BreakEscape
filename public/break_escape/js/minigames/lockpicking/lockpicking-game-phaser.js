@@ -358,12 +358,9 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             more.className = 'lockpicking-obs-more';
             more.setAttribute('aria-hidden', 'true');
             obs.insertAdjacentElement('afterend', more);
-            // The button's name is its own text (the observations can hold clues). This visually
-            // hidden tail adds the action after it; it is empty while the text is not a button.
-            const hint = document.createElement('span');
-            hint.className = 'lockpicking-obs-hint';
-            obs.appendChild(hint);
-            this._obsHint = hint;
+            // As a button the observations are named by their own text (they can hold clues);
+            // aria-expanded gives the state. No aria-label or aria-describedby: they would
+            // replace the text as the name.
             this._obsEl = obs;
             this._obsMore = more;
             this._obsSection = itemDisplayDiv;
@@ -639,7 +636,6 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             obs.setAttribute('role', 'button');
             obs.tabIndex = 0;
             obs.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            if (this._obsHint) this._obsHint.textContent = expanded ? ' Show less.' : ' Show more.';
             if (this._obsMore) this._obsMore.textContent = expanded ? '- LESS' : '+ MORE';
         } else {
             // Focus must not fall to the page when the button goes: hand it to the mode button,
@@ -652,7 +648,6 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             }
             ['role', 'aria-expanded'].forEach((a) => obs.removeAttribute(a));
             obs.removeAttribute('tabindex');
-            if (this._obsHint) this._obsHint.textContent = '';
         }
     }
 

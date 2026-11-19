@@ -446,16 +446,6 @@
         line-height: 24px;
     }
 
-    /* the action after the observations' text, for screen readers only */
-    .lockpicking-obs-hint {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        white-space: nowrap;
-    }
-
     /* the heading leaves room for "- LESS" on its line */
     .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info h4 {
         padding-right: 56px;
