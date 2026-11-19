@@ -500,7 +500,7 @@
   /* A flat plate behind the credits so the text never sits on busy map pixels: a solid
      colour (no alpha, blur or gradient) with a 2px border in the visualiser's gold. */
   background: #000;
-  border: 2px solid var(--bv-gold-dim, #7a6500);
+  border: 2px solid var(--bv-gold-dim, #997a00);
   padding: 8px 16px;
   /* % of the fixed overlay (the label's containing block), not 100vw, which
      counts a page scrollbar */
@@ -533,7 +533,7 @@
 #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar { width: 12px; }
 #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-track {
   background: #000;
-  border: 2px solid var(--bv-gold-dim, #7a6500);
+  border: 2px solid var(--bv-gold-dim, #997a00);
 }
 #bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-thumb {
   background: var(--bv-gold, #FFD700);

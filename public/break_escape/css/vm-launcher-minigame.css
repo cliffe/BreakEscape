@@ -29,13 +29,7 @@
     background: var(--device-palette-face);
     border: 2px solid var(--device-palette-edge);
     padding: 15px;
-    cursor: pointer;
-    color: var(--device-palette-text);
-}
-
-.vm-card:hover {
-    border-color: var(--device-palette-info);
-    background: var(--device-palette-button);
+    color: var(--device-palette-text);   /* not clickable: the Open VM Console link inside is the control */
 }
 
 .vm-card.selected {
@@ -82,10 +76,10 @@
 }
 
 .vm-status.console {
-    /* a muted console tag, not a bright web-blue button (critique A30) */
-    background: var(--device-palette-button);
+    /* a status label, not a button: no button fill, and a dashed edge where buttons have a solid one */
+    background: var(--device-palette-face);
     color: var(--device-palette-text);
-    border: 2px solid var(--device-palette-edge);
+    border: 2px dashed var(--device-palette-dim);
 }
 
 .vm-details {

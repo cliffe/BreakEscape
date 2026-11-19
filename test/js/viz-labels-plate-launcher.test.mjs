@@ -23,6 +23,75 @@ test('no Press Start 2P canvas label is set under 8px', () => {
   assert.match(js, /Math\.max\(MIN_LABEL_PX,size\)/);
 });
 
+test('every Press Start 2P canvas font is on the 8px grid with no weight keyword', () => {
+  const fonts = [...js.matchAll(/(?:font\s*=\s*)[`'"]([^`'"\n]*Press Start 2P[^`'"\n]*)[`'"]/g)].map(m => m[1]);
+  assert.ok(fonts.length >= 10, `found ${fonts.length} fonts`);
+  for (const f of fonts) {
+    assert.doesNotMatch(f, /\b(bold|bolder|[1-9]00)\b/, f);
+    const px = /(?:^|\s)(\d+|\$\{[^}]+\})px/.exec(f);
+    assert.ok(px, f);
+    if (/^\d+$/.test(px[1])) assert.equal(Number(px[1]) % 8, 0, f);
+    else assert.match(px[1], /MIN_LABEL_PX|fontPx|Math\.max\(MIN_LABEL_PX/, f); // 8 or 16 by construction
+  }
+  assert.doesNotMatch(js, /(18|20)px "Press Start 2P"/);
+});
+
+test('CCTV room label is fitted left of the REC tag, hidden when it will not fit', () => {
+  const src = /function fitLabelText[\s\S]*?\n}\n/.exec(js)[0] + /function cctvLabelMaxW[\s\S]*?\n}\n/.exec(js)[0];
+  const { fit, maxW } = new Function(`const PIX = 4; ${src}; return { fit: fitLabelText, maxW: cctvLabelMaxW };`)();
+  const m = t => t.length * 8;
+  const room = maxW(160, 8);
+  assert.equal(room, 160 - 16 - 40 - 4);
+  assert.equal(fit(m, 'MAIN OFFICE AREA', room), '', 'a 160px cell hides the long room name');
+  assert.equal(fit(m, 'SERVER', room), 'SERVER');
+  assert.ok(fit(m, 'MAIN OFFICE AREA', maxW(400, 8)) === 'MAIN OFFICE AREA', 'a wide cell keeps it');
+  assert.match(js, /fitLabelText\(t => _visCtx\.measureText\(t\)\.width, feed\.label, cctvLabelMaxW\(w, fontPx\)\)/);
+});
+
+test('MITRE labels are drawn only when the ring spacing and the panel allow', () => {
+  const src = /function mitreLabelsFit[\s\S]*?\n}\n/.exec(js)[0];
+  const fit = new Function(`${src}; return mitreLabelsFit;`)();
+  const m = t => t.length * 8;
+  const tac = ['RECON','RESOURCE','INITIAL','EXEC','PERSIST','PRIV-ESC','DEFENSE','CRED','DISCOVERY','LATERAL','COLLECT','C2','EXFIL','IMPACT'];
+  assert.equal(fit(m, tac, 300, 200, 80, 100, 400), false, 'R=80: 36px spacing is under a 5-letter label');
+  assert.equal(fit(m, tac, 300, 200, 30, 260, 80), false, 'phone ring is far too tight');
+  assert.equal(fit(m, tac, 300, 200, 120, 100, 400), true, 'wide ring inside a wide panel');
+  assert.equal(fit(m, tac, 300, 200, 120, 190, 220), false, 'spacing fine but labels leave the panel');
+  assert.match(js, /if \(active && showTactics\)/);
+});
+
+test('city labels skip any that would sit on one already drawn', () => {
+  const src = /function boxesOverlap[\s\S]*?\n}\n/.exec(js)[0];
+  const ov = new Function(`${src}; return boxesOverlap;`)();
+  assert.equal(ov({ x: 0, y: 0, w: 56, h: 8 }, { x: 40, y: 4, w: 64, h: 8 }), true);
+  assert.equal(ov({ x: 0, y: 0, w: 56, h: 8 }, { x: 56, y: 0, w: 64, h: 8 }), false);
+  assert.equal(ov({ x: 0, y: 0, w: 56, h: 8 }, { x: 10, y: 8, w: 64, h: 8 }), false);
+  assert.match(js, /cityBoxes\.some\(b=>boxesOverlap\(b,box\)\)/);
+});
+
+test('8px canvas text is drawn at whole-pixel origins', () => {
+  for (const re of [/fillText\(t\.slice\(0,5\),Math\.round\(tx-8\),Math\.round\(ty-4\)\)/, /fillText\('MOTION', Math\.round\(bx\), Math\.round\(by - PIX \* 2\)\)/, /Math\.round\(col1X\+col1W\/2\),Math\.round\(c1y\+40\)/, /_visCtx\.fillText\(city\[0\],lx,ly\)/]) assert.match(js, re);
+});
+
+test('SIEM panel titles reach 4.5:1 on the panel background and the plate fallback matches its token', () => {
+  const lum = h => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(x => x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const cols = [...js.matchAll(/panelBox\([^;]*'▸ (?:SCORE HISTORY|FREQ BANDS|EVENT TOTALS)','(#[0-9a-fA-F]{6})'\)/g)].map(m => m[1]);
+  assert.equal(cols.length, 3);
+  for (const c of cols) assert.ok((lum(c) + 0.05) / (lum('#00040a') + 0.05) >= 4.5, c);
+  const token = /--bv-gold-dim:\s*(#[0-9a-f]{6})/i.exec(vizCss)[1].toLowerCase();
+  const falls = [...vizCss.matchAll(/var\(--bv-gold-dim,\s*(#[0-9a-f]{6})\)/gi)].map(m => m[1].toLowerCase());
+  assert.ok(falls.length >= 2);
+  for (const f of falls) assert.equal(f, token);
+});
+
+test('the launcher status tag does not look like a button, and the card is not a click target', () => {
+  const tag = /\.vm-status\.console \{([^}]*)\}/.exec(launcherCss)[1];
+  assert.match(tag, /border:\s*2px dashed/);
+  assert.doesNotMatch(tag, /palette-button/);
+  assert.doesNotMatch(/\.vm-card \{[^}]*\}/.exec(launcherCss)[0], /cursor:\s*pointer/);
+  assert.doesNotMatch(launcherCss, /\.vm-card:hover/);
+});
+
 test('fitLabelText keeps a label that fits, drops the marker, then hides', () => {
   const src = /function fitLabelText[\s\S]*?\n}\n/.exec(js)[0];
   const fit = new Function(`${src}; return fitLabelText;`)();
