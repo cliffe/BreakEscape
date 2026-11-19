@@ -27,3 +27,7 @@ Findings not acted on as suggested, one line each.
 - **N3.** `accountOnly` NPCs take an allow-list of keys, and `NpcHabits.expand!` joins the readers that skip them (a role's `awareness` would otherwise give the account preset habits and door-gate `noHold` entries).
 - **N2.** The grep-count guard became a checked-in manifest (`test/models/account_only_readers.yml`) read by the test.
 - **N4, N5, N6, n1-n7.** Applied as wording: ids within the log caps where `logSources` is set (collect `pc_id` cap now 40), the same-name warning gated on an admin path, the golden-compare script's parent, test file and database rule stated.
+
+## Round 5
+
+- **M2 (comment keys).** Allowed every `_`-prefixed key on an `accountOnly` NPC, not only `_comment`, matching the schema's `patternProperties: {"^_": {}}` convention elsewhere (the `npc` definition declares neither `_comment` nor closed properties); `staff` is also made required, not just allowed, and the two `accountOnly` examples now say `"staff": false`.

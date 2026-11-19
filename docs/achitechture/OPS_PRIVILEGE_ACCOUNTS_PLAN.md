@@ -247,10 +247,10 @@ room NPC: `accountOnly: true` for an account with no person behind it.
 ```json
 "rooms": { "it": {
   "npcs": [
-    { "id": "deskAdmin", "displayName": "Desk administrator", "npcType": "person", "accountOnly": true,
+    { "id": "deskAdmin", "displayName": "Desk administrator", "npcType": "person", "accountOnly": true, "staff": false,
       "creds": { "username": "deskadmin", "password": "Winter2026", "admin": true,
                  "accountKind": "local", "localTo": ["pc01", "pc02", "pc03"] } },
-    { "id": "lab1Admin", "displayName": "Lab 1 administrator", "npcType": "person", "accountOnly": true,
+    { "id": "lab1Admin", "displayName": "Lab 1 administrator", "npcType": "person", "accountOnly": true, "staff": false,
       "creds": { "username": "lab1-admin", "password": "q8-Fen-31", "admin": true,
                  "accountKind": "local", "localTo": ["lab1"] } },
     { "id": "domAdmin", "displayName": "Ravi Menon", "npcType": "person",
@@ -306,8 +306,9 @@ names; this plan adds no condition on it.
 a blank `foothold`, is not a remote-route session (`remote_route_session?`, which covers relay and
 `from`), and `session_admin?(pc_id)` is true, step 4 (power and route) included. So a PC whose
 service is off never overrides, and the client, whose `access` comes from the same
-`session_access`, agrees once the next answer arrives. A technique record always keeps its
-`foothold` (OPS_CORE 5.4) and a locked session fails step 3, so neither is keyboard admin.
+`session_access`, agrees once the next answer or the desktop's `off` refusal arrives. A technique
+record always keeps its `foothold` (OPS_CORE 5.4) and a locked session fails step 3, so neither is
+keyboard admin.
 
 **S5a: profiles.** Under S5a alone the admin set of a PC is its `owner` (empty on an unowned PC).
 Once S5b lands it is `pc_present_accounts(pc)`: the owner plus the accounts in
@@ -448,7 +449,9 @@ walks room NPCs in about 120 places in `app` and `lib`; they fall into four grou
   accepts only an allow-list of keys on an `accountOnly` NPC (section 9).
 
 `test/models/account_only_readers.yml` lists, as `file#method: group`, every method in `app` and
-`lib` whose body matches `['npcs']`, `scenario_room_npcs`, `room_npcs` or `each_room_npc`.
+`lib` whose body matches `['npcs']`, `scenario_room_npcs`, `room_npcs` or `each_room_npc`. A
+method runs from its `def` to the next `def` at the same or a lesser indent (or the file's end),
+and a match outside any method is listed as `file#(top)`.
 `account_only_readers_test.rb` scans those files in plain Ruby and fails when a matching method is
 missing from the manifest or an entry no longer matches, so a new loop gets a decision. It puts an
 `accountOnly` NPC in a room with a PC and asserts that each first-group reader leaves it out, each
@@ -497,14 +500,16 @@ The desktop then shows:
 through when `admin` is true. `interactions.js:1056` passes `admin: keyboardAdmin(pcId)`, one
 function in `pc-sessions.js` that mirrors the server predicate: the mirror entry has `access ===
 "admin"` and is not `locked`, not `remote` and not `relay`. Power reaches the client through
-`access`: an answer that follows power-off has no `access`, so the entry is cleared.
+`access`: an answer that follows power-off has no `access`, so the entry is cleared, and the
+desktop's 403, which carries no session, also drops `access` from that PC's entry when its
+`serverReason` is `'off'` or `'not_responding'` (`pc-sessions.js:509-547`, `:665-667`).
 
 The two can still disagree in two ways, and the server wins in both:
 - *Client narrower.* A foothold session settled at the keyboard (`settle_session_at_keyboard!`,
   `network_access.rb:1556-1565`) is corrected by the same desktop answer that settles it, which
   carries the fresh session (`GC:3166-3169`).
-- *Client wider* (a tampered client, or a mirror not yet updated after a session ended or a PC went
-  off, such as a borrow hand-over). The plant proof records nothing (`capture_proofs.rb:52` answers
+- *Client wider* (a tampered client, or a mirror not yet updated after a session ended, such as a
+  borrow hand-over). The plant proof records nothing (`capture_proofs.rb:52` answers
   false without a message), so the item leaves the tray with no plant recorded, as a client that
   skips `plantRefusal` meets today. The next room answer corrects the mirror.
 
@@ -661,13 +666,17 @@ unchanged.
   Warn for a PC `domain` no account uses.
 - An owner or a borrower whose account kind refuses its own PC, error.
 - `accountOnly` on an NPC with no `creds.username`, error. An `accountOnly` NPC may carry only
-  `id`, `displayName`, `npcType`, `creds`, `role` and `accountOnly`; any other key (`itemsHeld`, a
-  story, a phone, `habits`, `awareness`, `voice`, a position or sprite) is an error, which the
-  server readers of section 5 rely on. Naming one where a person who walks and is met is expected
+  `id`, `displayName`, `npcType`, `creds`, `role`, `staff`, `accountOnly` and `_`-prefixed comment
+  keys (the NPC schema leaves extra properties open). `staff` (`true` or `false`) is required, else
+  error, because `identity_roles` makes every NPC with `creds` staff unless it says `false`
+  (`access_identities.rb:63-64`). Any other key (`itemsHeld`, a story, a phone, `habits`,
+  `awareness`, `voice`, a position or sprite) is an error, which the server readers of section 5
+  rely on. Naming one where a person who walks and is met is expected
   is an error: a PC `owner`, an NPC with `workarounds` or `needsHome`, a `share_login` `with`, a
   `borrow_session` borrower or an `after: "borrow"` candidate. It may be listed in
   `cachedAccounts` (start candidate) and named by `grants.session.account`. Every person check
-  that requires a position or sprite skips it.
+  that requires a position or sprite skips it, and so does `awareness_level` in
+  `scripts/validate_access_work.rb:1520-1526`, which calls `NpcHabits.level_of` directly.
 - A `|` in the id of a PC or NPC that `cachedAccounts` names, error: the pair strings of section 8
   are `"<pcId>|<npcId>"` and are split on that character.
 - `domain` on a PC or in `creds` outside the schema pattern, error.
@@ -715,8 +724,9 @@ comparison between two commits, which the stage's review runs on the hash to be 
 `bin/ops-golden-compare <stage>` takes as parent `git merge-base main <stage>` after the stage's
 last merge of `main`. In a scratch worktree under `tmp/` at the parent's engine code, with the
 stage's `ops_privilege_unchanged_test.rb` and golden helper copied in, it records the golden files
-(`RECORD_GOLDEN=1`), runs the same test against them at the stage's commit, and removes the
-worktree with `git worktree remove`. It runs that one test file only, never a `db:` task against
+(`RECORD_GOLDEN=1`) into the directory `OPS_GOLDEN_DIR` names, runs the same test against it in a
+second `tmp/` worktree at the stage's commit, and removes both with `git worktree remove`; it never
+writes the checked-in golden files. It runs that one test file only, never a `db:` task against
 the shared Postgres, and refuses when the two commits differ in `db/`. The checked-in golden files
 only catch drift between stages, so work on `main` may refresh them without weakening the proof.
 Three rules keep the comparison honest:
@@ -794,7 +804,9 @@ plan's `network_ops_no_exposure_test.rb` if that has landed first.
 **JS unit** (`test/js/`): `pc-sessions` keeps `access` through `publicSession` and the bootstrap
 adopt, and drops it when the mirror locks a session; `keyboardAdmin` is false for a locked mirror
 entry that still held `access`, and for remote and relay entries; a later answer for the same PC
-with no `access` (the PC gone off) clears it from the entry and `keyboardAdmin` is then false; a
+with no `access` (the PC gone off) clears it from the entry and `keyboardAdmin` is then false;
+after a desktop 403 with reason `off` for that PC, `keyboardAdmin` is false and a refused stick
+stays in the tray; a
 stick refused for a `remote` entry shows the policy's refusal message and stays in the tray; the
 desktop shows the marker and the collect control only for admin; the collect calls
 `keyring.refresh()` and the panel uses the answer's `portrait`; `plantRefusal` with `admin`; a
@@ -893,7 +905,8 @@ counts; never a password, a hash token or a code. The helper cuts nothing: a PC 
 40 characters, or an account username over 32, makes the call malformed (no row, a raise in test
 and development). So every PC id, profile id and account username these rows carry must be within
 those limits in a scenario that declares `logSources`, and the log rows plan's validator check
-enforces it there. An
+enforces it there. The collect route caps `pc_id` at 40 in every scenario, so this plan's validator
+also makes an id over 40 on a PC with `cachedAccounts` an error whatever `logSources` says. An
 account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is the log rows plan's
 `signin_refused` row; this plan writes none, and S5c registers that row's optional `kind` detail
 (`local`, `domain`).
@@ -989,7 +1002,8 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
    (`cachedAt`). If owned PCs matter, a later step could add a small own-PC-use report checked like
    borrow reports. Under (a), `after` and `cachedAt` go and S5b shrinks a little.
 3. **Does a collect or an admin action cost game minutes or risk detection?** No server clock is
-   assumed. **Recommend no cost now**; detection belongs to the defence work.
+   assumed. (a) no cost now, or (b) a fixed cost per collect, which needs a server clock.
+   **Recommend (a)**; detection belongs to the defence work.
 4. **Domain-wide lockout.** Left out: the lockout key is read in six places (sign-in, keyring
    sign-in, the client's lockout marks, NPC frustration, feed posts, the failure counter), and a
    domain scope would need one key helper for all of them, a rule for which PC's `maxAttempts`
