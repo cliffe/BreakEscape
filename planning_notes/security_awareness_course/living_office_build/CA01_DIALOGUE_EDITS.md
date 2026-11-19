@@ -99,3 +99,51 @@ line 29
 
 - `scenarios/_office_kit/ink/priya_nair_ambient.ink:14` and `scenarios/_office_kit/ink/sam_okoro_ambient.ink:13` carry the old Gwen stub text verbatim ("Good spot on that invoice. Phone the supplier next time too."). Not in the task's edit list, so left unchanged; flag for the orchestrator if those stubs can appear in ca01.
 - The board-notice prop observation (`office_kits/brightwell_foods.json:70,86`, `test_ca01_panel/scenario.json.erb:1146`) says "being chased with the bank". Left as is; it is the read layer-1 text and a figure-free bank reference, consistent with the fortnight.
+
+## Round 2 (review REVIEW_R2.md: 1 major, 5 minor, 3 nit)
+
+Counts: **7 accepted, 1 rejected, 1 resolved by another fix.**
+
+| # | Disposition | Reason |
+|---|---|---|
+| R2-1 (major) | Accepted | Bark 1000 said "That's the one on the board", which read as the player's own email and contradicted the host's "supplier got paid". Reframed as a different case, one that got through. |
+| R2-2 | Accepted | Bark 916 dropped the "fortnight" figure; the cost is now stated once per sitting, in the panel. |
+| R2-3 | Accepted | Defend twin host line 22 no longer states the figure ("took an age"), so the fortnight is said once in that sitting (the panel) and the host verb differs from "chasing the bank". |
+| R2-4 | Accepted | Stubs now branch on kit_caught: praise only when caught (kit_caught is set at >=85%), a neutral on-topic line otherwise, so a low scorer is not congratulated. Node test extended to both branches (boolean asserts). |
+| R2-5 | Accepted | Gwen's caught line now names "that bank-details email", the fraudulent message, not "that invoice" (the legitimate INV-2217). |
+| R2-6 | Accepted | Panel sentence 4 split into two, the "on a number you already hold before any change" ambiguity removed, and the implied "run pays the right account" tail dropped. Edited in both full panels. |
+| R2-7 (nit) | Accepted | Host kit_caught sub-clause reworded to avoid "you reported ... that was you" double credit. |
+| R2-8 (nit) | Rejected | "never sees a penny" is a natural UK idiom and reads aloud fine; the known amount does not break it. |
+| R2-9 (nit) | Resolved | Praise from three people resolves once the stubs gate on kit_caught (R2-4). |
+
+No change to defend.json this round, so no twin regeneration.
+
+### Changed lines R2 (before / after)
+
+`scenarios/test_ca01_panel/scenario.json.erb` bark 1000
+- before: `That's the one up on the board. Money went to the wrong account, and the real supplier's still waiting to be paid.`
+- after: `That notice on the board is a different case, one that got through. Wrong account, and the supplier's still waiting to be paid.`
+
+`scenarios/test_ca01_panel/scenario.json.erb` bark 916
+- before: `One call to confirm the new details, and the money never moves. Beats a fortnight on the phone to the bank.`
+- after: `One call to confirm the new details, and the money never moves. Saves a lot of phoning round afterwards.`
+
+Panel sentence (both `scenarios/ca01_invoice_fraud/scenario.json.erb` and `scenarios/test_ca01_panel/scenario.json.erb`)
+- before: `The call back you just practised, on a number you already hold before any change to a payee, is what breaks that chain: the new details never reach the file, and the run pays the right account.`
+- after: `The call back you just practised is what breaks that chain. Ring a number you already hold before any change to a payee, and the new details never reach the file.`
+
+Host kit_caught sub-clause (both `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink:28` and `scenarios/test_ca01_panel/ink/adaeze_okafor.ink:28`)
+- before: `{kit_caught: And that was you, spotting it before it went anywhere.}`
+- after: `{kit_caught: That was down to you, before it went anywhere.}`
+
+Defend twin host ink (`scenarios/ca01_invoice_fraud_defend/ink/adaeze_okafor.ink:22`)
+- before: `...a bank-change email we took at face value, and spent a fortnight chasing the bank to get the money back. So now we ring...`
+- after: `...a bank-change email we took at face value, and it took an age to get the money back. So now we ring...`
+
+Gwen stub (`scenarios/_office_kit/ink/gwen_pritchard_ambient.ink`, ca01 knot, now kit_caught-gated)
+- caught: `Gwen Pritchard: Good spot on that bank-details email. That one would've sailed straight through.`
+- not caught: `Gwen Pritchard: Heard you've been through the inbox. Some real traps in there lately.`
+
+Agnieszka stub (`scenarios/_office_kit/ink/agnieszka_duda_ambient.ink`, ca01 knot, now kit_caught-gated)
+- caught: `Agnieszka Duda: Nice one, catching that. Saved the whole floor a headache.`
+- not caught: `Agnieszka Duda: Busy one on the payments inbox today. Those bank-change emails keep coming.`

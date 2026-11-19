@@ -25,7 +25,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { kit_defend_done && not kit_ca01_host_said:
-        Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. {kit_caught: And that was you, spotting it before it went anywhere.}
+        Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. {kit_caught: That was down to you, before it went anywhere.}
         Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.
         ~ kit_ca01_host_said = true
     - else:

@@ -124,19 +124,26 @@ async function openStub({ person, npcId }, globals) {
 }
 
 for (const stub of STUBS) {
-    test(`${stub.person} stub: after kit_defend_done the ca01 line shows, not "(End of conversation)"`, async () => {
-        const conv = await openStub(stub, { kit_defend_done: true, kit_ep: 'ca01' });
-        const r = conv.continue();
-        assert.ok(r.hasEnded === false, 'first continue reported the story ended');
-        assert.ok(typeof r.text === 'string' && r.text.trim().length > 0);
-        const ca01 = readFileSync(join(root, `scenarios/_office_kit/ink/${stub.person}_ambient.ink`), 'utf8')
-            .split('=== ca01 ===')[1].split('\n').find(l => /:\s/.test(l)).trim();
-        assert.ok(r.text.trim() === ca01, `got "${r.text.trim()}"`);
-        assert.ok(r.choices.length === 1);
-        conv.engine.choose(0);
-        const end = conv.continue();
-        assert.ok(end.hasEnded === true);
-        assert.ok(end.tags.some(t => t.trim() === 'exit_conversation'));
+    test(`${stub.person} stub: the ca01 line shows on both kit_caught branches, not "(End of conversation)"`, async () => {
+        // The ca01 knot branches on kit_caught: praise when caught, a neutral on-topic line when not.
+        const knot = readFileSync(join(root, `scenarios/_office_kit/ink/${stub.person}_ambient.ink`), 'utf8')
+            .split('=== ca01 ===')[1].split('=== bye ===')[0];
+        const speakerLines = knot.split('\n').map(l => l.trim()).filter(l => /^[A-Z][A-Za-z ]*:\s/.test(l));
+        assert.ok(speakerLines.length === 2);   // caught branch first, then the not-caught branch
+        const [caught, notCaught] = speakerLines;
+        assert.ok(caught !== notCaught);
+
+        for (const [kitCaught, expected] of [[true, caught], [false, notCaught]]) {
+            const conv = await openStub(stub, { kit_defend_done: true, kit_ep: 'ca01', kit_caught: kitCaught });
+            const r = conv.continue();
+            assert.ok(r.hasEnded === false, 'first continue reported the story ended');
+            assert.ok(typeof r.text === 'string' && r.text.trim() === expected, `kit_caught ${kitCaught}: got "${r.text.trim()}"`);
+            assert.ok(r.choices.length === 1);
+            conv.engine.choose(0);
+            const end = conv.continue();
+            assert.ok(end.hasEnded === true);
+            assert.ok(end.tags.some(t => t.trim() === 'exit_conversation'));
+        }
     });
 
     test(`${stub.person} stub: before kit_defend_done the neutral line shows`, async () => {

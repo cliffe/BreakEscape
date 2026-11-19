@@ -1,5 +1,6 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
+VAR kit_caught = false
 
 === start ===
 { kit_defend_done:
@@ -9,7 +10,11 @@ Gwen Pritchard: Morning. Grab a coffee if you need one.
 -> bye
 
 === ca01 ===
-Gwen Pritchard: Good spot on that invoice. That one would've sailed straight through.
+{ kit_caught:
+    Gwen Pritchard: Good spot on that bank-details email. That one would've sailed straight through.
+- else:
+    Gwen Pritchard: Heard you've been through the inbox. Some real traps in there lately.
+}
 -> bye
 
 // Every knot ends on this choice: a knot that prints its line and ends at DONE with no
