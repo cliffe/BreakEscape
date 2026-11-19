@@ -164,7 +164,7 @@ test('the control matcher sees the known text controls (guards against a matcher
 // must divide the zoom back. Each one is named here with the size it must keep.
 const ZOOMED_CONTROLS = [
     { file: 'game-menu.css', sel: '.game-menu-field select', px: 16 },
-    { file: 'modals.css', sel: '#password-modal-input', px: 20 },
+    { file: 'modals.css', sel: '#password-modal-input', px: 24 },
     { file: 'music-widget.css', sel: '.mw-select', px: 16 },
     { file: 'player_preferences.css', sel: '.player-preferences-modal-content .form-control', px: 16 },
 ];
