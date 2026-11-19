@@ -22,6 +22,12 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   cracking minigame)" was stopped on Opus 5.5 while reading keyring and session code; no plan
   text existed yet. If `opus48` is stopped too: Haiku gathers the context, then the narrow
   residue goes to the user as a `sonnet-cvp` offer.
+- 10:54. CRACKING R1 done (4 blockers, 9 majors, 8 minors, 3 nits; `46649f23f`). Its reviser on
+  `opus48` was stopped by the safeguard before editing anything (plan unchanged). Model-routing
+  note: task type "revise the hash-cracking minigame plan from review findings", stop message
+  "Opus 4.8's safeguards flagged this message ... Details: [cyber]", request
+  req_011ChCAPunmRgP5dGaJNTkEy. HELD: waiting for the user's choice (sonnet-cvp retry, or other).
+  Do not rerun it on another model without that.
 - The user's quota resets at 12:00 (2026-11-19): run agents in parallel, do not hold back.
 
 ## Next steps
