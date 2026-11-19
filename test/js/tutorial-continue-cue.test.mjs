@@ -257,10 +257,11 @@ test('the ready words contain no dash characters', () => {
 
 // Fake layout: rect(top, bottom) per element, panel scrollHeight/clientHeight
 const rect = (top, bottom) => () => ({ top, bottom });
-function setLayout({ panelTop = 0, panelBottom = 310, lineTop, btnTop, btnBottom, scrollH = 387, clientH = 310 }) {
+function setLayout({ panelTop = 0, panelBottom = 310, lineTop, btnTop, btnBottom, scrollH = 387, clientH = 310, clientTop }) {
     const panel = overlayParts['.tutorial-panel'];
     panel.getBoundingClientRect = rect(panelTop, panelBottom);
     panel.scrollHeight = scrollH; panel.clientHeight = clientH; panel.scrollTop = 0;
+    if (clientTop !== undefined) panel.clientTop = clientTop;
     overlayParts['.tutorial-ready'].getBoundingClientRect = rect(lineTop, lineTop + 16);
     overlayParts['.tutorial-next'].getBoundingClientRect = rect(btnTop, btnBottom);
     return panel;
@@ -270,7 +271,46 @@ test('clipped Continue: the panel scrolls just enough to show it', async () => {
     const t = await begin();
     const panel = setLayout({ lineTop: 330, btnTop: 349, btnBottom: 385 });
     t.notifyPlayerMoved(); tick();
-    assert.ok(panel.scrollTop === 75, 'scrolled by the hidden part of the button: ' + panel.scrollTop);
+    assert.ok(panel.scrollTop === 79, 'scrolled by the hidden part of the button plus the outline: ' + panel.scrollTop);
+});
+
+test('m2: a 2px border is excluded from the scrollport, so the button border is not clipped', async () => {
+    const t = await begin();
+    // border box 0..314, 2px border: scrollport 2..312
+    const panel = setLayout({ panelBottom: 314, lineTop: 330, btnTop: 349, btnBottom: 385, clientH: 310, clientTop: 2 });
+    t.notifyPlayerMoved(); tick();
+    assert.ok(panel.scrollTop === 385 + 4 - 312, 'bottom edge is the scrollport, not the border box: ' + panel.scrollTop);
+});
+
+test('18px themed frame: Continue and its outline clear the inner edge', async () => {
+    const t = await begin();
+    // border box 0..346, 18px frame: scrollport 18..328 (live 844x390 numbers, Continue 349..385 before scrolling)
+    const panel = setLayout({ panelBottom: 346, lineTop: 254 + 39, btnTop: 349, btnBottom: 385, clientH: 310, clientTop: 18, scrollH: 387 });
+    t.notifyPlayerMoved(); tick();
+    assert.ok(panel.scrollTop === 61, 'scrolled to clear the frame: ' + panel.scrollTop);
+    assert.ok(385 + 4 - panel.scrollTop <= 18 + 310, 'button plus outline inside the scrollport');
+});
+
+test('m3: removed or hidden panel: no scroll, no throw', async () => {
+    const t = await begin();
+    const panel = setLayout({ lineTop: 330, btnTop: 349, btnBottom: 385 });
+    const nextBtn = overlayParts['.tutorial-next'];
+    t.tutorialOverlay = null;
+    t.revealReadyCue(overlayParts['.tutorial-ready'], nextBtn);
+    assert.ok(panel.scrollTop === 0, 'removed overlay: untouched');
+    t.tutorialOverlay = { querySelector: () => ({ scrollHeight: 0, clientHeight: 0, scrollTop: 0, getBoundingClientRect: rect(0, 0) }) };
+    t.revealReadyCue(overlayParts['.tutorial-ready'], nextBtn);
+    assert.ok(panel.scrollTop === 0, 'hidden panel with no layout: untouched');
+});
+
+test('m1: the panel scrolls back to the top when the next step shows', async () => {
+    const t = await begin();
+    const panel = setLayout({ lineTop: 330, btnTop: 349, btnBottom: 385 });
+    t.notifyPlayerMoved(); tick();
+    assert.ok(panel.scrollTop > 0, 'scrolled for the ready cue: ' + panel.scrollTop);
+    press('Enter');
+    assert.ok(t.currentStep === 1, 'advanced');
+    assert.ok(panel.scrollTop === 0, 'next step starts at the top: ' + panel.scrollTop);
 });
 
 test('visible Continue: no scroll', async () => {
@@ -299,6 +339,7 @@ test('no layout API (test environments): ready state still works, no throw', asy
     t.clearStepReady();
     t.setStepReady(overlayParts['.tutorial-next']);
     assert.ok(t.stepReady === true, 'no throw when the button has no rect');
+    assert.ok(panel.scrollTop === 0, 'and the panel is not scrolled');
 });
 
 test('the reveal uses no smooth scrolling, focus or window scroll', () => {

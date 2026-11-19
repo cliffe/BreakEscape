@@ -17,6 +17,7 @@ const TUTORIAL_DECLINED_GLOBAL = 'engine_tutorial_declined';
 const TUTORIAL_READY_TEXT = 'Done. Press Continue (or Enter).';
 // Touch-first devices have no Enter key to press
 const TUTORIAL_READY_TEXT_TOUCH = 'Done. Tap Continue.';
+const READY_OUTLINE_PX = 4; // Continue's ready outline: 2px plus 2px offset
 
 // Dialogs that hold the keyboard while shown. Most are built once and hidden, so the
 // check below counts only the ones actually rendered. The tutorial's own panel and
@@ -424,9 +425,14 @@ export class TutorialManager {
             const btn = nextButton.getBoundingClientRect();
             const lineTop = readyLine && typeof readyLine.getBoundingClientRect === 'function'
                 ? readyLine.getBoundingClientRect().top : btn.top;
-            let delta = btn.bottom - box.bottom;
+            // The scrollport is the padding box: the panel's frame (border or border-image,
+            // 18px in the themed skin) is not part of it. Leave room for the button's focus
+            // outline (2px plus 2px offset).
+            const innerTop = box.top + (panel.clientTop || 0);
+            const innerBottom = innerTop + panel.clientHeight;
+            let delta = btn.bottom + READY_OUTLINE_PX - innerBottom;
             if (!(delta > 0)) return;
-            if (lineTop - delta < box.top) delta = Math.max(0, lineTop - box.top);
+            if (lineTop - delta < innerTop) delta = Math.max(0, lineTop - innerTop);
             if (!(delta > 0)) return;
             panel.scrollTop += delta;
         } catch (e) { /* cosmetic only */ }
@@ -459,6 +465,11 @@ export class TutorialManager {
 
         this.currentStep = stepIndex;
         const step = this.steps[stepIndex];
+        // A scrolled panel (phone landscape) must start the next step at the top
+        try {
+            const panel = this.tutorialOverlay?.querySelector('.tutorial-panel');
+            if (panel) panel.scrollTop = 0;
+        } catch (e) { /* cosmetic only */ }
 
         // Update UI
         const overlay = this.tutorialOverlay;
