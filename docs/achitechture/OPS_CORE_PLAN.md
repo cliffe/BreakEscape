@@ -474,6 +474,23 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   then host rows and resource rows. A host row gains `scanned: true` and `services: [{ name,
   label, port, product, version }]` only when the host id is in `opsDiscovered.hosts`.
 - A device row is `{ id, kind: 'device', name, sprite, responding? }`.
+- **Display fields (`cli`).** The optional `cli` objects of section 9.1 are display text for the
+  command-line skin. The row builders copy each one unchanged, as the object the author wrote,
+  beside the fields it belongs to and at the stage that serves them, and never earlier:
+  `networks.<id>.cli.range` as `cli: { range }` on the network's block, when the block is built
+  (the range is the sweep's target, so it travels with the block that offers the sweep, and the
+  block still carries no host and no count);
+  `networks.<id>.cli.hosts.<hostId>.address` as `address` on that host's row, in the sweep answer
+  and in `GET /network`, only once the network is swept (the row exists only then); a service's
+  `cli` as `cli` on that service inside the host row's `services`, in the host scan answer and in
+  `GET /network`, only once the host is scanned. A host row for a PC the player holds a session
+  on, listed on an unswept network (above), carries no `address` until the sweep, as it carries no
+  `services` until the scan. A weakness's or a decoy's `cli` is served in section 5.3. An object
+  or key the author did not write is left out of the answer: never `{}`, never `null`, and the
+  browser builds the defaults itself from fields it already has. Nothing reads a `cli` field to
+  decide anything: no route, check, refusal, log row or synced key uses one, and the bootstrap and
+  every room answer carry none (they carry no `networks`, `hosts` or `services` at all). Nothing
+  is added to synced `player_state`.
 - A network block gains `swept` (true or false) on a discovery network, and `ops: true` when some
   host on it declares `services`. `ops` is sent only on an open network or a swept one: on an
   unswept discovery network it would say that the network holds at least one host, which is not
@@ -505,7 +522,12 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   repeat check never turns a confirmed finding back to unconfirmed and never hands out a second
   alias. The answer lists every finding of that service the player now holds, each with its
   stored status and alias. Nothing tells a real one from a decoy until confirm: the answer
-  builds both from the same fields in id order.
+  builds both from the same fields in id order. A finding's authored `cli` (`title`, `module`,
+  `script`) is copied unchanged as `cli` on the finding, in the check answer and in
+  `GET /network`, by the one builder that makes both kinds, so a decoy cannot be told from a
+  weakness by what is sent: the same keys, drawn from the same definition, and an absent object
+  left out for both alike. The finding in the confirm answer is the same finding and carries the
+  same `cli`; the confirm and a card never read it.
 - **A check is recorded whatever it finds.** The first check of a service adds
   `<hostId>.<serviceName>` to `opsDiscovered.services` and writes the `service_checked` row,
   even when it adds no finding (a service with no weaknesses or decoys, or whose only weakness
@@ -1119,6 +1141,12 @@ whether or not it has services, and nothing about its services is told before a 
 A host on an open network counts as discovered and its network as swept, so `/check` works
 there after a host scan; the host scan is the one step an open network still needs.
 
+**Display fields in these answers.** The sweep answer's host rows carry `address` where authored,
+the host scan answer's row carries each service's `cli` where authored, and the check answer's
+findings carry `cli` where authored (section 5.2, "Display fields"). They are copied, not
+computed, and no check in the table reads them, so a refusal, a status and a log row are the same
+with or without them. A repeat answers the same fields, `cli` included.
+
 **An exact repeat, and a stale id.** A repeat is the same request sent again with nothing
 changed in between. A repeated host scan or check answers `already: true` with the same
 fields (a check: the service's findings as they now stand, statuses and aliases kept); a
@@ -1149,10 +1177,14 @@ session a technique granted through an unplugged foothold has already ended with
 | Log rows (section 13) | never, by this plan | stored server-side in `opsLog`; the log feature's viewer is the only reader and has its own reach check |
 | `openHere` on a session row | only in the view of the foothold a technique session came through, on a host that blocks remote sign-in | |
 | A finding's `alias` | with the finding | a counter of the player's own finds; it says nothing about what is unchecked |
+| A network's `cli.range` | with the network's block, as `cli: { range }`; left out when not authored | `GET /network`; never in the bootstrap or a room answer |
 | A host's `id`, `name`, `sprite`, kind | after its network is swept | `GET /network`, the sweep answer |
+| A host's `address` (authored under `networks.<id>.cli.hosts.<hostId>`) | after its network is swept, on the host's row; left out when not authored | `GET /network`, the sweep answer |
 | A service's `name`, `label`, `port`, `product`, `version` | after the host is scanned | `GET /network`, the scan answer |
+| A service's `cli` (`protocol`, `service`, `banner`) | after the host is scanned, as `cli` on the service; left out when not authored | `GET /network`, the scan answer |
 | That a service has weaknesses or decoys, and how many | never before a check | |
 | A finding's `class`, `severity`, `summary` | after the check | check answer, `GET /network` |
+| A finding's `cli` (`title`, `module`, `script`) | after the check, as `cli` on the finding, the same keys for a weakness and a decoy; left out when not authored | check answer, confirm answer's finding, `GET /network` |
 | Whether a finding is real | after the confirm | |
 | `falseBecause` | after the confirm, for a decoy | |
 | `needs` (kind, label, met) | after the confirm, for a real finding | a need's `label` is a name the scenario already shows elsewhere, or the entry's authored `label`; never a password, a credential's secret or a global's name |
@@ -1169,7 +1201,10 @@ key; before a host scan names no
 product or version; before a check no class or summary; before a confirm nothing differs
 between a decoy and a real finding except authored text, with the weakness fixed or not; a
 technique not held is never named; the 400 body is the same for every route and every bad
-parameter; a `no_grant` refusal carries `reason` and nothing else. The leak scanner gains a collector for these strings, staged
+parameter; a `no_grant` refusal carries `reason` and nothing else; no `cli` string appears in the
+bootstrap or any room answer, none of a host's or service's before its sweep or scan, none of a
+finding's before its check, and a decoy's `cli` has exactly the keys a weakness's has. No route,
+check or refusal reads a `cli` field. The leak scanner gains a collector for these strings, staged
 by what has been earned.
 
 ## 8. State and saved games
@@ -1225,14 +1260,25 @@ neighbouring blocks use, and every new open location carries the `x-id-map` mark
 | S1 | top level, beside `resources` (`SC:347`) | `hosts`: id map (`propertyNames` with the id pattern, `x-id-map: true`), `x-serverOnly: true`, `x-servedBy: ["GET /network", "POST /network/scan"]`. Entry: `name` (required), `network` (required, `x-ref: network`), `sprite`, `offWhen` (the same `oneOf` as a network's), `services` |
 | S1 | `definitions.item.properties`, beside `network` and `headless` (`SC:5525-5542`) | `services`, `x-serverOnly: true`, `$ref` to a new `definitions.service`. The item definition is open, so this declares the key (ending the unknown-key warning) and closes nothing |
 | S1 | `definitions.service` | `name` (id pattern, max 40), `label` (max 40), `port` (integer 1 to 65535), `product` and `version` (1 to 40 characters); `name`, `port`, `product`, `version` required; array `maxItems: 8` |
+| S1 | `networks.<id>` | `cli`: one optional closed object (`additionalProperties: false`, note pattern `^_`, no required key) with `range` (string, IPv4 CIDR pattern, max 18) and `hosts`, an id map (`x-id-map: true`, keys the host id pattern) of closed objects with one property `address` (string, dotted IPv4 pattern). Display text for the command-line skin; the description names its reader (`cli-gen/`) and says no route, check or refusal reads it. Declared in the same shared file as the skin plan's schema rows (its section 9), which carry the patterns and the rules the validator applies |
+| S1 | `definitions.service` | `cli`: one optional closed object with `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`) and `banner` (1 to 80 characters). Not part of `product` or `version`, which keep their rule and their place |
 | S2 | `definitions.service` | `weaknesses` (`maxItems: 4`, items `$ref` `definitions.weakness`) and `decoys` (`maxItems: 4`, items `$ref` `definitions.decoy`). `x-servedBy` gains `POST /network/check` and `/confirm` |
 | S2 | `definitions.weakness` (closed) | `id` (id pattern, max 40), `class` and `severity` (the enums of section 0), `summary` (max 200), `needs`, `grants`, `fixedIf` (the same `oneOf` as `offWhen`: a global name or the requireGlobal map); `id`, `class`, `severity` required. `grants` is not required at any stage |
 | S2 | `definitions.decoy` (closed) | `id`, `class`, `severity`, `summary` as on a weakness, and `falseBecause` (1 to 200 characters); `id`, `class`, `severity`, `falseBecause` required |
+| S2 | `definitions.weakness` and `definitions.decoy` | `cli`, one shared `definitions.cliFinding` referenced from both so the two cannot drift: closed, no required key, `title` (1 to 80 characters), `module` (`^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, max 80), `script` (`^[a-z][a-z0-9-]{0,39}$`). Both definitions take the same object, which is what lets a decoy's `cli` and a weakness's carry the same keys |
 | S2 | `definitions.opsNeeds` (closed) | `credential` (`x-ref: credential`), `item` (`x-ref: item`), `itemType` (string), `session` (enum `user`, `admin`), `global` (the requireGlobal `oneOf`), at least one of them; `item` and `itemType` not both (`not` over `required`); `label` (plain text, 1 to 40 characters), required with `itemType` or `global` and refused otherwise. One `needs` map has one label, so the validator refuses `itemType` and `global` together in one map. The split of `item` from `itemType` is what lets the schema's reference check report a dangling item id |
 | S2 | `definitions.opsGrants` (closed) | `session` (closed: `account` with `x-ref: npc`, `access` enum `user`, `admin`, both required) or `credential` (`x-ref: credential`); `minProperties: 1`, `maxProperties: 1`. Declared in S2 so the shape is fixed once; the validator refuses the key until S3 (section 3) |
 | S3 | top level | `techniques`: id map, `x-serverOnly: true`, `x-servedBy: ["GET /network"]`, `maxProperties: 32`, keys at most 40 characters. Entry: `name` (required, max 40), `summary` (max 200), `worksOn` (required; `class` required, `product`, `versions` as 1 to 8 strings) |
 | S3 | `definitions.item.properties`, beside `credential` (`SC:5158`) | `technique_card`: a key of the technique card registry, allowed only on an item of type `technique_card`; the description says so. It stays on the item the browser receives, as `credential` does; the registry entry it names does not |
 | S3 | `credentials.<id>.proof` (`SC:293-306`) | `technique_card`: a finding id, with its own pattern (three ids joined by dots), which the description states. The description's list of proof kinds gains it |
+
+The `cli` objects inherit the server-only marks of the objects they sit in (`networks`, `hosts`
+and `services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already
+name the routes that serve them. Their rules beyond the schema (the address inside the range and
+unique on its network, the module unique in the scenario, a service whose findings author a field
+unevenly, strings holding a password or a command form) are checked by the skin plan's
+`check_realism_skin` in `scripts/validate_realism_skin.rb` (its section 9), which reads hosts,
+services and findings through `NetworkModel`. `check_network_ops` does not read a `cli` field.
 
 The top level and `definitions.item` are open, so declaring a key there adds a known name and
 nothing more; section 3 says what refuses each field before its stage.
@@ -1436,6 +1482,7 @@ a scenario with no `logSources`.
 | `network_scan_test.rb` | S1 | each check of `/network/scan` in order, with its status and reason; the 400 for a missing, non-string or over-long parameter and for both or neither of `network_id` and `host_id`; a powered-down host answering `not_responding` with and without services; the first sweep's `network_swept` row, passed with no limit (the route saves, as it changed `opsDiscovered`), and the `host_scanned` row, once only; a repeat's row passed with `save_limit: true`; a sweep through a foothold that does not reach the network (404); `already` carrying the same fields; a repeated sweep writing its `network_swept` row again (merged into the newest row's count) and saving nothing else; `GET /network` before and after; a second network swept only after a pivot session; discovery kept across an unplug and a new foothold |
 | `network_discovery_display_test.rb` | S1 | on an unswept discovery network, with a PC id the client was never sent: remote sign-in, account tiles, desktop, credential sign-in through a foothold, sign-in from a held desktop and the keyring's offered routes each answer exactly as on the same network declared open (the same requests on an open network are the reference); the unswept block lists rows only for PCs the player holds a session on, and lists them before and after the sweep; an open share on the unswept network served by `GET /container`; a host scan of a host on the unswept network answering as an invented id until the sweep |
 | `network_ops_indistinguishable_test.rb` | S1 to S3 | for each of scan (sweep and host), check, confirm and technique: the answer for a real id the player has not earned (a network out of reach, a host on an unswept network, a host not scanned, a real finding id never checked, a finding whose host is no longer listed) equals, status and body byte for byte, the answer for an invented id, a string that is not of the id form and a foothold not held; and a stale id (good before an unplug or a lost pivot) answers the same |
+| `network_cli_fields_test.rb` | S1, S2 | on a fixture with every `cli` object authored: `networks.<id>.cli.range` as `cli.range` on the block of `GET /network`; a host's `address` absent from the block and from every row before the sweep, present in the sweep answer and in `GET /network` after it; a service's `cli` absent from `GET /network` before the host scan and present, unchanged, in the scan answer and after it; a finding's `cli` absent before the check and present, unchanged, in the check answer, the confirm answer and `GET /network`; no `cli` string, and no `cli` key, in the bootstrap, in any room answer, in a refusal body or in a sync answer; a weakness and a decoy of one service carrying the same key set and the same value types, with every `cli` field authored on both and again with every one left out on both, before and after the confirm; a fixture that authors none of the objects answering the same bytes as before the objects existed, with no `cli` key and no `{}` or `null` anywhere in an answer; a fixture that authors only some keys of an object (a service with a `banner` and no `protocol`) answering only those keys; the same requests with every `cli` string changed answering the same statuses, reasons, statuses of findings and log rows (nothing reads a `cli` field); the answer to a stale or unearned id unchanged by the objects (the 404 body is the one body) |
 | `network_ops_free_test.rb` | S2, S3 | the loop costs nothing but rows: confirming every finding of a service, decoys and weaknesses alike, and trying every card in the scenario on every finding change no state beyond the statuses, the grants and the log, and add no state key; each refusal past the two 404s, the 403 `not_responding` included, writes a `technique_refused` row with `save_limit: true` and saves the game only while the helper's result is `stored?`: the first ten at a host in a five-minute window of server time save, whatever the card, finding or reason, the eleventh and every later one in that window do not (the first after the window ends does again), and none does with no log source; a refusal sent twice writes its row twice (merged into a count); a confirm repeated writes no second row |
 | `network_findings_test.rb` | S2 | aliases given in the order found and kept across a reload; a check repeated after a confirm keeps the status and the alias and answers `already: true`; a first check of a service with no weakness or decoy, and of one whose only weakness is fixed, answers no findings and no `already`, adds the service to `opsDiscovered.services` and writes one `service_checked` row, and its repeat answers `already: true` with no row; a repeat check after the weakness has become unfixed adds the finding, saves, answers no `already` and writes no second row, and the check after that answers `already: true`; a second service's check carries on the alias count; a host with services and no finding held carries no `findings` key, scanned or not; the 400s and each 403 `not_responding` of `/check` and `/confirm`; the `service_checked` and `finding_confirmed` rows; check before scan (404); a check's answer with a decoy and a weakness built from the same keys in id order; confirm for each; an invented finding id (404); a weakness whose `fixedIf` holds left out of a check; one already confirmed carrying `fixed: true`, and one found but unconfirmed carrying no `fixed` key and the same keys as a decoy; an `itemType` need met only by an unforged held item whose id is an authored item of that type; the authored `label` shown for an `itemType` and a `global`, and the global's name in no answer; `met` recomputed on each read as an item is picked up and a credential earned |
 | `network_technique_test.rb` | S3 | section 5.4, each rule one test: every refusal in its fixed order with what it writes: no row for either 404, and a `technique_refused` row for the 403 `not_responding` (`reason: not_responding`, `save_limit: true`) and for each 422, both grants with their `technique_used` row, and the repeat for a session and for a credential, each writing its `technique_used` row again with `save_limit: true` (merged into a count, the route saving only while the helper's result is `stored?`). Beyond that section's text: with two footholds that both reach the host, a use through the second being a new use that runs every check and moves the session to that foothold; a grant again after the session ended; `endedPcIds` when the grant replaces a pivot session; the step up replacing the record in place and keeping `foothold`, from a technique session and from a password session at `user`; `signedInPcs` gaining the PC; `access: "admin"` in the answer, in `GET /scenario` after a reload and on the host row for a session at admin, and no `access` key for a technique session at user or for a password, claim or credential session; `GET /network` `techniques` absent with no card held and carrying `itemId` (first in id order of two held cards) otherwise |
@@ -1611,7 +1658,12 @@ section 5.5, so the events are proved to drive a task. The line is in the NPC's 
 `collect_network_secrets` (`:494`). It collects, with the same "not already in room text" rule:
 host names of `hosts` entries and of sign-in hosts on discovery networks, the names of shares on
 discovery networks, products, versions, service labels, summaries, `falseBecause` texts, technique names and summaries, and the global
-names in `fixedIf`. Each string is tagged with the step that earns it (sweep, scan, check,
+names in `fixedIf`, and the authored `cli` strings: a network's `range` (earned once the
+network's block is listed through a foothold, so a leak only in a bootstrap or room answer), a host's `address` (sweep), a
+service's `protocol`, `service` and `banner` (scan), and a finding's `title`, `module` and
+`script` (check). Each `test_ops_*` feature scenario that authors `cli` objects lists them in its
+own collector at the stage that serves them, so a `banner` or an `address` appearing before its
+sweep or scan, or in a bootstrap or room answer, fails the run. Each string is tagged with the step that earns it (sweep, scan, check,
 confirm, card held, never), and the scan takes the run's list of completed steps so that a string
 is a leak only before its step.
 
@@ -1845,7 +1897,9 @@ Each is a statement of what this plan provides or needs, for the plan named.
    them is `desktop_request_allowed?` (section 5.4), whose `remote: "blocked"` term admits a
    technique session through its own foothold.
 6. **Skin (S6).** The four routes and the `GET /network` fields of sections 5 to 7 are the whole
-   surface, and `ops-model.js` with its `REFUSAL_TEXT` is the one shared pure module (section
+   surface (the optional `cli` display objects of section 9.1 are served as sections 5.2, 5.3 and
+   7 say, at the stage of the thing they belong to, copied unchanged, left out when not authored,
+   and read by nothing on the server), and `ops-model.js` with its `REFUSAL_TEXT` is the one shared pure module (section
    5.5). For typing, a finding has an `alias` and a `techniques` entry carries the `itemId` to
    send. This plan builds the scene's `perform` path and its one pending guard in S1 to S3,
    keyed by action and target (for `use`, the card and the finding together), over sweep,

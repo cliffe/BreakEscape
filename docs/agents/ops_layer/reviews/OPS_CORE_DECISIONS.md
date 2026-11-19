@@ -107,3 +107,14 @@ entries below took a different fix from the one suggested.
 - R2-6 b: question removed from section 15, which is now "Decisions".
 - R2-7 a: session-type implants stay keyboard-only; the question is removed and the rule stated as a decision in section 15 (already in 5.4).
 - R2-11 a: the plan mentions neither existing-code bug, so no change.
+
+## Skin request 3 (2026-11-19)
+
+- Section 9.1: schema rows for `cli` on `networks.<id>` (range, hosts id map with address) and on `definitions.service` (S1), and one shared `definitions.cliFinding` on weakness and decoy (S2); a paragraph pointing at the skin plan's `check_realism_skin` for every rule beyond the schema.
+- Section 5.2: new "Display fields (`cli`)" bullet: row builders copy each object unchanged at its stage (range on the block, address after the sweep, service `cli` after the scan); absent means omitted, never `{}` or `null`; nothing reads a `cli` field; nothing added to synced `player_state`.
+- Section 5.3: the check builder copies a finding's `cli` for weakness and decoy alike through one builder, same keys; the confirm's finding carries it too.
+- Section 6: paragraph "Display fields in these answers" (sweep, scan and check answers; repeats; no check reads them).
+- Section 7: five new serving rows (range, address, service `cli`, finding `cli`) and the no-exposure paragraph gains the bootstrap, room, stage and decoy-equals-weakness assertions.
+- Section 11.2: new `network_cli_fields_test.rb` row (right stage, absent before, absent from bootstrap, room, refusal and sync answers, decoy and weakness indistinguishable, omitted when not authored, nothing reads a `cli` field).
+- Section 11.4: the leak collector lists the `cli` strings at their serving stage, and each `test_ops_*` scenario that authors them lists them in its collector.
+- Section 14, item 6: notes that the `cli` objects are served as 5.2, 5.3 and 7 say. The core's `product` field and its rule are unchanged.
