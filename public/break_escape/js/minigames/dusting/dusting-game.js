@@ -11,10 +11,10 @@
  * with `{ cancelled: true }`; "Use normally" with `{ cancelled: true, useNormally: true }`.
  */
 import { MinigameScene } from '../framework/base-minigame.js';
-import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
+import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS, whorlShapeFor, WHORL_SHAPES } from './fingerprint-generator.js';
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
-    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
+    liftQuality, ratingFor, brushFeel, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
     zoomPlanBeside, ZOOM_STATUS_MAX_H, ZOOM_CHROME_H
 } from './dusting-model.js';
 import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide, fitCropToMarks, markGlyph, describeMarks, uprightMarks, rotateUpright } from './print-features.js';
@@ -71,8 +71,8 @@ const STORE_HC = 'breakEscape.dusting.highContrast';
 const STORE_STEADY = 'breakEscape.dusting.steadyHand';
 const TAPE_RADIUS = 9;
 const PUFF_RADIUS = 30;
-// UI-side only: the brush lays powder a little faster, so over-brushing is reachable in a normal sitting.
-const BRUSH_BOOST = 1.3;
+// A held Space ticks in place (about 14 a second): gentler per tick than a moving stroke (see BRUSH_FEEL in the model).
+const KEY_HOLD_GENTLE = 0.4;
 // UI-side only: extra haze drawn over fogged furrows so over-brushing is visible (the model's scores are unchanged).
 const FOG_HAZE = 1.4;
 
@@ -122,9 +122,25 @@ const PATTERN_SVG = {
     arch: '<svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 38Q24 8 45 38"/><path d="M3 44Q24 20 45 44"/><path d="M3 32Q24 0 45 32"/></g></svg>'
 };
 
+/**
+ * Whorl layout for a decoy card. A whorl decoy beside a whorl lift is the hard case: two whorls from the same
+ * jittered layout read as one print (m09 confirm). On easy and medium the decoy always uses a layout other than the
+ * lift's (cores and deltas moved 5 to 10 px, visible at card size); on hard it takes the lift's own layout, so only
+ * the minutiae tell them apart. Any other pairing keeps the person's own layout. Returns null for "use the owner's".
+ * @returns {number|null}
+ */
+export function decoyWhorlShape(decoyName, decoyPattern, liftPattern, liftOwner, rule, k = 0) {
+    if (decoyPattern !== 'whorl' || liftPattern !== 'whorl') return null;
+    const liftShape = whorlShapeFor(liftOwner);
+    if (rule === 'all') return liftShape;
+    const own = whorlShapeFor(decoyName);
+    if (own !== liftShape) return null;
+    return (liftShape + 1 + (k % (WHORL_SHAPES.length - 1))) % WHORL_SHAPES.length;
+}
+
 const printCache = new Map();
 function cachedPrint(opts) {
-    const key = `${opts.owner}|${opts.pattern || ''}|${opts.variant ?? ''}|${opts.partial ? 1 : 0}`;
+    const key = `${opts.owner}|${opts.pattern || ''}|${opts.variant ?? ''}|${opts.partial ? 1 : 0}|${opts.whorlShape ?? ''}`;
     if (!printCache.has(key)) {
         if (printCache.size > 24) printCache.clear();
         printCache.set(key, generatePrint({ size: N, ...opts }));
@@ -1064,7 +1080,7 @@ export class DustingMinigame extends MinigameScene {
         free.forEach((k, j) => { decoyClasses[k] = freeClasses[j]; });
         const decoys = decoyNames.map((nm, k) => {
             const pattern = forced.get(String(nm)) || decoyClasses[k];
-            return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern }), correct: false };
+            return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern, whorlShape: decoyWhorlShape(nm, pattern, lp, this.owner, this.diff.decoySamePattern, k) }), correct: false };
         });
         const correct = { label: this.ownerName, pattern: lp, print: cachedPrint({ owner: this.owner, pattern: lp }), correct: true };
         const at = seed % n;
@@ -1188,13 +1204,14 @@ export class DustingMinigame extends MinigameScene {
     }
 
     /** One brush/press/mark at pos; with `from`, a continuous stroke from there. */
-    _act(pos, from) {
+    _act(pos, from, keyed = false) {
         if (this.step === 'find') { if (!from && !this._touchFind) this._attemptFind(pos); return; }
         if (this.step === 'dust') {
             if (this.puffMode) { this.field.puff(pos.x, pos.y, PUFF_RADIUS); this.field.puff(pos.x, pos.y, PUFF_RADIUS); }
             else {
-                const base = TOOLS[this.tool];
-                const tool = { ...base, strength: base.strength * BRUSH_BOOST };
+                const tool = brushFeel(TOOLS[this.tool], this.difficultyId);
+                // a held key ticks in place every KEY_TICK_MS, so it lays powder more gently than a moving stroke
+                if (keyed) tool.strength *= KEY_HOLD_GENTLE;
                 if (from) this.field.brushLine(from.x, from.y, pos.x, pos.y, tool); else this.field.brush(pos.x, pos.y, tool);
             }
             this.dirty = true;
@@ -1240,7 +1257,7 @@ export class DustingMinigame extends MinigameScene {
                     this._countStroke();
                     this._act(this.reticle, null);
                     clearInterval(this._keyTimer);
-                    this._keyTimer = setInterval(() => this._act(this.reticle, null), KEY_TICK_MS);
+                    this._keyTimer = setInterval(() => this._act(this.reticle, null, true), KEY_TICK_MS);
                 }
             }
             return;
@@ -1567,17 +1584,29 @@ export class DustingMinigame extends MinigameScene {
             d[j] = r; d[j + 1] = g; d[j + 2] = b; d[j + 3] = 255;
         }
         if (hc) this._outlineMask(d, hcInk);
+        else if (holes === null) this._outlineMask(d, null, true);   // the dust step only (the lift card passes its holes)
     }
 
-    _outlineMask(d, ink) {
+    /**
+     * Dotted edge of the print. High contrast draws it solid grey. By default (`faint`) the dust step draws it half as
+     * strong in the tone that stands out from the surface (light on dark, dark on light), dashed so it is a pattern and
+     * not only a colour, and it stays under the powder once the ridges show (m04 blind run: nothing said where the print was).
+     */
+    _outlineMask(d, ink, faint = false) {
         const m = this.print.mask;
+        const f = this.field;
+        const FAINT = 0.55;
         for (let y = 1; y < N - 1; y++) {
             for (let x = 1; x < N - 1; x++) {
                 const i = y * N + x;
                 const inside = m[i] > 0.5;
                 if (inside && (m[i - 1] <= 0.5 || m[i + 1] <= 0.5 || m[i - N] <= 0.5 || m[i + N] <= 0.5) && ((x + y) & 3) < 2) {
                     const j = i * 4;
-                    d[j] = 128; d[j + 1] = 128; d[j + 2] = 128;
+                    if (!faint) { d[j] = 128; d[j + 1] = 128; d[j + 2] = 128; continue; }
+                    const lum = 0.3 * d[j] + 0.59 * d[j + 1] + 0.11 * d[j + 2];
+                    const to = lum > 128 ? 0 : 255;
+                    const k = FAINT * (1 - Math.min(1, f.reveal(i)));
+                    d[j] += (to - d[j]) * k; d[j + 1] += (to - d[j + 1]) * k; d[j + 2] += (to - d[j + 2]) * k;
                 }
             }
         }
@@ -1620,7 +1649,7 @@ export class DustingMinigame extends MinigameScene {
     _drawReticle() {
         if (!this.pointerInside || this.step === 'find') return;
         const c = this.ctx, r = this.reticle;
-        const rad = this.step === 'lift' ? TAPE_RADIUS : this.puffMode ? PUFF_RADIUS : TOOLS[this.tool] ? TOOLS[this.tool].radius : 5;
+        const rad = this.step === 'lift' ? TAPE_RADIUS : this.puffMode ? PUFF_RADIUS : TOOLS[this.tool] ? brushFeel(TOOLS[this.tool], this.difficultyId).radius : 5;
         c.save();
         c.strokeStyle = this.highContrast ? (POWDERS[this.powder] && POWDERS[this.powder].id === 'silver' ? '#fff' : '#000') : '#00ff41';
         c.lineWidth = 1;

@@ -107,10 +107,30 @@ export const DIFFICULTY = {
     // easy: decoys have a different pattern class by default, so the compare is by class; near-identical
     // whorls on easy were not a fair comparison (m08 E16). A scenario may force a same-class decoy with a
     // { name, pattern } entry in fingerprintCandidates (m05's mug does). Medium and hard keep the minutiae test.
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.24, partial: 'never', sheenScale: 1.0, hintAfterMs: 8000, nearRadius: 8, marks: 3 },
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.34, partial: 'never', sheenScale: 1.0, hintAfterMs: 8000, nearRadius: 8, marks: 3 },
     medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, hintAfterMs: 10000, nearRadius: 8, marks: 3 },
     hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findFloor: 0, partial: 'always', sheenScale: 0.7, hintAfterMs: 15000, nearRadius: 5, marks: 2 }
 };
+
+/**
+ * How the brush feels in the game, on top of TOOLS (which the model tests pin). Blind playtests m09 and m04 took 45 drag
+ * strokes to reach the Lift threshold: the fine brush lays a 5 px line over a 71 x 95 px print and a stroke that misses the
+ * print adds nothing. The game draws the brush at `size` times its model radius and lays powder `strength` times faster, so a
+ * mouse, finger or arrow-key player (all feed the same brushLine) reaches the threshold in about 5 deliberate strokes with the
+ * default fine brush on medium. `byDifficulty` keeps the ordering: easy a little wider, hard narrower, so hard still takes more
+ * strokes (and its higher threshold and partial print still apply).
+ */
+export const BRUSH_FEEL = { size: 2, strength: 2, byDifficulty: { easy: 1.1, medium: 1, hard: 0.85 } };
+
+/**
+ * The tool as the game applies it for a difficulty: `radius` and `strength` scaled by BRUSH_FEEL.
+ * @param {{radius:number, strength:number}} tool an entry of TOOLS
+ * @param {string} [difficultyId]
+ */
+export function brushFeel(tool, difficultyId = 'medium') {
+    const k = BRUSH_FEEL.byDifficulty[difficultyId] || 1;
+    return { ...tool, radius: tool.radius * BRUSH_FEEL.size * k, strength: tool.strength * BRUSH_FEEL.strength * k };
+}
 
 const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];
 
@@ -457,7 +477,7 @@ export function wrongPowderReason(powder, surface, short = false) {
 
 export const FIND_BEAM_GAIN = 1.6;
 export const FIND_HC_FLOOR_BONUS = 0.16;
-/** Luma change the medium floor (0.16) makes on every surface; easy and High contrast scale from it. */
+/** Luma change the reference floor (0.16) makes on every surface (medium's 0.16 moves it by about 30 to 38, easy's 0.34 by about 64); High contrast scales from it. */
 export const FIND_FLOOR_DELTA = 30;
 const FIND_FLOOR_REF = 0.16;
 const FIND_FLOOR_MAX = 0.9;

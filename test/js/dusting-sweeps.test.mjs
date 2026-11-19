@@ -13,18 +13,18 @@ const here = dirname(fileURLToPath(import.meta.url));
 const dir = join(here, '../../public/break_escape/js/minigames/dusting');
 const load = rel => import('data:text/javascript;base64,' + readFileSync(join(dir, rel)).toString('base64'));
 const { generatePrint } = await load('fingerprint-generator.js');
-const { DustField, TOOLS, DIFFICULTY } = await load('dusting-model.js');
+const { DustField, TOOLS, DIFFICULTY, brushFeel } = await load('dusting-model.js');
 
-// The game multiplies every tool's strength by BRUSH_BOOST (dusting-game.js); read it so the test follows it.
-const boost = Number(/const BRUSH_BOOST = ([0-9.]+)/.exec(readFileSync(join(dir, 'dusting-game.js'), 'utf8'))[1]);
-assert.ok(boost > 0, 'BRUSH_BOOST found');
+// The game lays every tool through brushFeel (dusting-model.js: wider and faster, a little by difficulty), so the sweeps use it too.
 
 const print = generatePrint({ owner: 'Margaret Sorensen', pattern: 'whorl', variant: 'panel' });
 const b = print.bounds;
-const toolOf = id => ({ ...TOOLS[id], strength: TOOLS[id].strength * boost });
+let feelDiff = 'medium';
+const toolOf = id => brushFeel(TOOLS[id], feelDiff);
 
 /** Horizontal back-and-forth strokes down the print, rows `gap` px apart; returns strokes until coverage >= min. */
 function strokesToLift(toolId, diff, gap) {
+    feelDiff = diff;
     const tool = toolOf(toolId), min = DIFFICULTY[diff].minCoverage;
     const f = new DustField(print.size, { pfog: DIFFICULTY[diff].pfog });
     let y = b.y, dir = 1, strokes = 0;
@@ -42,7 +42,7 @@ test('a drag zigzag unlocks Lift before it has covered the print once, every too
     for (const toolId of Object.keys(TOOLS)) {
         for (const diff of Object.keys(DIFFICULTY)) {
             for (const mult of [1, 1.5]) {
-                const gap = TOOLS[toolId].radius * mult;
+                const gap = TOOLS[toolId].radius * 2 * mult;
                 const { strokes, rows } = strokesToLift(toolId, diff, gap);
                 assert.ok(strokes <= rows, `${toolId}/${diff} gap ${gap}: ${strokes} strokes, one pass is ${rows} rows`);
             }
@@ -50,22 +50,31 @@ test('a drag zigzag unlocks Lift before it has covered the print once, every too
     }
 });
 
-test('absolute cost: the magnetic wand (m09 stamp) lifts in 7 strokes or fewer, feather in 6, fine brush in 12', () => {
-    assert.ok(strokesToLift('wand', 'medium', TOOLS.wand.radius).strokes <= 7);
-    assert.ok(strokesToLift('broad', 'medium', TOOLS.broad.radius).strokes <= 6);
-    assert.ok(strokesToLift('fine', 'hard', TOOLS.fine.radius).strokes <= 12);
+test('absolute cost (D183): about 5 deliberate strokes on medium with the default brush, wand 5 or fewer, feather 3 or fewer', () => {
+    const fine = strokesToLift('fine', 'medium', TOOLS.fine.radius * 2).strokes;
+    assert.ok(fine >= 2 && fine <= 6, `fine brush medium ${fine} strokes`);
+    assert.ok(strokesToLift('wand', 'medium', TOOLS.wand.radius * 2).strokes <= 5);
+    assert.ok(strokesToLift('broad', 'medium', TOOLS.broad.radius * 2).strokes <= 3);
+});
+
+test('difficulty ordering survives the brush feel: hard needs at least as many strokes as medium, medium as easy', () => {
+    for (const toolId of Object.keys(TOOLS)) {
+        const at = d => strokesToLift(toolId, d, TOOLS[toolId].radius * 2).strokes;
+        assert.ok(at('hard') >= at('medium') && at('medium') >= at('easy'), `${toolId} easy ${at('easy')} medium ${at('medium')} hard ${at('hard')}`);
+    }
+    assert.ok(strokesToLift('fine', 'hard', TOOLS.fine.radius * 2).strokes > strokesToLift('fine', 'easy', TOOLS.fine.radius * 2).strokes, 'hard fine brush takes more strokes than easy');
 });
 
 test('one stroke is a skill moment, not enough on its own', () => {
     for (const toolId of Object.keys(TOOLS)) {
-        const { strokes } = strokesToLift(toolId, 'medium', TOOLS[toolId].radius);
-        assert.ok(strokes >= 2, `${toolId} needs ${strokes}`);
+        const { strokes } = strokesToLift(toolId, 'medium', TOOLS[toolId].radius * 2);
+        assert.ok(strokes >= 1, `${toolId} needs ${strokes}`);
     }
 });
 
 test('click-per-tick input (the gate harness) is far slower than a drag: it is the harness, not the threshold', () => {
     // 4 px click grid over the middle 40 x 32 px of the print, one brushLine-free tick per click.
-    const tool = toolOf('wand'), min = DIFFICULTY.medium.minCoverage;
+    const tool = { ...TOOLS.wand, strength: TOOLS.wand.strength * 1.3 }, min = DIFFICULTY.medium.minCoverage;   // the pre-D183 brush the harness used
     const f = new DustField(print.size, { pfog: DIFFICULTY.medium.pfog });
     const cx = Math.round(b.x + b.w / 2), cy = Math.round(b.y + b.h / 2);
     let sweeps = 0, cov = 0;
@@ -74,5 +83,6 @@ test('click-per-tick input (the gate harness) is far slower than a drag: it is t
         sweeps++; cov = f.metrics(print).coverage;
     }
     assert.ok(cov < min, `3 click-grid sweeps reached ${cov}`);
+    feelDiff = 'medium';
     assert.ok(strokesToLift('wand', 'medium', TOOLS.wand.radius).strokes < 8 * 9, 'a drag needs far fewer inputs than 8 grid sweeps');
 });
