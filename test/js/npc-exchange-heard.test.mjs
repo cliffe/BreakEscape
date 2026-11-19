@@ -574,3 +574,17 @@ test('no line overheard: the flag is not set at any point, and a later meeting i
     assert.equal(o.exLines()[LINES.length].data.lineId, 'ex_parcel:0');
     assert.equal(o.globals.heard_ex_parcel, true);
 });
+
+test('sync: one heard line writes exactly one heard_<knot> key through setGlobal; later lines and the finish do not write it again', () => {
+    const o = office();
+    const writes = [];
+    const inner = o.w.world.setGlobal;
+    o.w.world.setGlobal = (name, value) => { writes.push([name, value]); inner(name, value); };
+    o.sys.step(40000);
+    assert.equal(o.exLines().length, LINES.length);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'finished');
+    assert.deepEqual(writes, [['heard_ex_parcel', true]], 'one scalar write, no list or whole-map write');
+    o.meetAgain();
+    o.sys.step(60000);
+    assert.equal(writes.length, 1, 'not again at the next meeting');
+});
