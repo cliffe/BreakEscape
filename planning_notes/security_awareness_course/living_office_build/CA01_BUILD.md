@@ -188,13 +188,84 @@ Pilot compares panel vs fallback. Run one persona through `test_ca01_panel` (see
 one through `ca01_invoice_fraud` (fallback: notice on close + host hub line), same attack/defend answers,
 and compare whether the consequence reads without the panel.
 
+## Wave 1A continuation (2026-11-19) — resume from here
+
+**Done this session (commits 10a80a977, b560b9ac4; CA01_BUILD fix in 10a80a977):**
+- Set pieces in `brightwell_foods.json`: `ca01_recall_fallback` and `ca01_recall` (board notice
+  `kit_ca01_notice`, type `notes1`/sprite `notes4` placeholder, position {4,2} on the back wall,
+  revealOnGlobal `kit_defend_done` / `{out}`; `ca01_recall` also has Agnieszka's hold-still caffeine
+  patch). A `_note` in setPieces flags the provisional art/tiles (dressing TODO).
+- `episodes.json`: `ca01_invoice_fraud` row (handAuthored, tier O, company brightwell_foods, ep ca01,
+  ambient [agnieszka_duda, gwen_pritchard], setPiece ca01_recall_fallback, attack true, stepAway false).
+  **No `ca01_invoice_fraud_defend` row** on purpose: the twin's `row_for` returns None → tier none →
+  the kit stays off the twin (Step 5 twin check).
+- Kit applied to the committed fallback shell (via `--kit` to scratch, copied `scenario.json.erb` back):
+  2 ambient staff, coffee/cooler, notice, 6 kit globals, 5 kit host mappings. stepAway false.
+- Content: host layer 2 in `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink:28-29` (branch gated
+  `kit_defend_done && not kit_ca01_host_said`, kit_caught clause), compiled. Layer 0+1 in the full
+  shell `strings.conceptPanel` (heading "Where that email leads"; fallback keeps the "look around the
+  office / word with Adaeze" invite). Twin layer-1 conceptPanel in the fragment `e1/defend.json`
+  (heading "If one gets through", firm's-own-case, no look-up, no layer 0). Twin host line reframed in
+  `scenarios/ca01_invoice_fraud_defend/ink/adaeze_okafor.ink`, compiled.
+- Validator (fallback shell, `--strict-social --no-graph --skip-ink`): **0 errors, 3 warnings**
+  (`kit_quiet`/`kit_attack_done` set-but-unread — by design in the fallback, the panel reads them;
+  `phish_supplier_contact_landed` pre-existing). Python tests: test_office_kit 29/29,
+  test_apply_training_room 10/10.
+
+**RESOLVED open questions:**
+- Refresh/kit DO tolerate two positioned kit staff + the host. In `--kit`, `kit_text` calls
+  `find_host_span(text, host_id, shell)` with an explicit host_id (matched by id, position ignored).
+  In `--refresh`, the host is matched by its own-shell-ink storyPath + position while kit staff point
+  at `scenarios/_office_kit/`. Proved `refresh_text` on the kit-applied ca01: OK, no change. No fix.
+- `test_ca01_panel` has **no clash** in the Hacktivity repo (grepped `/home/.../Code/Hacktivity`).
+- Debrief cost passage key = `strings.conceptPanel` (engine `debrief-view.js` draws it unconditionally;
+  object `{heading,text}`, paragraphs split on blank lines; default heading "How it works"). Used here.
+- Board-notice prop: `notes4` sprite / `notes1` type placeholder, dressing TODO (see setPieces `_note`).
+
+**NOT done — remaining steps for the next agent:**
+1. **Build `scenarios/test_ca01_panel`** (Step 2.4 / Step 4). Copy the ca01 shell; apply the kit with a
+   panel row (add a `fixture:true` episodes row `test_ca01_panel`: tier O, setPiece `ca01_recall`,
+   stepAway true, same ambient; run `--kit` to scratch, copy back) OR hand-splice. `patch_kiosk` then
+   keys the finished variant to `KIOSK_FINISHED`. Then **hand-author the chain on the NPC records**
+   (the tool can't own per-NPC mappings): **suspend, patrolOverride, resume in THREE separate
+   mappings** (a needs:"suspend" in the same mapping as patrolOverride cancels the walk — gate B proof
+   9); Agnieszka's target a FREE FLOOR tile in front of the board (provisional {4,3}); arrival bark on
+   `npc_arrived:kit_agnieszka_duda` keyed to its own walk (a `kit_` walk flag the walk sets and the
+   arrival clears) **plus** `data.owner !== 'needs'` + `kit_ca01_out===true` + `kit_quiet===true`,
+   onceOnly; Gwen suspend on `global_variable_changed:kit_ca01_out`, resume on the last step; use
+   `targetKnot`/`delayMs`; 2 chain barks ≥4 s apart (Agnieszka at board, then host). Add host layer 2
+   to the panel's adaeze ink (copy the fallback branch). **Then EDIT `test_ca01_panel`'s
+   `conceptPanel` to drop the "look around the office / word with Adaeze" sentence** (the panel does
+   the inviting).
+2. **Regenerate the twin** with `gen_e1_shells.py` so the fragment conceptPanel reaches
+   `ca01_invoice_fraud_defend/scenario.json.erb`. **First confirm the 4 check shells don't gain
+   conceptPanel** (appendix 4.4 step 4: must never reach a check shell). Only `defend_only()` does
+   `strings = copy.deepcopy(EP['strings'])` (line 333); `check()` builds its own `ep` — looks safe, but
+   **diff the four check shells after regen** to be sure. Then assert the twin has conceptPanel, no kit
+   member, no chain/timer/stepAway mapping.
+3. **Tests**: node `social-*`, `validator-social-*`, `validator-office-life`; a twin node check (no
+   chain/timer/stepAway); **proof 8** (`grep -l payload test/js/social-*.test.mjs`, run vs the panel
+   build; no class 1/2 finding, no class 4 leaf matching an answer); pin test (ca01 not pinned).
+4. **Validator on `test_ca01_panel`** (expect 0 errors); move any `dungeon_graph.*` to `tmp/delete/`.
+5. **New-lines list** (target 2/2/2/0 = 6): stub 2 (done, in `_office_kit` ink); host 2 =
+   `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink:28-29`; chain 2 = panel build TODO. Write the
+   list file (location per §"New spoken lines"); then dialogue review before any voicing.
+6. **Runner steps / persona setup**: already specified in the two sections above — no new authoring,
+   just execute when the panel build exists.
+
+**Budget caveat to confirm with the owner:** appendix §8 says the extra debrief time is "paid for by
+replacing one debrief sentence and trimming one flip sentence." I added `conceptPanel` without trimming
+a flip sentence, to avoid undoing the merged dialogue-tightening edits. Owner to decide if a trim is
+wanted.
+
 ## Open questions
 
-- Does `apply_training_room.py` refresh tolerate two positioned kit staff + a positioned host? (plan 4.4
-  step 3 said to fix it; confirm gate A did, or fix before Step 2.3.)
-- `test_ca01_panel` name clash in the Hacktivity `test/` fixtures — grep before creating.
-- Exact `strings` key that carries the debrief cost passage (read the full object).
-- Board-notice prop: which existing sprite to stand in with until the art/dressing pass.
+- Tier label for the committed fallback row: used "O"; tests don't check tier, but confirm with the plan
+  owner that an O row with stepAway false is the intended record for the no-EC1 pilot.
+- Gate-A run-5 open question: end-of-mission screen after a reload at the triage result, before the
+  debrief — decide bug vs expected (affects the panel live proof).
+- Board-notice position {4,2} and Agnieszka's walk target {4,3} are provisional (10x10 room, interior
+  cols 1-8/rows 2-8, back wall row 1). Confirm against the dressing pass and live proof 9 (8 s arrival).
 - Tier label for the committed fallback row: used "O"; tests don't check tier, but confirm with the plan
   owner that an O row with stepAway false is the intended record for the no-EC1 pilot.
 - Gate-A run-5 open question: end-of-mission screen after a reload at the triage result, before the
