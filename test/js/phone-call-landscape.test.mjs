@@ -520,8 +520,12 @@ check('cascade: the short-screen header and portrait rules come after the compac
     assert.ok(shortA > compactA, 'the 501-680 48px portrait comes later');
     const tinyA = idx('@media (min-height: 500.02px) and (max-height: 560px)', av);
     assert.ok(tinyA > compactA && tinyA > shortA, 'the 501-560 40px portrait comes last');
-    // equal specificity, so source order decides
-    assert.deepEqual(spec(hdr), spec(hdr));
+    // source order only decides if no other avatar rule above 500px out-ranks the short-screen one
+    for (const r of all.filter(x => x.media.includes('min-height: 500.02px'))) {
+        for (const s of r.selector.split(', ').filter(s => s.trim().endsWith('.conversation-avatar'))) {
+            assert.ok(cmpSpec(spec(s), spec(av)) <= 0, s + ' must not out-rank ' + av);
+        }
+    }
     const both = all.filter(r => r.selector.split(', ').includes(av) && r.media.includes('min-height: 500.02px'));
     const last = both[both.length - 1];
     assert.equal(last.media, '@media (min-height: 500.02px) and (max-height: 560px)', 'the last matching rule at 501-560 is the 40px one');
