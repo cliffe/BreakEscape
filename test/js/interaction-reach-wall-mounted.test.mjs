@@ -196,10 +196,10 @@ test('engine: the range checks and the E key measure y with reachY, the facing a
     const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
     assert.match(src, /const dy = reachY\(obj, py\) - py;/, 'highlight');
     assert.match(src, /getInteractionDistance\(player, reachX\(sprite, player\.x\), reachY\(sprite, player\.y\)\)/, 'handleObjectInteraction');
-    assert.match(src, /consider\(reachX\(obj, px\), reachY\(obj, py\), \(\) => handleObjectInteraction\(obj\), INTERACTION_RANGE_SQ, null, obj, aimX\(obj\), aimY\(obj\)\)/, 'E key');
+    assert.match(src, /consider\(reachX\(obj, px\), reachYSeated\(obj, py, seatedOn\), \(\) => handleObjectInteraction\(obj\), INTERACTION_RANGE_SQ, null, obj, aimX\(obj\), aimY\(obj\)\)/, 'E key');
     assert.match(src, /const dy = reachY\(sprite, player\.y\) - player\.y;/, 'isObjectInInteractionRange');
     const label = readFileSync(join(js, 'ui/info-label.js'), 'utf8');
-    assert.match(label, /consider\(reachX\(obj, px\), reachY\(obj, py\), text, INTERACTION_RANGE_SQ, obj, aimX\(obj\), aimY\(obj\)\)/, 'info label');
+    assert.match(label, /consider\(reachX\(obj, px\), reachYSeated\(obj, py, seatedOn\), text, INTERACTION_RANGE_SQ, obj, aimX\(obj\), aimY\(obj\)\)/, 'info label');
     const game = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(game, /reachX: \(o, x\) => reachX\(o, x\),[\s\S]{0,120}reachY: \(o, y\) => reachY\(o, y\)/, 'walkToObjectThenUse passes reachY to objectStandPoint');
     assert.equal(typeof reachX, 'function');
