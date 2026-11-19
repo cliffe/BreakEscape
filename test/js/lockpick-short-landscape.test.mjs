@@ -86,7 +86,16 @@ test('text stays on its pixel-font grid: name on one line, observations on two, 
     assert.match(p, /line-height\s*:\s*24px/);
     assert.match(p, /-webkit-line-clamp\s*:\s*2/);
     assert.match(rule(short.body, '.lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p'), /line-clamp\s*:\s*unset/);
-    assert.doesNotMatch(short.body, /border-radius\s*:\s*[1-9]|gradient|blur|font-size\s*:\s*(1[0-5]|[0-9])px/);
+    // the "+ MORE" marker is Press Start 2P at its own 8px; every other size is at least 16px
+    assert.doesNotMatch(short.body.replace(/\.lockpicking-obs-more\s*\{[^}]*\}/g, ''), /border-radius\s*:\s*[1-9]|gradient|blur|font-size\s*:\s*(1[0-5]|[0-9])px/);
+    assert.match(rule(short.body, '.lockpicking-item-section.lockpicking-obs-overflow .lockpicking-obs-more'), /Press Start 2P[\s\S]*font-size\s*:\s*8px/);
+    // the expanded scroller has the frame's pixel scrollbar, both scrollbar properties auto
+    assert.match(short.body, /lockpicking-info-expanded \.lockpicking-item-info p::-webkit-scrollbar-thumb \{[^}]*border-radius: 0/);
+    assert.match(short.body, /lockpicking-info-expanded \.lockpicking-item-info p \{[^}]*scrollbar-color\s*:\s*auto;[^}]*scrollbar-width\s*:\s*auto/);
+    // the instruction line is hidden for a fitted lock
+    assert.match(rule(short.body, '.minigame-container:has(#phaser-game-container.lockpicking-fit) .minigame-header p'), /display\s*:\s*none/);
+    // the focus ring and the pointer apply wherever the role is present
+    assert.match(short.body, /\.lockpicking-item-info p\[role="button"\]:focus-visible/);
 });
 
 test('the mode switch is an icon at its own 32px, 48px target, the caption and label hidden', () => {
@@ -156,47 +165,87 @@ test('taller windows are untouched: no 561px+ block carries the short-window rul
 
 test('the JS marks the box, caps FIT at the crop, watches the box and the key panel stays in the crop', () => {
     assert.match(js, /classList\.add\('lockpicking-fit'\)/);
-    assert.match(js, /max: \{ width: 580, height: 340 \}/);
+    assert.match(js, /if \(!isPortrait && window\.innerHeight <= 560\) \{\s*config\.scale\.maxWidth = 580;\s*config\.scale\.maxHeight = 340;/);
+    assert.doesNotMatch(js, /max: \{ width/, 'Phaser 3.60 ignores a nested scale.max');
     assert.match(js, /this\._watchLockBox\(\)/);
     assert.match(keySel, /crop\.y \+ 340 - containerHeight - 4/);
 });
 
 test('the JS scales the cropped canvas with Scale.FIT in any short window, and skips whole zoom there', () => {
     assert.match(js, /window\.innerWidth <= 768 \|\| window\.innerHeight <= 560\) \{\s*const isPortrait/);
-    assert.equal((js.match(/window\.innerHeight <= 560/g) || []).length, 3, 'config, _fitLockZoom, _watchLockZoom');
+    assert.equal((js.match(/window\.innerHeight <= 560/g) || []).length, 5, 'config, its max cap, _fitLockZoom, _watchLockZoom, the observations');
     assert.match(js, /mode: Phaser\.Scale\.FIT/);
 });
 
 // ---- behaviour ----
+let lastFake = null;
 function render(observations) {
     document.body.innerHTML = '<div><div class="game"></div></div>';
-    const fake = { params: { itemName: 'Server cage', itemImage: '/door.png', itemObservations: observations }, gameContainer: document.querySelector('.game') };
+    const fake = { params: { itemName: 'Server cage', itemImage: '/door.png', itemObservations: observations }, gameContainer: document.querySelector('.game'), _syncObsButton: LockpickingMinigamePhaser.prototype._syncObsButton };
     LockpickingMinigamePhaser.prototype.createLockableItemDisplay.call(fake);
+    lastFake = fake;
     return document.querySelector('.lockpicking-item-section');
 }
 
-test('the observations carry the full text in a title and toggle open by click, Enter and Space', () => {
+test('the observations are a button only while they overflow or are open, named for what they do', () => {
     const long = 'A heavy cage door with a standard pin tumbler lock. The brass is scratched around the keyhole and a faint smell of oil hangs about it.';
     const strip = render(long);
+    const fake = lastFake;
     const p = strip.querySelector('.lockpicking-item-info p');
     const h4 = strip.querySelector('.lockpicking-item-info h4');
+    const open = () => strip.classList.contains('lockpicking-info-expanded');
+    const sync = () => LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
+    let sh = 24;
+    Object.defineProperty(p, 'scrollHeight', { get: () => sh, configurable: true });
+    Object.defineProperty(p, 'clientHeight', { get: () => 48, configurable: true });
     assert.equal(p.title, long);
     assert.equal(h4.title, 'Server cage');
-    assert.equal(p.tabIndex, 0);
-    assert.equal(p.getAttribute('role'), 'button');
-    assert.equal(p.getAttribute('aria-expanded'), 'false');
-    const open = () => strip.classList.contains('lockpicking-info-expanded');
-    p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-    assert.equal(open(), true);
-    assert.equal(p.getAttribute('aria-expanded'), 'true');
-    p.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    assert.equal(open(), false);
-    const ev = new window.KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
-    p.dispatchEvent(ev);
-    assert.equal(open(), true);
-    assert.equal(ev.defaultPrevented, true, 'Space does not scroll the page');
-    p.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'a', bubbles: true }));
-    assert.equal(open(), true, 'other keys do nothing');
+    const savedH = window.innerHeight;
+    try {
+        window.innerHeight = 390;
+        // fits: plain text, no role, no tab stop, no marker, clicking does nothing
+        sync();
+        assert.equal(p.getAttribute('role'), null);
+        assert.equal(p.getAttribute('tabindex'), null);
+        assert.equal(strip.classList.contains('lockpicking-obs-overflow'), false);
+        p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+        assert.equal(open(), false);
+        // overflows: a button with a name that says what it does, described by its own text
+        sh = 72; sync();
+        assert.equal(p.getAttribute('role'), 'button');
+        assert.equal(p.tabIndex, 0);
+        assert.equal(p.getAttribute('aria-expanded'), 'false');
+        assert.equal(p.getAttribute('aria-label'), 'Show full description');
+        assert.equal(p.getAttribute('aria-describedby'), p.id);
+        assert.equal(strip.querySelector('.lockpicking-obs-more').textContent, '+ MORE');
+        assert.equal(strip.classList.contains('lockpicking-obs-overflow'), true);
+        p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+        assert.equal(open(), true);
+        assert.equal(p.getAttribute('aria-expanded'), 'true');
+        assert.equal(p.getAttribute('aria-label'), 'Hide full description');
+        assert.equal(strip.querySelector('.lockpicking-obs-more').textContent, '- LESS');
+        p.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        assert.equal(open(), false);
+        const ev = new window.KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+        p.dispatchEvent(ev);
+        assert.equal(open(), true);
+        assert.equal(ev.defaultPrevented, true, 'Space does not scroll the page');
+        p.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+        assert.equal(open(), true, 'other keys do nothing');
+        // open and now fitting (a wider window): stays a button so it can be closed
+        sh = 24; sync();
+        assert.equal(p.getAttribute('role'), 'button');
+        // the window grows tall: plain text again, and the open state is reset
+        window.innerHeight = 800; sync();
+        assert.equal(open(), false);
+        assert.equal(p.getAttribute('role'), null);
+        assert.equal(p.getAttribute('aria-label'), null);
+        // cleanup removes the listeners
+        sh = 72; window.innerHeight = 390; sync();
+        LockpickingMinigamePhaser.prototype._releaseLockWatchers.call(fake);
+        p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+        assert.equal(open(), false, 'the click listener is gone');
+    } finally { window.innerHeight = savedH; }
 });
 
 test('no observations: no button is made', () => {
@@ -230,17 +279,40 @@ test('the box observer refreshes Phaser on a size change and is disconnected on 
     try {
         document.body.innerHTML = '<div class="game"><div id="phaser-game-container" class="lockpicking-fit"></div></div>';
         let refreshed = 0;
-        const fake = { gameContainer: document.querySelector('.game'), game: { scale: { refresh: () => { refreshed++; } } } };
+        const order = [];
+        const fake = { _syncObsButton: () => {}, gameContainer: document.querySelector('.game'), game: { scale: { getParentBounds: () => { order.push('bounds'); return true; }, refresh: () => { order.push('refresh'); refreshed++; } } } };
         LockpickingMinigamePhaser.prototype._watchLockBox.call(fake);
         assert.equal(made.length, 1);
         assert.equal(made[0].observed[0].id, 'phaser-game-container');
+        made[0].cb();
+        assert.equal(refreshed, 1);
+        assert.deepEqual(order, ['bounds', 'refresh'], 'Phaser 3.60 refresh() is one change behind unless the parent bounds are read first');
+        // bounds unchanged: no refresh
+        fake.game.scale.getParentBounds = () => false;
         made[0].cb();
         assert.equal(refreshed, 1);
         // a box without the fit class (desktop boot) is not observed
         document.body.innerHTML = '<div class="game"><div id="phaser-game-container"></div></div>';
         LockpickingMinigamePhaser.prototype._watchLockBox.call({ gameContainer: document.querySelector('.game') });
         assert.equal(made.length, 1);
-        // cleanup disconnects it
-        assert.match(js, /this\._lockBoxObserver\?\.disconnect\?\.\(\);\s*this\._lockBoxObserver = null;/);
+        // cleanup() (the path endMinigame and displacement take, without complete()) disconnects
+        // the observer, removes the window listeners and destroys the game
+        let destroyed = 0, superCleaned = 0, removed = [];
+        const realRemove = window.removeEventListener;
+        window.removeEventListener = (n, f) => removed.push(n);
+        try {
+            const dying = { _lockBoxObserver: made[0], _lockZoomOnResize: () => {}, _obsOnResize: () => {}, game: { destroy: () => { destroyed++; } } };
+            dying._releaseLockWatchers = LockpickingMinigamePhaser.prototype._releaseLockWatchers;
+            const base = Object.getPrototypeOf(LockpickingMinigamePhaser.prototype);
+            const realBase = base.cleanup;
+            base.cleanup = function () { superCleaned++; };
+            try { LockpickingMinigamePhaser.prototype.cleanup.call(dying); } finally { base.cleanup = realBase; }
+            assert.equal(made[0].gone, true);
+            assert.equal(dying._lockBoxObserver, null);
+            assert.deepEqual(removed, ['resize', 'resize']);
+            assert.equal(destroyed, 1);
+            assert.equal(dying.game, null);
+            assert.equal(superCleaned, 1);
+        } finally { window.removeEventListener = realRemove; }
     } finally { delete globalThis.ResizeObserver; }
 });

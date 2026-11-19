@@ -336,6 +336,11 @@
     cursor: not-allowed;
 }
 
+/* The "+ MORE" marker exists only in short windows (shown in the block below) */
+.lockpicking-obs-more {
+    display: none;
+}
+
 /* Short windows (a landscape phone: 667x375, 740x360, 844x390; 560px tall or less): the lock
    must be usable without scrolling. The info strip becomes one compact row (picture at 48px,
    name over one line of observations, the mode switch as an icon button) and the lock's frame
@@ -400,12 +405,47 @@
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
         overflow: hidden;
+    }
+
+    /* The JS gives the observations role=button only while they overflow or are open */
+    .lockpicking-item-info p[role="button"] {
         cursor: pointer;
     }
 
-    .lockpicking-item-info p:focus-visible {
+    .lockpicking-item-info p[role="button"]:focus-visible {
         outline: 2px solid #ffcc44;
         outline-offset: 2px;
+    }
+
+    /* "+ MORE" / "- LESS" over the end of the second line, only while the text can be opened */
+    .lockpicking-item-info {
+        position: relative;
+    }
+
+    .lockpicking-item-section.lockpicking-obs-overflow .lockpicking-obs-more {
+        display: block;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        padding: 0 0 0 4px;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        line-height: 12px;
+        color: #ffcc44;
+        background: #000;
+        pointer-events: none;
+    }
+
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-obs-more {
+        bottom: auto;
+        top: 0;
+        right: 0;
+        line-height: 24px;
+    }
+
+    /* the heading leaves room for "- LESS" on its line */
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info h4 {
+        padding-right: 56px;
     }
 
     .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p {
@@ -413,6 +453,28 @@
         -webkit-line-clamp: unset;
         max-height: 96px;
         overflow-y: auto;
+    }
+
+    /* the frame's pixel-art scrollbar (the 12px one above); both properties stay auto, or the
+       browser ignores the ::-webkit-scrollbar rules */
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p {
+        scrollbar-color: auto;
+        scrollbar-width: auto;
+    }
+
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar { width: 12px; }
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-track { background: #10161c; border-radius: 0; }
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-thumb { background: #2d3a44; border: 2px solid #6f8a9c; border-radius: 0; }
+    .lockpicking-item-section.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+    /* The instruction line repeats the feedback line under the lock: drop it for the room */
+    .minigame-container:has(#phaser-game-container.lockpicking-fit) .minigame-header p {
+        display: none;
+    }
+
+    /* and the gap under the title shrinks with it (20px in the framework) */
+    .minigame-container:has(#phaser-game-container.lockpicking-fit) .minigame-header {
+        margin-bottom: 8px;
     }
 
     /* Mode switch: the icon alone (the label is in aria-label and title), 48px square */
