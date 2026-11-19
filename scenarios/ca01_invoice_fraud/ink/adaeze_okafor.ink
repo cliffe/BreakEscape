@@ -12,6 +12,9 @@
 
 VAR phish_supplier_contact_attempts = 0
 VAR episode_e1_invoice_fraud_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_ca01_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -21,6 +24,11 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca01_host_said:
+        Adaeze Okafor: The moment you reported that one, we had the right account confirmed and the payment run went out clean. Our supplier got paid, and nobody chased a thing. {kit_caught: You flagged it before a single detail was saved, so there was nothing to unwind.}
+        Adaeze Okafor: That's the whole of it, honestly. Ring the person back on a number you already hold before you change who gets paid, and it never reaches the bank.
+        ~ kit_ca01_host_said = true
+    - else:
     { episode_e1_invoice_fraud_defend_complete:
         Adaeze Okafor: You've worked it from both ends now.
         Adaeze Okafor: Anyone asking you to move money or change bank details, ring them back on a number you already hold before you act. That's what I want from my team.
@@ -30,6 +38,7 @@ VAR hub_quiet = false
         - else:
             Adaeze Okafor: Welcome to the Brightwell exercise. Start at the kiosk: research us and our supplier, write one email as the red team, then swap seats and cover the payments inbox.
         }
+    }
     }
 }
 + [Thanks, Adaeze.]

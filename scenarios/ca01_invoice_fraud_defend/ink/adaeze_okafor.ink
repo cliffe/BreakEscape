@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e1_invoice_fraud_defend_defend_complete:
-        Adaeze Okafor: That's the inbox sorted, thank you. If anything still bothers you, ring the sender on a number we already hold.
+        Adaeze Okafor: That's the inbox sorted, thank you. We lost an afternoon to one of these once, a bank-change email we took at face value, so now we ring the supplier back on a number we already hold before any payee change.
     - else:
         Adaeze Okafor: Thanks for covering the payments inbox before the three o'clock run. It's open on the kiosk.
     }
