@@ -70,7 +70,7 @@ const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { MinigameFramework: FW } = await load('minigames/framework/minigame-manager.js');
 const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js');
 const { EpisodeRunnerMinigame, _resetDefendReemitsForTests } = await load('minigames/episode-runner/episode-runner-minigame.js');
-const { _resetTriageStarterForTests } = await load('systems/triage-starter.js');
+const { _resetTriageStarterForTests, persistTriageResult } = await load('systems/triage-starter.js');
 const { renderDebrief: realRenderDebrief } = await load('minigames/episode-runner/debrief-view.js');
 const { buildTriageMessages } = await load('minigames/inbox-triage/triage-messages.js');
 const { scoreTriage } = await load('minigames/inbox-triage/triage-scoring.js');
@@ -731,6 +731,8 @@ test('gate B D3: a reload on the triage result opens the defend launch, the resu
     assert.ok(epState().stage === 'debrief');
     assert.ok(epState().stepAwayPanel === true);
     assert.ok(q('.epr-look-up') !== null);
+    // the round is measured exactly once (it never was before the reload)
+    assert.ok(calls.measure.length === 1);
 });
 
 // D1: a set with truth. m1 phish trusted (wrong), m2 genuine reported (full marks live), m3 genuine
@@ -878,6 +880,31 @@ test('gate B D2: no emit when kit_defend_done is already true, complete is false
     open(ep);
     await flush();
     assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 0, 'unconfirmed save');
+    delete window.stateSync;
+});
+
+test('gate B D2: a save of the round still pending skips the re-emit; the save emits once on its own', async () => {
+    const ep = fullEpisode();
+    atDefendComplete(ep, { [DEFEND_COMPLETE]: false });
+    mapDone();
+    let release;
+    window.stateSync = { syncConfirmed: () => new Promise((r) => { release = r; }) };
+    const set = defendSet();
+    const save = persistTriageResult({ percent: 50, reportRate: 0.5 }, { set, prefix: 'episode_e1_fixture_defend_' });
+    await flush(); // the save writes, then waits on the sync
+    assert.ok(window.gameState.globalVariables[DEFEND_COMPLETE] === true, 'complete written, emit deferred');
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 0, 'no re-emit while the save is queued');
+    release(true);
+    await save;
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 1);
+    assert.ok(window.gameState.globalVariables.kit_defend_done === true);
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep);
+    await flush();
+    assert.ok(named(`global_variable_changed:${DEFEND_COMPLETE}`).length === 1, 'nothing more on a reopen');
     delete window.stateSync;
 });
 
