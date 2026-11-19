@@ -145,7 +145,7 @@ Also present in the battery hall (read for atmosphere and teaching content):
 
 **Verify**:
 - `anomaly_detected` = `true` (set by `triggerOnInteract` on the gauge)
-- Helen's eventMapping fires 3 seconds later, as a text asking which reading the player believes (one of three variants: normal, "we needed that ESD" if the ESD went in before the dial was read, or no text at all in a gas alarm)
+- Helen's texts come from her phone thread "Helen Marsh (radio)" (`helen_marsh_phone` on the site phone), so each arrives as a toast and stays in the phone's Messages list. Her mapping fires 3 seconds later, as a text asking which reading the player believes (one of three variants: normal, "we needed that ESD" if the ESD went in before the dial was read, or no text at all in a gas alarm)
 - Task `check_thermometer` complete (same eventMapping)
 - The Check the Historian and Shut Down Hall 1 (ESD) aims unlock
 - The alarm panel's BATTERY HALL 1 lamp does **not** change yet; it turns amber when the historian is found (Step 10)
@@ -469,7 +469,7 @@ Then message Marcus. Hub option **About the NIS notification.** (open once the t
 
 **Objective**: Decide whether CastleTech should warn Trent Water about the shared file server, and when.
 
-The aim unlocks when the jump server session is found (Tom's mapping on `jump_server_confirmed` reveals it and sends his text).
+The aim unlocks when the jump server session is found (Tom's mapping on `jump_server_confirmed` reveals it and sends his text). It has no `unlockCondition`: reading the dial and finishing the walkdown does not open it, so the list does not hint at the jump server early.
 
 ### Step 28: Complete the Trent Water Thread via Tom Hadley
 
