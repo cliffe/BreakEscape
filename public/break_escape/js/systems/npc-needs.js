@@ -4206,6 +4206,9 @@ export class NPCNeedsSystem {
      * stayPut: an own-desk use just ended; the NPC is at its post (maybe seated off the cell).
      * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
      * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
+     * reroute: plan round held bodies first (ring, tight, then plain). Every stall re-issue (the far
+     * re-issue and each return_resumed retry) now passes it, so the option matters only for the first
+     * walk home, which stays plain (docs/IDEAS_BACKLOG.md, "Plan the first needs walk home ring-first").
      */
     _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false, reroute = false, nudge = false } = {}) {
         const id = s.npcId;
@@ -4274,13 +4277,16 @@ export class NPCNeedsSystem {
         this._log(s.npcId, 'return_resumed', { x: Math.round(pos.x), y: Math.round(pos.y) });
         // SIMS-2 m1: keep returnFarReissued so an unreachable home logs `arrival_far` once per return,
         // not once per _watchReturn cycle; this re-plans the walk without re-arming the far log.
-        // The first re-issue keeps the plain path (a player who held the walk has gone); later ones
-        // plan round other bodies, seated and held ones included.
+        // Every re-issue plans round other bodies, seated and held ones included (ring, tight, then
+        // plain). The first used to keep the plain path because a player who held the walk had gone,
+        // but a plain plan from the stop can run through a standing NPC's avoidance lane (m08 game
+        // 9532: 10.6 px off Vector, held 6 s). A plan round a body that has left costs nothing: the
+        // avoid cells are the bodies' positions now, and no path falls back to the plain one.
         // The 3 s re-issue always comes before the behaviour layer's 4 s stuck watch (a new path re-arms
         // it), so its nudge onto a walkable cell never runs for a needs walk; the last re-route in one
         // place does that nudge itself (code review R1, m3)
         // The place also covers where the nudge put the body, only when a nudge ran (R2 M1, R3 M1)
-        const r = this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: tries > 1, nudge: tries === STUCK_TRIES });
+        const r = this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: true, nudge: tries === STUCK_TRIES });
         this._markNudge(s.stall, r);
         s.returnWatch = { x: pos.x, y: pos.y, since: this.clockMs };
     }

@@ -63,7 +63,8 @@ test('the session script uses the ordering, and the bridge reports the overlay o
     assert.equal(nextBootstrapTarget({ worldReady: false }), 'wait-world');
     assert.match(session, /const mg = target === 'session-overlay' \? null : facts\.mg;/);
     const state = readFileSync(join(root, 'public/break_escape/js/systems/test-bridge/state.js'), 'utf8');
-    assert.match(state, /blockingUi: \(mg && !sessionOverlayShowing\(\)\) \? null : detectBlockingUi\(\),/);
+    // With a minigame open only the ending question is reported (m10 blind part 3)
+    assert.match(state, /blockingUi: \(mg && !sessionOverlayShowing\(\)\) \? endingCheckOverlayUi\(\) : detectBlockingUi\(\),/);
 });
 
 // lab_physical_pentest N4: converse closed the cloner's read screen that Len's line had

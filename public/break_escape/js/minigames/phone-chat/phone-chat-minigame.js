@@ -1244,7 +1244,14 @@ export class PhoneChatMinigame extends MinigameScene {
      * or moved on meanwhile.
      */
     async _askEndingBeforeChoice(choiceIndex) {
-        if (this._endingAsking) return false;
+        if (this._endingAsking) {
+            // As person chat: nudge an open question; a lost one is dropped and asked again.
+            if (window.endingCheck?.isAsking?.()) {
+                window.endingCheck.nudge?.();
+                return false;
+            }
+            this._endingAsking = false;
+        }
         const askedTags = this.conversation?.engine?.story?.currentChoices?.[choiceIndex]?.tags;
         if (!choiceAsksEnding(askedTags)) return true;
         const asking = this.conversation;

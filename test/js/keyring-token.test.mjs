@@ -39,7 +39,7 @@ put('systems/inventory.js',
     'export async function addToInventory() { return { ok: true }; }\n' +
     'export function removeFromInventory() {}\n' +
     'export function inventoryImageKey(d) { return (typeof d?.sprite === "string" && d.sprite) || d?.type; }\n');
-for (const rel of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils/more-below.js', 'utils/computer-keywords.js',
+for (const rel of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils/dispense-on-unlock.js', 'minigames/container/container-item-image.js', 'utils/more-below.js', 'utils/computer-keywords.js',
     'utils/pc-monitor.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js',
     'utils/locked-hint.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'systems/captures.js',
     'utils/remote-host-text.js', 'systems/keyring.js', 'systems/notifications.js', 'ui/modal-stack.js', 'utils/overlay-open.js',

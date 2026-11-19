@@ -31,7 +31,10 @@ export async function confirmEndingBeforeChoice(tags, checker = (typeof window !
     if (!choiceAsksEnding(tags) || typeof checker?.confirm !== 'function') return true;
     // The question is already up for another trigger (the credits, a mapped global): its
     // answer is not this choice's, so take nothing; the player clicks the choice again
-    if (typeof checker.isAsking === 'function' && checker.isAsking()) return false;
+    if (typeof checker.isAsking === 'function' && checker.isAsking()) {
+        checker.nudge?.();
+        return false;
+    }
     if (typeof checker.needsAnswer === 'function' && !checker.needsAnswer()) return true;
     return !!(await checker.confirm({ reason: 'choice' }));
 }

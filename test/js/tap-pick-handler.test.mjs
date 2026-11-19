@@ -200,6 +200,15 @@ test('handler M1: a tap on Sarah\'s figure over the far directory talks to her, 
     assert.deepEqual(w.log, ['talk:sarah']);
 });
 
+test('handler M1b: the same tap with the directory measured by its footprint (40px tall, reachable) shows the Sarah/directory menu', () => {
+    const player = { x: 126, y: 71 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });
+    const directory = sprite('directory', 150, 20, 40, 40, { depth: 10 });   // 40 tall: reachY clamps into its span, so it is in reach
+    const w = world({ player, objects: [directory], npcs: [sarah] });
+    w.tap(150, 45);
+    assert.deepEqual(w.log, ['menu:sarah|directory']);
+});
+
 test('handler M1: a tap on the empty part of her frame over the far object walks to the object', () => {
     const player = { x: 126, y: 71 };
     const sarah = npc('sarah', 150, 60, { depth: 80 });
@@ -441,6 +450,15 @@ test('handler R2 m5: a tap a pixel off an in-reach NPC\'s outline, over a far ob
     w2.tap(165, 50);                             // 5 px off: the board's
     assert.ok(walkedTo(w2.log) && !w2.log.some(l => l.startsWith('talk')), w2.log.join());
     assert.equal(w2.pendingTapUse.get()?.obj, board);
+});
+
+test('handler R2 m5b: the same board measured by its footprint is in reach, so a tap a pixel off her outline gives the Sarah/board menu', () => {
+    const player = { x: 126, y: 71 };
+    const sarah = npc('sarah', 150, 60, { depth: 80 });
+    const board = sprite('board', 155, 20, 40, 40, { depth: 10 });
+    const w = world({ player, objects: [board], npcs: [sarah] });
+    w.tap(161, 50);
+    assert.deepEqual(w.log, ['menu:sarah|board']);
 });
 
 test('handler R2 M1: a keyboard walk after a far tap never uses the object', () => {
@@ -699,6 +717,15 @@ test('overlap 22f2 (R3 m4): overlapReachSpan covers a wide object, a wall-mounte
     // A walking NPC and a door are measured from their centre
     assert.equal(w.overlapReachSpan(npc('walker', 100, 100)), null);
     assert.equal(w.overlapReachSpan(doorAt('d', 10, 10)), null);
+});
+
+test('overlap 22f3: a prop under 32px tall (no wallMounted) has a span whose top equals its bottom', () => {
+    const player = { x: 0, y: 0, body: { center: { x: 0, y: 31 } } };
+    const w = world({ player });
+    const box = sprite('box', 200, 100, 30, 20, { originX: 0.5, originY: 0.5 });
+    const span = w.overlapReachSpan(box);
+    assert.ok(span, 'a span');
+    assert.equal(span.top, span.bottom, JSON.stringify(span));
 });
 
 test('overlap 22d (R2 M1): a second click within 8 px of the stand point with nothing in reach is never the toast: a step, or the far click', () => {

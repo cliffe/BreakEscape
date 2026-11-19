@@ -2062,7 +2062,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "rfidCard": {
             "card_id": "employee_badge",
             "rfid_protocol": "EM4100",
-            "name": "Staff Badge - O. Gallagher"
+            "name": "Staff Badge - O. Gallagher",
+            "_comment": "Badge number 4430 (the #4430 on the door log and the on-call lockbox code) is the EM4100 card number, the low 16 bits of the ID: 0x114E = 1*4096 + 1*256 + 4*16 + 14 = 4430. Hex 2A0000114E (facility 0x2A = 42, DEZ 8 = last three bytes 00114E = 00004430). Without these the cloner showed a card number hashed from the card_id.",
+            "rfid_hex": "2A0000114E",
+            "rfid_facility": 42,
+            "rfid_card_number": 4430,
+            "rfid_data": { "cardId": "employee_badge", "hex": "2A0000114E", "facility": 42, "cardNumber": 4430 }
           },
           "itemsHeld": [
             {
