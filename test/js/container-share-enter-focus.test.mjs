@@ -64,6 +64,7 @@ const key = (el, k, init = {}) => {
 };
 const keyup = (el, k) => el.dispatchEvent(new window.KeyboardEvent('keyup', { key: k, bubbles: true, cancelable: true }));
 const settle = () => new Promise(r => setTimeout(r, 10));
+const DOC_N = { type: 'text_file', id: 'f1', name: 'Rota.txt', takeable: false, text: 'x' };
 const A = item('a', 'Brass Key'), B = item('b', 'Red Folder'), C = item('c', 'Tape Card');
 
 
@@ -140,4 +141,50 @@ test('D2: an empty share puts the focus on its grid, a click puts it nowhere new
     icons()[0].click(); await settle();
     await window.MinigameFramework.currentMinigame.ready; await settle();
     assert.equal(document.activeElement, document.body, 'a mouse open leaves the focus alone');
+});
+
+test('m1: a share that loads slowly does not take back a focus the player moved to the X', async () => {
+    releaseHeldEnter();
+    const SHARE = { type: 'network_share', id: 'sh1', name: 'Public (\\\\fs01\\public)', takeable: false };
+    await openDesktop([DOC_N, SHARE]);
+    await wire([{ type: 'key', id: 'k1', name: 'Brass Key', takeable: true }]);
+    let release;
+    const gate = new Promise(r => { release = r; });
+    const wired = window.MinigameFramework.startMinigame;
+    window.MinigameFramework.startMinigame = (name, c, p) => {
+        const mg = wired(name, c, p);
+        const real = window.fetch;
+        window.fetch = globalThis.fetch = async (...a) => { await gate; return real(...a); };
+        return mg;
+    };
+    window.startContainerMinigame = startContainerMinigame;
+    const ic = icons();
+    ic[1].focus(); key(ic[1], 'Enter'); await settle();
+    // The X is already on screen while the contents load: the player tabs to it
+    const x = document.createElement('button');
+    x.id = 'minigame-close';
+    document.body.appendChild(x);
+    x.focus();
+    release();
+    await window.MinigameFramework.currentMinigame.ready; await settle();
+    assert.equal(document.activeElement, x, 'focus stays on the X');
+    releaseHeldEnter();
+});
+
+test('Places: opening a share from the Start panel by key lands on its first item; a mouse click does not', async () => {
+    releaseHeldEnter();
+    const SHARE = { type: 'network_share', id: 'sh1', name: 'Public (\\\\fs01\\public)', takeable: false };
+    const mg = await openDesktop([DOC_N, SHARE]);
+    await wire([{ type: 'key', id: 'k1', name: 'Brass Key', takeable: true }]);
+    window.startContainerMinigame = startContainerMinigame;
+    mg.taskbarPlace({ kind: 'share', item: SHARE, byKey: true });
+    await window.MinigameFramework.currentMinigame.ready; await settle();
+    assert.equal(document.activeElement.getAttribute('aria-label'), 'Brass Key');
+    releaseHeldEnter();
+    const mg2 = await openDesktop([DOC_N, SHARE]);
+    await wire([{ type: 'key', id: 'k1', name: 'Brass Key', takeable: true }]);
+    mg2.taskbarPlace({ kind: 'share', item: SHARE, byKey: false });
+    await window.MinigameFramework.currentMinigame.ready; await settle();
+    assert.equal(document.activeElement, document.body, 'a mouse open leaves the focus alone');
+    releaseHeldEnter();
 });

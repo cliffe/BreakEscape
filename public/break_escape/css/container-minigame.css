@@ -204,6 +204,13 @@
     outline: none;
 }
 
+/* A keyboard player left on the empty desktop sees where the focus is (square, 2px) */
+.desktop-background:focus-visible {
+    outline: 2px solid var(--ui-accent, #ffcc44);
+    outline-offset: -2px;
+    border-radius: 0;
+}
+
 .desktop-wallpaper {
     position: absolute;
     top: 0;

@@ -1696,7 +1696,12 @@ export class ContainerMinigame extends MinigameScene {
 
     /** Start panel Places: the desktop, or a mapped share (opened as from the desktop). */
     taskbarPlace(place) {
-        if (place?.kind === 'share') { this.openMappedShare(place.item, this.desktopLockable()); return; }
+        if (place?.kind === 'share') {
+            // Opened from the Start panel by a key: the share takes the entry focus, as from an icon
+            this.openedByKey = place.byKey === true;
+            try { this.openMappedShare(place.item, this.desktopLockable()); } finally { this.openedByKey = false; }
+            return;
+        }
         if (place?.kind !== 'desktop' || this.desktopMode) return;
         // A share window's own Close goes back to the desktop it came from
         if (this.parentLockable) { this.closeByPlayer(); return; }
@@ -1774,11 +1779,20 @@ export class ContainerMinigame extends MinigameScene {
     populateStandardContents() {
         const contentsGrid = document.getElementById('container-contents-grid');
         if (!contentsGrid) return;
-        
+
+        // A share opened by a key takes the entry focus once, and only if the player has not
+        // moved it while the contents loaded (to the X, the Start button)
+        let takeEntryFocus = this.params?.focusEntry === true;
+        if (takeEntryFocus) {
+            this.params = { ...this.params, focusEntry: false }; // once
+            const active = document.activeElement;
+            takeEntryFocus = !active || active === document.body || !active.isConnected;
+        }
+
         if (this.contents.length === 0) {
             contentsGrid.innerHTML = '<p class="empty-contents">This container is empty.</p>';
             // A share opened by a key with nothing in it: the grid takes the focus, not the body
-            if (this.params?.focusEntry === true) {
+            if (takeEntryFocus) {
                 if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
                 contentsGrid.focus?.({ preventScroll: true });
             }
@@ -1864,7 +1878,7 @@ export class ContainerMinigame extends MinigameScene {
         if (this.shareFolder) evenShareLabels(contentsGrid);
         else fitContentLabels(contentsGrid);
         // A share opened by a key: its first item, else the grid (an empty share), has the focus
-        if (this.params?.focusEntry === true) {
+        if (takeEntryFocus) {
             const first = contentsGrid.querySelector('.container-content-slot');
             if (first) first.focus?.({ preventScroll: true });
             else {
@@ -2024,6 +2038,9 @@ export class ContainerMinigame extends MinigameScene {
         const mark = this.params?.focusReturn;
         if (mark) this.params = { ...this.params, focusReturn: null }; // once
         if (!mark || mark.byKey !== true) return;
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        if (active && !grid.contains(active)
+            && active.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
         const icons = Array.from(grid.children).filter(el => el.classList?.contains('desktop-icon'));
         let icon = icons.find(el => el.itemKey === mark.key);
         if (!icon && Number.isInteger(mark.index)) {
@@ -2038,9 +2055,6 @@ export class ContainerMinigame extends MinigameScene {
             }
         }
         if (!icon) return;
-        const active = typeof document !== 'undefined' ? document.activeElement : null;
-        if (active && !grid.contains(active)
-            && active.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
         icon._keyReturn = true;
         icon.focus?.({ preventScroll: true });
         icon.openLabel?.();

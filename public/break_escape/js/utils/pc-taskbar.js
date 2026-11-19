@@ -545,7 +545,7 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
         if (btn.dataset.place === 'desktop') { onPlace({ kind: 'desktop' }); return; }
         if (btn.dataset.place === 'share') {
             const item = model?.places?.[Number(btn.dataset.placeIndex)];
-            if (item) onPlace({ kind: 'share', item });
+            if (item) onPlace({ kind: 'share', item, byKey: e.detail === 0 });
         }
     });
     // A short line above the taskbar, inside the screen (a refused Lock says why here, R1 m2)

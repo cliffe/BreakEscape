@@ -140,7 +140,7 @@ test('D1: a note that was the last icon returns the focus to the one before; non
     returnToContainerAfterNotes({ reopen: true });
     await window.MinigameFramework.currentMinigame.ready; await settle();
     assert.ok(document.querySelector('.empty-desktop'), 'the desktop reopened empty');
-    assert.notEqual(document.activeElement, document.body, 'no icon left: the desktop itself has the focus');
+    assert.ok(document.activeElement.classList.contains('desktop-background'), 'no icon left: the desktop itself has the focus');
     releaseHeldEnter();
 });
 
@@ -148,9 +148,18 @@ test('D1: a note opened with the mouse takes no focus', async () => {
     await openDesktop([DOC, NOTE, DOC2]);
     await wire([DOC, DOC2]);
     icons()[1].click(); await settle();
-    assert.equal(window.pendingContainerReturn.focusReturn.byKey, false);
+    assert.notEqual(window.pendingContainerReturn.focusReturn?.byKey, true, 'no keyboard mark');
     returnToContainerAfterNotes();
     await window.MinigameFramework.currentMinigame.ready; await settle();
     assert.equal(document.activeElement.classList.contains('desktop-icon'), false);
+    assert.equal(document.activeElement, document.body, 'the focus was not taken');
 });
 
+
+test('m2: the empty desktop shows a square 2px focus-visible outline', async () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/container-minigame.css'), 'utf8');
+    const m = css.match(/\.desktop-background:focus-visible\s*\{([^}]*)\}/);
+    assert.ok(m, 'a :focus-visible rule exists');
+    assert.match(m[1], /outline:\s*2px solid/);
+    assert.match(m[1], /border-radius:\s*0/);
+});
