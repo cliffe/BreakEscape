@@ -150,6 +150,34 @@ unwritten, one save; Finish is unchanged (done gains debrief, done global writte
 later close); `done`/`stage`/done global after a close match a plain full shell's; a check shell closes with the same
 state with or without stepAway.
 
+## Gate B fixes (2026-11-19, commit a2277811c; tests in social-episode-step-away.test.mjs)
+
+Findings D1 to D3 are in `EC1_GATE_B_VERIFY.md`; live proof steps are under "Fix proof steps" there.
+
+- **Hold rule (D3).** `stepAwayHeld(episode, raw, globals)` is false once the debrief is done or `debriefSeen`. It is
+  true when the defend stage is in `done`, and also when the stage still reads `defend` and
+  `<defendPrefix>complete` (`episode_<id>_defend_complete`) is true. That second case is a reload on the triage
+  result before Continue: the round saved and the mission concluded, but the stage was never completed. The
+  starter's `stepAwayHoldNow` passes the globals, so the success screen stays held from boot.
+- **Reopen at the result.** No runner change. After that reload the kiosk opens on the defend launch. The triage
+  restores all stored answers and shows the result again. Continue runs `_triageDone` (so `measure` runs once, as
+  it never ran before the reload) and then the panel shows. The debrief is not skipped to: that would write the
+  stage with no triage result recorded.
+- **Debrief rescoring on reopen (D1).** The stored `defendProgress` keeps verdicts, flags, ms and action only (no
+  score, no `isPhish`), and the debrief's fallback counted "report" on a genuine item as wrong. With no live
+  `triageResult`, `_renderDebrief` now calls `_rescoreDefend(kept)`: `scoreTriage` over `buildTriageMessages` of
+  the defend set, the same as the live round, with answers mapped as `_buildResult` does. Stored `defend` figures
+  win over the rescored ones. Cards and summary now match Carry on. The state gains no field and no write.
+- **Defend complete re-emit (D2).** If the confirmed-save retries all failed but the pagehide keepalive flush
+  landed, `<defendPrefix>complete` is true and `kit_defend_done` is false for good. On open, a stepAway runner with
+  that state calls `reemitTriageComplete` (triage-starter.js, on `window`): it waits for a confirmed sync, checks
+  again that the event is still needed, and emits only `global_variable_changed:<prefix>complete`. The shell's
+  mapping then sets `kit_defend_done`. It does nothing when `kit_defend_done` is already true, when complete is
+  false, or while a save of the prefix is queued, and a module-level set allows one emit per page per episode.
+- **Non-stepAway episodes are unchanged.** `stepAwayHeld`, the re-emit and the rescoring are all gated on
+  `stepAwayOn`. A plain shell clears `defendProgress` at `completeStage`, so a reopen at its debrief still shows the
+  stored figures with an empty answer list. Tests cover a plain shell, a twin and a check shell for each fix.
+
 ## Decisions to check
 
 - Close-without-Finish release is persisted as `debriefSeen: true` in the existing state global (one save, once).

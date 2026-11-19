@@ -78,14 +78,19 @@ export function stepAwayOn(episode) {
 }
 
 /**
- * EC1 (d): whether the success screen waits, read from the saved state alone so it holds after a
- * reload: a step-away episode with the defend stage done and the debrief neither finished nor
- * closed (debriefSeen). Look up changes neither, so it releases nothing.
+ * EC1 (d): whether the success screen waits, read from saved state alone so it holds after a
+ * reload: a step-away episode whose defend round is complete and whose debrief is neither
+ * finished nor closed (debriefSeen). The round counts as complete when the defend stage is done,
+ * or when the stage still reads defend but the round's done global (`<defendPrefix>complete`) is
+ * true: the learner reloaded on the triage result before Continue, after the round had saved and
+ * the mission had concluded (gate B D3). Look up changes none of this, so it releases nothing.
  */
-export function stepAwayHeld(episode, raw) {
+export function stepAwayHeld(episode, raw, globals = null) {
     if (!stepAwayOn(episode)) return false;
     const state = readState(episode, raw);
-    return state.done.includes('defend') && !state.done.includes('debrief') && state.debriefSeen !== true;
+    if (state.done.includes('debrief') || state.debriefSeen === true) return false;
+    if (state.done.includes('defend')) return true;
+    return state.stage === 'defend' && isObj(globals) && globals[`${defendPrefix(episode.id)}complete`] === true;
 }
 
 /** A check mission: its stages list names 'check'. */
