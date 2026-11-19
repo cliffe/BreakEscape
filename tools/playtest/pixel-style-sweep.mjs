@@ -444,9 +444,9 @@ async function main() {
             const cv = await checkCanvas(page);
             const found = [...chk.breaches, ...(cv?.breaches || [])];
             const fit = await checkFit(page);
-            (res.fit ||= {})[`${w}x${h}`] = fit;
             if (!res) res = { ...st, errors: [...(st.errors || [])], elements: chk.elements, canvasTexts: cv?.texts ?? null, breaches: [], seen: new Map() };
             else for (const e of st.errors || []) if (!res.errors.includes(e)) res.errors.push(e);
+            (res.fit ||= {})[`${w}x${h}`] = fit;
             if (!st.open) res.open = false;
             for (const b of found) {
                 const key = `${b.kind}|${b.where}|${b.detail}`;
