@@ -371,8 +371,8 @@ Rules that keep a row from telling the player something new:
   author wrote a seed row. A forged swipe at an unreached door writes nothing (13.8). A place id
   whose kind has no display name, or that no longer resolves, shows as `-` (`OpsLog::KINDS`, 13.5),
   never as the raw id.
-- **Player text.** The typed username is the only player text in a row: stored as typed, cut and
-  marked by the helper (13.1), normalised only when shown, and the viewer renders every cell by
+- **Player text.** The typed username is the only player text in a row: stored in its
+  `normalise_username` form, cut and marked by the helper (13.1), and the viewer renders every cell by
   `textContent`.
 
 **The reader's own fields reach the browser with its room or container**, as log-filter's do:
@@ -442,8 +442,9 @@ object type enum. `scripts/minigame-data-schemas.json` gains the `ops_log_termin
 Warnings: a source no reader names (rows written, never shown; fine for a defence-only source); a
 source with a prefix wildcard and no `where`; a reader whose source records no event the scenario
 can produce (for example `badge_swipe` with no rfid lock in its `where`). In a scenario with
-`logSources` also: a declared secret equal to a username or an id (a row naming that thing shows
-text equal to the secret; the guard skips it, 13.2 step 2); a source whose `maxRows` is below the
+`logSources` also: a declared secret equal to a username, an id or a code in `EVENTS` (a row naming that
+thing shows text equal to the secret; the guard leaves that secret out of its comparison, 13.2
+step 2); a source whose `maxRows` is below the
 number of events it takes plus its limited places (protected rows may be evicted, 13.2 step 6);
 more possible save-counter keys than 256, counted from `EVENTS`: for each event and each result
 in its `save_limit` map, the places of its kinds that some source admits.
@@ -547,11 +548,16 @@ No scenario in the repo has `logSources`, so:
   the type rules or stores a row in which the matcher finds no secret; this run fails on a weak
   type rule alone, such as a bare integer or a `count` maximum of 99. Run 2 with the guard on:
   the same, and `assert_ops_log_holds_no_secret` (the matcher of 13.2 step 2 over every stored
-  row) passes. A raised guard error's message contains the event and key path and none of the
+  row) passes. The guard itself is proved by a test-only event with a `detail` kind
+  `{ id: 'test_any' }` (its lookup resolves any string, so the type rule admits the value): a call
+  that puts an issued value, then a registered hash, in that field raises `ArgumentError` whose
+  message starts with `secret in`; the same call with a value equal to an authored username
+  raises nothing. Only that test proves the guard fires, since a type refusal has a different
+  message. A raised guard error's message contains the event and key path and none of the
   fixture's secrets, and so does the production warning line. A clean row whose `seq`, `n` or
   `serverMs` equals a numeric secret does not raise, and a harvest row with `count: 4` does not
   raise beside a one-digit secret. `typed` is exercised on its own: a typed username equal to the
-  account password, and one equal to the PIN, is stored as typed and the row is written, in test
+  account password, and one equal to the PIN, is stored (normalised) and the row is written, in test
   and in production, with no raise; the response and the stored row differ from those for a
   non-secret candidate only in the text. The walk reads `EVENTS` at run time, so each sibling
   event is covered the moment it lands.
@@ -757,7 +763,7 @@ the call malformed, 13.2 step 2):
 | `{ account: }` | a username | must be an account the scenario declares; at most 32 characters |
 | `{ npc: }` | an NPC id | must be an NPC in the scenario; a card or record tied to one person |
 | `{ card: }` | an item id | must be an rfid card or clone item in the scenario; a card with no single holder |
-| `{ typed: }` | text as the player entered it | the only free text a row may hold: stripped of control characters (case kept), cut to 32 characters, then by whole characters until its JSON form is at most 96 bytes, a cut value marked `cut: true` and shown with a trailing `~`. Stored for the player's own username input only, never for text the server holds. Stored as typed whatever it equals, a registered secret included: the matcher never reads it (13.2 step 2) |
+| `{ typed: }` | text as the player entered it | the only free text a row may hold: put in the `normalise_username` form (`strip.downcase[0, 64]`, `game.rb:2721-2723`, the form the sign-in route keys on), stripped of control characters, cut to 32 characters, then by whole characters until its JSON form is at most 96 bytes, a cut value marked `cut: true` and shown with a trailing `~`. Stored for the player's own username input only, never for text the server holds. Stored in that normalised form whatever it equals, a registered secret included: the matcher never reads it (13.2 step 2) |
 
 `OpsLog::Result` answers three questions about one call:
 
@@ -834,19 +840,22 @@ over 400 bytes, so the run-time check never fires.
 
    **The matcher**, one function used by the guard, the helper, `assert_ops_log_holds_no_secret`
    and `verify-run.rb --ops-log`: each value under `as`, `where` and `detail` that its type rule
-   did not resolve (an alias, and any later rule that admits a value without looking it up) is
-   compared exactly with each secret, and each count with each numeric secret of 10 or more (a
-   one-digit secret is not compared, since every count is one digit). A value the type rule
-   resolved, a registered code, a scenario id or a declared username, is skipped: it is already
-   known not to be free text, and an author's password equal to a username or a code (a classic
-   weak password) must not make a validated scenario raise. Counters and times (`seq`, `n`,
+   did not resolve is compared exactly with each secret, and each count with each numeric secret of
+   10 or more (a one-digit secret is not compared, since every count is one digit). The secrets
+   compared are `secret_values` minus the authored collisions, computed once at load: registered
+   authored values that equal a declared username, a scenario id or a code in `EVENTS`. An
+   author's password equal to a username or a code (a classic weak password) therefore never
+   makes a validated scenario raise, while an issued code, a reset password or a hash a builder
+   routes into any field is still caught: values passed to `OpsLog.note_issued_secret` are always
+   compared, against every non-typed field, resolved or not. Counters and times (`seq`, `n`,
    `elapsedMs`, `serverMs`) are not compared. `as.typed` is never compared, by any of the four
    users of the matcher: it is the player's own text, echoed to the same player, so any branch on
    its value would tell them whether what they typed is a secret.
 
    **The guard** runs the matcher in test and development. A hit, or any failed check above,
    raises `ArgumentError` whose message names the event and the key path (`detail.route`) and
-   never the value. The raise must reach `with_game_lock`, so the transaction rolls back the
+   never the value. The guard's message starts with a fixed prefix, `secret in`, which no type
+   check uses, so a test can tell the two apart. The raise must reach `with_game_lock`, so the transaction rolls back the
    grant with the row; a call site inside a broad `rescue` re-raises `ArgumentError` first. In
    production the checks other than the guard still run: a mismatch writes
    nothing and logs one `Rails.logger.warn` line naming the event and key path, so a typo can
@@ -888,7 +897,9 @@ over 400 bytes, so the run-time check never fires.
    `maxRows`, it evicts one row from that source, taking the first class that has one. A
    **protected** row is the first row of its event in that source (per event, not per event and
    result), or a row with `p` whose latest server time (`last`, else `serverMs`) is from 0 to
-   under `SAVE_WINDOW_MS` before now (the row that records "limit reached" in the open window).
+   under `SAVE_WINDOW_MS` before now (the row that records "limit reached" in the open window;
+   only a `save_limit: true` merge refreshes `last` for this purpose, so a noisy refusal merging
+   into such a row does not extend it).
    Classes 1 to 3 never take a protected row:
    1. the oldest refusal row (result other than `ok` or `granted`) with `n` above 1;
    2. the oldest other refusal row;
@@ -959,7 +970,7 @@ over 400 bytes, so the run-time check never fires.
   two-digit matching number (13.5). No rule admits free text, so a password, hash, PIN, code,
   key, MFA number, security answer or file content has no field to land in. The only free text
   in a row is `as.typed`, and it is the one place a row may hold a secret: only one the player
-  typed there, stored as typed (real logs catch passwords typed into the username box). The guard of step 2 is a second, separate check in tests (section 11
+  typed there, stored in its normalised form (real logs catch passwords typed into the username box). The guard of step 2 is a second, separate check in tests (section 11
   runs the walk with it off to prove the type rules alone).
 - **Nothing unearned.** Ids and display names of findings, techniques, networks, shares, folders,
   services, hosts and accounts may be stored and shown, because the player reaches the row only by
@@ -1010,6 +1021,7 @@ EVENTS = {
   'network_swept'   => { label: 'NET_SWEEP', places: %w[network], results: %w[ok], detail: { 'from' => { id: 'foothold' } } },
   'credentials_harvested' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 9 }, 'hashes' => { count: 9 } } },
   'signin_refused'  => { label: 'SIGN_IN',   places: %w[pc],      results: %w[denied blocked], save_limit: { 'denied' => 10, 'blocked' => 10 } },
+  'badge_swipe'     => { label: 'BADGE',     places: %w[door object], results: %w[ok denied], save_limit: { 'denied' => 10 } },
   # ...
 }.freeze
 ```
@@ -1090,7 +1102,7 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
 | S8a | `mfa_prompt_approved` | `{ account: }` | `pc` | ok | `approver` (`owner`, `held_phone`, `own_phone`) | one per sign-in | the save that writes the session |
 | S8a | `mfa_prompt_denied` | `{ account: }` | `pc` | denied | none | one per attempt | the save that drops the record |
 | S8a | `mfa_expired` | `{ account: }` | `pc` | expired | none | one per attempt | the save that drops the record |
-| S8b | `helpdesk_request` | `{ typed: }`, the username as asked, for every result and whether or not it is an account | `desk` | granted, refused, blocked | `what` (`password`, `mfa`) | granted, refused: merged repeats and the desk's `maxTries`. Blocked: `save_limit: true`, 10 per desk (registered for `blocked`), whatever username is typed | granted, refused: the save that stores the grant or the tries. Blocked changes nothing else: `save!` only when `r&.stored?` |
+| S8b | `helpdesk_request` | `{ typed: }`, the username as asked (normalised), for every result and whether or not it is an account | `desk` | granted, refused, blocked | `what` (`password`, `mfa`) | granted, refused: merged repeats and the desk's `maxTries`. Blocked: `save_limit: true`, 10 per desk (registered for `blocked`), whatever username is typed | granted, refused: the save that stores the grant or the tries. Blocked changes nothing else: `save!` only when `r&.stored?` |
 | S8b | `account_password_reset`, `account_mfa_reenrolled` | `{ account: }` | `desk` | ok | `agent` | once per account (caller: first grant) | the save that stores the grant |
 
 - **S8c, a second step on any lock**, adds no events: the eight `mfa_*` events also register
@@ -1159,7 +1171,7 @@ records nothing for these, and the gap is the lesson.
    before the S3, S5a, S5c and S8 stages that edit `attempt_login!` and `start_login_session!`.
 3. **OPS_CORE (S1 to S3):** `technique_refused` registers `save_limit: { 'refused' => 10 }`; a
    quiet refusal is written with `save_limit: true` (not `10`) and saves only on `r&.stored?`, a
-   noisy one passes none and keeps the route's save; a repeat of one of a source's 10 newest rows
+   noisy one passes none (the default `false`) and keeps the route's save; a repeat of one of a source's 10 newest rows
    merges.
 4. **OPS_PRIVILEGE_ACCOUNTS (S5):** `admin_profile_read` is one per PC, profile and account; the
    harvest detail is `count` and `hashes`, each `{ count: 9 }`, a collect adding at most 8 pairs;
@@ -1171,13 +1183,13 @@ records nothing for these, and the gap is the lesson.
      `save_limit: { 'blocked' => 10 }`, and the blocked call is exactly
      `write_log_row!('helpdesk_request', as: { typed: username }, where: { kind: 'desk', id: desk_id }, result: 'blocked', detail: { 'what' => what }, save_limit: true)`,
      saving only when `r&.stored?`.
-   - Its guard tests for a second-step code and a matching number force a `detail` value to the
-     issued value in a test-only event (the walk of section 11 already builds such calls), not a
-     `typed` value: typed text is stored as typed and never reaches the matcher.
+   - Its guard tests for a second-step code, a matching number and a reset password force a
+     `detail` value to the issued value in a test-only event whose kind is `{ id: 'test_any' }`
+     (its lookup resolves any string, so the value passes its type rule and reaches the matcher),
+     and assert the error message starts with `secret in`, not a `typed` value: typed text is stored normalised and never reaches the matcher. The blocked and other `helpdesk_request` calls pass the `normalise_username` form (the route's own key).
 6. **OPS_LOCK_SECOND_STEP (S8c):** met for `approver` (not `by`) and for `as: { npc: }` only
-   when the second-step screen shows the owner, nil otherwise, never `{ account: }`. Still asked:
-   the `method` detail on `mfa_challenge` is a closed list of codes, each at most 16 lowercase
-   characters, listed in that plan; its rows use the `door` and `object` place kinds (13.5) and
+   when the second-step screen shows the owner, nil otherwise, never `{ account: }`; the `method` detail on `mfa_challenge` is met too (a closed list of codes,
+   each at most 16 lowercase characters, listed in that plan). Still asked: its rows use the `door` and `object` place kinds (13.5) and
    follow 13.7; the `mfa_*` events it extends number eight.
 7. **OPS_CRACKING (S7):** writes no rows, and registers any hash or cracked value it stores as a
    secret source.
@@ -1214,7 +1226,7 @@ records nothing for these, and the gap is the lesson.
    **Recommend (a):** it needs no change to the share reader, keeps file names out of rows, and
    a hash file on a share still leaves a trace (the folder that holds it). This plan is written
    to (a).
-4. **Typed text before another player.** A typed username is stored as typed, so a password
+4. **Typed text before another player.** A typed username is stored in its normalised form, so a password
    typed into the username box sits in the row; the parked defence game would show it to another
    player. **Recommend accepting it:** passwords typed into a username box are a real thing a
-   defender sees.
+   defender sees. This plan is written to accepting it.

@@ -62,3 +62,13 @@ Every blocker, major and minor in `OPS_LOG_ROWS_R5.md` was acted on, with the or
 | m3 | Matcher skips values its type rule resolved (codes, scenario ids, declared usernames); validator warning kept | Cannot block an author; the type rules already prove those are not free text |
 | m6, M1, M3, m7 | Section 14 items 5 and 6; lock plan marked met for `approver` and `{ npc: }` per the orchestrator's note, `method` list still asked | Sibling edits |
 | technique_used ceiling | Recomputed as 388 at a `host` place (was 386) | Measured with compact JSON |
+
+Round 6 (two minors, five nits), orchestrator's rulings applied.
+
+| Finding | Decision | Why |
+|---|---|---|
+| m1 | `typed` is the `normalise_username` form (`strip.downcase[0, 64]`, `game.rb:2721-2723`); "case kept" and "stored as typed" removed; `signin_fail` and `signin_lockout` rows stand as written; blocked `helpdesk_request` and `signin_refused` pass the normalised form | `record_login_failure!` and `add_login_lockout!` only see the normalised key; one form per field, and the FAIL row's `n` matches the attempts counted |
+| m2 | Matcher compares every non-typed value against `secret_values` minus authored collisions (a username, scenario id or `EVENTS` code); issued secrets always compared; guard message prefix `secret in`; the test-only `{ id: 'test_any' }` event proves the guard fires; validator warning extended to codes | The old skip left the guard nothing to compare, so a guard test passed on the type rule alone |
+| n1, n2, n4, n5 | `badge_swipe` `EVENTS` line shown; section 14 item 6 `method` list marked met; "(the default `false`)" added; open question 4 "written to accepting it" | One-line fixes |
+| n3 | Clause added: only a `save_limit: true` merge refreshes `last` for protection | Bounded already; stated for clarity |
+| Not applied | Core plan wording at `OPS_CORE_PLAN.md:621` (n4) and the MFA plan's guard tests | Outside the two files this pass may edit; section 14 now states what the MFA plan must do |
