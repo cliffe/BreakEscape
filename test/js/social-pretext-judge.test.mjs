@@ -201,6 +201,29 @@ test('Dev open_buddy with neither fact prepared stays neutral (no penalties)', (
   assert.equal(r.influenceAfter, -10, 'influence is unchanged');
 });
 
+// The skip is only for an UNFILLED blank, not a wrong one (lab post-release m1): leaving the
+// team empty must not launder a wrong intern. The filled-but-wrong fact is still judged as an
+// identity mismatch, while the other, empty, blank stays skipped.
+test('Dev open_buddy with the intern filled wrong and the team empty still judges the wrong fact', () => {
+  const r = judgeUtterance(DEV, sess(), 'open_buddy', { intern: 'wrong' }, -10);
+  assert.equal(entryFor(r, 'intern').delta, GRADE_COST.identity, 'the wrong intern is an identity mismatch');
+  assert.deepEqual(r.opens, ['intern'], 'the wrong fact opens; the empty team does not');
+  assert.equal(entryFor(r, 'team'), undefined, 'the unfilled team is still skipped, not judged');
+});
+
+// Regression guard (lab post-release m1): the skip is opt-in via optionalBlanks. A line
+// WITHOUT the flag keeps the strict default — a missing blank for a known fact is a mismatch,
+// not a free pass — so no other mission's lines change behaviour.
+test('a line without optionalBlanks still treats a missing blank as a mismatch', () => {
+  const strictLine = { ...DEV.lines.open_buddy };
+  delete strictLine.optionalBlanks;
+  const strictDev = { ...DEV, lines: { ...DEV.lines, open_buddy_strict: strictLine } };
+  const r = judgeUtterance(strictDev, sess(), 'open_buddy_strict', { intern: 'lord_full' }, -10);
+  assert.equal(entryFor(r, 'intern').delta, 10, 'the stated intern still earns credit');
+  assert.deepEqual(r.opens, ['team'], 'the missing team opens as a mismatch');
+  assert.equal(entryFor(r, 'team').delta, GRADE_COST.identity);
+});
+
 test('Dev repair_team recovers an open team mismatch for +20', () => {
   const r = judgeUtterance(DEV, sess({ openMismatches: ['team'] }), 'repair_team', { team: 'finance' }, -30);
   assert.equal(r.influenceAfter, -10);
