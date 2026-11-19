@@ -183,7 +183,8 @@
     z-index: 100;
     white-space: pre-wrap;
     line-height: 1.5;
-    max-width: 360px;
+    box-sizing: border-box;   /* so max-height counts the padding and border */
+    max-width: 382px;         /* 360px of text plus the 22px of padding and border */
     max-height: 100%;   /* never taller than the chart area, which clips it */
     overflow: hidden;
 }
@@ -348,6 +349,10 @@
 @media (max-height: 560px) {
     .sh-chart-area { min-height: 140px; }
     .sh-dzdt-panel { height: 80px; min-height: 80px; }
+    /* Phone landscape is wider than 600px but only ~140px of chart: smaller, wider tooltip so the
+       revealed anomaly text fits the area (review R4 m1) */
+    .sh-tooltip { font-size: 14px; line-height: 1.2; max-width: 520px; }
+    .sh-tooltip-label { font-size: 14px; }
     /* Phone landscape: hint plus the 140px chart is taller than the window, so the chart column
        scrolls (pixel scrollbar) and the time axis stays reachable (review R1 m6) */
     .sh-charts { overflow-y: auto; overflow-x: hidden; }
