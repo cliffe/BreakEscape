@@ -857,6 +857,8 @@ wall_safe_pin = "5829"
     The exposure / Gary reactions are intentionally left to the closing debrief, which fires
     immediately after the press terminal and covers them in full — a live beat there would
     collide with the debrief and, if the insider was never identified, the Reeves ambush. %>
+<%# The !advised_board_pay guard on the two refuse texts is redundant at runtime (Kim's ink clears
+    one advice flag when it sets the other) but tells the validator the four texts cannot stack. %>
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
               "condition": "globalVars.advised_board_refuse && !globalVars.advised_board_pay && !globalVars.paid_ransom && !globalVars.dr_kim_ko",
