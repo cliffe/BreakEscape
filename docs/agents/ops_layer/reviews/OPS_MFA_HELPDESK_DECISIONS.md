@@ -53,3 +53,7 @@ the places where the plan took a different fix.
 | Log R4 section 4 | "Second-step seeds" not registered as a scenario field | This plan authors no seed: the code key is the application's secret. Codes and matching numbers are noted on issue; `creds.recovery` and `creds.resetPassword` are the registered fields (H1) |
 | Log R4 section 4 | `route` takes all four shared codes, including `relay` | The pending record stores `relay`, so a challenge can start over one |
 | Request 8 (S9) | Reduced to "nothing further asked" | The log plan now registers these rows as this plan writes them |
+| R5-F1 (minor) | Fixed differently: only `creds.resetPassword` is registered; recovery answers are not, and no helpdesk row stores a typed answer | Orchestrator ruling; recovery answers can be public facts that collide with ids and display names. Secret table and guard test row updated |
+| R5-F2 (minor) | Applied: `relay` dropped from the pending record and from `mfa_challenge` `route`. Supersedes the "Log R4 section 4" `relay` row above | A typed sign-in with a relay is refused before `attempt_login!` (`games_controller.rb:1549-1552`, `game.rb:3444`) |
+| R5-F3 (minor) | Applied: "at most one `helpdesk_request` row" | Matches section 13 |
+| R5-N1 to N6 | All applied (blank line after the state table, "closed codes or ids", "each five-minute window", M1a/M3 guard tests via `typed` after `note_issued_secret` and `/mfa/approve` noted, `:606`, saved connection refused in the section 1 sentence) | One-line fixes |

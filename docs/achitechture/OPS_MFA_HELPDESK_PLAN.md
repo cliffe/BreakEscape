@@ -34,7 +34,7 @@ already open, a stolen session token, or access gained through a weakness in a s
 asked for a second factor at all.
 
 **Which ways in meet the second step.** A typed password does, wherever the player got it; a
-way in that proves no password does not (the list is in section 5.2).
+way in that proves no password does not, and a saved connection is refused (the list is in section 5.2).
 
 **S8b, helpdesk recovery (A23, lower priority).** A helpdesk NPC can reset an account's password
 or move its second factor to the caller, after checking who is asking under a rule the scenario
@@ -352,7 +352,7 @@ The body carries the reason code and no text. Section 5.3 gives the client mappi
 lines the screen shows.
 
 **Pending record.** `player_state['mfaPending'][pcId] = { 'id' => npcId, 'kind', 'foothold'?,
-'from'?, 'relay'?, 'n' => 0, 'tries' => 0, 'nonce', 'at' => server seconds, 'last' => 0 }`. One
+'from'?, 'n' => 0, 'tries' => 0, 'nonce', 'at' => server seconds, 'last' => 0 }`. One
 per PC; a new first step at that PC overwrites it. It expires after `PENDING_SECONDS`; expired
 records are dropped whenever the map is read or written, so abandoned attempts do not pile up.
 Writing one adds 1 to `mfaAccounts[npcId].started`, which is the `nonce`.
@@ -511,7 +511,7 @@ session state.
   ownPhone, pcId }`. No `pc_signin_failed` is emitted; `mfa_required` is.
 - `signInWithCredential` handles a 422 in its own branch (`pc-sessions.js:598-612`), which maps
   the body through `credentialRefusalReason(b)` and otherwise falls back to `b.message ||
-  'Incorrect username or password'` (`:607`). `credentialRefusalReason` learns `typeToSignIn`
+  'Incorrect username or password'` (`:606`). `credentialRefusalReason` learns `typeToSignIn`
   and returns the reason `type_to_sign_in` with `why: b.typeToSignIn`, ahead of that fallback,
   so the player is never told the password is wrong. The sign-in screen holds the two lines:
   for `second_step`, "This PC asks for a second step. Type the password to sign in."; for
@@ -665,7 +665,7 @@ would. "Lockout" is the account's lockout key at that PC (422 `lockedOut`).
 | `POST /mfa/prompt` (locked) | `pc_id` | PC found. Pending record, push kind, live (else generic 422). Route still holds. Lockout. Gap since `last` (else 422 `tooSoon: true, retryAfterS`). `n < MAX_PROMPTS` (else record dropped, 422 `expired: true`) | Counts, then the decision in 5.2. Not approved: `{ success: false, approved: false, promptsSent, waiting? }`. Approved: `mfaPrompts[npc] = 0`, record dropped, session written, the normal sign-in answer plus `approvedBy: "owner"` |
 | `GET /mfa/phone` | `npc_id` (that NPC's held phone), or `own=1` (the player's own) | `npc_id`: `held_friendface_phone(npc_id)` (else 403 `no such phone`). `own`: at least one account has `accountResets[...].mfa` (else the same 403) | No write. `{ requests: [{ pcId, host, username, n, numbers? }] }`: live push records for that owner's account, or for every re-enrolled account; at most one per PC. `numbers` is the three choices from `MfaModel.numbers`, in its order, none marked |
 | `POST /mfa/approve` (locked) | `pc_id`, `number?`, `deny?` | PC found. Pending record, push kind, live (else generic 422). Phone held for the pending account, or account re-enrolled (else 403). Route still holds. `deny`, or a wrong or missing `number` for number matching: record dropped, `{ success: false, cancelled: true }` | Right: record dropped, `mfaPrompts[npc] = 0`, session written, the normal sign-in answer plus `approvedBy: "player"` |
-| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points) | The checks in 5.2. Desk unknown: 404. NPC not met or knocked out, `what` not offered: generic 422. Stopped serving: 422 `blocked: true`. Unknown username or rule not met: tries counted, 422 `refused: true, triesLeft` | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A request for something already granted passes the same checks, answers the same body with the current `lockoutPcIds`, writes nothing and clears nothing. Each outcome writes one `helpdesk_request` row (section 13) |
+| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points) | The checks in 5.2. Desk unknown: 404. NPC not met or knocked out, `what` not offered: generic 422. Stopped serving: 422 `blocked: true`. Unknown username or rule not met: tries counted, 422 `refused: true, triesLeft` | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A request for something already granted passes the same checks, answers the same body with the current `lockoutPcIds`, writes nothing and clears nothing. Each outcome writes at most one `helpdesk_request` row (section 13) |
 
 A refused second step never says more than the first step already did: the `mfaRequired` answer
 itself tells the player the password was right, as a real second prompt does.
@@ -738,6 +738,7 @@ them.
 | `mfaAccounts` | `{ npcId => { 'started' => n, 'used' => window, 'wrong' => n, 'closedAt'? } }` | Four integers per account | Never |
 | `accountResets` | `{ npcId => { 'password'?, 'mfa'?, 'typed'? } }` | Three booleans per account | Never; the keyring answer lists the new entry through its existing `rev` digest, so an unchanged keyring is not re-sent |
 | `helpdeskTries` | `{ "deskId\|username" => n }`, username normalised and at most 64 code points | Account keys bounded by authoring; non-account keys capped at 200, oldest dropped, as `loginFailures` does (`game.rb:4357-4364`) | Never; `triesLeft` rides on the refusal |
+
 Nothing is added to synced client state, and no existing synced value grows. `MfaClient` holds
 the pending kind, number and last read code in memory only. **Reload:** memory is lost, so the
 sign-in screen opens on the password pane and the next password step overwrites the pending
@@ -979,7 +980,7 @@ must hold to:
   `logSources`, no source takes the event, `once: true` found the row already written, or the
   `save_limit` is spent). A branch with no save of its own calls `save!` only when `r&.stored?`.
 - **`save_limit: k`** is a count over a window: at most `k` calls for one event, place and
-  result may store in any five minutes of server time, whatever `as` holds. It is the bound for
+  result may store in each five-minute window of server time, whatever `as` holds. It is the bound for
   a branch whose only save would be the row's. `once:` is refused with `as: { typed: }`, so
   this plan never passes `once:`.
 - **Merging** is the log plan's merge step: if one of a source's 10 newest rows has the same
@@ -991,7 +992,7 @@ must hold to:
   made-up one have the same shape and the desk's log tells a reader no more about which
   usernames exist than the desk's answers did.
 - **`where`** is `{ kind: 'pc', id: }` or `{ kind: 'desk', id: }`.
-- **Details are closed codes.** No row of this plan carries a number. If one is ever added it
+- **Details are closed codes or ids.** No row of this plan carries a number. If one is ever added it
   is a `count` of at most 9, which also keeps it clear of a matching number (10 to 99).
 
 Each stage registers its events in `OpsLog::EVENTS` and asserts its rows in its controller
@@ -1003,17 +1004,19 @@ tests and scenario beats. "When" names the model method and branch, inside the g
 | Stage | Secret | Registered how |
 |---|---|---|
 | M1a | A six digit code | Derived, never stored: `MfaAccess`'s code function calls `OpsLog.note_issued_secret(code)` each time it computes one (the device route and verify), which holds for the length of the request |
-| M3 | The matching number | The same call, by the function that issues the number (the pending-record write and the phone list) |
-| H1 | `creds.recovery` values and `creds.resetPassword` | Scenario fields: `OpsLog.register_secret_source(:helpdesk) { \|game\| ... }` returns every account's values |
+| M3 | The matching number | The same call, by the function that issues the number (the pending-record write, the phone list and `POST /mfa/approve`, which computes them to judge a tap) |
+| H1 | `creds.resetPassword` | Scenario field: `OpsLog.register_secret_source(:helpdesk) { \|game\| ... }` returns every account's reset password. The recovery answers are not registered: they can be public facts, such as a name from a feed post, and would collide with ids and display names. No helpdesk row stores a typed answer; the detail records the result only |
 
 This plan authors no second-step seed: the code key comes from the application's secret and is
 in no scenario or game row, so there is no seed field to register. Each stage's controller
 tests include one case that tries to write a row holding its secret and asserts the guard
-refuses it.
+refuses it (for H1, a row holding `creds.resetPassword`; for M1a and M3, a `typed` value set
+after `note_issued_secret`, since no row of this plan has a field that could hold the code or
+number otherwise).
 
 | Event | Where | When | Result | Detail | Bound | Saved by | Stage |
 |---|---|---|---|---|---|---|---|
-| `mfa_challenge` | pc | `attempt_login!`, the second-step branch | `ok` | `route`: the shared codes `keyboard`, `foothold`, `from`, `relay` | merged repeats | the save that stores the pending record | M1a |
+| `mfa_challenge` | pc | `attempt_login!`, the second-step branch | `ok` | `route`: the shared codes `keyboard`, `foothold`, `from` (a typed sign-in never carries a relay) | merged repeats | the save that stores the pending record | M1a |
 | `mfa_code_ok` | pc | `MfaAccess` verify, right code | `ok` | none | one per sign-in | the save that writes the session | M1a |
 | `mfa_code_wrong` | pc | verify, wrong code | `fail` | none | merged repeats; the three code caps | the save that stores the counts | M1a |
 | `mfa_code_locked` | pc | verify, the wrong code that reaches `MAX_CODE_WRONG_TOTAL` | `locked` | none | merged repeats; at most one per thirty wrong codes and five minutes | the save that stores `closedAt` | M1a |
