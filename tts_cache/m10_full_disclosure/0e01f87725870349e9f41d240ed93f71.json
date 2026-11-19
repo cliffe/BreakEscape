@@ -1,0 +1,13 @@
+{
+  "key": "0e01f87725870349e9f41d240ed93f71",
+  "npc": "farah_guard",
+  "text": "Step away from that locker. Last chance.",
+  "voice": "Zephyr",
+  "style": "Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T08:26:06Z"
+}
