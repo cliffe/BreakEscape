@@ -231,9 +231,12 @@ New `lib/break_escape/mfa_model.rb`, no Rails, like `CredentialModel`:
 - `code_state(typed, codes, used_window, window)`: `:right` when the typed code is the current or
   previous window's and that window is later than `used_window`; `:stale` when it equals the code
   of any of the last four windows but is not right (already used, or too old); else `:wrong`.
-- `numbers(key, game_id, pc_id, npc_id, nonce)`: for number matching. One HMAC over those four
-  values gives the right two digit number (10 to 99), two different wrong ones, and the order
-  of the three on the phone. `nonce` is the count of second steps started for that account in this game
+- `numbers(key, game_id, subject_key, npc_id, nonce)`: for number matching. One HMAC over those
+  four values gives the right two digit number (10 to 99), two different wrong ones, and the
+  order of the three on the phone. `subject_key` is the key of the subject's pending record: the
+  PC id for sign-in, so sign-in numbers are exactly those an HMAC over the PC id gives; for any
+  other subject, the key its caller files the record under (for a lock, the object or room id
+  with its kind). `nonce` is the count of second steps started for that owner in this game
   (`mfaAccounts[npcId].started`, section 8), so nothing is drawn at random.
 - `PROMPT_PRESETS = { 'low' => 'pestered', 'medium' => 'never', 'high' => 'never' }` and
   `prompt_habit(npc, scenario)`: the NPC's authored `habits.approvesPrompts` if valid, else
@@ -279,6 +282,27 @@ alone (the route re-judge, the lockout key, the session write). Sign-in is one c
 only one this plan builds. The functions read nothing about the subject beyond its kind and id,
 so a second caller with another kind of subject needs no change to them; the `/mfa/*` routes
 accept a subject that is not a PC only once the lock plan (A25) lands.
+
+M1a builds the functions to these rules, so that a second caller adds its subject and its
+record home and changes nothing here. For a `pc` subject each rule gives exactly the sign-in
+behaviour the rest of this section describes; sign-in is unchanged by them.
+
+| Rule | A `pc` subject (sign-in) | Any other subject |
+|---|---|---|
+| Where the record lives | `mfaPending[pcId]` | A map the caller owns, under its own key; the same fields, plus `'passed' => true` once passed |
+| The expiry tidy, `tidy_pending!(map)`, run on every read and write of a record map | Drops records older than `PENDING_SECONDS` | The same, except that a record marked `passed` is kept: the caller spends it or drops it. A sign-in record is never marked `passed`, so the tidy acts on `mfaPending` as before |
+| On a pass (right code, owner approval, player approval) | The function returns `:passed`; the sign-in caller drops the record, clears failures and writes the session in the same locked write | The function returns `:passed` and drops nothing; the caller marks the record `passed` |
+| Route re-judge (`second_step_refusal`, below) | Run by the sign-in caller before the step | Skipped: the caller judges reach itself |
+| A wrong code adds to | `tries`, `mfaAccounts[npcId].wrong`, the lockout key | `tries` and `mfaAccounts[npcId].wrong` only |
+| `numbers` subject key (5.1) | The PC id | The caller's record key |
+| Where the step goes | Re-enrolment is honoured: `own:<npcId>` for a code, the player's own phone for push | Re-enrolment is ignored: the owner's authored `code_device` (`device_for`) and `phone_friendface`; `ownPhone` is never set |
+
+**Re-enrolment belongs to sign-in.** A helpdesk second-factor reset (S8b) moves the account's
+sign-in and nothing else. A step on any other subject keeps using the phone and device the
+scenario names for its owner, so resetting someone's work sign-in leaves their other locks as
+authored. Push case 1 below, the re-enrolled branch of `POST /mfa/approve`, the `npc_id` and
+`own=1` forms of the device and phone routes, and `own:<npcId>` in verify apply to `pc`
+subjects only.
 
 **The sign-in order.** `attempt_login!` (`game.rb:3444`) runs, in the order agreed across the
 ops plans:
@@ -353,11 +377,13 @@ lines the screen shows.
 
 **Pending record.** `player_state['mfaPending'][pcId] = { 'id' => npcId, 'kind', 'foothold'?,
 'from'?, 'n' => 0, 'tries' => 0, 'nonce', 'at' => server seconds, 'last' => 0 }`. One
-per PC; a new first step at that PC overwrites it. It expires after `PENDING_SECONDS`; expired
-records are dropped whenever the map is read or written, so abandoned attempts do not pile up.
-Writing one adds 1 to `mfaAccounts[npcId].started`, which is the `nonce`.
+per PC; a new first step at that PC overwrites it. It expires after `PENDING_SECONDS`;
+`tidy_pending!` drops expired records whenever the map is read or written, so abandoned attempts
+do not pile up. Writing one adds 1 to `mfaAccounts[npcId].started`, which is the `nonce`; the
+issue function adds that 1 for every subject, so the count, and with it the numbers, never
+repeats for an owner whichever caller started the step.
 
-**Every second-step route judges the first step's route again.** The player can unplug a
+**Every sign-in second step judges the first step's route again.** The player can unplug a
 foothold or be removed from a PC's access list between the two steps.
 `second_step_refusal(pc, pending)` returns the refusal the first step would now give, or nil:
 `typed_route_refusal(pc, foothold:, from:)`, which is the route branch of `attempt_login!` moved
@@ -423,16 +449,21 @@ The per-PC lockout is the one count here that never clears by itself: only a hel
 reset lifts it (below), as for a wrong password today. The validator warns where a lock the
 scenario needs sits behind such a PC and no desk can lift it (section 9).
 
-For a re-enrolled account the server compares against the own-phone code (`device_id`
-`own:<npcId>`). The account's old device is no longer in use: `GET /mfa/device` answers
-`{ enrolled: false }` for it, with no code, and the scene says so.
+For a re-enrolled account the server compares a sign-in code against the own-phone code
+(`device_id` `own:<npcId>`). The account's old device no longer signs it in: `GET /mfa/device`
+answers `{ enrolled: false }` for it, with no code, and the scene says so, unless a step on
+another subject still names that owner's device (`device_in_use?(npc_id)`, which asks each
+registered non-sign-in subject kind). No such kind exists in this plan, so here the answer
+depends on the re-enrolment alone; the lock plan registers its kind and the device keeps showing
+its code for the owner's locks. The once-per-window rule is per owner (`mfaAccounts[npcId].used`)
+whatever the subject.
 
 **Push.** `POST /mfa/prompt` sends one request and answers at once. In order: the pending record
 is a push kind and live; at least `PROMPT_GAP_SECONDS` since `last` (else `tooSoon`); `n` below
 `MAX_PROMPTS` (else the attempt ends); then `n += 1` and the first of these that applies:
 
-1. The account was re-enrolled (S8b): the request is on the player's own phone; answer `waiting:
-   "own_phone"`.
+1. The subject is a sign-in and the account was re-enrolled (S8b): the request is on the
+   player's own phone; answer `waiting: "own_phone"`. Any other subject skips this case.
 2. The player holds the owner's phone: answer `waiting: "held_phone"`. Nobody else can approve.
 3. The owner's phone was taken and is not held (dropped, left in a room): nobody answers.
 4. The owner is recorded as knocked out: nobody answers. The record comes from the browser, so
@@ -442,15 +473,16 @@ is a push kind and live; at least `PROMPT_GAP_SECONDS` since `last` (else `tooSo
    >= prompt_patience`; `never` does not.
 
 `mfaPrompts[npcId]` counts only requests the owner received (case 5), so a request the player
-caught on a held phone tires nobody. It counts across attempts and across PCs and returns to 0
-when a request for that account is approved by anyone, so fatigue survives an expired attempt
+caught on a held phone tires nobody. It counts across attempts, PCs and subjects (an owner
+pestered about a sign-in and a lock is one tired owner) and returns to 0 when a request to that
+owner is approved by anyone, so fatigue survives an expired attempt
 and starts again after a success. An approval starts the session as a correct password does
 today.
 
 `POST /mfa/approve` is the player approving on a phone: the pending record is a push kind; the
-player holds the owner's phone (`held_friendface_phone(npc_id)`, called unchanged), or the
-account was re-enrolled; for number matching the posted number equals the pending number. A
-wrong number or a Deny cancels the attempt and is not counted towards a lockout: a cancelled
+player holds the owner's phone (`held_friendface_phone(npc_id)`, called unchanged), or, for a
+sign-in only, the account was re-enrolled; for number matching the posted number equals the
+pending number. A wrong number or a Deny cancels the attempt and is not counted towards a lockout: a cancelled
 attempt costs the password step again and a new attempt has new numbers, so three choices
 leave nothing worth guessing.
 
@@ -507,8 +539,9 @@ A grant writes `accountResets[npcId]` with `'password' => true` or `'mfa' => tru
 session state.
 
 - `signIn` tests `body.mfaRequired === true` before its `success === false` test. It records
-  the step in `MfaClient` and returns `{ ok: false, reason: 'mfa_required', mfa, npcId, number,
-  ownPhone, pcId }`. No `pc_signin_failed` is emitted; `mfa_required` is.
+  the step with `MfaClient.noteRequired({ kind: 'pc', id: pcId }, body)` and returns `{ ok:
+  false, reason: 'mfa_required', mfa, npcId, number, ownPhone, pcId }`. No `pc_signin_failed`
+  is emitted; `noteRequired` emits `mfa_required`.
 - `signInWithCredential` handles a 422 in its own branch (`pc-sessions.js:598-612`), which maps
   the body through `credentialRefusalReason(b)` and otherwise falls back to `b.message ||
   'Incorrect username or password'` (`:606`). `credentialRefusalReason` learns `typeToSignIn`
@@ -522,14 +555,21 @@ session state.
   them exactly what `signIn` does with its own (`pc-sessions.js:555-562`): build the session,
   `_replace`, `_dropEnded(body.endedPcIds, pcId, body.tokenExpiredPcIds)`, and the same
   `pc_signed_in` event. No other module writes the mirror.
-- A refused second step emits `pc_signin_failed` with a new reason: `mfa_wrong_code`,
-  `mfa_code_locked`, `mfa_cancelled` or `mfa_expired`; `locked_out` as today. A stale code
-  emits nothing: it is not a failure.
+- A refused sign-in second step emits `pc_signin_failed` from the mirror (`MfaClient` hands it
+  the refusal) with a new reason: `mfa_wrong_code`, `mfa_code_locked`, `mfa_cancelled` or
+  `mfa_expired`; `locked_out` as today. A stale code emits nothing: it is not a failure. A
+  subject that is not a sign-in never reaches the mirror and emits no `pc_signin_failed`.
 
-**`systems/mfa-client.js` (new).** Calls the five `/mfa/*` routes and hands every sign-in answer
-to `completeSecondStep`. It holds, in memory only, what a reopened sign-in screen needs:
-`pendingFor(pcId)` (kind, `npcId`, number, `ownPhone`, and which lesson to teach afterwards),
-`takeCompleted(pcId)` (a session a child scene just opened, handed out once) and `lastRead`:
+**`systems/mfa-client.js` (new).** Calls the five `/mfa/*` routes. Every note it keeps is filed
+under a subject key (`pc:<pcId>` for sign-in, `<kind>:<id>` for any other subject), and every
+call takes the subject `{ kind, id }`; the sign-in screen's calls below pass `{ kind: 'pc', id:
+pcId }`. A passing answer is routed by subject kind: for `pc` it is the normal sign-in answer
+and goes to `completeSecondStep`; for any other kind it is `{ success: true, stepPassed: true,
+... }`, never reaches the mirror, and is kept for that subject's caller. It holds, in memory
+only, what a reopened screen needs: `pendingFor(subject)` (kind, `npcId`, number, `ownPhone`,
+and which lesson to teach afterwards), `takeCompleted(subject)` (handed out once: for `pc`, the
+session a child scene just opened; for any other kind, the pass answer a child scene received,
+which the subject's caller spends, so there is no second method) and `lastRead`:
 one record `{ npcId, source, code }` for the last code a device scene showed that was not marked
 `used`, where `source` is the device's item id or `'own'` for the player's own phone.
 `codeFor(pending)` returns that code only when the device it was read from is the one enrolled
@@ -564,9 +604,9 @@ said `ownPhone: true`. Otherwise it returns nothing.
   `closeMode` it calls `close()`, which completes with success true (`:127-142`), so the sign-in
   screen comes back.
 - **The screen that comes back is a new instance**, so what it must remember lives in
-  `MfaClient`. Its `init` asks there first: `takeCompleted(pcId)` returns a session when the
-  child approved the request, and the screen runs the accepted path at once; else
-  `pendingFor(pcId)` puts it straight on the second pane, with the code field filled from
+  `MfaClient`. Its `init` asks there first, with the subject `{ kind: 'pc', id: pcId }`:
+  `takeCompleted` returns a session when the child approved the request, and the screen runs
+  the accepted path at once; else `pendingFor` puts it straight on the second pane, with the code field filled from
   `codeFor(pending)` when that returns a code and left empty when it does not (never submitted:
   the player presses Verify); else the password pane, with a "request cancelled" line if the
   child denied.
@@ -574,7 +614,7 @@ said `ownPhone: true`. Otherwise it returns nothing.
   normally, so the framework releases the sign-in screen: its `onComplete` runs once, as
   `(false, { aborted: true, viaChild: true })`, and it does not reopen
   (`minigame-manager.js:641-655`). The screen's starter treats that as a quiet close: no toast,
-  no reject sound, no `pc_signin_failed`. It clears `takeCompleted(pcId)`, so a session note
+  no reject sound, no `pc_signin_failed`. It clears the PC's `takeCompleted` note, so a session note
   can never be picked up by a later visit to the PC; the mirror already holds any session the
   child opened.
 - **Closing the screen does not cancel the attempt.** X leaves the server's pending record to
@@ -620,8 +660,17 @@ reads it to grant.
 
 **Events** (for scenario `eventMappings`, so barks stay in scenario files): `mfa_required`,
 `mfa_prompt_sent` `{ npcId, pcId, n }`, `mfa_approved` `{ npcId, pcId, by }`, `mfa_failed`,
-`helpdesk_answered` `{ deskId, result }`; each also as `<name>:<id>`. The owner's reaction to a
-buzzing phone is a bark the scenario maps to `mfa_prompt_sent:<npcId>`.
+`helpdesk_answered` `{ deskId, result }`. `MfaClient` emits the four `mfa_*` events for every
+subject: `mfa_required` from `noteRequired`, the other three when a route answers. It emits
+through `window.eventDispatcher` as the mirror's `_emit` does (`pc-sessions.js:335-341`), each
+also as `<name>:<npcId>`. For a sign-in the payload carries `pcId`; for any other subject it
+carries `targetType` and `targetId` in its place, and the rest is the same, so an owner's bark is
+mapped the same way for both. The owner's reaction to a buzzing phone is a bark the scenario
+maps to `mfa_prompt_sent:<npcId>`. `helpdesk_answered` comes from the `helpdesk-request` scene,
+also as `helpdesk_answered:<deskId>`. In this plan the only caller of `noteRequired` is
+`signIn`. The subject keys, the routing of a pass by kind, `takeCompleted` for any kind and the
+event payloads are built here; the lock plan (A25) adds the lock caller (its entry from the
+unlock request and the lock pane) on top of them and changes none of what sign-in does.
 
 All server and author text is set with `textContent`. The three new scenes use pixel fonts and
 2px borders, close with X only, and go on every JS test harness copy list with `mfa-client.js`.
@@ -660,7 +709,7 @@ would. "Lockout" is the account's lockout key at that PC (422 `lockedOut`).
 
 | Route | Params | Checks in order | Writes and answer |
 |---|---|---|---|
-| `GET /mfa/device` | `item_id`, or `npc_id` for a re-enrolled account | A policy declares an `mfa` kind (else 404). `item_id`: `held_code_device` holds for that item (else 403 `no such device`, the same body whether the item is unknown, not held, forged or another type). `npc_id`: `accountResets[npc].mfa` (else the same 403) | No write. `{ deviceId, displayName, npcId, code, secondsLeft, used? }`. `used` is true when the device's account has already used this window. The `item_id` form for a held device whose account has been re-enrolled answers `{ deviceId, displayName, npcId, enrolled: false }` with no code; the player caused the re-enrolment, so this tells them nothing new |
+| `GET /mfa/device` | `item_id`, or `npc_id` for a re-enrolled account | A policy declares an `mfa` kind (else 404). `item_id`: `held_code_device` holds for that item (else 403 `no such device`, the same body whether the item is unknown, not held, forged or another type). `npc_id`: `accountResets[npc].mfa` (else the same 403) | No write. `{ deviceId, displayName, npcId, code, secondsLeft, used? }`. `used` is true when the device's account has already used this window. The `item_id` form for a held device whose account has been re-enrolled, and which no other subject still uses (`device_in_use?`, 5.2), answers `{ deviceId, displayName, npcId, enrolled: false }` with no code; the player caused the re-enrolment, so this tells them nothing new |
 | `POST /mfa/verify` (locked) | `pc_id`, `code` | PC found (404). Pending record for the PC, kind `code`, live (else generic 422). Route still holds. Lockout. Account's code step closed (422 `codeLocked: true, retryIn`; a closure older than `CODE_CLOSED_SECONDS` is lifted first). `code` is six digits (else generic 422, not counted). Then `MfaModel.code_state` | Stale: 422 `stale: "used"` or `"expired"`, no write. Wrong: `tries += 1`; `mfaAccounts[npc].wrong += 1`, and at `MAX_CODE_WRONG_TOTAL` `closedAt` is set and the `mfa_code_locked` row written; `record_login_failure!`; answer as a wrong password plus `mfaIncorrect: true`; at `MAX_CODE_TRIES` the record is dropped and the answer adds `expired: true`. Right: `mfaAccounts[npc].used` set, failures cleared, record dropped, session written, the normal sign-in answer |
 | `POST /mfa/prompt` (locked) | `pc_id` | PC found. Pending record, push kind, live (else generic 422). Route still holds. Lockout. Gap since `last` (else 422 `tooSoon: true, retryAfterS`). `n < MAX_PROMPTS` (else record dropped, 422 `expired: true`) | Counts, then the decision in 5.2. Not approved: `{ success: false, approved: false, promptsSent, waiting? }`. Approved: `mfaPrompts[npc] = 0`, record dropped, session written, the normal sign-in answer plus `approvedBy: "owner"` |
 | `GET /mfa/phone` | `npc_id` (that NPC's held phone), or `own=1` (the player's own) | `npc_id`: `held_friendface_phone(npc_id)` (else 403 `no such phone`). `own`: at least one account has `accountResets[...].mfa` (else the same 403) | No write. `{ requests: [{ pcId, host, username, n, numbers? }] }`: live push records for that owner's account, or for every re-enrolled account; at most one per PC. `numbers` is the three choices from `MfaModel.numbers`, in its order, none marked |
@@ -672,6 +721,11 @@ itself tells the player the password was right, as a real second prompt does.
 
 In this plan every second-step route names a PC. The routes accept a subject that is not a PC
 only once the lock plan (A25) lands; until then a request without `pc_id` is the generic 422.
+The table above is the `pc` column of the subject rules in 5.2. The record drop and the session
+write on a pass, "Route still holds", "Lockout", `record_login_failure!`, and every re-enrolled
+form (`npc_id` on the device route, `own=1` on the phone route, the re-enrolled branch of
+approve) are sign-in's alone; the shared functions behind each route return their outcome and
+leave those to the caller.
 
 ## 7. What reaches the browser, and what never does
 
@@ -734,12 +788,15 @@ them.
 | Key | Shape | Bound | Sent |
 |---|---|---|---|
 | `mfaPending` | `{ pcId => record }` | One record per sign-in PC. Expired records are dropped on every read and write of the map | Never. Route answers carry only the one changed value (`promptsSent`, `approved`) |
-| `mfaPrompts` | `{ npcId => count }` | One integer per account | Never |
-| `mfaAccounts` | `{ npcId => { 'started' => n, 'used' => window, 'wrong' => n, 'closedAt'? } }` | Four integers per account | Never |
+| `mfaPrompts` | `{ npcId => count }` | One integer per step owner: an NPC whose account has a second step, or who owns a step on another subject (a lock, A25). At most one entry per NPC in the scenario, so bounded by authoring; about 20 bytes each | Never. A route answer carries only `promptsSent` |
+| `mfaAccounts` | `{ npcId => { 'started' => n, 'used' => window, 'wrong' => n, 'closedAt'? } }` | Four integers per step owner, as above: at most one entry per NPC in the scenario, about 80 bytes each. `started` and `wrong` count sign-in and lock steps together | Never. A route answer carries only the changed value (`retryIn`, `used`) |
 | `accountResets` | `{ npcId => { 'password'?, 'mfa'?, 'typed'? } }` | Three booleans per account | Never; the keyring answer lists the new entry through its existing `rev` digest, so an unchanged keyring is not re-sent |
 | `helpdeskTries` | `{ "deskId\|username" => n }`, username normalised and at most 64 code points | Account keys bounded by authoring; non-account keys capped at 200, oldest dropped, as `loginFailures` does (`game.rb:4357-4364`) | Never; `triesLeft` rides on the refusal |
 
-Nothing is added to synced client state, and no existing synced value grows. `MfaClient` holds
+Nothing is added to synced client state, and no existing synced value grows. A step on another
+subject keeps its record in its caller's own key, which that plan bounds; `mfaPrompts` and
+`mfaAccounts` gain at most one entry per owner from it, never one per lock or per attempt, and
+`mfaPending` gains nothing. `MfaClient` holds
 the pending kind, number and last read code in memory only. **Reload:** memory is lost, so the
 sign-in screen opens on the password pane and the next password step overwrites the pending
 record. `mfaPrompts`, `mfaAccounts`, `accountResets` and `helpdeskTries` persist, and cleared
@@ -872,6 +929,7 @@ The feature scenario's beats are each asserted in a controller case too. Cases n
 | Push | The count survives a new attempt; requests caught on a held phone do not raise it; a knocked-out owner approves nothing; `tooSoon` |
 | Phone | Approve refused without the phone; the three numbers are stable for one attempt and differ for the next; deny cancels; own-phone list refused with no re-enrolled account |
 | Helpdesk | Unknown user and wrong answers give the same body and rows of the same shape (section 13); a blocked desk posted to twenty times inside five minutes, with one username or twenty, stores and saves ten times and no more, and stores again once the window has passed; retry of a granted request gets the same body and leaves a lockout earned since the grant in place; an account locked out at two PCs is unlocked at both and `lockoutPcIds` shrinks; a second-factor grant leaves lockouts alone; desk NPC not met refused; hostile text in `answers` and `username` (long, HTML, control characters) is cut and cleaned before any use, echoed in no answer, and stored only as the normalised 64 code point key and the log row's capped `typed` field |
+| Subject rules (`test/models/break_escape/mfa_access_subject_test.rb`) | The `MfaAccess` functions called with a test-only subject kind and its own map, since no route takes one in this plan: a `passed` record survives the tidy past `PENDING_SECONDS` and an unpassed one does not; a right code, an owner approval and a player approval each return `:passed` and leave the record; no route re-judge and no lockout key is touched; `numbers` for that subject differs from a PC's with the same owner and nonce; `started`, `wrong` and `mfaPrompts` move on the shared per-owner entries; with the owner re-enrolled, push case 1 is skipped, approve needs the held phone, verify compares against the authored device, and `device_in_use?` keeps the old device's code live. The same calls with a `pc` subject give exactly the sign-in results above |
 | No inline key | A unit test greps `app/` and `lib/` for a lockout key built or split outside `AccessIdentities` and fails on any hit |
 
 **JS** (`test/js/`), beside the existing authenticator and episode-runner tests, which pass
@@ -884,6 +942,7 @@ unedited, and `authenticator-live`, `authenticator-snapshot` (section 10), `help
 | `mfa-signin-pane.test.mjs` | Pane swap with no reject sound; `teachAfter` only after the second step; a reopened instance resumes from `MfaClient` and accepts a completed session; the code field is filled after a read of the pending account's device, and empty after a read of another account's device, of an item device when the answer said `ownPhone`, and of a device that answered `enrolled: false`; each `typeToSignIn` reason shows its own line |
 | `mfa-child-handover.test.mjs` | Against the real minigame manager, for each child scene: the sign-in screen suspends, the child ends by X, the `password` scene reopens on the second pane; a forced close releases the screen once, with no failure event and no completed note left behind |
 | `code-device.test.mjs` | A `used` code is greyed and not noted; an `enrolled: false` answer shows no digits |
+| `mfa-client.test.mjs` | Notes are kept per subject key; a passing answer for `pc` goes to `completeSecondStep`, and one for a test-only kind is handed out once by `takeCompleted` and never reaches the mirror; `noteRequired` and each route answer emit the matching `mfa_*` event, plain and as `<name>:<npcId>`, with `pcId` for a PC and `targetType`, `targetId` for the test kind; no `pc_signin_failed` for the test kind |
 
 **Feature scenario** `scenarios/test_ops_mfa/`: three rooms, one foothold, five sign-in PCs
 (two under a `code` policy with `maxAttempts`, one `push`, one `push_number_match`, one with
@@ -971,7 +1030,7 @@ Shared files (re-read just before editing, own block only, explicit paths):
 ## 13. Log rows this feature writes
 
 Every row goes through the log plan's helper, `write_log_row!(event, as:, where:, result: 'ok',
-detail: nil, once: false, save_limit: nil)`, which lands before M1a. Its contract is the log
+detail: nil, once: false, save_limit: false)`, which lands before M1a. Its contract is the log
 plan's sections "The helper" and "What the helper does, in order". What a builder of these rows
 must hold to:
 
@@ -979,9 +1038,10 @@ must hold to:
   `stored?` is true when a row was appended or merged, and nil when nothing could change (no
   `logSources`, no source takes the event, `once: true` found the row already written, or the
   `save_limit` is spent). A branch with no save of its own calls `save!` only when `r&.stored?`.
-- **`save_limit: k`** is a count over a window: at most `k` calls for one event, place and
-  result may store in each five-minute window of server time, whatever `as` holds. It is the bound for
-  a branch whose only save would be the row's. `once:` is refused with `as: { typed: }`, so
+- **`save_limit: true`** is a switch, never a number. The limit is registered with the event in
+  `OpsLog::EVENTS`, per result: at most that many calls for one event, place and result may
+  store in each five-minute window of server time, whatever `as` holds. It is the bound for a
+  branch whose only save would be the row's. `once:` is refused with `as: { typed: }`, so
   this plan never passes `once:`.
 - **Merging** is the log plan's merge step: if one of a source's 10 newest rows has the same
   event, `as`, `where`, `result` and `detail`, the helper adds 1 to that row's `n` instead of
@@ -1010,9 +1070,10 @@ tests and scenario beats. "When" names the model method and branch, inside the g
 This plan authors no second-step seed: the code key comes from the application's secret and is
 in no scenario or game row, so there is no seed field to register. Each stage's controller
 tests include one case that tries to write a row holding its secret and asserts the guard
-refuses it (for H1, a row holding `creds.resetPassword`; for M1a and M3, a `typed` value set
-after `note_issued_secret`, since no row of this plan has a field that could hold the code or
-number otherwise).
+refuses it (for H1, a row holding `creds.resetPassword`; for M1a and M3, a test-only event
+whose `detail` value is forced to the code or number just passed to `note_issued_secret`, since
+no row of this plan has a field that could hold either. Typed text in `as.typed` is stored as
+typed and never checked against secrets, so it cannot serve as the guard case).
 
 | Event | Where | When | Result | Detail | Bound | Saved by | Stage |
 |---|---|---|---|---|---|---|---|
@@ -1024,7 +1085,7 @@ number otherwise).
 | `mfa_prompt_approved` | pc | prompt (owner approves) or approve (player) | `ok` | `approver`: `owner`, `held_phone`, `own_phone` | one per sign-in | the save that writes the session | M2, M3, H2 |
 | `mfa_prompt_denied` | pc | approve, Deny or a wrong number | `denied` | none | one per attempt | the save that drops the record | M3 |
 | `mfa_expired` | pc | verify or prompt, the per-attempt cap reached | `expired` | none | one per attempt | the save that drops the record | M1a, M2 |
-| `helpdesk_request` | desk | `request_helpdesk!`, after the desk, its NPC and `what` are checked | `granted`, `refused`, `blocked` | `what`: `password`, `mfa` | granted, refused: merged repeats, `maxTries`. Blocked: `save_limit: 10` per desk | granted and refused: the save that stores the grant or the tries. Blocked changes nothing else: `save!` only when `r&.stored?`, at most ten times per desk in each five-minute window, whatever username is typed | H1 |
+| `helpdesk_request` | desk | `request_helpdesk!`, after the desk, its NPC and `what` are checked | `granted`, `refused`, `blocked` | `what`: `password`, `mfa` | granted, refused: merged repeats, `maxTries`. Blocked: `save_limit: true`, 10 per desk, registered in `EVENTS` as `{ 'blocked' => 10 }` | granted and refused: the save that stores the grant or the tries. Blocked changes nothing else: `save!` only when `r&.stored?`, at most ten times per desk in each five-minute window, whatever username is typed | H1 |
 | `account_password_reset`, `account_mfa_reenrolled` | desk | `request_helpdesk!`, the first grant of each | `ok` | `agent`: the desk NPC's id | once per account | the save that stores the grant | H1, H2 |
 
 A run of `mfa_prompt_sent` to one owner at one PC is one row with a count, which is why the
@@ -1034,7 +1095,9 @@ and the typed username needs the room. A stale code, a refused route, a verify a
 step already closed and a repeat of a granted request change nothing and write no row.
 
 The blocked call, exactly: `write_log_row!('helpdesk_request', as: { typed: username }, where:
-{ kind: 'desk', id: desk_id }, result: 'blocked', detail: { 'what' => what }, save_limit: 10)`.
+{ kind: 'desk', id: desk_id }, result: 'blocked', detail: { 'what' => what }, save_limit: true)`,
+saving only when `r&.stored?`. The limit of 10 is the `helpdesk_request` entry's
+`save_limit: { 'blocked' => 10 }` in `OpsLog::EVENTS`, which H1 registers.
 
 No field holds a code, a number to match, an answer or a password. The only free text is
 `as.typed` on `helpdesk_request`, which the helper strips and caps.
@@ -1056,15 +1119,26 @@ No field holds a code, a number to match, an answer or a password. The only free
 7. **Policy fields in the browser (S5a, S5c, any plan adding a policy field).** A policy's kind
    is public, its answers are not (section 7); the others are asked to state it for their fields.
 8. **Log rows (S9).** Section 13 is written to the log plan's helper and to its registration of
-   these rows (`approver`, the shared `route` codes, `save_limit:` on the blocked desk row,
-   secret sources registered per stage). Nothing further is asked of S9.
+   these rows (`approver`, the shared `route` codes, `save_limit: true` on the blocked desk row
+   with its limit registered in `EVENTS`, guard tests that force a `detail` value, secret
+   sources registered per stage). Nothing further is asked of S9.
 9. **Hosts (S1).** A host with no sign-in has no policy and so no second step. A headless
    sign-in host is covered, since the pending record stores the route.
 10. **Feature scenario names.** `test_ops_mfa` covers S8b too; no `test_ops_helpdesk` is asked
     for.
 11. **The lock plan (A25).** It calls the section 5.2 functions with its own subject and widens
-    the `/mfa/*` routes to take it. A change to those functions' signatures, to the pending
-    record's fields or to the `mfaPrompts` and `mfaAccounts` counts is checked against
+    the `/mfa/*` routes to take it. This plan builds, in S8a, what that caller relies on, so A25
+    changes none of it: the subject rules of 5.2 (the record in the caller's own map, a
+    `passed` record kept by the expiry tidy, no drop on a pass, no route re-judge, no lockout
+    key, re-enrolment ignored so the step goes to the owner's authored phone and device, and
+    `device_in_use?` keeping that device's code live); `numbers` taking the subject's record
+    key (5.1); `mfaPrompts` and `mfaAccounts` counted per step owner across subjects (5.2,
+    section 8); and in `MfaClient` the subject keys, `takeCompleted` handing out a pass answer
+    for any kind, and the four `mfa_*` events emitted from `MfaClient` with `targetType` and
+    `targetId` in place of `pcId` (5.3). The lock plan is asked to use these names, to keep its
+    lock records in its own key, to register its subject kind with `device_in_use?`, and to
+    drop `ownPhone` from its lock answer. A change to those functions' signatures, to the
+    pending record's fields or to the counts is checked against
     `OPS_LOCK_SECOND_STEP_PLAN.md` before it is made.
 
 ## 15. Open questions for the user
