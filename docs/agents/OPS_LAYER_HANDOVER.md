@@ -1,0 +1,183 @@
+# Ops layer planning: orchestrator handover
+
+Written 2026-11-19, about 12:15, by the orchestrating session (Fable). From here the deep planning
+work moves to Opus: an Opus session orchestrates, and Opus agents write and revise the plans. This
+note is everything the next orchestrator needs that is not already in a plan file. Read it with
+`docs/agents/OPS_LAYER_BRIEF.md` (the shared brief every agent reads) and `AGENTS.md`.
+
+## 1. The job
+
+The user asked for plans, not builds, for a set of access-control, sign-in and abstract network
+features, so that a later game can replace real VMs with simulated mechanics. Standing instruction:
+task subagents to plan the features, consider the existing code carefully so the additions fit,
+run several agents in parallel, use Haiku for retrieval, and do iterative adversarial review
+rounds. AC0 (the usual integrating session) is parked; this stream's orchestrator commits its own
+branch.
+
+Nothing is built until the user says so (their pick Q8). Parked by the user and out of scope: S0,
+S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING_PLAN_OUTLINE.md`).
+
+## 2. Where things are
+
+- Worktree `.claude/worktrees/ops-plan`, branch `docs/ops-layer-plan`. Never commit on main. Stage
+  explicit paths, check `git diff --cached --stat`, no attribution lines in commit messages.
+  Subagents never commit; the orchestrator does.
+- Plans: `docs/achitechture/OPS_*_PLAN.md`. Outline: `docs/achitechture/OPS_LAYER_PLAN_OUTLINE.md`.
+- Findings and declined items: `docs/agents/ops_layer/reviews/<PLAN>_R<n>.md` and
+  `<PLAN>_DECISIONS.md`. Cross-plan review: `CROSS_PLAN_R1.md`.
+- Code digests (Haiku, with `file:line`): `docs/agents/ops_layer/digests/` D1 to D6. D6 line 149 is
+  wrong about door lock fields: they live on the room (`scripts/scenario-schema.json` near 4171).
+- Running log of the session: `docs/agents/OPS_LAYER_RESUME.md` (long; this note replaces it as the
+  starting point).
+- Picks page for the user's decisions: https://claude.ai/artifact/NJ3CMZUUG6wKE2S9VtEg5e. Its
+  source lived in the old session's scratchpad and may be gone; read the page back with the
+  Artifact tool (`action: read`) to get the HTML, and republish to the same URL. It saves answers
+  under localStorage key `be-ops-plan-picks-v1` with stable question ids in a `GROUPS` array; keep
+  the ids so the user's saved answers survive.
+
+## 3. State of each plan
+
+| Plan | Lines | Round state | Next |
+|---|---|---|---|
+| `OPS_CORE_PLAN.md` (S1 to S3, N13 to N15) | 1703 | R4 revised, commit `6d2330a50` | R5 delta review running (Opus) → small fix pass if needed → done |
+| `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (S5a/b/c, A18 to A20) | 1041 | Five rounds done, `d4fd20176` | Only the sibling renames in section 5 below |
+| `OPS_REALISM_SKIN_PLAN.md` (S6, N16) | 1031 | R4 fixed, commit `a4217f2ed` | R5 delta review running (Sonnet; checks agreement with core's guard text) → done |
+| `OPS_LOG_ROWS_PLAN.md` (S9, A24) | about 1290, mid-edit | R4 findings `ceb248f83`; reviser running (Opus) | Commit → R5 short delta (13.1 to 13.3, the counter and secret tests in 11, the sibling tables) |
+| `OPS_MFA_HELPDESK_PLAN.md` (S8a/b, A22, A23) | about 1180, mid-edit | R4 findings `1754dfe69`; reviser running (Fable): removes S8c, trims under 1150, applies the log renames | Commit → R5 delta |
+| `OPS_LOCK_SECOND_STEP_PLAN.md` (S8c, A25) | not yet on disk | Planner running (Fable) | Commit → first full adversarial review → revise → at least one more round |
+| `OPS_CRACKING_PLAN.md` (S7, A21) | 357 | First draft `5e88e7aff`, R1 findings `46649f23f`, unrevised | **Held** for the user's answer to BLOCK-1 on the picks page |
+
+Agents running when this was written (all in the worktree, none commits): core R5 review, skin R5
+review, log rows R4 reviser, MFA R4 reviser, lock second-step planner. A new session cannot receive
+their hand-backs. Check `git status` in the worktree: a modified plan with no newer commit is a
+finished or abandoned pass. Read the diff, check the plan reads as one standalone document, commit
+it, and carry on with the "Next" column. A missing `OPS_CORE_R5.md` or `OPS_REALISM_SKIN_R5.md`
+means that review must be launched again.
+
+After every plan reaches R5: one second cross-plan review over all seven, including the log plan's
+sibling change list (`OPS_LOG_ROWS_R4.md` section 4).
+
+## 4. Model routing from here
+
+- Opus writes and revises plans and does full reviews. Fable is no longer used for planning.
+- The brief's rule "a plan drafted on Fable is reviewed on Opus and the other way round" no longer
+  works. My suggestion, for the user to overrule: every review goes to a fresh Opus agent that did
+  not write or revise that plan, and delta rounds on plans with no secrets or access checks (the
+  skin) go to Sonnet. Update brief section 8 once the user agrees.
+- Haiku (`haiku-reader`) for code retrieval and digests. Sonnet for well-defined edits such as
+  applying a rename list.
+- `opus48` only for CTF or VM solution work and social-engineering content, and for one retry when
+  a safeguard stops a task. If a safeguard stops an `opus48` task, stop and offer the user the
+  retry choice; never rerun it on a third model, never do it yourself, never use grok or qwen for
+  it. This is what happened to the cracking reviser.
+- Every multi-step brief tells the agent to write a handover note and stop at about 150k tokens.
+  Revisers have hit that limit several times on plans over 1200 lines: tell them to read in ranges
+  under 200 lines, start editing within ten calls, and use the Edit tool only.
+- No agent opens SecGen XML or the exploit-detail field guides.
+
+## 5. Rulings in force
+
+These were settled by the orchestrator between plans. Plans already carry most of them; the list is
+here so a reviewer's finding that contradicts one can be declined quickly. None is a user decision
+unless marked.
+
+**Shape (user decisions, brief section 2).** Each stage is its own feature with its own routes; no
+shared moves registry, act route or actors. Neutral schema terms. The skin is only a skin. MFA uses
+a real in-game device. Game-design prose only.
+
+**Sign-in and sessions.** Order: password match, PC admission, second step, session write. A
+session gained by a technique card meets no sign-in checks and no second step. Step-up to admin
+uses core's shapes. Session answers carry `access: "admin"` only when the computed level is admin.
+A refusal reason is a code, with one client text table. A policy's kind is public; its answers are
+not. No `actor` field anywhere.
+
+**Core.** Card item type is `technique_card` (placeholder PNG copied from `qr_card.png`; art is a
+later task, generate nothing). `fixed: true` appears only on a confirmed finding. A technique
+session used at the PC's own keyboard gets 403 `network_only`, handled once in `loadLoginDesktop`
+before `fromReturn` and the catch-all; it keeps the copy, raises no sign-out event and shows the
+plain sign-in screen. Quiet `no_grant` is checked just after status. Noise keys are stated once in
+5.3 and never appear on unswept blocks. Panels show no quiet/noisy note. Core owns and builds the
+scene's `perform` path and one pending-request guard keyed by action and target (`use` keyed by
+card and finding), with the existing unplug guard folded in; the skin only routes through it. Core
+draws the "admin" tag. `data-action` hooks go on ops controls only. Beat tables stay in the core
+plan; its length is accepted.
+
+**Skin.** The control list is private to the network-view folder, on core's `ops-model.js`. The
+switch shows only on `ops: true` networks. A late answer after a skin switch is drawn by the
+mounted renderer. `network_only` never reaches a network-view renderer. Playtests set the skin
+through the bridge's `network.storePick()`.
+
+**Privilege.** The collect route answers the same 404 for an unknown PC and a PC with no admin
+session, and passes `desktop_request_allowed?`. `keyboard_admin?` is `session_admin?` (power term
+included) plus two route terms. `accountOnly` NPCs get no tile, have a key allow-list (`id`,
+`displayName`, `npcType`, `creds`, `role`, `accountOnly`, `staff` as an explicit true or false,
+`_`-prefixed keys), and are skipped by `NpcHabits.expand!` and `awareness_level`. Reader manifest
+`test/models/account_only_readers.yml`; `bin/ops-golden-compare`. The collect action and the
+`harvestedAccounts` marker belong to privilege; the proof kind `harvested` belongs to cracking.
+
+**Log rows.** Event names are snake_case and the log plan's names win: `usb_install_overridden`,
+`credentials_harvested`, `admin_profile_read`, `signin_refused`, `share_folder_opened`,
+`network_swept`, `host_scanned`, `service_checked`, `finding_confirmed`, `technique_refused`,
+`technique_used`, `network_alerted`, `mfa_code_ok`, `mfa_code_wrong`, `mfa_code_locked`,
+`mfa_prompt_sent`, `mfa_challenge`, `account_password_reset`, `helpdesk_request`. Stage L1a (the
+helper and the event list) lands before every other ops stage; L1b is the log plan's own rows.
+`write_log_row!` never saves by itself, returns a result with `stored?`, takes `once:` and
+`save_limit:` (a count over a window of real server time, with reclaimed entries; there is no
+`merge_limit`), and returns nil when the scenario has no `logSources`. Callers on routes that do
+not otherwise save do so only when `stored?`. Storage is in `player_state`: 400 bytes a row, 128 KB
+in all; ids at most 40 characters and account names at most 32 in scenarios with logs. Place kinds
+include `pc`, `host`, `foothold`, `object`, `door`. Identity forms include `{ typed: }` and
+`{ npc: }`. The detail once called `by` is `approver`. One shared `route` list: `keyboard`,
+`foothold`, `from`, `relay`. The only number in a detail is `{ count: }`, clamped at 9. The log
+module builds its own secret registry; L1a registers only today's secrets, each sibling registers
+its own in its stage, and issued codes are registered for the life of the request. Helpdesk rows
+are always `as: { typed: }` and bounded per desk. Cracking writes no log rows. Open: whether noisy
+refusals spend the same per-host `save_limit` count as quiet ones (the core plan leaves it to the
+log plan).
+
+**MFA and helpdesk.** No scenario may be left stranded by the wrong-code limit or by helpdesk
+`maxTries` (validator warning or error). A remembered code is tied to its device. A saved
+connection after a password reset is refused (`typeToSignIn: "password_changed"`). Saved
+connections through a second step and approve-from-the-phone-menu are later slices.
+
+**Lock second step (S8c).** Its own plan. One gate keyed on the object's real id; the validator
+refuses a `secondStep` object whose name or id collides with another's. The `npc` unlock method
+does not skip the step (the browser asserts it); a `flag_reward` does. The attribute lives where a
+door's lock really is, on the room. A pending lock request is approved only from the prompt the
+attempt opens, or by the player holding the owner's phone while that prompt is live. Log rows reuse
+the `mfa_*` events with place kinds `object` and `door`.
+
+The user's wording for S8c, the only user input on it: "MFA should (also?) be flexible to apply to
+various kinds of locks as a push accept, for example: the player walks up to a locked PC, or even
+open an encrypted zip file -- as an attribute to the object." Reading it as "an attribute on any
+lockable object, in addition to the sign-in policy, push as the main case" is mine, not confirmed.
+
+## 6. Work owed that no agent is doing
+
+1. **Sibling renames.** The log plan's change list (`OPS_LOG_ROWS_R4.md` section 4): privilege
+   four lines, core three, MFA eight (the MFA reviser is doing those), and the cracking plan's
+   stale row list. A Sonnet task once the log plan's R5 is in.
+2. **Cracking plan**, once the user answers BLOCK-1: revise for R1, rename proof `dumped` to
+   `harvested` keyed by the sign-in PC id, delete its log row list, register hash secrets with the
+   log module.
+3. **Picks page republish**, once, after the lock plan and the MFA plan settle their questions.
+   Groups to add or refresh: core (discovery enforced or display only; cost of the loop; a
+   technique session against sign-in rules, including at the keyboard; the word `technique`; a
+   card-gained session in permanent `signedInPcs`), privilege (seven questions in its section 15),
+   MFA (code clock; NPC reactions; borrowing and giving back; typed form or dialogue; wrong-code
+   limit; helpdesk `maxTries`), lock second step (its section 15), skin (scenario default skin),
+   log rows (copied-card identity; NPC and office-life rows; share row on folder or file). Drop
+   LOG-2: storage is settled. Each question needs enough context to answer cold (a snippet, a
+   screenshot or a small diagram), and answers must persist in localStorage.
+4. **Outline status paragraph**: the build order and the S8c entry are updated (`333b8b816`); the
+   status line at the top still reads as on the first day.
+5. Housekeeping: the worktree `.claude/worktrees/docs-access-networks` can be cleared now Train 211
+   has landed (move, never `rm`).
+
+## 7. Waiting on the user
+
+- BLOCK-1 to BLOCK-4 and the rest of the picks page. Nothing else is blocked on them except the
+  cracking plan.
+- Whether the review routing in section 4 suits them.
+- Outside this stream, already reported: the sis01 and sis02 log terminal tints its anomaly row
+  (`log-filter-minigame.css:336-342`).
