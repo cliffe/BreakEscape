@@ -63,12 +63,12 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
 
 | Plan | Draft | R1 | R2 | R3 | R4 | R5 |
 |---|---|---|---|---|---|---|
-| OPS_CORE | `bd350990a` (977 lines) | review running (Opus) | | | | |
-| OPS_PRIVILEGE_ACCOUNTS | `9f5216ba8` (opus48) | 3B 12M 9m `abd5bd1bb`; reviser running (Opus) | | | | |
-| OPS_REALISM_SKIN | `1f9fc50e3` | 1B 5M 16m `b1355fd32`; reviser running (Fable) | | | | |
-| OPS_CRACKING | `5e88e7aff` (opus48) | 4B 9M 8m `46649f23f`; reviser HELD (opus48 safeguard stop, user to choose) | | | | |
-| OPS_MFA_HELPDESK | `6995773a9` | 0B 7M 15m `f3b038b8d`; reviser running (Fable) | | | | |
-| OPS_LOG_ROWS | `aa595c30d` | review running (Fable) | | | | |
+| OPS_CORE | `bd350990a` | R1 `724275ed2` + R1b `4f043a33e`; revised `17c6a3d16`; second reviser pass running (Fable, a1bcf6813a084bbe1) | next: full R2 on Opus | | | |
+| OPS_PRIVILEGE_ACCOUNTS | `9f5216ba8` | 3B 12M; revised `86e8bc159` | 0B 5M 9m `5bac3cbe4`; reviser running (Opus, a6da98267bbaa0c17) | | | |
+| OPS_REALISM_SKIN | `1f9fc50e3` | 1B 5M; revised `b40e9c1eb` | 0B 2M 11m `97f5538f8`; reviser NOT launched, waits for core second pass | | | |
+| OPS_CRACKING | `5e88e7aff` | 4B 9M `46649f23f`; reviser HELD (opus48 safeguard stop; user picks on BLOCK-1) | | | | |
+| OPS_MFA_HELPDESK | `6995773a9` | 0B 7M; revised `1ac5579be` | 0B 2M 11m `850c0d087`; reviser running (Fable, afce605ac16c1e685) | | | |
+| OPS_LOG_ROWS | `aa595c30d` | 0B 8M; revised `354171b88` | review running (Fable, aaeabde849598eb7f) | | | |
 
 ## Decisions and questions for the user
 
@@ -93,6 +93,29 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   plan's L1 (helper only) lands before core S1; a hash file read on a share is the log plan's own
   plain "file read" row. Picks page builder running, writes scratchpad `ops_plan_picks.html`
   (localStorage key `be-ops-plan-picks-v1`); publish it when it reports.
+- 11:18 HANDOFF (read this first after compaction).
+  Picks page PUBLISHED for the user: source scratchpad `ops_plan_picks.html` (session scratchpad
+  dir), 37 questions in groups BLOCK, SHARED, CORE, PRIV, MFA, SKIN, CRACK, LOG; localStorage key
+  `be-ops-plan-picks-v1`; ids are stable, so republish the same file path to update. The user has
+  not answered yet. BLOCK-1 decides the cracking revision (do NOT rerun it on any model before).
+  When agents report: commit the plan + DECISIONS file by explicit path, then launch the next
+  review. Next reviews: R3 is a full review only where R2 found majors and the revision
+  redesigned something; otherwise a Sonnet delta review (diff since last round + previous
+  findings), per AGENTS.md "Cheaper later rounds". Reviewers cross-model: Fable-revised plans
+  (CORE, SKIN, MFA) on Opus, Opus-revised (PRIVILEGE, LOG_ROWS) on Fable.
+  After the core second pass reports: (1) commit; (2) launch core R2 (Opus, full); (3) launch the
+  SKIN R2 reviser (Fable) from `OPS_REALISM_SKIN_R2.md`, telling it core is final for now: show
+  noise, Probe, evidence and Alerted in the Terminal, list `network_alerted`, use core's server
+  aliases f1/f2, fix text test 9, the locked-row Sign in offer, beats T3/T5; settle questions 4
+  and 5 in the plan; (4) update the picks page Core group from core's section 15 and republish.
+  Rulings since 11:02: session answers carry `access: "admin"` only when the computed level is
+  admin, any session kind, never a default; log helper stage L1 lands before core S1 and each
+  plan's stages write and assert their own rows; MFA: saved connections through the second step
+  and approve-from-phone-menu move to a later slice, and until then a saved connection to an MFA
+  PC is refused with a reason; a hash file read on a share is the log plan's plain file-read row.
+  Still to do at the end: update the outline's build order (log helper first) and its status
+  paragraph; a second cross-plan review once all six are through R2; tell the user about the
+  sis01/sis02 log tint bug (already reported in chat).
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
