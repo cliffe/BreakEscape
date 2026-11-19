@@ -59,10 +59,10 @@ ca12's ambient pair is **Thandiwe Moyo (`thandiwe_moyo`)** and **Julian Sallow (
 
 Both sprite atlases carry walk, talk, visemes and `sit_<dir>` in all 8 directions (`public/break_escape/assets/characters/thandiwe_moyo.json`, `julian_sallow.json`; Lorna's and Delphine's atlases carry `sit` too).
 
-- `thandiwe_moyo`: `displayName "Thandiwe Moyo"`, `spriteSheet "thandiwe_moyo"`, `voice { name: "Pulcherrima", style, language }` from her cast record (`AW/VOICE_CAST.md:110`), one `rest` need, 3 `chatterLines`, the company `pool`, a `position` and a coordinate `needsHome` beside a studio chair. In ca12 she is the set-piece colleague: both set pieces override her `needsHome` to her workstation and slow her `rest` (1.4). The coordinate home is for later Merrin & Sallow shells.
-- `julian_sallow`: `displayName "Julian Sallow"`, `spriteSheet "julian_sallow"`, `voice { name: "Rasalgethi", ... }` (`AW/VOICE_CAST.md:108`), one `rest` need met at `kit_sofa`, live at `initial: 45, decayPerMin: 30`, so his first trip is under way at load and he carries the room's arrival life while Thandiwe stays at her desk. 3 `chatterLines`, pool, `position` and a coordinate `needsHome`. **His home coordinate must not be the sofa's `useFrom` cell** (proof 4).
+- `thandiwe_moyo`: `displayName "Thandiwe Moyo"`, `spriteSheet "thandiwe_moyo"`, `voice { name: "Pulcherrima", style, language }` from her cast record (`AW/VOICE_CAST.md:110`), `"needs": { "rest": { "decayPerMin": 10, "urgentAt": 50, "initial": 90 } }` (a first trip about four minutes in, for later shells), 3 `chatterLines`, the company `pool`, a `position` and a coordinate `needsHome` beside a studio chair. In ca12 she is the set-piece colleague: both set pieces override her `position`, `needsHome` and `rest` so she starts and stays at her workstation (1.4). The coordinate home is for later Merrin & Sallow shells.
+- `julian_sallow`: `displayName "Julian Sallow"`, `spriteSheet "julian_sallow"`, `voice { name: "Rasalgethi", ... }` (`AW/VOICE_CAST.md:108`), `"needs": { "rest": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } }`, so his first trip to `kit_sofa` is under way at load and he carries the room's arrival life while Thandiwe stays at her desk. 3 `chatterLines`, pool, `position` and a coordinate `needsHome`. **His home coordinate must not be the sofa's `useFrom` cell** (proof 4).
 
-Both: `needs: "rest"` met by `kit_sofa`, `needsRooms: ["training_room"]`, `chatterCooldownMin: 5`, `needsSpeed` and `needsHome.facing` as Brightwell. No work need, exchange, call, `los`, sight, challenge, `frustration`, `workarounds` or `feed`.
+Both: the `needs` object form above, as Brightwell's staff (`AW/office_kits/brightwell_foods.json`), with `rest` met by `kit_sofa`, `needsRooms: ["training_room"]`, `chatterCooldownMin: 5`, `needsSpeed` and `needsHome.facing` as Brightwell. No work need, exchange, call, `los`, sight, challenge, `frustration`, `workarounds` or `feed`.
 
 ### 1.2 Source
 
@@ -74,9 +74,11 @@ The studio's only need source is the sofa (no kitchenette or coffee point: tone 
     "sprite": "leather_sofa1", "takeable": false, "interactable": false,
     "observations": "A studio sofa by the wall. Staff drop onto it for a breather.",
     "affordance": { "satisfies": "rest", "restores": 70, "useSeconds": 8,
-                    "useFrom": { "dx": 0, "dy": -1 } } }
+                    "useFrom": { "dx": 0, "dy": -1 }, "capacity": 2, "chatter": "pool" } }
 ]
 ```
+
+`"capacity": 2, "chatter": "pool"` is required. `room_objects` rewrites `"pool"` to the pool key (`OK:178-180`), and T:221-222 requires every kit shell (course, twin, test) to carry an object whose `affordance.chatter` starts `kit_` with `capacity === 2`, as Brightwell's `kit_coffee` does. The pool is spoken only through that topic: two compatible NPCs using the sofa together trade a pool line (`NN:4491-4500`). With capacity 2 a second user stands on the cell beside the first (`NN:3470-3473`), so Julian on the sofa never blocks Thandiwe's trip.
 
 The studio map has one sofa object, `leather_sofa1.png`, at Tiled `(6.75, 9.38)` tiles (bottom-left anchor) in the `items` layer of `assets/rooms/room_aw_merrin_sallow.json`. With no `position`, the source binds to the drawn prop of its `type` (`core/rooms.js` `findMatchFor`, `:261-284`, confirm); an explicit `position` is the fallback. The builder copies the sofa object's catalogue `type` string from the map's `items` layer verbatim. `useFrom` dy -1 is the cell above the sofa's top row and must be free floor (proof 4).
 
@@ -92,11 +94,13 @@ Three studio lines, each under 40 characters, no braces, nobody blamed. They are
 
 **New shared ink in `scenarios/_office_kit/ink/`** (the folder holds `agnieszka_duda_ambient`, `gwen_pritchard_ambient`, `ep_host_ambient`, `priya_nair_ambient`, `sam_okoro_ambient`; follow the gwen/agnieszka pattern). Compile each `.ink` with its `.json` and commit both (`test/unit/break_escape/ink_compiled_staleness_test.rb:26`).
 
-- `thandiwe_moyo_ambient.ink`: a `start` knot (idle line, then `{ kit_defend_done && kit_ep == "ca12": -> ca12 }`), the `ca12` episode knot (S1, branching on `kit_key_caught` alone), and the screen knot `ca12_screen` (2.6), so the C1 bark's `knot: "ca12_screen"` resolves against her `storyPath`. Each knot ends on the sticky `+ [See you later.]` / `#exit_conversation`.
+- `thandiwe_moyo_ambient.ink`: a `start` knot (idle line, then `{ kit_defend_done && kit_ep == "ca12": { kit_ca12_screen_asked: -> ca12_screen | -> ca12 } }`), the `ca12` episode knot (S1, branching on `kit_key_caught` alone), and the screen knot `ca12_screen` (2.6), so the C1 bark's `knot: "ca12_screen"` resolves against her `storyPath`. Each knot ends on the sticky `+ [See you later.]` / `#exit_conversation`.
 - `julian_sallow_ambient.ink`: `start` and `ca12` (S2) as above.
-- `camila_ospina_ca12.ink`: the visitor's holding knot `start` and the door knot `ca12_door` (2.6). It declares and so mentions `kit_defend_done` and `kit_ep`, which T:353-357 requires of every kit NPC's ink; the holding knot need not divert on them.
+- `camila_ospina_ca12.ink`: the visitor's `start` knot (`{ kit_ca12_visitor_there: -> ca12_door }`, then the holding line and an exit) and the door knot `ca12_door` (2.6). It declares and so mentions `kit_defend_done` and `kit_ep`, which T:353-357 requires of every kit NPC's ink; the holding knot need not divert on them.
 
-Of the chain globals, `thandiwe_moyo_ambient.ink` declares only `kit_ca12_screen_choice` and `camila_ospina_ca12.ink` only `kit_ca12_door_choice`; Julian's file declares none. The later Merrin & Sallow shells (ca14, ca18) will load Thandiwe's file with its `ca12_screen` knot and `kit_ca12_screen_choice` VAR, so their sheets should declare that global (as the fallback set piece does here) or accept the validator's note.
+The two `start` diverts make each request reachable from a plain click once it has been made, whatever knot the NPC is on: a dropped bark, or a reload that puts the NPC back on `start`, still leads to the request knot, and each request knot replays the reply or the stub once answered (2.6).
+
+Of the chain globals, `thandiwe_moyo_ambient.ink` declares only `kit_ca12_screen_choice` and `kit_ca12_screen_asked`, and `camila_ospina_ca12.ink` only `kit_ca12_door_choice` and `kit_ca12_visitor_there`; Julian's file declares none. Every shell that loads Thandiwe's file declares her two VARs or carries the validator's undeclared-VAR note: the fallback set piece declares them here; the twin (`setPiece: null`, so `kit_globals` declares no set-piece globals, `OK:186-203`) and the later Merrin & Sallow shells (ca14, ca18) carry the note, which each shell's build notes record.
 
 ### 1.4 Two set pieces
 
@@ -130,7 +134,8 @@ How the chain's mapping fields behave (all read for this sheet):
     "kit_ca12_screen_choice": "", "kit_ca12_door_choice": "",
     "kit_ca12_sat": false, "kit_ca12_screen_asked": false, "kit_ca12_screen_done": false,
     "kit_ca12_visitor_go": false, "kit_ca12_visitor_there": false,
-    "kit_ca12_host_there": false, "kit_ca12_done": false
+    "kit_ca12_host_there": false, "kit_ca12_at_desks": false,
+    "kit_ca12_visitor_leaving": false, "kit_ca12_done": false
   },
   "objects": [
     { "type": "pc", "id": "kit_ca12_pc", "name": "Thandiwe's workstation",
@@ -140,30 +145,31 @@ How the chain's mapping fields behave (all read for this sheet):
       "requiresItemHint": "That's Thandiwe's session, signed in as her. It's hers to lock before she steps away.",
       "position": { "x": <pcX>, "y": 6.75 },
       "spriteVariants": [
-        { "condition": "globalVars.kit_ca12_screen_choice === 'mention'", "sprite": "pc1_locked" },
-        { "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_choice !== 'mention' && globalVars.kit_ca12_done !== true", "sprite": "<break_reminder key>" }
+        { "condition": "globalVars.kit_ca12_screen_choice === 'mention'", "value": "pc1_locked" },
+        { "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_choice !== 'mention' && globalVars.kit_ca12_done !== true", "value": "<break_reminder key>" }
       ],
       "observations": "Thandiwe's workstation. The screen is still on." }
   ],
   "timers": [
-    { "id": "kit_ca12_t_return", "startOnGlobal": "kit_ca12_out", "delayMs": 30000,
+    { "id": "kit_ca12_t_return", "startOnGlobal": "kit_ca12_out", "delayMs": 45000,
       "condition": "!globalVars.kit_ca12_sat", "setGlobal": { "kit_ca12_sat": true } },
     { "id": "kit_ca12_t_screen_tail", "startOnGlobal": "kit_ca12_screen_asked", "delayMs": 20000,
       "condition": "globalVars.kit_ca12_screen_choice === ''", "setGlobal": { "kit_ca12_screen_done": true } },
     { "id": "kit_ca12_t_door", "startOnGlobal": "kit_ca12_visitor_go", "delayMs": <step-in walk ms + 3000; 6000 until measured>,
       "condition": "!globalVars.kit_ca12_visitor_there", "setGlobal": { "kit_ca12_visitor_there": true } },
     { "id": "kit_ca12_t_door_tail", "startOnGlobal": "kit_ca12_visitor_there", "delayMs": 20000,
-      "condition": "globalVars.kit_ca12_door_choice === ''", "setGlobal": { "kit_ca12_door_choice": "silent" } },
+      "condition": "globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done", "setGlobal": { "kit_ca12_door_choice": "silent" } },
     { "id": "kit_ca12_t_done", "startOnGlobal": "kit_ca12_out", "delayMs": 150000,
       "condition": "!globalVars.kit_ca12_done", "setGlobal": { "kit_ca12_done": true } }
   ],
   "npcs": [ <the visitor record, 2.3> ],
-  "mappings": [ <Lorna's let-in walk, 2.5: H-a, H-b, H-c> ],
+  "mappings": [ <Lorna's let-in walk, 2.5: H-a, H-b, H-c1, H-c2> ],
   "staff": {
     "thandiwe_moyo": {
+      "position": <the PC's approach cell, as a tile { "x", "y" }>,
       "needsHome": "kit_ca12_pc",
       "needs": { "rest": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 100 } },
-      "eventMappings": [ <T1-T5, 2.2> ]
+      "eventMappings": [ <T1, T2, T3a, T3b, T4, T5, 2.2> ]
     },
     "julian_sallow": {
       "eventMappings": [ <J1-J3, 2.2> ]
@@ -176,7 +182,8 @@ Notes:
 
 - **`kit_ca12_pc`** is placed like `lobby_hotdesk` (`CA12:1053`): `type: "pc"`, `sprite: "pc"`, an explicit `position`, because no PC is drawn on the studio map. The studio seats are `aw_studio_chair_s1` at `y 6.75` (`x` 1.44, 2.66, 3.88) and `aw_studio_chair_n1` at `y 9.38`. Put the PC on a free desk cell beside one `aw_studio_chair_s1`, readable from the kiosk seat (`<pcX>`, dressing pass); that chair is Thandiwe's seat, and proof 4 checks she sits at the PC's approach cell.
 - `owner` is the NPC id `kit_thandiwe_moyo` (`WS:115-118`); without the `kit_` prefix no return event is emitted.
-- `needsHome: "kit_ca12_pc"` is the string form (`NN:4196-4202`): her home is the PC's approach cell, so her needs trip leaves and returns to the workstation. Her `rest` override (decay 0.01 from 100) keeps her at the desk until the look-up sets it low.
+- `needsHome: "kit_ca12_pc"` is the string form (`NN:4196-4202`): her home is the PC's approach cell, so her needs trip leaves and returns to the workstation. Her `rest` override (decay 0.01 from 100) keeps her at the desk until the look-up sets it low. The patch is a shallow `npc.update` (`OK:165`), so it also sets `position` to the same approach cell: without it she would spawn at the base record's coordinate spot and walk to the PC at load.
+- Each `spriteVariants` entry names its texture in `value`: `resolveConditionalText` skips any variant whose `value` is not a string (`utils/conditional-text.js:87-89`), as every shipped variant does (`scenarios/test_ca_office_kit/scenario.json.erb:845`).
 - `pc1_locked` is the catalogue locked look (`pc_locked` is its alias), paired with base `pc`, and is preloaded (`core/game.js:851`).
 - `<break_reminder key>` is the one new prop (part 6, waiting on art). Entry 2 stops at the beat's end (`kit_ca12_done !== true`) as well as when she locks, so the reminder does not hold forever after "say nothing". Entry 1 sits above entry 2 because the first match wins and conditions cannot use OR.
 - With `spriteVariants` on the PC the engine's own locked look is off for it (`systems/screen-states.js:69-74`, confirm), so `lockChance: 0` is right: she does not auto-lock on leaving.
@@ -186,11 +193,12 @@ Notes:
 
 ```
 "ca12_visitor_fallback": {
-  "globals": { "kit_ca12_screen_choice": "", "kit_ca12_door_choice": "" },
+  "globals": { "kit_ca12_screen_choice": "", "kit_ca12_screen_asked": false,
+               "kit_ca12_door_choice": "", "kit_ca12_visitor_there": false },
   "objects": [
     { <kit_ca12_pc exactly as above, except>
       "spriteVariants": [
-        { "condition": "globalVars.kit_defend_done === true", "sprite": "<break_reminder key>" }
+        { "condition": "globalVars.kit_defend_done === true", "value": "<break_reminder key>" }
       ] }
   ],
   "npcs": [ <the visitor record as in 2.3, with "eventMappings": [
@@ -198,6 +206,7 @@ Notes:
         "onceOnly": true, "setVisible": true } ] > ],
   "staff": {
     "thandiwe_moyo": {
+      "position": <the PC's approach cell, as in the panel set piece>,
       "needsHome": "kit_ca12_pc",
       "needs": { "rest": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 100 } }
     }
@@ -207,7 +216,7 @@ Notes:
 
 - No timers, no out global, no `mappings`, and no `eventMappings` for Thandiwe or Julian.
 - The visitor is the same record (`initiallyHidden`, the door-side tile, `currentKnot: "start"`), revealed on `kit_defend_done` by its one `setVisible` mapping. She never walks and never reaches `ca12_door`, because nothing moves her knot; a click gives the holding line.
-- The two choice globals are declared so the shared inks' VARs match a scenario global. Nothing in this build writes them.
+- The four chain globals are declared so the shared inks' VARs match a scenario global. Nothing in this build writes them, so both `start` knots take their plain branches (Thandiwe's S1 after the defend stage, Camila's holding line).
 - After the defend stage the room shows the settled end state: Thandiwe at her desk with the break reminder on her screen, and a visitor standing just inside the door.
 
 ### 1.5 Host step-away mapping
@@ -263,24 +272,27 @@ T1 { "eventPattern": "global_variable_changed:kit_ca12_out", "condition": "value
 T2 { "eventPattern": "workstation_owner_returned:kit_ca12_pc",
      "condition": "globalVars.kit_ca12_out === true",
      "onceOnly": true, "setGlobal": { "kit_ca12_sat": true } }
-T3 { "eventPattern": "global_variable_changed:kit_ca12_sat",
-     "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
-     "onceOnly": true, "bark": "<C1>", "knot": "ca12_screen",
-     "setGlobal": { "kit_ca12_screen_asked": true } }
+T3a { "eventPattern": "global_variable_changed:kit_ca12_sat",
+      "condition": "value === true && globalVars.kit_ca12_out === true",
+      "onceOnly": true, "setGlobal": { "kit_ca12_screen_asked": true } }
+T3b { "eventPattern": "global_variable_changed:kit_ca12_sat",
+      "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
+      "onceOnly": true, "bark": "<C1>", "knot": "ca12_screen" }
 T4 { "eventPattern": "conversation_closed:kit_thandiwe_moyo",
-     "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_asked === true",
+     "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_asked === true && !globalVars.kit_ca12_done",
      "onceOnly": true, "setGlobal": { "kit_ca12_screen_done": true, "kit_ca12_visitor_go": true } }
 T5 { "eventPattern": "global_variable_changed:kit_ca12_screen_done",
-     "condition": "value === true && globalVars.kit_ca12_out === true",
+     "condition": "value === true && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
      "onceOnly": true, "setGlobal": { "kit_ca12_visitor_go": true } }
 ```
 
 - **T1** is the only thing that moves her. She is not suspended: a suspended NPC's tick returns early (`NN:1464`) and `set` only writes the level (`NN:1153-1166`), so a suspend would keep her at the desk. With her rest at 10 the normal tick sends her to the sofa about 1 s after the look-up, leaving the screen on. She has no resume either (`NN:1130`). The suspend-and-resume requirement (T:333-336) is met by Julian and the visitor.
-- **T2** records that she has sat back down at her PC (`WS:569-585`). It has no bark. The timer `kit_ca12_t_return` (30 s after the look-up, covering the 1 s delay, the walk, the 8 s use and the walk back) writes the same global if the return event never comes.
-- **T3** is the single C1 bark. Both T2 and the timer can write `kit_ca12_sat`, and a repeat write re-emits the event (`NM:1794-1808`); `onceOnly` is what keeps C1 to one bark (`NM:1747-1751`). T3 reads `kit_ca12_sat`, the out global and `kit_quiet`, and sets only `kit_ca12_screen_asked`, so `_barkStillValid` never cancels it. Its `knot` moves her to `ca12_screen`, opened by clicking the bubble or her. `kit_ca12_screen_asked` starts the no-answer tail from the request.
+- **T2** records that she has sat back down at her PC (`WS:569-585`). It has no bark. The timer `kit_ca12_t_return` (45 s after the look-up) writes the same global if the return event never comes. 45 s covers the 1 s delay, the walk, the 8 s use and the walk back with room to spare: a learner who chats with her on the trip freezes her (`NN:1466-1476`), as a queue at the sofa does, and the fallback must not play "that's me back" before she is back.
+- **T3a and T3b** split the chain's progress from its bark. T3a, with no `kit_quiet` term, always sets `kit_ca12_screen_asked`, which starts the no-answer tail and arms T4; it has no `knot`, because a mapping with a `knot` and no `bark` runs as a knot bark (`NM:887-891`). T3b is the single C1 bark: it carries `kit_quiet`, sets nothing (so `_barkStillValid` never cancels it, `NM:1597-1604`), and its `knot` moves her to `ca12_screen`, opened by clicking the bubble or her. If the learner has reopened the kiosk and closed its debrief (`kit_quiet` false, `OK:234-241`), T3b is dropped but the beat still runs: T3a has set `screen_asked`, her `start` knot diverts to `ca12_screen` on it (1.3), and the screen tail ends the beat at 20 s. Both T2 and the timer can write `kit_ca12_sat`, and a repeat write re-emits the event (`NM:1794-1808`); `onceOnly` keeps each of T3a and T3b to one firing (`NM:1747-1751`).
 - **T4**: closing a conversation with her after the request ends the screen beat and starts the visitor. A chat with her before the request (during her sofa trip) fails the `screen_asked` term and leaves the mapping armed (`NM:1747-1751`).
 - **Screen tail**: `kit_ca12_t_screen_tail` (20 s after the request) fires only if the knot was never opened (`screen_choice === ''`). Opening the knot writes `"asked"` on entry, so the tail cannot end the beat under a learner who is reading; once opened, T4 ends it on close.
 - **T5** starts the visitor on the tail route. On the close route T4 sets `visitor_go` directly and T5's repeat write does nothing new (the visitor's start mappings are once-only).
+- T4 and T5 carry `!globalVars.kit_ca12_done`: if the 150 s hard close falls while the screen knot is still open, closing it afterwards must not bring the visitor in after the beat has ended.
 
 Julian (`staff.julian_sallow.eventMappings`):
 
@@ -303,7 +315,7 @@ Julian's live rest need can have him on or queued at the sofa at the look-up. A 
   "spriteSheet": "camila_ospina",
   "spriteTalk": "assets/characters/camila_ospina_talk.png",
   "spriteVisemes": "assets/characters/camila_ospina_visemes.png",
-  "voice": { "name": "Laomedeia", "style": <from VOICE_CAST>, "language": <as the cast> },
+  "voice": { "name": "Zephyr", "style": <the proposed style, part 8 Q3>, "language": "en-GB" },
   "behavior": { "initiallyHidden": true },
   "position": { "x": <studio tile just inside the east door>, "y": <...> },
   "storyPath": "scenarios/_office_kit/ink/camila_ospina_ca12.json", "currentKnot": "start",
@@ -311,7 +323,7 @@ Julian's live rest need can have him on or queued at the sofa at the look-up. A 
 ```
 
 - No `person` field. The row check (T:187-195) compares the `kit_` NPCs that carry `person` with the row's `ambient`, so a `person` on the visitor would fail it.
-- `currentKnot: "start"` is required of every kit NPC (T:217-218). `start` is a holding knot: one line ("Hi. Just waiting for someone, thanks.") and an exit. A click on her before the door bark gets that line and cannot answer the door question. The A4 bark's `knot` moves her to `ca12_door`.
+- `currentKnot: "start"` is required of every kit NPC (T:217-218). `start` diverts to `ca12_door` once `kit_ca12_visitor_there` is true; otherwise it is a holding knot: one line ("Hi. Just waiting for someone, thanks.") and an exit. A click on her before she reaches the door gets that line and cannot answer the door question. The A4 bark's `knot` moves her to `ca12_door`; the `start` divert covers a dropped A4 and a reload.
 - `displayName` is her name, which does not appear in ca12's `social` block (T:349-352 refuses a kit name there; "Visitor" is in it, `CA12:199`).
 - `behavior.initiallyHidden: true` is the boot-hidden field (`systems/npc-sprites.js:238-244`). A saved `setVisible` overrides it after a reload (`core/game.js:1839-1844`, confirm), which is what proof 8 needs.
 
@@ -329,28 +341,38 @@ V4  { "eventPattern": "npc_arrived:kit_camila_ospina",
       "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_visitor_go === true",
       "onceOnly": true, "setGlobal": { "kit_ca12_visitor_there": true } }
 V5  { "eventPattern": "global_variable_changed:kit_ca12_visitor_there",
-      "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true && globalVars.kit_ca12_door_choice === ''",
+      "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true && globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done",
       "onceOnly": true, "bark": "<A4>", "knot": "ca12_door" }
 V6  { "eventPattern": "conversation_closed:kit_camila_ospina",
       "condition": "globalVars.kit_ca12_door_choice === 'asked' && globalVars.kit_ca12_out === true",
       "onceOnly": true, "setGlobal": { "kit_ca12_door_choice": "silent" } }
 V7  { "eventPattern": "global_variable_changed:kit_ca12_door_choice",
-      "condition": "value === 'reception' && globalVars.kit_ca12_out === true",
-      "onceOnly": true, "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
+      "condition": "value === 'reception' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+      "onceOnly": true, "delayMs": 500,
+      "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
 V8  { "eventPattern": "npc_arrived:kit_camila_ospina",
       "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'reception'",
       "onceOnly": true, "setVisible": false, "setGlobal": { "kit_ca12_done": true } }
 V9  { "eventPattern": "global_variable_changed:kit_ca12_door_choice",
-      "condition": "value === 'letin' && globalVars.kit_ca12_out === true",
-      "onceOnly": true, "patrolOverride": { "targetTile": <studio desks tile>, "speed": 90 } }
-V10 { "eventPattern": "global_variable_changed:kit_ca12_host_there",
-      "condition": "value === true && globalVars.kit_ca12_out === true",
-      "onceOnly": true, "delayMs": 1000, "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
+      "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+      "onceOnly": true, "delayMs": 500,
+      "patrolOverride": { "targetTile": <studio desks tile>, "speed": 90 } }
+V9b { "eventPattern": "npc_arrived:kit_camila_ospina",
+      "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
+      "onceOnly": true, "setGlobal": { "kit_ca12_at_desks": true } }
+V10a { "eventPattern": "global_variable_changed:kit_ca12_host_there",
+      "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
+      "onceOnly": true, "delayMs": 1000, "setGlobal": { "kit_ca12_visitor_leaving": true },
+      "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
+V10b { "eventPattern": "global_variable_changed:kit_ca12_at_desks",
+      "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
+      "onceOnly": true, "delayMs": 1000, "setGlobal": { "kit_ca12_visitor_leaving": true },
+      "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
 V11 { "eventPattern": "npc_arrived:kit_camila_ospina",
-      "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_host_there === true",
+      "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true",
       "onceOnly": true, "setVisible": false, "setGlobal": { "kit_ca12_done": true } }
 V12 { "eventPattern": "global_variable_changed:kit_ca12_door_choice",
-      "condition": "value === 'silent' && globalVars.kit_ca12_out === true",
+      "condition": "value === 'silent' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
       "onceOnly": true, "delayMs": 5000, "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
 V13 { "eventPattern": "npc_arrived:kit_camila_ospina",
       "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'silent'",
@@ -363,8 +385,10 @@ V15 { "eventPattern": "global_variable_changed:kit_ca12_done", "condition": "val
 
 - **V1/V15**: the visitor has no needs state, so both are no-ops (`NN:1120-1121`). They are there because she walks, and T:338 requires every kit NPC with a `patrolOverride` to be a suspender with a resume.
 - **V2-V4**: she appears when the screen beat ends and takes one short walk in from the door to a tile where the bark reads from the kiosk seat (dressing pass, proof 4). `kit_ca12_t_door` writes `visitor_there` if the walk is blocked, so V5 fires on either route.
-- **V5** is the A4 bark. It sets nothing, so it reads nothing it writes. The `door_choice === ''` term means it cannot play after an answer.
-- **Every `npc_arrived` mapping** (V4, V8, V11, V13) is once-only, filters `data.owner !== 'needs'` and carries the out global (T:305-319). Each hide reads the answer, so the step-in arrival can never hide her: she is on the holding knot until A4, so `door_choice` is `''` at that arrival. A hide whose condition fails stays armed for the later arrival (`NM:1747-1751`); V11's `host_there` term is what stops her vanishing at the desks.
+- **V5** is the A4 bark. It sets nothing, so it reads nothing it writes. The `door_choice === ''` term means it cannot play after an answer, and `!kit_ca12_done` that it cannot play from a visitor V14 has already hidden (a hard close during her walk in, after which her arrival or `kit_ca12_t_door` still writes `visitor_there`). It also means the bubble closes, with no remainder, as soon as the knot writes `"asked"`: world bubbles re-check `stillValid` every 250 ms and drop a stale bark (`systems/npc-world-bubbles.js:85`, `:990-996`), and person-chat shows no bark history (the only reader of `isBark` messages, phone-chat, filters them out, `minigames/phone-chat/phone-chat-minigame.js:563`). So `ca12_door` opens with A4's own words on first entry (2.6): a learner who clicks the bubble early still gets the pretext.
+- **V7, V9, V12** (and Lorna's H-a) carry `!globalVars.kit_ca12_done` (the `!` form, `NM:88-90`), so an answer given after the 150 s hard close starts no walk. V7 and V9 wait 500 ms, as H-a does: a delayed mapping that falls due while a conversation is open waits for it to close (`NM:952-967`), so Camila does not walk off while A5 or A6 is still on screen (NPCs without needs keep walking during a chat, `NB:966-979`). Delayed mappings re-check their condition when they fire (`NM:938-944`).
+- **V9b, V10a, V10b, V11** run the let-in exit. V9b records that she has reached the desks. Whichever of V9b's `at_desks` and Lorna's `host_there` (H-b) is written second fires V10a or V10b: it sets `kit_ca12_visitor_leaving` and walks her to the door 1 s later. Only the outbound walk sets `visitor_leaving` (`setGlobal` runs before `patrolOverride` in a mapping, `NM:1794`, `:1930`), so V11 hides her at the door and never at the desks, whichever of the two arrives first. The two conditions cannot both hold at their own events, so only one of them fires.
+- **Every `npc_arrived` mapping** (V4, V8, V9b, V11, V13) is once-only, filters `data.owner !== 'needs'` and carries the out global (T:305-319). Each reads the answer, so the step-in arrival can never hide her or mark her at the desks: she is on the holding knot until she arrives, so `door_choice` is `''` at that arrival. A mapping whose condition fails stays armed for a later arrival (`NM:1747-1751`).
 - **V14** is the hard close: when `kit_ca12_done` is set by any route, including the 150 s timer after a blocked walk, she is hidden, so nobody is ever left standing on the floor.
 
 ### 2.4 Visitor beat: start routes
@@ -377,22 +401,27 @@ The door knot (2.6) sets `kit_ca12_door_choice` to `"reception"`, `"letin"` or `
 
 **Send her to reception (`"reception"`, the secure answer).** Camila replies (A5), V7 walks her to the east door tile and V8 hides her and sets `kit_ca12_done`. Then Delphine's A7 plays in the lobby (below). The visitor never reaches the desks.
 
-**Let her in (`"letin"`).** Camila replies (A6) and V9 walks her to the desks. Lorna walks over, and once she arrives they leave the floor together: Camila to the door, Lorna back to her post. The host mappings live in the set piece's `mappings`, each with a `kit_` term in its condition (`OK:351-356`):
+**Let her in (`"letin"`).** Camila replies (A6) and V9 walks her to the desks once the conversation closes. Lorna walks over at the same moment. Lorna is usually there first (about 3 tiles from `{5.5, 3.8}`, against Camila's longer walk from the door), so she waits beside the desks; once both are there they leave the floor together: Camila to the door, Lorna back to her post. The host mappings live in the set piece's `mappings`, each with a `kit_` term in its condition (`OK:351-356`):
 
 ```
-H-a { "eventPattern": "global_variable_changed:kit_ca12_door_choice",
-      "condition": "value === 'letin' && globalVars.kit_ca12_out === true",
-      "onceOnly": true, "patrolOverride": { "targetTile": <tile beside the desks tile>, "speed": 90 } }
-H-b { "eventPattern": "npc_arrived:lorna_easton",
-      "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
-      "onceOnly": true, "setGlobal": { "kit_ca12_host_there": true } }
-H-c { "eventPattern": "global_variable_changed:kit_ca12_host_there",
-      "condition": "value === true && globalVars.kit_ca12_out === true",
-      "onceOnly": true, "delayMs": 1000,
-      "patrolOverride": { "targetTile": <Lorna's post tile, holding {5.5, 3.8}>, "speed": 90 } }
+H-a  { "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+       "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+       "onceOnly": true, "delayMs": 500,
+       "patrolOverride": { "targetTile": <tile beside the desks tile>, "speed": 90 } }
+H-b  { "eventPattern": "npc_arrived:lorna_easton",
+       "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
+       "onceOnly": true, "setGlobal": { "kit_ca12_host_there": true } }
+H-c1 { "eventPattern": "global_variable_changed:kit_ca12_host_there",
+       "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
+       "onceOnly": true, "delayMs": 1000,
+       "patrolOverride": { "targetTile": <Lorna's post tile, holding {5.5, 3.8}>, "speed": 90 } }
+H-c2 { "eventPattern": "global_variable_changed:kit_ca12_at_desks",
+       "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
+       "onceOnly": true, "delayMs": 1000,
+       "patrolOverride": { "targetTile": <Lorna's post tile, holding {5.5, 3.8}>, "speed": 90 } }
 ```
 
-`patrolOverride` moves the mapping's own NPC (`NM:1930-1950`), so H-a, H-c move Lorna and V10 moves Camila. H-c is required: `goToAndStay` leaves a host without needs wherever she stopped, so she has to be walked back to the spot the learner knows her from (confirm how `targetTile` rounds `{5.5, 3.8}`; proof 4 checks she ends where she started). H-b is consumed on her first arrival, so her walk back does not re-fire it. V11 hides Camila at the door once `host_there` is true and sets `kit_ca12_done`. Lorna has no spoken line on the walk; H1 carries the meaning.
+`patrolOverride` moves the mapping's own NPC (`NM:1930-1950`), so H-a and H-c1/H-c2 move Lorna and V10a/V10b move Camila. H-c1 and H-c2 pair with V10a and V10b: whichever of `host_there` and `at_desks` is written second sends both walkers off 1 s later, so Lorna never leaves before Camila reaches the desks. The walk back is required: `goToAndStay` leaves a host without needs wherever she stopped, so she has to be walked back to the spot the learner knows her from (confirm how `targetTile` rounds `{5.5, 3.8}`; proof 4 checks she ends where she started). H-b is consumed on her first arrival, so her walk back does not re-fire it. V11 hides Camila at the door, on the arrival after `kit_ca12_visitor_leaving` is set, and sets `kit_ca12_done`. Lorna has no spoken line on the walk; H1 carries the meaning.
 
 **Say nothing (`"silent"`).** Three routes reach it:
 
@@ -421,16 +450,16 @@ A bark's `knot` moves `npc.currentKnot` for good (`NM:2002-2006`), so each knot 
 `ca12_screen` (in `thandiwe_moyo_ambient.ink`):
 
 - on entry, `{ kit_ca12_screen_choice == "": ~ kit_ca12_screen_choice = "asked" }`;
-- if the choice is already `"mention"` or `"silent"`, divert to her `ca12` episode knot (S1). This is a later conversation, so S1 never follows A2 or A3 in the same one;
+- if the choice is already `"mention"` or `"silent"`, divert to her `ca12` episode knot (S1). This is a later conversation, so S1 never follows A2 or A3 in the same one. Her `start` knot diverts here on `kit_ca12_screen_asked`, so this guard is also what a click reaches after an answer once she is back on `start`;
 - otherwise offer the two choices: `Your screen's still unlocked, Thandiwe.` → `~ kit_ca12_screen_choice = "mention"`, A2, exit; `[Say nothing]` → `~ kit_ca12_screen_choice = "silent"`, A3, exit.
 
 The `"mention"` write emits at once (`systems/npc-conversation-state.js:629`), so the PC swaps to `pc1_locked` while the conversation is still open. An abandoned open leaves `"asked"`: the next click offers the choice again, which is harmless (the visitor has already started from T4).
 
 `ca12_door` (in `camila_ospina_ca12.ink`):
 
-- on entry, `{ kit_ca12_door_choice == "": ~ kit_ca12_door_choice = "asked" }`;
-- if the choice is already `"reception"`, `"letin"` or `"silent"`, replay her reply for that answer (A5, A6 or A8) and exit, so a re-click never re-answers and never opens on a blank line;
-- otherwise offer the three choices: `Reception's just through there. They'll sign you in.` → `"reception"`, A5; `Of course, go on through.` → `"letin"`, A6; `[Say nothing]` → `"silent"`, A8. Each exits after the reply.
+- if the choice is `""` or `"asked"`, Camila says A4 (`Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up.`, the same speaker and text as the bark, so the same audio clip), then `{ kit_ca12_door_choice == "": ~ kit_ca12_door_choice = "asked" }`. The bubble closes when `"asked"` is written (2.3, V5), so this is how a learner who clicked the bubble early hears the pretext; a learner who heard the whole bubble hears her greet them again as the conversation opens;
+- if the choice is already `"reception"`, `"letin"` or `"silent"`, replay her reply for that answer (A5, A6 or A8) and exit, so a re-click never re-answers and never opens on a blank line. Her `start` knot diverts here on `kit_ca12_visitor_there`, so this holds after a reload too;
+- after A4, offer the three choices: `Reception's just through there. They'll sign you in.` → `"reception"`, A5; `Of course, go on through.` → `"letin"`, A6; `[Say nothing]` → `"silent"`, A8. Each exits after the reply.
 
 The three door labels differ by intent (redirect, permit, stay quiet). `[Say nothing]` is the same label in both knots.
 
@@ -439,6 +468,28 @@ The three door labels differ by intent (redirect, permit, stay quiet). `[Say not
 Panel form (EC1, live on this branch): `awarenessEpisode.stepAway: true` is written from the row. The panel shows after the defend triage; **Look up** emits `episode_step_away`, and the host mapping (1.5) sets `kit_ca12_out`; **Carry on** goes to the debrief. Panel framing: the end-to-end wording with ca12's 2-minute figure and "and someone may ask you something" (EC1 owns the string). The kiosk's finished variant is `KIOSK_FINISHED`; the held success screen waits for the debrief close.
 
 The host recap needs a different gate in each build, so each build's shell has its own copy of `lorna_easton.ink` (part 3, Host). In the panel build the gate is `kit_defend_done && (kit_ca12_done || not kit_ca12_out) && not kit_ca12_host_said`: a learner who looked up hears it after the beat ends, and a learner who carried on hears it straight away, in a branch that names no visitor. ca01's host gate is the model (`scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink:28`). The `||` is in ink, not in a mapping condition, so T's no-`||` rule does not apply.
+
+### 2.8 Route end states
+
+What the room and Lorna end on, route by route. Every route ends with `kit_ca12_done` set and nobody left on the floor.
+
+| Route | End state |
+|---|---|
+| Carry on | No chain; visitor hidden all game; Thandiwe at her desk; Lorna: H1a (if caught) + H2, no visitor named |
+| Look up, screen mention, door reception | PC locks while the screen knot is open; after A5 closes, V7 walks Camila to the door (0.5 s); V8 hides her, sets done; A7 toast in the lobby; Julian resumes; H1a, H1b reception, H2 |
+| Look up, any screen, door let in, Lorna first | Lorna waits beside the desks (`host_there`); Camila arrives, V9b sets `at_desks`; V10b and H-c2 send both off 1 s later; V11 hides Camila at the door; Lorna back at post; done; H1b let-in branch by screen answer |
+| Look up, any screen, door let in, Camila first | Camila waits at the desks (`at_desks`); Lorna arrives (`host_there`); V10a and H-c1 send both off 1 s later; then as above |
+| Look up, any screen, door say nothing (picked) | A8 in the knot; V12 walks her out 5 s after the write (waiting for the close); V13 hides her; done; H1b silent |
+| Look up, any screen, door opened and closed | V6 writes silent on close; 5 s; out; hidden; done; H1b silent |
+| Look up, any screen, door never opened | Door tail at 20 s writes silent; 5 s; out; hidden; done; H1b silent |
+| Look up, screen not answered, door answered | Screen tail at 20 s after the request starts the visitor; then as the door rows; H1b let-in branch says the screen was still open (true) |
+| Look up, kiosk reopened and debrief closed before C1 | C1 (T3b) dropped; T3a still sets `screen_asked`; a click on Thandiwe reaches `ca12_screen` through `start`; else the screen tail at 20 s starts the visitor; A4 plays if `kit_quiet` is true by then, else a click on Camila reaches `ca12_door` (with A4) through `start`, else the door tail writes silent; done as the door rows |
+| Look up, screen knot held open past 150 s | `kit_ca12_t_done` sets done; the close afterwards fails T4's `!kit_ca12_done` term, so `visitor_go` stays false and the visitor never appears; H1b never-started branch |
+| Look up, hard close during Camila's walk in | V14 hides her; her arrival (or `kit_ca12_t_door`) writes `visitor_there`, but V5's `!kit_ca12_done` term drops A4 and the door tail's does not write `"silent"`, so the door choice stays `""`; H1b last branch (Camila named, she was seen walking in) |
+| Look up, door answer given after the hard close | Answer recorded in the knot; V7, V9, V12 and H-a do not fire; Camila stays hidden (V14); H1b by the recorded answer |
+| Look up, blocked walks | `kit_ca12_t_door` / `kit_ca12_t_done` advance; V14 hides her |
+| Reload mid-chain | Both NPCs back on `start` if the knot is lost; `start` diverts to the pending request knot, or to the reply/stub once answered; no second C1 (once-only counts persist) |
+| Fallback build | Visitor revealed by the door on `kit_defend_done`, holding line only; PC break reminder on `kit_defend_done`; H1a + fixed Camila line + H2 |
 
 ---
 
@@ -452,29 +503,30 @@ Dialogue rules (`CA01_DIALOGUE_EDITS.md`): short natural speech, not policy; nob
 
 ### Host (Lorna)
 
-In each build's own `lorna_easton.ink`, a hub-first branch above her existing defend-complete branch. Declare `kit_defend_done`, `kit_key_caught`, `kit_ca12_host_said`, and in the panel copy also `kit_ca12_out`, `kit_ca12_done`, `kit_ca12_door_choice`, `kit_ca12_screen_choice`. End with `~ kit_ca12_host_said = true`.
+In each build's own `lorna_easton.ink`, a hub-first branch above her existing defend-complete branch. Declare `kit_defend_done`, `kit_key_caught`, `kit_ca12_host_said`, and in the panel copy also `kit_ca12_out`, `kit_ca12_done`, `kit_ca12_door_choice`, `kit_ca12_screen_choice`, `kit_ca12_visitor_go`. End with `~ kit_ca12_host_said = true`.
 
 - **Panel copy.** Gate `kit_defend_done && (kit_ca12_done || not kit_ca12_out) && not kit_ca12_host_said`. H1a, then `{ kit_ca12_out: <H1b> }`, then H2. A Carry-on learner hears H1a (if caught) and H2 only, so nothing names a visitor they never saw. An early re-talk during the beat fails the gate and reaches her existing defend-complete line.
-- **Fallback copy.** Gate `kit_defend_done && not kit_ca12_host_said`. H1a, then the fixed line `A visitor was waiting at the studio door and nobody had asked who she was there for.` (the same text as H1b's last branch, so it shares one audio clip), then H2. It reads no chain global, so nothing undeclared is read.
+- **Fallback copy.** Gate `kit_defend_done && not kit_ca12_host_said`. H1a, then the fixed line `Camila was waiting at the studio door and nobody had checked she was expected.` (the same text as H1b's last branch, so it shares one audio clip), then H2. It names Camila, so it does not read as the gate visitor of H1a getting in. It reads no chain global, so nothing undeclared is read.
 
 H1 is two ink lines: the gate sentence (H1a) and the door recap (H1b). H1b covers every door and screen combination:
 
 | Door | Screen | H1b says |
 |---|---|---|
-| reception | any | sent to Delphine's desk, signed in, walked up |
+| reception | any | sent to Delphine's desk to sign in |
 | letin | mention | got as far as the desks without signing in; the screen was locked by then |
-| letin | silent or no answer | got as far as the desks; with the screen still open, a client list in front of a stranger |
+| letin | silent or no answer | got as far as the desks; with the screen still open, a client list was on show to a stranger |
 | silent | any | stood at the door a while with a clear view of the studio, then went to the desk herself |
-| `""` or `"asked"` (hard close) | any | a visitor waiting at the studio door and nobody had asked who she was there for (no screen claim) |
+| `""`, visitor never started (`kit_ca12_visitor_go` false at the hard close) | any | a screen sat unlocked while its owner was on a break (names no visitor and nobody) |
+| `""` or `"asked"`, visitor started (hard close) | any | Camila was waiting at the studio door and nobody had checked she was expected (no screen claim) |
 
-No branch names Thandiwe or anyone else against an answer. H2 closes on both habits.
+The never-started branch sits just above the last one. It covers a hard close (the 150 s timer) that falls while the screen beat is still open, for example a learner reading the screen knot for a long time: Camila never appeared, so no line may describe her. The door choice is always `""` there, because nothing reaches `ca12_door` before `visitor_go`. No branch names Thandiwe or anyone else against an answer. H2 closes on both habits.
 
 ### Chain and action lines
 
-- C1: Thandiwe's return bark (T3), opening `ca12_screen`.
+- C1: Thandiwe's return bark (T3b), opening `ca12_screen`.
 - A2, A3: Thandiwe's replies inside `ca12_screen`.
-- V0: Camila's holding line, the `start` knot of `camila_ospina_ca12.ink`. Drafted for this sheet; it needs a dialogue check and voicing.
-- A4: Camila's door bark (V5), opening `ca12_door`.
+- V0: Camila's holding line, the `start` knot of `camila_ospina_ca12.ink`.
+- A4: Camila's door bark (V5), opening `ca12_door`; the same line opens `ca12_door` on first entry (2.6), one clip for both.
 - A5, A6, A8: Camila's replies inside `ca12_door` (A8 is her reply to `[Say nothing]`).
 - A7: Delphine's lobby bark (2.5), panel build only.
 
@@ -486,19 +538,20 @@ No branch names Thandiwe or anyone else against an answer. H2 closes on both hab
 
 Both layers go into `strings.conceptPanel.text` (`CA12:574-577`), as in wave 1A: the conformance test reads that key, layer 0 must contain "To a real attacker", and the panel build must not contain "have a word with" (T:342-348). Edits touch only `strings`, never `triageSets`.
 
-The passage grows by one sentence net, from four to five (94 to 140 words, about +0.23 min at 200 wpm):
+The passage grows by two sentences net, from four to six (94 to 136 words, about +0.21 min at 200 wpm):
 
 - **Kept:** sentences 1 and 2 ("A parcel, a familiar name..." and "What stops it costs nothing...").
 - **Cut:** sentence 3, "A genuine visitor never minds being signed in and escorted; the one who pushes to skip it is the one to report." The Monday card already says "report anyone who pushes past a check" (`CA12:572`).
 - **Cut:** sentence 4, "The same visitor, once inside, reads whatever is left open, so a locked screen when you step away is part of the same habit." Layer 0 now carries what the visitor reads; the habit stays on the Monday card ("lock your screen whenever you step away (Windows key and L)") and in H2.
-- **Added:** layer 0 (two sentences) and layer 1 (one sentence).
+- **Added:** layer 0 (two sentences) and layer 1 (two sentences).
 
 New text:
 
-> A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. To a real attacker, an unescorted visitor is time alone on the studio floor. A client list left on an open screen can be read and copied there, and a friendly "she said to come straight up" is often all it takes to get that far. At a practice like this, an earlier visitor was walked up without signing in while a client list sat on an unlocked screen; nobody could say who had seen it, so the partners and reception spent an afternoon working out who had been on the floor.
+> A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. To a real attacker, an unescorted visitor is time alone on the studio floor. A client list left on an open screen can be read and copied there, and a friendly "she said to come straight up" is often all it takes to get that far. At a practice like this, an earlier visitor was walked up without signing in while a screen sat unlocked. Nobody could say what had been seen, so the partners and reception spent an afternoon working out who had been on the floor.
 
+- In `scenario.json.erb` the quoted pretext is written with escaped straight quotes inside the JSON string: `a friendly \"she said to come straight up\" is often all it takes`. Use the same in the fragment `AW/e12/defend.json` if the twin's layer 1 ever gains a quote (it has none now).
 - The passage reads the same whether the learner looked up or carried on, and whether it is read before or after the scene: it never points at the scene.
-- "she said to come straight up" matches Camila's A4. "Client list" is the one noun in the panel and in H1.
+- "she said to come straight up" matches Camila's A4. "Client list" appears once in the panel (layer 0) and once in H1b; layer 1 says "a screen sat unlocked", so the two layers do not repeat each other.
 - One time figure (an afternoon). No money, no number, no notification or legal-duty claim, no blame.
 - The heading "What these visitors relied on" stays: the passage still opens on what the visitors relied on.
 - **Fallback build only:** append `Before you leave, take a look around the office and have a word with Lorna.` as `ca01_invoice_fraud` does; the panel build leaves it out because the chain does the inviting.
@@ -514,21 +567,22 @@ Gate C runs on a keyless server from the worktree, fresh games made in the run w
 1. **Rooms and costume.** Walk studio↔lobby with no item, between stages and at the look-up; run the costume stage. Pass: the learner always gets back to the kiosk; the costume stage and reception behave as before; the visitor is hidden until `visitor_go` in the panel build and until `kit_defend_done` in the fallback build.
 2. **Key message.** Three games, answering `e12_call_tailgater` Report, Turn away and Let them in (a fourth with Check first if time allows). Pass: the validator accepts the pair; `kit_key_caught` is true after Report, Turn away and Check first and false after Let them in; H1a plays only when true.
 3. **Shared ink.** `thandiwe_moyo_ambient`, `julian_sallow_ambient` and `camila_ospina_ca12` load from `scenarios/_office_kit/ink/`; the folder is skipped by the mission registry and by every test that needs a `scenario.json.erb`; the staleness test covers the new files.
-4. **Staff, seats and walk tiles.** Thandiwe and Julian through five need cycles. Pass: `kit_sofa` binds to the drawn sofa; nobody sticks; Thandiwe sits at the PC's approach cell on `aw_studio_chair_s1`; Julian's home is off the sofa's `useFrom` cell; every walk tile is free floor and reached (sofa `useFrom`, Julian's home, the visitor's start and step-in tiles, the east door tile, the desks tile, Lorna's beside-the-desks and post tiles); Lorna ends on her original spot; the learner's start→host→kiosk and studio↔lobby paths are never blocked.
-5. **Thandiwe's trip and C1.** Look up. Pass: the break reminder is on at 0 s; Julian walks home; Thandiwe leaves about 1 s later, uses the sofa, sits back down; `workstation_owner_returned:kit_ca12_pc` fires (log it; if it does not, `kit_ca12_t_return` sets `kit_ca12_sat` at 30 s); exactly one C1 bubble, over Thandiwe, which stays for its full time.
+4. **Staff, seats and walk tiles.** Thandiwe and Julian through five need cycles. Pass: `kit_sofa` binds to the drawn sofa; two users fit (the second stands on the cell beside the first, which is free floor and reachable) and trade a `kit_merrin` line; Julian's place on the sofa never blocks Thandiwe's trip; Thandiwe spawns at the PC (no walk at load); nobody sticks; Thandiwe sits at the PC's approach cell on `aw_studio_chair_s1`; Julian's home is off the sofa's `useFrom` cell; every walk tile is free floor and reached (sofa `useFrom`, Julian's home, the visitor's start and step-in tiles, the east door tile, the desks tile, Lorna's beside-the-desks and post tiles); Lorna ends on her original spot; the learner's start→host→kiosk and studio↔lobby paths are never blocked.
+5. **Thandiwe's trip and C1.** Look up. Pass: the break reminder is on at 0 s; Julian walks home; Thandiwe leaves about 1 s later, uses the sofa, sits back down; `workstation_owner_returned:kit_ca12_pc` fires (log which route set `kit_ca12_sat`: T2 or `kit_ca12_t_return` at 45 s); exactly one C1 bubble, over Thandiwe, which stays for its full time. A second run chats with her on her trip: C1 plays only once she is back at the PC.
 6. **Break-reminder preload.** Fresh game, no earlier load of the key. Pass: the reminder is visible on the first frame after Look up.
 7. **Answer paths.** One run per row, logging `kit_ca12_screen_choice`, `kit_ca12_door_choice` and the end state:
 
 | Screen | Door | Pass |
 |---|---|---|
 | mention | reception | PC locks in the knot; Camila to the door, hidden; A7 toast in the lobby; done; Julian resumes |
-| silent | letin | Camila walks to the desks and stays visible; Lorna arrives; both leave; Camila hidden at the door; Lorna back at post; done |
+| silent | letin (Lorna first, the usual order) | Camila walks to the desks after A6 closes and stays visible there; Lorna waits beside the desks; both leave 1 s after Camila arrives; Camila hidden at the door, never at the desks; Lorna back at post; done |
+| mention | letin (Camila first: hold Lorna's walk, or start Lorna farther off) | Camila waits at the desks; both leave 1 s after Lorna arrives; Camila hidden at the door; Lorna back at post; done |
 | never opened | never opened | screen tail at 20 s starts the visitor; door tail at 20 s; she stands 5 s more, leaves, hidden; done |
 | opened, closed | opened, closed | T4 starts the visitor on close; V6 writes silent on close; she leaves after 5 s |
 | mention | silent (picked) | A8 in the knot; she leaves 5 s later; H1b silent branch |
 
-   Also: an `npc_arrived` payload for the visitor and for Lorna carries an `owner` other than `'needs'` (`NB:3609-3626`); clicking Camila before A4 gives V0 and no choice; a re-click on either knot after an answer replays the reply or the stub, never the choice.
-8. **Reload mid-chain.** Reload after the defend stage, during Thandiwe's trip, after C1, during the visitor's walk, after A4, and after each answer. Pass: the visitor and her mappings re-register with `training_room`; the beat resumes or ends; `kit_ca12_done` always fires (150 s timer, then V14 hides her); no second C1; no re-answerable choice.
+   Also: on both let-in rows, log the `npc_arrived` order (Lorna, Camila) and Camila's last position before the hide, which must be the east door tile; an `npc_arrived` payload for the visitor and for Lorna carries an `owner` other than `'needs'` (`NB:3609-3626`); clicking Camila before she reaches the door gives V0 and no choice; clicking the A4 bubble in its first second opens `ca12_door` on A4's words, so the pretext ("here for Yasmin Chaudhry...") is readable; a re-click on either knot after an answer replays the reply or the stub, never the choice; with the screen knot held open past 150 s, closing it brings no visitor and Lorna gives the never-started branch.
+8. **Reload mid-chain.** Reload after the defend stage, during Thandiwe's trip, after C1, during the visitor's walk, after A4, and after each answer. Pass: the visitor and her mappings re-register with `training_room`; the beat resumes or ends; `kit_ca12_done` always fires (150 s timer, then V14 hides her); no second C1 or A4. After a reload past C1 or A4 with no answer yet, a click on that NPC opens the pending request through `start` (Thandiwe's choice; Camila's A4 then her choice), whether or not the knot itself survived; after an answer, a click gives the reply or the stub, never the choice.
 9. **Blocked walks and A7 after `--kit`.** Block each walk target in turn. Pass: `kit_ca12_t_door` and `kit_ca12_t_done` advance the beat and V14 leaves nobody on the floor. After a `--kit` rebuild, Delphine's A7 mapping is still present.
 10. **Barks and the kiosk.** Reopen the kiosk with a bark pending. Pass: it is dropped on release (both barks carry `kit_quiet === true`).
 11. **Host recap.** Panel build: Carry on → H1a (if caught) and H2, no visitor named; Look up → nothing new from Lorna until `kit_ca12_done`, then H1a, H1b, H2, once. Fallback build: H1a, the fixed door line, H2.
@@ -571,7 +625,7 @@ Everything else is unblocked, with the visitor record authored and a sprite TODO
 
 ## Part 7 — Timing and the named cut
 
-ca12's static upper bound is **18.34 min** (all branches summed; `TIMING_BASELINE.md:68`), over the 15 min full-shell target and over the 14.5 min point at which the plan names a cut. No bridge run has measured it yet. The conceptPanel adds about 0.23 min (part 4).
+ca12's static upper bound is **18.34 min** (all branches summed; `TIMING_BASELINE.md:68`), over the 15 min full-shell target and over the 14.5 min point at which the plan names a cut. No bridge run has measured it yet. The conceptPanel adds about 0.21 min (part 4).
 
 The named cut is **the third attack-half hint (`CA12:903`)**, leaving hints 1 and 2 (`CA12:901-902`). Hint 2 already says a partner's parcels pile up at reception, so hint 3 spells out a deduction the learner can make. The cut is **conditional on the pilot bridge run** (proof 12): it is made only if the measured path is 14.5 min or more. The hint removes about 20 words and only stuck learners open it, so a measured path, not the static bound, decides.
 
@@ -581,8 +635,8 @@ The named cut is **the third attack-half hint (`CA12:903`)**, leaving hints 1 an
 
 1. **Course-shell form (D195).** Form A (panel course shell, `test_ca12_fallback`) or form B (fallback course shell, `test_ca12_panel`). The sheet builds either; only the rows in 1.6 and the test shell's name change.
 2. **Visitor sprite go-ahead.** PixelLab pipeline run for `camila_ospina` (stock six and seated). The visitor-dependent proofs and the playtests wait on it.
-3. **Camila's voice.** Proposed Laomedeia: unused in the awareness cast and distinct from every other e12 speaker (Delphine Despina, Lorna Erinome, Thandiwe Pulcherrima, Julian Rasalgethi).
-4. **New lines.** All 14 voiced lines in the appendix are new and unvoiced, including the drafted holding line V0, which still needs a dialogue check. Voicing waits for the dialogue sign-off and the owner's yes (20 clips, see the appendix).
+3. **Camila's voice.** No Gemini voice is free: the female palette is 14 voices for the course's 15 female speakers with Aoede held for Agent HaX (`AW/VOICE_CAST.md:61-66`), and the campaign uses all 30. Laomedeia is Yasmin Chaudhry's (`AW/VOICE_CAST.md:109`), the partner Camila claims to visit, so it is out. Proposed: **Zephyr** (bright, clear female timbre), a third documented reuse beside Despina and Gacrux. Its course speaker, Joanne Pell (Brightwell, `pre/post_finance_ba`, `AW/VOICE_CAST.md:81`), is at another company and never shares a scenario with Camila; it differs from every e12 speaker (Delphine Despina, Lorna Erinome, Thandiwe Pulcherrima, Julian Rasalgethi). The accent separates them: style `"A client-side account rep in her 30s, confident, friendly and unhurried, with the easy manner of someone sure she is expected. Speak with a consistent London accent with a light Colombian inflection throughout — do not shift to any other accent."`, `en-GB`. The owner picks Zephyr, another reuse, or a male-palette voice not in the course (Charon, Fenrir, Enceladus, Achird, Sadachbia) steered by style. Add the chosen row to `VOICE_CAST.md`'s reuse list.
+4. **New lines.** All 14 voiced lines in the appendix are new and unvoiced. H1b's never-started branch (`A screen sat unlocked while its owner was on a break.`) is a draft and needs a dialogue check. Voicing waits for the dialogue sign-off and the owner's yes (21 clips, see the appendix).
 5. **Twin host line.** The twin's catch/miss line on `episode_e12_visitor_tailgater_defend_defend_complete` is new spoken content; its wording is drafted when the twin is regenerated.
 6. **Break-reminder prop art.** One new object image (the look of a screen left on a break reminder), generated at its target size.
 
@@ -596,22 +650,24 @@ Every new line, exactly. Inline conditionals count as one line.
 
 | # | Speaker | Voice | Line |
 |---|---|---|---|
-| S1 | Thandiwe Moyo | Pulcherrima | `{kit_key_caught: Sounds like the front desk had a good morning.\|Long day on the plan sets. Bet the desk's been busy.}` |
-| S2 | Julian Sallow | Rasalgethi | `{kit_key_caught: Good. Plenty of what's on my desk belongs to clients.\|Kettle's calling. Nearly time for tea.}` |
-| H1a | Lorna Easton | Erinome | `{kit_key_caught: You kept the badgeless visitor at the gate.}` |
-| H1b | Lorna Easton | Erinome | `{kit_ca12_door_choice == "reception": You sent Camila to Delphine's desk, so she signed in and got walked up. That's how it should go.\|{kit_ca12_door_choice == "letin": Camila got as far as the desks without signing in. {kit_ca12_screen_choice == "mention": The screen was locked by then, at least.\|With the screen still open, that was a client list in front of a stranger.}\|{kit_ca12_door_choice == "silent": Camila stood at the door a while with a clear view of the studio, then went off to the desk herself.\|A visitor was waiting at the studio door and nobody had asked who she was there for.}}}` |
-| H2 | Lorna Easton | Erinome | `Anyone you don't know on the floor, walk them back to the desk. And lock your screen whenever you step away.` |
+| S1 | Thandiwe Moyo | Pulcherrima | `{kit_key_caught: Sounds like the front desk had a good morning.\|Long morning on the plan sets. Bet the desk's been busy.}` |
+| S2 | Julian Sallow | Rasalgethi | `{kit_key_caught: Glad the gate held. Most of what's on my desk is client work.\|Kettle's calling. Time for a brew, I think.}` |
+| H1a | Lorna Easton | Erinome | `{kit_key_caught: You kept the visitor with no badge at the gate.}` |
+| H1b | Lorna Easton | Erinome | `{kit_ca12_door_choice == "reception": You sent Camila to Delphine's desk to sign in.\|{kit_ca12_door_choice == "letin": Camila got as far as the desks without signing in. {kit_ca12_screen_choice == "mention": The screen was locked by then, at least.\|With the screen still open, a client list was on show to a stranger.}\|{kit_ca12_door_choice == "silent": Camila stood at the door a while with a clear view of the studio, then went off to the desk herself.\|{not kit_ca12_visitor_go: A screen sat unlocked while its owner was on a break.\|Camila was waiting at the studio door and nobody had checked she was expected.}}}}` |
+| H2 | Lorna Easton | Erinome | `Anyone you don't know on the floor goes back to the desk. And lock your screen whenever you step away.` |
 | C1 | Thandiwe Moyo | Pulcherrima | `Right, that's me back. Anything I should know?` |
 | A2 | Thandiwe Moyo | Pulcherrima | `Oh, good shout. Locked. Easy to do when you've only nipped off.` |
-| A3 | Thandiwe Moyo | Pulcherrima | `Okay, back to it then.` |
-| V0 | Camila Ospina | Laomedeia (proposed) | `Hi. Just waiting for someone, thanks.` (draft: needs a dialogue check and voicing) |
-| A4 | Camila Ospina | Laomedeia (proposed) | `Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up.` |
-| A5 | Camila Ospina | Laomedeia (proposed) | `Oh, of course. I'll go through.` |
-| A6 | Camila Ospina | Laomedeia (proposed) | `Lovely, thanks. I'll find her myself.` |
+| A3 | Thandiwe Moyo | Pulcherrima | `Okay. Back to work, then.` |
+| V0 | Camila Ospina | Zephyr (proposed) | `Hi. Just waiting for someone, thanks.` |
+| A4 | Camila Ospina | Zephyr (proposed) | `Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up.` (the bark, and the first line of `ca12_door`) |
+| A5 | Camila Ospina | Zephyr (proposed) | `Oh, of course. Thanks, I'll do that.` |
+| A6 | Camila Ospina | Zephyr (proposed) | `Lovely, thanks. I'll find her myself.` |
 | A7 | Delphine Arvanitis | Despina | `Pop your name in the book and I'll let Yasmin know you're here.` |
-| A8 | Camila Ospina | Laomedeia (proposed) | `Sorry, I'll try the desk.` |
+| A8 | Camila Ospina | Zephyr (proposed) | `Sorry, I'll try the desk.` |
 
-In ink, H1a and H1b each carry the `Lorna Easton:` prefix (for H1a, inside the conditional: `{kit_key_caught: Lorna Easton: You kept the badgeless visitor at the gate.}`). The fallback copy's fixed door line is H1b's last branch, word for word. Audio clips (the cache is keyed on the rendered text): S1 2, S2 2, H1a 1, H1b 5, H2 1, C1 1, A2-A8 7, V0 1 = **20 clips**.
+H1b's never-started branch, `A screen sat unlocked while its owner was on a break.`, is a draft and needs a dialogue check. It names no visitor and nobody, and it plays only when Camila never appeared, so it cannot contradict the Camila branch: they are exclusive on `kit_ca12_visitor_go`.
+
+In ink, H1a and H1b each carry the `Lorna Easton:` prefix (for H1a, inside the conditional: `{kit_key_caught: Lorna Easton: You kept the visitor with no badge at the gate.}`). The fallback copy's fixed door line is H1b's last branch, word for word. Audio clips (the cache is keyed on the rendered text): S1 2, S2 2, H1a 1, H1b 6, H2 1, C1 1, A2-A8 7, V0 1 = **21 clips**. A4's knot copy reuses the bark's clip; the fallback's fixed line reuses H1b's last-branch clip.
 
 **Player choice labels (displayed, not voiced): 5.**
 
