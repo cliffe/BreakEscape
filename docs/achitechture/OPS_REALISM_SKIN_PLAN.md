@@ -99,7 +99,9 @@ and one who wants the prompt can have it on every ops network.
    that would configure one. Module paths, banners and addresses are labels the author writes,
    validated as plain text (section 9). Generators format the answer and the author's labels;
    they never invent exploit content, and a scenario's console text teaches no attack step
-   beyond what its lab sheet already covers.
+   beyond what its lab sheet already covers. No validator or test can see that last point: it
+   is checked by the scenario design review and the lab-sheet step of every scenario that
+   authors `cli` fields, and the validator enforces only the text rules of section 9.
 
 Rule 1 is what lets the feature ship without mission playtests of its own: a mission that is
 solvable in one skin is solvable in the other because the requests, the server and the text shown
@@ -154,7 +156,10 @@ What already does part of the job, and what does not:
   adds no second model.
 - The core's `perform` path and its pending guard (core 5.3) already stop a second press while
   the first is out, for every action of the screen, and leave the drawing to the renderer. S6
-  builds neither: it puts the Terminal renderer behind that same path (section 5.2).
+  builds neither. It needs three small additions to `perform`, which the core makes (section 14,
+  request 4): an `echo` option, a hook after the guard accepts a press and before the request
+  goes out, and a hook on every ending, run before the pending key is cleared. The Terminal
+  renderer then sits behind that same path (section 5.2).
 - Display settings are **not** reused for the skin. A write there fires a canvas resize behind
   the open view, the whole-object rewrite would clobber a value written from elsewhere, and its
   menu page is drawn in every game, while the switch must appear only on an ops network. The
@@ -165,8 +170,9 @@ What already does part of the job, and what does not:
 - The core already sends, for a scanned service, `name`, `label`, `port`, `product` and
   `version`, and for a checked finding `class`, `severity` and `summary`. Those are enough for
   every generator's default output. The core's validator already keeps `product` invented
-  (`scripts/real_product_names.txt`) and warns on a `summary` that reads as a procedure; the
-  skin's own display fields reuse both rules (section 9) instead of adding second lists.
+  (`scripts/real_product_names.txt`) and warns on a `summary` that reads as a procedure. For the
+  skin's `cli` strings, section 9's command-form error takes the place of the procedure warning,
+  and the real-product list applies to them only if question 15(a) is answered with option 2.
 - Networks today carry `name`, `offWhen` and `wifi` and nothing address-like
   (`scripts/scenario-schema.json`, `properties.networks`, server-only). No host, network or
   service has an address, a protocol or a banner, so those are new optional fields (section 4).
@@ -178,9 +184,9 @@ by tests and runs that exist when it lands. Total size M.
 
 | Stage | Adds | Proved when it lands by | Size |
 |---|---|---|---|
-| K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
-| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls; the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
-| K3 Scenario fields | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts, services, weaknesses and decoys, served by the core's answers (section 14, request 3); their schema entries; `scripts/validate_realism_skin.rb` with every check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects | The Rails and validator tests of 11.3; the golden files with authored fields; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
+| K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). K1 uses `perform` as the core built it; the echo and the two hooks of section 14, request 4 are first used in K2. No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
+| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls, made from the core's `onSent` and `onEnded` hooks (section 14, request 4); the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
+| K3 Scenario fields | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts, services, weaknesses and decoys, served by the core's answers and declared in the core's schema (section 14, request 3); `scripts/validate_realism_skin.rb` with every check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects | The Rails and validator tests of 11.3; the golden files with authored fields; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
 | K4 Live proof | The live parity runner and the docs, which change nothing a player sees (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
 ## 4. Scenario fields
@@ -212,9 +218,9 @@ core already serves that thing (section 7), never earlier.
 
 | Where | Field | Shape | Printed as | Default when absent |
 |---|---|---|---|---|
-| `networks.<id>.cli` | `range` | IPv4 CIDR inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, prefix /16 to /30 | the sweep target and the "addresses scanned" count of the sweep summary | the network id; the summary counts hosts up only |
-| `networks.<id>.cli.hosts.<hostId>` | `address` | dotted IPv4 inside `range` (so `range` is required with it), unique on the network | `(<address>)` after the host id in a scan report, and an accepted typed target | no address: the host id alone |
-| a service's `cli` | `protocol` | `"tcp"` or `"udp"` | the `<port>/<protocol>` cell | `tcp` |
+| `networks.<id>.cli` | `range` | IPv4 CIDR inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, prefix /16 to /30, overlapping no other network's range in the scenario | the sweep target and the "addresses scanned" count of the sweep summary | the network id; the summary counts hosts up only |
+| `networks.<id>.cli.hosts.<hostId>` | `address` | dotted IPv4 inside `range` (so `range` is required with it), unique in the scenario | `(<address>)` after the host id in a scan report, and an accepted typed target | no address: the host id alone |
+| a service's `cli` | `protocol` | `"tcp"` or `"udp"`; the service's `port` is unique on its host whatever the protocol (section 9) | the `<port>/<protocol>` cell, and `-sU` in the service's check line | `tcp` |
 | a service's `cli` | `service` | a lower-case word, `^[a-z][a-z0-9-]{0,23}$`, such as `microsoft-ds` or `http` | the `SERVICE` cell | the service's `name` |
 | a service's `cli` | `banner` | plain text, 1 to 80 characters | a `\|_banner: <text>` line under the port row | no banner line |
 | a weakness's or decoy's `cli` | `title` | plain text, 1 to 80 characters | the finding's title in the script report and in the framework's `search`, `info` and `use` lines | the finding label words of `ops-model.js` (class and severity) and the service's label or name |
@@ -224,16 +230,23 @@ core already serves that thing (section 7), never earlier.
 Host addresses sit under the network rather than on the host, because a sign-in host is a room
 object and room objects ride in the bootstrap, while `networks` is already server-only and the
 address belongs to the network's range. Weakness and decoy carry the same three keys and the same
-defaults, so before a confirm the console tells a decoy from a weakness by nothing but the
-author's text, as the Panels do. The validator refuses a service whose weaknesses and decoys
-author a field unevenly (section 9), because an authored module on the weaknesses beside a
-default one on the decoy would give the decoy away.
+defaults. **A decoy's labels must be indistinguishable in form from a weakness's**: before a
+confirm, the console may tell them apart by nothing the Panels do not also show. The validator
+enforces the parts of this it can see (section 9): no service whose weaknesses and decoys author
+a field unevenly (an authored module beside a default one gives the decoy away); one module
+category on a service (the first path segment, such as `auxiliary` or `exploit`, and the number
+of segments are the same for every finding of the service); no telltale word in any `cli` string
+of a weakness or a decoy; and a warning when a decoy's text shares a content word with its own
+`falseBecause`. The author is left with the wording of each title, as in Panels.
 
 Every authored string is a label. It carries no command, flag, path to a real file, payload,
-shellcode or credential, and is written as plain text that the Terminal sets with `textContent`.
+shellcode, escaped byte, encoded blob, credential, public address, URL or markup, and the
+validator refuses each of those (section 9). It is plain text that the Terminal sets with
+`textContent`.
 Whether a label may also hold a real advisory identifier or a real product name and version is
 open (section 15, question a). The generators print whatever label is authored and have no rule
-of their own about it, so the answer changes one validator rule (section 9) and nothing else.
+of their own about it, so the answer changes validator rules (section 9) and nothing else in
+this plan.
 
 A minimal example, one network and one service with a weakness and a decoy:
 
@@ -251,9 +264,9 @@ A minimal example, one network and one service with a weakness and a decoy:
                  "module": "auxiliary/scanner/brackley/shareserve_guest_login",
                  "script": "shareserve-guest" } } ],
       "decoys": [ { "id": "old_banner", "class": "unpatched", "severity": "medium",
-        "falseBecause": "The banner is old; the build is patched.",
+        "falseBecause": "The version string is stale; the vendor fix is installed.",
         "cli": { "title": "ShareServe 3.1 out-of-date build",
-                 "module": "exploit/brackley/shareserve_old_build",
+                 "module": "auxiliary/scanner/brackley/shareserve_old_build",
                  "script": "shareserve-build" } } ] } ] } }
 }
 ```
@@ -291,8 +304,9 @@ previews and demos.
 
 S6 adds no route, no check and no state. The server-side changes are:
 
-- the schema entries for `networkView` and the `cli` objects, and the checks in
-  `scripts/validate_realism_skin.rb` (section 9);
+- the schema entry for `networkView`, and the checks in `scripts/validate_realism_skin.rb`
+  (section 9). The schema entries for the `cli` objects are the core's, added with the serving
+  of request 3 (section 14); S6 adds only the validator rules for them;
 - a test that `networkView` reaches the bootstrap (section 7);
 - the `cli` fields riding in the core's existing answers beside the fields they belong to. The
   core's row builders copy them (section 14, request 3); S6 relies on that and writes no
@@ -309,7 +323,7 @@ All under `public/break_escape/js/minigames/network-view/`.
 | `view-texts.js` | constants, new | The scene's fixed texts (section 2, `UNPLUGGING_TEXT` among them), moved here so both renderers can import them. The scene re-exports them, so existing tests are unchanged |
 | `view-controls.js` | pure, new | `CONTROLS`, the private control list below, and `offers(view)`: every offer open right now, in display order; and `LOCAL_ACTIONS`, the `data-action` values that only select (below) |
 | `skin-choice.js` | new | `chooseSkin(inputs)`, pure, implementing the order of section 4; `readPick(storage)` and `writePick(storage, name)`, which touch storage only when called |
-| `network-view-minigame.js` | scene | Keeps what it has: load, refetch, the handlers (`act`, `unplugBox`, the core's calls), every event, the way back, the test snapshot, and the core's `perform(offer)` path with its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3). New: it mounts one of two renderers and gives each `ctx.perform(offer)`, which leads into that path |
+| `network-view-minigame.js` | scene | Keeps what it has: load, refetch, the handlers (`act`, `unplugBox`, the core's calls), every event, the way back, the test snapshot, and the core's `perform` path with its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3), with the `echo` option and the `onSent` and `onEnded` hooks of section 14, request 4. New: it mounts one of two renderers, gives each `ctx.perform(offer, echo)`, which leads into that path, and sets the two hooks to call `recordSent` and `recordResult` |
 | `network-view-panels.js` | renderer, new | Today's HTML and the core's, moved. Its `data-*` hooks are unchanged. It exports `DRAG_EVENTS`, the event names its drag listens for, in order, for the tests and the bridge |
 | `network-view-terminal.js` | renderer, new | Prompt, log, quick commands |
 | `terminal-grammar.js` | pure, new | `parse(line, offers, view, mode)`, `complete(line, offers, view, mode)`, `commandFor(offer, view)`, `helpFor(verb, mode)`. It reads the game verbs, the scanner command shape and the framework commands (section 5.3, "Grammar"); `mode` is the renderer's prompt mode and the framework's selected module and `TECHNIQUE`. A finding's alias is resolved with the core's alias lookup over `view`; the grammar holds no alias table of its own |
@@ -394,24 +408,52 @@ device, a cracking minigame) is outside this view and has one look.
 
 **The renderer contract.** A renderer is a class with `mount(root, ctx)`, `render(view, offers)`,
 `showResult(offer, answer)`, `noteChange()`, `unmount()` and `testState()`. `ctx` holds
-`perform(offer)`, `requestClose()` and `requestSkin(name)`, and nothing else. A renderer:
+`perform(offer, echo)`, `requestClose()` and `requestSkin(name)`, and nothing else. `echo` is
+the command line the log shows for the press (below); Panels pass `commandFor(offer)`. A
+renderer:
 
 - imports only the pure modules of this folder and the escape helper;
 - never names `fetch`, `ApiClient`, `networkLinks`, `window.open*` or `window.start*`;
 - emits no game event. The scene emits all eight (the two of today and the core's six), so objectives and ink mappings see the same events from both
   skins;
 - draws authored and server text with `textContent` (Terminal) or the existing escape helpers
-  (Panels);
+  (Panels). The Terminal renderer, the grammar, the format module and the `cli-gen/` files
+  never name `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`,
+  `new Function`, or a string as the first argument of `setTimeout` or `setInterval`; they
+  build elements with `createElement` and set text with `textContent`. The Terminal's log helper
+  replaces each control character (U+0000 to U+001F, U+007F to U+009F) and U+2028 and U+2029
+  with U+FFFD before it sets a span's text, so a carriage return or an escape character in
+  authored or server text cannot fake a log line or a prompt. Section 11.1 tests both;
 - may keep local state that is not part of any offer: the Panels' selected finding and a drag in
   progress, the Terminal's half-typed line. Local state ends in one call of `perform` with one
   complete offer, or in nothing;
-- is the only code that writes into the view's DOM. The scene draws the header switch and
-  nothing else.
+- is the only code that writes into the view's DOM once mounted. The scene draws the header
+  switch and two states before any renderer is mounted, which stay as they are in both skins:
+  the "Connecting..." line while the first load is out (`NV:302`) and the load-error line "The
+  link did not answer. Close this and try again." (`NV:417`). Neither is a renderer's state;
+  test 9 starts after the mount, and a failed first load shows the same scene-drawn line
+  whichever skin was chosen.
 
 **`perform`** is the core's (core 5.3): the scene's one path for every action of this screen and
-the one way either skin causes a request. `ctx.perform(offer)` passes the offer's action and
-target into it, the same pairing the delegated click listener makes today from a button's
-`data-action`. It sends to the route that action already has; the server sees no difference.
+the one way either skin causes a request. `ctx.perform(offer, echo)` passes the offer's action
+and target into it, the same pairing the delegated click listener makes today from a button's
+`data-action`, with the echo as the option of section 14, request 4. It sends to the route that
+action already has; the server sees no difference, because the echo and the hooks never reach a
+request.
+
+S6 asks the core for three additions to `perform` and uses them as follows (the exact hook
+points are in section 14, request 4):
+
+- `perform(offer, { echo })`: the echo travels with the press and is used only by the hooks.
+- `onSent(offer, echo)`, called once after the guard has accepted the press and added the key,
+  before the request goes out. The scene sets it to `recordSent(log, offer, echo)`.
+- `onEnded(offer, answer)`, called once on every ending (answer, refusal, failure with
+  `answer = null`), before the pending key is cleared. The scene sets it to
+  `recordResult(log, offer, answer)`. The core then clears the key and hands the answer to the
+  mounted renderer's `showResult`, in that order.
+
+Both hooks default to doing nothing, so `perform` without S6 behaves as the core built it, and
+the core's guard tests run unedited.
 
 - **Panels path.** A click finds the row by id, builds the offer and calls `perform`. The
   select-then-Use and drag gestures are the core's, and each ends in `perform` with a `use`
@@ -484,7 +526,7 @@ node harness needs no stub at import.
 | PORT     STATE  SERVICE       VERSION                             |
 | 445/tcp  open   microsoft-ds  Brackley ShareServe 3.1             |
 | |_banner: Brackley ShareServe ready                               |
-| Service detection performed (simulated).                          |
+| Service detection performed.                                      |
 | $ msfconsole                                                      |
 | msf > use auxiliary/scanner/brackley/shareserve_guest_login       |
 | msf (auxiliary/scanner/brackley/shareserve_guest_login) > check   |
@@ -568,19 +610,22 @@ the piece comparison of section 11.2 still finds it.
 | Share and resource table; Look | `show`; an `observe` | id, name, kind label, "on <host>", the lock label and the locked-share sentence; for a look, the resource's `observations` and the notice, as Panels shows them |
 | Use result | a use's answer (framework generator, after `run`) | the result sentence for a session (then the desktop opens, as from Panels), for a credential (`keyringChanged`) and for `already`; on a refusal the `REFUSAL_TEXT` words for the `reason` code, with the need's label for `need_unmet`. A use that opens a desktop opens it as the core draws it, with the remote-view frame and line, which the Terminal leaves as they are |
 | Pending | an `unplug` while its request is out | `UNPLUGGING_TEXT`, the Panels button's label for that state, on the quick command (the log holds only the echo, written by `recordSent`) |
-| Refusal | any other refused request | the `REFUSAL_TEXT` words for the code, for the twelve codes. The unplug refusal is the one refusal on this screen that arrives as a server sentence (`out.message`, `NV:848`); it is printed as Panels shows it, through `textContent` |
+| Refusal | any other refused request | the `REFUSAL_TEXT` words for the code, for the twelve codes. The unplug refusal is the one refusal on this screen that arrives as a server sentence (`out.message`, `NV:850`); it is printed as Panels shows it, through `textContent` |
 
 **Scan output.** A sweep and a service scan are one request and one answer in both skins. While
 the request is out (`pending: true` on the sweep or scan offer), Panels show a progress bar
 labelled "Scanning" on the block or host row, and remove it when the request ends, whether by an
-answer, a refusal or a failure. The Terminal prints the generator's `started` lines when the
+answer, a refusal or a failure. A pending `check`, `confirm` or `use` gets no bar, on purpose:
+its control is drawn disabled, as the core has it, and a builder adds no bar for it. The
+Terminal prints the generator's `started` lines when the
 request is sent, as ordinary scrollback that stays in the log like the output of any typed
 command; the generator's `result` lines print after the answer arrives.
 
 *What the log is written by.* Printing is driven by two events, never by drawing. The scene
-calls `recordSent(log, offer, echo)` once, from `perform`, after the pending guard has accepted
-the press and before the request goes out, and `recordResult(log, offer, answer)` once, when
-the request ends. Both are pure functions in `terminal-format.js` that append lines to the
+calls `recordSent(log, offer, echo)` once, from the `onSent` hook of `perform`, after the
+pending guard has accepted the press and before the request goes out, and
+`recordResult(log, offer, answer)` once, from the `onEnded` hook, when the request ends
+(section 14, request 4). Both are pure functions in `terminal-format.js` that append lines to the
 foothold's log (the module variable of section 5.3, keyed by foothold id). The scene calls them
 for every guarded request, from either skin and whether or not the Terminal is mounted, so the
 log is complete in every order of switches; Panels draw their own result from the same
@@ -611,7 +656,8 @@ and not `REQUEST_FAILED_TEXT`. A request that throws sets the same notice and li
 gives no reply.
 
 *Where a request ends.* `perform` ends in one place, a single `finally`-shaped path, in this
-order, on the answer, refusal and failure paths alike: `recordResult`, then the clear of the
+order, on the answer, refusal and failure paths alike (the order request 4 of section 14 asks the
+core for): `onEnded`, which calls `recordResult`, then the clear of the
 pending key (which removes the bar and re-enables the control, and in the Terminal makes the key
 no longer pending for the next typed line), then `showResult`. Because the log is written
 first, a redraw the clear triggers already sees the new lines. The unplug that ends the trip runs the same
@@ -686,11 +732,14 @@ Each finding the view lists is one module, named by its `cli.module` or the defa
 | `run` or `exploit` | the `use` offer for the selected finding and the set technique | `started`: `[*] Trying <technique id> against <host>:<port>`; with `TECHNIQUE` unset, the local line `Set TECHNIQUE first. Held: <ids>` and nothing is sent |
 | `sessions` | nothing | one row per held session in the view's rows: host, account and the "admin" tag, from the same `ops-model.js` exports the Panels' Open button uses |
 
-In framework mode `help`, `show` (as `show` with no argument), `clear` and the `Tab` completion
-work as in the shell mode; the game verbs and the nmap form are shell-mode lines. `;` joins
-commands on one line, and they run in order: `use f2; set TECHNIQUE phish; run`. A line that
-holds two commands which send requests answers `One action at a time.` and runs none of it; a
-local command that fails stops the rest of the line.
+With no module selected, `check`, `run`, `exploit`, `info` and `show options` send nothing and
+answer `Select a module first: use <module>`. In framework mode `help`, `show` with no
+argument (the game listing, as in the shell mode), `clear` and the `Tab` completion work as in
+the shell mode; `show options` is the table above, and `show` followed by anything else
+(`show payloads`, `show targets`, `show advanced`) answers `Not part of this simulation.` and
+sends nothing. The game verbs and the nmap form are shell-mode lines. `;`, more than one
+request on a line, more than one target, pipes and redirects follow the line rules of the
+Grammar below, in both modes.
 
 Framework results, with `<host>` replaced by the address where the host has one:
 
@@ -730,7 +779,7 @@ state:
 
 | Entry | Text |
 |---|---|
-| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt marks `$`, `msf >` and `msf (<module>) >`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; "One action at a time."; the player's own echoed line |
+| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt marks `$`, `msf >` and `msf (<module>) >`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; the line-rule answers "One action at a time.", "One target at a time in this simulation." and "Pipes and redirects are not part of this simulation."; the player's own echoed line |
 | Generator text | each generator's `TEMPLATES` (framing lines, `[*]`, `[+]`, `[-]` and `\|` prefixes, table headers, the framework's local answers); the authored `cli` strings and the defaults of section 4.2 built from the core's fields |
 | Table headers | `HOST`, `NAME`, `STATUS`, `SERVICE`, `PORT`, `PRODUCT`, `VERSION`, `TECHNIQUE`, `WORKS ON` and the headers of the findings, share and resource tables of the plain layouts |
 | Help | the output of `help`: verb names, their argument forms and the verb aliases (the descriptions are the Panels' `title` texts and are not on this list) |
@@ -743,18 +792,42 @@ result sentence are not on this list: they are Panels text and must match it.
 
 **Grammar.** A line is `verb [target ...]`.
 
+- **Line rules, in both modes.** `;` splits a line into commands, run in order:
+  `use f2; set TECHNIQUE phish; run`. A line whose commands would send more than one request
+  answers `One action at a time.` and runs none of it. A local command that fails stops the rest
+  of the line. A command that names more than one target (`nmap -sV files01 web01`, which the
+  real tool accepts) answers `One target at a time in this simulation.` and sends nothing. A
+  token `|`, `>`, `>>` or `<` anywhere on the line answers `Pipes and redirects are not part of
+  this simulation.` and sends nothing.
+- **One line, one request.** Every target the grammar accepts names exactly one thing: ids share
+  one space, a host's `port` is unique on it, and addresses and ranges are unique in the
+  scenario (section 9). So every command line `commandFor` writes, and every line the log echoes
+  for a press, parses back to exactly one offer. If two offers still match a line (a fixture
+  the validator would refuse), the grammar lists both and sends nothing; it never picks one.
+
 - Verbs: one for each control (`sweep`, `scan`, `check`, `use`, `signin`, `open`, `look`,
   `unplug`, and `confirm`), and five local ones that
   send nothing: `help [verb]`, `show` (print the current listing), `clear`, `exit` (close the
   view, as the X does) and `panels` (switch skin). Each verb alias goes to exactly one verb:
   `login` and `connect` to `signin`; `ls` to `show`; `run` to `use`; `quit` to `exit`.
 - `sweep` with no target is accepted when exactly one block offers a sweep.
+- **Open networks.** A block of an open network (the core's default, every row listed from the
+  start) offers no sweep, as Panels draw no Sweep there. `sweep` or `nmap -sn` naming it sends
+  nothing and answers locally with the block's host lines in the sweep report's form, built from
+  the rows already listed, followed by the note `Every host here is already listed.`; the same
+  answer whether or not a host on it is up.
 - **The nmap form**, in the shell mode: `nmap [flags] <target>`. A target that is a network id or
   its `range` resolves to that block's `sweep`. A host id or its `address` resolves to the host's
   `scan` when the line has no `--script`, and to a `check` when it has `--script <anything>`; the
-  check's service is the one whose port `-p` names. With no `-p` and one service that offers a
-  check, that service is taken; with more than one, the local answer `Name a port with -p:`
-  lists the ports on offer. Flags that take a value are `-p`, `--script`, `-oN`, `-oX`, `-oG`,
+  check's service is the one whose port `-p` names (ports are unique on a host, so `-sU` is
+  accepted and changes nothing; `commandFor` writes it before `-p` for a service whose
+  `protocol` is `udp`). With no `-p` and one service that offers a check, that service is taken;
+  with more than one, the local answer `Name a port with -p:` lists the ports on offer.
+- **Flags that change the meaning.** `-sn` on a host target sends nothing and answers `-sn
+  only finds hosts. Use nmap -sV <host> to list its services.` A network target or range with
+  `-sV`, `-sS`, `-sT` or `-A` prints one note line, `Versions are listed per host: nmap -sV
+  <host>.`, the way an ignored flag's note is printed, and sends the sweep, because the sweep's
+  answer holds no services. Flags that take a value are `-p`, `--script`, `-oN`, `-oX`, `-oG`,
   `-oA`, `--top-ports`, `--min-rate`, `--max-retries` and `-e`, so their value is never read as
   the target. The known flags (`-sS`, `-sT`, `-sV`, `-sC`, `-A`, `-O`, `-Pn`, `-n`, `-v`, `-vv`,
   `-T0` to `-T5`, `-sn` and the value flags) are accepted with no comment; any other flag prints
@@ -795,7 +868,9 @@ result sentence are not on this list: they are Panels text and must match it.
   can reach the quick commands, the switch and the X.
 - `help` prints each verb with the one-line description its Panels button has as its `title`.
   Both come from `CONTROLS`. In framework mode it lists the framework's commands, and `help nmap`
-  lists the accepted flags and target forms.
+  lists the accepted flags and target forms. `check` means two things, and `help` in each mode
+  says which: in the shell mode "check a service for weaknesses (nmap --script vuln)", in
+  framework mode "confirm the selected module's finding".
 
 ### 5.4 Pixel-art UI rules
 
@@ -874,7 +949,7 @@ objects they belong to, each only once the player has earned that object (core 1
 | `cli` field | Served in | From when |
 |---|---|---|
 | `networks.<id>.cli.range` | the view's block for that network (`GET /network`) | whenever the block is listed |
-| `networks.<id>.cli.hosts.<hostId>.address` | `address` on the host row, in the sweep answer and in `GET /network` | once the host is discovered by a sweep |
+| `networks.<id>.cli.hosts.<hostId>.address` | `address` on the host row, in `GET /network` and, on a discovery network, in the sweep answer | with the host row, whenever the core lists that row as discovered: on an open network from the first answer; on a discovery network from the sweep. A held-session row the core lists on an unswept discovery network carries no `address` until the sweep |
 | a service's `cli` (`protocol`, `service`, `banner`) | the service, in the host scan answer and in `GET /network` | once the host is scanned |
 | a weakness's or a decoy's `cli` (`title`, `module`, `script`) | the finding, in the check answer and in `GET /network` | once the service is checked; the same keys for a weakness and a decoy |
 
@@ -887,7 +962,14 @@ objects they belong to, each only once the player has earned that object (core 1
   whatever its status, so a decoy and a weakness arrive with the same keys.
 - The core's leak collector, which lists the strings each stage may show, gains the `cli`
   strings at the stage their object is served, so a string seen before its stage fails the
-  core's leak test.
+  core's leak test. An address on an open network is staged with the view's first answer; one on
+  a discovery network with its sweep, including the address of a PC the player held a session on
+  before the sweep.
+- With no address, the Terminal prints the host id wherever an address would go (the scan
+  report, `RHOSTS`, the framework's `<host>:<port>` lines). Because the address arrives with the
+  row's discovery, the same host prints its id before the sweep and its address after it; the
+  echo of a press is the `commandFor` line of the moment, which names the host id in both cases,
+  so no line changes meaning.
 - `networkView` holds a presentation choice only; the closed schema leaves nowhere to put a
   secret. The bootstrap filter deletes named keys and passes the rest, so the block arrives
   without a change to the filter. A model test pins that it does, and that a scenario without
@@ -933,11 +1015,13 @@ ignored, and blocked storage leaves the switch working for the page.
 `enum: ["gui", "cli"]` and a description naming its reader (`skin-choice.js`). It is structure,
 not an id map and not free data. It is not marked `x-serverOnly`.
 
-The `cli` objects are added to the core's definitions, in the same shared file. Each is closed
-(`additionalProperties: false`, note pattern `^_`), has no required key, and carries a
-description naming its reader (`cli-gen/`):
+The `cli` objects are the core's schema entries, in the same shared file, added by the core with
+its serving of them (section 14, request 3); S6 writes no schema entry for them and adds only the
+validator rules below. For reference, the core's entries are closed (`additionalProperties:
+false`, note pattern `^_`), have no required key, and carry a description naming their reader
+(`cli-gen/`):
 
-| Added to | `cli` properties |
+| In the core's | `cli` properties |
 |---|---|
 | `networks.<id>` (closed today) | `range` (string, IPv4 CIDR pattern, max 18); `hosts`, an id map (`x-id-map: true`, keys the host id pattern) of closed objects with one property `address` (string, dotted IPv4 pattern) |
 | the core's `definitions.service` | `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`), `banner` (1 to 80 characters) |
@@ -957,19 +1041,29 @@ the validator already has.
 |---|---|
 | Error | `networkView.defaultSkin` is not `gui` or `cli` (from the schema) |
 | Error | An unknown key in `networkView` or in any `cli` object (closed blocks, with the usual "did you mean") |
-| Error | `range` is not inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, or its prefix is outside /16 to /30, or it has host bits set |
-| Error | An `address` on a network with no `range`, outside the range, equal to its network or broadcast address, or used twice on one network |
+| Error | `range` is not inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, or its prefix is outside /16 to /30, or it has host bits set, or it overlaps another network's `range` in the scenario |
+| Error | An `address` on a network with no `range`, outside the range, equal to its network or broadcast address, or used twice anywhere in the scenario |
+| Error | Two services of one host with the same `port`, whatever their `protocol`, so `-p` names one service |
 | Error | A key of `cli.hosts` that is not a host (a `hosts` entry or a sign-in object) on that network |
 | Error | A `module` used twice in the scenario, or one beginning `simulated/` (the default's prefix) |
 | Error | Uneven authoring on one service: one of `title`, `module` or `script` is set on some of its weaknesses and decoys and not on the others, which would tell a decoy from a weakness before a confirm |
-| Error | A `cli` string that contains a password of the scenario (the core's rule `VN:519`, applied to these strings) |
+| Error | A decoy's form differs from a weakness's on one service: the authored `module` paths of its weaknesses and decoys do not all share the same first segment (`auxiliary` against `exploit`) and the same number of segments |
+| Error | A telltale word in any `cli` string of a weakness or a decoy, as a whole word, case-insensitive: the core's list (`decoy`, `fake`, `false`, `real`, `true`, `bait`) plus `patched`, `fixed`, `safe`, `not vulnerable`, and the same words joined by `_` or `-` inside a `module` or `script` |
+| Error | A `cli` string that contains a password of the scenario (the core's rule at `scripts/validate_network.rb:519`, applied to these strings) |
 | Error | A `cli` string that holds a payload or command form: a shell metacharacter (`;`, `\|`, `&`, backtick, `$(`), a flag beginning with `-`, or a path other than the `module` field |
-| Depends on question 15(a) | Under option 2 only: an error for a `cli` string matching an advisory pattern (`cve-\d{4}-\d+`, `ms\d\d-\d{3}`, case-insensitive) or a `banner` or `title` holding an entry of the core's `scripts/real_product_names.txt`. Under option 1 the rule is not built |
+| Error | A `cli` string with a character outside printable ASCII (0x20 to 0x7E), a backslash (so no `\x31` or `A` escape), a `%` followed by two hex digits, `0x` followed by four or more hex digits, or `<` or `>` (markup) |
+| Error | An encoded blob in a `cli` string: a run of 16 or more hex digits, or in a `banner` or `title` a run of 24 or more base64 characters (`A-Z`, `a-z`, `0-9`, `+`, `/`, `=`) with no space that holds a digit, `+` or `=` |
+| Error | A credential-like string in a `cli` string: two non-space runs joined by `:` with no space (`admin:admin`); a `/` pair whose left side is an account word (`admin`, `administrator`, `root`, `user`, `guest`, `sa`, `test`, `operator`, `service`) or whose two sides are equal (`root/toor`, `admin/admin`); or a key word followed by `=` or `:` (`user`, `username`, `login`, `pass`, `passwd`, `password`, `pwd`, `secret`, `token`, `key`) |
+| Error | A real host in a `cli` string: a dotted IPv4 literal outside 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16 (in any field, not only `range` and `address`); `://` or `www.`; or a dotted name whose last part is letters only (`[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}`, case-insensitive) unless that last part is a reserved one (`local`, `internal`, `lan`, `test`, `example`, `invalid`). `module` cannot hold a dot, so the rule never reads it |
+| Depends on question 15(a) | Under option 2: an error for a `cli` string matching an advisory pattern (`cve[-_]\d{4}[-_]\d+` or `ms\d\d[-_]\d{3}`, case-insensitive, so `cve_2017_0144` and `ms17_010` in a `module` are caught) or a `banner` or `title` holding an entry of the core's `scripts/real_product_names.txt`. Under option 1: an error when a service's `banner` or a finding's `title` names an entry of that list other than the service's own `product`, or holds a version number (`\d+(\.\d+)+`) other than the service's `version`, so the `VERSION` column and the lines under it cannot disagree |
+| Warning | A decoy's `cli` string shares a content word (four or more letters, not on a short stop list) with its own `falseBecause`, which would read as a hint before the confirm |
 | Warning | `networkView` or a `cli` object is set in a scenario where no host declares `services`: no view will be an ops view, so it has no effect |
 | Warning | Skin-specific wording: in a scenario that uses `services`, an objective, hint, mail or ink line that pairs a control word (click, press the, button, type, command line, prompt, terminal) with an action word (sweep, scan, check, confirm, sign in, technique) |
 
 The wording check is a warning because it is a pattern match and will have false positives (an
-NPC may mention a terminal in passing).
+NPC may mention a terminal in passing). The text rules on `cli` strings are errors although
+some have false positives (`TCP:IP` written without a slash, a four-part version that reads as
+an address): each error message names the matched fragment and the plain form that passes.
 
 **Dungeon graph**: no change. The skin adds no lock, key, node or edge, and the graph generator
 does not read `networkView`. A test asserts that the generated graph for `test_ops_skin` is the
@@ -1026,13 +1120,15 @@ or control gets these checks on it.
 |---|---|---|
 | `network-view-controls.test.mjs` | K1 | `offers()` for each fixture: order, targets, one offer per pressable control, every use pair, the `itemId` rule. A locked remote session yields a `sign-in` offer beside its lock status. An unconfirmed finding yields a `confirm` offer labelled Confirm. A settled finding yields no `confirm` offer. With a key in the pending set the offers under it carry `pending: true` and no other offer does; each `use` pair has its own key. `CONTROLS` is well formed: each entry has one label, one verb and one description, and a verb together with a target kind names exactly one entry. Every `data-action` literal in `network-view-panels.js` is a key of `CONTROLS` or an entry of `LOCAL_ACTIONS` (`select-finding`, `select-technique`), no value is in both, and `data-unplug` appears there once, for the `unplug` entry |
 | `network-view-panels-same.test.mjs` | K1 | Each fixture rendered by the scene as it was (output saved as a fixture string before the split) and by the Panels renderer is equal byte for byte; a press on each control records the same call before and after. With the unplug's answer held, the header button is disabled and reads `UNPLUGGING_TEXT`, and a refused unplug shows the server's sentence beside the button, both as the saved output has them; the scene file contains no `querySelector('[data-unplug]')` and no `setUnplugNotice` |
-| `network-skin-imports.test.mjs` | K1, K2 | The two renderer files and the pure modules import nothing outside the allowed list and do not contain `fetch(`, `ApiClient`, `networkLinks`, `window.open` or `window.start`. From K2 the `cli-gen/` files are checked too: each imports only `ops-model.js`, `view-texts.js` and its own defaults, and none names `Date`, `performance.now`, `Math.random`, `crypto`, `localStorage`, `document` or `window` |
+| `network-skin-imports.test.mjs` | K1, K2 | The two renderer files and the pure modules import nothing outside the allowed list and do not contain `fetch(`, `ApiClient`, `networkLinks`, `window.open` or `window.start`. From K2 the `cli-gen/` files are checked too: each imports only `ops-model.js`, `view-texts.js` and its own defaults, and none names `Date`, `performance.now`, `Math.random`, `crypto`, `localStorage`, `document` or `window`. From K2 a source check over `network-view-terminal.js`, `terminal-grammar.js`, `terminal-format.js` and every `cli-gen/` file fails on `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval(`, `new Function` and a string literal or template as the first argument of `setTimeout` or `setInterval` |
+| `network-terminal-hostile.test.mjs` | K2, K3 | A hostile fixture whose every text field (host and network names, service `name`, `label`, `product` and `version`, `summary`, `falseBecause`, need labels, technique names, the view's `message`, the unplug refusal's `message`) and every served `cli` field is `<img src=x onerror=alert(1)>` followed by a carriage return, an escape character (U+001B) and U+2028, fed straight to the generators and the plain layouts (bypassing the validator, which would refuse it) and rendered in both skins through test 9's sequence. After each step the Terminal's mount root holds only the elements the plan draws (`span`, `code`, `button`, `input`, `label` and the log's line containers), no attribute whose name starts `on`, and no `img`; each hostile string appears as literal text with its control characters shown as U+FFFD and no extra log line; the Panels output holds the same strings escaped, with no new element |
+| `network-view-bridge.test.mjs` | K2 | `window.__test.network`: `state()` is equal in both skins apart from `skin`; `run` rejects a path of the other skin, an offer not in the list and a pending offer, and records no call; `storePick` calls `writePick` and presses nothing |
 | `network-view-panels.test.mjs` | K2 | The "Scanning" bar: it shows on the block row for a pending `sweep` offer and on the host row for a pending `scan` offer, on no other offer (check, confirm, use, unplug), and is removed when the answer lands, when the request is refused and when it fails (`answer = null`), each its own case, and the pending key is cleared in all three; the bar has `role="progressbar"` with no value and the row `aria-busy`; its label is `SCANNING_TEXT` ("Scanning"); a failure draws `REQUEST_FAILED_TEXT` on the row (a failed unplug draws the unplug sentence as the header notice, and `unplugBox` sets it on a thrown request too). A node DOM test cannot evaluate a media query, so the reduced-motion rule is a CSS-text assertion: the `@media (prefers-reduced-motion: reduce)` block of `network-view-minigame.css` sets `animation: none` for the bar; the bar's CSS has no radius and a 2px border |
-| `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; a verb that is not in `CONTROLS` returns the nearest-verb message and no offer; a line for a pending offer returns the pending line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. The nmap form: a network id and a range give the sweep; a host id and an address give the scan; `--script` with `-p` gives the check on that port, without `-p` the one checkable service, and with two checkable services the `Name a port with -p:` answer and no offer; value flags never become the target; each known flag gives no note; an unknown flag gives one `Ignored in this simulation:` note and the offer; `-iL` gives its answer and no offer; `-p` on a version scan gives the note and the full scan; every nmap line gives the same offer as the game verb for that target. The framework form: `msfconsole`, `back`, `exit` and `quit` change only the mode; `use` by module, alias and search number; `set TECHNIQUE` with a held id and a prefix, with an unheld id; `check` and `run` resolve to the same offers as `confirm f2` and `use <card> on f2`; `run` with `TECHNIQUE` unset returns its message and no offer; `;` with one request command returns that offer after the local commands, with two returns `One action at a time.` and no offer. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
+| `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; a verb that is not in `CONTROLS` returns the nearest-verb message and no offer; a line for a pending offer returns the pending line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. The nmap form: a network id and a range give the sweep; a host id and an address give the scan; `--script` with `-p` gives the check on that port, without `-p` the one checkable service, and with two checkable services the `Name a port with -p:` answer and no offer; value flags never become the target; each known flag gives no note; an unknown flag gives one `Ignored in this simulation:` note and the offer; `-iL` gives its answer and no offer; `-p` on a version scan gives the note and the full scan; every nmap line gives the same offer as the game verb for that target. The framework form: `msfconsole`, `back`, `exit` and `quit` change only the mode; `use` by module, alias and search number; `set TECHNIQUE` with a held id and a prefix, with an unheld id; `check` and `run` resolve to the same offers as `confirm f2` and `use <card> on f2`; `run` with `TECHNIQUE` unset returns its message and no offer; `;` with one request command returns that offer after the local commands, with two returns `One action at a time.` and no offer, in both modes. Line rules: two targets (`nmap -sV files01 web01`, `scan files01 web01`) return `One target at a time in this simulation.`; `|`, `>`, `>>` and `<` return the pipes answer; each sends nothing. Flag meanings: `nmap -sn <host>` returns its `-sV` pointer and no offer; a range with `-sV`, `-sS`, `-sT` or `-A` returns the sweep and the per-host note. Framework with no module: `check`, `run`, `info` and `show options` return `Select a module first: use <module>`; `show payloads`, `show targets` and `show advanced` return `Not part of this simulation.`; `help` in each mode gives that mode's meaning of `check`. An open network's block: `sweep` and `nmap -sn` return the local host lines and no offer. A udp service: `-sU -p <port>` gives its check. **Round trip**: for every offer of every fixture, `parse(commandFor(offer))` returns exactly that offer and no other, in both modes and with the leading prompt mark, and every echo `recordSent` writes for a press parses back the same way; a fixture with two services on one port or one address on two hosts (built by hand, since the validator refuses it) returns the both-matches answer and no offer. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
 | `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a confirm, each of the three use outcomes, each code in the core's `ops_refusal_codes.json`, so twelve today, `already`); every field in the table of 5.3 is printed. Log writing, by calling `recordSent` and `recordResult` on a log: each action with a registry entry writes its echo line and the generator's `started` lines at `recordSent`, before any answer, and the lines stay; an action with none writes the echo only; the `result` lines are written at `recordResult`, directly after those lines, once; a refusal writes the Refusal row's words and no failure line and no table; a failure (`answer = null`) writes `REQUEST_FAILED_TEXT` and no table; the same lines on every run; a quick-command press, a Panels press and a typed game-verb line each write the offer's `commandFor` echo (`$ nmap -sn <id>`, `msf > use <module>; check`) before the lines, and a typed nmap or msf line writes itself; the `started` lines name the resolved target from the view, set as plain text; a typed line with markup, or a 10,000 character target, that resolves to nothing writes no `started` lines and calls neither function; a press the guard rejects calls neither function; and the one request and one answer are unchanged by them. A failed request (`answer = null`) of each of `sweep`, `scan`, `check`, `confirm` and `use` writes `REQUEST_FAILED_TEXT` and no table, and a failed `unplug` writes the unplug sentence of `NV:850` and not `REQUEST_FAILED_TEXT`. A late `recordResult` or `recordSent` after the trip ends (the log dropped) writes nothing and leaves no log entry. The log is created by the first `recordSent`, holds the opening line and the 300-line cap from creation, and lists earlier echoes and results in order after the opening line. The switch-order cases (which need the scene, both renderers and a held fake answer) are in `network-skin-parity.test.mjs`, not here |
 | `cli-gen-scanner.test.mjs` | K2 (defaults), K3 (authored fields) | Golden output. Each fixture is run through `started` and `result` for a sweep, a version scan and a script scan, and the lines (spans joined, with each span's `cls` in brackets) must equal a committed file `test/js/fixtures/network-view/cli-golden/scanner/<fixture>.<step>.txt`. Every fixture runs twice: once with no `cli` fields, which pins the defaults of section 4.2 (a scenario with no `cli` data prints a complete report built from the core's fields), and once with every field authored. Cases: a range of /24 and of /30 for the address count; no range (`Nmap done: <n> hosts up`); singulars; a down host (`Host seems down.`, not counted); a service with and without a banner (where the `\|_` falls); an empty check; a fixture whose findings arrive out of alias order. Called twice on one answer, a generator returns equal lines |
-| `cli-gen-framework.test.mjs` | K2 (defaults), K3 (authored fields) | Golden output under `cli-golden/framework/`, each fixture with no `cli` fields and with all of them: `search` with and without a word, `info`, `show options`, `sessions`, and the `started` and `result` lines of a confirmed, a false and a refused `check` and of each use outcome (session, credential, `already`, each refusal code). `show options` names exactly `RHOSTS`, `RPORT` and `TECHNIQUE`, and `set` of any other name (`PAYLOAD`, `LHOST`, `CMD`) changes nothing and sends nothing. A decoy and a weakness with equally authored `cli` fields (or none) print the same lines, other than their own authored text, in `search`, `info` and `use` before a confirm |
-| `cli-gen-provenance.test.mjs` | K2 | Over every fixture and every generator call: each span is one of the generator's `TEMPLATES` entries (with its slots filled), a field of the answer, the view or a served `cli` object, a count computed from them, or the player's line. Marker fixtures hold a unique string in each field and check that it appears only where that field is printed. The registry maps exactly `sweep`, `scan`, `check`, `confirm` and `use`; each generator exports `id`, `started`, `result` and a frozen `TEMPLATES`; each `cls` is one of `prompt`, `head`, `ok`, `bad`, `note`. Each Panels piece of 11.2 test 9 is a whole span in the generator's output |
+| `cli-gen-framework.test.mjs` | K2 (defaults), K3 (authored fields) | Golden output under `cli-golden/framework/`, each fixture with no `cli` fields and with all of them: `search` with and without a word, `info`, `show options`, `sessions`, and the `started` and `result` lines of a confirmed, a false and a refused `check` and of each use outcome (session, credential, `already`, each refusal code). `show options` names exactly `RHOSTS`, `RPORT` and `TECHNIQUE`, and `set` of any other name (`PAYLOAD`, `LHOST`, `CMD`) changes nothing and sends nothing. A decoy and a weakness with equally authored `cli` fields (or none) print the same lines, other than their own authored text, in `search`, `info` and `use` before a confirm; with the authored text of each replaced by the same placeholder of the same form, they print the same lines exactly |
+| `cli-gen-provenance.test.mjs` | K2 | Over every fixture and every generator call: each span is one of the generator's `TEMPLATES` entries (with its slots filled), a field of the answer, the view or a served `cli` object, or a count computed from them. The player's line is never a source for a generator span (generators never receive it); it is allowed only in the renderer's echo lines, which this test does not read. Marker fixtures hold a unique string in each field and check that it appears only where that field is printed. The registry maps exactly `sweep`, `scan`, `check`, `confirm` and `use`; each generator exports `id`, `started`, `result` and a frozen `TEMPLATES`; each `cls` is one of `prompt`, `head`, `ok`, `bad`, `note`. Each Panels piece of 11.2 test 9 is a whole span in the generator's output |
 | `network-skin-parity.test.mjs`, `network-skin-text.test.mjs` | K2 | Section 11.2 |
 | `network-skin-choice.test.mjs` | K2 | The order of section 4, case by case: a press beats a URL value; a URL value beats a stored pick and is not written to storage; a press with a URL value present changes the skin and writes nothing; a press with no URL value is stored; a bad stored value is ignored; blocked storage still switches; a view with no `ops` block is `gui` under every combination; the switch is drawn only with an `ops` block and removed when a refetch has none |
 | `network-skin-unchanged.test.mjs` | K2 | Section 10, check 1 |
@@ -1142,7 +1238,7 @@ is covered without an edit here.
    opening render, then each offer of the fixture in `offers()` order with the same fake answer
    in both, a refetch answer after each, for each ops route one refusal per code and one
    `already`, one unplug whose answer is held and then refused, and a null-answer step
-(`answer = null`) for each of `sweep`, `check`, `confirm`, `use` and `unplug`: the first four
+(`answer = null`) for each of `sweep`, `scan`, `check`, `confirm`, `use` and `unplug`: the first five
 show `REQUEST_FAILED_TEXT` in both skins and the unplug shows the `NV:850` sentence in both. The two skins are compared
    **at every step**, never as a total over the run, so text that one skin shows at the wrong
    moment fails at that moment.
@@ -1183,8 +1279,8 @@ show `REQUEST_FAILED_TEXT` in both skins and the unplug shows the `NV:850` sente
    `PANELS_ONLY_TEXT` lives in the test file and holds the section headings that the Terminal
    replaces with table headers, and the "Scanning" label of the progress bar, which the list
    imports as `SCANNING_TEXT` from `view-texts.js`. `TERMINAL_ONLY_TEXT` is the exported list of section 5.3, and
-   the test also fails if the Terminal prints one of its entries that the list in the plan does
-   not name. Button labels and `title` texts are in neither list: they appear in the Terminal
+   the test fails on any Terminal piece that equals no Panels piece, is no listed id and matches
+   no entry of that export. Button labels and `title` texts are in neither list: they appear in the Terminal
    as the quick commands' labels and titles. Finding aliases, the
    Fixed mark, the "admin" tag and `UNPLUGGING_TEXT` are in neither list:
    they are the server's or the Panels' text and must match at every step. The fixtures
@@ -1240,8 +1336,8 @@ show the other skin gives the same game, on every build.
 |---|---|---|
 | `test/models/break_escape/network_view_bootstrap_test.rb` | K3 | `networkView` reaches the bootstrap unchanged; a scenario without it has no such key |
 | `test/controllers/break_escape/network_skin_blind_test.rb` | K2 | Each network and ops route gives the same answer and writes the same state with and without a `skin` or `net_skin` parameter, so no route reads one |
-| Validator tests | K3 | Each check of section 9, with one passing and one failing scenario fragment per error, among them a decoy whose `cli.module` is missing beside an authored one on its weakness; the graph is the same with and without the block and the `cli` objects |
-| `cli` serving (core's leak collector) | K3 | `test_ops_skin`'s collector stages the `cli` strings: the range on the view block from the first answer, an address only after the sweep, a service's `cli` only after the host scan, a finding's `cli` only after the check, with the same keys on the decoy as on the weakness; none in the bootstrap or a room answer; a scenario with no `cli` data gives answers with no `cli` key |
+| Validator tests | K3 | Each check of section 9, with one passing and one failing scenario fragment per error and per warning. Among the failing fragments: a decoy whose `cli.module` is missing beside an authored one on its weakness; a decoy module under `exploit/` beside a weakness under `auxiliary/scanner/`; a decoy title holding `patched`; a decoy script `smb-bait-check`; two services on port 53 (`tcp` and `udp`) on one host; one address on two networks; two overlapping ranges; a banner with a tab and one with `é`; `\x31\xc0`; `%41%42`; `0xdeadbeef`; `<b>x</b>`; a 16-digit hex run; `QWxhZGRpbjpvcGVuIHNlc2FtZQ==`; `admin:admin`; `root/toor`; `password=letmein`; `8.8.8.8` in a banner; `http://intranet`; `www.brackley.com`; `shareserve.com`; and under option 2 `cve_2017_0144`, `CVE-2017-0144` and `exploit/windows/smb/ms17_010_x` (or, under option 1, a banner whose version differs from the service's `version`). Passing fragments include a banner naming `files.local` and one with `10.20.0.15`. The example of section 4.2 passes with no error and no warning. The graph is the same with and without the block and the `cli` objects |
+| `cli` serving (core's leak collector) | K3 | `test_ops_skin`'s collector stages the `cli` strings: the range on the view block from the first answer, an address on its open network from the first answer, an address on the discovery network only after the sweep (including the held-session PC's), a service's `cli` only after the host scan, a finding's `cli` only after the check, with the same keys on the decoy as on the weakness; none in the bootstrap or a room answer; a scenario with no `cli` data gives answers with no `cli` key |
 | `tools/playtest` shell test | K2 | `session-start.sh` gives the same session tag with and without `--net-skin` |
 
 ### 11.4 Feature scenario `test_ops_skin`
@@ -1251,8 +1347,11 @@ one with remote sign-in off), a file server with one service that has two real w
 one decoy, two technique cards for different techniques, an open share and a printer to look
 at. The first real weakness grants a session and the second a credential. The scenario declares one log source that takes the core's
 network events, so the live run has rows to compare. Its objectives and hints follow the
-wording rule of 5.6. K3 adds `networkView.defaultSkin: "cli"` and authored `cli` fields for the
-network's range, the file server's address, its service and its three findings (the decoy
+wording rule of 5.6. K3 adds `networkView.defaultSkin: "cli"` and a second, open network
+(the core's default discovery) reached through the same box, holding one host with an
+authored `range` and `address`, so the address is served from the first answer and has its own
+golden file and leak-collector stage. K3 also adds authored `cli` fields for the office
+network's range, the file server's address, the held-session PC's address, its service and its three findings (the decoy
 authored as fully as the weaknesses); the printer and the sign-in hosts keep the defaults, so one
 run shows both kinds of output.
 
@@ -1353,18 +1452,18 @@ committed before its tests are run in the shared tree.
 | 1 | K1 | Save the scene's DOM for every fixture and for every recorded `ops_unchanged` view answer (under `test/js/fixtures/network-view/unchanged/`, beside the server fixtures in `test/fixtures/files/ops_unchanged/`), before any change. Move the fixtures the tests build inline into `test/js/fixtures/network-view/` only for the new tests; existing tests are not edited | the snapshots exist on the branch point |
 | 2 | K1 | `view-texts.js`, `view-controls.js`, `network-view-panels.js`; the new exports in `ops-model.js`, with the Panels drawing changed to call them; the scene mounts the Panels renderer and routes it through the core's `perform` path, with `offers()` reading the core's pending set and `pendingKey` (core 5.3); copy lists | K1 rows of 11.1; existing and core node tests unedited; `bin/test-js` whole; scripted reruns of `test_access_networks` and `test_ops_access` |
 | 3 | K2 | `skin-choice.js`; the starter passes the skin; the header switch on ops views | `network-skin-choice.test.mjs`, `network-skin-unchanged.test.mjs` |
-| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene from `perform`), `cli-gen/registry.js`, `cli-gen/scanner-output.js` and `cli-gen/framework-console.js` with the defaults of section 4.2 and their golden files, the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, `cli-gen` golden and provenance, parity and text tests |
+| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene through the `onSent` and `onEnded` hooks of `perform` that the core added for section 14, request 4; if the core has not added them when K2 starts, K2 waits for that change rather than editing `perform` itself), `cli-gen/registry.js`, `cli-gen/scanner-output.js` and `cli-gen/framework-console.js` with the defaults of section 4.2 and their golden files, the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, `cli-gen` golden and provenance, parity and text tests |
 | 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots checked, audit clean, phone keyboard check); full suites; land K2 |
-| 6 | K3 | Schema for `networkView` and the `cli` objects, `scripts/validate_realism_skin.rb` and its hook, wording warning, bootstrap test; `defaultSkin` and the authored `cli` fields in `test_ops_skin`, its leak collector stages and the authored-field golden files | K3 rows of 11.1 and 11.3; beat D1; validator output for every other scenario unchanged |
+| 6 | K3 | Schema for `networkView` (the `cli` entries are the core's), `scripts/validate_realism_skin.rb` and its hook, wording warning, bootstrap test; `defaultSkin` and the authored `cli` fields in `test_ops_skin`, its leak collector stages and the authored-field golden files | K3 rows of 11.1 and 11.3; beat D1; validator output for every other scenario unchanged |
 | 7 | K4 | `tools/playtest/network-skin-parity.mjs`; the `README_scenario_design.md` feature index (N16) and `docs/ACCESS_AND_NETWORKS.md` | the K4 part of 11.6; land |
 
 | Shared file | Also touched by | This plan's part |
 |---|---|---|
-| `minigames/network-view/network-view-minigame.js` | core (S1 to S3); the privilege feature may add session badges | K1 moves the drawing out and leaves the handlers, the `perform` path, its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3) as the core built them; K1 only reads the set. A plan that lands after K1 adds its drawing to `network-view-panels.js` and its handler to the scene |
+| `minigames/network-view/network-view-minigame.js` | core (S1 to S3); the privilege feature may add session badges | K1 moves the drawing out and leaves the handlers, the `perform` path, its pending guard and the `pending` set and `pendingKey` it exposes (core 5.3) as the core built them; K1 only reads the set. `perform`'s `echo` option and its `onSent` and `onEnded` hooks are the core's change (section 14, request 4); K2 only sets the hooks. A plan that lands after K1 adds its drawing to `network-view-panels.js` and its handler to the scene |
 | `minigames/network-view/ops-model.js` | core (owner); later plans add refusal codes to `REFUSAL_TEXT` | K1 adds exports, as the core's shared-file table expects: `findingLabel`, `needLine`, `useResultText` and the line functions of section 5.2. It changes no existing export and adds no entry to `REFUSAL_TEXT` |
 | `test/fixtures/files/ops_refusal_codes.json` | core (owner) | read by parity test 5 and the format test; not edited |
 | `css/network-view-minigame.css` | core | the Terminal's rules, appended |
-| `scripts/scenario-schema.json` | every plan; core owns `definitions.service`, `definitions.weakness`, `definitions.decoy` and `networks.<id>` | one top-level block; a `cli` property on each of the four, and one shared `definitions.cliFinding` |
+| `scripts/scenario-schema.json` | every plan; core owns `definitions.service`, `definitions.weakness`, `definitions.decoy` and `networks.<id>` | one top-level block, `networkView`; the `cli` properties and `definitions.cliFinding` are the core's (section 14, request 3) |
 | `scripts/validate_scenario.rb` | every plan | one require and one call of `check_realism_skin`; the ink half of the wording warning in the dialogue lint |
 | the core's network row builders (`network_ops.rb`) and leak collector | core (owner) | none in the builders, which copy the `cli` objects as request 3 of section 14 asks; `test_ops_skin`'s collector entries for the `cli` strings |
 | `systems/test-bridge/index.js`, `tools/playtest/session-start.sh`, `tools/playtest/ui-rules-audit.mjs` | possibly core; none known for the others | one namespace; one option; one surface |
@@ -1402,12 +1501,17 @@ showing and reads through `compromiseMarks()`.
 2. **Every plan: wording.** Every beat of a `test_ops_*` scenario's `PLAYTEST.md` names actions
    (sweep, scan, check, confirm, use), never controls (a button, a drag, a typed line), as
    objectives and hints do (sections 1.3 and 5.6), so one script runs in either skin.
-3. **Core: serve the `cli` display fields with the answers the player has earned.** The core's
-   schema gains the `cli` objects of section 9, and its row builders copy them, unchanged, beside
+3. **Core: declare and serve the `cli` display fields with the answers the player has earned.**
+   The core's schema declares the `cli` objects of section 9 (S6 writes no schema entry for
+   them and adds only its validator rules), and its row builders copy them, unchanged, beside
    the fields they belong to:
    - `networks.<id>.cli.range`, as `cli.range` on the view's block for that network;
-   - `networks.<id>.cli.hosts.<hostId>.address`, as `address` on the host's row, in the sweep
-     answer and in `GET /network`, only once the host has been discovered by a sweep;
+   - `networks.<id>.cli.hosts.<hostId>.address`, as `address` on the host's row, with the row,
+     whenever the core lists that row as discovered: on an open network (`discovery: "open"` or
+     absent, never swept) from the first `GET /network` answer that lists the row; on a
+     discovery network in the sweep answer and in `GET /network` from the sweep on. A held-session
+     PC row that the core lists on an unswept discovery network carries no `address` until the
+     sweep, so the address arrives with the sweep like the other rows;
    - a service's `cli` (`protocol`, `service`, `banner`), with the service in the host scan
      answer and in `GET /network`, only once the host has been scanned;
    - a weakness's or a decoy's `cli` (`title`, `module`, `script`), as `cli` on the finding in
@@ -1417,20 +1521,51 @@ showing and reads through `compromiseMarks()`.
    None of it is sent in the bootstrap or in any room answer. An object the author did not write
    is left out of the answer, never sent as `{}` or `null`, and the browser builds the defaults
    of section 4.2 from fields it already has, so the server sends authored data only. The leak
-   collector of each `test_ops_*` scenario lists the `cli` strings at the stage they are served.
-   No route, check or refusal reads a `cli` field.
+   collector of each `test_ops_*` scenario lists the `cli` strings at the stage they are served,
+   an open network's addresses at the first answer. No route, check or refusal reads a `cli`
+   field.
+4. **Core: an echo and two hooks in `perform`.** The scene's `perform` (core 5.3) becomes
+   `perform(offer, { echo } = {})`, and the scene gains two hook properties, `onSent(offer,
+   echo)` and `onEnded(offer, answer)`, each a no-op by default. The hook points:
+   - `onSent` is called once per accepted press, synchronously, after the guard has found the
+     key free and added it to `pending`, and before the first `await`, so before the request
+     goes out. A press the guard rejects calls neither hook.
+   - Every ending (an answer, a refusal answer, a request that throws, and no reply, the last
+     two with `answer = null`) runs one `finally`-shaped tail, in this order: `onEnded(offer,
+     answer)`, then the removal of the key from `pending` (with the redraw that follows), then
+     the mounted renderer's `showResult(offer, answer)`. For the unplug that ends the trip, the
+     same tail runs before `complete(false)`.
+   - `echo` and the hooks never change the request, its body or the route; `perform` without
+     them behaves as the core built it. A hook that throws is caught and logged, and the tail
+     still clears the key and calls `showResult`.
+   The core's guard tests run unedited; one more case shows the hook order on an answer, a
+   refusal, a throw and a null answer, and that a rejected press calls neither hook.
 
 ## 15. Open questions for the user
 
 a. **May `cli` fields carry real advisory identifiers (CVE-style) and real product names and
    versions?**
-   Option 1: allowed, as labels the author supplies. They are public information, and the VM
-   missions already teach with them. Option 2: refused by the validator, and products stay
-   invented. The generators print whatever label is authored, so the answer changes one
-   validator rule of section 9 and nothing else. Under option 1 a real product and version can
-   appear in `banner` and `title`; the core's own `product` field keeps its invented-names rule
-   unless the core changes it.
-   Recommendation: option 1, since the aim is full simulated output, provided the output never
+   The ops brief (`docs/agents/OPS_LAYER_BRIEF.md`, section 2, rule 4) is a binding user
+   decision: "Products, versions and organisations are invented. Weaknesses are classes, not
+   real identifiers." Option 1 changes that rule for the Terminal, and needs the user's change
+   to the brief before it is built.
+   Option 1: allowed, as labels the author supplies: real advisory ids in `title`, `script` and
+   `module`, real framework module paths copied verbatim into `module` (the most tool-real
+   string in the output), and real product names and versions in `banner` and `title`. They are
+   public information, and the VM missions already teach with them. Its cost: the `VERSION`
+   column prints the core's `product` and `version`, which the core keeps invented, so a real
+   banner under it would disagree with its own row. Section 9 prevents that under option 1 with
+   an error when a banner or title names a listed real product other than the service's
+   `product`, or a version other than its `version`. With the core unchanged, real product names
+   therefore stay out of banners and titles, and option 1 brings real advisory ids and module
+   paths only. Option 1b adds real names in the core's `product` too, a core change under the
+   same change to the brief, and then banner, title and table all name the real product.
+   Option 2: refused by the validator (advisory patterns, underscore forms included, and the
+   real-product list), and the brief's rule stands as written.
+   The generators print whatever label is authored, so the answer changes validator rules of
+   section 9 (and, for 1b, the core's `product` rule) and nothing else.
+   Recommendation: option 1, since the user's stated aim is full simulated output, provided the
+   brief's rule 4 is changed by the user first and the output never
    carries a payload, shellcode or working exploit content. The limits of section 1.3 rule 4 and
    section 9 hold either way: private address ranges only, `RHOSTS`, `RPORT` and `TECHNIQUE` as
    the only options, no payload option, and nothing run against a real host.
@@ -1438,6 +1573,10 @@ b. **Is the output marked as simulated, or printed bare?**
    Option 1: the first line of each run carries the mark (`Starting Nmap (simulated) against
    ...`, `Metasploit Framework console (simulated)`), as this plan is written. Option 2: every
    line bare, as the real tools print. Option 3: the mark on every result line.
+   Under every option the local answers that say "in this simulation" (an ignored flag, `-iL`,
+   `set` of a payload option, pipes, more than one target) stay, because they explain why a
+   real command did nothing. Under option 1 a cropped screenshot of a port table or a script
+   report carries no mark, since the mark is only on the run's first line.
    Recommendation: option 1. One mark per run is enough to tell a learner, a screenshot reader or
    a teacher that nothing real ran, and leaves the tables and report lines exactly in the tools'
    layout. Option 3 clutters the lines a learner is meant to read.

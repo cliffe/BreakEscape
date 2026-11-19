@@ -154,3 +154,29 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - R2-3, 14: request 3 to the core: serve authored `cli` fields only with earned answers, same keys for weakness and decoy, never in bootstrap or room answers, absent objects left out.
 - SKIN-2 and R2-3, 15: the old forcing question removed (answered); new questions (a) real advisory ids and products in `cli` (recommend allow) and (b) the "(simulated)" mark (recommend first line of each run).
 
+## R9 fixes (2026-11-19)
+
+- M1: `address` served with the host row whenever the core lists it as discovered: open network from the first answer, discovery network from the sweep, held-session rows on an unswept discovery network none until the sweep; request 3, section 7 table, 11.3 collector row; `test_ops_skin` gains an open network with an addressed host; open-network `sweep`/`nmap -sn` answers locally.
+- M2: new request 4 to the core: `perform(offer, { echo })`, no-op `onSent` (after guard accepts, before first await) and `onEnded` (every ending), tail order `onEnded`, clear key, `showResult`; "perform unchanged" claims removed from 2, 3, 5.2, 12; `ctx.perform(offer, echo)`.
+- M3: section 9 errors added for non-printable characters, backslash, `%xx`, `0x` runs, markup, 16+ hex and 24+ base64 runs, credential-like strings, public IPv4 literals, URLs and public domains; option-2 patterns widened to `[-_]` forms; each has a failing fixture in 11.3.
+- M4: source ban on `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval(`, `new Function`, string timers in Terminal, grammar, format and `cli-gen/`; log helper replaces control characters with U+FFFD; new `network-terminal-hostile.test.mjs` runs hostile markup in every text and `cli` field through generators in both skins.
+- M5: validator errors for a port used twice on a host (any protocol), an address used twice in the scenario and overlapping ranges; grammar "one line, one request" rule; `-sU` written for udp checks; round-trip test that every `commandFor` line and press echo parses back to exactly one offer. Took the ruling (port unique per host) over the review's port+protocol rule, so `-sU` never disambiguates.
+- M6: rule stated (decoy labels indistinguishable in form from a weakness's); errors for differing module first segment or depth on one service and for telltale words (core list plus patched, fixed, safe, not vulnerable) in any `cli` string; warning for a decoy word shared with its `falseBecause`; example decoy module moved under `auxiliary/scanner/` and its `falseBecause` reworded. Made the module-category check an error (review proposed a warning) per the ruling.
+- M7: 15(a) quotes brief rule 4, says option 1 needs the user's change to it, lists module paths, and states the VERSION/banner cost with a validator check under option 1 and an option 1b (core `product` opened); recommendation kept.
+- m1: section 2 says the command-form error replaces the procedure warning and the product list applies only under option 2.
+- m2: one line-rules bullet for both modes: `;`, one action, one target, pipes and redirects; grammar cases added.
+- m3: `-sn` on a host sends nothing and points at `-sV`; a range with `-sV`/`-sS`/`-sT`/`-A` sweeps with a per-host note; grammar cases.
+- m4: no module answers `Select a module first: use <module>`; `show` other than options answers `Not part of this simulation.`; grammar cases.
+- m5: sketch now ends `Service detection performed.`; 15(b) notes the "in this simulation" answers stay under every option and a cropped table carries no mark under option 1.
+- m6: test 9 null-answer steps include `scan`.
+- m7: player's line dropped from generator provenance sources.
+- m8: test 9 fails on a Terminal piece matching no Panels piece, listed id or `TERMINAL_ONLY_TEXT` entry.
+- m9: the core owns the `cli` schema entries (its 9.1 already has them); K3 adds validator rules only; 3, 5.1, 9, 12 and request 3 agree.
+- m10: "Connecting..." and the load-error line stay scene-drawn pre-mount states, named as the exception.
+- m11: `network-view-bridge.test.mjs` added.
+- m12: rule 4 names the design review and lab-sheet step as where "no step beyond the lab sheet" is checked.
+- n1: `NV:850`.
+- n2: `scripts/validate_network.rb:519` spelled out.
+- n3: no bar for a pending check, confirm or use, on purpose.
+- n4: `help` gives each mode's meaning of `check`.
+
