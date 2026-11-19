@@ -305,6 +305,29 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   `git log -1 -- docs/achitechture/OPS_PRIVILEGE_ACCOUNTS_PLAN.md`). No more reviews for it. Left:
   its seven user questions, the log plan's renames if any still differ (the R4 log review's
   sibling list will say), and the second cross-plan review.
+- 11:58 HANDOFF 8 (NEWEST: read this first; it supersedes earlier per-plan state).
+  Rules in force: subagents never commit, I commit by explicit path in the worktree; cross-model
+  reviews; plans standalone; cracking untouched until the user answers BLOCK-1; user decisions go
+  on the picks page (scratchpad `ops_plan_picks.html`, published
+  https://claude.ai/artifact/NJ3CMZUUG6wKE2S9VtEg5e, localStorage key `be-ops-plan-picks-v1`,
+  republish the same path once, after the R4/R5 rounds).
+  PRIVILEGE: DONE (five rounds, `d4fd20176`).
+  CORE: R4 findings `d2e5740c0` (0B 1M 4m). R4 reviser running (Fable, ade3af4823983655d), small
+  pass. Ruling: core owns and builds the shared `perform` pending guard (key action+target; `use`
+  keyed by card+finding; unplug folded in); the skin only routes through it. Next: commit, R5
+  delta on Opus, then done (a tiny fix pass if R5 has minors).
+  SKIN: R4 delta review running (Sonnet, aedac230b57faa436). Its fix pass must also apply the
+  guard ruling above (K1 no longer builds the guard) and then the skin is done after R5 or, if
+  R4 says "ready" apart from that, one Fable fix pass and stop.
+  MFA (+S8c): full R4 review running (Opus, a507d1abc5320b61a). Next: Fable reviser (split S8c to
+  its own file if the review recommends), then R5 delta on Opus.
+  LOG_ROWS: R4 review running (Fable, ad1f8c88a66ac2edb). Next: one Opus reviser pass (findings +
+  trim + its own change for `service_checked` bound, core R4 m4-3), then R5 delta on Fable.
+  CRACKING: held.
+  After those: second cross-plan review (Fable) over five plans incl. the log plan's sibling
+  change list; apply sibling renames; picks page republish (Core 5, Privilege 7, MFA 8, Skin 1,
+  Log 3); outline build order (L1a first; S8c = A25) and status paragraph.
+  User requirement added 11:42: second step on any lock (S8c) - done as a plan stage.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
