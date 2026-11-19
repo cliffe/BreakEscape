@@ -78,6 +78,7 @@ const DEVICES = [
     { name: 'Smart Lock', mac: 'AA:BB:CC:00:11:33', rssi: -71, type: 'lock' }
 ];
 const PARAMS = {
+    'network-view': { title: 'Network link', footholdId: 'jack_sweep', hosts: null },
     'pin': { title: 'Keypad', correctPin: '1234', pinLength: 4, maxAttempts: 3 },
     'biometrics': { title: 'Fingerprint kit' },
     'fingerprint-reader': { title: 'Fingerprint reader', requires: 'someone', lockable: { name: 'Door' } },
@@ -115,7 +116,21 @@ const PARAMS = {
 // working state before the start (pre) or drive the scene into it after (post), so the sweep
 // and the shots cover the screen players use (review R1 M2).
 const BLE = [['Smart Lock', 'AA:BB:CC:00:11:33', ['180f', 'fff0'], true], ['Office Printer', 'AA:BB:CC:00:11:22', ['1800'], false]];
+const NV_HOSTS = [
+    { id: 'door_box', kind: 'pc', name: 'Door controller', host: 'HB-DOOR-01', sprite: 'network_rack1', headless: true, remoteSignIn: true },
+    { id: 'lena_pc', kind: 'pc', name: "Lena's PC", host: 'HB-FIN-02', sprite: 'pc_desktop', headless: false, remoteSignIn: true,
+        session: { username: 'lfox', displayName: 'Lena Fox', via: 'password', remote: true } },
+    { id: 'ledger_archive', kind: 'file_share', name: 'Ledger-Archive', host: 'HB-FS01', open: false },
+    { id: 'print_queue', kind: 'printer', name: 'Office print queue', host: 'HB-PRN-01', open: true, observations: 'Three payslips wait.' }
+];
+PARAMS['network-view'].hosts = NV_HOSTS;
 const SETUP = {
+    // network-view needs a held foothold; stand one in for the link's answer (no server state)
+    'network-view': { pre: (p) => {
+        const f = { id: 'jack_sweep', via: 'jack', name: 'Drop box: comms room', itemId: 'netlink_jack_sweep', sourceId: 'comms_port', network: { id: 'office_lan', name: 'Harbour office LAN' }, hosts: p.hosts };
+        if (!window.__sweepSaved) window.__sweepSaved = { networkLinks: window.networkLinks };
+        window.networkLinks = { get: () => f, view: async () => ({ ok: true, view: f }), footholds: new Map(), views: new Map() };
+    } },
     'infusion-pump': { pre: () => { window.gameState.globalVariables.paper_charts_collected = true; } },
     'ncsc-brief': {
         pre: (p) => { window.gameState.globalVariables[p?.lockable?.scenarioData?.gateVar || 'warranty_checklist_complete'] = true; },
@@ -369,6 +384,40 @@ async function checkScene(page, scene) {
     }, { ALLOWED: ALLOWED_FONTS, hardSrc: hardGradient.toString(), KEEP });
 }
 
+// Fit metrics (D164 font-size change): how much of the open minigame scrolls or clips.
+// scrolls = elements inside the shell with a visible scroll range (overflow auto/scroll and
+// scrollHeight/Width beyond the box); clipped = elements with overflow hidden/clip whose
+// content is wider/taller than the box by more than 1px (text cut off); wrapButtons =
+// buttons whose text wraps to more than one line.
+async function checkFit(page) {
+    return page.evaluate(() => {
+        const root = document.querySelector('.minigame-container') || document.body;
+        const name = (el) => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''}`;
+        const scrolls = []; const clipped = []; const wrapButtons = [];
+        for (const el of [root, ...root.querySelectorAll('*')]) {
+            const cs = getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+            const r = el.getBoundingClientRect();
+            if (!r.width || !r.height) continue;
+            // screen-reader-only helpers (1px boxes or clipped away) are meant to be invisible
+            if ((r.width <= 1 && r.height <= 1) || (cs.position === 'absolute' && /rect\(0(px)?,? ?0(px)?,? ?0(px)?,? ?0(px)?\)/.test(cs.clip)) || cs.clipPath === 'inset(50%)' || /(^|[-_ ])sr-only|screen-reader/.test(String(el.className))) continue;
+            const ox = cs.overflowX; const oy = cs.overflowY;
+            const sy = el.scrollHeight - el.clientHeight; const sx = el.scrollWidth - el.clientWidth;
+            if ((oy === 'auto' || oy === 'scroll') && sy > 1) scrolls.push(`${name(el)} y+${sy}`);
+            if ((ox === 'auto' || ox === 'scroll') && sx > 1) scrolls.push(`${name(el)} x+${sx}`);
+            if ((ox === 'hidden' || ox === 'clip') && sx > 1 && el.children.length + el.childNodes.length > 0 && el.textContent.trim()) clipped.push(`${name(el)} x+${sx}`);
+            if ((oy === 'hidden' || oy === 'clip') && sy > 1 && el.textContent.trim() && el !== document.body) clipped.push(`${name(el)} y+${sy}`);
+            if (el.tagName === 'BUTTON' && el.textContent.trim()) {
+                const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+                const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+                if (r.height - pad > lh * 1.6) wrapButtons.push(`${name(el)} ${el.textContent.trim().slice(0, 24)}`);
+            }
+        }
+        const win = { w: innerWidth, h: innerHeight, docScrollX: document.documentElement.scrollWidth - innerWidth, docScrollY: document.documentElement.scrollHeight - innerHeight };
+        return { scrolls: scrolls.slice(0, 12), clipped: clipped.slice(0, 12), wrapButtons: wrapButtons.slice(0, 8), win };
+    });
+}
+
 async function main() {
     // Scrollbars shown, as a desktop player sees them (the headless shell hides them by default)
     const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
@@ -411,8 +460,10 @@ async function main() {
             const chk = await checkScene(page, scene);
             const cv = await checkCanvas(page);
             const found = [...chk.breaches, ...(cv?.breaches || [])];
+            const fit = await checkFit(page);
             if (!res) res = { ...st, errors: [...(st.errors || [])], elements: chk.elements, canvasTexts: cv?.texts ?? null, breaches: [], seen: new Map() };
             else for (const e of st.errors || []) if (!res.errors.includes(e)) res.errors.push(e);
+            (res.fit ||= {})[`${w}x${h}`] = fit;
             if (!st.open) res.open = false;
             for (const b of found) {
                 const key = `${b.kind}|${b.where}|${b.detail}`;
@@ -429,9 +480,11 @@ async function main() {
                 unlinkSync(png);
             }
         }
+        // put back anything a scene's pre() swapped, so later scenes run against the real object
+        await page.evaluate(() => { if (window.__sweepSaved) { window.networkLinks = window.__sweepSaved.networkLinks; delete window.__sweepSaved; } });
         const byKind = {};
         for (const b of res.breaches) byKind[b.kind] = (byKind[b.kind] || 0) + 1;
-        report[scene] = { inScope: SCOPE.includes(scene), open: res.open, setup: res.setup ?? null, errors: res.errors, elements: res.elements, canvasTexts: res.canvasTexts, byKind, breaches: res.breaches };
+        report[scene] = { inScope: SCOPE.includes(scene), open: res.open, setup: res.setup ?? null, errors: res.errors, elements: res.elements, canvasTexts: res.canvasTexts, fit: res.fit, byKind, breaches: res.breaches };
         const sum = Object.entries(byKind).map(([k, n]) => `${k} ${n}`).join(', ') || 'clean';
         console.log(`${SCOPE.includes(scene) ? '*' : ' '} ${scene.padEnd(28)} ${String(res.elements).padStart(4)} el  ${sum}${res.errors.length ? `  ERR ${res.errors[0].slice(0, 80)}` : ''}${res.open ? '' : '  (did not open)'}`);
     }
