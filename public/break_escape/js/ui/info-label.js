@@ -131,7 +131,8 @@ export function updateInfoLabel() {
 
     let bestScore = Infinity;
     let bestText  = null;
-    let bestIsNpc = false;
+    let bestNpcScore = Infinity; // the best NPC apart: a better-aimed colleague beats the seated PC (seatedPcWins)
+    let bestNpcText = null;
     // The best desk computer in front of a seated player (interaction-reach.js isSeatedDeskPc), kept apart
     let pcScore = Infinity;
     let pcText = null;
@@ -154,10 +155,10 @@ export function updateInfoLabel() {
             pcScore = score;
             pcText = text;
         }
+        if (target && target._isNPC && score < bestNpcScore) { bestNpcScore = score; bestNpcText = text; }
         if (score < bestScore) {
             bestScore = score;
             bestText  = text;
-            bestIsNpc = !!(target && target._isNPC);
         }
     }
 
@@ -178,7 +179,7 @@ export function updateInfoLabel() {
                 }
                 // A sign-in PC with a sticky note picture says so (slice 9.2 B)
                 if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
-                consider(reachX(obj, px), reachYSeated(obj, py, seatedOn), text, INTERACTION_RANGE_SQ, obj, aimX(obj), aimY(obj));
+                consider(reachX(obj, px), reachYSeated(obj, player, seatedOn), text, INTERACTION_RANGE_SQ, obj, aimX(obj), aimY(obj));
             });
         }
 
@@ -210,7 +211,7 @@ export function updateInfoLabel() {
     });
 
     // Seated at a desk, its computer (interactions.js decides E the same way)
-    if (pcText && seatedPcWins(pcScore, bestScore, bestIsNpc)) bestText = pcText;
+    if (pcText) bestText = seatedPcWins(pcScore, bestNpcScore) ? pcText : bestNpcText;
     proximityText = bestText;
     if (!hoverText) _applyText(proximityText);
 }

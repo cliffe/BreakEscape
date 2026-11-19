@@ -15,7 +15,7 @@ import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { aimX, aimY, aimDiff, BODY_AIM_MAX_PX } from '../../public/break_escape/js/systems/interaction-reach.js';
+import { aimX, aimY, aimDiff, reachY, BODY_AIM_MAX_PX, reachYSeated, isSeatedDeskPc, isDeskComputer, seatedPcWins, SEATED_PC_FRONT_DEG } from '../../public/break_escape/js/systems/interaction-reach.js';
 const OLD = process.env.EAIM_OLD_INTERACTIONS;
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -58,7 +58,7 @@ for (const [spec, body] of Object.entries(stubs)) {
 }
 writeFileSync(join(dir, 'interactions.mjs'), src);
 globalThis.window = {};
-const { tryInteractWithNearest } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
+const { tryInteractWithNearest, isObjectInInteractionRange } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
 
 const picked = [];
 window.playerPoses = { use: (s) => picked.push(s.scenarioData.id) };
@@ -273,7 +273,7 @@ test('E and the label both skip the seat the player is sitting on', () => {
 
 // Seated at a desk, E and the label prefer the desk's computer (interaction-reach.js isSeatedDeskPc). Gary's m02 desk:
 // the chair under the player, his mug nearer the facing line than the PC, the PC a little off to one side.
-const seatedAt = (chair) => { window.seating = { currentSeat: () => chair, isSeat: (o) => o === chair, standUp() {} }; };
+const seatedAt = (chair) => { window.seating = { currentSeat: () => chair, isSeat: (o) => o === chair, standUp() {}, trySit: () => false }; };
 const deskScene = (pcType = 'pc') => {
     const chair = obj('chair', 130, 150, 24, 30, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
     const mug = obj('mug', 138, 138, 12, 14, { scenarioData: { id: 'mug', observations: 'A mug.' } });
@@ -338,4 +338,143 @@ test('seated, an NPC aimed better than the PC still wins; a worse-aimed one does
         assert.equal(labelAt(142, 170, 'up'), 'A workstation.');
         assert.equal(pressE(142, 170, 'up'), 'pc');
     } finally { delete window.seating; delete window.npcManager; delete room.npcSprites; }
+});
+
+// ---------------------------------------------------------------------------
+// Review R1 (seated-E-prefers-PC): every reach check uses the same footprint reach, so the pick survives
+// handleObjectInteraction's own range check (it used to log INTERACTION_OUT_OF_RANGE and do nothing), and the
+// highlight and the tap reach agree.
+// ---------------------------------------------------------------------------
+// E from a chair, recording the pick only if handleObjectInteraction got past its range check
+const pressESeated = (fx, fy, direction) => {
+    picked.length = 0;
+    const logs = [];
+    globalThis.__pastRange = false;
+    window.gameAlert = () => { globalThis.__pastRange = true; };   // the first thing a plain PC does after the range check
+    const realLog = console.log;
+    console.log = (...a) => { logs.push(String(a[0])); };
+    window.player = standAt(fx, fy, direction);
+    try { tryInteractWithNearest(); } finally { console.log = realLog; }
+    return { id: picked[0], pastRange: globalThis.__pastRange, outOfRange: logs.includes('INTERACTION_OUT_OF_RANGE') };
+};
+const sideScene = (pcx, pcy) => {
+    const chair = obj('chair', 130, 150, 24, 27, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
+    const pc = obj('pc', pcx, pcy, 24, 27, { scenarioData: { id: 'pc', type: 'pc', observations: 'A workstation.' } });
+    setRoom(chair, pc);
+    return chair;
+};
+for (const [dir, pcx, pcy] of [['left', 100, 99], ['right', 160, 99], ['up-left', 150, 99]]) {
+    test(`seated facing ${dir}, a PC in footprint reach is opened and survives the range check`, () => {
+        seatedAt(sideScene(pcx, pcy));
+        try {
+            const r = pressESeated(142, 170, dir);
+            assert.equal(r.id, 'pc');
+            assert.equal(r.outOfRange, false, 'handleObjectInteraction dropped the pick as out of range');
+            assert.equal(r.pastRange, true, 'the interaction went on past the range check');
+            assert.equal(labelAt(142, 170, dir), 'A workstation.');
+        } finally { delete window.seating; }
+    });
+}
+
+test('seated, the PC highlight and the tap reach use the same footprint reach as E', () => {
+    seatedAt(sideScene(142, 99));
+    try {
+        const pc = globalThis.__testRooms.r.objects.pc;
+        window.player = standAt(142, 170, 'up');
+        assert.equal(isObjectInInteractionRange(pc), true, 'seated facing it: tap reach');
+        window.player = standAt(142, 170, 'down');
+        assert.equal(isObjectInInteractionRange(pc), false, 'seated facing away: plain reach');
+        delete window.seating;
+        window.player = standAt(142, 170, 'up');
+        assert.equal(isObjectInInteractionRange(pc), false, 'standing: plain reach');
+    } finally { delete window.seating; }
+});
+
+test('seated, mug > NPC > PC: an NPC aimed between the mug and the PC beats the PC; a worse-aimed one does not', () => {
+    const chair = obj('chair', 130, 150, 24, 27, { scenarioData: { id: 'chair', observations: 'A hospital chair.' } });
+    const mug = obj('mug', 140, 140, 6, 6, { scenarioData: { id: 'mug', observations: 'A mug.' } });        // about 2 degrees off
+    const pc = obj('pc', 150, 99, 24, 27, { scenarioData: { id: 'pc', type: 'pc', observations: 'A workstation.' } });  // about 19 degrees off
+    setRoom(chair, mug, pc);
+    const room = globalThis.__testRooms.r;
+    const npc = (x, y) => ({ x, y, active: true, visible: true, _isNPC: true, npcId: 'n1', scenarioData: undefined });
+    seatedAt(chair);
+    try {
+        window.npcManager = { getNPC: () => ({ observations: 'A colleague.' }) };
+        room.npcSprites = [npc(146, 120)];          // about 12 degrees off: between the mug and the PC
+        assert.equal(labelAt(142, 170, 'up'), 'A colleague.', 'the NPC is better aimed than the PC although the mug scored best');
+        room.npcSprites = [npc(165, 125)];          // about 59 degrees off
+        assert.equal(labelAt(142, 170, 'up'), 'A workstation.', 'a worse-aimed NPC does not');
+        assert.equal(pressESeated(142, 170, 'up').id, 'pc');
+        delete room.npcSprites;
+        assert.equal(labelAt(142, 170, 'up'), 'A workstation.', 'no NPC: the PC beats the mug');
+    } finally { delete window.seating; delete window.npcManager; delete room.npcSprites; }
+});
+
+test('reachYSeated: a PC outside the front cone (player facing right, PC straight above) gains no footprint reach', () => {
+    const pc = pcSprite({ x: 130, y: 60 });
+    const p = { x: 130, y: 139, direction: 'right' };
+    assert.equal(reachYSeated(pc, p, {}), reachY(pc, 139));
+});
+
+// ---------------------------------------------------------------------------
+// interaction-reach.js directly
+// ---------------------------------------------------------------------------
+const pcSprite = (extra = {}) => ({ x: 100, y: 99, displayWidth: 24, displayHeight: 27, originX: 0, originY: 0, scenarioData: { id: 'pc', type: 'pc' }, ...extra });
+
+test('reachYSeated: unseated is plain reachY', () => {
+    const pc = pcSprite();
+    assert.equal(reachYSeated(pc, { x: 112, y: 139, direction: 'up' }, null), reachY(pc, 139));
+    assert.equal(reachYSeated(pc, { x: 112, y: 139, direction: 'up' }, undefined), reachY(pc, 139));
+});
+
+test('reachYSeated: seated, facing the PC, the player y is clamped into its vertical span', () => {
+    const pc = pcSprite();
+    const chair = {};
+    assert.equal(reachYSeated(pc, { x: 112, y: 139, direction: 'up' }, chair), 126, 'below it: the bottom edge');
+    assert.equal(reachYSeated(pc, { x: 112, y: 110, direction: 'up' }, chair), 110, 'level with it: unchanged');
+    assert.equal(reachYSeated(pc, { x: 112, y: 60, direction: 'down' }, chair), 99, 'above it: the top edge');
+});
+
+test('reachYSeated: seated, a rotated PC, a non-finite y, a non-PC or a PC behind the player keep plain reachY', () => {
+    const chair = {};
+    const up = { x: 112, y: 139, direction: 'up' };
+    assert.equal(reachYSeated(pcSprite({ rotation: 0.5 }), up, chair), reachY(pcSprite({ rotation: 0.5 }), 139));
+    assert.equal(reachYSeated(pcSprite(), { x: 112, y: NaN, direction: 'up' }, chair), reachY(pcSprite(), NaN));
+    const mug = pcSprite({ scenarioData: { id: 'm', type: 'mug' } });
+    assert.equal(reachYSeated(mug, up, chair), reachY(mug, 139));
+    assert.equal(reachYSeated(pcSprite(), { x: 112, y: 139, direction: 'down' }, chair), reachY(pcSprite(), 139), 'behind the player');
+});
+
+test('reachYSeated: a short and a tall PC both clamp to their own span', () => {
+    const chair = {};
+    const short = pcSprite({ displayHeight: 10 });
+    const tall = pcSprite({ displayHeight: 40 });
+    assert.equal(reachYSeated(short, { x: 112, y: 139, direction: 'up' }, chair), 109);
+    assert.equal(reachYSeated(tall, { x: 112, y: 139, direction: 'up' }, chair), 139);
+});
+
+test('isSeatedDeskPc: seated only, PC types only, inside the cone and exactly at its edge', () => {
+    const pc = pcSprite();
+    const seat = {};
+    assert.equal(isSeatedDeskPc(null, pc, 0), false, 'unseated');
+    assert.equal(isSeatedDeskPc(seat, pc, 0), true);
+    assert.equal(isSeatedDeskPc(seat, pc, SEATED_PC_FRONT_DEG), true, 'exactly at the cone edge');
+    assert.equal(isSeatedDeskPc(seat, pc, SEATED_PC_FRONT_DEG + 0.01), false, 'just past it');
+    assert.equal(isSeatedDeskPc(seat, pc, NaN), false);
+    assert.equal(isSeatedDeskPc(seat, pcSprite({ scenarioData: { id: 'k', type: 'kiosk' } }), 0), false);
+});
+
+test('isDeskComputer: trailing digits are ignored and the terminal types count; kiosk, tablet and monitors do not', () => {
+    const t = (type) => isDeskComputer(pcSprite({ scenarioData: { id: 'x', type } }));
+    for (const ok of ['pc', 'pc3', 'pc10', 'laptop', 'laptop1', 'workstation', 'mail_terminal', 'log_filter_terminal', 'drug_library_terminal']) assert.equal(t(ok), true, ok);
+    for (const no of ['kiosk', 'tablet', 'security_monitor', 'phone', 'server']) assert.equal(t(no), false, no);
+    assert.equal(isDeskComputer(pcSprite({ _isNPC: true })), false);
+    assert.equal(isDeskComputer(pcSprite({ doorProperties: {} })), false);
+});
+
+test('seatedPcWins: the PC loses only to a better-aimed NPC', () => {
+    assert.equal(seatedPcWins(5000, Infinity), true, 'no NPC');
+    assert.equal(seatedPcWins(5000, 4000), false, 'a better-aimed NPC');
+    assert.equal(seatedPcWins(5000, 6000), true, 'a worse-aimed NPC');
+    assert.equal(seatedPcWins(Infinity, Infinity), false, 'no PC');
 });
