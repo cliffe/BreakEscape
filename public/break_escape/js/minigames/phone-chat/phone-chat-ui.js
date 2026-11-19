@@ -1430,10 +1430,16 @@ export default class PhoneChatUI {
             // Reduced motion: lines appear whole (no character-by-character typing)
             if (this._instantType || prefersReducedMotion()) { finish(); return; }
 
+            // Timers run late (nested timeouts, a busy frame), so type by elapsed time: the line
+            // takes chars x CHAR_DELAY however late each tick is, and the batch keeps its budget
+            const startedAt = Date.now();
             const tick = () => {
                 if (cancelled) return;
                 if (i < chars.length) {
-                    messageText.textContent += chars[i++];
+                    const due = Math.max(i + 1, Math.floor((Date.now() - startedAt) / CHAR_DELAY));
+                    const upTo = Math.min(chars.length, due);
+                    messageText.textContent += chars.slice(i, upTo).join('');
+                    i = upTo;
                     if (scrollToBottom) this.scrollToBottom(false);
                     setTimeout(tick, CHAR_DELAY);
                 } else {

@@ -332,6 +332,10 @@ test('p1b: pauses shrink so a whole batch (typing plus pauses) is about 15 s at 
     assert.ok(/_scaledPause\(TYPING_DELAY_MS\)/.test(mgSrc) && /_scaledPause\(INTER_MESSAGE_MS\)/.test(mgSrc), 'the minigame scales both pauses');
 });
 
+test('p1c: the typewriter types by elapsed time, so late timers do not stretch a line', () => {
+    assert.ok(/Math\.floor\(\(Date\.now\(\) - startedAt\) \/ CHAR_DELAY\)/.test(uiSrc), 'ticks catch up to elapsed time');
+});
+
 test('p2: the terminal hint says the reply options follow', () => {
     document.body.innerHTML = '<div id="host"></div>';
     const ui = Object.create(UI.prototype);
