@@ -1,0 +1,13 @@
+{
+  "key": "21ce0de28fa03ef055a8038f6be47597",
+  "npc": "kit_gwen_pritchard",
+  "text": "Heard you've been through the inbox. Some real traps in there lately.",
+  "voice": "Sulafat",
+  "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:53:19Z"
+}
