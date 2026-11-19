@@ -1,3 +1,9 @@
+// Camila Ospina, the ca12 visitor (set-piece NPC, hidden at boot).
+// kit_ca12_door_choice is a synced global: the set piece's mappings and Lorna's recap read it.
+// She has no after-defend stub: by the time kit_defend_done is true in ca12 (kit_ep == "ca12")
+// she has left the studio and is hidden, so no learner can click her.
+VAR kit_defend_done = false
+VAR kit_ep = ""
 VAR kit_ca12_visitor_there = false
 VAR kit_ca12_door_choice = ""
 
