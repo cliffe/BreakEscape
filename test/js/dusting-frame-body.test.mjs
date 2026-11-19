@@ -71,6 +71,7 @@ test('the root is a flex column that does not scroll; the body is the scroll reg
     assert.match(body, /min-height: 0/);
     assert.match(body, /flex: 1 1 auto/);
     assert.match(body, /padding: 6px; margin: -6px/, 'ring room, cancelled so the outer size does not change');
+    assert.match(body, /scroll-padding: 6px/, 'a control scrolled into view stays clear of the edge, so its ring is not cut');
     assert.match(css, /\.dusting-short \.dusting-body \{ display: contents; \}/);
 });
 

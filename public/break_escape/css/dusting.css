@@ -48,8 +48,9 @@
 
 /* The named scroll region: everything under the steps. In a frame capped to the screen (800x600, phone portrait) it is the only
    part that scrolls. Its 6px padding is cancelled by the -6px margin (the outer size is unchanged) and gives a focus ring (3px
-   at offset 2px) room, because overflow clips at the padding edge; the frame's own padding is 8px or more. Short landscape lays the frame out as a grid and scrolls its own columns, so the body drops out of the box tree there. */
-.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px; margin: -6px; }
+   at offset 2px) room, because overflow clips at the padding edge; scroll-padding keeps a control scrolled into view 6px clear of the
+   edge for the same reason. The frame's own padding is 8px or more. Short landscape lays the frame out as a grid and scrolls its own columns, so the body drops out of the box tree there. */
+.dusting-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 6px; margin: -6px; scroll-padding: 6px; }
 .dusting-short .dusting-body { display: contents; }
 
 /* padding-right keeps the title clear of the X in the frame's corner (critique A14) */
