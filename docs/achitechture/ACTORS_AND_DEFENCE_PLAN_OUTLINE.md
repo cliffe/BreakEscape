@@ -65,6 +65,21 @@ shape is the first thing for this plan to decide.
 - **Test:** `test_ops_defend`: a fixed seed reaches a known host with default settings and fails
   once one named control is on. Size L overall.
 
+### Unsettled ideas handed over from the ops layer (user, 2026-11-19)
+
+Not yet designed. The ops layer only logs these actions (its log rows plan, S9) and nothing
+reacts to them.
+
+- **Staff and defenders react to what the player does** (ops picks SHARED-1): collecting a
+  cached sign-in or using admin rights risks detection; a careful account owner reacts to
+  repeated approval prompts on their phone; an owner reacts after the helpdesk resets their
+  account.
+- **A cost for the scan, check, confirm and use loop** (ops pick CORE-4): in the ops layer,
+  confirming a finding and trying a technique card are free but logged. A later version could add
+  evidence that settles a finding quietly, a noise count per network, a noisy "probe" for a
+  confirm without evidence, and an alert flag at a network's limit that the scenario acts on.
+  This fits with S12's defender console and the rival.
+
 ## Open questions
 
 1. Where the rival NPC's planner runs. On the server is authoritative and ready for multiplayer;
