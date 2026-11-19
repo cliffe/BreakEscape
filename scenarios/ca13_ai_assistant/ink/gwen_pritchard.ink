@@ -88,8 +88,8 @@ Gwen Pritchard: That's the demo over. It really was me, but someone with a copy 
 - "left": Gwen Pritchard: You left and checked another way. That's right, even when it turns out to be me.
 - "asked": Gwen Pritchard: Asking is good, but a faker has an answer ready, as I did. Ringing back is the check that holds.
 }
-Gwen Pritchard: Same face, same voice, on our own meeting tool. None of that proved who was asking.
-Gwen Pritchard: When a call wants a code, money or data, pause. End it, ring back on a number you already hold, or ask someone. Then report it.
+Gwen Pritchard: And that was on our own meeting tool. None of it proved who was asking.
+Gwen Pritchard: When a call wants a code, money or data, end it. Ring back on a number you already hold, or ask someone, then report it.
 + [Understood.]
     Gwen Pritchard: You don't need to spot a deepfake. You need to check another way.
     ~ hub_quiet = true

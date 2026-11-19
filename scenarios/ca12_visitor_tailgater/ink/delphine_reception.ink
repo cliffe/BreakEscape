@@ -77,7 +77,7 @@ Delphine Arvanitis: Morning. Can I help you?
 }
 { band == 1:
     { named_recipient:
-        Delphine Arvanitis: Let's slow down a moment. I'd like to check that against today's list first.
+        Delphine Arvanitis: Hold on a moment. I'd like to check that against today's list first.
     - else:
         Delphine Arvanitis: Let's slow down a moment. I still need to know who it's for.
     }

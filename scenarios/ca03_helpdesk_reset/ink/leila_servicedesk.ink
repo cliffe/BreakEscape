@@ -97,7 +97,7 @@ IT service desk, Leila speaking. How can I help?
 - said == "skip_verification":
     I can't skip those, I'm afraid. They protect your account.
 - else:
-    Right, bear with me a second.
+    Right, one moment.
 }
 -> desk
 
