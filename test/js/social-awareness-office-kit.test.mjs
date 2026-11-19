@@ -220,3 +220,28 @@ test('kit data: Brightwell pool lines and ambient ids are well formed', () => {
     for (const p of r.ambient) assert.ok(p in kit.staff, `${r.id}: ${p}`);
   }
 });
+
+test('ca01 twin: has the conceptPanel but no kit, chain, step-away or timer, and nothing fires', () => {
+  const twin = readFileSync(join(scenarios, 'ca01_invoice_fraud_defend/scenario.json.erb'), 'utf8');
+  const sc = JSON.parse(twin);
+  const cp = sc.social.awarenessEpisode.strings.conceptPanel;
+  assert.ok(typeof cp === 'object' && cp.heading === 'If one gets through');
+  assert.ok(!twin.includes('kit_'));
+  assert.ok(!/patrolOverride|stepAway|"needs"|npc_arrived|"timer"/i.test(twin));
+  assert.ok(sc.social.awarenessEpisode.stepAway !== true);
+  const allMaps = [];
+  const walk = (o) => {
+    if (Array.isArray(o)) o.forEach(walk);
+    else if (o && typeof o === 'object') {
+      if (Array.isArray(o.eventMappings)) allMaps.push(...o.eventMappings);
+      Object.values(o).forEach(walk);
+    }
+  };
+  walk(sc);
+  assert.ok(allMaps.every((m) => !JSON.stringify(m).includes('kit_')));
+  assert.ok(allMaps.every((m) => !m.timer && !m.delayMs && !m.needs));
+  // the four check shells never gain a conceptPanel
+  for (const n of pinnedShells().filter((x) => /^ca_(pre|post)_/.test(x))) {
+    assert.ok(!readFileSync(join(scenarios, n, 'scenario.json.erb'), 'utf8').includes('conceptPanel'), n);
+  }
+});
