@@ -39,8 +39,8 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 **14:18 London: the 5-hour usage limit (resets 15:10) failed all four running agents below
 (core R6 review, privilege R7 fixer, lock R8 delta, skin R6 fixes). Nothing was written. After
-15:10 relaunch each with the same brief (or SendMessage to resume). Main checkout is in a stalled
-rebase (AC0, 14:20): work in worktrees only.**
+15:10 relaunch each with the same brief (or SendMessage to resume). AC0 aborted the stalled
+main-checkout rebase (main clean at 4b5f65edd).**
 
 The user answered the 41-question picks page on 2026-11-19; rulings in
 `docs/agents/ops_layer/USER_PICKS_2026-11-19.md`. Plans revised to them, then reviewed again.
