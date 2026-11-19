@@ -2258,7 +2258,7 @@ export function tryInteractWithNearest() {
         default:           facingAngle = 90;  break;
     }
 
-    // The angle is taken from (fromX, fromY): the player's centre by default, the feet for a scenario object
+    // The angle is taken from (fromX, fromY): the player's centre by default (NPCs); scenario objects are scored by aimDiff
     function angularDiff(objX, objY, fromX = px, fromY = py) {
         let angle = Math.atan2(objY - fromY, objX - fromX) * 180 / Math.PI;
         angle = (angle + 360) % 360;
