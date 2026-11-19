@@ -93,7 +93,7 @@ function makeValueNoise(rng, cells) {
  */
 export const WHORL_SHAPES = [
     { cores: [[-0.06, 0.46], [0.06, 0.52]], deltas: [[-0.18, 0.74], [0.18, 0.74]] },
-    { cores: [[-0.06, 0.52], [0.06, 0.46]], deltas: [[-0.18, 0.74], [0.18, 0.74]] },
+    { cores: [[-0.06, 0.54], [0.06, 0.44]], deltas: [[-0.14, 0.68], [0.22, 0.80]] },
     { cores: [[-0.11, 0.47], [0.11, 0.51]], deltas: [[-0.25, 0.69], [0.25, 0.69]] },
     { cores: [[-0.03, 0.43], [0.03, 0.55]], deltas: [[-0.12, 0.79], [0.12, 0.79]] }
 ];
@@ -104,7 +104,7 @@ export function whorlShapeFor(owner) {
 }
 
 /** Singular points (canonical frame, pixels) for a pattern. */
-function singularPoints(pattern, size, rng, whorlShape = 0) {
+export function singularPoints(pattern, size, rng, whorlShape = 0) {
     const N = size;
     const j = () => (rng() - 0.5) * 0.05 * N;
     if (pattern === 'loop') {

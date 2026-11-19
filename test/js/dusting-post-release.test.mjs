@@ -22,7 +22,7 @@ const imp = rel => import(pathToFileURL(join(root, 'js/minigames/dusting', rel))
 const gen = await imp('fingerprint-generator.js');
 const model = await imp('dusting-model.js');
 const { DustingMinigame, decoyWhorlShape } = await imp('dusting-game.js');
-const { WHORL_SHAPES, whorlShapeFor, generatePrint } = gen;
+const { WHORL_SHAPES, whorlShapeFor, generatePrint, singularPoints } = gen;
 const { DIFFICULTY, SURFACES, DustField, TOOLS, brushFeel, findSheen, findGlint, findFloorScale } = model;
 
 // ---------------------------------------------------------------- item 1
@@ -34,6 +34,30 @@ test('item 1: the four whorl layouts differ pairwise by at least 5 px (at 128) i
         for (const key of ['cores', 'deltas']) A[key].forEach((p, i) => { max = Math.max(max, Math.abs(p[0] - B[key][i][0]) * 128, Math.abs(p[1] - B[key][i][1]) * 128); });
         assert.ok(max >= 5, `layouts ${a} and ${b} differ by ${max.toFixed(1)} px`);
     }
+});
+
+test('m4: after jitter, any two different layouts keep a largest-point gap of at least 5 px over many seeds (easy and medium lift-vs-decoy)', () => {
+    // the same singular points generatePrint uses (same seed), so thousands of seeds stay cheap
+    const sp = (owner, shape) => { const r = singularPoints('whorl', 128, gen.mulberry32(gen.hashString(`${owner}|whorl`)), shape); return [...r.cores, ...r.deltas]; };
+    const probe = generatePrint({ owner: 'Seed 7', pattern: 'whorl', whorlShape: 2 }), want = sp('Seed 7', 2);
+    assert.ok([...probe.canonical.cores, ...probe.canonical.deltas].every((p, i) => p.x === want[i].x && p.y === want[i].y), 'helper matches generatePrint');
+    const gap = (A, B) => Math.max(...A.map((p, i) => Math.hypot(p.x - B[i].x, p.y - B[i].y)));
+    let worst = Infinity, worstPair = '';
+    for (let a = 0; a < WHORL_SHAPES.length; a++) for (let b = 0; b < WHORL_SHAPES.length; b++) {
+        if (a === b) continue;   // easy and medium decoys never share the lift layout
+        for (let i = 0; i < 3000; i++) {
+            const g = gap(sp('Lift ' + i, a), sp('Decoy ' + i, b));
+            if (g < worst) { worst = g; worstPair = `${a}/${b} seed ${i}`; }
+        }
+    }
+    assert.ok(worst >= 5, `closest jittered pair ${worst.toFixed(2)} px (${worstPair})`);
+});
+
+test('m4: the real m09 pair, Sorensen against Tran, differs by at least 8 px after jitter', () => {
+    const pts = pr => [...pr.canonical.cores, ...pr.canonical.deltas];
+    const A = pts(generatePrint({ owner: 'Margaret Sorensen', pattern: 'whorl', variant: 'panel' })), B = pts(generatePrint({ owner: 'Jesse Tran', pattern: 'whorl' }));
+    let m = 0; A.forEach((p, i) => { m = Math.max(m, Math.hypot(p.x - B[i].x, p.y - B[i].y)); });
+    assert.ok(m >= 8, `Sorensen vs Tran ${m.toFixed(1)} px`);
 });
 
 test('item 1: a whorlShape option changes the generated cores and deltas; the owner default is stable', () => {
