@@ -13,7 +13,7 @@
 #     - Break Room (unlocked, clues)
 #     - Conference Room (unlocked, evidence)
 #     - IT Room (PIN 2468, Kevin + lockpicks + keycard)
-#     - Manager's Office (unlocked, safe with Derek's key, briefcase for lockpick)
+#     - Manager's Office (unlocked, briefcase with Derek's key: key lock, lockpick only)
 #     - Maya's Office (unlocked, informant)
 #     - Derek's Office (KEY or LOCKPICK)
 #       └→ Derek's Office connects to Server Room (KEYCARD)
@@ -884,7 +884,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "setGlobal": { "cyberchef_guide_offered": true },
               "sendTimedMessage": {
-                "delay": 1500,
+                "delay": 500,
                 "message": "Those notes are encoded, and now you've got a proper lead. I can upload a CyberChef field guide for Base64 and ROT13 if you want a faster decode workflow."
               }
             },
@@ -939,7 +939,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 1500,
+                "delay": 4500,
                 "message": "That text is encoded. Ends in `=` or `==`, only letters, numbers, `+` and `/`? Base64. Readable word lengths but scrambled letters? Probably ROT13. Try the CyberChef workstation."
               }
             },
@@ -1002,7 +1002,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "submit_ssh_flag",
               "unlockAim": "decrypt_entropy_intel",
               "sendTimedMessage": {
-                "delay": 3000,
+                "delay": 6000,
                 "message": "ENTROPY archive decryption key confirmed. 🦎 The archive is unlocked. Open it in the server room and pull the intelligence inside."
               }
             },
@@ -1087,7 +1087,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true && globalVars.linux_flag_submitted && globalVars.sudo_flag_submitted && !globalVars.derek_confronted",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 3000,
+                "delay": 10000,
                 "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek in the break room, west of the main office."
               }
             },
@@ -1096,7 +1096,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.sudo_flag_submitted && !globalVars.derek_confronted",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 3000,
+                "delay": 5500,
                 "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek in the break room, west of the main office."
               }
             },
@@ -1105,7 +1105,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.linux_flag_submitted && !globalVars.derek_confronted",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 3000,
+                "delay": 6000,
                 "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek in the break room, west of the main office."
               }
             },
@@ -1114,7 +1114,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true && globalVars.linux_flag_submitted && globalVars.sudo_flag_submitted && globalVars.derek_confronted === true",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 3000,
+                "delay": 10000,
                 "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
               }
             },
@@ -1123,7 +1123,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.sudo_flag_submitted && globalVars.derek_confronted === true",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 3000,
+                "delay": 5500,
                 "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
               }
             },
@@ -1132,7 +1132,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true && globalVars.ssh_flag_submitted && globalVars.linux_flag_submitted && globalVars.derek_confronted === true",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 3000,
+                "delay": 6000,
                 "message": "All technical evidence secured. Derek is already contained. 🦎 Call me when you're ready for debrief."
               }
             },
