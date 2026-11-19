@@ -78,7 +78,15 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   core owns names; the skin switch shows only on `ops: true` networks; sign-in order is password,
   PC admission (account kind), second step, session write; a technique session meets no second
   step, a recovered or collected password does; a policy's kind is public, its answers are not.
-- User decisions pending: how the cracking revision proceeds; forged intel facts (cracking B2);
+- 11:02. Cross-plan R1 (`de81d644f`): 2 blockers, 12 majors, 13 minors; 42 requests, 26 unmet,
+  rulings A to K in `reviews/CROSS_PLAN_R1.md` lines 99-179; merged question list at line 611
+  (37 for the user). Sent to the four running revisers by message. Where I differ from that file:
+  the log helper fits the sibling plans (not the reverse) and ids may appear in a row if nothing
+  unearned is revealed; cracking writes no rows (offline work; the row belongs to the action that
+  obtained the hash); the skin's control list is view-local on core's `ops-model.js`, build order
+  unchanged, with a confirm question to the user. Still to apply in round 2: rulings touching CORE
+  (B, D, E, G's item-id request) and CRACKING (E, F, named state keys, `crackRuns` server-owned).
+- User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
 - 10:50. Cross-plan R1 review running (Fable), findings to `reviews/CROSS_PLAN_R1.md`: request
