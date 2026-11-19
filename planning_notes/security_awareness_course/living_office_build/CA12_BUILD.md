@@ -450,7 +450,7 @@ V12 then waits 5 s before walking her out, so she stands just inside the open st
   "onceOnly": true, "bark": "<A7>" }
 ```
 
-Keyed on `kit_ca12_done` with the reception answer, it plays after Camila has left the studio, not at the click. Delphine is in the lobby, so the tool never owns or rewrites this mapping (`strip_kit` and `kit_owned` read only `rooms.training_room`, `OK:395-400`, `:523-530`), and the conformance walk does not see it (T:248-253). That is acceptable because the line is decoration in another room: no step of the chain waits on it, the bark cap counts only studio staff, and H1's reception recap does not depend on it being heard (it reads as Lorna's account of what happened downstairs). A7 plays only once the lobby room has been loaded (the player has been in or beside it): room NPCs register their mappings when their room is created (`core/rooms.js:1027`, `npc-lazy-loader.js:37-110`), and the studio-only route never creates the lobby. With the player in the studio the line arrives as a toast (`npc-barks.js:26-29`). Best-effort, accepted; it can also be lost after a reload that leaves the lobby unloaded. The builder re-checks after each `--kit` run that the mapping is still there (proof 9).
+Keyed on `kit_ca12_done` with the reception answer, it plays after Camila has left the studio, not at the click. Delphine is in the lobby, so the tool never owns or rewrites this mapping (`strip_kit` and `kit_owned` read only `rooms.training_room`, `OK:395-400`, `:523-530`), and the conformance walk does not see it (T:248-253). That is acceptable because the line is decoration in another room: no step of the chain waits on it, the bark cap counts only studio staff, and H1's reception recap does not depend on it being heard (it reads as Lorna's account of what happened downstairs). A7 plays only once the lobby room has been loaded (the player has been in or beside it): room NPCs register their mappings when their room is created (`core/rooms.js:1027`, `npc-lazy-loader.js:37-110`), and the studio-only route never creates the lobby. Live, with the lobby loaded and the player back in the studio, it still showed as a speech bark (game 10586); `npc-barks.js:26-29` would turn it into a toast only when the bubble cannot be drawn. Best-effort, accepted; it can also be lost after a reload that leaves the lobby unloaded. The builder re-checks after each `--kit` run that the mapping is still there (proof 9).
 
 ### 2.6 The two request knots
 
@@ -480,12 +480,12 @@ The host recap needs a different gate in each build, so each build's shell has i
 
 ### 2.8 Route end states
 
-What the room and Lorna end on, route by route. Every route ends with `kit_ca12_done` set and nobody left on the floor.
+What the room and Lorna end on, route by route. Every Look up route ends with `kit_ca12_done` set and nobody left on the floor. Carry on never sets `kit_ca12_out`, so it never sets `done` either; Lorna's gate accepts `not kit_ca12_out` instead. Closing the debrief raises the course's own "finished" success screen on every route (the shipped ending, as in ca01); its close button returns the learner to the room, and a chain still running carries on under it.
 
 | Route | End state |
 |---|---|
 | Carry on | No chain; visitor hidden all game; Thandiwe at her desk; Lorna: H1a (if caught) + H2, no visitor named |
-| Look up, screen mention, door reception | PC locks while the screen knot is open; after A5 closes, V7 walks Camila to the door (0.5 s); V8 hides her, sets done; A7 in the lobby once it has loaded (a toast if the player is elsewhere); Julian resumes; H1a, H1b reception, H2 |
+| Look up, screen mention, door reception | PC locks while the screen knot is open; after A5 closes, V7 walks Camila to the door (0.5 s); V8 hides her, sets done; A7 in the lobby once it has loaded; Julian resumes; H1a, H1b reception, H2 |
 | Look up, any screen, door let in, Lorna first | Lorna waits beside the desks (`host_there`); Camila arrives, V9b sets `at_desks`; V10b and H-c2 send both off 1 s later; V11 hides Camila at the door; Lorna back at post; done; H1b let-in branch by screen answer |
 | Look up, any screen, door let in, Camila first | Camila waits at the desks (`at_desks`); Lorna arrives (`host_there`); V10a and H-c1 send both off 1 s later; then as above |
 | Look up, any screen, door say nothing (picked) | A8 in the knot; V12 walks her out 5 s after the write (waiting for the close); V13 hides her; done; H1b silent |
@@ -583,7 +583,7 @@ Gate C runs on a keyless server from the worktree, fresh games made in the run w
 
 | Screen | Door | Pass |
 |---|---|---|
-| mention | reception | PC locks in the knot; Camila to the door, hidden; A7 in the lobby (visit the lobby first so its mappings are registered; a toast otherwise); done; Julian resumes |
+| mention | reception | PC locks in the knot; Camila to the door, hidden; A7 in the lobby (visit the lobby first so its mappings are registered); done; Julian resumes |
 | silent | letin (Lorna first, the usual order) | Camila walks to the desks after A6 closes and stays visible there; Lorna waits beside the desks; both leave 1 s after Camila arrives; Camila hidden at the door, never at the desks; Lorna ends within 1 tile of her post tile `{5.5, 3.8}`; done |
 | mention | letin (Camila first: hold Lorna's walk, or start Lorna farther off) | Camila waits at the desks; both leave 1 s after Lorna arrives; Camila hidden at the door; Lorna ends within 1 tile of her post tile `{5.5, 3.8}`; done |
 | never opened | never opened | screen tail at 20 s starts the visitor; door tail at 20 s; she stands 5 s more, leaves, hidden; done |
