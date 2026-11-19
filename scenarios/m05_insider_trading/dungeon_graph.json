@@ -16,13 +16,13 @@
     },
     {
       "id": "door_server_room",
-      "label": "Server Room — Password Access. Contact IT.<br/>Password lock",
+      "label": "Server Room: Password Access. Contact IT.<br/>Password lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "server_room",
-      "label": "Server Room — Password Access. Contact IT.",
+      "label": "Server Room: Password Access. Contact IT.",
       "kind": "room",
       "optional": false
     },
@@ -40,13 +40,13 @@
     },
     {
       "id": "door_data_center",
-      "label": "Key Vault — Fingerprint Access. Heisenberg Leads Only.<br/>Biometric lock",
+      "label": "Key Vault: Fingerprint Access. Heisenberg Leads Only.<br/>Biometric lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "data_center",
-      "label": "Key Vault — Fingerprint Access. Heisenberg Leads Only.",
+      "label": "Key Vault: Fingerprint Access. Heisenberg Leads Only.",
       "kind": "room",
       "optional": false
     },
