@@ -247,7 +247,7 @@ function openWithX() {
     return scene;
 }
 
-test('R1 M1: at phone width a tap about 30 minutes either side of the cliff still marks it; far taps do not', () => {
+test('R1 M1: at phone width a tap about 30 minutes late (or a few minutes early) still marks it; far taps do not', () => {
     const scene = open();
     setWidth(scene, 350);   // the 390px phone: about 0.4px a minute over 12 hours
     hitAt(scene, '23:42:00').fire('click');
@@ -255,7 +255,11 @@ test('R1 M1: at phone width a tap about 30 minutes either side of the cliff stil
     const scene2 = open();
     setWidth(scene2, 350);
     hitAt(scene2, '22:42:00').fire('click');
-    assert.equal(scene2._annotateUnlocked, true, '30 minutes early is accepted');
+    assert.equal(scene2._annotateUnlocked, false, '30 minutes early is 12px: past the 4px early radius (R2 m2)');
+    const scene2b = open();
+    setWidth(scene2b, 350);
+    hitAt(scene2b, '23:05:00').fire('click');
+    assert.equal(scene2b._annotateUnlocked, true, '7 minutes early is under 3px: accepted');
     const scene3 = open();
     setWidth(scene3, 350);
     hitAt(scene3, '01:00:00').fire('click');
@@ -293,20 +297,39 @@ test('R1 M3: moving the keyboard cursor tells a screen reader the time and value
     assert.match(sr.textContent, /^2026-03-20 19:32:00\./);
 });
 
-test('R1 M4: the question has an X and no [CANCEL]; the scene X stays; the confirm keeps [CANCEL] and hides the scene X', () => {
+test('R2 M1: one X. The report has none; the scene X closes the report and keeps the mark; the confirm hides it', () => {
     const scene = openWithX();
+    let completed = 0;
+    scene.complete = () => { completed++; };
     hitAt(scene, '23:12:07').fire('click');
     annotateBtn().fire('click');
     assert.equal(fakeDoc.querySelector('.sh-modal-cancel-btn'), null, 'no lone [CANCEL] on the question');
-    assert.ok(fakeDoc.querySelector('.sh-modal-close'), 'the report has an X');
+    assert.equal(fakeDoc.querySelector('.sh-modal-close'), null, 'no second X in the report');
     assert.notEqual(sceneX().style.visibility, 'hidden', 'the scene X stays');
-    fakeDoc.querySelector('.sh-modal-close').fire('click');
-    assert.equal(fakeDoc.querySelector('.sh-modal'), null, 'X closes the report');
+    scene.closeByPlayer();
+    assert.equal(fakeDoc.querySelector('.sh-modal'), null, 'the scene X closes the report');
+    assert.equal(completed, 0, 'the viewer stays open');
+    assert.equal(scene._annotateUnlocked, true);
+    assert.ok(scene._markTs !== null, 'the mark is kept');
+    scene.closeByPlayer();
+    assert.equal(completed, 1, 'with no report open the scene X closes the viewer');
+    assert.equal(scene.closedByPlayer, true);
+    const scene2 = openWithX();
+    hitAt(scene2, '23:12:07').fire('click');
     annotateBtn().fire('click');
     fakeDoc.querySelector('.sh-choice-btn[data-choice="written"]').fire('click');
     assert.ok(fakeDoc.querySelector('.sh-modal-cancel-btn'), 'the confirm keeps its named cancel');
-    assert.equal(fakeDoc.querySelector('.sh-modal-close'), null);
     assert.equal(sceneX().style.visibility, 'hidden', 'the scene X hides on the confirm');
+});
+
+test('R2 m3: the already-confirmed key comes from the completion actions, not a hard-coded name', () => {
+    globalThis.gameState = { globalVariables: { some_other_key: true } };
+    try { assert.equal(open()._revealed, false, 'an unrelated global does nothing'); } finally { delete globalThis.gameState; }
+    const saved = SD.completionActions;
+    SD.completionActions = [{ type: 'set_global', key: 'custom_done', value: true }];
+    globalThis.gameState = { globalVariables: { custom_done: true } };
+    try { assert.equal(open()._revealed, true, 'the scenario key is read'); }
+    finally { delete globalThis.gameState; SD.completionActions = saved; }
 });
 
 test('R1 m5: reopening after the finding was confirmed starts revealed with ANNOTATE unlocked', () => {
@@ -349,7 +372,7 @@ test('R1 m7: closing the report returns focus to ANNOTATE (or the chart before a
     assert.equal(fakeDoc.activeElement, annotateBtn());
     annotateBtn().fire('click');
     assert.ok(fakeDoc.querySelector('.sh-modal'), 'reopens after Esc');
-    fakeDoc.querySelector('.sh-modal-close').fire('click');
+    scene.closeByPlayer();
     assert.equal(fakeDoc.activeElement, annotateBtn());
 });
 
@@ -412,4 +435,13 @@ test('R1 live minor: the report grows the chart column on a phone; the 23:06 too
     const after = hits();
     assert.ok(before.length === after.length && before.every((h, i) => h === after[i]),
         'the hit targets are the same nodes: no new target slides under a resting mouse and fires mouseenter');
+});
+
+test('R2 m1: the chart SVG is out of the flow, so a redraw while the report is open cannot hold the column tall', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/scada-historian-minigame.css'), 'utf8');
+    const rule = css.match(/\.sh-chart-area svg\s*\{([^}]*)\}/);
+    assert.ok(rule, 'the svg rule exists');
+    assert.match(rule[1], /position:\s*absolute/);
+    assert.match(rule[1], /inset:\s*0/);
+    assert.doesNotMatch(css, /\.sh-modal-close/, 'no report X styles left');
 });

@@ -159,7 +159,7 @@
     min-height: 300px;
     overflow: hidden;
 }
-.sh-chart-area svg { display: block; }
+.sh-chart-area svg { display: block; position: absolute; inset: 0; }
 .sh-dzdt-panel {
     height: 120px;
     min-height: 120px;
@@ -319,21 +319,6 @@
 }
 .sh-choice-btn:hover, .sh-choice-btn:focus-visible { background: #223355; color: #ffffff; border-color: #f5a623; outline: none; }
 .sh-choice-btn.wrong { color: #a8b4cc; border-color: #556070; }
-/* Report X (the question has no named Cancel) */
-.sh-modal-title { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.sh-modal-close {
-    flex-shrink: 0;
-    min-width: 36px;
-    min-height: 36px;
-    background: #1a1a2e;
-    border: 2px solid #445566;
-    border-radius: 0;
-    color: #8899bb;
-    font-family: inherit;
-    font-size: 18px;
-    cursor: pointer;
-}
-.sh-modal-close:hover, .sh-modal-close:focus-visible { background: #223355; color: #ffffff; border-color: #f5a623; outline: none; }
 /* Read by screen readers only */
 .sh-sr-only {
     position: absolute;

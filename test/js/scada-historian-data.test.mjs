@@ -181,8 +181,10 @@ test('a mark within MARK_TOUCH_PX of the cliff counts at phone scale; one just o
     // 23:42 is 30 min late: time window says late, pixels say near
     assert.equal(H.judgeMark(at('23:42:00'), anomaly).kind, 'late');
     assert.ok(H.judgeMark(at('23:42:00'), anomaly, { pxPerMs }).ok, 'late but within 14px');
-    // 22:40 is 32 min early: near by pixels
-    assert.ok(H.judgeMark(at('22:40:00'), anomaly, { pxPerMs }).ok, 'early but within 14px');
+    // 22:40 is 32 min early: 12px, but the early radius is 4px (R2 m2)
+    assert.equal(H.judgeMark(at('22:40:00'), anomaly, { pxPerMs }).kind, 'early');
+    assert.ok(H.judgeMark(at('23:05:00'), anomaly, { pxPerMs }).ok, '7 minutes early is within the 2 minute window or 4px');
+    assert.equal(H.MARK_EARLY_PX, 4);
     // 00:00 is 48 min late: 18px, outside
     assert.equal(H.judgeMark(at('00:00:00'), anomaly, { pxPerMs }).kind, 'late');
     assert.equal(H.judgeMark(at('21:00:00'), anomaly, { pxPerMs }).kind, 'early');

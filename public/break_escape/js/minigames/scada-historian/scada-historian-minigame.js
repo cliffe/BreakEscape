@@ -88,7 +88,9 @@ export class ScadaHistorianMinigame extends MinigameScene {
         this._plot            = null;  // geometry of the last chart render
         this._completionFired = false;
         // Already confirmed in an earlier visit: start with the finding made (D167 R1 m5)
-        if (window.gameState?.globalVariables?.historian_flatline_found) this._revealed = true;
+        // The key comes from the scenario's completion actions (R2 m3)
+        const doneKey = this._completionActions.find(a => a && a.type === 'set_global' && a.value === true)?.key;
+        if (doneKey && window.gameState?.globalVariables?.[doneKey]) this._revealed = true;
         this._srTimer         = null;  // debounce for the screen-reader reading announcement
         this._progressFired   = new Set();
         this._trendData       = new Map(); // rackId → [{ts, value, dzdt, isInjected, isTransition}]
@@ -856,12 +858,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
         // the written finding and the confirm button come after (D167)
         const asking = !!anomaly && !this._revealed;
         if (asking) {
-            // The question is not a confirm, so it has no named Cancel: X closes it (the scene X stays too)
-            const xBtn = this._el('button', 'sh-modal-close');
-            xBtn.textContent = 'X';
-            xBtn.setAttribute?.('aria-label', 'Close report');
-            xBtn.addEventListener('click', () => this._closeAnnotateModal());
-            title.appendChild(xBtn);
+            // The question is not a confirm, so it has no named Cancel: the one scene X closes it (closeByPlayer)
         }
         if (asking) {
             addRow(rows[0][0], rows[0][1]);
@@ -959,6 +956,12 @@ export class ScadaHistorianMinigame extends MinigameScene {
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // The scene X closes the topmost layer: the report first (the mark is kept), then the viewer
+    closeByPlayer() {
+        if (this._annotateOverlay) { this._closeAnnotateModal(); return; }
+        super.closeByPlayer();
     }
 
     // Esc is Cancel while the report is open; with none open it closes the scene

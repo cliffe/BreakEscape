@@ -36,6 +36,8 @@ export const MARK_LATE_MS  = 10 * 60000;
 // On a phone the 12-hour chart is under half a pixel a minute, so the time window alone is a few
 // pixels wide. A mark within this many CSS pixels of the first falsified reading counts too.
 export const MARK_TOUCH_PX = 14;
+/** Before the cliff the pixel allowance is smaller, so a mark on the rising real trace is not accepted (R2 m2). */
+export const MARK_EARLY_PX = 4;
 
 const ts = (s) => (s ? new Date(s).getTime() : NaN);
 
@@ -200,7 +202,7 @@ export function compareNeutralText(rackCount) {
 /**
  * Judge the reading the player marked as "the moment the data stops behaving like a
  * real sensor". ok: within MARK_EARLY_MS before to MARK_LATE_MS after the first
- * falsified reading, or within MARK_TOUCH_PX of it on screen (opts.pxPerMs, CSS pixels per
+ * falsified reading, or within MARK_EARLY_PX before / MARK_TOUCH_PX after it on screen (opts.pxPerMs, CSS pixels per
  * millisecond of the current chart). opts.rangeStartTs is the left edge of the current time
  * range: a late mark when the cliff is left of it gets the "widen the range" hint, because
  * zooming in would only hide the start. Otherwise a gentle retry hint.
@@ -209,7 +211,8 @@ export function judgeMark(point, anomaly, opts = {}) {
     const reading = `${fmtClock(point.ts)}: ${point.value.toFixed(1)}°C.`;
     if (!anomaly) return { ok: false, kind: 'none', message: `${reading} Nothing here stops behaving like a real sensor.` };
     const start = anomaly.firstInjected.ts;
-    const nearPx = opts.pxPerMs > 0 && Math.abs(point.ts - start) * opts.pxPerMs <= MARK_TOUCH_PX;
+    const radiusPx = point.ts < start ? MARK_EARLY_PX : MARK_TOUCH_PX;
+    const nearPx = opts.pxPerMs > 0 && Math.abs(point.ts - start) * opts.pxPerMs <= radiusPx;
     if (nearPx) {
         return { ok: true, kind: 'ok',
             message: `Marked ${fmtClock(point.ts)}. Now say what the data shows: press [ANNOTATE FINDING] on the left.` };
