@@ -991,9 +991,11 @@ plan. The four state keys of section 8 (`earnedFacts`, `crackRuns`, `crackStarte
 bounded by authoring (at most 64 entries, keys only registry hash ids). None is sent to the
 browser as state, in the bootstrap or in any answer, so none is ever re-sent whole, and a sync that
 carries one is ignored. Section 8 here is their growth table, and section 11 (C2) tests it.
-(`crackFacts` is open: up to 64 ids sent whole in each keyring answer whose `rev` changed, which
-rule 4 of that section 11, "Answers carry what changed", does not allow. Whether it becomes a
-delta of newly earned ids, and how the client keeps the set across answers, is not settled.)
+`crackFacts` is not stored state: it is a read answer built from `earnedFacts`, and it follows the
+keyring's existing pattern for `entries` and `captures` (`credential_keyring.rb`), which the client
+fetches only when `keyring_rev` changes. Rule 4 governs answers to routes that change state; a
+crack or fact grant answers with its own change, and the keyring read stays a whole, rev-gated
+answer, capped by authoring at 64 ids (about 1.5 KB), and it is never written back by a sync.
 
 **Intel and scenario authors.** A recipe fact that today comes only from dialogue, an object
 action, an OSINT page or a mail highlight needs a second, server-visible source: a takeable item
