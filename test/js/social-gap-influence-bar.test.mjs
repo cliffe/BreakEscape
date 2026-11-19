@@ -160,7 +160,7 @@ test('a threshold id with underscores reads in words in the legend', () => {
 test('the legend colon is its own span, so a compact legend can drop it until a threshold is reached', () => {
     setup();
     const b = mount();
-    const li = b.el.querySelector('[data-threshold="weird_one"]');
+    const li = b.el.querySelector('.ib-infl-legend-item[data-threshold="weird_one"]');
     assert.equal(li.querySelector('.ib-infl-legend-name').textContent, 'Weird one at -90');
     assert.equal(li.querySelector('.ib-infl-legend-colon').textContent, ':');
     assert.match(li.textContent.replace(/\s+/g, ' '), /^Weird one at -90: not reached$/);
