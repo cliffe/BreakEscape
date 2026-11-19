@@ -37,7 +37,12 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**Update about 16:00: privilege (R8 settled, 1382 lines, `6976eef98`), lock (R9 settled, 1063,
+**Update evening 2026-11-19: ALL SIX revised plans settled (core R7 fixed, 1948 lines; cross-plan
+R5 fixed `185becfb7`). Two log-plan wording nits left as noted (lock R8 n4, core R7 n4, LOG:607,
+:939, :992). Waiting on the user: round 2 page answers (then apply them, Sonnet delta per touched
+plan) and R2-1 (cracking route). Nothing running.**
+
+**Earlier, about 16:00: privilege (R8 settled, 1382 lines, `6976eef98`), lock (R9 settled, 1063,
 `4ef605036`) and skin (R8 settled, 1121, `7d427911c`) are settled pending round 2 answers. Core:
 R6 0B/3M/7m fixes part 1 at `420319505` (handover `ops_layer/HANDOVER_OPS_CORE_R6_fixer.md`);
 an opus55 part-2 fixer is running (M2 rest, m1 NA:498, m6 log rows in core AND log plan, m7,

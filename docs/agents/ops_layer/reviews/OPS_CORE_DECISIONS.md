@@ -83,3 +83,20 @@ entries below took a different fix from the one suggested.
 - n2: names the item field `technique_card`.
 - n3: key kept as `technique`; section 0 says why (it pairs with `via: "technique"`, and the finding id identifies the use).
 - n4: the S3 live proof closes the desktop by its Close, then unplugs by the real control, then reads `no_session`.
+
+## R7 fixes (2026-11-19)
+
+- m1: ruling: the behaviour change stands; section 10 part 3 lists `pc-sessions.test.mjs:543` (remote kind leaves the displaced loop, new assertion: a remote copy is kept on `npc_sat_at`, no logout, no `pc_signed_out`) and `:568` (inverted: kept, nothing sent) as the two tests that change; the comparison-table note excepts the two NPC rows; the `pc-sessions.js` 12.2 row adds the header (`:81-87`) and docstring (`:737-741`) edits.
+- m2: ruling: one click order, the player's own copy first (remote view for a technique copy, keyboard desktop for any other), no guest session offered until sign-out; a case in `pc-remote-view-click.test.mjs`.
+- m3: ruling: one mark rule, a technique copy with `remoteViewFoothold(pcId)` not null, in the source table, `refresh()` and `syncRoom`; `compromise-marks.test.mjs` case for a dropped foothold followed by `syncRoom`/reload.
+- m4: ruling: `biometrics-minigame.js` gets the same local `restTint(obj)` as `interactions.js` (no import, so no copy-list change, which departs from the review's shared util); added to the shared-files table and a case in `interactions-compromise-tint.test.mjs`.
+- m5: the scan test row now matches section 13: first sweep passes no limit, a repeat passes `save_limit: true`, `host_scanned` once only.
+- m6: `desktop-remote-view.test.mjs` row gains the keyboard-fallback frame and line, the no-link line, and `canSwitch: false` on a blocked host in both minigames; `network_technique_session_test` row adds the needsSession refusal with the device still held.
+- n1: build step 10 names the 403 `not_responding` and every 422.
+- n2: section 10 row names `credentials_declared?` (`NA:1504-1507`) for `from` sessions and both scenarios without `networks` or `credentials`.
+- n3: step 9 gives the new `info` helper in `pretext.rb` and its `ℹ️ INFO: SOCIAL:` format.
+- n4: declined here: the wording sits in the log plan (`LOG:607`, `:939`, `:992`), which another agent edits.
+- n5: beat 17a clicks `desk01` again to open the remote view, then Sign out.
+- n6: the password column of the `needsSession` row reads "only once settled at the keyboard", with `NA:498`.
+- Cross-plan F3 (`CORE:1435`): same edit as m5.
+- Cross-plan F7 (`CORE:1443`): the `network_technique_session_test` row says the device is still held and that the reason is the privilege plan's test.
