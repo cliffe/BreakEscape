@@ -164,13 +164,14 @@ Go south back to the control room.
 
 On HMI-OPS-01, open the **Historian Trend Viewer** (sub-object inside the PC, `type: scada_historian`, `minigameId: scada-historian`). This is an in-game minigame; no external VM.
 
-**What the minigame shows**: temperature trends for Battery Hall 1 Racks A1-A4 from 18:00 Friday to 06:30 Saturday. Normal racks show natural noise (about 0.3-0.5°C around a base near 30°C). Partway through the night, **all four racks go to a perfectly flat line**: zero variance. Find the injection point on the chart itself (the first flat point and the last real reading before it show when you inspect points on Rack A1).
+**What the minigame shows**: temperature trends for Battery Hall 1 Racks A1-A4 from 18:00 Friday to 06:30 Saturday (the window always ends at 06:30, so use 12h or 24h; at 1h, 3h and 6h the 23:12 step is off the chart). Normal racks show natural noise (about 0.3-0.5°C around a base near 30°C). Partway through the night, **all four racks go to a perfectly flat line**: zero variance. The chart draws raw values only: no red injection line, no "anomaly" tooltips, and the viewer does not say where the flat part starts. The player has to find it.
 
 **Controls**:
-- Rack selector tick boxes, time range buttons (6h, 12h and so on)
+- Rack selector tick boxes, time range buttons (12h and 24h show the step)
 - **dZ/dt** toggle (rate-of-change overlay): sets `rate_of_change_viewed` = `true` (`progressActions: overlay_enabled`)
-- **COMPARE RACKS** (side-by-side comparison): sets `compare_racks_viewed` = `true` (`progressActions: compare_racks_opened`) and shows a "SYSTEMATIC INJECTION DETECTED" banner
-- Inspect a point on the flat section of the chart (or compare racks) until "Finding ready" shows, then press **[ANNOTATE FINDING]**. A HISTORIAN ANOMALY REPORT modal lists the finding with a confirm button and **[CANCEL]**; confirming fires `completionActions`. **No flag station.**
+- **COMPARE RACKS** (side-by-side comparison): sets `compare_racks_viewed` = `true` (`progressActions: compare_racks_opened`). It shows all four racks together and a neutral banner; it no longer unlocks the annotation or names the time
+- **Mark the moment**: click or tap a reading (or focus the chart with Tab, move the cursor with Left/Right, Shift+Left/Right for 10 readings, PageUp/PageDown for 60, Home/End, and press Enter or Space). Hover only shows the reading. The mark is judged: more than 2 minutes before the first flat reading gives "Still moving like a real sensor reading. The moment is later."; more than 10 minutes after it gives "Not moving, but it was already like this before. Find where it starts."; otherwise a grey mark line appears and the hint reads "Marked 23:12:07. Now say what the data shows: press [ANNOTATE FINDING] on the left." The button is locked until then ("Mark the moment on the chart first.")
+- Press **[ANNOTATE FINDING]**. The report shows the variable and the marked time and asks **"What does the data show from that moment?"** with three choices. "Real cooling" and "Sensor dropout" each give a one-line reason from the data and let the player choose again; "Written, not measured" is right. Only then does the report show the finding and interpretation rows and the confirm button (with **[CANCEL]**), and the chart gains the red injection line and anomaly tooltips. Confirming fires `completionActions`. **No flag station.** Esc cancels the report, and closes the viewer when no report is open.
 
 **Verify**:
 - `historian_flatline_found` = `true` (`completionActions: set_global`)
