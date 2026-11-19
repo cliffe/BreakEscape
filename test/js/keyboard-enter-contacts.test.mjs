@@ -247,7 +247,7 @@ test('D2: a contact row is focusable, a button by role, and named from the conta
 test('D2: Enter and Space on a focused row open the thread; other keys do not', () => {
     const { row, mg } = listRig();
     row.focus();
-    assert.equal(document.activeElement, row);
+    assert.ok(document.activeElement === row);
     assert.equal(press(row, 'Enter'), false);
     assert.equal(press(row, ' '), false);
     assert.deepEqual(mg.opened, ['ana', 'ana']);
@@ -306,11 +306,11 @@ test('m3b: a list rebuild gives focus back to the same row', () => {
     ui.populateContactList('p');
     const ana = document.querySelector('.contact-item[data-npc-id="ana"]');
     ana.focus();
-    assert.equal(document.activeElement, ana);
+    assert.ok(document.activeElement === ana);
     ui.populateContactList('p');
     const again = document.querySelector('.contact-item[data-npc-id="ana"]');
     assert.notEqual(again, ana, 'the list was rebuilt');
-    assert.equal(document.activeElement, again);
+    assert.ok(document.activeElement === again);
 });
 
 test('m3a: Back to the list focuses the row of a thread opened with the keyboard, not a mouse one', () => {
@@ -383,7 +383,7 @@ test('nit: a focused text input outside the list keeps focus through a rebuild',
     const input = document.createElement('input'); input.type = 'text'; document.body.append(input);
     input.focus();
     ui.populateContactList('p');
-    assert.equal(document.activeElement, input);
+    assert.ok(document.activeElement === input);
 });
 
 test('nit: if the focused row\'s contact leaves the list, focus falls back into the phone view', () => {
@@ -402,8 +402,8 @@ test('nit: if the focused row\'s contact leaves the list, focus falls back into 
     document.querySelector('.contact-item[data-npc-id="ana"]').focus();
     ui.listContacts = () => [{ id: 'bob', displayName: 'Bob' }];
     ui.populateContactList('p');
-    assert.notEqual(document.activeElement, document.body, 'focus did not drop to body');
-    assert.equal(document.activeElement, listView);
+    assert.ok(document.activeElement !== document.body, 'focus did not drop to body');
+    assert.ok(document.activeElement === listView);
 });
 
 test('nit: showConversation for a thread not opened by a keyboard press clears _threadByKeyboard', () => {
@@ -438,7 +438,7 @@ test('R3 M: an in-place refresh keeps aria-describedby in step with the unread b
     assert.ok(!desc().some((id) => /-unread$/.test(id)), 'no unread id at 0');
     unread = 1;
     assert.equal(ui.refreshContactList(), true);
-    assert.equal(document.querySelector('.contact-item[data-npc-id="bob"]'), row, 'refreshed in place, not rebuilt');
+    assert.ok(document.querySelector('.contact-item[data-npc-id="bob"]') === row, 'refreshed in place, not rebuilt');
     const unreadId = desc().find((id) => /-unread$/.test(id));
     assert.ok(unreadId, 'the new unread id is in the description');
     assert.match(document.getElementById(unreadId).textContent, /1 unread/);
@@ -463,5 +463,5 @@ test('R3 n: the last focused contact leaving keeps focus inside the phone', () =
     document.querySelector('.contact-item[data-npc-id="ana"]').focus();
     ui.listContacts = () => [];
     ui.populateContactList('p');
-    assert.equal(document.activeElement, listView);
+    assert.ok(document.activeElement === listView);
 });

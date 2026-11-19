@@ -154,7 +154,7 @@ test('one click while typing finishes that line at once; the waits stay', async 
         await c.advance(0);
         assert.equal(r.text()[0], LINES[0]);
         assert.equal(r.ui.isTypewriting(), false);
-        assert.equal(document.querySelector('.terminal-cursor'), null);
+        assert.ok(document.querySelector('.terminal-cursor') === null);
         assert.equal(r.ui._choicesShown, undefined);
         assert.equal(r.mg._skipAll, false);
         await c.advance(300);   // still in the pause

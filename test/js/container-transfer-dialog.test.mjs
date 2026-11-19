@@ -113,7 +113,7 @@ test('a claimed session says whose open screen it is and when it ends (UX access
     assert.equal(claimLineText({ via: 'claim', guest: true, displayName: 'Ian Shaw' }),
         "You're on the screen Ian Shaw left open. It ends when the screen locks.");
     const mg = await openDesktop();
-    assert.equal(document.querySelector('.desktop-claim-line'), null, 'none for a password sign-in');
+    assert.ok(document.querySelector('.desktop-claim-line') === null, 'none for a password sign-in');
     sessions.sessions.get('hot_desk').via = 'claim';
     const html = mg.accountBarHtml();
     assert.match(html, /desktop-claim-line/);
@@ -127,16 +127,16 @@ test('the desktop loads from container for the session and names the account, wi
     assert.equal(mg.desktopMode, true);
     // UX slice 6: the account is on the taskbar at the bottom of the screen, Switch user
     // and Sign out in the start panel; the description sits above the taskbar
-    assert.equal(document.querySelector('.desktop-account-bar'), null, 'no top account bar in the monitor');
+    assert.ok(document.querySelector('.desktop-account-bar') === null, 'no top account bar in the monitor');
     const bar = document.querySelector('.pc-monitor .pc-monitor-screen .pc-taskbar');
     assert.ok(bar, 'the taskbar is on the monitor screen');
     assert.equal(bar.querySelector('.pc-taskbar-name').textContent, 'Ian Shaw');
     document.querySelector('.pc-start-btn').click();
     assert.ok(document.getElementById('pc-start-switch'));
     assert.ok(document.getElementById('pc-start-signout'));
-    assert.equal(document.getElementById('pc-start-lock'), null, 'no Lock until the server supports it');
+    assert.ok(document.getElementById('pc-start-lock') === null, 'no Lock until the server supports it');
     assert.equal(document.querySelector('.pc-start-username').textContent, 'ishaw');
-    assert.equal(document.querySelector('.pc-desktop-status, .desktop-taskbar-note'), null, 'the PC\'s observations are not repeated on its desktop');
+    assert.ok(document.querySelector('.pc-desktop-status, .desktop-taskbar-note') === null, 'the PC\'s observations are not repeated on its desktop');
     assert.equal(document.querySelector('.pc-monitor-name').textContent, mg.containerItem.scenarioData.name, 'the PC name on the bezel');
     assert.deepEqual(events.filter(([n]) => n === 'pc_desktop_opened').map(([, d]) => d),
         [{ pcId: 'hot_desk', npcId: 'ian', via: 'password', restored: false }]);
@@ -159,7 +159,7 @@ test('a takeable file offers Open, Copy, Move and Cancel; Copy keeps it listed a
     icon('Server rota.txt').click();
     assert.deepEqual(dialogLabels(), ['Open', 'Cancel']);
     choose('Cancel');
-    assert.equal(document.querySelector('.desktop-transfer-dialog'), null);
+    assert.ok(document.querySelector('.desktop-transfer-dialog') === null);
     assert.equal(adds.length, 1);
 });
 
@@ -239,10 +239,10 @@ test('a plain PC desktop (not a sign-in PC) keeps today\'s behaviour: no dialog,
     await openDesktop({ item: plain });
     icon('VPN notes.txt').click();
     await settle();
-    assert.equal(document.querySelector('.desktop-transfer-dialog'), null);
+    assert.ok(document.querySelector('.desktop-transfer-dialog') === null);
     assert.equal(adds.length, 1);
     assert.equal(adds[0].sourcePcId, undefined);
-    assert.equal(document.querySelector('.desktop-account-bar'), null);
+    assert.ok(document.querySelector('.desktop-account-bar') === null);
 });
 
 test('a folder opened from a sign-in desktop keeps the PC as the source of its files', async () => {
@@ -307,7 +307,7 @@ test('a container 403 drops the session locally (one pc_signed_out, no request) 
     assert.equal(sessions.has('hot_desk'), false);
     assert.equal(ended.length, 1);
     assert.equal(signInScreens.length, 1);
-    assert.equal(document.querySelector('.desktop-icon'), null);
+    assert.ok(document.querySelector('.desktop-icon') === null);
 });
 
 // The inventory add's source_pc_id and transfer are checked by running inventory.js in
@@ -392,7 +392,7 @@ test('K5 R3: the top strip says the minutes left for a token session, steps each
         assert.equal(stripToken(), 'with a session token, under a minute left');
         mg.cleanup?.();
         const pw = await openDesktop();
-        assert.equal(document.querySelector('.desktop-token-line'), null, 'none for a password session');
+        assert.ok(document.querySelector('.desktop-token-line') === null, 'none for a password session');
         pw.cleanup?.();
     } finally { mock.timers.reset(); }
 });
@@ -404,7 +404,7 @@ test('K5 R3: the strip line is plain text; a hostile label or link name makes no
         const mg = await openDesktop({ held: { ...TOKEN_SESSION, label: hostile } });
         const html = mg.sessionNoticesHtml();
         assert.doesNotMatch(html, /<img/);
-        assert.equal(document.querySelector('.pc-desktop-topbar img'), null);
+        assert.ok(document.querySelector('.pc-desktop-topbar img') === null);
         assert.equal(stripToken(), 'with a session token, about 10 min left');
         assert.equal(stripToken().includes('onerror'), false);
         mg.cleanup?.();
@@ -509,14 +509,14 @@ test('Icon labels R2 m2: Enter on an icon focuses the dialog\'s first button; cl
     pressKey(rota, 'Enter');
     const first = document.querySelector('.desktop-transfer-dialog .desktop-transfer-btn');
     assert.equal(first.textContent, 'Open');
-    assert.equal(document.activeElement, first, 'the first button has the focus');
+    assert.ok(document.activeElement === first, 'the first button has the focus');
     choose('Cancel');
-    assert.equal(document.querySelector('.desktop-transfer-dialog'), null);
-    assert.equal(document.activeElement, rota, 'focus is back on the icon that opened it');
+    assert.ok(document.querySelector('.desktop-transfer-dialog') === null);
+    assert.ok(document.activeElement === rota, 'focus is back on the icon that opened it');
     // a click (mouse) opens the dialog without moving focus into it
     document.activeElement.blur();
     icon('VPN notes.txt').click();
-    assert.equal(document.activeElement.closest('.desktop-transfer-dialog'), null, 'a click does not focus a button');
+    assert.ok(document.activeElement.closest('.desktop-transfer-dialog') === null, 'a click does not focus a button');
     choose('Cancel');
 });
 
@@ -541,7 +541,7 @@ test('Icon labels R2 m2: a moved icon passes focus to the next icon, the previou
     pressKey(lic, 'Enter');
     choose('Copy to inventory');
     await settle();
-    assert.equal(document.activeElement, lic, 'a copy leaves the icon, and focus stays on it');
+    assert.ok(document.activeElement === lic, 'a copy leaves the icon, and focus stays on it');
 });
 
 test('Icon labels R2 m2: taking the last icon focuses the previous one; taking the only icon focuses the desktop', async () => {
@@ -552,7 +552,7 @@ test('Icon labels R2 m2: taking the last icon focuses the previous one; taking t
     pressKey(b, 'Enter');
     choose('Move to inventory');
     await settle();
-    assert.equal(document.activeElement, icon('A.txt'), 'the previous icon');
+    assert.ok(document.activeElement === icon('A.txt'), 'the previous icon');
     const a = icon('A.txt');
     pressKey(a, 'Enter');
     choose('Move to inventory');
@@ -571,17 +571,17 @@ test('Icon labels R3 m1/m2: the opened icon takes the focus again, from the hand
     const mark = window.pendingContainerReturn.focusReturn;
     assert.deepEqual(mark, { key: 'ian_rota', byKey: true }, 'the opened file rides on the hand-over');
     const mg = await openDesktop({ item, focusReturn: mark });
-    assert.equal(document.activeElement, icon('Server rota.txt'), 'focus is back on that icon');
+    assert.ok(document.activeElement === icon('Server rota.txt'), 'focus is back on that icon');
     assert.equal(mg.params.focusReturn, null, 'used once');
     // a plain reopen (nothing handed over) focuses nothing, however long ago a file was opened
     await openDesktop({ item });
-    assert.equal(document.activeElement, document.body);
+    assert.ok(document.activeElement === document.body);
     // a mouse open: the icon is not focused
     await openDesktop({ item, focusReturn: { key: 'ian_rota', byKey: false } });
-    assert.equal(document.activeElement, document.body, 'no focus after a mouse open');
+    assert.ok(document.activeElement === document.body, 'no focus after a mouse open');
     // the icon is gone (taken meanwhile): nothing is focused, nothing throws
     await openDesktop({ item, contents: FILES.filter(f => f.id !== 'ian_rota'), focusReturn: mark });
-    assert.equal(document.activeElement, document.body);
+    assert.ok(document.activeElement === document.body);
     // a text field elsewhere keeps the focus (n1)
     window.pendingContainerReturn = null;
 });
@@ -594,7 +594,7 @@ test('Icon labels R3 n1: a text field outside the icon grid keeps the focus', as
     field.focus();
     mg.params = { ...mg.params, focusReturn: { key: 'ian_rota', byKey: true } };
     mg.focusReturnedIcon(document.getElementById('desktop-icons'));
-    assert.equal(document.activeElement, field, 'the input still has the focus');
+    assert.ok(document.activeElement === field, 'the input still has the focus');
     field.remove();
 });
 
@@ -619,7 +619,7 @@ test('Icon labels R4 m1: a returned icon keeps its clipped label open past the d
         await openDesktop({ item, contents: files, focusReturn: { key: 'ian_rota', byKey: true } });
         const rota = icon(LONG);
         const label = rota.querySelector('.desktop-icon-label');
-        assert.equal(document.activeElement, rota, 'the returned icon has the focus');
+        assert.ok(document.activeElement === rota, 'the returned icon has the focus');
         assert.ok(label.classList.contains('desktop-icon-label-open'), 'open at once');
         await new Promise(r => dom.window.requestAnimationFrame(() => setTimeout(r, 0)));
         assert.ok(label.classList.contains('desktop-icon-label-open'), 'still open after the deferred refit');

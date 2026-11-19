@@ -422,7 +422,7 @@ test('K0: a tiles screen with no captures shows the PC tiles, Choose an account,
     const mg = openRemote();
     answerRemote(mg, { picker: 'accounts', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [] });
     assert.deepEqual(dataUsernames(), ['lfox']);
-    assert.equal(document.querySelector('.signin-tag'), null, 'no tags with nothing captured');
+    assert.ok(document.querySelector('.signin-tag') === null, 'no tags with nothing captured');
     assert.equal(messageText(), 'Choose an account.');
 });
 
@@ -441,7 +441,7 @@ test('K0: at the pair cap the Other user form shows with "Still checking for acc
     assert.equal(mg.signInState.other, true);
     assert.ok(visible(q('#signin-form')) && visible(q('#signin-username-row')));
     assert.equal(messageText(), 'Still checking for accounts...');
-    assert.equal(document.activeElement, q('#signin-username'), 'focus once, when the form appears');
+    assert.ok(document.activeElement === q('#signin-username'), 'focus once, when the form appears');
 });
 
 test('K0: a late answer after the cap redraws in place, keeping focus and typed text', () => {
@@ -453,7 +453,7 @@ test('K0: a late answer after the cap redraws in place, keeping focus and typed 
     for (const el of [q('#signin-username'), q('#password-field')]) { const f = el.focus.bind(el); el.focus = () => { focusCalls++; f(); }; }
     answerRemote(mg, { picker: 'accounts', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [] });
     assert.equal(focusCalls, 0, 'the late answer moves no focus');
-    assert.equal(document.activeElement, q('#password-field'));
+    assert.ok(document.activeElement === q('#password-field'));
     assert.equal(q('#signin-username').value, 'lf', 'the typed text is kept');
     assert.equal(mg.signInState.other, true, 'the player keeps the typed form');
 });
@@ -498,7 +498,7 @@ test('R1 M6: a tagged tile has the full kind names in its title and badge label,
     assert.equal(lena.title, 'Lena Fox, Captured password');
     assert.equal(lena.querySelector('.signin-badges').getAttribute('aria-label'), 'Captured password', 'the short-window badge has a text equivalent');
     assert.equal(sam.title, 'Sam Okafor', 'an untagged tile is titled by its name only');
-    assert.equal(sam.querySelector('.signin-badges'), null);
+    assert.ok(sam.querySelector('.signin-badges') === null);
     lena.click();
     assert.equal(q('#signin-selected').textContent, 'Lena Fox (lfox), Captured password');
     sam.click();
@@ -552,7 +552,7 @@ test('R1 M2: under the Other user form and a locked form the message line is emp
 test('R1 M3: focus alone is not typing: a late answer with an empty focused form returns the row', () => {
     const mg = openRemote();
     mg.setRemoteAccounts({ pending: true, accountsPending: true, capturedPending: true, captured: [] });
-    assert.equal(document.activeElement, q('#signin-username'), 'the cap focused the empty form');
+    assert.ok(document.activeElement === q('#signin-username'), 'the cap focused the empty form');
     answerRemote(mg, { picker: 'accounts', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [] });
     assert.equal(mg.signInState.other, false, 'the row comes back');
     assert.equal(visible(q('#signin-form')), false);
@@ -1352,11 +1352,11 @@ test('R2 N1: Other user clicked on the cap row survives the late answer, form an
     assert.deepEqual(dataUsernames(), ['lfox', 'ishaw'], 'the cap shows the captured row');
     q('.signin-other').click();
     assert.equal(visible(q('#signin-form')) && visible(q('#signin-username-row')), true);
-    assert.equal(document.activeElement, q('#signin-username'));
+    assert.ok(document.activeElement === q('#signin-username'));
     answerRemote(mg, { tiles: [{ username: 'sokafor', displayName: 'Sam Okafor' }], captured: CAP_PENDING().captured });
     assert.equal(visible(q('#signin-form')), true, 'the form the player chose stays');
     assert.equal(visible(q('#signin-username-row')), true);
-    assert.equal(document.activeElement, q('#signin-username'), 'focus stays');
+    assert.ok(document.activeElement === q('#signin-username'), 'focus stays');
     assert.equal(messageText(), '', 'no "Choose an account." under the form');
 });
 

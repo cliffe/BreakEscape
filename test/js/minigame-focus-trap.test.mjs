@@ -60,7 +60,7 @@ test('Shift+Tab wraps from the first element to the last', () => {
     const first = MF.currentMinigame.container.querySelector(MF.FOCUSABLE_SELECTOR);
     first.focus();
     tab(true);
-    assert.equal(document.activeElement, MF.currentMinigame.container.querySelectorAll('#a, #b, #t, #minigame-close')[3]);
+    assert.ok(document.activeElement === MF.currentMinigame.container.querySelectorAll('#a, #b, #t, #minigame-close')[3]);
     close();
 });
 
@@ -185,7 +185,7 @@ test('focus goes back to the opener when the minigame closes, and the trap is re
     MF.startMinigame('demo', null, {});
     assert.ok(MF._trapHandler);
     MF.endMinigame(false, null);
-    assert.equal(document.activeElement, hud);
+    assert.ok(document.activeElement === hud);
     assert.equal(MF._trapHandler, null);
 });
 
@@ -195,12 +195,12 @@ test('opener survives a chain (displacing start, returnTo reopen) and is not for
     MF.startMinigame('demo2', null, { returnTo: { sceneType: 'demo', params: {} } });
     MF.endMinigame(true, {});
     MF.endMinigame(true, {});
-    assert.equal(document.activeElement, hud);
+    assert.ok(document.activeElement === hud);
     // something else took focus during close: leave it
     hud.focus();
     MF.startMinigame('demo', null, { onComplete: () => outside.focus() });
     MF.endMinigame(false, null);
-    assert.equal(document.activeElement, outside);
+    assert.ok(document.activeElement === outside);
 });
 
 const GAME_MENU = '<div class="game-menu-overlay" style="display:none"><div class="game-menu-panel" role="dialog" aria-modal="true"><button id="gm-btn">Menu</button></div></div>';
@@ -350,7 +350,7 @@ test('R2 m3: a chained minigame keeps the first opener', () => {
     MF.startMinigame('demo2', null, {});
     assert.equal(MF._focusOpener, btn, 'the second minigame does not replace it');
     MF.endMinigame(false, null);
-    assert.equal(document.activeElement, btn);
+    assert.ok(document.activeElement === btn);
     btn.remove();
 });
 
@@ -412,13 +412,13 @@ test('m4: a mouse-focused button opener is not refocused; a non-button opener is
     MF.startMinigame('demo', null, {});
     document.activeElement.blur();
     MF.endMinigame(false, null);
-    assert.notEqual(document.activeElement, btn);
+    assert.ok(document.activeElement !== btn);
     btn.matches = (sel) => (sel === ':focus-visible' ? true : dom.window.Element.prototype.matches.call(btn, sel));
     btn.focus();
     MF.startMinigame('demo', null, {});
     document.activeElement.blur();
     MF.endMinigame(false, null);
-    assert.equal(document.activeElement, btn);
+    assert.ok(document.activeElement === btn);
     btn.remove();
     const div = document.createElement('div');
     div.tabIndex = 0;
@@ -427,7 +427,7 @@ test('m4: a mouse-focused button opener is not refocused; a non-button opener is
     MF.startMinigame('demo', null, {});
     document.activeElement.blur();
     MF.endMinigame(false, null);
-    assert.equal(document.activeElement, div);
+    assert.ok(document.activeElement === div);
     div.remove();
     // opener hidden by then: not refocused
     hud.focus();
@@ -436,7 +436,7 @@ test('m4: a mouse-focused button opener is not refocused; a non-button opener is
     hud.blur();
     hud.style.display = 'none';
     MF.endMinigame(false, null);
-    assert.notEqual(document.activeElement, hud);
+    assert.ok(document.activeElement !== hud);
     hud.style.display = '';
     delete hud.matches;
 });

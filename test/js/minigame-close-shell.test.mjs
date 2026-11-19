@@ -46,7 +46,7 @@ const rect = (left, top, width, height) => ({ left, top, width, height, right: l
 test('a plain scene given showCancel: true draws no Cancel, and no empty controls row', () => {
     const mg = track(new MinigameScene(fresh(), { title: 'Box', showCancel: true, cancelText: 'Close' }));
     mg.init();
-    assert.equal(document.getElementById('minigame-cancel'), null, 'no Cancel beside the X');
+    assert.ok(document.getElementById('minigame-cancel') === null, 'no Cancel beside the X');
     assert.equal(document.querySelectorAll('.minigame-controls').length, 0, 'no empty controls row');
     // A footer button gets the row on first use, under the message line, made once
     const controls = mg.ensureControlsRow();
@@ -72,10 +72,10 @@ test('a scene that keeps its button still draws none when the caller says showCa
     class Keeps extends MinigameScene { static keepsCancelButton = true; }
     let mg = new Keeps(fresh(), { showCancel: false });
     mg.init();
-    assert.equal(document.getElementById('minigame-cancel'), null);
+    assert.ok(document.getElementById('minigame-cancel') === null);
     mg = new Keeps(fresh(), { disableClose: true });
     mg.init();
-    assert.equal(document.getElementById('minigame-cancel'), null);
+    assert.ok(document.getElementById('minigame-cancel') === null);
     assert.equal(document.getElementById('minigame-close').style.display, 'none', 'the X is hidden too');
 });
 

@@ -115,8 +115,8 @@ test('opening a message shows From name and address, To, subject and body; it ma
 test('authored names, subjects and bodies render as text, never as markup', () => {
     const { host } = open();
     host.querySelector('.mail-row[data-id="lookalike"]').click();
-    assert.equal(host.querySelector('.mail-body b'), null);
-    assert.equal(host.querySelector('script'), null);
+    assert.ok(host.querySelector('.mail-body b') === null);
+    assert.ok(host.querySelector('script') === null);
     assert.equal(text(host, '.mail-body'), '<b>not bold</b>');
     assert.equal(text(host, '.mail-from-name'), 'Payroll <b>Team</b>');
     assert.equal(text(host, '.mail-from-address'), '<payroll@ledgervvell.example>');
@@ -146,7 +146,7 @@ test('message details is a layer: Esc closes it before the reader or the overlay
     assert.match(text(host, '.mail-details'), /Shown as from/);
     assert.deepEqual(scene.getTestState().overlay.layers, ['message-details']);
     press('Escape');
-    assert.equal(host.querySelector('.mail-details'), null);
+    assert.ok(host.querySelector('.mail-details') === null);
     assert.equal(ended, null);
     assert.equal(scene.getTestState().mail.selectedId, 'welcome');
 });
@@ -171,10 +171,10 @@ test('the Sent folder lists sent records with the judged line', () => {
     host.querySelector('.mail-row[data-id="m2"]').click();
     assert.equal(text(host, '.mail-judged'), 'Judged: did not land');
     host.querySelector('.mail-row[data-id="m3"]').click();
-    assert.equal(host.querySelector('.mail-judged'), null);
+    assert.ok(host.querySelector('.mail-judged') === null);
     assert.equal(scene.getTestState().mail.folder, 'sent');
     // Sent mail never carries an unread dot or count
-    assert.equal(host.querySelector('.mail-row[data-unread="true"]'), null);
+    assert.ok(host.querySelector('.mail-row[data-unread="true"]') === null);
 });
 
 test('in withReply mode a pending sent record hides its verdict', () => {
@@ -194,7 +194,7 @@ test('contacts appear once their revealedBy global is true, and per account', ()
     // no revealedBy set: only the contact with none
     assert.deepEqual([...host.querySelectorAll('.mail-contact')].map((c) => c.dataset.id), ['it']);
     press('Escape');
-    assert.equal(host.querySelector('.mail-contacts-panel'), null);
+    assert.ok(host.querySelector('.mail-contacts-panel') === null);
 
     globals.se_intel_hampshire_careers = true;
     globals.se_intel_pierce_role = true;

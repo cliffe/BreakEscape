@@ -72,7 +72,7 @@ test('PLAYER_KO carries the attacker and the screen shows it via textContent', (
     assert.equal(ko.data.cause.npcId, 'hollis');
     const msg = document.querySelector('#game-over-screen p');
     assert.equal(msg.textContent, 'Knocked out by <img src=x onerror=alert(1)>Hollis.');
-    assert.equal(msg.querySelector('img'), null, 'never parsed as HTML');
+    assert.ok(msg.querySelector('img') === null, 'never parsed as HTML');
 });
 
 test('PLAYER_KO without a cause keeps "You have been defeated"', () => {
@@ -151,7 +151,7 @@ test('overlay: X closes the step without a POST and returns focus to Start over'
     assert.equal(d.activeElement.id, 'session-restart-btn');
     assert.equal(calls.length, 0);
     assert.equal(reloads(), 0);
-    assert.equal(d.getElementById('session-restart-keep-btn'), null);
+    assert.ok(d.getElementById('session-restart-keep-btn') === null);
 });
 
 test('overlay: Enter and Escape close the step only while it is open', () => {

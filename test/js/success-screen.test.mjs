@@ -85,7 +85,7 @@ test('shows the title, the body as plain text, Return to missions and Close', ()
     assert.equal(document.getElementById('success-screen-title').textContent, 'Inbox sorted');
     const body = el.querySelector('.success-screen-body');
     assert.equal(body.textContent, 'All <b>five</b> – done.');
-    assert.equal(body.querySelector('b'), null, 'body is not parsed as HTML');
+    assert.ok(body.querySelector('b') === null, 'body is not parsed as HTML');
     assert.equal(document.getElementById('success-screen-return').textContent, 'Return to missions');
     assert.equal(document.getElementById('success-screen-close').textContent, 'Close');
 });
@@ -93,7 +93,7 @@ test('shows the title, the body as plain text, Return to missions and Close', ()
 test('defaults: a title with no body, and buttonText renames Return', () => {
     S.showSuccessScreen({}, syncDeps());
     assert.equal(document.getElementById('success-screen-title').textContent, S.DEFAULT_TITLE);
-    assert.equal(overlay().querySelector('.success-screen-body'), null);
+    assert.ok(overlay().querySelector('.success-screen-body') === null);
     S._resetSuccessScreen();
     S.showSuccessScreen({ buttonText: 'Back to the course' }, syncDeps());
     assert.equal(document.getElementById('success-screen-return').textContent, 'Back to the course');

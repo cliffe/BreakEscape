@@ -98,24 +98,24 @@ test('38 keyboard: 1 to 9, arrows (wrapping), Home, End, Enter, Tab, Esc', () =>
     const e = entries(3);
     showInteractionMenu(e, 10, 10, 'Pick', { numberKeys: true, keyboard: true, holdKeys: true });
     const btns = items();
-    assert.equal(document.activeElement, btns[0], 'first entry focused');
+    assert.ok(document.activeElement === btns[0], 'first entry focused');
     press('ArrowDown');
-    assert.equal(document.activeElement, btns[1]);
+    assert.ok(document.activeElement === btns[1]);
     press('End');
-    assert.equal(document.activeElement, btns[2]);
+    assert.ok(document.activeElement === btns[2]);
     press('ArrowDown');
-    assert.equal(document.activeElement, btns[0], 'wraps');
+    assert.ok(document.activeElement === btns[0], 'wraps');
     press('ArrowUp');
-    assert.equal(document.activeElement, btns[2], 'wraps back');
+    assert.ok(document.activeElement === btns[2], 'wraps back');
     press('Home');
-    assert.equal(document.activeElement, btns[0]);
+    assert.ok(document.activeElement === btns[0]);
     // Tab walks the entries, then the X, then round again
     press('Tab'); press('Tab'); press('Tab');
-    assert.equal(document.activeElement, $('.be-im-close'), 'the X comes after the entries');
+    assert.ok(document.activeElement === $('.be-im-close'), 'the X comes after the entries');
     press('Tab');
-    assert.equal(document.activeElement, btns[0]);
+    assert.ok(document.activeElement === btns[0]);
     press('Tab', { shiftKey: true });
-    assert.equal(document.activeElement, $('.be-im-close'), 'Shift+Tab goes back to the X');
+    assert.ok(document.activeElement === $('.be-im-close'), 'Shift+Tab goes back to the X');
     press('Escape');
     assert.equal(isInteractionMenuOpen(), false, 'Esc closes it through the stack');
     assert.equal(openModalCount(), 0);
@@ -202,7 +202,7 @@ test('40 a menu without holdKeys is not closed by a later overlay', () => {
 
 test('41 touch: nothing focused, no key hints, placed at the finger', () => {
     showInteractionMenu(entries(), 300, 400, 'Pick', { touch: true, numberKeys: true, keyboard: true });
-    assert.notEqual(document.activeElement, items()[0]);
+    assert.ok(document.activeElement !== items()[0]);
     assert.equal(document.querySelectorAll('.be-im-key').length, 0);
     assert.ok($('#be-interaction-menu-overlay').classList.contains('be-im-touch'));
     const m = $('#be-interaction-menu');
@@ -212,17 +212,17 @@ test('41 touch: nothing focused, no key hints, placed at the finger', () => {
     // the same menu by keyboard does show the hints and takes the focus
     showInteractionMenu(entries(), 300, 400, 'Pick', { numberKeys: true });
     assert.equal(document.querySelectorAll('.be-im-key').length, 3);
-    assert.equal(document.activeElement, items()[0]);
+    assert.ok(document.activeElement === items()[0]);
     reset();
 });
 
 test('42 no options: not on the stack, the module\'s own Esc closes it, no focus, no hints', () => {
     showInteractionMenu(entries(), 10, 10, 'Pick');
     assert.equal(openModalCount(), 0);
-    assert.notEqual(document.activeElement, items()[0]);
+    assert.ok(document.activeElement !== items()[0]);
     assert.equal(document.querySelectorAll('.be-im-key').length, 0);
     press('ArrowDown');
-    assert.notEqual(document.activeElement, items()[1], 'arrows are not the menu\'s without keyboard');
+    assert.ok(document.activeElement !== items()[1], 'arrows are not the menu\'s without keyboard');
     press('Escape');
     assert.equal(isInteractionMenuOpen(), false);
     reset();
@@ -301,7 +301,7 @@ test('44 a Gone. or Out of reach. entry cannot be chosen', () => {
     press('1');
     assert.deepEqual(e.picked, [], 'nothing ran');
     assert.equal(isInteractionMenuOpen(), true, 'the menu stays');
-    assert.notEqual(document.activeElement, first, 'focus left the greyed entry');
+    assert.ok(document.activeElement !== first, 'focus left the greyed entry');
     state = 'Out of reach.';
     tickInteractionMenu(Date.now(), { force: true });
     assert.equal(first.querySelector('.be-im-detail').textContent, 'Out of reach.');

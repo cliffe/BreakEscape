@@ -77,9 +77,9 @@ test('only the latest missed row has it: a newer missed row takes it from the ol
     ui._addCallRow(missed(), 'Missed call', false);
     const rows = [...ui.elements.messagesContainer.querySelectorAll('.message-call-row')];
     assert.equal(buttons(ui).length, 1);
-    assert.equal(rows[0].querySelector('.call-row-callback'), null, 'the older missed row lost it');
+    assert.ok(rows[0].querySelector('.call-row-callback') === null, 'the older missed row lost it');
     assert.ok(rows[2].querySelector('.call-row-callback'));
-    assert.equal(rows[1].querySelector('.call-row-callback'), null);
+    assert.ok(rows[1].querySelector('.call-row-callback') === null);
 });
 
 test('clearing the callback (the header button goes back to nothing or "Call") removes the row button', () => {
