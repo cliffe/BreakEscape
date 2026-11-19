@@ -1122,6 +1122,50 @@
     .phone-call-mode #conversation-view.call-has-choices .messages-container > .call-subtitle.narrator { opacity: 0.75; }
 }
 
+/* Influence (pretext) calls on every screen taller than 500 px: the compact header, the 64px
+   portrait in a row with the name, in both phases. The large 128px stage portrait plus the
+   influence panel needs about 410px, more than the slot the thread and controls leave (about 295px
+   at 1280x720). Measured live after a scored reply, the large portrait still spilled 80px at
+   1920x1080 and 390x844 (the phone screen stops at 700px tall), with the influence panel over the
+   thread, so there is no taller exception. The speaking bars sit beside the name and the caption is
+   folded. Ordinary calls (no influence bar) keep the large portrait. It sits before the short-screen blocks
+   below on purpose: they have the same specificity and must come later to win. */
+@media (min-height: 500.02px) {
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header {
+        flex: 0 0 auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 10px 16px;
+        gap: 8px 12px;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info {
+        flex: 1 1 auto;
+        flex-direction: row;
+        text-align: left;
+        min-width: 0;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
+    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder {
+        width: 64px;
+        height: 64px;
+        box-shadow: none;
+        font-size: 24px;
+    }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .npc-name { font-size: 16px; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .npc-id-block { align-items: flex-start; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .call-caption { display: none; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .call-speaking { flex: 0 0 auto; margin-left: auto; height: 24px; }
+    .phone-call-mode #conversation-view:has(.se-chat-header) .se-chat-header { flex: 1 0 100%; min-width: 0; }
+    /* While the contact speaks (no replies yet) the thread takes the slack under the compact header,
+       so there is no empty band; with replies showing, the capped thread above applies. */
+    .phone-call-mode #conversation-view:has(.se-chat-header):not(.call-has-choices) .messages-container {
+        flex: 1 1 auto;
+        max-height: none;
+    }
+}
+
 /* Taller than 680 px there is room for a two-line tell (46px with its padding) above a three-line
    contact line (62px) in the thread: 8 + 8 + 46 + 6 + 62 = 130, so the cap is 131px. */
 @media (min-height: 680.02px) {
@@ -1155,23 +1199,35 @@
     .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 48px; height: 48px; font-size: 16px; }
 }
 
-/* Up to 820 px tall the three-line influence legend is one line: "Wary at -40 / Refuses at -50 / Reports at -70",
+/* Up to 820 px tall the three-line influence legend is one line (it wraps by whole items only when a reached threshold makes it too long): "Wary at -40 / Refuses at -50 / Reports at -70",
    with ": reached" added to a threshold once it is passed (the colon and state are hidden until then).
    Colour and icon opacity are not the only cue. Taller than 820 px the full legend stays. */
 @media (min-height: 500.02px) and (max-height: 820px) {
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         gap: 0 8px;
         margin: 2px 0 0;
         font-size: 16px;
         line-height: 16px;
-        white-space: nowrap;
-        overflow: hidden;
+        overflow: visible;
     }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item { white-space: nowrap; }
-    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item + .ib-infl-legend-item::before { content: "/ "; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item + .ib-infl-legend-item::before {
+        content: "/ ";
+        content: "/ " / "";
+    }
+    /* "not reached" is visually hidden, not display:none, so screen readers still hear it */
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-colon,
-    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-state { display: none; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-state {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
 }
 
 /* Below 560 px the stack no longer fits with the change line (the tell carries the same figure), so
@@ -1189,43 +1245,6 @@
     }
     .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
     .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 40px; height: 40px; font-size: 16px; }
-}
-
-/* Influence (pretext) calls on every screen taller than 500 px: the compact header, the 64px
-   portrait in a row with the name, in both phases. The large 128px stage portrait plus the
-   influence panel needs about 410px, more than the slot the thread and controls leave (about 295px
-   at 1280x720). Measured live after a scored reply, the large portrait still spilled 80px at
-   1920x1080 and 390x844 (the phone screen stops at 700px tall), with the influence panel over the
-   thread, so there is no taller exception. The speaking bars sit beside the name and the caption is
-   folded. Ordinary calls (no influence bar) keep the large portrait. */
-@media (min-height: 500.02px) {
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-header {
-        flex: 0 0 auto;
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: flex-start;
-        padding: 10px 16px;
-        gap: 8px 12px;
-    }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info {
-        flex: 1 1 auto;
-        flex-direction: row;
-        text-align: left;
-        min-width: 0;
-    }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar,
-    .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder {
-        width: 64px;
-        height: 64px;
-        box-shadow: none;
-        font-size: 24px;
-    }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .npc-name { font-size: 16px; }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .npc-id-block { align-items: flex-start; }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .call-caption { display: none; }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .call-speaking { flex: 0 0 auto; margin-left: auto; height: 24px; }
-    .phone-call-mode #conversation-view:has(.se-chat-header) .se-chat-header { flex: 1 0 100%; min-width: 0; }
 }
 
 /* Phones held sideways (about 390 px tall): the frame is about 270 px, less than the header, the

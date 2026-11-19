@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(path.join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -341,8 +342,6 @@ const baseCall = sel => { const r = all.find(x => x.media === '' && x.selector =
 const CH = V + '.call-has-choices';
 const beats = (sel, base) => assert.ok(cmpSpec(spec(sel), spec(base)) > 0, sel + ' ' + spec(sel) + ' must beat ' + base + ' ' + spec(base));
 check('desktop-height call: the range starts exactly where the landscape block ends (no gap, no overlap), classic syntax', () => {
-    assert.ok(desk.length > 0, 'the rules are parsed under ' + DESK_MEDIA);
-    assert.ok(parseFloat(DESK_MEDIA.match(/min-height:\s*([\d.]+)px/)[1]) > 500 && parseFloat(DESK_MEDIA.match(/min-height:\s*([\d.]+)px/)[1]) < 501, 'just above 500px');
     assert.ok(!/@media[^{]*height\s*[<>]/.test(css), 'no range syntax in any media query');
     assert.ok(land.length > 0 && land.every(r => r.media === '@media (max-height: 500px)'), 'landscape block is max-height 500px');
     assert.ok(desk.length >= 5);
@@ -404,7 +403,6 @@ check('desktop-height call: the thread shows the latest subtitle plus the tell d
     assert.ok(tell.selector.split(', ').includes(trailing), 'a trailing tell still shows');
     assert.match(tell.body, /display:\s*block/);
     for (const sel of tell.selector.split(', ')) { beats(sel, hideOthers.selector); beats(sel, base); }
-    assert.ok(!/previous|:last-child\s*$/.test(before.replace(trailing, '')) || before.includes('+ .call-subtitle'), 'not the old trailing-only rule');
 });
 check('desktop-height call: influence calls use the compact header (64px portrait row) in both phases', () => {
     const h = D(V + ':has(.se-chat-header) .conversation-header');
@@ -473,15 +471,17 @@ check('call up to 820px tall: the legend is one line of text, not hidden, "Name 
     const rs = all.filter(r => r.media === LEGEND_MEDIA);
     const legend = rs.find(r => r.selector === V + ' .se-chat-header .ib-infl-legend');
     assert.ok(legend, 'a short-screen legend rule');
-    assert.match(legend.body, /flex-wrap:\s*nowrap/);
-    assert.doesNotMatch(legend.body, /display:\s*none|clip|visibility:\s*hidden|opacity/, 'visible text, not hidden');
+    assert.match(legend.body, /flex-wrap:\s*wrap/, 'wraps by whole items when a reached threshold makes the line too long');
+    assert.doesNotMatch(legend.body, /overflow:\s*hidden|white-space:\s*nowrap|display:\s*none|clip|visibility:\s*hidden|opacity/, 'visible text, never cut off');
+    const item = rs.find(r => r.selector === V + ' .se-chat-header .ib-infl-legend-item');
+    assert.ok(item && /white-space:\s*nowrap/.test(item.body), 'each item stays whole');
     assert.ok(px(legend.body, 'font-size') >= 16, 'VT323 16px');
     beats(legend.selector, '.conversation-header .ib-infl-legend');
     const state = rs.find(r => /ib-infl-legend-state/.test(r.selector));
-    assert.ok(state && /:not\(\.is-reached\)/.test(state.selector) && /display:\s*none/.test(state.body), '"reached" shows only once a threshold is passed');
+    assert.ok(state && /:not\(\.is-reached\)/.test(state.selector) && /clip:\s*rect\(0 0 0 0\)/.test(state.body) && !/display:\s*none/.test(state.body), '"not reached" is visually hidden, not display:none (screen readers)');
     assert.match(state.selector, /ib-infl-legend-colon/, 'the colon goes with it, so no dangling colon');
     const sep = rs.find(r => /legend-item \+ \.ib-infl-legend-item::before/.test(r.selector));
-    assert.ok(sep && /content:\s*"\/ "/.test(sep.body), 'items are separated by a slash, which VT323 renders');
+    assert.ok(sep && /content:\s*"\/ ";\s*content:\s*"\/ " \/ "";/.test(sep.body), 'slash separator with a plain fallback first, then empty alt text');
     assert.ok(!all.some(r => r.media === SHORT_MEDIA && /ib-infl-legend/.test(r.selector)), 'the legend rules live in the 820px block only');
     assert.ok(!all.some(r => r.media === '' && /ib-infl-legend/.test(r.selector) && /clip/.test(r.body)), 'the legend is not clipped on tall screens');
     assert.ok(!rs.some(r => /align-self/.test(r.body)), 'no stretch hack: the legend gives the bar its width');
@@ -493,6 +493,68 @@ check('desktop-height call: no radius, blur or gradient', () => {
 check('the shared end-button block is its own "screen and" block, with the reason in a comment', () => {
     assert.ok(shared.length > 0);
     assert.match(readFileSync(path.join(here, '../../public/break_escape/css/phone-chat-minigame.css'), 'utf8'), /"screen and" is deliberate/);
+});
+
+// ---- round 4 fixes: real DOM, real cascade, real legend widths ----
+const doc = html => new JSDOM(html).window.document;
+check('jsdom: in the real thread order (Dev, You, tell, Dev) the tell before Dev\'s latest line shows and You is hidden', () => {
+    const d = doc('<div class="phone-call-mode"><div id="conversation-view" class="call-has-choices"><div class="se-chat-header"></div><div class="messages-container"><div class="call-subtitle" id="dev1"></div><div class="call-subtitle" id="you"></div><div class="pretext-tell" id="tell"></div><div class="call-subtitle" id="dev2"></div></div></div></div>');
+    const tellSel = (D(CH + ':has(.se-chat-header) .messages-container > .pretext-tell:has(+ .call-subtitle:last-child), ' + CH + ':has(.se-chat-header) .messages-container > .pretext-tell:last-child')).selector;
+    const hideSel = D(CH + ' .messages-container > .call-subtitle:has(~ .call-subtitle)').selector;
+    assert.ok(d.getElementById('tell').matches(tellSel), 'the tell before Dev\'s latest line is shown');
+    assert.ok(d.getElementById('you').matches(hideSel), 'You is hidden');
+    assert.ok(d.getElementById('dev1').matches(hideSel), 'older Dev line is hidden');
+    assert.ok(!d.getElementById('dev2').matches(hideSel), 'Dev\'s latest line is not hidden');
+    assert.ok(!d.getElementById('you').matches(tellSel), 'the tell rule does not match a subtitle');
+    const d2 = doc('<div class="phone-call-mode"><div id="conversation-view" class="call-has-choices"><div class="se-chat-header"></div><div class="messages-container"><div class="call-subtitle" id="dev"></div><div class="pretext-tell" id="tell"></div></div></div></div>');
+    assert.ok(d2.getElementById('tell').matches(tellSel), 'a trailing tell shows');
+});
+check('cascade: the short-screen header and portrait rules come after the compact header block, so they win at 800x600', () => {
+    const idx = (media, sel) => all.findIndex(r => r.media === media && r.selector.split(', ').includes(sel));
+    const hdr = V + ':has(.se-chat-header) .conversation-header';
+    const av = V + ':has(.se-chat-header) .conversation-avatar';
+    const compactH = idx(DESK_MEDIA, hdr), compactA = idx(DESK_MEDIA, av);
+    assert.ok(compactH >= 0 && compactA >= 0, 'the compact header block exists');
+    const shortH = idx(SHORT_MEDIA, hdr), shortA = idx(SHORT_MEDIA, av);
+    assert.ok(shortH > compactH, 'the 501-680 header padding comes later');
+    assert.ok(shortA > compactA, 'the 501-680 48px portrait comes later');
+    const tinyA = idx('@media (min-height: 500.02px) and (max-height: 560px)', av);
+    assert.ok(tinyA > compactA && tinyA > shortA, 'the 501-560 40px portrait comes last');
+    // equal specificity, so source order decides
+    assert.deepEqual(spec(hdr), spec(hdr));
+    const both = all.filter(r => r.selector.split(', ').includes(av) && r.media.includes('min-height: 500.02px'));
+    const last = both[both.length - 1];
+    assert.equal(last.media, '@media (min-height: 500.02px) and (max-height: 560px)', 'the last matching rule at 501-560 is the 40px one');
+    assert.match(last.body, /width:\s*40px/);
+    // at 800x600 (501-680) the last matching rule is the 48px one
+    const at600 = both.filter(r => !/max-height:\s*560px/.test(r.media));
+    assert.match(at600[at600.length - 1].body, /width:\s*48px/);
+});
+check('speaking phase: the thread takes the slack under the compact header (no empty band), only while no replies show', () => {
+    const r = D(V + ':has(.se-chat-header):not(.call-has-choices) .messages-container');
+    assert.match(r.body, /flex:\s*1 1 auto/);
+    assert.match(r.body, /max-height:\s*none/);
+    const d = doc('<div class="phone-call-mode"><div id="conversation-view" class="call-has-choices"><div class="se-chat-header"></div><div class="messages-container" id="m"></div></div></div>');
+    assert.ok(!d.getElementById('m').matches(r.selector), 'not with replies showing');
+});
+check('legend with all three thresholds reached: wraps by whole items, nothing is clipped', () => {
+    // Rendered text at VT323 16px: 6px per character, 8px gaps. jsdom has no layout, so the widths are
+    // computed and the computed rules (wrap, visible overflow, whole items) are checked.
+    const names = ['Wary at -40', 'Refuses at -50', 'Reports at -70'];
+    const reached = names.map((n, i) => (i ? '/ ' : '') + n + ': reached');
+    const lineChars = reached.join('').length;
+    const lineW = lineChars * 6 + 2 * 8;
+    const panelContent = 323;                 // measured live at 1280x720: 478 to 801 (360px phones leave about 285)
+    assert.ok(lineW > panelContent, 'the all-reached line really is longer than the panel (' + lineW + 'px), so wrapping is needed');
+    const rs = all.filter(r => r.media === LEGEND_MEDIA);
+    const legend = rs.find(r => r.selector === V + ' .se-chat-header .ib-infl-legend');
+    const item = rs.find(r => r.selector === V + ' .se-chat-header .ib-infl-legend-item');
+    assert.match(legend.body, /flex-wrap:\s*wrap/);
+    assert.match(legend.body, /overflow:\s*visible/);
+    assert.ok(item && /white-space:\s*nowrap/.test(item.body));
+    const widest = Math.max(...reached.map(t => t.length * 6));
+    assert.ok(widest < 285, 'each whole item fits even a 360px phone panel: ' + widest + 'px');
+    assert.ok(!rs.some(r => r.selector.endsWith('.ib-infl-legend') && /overflow:\s*hidden/.test(r.body)), 'no overflow:hidden on the legend line');
 });
 
 console.log(`\n${pass} checks passed`);
