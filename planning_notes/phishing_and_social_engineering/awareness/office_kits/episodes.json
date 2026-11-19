@@ -79,7 +79,7 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e1_lookalike_bank",
-   "hostLine": true,
+      "hostLine": true,
       "why": "Defend-only twin, tier S (plan 5): kit room, ambient staff, pool and stubs; no chain, no panel, no step-away, no set piece. The host layer-2 line is not written yet (new spoken content)."
     }
   ]
