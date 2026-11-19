@@ -99,6 +99,8 @@ export class KeyInsertion {
 
     updateFeedback(message) {
         this.parent.feedback.textContent = message;
+        // A longer line grows the strip; keep the key panel clear of it
+        this.parent._scrollKeyPanelIntoView?.();
     }
     
 }
