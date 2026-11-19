@@ -135,3 +135,18 @@ entries below took a different fix from the one suggested.
 - n5: 5.2 says "beyond what the range's size implies"; no prefix cap asked.
 - n6: kept the log detail key `technique` (renaming touches the log plan); section 13 now says what the three uses mean and that they never meet.
 - n7: `network-view-ops.test.mjs` row asserts the Panels draw no `cli` string.
+
+## Skin requests 3-4 applied (2026-11-19)
+
+- Req 3, 5.2 "Display fields": `address` rides on the row whenever it is listed: open network (`discovery: "open"` or absent) from the first `GET /network` answer that lists it, discovery network from the sweep; a held-session PC row on an unswept discovery network carries none until the sweep.
+- Req 3, section 6 "Display fields in these answers": names `GET /network` as the carrier of an open network's addresses.
+- Req 3, section 7: the address row restated for both network kinds; the leak collector now counts an open network's addresses at the first answer (tag `listed`), replacing "discovery networks only" (which reversed m3's address clause); the no-exposure paragraph restated to match.
+- Req 3, 11.4 leak scanner: `address` tagged sweep on a discovery network (held-session rows included) and `listed` on an open network.
+- Req 3, 11.2 `network_cli_fields_test`: held-session row with no address before the sweep; open-network cases (`"open"` and absent) with the address in the first `GET /network`.
+- Req 3, section 3 S1 row, 12.1 steps 3 and 5, 14 item 6: the serving rule stated in each.
+- Req 3 exception, not applied: its clause that the core's schema declares the `cli` objects. The core keeps 9.1 as written (the skin plan declares the `cli` rows at its K3; the closed blocks refuse `cli` until then). Orchestrator decision; the skin plan is being corrected to match.
+- Req 4, 5.3: `perform(offer, { echo } = {})` with no-op `onSent`/`onEnded`; the hook points mapped to real lines of `network-view-minigame.js` (`unplugBox` guard `:830-832`, key in `:835`, request `:839`, `finally` `:840-842`, reset `:848`, notice `:850`, `complete(false)` `:843-846`, listener catch `:295`); answer `null` on throw or no reply; a throwing hook is caught and logged and neither stops the request nor the tail.
+- Req 4, 5.3: onSent placed between adding the key and the synchronous pending redraw (the request leaves this open; chosen so a log line it writes shows in that redraw). Until the skin's K1, the `showResult` step is the scene's own result drawing at that point.
+- Req 4, 5.3 note: a throw from the unplug request no longer escapes `unplugBox` with the button disabled; the busy and wrong-jack answers of `unplugFromView` (`network-links.js:548-553`) are answers, so both hooks run for them.
+- Req 4, 11.3 `network-view-ops.test.mjs`: guard cases and `network-view.test.mjs` pass unedited with default hooks; one hook-order case (answer, refusal, throw, null; unplug before `complete(false)`; rejected press calls neither; throwing hooks; same request with and without echo).
+- Req 4, section 3 S1 row, 12.1 step 4, 12.2 scene row, 14 item 6: `perform` signature and hooks stated.
