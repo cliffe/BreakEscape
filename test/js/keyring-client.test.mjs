@@ -166,6 +166,41 @@ test('step 2: no entry for the tray item gives "{label} no longer works." named 
     assertOnlyToast(await window.keyring.connect(ITEM), 'missing', 'HB-FIN-02.rdp no longer works.');
 });
 
+test('a cancelled keycard (revoked_card_ids) is refused with the reader wording and never reaches GET or POST', async () => {
+    setup();
+    window.isCardRevoked = (id) => (window.gameState.globalVariables.revoked_card_ids || []).includes(id);
+    window.gameState.globalVariables.revoked_card_ids = ['clerk_card'];
+    const card = { scenarioData: { id: 'lena_rdp_file', name: 'Clerk badge', type: 'keycard', card_id: 'clerk_card', credential: 'x' } };
+    const r = await window.keyring.connect(card);
+    assert.equal(r.outcome, 'revoked');
+    assert.equal(r.message, 'Card cancelled');
+    assert.deepEqual(toasts(), ['Clerk badge has been deactivated. The reader rejects it.']);
+    assert.equal(alerts[0][2], 'Card cancelled');
+    assert.equal(posts().length, 0, 'no POST');
+    assert.equal(calls.filter(c => c[0] === 'keyring').length, 0, 'no GET');
+    assert.equal(opened.length, 0, 'no desktop');
+});
+
+test('a non-keycard item whose card_id is revoked is not treated as a card and still connects', async () => {
+    setup();
+    window.isCardRevoked = (id) => (window.gameState.globalVariables.revoked_card_ids || []).includes(id);
+    window.gameState.globalVariables.revoked_card_ids = ['clerk_card'];
+    const file = { scenarioData: { ...ITEM.scenarioData, card_id: 'clerk_card' } };
+    const r = await window.keyring.connect(file);
+    assert.notEqual(r.outcome, 'revoked');
+    assert.equal(posts().length, 1, 'signed in by POST');
+});
+
+test('an unrevoked keycard, and a revoked id for another card, still connect', async () => {
+    setup();
+    window.isCardRevoked = (id) => (window.gameState.globalVariables.revoked_card_ids || []).includes(id);
+    window.gameState.globalVariables.revoked_card_ids = ['other_card'];
+    const card = { scenarioData: { ...ITEM.scenarioData, type: 'keycard', card_id: 'clerk_card' } };
+    const r = await window.keyring.connect(card);
+    assert.notEqual(r.outcome, 'revoked');
+    assert.equal(posts().length, 1, 'signed in by POST');
+});
+
 test('step 2: another item\'s entry does not stand in, and the label is the tray item\'s name, not the entry\'s', async () => {
     setup();
     keyringAnswer = () => ({ entries: [{ ...OTHER_RDP, label: 'Wrong label' }], rev: 'r1' });

@@ -5,11 +5,22 @@
 VAR talked_to_kevin = false
 VAR talked_to_maya = false
 VAR told_derek_rumour = false
+// NPC-local: set after the greeting, so a re-talk goes straight to the choices instead of replaying it.
+VAR greeted = false
 
 -> start
 
 === start ===
+{ greeted:
+    // Return greeting: reuses his voiced cooler chatter line (same text, no #delivery tag, so the same cached audio).
+    Graham Whitfield: Quarter close. Nobody speak to me.
+    -> hub
+}
+~ greeted = true
 Graham Whitfield: Graham, finance. If it's about expenses, I'm not in. #delivery: dry, deadpan
+-> hub
+
+=== hub ===
 + {not told_derek_rumour and (talked_to_kevin or talked_to_maya)} [Anything odd in the budgets? Marketing, say.]
     ~ told_derek_rumour = true
     Graham Whitfield: Marketing has a budget line called partner services. Eleven thousand a month, and I've never seen an invoice. #delivery: dry, a little quieter

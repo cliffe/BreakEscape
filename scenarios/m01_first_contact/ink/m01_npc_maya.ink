@@ -13,6 +13,9 @@ VAR asked_about_patricia = false
 VAR maya_away = false
 VAR maya_settled = false
 
+// Global variable synced from scenario: set once the launch device is aborted or fired
+VAR ready_for_debrief = false
+
 // ================================================
 // START: FIRST MEETING
 // ================================================
@@ -167,7 +170,7 @@ Maya Chen: Derek's the operations lead. He built the target lists, wrote the fak
     -> derek_intel
 + {not asked_about_patricia} [What happened to Patricia?]
     -> patricia_story
-+ {revealed_informant} [What should I do first?]
++ {revealed_informant and not ready_for_debrief} [What should I do first?]
     -> tactical_advice
 + [I need to keep investigating]
     #exit_conversation

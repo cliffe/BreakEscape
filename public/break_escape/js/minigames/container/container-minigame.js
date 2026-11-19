@@ -1696,7 +1696,12 @@ export class ContainerMinigame extends MinigameScene {
 
     /** Start panel Places: the desktop, or a mapped share (opened as from the desktop). */
     taskbarPlace(place) {
-        if (place?.kind === 'share') { this.openMappedShare(place.item, this.desktopLockable()); return; }
+        if (place?.kind === 'share') {
+            // Opened from the Start panel by a key: the share takes the entry focus, as from an icon
+            this.openedByKey = place.byKey === true;
+            try { this.openMappedShare(place.item, this.desktopLockable()); } finally { this.openedByKey = false; }
+            return;
+        }
         if (place?.kind !== 'desktop' || this.desktopMode) return;
         // A share window's own Close goes back to the desktop it came from
         if (this.parentLockable) { this.closeByPlayer(); return; }
@@ -1774,9 +1779,23 @@ export class ContainerMinigame extends MinigameScene {
     populateStandardContents() {
         const contentsGrid = document.getElementById('container-contents-grid');
         if (!contentsGrid) return;
-        
+
+        // A share opened by a key takes the entry focus once, and only if the player has not
+        // moved it while the contents loaded (to the X, the Start button)
+        let takeEntryFocus = this.params?.focusEntry === true;
+        if (takeEntryFocus) {
+            this.params = { ...this.params, focusEntry: false }; // once
+            const active = document.activeElement;
+            takeEntryFocus = !active || active === document.body || !active.isConnected;
+        }
+
         if (this.contents.length === 0) {
             contentsGrid.innerHTML = '<p class="empty-contents">This container is empty.</p>';
+            // A share opened by a key with nothing in it: the grid takes the focus, not the body
+            if (takeEntryFocus) {
+                if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
+                contentsGrid.focus?.({ preventScroll: true });
+            }
             return;
         }
         
@@ -1858,6 +1877,15 @@ export class ContainerMinigame extends MinigameScene {
         });
         if (this.shareFolder) evenShareLabels(contentsGrid);
         else fitContentLabels(contentsGrid);
+        // A share opened by a key: its first item, else the grid (an empty share), has the focus
+        if (takeEntryFocus) {
+            const first = contentsGrid.querySelector('.container-content-slot');
+            if (first) first.focus?.({ preventScroll: true });
+            else {
+                if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
+                contentsGrid.focus?.({ preventScroll: true });
+            }
+        }
         // Back from a note read on pickup: same scroll position, focus kept inside the frame
         if (this.params?.fromReturn) {
             const top = Number(this.params.scrollTop);
@@ -1888,6 +1916,8 @@ export class ContainerMinigame extends MinigameScene {
         
         if (this.contents.length === 0) {
             desktopIcons.innerHTML = '<div class="empty-desktop">Desktop is empty</div>';
+            // A note read from the last icon: the desktop itself takes the focus back
+            this.focusReturnedIcon(desktopIcons);
             return;
         }
         
@@ -2008,11 +2038,23 @@ export class ContainerMinigame extends MinigameScene {
         const mark = this.params?.focusReturn;
         if (mark) this.params = { ...this.params, focusReturn: null }; // once
         if (!mark || mark.byKey !== true) return;
-        const icon = Array.from(grid.children).find(el => el.itemKey === mark.key);
-        if (!icon) return;
         const active = typeof document !== 'undefined' ? document.activeElement : null;
         if (active && !grid.contains(active)
             && active.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+        const icons = Array.from(grid.children).filter(el => el.classList?.contains('desktop-icon'));
+        let icon = icons.find(el => el.itemKey === mark.key);
+        if (!icon && Number.isInteger(mark.index)) {
+            // The file is gone (a note is taken as it is read): the icon now at its place, else
+            // the last one, else the desktop itself. Never the body.
+            icon = icons[Math.max(0, Math.min(mark.index, icons.length - 1))];
+            if (!icon) {
+                const desk = grid.closest?.('.desktop-background') || grid;
+                if (!desk.hasAttribute?.('tabindex')) desk.setAttribute?.('tabindex', '-1');
+                desk.focus?.({ preventScroll: true });
+                return;
+            }
+        }
+        if (!icon) return;
         icon._keyReturn = true;
         icon.focus?.({ preventScroll: true });
         icon.openLabel?.();
@@ -2094,8 +2136,10 @@ export class ContainerMinigame extends MinigameScene {
             parentLockable: parent || this.containerItem
         };
         this.exitReason = 'share';
+        // Opened by a key: the share's first item takes the focus (the way into a folder)
+        const focusEntry = this.openedByKey === true;
         this.complete(false);
-        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, false);
+        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, false, null, focusEntry ? { focusEntry: true } : null);
     }
 
     /**
@@ -2383,6 +2427,11 @@ export class ContainerMinigame extends MinigameScene {
                 // Where the list was scrolled to, so the container comes back there
                 scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
+                // A note opened from a desktop icon: the icon is gone on reopen (the note is
+                // taken), so the mark carries its place and the focus lands on the icon now there
+                focusReturn: itemElement?.parentElement?.classList?.contains('desktop-icon')
+                    ? { ...iconFocusMark(item, this.openedByKey === true), index: Array.from(itemElement.parentElement.parentElement?.children || []).indexOf(itemElement.parentElement) }
+                    : null,
                 // A note taken by key: on reopen the focus goes to the slot at this place
                 slotReturn: this.openedByKey === true && itemElement?.parentElement
                     ? { index: Array.from(itemElement.parentElement.parentElement?.children || []).indexOf(itemElement.parentElement), byKey: true }
@@ -2786,6 +2835,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         fromReturn: !!extra?.fromReturn,
         focusReturn: extra?.focusReturn || null,
         slotReturn: extra?.slotReturn || null,
+        focusEntry: extra?.focusEntry === true,
         scrollTop: extra?.scrollTop || 0,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',

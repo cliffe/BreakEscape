@@ -46,14 +46,26 @@
 //     is held in memory only (a child's return or the triage reopen carries pauseAfter),
 //     so a reopen from the kiosk goes straight to the stage.
 //
+// Step-away panel (EC1, living office), when episode.stepAway is true on a full episode:
+//   - the triage reopen carries stepAwayAfter: 'defend' (memory only, like pauseAfter), and the
+//     runner shows the panel in place of the debrief: Look up closes the runner and emits
+//     episode_step_away once; Carry on renders the debrief. Neither writes the state, which
+//     already says debrief, so a reopen or a reload resumes at the debrief with no panel;
+//   - Look up is enabled only while kit_defend_done is true (read at render, then on its change
+//     event), so after a failed save only Carry on can be used;
+//   - a facilitated run shows Look up on the pause after the defend stage instead;
+//   - closing the debrief by any route marks it seen (debriefSeen, once), which releases the
+//     success screen's hold (systems/episode-starter.js).
+//
 // Test seams: params.deps may replace renderStepStrip, renderFlipView, renderDebrief,
-// measure (recordTriageResult), startTriage, write (writeGlobal), now, schedule and
+// measure (recordTriageResult), startTriage, reemitDone (reemitTriageComplete), write (writeGlobal), now, schedule and
 // clearScheduled (the call watcher's timer).
 
 import { SocialOverlayScene, socialOverlayParams } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { recordTriageResult } from '../../systems/awareness-measure.js';
-import { resolvePlayerSent, plainSentMessage } from '../inbox-triage/triage-messages.js';
+import { resolvePlayerSent, plainSentMessage, buildTriageMessages } from '../inbox-triage/triage-messages.js';
+import { scoreTriage } from '../inbox-triage/triage-scoring.js';
 import { renderStepStrip, applyBrand } from './step-strip.js';
 import { renderFlipView } from './flip-view.js';
 import { renderDebrief } from './debrief-view.js';
@@ -65,7 +77,8 @@ import {
     awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps, guessLanded, sandboxRecap,
     drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
     concernPending, concernLaunchCopy, concernLaunchParams, concernRecord, concernRecap,
-    privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord
+    privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord,
+    stepAwayOn, STEP_AWAY_READY_GLOBAL, STEP_AWAY_EVENT, defendPrefix
 } from './episode-model.js';
 
 /**
@@ -123,6 +136,15 @@ const BRIEF_COPY = Object.freeze({ next: 'Next', back: 'Back', done: 'Got it' })
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
 const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
 const LAUNCH_FAILED = 'That did not open. Close this window and try the kiosk again.';
+// EC1: the step-away panel's chrome. strings.stepAway / strings.stepAwayHeading replace the
+// heading and line (the end-to-end shells give their own time).
+const STEP_AWAY_COPY = Object.freeze({
+    heading: 'Before the debrief',
+    text: 'Look up from the kiosk to see how a case like this plays out here. It takes about 20 seconds, and your place is saved.',
+    lookUp: 'Look up',
+    carryOn: 'Carry on',
+    wait: 'Look up is ready once your result has saved.'
+});
 const PAUSE_COPY = Object.freeze({
     heading: 'Pause',
     text: 'Stop here and talk it over as a group before the next step.',
@@ -209,6 +231,11 @@ function el(tag, className, text) {
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
+// Gate B D2: episode ids whose defend complete event this page has re-emitted (once per page).
+const REEMITTED = new Set();
+/** Test seam: forget the re-emits of this page. */
+export function _resetDefendReemitsForTests() { REEMITTED.clear(); }
+
 export class EpisodeRunnerMinigame extends SocialOverlayScene {
     constructor(container, params) {
         super(container, { title: 'Exercise', ...(params || {}) });
@@ -216,6 +243,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             renderStepStrip, renderFlipView, renderDebrief,
             measure: recordTriageResult,
             startTriage: (lockable, options) => win().startInboxTriageMinigame?.(lockable, options) ?? null,
+            // Gate B D2: triage-starter.js reemitTriageComplete, on window like startTriage.
+            reemitDone: (ctx) => win().reemitTriageComplete?.(ctx) ?? null,
             write: writeGlobal,
             now: () => Date.now(),
             schedule: (fn, ms) => setTimeout(fn, ms),
@@ -229,6 +258,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.view = null;
         this.state = null;
         this.pauseAfter = null;
+        this.stepAwayPanel = false;
+        this._steppedAway = false;
+        this._debriefShown = false;
+        this._readyOff = null;
         this._launching = null;
     }
 
@@ -369,6 +402,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         }
 
         this.state = this._readState();
+        this._reemitDefendDone();
         this.alreadySeen = this._seenAlready();
         this._settleCall();
         this._settleWorld();
@@ -377,6 +411,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const after = this.params.pauseAfter;
         this.pauseAfter = this.facilitated && isStr(after) && this.state.stage && this.state.done.includes(after)
             ? after : null;
+        // EC1: the step-away panel, carried by the triage reopen only (memory, never stored).
+        this.stepAwayPanel = !this.facilitated && !this.alreadySeen && stepAwayOn(this.episode)
+            && this.params.stepAwayAfter === 'defend' && this.state.done.includes('defend') && this.state.stage === 'debrief';
         this.strip = this.deps.renderStepStrip(this.stripHost, {
             stages: stagesFor(this.episode), current: this.state.stage, done: this.state.done,
             skipped: this._skippedStages(), labels: this._stripLabels(), brand: this.episode.brand
@@ -390,7 +427,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     }
 
     cleanup() {
+        const fromDebrief = this._debriefShown;
         this._destroyView();
+        if (fromDebrief) this._markDebriefSeen();
         this.strip?.destroy?.();
         this.strip = null;
         super.cleanup();
@@ -399,6 +438,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     _destroyView() {
         try { this.view?.destroy?.(); } catch (e) { console.warn('[episode] view destroy failed:', e); }
         this.view = null;
+        this._debriefShown = false;
+        this._unwatchReady();
         if (this.body) this.body.textContent = '';
     }
 
@@ -415,6 +456,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.strip?.update?.({ current: stage, done: this.state.done, skipped: this._skippedStages() });
         if (this.alreadySeen) this._renderFinished();
         else if (this.pauseAfter && stage) this._renderPause();
+        else if (this.stepAwayPanel && stage === 'debrief') this._renderStepAway();
         else if (stage === 'brief') this._renderBrief();
         else if (stage === 'flip') this._renderFlip();
         else if (stage === 'debrief') this._renderDebrief();
@@ -454,6 +496,113 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             this._render();
             this._focus();
         }, 'epr-resume');
+        // EC1 (e): in an opted-in shell, the pause after the defend stage also offers Look up.
+        if (after === 'defend' && stepAwayOn(this.episode) && this.state.done.includes('defend')) this._lookUpButton(panel);
+    }
+
+    // ── the step-away panel (EC1) ────────────────────────────────────────────
+
+    _renderStepAway() {
+        const s = this.strings;
+        const panel = this._panel(isStr(s.stepAwayHeading) ? s.stepAwayHeading : STEP_AWAY_COPY.heading,
+            isStr(s.stepAway) ? s.stepAway : STEP_AWAY_COPY.text);
+        panel.classList.add('epr-step-away');
+        this._lookUpButton(panel);
+        this._button(panel, STEP_AWAY_COPY.carryOn, () => {
+            this.stepAwayPanel = false;
+            this._render();
+            this._focus();
+        }, 'epr-carry-on aw-button-secondary');
+    }
+
+    /** True once the shell's mapping has set kit_defend_done on the confirmed defend save. */
+    _stepAwayReady() {
+        const g = this.globals;
+        return !!g && g[STEP_AWAY_READY_GLOBAL] === true;
+    }
+
+    /** Look up, disabled until kit_defend_done is true (read now, then on its change event). */
+    _lookUpButton(panel) {
+        const btn = this._button(panel, STEP_AWAY_COPY.lookUp, () => this._lookUp(), 'epr-look-up');
+        const note = el('p', 'epr-step-away-note', STEP_AWAY_COPY.wait);
+        note.setAttribute('aria-live', 'polite');
+        panel.appendChild(note);
+        const sync = () => {
+            const ready = this._stepAwayReady();
+            btn.disabled = !ready;
+            note.hidden = ready;
+        };
+        sync();
+        this._watchReady(sync);
+        return btn;
+    }
+
+    _watchReady(fn) {
+        this._unwatchReady();
+        const events = win().eventDispatcher;
+        if (typeof events?.on !== 'function') return;
+        const name = `global_variable_changed:${STEP_AWAY_READY_GLOBAL}`;
+        const handler = () => { try { fn(); } catch (e) { /* the panel may be gone */ } };
+        events.on(name, handler);
+        this._readyOff = () => { try { events.off?.(name, handler); } catch (e) { /* no dispatcher */ } };
+    }
+
+    _unwatchReady() {
+        const off = this._readyOff;
+        this._readyOff = null;
+        off?.();
+    }
+
+    /**
+     * Look up: close the runner, then emit episode_step_away once. The state is not written (it
+     * already says debrief), so the success screen's hold stays and a reopen lands on the debrief.
+     */
+    _lookUp() {
+        if (this._steppedAway || !this._stepAwayReady()) return;
+        this._steppedAway = true;
+        this.stepAwayPanel = false;
+        this.pauseAfter = null;
+        const episodeId = this.episode.id ?? null;
+        if (this.gameState.isActive) this.close();
+        try {
+            win().eventDispatcher?.emit?.(STEP_AWAY_EVENT, { episodeId });
+        } catch (e) {
+            console.error('[episode] could not emit the step-away event:', e);
+        }
+    }
+
+    /**
+     * Gate B D2: a step-away episode whose defend round reached the server with no event (every
+     * confirmed-save retry failed, the pagehide keepalive flush landed) has <defendPrefix>complete
+     * true and kit_defend_done false for good. On each open, re-emit the complete event once a sync
+     * confirms (triage-starter.js reemitTriageComplete), so the shell's mapping sets
+     * kit_defend_done. In the normal case kit_defend_done is already true and nothing is sent; a
+     * successful re-emit is not repeated in this page even if no mapping sets the global.
+     */
+    _reemitDefendDone() {
+        const g = this.globals;
+        const id = this.episode.id;
+        if (!g || !id || !stepAwayOn(this.episode) || REEMITTED.has(id)) return;
+        const prefix = defendPrefix(id);
+        if (g[`${prefix}complete`] !== true || g[STEP_AWAY_READY_GLOBAL] === true) return;
+        let run = null;
+        try {
+            run = this.deps.reemitDone({ prefix, stillNeeded: () => this.globals?.[STEP_AWAY_READY_GLOBAL] !== true });
+        } catch (e) {
+            console.error('[episode] could not re-emit the defend round:', e);
+            return;
+        }
+        Promise.resolve(run).then((r) => {
+            if (Array.isArray(r?.emitted) && r.emitted.length) REEMITTED.add(id);
+        }).catch((e) => console.error('[episode] re-emitting the defend round failed:', e));
+    }
+
+    /** EC1 (d): the debrief view closed (Finish or the kiosk's X): release the success screen once. */
+    _markDebriefSeen() {
+        if (!stepAwayOn(this.episode)) return;
+        const s = this._readState();
+        if (s.debriefSeen === true || s.done.includes('debrief')) return;
+        this._saveState({ ...s, debriefSeen: true });
     }
 
     _button(panel, label, onClick, cls = '') {
@@ -704,6 +853,40 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (!child) this._complete('flip'); // the scene did not open: do not strand the learner
     }
 
+    /**
+     * Gate B D1: the debrief's result rebuilt from the stored verdicts (a step-away reopen), scored
+     * by scoreTriage over the same built messages the triage round scored, so the cards and the
+     * summary equal the live debrief's. Answers carry score and isPhish as the live result's do
+     * (inbox-triage-minigame.js _buildResult). Null with no stored verdicts or no defend set.
+     */
+    _rescoreDefend(kept) {
+        if (!Array.isArray(kept) || !kept.length) return null;
+        try {
+            const set = this.defendSet;
+            if (!isObj(set)) return null;
+            const { messages } = buildTriageMessages(set, { mailState: this.mailState, social: this.social, globals: this.globals || {} });
+            const s = scoreTriage({
+                messages, answers: kept, profile: set.scoringProfile === 'analyst' ? 'analyst' : 'awareness',
+                bands: set.bands, scoring: set.scoring || null
+            });
+            const byId = new Map(kept.map((a) => [a.id, a]));
+            const { perMessage, ...rest } = s;
+            return {
+                ...rest,
+                answers: perMessage.map((pm) => {
+                    const a = byId.get(pm.id) || {};
+                    const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0, isPhish: pm.isPhish === true };
+                    if (a.action) out.action = a.action;
+                    if (a.none === true) out.none = true;
+                    return out;
+                })
+            };
+        } catch (e) {
+            console.warn('[episode] could not score the stored defend answers:', e);
+            return null;
+        }
+    }
+
     /** Above a P7-B view, the stage's group prompt (facilitated mode). */
     _prependPrompt(stage) {
         const prompt = this._groupPrompt(this.body, stage);
@@ -712,7 +895,16 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     _renderDebrief() {
         const stored = this.state.defend || {};
-        const raw = isObj(this.params.triageResult) ? this.params.triageResult : { ...stored, answers: [] };
+        // EC1 (c): a step-away episode keeps the defend answers in the state, so the per-item
+        // cards survive a look-up and a reload; every other episode passes an empty list as before.
+        const kept = stepAwayOn(this.episode) && Array.isArray(this.state.defendProgress) ? this.state.defendProgress : [];
+        // Gate B D1: the stored list keeps verdicts only (no score, no isPhish), so a reopen scores
+        // it again with the live round's scorer; the stored figures win where both have one.
+        let raw = this.params.triageResult;
+        if (!isObj(raw)) {
+            const rescored = this._rescoreDefend(kept);
+            raw = rescored ? { ...rescored, ...stored, answers: rescored.answers } : { ...stored, answers: kept };
+        }
         // aw1, aw4, aw6: the deployment's report route, shared rule of thumb and team size
         // (social.awareness, with the host page's breakEscapeConfig.awareness winning).
         const config = win().breakEscapeConfig;
@@ -722,6 +914,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // report-rate percentage, which the stored result keeps. The item counts stay either way.
         const showScore = !this.facilitated && settings.showResult !== false;
         const result = showScore ? raw : hideScore(raw);
+        this._debriefShown = true;
         this.view = this.deps.renderDebrief(this.body, {
             result,
             showScore,
@@ -1011,7 +1204,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     /** The params this runner reopens with. */
     _reopenParams(extra = {}) {
-        const { suspended, triageResult, resume, pauseAfter, ...base } = this.params;
+        const { suspended, triageResult, resume, pauseAfter, stepAwayAfter, ...base } = this.params;
         return { ...base, ...extra, resume: true, suspended: false };
     }
 
@@ -1074,13 +1267,19 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 console.error('[episode] recording the round failed:', e);
             }
         }
-        const state = completeStage(episode, this._readState(), stage, { defend: defendSummary(result) });
+        // EC1 (c): a step-away episode keeps the round's verdicts (the result's list, cleaned).
+        const keep = stepAwayOn(episode) && stage === 'defend' && Array.isArray(result?.answers) && result.answers.length
+            ? { defendProgress: result.answers } : {};
+        const state = completeStage(episode, this._readState(), stage, { defend: defendSummary(result), ...keep });
         this._saveState(state);
         if (!state.stage) return; // a check mission ends with the triage result screen
         const fw = win().MinigameFramework;
         if (!fw?.startMinigame) return;
+        const facilitated = episode.facilitated === true;
         fw.startMinigame('episode-runner', null, {
-            ...reopenBase, triageResult: result, pauseAfter: episode.facilitated === true ? stage : null
+            ...reopenBase, triageResult: result, pauseAfter: facilitated ? stage : null,
+            // EC1 (a): the step-away panel, for an opted-in, non-facilitated run.
+            stepAwayAfter: !facilitated && stepAwayOn(episode) && stage === 'defend' ? stage : null
         });
     }
 
@@ -1102,7 +1301,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 sentHeld: !!s.sent,
                 mistakeHeld: !!s.mistakeChoices,
                 facilitated: this.facilitated,
-                paused: !!(this.pauseAfter && s.stage)
+                paused: !!(this.pauseAfter && s.stage),
+                stepAwayPanel: !!(this.stepAwayPanel && s.stage === 'debrief'),
+                stepAwayReady: this._stepAwayReady(),
+                debriefSeen: s.debriefSeen === true
             }
         };
     }

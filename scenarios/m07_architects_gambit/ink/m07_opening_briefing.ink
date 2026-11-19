@@ -241,7 +241,7 @@ Director Magnus Netherton: Trojan Horse. Access to forty-seven million systems. 
 
 Director Magnus Netherton: Meltdown. Eighty to a hundred and forty dead this week. The markets recover inside a year. The patients do not.
 
-* [So Meltdown. It's the only one killing people tonight.]
+* [Meltdown, then. It has the highest toll on the board.]
     Director Magnus Netherton: That is the reading the numbers invite.
     Director Magnus Netherton: It is also the loudest brief of the three. Loudest and worst are not always the same brief.
     -> compare_tail

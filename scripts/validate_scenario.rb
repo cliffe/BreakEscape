@@ -2312,13 +2312,15 @@ def check_lock_credentials(json_data)
   walk_locks.call(json_data)
 
   # [name, credential, lockType] for items whose type is a physical key or an
-  # RFID/keycard/fob credential. A physical key is matched by 'opens_lock'
+  # keycard credential. A physical key is matched by 'opens_lock'
   # (falling back to 'key_id' -- ItemIdentity.lock_ref). An RFID/keycard is
   # matched by 'card_id' first, falling back to 'opens_lock'/'key_id'
   # (unlock-system.js getCardId) -- so card_id is the credential that
   # actually satisfies the door when both are present.
   key_items = []
-  credential_item_types = { 'key' => 'key', 'keycard' => 'rfid', 'rfid' => 'rfid', 'fob' => 'rfid' }
+  # Only 'keycard' counts as a card: the engine (Game#held_keycard_ref_ids, held_keycard_ids) takes
+  # type == 'keycard' alone, so a 'fob' or 'rfid' item never opens a requires lock.
+  credential_item_types = { 'key' => 'key', 'keycard' => 'rfid' }
   walk_items = lambda do |node|
     case node
     when Array then node.each { |n| walk_items.call(n) }
@@ -3929,7 +3931,11 @@ def check_common_issues(json_data, valid_item_types = nil)
                   has_effect = phone_chat_trigger || mapping['setGlobal'] || mapping['sendTimedMessage'] ||
                                mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim'] ||
                                mapping['unlockDoor'] || mapping['bark'] || mapping['sendEmail']
-                  unless has_effect
+                  # A mapping retired in place (a "Retired ..." _comment and a condition that can never be
+                  # true) is an inert slot kept so later mappings keep their once-only index: not a defect.
+                  retired_slot = mapping['_comment'].to_s.start_with?('Retired') &&
+                                 mapping['condition'].to_s.include?('retired_')
+                  unless has_effect || retired_slot
                     issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, unlockAim, unlockDoor, bark or phone-chat trigger). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
                   end
                 end
@@ -5416,6 +5422,8 @@ def check_stacked_timed_texts(json_data)
         next unless m.is_a?(Hash) && m['sendTimedMessage'].is_a?(Hash)
         d = m['sendTimedMessage']['delay']
         next unless d.is_a?(Numeric) && m['eventPattern'].is_a?(String)
+        # a mapping's own delayMs holds the whole action back, so it adds to the text's delay
+        d += m['delayMs'] if m['delayMs'].is_a?(Numeric) && m['delayMs'] > 0
         entries[m['eventPattern']] << { delay: d, msg: m['sendTimedMessage']['message'], cond: m['condition'], who: who,
                                        sets: m['setGlobal'].is_a?(Hash) ? m['setGlobal'].keys : [] }
       end

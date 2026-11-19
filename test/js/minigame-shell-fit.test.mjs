@@ -331,7 +331,8 @@ test('no Courier New or hairlines left in the flag station and VM launcher (A27,
 
 test('dusting kit is capped to the window and scrolls inside its frame (A15, A17)', () => {
     const c = css('dusting.css');
-    assert.equal(rule(c, '.dusting-root')['overflow-y'], 'auto');
+    assert.equal(rule(c, '.dusting-root').overflow, 'hidden');   // the frame is capped; its .dusting-body scrolls inside
+    assert.equal(rule(c, '.dusting-body')['overflow-y'], 'auto');
     assert.equal(rule(c, '.minigame-container > .dusting-game-container')['max-height'], 'none');
     assert.equal(rule(c, '.dusting-options input[type="checkbox"]').appearance, 'none');
     assert.doesNotMatch(c, /1px solid/);

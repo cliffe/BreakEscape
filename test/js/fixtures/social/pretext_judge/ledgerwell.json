@@ -101,7 +101,7 @@
       "bands": { "calm": "Dev is relaxed.", "wary": "Dev has slowed down.", "refusing": "Dev has stopped helping." }
     },
     "lines": {
-      "open_buddy": { "blanks": { "intern": "intern", "team": "team" }, "claims": [ { "fact": "intern", "from": "blank:intern" }, { "fact": "team", "from": "blank:team" } ] },
+      "open_buddy": { "blanks": { "intern": "intern", "team": "team" }, "optionalBlanks": true, "claims": [ { "fact": "intern", "from": "blank:intern" }, { "fact": "team", "from": "blank:team" } ] },
       "repair_team": { "technique": "candour", "repairs": "team", "blanks": { "team": "team" }, "claims": [ { "fact": "team", "from": "blank:team" } ] },
       "urgent_payslip": { "technique": "urgency", "claims": [] },
       "name_drop_manager": { "technique": "authority_borrowed", "claims": [] }

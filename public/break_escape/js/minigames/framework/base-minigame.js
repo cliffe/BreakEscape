@@ -11,6 +11,15 @@ function consoleTitleHtml(text) {
     return `<span class="console-title-org">${escapeHtml(m[1] + m[2])}</span>${escapeHtml(m[3])}`;
 }
 
+// Opens the text of a chat scene whose head was cut (see getTestState). Same string as
+// TEXT_TAIL_MARK in utils/test-state-text.js, written out so this file gains no import.
+const TEXT_TAIL_MARK = '[... earlier text cut, newest lines below ...]\n';
+
+// A cut must not split an emoji: drop a lone low surrogate at the start of a tail, or a
+// lone high surrogate at the end of a head. Same as in utils/test-state-text.js.
+const headCut = (t, n) => { let h = t.slice(0, n); if (/[\uD800-\uDBFF]$/.test(h)) h = h.slice(0, -1); return h; };
+const tailCut = (t, n) => { let h = t.slice(t.length - n); if (/^[\uDC00-\uDFFF]/.test(h)) h = h.slice(1); return h; };
+
 // params.title and params.cancelText are plain text: they often come from scenario
 // object names, NPC names or server data, so they are escaped before they reach the
 // header HTML. No caller needs markup in a title, and there is deliberately no option
@@ -371,7 +380,12 @@ export class MinigameScene {
         // Guard against stale minigame instances (e.g. a deferred showSuccess timer
         // from an NPC chat firing after a new minigame has already started).
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame !== this) {
-            console.warn('complete() called on a superseded minigame instance — ignoring', this.constructor.name);
+            // Said once per instance, so a stray call is visible in development without a
+            // repeating timer flooding the log. The call is still ignored.
+            if (!this._staleCompleteWarned) {
+                this._staleCompleteWarned = true;
+                console.warn(`complete() called on a closed or replaced minigame instance (${this.constructor.name}) - ignoring`);
+            }
             return;
         }
 
@@ -544,8 +558,14 @@ export class MinigameScene {
             // Cut at 2000 characters, and says so (textTruncated, textLength: the same
             // rule as utils/test-state-text.js, written out here so this file gains no
             // import). A notes overlay also carries the note's own text as noteContent.
-            text: fullText.slice(0, 2000),
-            ...(fullText.length > 2000 ? { textTruncated: true, textLength: fullText.length } : {}),
+            // A chat or thread scene (static keepsTextTail = true) keeps the END of the
+            // text instead, since its newest lines are last: the text then starts with
+            // the marker below and the reply adds textKeeps: 'tail'. Total is at most 2000.
+            ...(fullText.length > 2000 && this.constructor.keepsTextTail
+                ? { text: TEXT_TAIL_MARK + tailCut(fullText, 2000 - TEXT_TAIL_MARK.length),
+                    textTruncated: true, textLength: fullText.length, textKeeps: 'tail' }
+                : { text: headCut(fullText, 2000),
+                    ...(fullText.length > 2000 ? { textTruncated: true, textLength: fullText.length } : {}) }),
             controls,
             fields
         };

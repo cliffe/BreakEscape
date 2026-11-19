@@ -24,7 +24,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e6_texts_and_qr_defend_complete:
-        Chidi Okeke: There, both ends done. On a phone it's one move every time: if a message wants a code scanned or a link tapped, open the app yourself instead.
+        Chidi Okeke: There, both ends done. On a phone, do the same thing every time: if a message wants a code scanned or a link tapped, open the app yourself instead.
     - else:
         { phish_mobile_staff_attempts > 0:
             Chidi Okeke: Your message has gone over to Kaylee. Now take the other seat and go through a Tarrowby work phone, the way it would land on your break.

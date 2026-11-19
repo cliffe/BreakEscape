@@ -461,6 +461,18 @@ check('short-screen call (501 to 680px): the thread gives way to 44px and the re
         assert.ok(need <= view, vw + 'x' + vh + ': view ' + view + ' needs ' + need);
     }
 });
+check('565 to 680px call: the thread floor is 58px (one full two-line Dev subtitle), 44px stays at 501 to 564px', () => {
+    const MID_SHORT = '@media (min-height: 564.02px) and (max-height: 680px)';
+    const r = Dm(MID_SHORT, CH + ' .messages-container');
+    const floor = px(r.body, 'min-height');
+    assert.ok(floor >= 2 * 16 * 1.3 + 16 - 0.5, 'two 16px lines at 1.3 plus 8px padding top and bottom fit: ' + floor);
+    assert.ok(allIdx(MID_SHORT) > allIdx(SHORT_MEDIA), 'the block comes after the 501-680 block so it wins');
+    assert.equal(px(Dm(SHORT_MEDIA, CH + ' .messages-container').body, 'min-height'), 44, '501-564 keeps 44px');
+    // the replies box keeps its 64px floor and the 58px thread still fits at the shortest screen of the range
+    const view = screenAt(565) - PHONE_HEADER;
+    assert.ok(STATUS + 187 + floor + 64 + CUE_H <= view, 'budget at 565px: need ' + (STATUS + 187 + floor + 64 + CUE_H) + ' of ' + view);
+    assert.ok(!all.some(x => x.media === MID_SHORT && /choices-container/.test(x.selector)), 'replies floor untouched');
+});
 check('tall call: height budget at 821px with the full three-line legend (status header counted, end button on screen)', () => {
     const header = 238;          // measured live: 64px portrait row, influence bar with three legend lines and a change line
     const need = PHONE_HEADER + STATUS + header + px(D(CH + ' .messages-container').body, 'min-height') + 82 + CUE_H;
@@ -480,8 +492,9 @@ check('call up to 820px tall: the legend is one line of text, not hidden, "Name 
     const state = rs.find(r => /ib-infl-legend-state/.test(r.selector));
     assert.ok(state && /:not\(\.is-reached\)/.test(state.selector) && /clip:\s*rect\(0 0 0 0\)/.test(state.body) && !/display:\s*none/.test(state.body), '"not reached" is visually hidden, not display:none (screen readers)');
     assert.match(state.selector, /ib-infl-legend-colon/, 'the colon goes with it, so no dangling colon');
-    const sep = rs.find(r => /legend-item \+ \.ib-infl-legend-item::before/.test(r.selector));
-    assert.ok(sep && /content:\s*"\/ ";\s*content:\s*"\/ " \/ "";/.test(sep.body), 'slash separator with a plain fallback first, then empty alt text');
+    assert.ok(!rs.some(r => /::before/.test(r.selector) && /legend-item/.test(r.selector)), 'no separator before an item: a wrapped line would start with "/"');
+    const sep = rs.find(r => /legend-item:not\(:last-child\)::after/.test(r.selector));
+    assert.ok(sep && /content:\s*" \/";\s*content:\s*" \/" \/ "";/.test(sep.body), 'slash ends every item but the last, plain fallback first, then empty alt text');
     assert.ok(!all.some(r => r.media === SHORT_MEDIA && /ib-infl-legend/.test(r.selector)), 'the legend rules live in the 820px block only');
     assert.ok(!all.some(r => r.media === '' && /ib-infl-legend/.test(r.selector) && /clip/.test(r.body)), 'the legend is not clipped on tall screens');
     assert.ok(!rs.some(r => /align-self/.test(r.body)), 'no stretch hack: the legend gives the bar its width');

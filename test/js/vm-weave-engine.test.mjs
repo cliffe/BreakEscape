@@ -139,7 +139,7 @@ test('R7: a hint-only response is neutral info with a soft sound, never the succ
     assert.ok(!sounds.includes('confirm'));
     assert.deepEqual(s.submittedFlags, [], 'a hint does not consume the flag');
     assert.deepEqual(s.recognisedFlags, [{ flag: 'flag{launch}', note: 'Launch code validated. Enter it into the launch device.' }], 'listed as a key for another device');
-    assert.match(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /key: use elsewhere/);
+    assert.match(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /Valid key, use elsewhere/);
     assert.doesNotMatch(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /DONE/);
     assert.equal(els['#reward-notification'].innerHTML, '', 'no "Rewards Unlocked" box');
     assert.deepEqual(events.map(e => e.name), ['flag_rejected']);
