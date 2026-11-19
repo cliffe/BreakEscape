@@ -193,6 +193,10 @@ def kit_globals(kit, row, prefix=None):
         g[out_global(row)] = False
     g.update(_subst(copy.deepcopy(_set_piece(kit, row).get('globals', {})), prefix, row))
     if row.get('keyMessage'):
+        # The hub-first host layer-2 "said once" flag (plan 6.6). Full shells get it from their set
+        # piece's globals; a tier-S twin has no set piece, so the key message is where it rides in.
+        # setdefault keeps the set-piece position for full shells (byte-identical), adds it for twins.
+        g.setdefault(f"kit_{row['ep']}_host_said", False)
         g[KEY_GLOBAL] = False
     return g
 

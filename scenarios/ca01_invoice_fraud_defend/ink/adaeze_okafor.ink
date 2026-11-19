@@ -4,11 +4,19 @@
 // payable. Warm and direct. One welcome line; the kiosk does the rest. Her record
 // carries the mapping that completes sort_payments_inbox when the set's done
 // global changes (11 S5.1), so the ink only reads that global.
+// Layer 2 host line (plan 6.6): a defend-only twin has no attack half, so the line
+// speaks of the incident as the firm's own case. The hub speaks first on
+// kit_defend_done && not kit_ca01_host_said, branches on kit_key_caught (did the
+// learner catch the bank-change email), then sets kit_ca01_host_said. Those three
+// kit_ globals come from the kit data (episodes.json keyMessage, tier S).
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
 // quietly, and a re-talk re-enters it and says the line that fits the moment.
 // ================================================
 
 VAR episode_e1_invoice_fraud_defend_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_key_caught = false
+VAR kit_ca01_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -18,10 +26,19 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e1_invoice_fraud_defend_defend_complete:
-        Adaeze Okafor: That's the inbox sorted, thank you. We got caught by one of these once, a bank-change email we took at face value, and it took an age to get the money back. So now we ring the supplier back on a number we already hold before any payee change.
+    { kit_defend_done && not kit_ca01_host_said:
+        { kit_key_caught:
+            Adaeze Okafor: You spotted that bank-change email in the inbox, so the run paid Harlow's real account, not the one the email asked for. That's the message these go wrong on, and you had it.
+        - else:
+            Adaeze Okafor: That bank-change email was the one to stop. On a busy afternoon a payee change can go onto the supplier file on trust, and then the run pays an account that was never Harlow's.
+        }
+        ~ kit_ca01_host_said = true
     - else:
-        Adaeze Okafor: Thanks for covering the payments inbox before the three o'clock run. It's open on the kiosk.
+        { episode_e1_invoice_fraud_defend_defend_complete:
+            Adaeze Okafor: That's the inbox sorted, thank you. We got caught by one of these once, a bank-change email we took at face value, and it took an age to get the money back. So now we ring the supplier back on a number we already hold before any payee change.
+        - else:
+            Adaeze Okafor: Thanks for covering the payments inbox before the three o'clock run. It's open on the kiosk.
+        }
     }
 }
 + [Thanks, Adaeze.]
