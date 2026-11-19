@@ -85,10 +85,10 @@ if (typeof window !== 'undefined') {
 // success toasts wait until the last of them closes and then show for their full time, a toast
 // barely on screen when one opens is pulled back, and older ones pause and carry on after.
 // Errors and warnings are feedback on what the player just did, so they still show at once.
-let openModalDialogs = 0;
-
+// Read from the page, not counted: an overlay removed by anything other than its own close
+// (a test or a scene teardown wiping the body) must never leave toasts held for good.
 export function modalDialogOpen() {
-    return openModalDialogs > 0;
+    return typeof document !== 'undefined' && !!document.querySelector('.game-confirm-overlay');
 }
 
 function anyPanelOpen() {
@@ -106,16 +106,13 @@ function setModalHold(on) {
 }
 
 function modalDialogOpened() {
-    openModalDialogs++;
-    if (openModalDialogs !== 1) return;
+    if (document.querySelectorAll('.game-confirm-overlay').length !== 1) return;   // already held by another
     holdRecentNotifications(Date.now(), { dismissStale: false });
     setModalHold(true);
 }
 
 function modalDialogClosed() {
-    if (openModalDialogs === 0) return;
-    openModalDialogs--;
-    if (openModalDialogs === 0) setModalHold(false);
+    if (!modalDialogOpen()) setModalHold(false);
 }
 
 function releaseHeldNotifications() {
