@@ -37,10 +37,13 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**14:18 London: the 5-hour usage limit (resets 15:10) failed all four running agents below
-(core R6 review, privilege R7 fixer, lock R8 delta, skin R6 fixes). Nothing was written. After
-15:10 relaunch each with the same brief (or SendMessage to resume). AC0 aborted the stalled
-main-checkout rebase (main clean at 4b5f65edd).**
+**Update about 16:00: privilege (R8 settled, 1382 lines, `6976eef98`), lock (R9 settled, 1063,
+`4ef605036`) and skin (R8 settled, 1121, `7d427911c`) are settled pending round 2 answers. Core:
+R6 0B/3M/7m fixes part 1 at `420319505` (handover `ops_layer/HANDOVER_OPS_CORE_R6_fixer.md`);
+an opus55 part-2 fixer is running (M2 rest, m1 NA:498, m6 log rows in core AND log plan, m7,
+decisions log). Next: commit it, Sonnet/opus55 core R7 delta, then a short cross-plan delta over
+today's revisions. Round 2 page: https://claude.ai/artifact/Kovtq5LNnBVNGrAYttEg97. The table
+below is older.**
 
 The user answered the 41-question picks page on 2026-11-19; rulings in
 `docs/agents/ops_layer/USER_PICKS_2026-11-19.md`. Plans revised to them, then reviewed again.
