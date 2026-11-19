@@ -63,6 +63,7 @@ const tick = () => ticks.slice().forEach(fn => fn && fn());
 const { TutorialManager } = await import(dataUrl(readFileSync(join(js, 'systems/tutorial-manager.js'), 'utf8')));
 
 const MAC_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15';
+const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 Chrome/130.0 Safari/537.36';
 const WIN_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0 Safari/537.36';
 const PHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1';
 const TOUCH_WORDS = 'Done. Tap Continue.';
@@ -122,4 +123,35 @@ test('without matchMedia the user agent and width rule decide, as before', async
     window.innerWidth = 600; ticks = [];
     t = new TutorialManager(); t.promptOpen = false; await t.start(() => {});
     assert.ok(!/W, A, S, D/.test(t.steps[0].instruction), 'narrow gives mobile steps');
+});
+
+test('Android tablet with a mouse (fine pointer, 1280 wide) gets mobile steps and Tap wording', async () => {
+    const r = await run({ ua: ANDROID_UA, width: 1280, coarse: false, fine: true });
+    assert.ok(r.mobileSteps === true, 'mobile steps by user agent, got: ' + r.first);
+    assert.ok(r.words === TOUCH_WORDS, 'tap wording from the user agent, got: ' + r.words);
+});
+
+test('relaunch after the pointer changes re-decides steps and wording together, both ways', async () => {
+    Object.defineProperty(globalThis, 'navigator', { value: { userAgent: MAC_UA }, configurable: true, writable: true });
+    window.innerWidth = 1280; ticks = []; docListeners.keydown = []; window.gameMenu = { isOpen: false };
+    window.matchMedia = (q) => ({ matches: q === '(pointer: coarse)' ? true : false });
+    const t = new TutorialManager(); t.promptOpen = false;
+    await t.start(() => {});
+    assert.ok(!/W, A, S, D/.test(t.steps[0].instruction), 'touch-only gives mobile steps');
+    // Keyboard and trackpad attached: fine pointer appears
+    window.matchMedia = (q) => ({ matches: q === '(any-pointer: fine)' });
+    ticks = [];
+    t.relaunch();
+    await new Promise(r => setImmediate(r));
+    assert.ok(/W, A, S, D/.test(t.steps[0].instruction), 'relaunch gives desktop steps');
+    t.notifyPlayerMoved(); tick();
+    assert.ok(overlayParts['.tutorial-ready'].textContent === ENTER_WORDS, 'desktop steps pair with Enter wording');
+    // Detached again: touch-only
+    window.matchMedia = (q) => ({ matches: q === '(pointer: coarse)' });
+    ticks = [];
+    t.relaunch();
+    await new Promise(r => setImmediate(r));
+    assert.ok(!/W, A, S, D/.test(t.steps[0].instruction), 'second relaunch gives mobile steps');
+    t.notifyPlayerMoved(); tick();
+    assert.ok(overlayParts['.tutorial-ready'].textContent === TOUCH_WORDS, 'mobile steps pair with Tap wording');
 });

@@ -94,6 +94,7 @@ export class TutorialManager {
         this.currentStep = 0;
         this.steps = [];
         this.isMobile = this.detectMobile();
+        this.touchFirst = isTouchFirst();
         this.tutorialOverlay = null;
         this.onComplete = null;
         // True from the moment the game decides to ask until the player answers,
@@ -222,6 +223,11 @@ export class TutorialManager {
         this.active = true;
         this.onComplete = onComplete;
         this.currentStep = 0;
+
+        // Decide the step set and the ready wording together, once per run, so a
+        // relaunch after the pointer or window changed still agrees with itself
+        this.isMobile = this.detectMobile();
+        this.touchFirst = isTouchFirst();
 
         // Define tutorial steps based on device type
         if (this.isMobile) {
@@ -418,7 +424,7 @@ export class TutorialManager {
         this.stepReady = true;
         nextButton.classList.add('tutorial-next-ready');
         const ready = this.tutorialOverlay?.querySelector('.tutorial-ready');
-        if (ready) ready.textContent = isTouchFirst() ? TUTORIAL_READY_TEXT_TOUCH : TUTORIAL_READY_TEXT;
+        if (ready) ready.textContent = this.touchFirst ? TUTORIAL_READY_TEXT_TOUCH : TUTORIAL_READY_TEXT;
         this.revealReadyCue(ready, nextButton);
     }
 

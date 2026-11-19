@@ -205,8 +205,8 @@ test('Enter listener: one after relaunch twice, none after the last step complet
 });
 
 test('touch-first devices are not told to press Enter; others are', async () => {
-    let t = await begin();
     touchFirst = true;
+    let t = await begin();
     t.notifyPlayerMoved(); tick();
     assert.ok(ready() === 'Done. Tap Continue.', 'touch wording');
     touchFirst = false;
