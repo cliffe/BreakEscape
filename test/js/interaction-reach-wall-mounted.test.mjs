@@ -183,7 +183,7 @@ test('objectStandPoint: without reachX/reachY deps an object is judged by its po
 test('test bridge: state.js and index.js measure y with reachY wherever they measure x with reachX', () => {
     const state = readFileSync(join(js, 'systems/test-bridge/state.js'), 'utf8');
     const index = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
-    assert.match(state, /import \{ reachX, reachY, aimX, aimY, TALL_PROP_PX \} from '\.\.\/interaction-reach\.js'/);
+    assert.match(state, /import \{ reachX, reachY, aimX, TALL_PROP_PX \} from '\.\.\/interaction-reach\.js'/);
     assert.match(index, /import \{ reachX, reachY \} from '\.\.\/interaction-reach\.js'/);
     assert.match(state, /const ry = reachY\(sprite, py\);[\s\S]{0,80}const d = dist\(px, py, rx, ry\);/, 'describeObject');
     assert.match(state, /const ty = target \? reachY\(target, sy\) : targetY;/, 'solveStandingPointWhere');
