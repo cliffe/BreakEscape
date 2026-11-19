@@ -32,6 +32,8 @@ VAR noor_told = false
 VAR noor_ko = false
 VAR noor_met = false
 VAR old_coyote_ko = false
+VAR old_coyote_told = false
+VAR cage_bin = ""
 VAR sorensen_fate = "left"
 VAR tran_outcome = "left"
 VAR memo_stance = ""
@@ -223,6 +225,14 @@ Director Magnus Netherton: Then I sign, and that is the night closed. Anything e
 { m03_victoria_fate == "recruited" and maintenance_code_used:
     Director Magnus Netherton: Sterling's people opened that gate for us. The first time we have used her. It will not be the last.
 }
+// Echo of the hatch bins (cage_bin), outside the two-line cap like Victoria's and Noor's lines.
+// nightshade_copy, and derek_file once the Nightshade file was tidied, stay silent.
+{
+- cage_bin == "letters":
+    Director Magnus Netherton: Teresa Villanueva left Butte before midnight with two of Arakawa's people. The letters did that.
+- cage_bin == "derek_file" and not m08_nightshade_tidied:
+    Director Magnus Netherton: Mr Lawson's file is with Analysis. The letters went in the feed, and nobody has warned Teresa Villanueva.
+}
 { sorensen_fate == "talked":
     Director Magnus Netherton: She wrote down every box she destroyed. She even got the numbers right.
     ~ said = said + 1
@@ -252,9 +262,13 @@ Director Magnus Netherton: Then I sign, and that is the night closed. Anything e
     }
     ~ said = said + 1
 }
-{ said < 2 and old_coyote_ko:
-    // "He" names the guard: this line can follow any other.
-    Director Magnus Netherton: Your night guard wants to climb power lines for a living. He will. Not this week.
+{ said < 2 and (old_coyote_ko or old_coyote_told):
+    // "He" names the guard: either line can follow any other. KO wins over told.
+    { old_coyote_ko:
+        Director Magnus Netherton: Your night guard wants to climb power lines for a living. He will. Not this week.
+    - else:
+        Director Magnus Netherton: Your night guard sat in his truck until it was over, as you told him. He went to his lineman's course this morning.
+    }
     ~ said = said + 1
 }
 { said < 2:
@@ -326,6 +340,9 @@ agent_0x99: I still owe you the rest. When this is over.
 - recruiter_offer == "double_crossed":
     Director Magnus Netherton: She knows we know. She will be where he is. So will we.
 - sleeper_named:
+    { kowalczyk_reply == "warm":
+        Director Magnus Netherton: You thanked her for her cracker. Good. Go on thanking her.
+    }
     Director Magnus Netherton: We take her at the briefing, in front of the others, where there is nowhere to go. Until then she sees nothing in my face. Nor in yours.
 - else:
     Director Magnus Netherton: If I bench anyone tonight, WREN knows we know. They come. You watch them.
