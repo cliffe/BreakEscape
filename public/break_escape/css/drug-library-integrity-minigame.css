@@ -382,7 +382,7 @@
 
 /* ── Verification tab ──────────────────────────────────────── */
 .dli-verify-title {
-  font-size: 18px;
+  font-size: 16px;
   color: #e6edf3;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -632,7 +632,7 @@
 
 /* ── Fleet report tab ──────────────────────────────────────── */
 .dli-fleet-title {
-  font-size: 18px;
+  font-size: 16px;
   color: #e6edf3;
   text-transform: uppercase;
   letter-spacing: 0.5px;

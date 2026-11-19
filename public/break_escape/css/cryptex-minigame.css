@@ -12,7 +12,7 @@
     background: #0d1117;
     color: #c9d1d9;
     font-family: 'VT323', 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -41,7 +41,7 @@
 
 .cryptex-header p {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     color: #c9d1d9;
     letter-spacing: 0.03em;
 }
@@ -66,7 +66,7 @@
 }
 
 .cryptex-wheel-label {
-    font-size: 18px;
+    font-size: 16px;
     color: #8899bb;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -167,7 +167,7 @@
 }
 
 .hint-char {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
     color: #f5a623;
     font-family: 'VT323', 'GNF', monospace;
@@ -226,7 +226,7 @@
 .cryptex-reset-btn,
 .cryptex-submit-btn {
     font-family: inherit;
-    font-size: 18px;
+    font-size: 16px;
     padding: 8px 16px;
     letter-spacing: 0.04em;
     text-transform: uppercase;

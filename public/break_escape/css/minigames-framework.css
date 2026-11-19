@@ -24,7 +24,7 @@
     font-family: 'GNF', monospace;
     color: white;
     box-shadow: none;   /* pixel-art UI: no soft shadow (slice 7) */
-    font-size: 18px;
+    font-size: 16px;
     /* GNF, VT323 and Press Start 2P ship one weight each, so the browser would smear a
        synthetic bold over any weight of 600 or more (slice 7 R5 M1). font-synthesis is
        inherited, so this one rule covers every minigame. */
@@ -309,7 +309,7 @@
 
 .minigame-header p {
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     margin: 0;
 }
 
@@ -362,7 +362,7 @@
     border: 2px solid #27ae60;
     text-align: center;
     z-index: 10001;
-    font-size: 18px;
+    font-size: 16px;
     box-shadow: none;   /* pixel-art UI: no glow (UX access R2) */
 }
 
@@ -381,7 +381,7 @@
     border: 2px solid #c0392b;
     text-align: center;
     z-index: 10001;
-    font-size: 18px;
+    font-size: 16px;
     box-shadow: none;   /* pixel-art UI: no glow (UX access R2) */
 }
 
@@ -476,7 +476,7 @@
     padding: 10px 20px;
     cursor: pointer;
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     transition: background 0.3s;
 }
 

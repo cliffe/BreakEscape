@@ -190,7 +190,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     color: #e0e0e0;
     margin-bottom: 3px;
@@ -362,7 +362,7 @@
     border: 2px solid #00bcd4;
     color: #e0f7fa;
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     outline: none;
 }
 
@@ -377,7 +377,7 @@
     border: 2px solid #00bcd4;
     color: #00bcd4;
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     transition: background 0.2s ease;
     white-space: nowrap;
@@ -421,7 +421,7 @@
     border: 2px solid #00bcd4;
     color: #00bcd4;
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     transition: background 0.2s ease;
 }
