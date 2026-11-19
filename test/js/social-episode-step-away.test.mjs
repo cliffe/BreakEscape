@@ -45,7 +45,8 @@ console.log = () => {};
 console.warn = () => {};
 console.debug = () => {};
 const errors = [];
-console.error = (...a) => errors.push(a.map(String).join(' '));
+const allErrors = [];
+console.error = (...a) => { const m = a.map(String).join(' '); errors.push(m); allErrors.push(m); };
 
 // A dispatcher with on/off (the panel listens on kit_defend_done's change) that also records
 // every emit, with whether a minigame was open at the time.
@@ -169,7 +170,6 @@ const setReady = () => {
 function playDefend(ep, globals = {}, opts = {}) {
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ep.variant === 'defendOnly' ? ['brief'] : [...ATTACK_DONE] }, ...globals });
     open(ep, opts);
-    if (ep.facilitated) click('.epr-resume');
     click('.epr-launch');
     assert.equal(scene(), 'inbox-triage');
     cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0.5, verifyCount: 0, answers: ANSWERS.map((a) => ({ ...a })) };
@@ -575,5 +575,5 @@ test('EC1: a held chain bark whose condition reads kit_quiet is dropped once kit
 });
 
 test('EC1: no console errors across the cases', () => {
-    assert.deepEqual(errors, []);
+    assert.deepEqual(allErrors, []);
 });
