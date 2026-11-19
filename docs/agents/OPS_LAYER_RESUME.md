@@ -246,6 +246,16 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   goes back into `keyboard_admin?`. Next: commit, R5 delta review (Fable); if nothing above nit,
   PRIVILEGE is done. Request to pass to core's next reviser: does `desktop_request_allowed?` let
   a technique admin session on a blocked headless host through (the collect depends on it).
+- 11:46 HANDOFF 6 (newest state by plan).
+  CORE: R3 findings `0ac4e7d04` (0B 2M 6m; verdict: delta next). R3 reviser running (Fable,
+  a5c0e7affc31a06ca), also answering privilege's `desktop_request_allowed?` question and the
+  skin's quiet-or-noisy text source. Next: commit, R4 delta on Opus.
+  PRIVILEGE: R4 reviser running (Opus, a85308373ccff6b0f). Next: R5 delta (Fable), then done.
+  SKIN: R3 reviser running (Fable, a42923e147f234204). Next: R4 delta on Sonnet.
+  MFA: S8c planner running (Fable, a2083d2c395e8f19a). Next: full R4 on Opus.
+  LOG_ROWS: R3 reviser running (Opus, a9ce153bf9d06d65f), told to add `foothold` and plain
+  object/door place kinds. Next: R4 delta (Fable).
+  CRACKING: held for BLOCK-1.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
