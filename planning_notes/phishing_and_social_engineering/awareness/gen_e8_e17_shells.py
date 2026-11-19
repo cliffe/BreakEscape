@@ -374,6 +374,8 @@ HOSTS = {
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
 LINES = {
     # E13: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
+    # Stale and unused: ca13_ai_assistant_defend is hand-authored (office_kits/episodes.json) and
+    # skipped by main(); its ink in scenarios/ is authoritative. Kept only for reference.
     ('e13', 'defend'): (
         "Brightwell's switched on its assistant, and the kiosk has the inbox beside it: supplier emails, voicemails and video calls. Some are real, some aren't.",
         "That's them all handled, thanks. A voice or a face can be faked. Check another way, on a number you already hold: that always works.",
