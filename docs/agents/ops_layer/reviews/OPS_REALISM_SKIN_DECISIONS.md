@@ -73,3 +73,16 @@ differently or declined:
 | Coordinator note, `network_only` and `no_grant` | Both covered by reading core's `ops_refusal_codes.json` in parity test 5 and the format test. `network_only` is treated as reachable from this view only by an `open` on a stale row; that reading of core 5.4 is an assumption for the next reviewer to check |
 | Noise at zero | Not a finding. Core's noise-keys rule shows "Noise 0 of N" on a swept block with a limit, so the Terminal's "no noise, no line" rule became "neither key, no line", and beats T3 and T4 show 0 of 3 |
 | Trim list | All seven items cut. The plan is still over the 1000-line target after the additions; see the handover note |
+
+## Round 4 (delta)
+
+Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differently from the suggested fix.
+
+| Finding | What was done instead, and why |
+|---|---|
+| R4-M1, pending guard | By orchestrator ruling the core owns `perform`, the guard and the renderer-drawn action messages outright (core 5.3). K1 does not reshape `perform` to take an offer: `ctx.perform(offer)` passes the offer's action and target into the core's path and `offers()` reads the core's pending keys. Core's argument shape is not named here |
+| R4-M1, `use` key | Follows the ruling's key (card and finding together), so "every `use` offer shares one key" is gone; the controls test and parity test 10 now use per-pair keys (a use of another pair still sends) |
+| R4-m2, `network_only` | Removed from the Terminal's refusal coverage instead of tested by a direct `showResult` call: parity test 5 and the format test skip it by name and walk twelve codes; the Refusal row says why |
+| R4-n2 | Reworded to "both skins draw their controls in `offers()` order"; no assertion added to test 2 |
+| R4-n6 | Restored as request 2 in its older form (every `test_ops_*` beat names actions, not controls), by ruling; the "new control, code or badge needs an entry" rule stays in 5.2 only |
+| R4-n3, n4, n7, n8 | Declined this round by ruling (JSON block, `check` params, `data-quiet` and Terminal selectors for the select actions, W1 after K3). Open for the builder or a later pass |
