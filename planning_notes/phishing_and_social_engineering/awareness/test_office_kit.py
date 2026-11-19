@@ -272,6 +272,16 @@ class Generators(unittest.TestCase):
                     self.assertTrue(old, f'{d}/{f} has no HEAD copy to compare with')
                     self.assertEqual(new, old, f'{d}/{f}')
 
+    def test_kit_skips_the_fixture_row(self):
+        # R2 finding 1: --kit must never rebuild test_ca_office_kit (its kit_ chain is hand-authored).
+        rows = ok.load_rows()
+        self.assertTrue(any(r.get('fixture') for r in rows), 'no fixture row to skip')
+        with tempfile.TemporaryDirectory() as out:
+            atr.kit(out)
+            made = sorted(os.listdir(out))
+            self.assertNotIn('test_ca_office_kit', made)
+            self.assertIn('ca01_invoice_fraud', made)
+
     def test_checks_pass_tier_none(self):
         import gen_e1_shells as g
         for pair in ('ab', 'ba'):
@@ -324,11 +334,13 @@ class KitMode(unittest.TestCase):
 
     def test_cli_writes_only_to_the_out_dir(self):
         with tempfile.TemporaryDirectory() as out:
-            # the real repo has no tiered non-fixture rows with a shell yet; the fixture row is a real shell
+            # ca01 is the real tiered shell; the fixture row is skipped (hand-authored chain)
             r = subprocess.run([sys.executable, os.path.join(HERE, 'apply_training_room.py'), '--repo', REPO, '--kit', out],
                                capture_output=True, text=True, cwd=tempfile.gettempdir())
             self.assertEqual(r.returncode, 0, r.stderr)
-            self.assertTrue(os.path.exists(os.path.join(out, 'test_ca_office_kit', 'scenario.json.erb')))
+            self.assertTrue(os.path.exists(os.path.join(out, 'ca01_invoice_fraud', 'scenario.json.erb')))
+            self.assertFalse(os.path.exists(os.path.join(out, 'test_ca_office_kit')))
+            self.assertIn('SKIP (fixture', r.stdout)
 
 
 def shell_text(name):

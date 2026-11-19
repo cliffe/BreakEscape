@@ -487,6 +487,10 @@ def kit(outdir):
         if office_kit.tier_of(row) == 'none':
             continue
         name = row['id']
+        if row.get('fixture'):
+            # The gate A fixture's kit_ chain is hand-authored; strip_kit would remove it and nothing re-adds it.
+            print('SKIP (fixture, hand-authored chain):', name)
+            continue
         try:
             office_kit.refuse_check_row(row)
         except ValueError as e:
