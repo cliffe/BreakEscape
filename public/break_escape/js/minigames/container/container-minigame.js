@@ -1777,6 +1777,11 @@ export class ContainerMinigame extends MinigameScene {
         
         if (this.contents.length === 0) {
             contentsGrid.innerHTML = '<p class="empty-contents">This container is empty.</p>';
+            // A share opened by a key with nothing in it: the grid takes the focus, not the body
+            if (this.params?.focusEntry === true) {
+                if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
+                contentsGrid.focus?.({ preventScroll: true });
+            }
             return;
         }
         
@@ -1858,6 +1863,15 @@ export class ContainerMinigame extends MinigameScene {
         });
         if (this.shareFolder) evenShareLabels(contentsGrid);
         else fitContentLabels(contentsGrid);
+        // A share opened by a key: its first item, else the grid (an empty share), has the focus
+        if (this.params?.focusEntry === true) {
+            const first = contentsGrid.querySelector('.container-content-slot');
+            if (first) first.focus?.({ preventScroll: true });
+            else {
+                if (!contentsGrid.hasAttribute('tabindex')) contentsGrid.setAttribute('tabindex', '-1');
+                contentsGrid.focus?.({ preventScroll: true });
+            }
+        }
         // Back from a note read on pickup: same scroll position, focus kept inside the frame
         if (this.params?.fromReturn) {
             const top = Number(this.params.scrollTop);
@@ -2108,8 +2122,10 @@ export class ContainerMinigame extends MinigameScene {
             parentLockable: parent || this.containerItem
         };
         this.exitReason = 'share';
+        // Opened by a key: the share's first item takes the focus (the way into a folder)
+        const focusEntry = this.openedByKey === true;
         this.complete(false);
-        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, false);
+        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, false, null, focusEntry ? { focusEntry: true } : null);
     }
 
     /**
@@ -2805,6 +2821,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         fromReturn: !!extra?.fromReturn,
         focusReturn: extra?.focusReturn || null,
         slotReturn: extra?.slotReturn || null,
+        focusEntry: extra?.focusEntry === true,
         scrollTop: extra?.scrollTop || 0,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
