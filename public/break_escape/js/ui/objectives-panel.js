@@ -8,6 +8,7 @@
  * @module objectives-panel
  */
 import { displayDashes } from '../utils/display-dashes.js';
+import { openModalCount } from './modal-stack.js';
 
 // Ids are scenario data: escaped for a quoted attribute (quotes included, no dash display),
 // and for a quoted attribute selector when looked up again.
@@ -47,6 +48,8 @@ export class ObjectivesPanel {
     // pop-up first (review R1 M3). Capture phase on window, so it runs before game-menu.js.
     this._escCue = (e) => {
       if (e.key !== 'Escape' || !this.container?.classList.contains('objectives-sheet')) return;
+      // A pop-up over the sheet (a read note, a confirm) takes the Esc first; modal-stack closes it
+      if (openModalCount() > 0) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       this.setCollapsed(true);

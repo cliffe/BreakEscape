@@ -861,6 +861,11 @@ async function clearTransientUi() {
     return cleared;
 }
 
+/** True while a gameDisplay (read note, sign, plaque) or gameConfirm dialog is in the DOM. */
+function textOverlayOpen() {
+    return !!document.querySelector('.game-display-dialog, .game-confirm-dialog');
+}
+
 function blockedByMinigame() {
     const mg = activeMinigameSummary();
     if (mg) {
@@ -1828,13 +1833,22 @@ const bridge = {
     async pressKey(key, opts) {
         // Keys 1-9, the arrows, Enter and Escape go to the overlap menu when it is the open blocking UI
         const toMenu = overlapMenuIsTheBlocker();
-        if (!toMenu) {
+        // Escape goes to a read note or confirm dialog (gameDisplay / gameConfirm) when one is the
+        // thing in front: the engine closes it through ui/modal-stack.js, as a player's Esc would.
+        // Any other key stays refused, since the dialog holds the game's keys.
+        const toOverlay = !toMenu && key === 'Escape' && !activeMinigameSummary() && textOverlayOpen();
+        if (!toMenu && !toOverlay) {
             const blocked = blockedByMinigame();
             if (blocked) return blocked;
         }
         await rawPressKey(key, opts?.holdMs);
         await sleepFrames(2);
         const result = { ok: true, key };
+        if (toOverlay) {
+            result.toOverlay = true;
+            result.stillOpen = textOverlayOpen();
+            if (result.stillOpen) result.blockingUi = detectBlockingUi();
+        }
         if (toMenu) {
             result.toMenu = true;
             const menu = interactionMenuState();
