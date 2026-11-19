@@ -39,31 +39,29 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 | Plan | Lines | Round state | Next |
 |---|---|---|---|
-| `OPS_CORE_PLAN.md` (S1 to S3, N13 to N15) | 1703 | R4 revised, commit `6d2330a50` | R5 delta review running (Opus) → small fix pass if needed → done |
-| `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (S5a/b/c, A18 to A20) | 1041 | Five rounds done, `d4fd20176` | Only the sibling renames in section 5 below |
-| `OPS_REALISM_SKIN_PLAN.md` (S6, N16) | 1031 | R4 fixed, commit `a4217f2ed` | R5 delta review running (Sonnet; checks agreement with core's guard text) → done |
-| `OPS_LOG_ROWS_PLAN.md` (S9, A24) | about 1290, mid-edit | R4 findings `ceb248f83`; reviser running (Opus) | Commit → R5 short delta (13.1 to 13.3, the counter and secret tests in 11, the sibling tables) |
-| `OPS_MFA_HELPDESK_PLAN.md` (S8a/b, A22, A23) | about 1180, mid-edit | R4 findings `1754dfe69`; reviser running (Fable): removes S8c, trims under 1150, applies the log renames | Commit → R5 delta |
-| `OPS_LOCK_SECOND_STEP_PLAN.md` (S8c, A25) | not yet on disk | Planner running (Fable) | Commit → first full adversarial review → revise → at least one more round |
+| `OPS_CORE_PLAN.md` (S1 to S3, N13 to N15) | 1732 | Done: five or more rounds, cross-plan R2 fixes in | Nothing unless a cross-plan check asks |
+| `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (S5a/b/c, A18 to A20) | 1055 | Done, cross-plan fixes `bc53a7f5b` | As above |
+| `OPS_REALISM_SKIN_PLAN.md` (S6, N16) | 1037 | Done | As above |
+| `OPS_LOG_ROWS_PLAN.md` (S9, A24) | 1251 | Done; stages L1a, L1b, L2a, L2b, L3 | As above |
+| `OPS_MFA_HELPDESK_PLAN.md` (S8a/b, A22, A23) | 1201 | Done, plus the shared-subject edits for S8c | As above |
+| `OPS_LOCK_SECOND_STEP_PLAN.md` (S8c, A25) | about 745 | R5 findings `191deb59f` (1 major: `held_item_sources` counts phones and NPC items the game would not let the player hold); Sonnet fix pass "Lock plan R5 fixes" running, uncommitted | Commit plan and DECISIONS → R6 short delta (Sonnet if validator and graph only, Opus if it touches the access path) → done when nothing above minor |
 | `OPS_CRACKING_PLAN.md` (S7, A21) | 357 | First draft `5e88e7aff`, R1 findings `46649f23f`, unrevised | **Held** for the user's answer to BLOCK-1 on the picks page |
 
-Agents running when this was written (all in the worktree, none commits): core R5 review, skin R5
-review, log rows R4 reviser, MFA R4 reviser, lock second-step planner. A new session cannot receive
-their hand-backs. Check `git status` in the worktree: a modified plan with no newer commit is a
-finished or abandoned pass. Read the diff, check the plan reads as one standalone document, commit
-it, and carry on with the "Next" column. A missing `OPS_CORE_R5.md` or `OPS_REALISM_SKIN_R5.md`
-means that review must be launched again.
+If a new session finds `OPS_LOCK_SECOND_STEP_PLAN.md` modified with no newer commit, the R5 fix
+pass finished or stopped: read the diff against the R5 findings, commit both files by explicit path,
+and launch R6.
 
-After every plan reaches R5: one second cross-plan review over all seven, including the log plan's
-sibling change list (`OPS_LOG_ROWS_R4.md` section 4).
+Cross-plan R2 (`CROSS_PLAN_R2.md`, X1 to X26) is settled: X3 dropped (the lock answers again from
+its own record with numbers and nonce), the lock's n7 stays as its cross-plan request 3, the rest
+fixed. After the lock plan settles: one short cross-plan R3 delta (the lock plan against the others,
+and the `/log_rows` refusal-code change).
 
 ## 4. Model routing from here
 
-- Opus writes and revises plans and does full reviews. Fable is no longer used for planning.
-- The brief's rule "a plan drafted on Fable is reviewed on Opus and the other way round" no longer
-  works. My suggestion, for the user to overrule: every review goes to a fresh Opus agent that did
-  not write or revise that plan, and delta rounds on plans with no secrets or access checks (the
-  skin) go to Sonnet. Update brief section 8 once the user agrees.
+- Opus (`opus55`) writes plans and does full reviews, and delta reviews that touch secrets or
+  access checks. Fable is no longer used. Every review goes to a fresh agent that did not write or
+  revise that plan.
+- Sonnet (`general-purpose`, model sonnet) applies explicit fix lists and does other delta reviews.
 - Haiku (`haiku-reader`) for code retrieval and digests. Sonnet for well-defined edits such as
   applying a rename list.
 - `opus48` only for CTF or VM solution work and social-engineering content, and for one retry when
@@ -154,24 +152,17 @@ lockable object, in addition to the sign-in policy, push as the main case" is mi
 
 ## 6. Work owed that no agent is doing
 
-1. **Sibling renames.** The log plan's change list (`OPS_LOG_ROWS_R4.md` section 4): privilege
-   four lines, core three, MFA eight (the MFA reviser is doing those), and the cracking plan's
-   stale row list. A Sonnet task once the log plan's R5 is in.
-2. **Cracking plan**, once the user answers BLOCK-1: revise for R1, rename proof `dumped` to
-   `harvested` keyed by the sign-in PC id, delete its log row list, register hash secrets with the
-   log module.
-3. **Picks page republish**, once, after the lock plan and the MFA plan settle their questions.
-   Groups to add or refresh: core (discovery enforced or display only; cost of the loop; a
-   technique session against sign-in rules, including at the keyboard; the word `technique`; a
-   card-gained session in permanent `signedInPcs`), privilege (seven questions in its section 15),
-   MFA (code clock; NPC reactions; borrowing and giving back; typed form or dialogue; wrong-code
-   limit; helpdesk `maxTries`), lock second step (its section 15), skin (scenario default skin),
-   log rows (copied-card identity; NPC and office-life rows; share row on folder or file). Drop
-   LOG-2: storage is settled. Each question needs enough context to answer cold (a snippet, a
-   screenshot or a small diagram), and answers must persist in localStorage.
-4. **Outline status paragraph**: the build order and the S8c entry are updated (`333b8b816`); the
-   status line at the top still reads as on the first day.
-5. Housekeeping: the worktree `.claude/worktrees/docs-access-networks` can be cleared now Train 211
+1. **Cracking plan**, once the user answers BLOCK-1: revise for R1, rename proof `dumped` to
+   `harvested` keyed by the sign-in PC id, delete its log row list, follow brief section 5
+   (own validator file, shared goldens, refusal codes), register with the log module only cracked
+   values stored outside the keyring. Its conflicts are listed in `CROSS_PLAN_R2.md` section 3.
+2. **Picks page**: published at Version 2 with 41 questions
+   (https://claude.ai/artifact/NJ3CMZUUG6wKE2S9VtEg5e, localStorage key `be-ops-plan-picks-v1`,
+   source in the session scratchpad as `ops_plan_picks.html`). Republish only if questions change,
+   for example after lock R6 or the cracking revision.
+3. **Brief section 8**: the "Fable reviews Opus" rule is stale; replace with the routing in
+   section 4 of this note. **Outline status paragraph** at the top still reads as on the first day.
+4. Housekeeping: the worktree `.claude/worktrees/docs-access-networks` can be cleared now Train 211
    has landed (move, never `rm`).
 
 ## 7. Waiting on the user

@@ -1,7 +1,8 @@
 # Ops layer: plan outline
 
-Status: outline, 2026-11-19. Each stage below gets its own full plan (and review rounds) before it
-is built. Two groups of stages are parked in their own outlines, to be planned later: the action
+Status: outline, 2026-11-19. Each stage below has its own full plan in `docs/achitechture/OPS_*_PLAN.md`;
+all are through their review rounds except the second step on any lock (S8c, in its last delta)
+and cracking (S7, held for the user's answer on whether hashes come in at all). Nothing is built. Two groups of stages are parked in their own outlines, to be planned later: the action
 model with actors, patch windows, the team of characters and the defence game (S0, S4, S10, S12)
 in `ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, and hosts backed by a VM or by the game (S11) in
 `VM_OR_GAME_BACKING_PLAN_OUTLINE.md`. Stage numbers here are unchanged, so this outline runs S1 to

@@ -164,8 +164,9 @@ and no references to reviews.
 ## 8. Review rounds
 
 - Rounds are adversarial: the reviewer's job is to find what is wrong, missing or will not fit the
-  code. A plan drafted on Fable is reviewed on Opus and the other way round. One further reviewer
-  each round reads all six plans for conflicts between them.
+  code. Each review goes to a fresh agent that did not write or revise that plan: Opus for full
+  reviews and for deltas that touch secrets or access checks, Sonnet for other deltas. A
+  cross-plan reviewer reads all the plans for conflicts between them.
 - Findings go in `docs/agents/ops_layer/reviews/<PLAN>_R<n>.md`, graded blocker, major, minor, nit,
   each with evidence (`file:line` in the plan and in the code) and a suggested fix. A reviewer does
   not edit the plan.
