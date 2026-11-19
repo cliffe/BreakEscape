@@ -76,7 +76,7 @@ test('Send as: recipient, subject, greeting, pretext and ask carry over; an unav
     assert.ok(b.root.querySelector('.mail-compose-carry'));
     // The next edit drops the notice
     b.setSubject('s_quick');
-    assert.equal(b.root.querySelector('.mail-compose-carry'), null);
+    assert.ok(b.root.querySelector('.mail-compose-carry') === null);
 });
 
 test('Send as: a recipient the new account does not list is cleared and named', () => {

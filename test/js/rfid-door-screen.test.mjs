@@ -694,7 +694,7 @@ test('each screen opens with its main control focused, so Enter does its main ac
         g.ui.showCardDetails(visitor());
         assert.equal(document.activeElement.textContent, '> Emulate');
         g.ui.showTapInterface();
-        assert.equal(document.activeElement, footer.children[0], 'no card to tap: Back');
+        assert.ok(document.activeElement === footer.children[0], 'no card to tap: Back');
         g.ui.showCardDataScreen(visitor());
         assert.equal(document.activeElement.textContent, 'Save');
         g.ui.showProtocolInfo({ card_id: 'w', rfid_protocol: 'MIFARE_Classic_Weak_Defaults', name: 'Staff badge' });
@@ -714,13 +714,13 @@ test('Enter and Space press the focused control; arrows move between controls; E
         const [first, second, back] = buttonsIn(screen, footer);
         let ev = key('ArrowDown', first);
         assert.equal(g.ui.onKey(ev), true);
-        assert.equal(document.activeElement, second);
+        assert.ok(document.activeElement === second);
         assert.ok(ev.stopped && ev.prevented, 'the world never sees it');
         g.ui.onKey(key('ArrowDown', second));
         g.ui.onKey(key('ArrowDown', back));
-        assert.equal(document.activeElement, back, 'stops at the last control');
+        assert.ok(document.activeElement === back, 'stops at the last control');
         g.ui.onKey(key('ArrowUp', back));
-        assert.equal(document.activeElement, second);
+        assert.ok(document.activeElement === second);
         ev = key('Escape', second);
         assert.equal(g.ui.onKey(ev), false);
         assert.equal(ev.stopped, false, 'Esc bubbles to the close handler');
@@ -805,7 +805,7 @@ test('Enter continues from a refusal, as a tap does', async () => {
     screen.setAttribute = function (k, v) { this[k] = v; };
     g._showDenial('Card not accepted', () => { back++; }, 'wrong_card', 'Not this one.');
     await new Promise(r => realTimeout(r, 5));
-    assert.equal(document.activeElement, screen, 'the refusal takes the focus');
+    assert.ok(document.activeElement === screen, 'the refusal takes the focus');
     screen.listeners.keydown(key('Escape', screen));
     assert.equal(back, 0, 'Esc is not a continue');
     screen.listeners.keydown(key('Enter', screen));

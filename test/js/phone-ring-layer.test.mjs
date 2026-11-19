@@ -18,7 +18,7 @@ test('the layer is a body child outside the bark container, and phone-ring.css p
         assert.equal(layer.parentElement, w.win.document.body);
         assert.equal(layer.getAttribute('role'), 'region');
         assert.equal(layer.getAttribute('aria-live'), 'assertive');
-        assert.equal(layer.closest('#npc-bark-container'), null);
+        assert.ok(layer.closest('#npc-bark-container') === null);
         const css = readFileSync(join(jsRoot, '../css/phone-ring.css'), 'utf8');
         assert.match(css, /#phone-ring-layer \{[^}]*z-index: 2300;/);
         assert.match(read('../../../app/views/break_escape/games/show.html.erb'), /css\/phone-ring\.css/);
@@ -76,7 +76,7 @@ test('Decline emits phone_call_declined; a forced banner has no Decline and auto
         w.nm._handleEventMapping('boss', 'room_entered', ringConfig({ disableClose: true, handlerIndex: 1 }), {});
         await w.advance(300);
         assert.ok(w.banner());
-        assert.equal(w.banner().querySelector('.incoming-call-decline'), null, 'forced: no Decline');
+        assert.ok(w.banner().querySelector('.incoming-call-decline') === null, 'forced: no Decline');
         await w.advance(6500);
         assert.equal(w.calls.started.length, 1, 'auto-answered and opened');
         assert.equal(w.calls.started[0].params.disableClose, true);

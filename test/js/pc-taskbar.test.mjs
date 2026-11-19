@@ -205,11 +205,11 @@ test('a remote desktop: Remote on the taskbar, the link in the panel, the remote
 test('a PC with no sign-in and no desktopUser: Start and the computer name only', async () => {
     base();
     await open(plainPc({ desktopUser: undefined, host: undefined, name: 'Reception PC' }), { contents: [] });
-    assert.equal(document.querySelector('.pc-taskbar-account'), null);
+    assert.ok(document.querySelector('.pc-taskbar-account') === null);
     assert.equal(text('.pc-taskbar-host'), 'Reception PC');
     startBtn().click();
-    assert.equal(document.querySelector('.pc-start-account'), null);
-    assert.equal(document.querySelector('.pc-start-actions'), null, 'no Switch user or Sign out');
+    assert.ok(document.querySelector('.pc-start-account') === null);
+    assert.ok(document.querySelector('.pc-start-actions') === null, 'no Switch user or Sign out');
 });
 
 test('desktopUser on a straight-to-desktop PC, with its authored headshot', async () => {
@@ -260,7 +260,7 @@ test('Esc closes the panel first, then the PC; a press outside closes the panel;
     esc();
     assert.equal(panelOpen(), false, 'the first Esc closes the panel');
     assert.equal(ended.length, 0, 'the PC stays open');
-    assert.equal(document.activeElement, startBtn(), 'focus back on Start');
+    assert.ok(document.activeElement === startBtn(), 'focus back on Start');
     esc();
     assert.equal(ended.length, 1, 'the second Esc closes the PC');
     // a press outside the panel
@@ -286,7 +286,7 @@ test('Lock shows only when the server reports locking, the client can lock, and 
     await open(loginPc());
     startBtn().click();
     assert.ok(document.getElementById('pc-start-signout'), 'the panel is open');
-    assert.equal(document.getElementById('pc-start-lock'), null, 'reported, but no lockSession()');
+    assert.ok(document.getElementById('pc-start-lock') === null, 'reported, but no lockSession()');
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');
     const locked = [];
@@ -305,7 +305,7 @@ test('Lock shows only when the server reports locking, the client can lock, and 
     sessions.lockSession = async () => ({ ok: true });
     await open(loginPc());
     startBtn().click();
-    assert.equal(document.getElementById('pc-start-lock'), null, 'hidden for a claimed session');
+    assert.ok(document.getElementById('pc-start-lock') === null, 'hidden for a claimed session');
     // a refusal is said
     base();
     await sessions.signIn('hot_desk', 'ishaw', 'x');
@@ -372,7 +372,7 @@ test('a share opened from the network view has no PC, so no taskbar', async () =
     const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Share', containerItem: share, contents: null });
     window.MinigameFramework.currentMinigame = mg;
     await mg.init();
-    assert.equal(document.querySelector('.pc-taskbar'), null);
+    assert.ok(document.querySelector('.pc-taskbar') === null);
 });
 
 // ── Review round 1 fixes (slice 6 fix 1) ─────────────────────────────────────
@@ -406,8 +406,8 @@ test('R1 m1: Take Container on a takeable desktop has a whole label and a short 
     // a desktop that cannot be taken has neither
     base();
     await open(plainPc(), { contents: [] });
-    assert.equal(document.getElementById('take-container-btn'), null);
-    assert.equal(document.querySelector('.pc-taskbar-takeable'), null);
+    assert.ok(document.getElementById('take-container-btn') === null);
+    assert.ok(document.querySelector('.pc-taskbar-takeable') === null);
 });
 
 test('R1 m2: Lock from a reader asks the server first; a refusal is said in the monitor and the reader stays', async () => {
@@ -460,7 +460,7 @@ test('K-lock R2 n2: a lock refused for an expired token adds no refusal line, an
     mg.init(); mg.start(); await mg.taskbarReady;
     panelItem('pc-start-lock').click();
     await settle();
-    assert.equal(document.querySelector('.pc-file-message-error'), null, 'no refusal line over the expiry line');
+    assert.ok(document.querySelector('.pc-file-message-error') === null, 'no refusal line over the expiry line');
     assert.equal(alerts.length, 0, 'and no alert');
     assert.equal(ended.length, 1, 'the reader closes as after a successful lock');
 });
@@ -468,7 +468,7 @@ test('K-lock R2 n2: a lock refused for an expired token adds no refusal line, an
 test('R1 m3: a reader with no remembered desktop does not offer Switch user; with one, it opens the sign-in screen', async () => {
     const bare = await openReader({ withDesktop: false });
     startBtn().click();
-    assert.equal(document.getElementById('pc-start-switch'), null, 'nothing to come back to');
+    assert.ok(document.getElementById('pc-start-switch') === null, 'nothing to come back to');
     assert.ok(document.getElementById('pc-start-signout'), 'Sign out stays');
     assert.deepEqual(bare.mg.taskbarModel.actions, ['signout']);
     const kept = await openReader();
@@ -632,11 +632,11 @@ test('R3 M1: the Places list is the only scroller; Lock, Switch user and Sign ou
     assert.equal(list.querySelectorAll('[data-action]').length, 0, 'no action inside the scroller');
     const actions = [...panel.querySelectorAll('.pc-start-actions [data-action]')].map(b => b.dataset.action);
     assert.deepEqual(actions, ['lock', 'switch', 'signout']);
-    assert.equal(list.closest('.pc-start-actions'), null);
+    assert.ok(list.closest('.pc-start-actions') === null);
     const more = panel.querySelector('.pc-start-more');
     assert.ok(more.hidden, 'the cue starts hidden');
     assert.equal(more.textContent.trim(), 'More below', 'the shared words');
-    assert.equal(more.closest('.pc-start-actions'), null);
+    assert.ok(more.closest('.pc-start-actions') === null);
     // CSS: the panel is a flex column; the fixed parts never shrink; only the list scrolls
     const rule = (sel) => R3_CSS.match(new RegExp(sel.replace(/[.[\]]/g, '\\$&') + ' \\{[^}]*\\}'))?.[0] || '';
     assert.match(rule('.pc-monitor .pc-start-panel'), /display:\s*flex;[\s\S]*flex-direction:\s*column/);

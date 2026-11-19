@@ -362,8 +362,8 @@ test('debrief: every real one trusted keeps the all-right line and adds the trus
     ]);
     assert.match(c.querySelector('.aw-all-right').textContent, /every one of these the right way/);
     assert.match(c.querySelector('.aw-genuine-trusted').textContent, /^Right call\. You trusted these real ones: ‘[^’]+’ and ‘[^’]+’\. You checked this real one by another route first, which is just as right: /);
-    assert.equal(c.querySelector('.aw-genuine-cost'), null);
-    assert.equal(c.querySelector('.aw-genuine-list'), null);
+    assert.ok(c.querySelector('.aw-genuine-cost') === null);
+    assert.ok(c.querySelector('.aw-genuine-list') === null);
     assert.deepEqual(view.getState().genuine, { trusted: 2, checked: 1, flagged: 0 });
 });
 
@@ -379,7 +379,7 @@ test('debrief: three real ones treated as phish fold into a details box; a reope
     assert.equal(fold.querySelector('summary').textContent, 'You reported 3 real ones just in case, which is fine when unsure:');
     assert.equal(fold.querySelectorAll('li').length, 3);
     const reopened = debrief([]);
-    assert.equal(reopened.c.querySelector('.aw-genuine'), null);
+    assert.ok(reopened.c.querySelector('.aw-genuine') === null);
     assert.equal(reopened.view.getState().genuine, null);
 });
 

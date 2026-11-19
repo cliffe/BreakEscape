@@ -41,8 +41,8 @@ function panelFor(aims) {
 test('objectives panel: a hostile aim or task id stays inside its attribute', () => {
     const aims = [{ aimId: ID, title: 'Aim', status: 'active', tasks: [{ taskId: ID, title: 'Task', status: 'active' }] }];
     panelFor(aims);
-    assert.equal(document.querySelector('[onmouseover]'), null, 'no handler attribute');
-    assert.equal(document.querySelector('[data-y]'), null, 'no extra attribute');
+    assert.ok(document.querySelector('[onmouseover]') === null, 'no handler attribute');
+    assert.ok(document.querySelector('[data-y]') === null, 'no extra attribute');
     assert.equal(document.querySelector('.objective-aim').dataset.aimId, ID, 'the id reads back as typed');
     assert.equal(document.querySelector('.objective-task').dataset.taskId, ID);
 });
@@ -77,7 +77,7 @@ test('npc-barks inline phone: the NPC name and an ink error are text', async () 
         globalThis.fetch = realFetch;
         delete window.InkEngine;
     }
-    assert.equal(document.querySelector('img'), null, 'no injected element');
+    assert.ok(document.querySelector('img') === null, 'no injected element');
     assert.ok(document.body.textContent.includes(NAME), 'the name reads back as typed');
     const err = document.getElementById('phone-messages');
     assert.match(err.textContent, /^Error loading story: bad ink near <img/);

@@ -147,8 +147,8 @@ test('a fakeCheck page draws the four persuasion rows, not the seven sign-in row
     const rows = [...s.container.querySelectorAll('.lpb-row')].map((r) => r.getAttribute('data-row'));
     assert.deepEqual(rows, ['check-host', 'check-pretext', 'check-urgency', 'check-steps']);
     // no sign-in rows
-    assert.equal(s.container.querySelector('[data-row="brand"]'), null);
-    assert.equal(s.container.querySelector('[data-row="domain"]'), null);
+    assert.ok(s.container.querySelector('[data-row="brand"]') === null);
+    assert.ok(s.container.querySelector('[data-row="domain"]') === null);
     // the preview is the fake-check surface, inert
     assert.equal(s.container.querySelector('.lpb-preview').getAttribute('data-page-type'), 'fakeCheck');
     assert.equal(s.getTestState().builder.previewForbidden, 0);
@@ -226,7 +226,7 @@ test('the inspect step finds the fake_check_paste tell on the steps panel; no li
     assert.equal(s.getTestState().builder.inspect.totalTells, 1);
     assert.deepEqual(s.getTestState().builder.inspect.presentIds, ['fake_check_paste']);
     // no "Show the link target" button for a fake check (no hoverMismatch tell)
-    assert.equal(s.container.querySelector('[data-focus="show-link"]'), null);
+    assert.ok(s.container.querySelector('[data-focus="show-link"]') === null);
     // click the steps hot-spot to find it
     const steps = s.container.querySelector('.lpb-preview [data-region="steps"]');
     assert.ok(steps, 'the steps hot-spot exists in inspect mode');

@@ -86,7 +86,7 @@ function assertSameEnd({ mg, fw, rec }, label, success) {
 test('a person conversation draws the X and no End Conversation button', () => {
     const { mg } = openConversation();
     assert.ok(document.getElementById('minigame-close'), 'the X is drawn');
-    assert.equal(document.getElementById('minigame-cancel'), null, 'no End Conversation button');
+    assert.ok(document.getElementById('minigame-cancel') === null, 'no End Conversation button');
     assert.equal(document.body.textContent.includes('End Conversation'), false);
     assert.equal(PersonChatMinigame.keepsCancelButton, false);
     mg.cleanup();
@@ -154,7 +154,7 @@ test('disableClose: no X, Esc does nothing, no cancel row', () => {
     fw.currentMinigame = mg;
     const x = document.getElementById('minigame-close');
     assert.ok(!x || x.style.display === 'none', 'the X is hidden');
-    assert.equal(document.getElementById('minigame-cancel'), null, 'no cancel row');
+    assert.ok(document.getElementById('minigame-cancel') === null, 'no cancel row');
     document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
     assert.equal(fw.currentMinigame, mg, 'Esc leaves the chat open');
     assert.equal(mg.gameState.isActive, true);

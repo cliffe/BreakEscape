@@ -405,7 +405,7 @@ test('a beat gains its done marker once it has produced a result (F-7)', () => {
     const s = open();
     const summarise = $(s, '.ac-summarise');
     assert.ok(!summarise.classList.contains('ac-done'), 'not done before the learner acts');
-    assert.equal(summarise.querySelector('.ac-done-badge'), null);
+    assert.ok(summarise.querySelector('.ac-done-badge') === null);
     click($(s, '.ac-summarise-btn'));
     assert.ok(summarise.classList.contains('ac-done'), 'done once the summary is produced');
     const badge = summarise.querySelector('.ac-done-badge');

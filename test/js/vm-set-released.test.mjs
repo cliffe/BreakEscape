@@ -72,7 +72,7 @@ test('released: the link sits in the actions row as a block button, not inline i
     const a = c.querySelector('a.vm-action-btn');
     assert.ok(a);
     assert.equal(a.parentElement.className, 'vm-actions');
-    assert.equal(a.closest('p'), null, 'not inside a paragraph');
+    assert.ok(a.closest('p') === null, 'not inside a paragraph');
     const css = readFileSync(join(js, '../css/vm-launcher-minigame.css'), 'utf8');
     assert.match(css, /a\.vm-action-btn\s*\{[^}]*display:\s*inline-block;[^}]*text-decoration:\s*none;/);
 });
@@ -82,7 +82,7 @@ test('released: shellReturnUrl is the fallback, and also only when same-origin',
     assert.equal(ok.getAttribute('href'), 'https://be.example/hacktivity/events/1');
     const menuWins = openLauncher({ shellMenuUrl: '/menu', shellReturnUrl: '/ret' }).container.querySelector('a');
     assert.equal(menuWins.getAttribute('href'), 'https://be.example/menu');
-    assert.equal(openLauncher({ shellReturnUrl: 'https://evil.example/x' }).container.querySelector('a'), null);
+    assert.ok(openLauncher({ shellReturnUrl: 'https://evil.example/x' }).container.querySelector('a') === null);
 });
 
 test('released: fixed text only; hostile VM title and IP never reach the DOM', () => {
@@ -92,9 +92,9 @@ test('released: fixed text only; hostile VM title and IP never reach the DOM', (
     assert.match(text, /The VMs for this session have been released\. Your progress is kept\./);
     assert.ok(!text.includes('kali-evil'), 'title not shown');
     assert.ok(!text.includes('10.9.8.7'), 'ip not shown');
-    assert.equal(container.querySelector('img'), null, 'no injected img');
-    assert.equal(container.querySelector('script'), null, 'no injected script');
-    assert.equal(container.querySelector('iframe'), null, 'no panel iframe');
+    assert.ok(container.querySelector('img') === null, 'no injected img');
+    assert.ok(container.querySelector('script') === null, 'no injected script');
+    assert.ok(container.querySelector('iframe') === null, 'no panel iframe');
     assert.equal(dom.window.pwned, undefined);
 });
 
@@ -113,14 +113,14 @@ test('released: Back to missions link only for a same-origin menu URL', () => {
     for (const bad of ['javascript:alert(1)', 'data:text/html,<b>x', '//evil.example/x', 'https://evil.example/x',
         'https://user:pw@be.example/x', '', undefined, 42]) {
         const c = openLauncher({ shellMenuUrl: bad }).container;
-        assert.equal(c.querySelector('a'), null, `no link for ${String(bad)}`);
+        assert.ok(c.querySelector('a') === null, `no link for ${String(bad)}`);
         assert.match(c.textContent, /VMs released/);
     }
 });
 
 test('a hostile menu URL that passes the origin check is attribute-escaped', () => {
     const c = openLauncher({ shellMenuUrl: '/m?"><img src=x onerror=alert(2)>' }).container;
-    assert.equal(c.querySelector('img'), null);
+    assert.ok(c.querySelector('img') === null);
     assert.equal(c.querySelectorAll('a').length, 1);
 });
 
