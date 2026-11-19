@@ -361,8 +361,14 @@ test('the guard gives up after 2 seconds', () => {
         swallowHeldKey('Enter');
         mock.timers.tick(1999);
         assert.equal(repeatSwallowed('Enter'), true, 'still armed at 1999ms');
-        mock.timers.tick(1);
-        assert.equal(repeatSwallowed('Enter'), false, 'released at 2000ms');
+        // each swallowed repeat restarts the clock: a long hold never leaks a repeat
+        for (let i = 0; i < 5; i++) {
+            mock.timers.tick(1999);
+            assert.equal(repeatSwallowed('Enter'), true, `still held after ${(i + 2) * 1999}ms`);
+        }
+        // no repeats and no keyup (the keyup was lost): released 2s after the last repeat
+        mock.timers.tick(2000);
+        assert.equal(repeatSwallowed('Enter'), false, 'released 2s after the last repeat');
     } finally { mock.timers.reset(); releaseHeldEnter(); }
 });
 

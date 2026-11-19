@@ -415,7 +415,15 @@ export function swallowHeldKey(armed = 'Enter') {
     const g = {
         down: (e) => {
             if (e.isComposing || e.key !== armed) return;
-            if (e.repeat) { stop(e); return; }
+            if (e.repeat) {
+                stop(e);
+                // Still held: restart the timeout, so a long hold never leaks a repeat
+                // (the timeout only covers a keyup that never arrives)
+                clearTimeout(g.timer);
+                g.timer = setTimeout(() => releaseHeldEnter(), HELD_ENTER_TIMEOUT_MS);
+                g.timer?.unref?.();
+                return;
+            }
             // A fresh press: the keyup of the held one never came (focus left the window)
             releaseHeldEnter();
         },
