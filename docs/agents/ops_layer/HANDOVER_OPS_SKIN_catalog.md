@@ -1,5 +1,8 @@
 # Handover: realism skin plan, R3-1 (catalog) and R3-2 (no mark)
 
+**Status 2026-11-19: all steps below done** (second agent). Banners and the default module path
+were ruled on by the orchestrator and are written into the plan as design facts. Nothing open.
+
 Worktree: `.claude/worktrees/ops-plan`. Nothing committed (brief says do not commit).
 Plan: `docs/achitechture/OPS_REALISM_SKIN_PLAN.md`. Log: `docs/agents/ops_layer/reviews/OPS_REALISM_SKIN_DECISIONS.md`.
 Rules: Edit tool only; plan stays standalone (no reviews/rounds/picks); no real advisory ids in
