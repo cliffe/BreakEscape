@@ -118,3 +118,20 @@ entries below took a different fix from the one suggested.
 - Section 11.2: new `network_cli_fields_test.rb` row (right stage, absent before, absent from bootstrap, room, refusal and sync answers, decoy and weakness indistinguishable, omitted when not authored, nothing reads a `cli` field).
 - Section 11.4: the leak collector lists the `cli` strings at their serving stage, and each `test_ops_*` scenario that authors them lists them in its collector.
 - Section 14, item 6: notes that the `cli` objects are served as 5.2, 5.3 and 7 say. The core's `product` field and its rule are unchanged.
+
+## R8 fixes (2026-11-19)
+
+- M1: the three `cli` schema rows are gone from 9.1, replaced by a note that the skin plan declares them at its K3 (until then the four closed blocks refuse `cli`); section 3 adds `cli` to the early-write table; the core keeps copying at S1 and S2 and tests it on a test-only fixture under `test/fixtures/`.
+- m1: 4.3 now says `technique` appears in a scenario file only on a pretext line, names the two engine uses (session record, log row detail), and 14 item 13 ends "in scenario files".
+- m2: section 10 part 3 no longer allows edits to the pretext fixtures.
+- m3: the leak collector gains the `listed` tag for `range`, collects `address` only on discovery networks, drops `protocol`, collects a `service` word only when new, and matches addresses as whole tokens; the 5.x serving rows in section 7 say the same.
+- m4: the range stays on the block; 5.2 says the skin validator enforces a range on every discovery network or on none (dependency only, rule owned by the skin plan); 14 item 6 repeats it.
+- m5: the note in 9.1 says the skin's `cli.hosts` keys are plain strings (max 64) so `kit_deviceA`, `planted_deviceA` and `P1` (found in `scenarios/`) fit.
+- m6: ten rows added: section 3 S1 and S2 Adds, 12.1 steps 3, 5, 6 and 8, and 12.2 `network_access.rb`, schema and leak scanner rows; the builders sit in `network_access.rb`.
+- n1: 4.3 says the validator reads `technique` and its fixtures are unchanged.
+- n2: section 10 part 5 kept, with the reason (the MFA plan edits `pretext-judge.js`).
+- n3: section 15 retitled "Open questions for the user", "None open."
+- n4: 4.1 gains the pointer to the skin plan's section 4.2 and section 5.2.
+- n5: 5.2 says "beyond what the range's size implies"; no prefix cap asked.
+- n6: kept the log detail key `technique` (renaming touches the log plan); section 13 now says what the three uses mean and that they never meet.
+- n7: `network-view-ops.test.mjs` row asserts the Panels draw no `cli` string.

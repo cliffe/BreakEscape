@@ -213,8 +213,8 @@ today, `technique_card` here), and `offWhen` in the requireGlobal form (the mode
 
 | Stage | Adds | Ends playable when | Size |
 |---|---|---|---|
-| S1 (N13) | `hosts` map, `services[]`, `networks.<id>.discovery`, `POST /network/scan`, host and service rows in the view | `test_ops_scan`: a discovery network opens empty; a sweep lists its hosts; a host scan lists services; a pivot then lets a second network be swept | M |
-| S2 (N14) | `weaknesses[]`, `decoys[]`, `fixedIf`, `POST /network/check` and `/confirm`, the findings panel | `test_ops_findings`: findings appear only after a check; a decoy confirms false; a real one confirms and lists its needs; a fixed weakness yields no finding; a global set by the scenario patches a weakness. No weakness in it has `grants`, so it passes the validator at S2 and unchanged after S3 | M |
+| S1 (N13) | `hosts` map, `services[]`, `networks.<id>.discovery`, `POST /network/scan`, host and service rows in the view, the optional `cli` display fields copied onto the block (range), host rows (address) and services (section 5.2; declared by the skin plan at its K3) | `test_ops_scan`: a discovery network opens empty; a sweep lists its hosts; a host scan lists services; a pivot then lets a second network be swept | M |
+| S2 (N14) | `weaknesses[]`, `decoys[]`, `fixedIf`, `POST /network/check` and `/confirm`, the findings panel, a finding's `cli` copied by the one finding builder (5.3) | `test_ops_findings`: findings appear only after a check; a decoy confirms false; a real one confirms and lists its needs; a fixed weakness yields no finding; a global set by the scenario patches a weakness. No weakness in it has `grants`, so it passes the validator at S2 and unchanged after S3 | M |
 | S3 (N15) | `techniques`, the item type `technique_card` and its field `technique_card`, `POST /network/technique`, `via: "technique"` sessions, the keyring proof kind `technique_card`, the techniques panel, the desktop at the keyboard through a technique session with its remote-view marker, the compromised marker on world sprites, the validator's grant checks (a granted credential's `connectsTo` PC must take it) | `test_ops_access`: a wrong card is refused with its reason; a card on a finding that grants nothing gets `no_grant`; the right card with needs met opens the desktop or adds the credential; the PC then shows the marker and clicking it opens the remote view; unplugging ends the session and clears the marker | L |
 
 No field is reserved ahead of its stage. What happens to a scenario that writes a field before
@@ -224,6 +224,7 @@ and open in others:
 | Field written early | Where it sits | What catches it |
 |---|---|---|
 | `weaknesses`, `decoys` on a service; `discovery` on a network; `technique_card` in a credential's `proof` | blocks this plan declares closed (`definitions.service`, a `hosts` entry), or that are closed today (`networks.<id>`, `credentials.<id>.proof`) | a schema error: unknown property |
+| `cli` on a network, service, weakness or decoy, before the skin plan's K3 declares it | the same closed blocks (`networks.<id>`, `definitions.service`, `definitions.weakness`, `definitions.decoy`) | a schema error: unknown property |
 | `hosts`, `techniques` at the top level | the top level is open (no `additionalProperties`) | the corpus test `test/js/validator-declared-top-level.test.mjs`, which fails for a top-level key the schema does not declare. A single scenario run through the validator gets no error from the schema |
 | `services` on a room object, `technique_card` on an item | `definitions.item` is open (177 properties, no `additionalProperties`) | only the unknown-key warning of `schema_unknown_key_warnings` (`VS:790-800`), and the engine ignores the field |
 
@@ -303,6 +304,9 @@ give `resources` two meanings. A server-only map beside `networks` and `resource
 from the bootstrap by one more name in `WITHHELD_SCENARIO_KEYS`, and reads through one new
 `NetworkModel` helper. Services on a sign-in object stay on the object, because that is where an
 author already describes that PC.
+
+Optional console display fields (`cli`) are described in the realism skin plan, section 4.2, and
+served as section 5.2 says.
 
 ### 4.2 S2
 
@@ -420,12 +424,16 @@ and a session grant, on a weakness of a sign-in host's service:
 - **One word, two separate keys.** `technique` was already a field of a social engineering
   pretext line (`SC:3603`; read by `pretext-judge.js:240`, `:258` and `:276`), naming one of six
   persuasion techniques. That key keeps its name: this plan's card uses its own key,
-  `technique_card` (on the item and as the keyring proof kind). `technique` is only ever the
-  pretext line key, and `technique_card` is only ever the card, so an author's search for
-  either finds only its own. The pretext block is unchanged: the six scenarios that write it
+  `technique_card` (on the item and as the keyring proof kind). In a scenario file the key
+  `technique` appears only on a pretext line, and the card is always `technique_card`, so an
+  author's search for either finds only its own. Two engine keys that no author writes share the
+  word: a technique session's record keeps the granting finding id under `technique` (section 0),
+  and the `technique_used` and `technique_refused` rows name the technique id under `technique`
+  (section 13). The pretext block is unchanged: the six scenarios that write it
   (`ca03_helpdesk_reset`, `ca12_visitor_tailgater`, `lab_social_engineering`, `test_dm_social`,
-  `test_social_m5_channels`, `test_social_slice`), the schema's pretext line definition,
-  `pretext-judge.js`, the social pretext validator and its fixtures read `technique` as today.
+  `test_social_m5_channels`, `test_social_slice`), the schema's pretext line definition and
+  `pretext-judge.js` are untouched, the social pretext validator reads `technique` as today, and
+  its fixtures are unchanged.
   The nested `tells.techniques` map of an NPC keeps its name. Prose, schema descriptions and
   validator messages about the card always say "technique card" and "technique card registry",
   never "technique" alone.
@@ -479,7 +487,9 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   beside the fields it belongs to and at the stage that serves them, and never earlier:
   `networks.<id>.cli.range` as `cli: { range }` on the network's block, when the block is built
   (the range is the sweep's target, so it travels with the block that offers the sweep, and the
-  block still carries no host and no count);
+  block still carries no host and no count beyond what the range's size implies; the skin
+  validator enforces that a range is authored on every discovery network or on none, so the range
+  says nothing about whether a sweep will find a host);
   `networks.<id>.cli.hosts.<hostId>.address` as `address` on that host's row, in the sweep answer
   and in `GET /network`, only once the network is swept (the row exists only then); a service's
   `cli` as `cli` on that service inside the host row's `services`, in the host scan answer and in
@@ -490,7 +500,9 @@ the way `rogue_device_definitions` finds devices, `NM:138`).
   browser builds the defaults itself from fields it already has. Nothing reads a `cli` field to
   decide anything: no route, check, refusal, log row or synced key uses one, and the bootstrap and
   every room answer carry none (they carry no `networks`, `hosts` or `services` at all). Nothing
-  is added to synced `player_state`.
+  is added to synced `player_state`. The core copies these fields at S1 and S2 and tests the
+  copying on a test-only fixture under `test/fixtures/` (not a scenario folder); the schema rows
+  that let an author write them arrive with the skin validator at the skin plan's K3 (section 9.1).
 - A network block gains `swept` (true or false) on a discovery network, and `ops: true` when some
   host on it declares `services`. `ops` is sent only on an open network or a swept one: on an
   unswept discovery network it would say that the network holds at least one host, which is not
@@ -1177,11 +1189,11 @@ session a technique granted through an unplugged foothold has already ended with
 | Log rows (section 13) | never, by this plan | stored server-side in `opsLog`; the log feature's viewer is the only reader and has its own reach check |
 | `openHere` on a session row | only in the view of the foothold a technique session came through, on a host that blocks remote sign-in | |
 | A finding's `alias` | with the finding | a counter of the player's own finds; it says nothing about what is unchecked |
-| A network's `cli.range` | with the network's block, as `cli: { range }`; left out when not authored | `GET /network`; never in the bootstrap or a room answer |
+| A network's `cli.range` | with the network's block, as `cli: { range }`; left out when not authored | `GET /network`; never in the bootstrap or a room answer. The leak collector tags it `listed`: earned once the block has appeared in a `GET /network` answer |
 | A host's `id`, `name`, `sprite`, kind | after its network is swept | `GET /network`, the sweep answer |
-| A host's `address` (authored under `networks.<id>.cli.hosts.<hostId>`) | after its network is swept, on the host's row; left out when not authored | `GET /network`, the sweep answer |
+| A host's `address` (authored under `networks.<id>.cli.hosts.<hostId>`) | after its network is swept, on the host's row; left out when not authored. On an open network the row, and so the address, arrives with the first `GET /network`, so the leak collector collects an address only for hosts on discovery networks | `GET /network`, the sweep answer |
 | A service's `name`, `label`, `port`, `product`, `version` | after the host is scanned | `GET /network`, the scan answer |
-| A service's `cli` (`protocol`, `service`, `banner`) | after the host is scanned, as `cli` on the service; left out when not authored | `GET /network`, the scan answer |
+| A service's `cli` (`protocol`, `service`, `banner`) | after the host is scanned, as `cli` on the service; left out when not authored. `protocol` is not collected as a secret, and `service` only when it equals no `service` word or `name` of a service already earned | `GET /network`, the scan answer |
 | That a service has weaknesses or decoys, and how many | never before a check | |
 | A finding's `class`, `severity`, `summary` | after the check | check answer, `GET /network` |
 | A finding's `cli` (`title`, `module`, `script`) | after the check, as `cli` on the finding, the same keys for a weakness and a decoy; left out when not authored | check answer, confirm answer's finding, `GET /network` |
@@ -1260,25 +1272,31 @@ neighbouring blocks use, and every new open location carries the `x-id-map` mark
 | S1 | top level, beside `resources` (`SC:347`) | `hosts`: id map (`propertyNames` with the id pattern, `x-id-map: true`), `x-serverOnly: true`, `x-servedBy: ["GET /network", "POST /network/scan"]`. Entry: `name` (required), `network` (required, `x-ref: network`), `sprite`, `offWhen` (the same `oneOf` as a network's), `services` |
 | S1 | `definitions.item.properties`, beside `network` and `headless` (`SC:5525-5542`) | `services`, `x-serverOnly: true`, `$ref` to a new `definitions.service`. The item definition is open, so this declares the key (ending the unknown-key warning) and closes nothing |
 | S1 | `definitions.service` | `name` (id pattern, max 40), `label` (max 40), `port` (integer 1 to 65535), `product` and `version` (1 to 40 characters); `name`, `port`, `product`, `version` required; array `maxItems: 8` |
-| S1 | `networks.<id>` | `cli`: one optional closed object (`additionalProperties: false`, note pattern `^_`, no required key) with `range` (string, IPv4 CIDR pattern, max 18) and `hosts`, an id map (`x-id-map: true`, keys the host id pattern) of closed objects with one property `address` (string, dotted IPv4 pattern). Display text for the command-line skin; the description names its reader (`cli-gen/`) and says no route, check or refusal reads it. Declared in the same shared file as the skin plan's schema rows (its section 9), which carry the patterns and the rules the validator applies |
-| S1 | `definitions.service` | `cli`: one optional closed object with `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`) and `banner` (1 to 80 characters). Not part of `product` or `version`, which keep their rule and their place |
 | S2 | `definitions.service` | `weaknesses` (`maxItems: 4`, items `$ref` `definitions.weakness`) and `decoys` (`maxItems: 4`, items `$ref` `definitions.decoy`). `x-servedBy` gains `POST /network/check` and `/confirm` |
 | S2 | `definitions.weakness` (closed) | `id` (id pattern, max 40), `class` and `severity` (the enums of section 0), `summary` (max 200), `needs`, `grants`, `fixedIf` (the same `oneOf` as `offWhen`: a global name or the requireGlobal map); `id`, `class`, `severity` required. `grants` is not required at any stage |
 | S2 | `definitions.decoy` (closed) | `id`, `class`, `severity`, `summary` as on a weakness, and `falseBecause` (1 to 200 characters); `id`, `class`, `severity`, `falseBecause` required |
-| S2 | `definitions.weakness` and `definitions.decoy` | `cli`, one shared `definitions.cliFinding` referenced from both so the two cannot drift: closed, no required key, `title` (1 to 80 characters), `module` (`^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, max 80), `script` (`^[a-z][a-z0-9-]{0,39}$`). Both definitions take the same object, which is what lets a decoy's `cli` and a weakness's carry the same keys |
 | S2 | `definitions.opsNeeds` (closed) | `credential` (`x-ref: credential`), `item` (`x-ref: item`), `itemType` (string), `session` (enum `user`, `admin`), `global` (the requireGlobal `oneOf`), at least one of them; `item` and `itemType` not both (`not` over `required`); `label` (plain text, 1 to 40 characters), required with `itemType` or `global` and refused otherwise. One `needs` map has one label, so the validator refuses `itemType` and `global` together in one map. The split of `item` from `itemType` is what lets the schema's reference check report a dangling item id |
 | S2 | `definitions.opsGrants` (closed) | `session` (closed: `account` with `x-ref: npc`, `access` enum `user`, `admin`, both required) or `credential` (`x-ref: credential`); `minProperties: 1`, `maxProperties: 1`. Declared in S2 so the shape is fixed once; the validator refuses the key until S3 (section 3) |
 | S3 | top level | `techniques`: id map, `x-serverOnly: true`, `x-servedBy: ["GET /network"]`, `maxProperties: 32`, keys at most 40 characters. Entry: `name` (required, max 40), `summary` (max 200), `worksOn` (required; `class` required, `product`, `versions` as 1 to 8 strings) |
 | S3 | `definitions.item.properties`, beside `credential` (`SC:5158`) | `technique_card`: a key of the technique card registry, allowed only on an item of type `technique_card`; the description says so. It stays on the item the browser receives, as `credential` does; the registry entry it names does not |
 | S3 | `credentials.<id>.proof` (`SC:293-306`) | `technique_card`: a finding id, with its own pattern (three ids joined by dots), which the description states. The description's list of proof kinds gains it |
 
-The `cli` objects inherit the server-only marks of the objects they sit in (`networks`, `hosts`
-and `services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already
-name the routes that serve them. Their rules beyond the schema (the address inside the range and
+The `cli` objects are declared by the realism skin plan at its K3, inside these core
+definitions: on `networks.<id>`, `definitions.service`, `definitions.weakness` and
+`definitions.decoy`, with one shared `definitions.cliFinding` so a decoy's and a weakness's `cli`
+cannot drift. Until then those four blocks, all closed, refuse `cli` as an unknown property, and
+section 3 lists it among the early-write fields. The skin plan's keys for `networks.<id>.cli.hosts`
+are plain strings (at most 64 characters, `x-id-map: true`), not the host id pattern, because a
+key may name a sign-in object and room object ids such as `kit_deviceA` and `P1` do not follow
+that pattern; the validator's "not a host on that network" error does the checking. The `cli`
+objects inherit the server-only marks of the objects they sit in (`networks`, `hosts` and
+`services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already name
+the routes that serve them. Their rules beyond the schema (the address inside the range and
 unique on its network, the module unique in the scenario, a service whose findings author a field
-unevenly, strings holding a password or a command form) are checked by the skin plan's
-`check_realism_skin` in `scripts/validate_realism_skin.rb` (its section 9), which reads hosts,
-services and findings through `NetworkModel`. `check_network_ops` does not read a `cli` field.
+unevenly, strings holding a password or a command form, a range on every discovery network or on
+none) are checked by the skin plan's `check_realism_skin` in `scripts/validate_realism_skin.rb`
+(its section 9), which reads hosts, services and findings through `NetworkModel`.
+`check_network_ops` does not read a `cli` field.
 
 The top level and `definitions.item` are open, so declaring a key there adds a known name and
 nothing more; section 3 says what refuses each field before its stage.
@@ -1422,9 +1440,7 @@ come from the log rows plan's stage L1a; that plan's stages L1a and L1b are both
    lines and the graph JSON with a snapshot taken on main. The `dungeon_graph.*` files checked in
    beside scenarios must show no diff after regeneration.
 3. **The existing suites, unmodified.** The Rails suite and `bin/test-js` pass with no edit to an
-   existing test, apart from the copy lists in section 11.3; in S3, the key name inside the
-   pretext fixtures under `test/js/fixtures/social_pretext/` and `social_role_swap/` (no
-   assertion changes); and two tests in `test/js/pc-sessions.test.mjs` that assert the
+   existing test, apart from the copy lists in section 11.3; and two tests in `test/js/pc-sessions.test.mjs` that assert the
    displacement of a remote session, which the NPC rule of section 5.4 removes on purpose.
    Test "H-4: npc_sat_at displaces a password, a claimed, a guest and a remote session"
    (`:543-565`) drops its `remote` kind from the displaced loop and gains a new assertion for it:
@@ -1445,7 +1461,9 @@ come from the log rows plan's stage L1a; that plan's stages L1a and L1b are both
    object listed while the foothold is held and gone after the unplug.
 5. **Pretext verdicts.** A node test, `test/js/pretext-verdicts-unchanged.test.mjs`, runs
    `pretext-judge.js` over every pretext line of the six scenarios of section 4.3 and records each
-   verdict and its reason keys. Step 1 writes the snapshot from main; after S3 the same run must
+   verdict and its reason keys. It stays although this plan no longer changes that file: the MFA
+   plan edits `pretext-judge.js`, and this snapshot shows that the core's S3 leaves verdicts
+   alone. Step 1 writes the snapshot from main; after S3 the same run must
    match it exactly, and the validator lines of part 2 for those six scenarios must be unchanged.
    The shipped SE scenarios judge as before.
 
@@ -1482,7 +1500,7 @@ a scenario with no `logSources`.
 | `network_scan_test.rb` | S1 | each check of `/network/scan` in order, with its status and reason; the 400 for a missing, non-string or over-long parameter and for both or neither of `network_id` and `host_id`; a powered-down host answering `not_responding` with and without services; the first sweep's `network_swept` row, passed with no limit (the route saves, as it changed `opsDiscovered`), and the `host_scanned` row, once only; a repeat's row passed with `save_limit: true`; a sweep through a foothold that does not reach the network (404); `already` carrying the same fields; a repeated sweep writing its `network_swept` row again (merged into the newest row's count) and saving nothing else; `GET /network` before and after; a second network swept only after a pivot session; discovery kept across an unplug and a new foothold |
 | `network_discovery_display_test.rb` | S1 | on an unswept discovery network, with a PC id the client was never sent: remote sign-in, account tiles, desktop, credential sign-in through a foothold, sign-in from a held desktop and the keyring's offered routes each answer exactly as on the same network declared open (the same requests on an open network are the reference); the unswept block lists rows only for PCs the player holds a session on, and lists them before and after the sweep; an open share on the unswept network served by `GET /container`; a host scan of a host on the unswept network answering as an invented id until the sweep |
 | `network_ops_indistinguishable_test.rb` | S1 to S3 | for each of scan (sweep and host), check, confirm and technique: the answer for a real id the player has not earned (a network out of reach, a host on an unswept network, a host not scanned, a real finding id never checked, a finding whose host is no longer listed) equals, status and body byte for byte, the answer for an invented id, a string that is not of the id form and a foothold not held; and a stale id (good before an unplug or a lost pivot) answers the same |
-| `network_cli_fields_test.rb` | S1, S2 | on a fixture with every `cli` object authored: `networks.<id>.cli.range` as `cli.range` on the block of `GET /network`; a host's `address` absent from the block and from every row before the sweep, present in the sweep answer and in `GET /network` after it; a service's `cli` absent from `GET /network` before the host scan and present, unchanged, in the scan answer and after it; a finding's `cli` absent before the check and present, unchanged, in the check answer, the confirm answer and `GET /network`; no `cli` string, and no `cli` key, in the bootstrap, in any room answer, in a refusal body or in a sync answer; a weakness and a decoy of one service carrying the same key set and the same value types, with every `cli` field authored on both and again with every one left out on both, before and after the confirm; a fixture that authors none of the objects answering the same bytes as before the objects existed, with no `cli` key and no `{}` or `null` anywhere in an answer; a fixture that authors only some keys of an object (a service with a `banner` and no `protocol`) answering only those keys; the same requests with every `cli` string changed answering the same statuses, reasons, statuses of findings and log rows (nothing reads a `cli` field); the answer to a stale or unearned id unchanged by the objects (the 404 body is the one body) |
+| `network_cli_fields_test.rb` | S1, S2 | on a test-only fixture under `test/fixtures/` (not a scenario folder, so the corpus snapshot of section 10 part 2 never sees it, and it loads without the schema rows that arrive at the skin plan's K3) with every `cli` object authored: `networks.<id>.cli.range` as `cli.range` on the block of `GET /network`; a host's `address` absent from the block and from every row before the sweep, present in the sweep answer and in `GET /network` after it; a service's `cli` absent from `GET /network` before the host scan and present, unchanged, in the scan answer and after it; a finding's `cli` absent before the check and present, unchanged, in the check answer, the confirm answer and `GET /network`; no `cli` string, and no `cli` key, in the bootstrap, in any room answer, in a refusal body or in a sync answer; a weakness and a decoy of one service carrying the same key set and the same value types, with every `cli` field authored on both and again with every one left out on both, before and after the confirm; a fixture that authors none of the objects answering the same bytes as before the objects existed, with no `cli` key and no `{}` or `null` anywhere in an answer; a fixture that authors only some keys of an object (a service with a `banner` and no `protocol`) answering only those keys; the same requests with every `cli` string changed answering the same statuses, reasons, statuses of findings and log rows (nothing reads a `cli` field); the answer to a stale or unearned id unchanged by the objects (the 404 body is the one body) |
 | `network_ops_free_test.rb` | S2, S3 | the loop costs nothing but rows: confirming every finding of a service, decoys and weaknesses alike, and trying every card in the scenario on every finding change no state beyond the statuses, the grants and the log, and add no state key; each refusal past the two 404s, the 403 `not_responding` included, writes a `technique_refused` row with `save_limit: true` and saves the game only while the helper's result is `stored?`: the first ten at a host in a five-minute window of server time save, whatever the card, finding or reason, the eleventh and every later one in that window do not (the first after the window ends does again), and none does with no log source; a refusal sent twice writes its row twice (merged into a count); a confirm repeated writes no second row |
 | `network_findings_test.rb` | S2 | aliases given in the order found and kept across a reload; a check repeated after a confirm keeps the status and the alias and answers `already: true`; a first check of a service with no weakness or decoy, and of one whose only weakness is fixed, answers no findings and no `already`, adds the service to `opsDiscovered.services` and writes one `service_checked` row, and its repeat answers `already: true` with no row; a repeat check after the weakness has become unfixed adds the finding, saves, answers no `already` and writes no second row, and the check after that answers `already: true`; a second service's check carries on the alias count; a host with services and no finding held carries no `findings` key, scanned or not; the 400s and each 403 `not_responding` of `/check` and `/confirm`; the `service_checked` and `finding_confirmed` rows; check before scan (404); a check's answer with a decoy and a weakness built from the same keys in id order; confirm for each; an invented finding id (404); a weakness whose `fixedIf` holds left out of a check; one already confirmed carrying `fixed: true`, and one found but unconfirmed carrying no `fixed` key and the same keys as a decoy; an `itemType` need met only by an unforged held item whose id is an authored item of that type; the authored `label` shown for an `itemType` and a `global`, and the global's name in no answer; `met` recomputed on each read as an item is picked up and a credential earned |
 | `network_technique_test.rb` | S3 | section 5.4, each rule one test: every refusal in its fixed order with what it writes: no row for either 404, and a `technique_refused` row for the 403 `not_responding` (`reason: not_responding`, `save_limit: true`) and for each 422, both grants with their `technique_used` row, and the repeat for a session and for a credential, each writing its `technique_used` row again with `save_limit: true` (merged into a count, the route saving only while the helper's result is `stored?`). Beyond that section's text: with two footholds that both reach the host, a use through the second being a new use that runs every check and moves the session to that foothold; a grant again after the session ended; `endedPcIds` when the grant replaces a pivot session; the step up replacing the record in place and keeping `foothold`, from a technique session and from a password session at `user`; `signedInPcs` gaining the PC; `access: "admin"` in the answer, in `GET /scenario` after a reload and on the host row for a session at admin, and no `access` key for a technique session at user or for a password, claim or credential session; `GET /network` `techniques` absent with no card held and carrying `itemId` (first in id order of two held cards) otherwise |
@@ -1506,7 +1524,7 @@ a scenario with no `logSources`.
 | `interactions-compromise-tint.test.mjs` | S3 | a marked sprite (`compromiseTint` set) walked into range shows the highlight blue, walked out of range shows the mark's red again (`tintTopLeft`), and the same after leaving the viewport and after `interactable` turns false; an unmarked sprite walked in and out ends with no tint, as today; a mark that ends while the sprite is highlighted leaves no red after the hover ends; the proximity ghost is blue in every case. A second case in the same file loads `biometrics-minigame.js` with a marked sprite that has prints: the dusting view's `clearHighlights()` leaves the mark's red on it, and an unmarked sprite ends with no tint |
 | `pretext-verdicts-unchanged.test.mjs` | step 1, S3 | section 10, part 5: the shipped SE scenarios judge as before |
 | `technique-card-item.test.mjs` | S3 | a picked-up `technique_card` gets a tray slot and a pickup toast, from a room, a container and an NPC gift; a `notes1` item in the same test gets neither, which pins why the card has its own type |
-| `network-view-ops.test.mjs` | S1 to S3 | the actions each row state offers, found by their `data-action` and row hooks; no such attribute on any control of a view built from an existing scenario's answer; select-then-Use and a drag sending the same request; the "admin" tag drawn from `access` and absent without it; Fixed drawn only from `fixed`; `hostAction` for a blocked-host row with and without `openHere`, for a powered-down row that has it (not responding), and unchanged for every existing row shape; one Confirm control per unconfirmed finding; `getTestState` fields; for each action the guard holds at that stage (unplug, sweep and scan at S1; check and confirm from S2; use from S3), the control disabled in the same tick as the press, before any `await`, while its request is pending, and a second press making no second call (one call counted); a refetch that lands while a request is pending keeping that control disabled; a `use` of another card on the same finding, or of the same card on another finding, making its own call; the unplug's pending label and notice unchanged and drawn by the renderer; the refetch after each ops success; the test bridge's `networkView` returning the blocks; hostile strings in host names, products, summaries, reasons and technique names rendered as text |
+| `network-view-ops.test.mjs` | S1 to S3 | the actions each row state offers, found by their `data-action` and row hooks; no such attribute on any control of a view built from an existing scenario's answer; select-then-Use and a drag sending the same request; the "admin" tag drawn from `access` and absent without it; Fixed drawn only from `fixed`; `hostAction` for a blocked-host row with and without `openHere`, for a powered-down row that has it (not responding), and unchanged for every existing row shape; one Confirm control per unconfirmed finding; `getTestState` fields; for each action the guard holds at that stage (unplug, sweep and scan at S1; check and confirm from S2; use from S3), the control disabled in the same tick as the press, before any `await`, while its request is pending, and a second press making no second call (one call counted); a refetch that lands while a request is pending keeping that control disabled; a `use` of another card on the same finding, or of the same card on another finding, making its own call; the unplug's pending label and notice unchanged and drawn by the renderer; the refetch after each ops success; the test bridge's `networkView` returning the blocks; hostile strings in host names, products, summaries, reasons and technique names rendered as text; from an answer that carries `cli` objects, no `cli` string drawn anywhere in the Panels view |
 | `api-client-network-ops.test.mjs` | S1 to S3 | the four calls: path, body, error mapping, and no retry of a refused or failed request |
 | `validator-network-ops.test.mjs` | S1 to S3 | one fixture per error and warning of section 9.2, and a clean fixture per stage |
 | `dungeon-graph-ops.test.mjs` | S2, S3 | the nodes and edges of section 9.3 for `test_ops_access`; no password in any label |
@@ -1658,12 +1676,19 @@ section 5.5, so the events are proved to drive a task. The line is in the NPC's 
 `collect_network_secrets` (`:494`). It collects, with the same "not already in room text" rule:
 host names of `hosts` entries and of sign-in hosts on discovery networks, the names of shares on
 discovery networks, products, versions, service labels, summaries, `falseBecause` texts, technique names and summaries, and the global
-names in `fixedIf`, and the authored `cli` strings: a network's `range` (earned once the
-network's block is listed through a foothold, so a leak only in a bootstrap or room answer), a host's `address` (sweep), a
-service's `protocol`, `service` and `banner` (scan), and a finding's `title`, `module` and
-`script` (check). Each `test_ops_*` feature scenario that authors `cli` objects lists them in its
-own collector at the stage that serves them, so a `banner` or an `address` appearing before its
-sweep or scan, or in a bootstrap or room answer, fails the run. Each string is tagged with the step that earns it (sweep, scan, check,
+names in `fixedIf`, and the authored `cli` strings: a network's `range` (tag `listed`: earned once the network's
+block has appeared in a `GET /network` answer, so a leak only in a bootstrap or room answer), a
+host's `address` (sweep; collected only for hosts on discovery networks, because on an open
+network the row and its address arrive with the first `GET /network`, as for host names), a
+service's `service` word and `banner` (scan), and a finding's `title`, `module` and `script`
+(check). `protocol` (`tcp`, `udp`) is left out, and a `service` word is collected only when it
+equals no `service` word or `name` of a service already earned, because such short words appear
+legitimately once any host is scanned and would be false leaks or hide a real one. Addresses are
+matched as whole tokens, not followed by a digit (or by a dot and a digit), so `10.20.0.1` is not
+found inside `10.20.0.15`. Each `test_ops_*` feature scenario that authors `cli` objects lists
+them in its own collector at the stage that serves them, so a `banner` or an `address`
+appearing before its sweep or scan, or in a bootstrap or room answer, fails the run. Each string
+is tagged with the step that earns it (listed, sweep, scan, check,
 confirm, card held, never), and the scan takes the run's list of completed steps so that a string
 is a leak only before its step.
 
@@ -1719,12 +1744,12 @@ the branch after each landing.
 |---|---|---|---|
 | 1 | before S1 | The unchanged-behaviour fixtures and tests of section 10, parts 1, 2 and 5 (part 5 is the pretext verdict snapshot), recorded on main with the shared helper, folder and rake task the log plan's L1a built; L1a and L1b are already on main, and this step builds none of them | they pass on main |
 | 2 | S1 | Schema (9.1, S1 rows); `NetworkModel` helpers; `check_network_ops` S1 rules and the not-built-yet table; the two withheld-list names | unit and validator node tests; step 1 tests |
-| 3 | S1 | `network_ops.rb` with `ops_listed?`, the one 404 answer, the 400, `scan_network!` and `scan_host!`; `opsDiscovered`; the route, both controller lists, `network_scan?` in the policy and its name in the role test; the `network_swept` and `host_scanned` events and their calls; `network_rows` and block changes (the unswept block lists rows of PCs the player holds a session on; sign-in, desktop and shares are not gated by discovery) | `network_scan_test`, `network_discovery_display_test`, `network_ops_indistinguishable_test`, no-exposure and delta tests; step 1 tests |
+| 3 | S1 | `network_ops.rb` with `ops_listed?`, the one 404 answer, the 400, `scan_network!` and `scan_host!`; `opsDiscovered`; the route, both controller lists, `network_scan?` in the policy and its name in the role test; the `network_swept` and `host_scanned` events and their calls; `network_rows` and block changes (the unswept block lists rows of PCs the player holds a session on; sign-in, desktop and shares are not gated by discovery); the block, `host_row` and service rows copy `cli.range`, `address` and a service's `cli` (5.2) | `network_scan_test`, `network_discovery_display_test`, `network_ops_indistinguishable_test`, `network_cli_fields_test` (S1 cases), no-exposure and delta tests; step 1 tests |
 | 4 | S1 | Client: `ops-model.js`, the scene's `perform` path and pending guard with the unplug guard folded in, Sweep and Scan in the view, the row icon, `api-client.js`, events, `getTestState`, the test bridge's `networkView` comment and test, copy lists | node tests; `bin/test-js` whole |
-| 5 | S1 | `test_ops_scan` with its `PLAYTEST.md`, graph and leak collector; the ops lines in `verify-run.rb`; docs (N13 in `docs/ACCESS_AND_NETWORKS.md` and the `README_scenario_design.md` index, the `networkView` shape in `docs/test-bridge.md`) | scripted playtest, live proof, full suites; land S1 |
-| 6 | S2 | Schema (S2 rows); model helpers; validator S2 rules; `check_service!`, `confirm_finding!` (free), `opsFindings` with aliases; the two routes with their policy methods; the `service_checked` and `finding_confirmed` events and calls; findings on rows | `network_findings_test`, `network_ops_free_test`, and the extended exposure and indistinguishable tests |
+| 5 | S1 | `test_ops_scan` with its `PLAYTEST.md`, graph and its leak collector entries; `collect_ops_secrets` in `access_leak_scanner.rb`, with the `listed`, sweep and scan `cli` entries (11.4); the ops lines in `verify-run.rb`; docs (N13 in `docs/ACCESS_AND_NETWORKS.md` and the `README_scenario_design.md` index, the `networkView` shape in `docs/test-bridge.md`) | scripted playtest, live proof, full suites; land S1 |
+| 6 | S2 | Schema (S2 rows); model helpers; validator S2 rules; `check_service!`, `confirm_finding!` (free), `opsFindings` with aliases; the two routes with their policy methods; the `service_checked` and `finding_confirmed` events and calls; findings on rows; the finding builder copies a finding's `cli` into check, confirm and `GET /network` answers (5.3) | `network_findings_test`, `network_ops_free_test`, `network_cli_fields_test` (S2 cases), and the extended exposure and indistinguishable tests |
 | 7 | S2 | Client: Check and Confirm, the findings panel with needs and reasons; graph: weakness nodes (9.3, without cards) | node tests |
-| 8 | S2 | `test_ops_findings`, playtest, leak collector steps, docs (N14) | scripted playtest, live proof, full suites; land S2 |
+| 8 | S2 | `test_ops_findings`, playtest, leak collector steps and the check-stage `cli` entries in the collector, docs (N14) | scripted playtest, live proof, full suites; land S2 |
 | 9 | S3 | Schema (S3 rows); `techniques` helpers; validator S3 rules, among them the card type rule, the `connectsTo` checks on a granted credential, and the warnings for a weakness with no `grants`, for `needs` on one, and for a card that can stand in for a sign-in; `PROOF_KINDS` and `credential_proof_holds?`; the `technique_card` type: the placeholder PNG, its `load.image` line, the grep of section 4.3 | unit, validator and keyring tests; `technique-card-item.test.mjs`; the part 5 snapshot of section 10 unchanged |
 | 10 | S3 | `start_login_session!` keywords; `access` through `login_session_answer` and `session_for_client`; `use_technique!` with the repeat test (the 403 `not_responding` and every 422 write a `technique_refused` row with `save_limit: true`); `opsUsed`; the route and its policy method; the `technique_used` and `technique_refused` events and calls; the credential grant; `techniques` with `itemId` on `GET /network` | `network_technique_test`, `network_technique_hostile_test`, `network_ops_free_test` |
 | 11 | S3 | The access check changes alone: `technique_session_through?`; its use in `desktop_request_allowed?` and `desktop_refusal`; the foothold argument of `network_rows` and `host_row` with `openHere`; the `technique` skip in `settle_session_at_keyboard!` (the keyboard branch is otherwise unchanged); the no-route line in `folder_route_allowed?`, passing only where the keyboard desktop would | `network_technique_blocked_host_test`, `network_technique_session_test`, and every existing network and keyring controller test, unmodified |
@@ -1758,7 +1783,7 @@ are in flight at once, their sessions agree who goes first on each file.
 | `tools/playtest/verify-run.rb` | three names in `ACCESS_KEYS`, three printed lines, two keys on the session line (about 20 lines) | the log feature adds `--ops-log`; S5 and S8 will add their own keys to the same list |
 | `public/break_escape/js/systems/test-bridge/access.js`, `docs/test-bridge.md` | the documented shape of `networkView` gains `networks` and `techniques`; no behaviour change | none known |
 | `app/models/break_escape/game.rb` | `ACCESS_STATE_DEFAULTS` (three keys); `start_login_session!` (two keywords), `login_session_answer` and `session_for_client` (`access`), the reader `client_access_level`; the include of `NetworkOps` | S5a adds `session_access`, points `client_access_level` at it, writes no level, and may add its own keys to the same constant; S8 and S5c change the sign-in order just above |
-| `app/models/break_escape/network_access.rb` | the withheld lists (`:18-21`), `network_rows`, blocks, `host_row`, `desktop_request_allowed?`, `desktop_refusal` (`host_reachable_through?`, `from_route_refusal` and `resource_admits_player?` are not changed) | S5a (what a session may do), the log feature (rows on the existing plant, unplug and join actions). This plan's new code lives in `network_ops.rb` to keep this file's diff small |
+| `app/models/break_escape/network_access.rb` | the withheld lists (`:18-21`), `network_rows`, blocks, `host_row`, `desktop_request_allowed?`, `desktop_refusal` (`host_reachable_through?`, `from_route_refusal` and `resource_admits_player?` are not changed), and the `cli` copies in the block and `host_row` | S5a (what a session may do), the log feature (rows on the existing plant, unplug and join actions). This plan's new code lives in `network_ops.rb` to keep this file's diff small |
 | `lib/break_escape/network_model.rb` | new helpers only, appended | S5c may add account kinds to host records |
 | `lib/break_escape/credential_model.rb`, `app/models/break_escape/credential_keyring.rb` | `PROOF_KINDS`, one `when` | S7 builds the `hash` kind in the same catalogue; S5b adds a harvest proof |
 | `public/break_escape/js/minigames/network-view/network-view-minigame.js` | rows, panels, `hostAction`, `getTestState`; the `perform` path and its pending guard, built in S1 with the unplug guard folded in and widened in S2 and S3 | S6 adds the second renderer, which reads the same answers through `ops-model.js`, never the DOM, and is routed through the same `perform` path; S5a adds no badge here (section 14, request 1) |
@@ -1773,10 +1798,10 @@ are in flight at once, their sessions agree who goes first on each file.
 | `public/break_escape/js/core/game.js`, `public/break_escape/assets/objects/` | one `load.image` line and `technique_card.png` | any plan or art pass that adds an object sprite |
 | `app/controllers/break_escape/games_controller.rb` `folder_route_allowed?` | one line | none known |
 | `public/break_escape/js/api-client.js` | four functions | every plan with a route |
-| `scripts/scenario-schema.json` | section 9.1 | every plan; the file has very long lines, so two edits to one block conflict even when they do not overlap in meaning |
+| `scripts/scenario-schema.json` | section 9.1; the skin plan (K3) declares `cli` inside `networks.<id>`, `definitions.service`, `definitions.weakness`, `definitions.decoy`, and `definitions.cliFinding` | every plan; the file has very long lines, so two edits to one block conflict even when they do not overlap in meaning |
 | `scripts/validate_scenario.rb` | one `require_relative` and one `run.call` (`:26`, `:8968`) | every plan adds a line in the same place |
 | `scripts/generate_dungeon_graph.rb` | one new block; one `when` in the credential block; legend lines. `scripts/lock_key_diff.rb` is not changed | S5 and S7 add nodes after the same block |
-| `tools/playtest/lib/access_leak_scanner.rb` | one collector | S5b, S7, S8 add collectors |
+| `tools/playtest/lib/access_leak_scanner.rb` | one collector, `collect_ops_secrets` | S5b, S7, S8 add collectors |
 | `test/js/validator-declared-top-level.test.mjs`, the four copy lists of section 11.3 | new names | S6 adds a module to the same copy lists |
 | `docs/ACCESS_AND_NETWORKS.md`, `README_scenario_design.md` | N13, N14, N15 in the feature index and a section each | every plan appends rows to the same index table |
 
@@ -1850,6 +1875,12 @@ logs it a second time. `start_login_session!` called with `via: 'technique'` wri
 row. A repeat of one of a source's 10 newest rows merges into a count on that row up to the log
 plan's bound and is dropped after it, so a replayed request never costs a row.
 
+The detail key `technique` on the two technique rows names a technique id from the registry. A
+technique session's record keeps a finding id under the same word (section 0), and a pretext line
+in a scenario file uses it for a persuasion technique (section 4.3). The three never meet: the
+log row, the session record and the scenario key sit in different places, and nothing reads one
+as another.
+
 These names are the log's. The client events of section 5.5 share some of the words
 (`network_swept`) and are a separate thing: they fire in the browser for objectives and NPC
 lines and never reach the log.
@@ -1897,9 +1928,10 @@ Each is a statement of what this plan provides or needs, for the plan named.
    them is `desktop_request_allowed?` (section 5.4), whose `remote: "blocked"` term admits a
    technique session through its own foothold.
 6. **Skin (S6).** The four routes and the `GET /network` fields of sections 5 to 7 are the whole
-   surface (the optional `cli` display objects of section 9.1 are served as sections 5.2, 5.3 and
+   surface (the optional `cli` display objects are served as sections 5.2, 5.3 and
    7 say, at the stage of the thing they belong to, copied unchanged, left out when not authored,
-   and read by nothing on the server), and `ops-model.js` with its `REFUSAL_TEXT` is the one shared pure module (section
+   and read by nothing on the server; the skin plan declares their schema rows at its K3 and owns
+   the rule that a range is authored on every discovery network or on none), and `ops-model.js` with its `REFUSAL_TEXT` is the one shared pure module (section
    5.5). For typing, a finding has an `alias` and a `techniques` entry carries the `itemId` to
    send. This plan builds the scene's `perform` path and its one pending guard in S1 to S3,
    keyed by action and target (for `use`, the card and the finding together), over sweep,
@@ -1949,12 +1981,12 @@ Each is a statement of what this plan provides or needs, for the plan named.
 13. **Cracking (S7), password harvest (S5b) and the log plan.** None of them names the proof
     kind `technique_card` today (the log plan's `technique` is a row kind, a different thing).
     A plan that adds a proof or an item field naming a card uses `technique_card`, never
-    `technique`, which stays the pretext line key (one of six persuasion techniques).
+    `technique`, which stays the pretext line key in scenario files (one of six persuasion techniques).
 
-## 15. Decisions
+## 15. Open questions for the user
 
-No question is open. Every design point is settled in the body, with its reason, where it
-applies. Two choices shape later work:
+None open. Every design point is settled in the body, with its reason, where it applies. Two
+choices shape later work:
 
 - **The pretext line key stays `technique`.** The new card uses `technique_card` (item field and
   proof kind) and the registry is `techniques` at the top level; neither appears inside a pretext
