@@ -104,11 +104,13 @@ and one who wants the prompt can have it on every ops network.
    realism catalog (section 4.3). All of them are validated as plain text (section 9). Every
    line is printed bare, in the tools' own layout, with no mark added. Generators format the
    answer and these labels;
-   they never invent exploit content, and a scenario's console text teaches no attack step
-   beyond what its lab sheet already covers. No validator or test can see that last point: it
-   is checked by the scenario design review and the lab-sheet step of every scenario that
-   authors `cli` fields or links catalog entries, and the validators enforce only the text
-   rules of section 9.
+   they never invent exploit content, and no console text teaches an attack step. The
+   validators enforce the text rules of section 9 and cannot see a procedure written in plain
+   words, so each side has a human check. A scenario's own `cli` strings are checked by the
+   scenario design review and the lab-sheet step of every scenario that authors them. Catalog
+   text is checked by the catalog task that adds or changes it, never by a scenario review,
+   which does not open the catalog: the task ends with the catalog validator and a review of
+   each changed entry against this rule (section 4.3, "Who opens it").
 
 Rule 1 is what lets the feature ship without mission playtests of its own: a mission that is
 solvable in one skin is solvable in the other because the requests, the server and the text shown
@@ -193,7 +195,7 @@ by tests and runs that exist when it lands. Total size M.
 |---|---|---|---|
 | K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). K1 uses `perform` as the core built it; the echo and the two hooks of section 14, request 4 are first used in K2. No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
 | K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls, made from the core's `onSent` and `onEnded` hooks (section 14, request 4); the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
-| K3 Scenario fields and catalog | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts and services and the optional `realism` link on weaknesses and decoys, served by the core's answers (section 14, request 3) and declared in the schema here, with the validator (until K3 the core's closed blocks refuse `cli` and `realism`); the realism catalog's JSON schema, its first entries and its validator `scripts/validate_realism_catalog.rb` (section 4.3); `scripts/validate_realism_skin.rb` with every scenario check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects and catalog links on its findings | The Rails and validator tests of 11.3; the golden files with authored fields and catalog entries; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
+| K3 Scenario fields and catalog | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts and services and the optional `realism` link on weaknesses and decoys, served by the core's answers (section 14, request 3) and declared in the schema here, with the validator (until K3 the core's closed blocks refuse `cli` and `realism`); the realism catalog's JSON schema, its validator `scripts/validate_realism_catalog.rb`, the generated index it writes, and `training_fixtures.json`, the only catalog file K3 adds, of invented entries for `test_ops_skin` (section 4.3); real entries come later, each in its own catalog task; `scripts/validate_realism_skin.rb` with every scenario check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects and catalog links on its findings | The Rails and validator tests of 11.3; the golden files with authored fields and catalog entries; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
 | K4 Live proof | The live parity runner and the docs, which change nothing a player sees (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
 ## 4. Scenario fields
@@ -342,7 +344,9 @@ vulnerability details that scenarios link to by a plain id. The catalog is the o
 the ops layer where real advisory ids and real module paths live. An ops scenario's file, ink,
 objectives, hints, mails and `PLAYTEST.md` hold none, nor do the examples in this plan, and the
 validator refuses them there (section 9). Older scenarios that teach with real advisories (the
-VM missions and labs) declare no `services` and are not read by that rule.
+VM missions and labs) declare no `services` and are not read by that rule. This scope is
+intended: when a VM mission later gains an ops network (declares `services`), its real ids move
+to the catalog as part of that work and its other text names them no more.
 
 **No banner in the catalog.** A banner stays a scenario service field and names no real
 identifier and no real product. It is served with the host scan, before any check, so a banner
@@ -355,10 +359,14 @@ topic (for example `file_sharing.json`, `web.json`), all loaded together. It sit
 `scenarios/`, outside `public/` and outside the asset pipeline, so no static path serves it and
 no route lists it. The engine gem ships it with the rest of `config/`. It is read on the server
 only, by one loader, `lib/break_escape/realism_catalog.rb` (section 14, request 3), which reads
-every file once on first use into a frozen map from id to entry, refuses to load when an id or a
-`module` appears twice, and takes another folder in tests. The browser never receives the
-catalog, a file of it, or a link id: it receives, per finding, only the fields of the one entry
-that finding links, at the stage section 7 gives.
+every file once on first use into a frozen map from id to entry and takes another folder in
+tests. The loader never raises into a route: when a file does not parse or an id or a `module`
+appears twice, it logs a server warning and loads an empty map, so every finding of every game
+prints the defaults evenly and the check and confirm routes keep working. The catalog validator
+is the hard gate for those faults, and it parses each file with a duplicate-key check, since a
+plain JSON parse keeps the last of two equal keys in one file without a word. The browser never
+receives the catalog, a file of it, or a link id: it receives, per finding, only the fields of
+the one entry that finding links, at the stage section 7 gives.
 
 **File form.** Each file is one closed object: `entries`, a map from catalog id to entry, and
 `_` note keys for authors. Each entry is a closed object:
@@ -369,12 +377,13 @@ that finding links, at the stage section 7 gives.
 | `module` | yes | a path label, `^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, at most 80 characters, unique in the whole catalog | the framework's module path in `search`, `use`, `info` and the prompt |
 | `script` | yes | `^[a-z][a-z0-9-]{0,39}$` | the script name heading the finding in the script report |
 | `advisories` | no | 1 to 4 strings, each in one of the forms `CVE-\d{4}-\d{4,7}`, `MS\d\d-\d{3}`, `GHSA-[2-9cfghjmpqrvwx]{4}(-[2-9cfghjmpqrvwx]{4}){2}` or `ZDI-\d\d-\d{3,5}` | one `IDs:` line in the script report (`\|     IDs: CVE:CVE-...`, each id after its scheme name) and a `References:` list in `info` |
-| `output` | no | 1 to 6 lines, each plain text of 1 to 80 characters | lines under the title in the script report, before the game's own `Finding`, `State`, `Risk` and summary lines |
+| `output` | no | 1 to 6 lines, each plain text of 1 to 80 characters, saying only what a scanner reports: the state, a one-line description of what is wrong, and the disclosure date; never a step, a request form or a trigger | lines under the title in the script report, before the game's own `Finding`, `State`, `Risk` and summary lines |
 | `_` keys | no | author notes | never served |
 
 A catalog id is `^[a-z][a-z0-9_]{2,47}$` and describes the weakness in plain words
 (`share_guest_login`, never an advisory number or a vulnerability's nickname), so the link a
-scenario holds names no real identifier. An entry has no kind and no reference to any scenario:
+scenario holds names no real identifier; the catalog validator refuses an id that matches an
+advisory pattern or a nickname (section 9). An entry has no kind and no reference to any scenario:
 whether it shows a real weakness or a decoy is decided by the object that links it, and one
 entry may be linked from several scenarios, at most once in each.
 
@@ -426,13 +435,44 @@ in the banner equals the service's `version`; and for each link, the linked entr
 its `version`. An entry that names a product and version therefore fits only services that match
 it, and the validator says so at the link.
 
+**The index.** The catalog validator also writes a generated index,
+`docs/REALISM_CATALOG_INDEX.md`, outside the catalog folder. It is rewritten every time the
+validator runs from the command line and is committed with the catalog. It holds no catalog
+text, only, per id: the file it is in; its form, that is its key set (whether it has
+`advisories` and `output`), its number of advisories, its number of output lines, and its
+`module`'s first segment and number of segments (for example `share_guest_login:
+file_sharing.json, advisories 1, output 1, auxiliary/4`); and the scenarios that link it. Ids
+are plain words checked by the catalog validator, the first segment is one framework word, and
+the rest are numbers and scenario paths, so the index leaks nothing the catalog holds. The
+separation test of 11.3 scans it too. The catalog validator test fails when the committed index
+differs from what the validator would write, with a message saying to rerun it.
+
+**Edits after games exist.** A game row keeps the scenario copy from when the game was made,
+but reads the catalog live, so a catalog edit reaches games made before it. The rule that keeps
+that safe: the catalog is append-only. An id in the committed index is never removed or renamed
+and its form never changes; new ids are only added. An entry no longer wanted is simply left
+unlinked. Text inside an entry may be corrected when its form stays the same, and the task that
+does so reruns the scenario validator over every scenario the index lists as linking it. The
+catalog validator test compares the catalog with the committed index: an added id passes, a
+removed id or a changed form fails. A game made earlier therefore always finds each link it holds,
+of the form its scenario was validated against.
+
 **Who opens it.** Scenario review and fix agents (design reviews, dialogue reviews, puzzle and
-room passes, playtests, validator runs) never need to open the catalog. A finding is understood
-from its scenario fields (class, severity, summary, `falseBecause`, needs); the catalog's text is
-console dress that is never needed to win (section 1.3, rule 1); the scripted playtest beats name
-actions, not console text; and both validators report a catalog problem by catalog id, field
-name and rule, never by quoting the catalog's text. Adding or changing catalog entries is its own
-task, briefed on its own, and runs the catalog validator before it finishes.
+room passes, playtests, validator runs) never open the catalog, and neither does an author or
+fixer of `realism` links: they read the index, which gives each entry's form and where it is
+linked, enough to meet the all-or-none, count-pair and module-form rules of section 9. A
+finding is understood from its scenario fields (class, severity, summary, `falseBecause`,
+needs); the catalog's text is console dress that is never needed to win (section 1.3, rule 1);
+the scripted playtest beats name actions, not console text; and both validators report a
+catalog problem by catalog id, rule and form, never by quoting the catalog's text. A link that
+fails the `VERSION` agreement of this section is fixed by linking another entry of the same form
+or by handing the entry to a catalog task, never by reading the entry.
+
+Adding or changing catalog entries is its own task, briefed on its own. It ends with the
+catalog validator (which also rewrites the index) and a review step: each added or changed entry
+is read against section 1.3, rule 4, and the `output` scope in the table above (what a scanner
+reports about the flaw, never how to use it). That review, not a scenario review, is the human
+check on catalog text.
 
 ## 5. Engine behaviour
 
@@ -1131,7 +1171,7 @@ player has earned that object (core 14, request 3):
 | `networks.<id>.cli.range` | the view's block for that network (`GET /network`) | whenever the block is listed |
 | `networks.<id>.cli.hosts.<hostId>.address` | `address` on the host row, in `GET /network` and, on a discovery network, in the sweep answer | with the host row, whenever the core lists that row as discovered: on an open network from the first answer; on a discovery network from the sweep. A held-session row the core lists on an unswept discovery network carries no `address` until the sweep |
 | a service's `cli` (`protocol`, `service`, `banner`) | the service, in the host scan answer and in `GET /network` | once the host is scanned |
-| a weakness's or a decoy's linked catalog entry (`title`, `module`, `script`, and `advisories` and `output` where the entry has them), resolved on the server | `cli` on the finding, in the check answer and in `GET /network` | once the service is checked; the same keys for a weakness and a decoy |
+| a weakness's or a decoy's linked catalog entry (`title`, `module`, `script`, and `advisories` and `output` where the entry has them), resolved on the server | `cli` on the finding, in the check answer, in the confirm answer's finding and in `GET /network` | once the service is checked; the same keys for a weakness and a decoy |
 
 - The `realism` link id and the catalog itself never reach the browser. The server looks the
   link up when it builds a checked finding and copies the entry's fields by name; no route
@@ -1187,8 +1227,9 @@ player has earned that object (core 14, request 3):
 | Folded or unfolded quick commands | the renderer instance | one boolean | never |
 | Prompt mode, selected module and `TECHNIQUE` | the Terminal renderer instance, dropped on unmount | three short strings | never |
 
-Nothing is added to `player_state`, to the sync sections or to any server answer, so the delta
-rule has nothing to judge. Findings and their aliases are the core's server
+Nothing is added to `player_state`, to the sync sections or to any other stored or synced
+state, so the delta rule has nothing to judge (the `cli` fields of section 7 ride on network
+answers and are not stored). Findings and their aliases are the core's server
 state and the skin keeps no copy. The pending set is in memory for as long as a request is out.
 A reload reopens an ops view in the skin section 4 gives, with an empty log. A saved game from
 before the feature behaves the same as a new one. A player who changes browser gets the
@@ -1231,19 +1272,28 @@ advisory forms, `output` an array of 1 to 6 strings of 1 to 80 characters. It is
 **Validators** (K3). Two new files:
 
 - `scripts/validate_realism_catalog.rb`, with `check_realism_catalog(dir)`, checks the catalog
-  on its own: the catalog schema, ids and `module` values unique across all files, and every
-  rule of the table below marked **Catalog**. It runs from the command line, from a Rails test
-  on every build (section 11.3), and at the end of every task that edits the catalog.
+  on its own: the catalog schema, each file parsed with a duplicate-key check, ids and `module`
+  values unique across all files, every rule of the table below marked **Catalog**, and the
+  append-only comparison with the committed index (section 4.3). It reads each scenario's
+  `realism` links, loading scenarios as `scripts/validate_scenario.rb` does, to fill the index's
+  "linked by" column, and from the command line it rewrites `docs/REALISM_CATALOG_INDEX.md`. It
+  runs from the command line, from a Rails test on every build (section 11.3), and at the end of
+  every task that edits the catalog.
 - `scripts/validate_realism_skin.rb`, with `check_realism_skin(json_data)`, required and run
   from `scripts/validate_scenario.rb` by one line beside the core's `check_network_ops`. It reads
-  hosts, services and findings through the core's `NetworkModel` helpers and the catalog through
-  the core's loader, and runs the rules marked **Scenario**. When the catalog itself has errors
-  it reports one error, "the realism catalog does not validate: run
-  scripts/validate_realism_catalog.rb", and checks no link against it.
+  hosts, services and findings through the core's `NetworkModel` helpers and runs the rules
+  marked **Scenario**. Only when the scenario has at least one `realism` link does it read the
+  catalog, by calling `check_realism_catalog` on the catalog folder and then the core's loader;
+  a scenario with no link never reads the catalog and never sees a catalog error. When that call
+  finds errors, the scenario gets one error, "the realism catalog does not validate: run
+  scripts/validate_realism_catalog.rb", and no link is checked against it.
 
-Neither validator's message quotes a catalog string: a catalog problem is named by file,
-catalog id, field and rule; a link problem by the scenario path of the weakness or decoy, its
-link id and the rule. The ink half of the wording check runs in the dialogue lint the validator
+Neither validator's message quotes a catalog string. A catalog problem is named by file,
+catalog id, field and rule. A link problem is named by the scenario path of the weakness or
+decoy, its link id, the rule and the forms involved, in the index's terms, for example "decoy
+`old_banner` links a (advisories 1, output 2, auxiliary/5) entry; weakness entries here are
+(advisories 1, output 1, auxiliary/5)". Forms are numbers and one framework word, so the fixer
+can pick a fitting entry from the index without opening the catalog. The ink half of the wording check runs in the dialogue lint the validator
 already has.
 
 In the table, a **text string** is a scenario `cli` string (`range`, an `address`, `protocol`,
@@ -1258,10 +1308,12 @@ In the table, a **text string** is a scenario `cli` string (`range`, an `address
 | Error | Scenario | An `address` on a network with no `range`, outside the range, equal to its network or broadcast address, or used twice anywhere in the scenario |
 | Error | Scenario | Two services of one host with the same `port`, whatever their `protocol`, so `-p` names one service |
 | Error | Scenario | A key of `cli.hosts` that is not a host (a `hosts` entry or a sign-in object) on that network |
-| Error | Scenario | A network id equal to a host, room object or resource id. The core's one id space covers hosts, objects and resources but not networks, and `nmap -sn <id>` must name one thing |
+| Error | Scenario | A network id equal to a host, room object or resource id. The core's one id space covers hosts, objects and resources but not networks, and `nmap -sn <id>` must name one thing. It reads every scenario that declares `networks`, not only ops scenarios, so an id clash is caught before a scenario gains `services` and has to rename ids its ink and objectives already use; no shipped scenario has such a clash today, so section 10's unchanged output holds |
 | Error | Scenario | Range all or none: on a scenario's discovery networks, one has a `range` and another has none. Either every discovery network has a range or none does; otherwise a range's presence would mark which networks hold content |
-| Error | Catalog | An id or a `module` used twice across the catalog's files (the loader refuses to load the same) |
-| Error | Catalog | A `module` of the default form of section 4.2: four segments, `auxiliary/scanner/<word>/<class>_f<n>`, where `<class>` is one of the core's five classes and `<n>` a number. A linked module therefore never equals a default one, and since the catalog is the only place real module paths are kept, no default can stand for a real path the project holds |
+| Error | Catalog | An id or a `module` used twice across the catalog's files, or an id twice inside one file (read by the duplicate-key parse; the loader logs and loads an empty map on the same faults) |
+| Error | Catalog | A catalog id that matches an advisory pattern or a nickname of the real-identifier row below (`ms31_017_share`, `heartbleed_check`) |
+| Error | Catalog | An id in the committed index that is missing from the catalog, or whose form differs from the index's (append-only, section 4.3) |
+| Error | Catalog | A `module` of the default form of section 4.2: four segments, `auxiliary/scanner/<word>/<class>_f<n>`, where `<class>` is any value of the core's `class` enum, read from `scripts/scenario-schema.json` so a class added later is covered, and `<n>` a number. A linked module therefore never equals a default one, and since the catalog is the only place real module paths are kept, no default can stand for a real path the project holds |
 | Error | Scenario | A `realism` link that names no catalog entry. The message gives the scenario path of the weakness or decoy and the link id |
 | Error | Scenario | One catalog id linked from two weaknesses or decoys of the scenario |
 | Error | Scenario | Links all or none. (1) Some of the scenario's weaknesses and decoys have a `realism` link and others have none; (2) among the linked entries, `advisories` is held by some and not by the others, or `output` is; (3) in a scenario with at least one weakness, a decoy's linked entry has a (number of advisories, number of output lines) pair that no weakness's linked entry in the scenario has; (4) `banner` is set on some of the services that hold at least one finding and not on the others, a decoy-only service included. So a default never prints beside a linked entry, an `IDs:` line or extra output never marks one kind, and a banner's presence says nothing about what the service holds, before a confirm |
@@ -1277,9 +1329,9 @@ In the table, a **text string** is a scenario `cli` string (`range`, an `address
 | Error | Both | A real host in a text string: a dotted IPv4 literal outside 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16 (in any field, not only `range` and `address`); `://` or `www.`; or a dotted name whose last part is letters only (`[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}`, case-insensitive) unless that last part is a reserved one (`local`, `internal`, `lan`, `test`, `example`, `invalid`). `module` cannot hold a dot, so the rule never reads it |
 | Error | Catalog | Any dotted quad (`\d+\.\d+\.\d+\.\d+`) in a catalog string, private or not: every address the Terminal prints comes from the scenario's range |
 | Error | Catalog | A `title` or `output` line holding an entry of the core's `scripts/real_product_names.txt`, as a whole word, case-insensitive. Products stay invented; a real product name may appear only where the tools spell it inside a `module`, `script` or advisory id |
-| Error | Scenario | A real identifier in an ops scenario (one that declares `services`): a match of an advisory pattern, case-insensitive (`cve[-_]\d{4}[-_]\d+`, `can[-_]\d{4}[-_]\d+`, `ms\d\d[-_]\d{3}`, `kb\d{6,7}`, or `rhsa`, `dsa`, `usn`, `ghsa` or `zdi` followed by `-` or `_`; so the made-up `cve_2031_24117`, `ms31_017`, `KB9013389` and `RHSA-2031:1234` are caught); a framework-path form, a lower-case token that splits on `/` into three or more parts whose first part is `exploit`, `auxiliary`, `post`, `payload`, `payloads`, `encoder`, `nop`, `evasion` or `scanner` (the path rule above lets such a letters-only token pass, so this row catches it); or a named vulnerability from `scripts/real_vuln_nicknames.txt` (a short list beside the core's product list, added by this plan: `eternalblue`, `heartbleed`, `shellshock`, `log4shell` and the like) as a whole word or as a part joined by `_` or `-`. It runs over every scenario `cli` string, every `realism` id and the scenario's other text (names, labels, products, versions, summaries, `falseBecause`, objectives, hints and mails; the ink half in the dialogue lint), and over each finding's default `module` and `script` as section 4.2 builds them when the scenario has no links, with the advisory and nickname patterns only (the framework-path form would match every default `auxiliary/scanner/...`). That last part catches a service word that is harmless alone and makes a match once joined, such as `usn` giving the default script `usn-default-creds`. Scenarios with no `services` are not read by this row, so the missions and labs that teach with real advisories keep their validator output |
+| Error | Scenario | A real identifier in an ops scenario (one that declares `services`): a match of an advisory pattern, case-insensitive (`cve[-_]\d{4}[-_]\d+`, `can[-_]\d{4}[-_]\d+`, `ms\d\d[-_]\d{3}`, `kb\d{6,7}`, or `rhsa`, `dsa`, `usn`, `ghsa` or `zdi` followed by `-` or `_`; each pattern matches only where it is not preceded by a letter or digit, so `x_ms17_010` still matches and `forms31_017` does not; so the made-up `cve_2031_24117`, `ms31_017`, `KB9013389` and `RHSA-2031:1234` are caught); a framework-path form, a lower-case token that splits on `/` into three or more parts whose first part is `exploit`, `auxiliary`, `post`, `payload`, `payloads`, `encoder`, `nop`, `evasion` or `scanner` (the path rule above lets such a letters-only token pass, so this row catches it); or a named vulnerability from `scripts/real_vuln_nicknames.txt` (a short list beside the core's product list, added by this plan: `eternalblue`, `heartbleed`, `shellshock`, `log4shell` and the like) as a whole word or as a part joined by `_` or `-`. It runs over every scenario `cli` string, every `realism` id and the scenario's other text (names, labels, products, versions, summaries, `falseBecause`, objectives, hints and mails; the ink half in the dialogue lint), and over each finding's default `module` and `script` as section 4.2 builds them when the scenario has no links, with the advisory and nickname patterns only (the framework-path form would match every default `auxiliary/scanner/...`). That last part catches a service word that is harmless alone and makes a match once joined, such as `usn` giving the default script `usn-default-creds`. Scenarios with no `services` are not read by this row, so the missions and labs that teach with real advisories keep their validator output. That scope is intended: a VM mission that later gains an ops network moves its real ids to the catalog as part of that work |
 | Error | Scenario | The `VERSION` column and the lines under it disagree. A service's `banner` names an entry of the real-product list, or holds a version number (`\d+(\.\d+)+`) directly after the service's own `product` (one space or `/` between) that differs from the service's `version`; or, for each link, the linked entry's `title` or an `output` line holds a version number directly after the linking service's `product` that differs from its `version`. A version is read only in that position, and a dotted quad inside one of the scenario's ranges is never read as a version, so `10.20.0.15`, `TLS 1.0`, `HTTP/1.1` and `SSH-2.0` pass. The message names the service and the catalog id, never the entry's text |
-| Warning | Scenario | A decoy's linked entry has a content word (four or more letters, not on a short stop list) in its `title` or an `output` line that is also in the decoy's own `falseBecause`, which would read as a hint before the confirm. The message names the decoy, the link id and the field, and quotes neither text, since the shared word is catalog text |
+| Warning | Scenario | A decoy's linked entry has a content word (four or more letters, not on a short stop list) in its `title` or an `output` line that is also in the decoy's own `falseBecause`, which would read as a hint before the confirm. The message names the decoy, the link id and the field, and quotes the shared word, which is also in the scenario's own `falseBecause` (already cleared by the real-identifier row), so the fixer knows what to reword; it quotes no other catalog text |
 | Warning | Scenario | `networkView` or a `cli` object is set in a scenario where no host declares `services`: no view will be an ops view, so it has no effect |
 | Warning | Scenario | Skin-specific wording: in a scenario that uses `services`, an objective, hint, mail or ink line that pairs a control word (click, press the, button, type, command line, prompt, terminal) with an action word (sweep, scan, check, confirm, sign in, technique) |
 
@@ -1563,11 +1615,11 @@ show the other skin gives the same game, on every build.
 |---|---|---|
 | `test/models/break_escape/network_view_bootstrap_test.rb` | K3 | `networkView` reaches the bootstrap unchanged; a scenario without it has no such key |
 | `test/controllers/break_escape/network_skin_blind_test.rb` | K2 | Each network and ops route gives the same answer and writes the same state with and without a `skin` or `net_skin` parameter, so no route reads one |
-| Validator tests (`test/unit/validate_realism_skin_test.rb`, beside `validate_plant_hiding_test.rb`) | K3 | Each **Scenario** and **Both** check of section 9, with one passing and one failing scenario fragment per error and per warning, run against a test-only catalog folder of invented entries. Among the failing fragments: a link that names no entry; one entry linked from two findings; a decoy with no `realism` link beside a linked weakness; a decoy-only service on another host left unlinked while every weakness in the scenario is linked; linked entries where the weaknesses' hold `advisories` and the decoy's holds none; a decoy's entry with two `output` lines where every weakness's entry has one; a decoy-only service whose decoy's linked module is under `auxiliary/scanner/` while every weakness's is under `exploit/`; a decoy's linked module under `exploit/` beside a weakness's under `auxiliary/scanner/` on one service; a service `banner` holding `patched`; a decoy whose `falseBecause` shares a word with its entry's `title` (the warning, whose message is checked to hold no catalog text); two services on port 53 (`tcp` and `udp`) on one host; one address on two networks; two overlapping ranges; one discovery network with a `range` beside one with none; a `cli.hosts` key of 65 characters; a network id equal to a host id; a banner with a tab and one with `é`; `\x31\xc0`; `%41%42`; `0xdeadbeef`; `<b>x</b>`; a 16-digit hex run; `QWxhZGRpbjpvcGVuIHNlc2FtZQ==`; the paths `/etc/shadow`, `../../x`, `C:/Windows` and `etc/init.d/x`; one failing fragment for each credential form: `admin:admin` (the `:` pair), `admin/admin` (equal sides), `root/toor` (default password on the right), `admin/Passw0rd1` (account word and a letter-digit right side), `Default login (admin/admin)` (brackets stripped), `admin=admin` (equal sides with `=`), `root=toor`, `usr/local/bin` (system directory path), `password=letmein` and `Password: letmein` (key word, with and without a space), `user=pass`, `token:abc` (the short key word); `8.8.8.8` in a banner; `http://intranet`; `www.brackley.com`; `shareserve.com`; a banner whose version after the service's `product` differs from the service's `version`, and a linked entry whose `title` does the same against the linking service; and, for the real-identifier rule (all made up), `cve_2031_24117` as a `realism` id, `CVE-2031-24117` in a banner, `ms31_017` as a service word, `KB9013389` in a summary, `RHSA-2031:1234` in a hint, `exploit/windows/smb/x` in a `falseBecause`, `heartbleed` in a service label, and a service word `usn` whose default script `usn-default-creds` matches while the word alone does not. Passing fragments include a banner naming `files.local`; one with `10.20.0.15`; `10.20.0.15:445`; `SMB/CIFS`, `TCP/IP`, `ShareServe/3.1`, `HTTP/1.1` and `Service/1.0` in a banner; `Guest/anonymous access enabled`, `Anonymous login: allowed`, `Read/Write/Execute` and `Service/HTTP2` in a banner; `timeout=30`; `SSH host key: RSA` and `API key: required`; `Weak TLS 1.0 enabled` and `SSH-2.0`; the same made-up advisory ids and module paths in the linked entries of the test catalog (the rule reads the scenario, never the catalog); and a scenario with no `services` whose ink holds `CVE-2031-24117` (not read). The warning fragments `Real-time`, `fixed session id` and `safe mode` give the weaker-word warning and no error. Every message is checked to hold no string of the test catalog. The example of section 4.2 passes with no error and no warning against a test catalog holding the two entries of section 4.3. The graph is the same with and without the block, the `cli` objects and the links |
-| Catalog validator test (`test/unit/validate_realism_catalog_test.rb`) | K3 | Every file of `config/break_escape/realism_catalog/` passes `check_realism_catalog`, on every build, so a catalog edit that breaks a rule fails the suite. On a test-only folder, one failing fragment per **Catalog** and **Both** row of section 9: an id used in two files; one `module` on two entries; a `module` of the default form (`auxiliary/scanner/files/default_creds_f2`); a `module` with two equal neighbouring segments (`auxiliary/admin/admin/x`); a dotted quad in an `output` line (`10.20.0.15`, private, still an error) and in a `title`; a real product from `scripts/real_product_names.txt` in a `title`; a `title` holding `patched` and a `script` `smb-bait-check`; `http://` and a public domain in an `output` line; the payload and blob forms of the scenario test (`\x31\xc0`, `%41%42`, a 16-digit hex run, a base64 run) and `admin/admin` in a `title`; an advisory not in one of the four forms; five advisories; seven `output` lines; an unknown key on an entry and on a file. Passing: the two entries of section 4.3; `auxiliary/scanner/brackley/shareserve_guest_login` and `auxiliary/admin/brackley/x` as modules; `Guest/anonymous access enabled` as a title. Every message names file, catalog id, field and rule and holds no catalog string |
-| Real-identifier separation (`test/unit/realism_separation_test.rb`) | K3 | Every file in the folder of each scenario that declares `services` (its JSON or ERB, ink, `PLAYTEST.md` and notes) matches no advisory pattern, framework-path form or nickname of section 9; the folders are found by the `services` key, so a new ops scenario joins without an edit. Scenarios without `services` are out of scope, since the VM missions and labs teach with real advisories. The test also checks that no file under `public/` or `app/assets/` holds a catalog entry's `module`, so catalog text has not been copied where a static path would serve it |
+| Validator tests (`test/unit/validate_realism_skin_test.rb`, beside `validate_plant_hiding_test.rb`) | K3 | Each **Scenario** and **Both** check of section 9, with one passing and one failing scenario fragment per error and per warning, run against the core's test-only catalog folder `test/fixtures/realism_catalog/` (invented entries; entries this test needs are added there, and folders of broken files sit in subfolders of it, which the loader does not read). Among the failing fragments: a scenario with a link while the catalog does not validate (one error, no link checked), beside a scenario with no link against the same broken catalog (no catalog error); a link that names no entry; one entry linked from two findings; a decoy with no `realism` link beside a linked weakness; a decoy-only service on another host left unlinked while every weakness in the scenario is linked; linked entries where the weaknesses' hold `advisories` and the decoy's holds none; a decoy's entry with two `output` lines where every weakness's entry has one; a decoy-only service whose decoy's linked module is under `auxiliary/scanner/` while every weakness's is under `exploit/`; a decoy's linked module under `exploit/` beside a weakness's under `auxiliary/scanner/` on one service; a service `banner` holding `patched`; a decoy whose `falseBecause` shares a word with its entry's `title` (the warning, whose message is checked to hold the shared word and no other catalog text); two services on port 53 (`tcp` and `udp`) on one host; one address on two networks; two overlapping ranges; one discovery network with a `range` beside one with none; a `cli.hosts` key of 65 characters; a network id equal to a host id; a banner with a tab and one with `é`; `\x31\xc0`; `%41%42`; `0xdeadbeef`; `<b>x</b>`; a 16-digit hex run; `QWxhZGRpbjpvcGVuIHNlc2FtZQ==`; the paths `/etc/shadow`, `../../x`, `C:/Windows` and `etc/init.d/x`; one failing fragment for each credential form: `admin:admin` (the `:` pair), `admin/admin` (equal sides), `root/toor` (default password on the right), `admin/Passw0rd1` (account word and a letter-digit right side), `Default login (admin/admin)` (brackets stripped), `admin=admin` (equal sides with `=`), `root=toor`, `usr/local/bin` (system directory path), `password=letmein` and `Password: letmein` (key word, with and without a space), `user=pass`, `token:abc` (the short key word); `8.8.8.8` in a banner; `http://intranet`; `www.brackley.com`; `shareserve.com`; a banner whose version after the service's `product` differs from the service's `version`, and a linked entry whose `title` does the same against the linking service; and, for the real-identifier rule (all made up), `cve_2031_24117` as a `realism` id, `CVE-2031-24117` in a banner, `ms31_017` as a service word, `KB9013389` in a summary, `RHSA-2031:1234` in a hint, `exploit/windows/smb/x` in a `falseBecause`, `heartbleed` in a service label, and a service word `usn` whose default script `usn-default-creds` matches while the word alone does not. Passing fragments include a banner naming `files.local`; one with `10.20.0.15`; `10.20.0.15:445`; `SMB/CIFS`, `TCP/IP`, `ShareServe/3.1`, `HTTP/1.1` and `Service/1.0` in a banner; `Guest/anonymous access enabled`, `Anonymous login: allowed`, `Read/Write/Execute` and `Service/HTTP2` in a banner; `timeout=30`; `SSH host key: RSA` and `API key: required`; `Weak TLS 1.0 enabled` and `SSH-2.0`; the same made-up advisory ids and module paths in the linked entries of the test catalog (the rule reads the scenario, never the catalog); a service label `forms31_017` (no match: the pattern is preceded by a letter); and a scenario with no `services` whose ink holds `CVE-2031-24117` (not read). The warning fragments `Real-time`, `fixed session id` and `safe mode` give the weaker-word warning and no error. Every message is checked to hold no string of the test catalog (the falseBecause warning's shared word apart), and each link-rule message to name the forms involved. The example of section 4.2 passes with no error and no warning against a test catalog holding the two entries of section 4.3. The graph is the same with and without the block, the `cli` objects and the links |
+| Catalog validator test (`test/unit/validate_realism_catalog_test.rb`) | K3 | Every file of `config/break_escape/realism_catalog/` passes `check_realism_catalog`, on every build, so a catalog edit that breaks a rule fails the suite; the committed `docs/REALISM_CATALOG_INDEX.md` equals what the validator would write (else "rerun scripts/validate_realism_catalog.rb"), and the index holds no catalog string; only `test_*` scenarios link entries of `training_fixtures.json`, read from the index. On subfolders of the core's `test/fixtures/realism_catalog/`, one failing fragment per **Catalog** and **Both** row of section 9: an id used in two files; an id twice inside one file (the duplicate-key parse); a catalog id `ms31_017_share` and one `heartbleed_check`; an index naming an id the catalog no longer has, and one whose form changed (an added id passes); one `module` on two entries; a `module` of the default form (`auxiliary/scanner/files/default_creds_f2`); a `module` with two equal neighbouring segments (`auxiliary/admin/admin/x`); a dotted quad in an `output` line (`10.20.0.15`, private, still an error) and in a `title`; a real product from `scripts/real_product_names.txt` in a `title`; a `title` holding `patched` and a `script` `smb-bait-check`; `http://` and a public domain in an `output` line; the payload and blob forms of the scenario test (`\x31\xc0`, `%41%42`, a 16-digit hex run, a base64 run) and `admin/admin` in a `title`; an advisory not in one of the four forms; five advisories; seven `output` lines; an unknown key on an entry and on a file. Passing: the two entries of section 4.3; `auxiliary/scanner/brackley/shareserve_guest_login` and `auxiliary/admin/brackley/x` as modules; `Guest/anonymous access enabled` as a title. Every message names file, catalog id, field and rule and holds no catalog string |
+| Real-identifier separation (`test/unit/realism_separation_test.rb`) | K3 | Every file in the folder of each scenario that declares `services` (its JSON or ERB, ink, `PLAYTEST.md` and notes) matches no advisory pattern, framework-path form or nickname of section 9, with the validator's exemption for the default `auxiliary/scanner/<word>/<class>_f<n>` form, so a note quoting a default module passes; `docs/REALISM_CATALOG_INDEX.md` is scanned the same way; the folders are found by the `services` key, so a new ops scenario joins without an edit. Scenarios without `services` are out of scope, since the VM missions and labs teach with real advisories. The test also checks that no file under `public/` or `app/assets/` holds a catalog entry's `module`, so catalog text has not been copied where a static path would serve it |
 | `cli` serving (core's leak collector) | K3 | `test_ops_skin`'s collector stages the `cli` strings: the range on the view block from the first answer and an address on its open network from the first answer (both tagged `listed`, as the core's collector tags them), an address on the discovery network only after the sweep (including the held-session PC's), a service's `cli` only after the host scan, a finding's `cli` (its linked entry's strings, read from the catalog by the collector) only after the check, with the same keys on the decoy as on the weakness; none in the bootstrap or a room answer; a scenario with no `cli` data and no links gives answers with no `cli` key. Never at any stage: a `realism` link id, the `module` of a catalog entry the scenario does not link, or any `_` key of an entry |
-| Catalog link serving (`test/controllers/break_escape/network_realism_link_test.rb`) | K3 | On `test_ops_skin` with its training catalog: the check answer, the confirm answer's finding and `GET /network` carry, for each linked finding, `cli` with exactly the keys its entry holds out of `title`, `module`, `script`, `advisories` and `output`, and the same key set on the decoy as on the weaknesses; no answer holds the key `realism` or any link id; the whole catalog is never served (no answer holds the `module` of an unlinked entry, and a request to `/config/break_escape/realism_catalog/training_fixtures.json` or any path under it, and to the engine's static paths, answers 404); a link removed from the loaded test catalog leaves that finding without `cli`, logs one server warning naming the link id, and changes no status, alias or log row |
+| Catalog link serving (`test/controllers/break_escape/network_realism_link_test.rb`) | K3 | On `test_ops_skin` with its training catalog: the check answer, the confirm answer's finding and `GET /network` carry, for each linked finding, `cli` with exactly the keys its entry holds out of `title`, `module`, `script`, `advisories` and `output`, and the same key set on the decoy as on the weaknesses; no answer holds the key `realism` or any link id, the bootstrap and the room answer for the held-session PC (a sign-in object whose service has a linked finding) named among them; a catalog folder with a duplicate id loads as an empty map with one server warning, and the check and confirm routes then answer normally with no `cli` on any finding; the whole catalog is never served (no answer holds the `module` of an unlinked entry, and a request to `/config/break_escape/realism_catalog/training_fixtures.json` or any path under it, and to the engine's static paths, answers 404); a link removed from the loaded test catalog leaves that finding without `cli`, logs one server warning naming the link id, and changes no status, alias or log row |
 | `tools/playtest` shell test | K2 | `session-start.sh` gives the same session tag with and without `--net-skin` |
 
 ### 11.4 Feature scenario `test_ops_skin`
@@ -1584,7 +1636,8 @@ golden file and leak-collector stage. K3 also adds authored `cli` fields for the
 network's range, the file server's address, the held-session PC's address and its service, and
 links its three findings to three entries of
 `config/break_escape/realism_catalog/training_fixtures.json`, a catalog file of invented text
-and made-up advisory ids added with it (the decoy's entry of the same form as the weaknesses',
+and made-up advisory ids added with it, each with the year `0000` (`CVE-0000-24117`), which is
+never assigned, and linked only from `test_*` scenarios (11.3) (the decoy's entry of the same form as the weaknesses',
 each with `advisories` and `output`). The printer and the sign-in hosts keep the defaults, so
 one run shows both kinds of output; every finding in the scenario is linked, as the all-or-none
 rule requires.
@@ -1689,7 +1742,7 @@ committed before its tests are run in the shared tree.
 | 3 | K2 | `skin-choice.js`; the starter passes the skin; the header switch on ops views | `network-skin-choice.test.mjs`, `network-skin-unchanged.test.mjs` |
 | 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene through the `onSent` and `onEnded` hooks of `perform` that the core adds in its S1, core 5.3; section 14, request 4), `cli-gen/registry.js`, `cli-gen/scanner-output.js` and `cli-gen/framework-console.js` with the defaults of section 4.2 and their golden files, the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, `cli-gen` golden and provenance, parity and text tests |
 | 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots checked, audit clean, phone keyboard check); full suites; land K2 |
-| 6 | K3 | Schema for `networkView`, the `cli` objects and the `realism` link; `config/break_escape/realism_catalog.schema.json`, the catalog folder with `training_fixtures.json`, `scripts/validate_realism_catalog.rb`; `scripts/validate_realism_skin.rb` and its hook, the wording warning, `scripts/real_vuln_nicknames.txt`; bootstrap test; `defaultSkin`, the authored `cli` fields and the links in `test_ops_skin`, its leak collector stages and the golden files with authored fields and linked entries. The catalog loader `lib/break_escape/realism_catalog.rb` and the link resolution in the finding builder are the core's, built at its S2 (section 14, request 3) | K3 rows of 11.1 and 11.3 (the catalog validator test, the separation test and the link serving test among them); beat D1; validator output for every other scenario unchanged |
+| 6 | K3 | Schema for `networkView`, the `cli` objects and the `realism` link; `config/break_escape/realism_catalog.schema.json`, the catalog folder with `training_fixtures.json` (its only file at K3), `scripts/validate_realism_catalog.rb` and the index it writes, `docs/REALISM_CATALOG_INDEX.md`; `scripts/validate_realism_skin.rb` and its hook, the wording warning, `scripts/real_vuln_nicknames.txt`; bootstrap test; `defaultSkin`, the authored `cli` fields and the links in `test_ops_skin`, its leak collector stages and the golden files with authored fields and linked entries. The catalog loader `lib/break_escape/realism_catalog.rb` and the link resolution in the finding builder are the core's, built at its S2 (section 14, request 3) | K3 rows of 11.1 and 11.3 (the catalog validator test, the separation test and the link serving test among them); beat D1; validator output for every other scenario unchanged |
 | 7 | K4 | `tools/playtest/network-skin-parity.mjs`; the `README_scenario_design.md` feature index (N16) and `docs/ACCESS_AND_NETWORKS.md` | the K4 part of 11.6; land |
 
 | Shared file | Also touched by | This plan's part |
@@ -1702,7 +1755,7 @@ committed before its tests are run in the shared tree.
 | `scripts/validate_scenario.rb` | every plan | one require and one call of `check_realism_skin`; the ink half of the wording warning in the dialogue lint |
 | the core's network row builders (`network_rows`, the block and `host_row` in `app/models/break_escape/network_access.rb`; the finding builder of the check and confirm answers in `network_ops.rb`) and leak collector | core (owner) | none in the builders, which copy each `cli` object by its named keys only and resolve the `realism` link through the core's catalog loader, copying the entry's named keys, as request 3 of section 14 asks, so a `_` note key and a link id are never served; `test_ops_skin`'s collector entries for the `cli` strings and its linked entries' strings |
 | `lib/break_escape/realism_catalog.rb` | core (owner, built at its S2) | none; the skin's validator calls it to read the catalog |
-| `config/break_escape/realism_catalog/`, `config/break_escape/realism_catalog.schema.json`, `scripts/validate_realism_catalog.rb` and its test | none (this plan's) | created at K3; later catalog tasks add entries and run the catalog validator |
+| `config/break_escape/realism_catalog/`, `config/break_escape/realism_catalog.schema.json`, `scripts/validate_realism_catalog.rb` and its test, `docs/REALISM_CATALOG_INDEX.md` (generated) | none (this plan's) | created at K3; later catalog tasks add entries (append-only, section 4.3), run the catalog validator, which rewrites the index, and commit the index with the catalog |
 | `scripts/real_vuln_nicknames.txt` | none (this plan's) | created at K3, read by the real-identifier rule of section 9; beside the core's `scripts/real_product_names.txt`, which this plan reads and does not edit |
 | `systems/test-bridge/index.js`, `tools/playtest/session-start.sh`, `tools/playtest/ui-rules-audit.mjs` | possibly core; none known for the others | one namespace; one option; one surface |
 | `README_scenario_design.md`, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md` | every plan | the N16 rows and one section |
@@ -1746,8 +1799,14 @@ showing and reads through `compromiseMarks()`.
    core's list of early-write fields names both. At S2, with the check route, the core adds the
    catalog loader `lib/break_escape/realism_catalog.rb`: it reads
    `config/break_escape/realism_catalog/*.json` once, on first use, into a frozen map from id to
-   entry, refuses to load when an id or a `module` appears twice, and takes another folder in
-   tests; no route serves it. The row builders in `network_access.rb` (`network_rows`, the
+   entry, and takes another folder in tests; no route serves it. Changed from the core's current
+   text, where the loader raises: the loader never raises into a route. When a file does not
+   parse, or an id or a `module` appears twice across the files, it logs one server warning
+   naming the file and the fault (never catalog text) and loads an empty map, so every linked
+   finding is built without `cli` and prints the defaults evenly, and the check and confirm
+   routes answer as normal. The skin's catalog validator, run on every build, stays the hard
+   gate for those faults; the core's loader test changes its two refusing folders to assert the
+   empty map and the warning. The row builders in `network_access.rb` (`network_rows`, the
    block, `host_row` and the device-row builder) and the one finding builder in
    `network_ops.rb` copy, unchanged and by named keys only (so a `_` note key is never served),
    beside the fields they belong to:
@@ -1772,7 +1831,8 @@ showing and reads through `compromiseMarks()`.
    and a finding with no link, is left out of the answer, never sent as `{}` or `null`, and the
    browser builds the defaults of section 4.2 from fields it already has, so the server sends
    authored and linked data only. The core tests the copying at S1 and S2 on test-only fixtures,
-   S2's with a test-only catalog folder. The leak collector of each `test_ops_*` scenario lists
+   S2's with the test-only catalog folder `test/fixtures/realism_catalog/`, which the skin's
+   validator tests also use. The leak collector of each `test_ops_*` scenario lists
    the `cli` strings at the stage they are served (an open network's addresses at the first
    answer, a linked entry's strings, read from the catalog, at the check), and fails at any
    stage on a link id or the `module` of an entry the scenario does not link. No route, check or
@@ -1794,15 +1854,12 @@ showing and reads through `compromiseMarks()`.
      still clears the key and calls `showResult`.
    The core's guard tests run unedited; one more case shows the hook order on an answer, a
    refusal, a throw and a null answer, and that a rejected press calls neither hook.
-5. **Core: the summary of the skin's validator rules (section 9.1).** The core's summary of the
-   rules beyond the schema that `check_realism_skin` checks already says "unique in the scenario"
-   for an address and lists "a network id equal to a host, object or resource id". Outstanding:
-   "the module unique in the scenario" and "findings that author a field unevenly anywhere in
-   the scenario" become "`realism` links all or none: every weakness and decoy in the scenario
-   has one or none has, each link resolves and is used once, and linked entries are of one
-   form"; a line is added that the catalog's own checks (unique ids and modules, the text rules)
-   run in `scripts/validate_realism_catalog.rb`; and `definitions.cliFinding` is dropped, since
-   a weakness or decoy carries a `realism` id and no `cli` object. No core check changes.
+5. **Core: the summary of the skin's validator rules (section 9.1) (taken by the core).** The
+   core's 9.1 summary now states `realism` links all or none (every weakness and decoy has one
+   or none has, each link resolves and is used once, linked entries are of one form), names
+   `scripts/validate_realism_catalog.rb` for the catalog's own checks, and says there is no
+   shared finding `cli` definition; no `cliFinding` remains anywhere in the core plan, its
+   shared-file table included. Kept here as the contract K3 depends on. No core check changes.
 
 ## 15. Open questions for the user
 
