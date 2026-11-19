@@ -291,3 +291,28 @@ chain; the validator's reader does not count a chatter-pool `requireGlobal` as a
   carries `chatter:"kit_brightwell"` and both staff meet there (capacity 2). A pool with no engine
   speaker (not an affordance.chatter / magnet / grumble / work-failure / phone topic) is silent — the
   validator warns. Carry this into the ca01 kit build.
+
+## Results, run 2 (2026-11-19, partial)
+
+Keyless server on :3002 from this worktree, started and stopped by this run. Games: 10257 (probe only, Start not pressed), 10258 (full shell run). Throttle 20 steps/s, fixedStep on. The run did not finish: the twin, the sub-85 score, the 90 s proof 3 sits and proof 6 are NOT RUN.
+
+Log paths (scratchpad `gate_a_run2/`): `full_session.jsonl` (first harness session, ended by a hang on a converse command), `full_session2.jsonl` (second session on the same game after the restart), `drain_full_1.txt` (event log dump, the source for the seq numbers below).
+
+- **Proof 1, kit_attack_done once at its save: PASS.** One `global_variable_changed:kit_attack_done` (seq 66), fired by the save that moved the stage to defend (seq 65).
+- **Proof 1, kit_defend_done once: PASS.** One change (seq 108), after `episode_e1_stub_defend_complete` (seq 107), which fires on the fifth triage answer, before Finish.
+- **Proof 1, kit_caught once, at 85 or more: PASS for 100%.** One change (seq 109). The below-85 run is NOT RUN.
+- **Proof 1, kit_quiet true at first save and false at debrief: PASS.** True at the brief-to-osint save (seq 31). False at the debrief Finish (seq 120). It stays true on the debrief screen until Finish.
+- **Proof 1, done holds debrief at last save: PASS.** Final episode state `done` is brief through debrief.
+- **Proof 1, reload keeps values: PASS, partly.** A fresh page load after Finish (session 2) kept kit_attack_done, kit_defend_done and kit_caught true, kit_quiet false, and `debrief` in done. A reload on the result screen itself is NOT RUN.
+- **Proof 1, per-answer triage saves re-fire nothing: PASS.** Seq 98 to 104 are episode-state saves only. No kit_ global event fired in the triage window.
+- **Proof 1, staff click after kit_defend_done diverts to the kit_ep knot: FAIL as observed.** Talking to kit_gwen_pritchard after defend opened person-chat with only "(End of conversation - press ESC to exit)". The ca01 line ("Good spot on that invoice...") did not appear, though the compiled JSON contains it. Cause not found (dialogue skipped, or ink state). Needs a driven run that reads the transcript.
+- **Proof 1, twin (defend-only): NOT RUN.**
+- **Proof 3, quiet guard: FAIL (provisional, one observation).** `npc_chatted` on kit_brightwell ("Any biscuits left?", seq 80, t=121.8 s) fired while the kiosk was open (defend stage) and kit_quiet was true. Seq 24 (t=11.2 s, "Audit week again.") fired before the brief save, which is the known gap. The 90 s sits per stage and the held-bark queue check are NOT RUN.
+- **Proof 6, kiosk resume after X: NOT RUN.**
+
+Gotchas found in this run:
+- `pkill -f games/<id>` matches the Chromium process for that game, and killed this run's own browser (exit 144). Kill by PID.
+- A `converse` call hung the session for about 3 minutes, then failed with "Target page ... has been closed". Use `interact` plus `mg getState` to read a conversation.
+- Triage flow: verdict, then optional tells (`input[data-chip=...]`), then Confirm (a second Confirm locks with no tells), then `.tri-next`. Finish is `.tri-finish` on the result step.
+
+Next step for a fresh agent: run the twin on a new game (test_ca_office_kit_defend), the sub-85 run (answer all five wrong), the Gwen divert transcript, the 90 s stage sits with both staff, and proof 6. Work from the kiosk stage names: Brief, Research (osint), Write, Your message (flip), Defend, Debrief.
