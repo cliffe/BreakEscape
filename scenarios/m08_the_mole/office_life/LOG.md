@@ -78,3 +78,7 @@ The two officers' `cooler` chatter pools now carry `requireGlobal {ops_watch_ups
 ## Cooler queue cells check (fix/m08-cooler-queue, 2026-11-19)
 
 The six validator warnings on `ops_cooler` queue cells 1 and 2 are a false positive: the object has no scenario position, so the validator reads it at 0,0. The engine puts the cells at (220,180) and (244,180) in operations_floor, walkable, clear of the doors. Live (games 10123, 10125, capacity forced to 1): Julian queued on cell 1 and used the cooler when the slot freed. No scenario change. Validator fix (skip the check when unpositioned, 17 to 11 warnings) saved as `validator-queue-skip.patch.txt`, not applied. Detail: LIVE_COOLER_QUEUE.md.
+
+## Validator resolves the Tiled position (D174)
+
+`scripts/validate_npc_needs.rb` now places the queue cells of an object with no scenario position from the Tiled object it claims (same claim order as rooms.js, centre at x + w/2, y - h/2, cells snapped to the 8 px grid as the engine does), so the six `ops_cooler` warnings are gone without a skip. An unresolvable claim gives an info line instead of a 0,0 guess. `validator-queue-skip.patch.txt` is superseded and was not applied.
