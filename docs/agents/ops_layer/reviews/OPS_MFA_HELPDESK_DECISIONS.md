@@ -75,3 +75,13 @@ Cross-plan round 2 (`CROSS_PLAN_R2.md`), items naming this plan.
 | X22 | `helpdesks` added to `WITHHELD_SCENARIO_KEYS` (`network_access.rb:18`) in the file table, tested by the hostile-input scan | Server-only field must not reach the bootstrap |
 | X24 | Unchanged-scenario proof uses `test/fixtures/files/ops_unchanged/` and `bin/ops-golden-compare`; the separate goldens are dropped | Brief section 5 |
 | X26 | Two controller tests added once S3 exists: technique session on a `code` PC opens with no pending record; a technique-granted saved connection answers `mfaRequired` | Closes the technique-session gap |
+
+## Picks and cross-plan R4 (2026-11-19)
+
+- MFA-8 (b): a desk's `maxTries` stop lifts after `DESK_STOP_SECONDS = 300` of server time (`stoppedAt` in `helpdeskTries`, `retryIn` on `blocked`), as `closedAt` does for the code step; the "desk that can stop for good" validator row is removed, tests and F16 updated.
+- MFA-4, MFA-6, MFA-7 (a): already how the plan is written; questions 1, 4, 5 and 6 removed from section 15 (matched by content, as the pick numbers do not map to the plan's list), questions 2 and 3 remain.
+- Z3: lockout-key site count in section 10 is seven.
+- Z5: 5.2 gains a "signed in where the desk needs it" check after the NPC check; scene result global maps `granted`, `refused`, `blocked`, `unavailable`, and `error` for `bad_request` and `not_found`.
+- Z7: section 2.1 knock-out row and the section 9 information line state the full rule (`koImmune`, `npcType: "phone"`; `disableAttacks` is the client's).
+- Z8: section 9 names the log plan's L1a mechanism for the unchanged-scenario proof.
+- Z9: `held_item_sources` returns `{ type:, id:, via: }` entries.

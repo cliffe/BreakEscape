@@ -75,7 +75,7 @@ Design rules every stage keeps:
 | Access state | Server-owned keys in `ACCESS_STATE_DEFAULTS`; none read from a sync body, none sent; a reset drops them | `game.rb:3021-3059` |
 | Held item proof | Inventory entry whose `type`, `id` (and stored field) equal the authored definition, and not `client_forged?` | `app/models/break_escape/credential_keyring.rb:42-64` |
 | NPC phone | Item `type: "phone_friendface"` with `owner`. `held_friendface_phone(npc_id)` reads the server's inventory and counts only a phone the scenario declares with that owner; `phonesTaken` records a phone leaving its NPC | `app/models/break_escape/social_feed.rb:186-246`; `games_controller.rb:1722-1730` |
-| Knock-out record | Claimed by the browser's sync; accepted only for a met room NPC that is not `koImmune` | `game.rb:2008-2033` |
+| Knock-out record | Claimed by the browser's sync; accepted only for a met room NPC that is neither `koImmune` nor `npcType: "phone"`. `disableAttacks` is the client's refusal to punch, not a server test | `game.rb:2008-2033` |
 
 ### 2.2 Time
 
@@ -204,7 +204,7 @@ requests (it cannot be taken, so only the habit decides).
 | `helpdesks.<id>.npc` | room NPC id | Who the desk is. One NPC may serve one desk |
 | `verify` | `"none"`, `"questions"`, `"callback"` | The rule. `none` grants to anyone who asks. `questions` compares typed answers. `callback` grants only while the player holds the account owner's phone |
 | `questions`, `minCorrect` | ids, integer | Which `creds.recovery` keys the desk asks, and how many must be right (default: all) |
-| `maxTries` | integer 1 to 9, default 3 | Refused requests for one account before the desk stops serving that account for the rest of the game |
+| `maxTries` | integer 1 to 9, default 3 | Refused requests for one account before the desk stops serving that account for five minutes of server time |
 | `resets` | subset of `["password", "mfa"]` | What this desk will do |
 | `questionLabels` | plain text, at most 40 code points each | Field labels on the request form. Not secret |
 | `creds.recovery` | map of id to plain text, at most 64 code points | The right answers. Server only |
@@ -225,7 +225,9 @@ New `lib/break_escape/mfa_model.rb`, no Rails, like `CredentialModel`:
 - `device_for(scenario, npc_id)`: the authored `code_device` whose `owner` is the NPC, found by
   the same walk the phone uses (room objects and their `contents`, NPC `itemsHeld`, start items;
   `social_feed.rb:201-221`).
-- `held_item_sources(scenario)`: M1a's one walk for "can the player come to hold this item", the
+- `held_item_sources(scenario)`: returns an array of `{ type:, id:, via: }` entries (one per way
+  to hold an item; `via` is `:object`, `:start`, `:offer` or `:knock_out`), so a caller asks for
+  a type or an id by filtering it. It is M1a's one walk for "can the player come to hold this item", the
   same walk as `device_for` and `held_friendface_phone` (`social_feed.rb:190-221`): room objects
   and `contents`, start items, and a room NPC's `itemsHeld` only when its story offers that type
   (`AccessWork.offers_item_text?`) or the NPC can be knocked out (not `koImmune`, not
@@ -251,7 +253,7 @@ New `lib/break_escape/mfa_model.rb`, no Rails, like `CredentialModel`:
   `PROMPT_PRESETS[NpcHabits.level_of(npc, scenario)]`, else `never`. `prompt_patience(npc)`:
   the authored `habits.promptPatience` if an integer 2 to 9, else 3.
 - `STEP_SECONDS = 60`, `PENDING_SECONDS = 300`, `PROMPT_GAP_SECONDS = 2`, `MAX_PROMPTS = 20`,
-  `MAX_CODE_TRIES = 5`, `MAX_CODE_WRONG_TOTAL = 30`, `CODE_CLOSED_SECONDS = 300`.
+  `MAX_CODE_TRIES = 5`, `MAX_CODE_WRONG_TOTAL = 30`, `CODE_CLOSED_SECONDS = 300`, `DESK_STOP_SECONDS = 300`.
 
 **Habits are resolved when read, not written at load.** `NpcHabits.expand!` writes each preset
 into the saved scenario, and fixtures pin that output, so `NpcHabits::PRESETS` is not touched.
@@ -450,8 +452,7 @@ ways:
     read of the entry after `CODE_CLOSED_SECONDS` removes `closedAt` and returns `wrong` to 0. A
     second-factor reset at a helpdesk (S8b) does the same at once. The closure runs on the
     server's clock, like the code itself, so no scenario can be stranded by it whatever desks
-    it authors; thirty guesses in five minutes against a million codes is no way in. Open
-    question 5 puts the other ways this could work to the user.
+    it authors; thirty guesses in five minutes against a million codes is no way in.
 
 The per-PC lockout is the one count here that never clears by itself: only a helpdesk password
 reset lifts it (below), as for a wrong password today. The validator warns where a lock the
@@ -496,11 +497,13 @@ leave nothing worth guessing.
 
 **Helpdesk (S8b).** New concern `app/models/break_escape/helpdesk_access.rb`.
 `request_helpdesk!(desk_id, username, what, answers)` checks, in order: the desk exists; its NPC
-is in `encounteredNPCs` and is not recorded as knocked out; `what` is in the desk's `resets`; the
-desk has not stopped serving this username (`helpdeskTries` at `maxTries`; that stop lasts the
-rest of the game, so the validator applies the rule it applies to a code step that can lock for
-good: a warning where a desk with `maxTries` is an account's only way back in, and an error
-where the dungeon graph marks that grant as the only key of a required lock, section 9); the
+is in `encounteredNPCs` and is not recorded as knocked out; the player is signed in
+where the desk needs it (a request made over a PC needs an open session at that PC; one made to
+the NPC in person needs none); `what` is in the desk's `resets`; the
+desk has not stopped serving this username (`helpdeskTries` at `maxTries` records `stoppedAt`,
+server seconds, and the stop lifts after `DESK_STOP_SECONDS = 300`: the first read of the entry
+after that removes `stoppedAt` and returns the count to 0, as for `closedAt` on the code step;
+a blocked answer carries `retryIn`, so no scenario can be stranded by it); the
 username is an account; the rule holds (`none`: always; `questions`: at least `minCorrect` normalised answers equal
 the account's `creds.recovery` values; `callback`: the player holds the account owner's phone).
 An unknown username and wrong answers take the same counted refusal with the same body, so the
@@ -663,7 +666,9 @@ phone button or from "My phone" (`own: true`).
 field, a choice of what is asked for, one text field per `questionLabels` entry, Send. Opened by
 an ink tag `#helpdesk_request:<deskId>` in the helpdesk NPC's conversation, or from a granted
 pretext ask that names `helpdesk: "<deskId>"` (`systems/pretext-judge.js` starts it). The answer
-sets the client global `helpdesk_<deskId>_result` (`granted`, `refused`, `blocked`) so the NPC's
+sets the client global `helpdesk_<deskId>_result` from the route's answer (`granted`; `refused`
+and `blocked` as named; `unavailable` as `unavailable`; `bad_request` and `not_found` as `error`;
+`helpdesk_answered` carries the same `result`) so the NPC's
 ink can voice the matching authored line. That global is a mirror for dialogue only; nothing
 reads it to grant.
 
@@ -724,7 +729,7 @@ would. "Lockout" is the account's lockout key at that PC (422 `lockedOut`).
 | `POST /mfa/prompt` (locked) | `pc_id` | PC found. Pending record, push kind, live (else generic 422). Route still holds. Lockout. Gap since `last` (else 422 `tooSoon: true, retryAfterS`). `n < MAX_PROMPTS` (else record dropped, 422 `expired: true`) | Counts, then the decision in 5.2. Not approved: `{ success: false, approved: false, promptsSent, waiting? }`. Approved: `mfaPrompts[npc] = 0`, record dropped, session written, the normal sign-in answer plus `approvedBy: "owner"` |
 | `GET /mfa/phone` | `npc_id` (that NPC's held phone), or `own=1` (the player's own) | `npc_id`: `held_friendface_phone(npc_id)` (else 403 `{ success: false, error: "no such phone" }`). `own`: at least one account has `accountResets[...].mfa` (else the same 403) | No write. `{ requests: [{ pcId, host, username, n, numbers? }] }`: live push records for that owner's account, or for every re-enrolled account; at most one per PC. `numbers` is the three choices from `MfaModel.numbers`, in its order, none marked |
 | `POST /mfa/approve` (locked) | `pc_id`, `number?`, `deny?` | PC found. Pending record, push kind, live (else generic 422). Phone held for the pending account, or account re-enrolled (else 403). Route still holds. `deny`, or a wrong or missing `number` for number matching: record dropped, `{ success: false, cancelled: true }` | Right: record dropped, `mfaPrompts[npc] = 0`, session written, the normal sign-in answer plus `approvedBy: "player"` |
-| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points) | The checks in 5.2. Refusals are `{ success: false, reason }` from a closed list: 400 `bad_request` (missing params, body over 4 KB), 404 `not_found` (desk unknown), 422 `unavailable` (not signed in where the desk needs it, NPC not met or knocked out, `what` not offered), 422 `blocked` (stopped serving), 422 `refused` with `triesLeft` (unknown username or rule not met; tries counted) | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A request for something already granted passes the same checks, answers the same body with the current `lockoutPcIds`, writes nothing and clears nothing. Each outcome writes at most one `helpdesk_request` row (section 13) |
+| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points) | The checks in 5.2. Refusals are `{ success: false, reason }` from a closed list: 400 `bad_request` (missing params, body over 4 KB), 404 `not_found` (desk unknown), 422 `unavailable` (not signed in where the desk needs it, NPC not met or knocked out, `what` not offered), 422 `blocked` (stopped serving, with `retryIn`), 422 `refused` with `triesLeft` (unknown username or rule not met; tries counted) | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A request for something already granted passes the same checks, answers the same body with the current `lockoutPcIds`, writes nothing and clears nothing. Each outcome writes at most one `helpdesk_request` row (section 13) |
 
 A refused second step never says more than the first step already did: the `mfaRequired` answer
 itself tells the player the password was right, as a real second prompt does.
@@ -803,7 +808,7 @@ them.
 | `mfaPrompts` | `{ npcId => count }` | One integer per step owner: an NPC whose account has a second step, or who owns a step on another subject (a lock, A25). At most one entry per NPC in the scenario, so bounded by authoring; about 20 bytes each | Never. A route answer carries only `promptsSent` |
 | `mfaAccounts` | `{ npcId => { 'started' => n, 'used' => window, 'wrong' => n, 'closedAt'? } }` | Four integers per step owner, as above: at most one entry per NPC in the scenario, about 80 bytes each. `started` and `wrong` count sign-in and lock steps together | Never. A route answer carries only the changed value (`retryIn`, `used`) |
 | `accountResets` | `{ npcId => { 'password'?, 'mfa'?, 'typed'? } }` | Three booleans per account | Never; the keyring answer lists the new entry through its existing `rev` digest, so an unchanged keyring is not re-sent |
-| `helpdeskTries` | `{ "deskId\|username" => n }`, username normalised and at most 64 code points | Account keys bounded by authoring; non-account keys capped at 200, oldest dropped, as `loginFailures` does (`game.rb:4357-4364`) | Never; `triesLeft` rides on the refusal |
+| `helpdeskTries` | `{ "deskId\|username" => n }`, or `{ 'n' => n, 'stoppedAt' => seconds }` once the desk has stopped; username normalised and at most 64 code points | Account keys bounded by authoring; non-account keys capped at 200, oldest dropped, as `loginFailures` does (`game.rb:4357-4364`) | Never; `triesLeft` rides on the refusal |
 
 Nothing is added to synced client state, and no existing synced value grows. A step on another
 subject keeps its record in its caller's own key, which that plan bounds; `mfaPrompts` and
@@ -852,15 +857,13 @@ naming a `helpdesk` that does not exist.
 | A `code_device` that is not gated | its owner's story has a `give_npc_inventory_items` tag with no type filter |
 | A loose owned phone | a `phone_friendface` with an `owner` sits in room `objects` or container `contents`, so it is takeable without its owner. This is the standing check behind section 10's pickup row; it runs on the rendered scenario, so it sees generated objects too |
 | **A code step that can lock for good** | a policy has `mfa: "code"` and `maxAttempts`, and an enrolled account it admits is covered by no desk whose `resets` include `password`: wrong codes count towards that PC's lockout and nothing in the scenario lifts it. An error when the dungeon graph marks that PC's sign-in as required and that account as its only key |
-| **A desk that can stop for good** | a desk has `maxTries` (authored or the default) and, for an account it serves, its grant is the only way to something: the only desk that lifts a lockout a policy's `maxAttempts` can cause, or the only source of a password or second step. Refused requests then end that account's recovery for the game. An error when the dungeon graph marks the desk's grant as the only key of a required lock. An author clears it with a second way in (open question 6) |
 | A saved connection that must be typed | a `saved_connection` to a PC whose policy sets `mfa`, for an enrolled account |
 | A push step nobody passes | every admitted owner resolves to `never` and `held_item_sources` lists no phone the player can hold, and no other way through exists |
 | Patience with no effect | `promptPatience` on an NPC whose habit does not resolve to `pestered` |
 | Answers the player cannot find | `verify: "questions"` where an answer appears in no readable text, feed post, document or ink line the player can reach (the reachability walk `npc_habits/clues.rb` does for password clues) |
 | A callback nobody can take | `verify: "callback"` where the owner declares no phone item |
 
-Information lines: per `code_device`, the routes to it (story offer, knock-out and that
-`koImmune` closes it, or loose and takeable without its owner). Per MFA PC, the kind and each
+Information lines: per `code_device`, the routes to it (story offer, knock-out where the owner can be knocked out (section 5.2), or loose and takeable without its owner). Per MFA PC, the kind and each
 admitted account's ways through or round the second step. Round it: a session token for that
 PC, a help invite, a helpdesk that resets `mfa`, a technique that grants a session on that host,
 and an owner whose open screen can be claimed. The last is the cheapest way past a second step
@@ -879,7 +882,7 @@ the fields is unchanged. Tests: `test/js/dungeon-graph-mfa.test.mjs`.
 | Change | Effect when the new fields are absent |
 |---|---|
 | `attempt_login!` and `attempt_credential_login!` call `mfa_step_for` | Returns `none`: same path, same answer, same state writes |
-| Route branch moved to `typed_route_refusal`; the lockout key built and split by the two `AccessIdentities` functions at five sites | Pure moves: same checks in the same order with the same answers and the same key string |
+| Route branch moved to `typed_route_refusal`; the lockout key built and split by the two `AccessIdentities` functions at seven sites | Pure moves: same checks in the same order with the same answers and the same key string |
 | The `password` flag on `saved_connection` in `KINDS`; `effective_password`; the `mfaRequired` test in `PcSessions` before its `success === false` test; bootstrap `helpdeskForms`; five `ACCESS_STATE_DEFAULTS` keys | Each is read or sent only when its field is set (a policy `mfa`, an `accountResets` entry, a desk). Without one: today's path, `creds.password`, no `helpdeskForms`, and five empty maps that are never sent |
 | `OWNER_BOUND_TYPES` replaces the phone-type test at three sites | A phone held by an NPC, dropped by one or added with no source is judged as today. No existing scenario has a `code_device` |
 | The pickup test runs only on a stored NPC drop | The one case that changes is a phone with an `owner` authored loose in a room, or dropped by the player, whose owner neither offers it nor is knocked out: it becomes takeable. No shipped scenario authors a loose owned phone (the validator warning of section 9, proof 4), and a player holds a phone only after an offer or a knock-out, which already pass the test |
@@ -893,7 +896,7 @@ Proof:
    byte-equal to its fixture in `test/fixtures/files/ops_unchanged/`, compared by
    `bin/ops-golden-compare`, and that the five new keys stay empty. The fixtures are captured
    from main and committed before any change of this plan; this plan builds no golden mechanism
-   of its own.
+   of its own and uses the log plan's stage L1a one.
 2. The habits fixtures and tests pass unedited
    (`test/fixtures/format_8c/test_access_habits.old.loaded.json`, `test/unit/npc_habits_test.rb`,
    `test/models/break_escape/npc_habits_loader_test.rb`), and a new case asserts the saved
@@ -944,7 +947,7 @@ The feature scenario's beats are each asserted in a controller case too. Cases n
 | Saved connection (`mfa_keyring_test.rb`) | Refused with `typeToSignIn: "second_step"` at a `push` and a number matching PC and over a foothold, with no session, pending record or counter moved; a locked-out account answers `lockedOut`; an exempt account's saved connection signs in; at a PC with no `mfa`, a saved connection is unchanged before a password reset, refused with `typeToSignIn: "password_changed"` after it, and works again once the new password has been typed at any PC |
 | Push | The count survives a new attempt; requests caught on a held phone do not raise it; a knocked-out owner approves nothing; `tooSoon` |
 | Phone | Approve refused without the phone; the three numbers are stable for one attempt and differ for the next; deny cancels; own-phone list refused with no re-enrolled account |
-| Helpdesk | Unknown user and wrong answers give the same body and rows of the same shape (section 13); a blocked desk posted to twenty times inside five minutes, with one username or twenty, stores and saves ten times and no more, and stores again once the window has passed; retry of a granted request gets the same body and leaves a lockout earned since the grant in place; an account locked out at two PCs is unlocked at both and `lockoutPcIds` shrinks; a second-factor grant leaves lockouts alone; desk NPC not met refused; hostile text in `answers` and `username` (long, HTML, control characters) is cut and cleaned before any use, echoed in no answer, and stored only as the normalised 64 code point key and the log row's capped `typed` field |
+| Helpdesk | Unknown user and wrong answers give the same body and rows of the same shape (section 13); `maxTries` refusals stop the desk with `retryIn`, and with time moved on `DESK_STOP_SECONDS` the same account is served again with the count at 0; a request with no session where the desk needs one is `unavailable`; a blocked desk posted to twenty times inside five minutes, with one username or twenty, stores and saves ten times and no more, and stores again once the window has passed; retry of a granted request gets the same body and leaves a lockout earned since the grant in place; an account locked out at two PCs is unlocked at both and `lockoutPcIds` shrinks; a second-factor grant leaves lockouts alone; desk NPC not met refused; hostile text in `answers` and `username` (long, HTML, control characters) is cut and cleaned before any use, echoed in no answer, and stored only as the normalised 64 code point key and the log row's capped `typed` field |
 | Subject rules (`test/models/break_escape/mfa_access_subject_test.rb`) | The `MfaAccess` functions called with a test-only subject kind and its own map, since no route takes one in this plan: a `passed` record survives the tidy past `PENDING_SECONDS` and an unpassed one does not; a right code, an owner approval and a player approval each return `:passed` and leave the record; no route re-judge and no lockout key is touched; `numbers` for that subject differs from a PC's with the same owner and nonce; `started`, `wrong` and `mfaPrompts` move on the shared per-owner entries; with the owner re-enrolled, push case 1 is skipped, approve needs the held phone, verify compares against the authored device, and `device_in_use?` keeps the old device's code live. The same calls with a `pc` subject give exactly the sign-in results above |
 | No inline key | A unit test greps `app/` and `lib/` for a lockout key built or split outside `AccessIdentities` and fails on any hit |
 
@@ -996,7 +999,7 @@ Desk 1 is `questions`, `resets: ["password"]`, `maxTries: 3`; desk 2 is `callbac
 | F13 | Number matching, owner holds phone | Never approved |
 | F14 | Number matching with the held phone, wrong then right number | Cancelled, then session |
 | F15 | Session token to an MFA PC; saved connection to it | Token session at once; saved connection refused with `typeToSignIn: "second_step"`, no session and no pending record; typing the same account's password reaches the second step |
-| F16 | Guess an account's password to the lockout; helpdesk, wrong answers to `maxTries` for another account | `loginLockouts` has the key; `helpdeskTries` at the cap; `blocked` |
+| F16 | Guess an account's password to the lockout; helpdesk, wrong answers to `maxTries` for another account | `loginLockouts` has the key; `helpdeskTries` at the cap; `blocked` with `retryIn`, and served again after five minutes |
 | F17 | Helpdesk, right answers found on a feed post and a document, for the locked account; a saved connection for it, then the new password typed | `accountResets` password; lockout gone; keyring lists the entry; old password refused; saved connection refused as `password_changed`; sign-in at the once-locked PC sets `typed` |
 | F18 | Helpdesk re-enrols a second factor (callback rule, phone held); the old device; "My phone" on the code pane | Old device answers `enrolled: false` and the code field stays empty; own-phone code accepted |
 
@@ -1162,50 +1165,14 @@ No field holds a code, a number to match, an answer or a password. The only free
 
 ## 15. Open questions for the user
 
-Each has a recommended answer, and the plan is written to it. Points with an obvious default
-are settled in section 5.4.
+None open. Points with an obvious default are settled in section 5.4. Two settled answers that
+shape later work:
 
-1. **What clock does the code run on?** The server has no game clock; the log plan stamps rows
-   with the game time the browser reports, and this plan would use the server's real time.
-   (a) Server real time: a new code every 60 real seconds, the previous one still accepted. It
-   behaves like the device people carry and teaches that a code is short-lived.
-   (b) No clock: the device shows a code bound to the sign-in attempt in progress, like a code
-   sent by text message. Single use by construction, but it teaches nothing about time-based
-   codes and the device shows nothing until a sign-in is waiting.
-   (c) Build a server game clock first and tick the code on game minutes.
-   *Recommend (a).* The server already uses real time for token expiry, a stale code costs the
-   player nothing, and scripted runs read the code from the device.
-2. **Should NPCs react to what the player does to their account?** A careful owner pestered
-   with requests could report it; an owner whose password was reset could fail to sign in and
-   ring the desk. (a) Not now: only the log rows are written, and the event
-   `mfa_prompt_sent:<npcId>` lets a scenario voice a bark. (b) Scenario-set reactions feeding
-   the existing frustration model. *Recommend (a);* reactions belong with the parked defence
-   work.
-3. **Borrowing: can the player give a device or phone back, and does the owner notice it is
-   gone?** Today nothing hands an item from the player to an NPC; the player can only drop it,
-   after which the device route refuses (beat F5). (a) No engine rule: "borrowed" means the
-   owner's story lends it. (b) An ink tag that returns an owner-bound item to its owner. (c) As
-   (b), plus the owner noticing after a set time. *Recommend (a) now and (b) as a small
-   follow-up;* (c) belongs with the defence work.
-4. **Is S8b worth a typed form?** (a) A typed form: the player types the answers they found.
-   (b) Choices picked in dialogue: easier to play, but the right answer is on screen among a
-   few and can be found by trying within `maxTries`. *Recommend (a):* typing is what makes
-   finding the facts matter.
-5. **What happens after thirty wrong codes for one account?** Wrong codes are also capped at
-   five per attempt and count towards the PC's lockout; this cap covers a policy with no
-   `maxAttempts` and a player spreading guesses over several PCs. A student reading the wrong
-   device can reach it honestly.
-   (a) Closed for five minutes of server time, then the count starts again.
-   (b) Closed until any helpdesk reset for the account, password or second factor.
-   (c) Counted per PC, not per account, so another PC still works.
-   (d) Closed for the rest of the game unless a desk resets the second factor.
-   *Recommend (a).* It is the only option under which no scenario can be stranded whatever
-   desks it has, and thirty guesses per five minutes against a million codes gets nobody in.
-   (b) and (d) strand any scenario without the right desk, so each needs a validator error for
-   a required `code` sign-in with no such desk. (c) gives a new allowance per PC. If question 1
-   is answered "no real time", (a) falls away and the fallback is (b) with that validator error.
-6. **Should a helpdesk's `maxTries` stop ever lift?** After `maxTries` refused requests for one
-   account the desk stops serving that account. (a) It stays for the game, with the validator
-   rule of section 9 keeping a required path clear of it. (b) It lifts after five minutes of
-   server time, as the code step does. *Recommend (a):* a desk that forgets a refusal teaches
-   the wrong thing, and the validator covers the risk of a stranded player.
+- **NPCs do not react to what the player does to their account.** Only the log rows are
+  written, and the event `mfa_prompt_sent:<npcId>` lets a scenario voice a bark. Reactions
+  (a careful owner reporting repeated prompts, an owner ringing the desk after a reset) belong
+  with the parked defence work (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`).
+- **Borrowing has no engine rule:** "borrowed" means the owner's story lends the device; the
+  player can only drop it, after which the device route refuses (beat F5). An ink tag that
+  returns an owner-bound item to its owner is a small follow-up after S8b; the owner noticing a
+  missing device belongs with the defence work.
