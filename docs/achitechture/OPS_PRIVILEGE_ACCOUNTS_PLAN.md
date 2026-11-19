@@ -1275,9 +1275,10 @@ also makes an id over 40 on a PC with `cachedAccounts` an error whatever `logSou
 account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is the log rows plan's
 `signin_refused` row; this plan writes none, and S5c registers that row's optional `kind` detail
 (`local`, `domain`). S5c also adds `detail: { 'kind' => <the account's accountKind> }` to the log
-plan's L1b `signin_refused` call, only when `account_kind_admits?` is what refused (it runs first,
-so a false from it is the kind refusal; a refusal by the PC's `access` list, which runs after it,
-passes no `kind`).
+plan's L1b `signin_refused` call, only when `account_kind_admits?` is what refused. `pc_admits_account?` returns only a boolean,
+so when it returns false the sign-in caller calls `account_kind_admits?(pc, npc)` itself: false
+there is the kind refusal and passes `kind`; true means the PC's `access` list refused, and passes
+no `kind`. A controller test covers each of the two refusals.
 
 ## 14. Cross-plan requests
 

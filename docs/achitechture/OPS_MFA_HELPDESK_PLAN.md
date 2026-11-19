@@ -526,7 +526,7 @@ A grant writes `accountResets[npcId]` with `'password' => true` or `'mfa' => tru
   returns `creds.resetPassword` once `accountResets[npcId].password` is set, else
   `creds.password`. `attempt_login!` (`game.rb:3486-3487`) changes to call it, so the old
   password fails at sign-in. Readers of things written before the reset keep the authored value
-  on purpose: a post-it (`game.rb:3425`), an earlier capture (`game.rb:2697`) and the privilege
+  on purpose: a post-it (`game.rb:3425`), an earlier capture (`game.rb:2697`) and the cracking
   plan's crack of a collected hash (which reads `creds.password`) are out of date, as they would
   be. A crack after a reset therefore yields the old password, which no longer signs in. A
   collected cached account is always a hash; the collect itself yields no password.
