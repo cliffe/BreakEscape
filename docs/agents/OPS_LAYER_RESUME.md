@@ -68,7 +68,7 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
 | OPS_REALISM_SKIN | `1f9fc50e3` | 1B 5M; revised `b40e9c1eb` | 0B 2M 11m `97f5538f8`; reviser NOT launched, waits for core second pass | | | |
 | OPS_CRACKING | `5e88e7aff` | 4B 9M `46649f23f`; reviser HELD (opus48 safeguard stop; user picks on BLOCK-1) | | | | |
 | OPS_MFA_HELPDESK | `6995773a9` | 0B 7M; revised `1ac5579be` | 0B 2M 11m `850c0d087`; reviser running (Fable, afce605ac16c1e685) | | | |
-| OPS_LOG_ROWS | `aa595c30d` | 0B 8M; revised `354171b88` | review running (Fable, aaeabde849598eb7f) | | | |
+| OPS_LOG_ROWS | `aa595c30d` | 0B 8M; revised `354171b88` | 0B 7M 14m `d0e30d580`; reviser running (Opus, aa64722898cd48cd2) | | | |
 
 ## Decisions and questions for the user
 
@@ -116,6 +116,25 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   Still to do at the end: update the outline's build order (log helper first) and its status
   paragraph; a second cross-plan review once all six are through R2; tell the user about the
   sis01/sis02 log tint bug (already reported in chat).
+- 11:20 HANDOFF 2 (newest; read with the 11:18 one). Four revisers running, none commits:
+  core second pass (Fable, a1bcf6813a084bbe1, from `OPS_CORE_R1b.md`), privilege R2 (Opus,
+  a6da98267bbaa0c17), MFA R2 (Fable, afce605ac16c1e685), log rows R2 (Opus, aa64722898cd48cd2).
+  Each writes its plan and `reviews/<PLAN>_DECISIONS.md` only. On each hand-back: `git add` the
+  two paths, check `git diff --cached --stat`, commit, then launch that plan's R3 review
+  (PRIVILEGE and LOG_ROWS on Fable, MFA and CORE on Opus with "review" in the description; all
+  four R2 rounds had majors and touch secrets or access checks, so R3 is a full review, not a
+  Sonnet delta). Not launched yet: core R2 review, SKIN R2 reviser (both wait for the core pass),
+  cracking reviser (HELD for BLOCK-1).
+  Rulings since 11:18, already sent to the running revisers: event names are snake_case in every
+  plan; the log helper is its own first stage L1a (helper and event list only) ahead of every
+  other ops stage, L1b is the log plan's own badge and sign-in rows; the helper never saves, so
+  each plan says per row whether its call site already saves; an exact repeat merges into a count;
+  no `detail` value may hold a secret, guarded by a test over every registered event; a refused
+  sign-in row and `share_file_read` belong to the log plan (privilege drops its duplicate); log
+  storage is settled in the plan (`player_state`, row caps plus a byte cap per row), so drop
+  LOG-2 from the picks page at the next republish unless the user answered it.
+  Then: second cross-plan review once five plans are through R2 revision; outline build order
+  (L1a first) and status paragraph; picks page Core group from core section 15.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
