@@ -185,6 +185,11 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   confirmed finding; technique cards need a plain item type, not `notes1`; a technique session
   refused at the PC keyboard gets its own code; core's Panels draw the access level.
   New user question from core: do technique sessions join the permanent `signedInPcs` list.
+- 11:33. MFA R3 findings `3537c4da7` (0B 1M 7m; verdict: delta next). MFA R3 reviser running
+  (Fable, ae5fc3a0e8a84cb43), told to trim under 1000 lines. Next: commit, R4 delta review
+  (Opus, since it touches sign-in checks). Rulings: the wrong-code limit is a user question (new
+  MFA question 5) and no scenario may be stranded by it; the remembered code is tied to its
+  device; helpdesk rows record the typed username the same way for known and unknown accounts.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
