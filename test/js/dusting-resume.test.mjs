@@ -155,3 +155,21 @@ test('nothing synced: saving does not touch gameState', () => {
     game()._saveProgress();
     assert.ok(JSON.stringify(window.gameState) === before, 'gameState unchanged');
 });
+
+test('m1: fog does not drop across save and restore (fog passes are max-pooled, not averaged)', () => {
+    mem.clear();
+    for (const pfog of [5, 6, 7]) {
+        const f = new DustField(128, { pfog });
+        const tool = { ...TOOLS.fine, radius: TOOLS.fine.radius * 2, strength: TOOLS.fine.strength * 2 };
+        for (let pass = 0; pass < 3; pass++) { f.brush(40, 40, tool); f.brushLine(40, 40, 90, 40, tool, 0); f.brushLine(90, 40, 40, 40, tool, 0); }
+        const total = fld => { let t = 0; for (let i = 0; i < fld.FP.length; i++) t += fld.fog(i); return t; };
+        const before = total(f);
+        assert.ok(before > 5, `pfog ${pfog}: the test stroke fogs (${before.toFixed(2)})`);
+        assert.ok(m.saveProgress(77, 'fog' + pfog, entryOf(f)) === true, 'saved');
+        const back = m.loadProgress(77, 'fog' + pfog), g = new DustField(128, { pfog });
+        m.upsampleInto(g.P, 128, back.p); m.upsampleInto(g.FP, 128, back.f);
+        const after = total(g), r = after / before;
+        assert.ok(r >= 0.8, `pfog ${pfog}: fog ${before.toFixed(2)} before, ${after.toFixed(2)} after (${r.toFixed(2)}x)`);
+        assert.ok(r <= 2, `pfog ${pfog}: fog does not balloon on restore (${r.toFixed(2)}x)`);
+    }
+});

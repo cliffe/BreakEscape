@@ -653,10 +653,10 @@ export const ZOOM_MAX_H_SHORT = 128;
 // and fog fields downsampled to PROGRESS_GRID x PROGRESS_GRID bytes-as-numbers. Every storage call is
 // wrapped, so a missing or throwing localStorage just means no resume.
 // ---------------------------------------------------------------------------------------------
-export const PROGRESS_GRID = 16;
+export const PROGRESS_GRID = 32;          // 32x32 (4x4 blocks): fog max-pooled at 16x16 restored about 1.7x the fog, 32x32 about 1.4x (never below 1x)
 export const PROGRESS_SCALE = 16;          // stored value = passes * 16, capped at 255
 export const PROGRESS_MAX_ENTRIES = 8;     // oldest entries beyond this are pruned
-export const PROGRESS_MAX_CHARS = 2400;    // a stored entry above this is refused (a full one is about 1.3k)
+export const PROGRESS_MAX_CHARS = 9000;    // a stored entry above this is refused (a full 32x32 pair is about 4k to 8k)
 const PROGRESS_PREFIX = 'breakEscape.dusting.';
 const PROGRESS_INDEX = 'breakEscape.dusting.index';
 const PROGRESS_STEPS = ['powder', 'dust'];
@@ -669,14 +669,21 @@ function defaultStorage() {
     try { return typeof window !== 'undefined' && window.localStorage ? window.localStorage : null; } catch (e) { return null; }
 }
 
-/** Mean of each block of a size x size Float32 grid, scaled and capped to 0..255 ints, as a plain array. */
-export function downsampleField(arr, size, grid = PROGRESS_GRID) {
+/**
+ * Each block of a size x size Float32 grid, scaled and capped to 0..255 ints, as a plain array. `mode` is 'mean' (powder)
+ * or 'max' (fog passes: fog is a threshold on FP, so a mean would average a fogged stroke under the threshold and a
+ * reload would wipe it; a max keeps it, and errs towards more fog, never a free unfog).
+ */
+export function downsampleField(arr, size, grid = PROGRESS_GRID, mode = 'mean') {
     const out = new Array(grid * grid), b = Math.floor(size / grid);
     for (let gy = 0; gy < grid; gy++) {
         for (let gx = 0; gx < grid; gx++) {
-            let sum = 0;
-            for (let y = 0; y < b; y++) for (let x = 0; x < b; x++) sum += arr[(gy * b + y) * size + gx * b + x];
-            out[gy * grid + gx] = Math.max(0, Math.min(255, Math.round((sum / (b * b)) * PROGRESS_SCALE)));
+            let sum = 0, top = 0;
+            for (let y = 0; y < b; y++) for (let x = 0; x < b; x++) {
+                const v = arr[(gy * b + y) * size + gx * b + x];
+                sum += v; if (v > top) top = v;
+            }
+            out[gy * grid + gx] = Math.max(0, Math.min(255, Math.round((mode === 'max' ? top : sum / (b * b)) * PROGRESS_SCALE)));
         }
     }
     return out;
@@ -694,7 +701,7 @@ export function upsampleInto(arr, size, vals, grid = PROGRESS_GRID) {
 export function packProgress({ step, powder, tool, quality }, field) {
     return {
         v: 1, step, powder, tool, q: Math.round((Number(quality) || 0) * 100) / 100, t: Date.now(),
-        p: downsampleField(field.P, field.size), f: downsampleField(field.FP, field.size)
+        p: downsampleField(field.P, field.size), f: downsampleField(field.FP, field.size, PROGRESS_GRID, 'max')
     };
 }
 
