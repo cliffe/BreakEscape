@@ -123,6 +123,10 @@
 .dusting-jar-text { line-height: 1.15; }
 
 .dusting-hint { animation: dusting-pulse 1.1s ease-in-out infinite; }
+/* Hint nudge (D183): a 2px solid frame plus the words "Stuck? Try Hint" above it; never colour alone */
+.dusting-btn.dusting-nudged { border: 2px solid var(--d-accent); outline: 2px solid var(--d-accent); outline-offset: 2px; }
+.dusting-nudge { margin: 4px 0; color: var(--d-accent); font-family: 'VT323', monospace; font-size: 20px; min-height: 0; }
+.dusting-nudge:empty { display: none; }
 @keyframes dusting-pulse { 50% { box-shadow: 0 0 0 4px rgba(0, 255, 65, 0.4); } }
 
 .dusting-meters { margin: 8px 0; }

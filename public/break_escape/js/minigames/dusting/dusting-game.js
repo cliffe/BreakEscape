@@ -257,6 +257,8 @@ export class DustingMinigame extends MinigameScene {
         this.found = false;
         this.hintReady = false;
         this.hintOn = false;
+        this.misses = 0;      // failed checks in the find step (drives the Hint nudge)
+        this.nudged = false;
         this.message = '';
         this.coach = '';
         this.metrics = { coverage: 0, clarity: 0, foggy: 0 };
@@ -620,8 +622,9 @@ export class DustingMinigame extends MinigameScene {
             of fine curved ridges. Long straight streaks are only reflections.</p>
             <p class="dusting-keys">${this._findKeyLine()}</p>
             <p class="dusting-feedback" data-dyn="feedback"></p>
+            <p class="dusting-nudge" data-dyn="nudge"></p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-hint" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
+                <button class="dusting-btn dusting-hint${this.nudged ? ' dusting-nudged' : ''}" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
             </div>`;
     }
 
@@ -1373,6 +1376,9 @@ export class DustingMinigame extends MinigameScene {
             }
         }
         if (!hit) {
+            this.misses = (this.misses || 0) + 1;
+            this._armNudge();
+            if (hintNudgeDue({ misses: this.misses })) this._showNudge();
             this.message = 'Nothing there. Keep the light low and look for a small patch of curved ridges, not a straight reflection.';
             this._refreshDynamic();
             this.announce(this.message);
@@ -1386,6 +1392,21 @@ export class DustingMinigame extends MinigameScene {
         this.announce('Found the print.');
         this.dirty = true;
         this._later(() => this._setStep('powder'), this.reduceMotion ? 0 : 450);
+    }
+
+    /** Idle nudge: restarts on every miss and on entering the find step; fires after NUDGE_IDLE_MS without a find. */
+    _armNudge() {
+        if (this._nudgeTimer) { clearTimeout(this._nudgeTimer); this._timers = (this._timers || []).filter(x => x !== this._nudgeTimer); }
+        this._nudgeTimer = this._later(() => { this._nudgeTimer = null; if (this.step === 'find' && !this.found && hintNudgeDue({ idleMs: NUDGE_IDLE_MS })) this._showNudge(); }, NUDGE_IDLE_MS);
+    }
+
+    /** Shows the Hint button if it was still hidden, outlines it, and says so in words ("Stuck? Try Hint"). A UI label, not spoken text. */
+    _showNudge() {
+        if (this.nudged || this.step !== 'find') return;
+        this.nudged = true;
+        this.hintReady = true;
+        this._renderPanel();
+        this.announce(NUDGE_TEXT);
     }
 
     // ------------------------------------------------------------------ rendering
@@ -1440,6 +1461,7 @@ export class DustingMinigame extends MinigameScene {
         const word = v => (v >= 0.85 ? 'good' : v >= 0.6 ? 'fair' : v >= 0.3 ? 'faint' : 'low');
         if (this.step === 'find' || this.step === 'compare') {
             this._setDyn('feedback', el => { el.textContent = this.message; });
+            this._setDyn('nudge', el => { el.textContent = this.nudged ? NUDGE_TEXT : ''; });
             return;
         }
         if (this.step === 'dust') {
@@ -2085,6 +2107,7 @@ const baseSetStep = DustingMinigame.prototype._setStep;
 DustingMinigame.prototype._setStep = function (step) {
     baseSetStep.call(this, step);
     if (step === 'dust') this._saveProgress();
+    if (step === 'find' && !this.nudged && !this.found) this._armNudge();
     if (step === 'find' && !this.hintReady && !this._hintTimer) {
         this._hintTimer = true;
         this._later(() => { this.hintReady = true; if (this.step === 'find') this._renderPanel(); }, this.diff.hintAfterMs);
