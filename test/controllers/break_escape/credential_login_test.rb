@@ -190,6 +190,51 @@ module BreakEscape
       assert_includes state['signedInPcs'], 'lena_pc'
     end
 
+    # ---- a keycard that carries a credential (the left-card consequence, 3.3b) ---------------
+
+    CARD_ID = 'lena_badge'.freeze
+
+    # lena_rdp_file becomes a keycard with a card_id, held in the inventory as a genuine take
+    # stores it (server-stamped credential), with the given cancelled ids.
+    def build_with_keycard(revoked = [])
+      scn = KS.scenario
+      item = KS.find_item(scn, 'lena_rdp_file')
+      item.merge!('type' => 'keycard', 'card_id' => CARD_ID)
+      globals = revoked.empty? ? {} : { 'globalVariables' => { Game::REVOKED_CARDS_GLOBAL => revoked } }
+      build_network_game({ 'encounteredNPCs' => %w[sam lena ian jake],
+                           'inventory' => [{ 'id' => 'lena_rdp_file', 'type' => 'keycard', 'name' => 'HB-FIN-02.rdp',
+                                             'card_id' => CARD_ID, 'credential' => 'lena_rdp' }] }.merge(globals), scn)
+    end
+
+    test 'a revoked keycard carrying a credential is refused with the door reason, nothing counted, no session' do
+      build_with_keycard([CARD_ID])
+      with_foothold
+      before = counters
+      body = cred_login('lena_pc', 'lena_rdp', foothold: OFFICE)
+      assert_response :unprocessable_entity
+      assert_equal({ 'success' => false, 'message' => 'Card cancelled', 'reason' => 'revoked' }, body)
+      assert_equal before, counters
+      assert_empty state['sessions']
+      refute_includes state['signedInPcs'], 'lena_pc'
+      refute @game.reload.keyring_for_client[:entries].any? { |e| e['id'] == 'lena_rdp' }, 'a cancelled card leaves the keyring'
+    end
+
+    test 'an unrevoked keycard carrying a credential still signs in, and revoking another card changes nothing' do
+      build_with_keycard(['someone_elses_card'])
+      with_foothold
+      body = cred_login('lena_pc', 'lena_rdp', foothold: OFFICE)
+      assert_response :success, response.body
+      assert_equal 'credential', body['via']
+      assert_equal 'lena', state['sessions']['lena_pc']['id']
+    end
+
+    test 'a password credential is unaffected by a revoked card' do
+      build_with_keycard([CARD_ID])
+      body = sign_in('jake_pc', 'jbrooks', KS::JAKE_PASSWORD)
+      assert_response :success, body.inspect
+      assert_equal({ 'id' => 'jake', 'via' => 'password' }, state['sessions']['jake_pc'])
+    end
+
     test 'step 9: a relay sign-in needs no foothold and leaves signedInPcs unchanged' do
       build
       hold('jake_assist_code')
