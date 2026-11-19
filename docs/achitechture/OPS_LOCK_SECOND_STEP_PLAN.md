@@ -1,6 +1,6 @@
 # Ops layer: a second step on any lock (A25)
 
-Stages G1, G2 and G3. Needs stages M1a to M3 of `OPS_MFA_HELPDESK_PLAN.md` (the "MFA plan") and
+Stages G1, G2, G3 and G4. Needs stages M1a to M3 of `OPS_MFA_HELPDESK_PLAN.md` (the "MFA plan") and
 stages L1a (the helper) and L1b (B11's `badge_swipe` row) of `OPS_LOG_ROWS_PLAN.md` (the "log plan"). Pointers are `file:line`; `game.rb` is
 `app/models/break_escape/game.rb`, `games_controller.rb` is
 `app/controllers/break_escape/games_controller.rb`, JS paths are under `public/break_escape/js/`.
@@ -149,10 +149,12 @@ quality is the client's, `:1006-1044`), so on those the second step is the only 
 |---|---|---|---|
 | G1 | `secondStep` on a locked object with a `password` or `pin` lock (a plain PC, a safe, an archive), all three kinds; the id-keyed gate, the single "is it open" test, the rule for everything below a closed step and the reach test for a carried gated object and everything inside it (Rule D, 5.5: G1 already places a step in a container an NPC carries and on a nested `takeable`); `lockSteps`; the lock form of the `/mfa/*` routes; the step handled once in `ApiClient.unlock`; the pane for a lock; schema, validator, graph, `test_ops_lock_step` | A player types an archive's right password, gets no contents and opens nothing inside it by any route, has the owner's phone approve, and only then sees the files | M |
 | G2 | `secondStep` on a room (a door), and on `key`, `rfid`, `combination`, `cryptex`, `biometric`, `bluetooth` and `ble` locks, push kinds only; the door-opener rules of 5.3; the cancelled-step guard in `notifyServerUnlock` and `unlockTarget` | An rfid door stays shut after the right card until the request is approved, and `roomData` is in the last answer only | S |
-| G3 | `secondStep` on a top-level item the player carries (5.5): an NPC's `itemsHeld` entry, a start item, a declared grant's item, a `takeable` room object; `secondStep` in the client-forged field list; the carried-item validator rules. Lock types `password` and `pin`, all three kinds; once G2 has landed, G2's types too, push kinds only | A player handed a gated briefcase opens it only through both checks, carrying it or after dropping it in reach; once it has left the inventory and every open room, a crafted request reaches it only after a re-add (5.5), and a re-added item still needs both checks unless its step had already passed; dropping and picking it up never resets its request count | S |
+| G3 | `secondStep` on a top-level item the player carries (5.5): an NPC's `itemsHeld` entry, a start item, a declared grant's item, a `takeable` room object; `secondStep` in the client-forged field list; the carried-item validator rules. Lock types `password` and `pin`, all three kinds; once G2 has landed, G2's types too, push kinds only | A player handed a gated briefcase opens it only through both checks, carrying it or after dropping it in reach; once it has left the inventory and every open room, a crafted request reaches it only after a re-add (5.5), which is a known best-effort route, and a re-added item still needs both checks unless its step had already passed (the step itself is never skipped); dropping and picking it up never resets its request count | S |
+| G4 | Rule D extended to plain carried containers (5.5, "Plain carried containers"): `carried_step_chains` also holds each top-level carrier that has a lock or `contents`, and `carried_step_reachable?` runs on any path holding one; the tests of section 11 and the regression runs of the three shipped scenarios it touches. G4 starts by re-making that list mechanically from every scenario rendered through ERB (some `.json.erb` scenarios do not parse as plain JSON), nested carriers included, and runs every scenario on it | After G4, a crafted `/unlock`, `GET /container` or take for a plain carried container that has left the inventory and every open room is refused as an invented id (generic 422, 404 "Container not found", "Item not found in scenario"). A give, a start item, a nested container inside a held briefcase and a dropped item in an unlocked room all still pass. The `ops_unchanged` goldens are unchanged, and the critical paths of `test_unlock_gaps`, `ceo_exfil` and `test_social_m5_channels` still pass | S |
 
-G3 needs G1 only, and lands after G1, before or after G2. In the build outline these three are
-outline stage S8c (after S8b); the stage names here are G1 to G3.
+G3 needs G1 only, and lands after G1, before or after G2. G4 needs G1 (Rule D and
+`carried_step_chains`) and lands last, after G3. In the build outline these four are
+outline stage S8c (after S8b); the stage names here are G1 to G4.
 
 Not planned: a step on a `flag` lock (the unlock submits to Hacktivity and is undone on an
 error), on a `login` PC (its policy owns that step, MFA plan), and on the lock types that
@@ -750,7 +752,40 @@ writes or resets, so the owner's approval is still needed unless the step had al
 a crafted re-add never skips the step. A take of an item that sits inside a gone carrier is
 not one of these routes: Rule D judges the carrier chain above the item (the briefcase's
 release record and `unlockedObjects` entry do not make the item reachable), so it is refused.
-Whether removal itself should be enforced is section 15.
+The server does not track removal, so these re-add routes stay known best-effort routes, and
+the step itself is never skipped.
+
+**Plain carried containers (G4).** The shipped code has the same stale-reach gap for a carried
+container with no second step: after it has left the player, a crafted `/unlock` or take can
+still reach a plain locked briefcase or a plain container that holds contents (the
+released-container and start-item walks do not test that it is held, `game.rb:4945-4959`,
+`:4909-4914`). Once Rule D is built (G1), G4 extends its trigger and its two legs to a **plain
+carrier**: a top-level carrier (home `npc`, `start`, `grant` or `room`) that has a lock or a
+`contents` list, whether or not any object at or below it carries `secondStep`. Rule D then runs
+on any path that holds a plain carrier id, with the same chain, the same two legs and the same
+closed-list refusals (generic 422 at `/unlock`, 404 "Container not found", "Item not found in
+scenario: <item_type>" at the take routes). Nothing else changes: a plain container in its
+authored place, a nested container inside a held carrier, a give, a start item and a dropped
+item in an unlocked room all pass exactly as above.
+
+`carried_step_chains` therefore also holds one entry per plain carrier. The cost is bounded: only
+top-level carriers with a lock or `contents` get an entry, each entry is the carrier's own chain
+(at most the nesting depth, because a nested `takeable` is judged by the deepest carrier on its
+path and has no entry of its own), and the table is built in the same single scenario walk as
+`second_step_ids` and memoised per scenario for the process. A lookup is a hash read per object
+on the request's path, so a scenario with no carried container pays nothing. Test items, notes
+and keys have neither a lock nor `contents`, so they get no entry.
+
+Shipped scenarios the extension touches (grep of `scenarios/` for carried containers: a
+`startItemsInInventory` entry, an `itemsHeld` entry or a `takeable` room object that has a lock
+or `contents`): `test_unlock_gaps` (the start cryptex bag `test_start_cryptex`, and
+`test_courier_bag`, a password bag held by the NPC `test_courier`), `ceo_exfil` (the
+Bluetooth-locked `Tablet Device`, a takeable object in `reception`) and
+`test_social_m5_channels` (the PIN-locked `m5_locked_terminal`, a takeable object in
+`m5_room`). The other scenarios (the missions, the labs, the `ca` set) hold no locked or
+`contents` item in a start list or an `itemsHeld`; `lab_tesseract_trials`'s lockbox is
+`takeable: false` and so is not a carrier. The critical path of each of the three must still
+pass after G4 (section 11, "Plain carried containers").
 
 **Copies share one step.** A gated file a sign-in desktop or a share lets the player copy
 (`transfer` `copy`, or `both`, the default, when the player picks Copy) leaves one copy in
@@ -937,11 +972,11 @@ A scenario without the field draws exactly as before.
 
 ## 10. Effect on existing scenarios
 
-None. No scenario carries `secondStep` today, and each change is behind it: the gate returns
+G1 to G3: none. No scenario carries `secondStep` today, and each change is behind it: the gate returns
 when `lock_step` is nil; Rules A, B, C and D, the shortcut turned off and the answer's finder
 act only on ids in `second_step_ids` (Rule D only on a path holding an id of its subset
 `carried_step_ids`), which is empty;
-`secondStep` joining `FORGEABLE_ITEM_FIELDS` strips a field no shipped item has; a plain locked
+`secondStep` joining `FORGEABLE_ITEM_FIELDS` strips a field no shipped item has; until G4, a plain locked
 carried item resolves and opens exactly as today; `resolve_unlock_target` finds what
 `find_scenario_object` found, plus the path; the `/mfa/*` lock form answers 404; each client
 branch fires only on `secondStep: true` or `second_step_cancelled`; the bootstrap copies the
@@ -949,6 +984,13 @@ field only when a room has it. Every game gains an empty `lockSteps` and an empt
 `npcStepGrants` on its next initialise (`game.rb:7576`), never sent. The grants are written
 only behind `lock_step`, and the bootstrap adds `npcStepOpener` only from them, so an existing
 scenario's bootstrap is unchanged.
+
+**G4 is the exception.** It changes what a crafted request reaches for a plain carried
+container that has left the player, in three shipped scenarios: `test_unlock_gaps`, `ceo_exfil`
+and `test_social_m5_channels` (5.5, "Plain carried containers"). Every legitimate flow in them
+is unchanged, and the critical path of each must still pass after G4 (section 11). The captured
+`ops_unchanged` answers hold for all five scenarios, because the fixed script only posts to
+containers in their authored place or held.
 
 **Proof.** (1) A spec walks every scenario under `scenarios/` (a pure scenario walk) and
 asserts `second_step_ids` is empty for all but `test_ops_lock_step`. (2) The shared mechanism
@@ -1022,6 +1064,9 @@ edge, and a scenario without the field drawn unchanged.
 | Re-add and dedupe (G3) | A crafted add of a held gated start item answers `already: true` and leaves the record; a re-sent add on reload the same |
 | Re-add after removal (G3) | After a `remove` of a gated start item with a live record, a crafted re-add is accepted (today's start-item rule); a right first factor then re-answers from the record, opens nothing and ships nothing without the approval. The same for a passed record: the item opens, as its step had passed. The same with a crafted `source_npc_id` give of the removed briefcase |
 | Client-built object (G3) | An `add_object` with no source carrying `secondStep` and a gated object's id: stored with a fresh id and no `secondStep`; `second_step_ids` and `carried_step_ids` unchanged; the gated object's record untouched |
+| Plain carried containers (G4) | Fixtures with no `secondStep` anywhere: a locked start-item bag, a locked bag an NPC holds, a `takeable` locked room object and a plain `contents` briefcase. Held, each opens as today. After an inventory `remove` (and, for the NPC bag, after the give), a crafted `/unlock`, `GET /container` and take for the bag or an object inside it are refused with the closed-list answers (generic 422, 404 "Container not found", "Item not found in scenario"), with nothing of the contents in any answer and nothing written. Legitimate flows still pass: a give (`source_npc_id`) adds the bag; a start item is held from the start and its re-add answers `already: true`; a nested container inside a held briefcase opens and yields its contents; a bag dropped into an open room is in reach and can be picked up and opened; a `takeable` room object still in its room is in reach while the room is open |
+| Plain carriers: chain table (G4) | `carried_step_chains` holds exactly one entry per top-level carrier with a lock or `contents`, none for notes, keys or tools, none for a nested `takeable`; the table is built once per scenario and a second call reads the memo (a counter on the walk); a scenario with no carried container has an empty table and `carried_step_reachable?` returns true at the first check |
+| Shipped scenarios (G4) | `test_unlock_gaps`, `ceo_exfil` and `test_social_m5_channels`: the existing scenario tests and the critical-path walkthrough (the `playtest-scenario` run for each) still pass, covering the start cryptex bag, `test_courier_bag` after the courier's give, the reception tablet and the `m5_room` terminal; the `ops_unchanged` comparison is unchanged |
 | Copies (G3) | A gated file copied from a sign-in desktop (`transfer: "copy"`): one record for both copies; passing the step on the inventory copy opens the desktop copy too. After the inventory copy is removed, the desktop copy is still in reach with a session. A `transfer: "both"` file the player moves: hidden from the desktop listing while held, listed and in reach again after a `remove` |
 
 **JS** (`second-step-lock.test.mjs`, plain `node`). No new module: the tests depend on the
@@ -1156,7 +1201,10 @@ the feature scenario, B1 to B10 and the live proof. G2 adds 5.3 (the bootstrap a
 retry, the door tests, B11 and B12a to B12e. G1 also builds `carried_step_ids`, `carried_step_chains` and Rule D (5.5)
 with the server rules. G3, after G1 and either side of G2, lifts the validator's carried-item
 refusal for its carried-item errors (section 9), adds `secondStep` to `FORGEABLE_ITEM_FIELDS`,
-the G3 controller and JS tests, the briefcase and B13a to B13f.
+the G3 controller and JS tests, the briefcase and B13a to B13f. G4, last, extends
+`carried_step_chains` and `carried_step_reachable?` to plain carriers (5.5), adds the three G4
+test rows of section 11, and runs the existing tests and the critical-path walkthroughs of
+`test_unlock_gaps`, `ceo_exfil` and `test_social_m5_channels`; it edits `game.rb` only.
 
 | Shared file | This plan's edit | Also edited by |
 |---|---|---|
@@ -1240,57 +1288,16 @@ design, so the player sees a copied card is not the owner's approval.
 - Fixed outside this plan, on the same branch: the validator counted `fob` and `rfid` item
   types as cards (`scripts/validate_scenario.rb:2321`); the engine accepts only `keycard`
   (`game.rb:4045`, `unlock-system.js:89-90`). Owner: the validator.
-- Open: a plain locked carried item that has left the inventory still resolves for `/unlock`
-  and `GET /container` (`released_npc_containers` and the start-item walk do not test that it
-  is held, `game.rb:4945-4959`, `:4909-4914`), so a crafted request can open one the player no
-  longer has. Rule D (5.5) covers gated items only.
-- Open: four add paths put back an item that has left the inventory, with no record that it
-  left (5.5, "Re-adds"), for any carried item. For a gated item the step record survives, so
-  the owner's approval is still needed; whether to refuse such re-adds is section 15.
+- Open until G4: a plain locked carried item that has left the inventory still resolves for
+  `/unlock` and `GET /container` (`released_npc_containers` and the start-item walk do not
+  test that it is held, `game.rb:4945-4959`, `:4909-4914`), so a crafted request can open one
+  the player no longer has. This is a gap in the shipped code. Rule D (5.5) covers gated items
+  from G1; G4 (5.5, "Plain carried containers") extends it to plain carried containers.
+- Known: four add paths put back an item that has left the inventory, with no record that it
+  left (5.5, "Re-adds"), for any carried item. They stay known best-effort routes. For a gated
+  item the step record survives, so the owner's approval is still needed and the step itself is
+  never skipped.
 
 ## 15. Open questions for the user
 
-1. **Should the server refuse to re-add a gated carried item that has left the inventory
-   (G3)?** Today a crafted request can bring back a start item, a declared grant's item, an
-   NPC's given item or a `takeable` room object after it has been removed, consumed, planted or
-   hidden (5.5, "Re-adds"). With a step, the re-added item keeps its record, so the owner's
-   approval is still needed unless the step had already passed; what a re-add gains is a second
-   look at an item whose step the player had already passed, or a live request after a
-   scripted removal such as the courier box.
-   - (a) **Wording only.** The plan promises only what the server enforces (section 1, G3's
-     done-when, 5.5) and lists the re-add routes as known best-effort routes, in line with the
-     cheat-resistance policy. No new state, no new tests beyond the re-add row of section 11,
-     no effect on any scenario. The same gap stays open for plain carried items, as today.
-   - (b) **A server-only `carriedGone` list.** A flat array in `player_state` of carrier ids
-     taken from `carried_step_chains` only, top-level homes only (`npc`, `start`, `grant`,
-     `room`; a nested `takeable` still goes back to its container), so it is bounded by the
-     scenario and empty without the attribute. A player drop is an `add_object` followed by an
-     inventory `remove` (`item-drop.js:356-389`), so the list is written by the inventory
-     `remove` only when no room's `objects_added` holds a copy with that id (a drop's
-     `add_object` lands first, `game.rb:1202`), by `hide`, and by the two server routes that
-     take an item out of the inventory without `remove`: the network jack plant
-     (`network_access.rb:262`) and the USB implant (`:516`); a pick-up of a dropped copy
-     clears the entry. Without the drop test every dropped gated carrier would be listed, and
-     the pick-up of a dropped start item (which meets the start-item branch first,
-     `games_controller.rb:3373-3382`) or of a dropped NPC or room carrier (priority 0, a room
-     location, `:3605-3615`) would be refused. The consumed use, the object plant and
-     `remove_item` reach `remove` only when the browser holds a matching item with an id
-     (`consumables.js:235-252`, `interactions.js:1087`, `apply-actions.js:275-295`), so (b)
-     also depends on that. It is read by `validate_item_collectible` only, which refuses the
-     re-add on every branch (start item, grant, NPC give, room object) as "Item not found in
-     scenario"; Rule D already fails leg 2 for a gone `npc`, `start` or `grant` carrier, so
-     reading the list there adds nothing. Delta sync: it is never in a sync
-     body, never read from one, and never sent or echoed to the browser (a refused re-add uses
-     the existing body), so nothing grows and is re-sent; `reset_player_state!` drops it.
-     Tests: a controller row per add path, a drop-and-pick-up row for each home (start item,
-     NPC carrier, room carrier), a jack plant and an implant row, the reset, a
-     forged sync body ignored, and the section 10 goldens unchanged. Scenarios: no shipped one
-     is touched (no `secondStep` today); in a gated scenario an author can no longer remove a
-     top-level gated item and give the same id again, so the validator warns on a
-     `remove_item` naming such an item when a later give names the same id. Extra edits fall
-     in `game.rb` and `games_controller.rb`, both shared with the MFA and log plans.
-
-   *Recommend (a) for now:* the step itself is never skipped, the gap is the engine's own for
-   every carried item, and (b) adds state for one feature. Written to (a); (b) can follow in G3,
-   but only with the drop rule above (the list skips a drop's copy) and the plant and implant
-   writes; nothing else here changes.
+None open.

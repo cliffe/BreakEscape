@@ -168,3 +168,12 @@
 - NIT-1: leg 1 says a route room in `npcRouteRooms` does not count and an awareness world room counts once its first `GET /room` adds it.
 - NIT-2: row 998 takes the archive, not the note, and says why.
 - NIT-3: the removal row in 5.5 names the jack plant and the implant.
+
+## Round 3 decisions applied (2026-11-19)
+
+- R3-5 a: no `carriedGone` list. Section 15 question 1 removed; section 15 reads "None open."
+- R3-5 a: 5.5 "Re-adds" and the G3 done-when say the re-add routes are known best-effort routes and the step itself is never skipped; section 14's two bullets reworded to match.
+- R3-8 a: new stage G4 (section 3 table, build order in 12): Rule D extended to plain carried containers (top-level carriers with a lock or `contents`), after G3.
+- R3-8 a: new 5.5 paragraph "Plain carried containers (G4)": trigger, closed-list refusals, bounded `carried_step_chains` (one entry per such carrier, nested takeables have none, single memoised walk).
+- R3-8 a: section 11 gains three G4 rows (legitimate flows: give, start item, nested container in a held briefcase, dropped item in an unlocked room; chain table bound; shipped scenarios).
+- R3-8 a: shipped scenarios touched, from a grep of `scenarios/`: `test_unlock_gaps` (start cryptex bag, courier bag), `ceo_exfil` (reception tablet), `test_social_m5_channels` (m5 terminal); their critical paths must still pass. Section 10 states the G4 exception.
