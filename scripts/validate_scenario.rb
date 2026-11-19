@@ -2312,13 +2312,15 @@ def check_lock_credentials(json_data)
   walk_locks.call(json_data)
 
   # [name, credential, lockType] for items whose type is a physical key or an
-  # RFID/keycard/fob credential. A physical key is matched by 'opens_lock'
+  # keycard credential. A physical key is matched by 'opens_lock'
   # (falling back to 'key_id' -- ItemIdentity.lock_ref). An RFID/keycard is
   # matched by 'card_id' first, falling back to 'opens_lock'/'key_id'
   # (unlock-system.js getCardId) -- so card_id is the credential that
   # actually satisfies the door when both are present.
   key_items = []
-  credential_item_types = { 'key' => 'key', 'keycard' => 'rfid', 'rfid' => 'rfid', 'fob' => 'rfid' }
+  # Only 'keycard' counts as a card: the engine (Game#held_keycard_ref_ids, held_keycard_ids) takes
+  # type == 'keycard' alone, so a 'fob' or 'rfid' item never opens a requires lock.
+  credential_item_types = { 'key' => 'key', 'keycard' => 'rfid' }
   walk_items = lambda do |node|
     case node
     when Array then node.each { |n| walk_items.call(n) }
