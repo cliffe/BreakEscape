@@ -136,15 +136,15 @@ test('the confirm focuses its cancel button and Enter presses the focused one', 
     canvas.focus();
     const p = gameConfirm('Switch it off?', 'Switch off', 'Leave it');
     const cancel = document.querySelector('.game-confirm-cancel');
-    assert.equal(document.activeElement, cancel, 'the safe choice has focus');
+    assert.ok(document.activeElement === cancel, 'the safe choice has focus');
     const ev = press('Enter', cancel);
     assert.equal(ev.defaultPrevented, true);
     assert.equal(await p, false, 'Enter on the focused cancel answers no');
-    assert.equal(document.activeElement, canvas, 'focus goes back to the game');
+    assert.ok(document.activeElement === canvas, 'focus goes back to the game');
 
     const p2 = gameConfirm('Switch it off?', 'Switch off', 'Leave it');
     press('Tab', document.activeElement);
-    assert.equal(document.activeElement, document.querySelector('.game-confirm-ok'), 'Tab moves to the other button');
+    assert.ok(document.activeElement === document.querySelector('.game-confirm-ok'), 'Tab moves to the other button');
     press(' ', document.activeElement);
     assert.equal(await p2, true, 'Space presses the focused button');
     assert.deepEqual(log, [], 'Space never reached the game as a jump');
@@ -164,7 +164,7 @@ test('repeated arrows on the focused button leave focus on the safe choice (R2 M
         document.activeElement.dispatchEvent(ev);
         assert.equal(ev.defaultPrevented, true, 'a repeat never reaches the game or scrolls');
     }
-    assert.equal(document.activeElement, cancel, 'focus is still on the cancel button');
+    assert.ok(document.activeElement === cancel, 'focus is still on the cancel button');
     press('Enter', document.activeElement);
     assert.equal(await p, false);
 });
@@ -176,10 +176,10 @@ test('an arrow held since before the confirm opened moves nothing until it comes
     const cancel = document.querySelector('.game-confirm-cancel');
     press('ArrowRight', cancel);
     press('ArrowRight', document.activeElement);
-    assert.equal(document.activeElement, cancel, 'the held arrow (no repeat flag) does not move focus');
+    assert.ok(document.activeElement === cancel, 'the held arrow (no repeat flag) does not move focus');
     release('ArrowRight', document.activeElement);
     press('ArrowRight', document.activeElement);
-    assert.equal(document.activeElement, document.querySelector('.game-confirm-ok'), 'a fresh press after the keyup moves focus');
+    assert.ok(document.activeElement === document.querySelector('.game-confirm-ok'), 'a fresh press after the keyup moves focus');
     press('Tab', document.activeElement);
     press('Enter', document.activeElement);
     assert.equal(await p, false);

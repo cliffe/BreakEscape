@@ -160,7 +160,7 @@ test('destroy unsubscribes and removes the bar', () => {
     assert.equal(before, 1);
     bar.destroy();
     assert.equal(window.eventDispatcher.listeners.get('global_variable_changed:priya_influence')?.length || 0, 0);
-    assert.equal(document.querySelector('.influence-bar'), null);
+    assert.ok(document.querySelector('.influence-bar') === null);
 });
 
 test('scenario default: social.influenceDisplay { number: false } drops the number for everyone', () => {
@@ -188,7 +188,7 @@ test('bar: false renders nothing at all, number included', () => {
     const s = setup();
     s.social.characters.priya.influence.display = { bar: false, number: true };
     assert.equal(createInfluenceBar({ characterId: 'priya' }), null);
-    assert.equal(document.querySelector('.influence-bar'), null);
+    assert.ok(document.querySelector('.influence-bar') === null);
     assert.ok(createInfluenceBar({ characterId: 'pierce' }));
 });
 
@@ -227,7 +227,7 @@ test('mount 1, mail reading pane: the bar sits under the headers for a social ch
     assert.equal(reader.readPane.querySelector('.ib-infl-number').textContent, '-35');
 
     reader.select('m2');
-    assert.equal(reader.readPane.querySelector('.influence-bar'), null, 'no bar for a non-social character');
+    assert.ok(reader.readPane.querySelector('.influence-bar') === null, 'no bar for a non-social character');
     assert.equal(reader.getState().influence, null);
     assert.equal(window.eventDispatcher.listeners.get('global_variable_changed:pierce_influence')?.length || 0, 0, 'old bar unsubscribed');
 
@@ -320,7 +320,7 @@ test('mount 1, reading pane honours bar: false', () => {
     const reader = new MailReader(document.getElementById('host'), {});
     reader.setMessages([rec({ thread: 'pierce:guest' })]);
     reader.select('m1');
-    assert.equal(reader.readPane.querySelector('.influence-bar'), null);
+    assert.ok(reader.readPane.querySelector('.influence-bar') === null);
     reader.destroy();
 });
 
@@ -342,7 +342,7 @@ test('mount 2, intel board: a target card with a social.characters entry shows t
     assert.ok(pierce.querySelector('.ib-influence .influence-bar'));
     assert.equal(pierce.querySelector('.influence-bar').dataset.mount, 'board');
     assert.equal(pierce.querySelector('.ib-infl-number').textContent, '-10');
-    assert.equal(hampshire.querySelector('.influence-bar'), null);
+    assert.ok(hampshire.querySelector('.influence-bar') === null);
     assert.equal(scene.getTestState().board.influence[0].character, 'pierce');
     // a rebuild replaces the bar rather than stacking subscriptions
     scene.rebuild();
@@ -363,7 +363,7 @@ test('mount 2, board honours social.influenceDisplay { bar: false }', () => {
     window.MinigameFramework.currentMinigame = scene;
     scene.init();
     scene.start();
-    assert.equal(scene.container.querySelector('.influence-bar'), null);
+    assert.ok(scene.container.querySelector('.influence-bar') === null);
     scene.cleanup();
 });
 

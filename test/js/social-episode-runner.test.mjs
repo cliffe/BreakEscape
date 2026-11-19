@@ -191,7 +191,7 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.equal(epState().stage, 'brief');
     // the brief goes in as text
     assert.ok(cur().container.textContent.includes('<b>Brief</b> line'));
-    assert.equal(cur().container.querySelector('.epr-panel b'), null);
+    assert.ok(cur().container.querySelector('.epr-panel b') === null);
 
     click('.epr-start');
     assert.equal(epState().stage, 'osint');
@@ -298,7 +298,7 @@ test('a reopen at every stage resumes there', () => {
     assert.equal(epState().stage, null);
     // one Close only: the bar's (P7-J playtest); the finished panel adds none of its own
     assert.ok(cur().container.querySelector('.epr-finished'));
-    assert.equal(cur().container.querySelector('.epr-finish'), null);
+    assert.ok(cur().container.querySelector('.epr-finish') === null);
     assert.equal(cur().container.querySelectorAll('.se-overlay-close, .epr-kiosk-close').length, 1);
 });
 
@@ -492,7 +492,7 @@ test('Back to research is only on the write stage, not on osint', () => {
     open(ep);
     click('.epr-start');
     assert.equal(epState().stage, 'osint');
-    assert.equal(cur().container.querySelector('.epr-back-research'), null, 'no Back to research on the osint launch');
+    assert.ok(cur().container.querySelector('.epr-back-research') === null, 'no Back to research on the osint launch');
 });
 
 test('Esc and Close are a normal exit with no minigame_failed', () => {
@@ -619,13 +619,13 @@ test('a facilitated episode shows each stage prompt and pauses between stages', 
     assert.ok(cur().container.querySelector('.epr-root.epr-facilitated'));
     // the prompt goes in as text
     assert.ok(panelText().includes('Who would <i>you</i> target first?'));
-    assert.equal(cur().container.querySelector('.epr-facilitator i'), null);
+    assert.ok(cur().container.querySelector('.epr-facilitator i') === null);
 
     click('.epr-start');
     assert.equal(epState().stage, 'osint');
     assert.equal(epState().paused, true);
     assert.ok(cur().container.querySelector('.epr-pause'));
-    assert.equal(cur().container.querySelector('.epr-launch'), null, 'no launch while paused');
+    assert.ok(cur().container.querySelector('.epr-launch') === null, 'no launch while paused');
     assert.ok(panelText().includes('Talk it over.'));
     assert.ok(panelText().includes('Who would <i>you</i> target first?'), 'the pause repeats the finished stage prompt');
     resume();
@@ -706,7 +706,7 @@ test('a facilitated debrief with the real view hides the score; an unfacilitated
         setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
         startEpisodeRunner(kiosk(ep.id), { deps: realViews });
         if (facilitated) assert.ok(panelText().includes('Do this one on your own.'));
-        else assert.equal(cur().container.querySelector('.epr-facilitator'), null, 'no prompts unless facilitated');
+        else assert.ok(cur().container.querySelector('.epr-facilitator') === null, 'no prompts unless facilitated');
         click('.epr-launch');
         cur().gameResult = result;
         cur().complete(true);
@@ -740,7 +740,7 @@ test('round-1 fix E1: an unfacilitated debrief hides the score when the host hid
         assert.doesNotMatch(text, /Round score/, 'no round score when results are hidden');
         assert.doesNotMatch(text, /Reported \d+%/, 'no reported percentage when results are hidden');
         assert.doesNotMatch(text, /\d+%/, 'no percentage figure at all');
-        assert.equal(cur().container.querySelector('.aw-card-score'), null, 'no per-message score');
+        assert.ok(cur().container.querySelector('.aw-card-score') === null, 'no per-message score');
     } finally {
         delete window.breakEscapeConfig;
     }
@@ -1037,7 +1037,7 @@ test('defend intro: strings.defendIntro replaces the line; without it the defaul
     setup(authored, { [M.stateKey(authored.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     open(authored);
     assert.equal(cur().container.querySelector('.epr-text').textContent, 'Now read the <b>queue</b> as Tom would.');
-    assert.equal(cur().container.querySelector('.epr-text b'), null, 'text, not HTML');
+    assert.ok(cur().container.querySelector('.epr-text b') === null, 'text, not HTML');
     assert.equal(cur().container.querySelector('.epr-launch').textContent, 'Open the inbox', 'the button still fits the set');
 
     // E5-like defendOnly run on a page set: no inbox wording

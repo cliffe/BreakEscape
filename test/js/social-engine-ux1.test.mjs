@@ -319,9 +319,9 @@ test('the concern form shows its guidance under the feedback once, and not again
     const first = proto._feedback.call(fake, 'good');
     assert.ok(first.querySelector('.cf-guidance'));
     const second = proto._feedback.call(fake, 'good');
-    assert.equal(second.querySelector('.cf-guidance'), null);
+    assert.ok(second.querySelector('.cf-guidance') === null);
     // on screen already (the intro): not repeated
     const fresh = { config: { guidance: 'Tell the manager.' }, stageEl: document.createElement('div') };
     fresh.stageEl.innerHTML = '<p class="cf-guidance">Tell the manager.</p>';
-    assert.equal(proto._feedback.call(fresh, 'good').querySelector('.cf-guidance'), null);
+    assert.ok(proto._feedback.call(fresh, 'good').querySelector('.cf-guidance') === null);
 });

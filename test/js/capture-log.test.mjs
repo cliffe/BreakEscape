@@ -346,7 +346,7 @@ test('filing follows the inventory: removed items leave, the holder arriving lat
     await openDevice();
     assert.deepEqual(keysIn('findings'), ['item:cable_capture']);
     removeFromInventory(held('cable_capture'));
-    assert.equal(device().root.querySelector('[data-section="findings"]'), null, 'a removed item leaves the device');
+    assert.ok(device().root.querySelector('[data-section="findings"]') === null, 'a removed item leaves the device');
     await add(FINDING);
     removeFromInventory(held('capture_log'));
     assert.equal(hidden(held('cable_capture')), false, 'the holder leaving shows its items again');
@@ -590,7 +590,7 @@ test('K3d: the Captures section is hidden when it has no row; without revealSecr
     await openDevice();
     await settle(5);
     assert.deepEqual(headings(), ['Sign-ins']);
-    assert.equal(device().root.querySelector('[data-section="captures"]'), null);
+    assert.ok(device().root.querySelector('[data-section="captures"]') === null);
     assert.equal(banner('signins'), rows.captureBannerText(false));
     assert.doesNotMatch(device().root.textContent, /Facilities!7/);
 });
