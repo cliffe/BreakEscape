@@ -3929,7 +3929,11 @@ def check_common_issues(json_data, valid_item_types = nil)
                   has_effect = phone_chat_trigger || mapping['setGlobal'] || mapping['sendTimedMessage'] ||
                                mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim'] ||
                                mapping['unlockDoor'] || mapping['bark'] || mapping['sendEmail']
-                  unless has_effect
+                  # A mapping retired in place (a "Retired ..." _comment and a condition that can never be
+                  # true) is an inert slot kept so later mappings keep their once-only index: not a defect.
+                  retired_slot = mapping['_comment'].to_s.start_with?('Retired') &&
+                                 mapping['condition'].to_s.include?('retired_')
+                  unless has_effect || retired_slot
                     issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, unlockAim, unlockDoor, bark or phone-chat trigger). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
                   end
                 end
