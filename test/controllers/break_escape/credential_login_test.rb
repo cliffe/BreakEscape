@@ -228,6 +228,15 @@ module BreakEscape
       assert_equal 'lena', state['sessions']['lena_pc']['id']
     end
 
+    test 'a non-keycard credential item whose key_id equals a revoked card id still signs in' do
+      build('inventory' => [KS.held('lena_rdp_file').merge('key_id' => CARD_ID)],
+            'globalVariables' => { Game::REVOKED_CARDS_GLOBAL => [CARD_ID] })
+      with_foothold
+      body = cred_login('lena_pc', 'lena_rdp', foothold: OFFICE)
+      assert_response :success, response.body
+      assert_equal 'credential', body['via']
+    end
+
     test 'a password credential is unaffected by a revoked card' do
       build_with_keycard([CARD_ID])
       body = sign_in('jake_pc', 'jbrooks', KS::JAKE_PASSWORD)

@@ -596,7 +596,9 @@ export class Keyring {
 
         // A cancelled keycard (left-card consequence, 3.3b) is refused as a reader refuses it: the
         // server drops its entry too, but this gives the door's wording rather than "no longer works"
-        const cardId = data.card_id || (typeof w.lockRef === 'function' ? w.lockRef(data) : null);
+        // Only a keycard carries a card id, as the door checks (and the server) read it.
+        const cardId = data.type !== 'keycard' ? null
+            : data.card_id || (typeof w.lockRef === 'function' ? w.lockRef(data) : null);
         if (cardId && w.isCardRevoked?.(cardId)) {
             try { w.playUISound?.('reject'); } catch (e) { /* no sound layer */ }
             try { w.gameAlert?.(`${data.name || 'This card'} has been deactivated. The reader rejects it.`, 'error', 'Card cancelled', 4000, { plainText: true }); } catch (e) { /* no notification layer */ }

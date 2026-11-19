@@ -181,6 +181,16 @@ test('a cancelled keycard (revoked_card_ids) is refused with the reader wording 
     assert.equal(opened.length, 0, 'no desktop');
 });
 
+test('a non-keycard item whose card_id is revoked is not treated as a card and still connects', async () => {
+    setup();
+    window.isCardRevoked = (id) => (window.gameState.globalVariables.revoked_card_ids || []).includes(id);
+    window.gameState.globalVariables.revoked_card_ids = ['clerk_card'];
+    const file = { scenarioData: { ...ITEM.scenarioData, card_id: 'clerk_card' } };
+    const r = await window.keyring.connect(file);
+    assert.notEqual(r.outcome, 'revoked');
+    assert.equal(posts().length, 1, 'signed in by POST');
+});
+
 test('an unrevoked keycard, and a revoked id for another card, still connect', async () => {
     setup();
     window.isCardRevoked = (id) => (window.gameState.globalVariables.revoked_card_ids || []).includes(id);

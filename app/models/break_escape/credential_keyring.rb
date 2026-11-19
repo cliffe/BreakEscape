@@ -70,7 +70,13 @@ module BreakEscape
                     data['type'].to_s == def_type &&
                     data['id'].to_s == def_id
 
-        card_id = data['card_id'].presence || ItemIdentity.lock_ref(data) || ItemIdentity.lock_ref(inv)
+        # Resolved as Game#held_keycard_ref_ids resolves it, and only for a keycard: the door checks
+        # read no card id from any other item type, so a file or key whose opens_lock/key_id happens
+        # to equal a cancelled card's id is never refused here either.
+        card_id = if def_type == 'keycard'
+                    inv['card_id'].presence || data['card_id'].presence ||
+                      ItemIdentity.lock_ref(data) || ItemIdentity.lock_ref(inv)
+        end
         return :held unless card_id && revoked.include?(card_id.to_s)
 
         state = :revoked
