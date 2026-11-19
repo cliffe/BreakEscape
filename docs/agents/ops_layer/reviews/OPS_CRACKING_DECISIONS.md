@@ -87,3 +87,13 @@ Plan: `docs/achitechture/OPS_CRACKING_PLAN.md`. Review: `OPS_CRACKING_R1.md`.
 - F3 fixed: the `passwordPattern` backing check takes the account's room NPC (an `accountOnly` one included) and is skipped when none has `creds.password`.
 - F4 not applied: it needs a new validator warning, not a one-line change; the loss is a missed fact, never a wrongly granted one.
 - F5 fixed: one sentence in section 5 says `Api::GamesController#inventory` is unrouted and passes no `fact_source`.
+
+## Round 3 decisions applied (2026-11-19)
+
+- R3-3 a: section 15 question 1 removed; section 1 states the 60 s real-time wait per salted guess as a design fact, with the reason the run count and batch-only options were dropped.
+- R3-4 a: section 15 question 2 removed; section 4 states `common` is recipe-only, with the reason. Section 15 now reads "None."
+- R3-4 note: optional `crack.difficulty` (`easy`/`medium`/`hard`) added on the hash record's recipe only (section 4), setting `salted`/`crackSeconds` defaults (easy unsalted; medium salted 60 s; hard salted 120 s) and a guessable fact-count band (1 / 2 / 3-4) checked as a validator warning; written fields override; it supplies no facts, does not change the class and adds no state.
+- Shared table `lib/break_escape/crack_difficulty.rb` (`CrackDifficulty.resolve`) used by server and validator; token and wait read the resolved salt (section 5); unknown difficulty fails closed with `no_recipe`; difficulty never reaches the browser (section 7); no state key (section 8).
+- Section 9: validator rules (enum, `crackSeconds` against resolved salt, fact-band warning), schema enum, graph edge label "crack (hard)".
+- Sections 3, 10, 11, 12: C1 row, unchanged-scenario note, `crack_difficulty_test.rb` and test rows in the row, validator and route tests, feature scenario record per difficulty, build step and new-file list.
+- No section 14 request: the privilege plan's examples need no change, since difficulty is optional.
