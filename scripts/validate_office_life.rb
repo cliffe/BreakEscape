@@ -852,8 +852,10 @@ module ValidateOfficeLife
         own_gate = pool.is_a?(Hash) ? pool['requireGlobal'] : nil
         base = scen[topic]
         base_gate = base.is_a?(Hash) ? base['requireGlobal'] : nil
+        # A warning, not an error: an ungated NPC line beside a gated scenario pool is a supported
+        # pattern (scenarios/test_chatter_pool_gate demonstrates it). Kit pools are errors below.
         if base_gate && own_gate != base_gate
-          issues << "❌ ERROR: office life V13: NPC '#{n['id']}' chatter '#{topic}' escapes the scenario pool's gate. The scenario pool " \
+          issues << "⚠️ WARNING: office life V13: NPC '#{n['id']}' chatter '#{topic}' escapes the scenario pool's gate. The scenario pool " \
                     "has requireGlobal #{base_gate.to_json}, but this pool #{own_gate ? "has #{own_gate.to_json}" : 'is not in object form with a requireGlobal'}, " \
                     'so it speaks while the scenario pool is shut. Use { "lines": [...], "requireGlobal": <the same gate> }.'
         end

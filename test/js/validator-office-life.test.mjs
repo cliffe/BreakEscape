@@ -507,7 +507,7 @@ test('V12: a gate on a security pool (login_aloud, usb_refused, work_fail_*, wk_
 
 // ── V13 ────────────────────────────────────────────────────────────────────────────────────
 
-test('V13: an NPC pool that escapes the scenario pool gate is an error; a matching gate is not', { skip }, () => {
+test('V13: an NPC pool that escapes the scenario pool gate is a warning; a matching gate is not', { skip }, () => {
     const gate = { kit_quiet: false };
     const s = scenario({ npcs: [
         worker({ id: 'plain', chatter: { coffee: ['Fresh pot.'] } }),
@@ -521,7 +521,7 @@ test('V13: an NPC pool that escapes the scenario pool gate is an error; a matchi
     } });
     const out = check(s);
     const errs = out.filter(l => l.includes('V13'));
-    assert.ok(errs.every(l => l.startsWith('❌ ERROR')) === true, errs.join('\n'));
+    assert.ok(errs.every(l => l.startsWith('⚠️ WARNING')) === true, errs.join('\n'));
     assertHas(out, "V13: NPC 'plain' chatter 'coffee' escapes");
     assertHas(out, "V13: NPC 'nogate' chatter 'coffee' escapes");
     assertHas(out, "V13: NPC 'other' chatter 'coffee' escapes");
@@ -536,6 +536,8 @@ test('V13: an NPC pool under a kit_ key needs requireGlobal { kit_quiet: false }
         worker({ id: 'ok', chatter: { kit_c: { lines: ['Line.'], requireGlobal: { kit_quiet: false } } } })
     ], extra: { globalVariables: { kit_quiet: false } } });
     const out = check(s);
+    const kitLines = out.filter(l => l.includes('is a kit pool'));
+    assert.ok(kitLines.length === 2 && kitLines.every(l => l.startsWith('❌ ERROR')) === true, kitLines.join('\n'));
     assertHas(out, "V13: NPC 'bad' chatter 'kit_a' is a kit pool");
     assertHas(out, "V13: NPC 'wrong' chatter 'kit_b' is a kit pool");
     assert.ok(!has(out, "V13: NPC 'ok'") === true);
