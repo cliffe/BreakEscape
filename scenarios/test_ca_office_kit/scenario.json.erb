@@ -60,8 +60,37 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca01",
-    "kit_e1_out": false
+    "kit_e1_out": false,
+    "kit_e1_walk": false,
+    "kit_e1_agn_there": false,
+    "kit_e1_gwen_back": false,
+    "kit_e1_note_up": false,
+    "kit_e1_note_choice": "",
+    "kit_e1_closed": false,
+    "kit_e1_t_report": false,
+    "kit_e1_t_other": false,
+    "kit_e1_timer_seen": false,
+    "kit_e1_combo": false,
+    "kit_e1_combo_arrived": false,
+    "kit_e1_combo_end": false,
+    "kit_e1_screen_choice": ""
   },
+  "resources": {
+    "kit_e1_system": {
+      "name": "Supplier portal",
+      "kind": "intranet",
+      "offWhen": "kit_e1_out"
+    }
+  },
+  "timers": [
+    { "id": "kit_e1_t_walk", "startOnGlobal": "kit_e1_out", "delayMs": 1000, "setGlobal": { "kit_e1_walk": true } },
+    { "id": "kit_e1_t_event", "startOnGlobal": "kit_e1_out", "delayMs": 2000, "actions": [ { "type": "emit_event", "event_name": "kit_e1_timer_event" } ] },
+    { "id": "kit_e1_t_note", "startOnGlobal": "kit_e1_out", "delayMs": 6000, "condition": "!globalVars.kit_e1_note_up", "setGlobal": { "kit_e1_note_up": true } },
+    { "id": "kit_e1_t_combo", "startOnGlobal": "kit_e1_out", "delayMs": 25000, "setGlobal": { "kit_e1_combo": true } },
+    { "id": "kit_e1_t_combo_end", "startOnGlobal": "kit_e1_out", "delayMs": 40000, "setGlobal": { "kit_e1_combo_end": true } },
+    { "id": "kit_e1_t_report", "startOnGlobal": "kit_e1_closed", "delayMs": 3000, "condition": "globalVars.kit_e1_note_choice === 'report'", "setGlobal": { "kit_e1_t_report": true } },
+    { "id": "kit_e1_t_other", "startOnGlobal": "kit_e1_closed", "delayMs": 3000, "condition": "globalVars.kit_e1_note_choice !== 'report' && globalVars.kit_e1_note_choice !== ''", "setGlobal": { "kit_e1_t_other": true } }
+  ],
   "chatter": {
     "kit_brightwell": {
       "lines": ["Busy inbox today.", "Kettle's on in a sec.", "Audit week again."],
@@ -464,7 +493,7 @@
           "spriteSheet": "female_blowse_v2",
           "spriteTalk": "assets/characters/female_blowse_talk.png",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
-          "storyPath": "scenarios/ink/generic-npc.json",
+          "storyPath": "scenarios/_office_kit/ink/ep_host_ambient.json",
           "currentKnot": "start",
           "eventMappings": [
             {
@@ -514,6 +543,20 @@
               "onceOnly": true,
               "setGlobal": { "kit_e1_out": true },
               "bark": "Have you got a minute? Someone in finance just took a call like that one."
+            },
+            {
+              "eventPattern": "kit_e1_timer_event",
+              "condition": "globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_timer_seen": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_closed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "bark": "Quick word about that portal note.",
+              "targetKnot": "kit_e1_host_note"
             }
           ]
         },
@@ -532,8 +575,28 @@
           "needsRooms": ["training_room"],
           "needsSpeed": 90,
           "chatterCooldownMin": 5,
-          "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } },
-          "chatter": { "kit_brightwell": { "lines": ["Morning, all.", "Tea round shortly?"], "requireGlobal": { "kit_quiet": false } } }
+          "needs": { "caffeine": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "chatter": { "kit_brightwell": { "lines": ["Morning, all.", "Tea round shortly?"], "requireGlobal": { "kit_quiet": false } } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": { "set": { "caffeine": 10 } }
+            },
+            {
+              "eventPattern": "npc_use_started:kit_coffee",
+              "condition": "data.npcId === 'kit_gwen_pritchard' && globalVars.kit_e1_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "bark": "Coffee first, then I'll look at that invoice query."
+            },
+            {
+              "eventPattern": "npc_returned_post:kit_gwen_pritchard",
+              "condition": "globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_gwen_back": true }
+            }
+          ]
         },
         {
           "id": "kit_agnieszka_duda",
@@ -550,8 +613,135 @@
           "needsRooms": ["training_room"],
           "needsSpeed": 90,
           "chatterCooldownMin": 5,
-          "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
-          "chatter": { "kit_brightwell": { "lines": ["Long week.", "Any biscuits left?"], "requireGlobal": { "kit_quiet": false } } }
+          "needs": { "caffeine": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 }, "thirst": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "chatter": { "kit_brightwell": { "lines": ["Long week.", "Any biscuits left?"], "requireGlobal": { "kit_quiet": false } } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_walk",
+              "condition": "value === true",
+              "onceOnly": true,
+              "patrolOverride": { "targetTile": { "x": 4, "y": 3 }, "speed": 90 }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_agnieszka_duda",
+              "condition": "data.owner !== 'needs' && globalVars.kit_e1_combo !== true && globalVars.kit_e1_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_agn_there": true },
+              "bark": "The reporting poster has gone up by the board."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_agn_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_combo",
+              "condition": "value === true",
+              "onceOnly": true,
+              "patrolOverride": { "targetTile": { "x": 5, "y": 5 }, "speed": 90 },
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "npc_arrived:kit_agnieszka_duda",
+              "condition": "data.owner !== 'needs' && globalVars.kit_e1_combo === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_combo_arrived": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_combo_arrived",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_combo_end",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        {
+          "id": "kit_priya_nair",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": { "x": 5, "y": 6 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/priya_nair_ambient.json",
+          "currentKnot": "start",
+          "needsHome": "kit_e1_pc2",
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "needs": { "work": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "workNeeds": ["kit_e1_system"],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": { "set": { "work": 10 } }
+            },
+            {
+              "eventPattern": "npc_use_failed:kit_priya_nair",
+              "condition": "data.objectId === 'kit_e1_pc2' && globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_note_up": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_note_up",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "The portal is refusing me, and there's a note on my screen.",
+              "targetKnot": "kit_e1_request"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_priya_nair",
+              "condition": "globalVars.kit_e1_note_up === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_closed": true }
+            }
+          ]
+        },
+        {
+          "id": "kit_sam_okoro",
+          "displayName": "Sam Okoro",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 6 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/sam_okoro_ambient.json",
+          "currentKnot": "start",
+          "needsHome": "kit_e1_pc",
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "needs": { "rest": { "decayPerMin": 0.01, "urgentAt": 40, "initial": 90 } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": { "set": { "rest": 10 } }
+            },
+            {
+              "eventPattern": "workstation_owner_returned:kit_e1_pc",
+              "condition": "globalVars.kit_e1_out === true",
+              "onceOnly": true,
+              "bark": "Right, back at my desk.",
+              "targetKnot": "kit_e1_screen"
+            }
+          ]
         }
       ],
       "objects": [
@@ -599,6 +789,76 @@
           "interactable": false,
           "observations": "A water cooler by the far wall.",
           "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 6, "useFrom": { "dx": 0, "dy": -1 } }
+        },
+        {
+          "type": "notes1",
+          "id": "kit_e1_poster",
+          "name": "Reporting poster",
+          "sprite": "aw_poster_report_brightwell1",
+          "position": { "x": 4.5, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_e1_out",
+          "observations": "A poster about reporting a suspicious call or email."
+        },
+        {
+          "type": "notes1",
+          "id": "kit_e1_note",
+          "name": "Note on Priya's screen",
+          "sprite": "notes4",
+          "position": { "x": 6.5, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_e1_note_up",
+          "observations": "A note stuck to the screen: the supplier portal is not letting anyone in."
+        },
+        {
+          "type": "leather_sofa1",
+          "id": "kit_e1_sofa",
+          "name": "Sofa",
+          "position": { "x": 5.5, "y": 7.5 },
+          "takeable": false,
+          "affordance": { "satisfies": "rest", "restores": 70, "useSeconds": 6 },
+          "observations": "A sofa for a short break."
+        },
+        {
+          "type": "pc",
+          "id": "kit_e1_pc",
+          "name": "Sam's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 3.5, "y": 5.5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "workstation": true,
+          "owner": "kit_sam_okoro",
+          "lockChance": 0,
+          "affordance": false,
+          "observations": "Sam's PC, signed in.",
+          "spriteVariants": [{ "condition": "globalVars.kit_e1_out === true", "value": "pc12" }],
+          "requiresItem": "kit_e1_gate_item",
+          "requiresItemHint": "Sam's session is open. It is his to lock when he is back.",
+          "triggerOnInteract": []
+        },
+        {
+          "type": "pc",
+          "id": "kit_e1_pc2",
+          "name": "Priya's PC",
+          "sprite": "pc_desktop",
+          "position": { "x": 6.5, "y": 5.5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "workstation": true,
+          "owner": "kit_priya_nair",
+          "lockChance": 0,
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 3, "useFrom": { "dx": 0, "dy": 1 } },
+          "observations": "Priya's PC, open on the supplier portal.",
+          "requiresItem": "kit_e1_gate_item",
+          "requiresItemHint": "Priya's PC. It is hers.",
+          "triggerOnInteract": []
         }
       ]
     }
