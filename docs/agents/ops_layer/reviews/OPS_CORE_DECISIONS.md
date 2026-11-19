@@ -28,3 +28,16 @@ entries below took a different fix from the one suggested.
 | m20 | `item` split into `item` (id) and `itemType`; a session record without `access` reads as `user` until S5a's helper exists | Lets the schema cross-reference the id and lets S3 test a step up alone |
 | m21 | Already closed | 9.1 and 9.2 had the `evidence` and `alert` rows |
 | Open questions | Four kept, not three: discovery enforced, cost of the loop, technique session against sign-in rules (keyboard), the word `technique` | The orchestrator asked for the word to stay with the user |
+
+Round 2 (`OPS_CORE_R2.md`). The major, all ten minors and the three nits were acted on. The
+entries below took a different fix from the one suggested.
+
+| Finding | Decision | Why |
+|---|---|---|
+| M-new-1 | A new plain type `technique_card`, required on every card, with a placeholder PNG copied from `qr_card.png`; not an existing card type | A type of its own cannot collide with present or future type-keyed code, and it lets the validator refuse `itemType: "technique_card"` |
+| m-new-5 | Authored `label` required with `itemType` or `global`, not a fixed engine line per kind | A fixed line tells the player nothing about what to fetch |
+| m-new-6 | `no_grant` moved to just after the status check and kept quiet; `needs` on a weakness with no `grants` is a warning only where the scenario has cards; no "Report only" mark on the finding | The S2 scenario has needs and no grants by design and must stay unchanged after S3; the refusal text says plainly that nothing can be gained |
+| m-new-7 | The `itemType` overlap with cards is a validator error (`itemType: "technique_card"`), not a warning | With one fixed card type the overlap can be refused outright |
+| m-new-4 | The no-route folder refusal at a technique session stays 403 `unreachable`; only the keyboard desktop gets `network_only` | The client already keeps its copy on `unreachable` |
+| m-new-9 | Put to the user as question 5; body written to "count it, with a validator warning" | Dropping technique sessions from `signedInPcs` would stop network work feeding keyring `session` proofs |
+| Log plan 13.7 | A quiet `technique_refused` saves only when the helper's result is `stored?`, where 13.7 says the route saves on every 422 | Orchestrator ruling; raised back in cross-plan request 8 |
