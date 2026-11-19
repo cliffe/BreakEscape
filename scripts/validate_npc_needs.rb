@@ -880,6 +880,17 @@ module ValidateNpcNeeds
     ids = npcs.map { |_r, n| n['id'] }
     groups = npcs.flat_map { |_r, n| Array(n.is_a?(Hash) ? n.dig('needsCompany', 'groups') : nil) }.uniq
     globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    # npc_exchange_heard carries { knot, ownerId, npcIds, objectId } and fires at the first overheard
+    # line: a condition reading data.complete is always false (EXCHANGE_HEARD R2 m3)
+    npcs.each do |_r, n|
+      next unless n.is_a?(Hash)
+
+      Array(n['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['eventPattern'].to_s.start_with?('npc_exchange_heard') && m['condition'].to_s.include?('data.complete')
+
+        issues << "⚠️ WARNING: NPC '#{n['id']}' mapping '#{m['eventPattern']}' reads data.complete, but npc_exchange_heard carries no complete field; it fires at the first overheard line, so the condition is never true."
+      end
+    end
     npcs.each do |_r, n|
       next unless n.key?('exchanges')
 

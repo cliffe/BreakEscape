@@ -748,8 +748,8 @@ during the walk home (exists). Player-facing behaviour:
   going: the needs system reads the flag only when it chooses an exchange. Ink, `requireGlobal`
   gates and mapping conditions do see it from the first heard line. The flag goes up with the next
   sync or the page-hide flush, so once per game survives a normal reload (a crash before either
-  can still replay it). The event carries no `complete` field; the finish only logs `exchange_heard`
-  (`complete` true or false) or `exchange_cut`. It is never played again, so the lines after a heard
+  can still replay it). The event carries no `complete` field; the finish logs `exchange_heard { complete }`
+  (true, or false after a heard cut, which also logs `exchange_cut`). It is never played again, so the lines after a heard
   cut are lost. Phone calls keep the stricter rule: a call is heard only when every line reached the
   player and it ran to the end, so a reload mid-call replays it. No line reached the player (cut, or played to the end to
   an empty room, logged `exchange_unheard { knot, of }`): unplayed, and a later meeting in earshot

@@ -57,6 +57,8 @@ const standNear = async (objId) => { const r = await page.evaluate((o) => window
 const playerRoom = () => page.evaluate(() => window.currentPlayerRoom);
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const events = () => page.evaluate(() => window.__s4.slice());
+// The needs decision log: exchange_heard { knot, complete } and exchange_cut come from here, not from the event (it carries no complete field)
+const needsLog = () => page.evaluate(() => window.__test.needs.log().filter(e => /^exchange_(heard|cut)$/.test(e.ev)).map(e => ({ ev: e.ev, knot: e.knot, complete: e.complete, heard: e.heard, heardLines: e.heardLines })));
 const npc = (id) => page.evaluate((id) => { const st = window.npcNeedsSystem.getState(id) || {}; const b = window.npcBehaviorManager && window.npcBehaviorManager.getBehavior(id); const sp = b && b.sprite; return { mode: st.mode, phase: st.job && st.job.phase, target: st.job && st.job.targetId, x: sp ? +sp.x.toFixed(0) : null, y: sp ? +sp.y.toFixed(0) : null, caffeine: st.levels && st.levels.caffeine != null ? +st.levels.caffeine.toFixed(0) : null, thirst: st.levels && st.levels.thirst != null ? +st.levels.thirst.toFixed(0) : null }; }, id);
 const tasks = () => page.evaluate(() => Object.values((window.objectivesManager && window.objectivesManager.taskIndex) || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 const hudState = () => page.evaluate(() => ({
@@ -72,7 +74,7 @@ function bothUsing(evs, objectId) {
     return uses;
 }
 // E7/E9 from captured npc_chatted/exchange events.
-function analyse(evs) {
+function analyse(evs, nlog = []) {
     const chat = evs.filter(e => e.ev.startsWith('npc_chatted:'));
     const poolLines = chat.filter(e => e.data.line && !e.data.picture && !e.data.exchange);
     const poolUnheard = poolLines.filter(e => !e.data.overheard);
@@ -80,11 +82,19 @@ function analyse(evs) {
     // per-knot heard-line count from the exchange chat turns
     const byKnot = {};
     for (const e of chat.filter(c => c.data.exchange)) { const k = e.data.exchange; byKnot[k] = byKnot[k] || { turns: 0, overheard: 0 }; byKnot[k].turns++; if (e.data.overheard) byKnot[k].overheard++; }
-    const e9 = exHeard.map(e => { const k = e.data.knot; const b = byKnot[k] || { turns: 0, overheard: 0 }; return { knot: k, complete: e.data.complete, heardLines: b.overheard, turnsSeen: b.turns, marked_heard_with_0_heard: e.data.complete && b.overheard === 0 }; });
+    // The event fires at the first overheard line and has no `complete`; the finish logs exchange_heard { complete }.
+    // Check: an event whose knot has no overheard line at or before it (clockMs) is marked heard with none heard.
+    const e9 = exHeard.map(e => {
+        const k = e.data.knot; const b = byKnot[k] || { turns: 0, overheard: 0 };
+        const firstHeardAt = chat.filter(c => c.data.exchange === k && c.data.overheard).reduce((m, c) => Math.min(m, c.clockMs), Infinity);
+        const fin = nlog.find(l => l.ev === 'exchange_heard' && l.knot === k);
+        const cut = nlog.some(l => l.ev === 'exchange_cut' && l.knot === k);
+        return { knot: k, complete: fin ? fin.complete : null, cut, heardLines: b.overheard, turnsSeen: b.turns, marked_heard_with_0_heard: b.overheard === 0 || !(firstHeardAt <= e.clockMs) };
+    });
     return {
         pool_lines_total: poolLines.length, pool_lines_spent_unheard_E7: poolUnheard.length,
         pool_unheard_samples: poolUnheard.slice(0, 6).map(e => ({ clock_s: +(e.clockMs / 1000).toFixed(1), who: e.data.speakerId, line: e.data.line })),
-        exchanges_heard: exHeard.map(e => ({ knot: e.data.knot, complete: e.data.complete })),
+        exchanges_heard: exHeard.map(e => ({ knot: e.data.knot, complete: (nlog.find(l => l.ev === 'exchange_heard' && l.knot === e.data.knot) || {}).complete ?? null })),
         E9_exchange_heard_detail: e9
     };
 }
@@ -230,7 +240,7 @@ if (beat === 'first_visit') {
         sat: evs.filter(e => /^npc_sat/.test(e.ev)).map(e => e.ev),
         tasks: await tasks(),
         ...stepFive(evs),
-        ...analyse(evs)
+        ...analyse(evs, await needsLog())
     };
 }
 
@@ -436,7 +446,7 @@ if (beat === 'schedule') {
         minutes, start_ms: start,
         use_starts: evs.filter(e => e.ev.startsWith('npc_use_started:')).map(e => ({ clock_min: +((e.clockMs - start) / 60000).toFixed(2), npc: e.data.npcId, obj: e.ev.split(':')[1] })),
         microwave_used: evs.filter(e => e.ev === 'npc_used:staff_microwave').map(e => +((e.clockMs - start) / 60000).toFixed(2)),
-        tasks: await tasks(), ...analyse(evs)
+        tasks: await tasks(), ...analyse(evs, await needsLog())
     };
 }
 

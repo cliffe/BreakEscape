@@ -6,7 +6,7 @@ Branch fix/exchange-heard-on-first-line. Keyless server on port 3094, m04_critic
 
 | Case | Game | Result |
 |---|---|---|
-| No reload | 9694 | `heard_ex_not_on_the_rota` was true at line 1. All four lines played. `npc_exchange_heard` fired once at the finish. |
+| No reload | 9694 | `heard_ex_not_on_the_rota` was true at line 1. All four lines played. `npc_exchange_heard` fired once at the finish. (This row predates review round 1, which moved the event to the first overheard line; the line-1 event proof follows.) |
 | Reload 1.5 s after line 1 | 9707 | Flag true before the reload and true after it (read back from the server). Over the next 200 s of game time no line of the exchange played again (a different exchange, `ex_stay_out_of_the_halls`, played instead). |
 | Reload 1 s after line 4 began, before the finish | 9708 | All four lines had played, `npc_exchange_heard` not yet fired, flag true. After the reload the flag was true and the exchange did not play again in 200 s. |
 

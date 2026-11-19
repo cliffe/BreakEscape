@@ -3103,13 +3103,17 @@ export class NPCNeedsSystem {
         if (!c.queue && B.job && B.job.useUntil < end) B.job.useUntil = end;
     }
 
-    /** Record an exchange or call as heard: the session set and the saved scalar global heard_<knot>. Idempotent. */
+    /**
+     * Record an exchange or call as heard: the session set and the saved scalar global heard_<knot>.
+     * Idempotent; returns true only when this call marked it, so a caller emits its event on that.
+     */
     _markExchangeHeard(knot) {
-        if (this._exPlayed.has(knot)) return;
+        if (this._exPlayed.has(knot)) return false;
         this._exPlayed.add(knot);
         if (typeof this.world.setGlobal === 'function') {
             try { this.world.setGlobal(`heard_${knot}`, true); } catch (e) { /* keep the session flag */ }
         }
+        return true;
     }
 
     /**
@@ -3118,7 +3122,8 @@ export class NPCNeedsSystem {
      * NPC_NEEDS_SYSTEM.md 5.6a): the player overheard at least one of its lines, whether it played to
      * the end or was cut. Heard: heard_<knot> (a global: one key per knot, set once) and
      * npc_exchange_heard:<knot>, both at the first overheard line (_tickChats), never played again;
-     * this finish only logs exchange_heard or exchange_cut. No line reached the player (cut, or
+     * this finish logs exchange_heard { complete } (a heard cut
+     * also logs exchange_cut first). No line reached the player (cut, or
      * played to the end to an empty room, logged exchange_unheard): unplayed, so a later meeting in
      * earshot plays it from the start. c.exDone stays true either way: not again in this meeting.
      */
@@ -4571,8 +4576,7 @@ export class NPCNeedsSystem {
                 };
                 this._emit(`npc_chatted:${oid}`, data);
                 if (data.overheard) this._emit(`npc_overheard:${l.speakerId}`, { ...data });
-                if (firstHeard) {
-                    this._markExchangeHeard(data.exchange);
+                if (firstHeard && this._markExchangeHeard(data.exchange)) {
                     this._emit(`npc_exchange_heard:${data.exchange}`, { knot: data.exchange, ownerId: c.ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId });
                 }
                 c.speaker = partnerId;

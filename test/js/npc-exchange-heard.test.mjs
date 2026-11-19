@@ -598,10 +598,61 @@ test('sync: a heard cut writes heard_<knot> once (line 1), not again at the fini
     const writes = [];
     const inner = o.w.world.setGlobal;
     o.w.world.setGlobal = (name, value) => { writes.push([name, value]); inner(name, value); };
+    o.until(() => o.exLines().length === 1, 30000, 'line one');
+    // pinned at line 1, before the cut: the old code wrote and emitted only at the finish
+    assert.deepEqual(writes, [['heard_ex_parcel', true]], 'written at line 1');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'event at line 1');
+    assert.equal(o.evs('exchange_cut').length, 0, 'no cut yet');
     o.until(() => o.exLines().length === 2, 30000, 'two lines');
     o.w.setChat('bob');
     o.sys.step(NEEDS_TICK_MS * 2);
     assert.equal(o.evs('exchange_cut').length, 1);
     assert.deepEqual(writes, [['heard_ex_parcel', true]]);
     assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
+});
+
+test('first overheard line is the second: no flag or event after line 1, both on line 2, in order', () => {
+    let hearing = true;
+    const o = office({ hears: () => hearing });
+    o.sys._speechUntil = 8000;   // the first line waits for the speech lock...
+    o.until(() => o.evs('exchange_started').length === 1, 20000, 'the start');
+    hearing = false;             // ...the player is out of earshot for it...
+    o.until(() => o.exLines().length === 1, 20000, 'line one');
+    assert.equal(o.exLines()[0].data.overheard, false);
+    assert.equal(o.globals.heard_ex_parcel, undefined, 'no flag after an unheard line 1');
+    assert.equal(o.emitted('npc_exchange_heard:').length, 0, 'no event after an unheard line 1');
+    hearing = true;              // ...and back in earshot for the rest
+    o.until(() => o.exLines().length === 2, 20000, 'line two');
+    assert.equal(o.exLines()[1].data.lineId, 'ex_parcel:1');
+    assert.equal(o.globals.heard_ex_parcel, true, 'flag at line 2');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'one event at line 2');
+    const emits = o.w.calls.emits;
+    const chatted = emits.findIndex(e => e.name.startsWith('npc_chatted:') && e.data.lineId === 'ex_parcel:1');
+    const overheard = emits.findIndex(e => e.name.startsWith('npc_overheard:') && e.data.lineId === 'ex_parcel:1');
+    const heardAt = emits.findIndex(e => e.name === 'npc_exchange_heard:ex_parcel');
+    assert.ok(chatted >= 0 && chatted < overheard && overheard < heardAt, 'npc_chatted, npc_overheard, then npc_exchange_heard');
+    o.sys.step(40000);
+    assert.equal(o.exLines().length, LINES.length, 'plays to the end');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'still one event');
+});
+
+// ── validator: a binding that reads data.complete (EXCHANGE_HEARD R2 m3) ─────
+
+test('validator: a npc_exchange_heard mapping that reads data.complete is a warning; one without is not', { skip: skipRuby }, () => {
+    const scenario = {
+        globalVariables: { heard_ex_a: false },
+        rooms: { office: { type: 'room_office', objects: [], npcs: [
+            { id: 'ann', voice: {}, eventMappings: [
+                { eventPattern: 'npc_exchange_heard:ex_a', condition: 'data.complete === true', completeTask: 't1' },
+                { eventPattern: 'npc_exchange_heard:ex_a', completeTask: 't2' },
+                { eventPattern: 'npc_chatted:cooler', condition: 'data.complete === true', completeTask: 't3' }
+            ] },
+            { id: 'bob', voice: {} }
+        ] } }
+    };
+    const issues = ruby('puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))', JSON.stringify(scenario));
+    const hits = issues.filter(s => s.includes('reads data.complete'));
+    assert.equal(hits.length, 1, issues.join('\n'));
+    assert.match(hits[0], /WARNING/);
+    assert.match(hits[0], /NPC 'ann' mapping 'npc_exchange_heard:ex_a'/);
 });
