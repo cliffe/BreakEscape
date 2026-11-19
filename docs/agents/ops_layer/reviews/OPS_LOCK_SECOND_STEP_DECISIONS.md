@@ -137,3 +137,23 @@
 - R2-5 b: section 14 request 2 gains the `/mfa/*` reach call; a new "Open" line notes the existing reach gap for plain carried items, with no scope change.
 - R2-11 a: section 14 marks both existing-code bugs as fixed outside this plan on their own branch.
 - Section 15 renumbered 1 to 6 (old 2, 3, 4, 5, 6, 8); in-body references updated (sections 4, 5.2, 5.3, 5.4, 8, 14).
+
+## R10 fixes (2026-11-19)
+
+- MAJOR-1: wording fix per the orchestrator's ruling. Section 1 now promises "no crafted request skips Gordon's approval"; G3's done-when says a gone item is reached only after a re-add and still needs both checks unless passed; 5.5 gains "Re-adds" naming the four paths (start item, grant, NPC give, room takeable) as best-effort under the cheat-resistance policy, with the record surviving; NPC-give row says a give is the browser's word; new G3 "Re-add after removal" controller row; section 14 "Open" line; section 15 question 1 offers (a) wording only, recommended, or (b) server-only `carriedGone` with storage, delta-sync, tests and scenario costs.
+- MAJOR-2: Rule D is now a path rule, `carried_step_reachable?(object, path)`, triggered when the object or anything on its path is in `carried_step_ids`, so contents of a gated carried object are judged too; runs with Rule C at every exit; new "Gated contents path" row.
+- MAJOR-3: `carried_step_chains` memoises every carrier at or above each carried gated id with its home; leg 1 walks innermost first for held or dropped; leg 2 falls back to the outermost carrier's home. New "Innermost carrier" row with cases (a) briefcase removed, (b) archive removed, (c) both. Case (b) is reachable (the archive is listed in the held briefcase again), which follows the ruling on MAJOR-4 rather than the review's "fails both ways".
+- MAJOR-4: a nested takeable that leaves the inventory goes back to its container, as today (`filter_container_contents`); 5.5 table row says so; old row 935 split into "NPC briefcase" (422/404 kept) and "nested takeable" (listed again, re-answers from the record); validator warning on `remove_item` naming a gated nested takeable.
+- MAJOR-5: leg 2 treats a `nested` carrier as in place and defers to the route's own tests (room, Rule B, `path_unlocked?`, `session_admits?` or the folder route, the share foothold) with their own answers; new "Sign-in desktop in place" row; Copies row extended (desktop copy in reach after the inventory copy is removed; Move case).
+- Take routes: Rule D judges the path above the item being taken only, so a legitimate give, start item or grant add is not refused by its own not-yet-held state. Not in the review; found while redesigning.
+- MINOR-1: validator error on `droppable: true` for a gated declared-grant item; grant row in 5.5 says a dropped grant item resolves nowhere until picked up.
+- MINOR-2: "Where it runs" puts Rules C and D straight after the finder, before `check_container_unlocked`, scope 403s and the take tests; B13f adds `GET /container` and a take; new "Refusal order" row.
+- MINOR-3: section 14 request 2 says the MFA lock form leaves one hook and G1 puts `carried_step_reachable?` in it.
+- MINOR-4: flag-station `itemsHeld` row in 5.5's table; validator walk covers flag stations and errors on `secondStep` there.
+- MINOR-5: validator reads `DEFAULT_HEAL_BY_TYPE` patterns from `consumables.js` once per run; a spec fails on zero or uncompilable patterns (no Ruby mirror exists to compare against).
+- MINOR-6: section 15's six answered questions removed; references at sections 4, 5.2, 5.3, 5.4, 8 and 14 replaced with the decisions (LOCK-2 to LOCK-6, LOCK-8, all a). G1/G2/G3 order was already stated in section 3.
+- MINOR-7: Copies paragraph reads "`copy`, or `both` when the player picks Copy"; table row notes `record_copied_item!` runs only for `copy`.
+- NIT-1: Rule D names `Game#room_unlocked?` and excludes the awareness world room and `npcRouteRooms`.
+- NIT-2: "walks the same homes except profiles and shares, which the scope branches find".
+- NIT-3: B13e uses `GET /container` on the briefcase and `/unlock` plus a take on `board_minutes`; the courier box's `remove_item` names the briefcase by id.
+- NIT-4: drop row says rooms never lock again, so the case is a crafted `player_drop` naming an unopened room.

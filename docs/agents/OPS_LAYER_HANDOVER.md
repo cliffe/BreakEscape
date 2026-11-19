@@ -49,6 +49,9 @@ timer/object-action item adds; revealsFacts in FORGEABLE_ITEM_FIELDS; crackFacts
 keyring_rev; grant_fact in process_flag_rewards; validator tests).
 Bug-fix branch `p-keyring-fix` now has 3 commits (8aac59791 head, from the reviewer); reviewer
 still running tests. When it passes, send the hash to AC0 (LIVE AC0 socket) for a train.
+Core R8 fixes DONE (1996 lines; n6 declined, log key stays `technique`). NEXT SKIN ROUND must
+adopt: range on every discovery network or none (validator), `cli.hosts` keys plain strings ≤64
+chars, `cli` schema rows declared at K3 (core refuses `cli` until then).
 ROUND 3 picks additions: the existing-code gap from cracking R2 B1 (games_controller.rb 3384-3399:
 a client can claim a timer/object-action item at any time with no trigger check); add to the
 bug-fix branch? Then: apply skin's new core requests to core, deltas, cross-plan R6.
