@@ -66,3 +66,18 @@ test('the new global is declared so it syncs', () => {
     const erb = readFileSync(join(root, 'scenarios/m03_ghost_in_the_machine/scenario.json.erb'), 'utf8');
     assert.ok(/"victoria_decision_reached": false/.test(erb), 'not declared');
 });
+
+test('the CyberChef workstation sits on the VM desk, over 64 px edge to edge from the drop-site', () => {
+    const erb = readFileSync(join(root, 'scenarios/m03_ghost_in_the_machine/scenario.json.erb'), 'utf8');
+    const m = erb.match(/"id": "cyberchef_workstation"[\s\S]*?"position": \{ "x": ([\d.]+), "y": ([\d.]+) \}/);
+    assert.ok(m !== null, 'workstation has no explicit position');
+    const ws = { x: Math.round(Number(m[1]) * 32), y: Math.round(Number(m[2]) * 32), w: 24, h: 18 };
+    // Drop-site: conditional_table_items slot in room_zds_servers (sprite top-left 149,202, 23x24 live).
+    const drop = { x: 149, y: 202, w: 23, h: 24 };
+    const gapX = Math.max(0, ws.x - (drop.x + drop.w), drop.x - (ws.x + ws.w));
+    const gapY = Math.max(0, ws.y - (drop.y + drop.h), drop.y - (ws.y + ws.h));
+    assert.ok(Math.hypot(gapX, gapY) > 64, 'one standing spot can reach both (32 px range each)');
+    // Sits on the VM desk (tables layer 206..257 x 139..178) and clear of the lab terminal (y 125..153).
+    assert.ok(ws.x >= 206 && ws.x + ws.w <= 257 && ws.y >= 139 && ws.y + ws.h <= 178, 'off the VM desk');
+    assert.ok(ws.y >= 153, 'overlaps the lab terminal');
+});
