@@ -28,9 +28,9 @@ VAR hub_quiet = false
 - else:
     { kit_defend_done && not kit_ca01_host_said:
         { kit_key_caught:
-            Adaeze Okafor: You spotted that bank-change email in the inbox, so the run paid Harlow's real account, not the one the email asked for. That's the message these go wrong on, and you had it.
+            Adaeze Okafor: You spotted that bank-change email, so the run paid Harlow's real account, not the one the email asked for. That's the one these usually go wrong on, and you had it.
         - else:
-            Adaeze Okafor: That bank-change email was the one to stop. On a busy afternoon a payee change can go onto the supplier file on trust, and then the run pays an account that was never Harlow's.
+            Adaeze Okafor: That bank-change email was the one to stop. It went through, so the run paid an account that was never Harlow's. On a busy afternoon it's an easy one to wave through.
         }
         ~ kit_ca01_host_said = true
     - else:

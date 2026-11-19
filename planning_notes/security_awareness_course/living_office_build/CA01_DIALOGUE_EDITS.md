@@ -296,3 +296,23 @@ test_office_kit test_apply_training_room` 53 OK; `node --test office-kit-quiet-a
 - MISS closes on its own line ("…That one call is what stops this."). "Never sees a penny" now plays only after a catch or a partial.
 - CATCH: "The moment you reported that one" is now "The moment that one was flagged", because delete and verify also count as caught.
 - Not done: bark 1005's repeat ("an older one, a case from last spring") waits until the corkboard move commits, because it is in the same file. Bark 921's third statement of the rule is kept.
+
+## Twin host line and kit greetings (2026-11-19, commit on b-ca-lo-build)
+
+Scope: the defend-only twin's new host knot (`ca01_invoice_fraud_defend/ink/adaeze_okafor.ink`) and the two kit greetings.
+Rules held: no reportability claims, nobody blamed, no debrief figure repeated, plain and short.
+
+**Twin CATCH: edited.** "in the inbox" was redundant (the learner has just been in it). "That's the message these go wrong on" read awkwardly, so it is now "the one these usually go wrong on".
+- before: You spotted that bank-change email in the inbox, so the run paid Harlow's real account, not the one the email asked for. That's the message these go wrong on, and you had it.
+- after: You spotted that bank-change email, so the run paid Harlow's real account, not the one the email asked for. That's the one these usually go wrong on, and you had it.
+
+**Twin MISS: edited.** The old line was conditional ("can go onto the file... then the run pays"), so it never said whether money went. In the twin, a miss means the change was accepted (delete and verify count as caught), so the line now says it did, passively, with the reason a busy afternoon gives. The debrief concept panel keeps the consequence (chasing the bank), so it is not repeated here.
+- before: That bank-change email was the one to stop. On a busy afternoon a payee change can go onto the supplier file on trust, and then the run pays an account that was never Harlow's.
+- after: That bank-change email was the one to stop. It went through, so the run paid an account that was never Harlow's. On a busy afternoon it's an easy one to wave through.
+- The habit (ring back on a number you hold) is not named in MISS on purpose. The re-talk line says it ("we ring the supplier back on a number we already hold"), and the Monday card and rule of thumb carry it. Naming it here too would be the third statement.
+
+**Gwen greeting: keep.** The room has both a coffee station (`kit_coffee`, "Staff drift over for a top-up") and a water cooler, so "Grab a coffee" matches an object. Her tea barks are a personal habit and don't clash. Flag, not changed: "Morning" while the twin brief says "this afternoon" and the barks include "Morning, all." The kit is shared, so it is left for the owner.
+
+**Agnieszka greeting: keep.** The water cooler exists (`kit_cooler`, far wall); "over there" is a fair pointer.
+
+Voicing: both host lines changed, so both need re-voicing (needs a yes via AC0). Greetings unchanged.
