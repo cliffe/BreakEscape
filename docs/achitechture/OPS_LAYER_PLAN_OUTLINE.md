@@ -125,6 +125,10 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
   that.
 - S8b **Helpdesk recovery** (P3): a helpdesk NPC resets a password or re-enrols MFA under a
   verification rule; answers can come from feed posts (A11).
+- S8c **A second step on any lock** (user, 2026-11-19): an attribute on a lockable object or a
+  locked room, so that a locked PC, a door or an encrypted archive asks for the owner's approval
+  (a push to their phone) after the lock itself is satisfied. Its own plan:
+  `OPS_LOCK_SECOND_STEP_PLAN.md`, feature A25.
 - **Test:** `test_ops_mfa`. Size M each.
 
 ### S9. Log rows — pick C1 (P3)
@@ -135,7 +139,10 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
 
 ## 5. Suggested order
 
-S1, S2, S3 (the core loop), then S5, S6, S8a, S7, S9, S8b. B6 sniffing and
+The log helper comes first: stage L1a of the log rows plan (the helper and the event list, no rows
+of its own) lands before any other stage, so each feature can write its rows as it is built. Then
+S1, S2, S3 (the core loop), S5, S6, S8a, S7, the rest of S9, S8b, and S8c (a second step as an
+attribute on any lock, `OPS_LOCK_SECOND_STEP_PLAN.md`, which needs S8a). B6 sniffing and
 B7 Wi-Fi handshake (both P3) slot in after S7, since both reuse the cracking minigame or the
 credential effects.
 

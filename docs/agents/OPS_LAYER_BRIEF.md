@@ -73,6 +73,7 @@ of characters, a defender console, staff patching on a schedule) and
 | `OPS_CRACKING_PLAN.md` | S7 hashes and offline cracking | A21 | Opus |
 | `OPS_MFA_HELPDESK_PLAN.md` | S8a MFA, S8b helpdesk recovery | A22, A23 | Fable |
 | `OPS_LOG_ROWS_PLAN.md` | S9 | A24 | Opus |
+| `OPS_LOCK_SECOND_STEP_PLAN.md` | S8c second step on any lock | A25 | Fable |
 
 The core plan covers three stages in one document because S2's schema sits inside S1's and S3
 reads S2's; it still has three build stages, each shippable and tested alone.
