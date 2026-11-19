@@ -13,6 +13,12 @@ const TUTORIAL_DECLINED_KEY = 'tutorial_declined';
 const TUTORIAL_COMPLETED_GLOBAL = 'engine_tutorial_completed';
 const TUTORIAL_DECLINED_GLOBAL = 'engine_tutorial_declined';
 
+// Shown under the objective when a step is done. Words, not colour, carry the meaning.
+const TUTORIAL_READY_TEXT = 'Done. Press Continue (or Enter).';
+
+// Same selector the game's key handler (core/player.js) uses for "a control has the focus"
+const FOCUSABLE_CONTROL = 'button, input, textarea, select, a[href], [contenteditable]:not([contenteditable="false"])';
+
 function readStorage(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }
 }
@@ -44,6 +50,8 @@ export class TutorialManager {
         // True from the moment the game decides to ask until the player answers,
         // including the settle delay before the modal appears (isPromptOpen)
         this.promptOpen = false;
+        this.stepReady = false;
+        this.keyHandler = null;
 
         // Track player actions for tutorial progression
         this.playerMoved = false;
@@ -292,6 +300,7 @@ export class TutorialManager {
                     <strong>Objective:</strong>
                     <span class="tutorial-objective-text"></span>
                 </div>
+                <p class="tutorial-ready" role="status" aria-live="polite"></p>
                 <div class="tutorial-actions">
                     <button class="tutorial-next" style="display: none;">Continue</button>
                 </div>
@@ -309,6 +318,69 @@ export class TutorialManager {
         this.tutorialOverlay.querySelector('.tutorial-next').addEventListener('click', () => {
             this.nextStep();
         });
+
+        // Enter continues once the step is done (see onKeyDown for when it does not)
+        if (!this.keyHandler) {
+            this.keyHandler = (event) => this.onKeyDown(event);
+            document.addEventListener('keydown', this.keyHandler);
+        }
+    }
+
+    /**
+     * True when something other than the game owns the keyboard: a minigame, a
+     * conversation, a modal (confirm, game menu, the tutorial prompt) or a focused control.
+     * Mirrors keysBelongToUi in core/player.js, plus the conversation and aria-modal checks.
+     */
+    inputBelongsToOther(event) {
+        if (window.MinigameFramework?.currentMinigame) return true;
+        if (window.currentConversationNPCId || window.currentConversationMinigameType) return true;
+        if ((window.openModalCount?.() || 0) > 0) return true;
+        if (window.gameConfirmOpen?.()) return true;
+        if (this.promptOpen) return true;
+        if (document.querySelector?.('[aria-modal="true"], .game-confirm-overlay')) return true;
+        const target = event?.target;
+        return !!(target && typeof target.closest === 'function' && target.closest(FOCUSABLE_CONTROL));
+    }
+
+    /**
+     * Enter takes the Continue button once the step is complete. Space is not bound:
+     * the game uses it to jump. A focused button (Continue itself, Skip) is left to its
+     * own Enter handling, so one press never advances twice.
+     */
+    onKeyDown(event) {
+        if (!this.active || !this.stepReady || event.key !== 'Enter') return;
+        if (event.repeat || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+        if (this.inputBelongsToOther(event)) return;
+        event.preventDefault?.();
+        this.nextStep();
+    }
+
+    /**
+     * Put the Continue button into its "ready" state: the words under the objective, a frame
+     * on the button and a short cue. The cue class is dropped after 3 steps by CSS
+     * (animation ends); under prefers-reduced-motion the CSS never animates.
+     */
+    setStepReady(nextButton) {
+        this.stepReady = true;
+        nextButton.classList.add('tutorial-next-ready');
+        const ready = this.tutorialOverlay?.querySelector('.tutorial-ready');
+        if (ready) ready.textContent = TUTORIAL_READY_TEXT;
+    }
+
+    clearStepReady() {
+        this.stepReady = false;
+        const overlay = this.tutorialOverlay;
+        overlay?.querySelector('.tutorial-next')?.classList.remove('tutorial-next-ready');
+        const ready = overlay?.querySelector('.tutorial-ready');
+        if (ready) ready.textContent = '';
+    }
+
+    removeKeyHandler() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            this.keyHandler = null;
+        }
+        this.stepReady = false;
     }
 
     /**
@@ -339,6 +411,7 @@ export class TutorialManager {
         // Hide next button initially
         const nextButton = overlay.querySelector('.tutorial-next');
         nextButton.style.display = 'none';
+        this.clearStepReady();
 
         // Start checking for completion
         this.checkStepCompletion(step, nextButton);
@@ -363,6 +436,7 @@ export class TutorialManager {
 
                 nextButton.style.display = 'inline-block';
                 nextButton.textContent = 'Continue →';
+                this.setStepReady(nextButton);
                 clearInterval(interval);
 
                 // Player must click Continue button to proceed
@@ -384,6 +458,7 @@ export class TutorialManager {
     complete() {
         this.active = false;
         this.markCompleted();
+        this.removeKeyHandler();
 
         if (this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
@@ -412,6 +487,7 @@ export class TutorialManager {
         if (confirm('Are you sure you want to skip the tutorial?')) {
             this.active = false;
             this.markCompleted();
+            this.removeKeyHandler();
 
             if (this.tutorialOverlay) {
                 document.body.removeChild(this.tutorialOverlay);
@@ -537,6 +613,7 @@ export class TutorialManager {
             globals[TUTORIAL_DECLINED_GLOBAL] = false;
         }
 
+        this.removeKeyHandler();
         if (this.active && this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
             this.tutorialOverlay = null;
