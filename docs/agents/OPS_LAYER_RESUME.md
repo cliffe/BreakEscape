@@ -261,6 +261,9 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   lines. Next: commit, R4 delta review on Sonnet (diff since `b0fa7afee` + `OPS_REALISM_SKIN_R3.md`).
   Rulings sent to the core reviser: Panels show no quiet/noisy note; the pending-request guard is
   in the scene's shared `perform` (sweep, scan, check, confirm, use, unplug).
+- 11:50. PRIVILEGE R4 revision committed `48b0ec89f` (1027 lines). R5 delta review running
+  (Fable, a6f8f5a57b1050dde) to `OPS_PRIVILEGE_ACCOUNTS_R5.md`; verdict "ready" ends the plan's
+  rounds, otherwise one small Opus fix pass and stop.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
