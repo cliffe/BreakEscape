@@ -18,7 +18,6 @@ VAR irina_news = 0
 // one-shot branch is never lost. seen_* are set by the target knots.
 VAR seen_monero_talk = false
 VAR seen_focus = false
-VAR seen_laundering = false
 VAR trader_flagged = false
 VAR seen_mixing = false
 VAR seen_ideology = false
@@ -124,6 +123,9 @@ Dani Okonkwo: Fast, cheap, loads of volume. It's a tough market, to be fair.
 
 + {not topic_volume} [How much goes through here in a day?]
     -> volume_discussion
+
++ {not seen_focus} [Why focus on privacy coins?]
+    -> privacy_coin_focus
 
 + {not seen_monero_talk} [Why is so much of this in Monero?]
     -> monero_discussion
@@ -268,7 +270,6 @@ Dani Okonkwo: Bitcoin, you can follow a wallet. Monero, you can't. Great for pri
 
 === laundering_opinion ===
 #speaker:trader
-~ seen_laundering = true
 
 Dani Okonkwo: I mean... I don't ask. I just place trades.
 

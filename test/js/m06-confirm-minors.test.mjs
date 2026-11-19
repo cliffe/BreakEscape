@@ -44,12 +44,10 @@ test('trader: Monero then mixing leaves the launder question on the hub, and it 
     pick(s, /Monero/);
     pick(s, /How does the mixing work/);
     assert.ok(has(s, /Is this place being used to launder/), 'launder option kept on the hub');
-    const r = pick(s, /Is this place being used to launder/);
+    pick(s, /Is this place being used to launder/);
     pick(s, /noticed something/);
-    const all = r.tags.join('|');
     assert.ok(s.variablesState['trader_flagged'] === true, 'flag set');
     assert.ok(!has(s, /Is this place being used to launder/), 'gone once taken through');
-    void all;
 });
 
 test('trader: the complete_task tag fires on the flagged-wallets knot', () => {
@@ -113,5 +111,6 @@ test('HaX fund call: freeze or watch is closed once the fund is decided', () => 
     assert.ok(!/still in the wallet/.test(d), 'decided: no pending line');
     d += pick(done, /advances already went/).text;
     assert.ok(!/Which leaves you a choice|Freeze it|Or watch it/.test(d), 'decided: no freeze or watch offer');
+    assert.ok(!/only touches what hasn/.test(d), 'decided: no open-decision line');
     assert.ok(done.currentChoices.length === 0, 'decided: no choices left');
 });

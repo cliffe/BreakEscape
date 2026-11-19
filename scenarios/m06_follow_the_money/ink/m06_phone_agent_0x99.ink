@@ -446,7 +446,9 @@ Not Ghost Protocol, the other name on that page. They're one of the cells being 
 === coordinated_attack ===
 // lint: call-knot
 Advances first, balances in seventy-two hours. The first stage is already paid for.
-Whatever we do with the wallet only touches what hasn't left.
+{not assets_decided:
+    Whatever we do with the wallet only touches what hasn't left.
+}
 -> critical_choice_preview
 
 === casualty_numbers ===
