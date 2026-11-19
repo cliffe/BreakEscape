@@ -534,9 +534,11 @@ export class DustingMinigame extends MinigameScene {
         }[step]);
     }
 
-    /** Short landscape compare: the row is the last child of .dusting-root, the scroller there (see dusting.css). Phone portrait (the CSS max-width: 760px rule, not short): the action footer row must be the last child of the
-     *  scrolling .dusting-body, because a sticky box only pins within its parent's box and the panel ends above the forensic,
-     *  status and keys blocks. Elsewhere (desktop, short landscape) the row stays at the end of the panel, where it always was.
+    /** Where the action footer row lives. A sticky box only pins within its parent's box, so the row must be a child of the scroller:
+     *  - Phone portrait (the CSS max-width: 760px rule, not short): last child of the scrolling .dusting-body, because the panel
+     *    ends above the forensic, status and keys blocks.
+     *  - Short landscape compare: last child of .dusting-root, the scroller there (see dusting.css).
+     *  - Elsewhere (desktop, short landscape examine): the end of the panel, where it always was.
      *  Also publishes the row's real height as --d-foot-h so the scroller's scroll-padding-bottom clears it, wrapped or not. */
     _placeFoot() {
         const root = this.root;
