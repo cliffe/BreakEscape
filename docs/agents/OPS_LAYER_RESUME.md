@@ -328,6 +328,10 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   change list; apply sibling renames; picks page republish (Core 5, Privilege 7, MFA 8, Skin 1,
   Log 3); outline build order (L1a first; S8c = A25) and status paragraph.
   User requirement added 11:42: second step on any lock (S8c) - done as a plan stage.
+- 11:59. SKIN R4 findings `65eea6358` (0B 1M 5m; nothing lost in the trim). R4 fix pass running
+  (Fable, a8a637f4fcece1652): K1 only routes through core's guard; a late answer after a skin
+  switch is drawn by the active renderer; `network_only` never reaches a network-view renderer.
+  Next: commit, R5 delta on Sonnet, checking it agrees with core's guard text; then done.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
