@@ -52,6 +52,7 @@ test('picking the right pattern clears the last wrong guess', () => {
     const seen = [];
     Object.assign(g, { print: { pattern: 'loop' }, patternOk: false, message: 'Not a whorl. ...' });
     g._buildCandidates = () => {};
+    g._layout = () => {};   // dust-fc: a right pattern re-lays out for the magnified pair
     g._renderPanel = () => seen.push(g.message);
     g._drawCard = () => {};
     g.announce = () => {};
