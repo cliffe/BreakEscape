@@ -14,8 +14,8 @@ VAR greeted = false
 
 === start ===
 { greeted:
-    // Return greeting: reuses her voiced cooler chatter line (same text, no #delivery tag, so the same cached audio).
-    Fatima Begum: Three interviews today. Three!
+    // Return greeting: its own voiced line (D175), so it no longer repeats her cooler chatter.
+    Fatima Begum: Back again? I really am up to my neck in CVs.
     -> hub
 }
 ~ greeted = true
