@@ -312,7 +312,10 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
       assert.ok(chainEvents.test(ev), where(`${who} mapping event ${ev} is not a chain event`));
       assert.ok(globalsRead(m.condition).includes(outG), where(`${who} mapping on ${ev} needs ${outG} in its condition`));
       if (/^npc_arrived/.test(ev)) {
-        assert.ok(m.onceOnly === true && /data\.owner !== 'needs'/.test(m.condition), where(`${who} arrival mapping is onceOnly and filters needs walks`));
+        // A re-issue (walk again after an arrival short of the target, ca12 V11r) only moves the walker, so it
+        // may repeat; every arrival mapping that writes state or hides someone is onceOnly.
+        const reissue = !!m.patrolOverride && !m.setGlobal && !m.setVisible && !m.bark;
+        assert.ok((m.onceOnly === true || reissue) && /data\.owner !== 'needs'/.test(m.condition), where(`${who} arrival mapping is onceOnly and filters needs walks`));
       }
     }
     // nothing kit-owned reads kit_attack_done in a reveal/off/timer start

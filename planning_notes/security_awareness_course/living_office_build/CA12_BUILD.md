@@ -371,8 +371,11 @@ V10b { "eventPattern": "global_variable_changed:kit_ca12_at_desks",
       "onceOnly": true, "delayMs": 1000, "setGlobal": { "kit_ca12_visitor_leaving": true },
       "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
 V11 { "eventPattern": "npc_arrived:kit_camila_ospina",
-      "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true",
+      "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true && data.x >= 232",
       "onceOnly": true, "setVisible": false, "setGlobal": { "kit_ca12_done": true } }
+V11r { "eventPattern": "npc_arrived:kit_camila_ospina",
+      "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true && !globalVars.kit_ca12_done && data.x < 232",
+      "delayMs": 300, "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
 V12 { "eventPattern": "global_variable_changed:kit_ca12_door_choice",
       "condition": "value === 'silent' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
       "onceOnly": true, "delayMs": 5000, "patrolOverride": { "targetTile": <east door tile>, "speed": 90 } }
@@ -415,11 +418,11 @@ H-b  { "eventPattern": "npc_arrived:lorna_easton",
        "onceOnly": true, "setGlobal": { "kit_ca12_host_there": true } }
 H-c1 { "eventPattern": "global_variable_changed:kit_ca12_host_there",
        "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
-       "onceOnly": true, "delayMs": 1000,
+       "onceOnly": true, "delayMs": 3000,
        "patrolOverride": { "targetTile": <Lorna's post tile, holding {5.5, 3.8}>, "speed": 90 } }
 H-c2 { "eventPattern": "global_variable_changed:kit_ca12_at_desks",
        "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
-       "onceOnly": true, "delayMs": 1000,
+       "onceOnly": true, "delayMs": 3000,
        "patrolOverride": { "targetTile": <Lorna's post tile, holding {5.5, 3.8}>, "speed": 90 } }
 H-d   { "eventPattern": "global_variable_changed:kit_ca12_done",
        "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
@@ -427,7 +430,7 @@ H-d   { "eventPattern": "global_variable_changed:kit_ca12_done",
        "patrolOverride": { "targetTile": <Lorna's post tile, holding {5.5, 3.8}>, "speed": 90 } }
 ```
 
-`patrolOverride` moves the mapping's own NPC (`NM:1930-1950`), so H-a, H-c1/H-c2 and H-d move Lorna and V10a/V10b move Camila. H-c1 and H-c2 pair with V10a and V10b: whichever of `host_there` and `at_desks` is written second sends both walkers off 1 s later, so Lorna never leaves before Camila reaches the desks. The walk back is required: `goToAndStay` leaves a host without needs wherever she stopped, so she has to be walked back to the spot the learner knows her from (confirm how `targetTile` rounds `{5.5, 3.8}`; proof 4 checks she ends where she started). H-d is the fallback for a beat that ends with Lorna still beside the desks (Camila's walk blocked, or the 150 s hard close before both arrive): `kit_ca12_done` then walks her to her post. On the normal route it repeats a walk she is already making, which is harmless; after a let-in answer given past the hard close, `door_choice` was not `letin` when `done` was written, so it does not fire and Lorna never left her post. H-b is consumed on her first arrival, so her walk back does not re-fire it. V11 hides Camila at the door, on the arrival after `kit_ca12_visitor_leaving` is set, and sets `kit_ca12_done`. Lorna has no spoken line on the walk; H1 carries the meaning.
+`patrolOverride` moves the mapping's own NPC (`NM:1930-1950`), so H-a, H-c1/H-c2 and H-d move Lorna and V10a/V10b move Camila. H-c1 and H-c2 pair with V10a and V10b: whichever of `host_there` and `at_desks` is written second sends both walkers off 1 s later, so Lorna never leaves before Camila reaches the desks. The walk back is required: `goToAndStay` leaves a host without needs wherever she stopped, so she has to be walked back to the spot the learner knows her from (confirm how `targetTile` rounds `{5.5, 3.8}`; proof 4 checks she ends where she started). H-d is the fallback for a beat that ends with Lorna still beside the desks (Camila's walk blocked, or the 150 s hard close before both arrive): `kit_ca12_done` then walks her to her post. On the normal route it repeats a walk she is already making, which is harmless; after a let-in answer given past the hard close, `door_choice` was not `letin` when `done` was written, so it does not fire and Lorna never left her post. H-b is consumed on her first arrival, so her walk back does not re-fire it. V11 hides Camila at the door, on the arrival after `kit_ca12_visitor_leaving` is set, and sets `kit_ca12_done`. V11 also needs `data.x >= 232` (tile 7.25, within 1.5 tiles of the door tile at x = 272 px). Cause found in live route 2 (game 10592): Lorna's walk back and Camila's walk out ran together past the desks, the two bumped, `npc-sprites.js:1700-1735` inserted a temporary avoidance waypoint into Camila's one-waypoint walk, and `npc-behavior.js:1458-1466` fired `npc_arrived` (pathLeft 0, no owner) when that waypoint was consumed, 3.6 tiles short of the door. An arrival short of the door now hides nobody: V11r (not once-only) re-issues the door walk 300 ms later, and H-c1/H-c2 wait 3 s so Camila is past Lorna before Lorna moves. Engine fix not made (see the report): an avoidance-waypoint arrival should not emit `npc_arrived`. Lorna has no spoken line on the walk; H1 carries the meaning.
 
 **Say nothing (`"silent"`).** Three routes reach it:
 
