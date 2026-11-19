@@ -95,3 +95,11 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - Core request 6 applied: evidence, Probe and the Confirm or Probe label, the noise line, `noise`, `noiseLimit`, `alerted`, `data-quiet`, `noisy`, the quiet or noisy split, `network_alerted` (events now eight) and `network_only` (codes now twelve) are removed from SKIN text, tests, the scenario beats and the live run. Discovery is stated as display only.
 - World-side marks: SKIN names the compromised mark and the remote-view frame as the world side's, leaves them showing, and reads marks through `compromiseMarks()` in the test snapshot and beat T7. The keyboard case needs no skin text: a click on a technique-held PC opens the remote view.
 - Scan output: Panels show a "Scanning" progress bar while a sweep or service scan runs; the Terminal prints simulated fictional scanner-style lines (`SCAN_OUTPUT_TEXT`, fixed and deterministic) over the same single request and answer. Added to the Terminal-only text list, the format test, the parity text test and the K2 screenshots.
+
+## R6 fixes (2026-11-19)
+
+- R6-M1: by ruling, the Terminal prints its fixed scan lines when the request is sent (scrollback that stays), the table after the answer, and one fixed failure line (`SCAN_FAILED_TEXT`) instead of the table on a refusal or network failure; a mid-request skin switch shows the new skin's own waiting state and the answer renders once. Section 1.1, the scan output paragraph, the format test and the parity text all say this.
+- R6-m1: the `SCAN_OUTPUT_TEXT` lines are listed per verb (invented Pingweave and Portlark, no digits); because they print before the answer, their only variable is the pressed or typed target id, not answer fields. A deny-list test (real tool names, flags, digits, protocol words) is in the format test.
+- R6-m2: pixel-art row added for the Panels bar: 2px border, GNF label, stepped indeterminate fill, static under reduced motion, `role="progressbar"` with no value.
+- R6-m3: the bar is in the K2 build row, and a `network-view-panels.test.mjs` row tests it.
+- R6-n1, n2: removed-feature names dropped from section 1.1; "the Terminal prints" wording fixed.
