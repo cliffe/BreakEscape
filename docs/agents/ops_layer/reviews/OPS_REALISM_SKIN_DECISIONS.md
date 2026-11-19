@@ -86,3 +86,6 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 | R4-n2 | Reworded to "both skins draw their controls in `offers()` order"; no assertion added to test 2 |
 | R4-n6 | Restored as request 2 in its older form (every `test_ops_*` beat names actions, not controls), by ruling; the "new control, code or badge needs an entry" rule stays in 5.2 only |
 | R4-n3, n4, n7, n8 | Declined this round by ruling (JSON block, `check` params, `data-quiet` and Terminal selectors for the select actions, W1 after K3). Open for the builder or a later pass |
+| R5-m1 to R5-m3, R5-n1, n2, n7, n8 | Written in. The skin cites the core's exposed `pending` set and `pendingKey` (core 5.3) and the renderer-drawn messages (core 5.5); `network_only` is described as a keyboard fetch with no route; W1 and W2 run on a copy with no default after K3; the Terminal's selectors for the select actions are null and `data-quiet` is carried | Agrees the two plans without a cross-plan request |
+| R5-n3, n4 (K3 JSON block, `check` params) | Skipped | The builder reads the routes from the core |
+| R4-M1, `use` key (earlier row) | The earlier note that the core's argument shape is not named is superseded: the core now names `perform(offer)` | Core 5.3 text |
