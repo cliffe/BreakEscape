@@ -46,7 +46,7 @@ A sweep and a service scan show the same single request and answer in both skins
 a progress bar labelled "Scanning" shows while the request runs. The Terminal prints
 simulated, fictional scanner-style output (invented banner and progress lines, no real
 tool's text) as soon as the request is sent, then the answer's table. The output is drawn, not
-a second request, and it carries nothing the answer holds or the player did not type.
+a second request, and it carries nothing the answer holds, only the id of the target the view lists.
 
 The player can switch at any time, in the middle of a task, and loses nothing: the hosts found,
 the findings and the sessions held all live on the server. A finding is `f2` in
@@ -150,7 +150,7 @@ by tests and runs that exist when it lands. Total size M.
 | Stage | Adds | Proved when it lands by | Size |
 |---|---|---|---|
 | K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
-| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4); the Terminal renderer, grammar, help and completion for every control in the list; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
+| K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls; the Terminal renderer, grammar, help and completion for every control in the list; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
 | K3 Scenario default | The scenario field `networkView.defaultSkin`, its schema entry, the validator checks and the wording warning | The Rails and validator tests of 11.3; beat D1 of 11.4 | S |
 | K4 Live proof | The live parity runner and the docs, which change nothing a player sees (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
@@ -322,7 +322,9 @@ so it holds for both skins, every path and a switch between them; parity test 10
 - The set lives in the scene, so a switch of skin while a request is out carries the guard
   across: the other skin mounts with the control already pending. The answer is drawn by
   whichever renderer is mounted when it arrives, through its `showResult`; the Terminal prints
-  such a result with no echo line before it.
+  such a result with no echo line before it. The Terminal's log is written by the scene, not by
+  the renderer, so it stays complete whichever skin is showing (the scan output rule of section
+  5.3 sets how).
 
 **Unplug's messages** are drawn by the renderer, as the core has them (core 5.5); `unplugBox`
 touches no DOM. A `pending` `unplug` offer is drawn as a disabled control reading
@@ -432,36 +434,66 @@ core's `ops-model.js`; the Terminal has no wording of its own for them.
 
 **Scan output.** A sweep and a service scan are one request and one answer in both skins. While
 the request is out (`pending: true` on the sweep or scan offer), Panels show a progress bar
-labelled "Scanning" on the block or host row, and remove it when the answer lands. The Terminal
-prints its fixed scan lines as soon as the request is sent, as ordinary scrollback that stays in
-the log like the output of any typed command; the result table prints after the answer arrives.
-On a refusal or a network failure one fixed failure line (`SCAN_FAILED_TEXT`) follows instead of
-the table. If the player switches skin while the request is out, the newly shown skin shows its
-own waiting state for the same pending request (the bar in Panels, the scan lines in the
-Terminal), and the answer renders once, in whichever skin is showing when it lands. The lines
-come from the fixed lists `SCAN_OUTPUT_TEXT` and `SCAN_FAILED_TEXT` in `terminal-format.js`, in
-the manner of a scanner but copying no real tool's text and naming only invented tools. They
-are drawn, never requested: they add no request, wait for no second answer, are chosen by the
-verb alone (the same lines every time, nothing random, no timer past the request's own wait),
-and use no field of the answer: the only variable in them is `{target}`, the id the player
-pressed or typed. Both skins end on the same answer, and the player who skips the output loses
-nothing.
+labelled "Scanning" on the block or host row, and remove it when the request ends, whether by an
+answer, a refusal or a failure. The Terminal prints its fixed scan lines when the request is
+sent, as ordinary scrollback that stays in the log like the output of any typed command; the
+result table prints after the answer arrives.
+
+*What the log is written by.* Printing is driven by two events, never by drawing. The scene
+calls `recordSent(log, offer, echo)` once, from `perform`, after the pending guard has accepted
+the press and before the request goes out, and `recordResult(log, offer, answer)` once, when
+the request ends. Both are pure functions in `terminal-format.js` that append lines to the
+foothold's log (the module variable of section 5.3, keyed by foothold id). The scene calls them
+for every guarded request, from either skin and whether or not the Terminal is mounted, so the
+log is complete in every order of switches; Panels draw their own result from the same
+`recordResult` call, through `showResult`. A press the guard rejects reaches neither function.
+The Terminal renderer only draws the log: a mount, a redraw or a refetch while a key is pending
+prints nothing. `echo` is the player's typed line, or for a quick command or a Panels press the
+command line the offer stands for, so the log reads the same from every input: `> sweep lan_a`
+comes first, then the scan lines. `recordSent` writes the scan lines for `sweep` and `scan`
+only; every other request writes just the echo.
+
+*How a request ends.* A refusal is an answer: `recordResult` prints the Refusal row's words (and
+Panels show the same words), and no failure line. A network failure, meaning the request threw
+or the client gave no reply, reaches `showResult` as `answer = null`. The core has no generic
+failure sentence (the only one in the scene is the unplug-specific one at `NV:850`, which
+`unplugBox` keeps as it is), so `REQUEST_FAILED_TEXT` is added to `view-texts.js`, the single
+line `No reply came back. Nothing finished.`. Panels draw it as the notice on the control's row
+and the Terminal prints it as one log line, in place of a table. In all three endings the scene
+clears the pending key, which removes the bar and re-enables the control, and in the Terminal
+the key stops being pending for the next typed line.
+
+*Skin switches.* The scan lines were printed once, when the request was sent, and a switch never
+prints them again. A skin mounted while a key is pending shows its waiting state without new
+log lines: the bar in Panels; in the Terminal the scan lines already in the log, with the quick
+command disabled. A request sent from Panels and then viewed in the Terminal has its echo and
+scan lines in the log from the moment of sending. When the answer lands in Panels and the
+player returns to the Terminal, the log already holds the table, or the refusal words or the
+failure line, because `recordResult` ran when it landed. The answer is drawn once: the log gets
+its table or line once, and Panels draw their result once.
+
+The lines come from the fixed list `SCAN_OUTPUT_TEXT` in `terminal-format.js`, in the manner of
+a scanner but copying no real tool's text, naming only invented tools, and containing no real
+word for a scanning technique. They are drawn, never requested: they add no request, wait for no
+second answer, are chosen by the verb alone (the same lines every time, nothing random, no timer
+past the request's own wait), and use no field of the answer. The only variable in them is
+`{target}`, the id of the offer's own target as the view lists it (never the text the player
+typed): `recordSent` reads it from the resolved offer and it is set as plain text. Both skins end
+on the same answer, and the player who skips the output loses nothing.
 
 `SCAN_OUTPUT_TEXT`, with the fixed verb that chooses each list. All are invented, hold no
-digit, flag, port, protocol, real tool name or version, and read as plainly simulated:
+digit, flag, port number, protocol word, real tool name or version, start with or contain no
+real tool name or word for a scanning technique, and read as plainly simulated:
 
 | Verb | Lines, in order |
 |---|---|
-| `sweep` | `Pingweave (simulated)` / `Sweeping {target} for live hosts` / `Listening for replies ...` / `Sweep sent. Waiting for the answer.` |
-| `scan` | `Portlark (simulated)` / `Looking at {target} for open services` / `Knocking on the usual doors ...` / `Scan sent. Waiting for the answer.` |
-
-`SCAN_FAILED_TEXT` is the one line `No answer. The scan did not finish.` On a refusal, the
-Refusal row's words follow it as for any refused request.
+| `sweep` | `Echoreel (simulated)` / `Sweeping {target} for live hosts` / `Listening for replies ...` / `Sweep sent. Waiting for the answer.` |
+| `scan` | `Lookmark (simulated)` / `Looking at {target} for open services` / `Trying the usual routes ...` / `Scan sent. Waiting for the answer.` |
 
 The column headers are plain words taken from the core's field names; no table layout reproduces
 a real tool's output. **What it may print**: constants from `terminal-format.js`, `view-texts.js`
 and `ops-model.js`, the ids, aliases and fields of the view answer and of a result, the
-scan output lines of `SCAN_OUTPUT_TEXT`, `SCAN_FAILED_TEXT` and the player's own line. Nothing else: no invented
+scan output lines of `SCAN_OUTPUT_TEXT`, `REQUEST_FAILED_TEXT` and the player's own line. Nothing else: no invented
 host, port, service, version or filler row, and no random text.
 
 **Text only the Terminal has.** Everything the Terminal prints that Panels never shows is in one
@@ -470,7 +502,7 @@ state:
 
 | Entry | Text |
 |---|---|
-| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt mark `>`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; the scan output lines of `SCAN_OUTPUT_TEXT` and the failure line `SCAN_FAILED_TEXT`; the player's own echoed line |
+| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt mark `>`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; the scan output lines of `SCAN_OUTPUT_TEXT`; the player's own echoed line (`REQUEST_FAILED_TEXT` is in `view-texts.js` and Panels show it too, so it is not on this list) |
 | Table headers | `HOST`, `NAME`, `STATUS`, `SERVICE`, `PORT`, `PRODUCT`, `VERSION`, `TECHNIQUE`, `WORKS ON` and the headers of the findings, share and resource tables |
 | Help | the output of `help`: verb names, their argument forms and the verb aliases (the descriptions are the Panels' `title` texts and are not on this list) |
 | Command line | a verb from `CONTROLS` followed by ids or aliases the view lists: the `<code>` part of a quick command, and the line a use button writes into the prompt |
@@ -520,10 +552,11 @@ result sentence are not on this list: they are Panels text and must match it.
 | X closes, no Cancel | The shared X and Esc close it. `exit` is a second way in, not a Cancel button. The finding strip of a use has an X |
 | One look per concept | The switch looks the same in both skins and sits in the same place. Both skins use the view's existing colours: the Terminal adds no palette and no theme tokens, because the Panels use none |
 | Crisp text | No text shadow, glow or scanline overlay on the log |
-| Panels "Scanning" bar | A 2px border with square ends (the `.minigame-button` look, no radius), the label "Scanning" in the GNF pixel font, and an indeterminate fill, because no progress is known: a block of stepped segments that jumps from cell to cell (`steps()` timing, no smooth easing, no tween), running only while the request is out. Under `prefers-reduced-motion: reduce` the bar is static (a fixed striped fill, no movement). The row carries `aria-busy="true"` and the bar has `role="progressbar"` with no value, so it reads as indeterminate. The bar adds no palette: it uses the view's existing colours |
+| Panels "Scanning" bar | A 2px border with square ends (the same border and square ends as `.minigame-button`, which it is not; no radius), the label "Scanning" in the GNF pixel font, and an indeterminate fill, because no progress is known: a block of stepped segments that jumps from cell to cell (`steps()` timing, no smooth easing, no tween), running only while the request is out. Under `prefers-reduced-motion: reduce` the bar is static (a fixed striped fill, no movement). The row carries `aria-busy="true"` and the bar has `role="progressbar"` with no value, so it reads as indeterminate. The bar adds no palette: it uses the view's existing colours |
 
-The Terminal's rules go in the existing `css/network-view-minigame.css`, so the game page needs
-no new stylesheet link. The UI rules audit (`tools/playtest/ui-rules-audit.mjs`) reports the
+The Terminal's rules and the bar's rules (including its `@media (prefers-reduced-motion:
+reduce)` block) go in the existing `css/network-view-minigame.css`, so the game page needs no
+new stylesheet link. The "Scanning" label is the constant `SCANNING_TEXT` in `view-texts.js`. The UI rules audit (`tools/playtest/ui-rules-audit.mjs`) reports the
 network view as not audited, because the surface needs a game that has a network. K2 adds a
 network-view surface that the audit opens in a live `test_ops_skin` game after the box is
 planted, once in each skin.
@@ -691,9 +724,9 @@ or control gets these checks on it.
 | `network-view-controls.test.mjs` | K1 | `offers()` for each fixture: order, targets, one offer per pressable control, every use pair, the `itemId` rule. A locked remote session yields a `sign-in` offer beside its lock status. An unconfirmed finding yields a `confirm` offer labelled Confirm. A settled finding yields no `confirm` offer. With a key in the pending set the offers under it carry `pending: true` and no other offer does; each `use` pair has its own key. `CONTROLS` is well formed: each entry has one label, one verb and one description, and a verb together with a target kind names exactly one entry. Every `data-action` literal in `network-view-panels.js` is a key of `CONTROLS` or an entry of `LOCAL_ACTIONS` (`select-finding`, `select-technique`), no value is in both, and `data-unplug` appears there once, for the `unplug` entry |
 | `network-view-panels-same.test.mjs` | K1 | Each fixture rendered by the scene as it was (output saved as a fixture string before the split) and by the Panels renderer is equal byte for byte; a press on each control records the same call before and after. With the unplug's answer held, the header button is disabled and reads `UNPLUGGING_TEXT`, and a refused unplug shows the server's sentence beside the button, both as the saved output has them; the scene file contains no `querySelector('[data-unplug]')` and no `setUnplugNotice` |
 | `network-skin-imports.test.mjs` | K1 | The two renderer files and the pure modules import nothing outside the allowed list and do not contain `fetch(`, `ApiClient`, `networkLinks`, `window.open` or `window.start` |
-| `network-view-panels.test.mjs` | K2 | The "Scanning" bar: it shows on the block row for a pending `sweep` offer and on the host row for a pending `scan` offer, on no other offer (check, confirm, use, unplug), and is removed when the answer lands or the request is refused; the bar has `role="progressbar"` with no value and the row `aria-busy`; its label is "Scanning"; under reduced motion the bar has no animation; the bar's CSS has no radius and a 2px border |
+| `network-view-panels.test.mjs` | K2 | The "Scanning" bar: it shows on the block row for a pending `sweep` offer and on the host row for a pending `scan` offer, on no other offer (check, confirm, use, unplug), and is removed when the answer lands, when the request is refused and when it fails (`answer = null`), each its own case, and the pending key is cleared in all three; the bar has `role="progressbar"` with no value and the row `aria-busy`; its label is `SCANNING_TEXT` ("Scanning"); a failure draws `REQUEST_FAILED_TEXT` on the row. A node DOM test cannot evaluate a media query, so the reduced-motion rule is a CSS-text assertion: the `@media (prefers-reduced-motion: reduce)` block of `network-view-minigame.css` sets `animation: none` for the bar; the bar's CSS has no radius and a 2px border |
 | `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; a verb that is not in `CONTROLS` returns the nearest-verb message and no offer; a line for a pending offer returns the pending line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
-| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a confirm, each of the three use outcomes, each code in the core's `ops_refusal_codes.json`, so twelve today, `already`); every field in the table of 5.3 is printed. Scan output: a sweep and a service scan print their `SCAN_OUTPUT_TEXT` lines as soon as the request is sent, before any answer, and the lines stay in the log; the table prints after the answer, directly after those lines, once; a refusal or a network failure prints `SCAN_FAILED_TEXT` and no table; the same lines on every run; the only variable in a line is the pressed or typed target id, with no host, port, service, product or version from the answer; and the one request and one answer are unchanged by them. Deny list: no line of `SCAN_OUTPUT_TEXT` or `SCAN_FAILED_TEXT` contains a digit, a `-` flag token, the words `http`, `ssh`, `ftp`, `smb`, `tcp`, `udp` or `icmp`, or the name of a real scanner or framework (at least `nmap`, `masscan`, `zmap`, `metasploit`, `msfconsole`, `hydra`, `nikto`, `netcat`, `wireshark`, `burp`, `sqlmap`, `gobuster`, `enum4linux`, `hashcat`, `john`), matched without regard to case |
+| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a confirm, each of the three use outcomes, each code in the core's `ops_refusal_codes.json`, so twelve today, `already`); every field in the table of 5.3 is printed. Scan output, by calling `recordSent` and `recordResult` on a log: a sweep and a service scan write their echo line and `SCAN_OUTPUT_TEXT` lines at `recordSent`, before any answer, and the lines stay; the table is written at `recordResult`, directly after those lines, once; a refusal writes the Refusal row's words and no failure line and no table; a failure (`answer = null`) writes `REQUEST_FAILED_TEXT` and no table; the same lines on every run; a quick-command press, a Panels press and a typed line each write the echo `> sweep <id>` before the lines; `{target}` is the resolved id from the view, set as plain text; a typed line with markup, or a 10,000 character target, that resolves to nothing writes no scan lines and calls neither function; a press the guard rejects calls neither function; and the one request and one answer are unchanged by them. The three switch orders, each with the scan lines counted once and a table, refusal words or failure line at the end: (1) press in Terminal, switch to Panels, back while pending; (2) press in Terminal, switch to Panels, answer lands in Panels, back to Terminal; (3) press in Panels, switch to Terminal while pending, answer lands. A mount, redraw or refetch while pending adds no line. Deny list, run on the templates with `{target}` removed (the substituted ids hold digits): no line of `SCAN_OUTPUT_TEXT` or `REQUEST_FAILED_TEXT` contains a digit, a `-` or `--` flag token, the words `http`, `ssh`, `ftp`, `smb`, `tcp`, `udp`, `icmp`, `dns`, `rdp`, `arp`, `ping`, `port`, `traceroute`, `telnet` or `nc`, or the name of a real scanner, framework or fetch tool (at least `nmap`, `masscan`, `zmap`, `metasploit`, `msfconsole`, `hydra`, `nikto`, `netcat`, `nessus`, `openvas`, `wireshark`, `tcpdump`, `curl`, `wget`, `burp`, `sqlmap`, `gobuster`, `enum4linux`, `hashcat`, `john`), matched as whole words without regard to case, plus a substring match for the longer names. The deny list cannot catch a new real tool, so a snapshot assertion also requires `SCAN_OUTPUT_TEXT` and `REQUEST_FAILED_TEXT` to equal the lists in this plan, and any edit to the lines needs an edit to the plan |
 | `network-skin-parity.test.mjs`, `network-skin-text.test.mjs` | K2 | Section 11.2 |
 | `network-skin-choice.test.mjs` | K2 | The order of section 4, case by case: a press beats a URL value; a URL value beats a stored pick and is not written to storage; a press with a URL value present changes the skin and writes nothing; a press with no URL value is stored; a bad stored value is ignored; blocked storage still switches; a view with no `ops` block is `gui` under every combination; the switch is drawn only with an `ops` block and removed when a refetch has none |
 | `network-skin-unchanged.test.mjs` | K2 | Section 10, check 1 |
@@ -736,11 +769,13 @@ words), the Confirm label (the button's label in Panels, the quick command's lab
 of its line in the Terminal), and a request that is out (the control disabled in both, Unplug
 reading `UNPLUGGING_TEXT`, and a typed line for a pending offer answered with the pending line).
 The scan output is the one text the Terminal alone prints: Panels show the "Scanning" progress
-bar exactly while the request is out, and the Terminal prints its scan lines once, as the request
-is sent, and keeps them in the log. The test checks the bar is present only while the offer is
-pending and gone after the answer; the lines appear once and stay; the table follows them after
-an answer, and a refusal or failure prints the failure line instead of the table; and a skin
-switch mid-request shows the other skin's waiting state, with the answer rendered once.
+bar exactly while the request is out, and the Terminal's log gets its scan lines once, when the
+request is sent (`recordSent`), and keeps them. The test checks the bar is present only while
+the offer is pending and gone after an answer, a refusal or a failure; the lines appear once and
+stay; the table follows them after an answer; a refusal writes its words and a failure writes
+`REQUEST_FAILED_TEXT`, each instead of the table; and a skin switch mid-request shows the other
+skin's waiting state without new log lines, in the three orders listed for
+`network-terminal-format.test.mjs`, the answer rendered once.
 
 **Node tests** (`network-skin-parity.test.mjs`), in the DOM the existing network-view test uses,
 against a fake `networkLinks`, a fake API client and fake openers that record every call. They
@@ -826,7 +861,8 @@ is covered without an edit here.
      listed row, or matches an entry of `TERMINAL_ONLY_TEXT` (section 5.3).
 
    `PANELS_ONLY_TEXT` lives in the test file and holds the section headings that the Terminal
-   replaces with table headers, and the "Scanning" label of the progress bar. `TERMINAL_ONLY_TEXT` is the exported list of section 5.3, and
+   replaces with table headers, and the "Scanning" label of the progress bar, which the list
+   imports as `SCANNING_TEXT` from `view-texts.js`. `TERMINAL_ONLY_TEXT` is the exported list of section 5.3, and
    the test also fails if the Terminal prints one of its entries that the list in the plan does
    not name. Button labels and `title` texts are in neither list: they appear in the Terminal
    as the quick commands' labels and titles. Finding aliases, the
@@ -974,7 +1010,7 @@ All on a keyless server from the worktree, with fresh games made in that run.
 - **K2**, before the stage lands, because it is the stage that shows players the Terminal: the
   T and W beats through the real client path; screenshots of both skins at desktop and phone
   widths, among them a sweep in progress (the "Scanning" bar in Panels, the scan output in the
-  Terminal), a finding with Confirm and a host row with the compromised mark; a screenshot of
+  Terminal), the bar under `prefers-reduced-motion: reduce` (static fill), a finding with Confirm and a host row with the compromised mark; a screenshot of
   the prompt above an on-screen keyboard; the UI rules audit over the network-view surface of a
   live `test_ops_skin` game, in each skin (section 5.4); a double press of Confirm and of Enter
   on a `confirm` line, each on a throttled connection, sending one request and not two; the
@@ -992,7 +1028,7 @@ committed before its tests are run in the shared tree.
 | 1 | K1 | Save the scene's DOM for every fixture and for every recorded `ops_unchanged` view answer (under `test/js/fixtures/network-view/unchanged/`, beside the server fixtures in `test/fixtures/files/ops_unchanged/`), before any change. Move the fixtures the tests build inline into `test/js/fixtures/network-view/` only for the new tests; existing tests are not edited | the snapshots exist on the branch point |
 | 2 | K1 | `view-texts.js`, `view-controls.js`, `network-view-panels.js`; the new exports in `ops-model.js`, with the Panels drawing changed to call them; the scene mounts the Panels renderer and routes it through the core's `perform` path, with `offers()` reading the core's pending set and `pendingKey` (core 5.3); copy lists | K1 rows of 11.1; existing and core node tests unedited; `bin/test-js` whole; scripted reruns of `test_access_networks` and `test_ops_access` |
 | 3 | K2 | `skin-choice.js`; the starter passes the skin; the header switch on ops views | `network-skin-choice.test.mjs`, `network-skin-unchanged.test.mjs` |
-| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js`, the rules in `network-view-minigame.css`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, parity and text tests |
+| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene from `perform`), the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, parity and text tests |
 | 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots checked, audit clean, phone keyboard check); full suites; land K2 |
 | 6 | K3 | Schema, validator checks, wording warning, bootstrap test; `defaultSkin` in `test_ops_skin` | K3 rows of 11.3; beat D1; validator output for every other scenario unchanged |
 | 7 | K4 | `tools/playtest/network-skin-parity.mjs`; the `README_scenario_design.md` feature index (N16) and `docs/ACCESS_AND_NETWORKS.md` | the K4 part of 11.6; land |

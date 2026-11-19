@@ -103,3 +103,15 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - R6-m2: pixel-art row added for the Panels bar: 2px border, GNF label, stepped indeterminate fill, static under reduced motion, `role="progressbar"` with no value.
 - R6-m3: the bar is in the K2 build row, and a `network-view-panels.test.mjs` row tests it.
 - R6-n1, n2: removed-feature names dropped from section 1.1; "the Terminal prints" wording fixed.
+
+## R7 fixes (2026-11-19)
+
+- R7-M1: printing is event-driven. The scene calls `recordSent` (once, from `perform`, after the guard accepts) and `recordResult` (once, when the request ends) for every guarded request, whether or not the Terminal is mounted; the Terminal only draws the log. All three switch orders and a guard-rejected press are in the format and parity tests. Differs from the review only in scope: the pair covers every guarded request, not just sweeps and scans, so the log is complete for all of them.
+- R7-M2: a network failure reaches `showResult` as `answer = null`. The core has no generic failure sentence (only the unplug-specific one at `NV:850`, kept), so `REQUEST_FAILED_TEXT` ("No reply came back. Nothing finished.") is added to `view-texts.js`: Panels draw it on the row, the Terminal prints it in place of the table. A refusal prints only the refusal words. Answer, refusal and failure each clear the pending key and the bar, each a test case. `SCAN_FAILED_TEXT` is dropped for this shared constant.
+- R7-m1: deny-list test runs on templates with `{target}` removed, adds `ping`, `port`, `dns`, `rdp`, `arp`, `traceroute`, `telnet`, `nc`, `nessus`, `openvas`, `curl`, `wget`, `tcpdump`, `--`, plus a snapshot assertion against the plan's lists. Scanner names changed to Echoreel and Lookmark (no tool or technique stem).
+- R7-m2: `{target}` is the resolved id from the view, plain text; hostile-input case added (no lines, no function called).
+- R7-m3: bar rules named in `network-view-minigame.css` and the K2 row; `SCANNING_TEXT` in `view-texts.js`, imported by the `PANELS_ONLY_TEXT` list; reduced motion tested as a CSS-text assertion on the media block and added to the screenshot set; the 100% cases (refusal, failure) are in the bar test.
+- R7-m4: a quick-command press, a Panels press and a typed line all write the echo `> sweep <id>` before the scan lines; format-test case added.
+- R7-n1: bar described as sharing the border and square ends of `.minigame-button`, not as a button.
+- R7-n2: "Knocking on the usual doors" replaced by "Trying the usual routes".
+
