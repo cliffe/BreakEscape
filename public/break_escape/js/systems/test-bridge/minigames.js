@@ -274,13 +274,44 @@ export const minigameBridge = {
      * that viewer returns to the container — see `returnsToContainer`.
      */
     async take(nameOrIndex) {
-        const mg = current();
+        let mg = current();
+        // A viewer just closed and its container is about to reopen (a real 100 ms timer)
+        if (!mg && window.pendingContainerReturn) {
+            const until = performance.now() + 5000;
+            while (!mg && window.pendingContainerReturn && performance.now() < until) { await sleep(20); mg = current(); }
+            if (!mg) { await sleep(60); mg = current(); }
+        }
         if (!mg) return fail('no-active-minigame');
 
-        const nodes = Array.from(
-            mg.container.querySelectorAll('.container-content-item, .desktop-icon')
-        ).filter(el => isShown(mg, el));
-        if (!nodes.length) return fail('no-takeable-items', { active: activeMinigameSummary() });
+        const findNodes = (scene) => Array.from(
+            scene.container.querySelectorAll('.container-content-item, .desktop-icon')
+        ).filter(el => isShown(scene, el));
+        let nodes = findNodes(mg);
+        if (!nodes.length) {
+            // A reopened container shows "Loading contents..." until its fetch returns: wait
+            // for the items rather than reporting an empty box. Anything else on top (a note
+            // viewer) is a different answer: close it, it returns to the container.
+            const loadingNow = () => { const m = current(); return !!m && m.container.querySelector('.loading') && activeMinigameSummary()?.id === 'container'; };
+            if (loadingNow()) {
+                const deadline = performance.now() + 5000;
+                while (performance.now() < deadline) {
+                    await sleep(50);
+                    const m = current();
+                    if (m && activeMinigameSummary()?.id === 'container') {
+                        nodes = findNodes(m);
+                        if (nodes.length || !m.container.querySelector('.loading')) break;
+                    }
+                }
+            }
+            if (!nodes.length) {
+                const active = activeMinigameSummary();
+                if (active && active.id !== 'container') {
+                    return fail('note-open', { active, hint: 'close() the viewer; it returns to the container' });
+                }
+                return fail('no-takeable-items', { active });
+            }
+        }
+        mg = current() || mg;
 
         const labelOf = (el) => (el.title || el.alt ||
             el.querySelector('.desktop-icon-label')?.dataset?.fullName ||
@@ -315,7 +346,17 @@ export const minigameBridge = {
             ok: true,
             took: name,
             openedViewer: after && after !== before ? after : null,
-            returnsToContainer: !!window.pendingContainerReturn
+            // From what is left in the box: the last note of an ordinary container closes to
+            // the world, so no return is coming.
+            returnsToContainer: !!window.pendingContainerReturn && !(
+                window.pendingContainerReturn.itemToTake
+                && Array.isArray(window.pendingContainerReturn.contents)
+                && window.pendingContainerReturn.contents.length <= 1
+                && window.lastNoteClosesToWorld?.({
+                    ...window.pendingContainerReturn,
+                    contents: window.pendingContainerReturn.contents.filter(c => c !== window.pendingContainerReturn.itemToTake)
+                })
+            )
         };
         logAction('minigame.take', { nameOrIndex }, result);
         return result;
@@ -328,7 +369,10 @@ export const minigameBridge = {
      * uses Escape to close.
      */
     async pressKey(key, { holdMs = 60 } = {}) {
-        if (!current()) return fail('no-active-minigame');
+        // A read note or confirm dialog over the game takes Escape from the engine's modal
+        // stack (ui/modal-stack.js), minigame or not.
+        const overlayEsc = key === 'Escape' && !!document.querySelector('.game-display-dialog, .game-confirm-dialog');
+        if (!current() && !overlayEsc) return fail('no-active-minigame');
         keyDown(key);
         await sleep(holdMs);
         keyUp(key);
@@ -574,10 +618,15 @@ export const minigameBridge = {
         const strayResume = strayMenu && strayMenu.querySelector('.game-menu-resume');
         if (strayResume) { clickElement(strayResume); await sleepFrames(4); }
         if (willReturnToContainer) {
-            const deadline = performance.now() + 500;
+            // The container is back when it is active and its contents have loaded (it shows
+            // "Loading contents..." until its fetch returns)
+            const deadline = performance.now() + 5000;
             while (performance.now() < deadline) {
                 const summary = activeMinigameSummary();
-                if (summary?.id === 'container') break;
+                const m = current();
+                if (summary?.id === 'container' && m && !m.container.querySelector('.loading')) break;
+                // Nothing pending and nothing open: the last note closed to the world
+                if (!window.pendingContainerReturn && !summary && !m) break;
                 await sleep(20);
             }
         }
@@ -693,6 +742,14 @@ export const minigameBridge = {
      * control, not a call into the minigame.
      */
     async _pick(index, choices) {
+        // The ending question takes the keys and holds the choice: report it, do not press into it.
+        // (state.js endingCheckOverlayUi reports it in getState().blockingUi.)
+        if (typeof document !== 'undefined' && document.getElementById('ending-check-overlay')) {
+            return fail('ending-check-overlay-up', {
+                hint: 'The end-of-mission question is up over the chat and holds this choice. Answer it with '
+                    + '__test.dismissBlockingUi("End the mission now") to take the choice, or "Keep going" to leave the choices as they were.'
+            });
+        }
         if (index < 9) return this.pressKey(String(index + 1));
         const mg = current();
         const buttons = mg?.ui?.getChoiceButtons?.() || [];

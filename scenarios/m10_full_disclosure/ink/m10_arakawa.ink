@@ -20,7 +20,7 @@ VAR arak_daughter_asked = false
 VAR arak_peel_said = false
 
 === function arak_can_accuse() ===
-~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
+~ return clue_door_log and clue_bench_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
 
 === start ===
 {ending != "": -> end_rest}

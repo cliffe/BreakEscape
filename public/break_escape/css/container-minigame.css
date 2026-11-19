@@ -259,6 +259,14 @@
     border: 2px solid transparent;
 }
 
+/* The list takes the focus (by script) when a note read on pickup closes: a square 2px frame
+   for keyboard users, never the browser's rounded ring */
+#container-contents-grid:focus-visible {
+    outline: 2px solid var(--ui-accent, #ffcc44);
+    outline-offset: -2px;
+    border-radius: 0;
+}
+
 /* The icon is a keyboard stop: the 2px frame on its picture marks it, not a browser ring */
 .desktop-icon:focus-visible {
     outline: none;

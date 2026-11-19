@@ -1090,7 +1090,16 @@ export class PersonChatMinigame extends MinigameScene {
      * move and the same choices stay on screen. Returns false when there is nothing to ask.
      */
     _askEndingBeforeChoice(choiceIndex) {
-        if (this._endingAsking) return true;
+        if (this._endingAsking) {
+            // The question is up: point the player back at it rather than eat the click silently.
+            // If it is gone without an answer (isAsking clears a lost overlay), drop the stale
+            // flag and ask again, so no click can be swallowed for good (m10 blind part 3).
+            if (window.endingCheck?.isAsking?.()) {
+                window.endingCheck.nudge?.();
+                return true;
+            }
+            this._endingAsking = false;
+        }
         const asked = this.lastResult?.choices?.[choiceIndex];
         if (!choiceAsksEnding(asked?.tags) || !window.endingCheck?.needsAnswer?.()) return false;
         this._endingAsking = true;
