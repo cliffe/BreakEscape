@@ -24,7 +24,8 @@ window.gameAlert = (msg, kind, title) => alerts.push(`${title}: ${msg}`);
 
 const { ObjectivesManager } = await import(dataUrl(readFileSync(join(js, 'systems/objectives-manager.js'), 'utf8')));
 const panelSrc = readFileSync(join(js, 'ui/objectives-panel.js'), 'utf8')
-    .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`);
+    .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+    .split("'./modal-stack.js'").join(`'${dataUrl('export const openModalCount = () => 0;')}'`);
 const { ObjectivesPanel } = await import(dataUrl(panelSrc));
 
 function dispatcher() {
