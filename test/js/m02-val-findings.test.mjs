@@ -42,3 +42,11 @@ test('after the vindicated beat the report-back choice is gone from the hub', ()
     const labels = s.currentChoices.map((c) => c.text);
     assert.ok(!labels.some((t) => t.includes("I said I'd tell you")), 'report_back still offered: ' + JSON.stringify(labels));
 });
+
+test('rack note observation hints at a shifted alphabet without naming the cipher or key', () => {
+    const erb = readFileSync(join(root, 'scenarios/m02_ransomed_trust/scenario.json.erb'), 'utf8');
+    const i = erb.indexOf('"id": "operator_site_note"');
+    const block = erb.slice(i, i + 1500);
+    assert.ok(block.includes('alphabet had slipped'), 'cue missing');
+    assert.ok(!/ROT13|rot-13|thirteen|caesar/i.test(block.split('"observations"')[1].split('"onRead"')[0]), 'cue names the cipher or key');
+});
