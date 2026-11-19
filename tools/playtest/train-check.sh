@@ -162,7 +162,9 @@ fi
 if [ "${TRAIN_CHECK_SKIP_JS:-0}" = 1 ]; then
   echo "js SKIPPED" >> "$SUM"; SKIPPED+=(js)
 else
-  MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j "${TRAIN_CHECK_JS_JOBS:-8}" > "$OUT/js.txt" 2>&1; rc=$?
+  # Own temp dir: a shared /tmp clean-up removed bin/test-js's mktemp folder mid-run (T237, exit 143).
+  mkdir -p "$OUT/tmp"
+  TMPDIR="$OUT/tmp" MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j "${TRAIN_CHECK_JS_JOBS:-8}" > "$OUT/js.txt" 2>&1; rc=$?
   echo "js exit $rc: $(grep -E '^Files: ' "$OUT/js.txt" | tail -1)" >> "$SUM"
   grep -E '^Failed: ' "$OUT/js.txt" >> "$SUM" || true
   [ "$rc" -ne 0 ] && RED+=("js exit $rc")
