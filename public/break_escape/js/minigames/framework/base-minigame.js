@@ -17,6 +17,10 @@ function consoleTitleHtml(text) {
 // for an HTML title; a subclass that wants richer header content builds it with DOM
 // nodes after super.init().
 // Base class for minigame scenes
+// Opens the text of a chat scene whose head was cut (see getTestState). Same string as
+// TEXT_TAIL_MARK in utils/test-state-text.js, written out so this file gains no import.
+const TEXT_TAIL_MARK = '[... earlier text cut, newest lines below ...]\n';
+
 export class MinigameScene {
     // true on a full-window console that keeps Cancel overlaid on its own bottom bar
     static controlsOverlay = false;
@@ -544,8 +548,14 @@ export class MinigameScene {
             // Cut at 2000 characters, and says so (textTruncated, textLength: the same
             // rule as utils/test-state-text.js, written out here so this file gains no
             // import). A notes overlay also carries the note's own text as noteContent.
-            text: fullText.slice(0, 2000),
-            ...(fullText.length > 2000 ? { textTruncated: true, textLength: fullText.length } : {}),
+            // A chat or thread scene (static keepsTextTail = true) keeps the END of the
+            // text instead, since its newest lines are last: the text then starts with
+            // the marker below and the reply adds textKeeps: 'tail'. Total stays 2000.
+            ...(fullText.length > 2000 && this.constructor.keepsTextTail
+                ? { text: TEXT_TAIL_MARK + fullText.slice(fullText.length - (2000 - TEXT_TAIL_MARK.length)),
+                    textTruncated: true, textLength: fullText.length, textKeeps: 'tail' }
+                : { text: fullText.slice(0, 2000),
+                    ...(fullText.length > 2000 ? { textTruncated: true, textLength: fullText.length } : {}) }),
             controls,
             fields
         };

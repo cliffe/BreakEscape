@@ -9,10 +9,17 @@
  */
 export const TEXT_LIMIT = 2000;
 export const NOTE_LIMIT = 20000;
+export const TEXT_TAIL_MARK = '[... earlier text cut, newest lines below ...]\n';
 
 /** Fields for a capped text: { [key]: text } plus the truncation mark when cut. */
-export function cappedText(key, value, limit = TEXT_LIMIT) {
+export function cappedText(key, value, limit = TEXT_LIMIT, keep = 'head') {
     const full = String(value ?? '');
     if (full.length <= limit) return { [key]: full };
+    // keep: 'tail' is for chat threads, where the newest lines are last. The text opens
+    // with TEXT_TAIL_MARK and is still `limit` long; the reply adds `${key}Keeps: 'tail'`.
+    if (keep === 'tail') {
+        return { [key]: TEXT_TAIL_MARK + full.slice(full.length - (limit - TEXT_TAIL_MARK.length)),
+            [`${key}Truncated`]: true, [`${key}Length`]: full.length, [`${key}Keeps`]: 'tail' };
+    }
     return { [key]: full.slice(0, limit), [`${key}Truncated`]: true, [`${key}Length`]: full.length };
 }

@@ -39,6 +39,62 @@ test('the notes overlay uses the note limit, and the base overlay marks its cut'
     const notes = readFileSync(join(js, 'minigames/notes/notes-minigame.js'), 'utf8');
     assert.match(notes, /\.\.\.cappedText\('noteContent', this\.noteContent \|\| '', NOTE_LIMIT\),/);
     const base = readFileSync(join(js, 'minigames/framework/base-minigame.js'), 'utf8');
-    assert.match(base, /text: fullText\.slice\(0, 2000\),\s*\.\.\.\(fullText\.length > 2000 \? \{ textTruncated: true, textLength: fullText\.length \} : \{\}\),/);
+    assert.match(base, /: \{ text: fullText\.slice\(0, 2000\),\s*\.\.\.\(fullText\.length > 2000 \? \{ textTruncated: true, textLength: fullText\.length \} : \{\}\) \}\),/);
     assert.equal(TEXT_LIMIT, 2000, 'the base overlay writes the same limit out by hand');
+});
+
+// Chat scenes keep the TAIL (newest lines are last), with a marker.
+const { TEXT_TAIL_MARK } = await import(pathToFileURL(join(js, 'utils/test-state-text.js')));
+
+test('keep tail: the newest line survives, the text opens with the marker, size stays at the limit', () => {
+    const thread = Array.from({ length: 120 }, (_, i) => `LINE ${i + 1}: message body here`).join('\n');
+    assert.ok(thread.length > TEXT_LIMIT);
+    const r = cappedText('text', thread, TEXT_LIMIT, 'tail');
+    assert.equal(r.text.length, TEXT_LIMIT);
+    assert.ok(r.text.startsWith(TEXT_TAIL_MARK));
+    assert.ok(r.text.endsWith('LINE 120: message body here'));
+    assert.ok(!r.text.includes('LINE 1:'));
+    assert.equal(r.textTruncated, true);
+    assert.equal(r.textLength, thread.length);
+    assert.equal(r.textKeeps, 'tail');
+});
+
+test('keep tail on a short text is unchanged, and the default still keeps the head', () => {
+    assert.deepEqual(cappedText('text', 'short', TEXT_LIMIT, 'tail'), { text: 'short' });
+    const r = cappedText('text', 'a'.repeat(3000) + 'END');
+    assert.ok(!r.text.endsWith('END'));
+    assert.ok(!('textKeeps' in r));
+});
+
+test('only the phone and person chat scenes keep the tail, and the base overlay does it for them', () => {
+    const base = readFileSync(join(js, 'minigames/framework/base-minigame.js'), 'utf8');
+    assert.match(base, /this\.constructor\.keepsTextTail/);
+    assert.match(base, /const TEXT_TAIL_MARK = '\[\.\.\. earlier text cut, newest lines below \.\.\.\]\\n';/);
+    for (const f of ['phone-chat/phone-chat-minigame.js', 'person-chat/person-chat-minigame.js']) {
+        assert.match(readFileSync(join(js, 'minigames', f), 'utf8'), /static keepsTextTail = true;/);
+    }
+    const marker = readFileSync(join(js, 'utils/test-state-text.js'), 'utf8').match(/TEXT_TAIL_MARK = ('[^']*')/)[1];
+    assert.ok(base.includes(marker), 'base-minigame writes the same marker out by hand');
+});
+
+test('behaviour: a MinigameScene subclass with keepsTextTail returns the tail in getTestState', async () => {
+    globalThis.window = globalThis.window || {};
+    let MinigameScene;
+    try { ({ MinigameScene } = await import(pathToFileURL(join(js, 'minigames/framework/base-minigame.js')))); }
+    catch (e) { return; } // DOM-only imports: the source checks above cover it
+    const text = Array.from({ length: 150 }, (_, i) => `MSG ${i + 1} hello there`).join('\n');
+    const mk = (tail) => {
+        const C = class extends MinigameScene {};
+        if (tail) C.keepsTextTail = true;
+        const o = Object.create(C.prototype);
+        o.container = { innerText: text };
+        o.params = {}; o.gameState = { isActive: true };
+        o.getTestControlElements = () => []; o.getTestFieldElements = () => [];
+        return o.getTestState();
+    };
+    const tail = mk(true), head = mk(false);
+    assert.ok(tail.text.endsWith('MSG 150 hello there'));
+    assert.equal(tail.textKeeps, 'tail');
+    assert.ok(head.text.startsWith('MSG 1 '));
+    assert.ok(!('textKeeps' in head));
 });
