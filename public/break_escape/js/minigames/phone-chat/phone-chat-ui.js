@@ -967,6 +967,7 @@ export default class PhoneChatUI {
      * @param {string} npcId - NPC identifier
      */
     showConversation(npcId) {
+        this._refocusChoices = false;
         if (!npcId) {
             console.error('❌ No NPC ID provided');
             return;
@@ -1475,8 +1476,10 @@ export default class PhoneChatUI {
         if (this.isCallMode) this.elements.conversationView?.classList.add('call-has-choices');
         
         const box = this.elements.choicesContainer;
-        const refocus = this._refocusChoices
-            || (typeof document !== 'undefined' && box.contains(document.activeElement));
+        // Honour the hand-off only while focus has not gone anywhere else since the pick
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const focusFree = !active || active === document.body || box.contains(active);
+        const refocus = this._refocusChoices && focusFree;
         this._refocusChoices = false;
         this.elements.choicesContainer.innerHTML = '';
         // A new reply set starts at the top: the old set may have been scrolled to its last
@@ -1524,8 +1527,12 @@ export default class PhoneChatUI {
         // A reply picked from the keyboard leaves focus on a button that is about to go:
         // remember it so the next reply set takes focus instead of dropping it to BODY
         const box = this.elements.choicesContainer;
-        if (box && typeof document !== 'undefined' && box.contains(document.activeElement)) {
-            this._refocusChoices = true;
+        // (keyboard picks only: a mouse pick keeps today's behaviour, where Space/Enter skip the typewriter)
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        if (box && active && box.contains(active)) {
+            let keyboard = false;
+            try { keyboard = active.matches(':focus-visible'); } catch { keyboard = false; }
+            this._refocusChoices = keyboard;
         }
         this.elements.choicesContainer.innerHTML = '';
         this.elements.choicesMoreCue?.classList.remove('visible');
@@ -1748,6 +1755,7 @@ export default class PhoneChatUI {
     }
 
     cleanup() {
+        this._refocusChoices = false;
         this.hideIncomingCall();
         this.stopCallTimer();
         this._chatInfluence?.destroy();
