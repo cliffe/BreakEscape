@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: CA12 visitors and tailgating (fallback)",
+  "description": "Fallback build of the awareness episode E12 (visitors and tailgating) in the Merrin & Sallow studio: no step-away panel and no timed chain, just the end state shown once the defend stage is done (the break reminder on Thandiwe's screen and a visitor waiting just inside the studio door), with the fallback host recap. Two ambient staff, sofa, kiosk-quiet-gated chatter, kit_ globals and host mappings. Stub content. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}
