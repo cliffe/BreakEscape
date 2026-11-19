@@ -759,6 +759,9 @@ module BreakEscape
       # client-chosen: never stamp a credential on them (R3 m1; the validator also errors).
       return if BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.include?(data['type'].to_s)
       return if BreakEscape::DeclaredGrants::DECOR_CUPS.include?(data['type'].to_s)
+      # An object added to a room with no server-known source is a bare client hash (its id is
+      # server-made, but nothing about it is the scenario's): never stamped either.
+      return if BreakEscape::ItemIdentity.client_forged?(item) || BreakEscape::ItemIdentity.client_forged?(data)
 
       # Look up by id, exactly as the `held` proof matches (def_id == data['id']).
       item_id = data['id'].to_s
@@ -1109,7 +1112,7 @@ module BreakEscape
         # Review R3 m2: the client retries a drop whose answer it never saw, and re-sends a drop
         # after a reload when one never landed, so an item already dropped, picked up or held is
         # not added twice: nothing to do, and the same answer as the first time
-        if held_item['id'].present? && npc_held_item_delivered?(held_item['id'])
+        if npc_held_item_delivered?(npc_held_item_server_id(npc_data, held_item))
           save! if ko_recorded
           return true
         end
@@ -1129,12 +1132,15 @@ module BreakEscape
         # restored after a reload behaves exactly like the original. Only identity and
         # placement come from the client.
         # The persisted object keeps the held item's ORIGINAL scenario id (flag-station
-        # ownership, collect tasks and lock matching all key on it); the client's
-        # generated drop id is only used when the scenario item has none.
+        # ownership, collect tasks and lock matching all key on it). A held item with no id
+        # (a save from before stamp_scenario_object_ids! named them) gets the id a fresh game
+        # stamps, `<npcId>_held_<n>`, never the client's: find_npc_held_item matches an id-less
+        # item by name, so a client id could borrow another scenario item's id and its
+        # `credential` stamp on pick-up (restamp_item_credential!).
         # No client texture: a reload draws the object from its sprite or type (rooms.js).
         item = held_item.deep_dup.except('texture').merge(
           item.slice('x', 'y', 'position')
-        ).merge('id' => held_item['id'].presence || item['id']).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+        ).merge('id' => npc_held_item_server_id(npc_data, held_item)).merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
       end
 
       # A player drop (item-drop.js): the item must be one the player holds and it must
@@ -2255,6 +2261,17 @@ module BreakEscape
     # Used for security validation when adding items to rooms
     def npc_has_item?(npc_data, item)
       !find_npc_held_item(npc_data, item).nil?
+    end
+
+    # The server's id for one of an NPC's itemsHeld entries: its authored or stamped id, or for
+    # a held item with none (a save from before stamp_scenario_object_ids! named them) the id
+    # a fresh game stamps, `<npcId>_held_<n>`. Never a client value. `held_item` is the entry
+    # find_npc_held_item returned, so it is found by identity.
+    def npc_held_item_server_id(npc_data, held_item)
+      return held_item['id'] if held_item['id'].present?
+
+      index = Array(npc_data['itemsHeld']).index { |h| h.equal?(held_item) }
+      index && "#{npc_data['id']}_held_#{index}"
     end
 
     # Return the itemsHeld entry (scenario definition) matching the given item, or nil.

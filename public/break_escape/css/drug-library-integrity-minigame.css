@@ -387,6 +387,8 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #30363d;
 }
 
 .dli-verify-values {
@@ -486,7 +488,7 @@
   background: #21262d;
   color: #3d444d;
   font-family: 'VT323', monospace;
-  font-size: 18px;
+  font-size: 16px;
   letter-spacing: 0.5px;
   border: 2px solid #30363d;
   border-radius: 0;
@@ -637,6 +639,8 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #30363d;
 }
 
 .dli-fleet-subtitle {

@@ -117,16 +117,29 @@ test('number keys still pick; V never does', () => {
     assert.equal(g.viewing, null);
 });
 
-test('each card has its own pick button and a separate View large button; none once identified', () => {
-    const g = compareGame();
-    g.viewing = 1;
-    const html = g._refButtons(false);
-    assert.equal((html.match(/data-action="ref"/g) || []).length, 3);
-    assert.equal((html.match(/data-action="view"/g) || []).length, 3);
-    assert.match(html, /data-action="view" data-index="1" aria-pressed="true"[^>]*>Back to my lift \(V\)</);
-    assert.match(html, /data-action="view" data-index="0" aria-pressed="false"[^>]*aria-label="View large \(V\): card 1, Jesse Tran">View large \(V\)</);
-    const done = g._refButtons(true);
-    assert.equal((done.match(/data-action="view"/g) || []).length, 0);
+test('each card has its own pick button and a separate View large button; none once identified', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('<!doctype html><body></body>');
+    const stub = globalThis.document;
+    globalThis.document = dom.window.document;
+    try {
+        const g = compareGame();
+        g.viewing = 1;
+        const host = dom.window.document.createElement('div');
+        host.appendChild(g._refCards(false));
+        assert.equal(host.querySelectorAll('[data-action="ref"]').length, 3);
+        assert.equal(host.querySelectorAll('[data-action="view"]').length, 3);
+        const v1 = host.querySelector('[data-action="view"][data-index="1"]');
+        assert.equal(v1.getAttribute('aria-pressed'), 'true');
+        assert.equal(v1.textContent, 'Back to my lift (V)');
+        const v0 = host.querySelector('[data-action="view"][data-index="0"]');
+        assert.equal(v0.getAttribute('aria-pressed'), 'false');
+        assert.equal(v0.getAttribute('aria-label'), 'View large (V): card 1, Jesse Tran');
+        assert.equal(v0.textContent, 'View large (V)');
+        const done = dom.window.document.createElement('div');
+        done.appendChild(g._refCards(true));
+        assert.equal(done.querySelectorAll('[data-action="view"]').length, 0);
+    } finally { globalThis.document = stub; }
 });
 
 test('the one-sentence key explains the marks with pixel glyphs; gone once identified', () => {

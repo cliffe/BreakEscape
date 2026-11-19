@@ -192,7 +192,7 @@ test('compare zoom: structure, crisp scale, text tags, pixel-art CSS', () => {
 });
 
 test('wrong pick: card is rejected, feedback shown above the cards, other cards stay pickable', () => {
-    assert.match(game, /c\.rejected = true;[\s\S]{0,600}this\._renderPanel\(\);\s*this\.announce\(this\.message\)/);
+    assert.match(game, /c\.rejected = true;[\s\S]{0,600}this\._renderPanel\(\);\s*(?:if \(viaKey\)[^\n]*\n\s*)?this\.announce\(this\.message\)/);
     const html = game.slice(game.indexOf('That is ${/^[aeiou]/i'), game.indexOf('/** The magnified lift'));
     assert.ok(html.indexOf('data-dyn="feedback"') < html.indexOf('_zoomHtml()'), 'feedback sits above the zoom and cards');
     assert.match(game, /if \(!c \|\| c\.rejected\) return;/);

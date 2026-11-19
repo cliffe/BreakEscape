@@ -40,27 +40,57 @@ module BreakEscape
     # id (no name fallback), and that is not client_forged?. The definition is found statically by
     # CredentialModel.item_definition.
     def credential_held_proof_holds?(cred_id, _entry, item_id)
+      credential_held_proof_state(cred_id, item_id) == :held
+    end
+
+    # :held, :revoked or :missing for a `held` proof. A matching item that is a cancelled access
+    # card (its card_id, else its opens_lock/key_id, is in revoked_card_ids, the left-card
+    # consequence 3.3b) is :revoked, the same rule the rfid door checks apply, so a cancelled
+    # keycard carrying a credential no longer signs in. :revoked only when no live copy is held.
+    def credential_held_proof_state(cred_id, item_id)
       definition = CredentialModel.item_definition(scenario_data, item_id)
-      return false unless definition.is_a?(Hash)
+      return :missing unless definition.is_a?(Hash)
 
       def_type = definition['type'].to_s
       def_id = definition['id'].to_s
-      return false if def_id.empty?
+      return :missing if def_id.empty?
 
-      Array(player_state['inventory']).any? do |inv|
-        next false unless inv.is_a?(Hash)
-        next false if ItemIdentity.client_forged?(inv)
+      revoked = revoked_card_ids
+      state = :missing
+      Array(player_state['inventory']).each do |inv|
+        next unless inv.is_a?(Hash)
+        next if ItemIdentity.client_forged?(inv)
 
         # Unwrap the stored shape, as the other inventory readers do (has_key?, the lockpick
         # check, record_planted_item!): a genuine take is stored flat, but a future path that
         # stored a credential item as { scenarioData: {...} } must still prove held (R1 m2).
         data = inv['scenarioData'] || inv
-        next false unless data.is_a?(Hash)
+        next unless data.is_a?(Hash)
+        next unless data['credential'].to_s == cred_id.to_s &&
+                    data['type'].to_s == def_type &&
+                    data['id'].to_s == def_id
 
-        data['credential'].to_s == cred_id.to_s &&
-          data['type'].to_s == def_type &&
-          data['id'].to_s == def_id
+        # Resolved as Game#held_keycard_ref_ids resolves it, and only for a keycard: the door checks
+        # read no card id from any other item type, so a file or key whose opens_lock/key_id happens
+        # to equal a cancelled card's id is never refused here either.
+        card_id = if def_type == 'keycard'
+                    inv['card_id'].presence || data['card_id'].presence ||
+                      ItemIdentity.lock_ref(data) || ItemIdentity.lock_ref(inv)
+        end
+        return :held unless card_id && revoked.include?(card_id.to_s)
+
+        state = :revoked
       end
+      state
+    end
+
+    # True when this credential's `held` proof fails only because its card was cancelled, so the
+    # sign-in can give the door's refusal reason ('revoked') instead of the generic one.
+    def credential_card_revoked?(cred_id)
+      entry = CredentialModel.registry(scenario_data)[cred_id.to_s]
+      return false unless entry.is_a?(Hash) && CredentialModel.proof_kind(entry['proof']) == 'held'
+
+      credential_held_proof_state(cred_id, entry['proof']['held']) == :revoked
     end
 
     # The keyring answer for GET /keyring (section 6.2). pc_id, route (:foothold/:from/:relay) name

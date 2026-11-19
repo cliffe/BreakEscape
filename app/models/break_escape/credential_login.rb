@@ -12,9 +12,19 @@ module BreakEscape
   module CredentialLogin
     extend ActiveSupport::Concern
 
+    # The reader's wording for a cancelled card (rfid-minigame.js), reused so the feedback matches.
+    CARD_CANCELLED_MESSAGE = 'Card cancelled'
+
     # The generic refusal (step 2): the typed refusal's shape without attemptsLeft.
     def credential_login_refusal
       { status: :unprocessable_entity, body: { success: false, message: Game::LOGIN_INCORRECT } }
+    end
+
+    # A keycard credential whose card was cancelled: the door's refusal reason (`revoked`) and the
+    # reader's wording ('Card cancelled'), so the sign-in refuses it the way a door does.
+    def credential_card_revoked_refusal
+      { status: :unprocessable_entity,
+        body: { success: false, message: CARD_CANCELLED_MESSAGE, reason: 'revoked' } }
     end
 
     # route: { foothold: } | { from: } | { relay: true }, as the controller read it from the body,
@@ -27,6 +37,7 @@ module BreakEscape
       pc = info[:object]
       # 2. A held, proven credential of a built connecting kind
       entry = provable_connecting_credential(cred_id)
+      return credential_card_revoked_refusal if !entry && cred_id.is_a?(String) && credential_card_revoked?(cred_id)
       return credential_login_refusal unless entry
 
       cred_id = cred_id.to_s

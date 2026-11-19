@@ -71,3 +71,14 @@ test('F1: found_upload_schedule is not set by the log (it gates the operator-nam
     const logBlock = erb.slice(erb.indexOf('"name": "transfer_queue.log"'), erb.indexOf('"id": "talentstack_envelope"'));
     assert.doesNotMatch(logBlock, /found_upload_schedule/);
 });
+
+test('F6: the HaX Recruiter text says she is on the phone, not that there is a number to find', () => {
+    assert.ok(erb.includes('"message": "That TalentStack caller is the Recruiter. Answer or not, she stays on your phone and you can ring her back.'), 'new wording present');
+    // The text promises a callback whether she is answered, declined or rung out: keep what makes that true.
+    const rings = erb.match(/"targetKnot": "first_call",\s*"ring": \{ "onMissed": "callback" \}/g) || [];
+    assert.ok(rings.length >= 2, 'first_call rings (conversation_closed loop and game_loaded twin) leave a callback when missed');
+    assert.ok(erb.includes('"call": { "knot": "return_contact", "when": "!globalVars.recruiter_line_dead"'), 'she can be rung back until her line goes dead');
+    assert.ok(/"message": "That TalentStack caller[^"]*"[^}]*"skipIfGlobal": "recruiter_contacted_player"/.test(erb), 'text skipped once she has been rung back');
+    assert.ok(!erb.includes('That TalentStack number is the Recruiter'), 'old wording gone');
+    assert.ok(!erb.includes('Let it ring out and she stays'), 'R1 wording gone');
+});

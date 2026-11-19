@@ -1183,7 +1183,7 @@
 
 /* Short screens (501 to 680 px: a 1366x768 laptop's browser, 800x600): the replies box, the "more
    choices" cue and the thread all have to share about 340px with the influence header, so
-   - the thread gives way first, down to two lines (44px), and scrolls to the contact's line;
+   - the thread gives way first, down to two lines (44px; 58px from 565px tall), and scrolls to the contact's line;
    - the replies box is border-box with a floor of one reply (64px), so the cue and at least one
      reply stay on screen down to 501px tall;
    - the influence legend is one line (see the 820 px rule below). */
@@ -1202,6 +1202,15 @@
     .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-avatar-placeholder { width: 48px; height: 48px; font-size: 16px; }
 }
 
+/* 565 to 680 px (the budget needs 563 px at least): one full two-line subtitle from Dev (2 x 20.8px of text plus padding) fits, so his
+   first line is not half cut until the player scrolls. At 501 to 564 px the replies box is already
+   near its 64px floor, so the 44px minimum stays there. */
+@media (min-height: 564.02px) and (max-height: 680px) {
+    .phone-call-mode #conversation-view.call-has-choices .messages-container {
+        min-height: 58px;
+    }
+}
+
 /* Up to 820 px tall the three-line influence legend is one line (it wraps by whole items only when a reached threshold makes it too long): "Wary at -40 / Refuses at -50 / Reports at -70",
    with ": reached" added to a threshold once it is passed (the colon and state are hidden until then).
    Colour and icon opacity are not the only cue. Taller than 820 px the full legend stays. */
@@ -1215,9 +1224,10 @@
         overflow: visible;
     }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item { white-space: nowrap; }
-    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item + .ib-infl-legend-item::before {
-        content: "/ ";
-        content: "/ " / "";
+    /* the separator ends the item before it (inside its nowrap), so a wrapped line never starts with "/" */
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(:last-child)::after {
+        content: " /";
+        content: " /" / "";
     }
     /* "not reached" is visually hidden, not display:none, so screen readers still hear it */
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-legend-item:not(.is-reached) .ib-infl-legend-colon,

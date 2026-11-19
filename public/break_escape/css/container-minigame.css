@@ -153,7 +153,7 @@
     padding: 15px;
     box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
     font-family: 'GNF', monospace;
-    font-size: 18px;
+    font-size: 16px;
     color: #333;
     max-width: 260px;
 }
@@ -202,6 +202,13 @@
 /* The desktop takes the focus (programmatically) when the icon that had it is taken */
 .desktop-background:focus {
     outline: none;
+}
+
+/* A keyboard player left on the empty desktop sees where the focus is (square, 2px) */
+.desktop-background:focus-visible {
+    outline: 2px solid var(--ui-accent, #ffcc44);
+    outline-offset: -2px;
+    border-radius: 0;
 }
 
 .desktop-wallpaper {
@@ -558,7 +565,7 @@
     color: white;
     padding: 4px 8px;
     /* border-radius: 4px; */
-    font-size: 18px;
+    font-size: 16px;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
@@ -674,7 +681,7 @@
     align-items: center;
     gap: 8px 12px;
     margin: 0 0 10px 0;
-    font-size: 18px;
+    font-size: 16px;
     color: #ecf0f1;
 }
 
@@ -933,6 +940,14 @@
 .share-folder-files .container-content-slot:focus-visible .container-content-label {
     background: #000080;
     color: #fff;
+}
+
+/* An empty share opened by key focuses the white pane itself: the gold ring is about 1.6:1 on
+   white, so the share pane gets the navy of its file selection (square, 2px) */
+.container-contents-grid.share-folder-files#container-contents-grid:focus-visible {
+    outline: 2px solid #000080;
+    outline-offset: -2px;
+    border-radius: 0;
 }
 
 .share-folder-files .container-content-slot[aria-disabled="true"] {

@@ -10,9 +10,6 @@
  * @module dusting-model
  */
 
-/** Maximum brush ticks per second the UI should feed the field. */
-export const MAX_TICKS_PER_SECOND = 30;
-
 /** Fog saturates at this density (gentle: it never fully hides the ridges). */
 const FOG_MAX = 0.35;
 /** Fog ramp divisor: fog = (FP - Pfog) / FOG_RAMP. */
@@ -107,10 +104,30 @@ export const DIFFICULTY = {
     // easy: decoys have a different pattern class by default, so the compare is by class; near-identical
     // whorls on easy were not a fair comparison (m08 E16). A scenario may force a same-class decoy with a
     // { name, pattern } entry in fingerprintCandidates (m05's mug does). Medium and hard keep the minutiae test.
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.24, partial: 'never', sheenScale: 1.0, hintAfterMs: 8000, nearRadius: 8, marks: 3 },
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.34, partial: 'never', sheenScale: 1.0, hintAfterMs: 8000, nearRadius: 8, marks: 3 },
     medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, hintAfterMs: 10000, nearRadius: 8, marks: 3 },
     hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findFloor: 0, partial: 'always', sheenScale: 0.7, hintAfterMs: 15000, nearRadius: 5, marks: 2 }
 };
+
+/**
+ * How the brush feels in the game, on top of TOOLS (which the model tests pin). Blind playtests m09 and m04 took 45 drag
+ * strokes to reach the Lift threshold: the fine brush lays a 5 px line over a 71 x 95 px print and a stroke that misses the
+ * print adds nothing. The game draws the brush at `size` times its model radius and lays powder `strength` times faster, so a
+ * mouse, finger or arrow-key player (all feed the same brushLine) reaches the threshold in about 5 deliberate strokes with the
+ * default fine brush on medium. `byDifficulty` keeps the ordering: easy a little wider, hard narrower, so hard still takes more
+ * strokes (and its higher threshold and partial print still apply).
+ */
+export const BRUSH_FEEL = { size: 2, strength: 2, byDifficulty: { easy: 1.1, medium: 1, hard: 0.85 } };
+
+/**
+ * The tool as the game applies it for a difficulty: `radius` and `strength` scaled by BRUSH_FEEL.
+ * @param {{radius:number, strength:number}} tool an entry of TOOLS
+ * @param {string} [difficultyId]
+ */
+export function brushFeel(tool, difficultyId = 'medium') {
+    const k = BRUSH_FEEL.byDifficulty[difficultyId] || 1;
+    return { ...tool, radius: tool.radius * BRUSH_FEEL.size * k, strength: tool.strength * BRUSH_FEEL.strength * k };
+}
 
 const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];
 
@@ -209,24 +226,39 @@ export class DustField {
     }
 
     /**
-     * Brush along a segment with ticks every ~radius/3 px so a fast stroke leaves no gaps.
-     * Ticks fall on (start, end] so chained segments of one stroke do not double-count the join;
-     * a zero-length segment gives a single tick. Callers cap tick rate with MAX_TICKS_PER_SECOND.
+     * Brush along a segment. Without `carry` (legacy, whole-stroke callers): ticks every ~radius/3 px on (start, end],
+     * at least one per segment. With a numeric `carry` (the distance travelled since the last tick of this stroke) ticks
+     * are laid only at fixed radius/3 spacing along the whole stroke, so many tiny pointermove segments lay the same
+     * powder as one long segment; a zero-length segment lays nothing. A carry above the step (after a switch to a finer brush)
+     * lays the next tick at the segment start, never behind it.
      * @param {number} x0
      * @param {number} y0
      * @param {number} x1
      * @param {number} y1
      * @param {{radius:number, strength:number, fogRate?:number}} tool
+     * @param {number} [carry] Distance since the last tick; start a stroke at 0.
+     * @returns {number|undefined} The new carry when `carry` was given.
      */
-    brushLine(x0, y0, x1, y1, tool) {
+    brushLine(x0, y0, x1, y1, tool, carry) {
         const dist = Math.hypot(x1 - x0, y1 - y0);
-        if (dist < 1e-6) { this.brush(x1, y1, tool); return; }
         const step = Math.max(1, tool.radius / 3);
-        const n = Math.max(1, Math.ceil(dist / step));
-        for (let k = 1; k <= n; k++) {
-            const t = k / n;
-            this.brush(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tool);
+        if (carry === undefined) {
+            if (dist < 1e-6) { this.brush(x1, y1, tool); return undefined; }
+            const n = Math.max(1, Math.ceil(dist / step));
+            for (let k = 1; k <= n; k++) {
+                const t = k / n;
+                this.brush(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tool);
+            }
+            return undefined;
         }
+        if (dist < 1e-6) return carry;
+        let d = Math.max(0, step - carry);   // distance along this segment of the next tick (never behind the segment start)
+        while (d <= dist + 1e-9) {
+            const t = Math.min(1, d / dist);
+            this.brush(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, tool);
+            d += step;
+        }
+        return Math.max(0, dist - (d - step));   // distance past the last tick (carry + dist when none was laid)
     }
 
     /**
@@ -457,7 +489,7 @@ export function wrongPowderReason(powder, surface, short = false) {
 
 export const FIND_BEAM_GAIN = 1.6;
 export const FIND_HC_FLOOR_BONUS = 0.16;
-/** Luma change the medium floor (0.16) makes on every surface; easy and High contrast scale from it. */
+/** Luma change the reference floor (0.16) makes on every surface (medium's 0.16 moves it by about 30 to 38, easy's 0.34 by about 64); High contrast scales from it. */
 export const FIND_FLOOR_DELTA = 30;
 const FIND_FLOOR_REF = 0.16;
 const FIND_FLOOR_MAX = 0.9;
@@ -612,3 +644,119 @@ export function zoomPlanBeside({ side, rootW, cards, budgetH, maxS = 6 }) {
     return p;
 }
 export const ZOOM_MAX_H_SHORT = 128;
+
+// ---------------------------------------------------------------------------------------------
+// Resume after a reload (D183 item 3): per-viewer localStorage only, never synced to the server.
+// One small entry per object being dusted: the step, powder, tool, a quality estimate and the powder
+// and fog fields downsampled to PROGRESS_GRID x PROGRESS_GRID bytes-as-numbers. Every storage call is
+// wrapped, so a missing or throwing localStorage just means no resume.
+// ---------------------------------------------------------------------------------------------
+export const PROGRESS_GRID = 32;          // 32x32 (4x4 blocks): fog max-pooled at 16x16 restored about 1.7x the fog, 32x32 about 1.4x (never below 1x)
+export const PROGRESS_SCALE = 16;          // stored value = passes * 16, capped at 255
+export const PROGRESS_MAX_ENTRIES = 8;     // oldest entries beyond this are pruned
+export const PROGRESS_MAX_CHARS = 9000;    // a stored entry above this is refused (a full 32x32 pair is about 4k to 8k)
+const PROGRESS_PREFIX = 'breakEscape.dusting.';
+const PROGRESS_INDEX = 'breakEscape.dusting.index';
+const PROGRESS_STEPS = ['powder', 'dust'];
+
+export function progressKey(gameId, objectId) {
+    return `${PROGRESS_PREFIX}${String(gameId == null ? 'local' : gameId)}.${String(objectId)}`;
+}
+
+function defaultStorage() {
+    try { return typeof window !== 'undefined' && window.localStorage ? window.localStorage : null; } catch (e) { return null; }
+}
+
+/**
+ * Each block of a size x size Float32 grid, scaled and capped to 0..255 ints, as a plain array. `mode` is 'mean' (powder)
+ * or 'max' (fog passes: fog is a threshold on FP, so a mean would average a fogged stroke under the threshold and a
+ * reload would wipe it; a max keeps it, and errs towards more fog, never a free unfog).
+ */
+export function downsampleField(arr, size, grid = PROGRESS_GRID, mode = 'mean') {
+    const out = new Array(grid * grid), b = Math.floor(size / grid);
+    for (let gy = 0; gy < grid; gy++) {
+        for (let gx = 0; gx < grid; gx++) {
+            let sum = 0, top = 0;
+            for (let y = 0; y < b; y++) for (let x = 0; x < b; x++) {
+                const v = arr[(gy * b + y) * size + gx * b + x];
+                sum += v; if (v > top) top = v;
+            }
+            out[gy * grid + gx] = Math.max(0, Math.min(255, Math.round((mode === 'max' ? top : sum / (b * b)) * PROGRESS_SCALE)));
+        }
+    }
+    return out;
+}
+
+/** Writes the downsampled values back into a field array (blocky, which is fine for a resume). */
+export function upsampleInto(arr, size, vals, grid = PROGRESS_GRID) {
+    const b = Math.floor(size / grid);
+    for (let y = 0; y < size; y++) {
+        const gy = Math.min(grid - 1, Math.floor(y / b));
+        for (let x = 0; x < size; x++) arr[y * size + x] = vals[gy * grid + Math.min(grid - 1, Math.floor(x / b))] / PROGRESS_SCALE;
+    }
+}
+
+export function packProgress({ step, powder, tool, quality }, field) {
+    return {
+        v: 1, step, powder, tool, q: Math.round((Number(quality) || 0) * 100) / 100, t: Date.now(),
+        p: downsampleField(field.P, field.size), f: downsampleField(field.FP, field.size, PROGRESS_GRID, 'max')
+    };
+}
+
+function validProgress(o) {
+    const n = PROGRESS_GRID * PROGRESS_GRID;
+    const grid = a => Array.isArray(a) && a.length === n && a.every(v => Number.isInteger(v) && v >= 0 && v <= 255);
+    return !!o && typeof o === 'object' && o.v === 1 && PROGRESS_STEPS.includes(o.step)
+        && typeof o.powder === 'string' && !!POWDERS[o.powder] && (o.tool === null || typeof o.tool === 'string')
+        && grid(o.p) && grid(o.f);
+}
+
+/** Saves the entry; false when storage is missing, throws, or the entry is over the size bound. */
+export function saveProgress(gameId, objectId, entry, storage = defaultStorage()) {
+    if (!storage || objectId == null || !validProgress(entry)) return false;
+    try {
+        const text = JSON.stringify(entry);
+        if (text.length > PROGRESS_MAX_CHARS) return false;
+        const key = progressKey(gameId, objectId);
+        storage.setItem(key, text);
+        let index = [];
+        try { index = JSON.parse(storage.getItem(PROGRESS_INDEX) || '[]'); } catch (e) { index = []; }
+        if (!Array.isArray(index)) index = [];
+        index = index.filter(k => k !== key); index.push(key);
+        while (index.length > PROGRESS_MAX_ENTRIES) { try { storage.removeItem(index.shift()); } catch (e) { /* ignore */ } }
+        storage.setItem(PROGRESS_INDEX, JSON.stringify(index));
+        return true;
+    } catch (e) { return false; }
+}
+
+export function loadProgress(gameId, objectId, storage = defaultStorage()) {
+    if (!storage || objectId == null) return null;
+    try {
+        const raw = storage.getItem(progressKey(gameId, objectId));
+        if (!raw || raw.length > PROGRESS_MAX_CHARS) return null;
+        const o = JSON.parse(raw);
+        return validProgress(o) ? o : null;
+    } catch (e) { return null; }
+}
+
+/** Removes the entry (a finished lift). Safe with storage missing or throwing. */
+export function clearProgress(gameId, objectId, storage = defaultStorage()) {
+    if (!storage || objectId == null) return;
+    const key = progressKey(gameId, objectId);
+    try { storage.removeItem(key); } catch (e) { /* ignore */ }
+    try {
+        const index = JSON.parse(storage.getItem(PROGRESS_INDEX) || '[]');
+        if (Array.isArray(index)) storage.setItem(PROGRESS_INDEX, JSON.stringify(index.filter(k => k !== key)));
+    } catch (e) { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Hint nudge (D183 item 5): after NUDGE_MISSES failed checks, or NUDGE_IDLE_MS without finding it,
+// the Hint button is shown and highlighted with the label "Stuck? Try Hint".
+// ---------------------------------------------------------------------------------------------
+export const NUDGE_MISSES = 3;
+export const NUDGE_IDLE_MS = 20000;
+export const NUDGE_TEXT = 'Stuck? Try Hint';
+export function hintNudgeDue({ misses = 0, idleMs = 0, found = false } = {}) {
+    return !found && (misses >= NUDGE_MISSES || idleMs >= NUDGE_IDLE_MS);
+}

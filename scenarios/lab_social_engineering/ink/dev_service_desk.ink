@@ -56,7 +56,21 @@ Service desk, Dev speaking. What can I do for you?
 // Each reaction is passed the say id as well as the band, so Dev answers the technique
 // (urgency, borrowed authority) and the band (wary, refusing) in his own voice, not with
 // one stock team line each turn (item 7). The team acknowledgement shows once (team_checked).
+// The opener speaks only the facts the card carried: each fact fills independently, so a
+// player who prepared only the name, or only the team, still has an opener, and it leaves
+// out what they don't have (lab post-release M2). pretext-judge skips the empty blank's
+// claim, so the call stays fair. The guards test the _name VAR and the judge's claimUnstated
+// tests the _value VAR, but they mean the same thing: fillPretextVars (person-chat-pretext,
+// from pretext-card) writes a fact's _name and _value together, so a blank the card did not
+// carry has both empty and one the card carried has both set. "Shown here" and "judged" are
+// therefore the same fact (lab post-release m2). The _name == "" guards also double as the
+// validator's blank-omission exemption and as the 1299b48d9 resume fix: a reload with empty
+// re-picks keeps the saved blanks, and the variant for what survived still shows.
 + { not team_repaired and not team_checked and pretext_intern_name != "" and pretext_team_name != "" } [I'm helping {pretext_intern_name}, your new starter in {pretext_team_name}.]
+    -> reaction(pretext_say("open_buddy"), "open_buddy")
++ { not team_repaired and not team_checked and pretext_intern_name != "" and pretext_team_name == "" } [I'm helping {pretext_intern_name}, one of your new starters.]
+    -> reaction(pretext_say("open_buddy"), "open_buddy")
++ { not team_repaired and not team_checked and pretext_intern_name == "" and pretext_team_name != "" } [I'm helping a new starter in your {pretext_team_name} team.]
     -> reaction(pretext_say("open_buddy"), "open_buddy")
 + { team_checked and pretext_team_value == "accounts" and not team_repaired } [Sorry, my mistake. She's in Finance.]
     ~ team_repaired = true
@@ -100,13 +114,31 @@ Service desk, Dev speaking. What can I do for you?
     -> desk
 }
 { said == "repair_team":
-    Finance, right you are. New intern, that'll be Sofia then. What's she after?
+    // Same as M1 on the opener: only name Sofia if the player actually stated the
+    // intern. A team-only Accounts player repairs to Finance with the name blank empty,
+    // so naming her here would have Dev supply a fact the player never gave (lab
+    // post-release M1, R2). Fall to the generic voiced line. The judge's +20 and the
+    // on-screen "Corrected" tell still fire, so the candour correction still lands.
+    { pretext_intern_name != "":
+        Finance, right you are. New intern, that'll be Sofia then. What's she after?
+    - else:
+        Right, bear with me a sec.
+    }
     -> desk
 }
 { not team_checked:
     ~ team_checked = true
     { pretext_team_value:
-    - "finance": Finance, lovely. New intern, that'll be Sofia. What's she after?
+    - "finance":
+        // Only name Sofia if the player actually stated the intern. On the team-only
+        // opener the name blank is empty, so naming her here would have Dev supply a
+        // fact the player never gave, then the asks still come back wanting her name
+        // (lab post-release M1). Fall to the generic voiced line instead.
+        { pretext_intern_name != "":
+            Finance, lovely. New intern, that'll be Sofia. What's she after?
+        - else:
+            Right, bear with me a sec.
+        }
     - "accounts": Accounts? We folded Accounts into Finance a couple of years back. What's she after?
     - else: Right, bear with me a sec.
     }

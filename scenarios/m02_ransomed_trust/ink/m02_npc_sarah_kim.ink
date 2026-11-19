@@ -248,7 +248,8 @@ Dr. Sarah Kim: Gary has one. I don't.
     -> boardroom_code
 
 + [I need to get on.]
-    {offline_keys_recovered and not kim_has_escrow_keys:
+    // D177: the alternative-keys line only fits while the player holds no keys.
+    {not offline_keys_recovered:
         Dr. Sarah Kim: Then go. If you find me an alternative before they dial in, I'll use it.
     - else:
         Dr. Sarah Kim: Yes. Go.

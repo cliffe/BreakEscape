@@ -174,7 +174,7 @@ agent_0x99: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwr
         Margaret Sorensen: Series R, to the last box.
         Margaret Sorensen: Take the print if you like. By the time it matters, the shredder will have caught up.
     }
-    Narrator: You lean on the counter. The card reel at her hip swings a hand's width from the cloner in your jacket.
+    Narrator: You lean on the counter, nearer than you need to be. Her card reel is within easy reach of the cloner in your jacket.
     #clone_keycard:stacks_card
     Narrator: She goes on stamping.
     ~ hatch_leaned = true
