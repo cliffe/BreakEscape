@@ -859,13 +859,13 @@ wall_safe_pin = "5829"
     collide with the debrief and, if the insider was never identified, the Reeves ambush. %>
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
-              "condition": "globalVars.advised_board_refuse && !globalVars.paid_ransom && !globalVars.dr_kim_ko",
+              "condition": "globalVars.advised_board_refuse && !globalVars.advised_board_pay && !globalVars.paid_ransom && !globalVars.dr_kim_ko",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 18000, "message": "Dr Kim messaged the team. You told her you'd bring the wards back without paying, and you did. She held the board off on your word. People remember that." }
             },
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
-              "condition": "globalVars.advised_board_refuse && globalVars.paid_ransom && !globalVars.dr_kim_ko",
+              "condition": "globalVars.advised_board_refuse && !globalVars.advised_board_pay && globalVars.paid_ransom && !globalVars.dr_kim_ko",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 18000, "message": "Word from Dr Kim. She held the board off on your word, and they paid anyway. That's a debt." }
             },

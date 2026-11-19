@@ -1425,7 +1425,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <% ["Locked Filing Cabinet", "Torres' Briefcase"].each do |nm| %>
             {
               "eventPattern": "object_interacted",
-              "condition": "data.objectName === <%= nm.to_json.gsub('"', '\\"') %> && globalVars.lockpicking_guide_offered !== true",
+              "condition": "data.objectName === <%= nm.to_json.gsub('"', '\\"') %> && data.objectType !== 'vm-launcher' && globalVars.lockpicking_guide_offered !== true",
               "onceOnly": true,
               "setGlobal": { "lockpicking_guide_offered": true },
               "sendTimedMessage": { "delay": 1500, "message": "Pin tumbler. Your picks will do it. Want the guide?" }
