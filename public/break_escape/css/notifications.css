@@ -19,13 +19,15 @@
    placeNotifyBlock moves the block off the phone's controls). */
 
 .notification {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: #0a0a14;   /* opaque: a long reading toast (an examined monitor) must not show the room through */
     color: white;
     /* 48 px on the right: room for the close X (a 30 px button 8 px in) */
     padding: 15px 48px 15px 20px;
     margin-bottom: 10px;
     box-shadow: none;
-    transition: all 0.3s ease;
+    /* The slide eases, the opacity does not: a toast fading in (or out) at half strength let
+       the room show through its text. It appears and goes whole. */
+    transition: transform 0.3s ease;
     opacity: 0;
     transform: translateY(-20px);
     /* A toast is not modal and nothing happens when its body is clicked, so clicks pass
@@ -246,7 +248,7 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
 }
 
 .game-confirm-dialog {
-    background: rgba(10, 10, 20, 0.97);
+    background: #0a0a14;   /* opaque: the dim belongs on the overlay behind, not on the card */
     border: 2px solid #3498db;
     padding: 28px 32px;
     max-width: 460px;
