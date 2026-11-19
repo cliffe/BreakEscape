@@ -511,6 +511,16 @@
     transform: scale(1.05);
 }
 
+/* Keyboard stop: a 2px square ring with a 2px black gap, so it shows on the purple slot and the grid */
+.container-content-slot:focus-visible {
+    outline: 2px solid var(--ui-accent, #ffcc44);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #000;
+    border-radius: 0;
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgb(149 157 216 / 90%);
+}
+
 .container-content-item {
     max-width: 48px;
     max-height: 48px;

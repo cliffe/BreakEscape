@@ -1770,6 +1770,25 @@ export class ContainerMinigame extends MinigameScene {
             // a 64px cell (a 16px glyph at x4), not the grid's x2 (slice 2a review R1 M2)
             if (this.shareFolder) fitWholeScale(itemImg, 64);
 
+            // Keyboard: the slot is a button named by the item (the picture's alt is the same
+            // name); Enter or Space does what a click on the picture does. Every item is a
+            // stop in visual order, as a desktop's icons are. One with no click action
+            // (nothing to take or open) is still reachable, so its name can be read, and
+            // says it is unavailable.
+            const acts = !!(shareParts || this.offersTransfer(item) || this.isInteractiveItem(item) || item.takeable);
+            slot.tabIndex = 0;
+            slot.setAttribute('role', 'button');
+            slot.setAttribute('aria-label', label.textContent || item.name || item.type || 'Item');
+            if (!acts) slot.setAttribute('aria-disabled', 'true');
+            slot.addEventListener('keydown', (e) => {
+                if (e.target !== slot || (e.key !== 'Enter' && e.key !== ' ')) return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.repeat || !acts) return;
+                this.openedByKey = true;
+                try { itemImg.click(); } finally { this.openedByKey = false; }
+            });
+
             slot.appendChild(itemImg);
             slot.appendChild(label);
             contentsGrid.appendChild(slot);
@@ -1929,8 +1948,18 @@ export class ContainerMinigame extends MinigameScene {
 
     /** The icon (or the desktop) that takes the focus when `slot`, a desktop icon, has just been removed. */
     focusAfterIconRemoved(slot) {
-        if (!slot?.classList?.contains('desktop-icon')) return;
         const active = document.activeElement;
+        if (slot?.classList?.contains('container-content-slot')) {
+            // A contents grid item: the next item, else the one before, else Take Container,
+            // else the X. Never the body.
+            if (active && active !== document.body && active.isConnected && !slot.contains(active)) return;
+            const sib = slot.nextElementSibling || slot.previousElementSibling;
+            if (sib?.classList?.contains('container-content-slot')) return sib;
+            const root = this.gameContainer || document;
+            return root.querySelector?.('#take-container-btn') || root.querySelector?.('#minigame-close')
+                || document.getElementById('minigame-close') || undefined;
+        }
+        if (!slot?.classList?.contains('desktop-icon')) return;
         if (active && active !== document.body && !slot.contains(active) && active !== slot) return;
         const next = slot.nextElementSibling || slot.previousElementSibling;
         const target = next?.classList?.contains('desktop-icon') ? next : slot.closest?.('.desktop-background');
@@ -2496,7 +2525,7 @@ export class ContainerMinigame extends MinigameScene {
             const focusNext = this.focusAfterIconRemoved(slot);
             slot.remove();
             if (focusNext) {
-                if (!focusNext.classList.contains('desktop-icon')) focusNext.setAttribute('tabindex', '-1');
+                if (!focusNext.classList.contains('desktop-icon') && !focusNext.classList.contains('container-content-slot') && focusNext.tagName !== 'BUTTON') focusNext.setAttribute('tabindex', '-1');
                 focusNext.focus?.({ preventScroll: true });
             }
             
