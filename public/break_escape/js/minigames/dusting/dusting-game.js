@@ -462,10 +462,13 @@ export class DustingMinigame extends MinigameScene {
         clearInterval(this._keyTimer);
         cancelAnimationFrame(this._raf);
         if (this._unsubArt) this._unsubArt();
+        // Closed mid-dust without a result (X, or a scripted call before the peel): keep what is on the surface for a resume.
+        if (!this.final && this.step === 'dust') this._saveProgress();
         // A scripted call or conversation ends the minigame with endMinigame(false, null) and never reaches
         // complete(): a lift mounted on the compare screen is still recorded, through the opener's callback.
         if (this.mounted && this.final && !this._resultSent) {
             this._resultSent = true;
+            this._clearProgress();   // the lift is logged, so the next interact shows "Lift on file", not Resume
             const forced = this.params && this.params.onForcedEnd;
             if (typeof forced === 'function') {
                 try { forced({ ...this._buildResult(), viaClose: true }); } catch (e) { console.error('dusting forced-end record failed', e); }
@@ -1062,6 +1065,7 @@ export class DustingMinigame extends MinigameScene {
     /** Closing after the peel keeps the lift (as unidentified); closing earlier is a plain cancel. */
     complete(success) {
         if (this._resultSent) return super.complete(success);
+        if (!this.final && this.step === 'dust') this._saveProgress();   // X mid-dust keeps the work for a resume
         if (!success && this.mounted && this.final) {
             this._clearProgress();
             this.gameResult = this._buildResult();

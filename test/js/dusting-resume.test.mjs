@@ -173,3 +173,65 @@ test('m1: fog does not drop across save and restore (fog passes are max-pooled, 
         assert.ok(r <= 2, `pfog ${pfog}: fog does not balloon on restore (${r.toFixed(2)}x)`);
     }
 });
+
+globalThis.cancelAnimationFrame = globalThis.cancelAnimationFrame || (() => {});
+const Base = Object.getPrototypeOf(DustingMinigame.prototype);
+function withBaseStubs(fn) {
+    const c = Base.cleanup, k = Base.complete;
+    Base.cleanup = function () { this._baseCleaned = true; };
+    Base.complete = function (ok) { this._baseCompleted = ok; return ok; };
+    try { fn(); } finally { Base.cleanup = c; Base.complete = k; }
+}
+const forGame = () => {
+    const g = game();
+    Object.assign(g, { _timers: [], mounted: true, final: false, params: {}, _buildResult: () => ({ quality: 0.8 }) });
+    return g;
+};
+
+test('m2: cleanup after the peel (scripted call mid-compare) logs the lift and clears the resume entry', () => {
+    withBaseStubs(() => {
+        mem.clear();
+        const g = forGame(); g._saveProgress();
+        assert.ok(m.loadProgress(77, 'panelX') !== null, 'entry present before');
+        g.final = true; g.step = 'compare';
+        let logged = 0; g.params = { onForcedEnd: r => { logged += r.viaClose ? 1 : 0; } };
+        g.cleanup();
+        assert.ok(logged === 1, 'lift logged once');
+        assert.ok(m.loadProgress(77, 'panelX') === null, 'resume entry cleared, so the next interact shows Lift on file');
+    });
+});
+
+test('m3: X mid-dust (complete) and a forced cleanup mid-dust save the work; no save once a result is sent', () => {
+    withBaseStubs(() => {
+        mem.clear();
+        const g = forGame();
+        g.complete(false);
+        assert.ok(m.loadProgress(77, 'panelX') !== null, 'complete(false) mid-dust saved');
+        mem.clear();
+        const h = forGame(); h.cleanup();
+        assert.ok(m.loadProgress(77, 'panelX') !== null, 'cleanup mid-dust saved');
+        mem.clear();
+        const d = forGame(); d._resultSent = true; d.complete(false); d.cleanup();
+        assert.ok(m.loadProgress(77, 'panelX') === null, 'nothing saved after a result');
+        const l = forGame(); l.step = 'lift'; l.complete(false);
+        assert.ok(m.loadProgress(77, 'panelX') === null, 'the lift step is not saved');
+    });
+});
+
+test('m3: keyboard only: Enter turns brushing on, arrows brush, Enter off saves', () => {
+    mem.clear();
+    const g = forGame();
+    Object.assign(g, { gameState: { isActive: true }, reticle: { x: 30, y: 90 }, field: new DustField(128, { pfog: 6 }), difficultyId: 'medium', toolStrokes: 0,
+        stickyBrush: false, spaceHeld: false, dirty: false, _refreshDynamic() {}, _updateNear() {} });
+    g.metrics = { coverage: 0.1 };
+    const key = (k, extra = {}) => g._onKeyDown({ key: k, target: { tagName: 'CANVAS' }, preventDefault() {}, ctrlKey: false, metaKey: false, altKey: false, ...extra });
+    key('Enter');
+    assert.ok(g.stickyBrush === true && g._brushCarry === 0, 'brushing on, carry reset');
+    for (let i = 0; i < 12; i++) key('ArrowRight');
+    assert.ok(g.field.P.some(v => v > 0), 'arrow steps laid powder');
+    assert.ok(m.loadProgress(77, 'panelX') === null, 'nothing saved while brushing');
+    key('Enter');
+    assert.ok(g.stickyBrush === false, 'brushing off');
+    const back = m.loadProgress(77, 'panelX');
+    assert.ok(back !== null && back.p.some(v => v > 0), 'Enter off saved the powder');
+});
