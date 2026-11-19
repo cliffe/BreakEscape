@@ -264,6 +264,15 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
 - 11:50. PRIVILEGE R4 revision committed `48b0ec89f` (1027 lines). R5 delta review running
   (Fable, a6f8f5a57b1050dde) to `OPS_PRIVILEGE_ACCOUNTS_R5.md`; verdict "ready" ends the plan's
   rounds, otherwise one small Opus fix pass and stop.
+- 11:51. MFA plan with S8c committed `c5ed48e55` (1400 lines). S8c: `secondStep: { kind, owner? }`
+  on any locked object or door; kinds push, push_number_match, code (code only on password/pin
+  locks); reuses `/mfa/*` routes with `target_type`/`target_id`; state key `lockSteps`; archive
+  example met by the existing `zip_archive` container; feature id A25 (my ruling); builds L1
+  (password/pin on objects) then L2. MFA user questions now 8 (6 archive as container or per-file
+  lock; 7 staging L1 then L2; 8 does a passed approval lapse, helpdesk `maxTries`). FULL R4
+  review running (Opus, a507d1abc5320b61a) to `OPS_MFA_HELPDESK_R4.md`, asked whether S8c should
+  be split into its own plan file and for a trim list. Next: Fable reviser acts on R4 (and
+  splits if recommended), then R5 delta on Opus. S8c's log requests sent to the log reviser.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
