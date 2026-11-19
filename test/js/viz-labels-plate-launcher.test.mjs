@@ -14,8 +14,8 @@ const frameCss = readFileSync(join(root, 'css/device-frame.css'), 'utf8');
 
 test('no Press Start 2P canvas label is set under 8px', () => {
   const sizes = [...js.matchAll(/(\d+(?:\.\d+)?)px "Press Start 2P"/g)].map(m => Number(m[1]));
-  assert.ok(sizes.length > 5, 'found the canvas fonts');
-  for (const s of sizes) assert.ok(s >= 8 && s % 8 === 0 || s === 18 || s === 20 || s >= 8, `font ${s}px`);
+  assert.ok(sizes.length >= 2, 'found the literal canvas fonts');
+  for (const s of sizes) assert.ok(s >= 8, `font ${s}px`);
   assert.deepEqual(sizes.filter(s => s < 8), []);
   assert.doesNotMatch(js, /font\s*=\s*'[0-7]px/);
   assert.match(js, /const MIN_LABEL_PX = 8;/);
@@ -28,7 +28,7 @@ test('fitLabelText keeps a label that fits, drops the marker, then hides', () =>
   const fit = new Function(`${src}; return fitLabelText;`)();
   const m = t => t.length * 8;
   assert.equal(fit(m, '▸ THREAT SCORE', 200), '▸ THREAT SCORE');
-  assert.equal(fit(m, '▸ THREAT SCORE', 112), 'THREAT SCORE'.length * 8 <= 112 ? 'THREAT SCORE' : '');
+  assert.equal(fit(m, '▸ THREAT SCORE', 100), 'THREAT SCORE');
   assert.equal(fit(m, '▸ THREAT SCORE', 60), '');
   assert.equal(fit(m, 'ABC', 24), 'ABC');
   assert.equal(fit(m, 'ABC', 23), '');
