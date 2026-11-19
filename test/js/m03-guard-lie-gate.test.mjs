@@ -47,3 +47,25 @@ for (const [name, vars, want] of cases) {
         assert.ok(creditShows(vars) === want, 'credits line ' + (want ? 'hidden' : 'shown'));
     });
 }
+
+// Terry's hub sets guard_waved_on only when he has not ordered the player out.
+function terryWaved(ordered) {
+    const tj = readFileSync(join(root, 'scenarios/m03_ghost_in_the_machine/ink/m03_npc_terry_mott.json'), 'utf8');
+    const story = new inkjs.Story(tj);
+    const vars = { player_warned: true, excuse_given: true, mission_phase: 'act2_infiltration', ordered_out: ordered };
+    for (const [k, v] of Object.entries(vars)) story.variablesState[k] = v;
+    let waved = false;
+    for (let i = 0; i < 30 && story.canContinue; i++) {
+        story.Continue();
+        if ((story.currentTags || []).some((t) => /guard_waved_on/.test(t))) waved = true;
+    }
+    return waved;
+}
+
+test('hub sets guard_waved_on after a believed story', () => {
+    assert.ok(terryWaved(false) === true, 'hub should set the flag');
+});
+
+test('hub does not set guard_waved_on when Terry ordered the player out', () => {
+    assert.ok(terryWaved(true) === false, 'ordered-out re-entry must not count as believed');
+});

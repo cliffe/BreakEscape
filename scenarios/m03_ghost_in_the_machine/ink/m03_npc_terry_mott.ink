@@ -469,7 +469,10 @@ Terry Mott: What do you need from me?
 === hub ===
 // Pass 2 blind fixes 2: reaching his hub means he has accepted the story, for now.
 // From here a sighting no longer stops the player (challengeOnSight skipIfGlobal).
-#set_global:guard_waved_on:true
+// Not when he ordered the player out and they walked back up: he has not believed anything then.
+{ not ordered_out:
+    #set_global:guard_waved_on:true
+}
 { hub_quiet:
     ~ hub_quiet = false
 - else:
