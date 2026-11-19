@@ -5,11 +5,11 @@ VAR kit_ep = ""
 { kit_defend_done:
     { kit_ep == "ca01": -> ca01 }
 }
-Gwen: Morning. Grab a coffee if you need one.
+Gwen Pritchard: Morning. Grab a coffee if you need one.
 -> bye
 
 === ca01 ===
-Gwen: Good spot on that invoice. Phone the supplier next time too.
+Gwen Pritchard: Good spot on that invoice. Phone the supplier next time too.
 -> bye
 
 // Every knot ends on this choice: a knot that prints its line and ends at DONE with no
