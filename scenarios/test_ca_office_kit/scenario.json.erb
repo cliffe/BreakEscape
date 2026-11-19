@@ -59,7 +59,8 @@
     "kit_defend_done": false,
     "kit_quiet": false,
     "kit_caught": false,
-    "kit_ep": "ca01"
+    "kit_ep": "ca01",
+    "kit_e1_out": false
   },
   "chatter": {
     "kit_brightwell": {
@@ -441,7 +442,8 @@
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     }
   },
   "rooms": {
@@ -499,6 +501,19 @@
               "condition": "data.value.done.includes('debrief')",
               "onceOnly": true,
               "setGlobal": { "kit_quiet": false }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_stub_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_quiet": false }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": { "kit_e1_out": true },
+              "bark": "Have you got a minute? Someone in finance just took a call like that one."
             }
           ]
         },
@@ -555,7 +570,13 @@
           "observations": "A training kiosk. It runs the episode.",
           "minigameData": {
             "episodeId": "e1_stub"
-          }
+          },
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
+              "value": "A training kiosk. Episode finished."
+            }
+          ]
         },
         {
           "type": "coffee_station",
