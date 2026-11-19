@@ -235,6 +235,12 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   `helpdesk_request` records `as: { typed: }` always, bounded per desk; `share_file_read`
   folder-or-file is a user question; a plain object or door id is a valid place kind (for S8c).
   Next: commit, R4 delta review (Fable).
+- 11:44. D6 committed `82809503c` (no second step on any lock today; no encrypted-file lock; an
+  unused `dual-auth` minigame posts a method the server refuses; unlock route
+  `POST /games/:id/unlock`, `Game#validate_unlock` at `game.rb:4597`). S8c planner running
+  (Fable, a2083d2c395e8f19a), writes only `OPS_MFA_HELPDESK_PLAN.md`. When it reports: commit,
+  then FULL R4 review on Opus (S8c against the unlock code, plus the end-to-end read and trim
+  list the R3 reviser never did); pass any new rows to the log plan's reviser or next round.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
