@@ -82,3 +82,9 @@ Findings not acted on as suggested, one line each.
 - R2-7 a: Q1 removed from section 15; keyboard-only session-type implants stated as a decision there.
 - R2-8 a: Q2 and the `quietNeedsConsole` option removed; section 15 states the accepted "Nobody is signed in at this keyboard." change in `test_access_networks` and `demo_access_tour`, and section 10 now says "accepted" in place of "needs the user's yes". Section 15 is now "Decisions".
 - R2-11 a: the plan mentions neither existing-code bug, so no change.
+
+## Cracking plan requests (2026-11-19)
+
+- Request 1: every hash example and the `account.npc` wording in sections 6, 9 and 14 now use `"account": "<npcId>"` (a string, as `scripts/scenario-schema.json` requires); `cachedAccounts` entries keep their `{ "npc": ... }` form.
+- Request 2: the `deskadmin_pc01` recipe example now carries `crack.facts` (`it_rota_poster_seen`, illustrative id), and the recipe text in sections 6 and 14 names `facts` (1 to 4 intel fact ids, required for `guessable`).
+- Answers to the S7 requests: the section 14 S7 entry now says each is answered in the cracking plan's section 14.

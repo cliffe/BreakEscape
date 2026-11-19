@@ -243,10 +243,10 @@ candidates only, and its collect control is on its remote desktop.
     "cachedAccounts": [ { "npc": "alexT" }, { "npc": "kemiA" } ] }
 ] } },
 "credentials": {
-  "hotdesk_priyan": { "kind": "hash", "account": { "npc": "priyaN" }, "proof": { "harvested": "hotDesk" } },
-  "hotdesk_samo":   { "kind": "hash", "account": { "npc": "samO" },   "proof": { "harvested": "hotDesk" } },
-  "alexpc_alext":   { "kind": "hash", "account": { "npc": "alexT" },  "proof": { "harvested": "alexPc" } },
-  "alexpc_kemia":   { "kind": "hash", "account": { "npc": "kemiA" },  "proof": { "harvested": "alexPc" } }
+  "hotdesk_priyan": { "kind": "hash", "account": "priyaN", "proof": { "harvested": "hotDesk" } },
+  "hotdesk_samo":   { "kind": "hash", "account": "samO",   "proof": { "harvested": "hotDesk" } },
+  "alexpc_alext":   { "kind": "hash", "account": "alexT",  "proof": { "harvested": "alexPc" } },
+  "alexpc_kemia":   { "kind": "hash", "account": "kemiA",  "proof": { "harvested": "alexPc" } }
 }
 ```
 
@@ -254,7 +254,7 @@ Registry ids follow the registry's id pattern (lowercase letters, digits and `_`
 `credential_model.rb:40`); a hash id needs no fixed relationship to the PC or NPC ids, and the
 names above only make the example readable. The proof is a string like the registry's other proof
 kinds (`session`, `foothold`): its value is the PC id, and the account comes from the entry's
-`account.npc`.
+`account` string (an NPC id).
 
 The hot desk has no owner: `priyaN` is cached from the start and `samO` only after a borrow, so
 `samO` must carry a `borrow_session` workaround whose `pc` resolves (through `find_login_pc`, as the
@@ -263,7 +263,7 @@ once signed in there are cached from the start.
 
 A cached account is always a hash. Each candidate needs exactly one `hash` record in the
 `credentials` registry (the cracking plan's record kind, with whatever other fields that plan
-defines) whose `account.npc` is the candidate and whose proof is `{ "harvested": "<that PC's id>"
+defines) whose `account` is the candidate and whose proof is `{ "harvested": "<that PC's id>"
 }`; a candidate without one, or with two, is a validator error (section 9). An account cached on
 several PCs (a shared local administrator) has one record per PC: collecting on any one of them is
 enough, and cracking that record gives the one password. Once that password is held, a second
@@ -276,17 +276,19 @@ S7; a scenario that does not teach cracking leaves it out.
 
 **How a cached hash is cracked.** The cracking plan cracks a hash from its account's `password`
 habit. A person's account has one; an `accountOnly` account (S5c) has no habits at all, so its hash
-record carries its own crack recipe, `crack`, with the same two keys as the habit: `password`
+record carries its own crack recipe, `crack`, with the habit's two keys: `password`
 (`guessable`, `reused` or `strong`) and, for `guessable`, `passwordPattern` (the object that gives
-the pattern). Section 14 asks the cracking plan to read `crack` on the record when it is present and
+the pattern). A `guessable` recipe also carries `facts`, 1 to 4 intel fact ids with server-visible
+sources (the cracking plan's recipe shape); the validator refuses it without them. Section 14 asks the cracking plan to read `crack` on the record when it is present and
 the habit otherwise, and to apply its "account needs a `password` habit" check only to a record
 with no `crack`. The facts a recipe needs come from finds and items (a note, a file, a poster),
 never from a conversation, because nobody stands behind the account. The S5c example below collects
 `deskAdmin` on `pc01` through this record:
 
 ```json
-"deskadmin_pc01": { "kind": "hash", "account": { "npc": "deskAdmin" }, "proof": { "harvested": "pc01" },
-                    "crack": { "password": "guessable", "passwordPattern": "it_rota_poster" } }
+"deskadmin_pc01": { "kind": "hash", "account": "deskAdmin", "proof": { "harvested": "pc01" },
+                    "crack": { "password": "guessable", "passwordPattern": "it_rota_poster",
+                               "facts": ["it_rota_poster_seen"] } }
 ```
 
 **S5c.** On `creds`: `accountKind` (`local` or `domain`), `localTo` (array of sign-in PC ids,
@@ -569,8 +571,8 @@ validator's caps (section 9) are an authoring limit on top.
 
 **S5b: the `harvested` proof.** S5b adds `harvested` to `CredentialModel::PROOF_KINDS`
 (`credential_model.rb:36`) and one branch to `credential_proof_holds?` (`credential_keyring.rb:21-36`):
-`{ "harvested": "<pcId>" }` on a registry entry whose `account.npc` names the account holds when
-`"<pcId>|<account.npc>"` is in `harvestedAccounts`. The value is a string, so `proof_kind`
+`{ "harvested": "<pcId>" }` on a registry entry whose `account` names the account holds when
+`"<pcId>|<account>"` is in `harvestedAccounts`. The value is a string, so `proof_kind`
 (`credential_model.rb:62-67`, which accepts only string values) reads it unchanged and
 `check_credentials` (`validate_scenario.rb:7523-7525`) sees a known kind; the schema adds
 `harvested` (string) to the proof properties (`scenario-schema.json:293-305`). Nothing else in the keyring changes:
@@ -877,7 +879,7 @@ required and run from `scripts/validate_scenario.rb` by one line beside the core
 `check_access_model` or `check_credentials`):
 - `cachedAccounts`: each `npc` is an account holder; no duplicates; the PC is a sign-in PC; the
   owner may be listed (that is how it becomes collectable). Each candidate has exactly one `hash`
-  credential whose `account.npc` is the candidate and whose proof is `{ "harvested": "<this PC's
+  credential whose `account` is the candidate and whose proof is `{ "harvested": "<this PC's
   id>" }`, else error ("cached accounts are hashes: author one hash record per PC and account").
   Those records count toward the registry's existing cap of 64 entries, which is the only cap on
   declared pairs. A candidate that is an `accountOnly` account (or any account with no
@@ -925,7 +927,7 @@ required and run from `scripts/validate_scenario.rb` by one line beside the core
   warn: the engine judges only the first.
 - Every check here that asks whether a PC admits an account uses `CredentialModel.pc_admits_account?`
   (`validate_scenario.rb:7583`), which carries the account-kind rule.
-- A `hash` credential with a `harvested` proof: the PC is a sign-in PC and `account.npc` is in its
+- A `hash` credential with a `harvested` proof: the PC is a sign-in PC and `account` is in its
   `cachedAccounts`, else error. A `harvested` proof on any kind other than `hash`, error.
 - Owned by the core plan's validator pass, not this one: a step-up weakness whose
   `grants.session.account` no account on the PC would be admitted as (core runs
@@ -1296,11 +1298,12 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   - the marker is `player_state.harvestedAccounts`, an array of `"<pcId>|<npcId>"`, server-written
     only by the collect, grow-only, never trimmed, never sent;
   - the proof form is `proof: { "harvested": "<pcId>" }` (a string, like `session` and `foothold`,
-    so `CredentialModel.proof_kind` reads it) on a `hash` registry entry whose `account.npc` names
-    the account; it holds when `"<pcId>|<account.npc>"` is in `harvestedAccounts`;
+    so `CredentialModel.proof_kind` reads it) on a `hash` registry entry whose `account` names
+    the account; it holds when `"<pcId>|<account>"` is in `harvestedAccounts`;
   - a hash record whose account has no `password` habit (an `accountOnly` account, which carries
-    no habits) carries its own crack recipe, `crack: { password, passwordPattern }`, the same two
-    keys as the habit. Please read `crack` when present and the habit otherwise, add `crack` to
+    no habits) carries its own crack recipe, `crack: { password, passwordPattern, facts }`: the
+    habit's two keys, plus `facts` (1 to 4 intel fact ids with server-visible sources, required for
+    `guessable`). Please read `crack` when present and the habit otherwise, add `crack` to
     your `hash` entry schema, and apply your "account needs a `password` habit" validator rule
     only to a record with no `crack`; your fact-reachability warning applies to the recipe's
     pattern as it does to a habit's;
@@ -1327,6 +1330,9 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   Please replace `dumped` with `harvested` and "host" with the sign-in PC id in your plan, drop
   the admin-dump source's "until settled" fallback to share files only, or say why a host-level
   marker is needed.
+  Answered in the cracking plan's section 14 ("Privilege and accounts plan (S5b)"): each request
+  above is agreed or done, and the cracking plan's two requests to this plan are the `account`
+  string and `crack.facts` changes made in sections 6 and 14 here.
 - **To OPS_MFA_HELPDESK (S8).** Agreed order: account-kind check inside your Admission step, then
   your second step, then the session. The account-kind check lives in `pc_admits_account?`, which
   `credential_login_checks` already calls, so your second-step re-judge picks it up: please drop
