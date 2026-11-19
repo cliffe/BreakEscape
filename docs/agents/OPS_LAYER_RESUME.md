@@ -224,6 +224,17 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   on a lock, which kinds each lock type supports, server unlock path order, what reaches the
   browser, state, validator and graph, tests, log rows), then a FULL R4 review on Opus (not a
   delta). Tell the log plan's next reviser about any new rows.
+- 11:43. MFA R3 revision committed `8cffe735e` (1101 lines; not re-read end to end; handover
+  in `ops_layer/HANDOVER_OPS_MFA_HELPDESK_PLAN_reviser.md`; the helpdesk `maxTries` block is
+  permanent and needs the same no-stranding rule as the code limit). MFA is WAITING for D6, then
+  the S8c planner (which also does the read-through and trim), then a full R4 on Opus.
+  LOG_ROWS: R3 findings `70affdce3` (0B 4M 9m). R3 reviser running (Opus, a9ce153bf9d06d65f).
+  Rulings: own secret list (not `AccessLeakScanner#secret_values`); no bare integer detail, only
+  a bounded `count`; saves on free branches bounded by a stored counter per event and place,
+  rows dropped after it (core's quiet `technique_refused` too: tell the core reviser);
+  `helpdesk_request` records `as: { typed: }` always, bounded per desk; `share_file_read`
+  folder-or-file is a user question; a plain object or door id is a valid place kind (for S8c).
+  Next: commit, R4 delta review (Fable).
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
