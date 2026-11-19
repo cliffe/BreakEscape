@@ -139,9 +139,11 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
 
 ## 5. Suggested order
 
-The log helper comes first: stage L1a of the log rows plan (the helper and the event list, no rows
-of its own) lands before any other stage, so each feature can write its rows as it is built. Then
-S1, S2, S3 (the core loop), S5, S6, S8a, S7, the rest of S9, S8b, and S8c (a second step as an
+The log helper comes first: stages L1a (the helper and the event list, no rows of its own) and
+L1b (the badge, sign-in and session rows of features already built) of the log rows plan land
+before any other stage, so each feature can write its rows as it is built and the sign-in methods
+already carry their rows before S3, S5 and S8 edit them. Then S1, S2, S3 (the core loop), S5, S6,
+S8a, S7, the rest of S9 (the log reader and network rows, L2a, L2b, L3), S8b, and S8c (a second step as an
 attribute on any lock, `OPS_LOCK_SECOND_STEP_PLAN.md`, which needs S8a). B6 sniffing and
 B7 Wi-Fi handshake (both P3) slot in after S7, since both reuse the cracking minigame or the
 credential effects.
