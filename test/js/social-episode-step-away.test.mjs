@@ -782,9 +782,8 @@ test('gate B D1: a reopened debrief has the same cards and summary as the live o
     assert.ok(liveSummary !== null && liveSummary.length > 0);
     assert.ok(isDeepStrictEqual(liveCards, ['m1']), 'live: only the trusted phish is reviewed');
     assert.ok(result.answers.find((a) => a.id === 'm2').score === 100, 'report on a genuine item scores full marks live');
+    while (FW.currentMinigame) FW.forceCloseMinigame(); // closing the first view marks debriefSeen, as before
     const before = structuredClone(stored(ep.id));
-
-    while (FW.currentMinigame) FW.forceCloseMinigame();
     open(ep, { deps: realDeps });
     assert.ok(epState().stage === 'debrief');
     assert.ok(calls.debrief.at(-1).result.answers.length === 4);
