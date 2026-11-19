@@ -135,4 +135,22 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - SKIN-2 and R2-3, 4: 4.1 states no forcing and the default in the scenario; 4.2 adds the optional `cli` fields (network range and host addresses, service protocol/service/banner, weakness and decoy title/module/script) with generic defaults and a JSON example.
 - R2-3, 5.1: `cli` fields ride in the core's answers (core request 3); S6 adds no serialiser.
 - R2-3, 5.2: `cli-gen/registry.js`, `cli-gen/scanner-output.js`, `cli-gen/framework-console.js` added; the control list's Terminal lines are now tool-shaped; the control list stays the one table and the generators only format.
+- R2-3, 4.2: the label rule no longer bans real products or advisory ids outright; that is open question 15(a), and only one validator rule depends on it.
+- R2-3, 5.3: sketch shows `nmap -sV` and an msf `check`; sweep/scan/check answers drawn by the scanner generator, confirm/use by the framework generator; every Panels sentence stays its own span.
+- R2-3, 5.3: `SCAN_OUTPUT_TEXT` (Echoreel, Lookmark) and the "no real tool name" text removed; `recordSent` writes the echo plus the generator's `started` lines, `recordResult` its `result` lines; event, ending-order, switch and failure rules unchanged.
+- R2-3, 5.3: scanner output defined (sweep report and `Nmap done` count from the range prefix, version-scan table with `| id:` and `|_banner:` lines, script report per finding); no timestamps, latency or invented rows.
+- R2-3, 5.3: framework mode defined (`msfconsole`, prompts, `search`, `use`, `info`, `show options` with RHOSTS/RPORT/TECHNIQUE only, `set`/`unset TECHNIQUE`, `check`, `run`/`exploit`, `sessions`, `back`, `exit`); `;` joins commands, two requests on one line answer "One action at a time."; mode state is renderer-local.
+- R2-3, 5.3: grammar gains the nmap form (targets by id, range or address; value flags; known flags silent; unknown flags noted; `-iL` refused; `-p` on a version scan noted) and prompt-mark parsing so `commandFor` lines parse back.
+- R2-3, 5.3: `TERMINAL_ONLY_TEXT` gains the prompt marks, "One action at a time." and a generator-text entry (TEMPLATES, `cli` strings, defaults); "What it may print" restated.
+- R2-3, 5.4 and 5.7: span classes use the view's existing colours; generators read no clock or random source.
+- R2-3, 7: table of when each `cli` field is served; never in bootstrap or room answers; absent objects left out; leak collector stages them.
+- R2-3, 8: prompt mode, selected module and TECHNIQUE listed as renderer state, never sent.
+- R2-3, 9: schema rows for the `cli` objects; `scripts/validate_realism_skin.rb` with errors for range, address, host key, module, uneven decoy authoring, passwords and command forms; the advisory/real-product rule applies only under option 2 of 15(a).
+- R2-3, 10: the core's ops scenarios print the defaults.
+- R2-3, 11.1: deny-list and snapshot-against-plan sentences removed; `cli-gen-scanner`, `cli-gen-framework` (golden files, each fixture with and without `cli`) and `cli-gen-provenance` tests added; imports test covers `cli-gen/`; grammar test gains nmap and msf cases; copy lists now ten modules.
+- R2-3, 11.2: test 3 expects `msf > use` for confirm and checks nmap/msf forms; test 9 counts generator TEMPLATES and `cli` values as Terminal-only dress, all Panels pieces still required.
+- R2-3, 11.3, 11.4, 11.6: validator and `cli` serving tests; `test_ops_skin` authors `cli` on the file server and leaves defaults elsewhere; T2/T3/T4/T7 use `nmap -iL`, an unknown flag, `--script vuln` and msf `run`; screenshots of a version scan and an msf session.
+- R2-3, 12: step 4 builds `cli-gen/*`; step 6 the `cli` schema and validator; shared-file table names the core's schema definitions and leak collector.
+- R2-3, 14: request 3 to the core: serve authored `cli` fields only with earned answers, same keys for weakness and decoy, never in bootstrap or room answers, absent objects left out.
+- SKIN-2 and R2-3, 15: the old forcing question removed (answered); new questions (a) real advisory ids and products in `cli` (recommend allow) and (b) the "(simulated)" mark (recommend first line of each run).
 

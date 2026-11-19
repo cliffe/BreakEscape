@@ -229,10 +229,11 @@ author's text, as the Panels do. The validator refuses a service whose weaknesse
 author a field unevenly (section 9), because an authored module on the weaknesses beside a
 default one on the decoy would give the decoy away.
 
-Every authored string is a label. It names no real product (the core's
-`scripts/real_product_names.txt` list applies to `banner` and `title`), carries no real advisory
-or bulletin identifier, no command, flag, path to a real file, payload or credential, and is
-written as plain text that the Terminal sets with `textContent`.
+Every authored string is a label. It carries no command, flag, path to a real file, payload,
+shellcode or credential, and is written as plain text that the Terminal sets with `textContent`.
+Whether a label may also hold a real advisory identifier or a real product name and version is
+open (section 15, question a). The generators print whatever label is authored and have no rule
+of their own about it, so the answer changes one validator rule (section 9) and nothing else.
 
 A minimal example, one network and one service with a weakness and a decoy:
 
@@ -477,21 +478,26 @@ node harness needs no stub at import.
 ```
 +--[ Drop box: Desks, Spare wall port ]------------------[Panels][X]+
 | Type help, or pick a command below.                               |
-| > sweep                                                           |
-| Office network                                                    |
-| HOST       NAME              STATUS                               |
-| fin_pc01   Finance desk 1                                         |
-| files01    File server       Remote sign-in off                   |
-| > confirm f2                                                      |
-| f2  confirmed                                                     |
-| > _                                                               |
+| $ nmap -sV files01                                                |
+| Starting Nmap (simulated) against files01                         |
+| Nmap scan report for files01 (10.20.0.15)                         |
+| PORT     STATE  SERVICE       VERSION                             |
+| 445/tcp  open   microsoft-ds  Brackley ShareServe 3.1             |
+| |_banner: Brackley ShareServe ready                               |
+| Service detection performed (simulated).                          |
+| $ msfconsole                                                      |
+| msf > use auxiliary/scanner/brackley/shareserve_guest_login       |
+| msf (auxiliary/scanner/brackley/shareserve_guest_login) > check   |
+| [+] 10.20.0.15:445 - The target appears to be vulnerable.         |
+| msf (auxiliary/scanner/brackley/shareserve_guest_login) > _       |
 +-------------------------------------------------------------------+
-| Commands:  [Scan  scan files01] [Sign in  signin fin_pc01] ...    |
+| Commands:  [Check  nmap -sV --script vuln -p 445 files01] ...     |
 +-------------------------------------------------------------------+
 ```
 
-The sketch shows the arrangement only. The status and result wording in it stands in for
-the Panels' own sentences, which the Terminal prints word for word (below).
+The sketch shows the arrangement only, with the authored `cli` fields of the example in section
+4.2. Lines after a result stand in for the Panels' own sentences, which the Terminal prints word
+for word (below).
 
 - **Log**: `role="log"`, `aria-live="polite"`, pixel scrollbar, capped at 300 lines (oldest
   dropped). It is kept for the length of the trip in a module variable keyed by foothold id, so
@@ -519,8 +525,8 @@ the Panels' own sentences, which the Terminal prints word for word (below).
   technique, labelled with the Panels' Use label and the technique's name. Pressing it writes
   `use <technique id> on ` into the prompt and swaps the strip for one button per listed
   finding, labelled with its alias; pressing a finding completes the line and performs the
-  offer. An X on the strip returns to the full list. This is the Terminal's form of
-  select-then-Use.
+  offer, and the echo is the offer's tool line from `commandFor`, as for every other press. An X
+  on the strip returns to the full list. This is the Terminal's form of select-then-Use.
 - **Folding**: the list wraps and scrolls. It starts open, because nothing may need typing
   (section 5.5), and the player can fold it with one press. Folded, the strip carries the
   `hidden` attribute, the buttons stay in the DOM, and the bridge unfolds it before pressing
@@ -543,27 +549,33 @@ skin, `f2` is the finding the server says it is.
 
 **What each layout prints.** Every field the Panels show is printed by one of these, word for
 word where it is a sentence or a status. Fixed sentences come from `view-texts.js` and from the
-core's `ops-model.js`; the Terminal has no wording of its own for them.
+core's `ops-model.js`; the Terminal has no wording of its own for them. The answers to `sweep`,
+`scan` and `check` are drawn by the scanner generator, the answers to `confirm` and `use` by the
+framework generator, and `show` and the other actions by the plain layouts of
+`terminal-format.js`. Each Panels sentence (a status text, an alias, a status word, a need's
+"yes" or "no", the `falseBecause` text, the Fixed mark, the "admin" tag, the refusal words) is
+its own span in whichever layout prints it, never merged into a generator's framing line, so
+the piece comparison of section 11.2 still finds it.
 
 | Layout | Printed when | Fields and texts |
 |---|---|---|
 | Link lines | `show`, and on opening | the view's `message`; the link-off sentence; the stale sentence; the unplug hint of a planted box's view ("You can unplug the box at its port (...)", `NV:813`); for each block its heading, the "through <host>" note and its "(Locked)" mark |
-| Host table `HOST NAME STATUS` | `show`; a sweep's answer | host id; the shown hostname where it differs; name; in the status column the status text Panels shows on the row (remote sign-in off, powered down, no route, the down tags, Locked), left blank for a host Panels shows only a button on; the "Session kept" line; a held session's account (the `<who>` of the Panels' Open button) and the "admin" tag where Panels draw it, from the same `ops-model.js` export |
-| Service table `SERVICE PORT PRODUCT VERSION` | `show` for a scanned host; a host scan's answer | service `name`, `label` when it differs, port, product, version |
-| Findings list | `show` for a checked service; a check's answer | alias, the finding label (class and severity words), `summary` and status |
-| Finding detail | a confirm's answer; `show` for a settled finding | alias and status; for a confirmed finding each need with its label and "yes" or "no"; for a false one the `falseBecause` text; the Fixed mark for one that carries `fixed` |
+| Host table `HOST NAME STATUS` | `show` (plain layout); a sweep's answer (scanner generator, one report block per host) | host id; the shown hostname where it differs; name; in the status column the status text Panels shows on the row (remote sign-in off, powered down, no route, the down tags, Locked), left blank for a host Panels shows only a button on; the "Session kept" line; a held session's account (the `<who>` of the Panels' Open button) and the "admin" tag where Panels draw it, from the same `ops-model.js` export |
+| Service table | `show` for a scanned host (plain layout, `SERVICE PORT PRODUCT VERSION`); a host scan's answer (scanner generator, `PORT STATE SERVICE VERSION`) | service `name`, `label` when it differs, port, product, version; in the generator's table also the `cli` protocol, service word and banner, or their defaults |
+| Findings list | `show` for a checked service (plain layout); a check's answer (scanner generator, script report) | alias, the finding label (class and severity words), `summary` and status; in the generator's report also the `cli` script name and title, or their defaults |
+| Finding detail | a confirm's answer (framework generator, after `check`); `show` for a settled finding (plain layout) | alias and status; for a confirmed finding each need with its label and "yes" or "no"; for a false one the `falseBecause` text; the Fixed mark for one that carries `fixed` |
 | Technique list `TECHNIQUE WORKS ON` | `show` | technique id, `name`, `summary`, the core's works-on line |
 | Share and resource table; Look | `show`; an `observe` | id, name, kind label, "on <host>", the lock label and the locked-share sentence; for a look, the resource's `observations` and the notice, as Panels shows them |
-| Use result | a use's answer | the result sentence for a session (then the desktop opens, as from Panels), for a credential (`keyringChanged`) and for `already`; on a refusal the `REFUSAL_TEXT` words for the `reason` code, with the need's label for `need_unmet`. A use that opens a desktop opens it as the core draws it, with the remote-view frame and line, which the Terminal leaves as they are |
+| Use result | a use's answer (framework generator, after `run`) | the result sentence for a session (then the desktop opens, as from Panels), for a credential (`keyringChanged`) and for `already`; on a refusal the `REFUSAL_TEXT` words for the `reason` code, with the need's label for `need_unmet`. A use that opens a desktop opens it as the core draws it, with the remote-view frame and line, which the Terminal leaves as they are |
 | Pending | an `unplug` while its request is out | `UNPLUGGING_TEXT`, the Panels button's label for that state, on the quick command (the log holds only the echo, written by `recordSent`) |
 | Refusal | any other refused request | the `REFUSAL_TEXT` words for the code, for the twelve codes. The unplug refusal is the one refusal on this screen that arrives as a server sentence (`out.message`, `NV:848`); it is printed as Panels shows it, through `textContent` |
 
 **Scan output.** A sweep and a service scan are one request and one answer in both skins. While
 the request is out (`pending: true` on the sweep or scan offer), Panels show a progress bar
 labelled "Scanning" on the block or host row, and remove it when the request ends, whether by an
-answer, a refusal or a failure. The Terminal prints its fixed scan lines when the request is
-sent, as ordinary scrollback that stays in the log like the output of any typed command; the
-result table prints after the answer arrives.
+answer, a refusal or a failure. The Terminal prints the generator's `started` lines when the
+request is sent, as ordinary scrollback that stays in the log like the output of any typed
+command; the generator's `result` lines print after the answer arrives.
 
 *What the log is written by.* Printing is driven by two events, never by drawing. The scene
 calls `recordSent(log, offer, echo)` once, from `perform`, after the pending guard has accepted
@@ -579,9 +591,12 @@ scroll with no log write. The renderer writes only the echo and reply of a local
 `show`, `clear`, a typo, an unknown or ambiguous word, a rejected press, the "Still waiting"
 reply, and any other line that sends nothing), through the same log helper. A mount, a redraw or
 a refetch while a key is pending prints nothing. `echo` is the player's typed line, or for a quick command or a Panels press the
-command line the offer stands for, so the log reads the same from every input: `> sweep lan_a`
-comes first, then the scan lines. `recordSent` writes the scan lines for `sweep` and `scan`
-only; every other request writes just the echo.
+command line the offer stands for (`commandFor`), so the log reads the same from every input:
+`$ nmap -sn lan_a` comes first, then the `started` lines. `recordSent` writes the echo and then,
+for an action with a registry entry, that generator's `started(offer, view)` lines, which use
+only ids and labels the view already shows; an action with no entry writes just the echo.
+`recordResult` writes the generator's `result(offer, answer, view)` lines, or for an action with
+no entry the plain layout of the table above.
 
 *How a request ends.* A refusal is an answer: `recordResult` prints the Refusal row's words (and
 Panels show the same words), and no failure line. A network failure, meaning the request threw
@@ -604,39 +619,110 @@ path before `complete(false)`. Both functions do nothing when the foothold's log
 trip ended and the log was dropped), so a late `recordResult` writes nothing and creates no
 entry.
 
-*Skin switches.* The scan lines were printed once, when the request was sent, and a switch never
-prints them again. A skin mounted while a key is pending shows its waiting state without new
-log lines: the bar in Panels; in the Terminal the scan lines already in the log, with the quick
-command disabled. A request sent from Panels and then viewed in the Terminal has its echo and
-scan lines in the log from the moment of sending. When the answer lands in Panels and the
+*Skin switches.* The `started` lines were printed once, when the request was sent, and a switch
+never prints them again. A skin mounted while a key is pending shows its waiting state without
+new log lines: the bar in Panels; in the Terminal the `started` lines already in the log, with
+the quick command disabled. A request sent from Panels and then viewed in the Terminal has its
+echo and `started` lines in the log from the moment of sending. When the answer lands in Panels and the
 player returns to the Terminal, the log already holds the table, or the refusal words or the
 failure line, because `recordResult` ran when it landed. The answer is drawn once: the log gets
 its table or line once, and Panels draw their result once.
 
-The lines come from the fixed list `SCAN_OUTPUT_TEXT` in `terminal-format.js`, in the manner of
-a scanner but copying no real tool's text, naming only invented tools, and containing no real
-word for a scanning technique (`sweep` and `scan` are the game's own verbs and are allowed). They are drawn, never requested: they add no request, wait for no
-second answer, are chosen by the verb alone (the same lines every time, nothing random, no timer
-past the request's own wait), and use no field of the answer. The only variable in them is
-`{target}`, the id of the offer's own target as the view lists it (never the text the player
-typed): `recordSent` reads it from the resolved offer and it is set as plain text. Both skins end
-on the same answer, and the player who skips the output loses nothing.
+The `started` lines are drawn, never requested: they add no request, wait for no second answer,
+use no field of the answer and run no timer past the request's own wait. Their only variables
+are ids and labels of the offer's own target as the view lists it (never the text the player
+typed), set as plain text. Both skins end on the same answer, and the player who skips the
+output loses nothing.
 
-`SCAN_OUTPUT_TEXT`, with the fixed verb that chooses each list. All are invented, hold no
-digit, flag, port number, protocol word, real tool name or version, and read as plainly
-simulated: none starts with or contains a real tool name or a real word for a scanning
-technique.
+**Scanner output** (`cli-gen/scanner-output.js`, modelled on nmap). In the forms below `<host>`
+is the host id, `(<address>)` is printed only when the host has an `address` (section 4.2), and
+every other value is a field of the view or the answer or a default of section 4.2.
 
-| Verb | Lines, in order |
-|---|---|
-| `sweep` | `Echoreel (simulated)` / `Sweeping {target} for live hosts` / `Listening for replies ...` / `Sweep sent. Waiting for the answer.` |
-| `scan` | `Lookmark (simulated)` / `Looking at {target} for open services` / `Trying the usual routes ...` / `Scan sent. Waiting for the answer.` |
+- `started`, for all three actions: `Starting Nmap (simulated) against <target>`, where the
+  target is the range (or the network id) for a sweep and the host for a scan or a check. A
+  check adds `Running vuln scripts on <port>/<protocol> (<service word>)`.
+- **Sweep result.** For each host row of the answer, in the answer's order: `Nmap scan report
+  for <host> (<address>)`, then `Host is up.`, then one line per Panels field of the row (name,
+  the shown hostname where it differs, the status text, the "Session kept" line, the account and
+  "admin" tag), each its own span. A host whose Panels status is a down state (powered down, no
+  route, a down tag) prints `Host seems down.` in place of `Host is up.` and is not counted as up.
+  The run ends `Nmap done: <N> IP addresses (<n> hosts up) scanned`, where `<N>` is the size of
+  the range worked out from its prefix and `<n>` the count of hosts up; with no range it ends
+  `Nmap done: <n> hosts up`. "1 host" and "1 IP address" take the singular.
+- **Version scan result** (a host scan). `Nmap scan report for <host> (<address>)`, `Host is
+  up.`, the header `PORT STATE SERVICE VERSION`, then one row per service in the answer's order:
+  `<port>/<protocol>`, `open`, the service word, and `<product> <version>`. Under each row an
+  `| id: <name>` line holds the service `name` the player types as a target (with `(<label>)`
+  where the label differs), and a `|_banner: <banner>` line follows when a banner is authored; the
+  last of these lines under a row starts `|_`, as the tool marks the end of a script block. The
+  run ends `Service detection performed.` and `Nmap done: 1 IP address (1 host up) scanned`. A
+  `-p` on a version scan is noted (Grammar, below) and does not narrow the table, so Panels and
+  Terminal list the same services.
+- **Script scan result** (a check). The report line, `Host is up.`, the header `PORT STATE
+  SERVICE` and the checked service's row, then for each finding of the answer: `| <script>:`,
+  `|   <title>`, `|     Finding: <alias>`, `|     State: <status>`, `|     Risk: <finding
+  label>` and `|_    <summary>`, the prefixes and each Panels piece in separate spans. A check
+  that found nothing prints the Panels' words for an empty check as a note line. The run ends
+  `Nmap done: 1 IP address (1 host up) scanned`.
+- No timestamps, latencies, MAC addresses, OS guesses, closed-port counts or traceroutes: the
+  answer holds none of them, and nothing is invented to fill the space.
 
-The column headers are plain words taken from the core's field names; no table layout reproduces
-a real tool's output. **What it may print**: constants from `terminal-format.js`, `view-texts.js`
-and `ops-model.js`, the ids, aliases and fields of the view answer and of a result, the
-scan output lines of `SCAN_OUTPUT_TEXT`, `REQUEST_FAILED_TEXT` and the player's own line. Nothing else: no invented
-host, port, service, version or filler row, and no random text.
+**Framework console** (`cli-gen/framework-console.js`, modelled on Metasploit). The Terminal has
+two prompt modes. The shell mode is where it starts, with the prompt `$`. `msfconsole` (local,
+sends nothing) enters framework mode: it prints `Metasploit Framework console (simulated)` and
+`Type help for the console's commands.`, and the prompt becomes `msf >`, or `msf (<module>) >`
+while a module is selected. `back` clears the module; `exit` or `quit` leave framework mode.
+Each finding the view lists is one module, named by its `cli.module` or the default of section
+4.2; weaknesses and decoys are listed alike.
+
+| Command | Sends | Prints |
+|---|---|---|
+| `search [word]` | nothing | a numbered table `#  Name  Alias  Description` of the modules whose path, title, alias, host or service contains the word (all of them with no word), in the view's finding order |
+| `use <module, alias or search number>` | nothing | selects the module; a target the view does not list answers with the list of modules, the same answer whether or not the id exists elsewhere |
+| `info` | nothing | the selected module's path and title, its target (`<host> (<address>)`, port, service word), and the finding's alias, status, label and summary as the Panels show them |
+| `show options` | nothing | a table `Name  Current Setting  Required  Description` with exactly three rows: `RHOSTS` (the address, or the host id, of the module's host), `RPORT` (its port) and `TECHNIQUE` (the set card's technique id, or blank), then the held techniques by id and name |
+| `set TECHNIQUE <id>`, `unset TECHNIQUE` | nothing | `TECHNIQUE => <id>` for a technique the player holds (a unique prefix is accepted); any other id answers with the held list. `set` of any other name answers `RHOSTS and RPORT come from the module in this simulation.` for those two and `No such option in this simulation.` for the rest, including any payload option |
+| `check` | the selected finding's `confirm` offer | `started`: `[*] Checking <host>:<port>`; `result`: below |
+| `run` or `exploit` | the `use` offer for the selected finding and the set technique | `started`: `[*] Trying <technique id> against <host>:<port>`; with `TECHNIQUE` unset, the local line `Set TECHNIQUE first. Held: <ids>` and nothing is sent |
+| `sessions` | nothing | one row per held session in the view's rows: host, account and the "admin" tag, from the same `ops-model.js` exports the Panels' Open button uses |
+
+In framework mode `help`, `show` (as `show` with no argument), `clear` and the `Tab` completion
+work as in the shell mode; the game verbs and the nmap form are shell-mode lines. `;` joins
+commands on one line, and they run in order: `use f2; set TECHNIQUE phish; run`. A line that
+holds two commands which send requests answers `One action at a time.` and runs none of it; a
+local command that fails stops the rest of the line.
+
+Framework results, with `<host>` replaced by the address where the host has one:
+
+- **confirm, confirmed**: `[+] <host>:<port> - The target appears to be vulnerable.`, then the
+  finding detail of the layouts table (alias, status, each need's label with "yes" or "no", the
+  Fixed mark), one span per piece.
+- **confirm, false**: `[-] <host>:<port> - The target is not vulnerable.`, then alias, status and
+  the `falseBecause` text.
+- **use, session**: `[*] Session opened on <host> as <account>` with the "admin" tag where the
+  Panels draw it, then the Panels' result sentence (`useResultText`) as its own span; the desktop
+  opens as from Panels.
+- **use, credential** and **use, already**: `[+]` followed by the Panels' result sentence.
+- **refusal**, for either: `[-]` followed by the `REFUSAL_TEXT` words for the code (with the
+  need's label for `need_unmet`). **Failure**: `REQUEST_FAILED_TEXT`, as for every request.
+
+**The echo of a framework request.** A `check` or `run` typed at the `msf` prompt echoes as
+typed. A press of a quick command or a Panels control for `confirm` or `use` echoes the
+one-line form from `commandFor`, `msf > use <module>; check` or `msf > use <module>; set
+TECHNIQUE <id>; run`, and changes neither the prompt mode nor the selected module.
+
+**Mode state.** The prompt mode, the selected module and `TECHNIQUE` are the Terminal
+renderer's local state, which the renderer contract allows: they are never stored, never sent
+and dropped on unmount. A typed `check` or `run` still ends in one call of `perform` with one
+offer from the current list; a module or technique the list no longer offers (the finding
+settled, the card spent) answers locally and sends nothing.
+
+**What it may print**: constants from `terminal-format.js`, `view-texts.js` and `ops-model.js`;
+each generator's `TEMPLATES`; the ids, aliases and fields of the view answer and of a result;
+the `cli` fields served with them and the defaults of section 4.2; counts computed from the
+answer and the range (hosts up, addresses in the range, search numbers); `REQUEST_FAILED_TEXT`;
+and the player's own line. Nothing else: no invented host, port, service, version or filler
+row, and no random text.
 
 **Text only the Terminal has.** Everything the Terminal prints that Panels never shows is in one
 exported list, `TERMINAL_ONLY_TEXT` in `terminal-format.js`, and none of it is about the game's
@@ -644,8 +730,9 @@ state:
 
 | Entry | Text |
 |---|---|
-| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt mark `>`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; the scan output lines of `SCAN_OUTPUT_TEXT`; the player's own echoed line |
-| Table headers | `HOST`, `NAME`, `STATUS`, `SERVICE`, `PORT`, `PRODUCT`, `VERSION`, `TECHNIQUE`, `WORKS ON` and the headers of the findings, share and resource tables |
+| Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt marks `$`, `msf >` and `msf (<module>) >`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; "One action at a time."; the player's own echoed line |
+| Generator text | each generator's `TEMPLATES` (framing lines, `[*]`, `[+]`, `[-]` and `\|` prefixes, table headers, the framework's local answers); the authored `cli` strings and the defaults of section 4.2 built from the core's fields |
+| Table headers | `HOST`, `NAME`, `STATUS`, `SERVICE`, `PORT`, `PRODUCT`, `VERSION`, `TECHNIQUE`, `WORKS ON` and the headers of the findings, share and resource tables of the plain layouts |
 | Help | the output of `help`: verb names, their argument forms and the verb aliases (the descriptions are the Panels' `title` texts and are not on this list) |
 | Command line | a verb from `CONTROLS` followed by ids or aliases the view lists: the `<code>` part of a quick command, and the line a use button writes into the prompt |
 | Parse messages | the fixed parts of the answers to a line that does not resolve (below) |
@@ -662,6 +749,30 @@ result sentence are not on this list: they are Panels text and must match it.
   view, as the X does) and `panels` (switch skin). Each verb alias goes to exactly one verb:
   `login` and `connect` to `signin`; `ls` to `show`; `run` to `use`; `quit` to `exit`.
 - `sweep` with no target is accepted when exactly one block offers a sweep.
+- **The nmap form**, in the shell mode: `nmap [flags] <target>`. A target that is a network id or
+  its `range` resolves to that block's `sweep`. A host id or its `address` resolves to the host's
+  `scan` when the line has no `--script`, and to a `check` when it has `--script <anything>`; the
+  check's service is the one whose port `-p` names. With no `-p` and one service that offers a
+  check, that service is taken; with more than one, the local answer `Name a port with -p:`
+  lists the ports on offer. Flags that take a value are `-p`, `--script`, `-oN`, `-oX`, `-oG`,
+  `-oA`, `--top-ports`, `--min-rate`, `--max-retries` and `-e`, so their value is never read as
+  the target. The known flags (`-sS`, `-sT`, `-sV`, `-sC`, `-A`, `-O`, `-Pn`, `-n`, `-v`, `-vv`,
+  `-T0` to `-T5`, `-sn` and the value flags) are accepted with no comment; any other flag prints
+  one note line, `Ignored in this simulation: <flag>`, through `textContent`, and the line still
+  runs. `-iL` answers `Reading targets from a file is not part of this simulation.` and sends
+  nothing. A `-p` on a version scan prints the note `The version scan lists every service here;
+  -p is ignored.` The flags change nothing that is sent: a sweep, a scan and a check carry the
+  same ids from the nmap form, the game verbs, a quick command and Panels.
+- **The framework form**, in framework mode: the commands of the framework table above. `check`
+  resolves only to the `confirm` offer of the selected module's finding and `run` only to the
+  `use` offer for that finding and the set technique; a finding with no such offer prints its
+  row's status text, as below.
+- **Mode words.** `exit` and `quit` close the view in the shell mode and leave framework mode in
+  framework mode; `run` is the alias of `use` in the shell mode and the framework's `run` in
+  framework mode. A line that begins with a prompt mark is read in that mark's mode: a leading
+  `$` is dropped, and a leading `msf >` makes the rest a framework line run against a module
+  selection local to that line, leaving the renderer's mode and selection as they were. That is
+  how a quick command's `<code>` line, or one pasted from the log, parses back to its offer.
 - Forgiving: case and extra spaces are ignored. A verb or target may be shortened to any prefix
   that is unique among what is on offer (`sig fin` runs `signin fin_pc01`). The word `on` is
   allowed and ignored.
@@ -683,7 +794,8 @@ result sentence are not on this list: they are Panels text and must match it.
   and drops it when empty. With an empty prompt Tab moves focus as usual, and a keyboard user
   can reach the quick commands, the switch and the X.
 - `help` prints each verb with the one-line description its Panels button has as its `title`.
-  Both come from `CONTROLS`.
+  Both come from `CONTROLS`. In framework mode it lists the framework's commands, and `help nmap`
+  lists the accepted flags and target forms.
 
 ### 5.4 Pixel-art UI rules
 
@@ -693,7 +805,7 @@ result sentence are not on this list: they are Panels text and must match it.
 | 2px borders, no radius | The prompt box, the quick-command buttons and the switch use the `.minigame-button` look; the cursor is a solid block |
 | Device frame | The view is already the link device's console in the shared console window. The Terminal is that console's other mode, inside the same frame |
 | X closes, no Cancel | The shared X and Esc close it. `exit` is a second way in, not a Cancel button. The finding strip of a use has an X |
-| One look per concept | The switch looks the same in both skins and sits in the same place. Both skins use the view's existing colours: the Terminal adds no palette and no theme tokens, because the Panels use none |
+| One look per concept | The switch looks the same in both skins and sits in the same place. Both skins use the view's existing colours: the Terminal adds no palette and no theme tokens, because the Panels use none. The generators' span classes (`prompt`, `head`, `ok`, `bad`, `note`) map onto colours the view already uses, and the table cells stay VT323 16px like the rest of the log |
 | Crisp text | No text shadow, glow or scanline overlay on the log |
 | Panels "Scanning" bar | A 2px border with square ends (the same border and square ends as `.minigame-button`, which it is not; no radius), the label "Scanning" in the GNF pixel font, and an indeterminate fill, because no progress is known: a block of stepped segments that jumps from cell to cell (`steps()` timing, no smooth easing, no tween), running only while the request is out. Under `prefers-reduced-motion: reduce` the bar is static (a fixed striped fill, no movement). The row carries `aria-busy="true"` and the bar has `role="progressbar"` with no value, so it reads as indeterminate. The bar adds no palette: it uses the view's existing colours |
 
@@ -736,7 +848,9 @@ so there is no voicing cost.
 
 The skin holds no state the server reads and makes no rolls: for the same view answer and the
 same offer, both skins send the same request, and the Terminal's output is a function of the
-view answer, the result and the player's line.
+view answer, the offer, the result and the player's line. The generators are pure: they read no
+clock and no random source, so the same answer always prints the same lines, which is what lets
+section 11.1 compare them with golden files.
 
 ## 6. Server routes
 
@@ -753,16 +867,34 @@ browser only.
 
 ## 7. What reaches the browser, and what never does
 
-Only `GET /scenario` (the bootstrap) changes: it sends `networkView.defaultSkin`, and there is
-nothing new to withhold. Every other route is unchanged.
+Two things change. `GET /scenario` (the bootstrap) sends `networkView.defaultSkin`, which holds
+nothing to withhold. The core's network answers carry the authored `cli` fields beside the
+objects they belong to, each only once the player has earned that object (core 14, request 3):
 
+| `cli` field | Served in | From when |
+|---|---|---|
+| `networks.<id>.cli.range` | the view's block for that network (`GET /network`) | whenever the block is listed |
+| `networks.<id>.cli.hosts.<hostId>.address` | `address` on the host row, in the sweep answer and in `GET /network` | once the host is discovered by a sweep |
+| a service's `cli` (`protocol`, `service`, `banner`) | the service, in the host scan answer and in `GET /network` | once the host is scanned |
+| a weakness's or a decoy's `cli` (`title`, `module`, `script`) | the finding, in the check answer and in `GET /network` | once the service is checked; the same keys for a weakness and a decoy |
+
+- None of the `cli` fields is in the bootstrap or in any room answer: the core removes
+  `networks` and `hosts` from the bootstrap by name (`WITHHELD_SCENARIO_KEYS`) and `services`
+  from room objects (`WITHHELD_OBJECT_FIELDS`), and its no-exposure tests already check that the
+  bootstrap and every room answer hold none of their strings. An absent `cli`
+  object is left out of the answer, never sent as `{}` or `null`, and the browser builds the
+  defaults of section 4.2 from fields it already has. A finding's `cli` is served on the finding
+  whatever its status, so a decoy and a weakness arrive with the same keys.
+- The core's leak collector, which lists the strings each stage may show, gains the `cli`
+  strings at the stage their object is served, so a string seen before its stage fails the
+  core's leak test.
 - `networkView` holds a presentation choice only; the closed schema leaves nowhere to put a
   secret. The bootstrap filter deletes named keys and passes the rest, so the block arrives
   without a change to the filter. A model test pins that it does, and that a scenario without
   the block has no such key.
-- The Terminal shows what the view answer and the results contain, which is what the Panels
-  show. `terminal-format.js` receives nothing else. Test 9 of section 11.2 checks both
-  directions.
+- The Terminal shows what the view answer and the results contain. That is what the Panels show,
+  plus the `cli` fields, which are console dress and are never needed to win. The generators and
+  `terminal-format.js` receive nothing else. Test 9 of section 11.2 checks both directions.
 - **Ids.** The Terminal prints ids that the server has already sent for listed things: host,
   network, share, resource and technique ids, and service names. The Panels may not print all of
   them. Nothing new reaches the browser by this, and nothing is printed before the core's rules
@@ -784,6 +916,7 @@ nothing new to withhold. Every other route is unchanged.
 | A switch press on this page | a module variable | one short string | never |
 | Terminal log and command history | a module variable, per trip | 300 lines, 20 commands | never |
 | Folded or unfolded quick commands | the renderer instance | one boolean | never |
+| Prompt mode, selected module and `TECHNIQUE` | the Terminal renderer instance, dropped on unmount | three short strings | never |
 
 Nothing is added to `player_state`, to the sync sections or to any server answer, so the delta
 rule has nothing to judge. Findings and their aliases are the core's server
@@ -800,18 +933,43 @@ ignored, and blocked storage leaves the switch working for the page.
 `enum: ["gui", "cli"]` and a description naming its reader (`skin-choice.js`). It is structure,
 not an id map and not free data. It is not marked `x-serverOnly`.
 
-**Validator** (K3):
+The `cli` objects are added to the core's definitions, in the same shared file. Each is closed
+(`additionalProperties: false`, note pattern `^_`), has no required key, and carries a
+description naming its reader (`cli-gen/`):
+
+| Added to | `cli` properties |
+|---|---|
+| `networks.<id>` (closed today) | `range` (string, IPv4 CIDR pattern, max 18); `hosts`, an id map (`x-id-map: true`, keys the host id pattern) of closed objects with one property `address` (string, dotted IPv4 pattern) |
+| the core's `definitions.service` | `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`), `banner` (1 to 80 characters) |
+| the core's `definitions.weakness` and `definitions.decoy`, one shared `definitions.cliFinding` | `title` (1 to 80 characters), `module` (`^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, max 80), `script` (`^[a-z][a-z0-9-]{0,39}$`) |
+
+They inherit the server-only marks of the objects they sit in (`networks`, `hosts` and
+`services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already name
+the routes that serve them.
+
+**Validator** (K3). The checks are one new file, `scripts/validate_realism_skin.rb`, with one
+function `check_realism_skin(json_data)`, required and run from `scripts/validate_scenario.rb`
+by one line beside the core's `check_network_ops`. It reads hosts, services and findings through
+the core's `NetworkModel` helpers. The ink half of the wording check runs in the dialogue lint
+the validator already has.
 
 | Level | Check |
 |---|---|
 | Error | `networkView.defaultSkin` is not `gui` or `cli` (from the schema) |
-| Error | An unknown key in `networkView` (closed block, with the usual "did you mean") |
-| Warning | `networkView` is set in a scenario where no host declares `services`: no view will be an ops view, so it has no effect |
+| Error | An unknown key in `networkView` or in any `cli` object (closed blocks, with the usual "did you mean") |
+| Error | `range` is not inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, or its prefix is outside /16 to /30, or it has host bits set |
+| Error | An `address` on a network with no `range`, outside the range, equal to its network or broadcast address, or used twice on one network |
+| Error | A key of `cli.hosts` that is not a host (a `hosts` entry or a sign-in object) on that network |
+| Error | A `module` used twice in the scenario, or one beginning `simulated/` (the default's prefix) |
+| Error | Uneven authoring on one service: one of `title`, `module` or `script` is set on some of its weaknesses and decoys and not on the others, which would tell a decoy from a weakness before a confirm |
+| Error | A `cli` string that contains a password of the scenario (the core's rule `VN:519`, applied to these strings) |
+| Error | A `cli` string that holds a payload or command form: a shell metacharacter (`;`, `\|`, `&`, backtick, `$(`), a flag beginning with `-`, or a path other than the `module` field |
+| Depends on question 15(a) | Under option 2 only: an error for a `cli` string matching an advisory pattern (`cve-\d{4}-\d+`, `ms\d\d-\d{3}`, case-insensitive) or a `banner` or `title` holding an entry of the core's `scripts/real_product_names.txt`. Under option 1 the rule is not built |
+| Warning | `networkView` or a `cli` object is set in a scenario where no host declares `services`: no view will be an ops view, so it has no effect |
 | Warning | Skin-specific wording: in a scenario that uses `services`, an objective, hint, mail or ink line that pairs a control word (click, press the, button, type, command line, prompt, terminal) with an action word (sweep, scan, check, confirm, sign in, technique) |
 
 The wording check is a warning because it is a pattern match and will have false positives (an
-NPC may mention a terminal in passing). It goes in the dialogue lint the validator already runs
-for ink, and in the core's `scripts/validate_network_ops.rb` for objectives and other text.
+NPC may mention a terminal in passing).
 
 **Dungeon graph**: no change. The skin adds no lock, key, node or edge, and the graph generator
 does not read `networkView`. A test asserts that the generated graph for `test_ops_skin` is the
@@ -852,7 +1010,9 @@ Checks that prove it, across all eight and any scenario that later declares `net
 
 The core's own ops scenarios (`test_ops_scan`, `test_ops_findings`, `test_ops_access`) are not
 "existing" in this sense: K2 adds the header switch, and with no stored pick and no default they
-open in Panels, so their scripted playtests run as written.
+open in Panels, so their scripted playtests run as written. They declare no `cli` fields, so in
+the Terminal they print the default output of section 4.2, built from the fields the core
+already sends, and their answers carry no `cli` key.
 
 ## 11. Tests
 
@@ -866,22 +1026,27 @@ or control gets these checks on it.
 |---|---|---|
 | `network-view-controls.test.mjs` | K1 | `offers()` for each fixture: order, targets, one offer per pressable control, every use pair, the `itemId` rule. A locked remote session yields a `sign-in` offer beside its lock status. An unconfirmed finding yields a `confirm` offer labelled Confirm. A settled finding yields no `confirm` offer. With a key in the pending set the offers under it carry `pending: true` and no other offer does; each `use` pair has its own key. `CONTROLS` is well formed: each entry has one label, one verb and one description, and a verb together with a target kind names exactly one entry. Every `data-action` literal in `network-view-panels.js` is a key of `CONTROLS` or an entry of `LOCAL_ACTIONS` (`select-finding`, `select-technique`), no value is in both, and `data-unplug` appears there once, for the `unplug` entry |
 | `network-view-panels-same.test.mjs` | K1 | Each fixture rendered by the scene as it was (output saved as a fixture string before the split) and by the Panels renderer is equal byte for byte; a press on each control records the same call before and after. With the unplug's answer held, the header button is disabled and reads `UNPLUGGING_TEXT`, and a refused unplug shows the server's sentence beside the button, both as the saved output has them; the scene file contains no `querySelector('[data-unplug]')` and no `setUnplugNotice` |
-| `network-skin-imports.test.mjs` | K1 | The two renderer files and the pure modules import nothing outside the allowed list and do not contain `fetch(`, `ApiClient`, `networkLinks`, `window.open` or `window.start` |
+| `network-skin-imports.test.mjs` | K1, K2 | The two renderer files and the pure modules import nothing outside the allowed list and do not contain `fetch(`, `ApiClient`, `networkLinks`, `window.open` or `window.start`. From K2 the `cli-gen/` files are checked too: each imports only `ops-model.js`, `view-texts.js` and its own defaults, and none names `Date`, `performance.now`, `Math.random`, `crypto`, `localStorage`, `document` or `window` |
 | `network-view-panels.test.mjs` | K2 | The "Scanning" bar: it shows on the block row for a pending `sweep` offer and on the host row for a pending `scan` offer, on no other offer (check, confirm, use, unplug), and is removed when the answer lands, when the request is refused and when it fails (`answer = null`), each its own case, and the pending key is cleared in all three; the bar has `role="progressbar"` with no value and the row `aria-busy`; its label is `SCANNING_TEXT` ("Scanning"); a failure draws `REQUEST_FAILED_TEXT` on the row (a failed unplug draws the unplug sentence as the header notice, and `unplugBox` sets it on a thrown request too). A node DOM test cannot evaluate a media query, so the reduced-motion rule is a CSS-text assertion: the `@media (prefers-reduced-motion: reduce)` block of `network-view-minigame.css` sets `animation: none` for the bar; the bar's CSS has no radius and a 2px border |
-| `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; a verb that is not in `CONTROLS` returns the nearest-verb message and no offer; a line for a pending offer returns the pending line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
-| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a confirm, each of the three use outcomes, each code in the core's `ops_refusal_codes.json`, so twelve today, `already`); every field in the table of 5.3 is printed. Scan output, by calling `recordSent` and `recordResult` on a log: a sweep and a service scan write their echo line and `SCAN_OUTPUT_TEXT` lines at `recordSent`, before any answer, and the lines stay; the table is written at `recordResult`, directly after those lines, once; a refusal writes the Refusal row's words and no failure line and no table; a failure (`answer = null`) writes `REQUEST_FAILED_TEXT` and no table; the same lines on every run; a quick-command press, a Panels press and a typed line each write the echo `> sweep <id>` before the lines; `{target}` is the resolved id from the view, set as plain text; a typed line with markup, or a 10,000 character target, that resolves to nothing writes no scan lines and calls neither function; a press the guard rejects calls neither function; and the one request and one answer are unchanged by them. A failed request (`answer = null`) of each of `sweep`, `scan`, `check`, `confirm` and `use` writes `REQUEST_FAILED_TEXT` and no table, and a failed `unplug` writes the unplug sentence of `NV:850` and not `REQUEST_FAILED_TEXT`. A late `recordResult` or `recordSent` after the trip ends (the log dropped) writes nothing and leaves no log entry. The log is created by the first `recordSent`, holds the opening line and the 300-line cap from creation, and lists earlier echoes and results in order after the opening line. The switch-order cases (which need the scene, both renderers and a held fake answer) are in `network-skin-parity.test.mjs`, not here. Deny list, run on the templates with `{target}` removed (the substituted ids hold digits): no line of `SCAN_OUTPUT_TEXT` or `REQUEST_FAILED_TEXT` contains a digit, a `-` or `--` flag token, the words `http`, `ssh`, `ftp`, `smb`, `tcp`, `udp`, `icmp`, `dns`, `rdp`, `arp`, `ping`, `port`, `traceroute`, `telnet` or `nc`, or the name of a real scanner, framework or fetch tool (at least `nmap`, `masscan`, `zmap`, `metasploit`, `msfconsole`, `hydra`, `nikto`, `netcat`, `nessus`, `openvas`, `wireshark`, `tcpdump`, `curl`, `wget`, `burp`, `sqlmap`, `gobuster`, `enum4linux`, `hashcat`, `john`), matched as whole words without regard to case, plus a substring match for the longer names. The deny list cannot catch a new real tool, so a snapshot assertion also requires `SCAN_OUTPUT_TEXT` and `REQUEST_FAILED_TEXT` to equal the lists in this plan, and any edit to the lines needs an edit to the plan |
+| `network-terminal-grammar.test.mjs` | K2 | Each verb and verb alias; ids, prefixes and the server's finding aliases, resolved through the core's lookup (a fixture whose findings arrive in an order different from their alias numbers still resolves `f1` to the server's `f1`); a built finding id is not accepted; `on`; `sweep` with no target; case and spacing; a verb that is not in `CONTROLS` returns the nearest-verb message and no offer; a line for a pending offer returns the pending line and no offer; unknown verb, unlisted target and ambiguous prefix return a message and no offer; a listed row with no offer for the verb (remote sign-in off, no route, powered down, a locked share, a settled finding) returns that row's status text from `view-texts.js` or `ops-model.js` and no offer; completion results. The nmap form: a network id and a range give the sweep; a host id and an address give the scan; `--script` with `-p` gives the check on that port, without `-p` the one checkable service, and with two checkable services the `Name a port with -p:` answer and no offer; value flags never become the target; each known flag gives no note; an unknown flag gives one `Ignored in this simulation:` note and the offer; `-iL` gives its answer and no offer; `-p` on a version scan gives the note and the full scan; every nmap line gives the same offer as the game verb for that target. The framework form: `msfconsole`, `back`, `exit` and `quit` change only the mode; `use` by module, alias and search number; `set TECHNIQUE` with a held id and a prefix, with an unheld id; `check` and `run` resolve to the same offers as `confirm f2` and `use <card> on f2`; `run` with `TECHNIQUE` unset returns its message and no offer; `;` with one request command returns that offer after the local commands, with two returns `One action at a time.` and no offer. Hostile input (markup, control characters, a 10,000 character line) returns no offer, and the "nearest verb" and "unknown target" answers that echo it are set as plain text |
+| `network-terminal-format.test.mjs` | K2 | One layout per answer shape of section 2 (sweep, host scan, check, a confirm, each of the three use outcomes, each code in the core's `ops_refusal_codes.json`, so twelve today, `already`); every field in the table of 5.3 is printed. Log writing, by calling `recordSent` and `recordResult` on a log: each action with a registry entry writes its echo line and the generator's `started` lines at `recordSent`, before any answer, and the lines stay; an action with none writes the echo only; the `result` lines are written at `recordResult`, directly after those lines, once; a refusal writes the Refusal row's words and no failure line and no table; a failure (`answer = null`) writes `REQUEST_FAILED_TEXT` and no table; the same lines on every run; a quick-command press, a Panels press and a typed game-verb line each write the offer's `commandFor` echo (`$ nmap -sn <id>`, `msf > use <module>; check`) before the lines, and a typed nmap or msf line writes itself; the `started` lines name the resolved target from the view, set as plain text; a typed line with markup, or a 10,000 character target, that resolves to nothing writes no `started` lines and calls neither function; a press the guard rejects calls neither function; and the one request and one answer are unchanged by them. A failed request (`answer = null`) of each of `sweep`, `scan`, `check`, `confirm` and `use` writes `REQUEST_FAILED_TEXT` and no table, and a failed `unplug` writes the unplug sentence of `NV:850` and not `REQUEST_FAILED_TEXT`. A late `recordResult` or `recordSent` after the trip ends (the log dropped) writes nothing and leaves no log entry. The log is created by the first `recordSent`, holds the opening line and the 300-line cap from creation, and lists earlier echoes and results in order after the opening line. The switch-order cases (which need the scene, both renderers and a held fake answer) are in `network-skin-parity.test.mjs`, not here |
+| `cli-gen-scanner.test.mjs` | K2 (defaults), K3 (authored fields) | Golden output. Each fixture is run through `started` and `result` for a sweep, a version scan and a script scan, and the lines (spans joined, with each span's `cls` in brackets) must equal a committed file `test/js/fixtures/network-view/cli-golden/scanner/<fixture>.<step>.txt`. Every fixture runs twice: once with no `cli` fields, which pins the defaults of section 4.2 (a scenario with no `cli` data prints a complete report built from the core's fields), and once with every field authored. Cases: a range of /24 and of /30 for the address count; no range (`Nmap done: <n> hosts up`); singulars; a down host (`Host seems down.`, not counted); a service with and without a banner (where the `\|_` falls); an empty check; a fixture whose findings arrive out of alias order. Called twice on one answer, a generator returns equal lines |
+| `cli-gen-framework.test.mjs` | K2 (defaults), K3 (authored fields) | Golden output under `cli-golden/framework/`, each fixture with no `cli` fields and with all of them: `search` with and without a word, `info`, `show options`, `sessions`, and the `started` and `result` lines of a confirmed, a false and a refused `check` and of each use outcome (session, credential, `already`, each refusal code). `show options` names exactly `RHOSTS`, `RPORT` and `TECHNIQUE`, and `set` of any other name (`PAYLOAD`, `LHOST`, `CMD`) changes nothing and sends nothing. A decoy and a weakness with equally authored `cli` fields (or none) print the same lines, other than their own authored text, in `search`, `info` and `use` before a confirm |
+| `cli-gen-provenance.test.mjs` | K2 | Over every fixture and every generator call: each span is one of the generator's `TEMPLATES` entries (with its slots filled), a field of the answer, the view or a served `cli` object, a count computed from them, or the player's line. Marker fixtures hold a unique string in each field and check that it appears only where that field is printed. The registry maps exactly `sweep`, `scan`, `check`, `confirm` and `use`; each generator exports `id`, `started`, `result` and a frozen `TEMPLATES`; each `cls` is one of `prompt`, `head`, `ok`, `bad`, `note`. Each Panels piece of 11.2 test 9 is a whole span in the generator's output |
 | `network-skin-parity.test.mjs`, `network-skin-text.test.mjs` | K2 | Section 11.2 |
 | `network-skin-choice.test.mjs` | K2 | The order of section 4, case by case: a press beats a URL value; a URL value beats a stored pick and is not written to storage; a press with a URL value present changes the skin and writes nothing; a press with no URL value is stored; a bad stored value is ignored; blocked storage still switches; a view with no `ops` block is `gui` under every combination; the switch is drawn only with an `ops` block and removed when a refetch has none |
 | `network-skin-unchanged.test.mjs` | K2 | Section 10, check 1 |
 
-**Harness copy lists.** The seven new modules (`view-texts.js`, `view-controls.js`,
+**Harness copy lists.** The ten new modules (`view-texts.js`, `view-controls.js`,
 `skin-choice.js`, `network-view-panels.js`, `network-view-terminal.js`, `terminal-grammar.js`,
-`terminal-format.js`) are static imports of the scene, so each goes on the copy list of every
+`terminal-format.js`, `cli-gen/registry.js`, `cli-gen/scanner-output.js`,
+`cli-gen/framework-console.js`) are static imports of the scene, so each goes on the copy list of every
 test that copies `network-view-minigame.js`: `network-view.test.mjs` (its list at `:15-40` shows
 the pattern), `minigame-consoles-fit.test.mjs`, `pc-monitor-frame.test.mjs`,
 `escaping-shared-helpers.test.mjs` and the core's `network-view-ops.test.mjs`. The builder
 greps `test/js` for `network-view` before finishing, since other branches add tests.
-None of the seven touches `localStorage` or `window.location` at import, so no harness needs a
+The three `cli-gen/` files keep their subfolder in each copy, since `terminal-format.js` imports
+them by relative path. None of the ten touches `localStorage` or `window.location` at import, so no harness needs a
 new stub.
 
 ### 11.2 The parity proof
@@ -911,14 +1076,15 @@ text in the layouts table of 5.3 (the alias, the Fixed mark, the "admin" tag, th
 words), the Confirm label (the button's label in Panels, the quick command's label and the verb
 of its line in the Terminal), and a request that is out (the control disabled in both, Unplug
 reading `UNPLUGGING_TEXT`, and a typed line for a pending offer answered with the pending line).
-The scan output is the one text the Terminal alone prints: Panels show the "Scanning" progress
-bar exactly while the request is out, and the Terminal's log gets its scan lines once, when the
-request is sent (`recordSent`), and keeps them. The test checks the bar is present only while
-the offer is pending and gone after an answer, a refusal or a failure; the lines appear once and
-stay; the table follows them after an answer; a refusal writes its words and a failure writes
+The generators' `started` lines are the one text the Terminal alone prints while a request is
+out: Panels show the "Scanning" progress bar exactly while a sweep or scan is out, and the
+Terminal's log gets the `started` lines once, when the request is sent (`recordSent`), and keeps
+them. The test checks the bar is present only while the offer is pending and gone after an
+answer, a refusal or a failure; the lines appear once and stay; the `result` lines follow them
+after an answer; a refusal writes its words and a failure writes
 `REQUEST_FAILED_TEXT`, each instead of the table; and a skin switch mid-request shows the other
 skin's waiting state without new log lines, the answer rendered once. This is proved in the
-parity harness, in three switch orders, each with the scan lines counted once and a table,
+parity harness, in three switch orders, each with the `started` lines counted once and a table,
 refusal words or failure line at the end: (1) press in Terminal, switch to Panels, back while
 pending; (2) press in Terminal, switch to Panels, answer lands in Panels, back to Terminal; (3)
 press in Panels, switch to Terminal while pending, answer lands. The same file checks that a
@@ -947,8 +1113,9 @@ is covered without an edit here.
    grammar accepts for the fixture (ids, unique prefixes, the server's finding aliases), and
    every quick-command button is pressed. Each either records exactly one call, the call of one
    offer in the list, or records nothing and prints a message. `commandFor(offer)` parses back
-   to that offer; for a `confirm` offer the line begins `confirm`. A quick-command use is one path of two presses, and the first
-   press alone records nothing.
+   to that offer; for a `confirm` offer the line begins `msf > use`. The nmap form and the
+   framework form of every offer (section 5.3, Grammar) record the same call as its game verb.
+   A quick-command use is one path of two presses, and the first press alone records nothing.
 4. **Use pairs.** For a fixture with two held techniques and four findings (one `unconfirmed`,
    one `confirmed`, one `false`, one `confirmed` that carries `fixed: true`), all eight pairs are
    reachable by `select`, `drag`, `typed` and `quick`, and each sends that pair's `finding_id`
@@ -982,7 +1149,7 @@ show `REQUEST_FAILED_TEXT` in both skins and the unplug shows the `NV:850` sente
 
    Two comparisons per step:
    - **Result.** Straight after `showResult`, before the refetch: the Terminal's pieces are the
-     log lines that step added, less the echo and the `SCAN_OUTPUT_TEXT` lines (`recordSent` adds both at send time, before `showResult`); the Panels' pieces are those in the view after
+     log lines that step added, less the echo and the generator's `started` lines (`recordSent` adds both at send time, before `showResult`); the Panels' pieces are those in the view after
      `showResult` that were not there before it, plus any toast or notice the scene raised,
      read from the test's toast capture.
    - **State.** After the refetch and its `render`: the test runs `show` in the Terminal (a
@@ -1008,7 +1175,10 @@ show `REQUEST_FAILED_TEXT` in both skins and the unplug shows the `NV:850` sente
    - every Panels piece, apart from the entries of `PANELS_ONLY_TEXT`, equals a Terminal piece
      of that step;
    - every Terminal piece of that step equals a Panels piece of that step, or is the id of a
-     listed row, or matches an entry of `TERMINAL_ONLY_TEXT` (section 5.3).
+     listed row, or matches an entry of `TERMINAL_ONLY_TEXT` (section 5.3), which includes each
+     generator's `TEMPLATES` spans and the value of a served `cli` field or its default. That
+     console dress is the only text the Terminal adds, and the first direction still requires
+     every Panels piece, so nothing the player needs is printed only as dress.
 
    `PANELS_ONLY_TEXT` lives in the test file and holds the section headings that the Terminal
    replaces with table headers, and the "Scanning" label of the progress bar, which the list
@@ -1070,7 +1240,8 @@ show the other skin gives the same game, on every build.
 |---|---|---|
 | `test/models/break_escape/network_view_bootstrap_test.rb` | K3 | `networkView` reaches the bootstrap unchanged; a scenario without it has no such key |
 | `test/controllers/break_escape/network_skin_blind_test.rb` | K2 | Each network and ops route gives the same answer and writes the same state with and without a `skin` or `net_skin` parameter, so no route reads one |
-| Validator tests | K3 | The four checks of section 9; the graph is the same with and without the block |
+| Validator tests | K3 | Each check of section 9, with one passing and one failing scenario fragment per error, among them a decoy whose `cli.module` is missing beside an authored one on its weakness; the graph is the same with and without the block and the `cli` objects |
+| `cli` serving (core's leak collector) | K3 | `test_ops_skin`'s collector stages the `cli` strings: the range on the view block from the first answer, an address only after the sweep, a service's `cli` only after the host scan, a finding's `cli` only after the check, with the same keys on the decoy as on the weakness; none in the bootstrap or a room answer; a scenario with no `cli` data gives answers with no `cli` key |
 | `tools/playtest` shell test | K2 | `session-start.sh` gives the same session tag with and without `--net-skin` |
 
 ### 11.4 Feature scenario `test_ops_skin`
@@ -1080,7 +1251,10 @@ one with remote sign-in off), a file server with one service that has two real w
 one decoy, two technique cards for different techniques, an open share and a printer to look
 at. The first real weakness grants a session and the second a credential. The scenario declares one log source that takes the core's
 network events, so the live run has rows to compare. Its objectives and hints follow the
-wording rule of 5.6. K3 adds `networkView.defaultSkin: "cli"`.
+wording rule of 5.6. K3 adds `networkView.defaultSkin: "cli"` and authored `cli` fields for the
+network's range, the file server's address, its service and its three findings (the decoy
+authored as fully as the weaknesses); the printer and the sign-in hosts keep the defaults, so one
+run shows both kinds of output.
 
 The beats are written once in the scenario's `PLAYTEST.md` and run twice in K2, once with
 `--net-skin gui` and once with `--net-skin cli`, through `window.__test.network`. After each beat
@@ -1090,12 +1264,12 @@ server's record.
 | Beat | What happens | Server record afterwards |
 |---|---|---|
 | T1 | Plant the box; the view opens in the starting skin with the header switch; the block shows no host | foothold held |
-| T2 | Terminal run only, before any sweep: a mistyped verb (`scna`), which prints the nearest verb; then `scan` with an invented host id and `scan` with the real id of the file server, whose network is not yet swept. Both `scan` lines print the same message, the unlisted-target answer with an empty list of what `scan` can be used on | unchanged; no request sent |
-| T3 | Sweep the network: Panels show the "Scanning" bar while the request is out, the Terminal prints its scan output over the same single request, and the block then lists its hosts. Then scan the file server, the same in both. Terminal run only: `signin` on the host with remote sign-in off prints the status sentence its Panels row shows | as `test_ops_scan` records; no request for the typed line |
-| T4 | Check the service: three findings, each under the alias the server gave. Every finding's control reads Confirm. Confirm the first real finding and the decoy (false, with its reason). The second real finding is left unconfirmed. Terminal run only: a mistyped `confrim f2` prints the nearest verb and sends nothing | as `test_ops_findings` records: two findings settled, one not |
+| T2 | Terminal run only, before any sweep: a mistyped verb (`scna`), which prints the nearest verb; then `scan` with an invented host id and `scan` with the real id of the file server, whose network is not yet swept. Both `scan` lines print the same message, the unlisted-target answer with an empty list of what `scan` can be used on. Then `nmap -iL hosts.txt`, which prints its answer | unchanged; no request sent |
+| T3 | Sweep the network (Terminal run: `nmap -sn --bogus <network>`, which prints one `Ignored in this simulation: --bogus` note and sweeps): Panels show the "Scanning" bar while the request is out, the Terminal prints the scanner's `started` and `result` lines over the same single request, and the block then lists its hosts. Then scan the file server, the same in both. Terminal run only: `signin` on the host with remote sign-in off prints the status sentence its Panels row shows | as `test_ops_scan` records; no request for the typed line |
+| T4 | Check the service (Terminal run: `nmap --script vuln -p <port> <host>`): three findings, each under the alias the server gave. Every finding's control reads Confirm. Confirm the first real finding and the decoy (false, with its reason). The second real finding is left unconfirmed. Terminal run only: a mistyped `confrim f2` prints the nearest verb and sends nothing | as `test_ops_findings` records: two findings settled, one not |
 | T5 | Use a card on the decoy (refused `false_positive`) and on the unconfirmed finding (refused `not_confirmed`). Then confirm that finding | the same refusal codes and sentences in both runs |
 | T6 | Switch skin; the same hosts, service, findings under the same aliases, statuses and cards are shown; switch back | unchanged; no request sent |
-| T7 | Use the first card on its finding (Panels: select then Use; Terminal: typed). Use the second (Panels: drag; Terminal: quick commands) | a session at the stated access, drawn with the compromised mark (read from `compromiseMarks()`, the same in both runs); a keyring entry |
+| T7 | Use the first card on its finding (Panels: select then Use; Terminal: typed, as `msfconsole`, `use <module>`, `set TECHNIQUE <id>`, `run`, which prints the session line). Use the second (Panels: drag; Terminal: quick commands) | a session at the stated access, drawn with the compromised mark (read from `compromiseMarks()`, the same in both runs); a keyring entry |
 | T8 | Open the share; look at the printer | unchanged apart from the share being opened |
 | T9 | Unplug | foothold gone, sessions through it ended |
 
@@ -1159,13 +1333,14 @@ All on a keyless server from the worktree, with fresh games made in that run.
 
 - **K2**, before the stage lands, because it is the stage that shows players the Terminal: the
   T and W beats through the real client path; screenshots of both skins at desktop and phone
-  widths, among them a sweep in progress (the "Scanning" bar in Panels, the scan output in the
-  Terminal), the bar under `prefers-reduced-motion: reduce` (static fill), a finding with Confirm and a host row with the compromised mark; a screenshot of
+  widths, among them a sweep in progress (the "Scanning" bar in Panels, the `started` lines in
+  the Terminal), a version-scan table, an msf `run` that ends with a session opened, the bar under `prefers-reduced-motion: reduce` (static fill), a finding with Confirm and a host row with the compromised mark; a screenshot of
   the prompt above an on-screen keyboard; the UI rules audit over the network-view surface of a
   live `test_ops_skin` game, in each skin (section 5.4); a double press of Confirm and of Enter
   on a `confirm` line, each on a throttled connection, sending one request and not two; the
   access leak scanner over the captured responses.
-- **K3**: beat D1.
+- **K3**: beat D1; screenshots of the same version scan and `run` with the authored `cli` fields
+  of `test_ops_skin`.
 - **K4**: the live parity run of 11.2, and the leak scanner over its captured responses.
 
 ## 12. Build steps and shared files
@@ -1178,9 +1353,9 @@ committed before its tests are run in the shared tree.
 | 1 | K1 | Save the scene's DOM for every fixture and for every recorded `ops_unchanged` view answer (under `test/js/fixtures/network-view/unchanged/`, beside the server fixtures in `test/fixtures/files/ops_unchanged/`), before any change. Move the fixtures the tests build inline into `test/js/fixtures/network-view/` only for the new tests; existing tests are not edited | the snapshots exist on the branch point |
 | 2 | K1 | `view-texts.js`, `view-controls.js`, `network-view-panels.js`; the new exports in `ops-model.js`, with the Panels drawing changed to call them; the scene mounts the Panels renderer and routes it through the core's `perform` path, with `offers()` reading the core's pending set and `pendingKey` (core 5.3); copy lists | K1 rows of 11.1; existing and core node tests unedited; `bin/test-js` whole; scripted reruns of `test_access_networks` and `test_ops_access` |
 | 3 | K2 | `skin-choice.js`; the starter passes the skin; the header switch on ops views | `network-skin-choice.test.mjs`, `network-skin-unchanged.test.mjs` |
-| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene from `perform`), the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, parity and text tests |
+| 4 | K2 | `terminal-grammar.js`, `terminal-format.js`, `network-view-terminal.js` (with `recordSent` and `recordResult`, called by the scene from `perform`), `cli-gen/registry.js`, `cli-gen/scanner-output.js` and `cli-gen/framework-console.js` with the defaults of section 4.2 and their golden files, the rules for the Terminal and for the Panels "Scanning" bar (reduced-motion block included) in `network-view-minigame.css`, `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`; the Tab attribute, the pause on mount, `scrollIntoView` on the prompt | grammar, format, `cli-gen` golden and provenance, parity and text tests |
 | 5 | K2 | `window.__test.network`; `--net-skin` in `session-start.sh`; `test_ops_skin` with its `PLAYTEST.md`, graph and leak collector entries; the audit entry; `docs/test-bridge.md` | the T beats in each skin and the W beats; the skin-blind controller test; the reruns of section 10, check 3; the K2 part of 11.6 (screenshots checked, audit clean, phone keyboard check); full suites; land K2 |
-| 6 | K3 | Schema, validator checks, wording warning, bootstrap test; `defaultSkin` in `test_ops_skin` | K3 rows of 11.3; beat D1; validator output for every other scenario unchanged |
+| 6 | K3 | Schema for `networkView` and the `cli` objects, `scripts/validate_realism_skin.rb` and its hook, wording warning, bootstrap test; `defaultSkin` and the authored `cli` fields in `test_ops_skin`, its leak collector stages and the authored-field golden files | K3 rows of 11.1 and 11.3; beat D1; validator output for every other scenario unchanged |
 | 7 | K4 | `tools/playtest/network-skin-parity.mjs`; the `README_scenario_design.md` feature index (N16) and `docs/ACCESS_AND_NETWORKS.md` | the K4 part of 11.6; land |
 
 | Shared file | Also touched by | This plan's part |
@@ -1189,10 +1364,12 @@ committed before its tests are run in the shared tree.
 | `minigames/network-view/ops-model.js` | core (owner); later plans add refusal codes to `REFUSAL_TEXT` | K1 adds exports, as the core's shared-file table expects: `findingLabel`, `needLine`, `useResultText` and the line functions of section 5.2. It changes no existing export and adds no entry to `REFUSAL_TEXT` |
 | `test/fixtures/files/ops_refusal_codes.json` | core (owner) | read by parity test 5 and the format test; not edited |
 | `css/network-view-minigame.css` | core | the Terminal's rules, appended |
-| `scripts/scenario-schema.json`, `scripts/validate_scenario.rb` dialogue lint, `scripts/validate_network_ops.rb` | every plan; core owns the last | one top-level block; two warnings |
+| `scripts/scenario-schema.json` | every plan; core owns `definitions.service`, `definitions.weakness`, `definitions.decoy` and `networks.<id>` | one top-level block; a `cli` property on each of the four, and one shared `definitions.cliFinding` |
+| `scripts/validate_scenario.rb` | every plan | one require and one call of `check_realism_skin`; the ink half of the wording warning in the dialogue lint |
+| the core's network row builders (`network_ops.rb`) and leak collector | core (owner) | none in the builders, which copy the `cli` objects as request 3 of section 14 asks; `test_ops_skin`'s collector entries for the `cli` strings |
 | `systems/test-bridge/index.js`, `tools/playtest/session-start.sh`, `tools/playtest/ui-rules-audit.mjs` | possibly core; none known for the others | one namespace; one option; one surface |
 | `README_scenario_design.md`, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md` | every plan | the N16 rows and one section |
-| JS test harness copy lists | every plan that adds a module | the seven new modules |
+| JS test harness copy lists | every plan that adds a module | the ten new modules, `cli-gen/` kept as a subfolder |
 
 Not touched: `ui/display-settings.js`, `ui/game-menu.js`, the game page's stylesheet list, any
 server model or controller. No file is added under `tools/playtest/` except the K4 runner.
@@ -1225,17 +1402,44 @@ showing and reads through `compromiseMarks()`.
 2. **Every plan: wording.** Every beat of a `test_ops_*` scenario's `PLAYTEST.md` names actions
    (sweep, scan, check, confirm, use), never controls (a button, a drag, a typed line), as
    objectives and hints do (sections 1.3 and 5.6), so one script runs in either skin.
+3. **Core: serve the `cli` display fields with the answers the player has earned.** The core's
+   schema gains the `cli` objects of section 9, and its row builders copy them, unchanged, beside
+   the fields they belong to:
+   - `networks.<id>.cli.range`, as `cli.range` on the view's block for that network;
+   - `networks.<id>.cli.hosts.<hostId>.address`, as `address` on the host's row, in the sweep
+     answer and in `GET /network`, only once the host has been discovered by a sweep;
+   - a service's `cli` (`protocol`, `service`, `banner`), with the service in the host scan
+     answer and in `GET /network`, only once the host has been scanned;
+   - a weakness's or a decoy's `cli` (`title`, `module`, `script`), as `cli` on the finding in
+     the check answer and in `GET /network`, only once the service has been checked, with the
+     same keys for both, so a decoy cannot be told from a weakness by what is sent.
+
+   None of it is sent in the bootstrap or in any room answer. An object the author did not write
+   is left out of the answer, never sent as `{}` or `null`, and the browser builds the defaults
+   of section 4.2 from fields it already has, so the server sends authored data only. The leak
+   collector of each `test_ops_*` scenario lists the `cli` strings at the stage they are served.
+   No route, check or refusal reads a `cli` field.
 
 ## 15. Open questions for the user
 
-1. **May a scenario force a skin, and where does its default live?**
-   (a) No forcing: a scenario sets a default and the player's pick wins. (b) `lockSkin: true`
-   removes the switch. (c) Forcing allowed, but only to force the Terminal with the quick
-   commands kept.
-   Recommendation: (a). Nothing in a mission can depend on the skin, a forced Terminal is harder
-   on phones and for some players, and a lab that wants the prompt can default to it.
-   The default is written in the scenario (`networkView.defaultSkin`) and not in `mission.json`
-   beside `ui_theme`, because it concerns the scenario's network and is validated with it; say
-   if you would rather keep presentation choices together in `mission.json`.
+a. **May `cli` fields carry real advisory identifiers (CVE-style) and real product names and
+   versions?**
+   Option 1: allowed, as labels the author supplies. They are public information, and the VM
+   missions already teach with them. Option 2: refused by the validator, and products stay
+   invented. The generators print whatever label is authored, so the answer changes one
+   validator rule of section 9 and nothing else. Under option 1 a real product and version can
+   appear in `banner` and `title`; the core's own `product` field keeps its invented-names rule
+   unless the core changes it.
+   Recommendation: option 1, since the aim is full simulated output, provided the output never
+   carries a payload, shellcode or working exploit content. The limits of section 1.3 rule 4 and
+   section 9 hold either way: private address ranges only, `RHOSTS`, `RPORT` and `TECHNIQUE` as
+   the only options, no payload option, and nothing run against a real host.
+b. **Is the output marked as simulated, or printed bare?**
+   Option 1: the first line of each run carries the mark (`Starting Nmap (simulated) against
+   ...`, `Metasploit Framework console (simulated)`), as this plan is written. Option 2: every
+   line bare, as the real tools print. Option 3: the mark on every result line.
+   Recommendation: option 1. One mark per run is enough to tell a learner, a screenshot reader or
+   a teacher that nothing real ran, and leaves the tables and report lines exactly in the tools'
+   layout. Option 3 clutters the lines a learner is meant to read.
 
 No action costs game time because of the skin, so this plan raises nothing about a clock.

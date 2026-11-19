@@ -26,7 +26,14 @@ or exploit-detail field guides. Do not edit `OPS_CORE_PLAN.md`.
   (`nmap -sn`, `nmap -sV`, `nmap -sV --script vuln -p <port> <host>`,
   `msf > use <module>; check`, `msf > use <module>; set TECHNIQUE <id>; run`); game verbs kept.
 
-## Open (still to do, in order)
+## Status 2026-11-19 (second agent)
+
+All open steps below are done in the plan (now 1445 lines), and the decision lines are appended.
+Change from this list: question 15(a) recommends option 1 (allow real advisory ids and product
+names as authored labels), per the orchestrator; the advisory/real-product validator rule
+applies only under option 2. Leftover grep is clean. Not reviewed yet; not committed.
+
+## Open (as originally listed; now done)
 
 1. **5.3** Terminal skin:
    - Layout sketch: show `$ nmap -sV files01` and an msf prompt.
