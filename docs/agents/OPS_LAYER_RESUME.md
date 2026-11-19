@@ -241,6 +241,11 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   (Fable, a2083d2c395e8f19a), writes only `OPS_MFA_HELPDESK_PLAN.md`. When it reports: commit,
   then FULL R4 review on Opus (S8c against the unlock code, plus the end-to-end read and trim
   list the R3 reviser never did); pass any new rows to the log plan's reviser or next round.
+- 11:45. PRIVILEGE R4 delta findings `c56a60195` (0B 0M 6m 7n; verdict: one more delta round).
+  R4 reviser running (Opus, a85308373ccff6b0f), wording and scope only; ruling: the power term
+  goes back into `keyboard_admin?`. Next: commit, R5 delta review (Fable); if nothing above nit,
+  PRIVILEGE is done. Request to pass to core's next reviser: does `desktop_request_allowed?` let
+  a technique admin session on a blocked headless host through (the collect depends on it).
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
