@@ -100,7 +100,7 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 | Step | Action | Result |
 |------|--------|--------|
 | 4 | Find **Maintenance Checklist** (Main Office desk) | Learn IT Room PIN: **2468** |
-| 5 | Explore Break Room | Collect Coffee Receipt, Birthday Card (→ date **0419**), Office Gossip |
+| 5 | Explore Break Room | Collect Coffee Receipt, Anniversary Card (→ date **0419**), Office Gossip |
 | 6 | Explore Conference Room | Collect ZDS Meeting Notes, Campaign Timeline |
 | 7 | Collect 4 notes total from open offices | **Phase 1 complete → Phase 2 unlocks** |
 
@@ -188,7 +188,7 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 
 | Tier | Item Type | Where Found | Examples |
 |------|-----------|-------------|---------|
-| Ambient intel | `notes` | Open unlocked offices | Coffee receipt, birthday card, gossip, ZDS meeting notes |
+| Ambient intel | `notes` | Open unlocked offices | Coffee receipt, anniversary card, gossip, ZDS meeting notes |
 | Investigation docs | `notes2` | Restricted/NPC items | Patricia's notes, Kevin's memo, Maya's research, IT incident log |
 | Operational evidence | `notes4` | Derek's filing cabinet | Casualty projections, manifesto, campaign materials |
 | Top-secret intel | `notes5` | ENTROPY encrypted archive (VM-gated) | Architect's authorization, ENTROPY network architecture |
@@ -208,7 +208,7 @@ Phase 0: ENTRY
 
 Phase 1: SURVEY (collect 4 notes + IT code)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Main Office ─┬─► Break Room ─► 3 notes (receipt, birthday card, gossip)
+  Main Office ─┬─► Break Room ─► 3 notes (receipt, anniversary card, gossip)
                └─► Conference Room ─► 2 notes (ZDS notes, timeline)
                └─► Main Office ─► Maintenance Checklist [IT code: 2468]
                                             │
@@ -390,7 +390,7 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | Confront Derek | ✅ Yes | Triggers mission end |
 | Complete Kevin moral choice | ❌ Optional | Affects Kevin's fate in future missions |
 | Decode whiteboard (CyberChef) | ✅ Yes | Reveals cabinet PIN (required for notes4) |
-| Pick Patricia's briefcase | ❌ Optional | Extra LORE (notes2) |
+| Pick Patricia's briefcase | ✅ Yes | Holds Derek's Office Key and the CyberChef Workstation (needed for the whiteboard), plus notes2 |
 
 ---
 
@@ -399,8 +399,8 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | Room | Lock Type | Access | Key NPCs/Items |
 |------|-----------|--------|----------------|
 | Reception | None | Start | Sarah (badge, key) |
-| Main Office | KEY | Key from Sarah | CyberChef, clues, notes |
-| Break Room | None | West from Main Office | **Derek Lawson** (NPC ⚠), birthday clue (0419), ambient notes, Sunday calendar, fridge sticky (Derek leaving after Sunday) |
+| Main Office | KEY | Key from Sarah | Clues, notes (CyberChef is in Patricia's briefcase, Manager's Office) |
+| Break Room | None | West from Main Office | **Derek Lawson** (NPC ⚠), anniversary clue (0419), ambient notes, Sunday calendar, fridge sticky (Derek leaving after Sunday) |
 | Conference Room | None | South from Break Room | ZDS notes, campaign timeline |
 | IT Room | PIN 2468 | East from Main Office | Kevin (lockpicks, keycard, notes2) |
 | Hallway West | None | North from Main Office | Directory sign; connects to Hallway East |
