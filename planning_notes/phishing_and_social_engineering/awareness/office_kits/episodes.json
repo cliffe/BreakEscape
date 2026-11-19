@@ -1,5 +1,5 @@
 {
-  "_note": "One row per shell. Wave 0 held only the hand-authored flag; wave 1A adds the kit fields. Kit fields (only when tier is not 'none'): tier (none|S|T|O|E), company (a kit file in this folder), ep (the string kit_ep holds, e.g. ca01), chainId (optional, names kit_<chainId>_out; defaults to ep), ambient (two person keys from the kit's staff), stub (the shared stub knot; defaults to ep), setPiece (name in the kit's setPieces, or null), attack (true for a full shell with an attack half: adds the kit_attack_done mapping), stepAway (the row is the one source: written to social.awarenessEpisode.stepAway), stepAwayBark (optional host line on the step-away mapping). A row with handAuthored true is never written by a generator (it is touched only by apply_training_room.py). A row with fixture true is a test scenario, not a course shell.",
+  "_note": "One row per shell. Wave 0 held only the hand-authored flag; wave 1A adds the kit fields. Kit fields (only when tier is not 'none'): tier (none|S|T|O|E), company (a kit file in this folder), ep (the string kit_ep holds, e.g. ca01), chainId (optional, names kit_<chainId>_out; defaults to ep), ambient (two person keys from the kit's staff), stub (the shared stub knot; defaults to ep), setPiece (name in the kit's setPieces, or null), attack (true for a full shell with an attack half: adds the kit_attack_done mapping), stepAway (the row is the one source: written to social.awarenessEpisode.stepAway), stepAwayBark (optional host line on the step-away mapping), override (optional: deep-merges into the kit before building, keyed sources by id and staff by person; a value of null deletes that key; used only to pin a test fixture to its frozen placeholder positions and timings). A row with handAuthored true is never written by a generator (it is touched only by apply_training_room.py). A row with fixture true is a test scenario, not a course shell.",
   "episodes": [
     {
       "id": "ca13_ai_assistant_defend",
@@ -22,7 +22,17 @@
       "setPiece": null,
       "attack": true,
       "stepAway": true,
-      "stepAwayBark": "Have you got a minute? Someone in finance just took a call like that one."
+      "stepAwayBark": "Have you got a minute? Someone in finance just took a call like that one.",
+      "override": {
+        "sources": {
+          "kit_coffee": { "position": { "x": 2, "y": 7 }, "affordance": { "useSeconds": 8 } },
+          "kit_cooler": { "position": { "x": 7, "y": 7 }, "affordance": { "useSeconds": 6 } }
+        },
+        "staff": {
+          "gwen_pritchard": { "voice": null, "chatterLines": ["Morning, all.", "Tea round shortly?"] },
+          "agnieszka_duda": { "voice": null, "chatterLines": ["Long week.", "Any biscuits left?"] }
+        }
+      }
     }
   ]
 }

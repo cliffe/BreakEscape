@@ -215,8 +215,38 @@ def kiosk_condition(row):
     return KIOSK_FINISHED if active(row) and row.get('stepAway') else None
 
 
+def _merge_override(dst, patch):
+    """Deep-merge patch into dst in place. A patch value of None deletes that key."""
+    for k, v in patch.items():
+        if v is None:
+            dst.pop(k, None)
+        elif isinstance(v, dict) and isinstance(dst.get(k), dict):
+            _merge_override(dst[k], v)
+        else:
+            dst[k] = copy.deepcopy(v)
+    return dst
+
+
+def apply_override(kit, row):
+    """A copy of the kit with the row's `override` applied (sources by id, staff by person).
+    Used only to pin a test fixture to its frozen placeholder positions and timings (4.3)."""
+    ov = (row or {}).get('override')
+    if not ov:
+        return kit
+    kit = copy.deepcopy(kit)
+    for src in kit.get('sources', []):
+        patch = ov.get('sources', {}).get(src.get('id'))
+        if patch:
+            _merge_override(src, patch)
+    for person, patch in ov.get('staff', {}).items():
+        if person in kit.get('staff', {}):
+            _merge_override(kit['staff'][person], patch)
+    return kit
+
+
 def build(kit, row, prefix, state_global):
     """Everything the kit owns for one shell, in one dict (the form the tests compare)."""
+    kit = apply_override(kit, row)
     return {
         'npcs': room_npcs(kit, row, prefix),
         'objects': room_objects(kit, row, prefix),
@@ -345,10 +375,16 @@ def patch_kiosk(sc, row):
     cond = kiosk_condition(row)
     if not cond:
         return sc
+    patched = 0
     for o in sc['rooms']['training_room']['objects']:
         if o.get('type') == 'kiosk':
             for v in o.get('observationVariants', []):
-                v['condition'] = cond
+                # only the existing "finished" variant, keyed on the defend-complete global;
+                # other variants (and kiosks with none) are left untouched
+                if '_defend_complete' in str(v.get('condition', '')):
+                    v['condition'] = cond
+                    patched += 1
+    assert patched, 'patch_kiosk: no finished (_defend_complete) kiosk variant to key on the panel'
     return sc
 
 

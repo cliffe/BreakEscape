@@ -237,6 +237,23 @@ class ApplyToTwin(unittest.TestCase):
         kiosk = [o for o in out['rooms']['training_room']['objects'] if o['type'] == 'kiosk'][0]
         self.assertEqual(kiosk['observationVariants'][0]['condition'], ok.KIOSK_FINISHED)
 
+    def test_patch_kiosk_touches_only_the_finished_variant(self):
+        sc = ok.apply_kit(twin_shell(), ok.load_kit('brightwell_foods'), row(stepAway=True))
+        kiosk = [o for o in sc['rooms']['training_room']['objects'] if o['type'] == 'kiosk'][0]
+        kiosk.setdefault('observationVariants', []).append({'condition': 'globalVars.something_else', 'value': 'x'})
+        ok.patch_kiosk(sc, row(stepAway=True))
+        conds = [v['condition'] for v in kiosk['observationVariants']]
+        self.assertIn(ok.KIOSK_FINISHED, conds)                 # the finished variant was keyed on the kit
+        self.assertIn('globalVars.something_else', conds)        # the unrelated variant was left alone
+
+    def test_patch_kiosk_asserts_when_there_is_no_finished_variant(self):
+        sc = ok.apply_kit(twin_shell(), ok.load_kit('brightwell_foods'), row(stepAway=True))
+        for o in sc['rooms']['training_room']['objects']:
+            if o['type'] == 'kiosk':
+                o['observationVariants'] = [{'condition': 'globalVars.unrelated', 'value': 'x'}]
+        with self.assertRaises(AssertionError):
+            ok.patch_kiosk(sc, row(stepAway=True))
+
 
 class Generators(unittest.TestCase):
     """Proof 5: with tier none or no kit rows, generator output is byte-identical to HEAD."""
