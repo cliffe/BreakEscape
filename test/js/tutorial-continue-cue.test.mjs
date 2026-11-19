@@ -28,7 +28,9 @@ const docListeners = { keydown: [] };
 let overlayParts = {};
 // Dialogs in the DOM: the real page always has hidden aria-modal panels (game menu,
 // session restart confirm), so a hidden one is the default; tests flip `shown`.
-let hiddenModal = { shown: false, checkVisibility() { return this.shown; } };
+const modalSel = '[aria-modal="true"]';
+const mkDialog = (sel) => ({ sel, shown: false, checkVisibility() { return this.shown; } });
+let hiddenModal = mkDialog(modalSel);
 let extraDialogs = [];
 globalThis.document = {
     createElement: () => ({
@@ -42,7 +44,10 @@ globalThis.document = {
     body: { appendChild(o) { this.last = o; }, removeChild() {} },
     addEventListener: (t, fn) => docListeners[t].push(fn),
     removeEventListener: (t, fn) => { docListeners[t] = docListeners[t].filter(f => f !== fn); },
-    querySelectorAll: () => [hiddenModal, ...extraDialogs]
+    querySelectorAll: (s) => {
+        const wanted = String(s).split(',').map(x => x.trim());
+        return [hiddenModal, ...extraDialogs].filter(d => wanted.includes(d.sel));
+    }
 };
 Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node' }, configurable: true, writable: true });
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -62,7 +67,7 @@ const { TutorialManager } = await import(dataUrl(readFileSync(join(js, 'systems/
 
 async function begin() {
     ticks = [];
-    hiddenModal = { shown: false, checkVisibility() { return this.shown; } }; extraDialogs = [];
+    hiddenModal = mkDialog(modalSel); extraDialogs = [];
     touchFirst = false; window.gameMenu = { isOpen: false }; window.gameConfirmOpen = undefined;
     window.MinigameFramework = undefined; window.currentConversationNPCId = undefined;
     window.currentConversationMinigameType = undefined; window.openModalCount = undefined;
@@ -143,7 +148,7 @@ test('Enter is ignored while something else owns the keyboard', async () => {
 test('B1: Enter advances with the hidden aria-modal panel present and the game menu closed; ignored once shown', async () => {
     const t = await begin();
     t.notifyPlayerMoved(); tick();
-    assert.ok(document.querySelectorAll().length >= 1, 'a hidden aria-modal element is in the DOM');
+    assert.ok(document.querySelectorAll(modalSel).length >= 1, 'a hidden aria-modal element is in the DOM');
     window.gameMenu = { isOpen: true };
     press(); assert.ok(t.currentStep === 0, 'game menu open: ignored');
     window.gameMenu = { isOpen: false };
@@ -165,13 +170,28 @@ test('other keyboard owners block Enter: confirm, prompt, conversation minigame,
     window.currentConversationMinigameType = 'phone-chat';
     press(); assert.ok(t.currentStep === 0, 'conversation minigame open');
     window.currentConversationMinigameType = undefined;
-    const prefs = { shown: false, checkVisibility() { return this.shown; } };
+    const prefs = mkDialog('#player-preferences-modal');
     extraDialogs = [prefs];
     press(); assert.ok(t.currentStep === 1, 'a hidden preferences modal does not block');
     t.notifyPlayerMoved(); t.currentStep = 1; // step 2 is its own objective; reuse the ready flag directly
     t.stepReady = true;
     prefs.shown = true;
     press(); assert.ok(t.currentStep === 1, 'preferences modal shown blocks Enter');
+});
+
+test('m1: without checkVisibility, a shown-looking panel inside a hidden parent does not block Enter', async () => {
+    const t = await begin();
+    t.notifyPlayerMoved(); tick();
+    // Old browser: no checkVisibility; own display is block, but the parent is display:none
+    const panel = { sel: modalSel, style: {}, rects: 0, getClientRects() { return { length: this.rects }; } };
+    hiddenModal = panel;
+    const realGcs = window.getComputedStyle;
+    window.getComputedStyle = () => ({ display: 'block', visibility: 'visible' });
+    press(); assert.ok(t.currentStep === 1, 'hidden by ancestor: Enter advances');
+    t.stepReady = true;
+    panel.rects = 1;
+    press(); assert.ok(t.currentStep === 1, 'rendered panel blocks Enter');
+    window.getComputedStyle = realGcs;
 });
 
 test('Enter listener: one after relaunch twice, none after the last step completes', async () => {
@@ -188,7 +208,7 @@ test('touch-first devices are not told to press Enter; others are', async () => 
     let t = await begin();
     touchFirst = true;
     t.notifyPlayerMoved(); tick();
-    assert.ok(ready() === 'Done. Press Continue.', 'touch wording');
+    assert.ok(ready() === 'Done. Tap Continue.', 'touch wording');
     touchFirst = false;
     t = await begin();
     t.notifyPlayerMoved(); tick();

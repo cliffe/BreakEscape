@@ -16,7 +16,7 @@ const TUTORIAL_DECLINED_GLOBAL = 'engine_tutorial_declined';
 // Shown under the objective when a step is done. Words, not colour, carry the meaning.
 const TUTORIAL_READY_TEXT = 'Done. Press Continue (or Enter).';
 // Touch-first devices have no Enter key to press
-const TUTORIAL_READY_TEXT_TOUCH = 'Done. Press Continue.';
+const TUTORIAL_READY_TEXT_TOUCH = 'Done. Tap Continue.';
 
 // Dialogs that hold the keyboard while shown. Most are built once and hidden, so the
 // check below counts only the ones actually rendered. The tutorial's own panel and
@@ -29,6 +29,9 @@ function isShown(el) {
     try {
         if (typeof el.checkVisibility === 'function') return !!el.checkVisibility({ checkVisibilityCSS: true });
         if (el.style && el.style.display === 'none') return false;
+        // No checkVisibility (older browsers): an element inside a display:none parent
+        // has no client rects, which its own computed style would not show
+        if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return false;
         const cs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(el) : null;
         return !(cs && (cs.display === 'none' || cs.visibility === 'hidden'));
     } catch (e) {
