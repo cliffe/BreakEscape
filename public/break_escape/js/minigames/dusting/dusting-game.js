@@ -398,11 +398,15 @@ export class DustingMinigame extends MinigameScene {
 
     /** The panel's click, hover and focus routes (split out so a test can wire them on a JSDOM panel). */
     _bindPanel() {
-        this.addEventListener(this.panel, 'click', e => {
+        const onClick = e => {
             const el = e.target.closest('[data-action]');
             // a click with detail 0 comes from the keyboard (Enter or Space on a focused button); a pointer click has detail 1 or more
             if (el && !el.disabled) this._action(el.dataset.action, el.dataset, e.detail === 0);
-        });
+        };
+        this.addEventListener(this.panel, 'click', onClick);
+        // On phone portrait the action footer row is the last child of the scrolling body (see _placeFoot), outside the panel.
+        const body = this.root && this.root.querySelector && this.root.querySelector('.dusting-body');
+        if (body) this.addEventListener(body, 'click', e => { if (e.target.closest('.dusting-body > .dusting-foot')) onClick(e); });
         // Compare: the magnified pair follows the card under the pointer or the keyboard focus (no re-render, so focus stays).
         const zoomTo = (e, speak) => {
             const w = e.target.closest && e.target.closest('.dusting-ref-wrap');
@@ -423,6 +427,7 @@ export class DustingMinigame extends MinigameScene {
         const short = window.innerHeight <= SHORT_LANDSCAPE_MAX_H && window.innerWidth > window.innerHeight;
         const was = this.root.classList.contains('dusting-short');
         this.root.classList.toggle('dusting-short', short);
+        this._placeFoot();
         if (was !== short) {
             this._applyLabels();
             if (this.metrics) this._refreshDynamic();
@@ -513,7 +518,6 @@ export class DustingMinigame extends MinigameScene {
         this._renderPanel();
         this._updateAria();
         this.dirty = true;
-        if (step === 'examine') this._scrollToTop();   // the panel opens at its title, never part way down
         if (['find', 'dust', 'lift'].includes(step)) this.canvas.focus({ preventScroll: true });
         this.announce({
             examine: 'Examine the surface.',
@@ -525,14 +529,35 @@ export class DustingMinigame extends MinigameScene {
         }[step]);
     }
 
-    /** Put the frame, its scrolling body and the game area back at scrollTop 0 (the title and steps in view). */
-    _scrollToTop() {
-        const body = this.root.querySelector('.dusting-body');
-        for (const el of [this.root, body, this.container]) if (el) el.scrollTop = 0;
+    /** Phone portrait (the CSS max-width: 760px rule, not short): the action footer row must be the last child of the
+     *  scrolling .dusting-body, because a sticky box only pins within its parent's box and the panel ends above the forensic,
+     *  status and keys blocks. Elsewhere (desktop, short landscape) the row stays at the end of the panel, where it always was.
+     *  Also publishes the row's real height as --d-foot-h so the scroller's scroll-padding-bottom clears it, wrapped or not. */
+    _placeFoot() {
+        const root = this.root;
+        if (!root || !root.querySelector || !this.panel) return;
+        const body = root.querySelector('.dusting-body');
+        const foot = root.querySelector('.dusting-foot');
+        if (!body || !foot) return;
+        const phone = window.innerWidth <= 760 && !root.classList.contains('dusting-short');
+        if (phone && foot.parentNode !== body) body.appendChild(foot);
+        else if (!phone && foot.parentNode !== this.panel) this.panel.appendChild(foot);
+        const h = foot.offsetHeight;
+        if (h && root.style && root.style.setProperty) root.style.setProperty('--d-foot-h', `${h + 6}px`);
+    }
+
+    /** First match for a selector in the panel or in the footer row (which sits in the body on phone portrait). */
+    _findInPanel(selector) {
+        const hit = this.panel && this.panel.querySelector(selector);
+        if (hit) return hit;
+        const foot = this.root && this.root.querySelector && this.root.querySelector('.dusting-body > .dusting-foot');
+        return foot ? foot.querySelector(selector) : null;
     }
 
     _renderPanel() {
         const p = this.panel;
+        const oldFoot = this.root && this.root.querySelector && this.root.querySelector('.dusting-body > .dusting-foot');
+        if (oldFoot) oldFoot.remove();   // a footer moved out of the panel is not cleared by the panel's innerHTML
         p.innerHTML = '';
         const html = {
             examine: () => this._htmlExamine(), find: () => this._htmlFind(), powder: () => this._htmlPowder(),
@@ -564,6 +589,7 @@ export class DustingMinigame extends MinigameScene {
             this.keysEl.textContent = keys;
             this.keysEl.hidden = keys === 'Keys: ';   // nothing to list after the match in short landscape
         }
+        this._placeFoot();
         this._drawKeyGlyphs();
         if (this.step === 'compare' && this.patternOk) this._drawZoom();
         this._applyLabels();
@@ -994,7 +1020,7 @@ export class DustingMinigame extends MinigameScene {
         this._renderPanel();
         this._drawCard();
         this._updateAria();
-        const b = this.panel.querySelector('[data-action="fulllift"]');
+        const b = this._findInPanel('[data-action="fulllift"]');
         if (b && b.focus) b.focus({ preventScroll: true });
         this.announce(this.fullLift ? 'Showing your whole lift.' : 'Showing the magnified pair.');
     }
@@ -1042,7 +1068,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _refocus(selector) {
-        const b = this.panel && this.panel.querySelector(selector);
+        const b = this._findInPanel(selector);
         if (!b || b.disabled || !b.focus) return false;
         this._refocusing = true;
         try { b.focus(); } finally { this._refocusing = false; }
