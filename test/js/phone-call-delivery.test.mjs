@@ -61,7 +61,7 @@ test('wiring: both story paths pass each step note down to the speaker', () => {
     const src = read('minigames/phone-chat/phone-chat-minigame.js');
     assert.equal((src.match(/stepDeliveries\(/g) || []).length, 3, 'continue loop, first result and continue after a choice');
     assert.match(src, /_presentOutput\(accumulatedMessages, accumulatedTags, lastResult, \{ tagsApplied: true, deliveries: accumulatedDeliveries \}\)/);
-    assert.match(src, /_showStoryLine\(message, TYPING_DELAY_MS, deliveries\?\.\[i\] \|\| null\)/);
-    assert.match(src, /_showStoryLine\(message, TYPING_DELAY_MS, accumulatedDeliveries\[i\] \|\| null\)/);
+    assert.match(src, /_showStoryLine\(message, this\._scaledPause\(TYPING_DELAY_MS\), deliveries\?\.\[i\] \|\| null\)/);
+    assert.match(src, /_showStoryLine\(message, this\._scaledPause\(TYPING_DELAY_MS\), accumulatedDeliveries\[i\] \|\| null\)/);
     assert.match(src, /await this\._callVoice\?\.speak\(voice\.speakerId, voice\.text, [^\n]*\{ delivery \}\)/);
 });
