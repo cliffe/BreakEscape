@@ -301,6 +301,10 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   fix pass running (Opus, a6392caf7249cf81b): client drops `access` on an `off` refusal;
   `accountOnly` must state `staff` explicitly; five nits. When it reports: commit; PRIVILEGE
   ROUNDS ARE DONE (five rounds). Do not launch another review for it.
+- 11:58. PRIVILEGE DONE: five rounds complete, final text committed (1041 lines; see
+  `git log -1 -- docs/achitechture/OPS_PRIVILEGE_ACCOUNTS_PLAN.md`). No more reviews for it. Left:
+  its seven user questions, the log plan's renames if any still differ (the R4 log review's
+  sibling list will say), and the second cross-plan review.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
