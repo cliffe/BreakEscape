@@ -5189,6 +5189,7 @@
           ]
         },
         "observations": { "type": "string" },
+        "emptyText": {"type": "string", "description": "Container (safe, bookcase, etc.) only: the toast shown when the player opens it after its contents are gone. Default: \"<name> is empty.\""},
         "observationDisplay": {
           "type": "string",
           "description": "Display mode for observation text: 'gameDisplay' for modal dialog, or omit for toast notification",

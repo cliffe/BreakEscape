@@ -3868,8 +3868,7 @@ wall_safe_pin = "5829"
       "delayMs": 600000,
       "condition": "!globalVars.ward_recovering",
       "setGlobal": { "patient_bed2_state": "distressed" },
-      "showCountdown": false,
-      "onceOnly": true
+      "showCountdown": false
     },
     {
       "id": "bed4_slow_path_window",
@@ -3878,8 +3877,7 @@ wall_safe_pin = "5829"
       "startOnGlobal": "slow_path_window_open",
       "condition": "!globalVars.bed4_manually_stabilised && !globalVars.ward_recovering",
       "setGlobal": { "patient_bed4_state": "critical", "bed4_critical": true },
-      "showCountdown": true,
-      "onceOnly": true
+      "showCountdown": true
     },
     {
       "id": "bed4_death_window",
@@ -3888,8 +3886,7 @@ wall_safe_pin = "5829"
       "startOnGlobal": "bed4_critical",
       "condition": "!globalVars.bed4_manually_stabilised && !globalVars.ward_recovering",
       "setGlobal": { "patient_bed4_deceased": true },
-      "showCountdown": true,
-      "onceOnly": true
+      "showCountdown": true
     }
   ],
 
