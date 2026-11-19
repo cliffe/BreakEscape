@@ -345,7 +345,9 @@ after S5c, includes the account-kind rule). `session_admin?(pc_id)` is `session_
 "admin"`. The level is read, never stored, for every session except a technique one, whose `access`
 the core plan writes. So nothing writes or sends a default level, and a rebuilt record gets the level
 of the account it now holds: the same account typing its password to unlock comes back at the same
-level; Switch user, a guest claim or a borrow's displacement drops to whatever the new holder has;
+level; Switch user, a guest claim or a borrow's displacement of a keyboard session drops to
+whatever the new holder has (a borrow ends only keyboard sessions: a remote or technique session,
+and its server record, stays and keeps its level);
 a technique session cannot lock (`session_lockable?` is false for it), so it cannot lose its level
 that way. The core plan's `needs.session: "user"` is met when `session_access` is not nil (user or
 admin); `needs.session: "admin"` when it is `"admin"`. So a relay session or an owner or guest
@@ -730,8 +732,9 @@ action and the plant proof for USB); S5c's check rides `POST /login` and the key
 Runs under the game lock, as the other writing routes do.
 
 Refusals follow the ops convention: `{ success: false, reason: "not_admin" | "locked" |
-"not_reachable" | "bad_request" }`. The 404 body of check 2 mirrors `GET /container` on purpose (so
-a real and an invented id look alike) and stays as that route gives it.
+"not_reachable" | "bad_request" }`, and the 404 of check 2, which is `GET /container`'s own body
+and not a reason on this list. It mirrors that route on purpose (so a real and an invented id look
+alike) and stays as that route gives it; a test that walks the closed list accepts it by name.
 
 Checks in order:
 1. `pc_id` missing, not a string or too long → 400 `{ success: false, reason: "bad_request" }`;
@@ -995,7 +998,7 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   real routes: password user, password admin, credential admin, `token` session of an administrator
   (admin), owner claim of an admin account (user), guest claim (user), relay (user), locked (nil),
   expired token (nil), route down (nil), PC off (nil); lock then unlock keeps admin; Switch user to a
-  user account drops it; a borrow displacement drops it; `access` present on the mirror entry, the
+  user account drops it; a borrow's displacement of a keyboard session drops it, and a remote or technique admin session keeps `access` (and its plant override) through a borrow; `access` present on the mirror entry, the
   sign-in answer and the host row for a password admin session, and absent from the next answer
   after the route drops or the PC goes off. S3: a technique session with `access: "admin"`; a relay
   session and a guest claim each feed a step up to admin.
@@ -1218,6 +1221,9 @@ Files this plan changes:
 **Shared with other ops plans** (agree edit order):
 - `start_login_session!`: the core plan adds the stored `access:` and `technique:` for a technique
   record; this plan reads `access` only through `session_access`.
+- `record_borrow_done!`: shared with the core plan, which makes it delete only a keyboard record
+  (a record with `foothold` or `from` stays); this plan writes `cachedAt` after the lock-out
+  branch. Agree the edit order with the core plan.
 - `login_session_answer`, `session_for_client` and the host row: the `access` rule of section 5.
   S3 lands first, and the core plan adds the answer parameter; S5a finds it there.
 - `attempt_login!` and `attempt_credential_login!`: S8 adds the second step after the Admission
@@ -1244,7 +1250,8 @@ Event names and details are as the log rows plan's section 13.7 writes them (`Op
 | S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count` (integer: hashes added, `{ count: 9 }`; a collect adds at most 8, the cap of section 9) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
 
 Nothing in this feature reads a log row back. Every collected pair is a hash, so `count` is the
-number of hashes obtained; there is no separate hash row, and a crack is the cracking plan's row.
+number of hashes obtained; there is no separate hash row. Cracking writes no row: it is offline and leaves nothing on the
+target, so collecting the hash (the row above) is this plan's own and the only one.
 No `detail` holds a secret: an authored id, a `usbClass`, a count; never a password, a hash token
 or a code. The helper cuts nothing: a PC or profile id over
 40 characters, or an account username over 32, makes the call malformed (no row, a raise in test

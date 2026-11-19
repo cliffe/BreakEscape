@@ -97,7 +97,7 @@ Each stage ships alone, with its tests.
 
 L1a lands before every other ops stage, so siblings write and test rows from their first commit.
 L1b lands with L1a, before S1, so it is in place before the stages that edit the sign-in methods
-(S3, S5a, S5c, S8) and before L2a. The rest of the log stages (L2a, L2b, L3) land after S7. Where a
+(S3, S5a, S5c, S8) and before L2a. The rest of the log stages (L2a, L2b, L3) land after S5c. Where a
 sibling stage and L1b ever touch the same method in the same week, whichever lands second merges
 into the other's edit. `signin_ok` sits after the second-step check of the mfa plan and after the
 `via: 'technique'` skip of the core plan, so L1b is correct whichever order they land in.
@@ -1207,7 +1207,7 @@ records nothing for these, and the gap is the lesson.
    `OpsLog.note_issued_secret` (13.2 step 2). Each `test_ops_*` scenario that asserts rows declares
    `logSources` and a `gameClock` and calls `assert_ops_log_holds_no_secret`.
 2. **Orchestrator, ordering:** L1a and L1b land before every other ops stage, before S1; the rest
-   of the log stages (L2a, L2b, L3) land after S7. L1b is the stage that edits `attempt_login!`,
+   of the log stages (L2a, L2b, L3) land after S5c. L1b is the stage that edits `attempt_login!`,
    `start_login_session!` and `#unlock`, so S3, S5a, S5c and S8a meet it already in place.
 3. **OPS_CORE (S1 to S3):** `technique_refused` registers `save_limit: { 'refused' => 10 }`, and
    `network_swept` and `technique_used` each register `save_limit: { 'ok' => 10 }`. Every refusal
@@ -1216,7 +1216,7 @@ records nothing for these, and the gap is the lesson.
    first sweep and a new grant pass none and keep the route's save; a repeat of one of a source's
    10 newest rows merges.
 4. **OPS_PRIVILEGE_ACCOUNTS (S5):** `admin_profile_read` is one per PC, profile and account; the
-   harvest detail is `count` and `hashes`, each `{ count: 9 }`, a collect adding at most 8 pairs;
+   harvest detail is `count` (`{ count: 9 }`, hashes added), a collect adding at most 8 pairs;
    S5b registers no secret source for hash values, because L1a's credential source covers every
    keyring entry, `hash` entries included.
 5. **OPS_MFA_HELPDESK (S8):** the rows, the `approver` key, the route codes, the secret sources

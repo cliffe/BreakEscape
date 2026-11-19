@@ -496,10 +496,14 @@ attempt costs the password step again and a new attempt has new numbers, so thre
 leave nothing worth guessing.
 
 **Helpdesk (S8b).** New concern `app/models/break_escape/helpdesk_access.rb`.
-`request_helpdesk!(desk_id, username, what, answers)` checks, in order: the desk exists; its NPC
+`request_helpdesk!(desk_id, username, what, answers, pc_id = nil)` checks, in order: the desk exists; its NPC
 is in `encounteredNPCs` and is not recorded as knocked out; the player is signed in
-where the desk needs it (a request made over a PC needs an open session at that PC; one made to
-the NPC in person needs none); `what` is in the desk's `resets`; the
+where the request says it is made (a request made over a PC is made from that PC's desktop and
+carries its id as `pc_id`: the server needs an open, unlocked record in `access_sessions[pc_id]`
+of any kind, keyboard, remote or technique, since all three are served that desktop; a `pc_id`
+that is not a sign-in PC, or has no such record, is `unavailable`, the same answer for a real and
+an invented id; a request made to the NPC in person sends no `pc_id` and needs no session);
+`what` is in the desk's `resets`; the
 desk has not stopped serving this username (`helpdeskTries` at `maxTries` records `stoppedAt`,
 server seconds, and the stop lifts after `DESK_STOP_SECONDS = 300`: the first read of the entry
 after that removes `stoppedAt` and returns the count to 0, as for `closedAt` on the code step;
@@ -664,7 +668,9 @@ phone button or from "My phone" (`own: true`).
 
 **`helpdesk-request` scene (new, S8b).** A paper request form in the shared frame: username
 field, a choice of what is asked for, one text field per `questionLabels` entry, Send. Opened by
-an ink tag `#helpdesk_request:<deskId>` in the helpdesk NPC's conversation, or from a granted
+an ink tag `#helpdesk_request:<deskId>` in the helpdesk NPC's conversation (a request in person:
+no `pc_id` is sent), from a helpdesk form on a PC's desktop (a request over a PC: the scene is
+given that PC's id and sends it as `pc_id`), or from a granted
 pretext ask that names `helpdesk: "<deskId>"` (`systems/pretext-judge.js` starts it). The answer
 sets the client global `helpdesk_<deskId>_result` from the route's answer (`granted`; `refused`
 and `blocked` as named; `unavailable` as `unavailable`; `bad_request` and `not_found` as `error`;
@@ -729,7 +735,7 @@ would. "Lockout" is the account's lockout key at that PC (422 `lockedOut`).
 | `POST /mfa/prompt` (locked) | `pc_id` | PC found. Pending record, push kind, live (else generic 422). Route still holds. Lockout. Gap since `last` (else 422 `tooSoon: true, retryAfterS`). `n < MAX_PROMPTS` (else record dropped, 422 `expired: true`) | Counts, then the decision in 5.2. Not approved: `{ success: false, approved: false, promptsSent, waiting? }`. Approved: `mfaPrompts[npc] = 0`, record dropped, session written, the normal sign-in answer plus `approvedBy: "owner"` |
 | `GET /mfa/phone` | `npc_id` (that NPC's held phone), or `own=1` (the player's own) | `npc_id`: `held_friendface_phone(npc_id)` (else 403 `{ success: false, error: "no such phone" }`). `own`: at least one account has `accountResets[...].mfa` (else the same 403) | No write. `{ requests: [{ pcId, host, username, n, numbers? }] }`: live push records for that owner's account, or for every re-enrolled account; at most one per PC. `numbers` is the three choices from `MfaModel.numbers`, in its order, none marked |
 | `POST /mfa/approve` (locked) | `pc_id`, `number?`, `deny?` | PC found. Pending record, push kind, live (else generic 422). Phone held for the pending account, or account re-enrolled (else 403). Route still holds. `deny`, or a wrong or missing `number` for number matching: record dropped, `{ success: false, cancelled: true }` | Right: record dropped, `mfaPrompts[npc] = 0`, session written, the normal sign-in answer plus `approvedBy: "player"` |
-| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points) | The checks in 5.2. Refusals are `{ success: false, reason }` from a closed list: 400 `bad_request` (missing params, body over 4 KB), 404 `not_found` (desk unknown), 422 `unavailable` (not signed in where the desk needs it, NPC not met or knocked out, `what` not offered), 422 `blocked` (stopped serving, with `retryIn`), 422 `refused` with `triesLeft` (unknown username or rule not met; tries counted) | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A request for something already granted passes the same checks, answers the same body with the current `lockoutPcIds`, writes nothing and clears nothing. Each outcome writes at most one `helpdesk_request` row (section 13) |
+| `POST /helpdesk/request` (locked, S8b) | `desk_id`, `username`, `what`, `answers` (map of question id to text; body refused over 4 KB before parsing; each answer cut to 64 code points), optional `pc_id` (the PC whose desktop the form is on; a string of at most 64 code points) | The checks in 5.2. Refusals are `{ success: false, reason }` from a closed list: 400 `bad_request` (missing params, body over 4 KB, a `pc_id` that is not a string or is too long), 404 `not_found` (desk unknown), 422 `unavailable` (a `pc_id` with no open session at that PC, NPC not met or knocked out, `what` not offered), 422 `blocked` (stopped serving, with `retryIn`), 422 `refused` with `triesLeft` (unknown username or rule not met; tries counted) | Grant: `accountResets` written; for `password`, lockouts cleared. `{ granted: true, what, password?, lockoutPcIds? }`. A request for something already granted passes the same checks, answers the same body with the current `lockoutPcIds`, writes nothing and clears nothing. Each outcome writes at most one `helpdesk_request` row (section 13) |
 
 A refused second step never says more than the first step already did: the `mfaRequired` answer
 itself tells the player the password was right, as a real second prompt does.
@@ -947,7 +953,7 @@ The feature scenario's beats are each asserted in a controller case too. Cases n
 | Saved connection (`mfa_keyring_test.rb`) | Refused with `typeToSignIn: "second_step"` at a `push` and a number matching PC and over a foothold, with no session, pending record or counter moved; a locked-out account answers `lockedOut`; an exempt account's saved connection signs in; at a PC with no `mfa`, a saved connection is unchanged before a password reset, refused with `typeToSignIn: "password_changed"` after it, and works again once the new password has been typed at any PC |
 | Push | The count survives a new attempt; requests caught on a held phone do not raise it; a knocked-out owner approves nothing; `tooSoon` |
 | Phone | Approve refused without the phone; the three numbers are stable for one attempt and differ for the next; deny cancels; own-phone list refused with no re-enrolled account |
-| Helpdesk | Unknown user and wrong answers give the same body and rows of the same shape (section 13); `maxTries` refusals stop the desk with `retryIn`, and with time moved on `DESK_STOP_SECONDS` the same account is served again with the count at 0; a request with no session where the desk needs one is `unavailable`; a blocked desk posted to twenty times inside five minutes, with one username or twenty, stores and saves ten times and no more, and stores again once the window has passed; retry of a granted request gets the same body and leaves a lockout earned since the grant in place; an account locked out at two PCs is unlocked at both and `lockoutPcIds` shrinks; a second-factor grant leaves lockouts alone; desk NPC not met refused; hostile text in `answers` and `username` (long, HTML, control characters) is cut and cleaned before any use, echoed in no answer, and stored only as the normalised 64 code point key and the log row's capped `typed` field |
+| Helpdesk | Unknown user and wrong answers give the same body and rows of the same shape (section 13); `maxTries` refusals stop the desk with `retryIn`, and with time moved on `DESK_STOP_SECONDS` the same account is served again with the count at 0; a request over a PC with a `pc_id` is granted with a keyboard session, a remote session and a technique session at that PC (one case each), and is `unavailable` with no session held, with a session held only at another PC, with a locked session, and with a `pc_id` that is not a sign-in PC (the last two bodies equal); the same request in person, with no `pc_id` and no session, passes the check; a non-string or 65-code-point `pc_id` is `bad_request`; a blocked desk posted to twenty times inside five minutes, with one username or twenty, stores and saves ten times and no more, and stores again once the window has passed; retry of a granted request gets the same body and leaves a lockout earned since the grant in place; an account locked out at two PCs is unlocked at both and `lockoutPcIds` shrinks; a second-factor grant leaves lockouts alone; desk NPC not met refused; hostile text in `answers` and `username` (long, HTML, control characters) is cut and cleaned before any use, echoed in no answer, and stored only as the normalised 64 code point key and the log row's capped `typed` field |
 | Subject rules (`test/models/break_escape/mfa_access_subject_test.rb`) | The `MfaAccess` functions called with a test-only subject kind and its own map, since no route takes one in this plan: a `passed` record survives the tidy past `PENDING_SECONDS` and an unpassed one does not; a right code, an owner approval and a player approval each return `:passed` and leave the record; no route re-judge and no lockout key is touched; `numbers` for that subject differs from a PC's with the same owner and nonce; `started`, `wrong` and `mfaPrompts` move on the shared per-owner entries; with the owner re-enrolled, push case 1 is skipped, approve needs the held phone, verify compares against the authored device, and `device_in_use?` keeps the old device's code live. The same calls with a `pc` subject give exactly the sign-in results above |
 | No inline key | A unit test greps `app/` and `lib/` for a lockout key built or split outside `AccessIdentities` and fails on any hit |
 
@@ -1165,8 +1171,16 @@ No field holds a code, a number to match, an answer or a password. The only free
 
 ## 15. Open questions for the user
 
-None open. Points with an obvious default are settled in section 5.4. Two settled answers that
-shape later work:
+One open, with a working answer built in. Points with an obvious default are settled in section
+5.4. Two settled answers that shape later work follow it.
+
+- **Does a helpdesk request need a sign-in?** Working answer, built as written in section 5.2:
+  a request made from a PC's desktop needs an open session at that PC (any kind), and a request
+  in person at the desk needs none. Alternative: a desk field (for example `needsSignIn: true`)
+  that says whether the desk wants a sign-in at all, so an author could have a desk that serves
+  only people already inside, or one that serves a request over any PC with no session. It would
+  add a field to section 4.2, a validator rule and a test per setting. Waiting for the user's
+  choice; the working answer needs no desk field.
 
 - **NPCs do not react to what the player does to their account.** Only the log rows are
   written, and the event `mfa_prompt_sent:<npcId>` lets a scenario voice a bark. Reactions
