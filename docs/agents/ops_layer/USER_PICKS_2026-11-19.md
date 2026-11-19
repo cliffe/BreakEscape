@@ -84,3 +84,34 @@ the question goes back to the user on the picks page. Everything else is a rulin
 ## Log rows
 
 - **LOG-1**: a. **LOG-4**: a. **LOG-6**: a. **LOG-7**: a.
+
+# Round 2 (answered 2026-11-19 evening)
+
+User's words quoted; orchestrator's readings marked "Reading:".
+
+- **R2-1** (cracking route): no option picked. "We are now running under the CVP account, so more
+  likely to work now." Reading: run the cracking reviser directly on an opus55 agent with the
+  existing brief; no sonnet-cvp relay.
+- **R2-2** (cracker needs server-granted facts and proof the hash was collected): left blank.
+  Reading: the plan stays on the recommendation (both checks).
+- **R2-3** (control list for the two looks): no option picked. "The realism mode should show full
+  simulated nmap msf cli output based on the weaknesses etc -- it should be generated from
+  separate files (js, etc)". Reading: the terminal (realism) look shows full simulated
+  scanner-style and exploit-framework-style console output, modelled on nmap and Metasploit,
+  generated from each host's services and weaknesses by separate per-tool generator modules. The
+  earlier "no real tool names" rule and its deny-list test are withdrawn for the realism look;
+  the movie look stays plain. Realistic names (services, versions, module names) come from
+  authored scenario data per weakness, with generic defaults; the generators format them. The one
+  shared control table stays (not contradicted). Still simulated: nothing runs against a real
+  host, and the output carries no working exploit payloads.
+- **R2-4**: a. The step is still due; the NPC replaces the card or PIN only.
+- **R2-5**: b. Allow a second step on a carried item after auditing every inventory path.
+- **R2-6**: b. Keep the pretext key as `technique`; `technique_card` only for the new card. No
+  `se_technique`.
+- **R2-7**: a. Session-type implants stay keyboard-only.
+- **R2-8**: a. Accept the new "Nobody is signed in at this keyboard." message in
+  test_access_networks and demo_access_tour.
+- **R2-9**: a. A helpdesk request over a PC needs a session there; in person needs none.
+- **R2-10**: a. The approval prompt waits until the conversation and its screens close.
+- **R2-11**: a. Fix both existing-code bugs (keycard credential signs in after revocation;
+  validator counts fob/rfid as cards) on a small branch with tests, through the usual train.
