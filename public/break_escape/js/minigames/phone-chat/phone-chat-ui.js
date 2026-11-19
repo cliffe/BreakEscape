@@ -1755,8 +1755,8 @@ export default class PhoneChatUI {
     }
 
     cleanup() {
-        this._refocusChoices = false;
         this.hideIncomingCall();
+        this._refocusChoices = false;
         this.stopCallTimer();
         this._chatInfluence?.destroy();
         this._chatInfluence = null;
