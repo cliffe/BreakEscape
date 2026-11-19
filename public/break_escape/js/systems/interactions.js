@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant, isSeatedDeskPc, seatedPcWins } from './interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant, isSeatedDeskPc, seatedPcWins, reachYSeated } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -2344,7 +2344,7 @@ export function tryInteractWithNearest() {
                 // A seat with no free place whose sitter (any of them, on a full sofa) is on it now is her, not "A chair." (interaction-reach.js
                 // seatOccupant); she is considered below. A sofa with a free place stays, and loses to her by score.
                 if (obj.seatedBy && window.seating?.isSeat(obj) && seatOccupant(obj, allNpcs(), { isKo: npcKo, isSeated: npcSeatedOn })) return;
-                consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), aimY(obj));
+                consider(reachX(obj, px), reachYSeated(obj, py, seatedOn), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), aimY(obj));
             });
         }
 
