@@ -236,8 +236,9 @@
   border: 2px solid #444;
   color: #ccc;
   padding: 4px 6px;
-  font-family: inherit;
-  font-size: 12px;
+  font-family: 'GNF', monospace;
+  /* the panel is zoomed by --hud-zoom; divided back so rendered text stays at least 16px */
+  font-size: max(16px, calc(16px / var(--hud-zoom, 1)));
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
