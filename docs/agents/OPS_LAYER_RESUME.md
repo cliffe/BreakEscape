@@ -291,6 +291,12 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   `foothold`, `from`, `relay`), `share_file_read` -> `share_folder_opened`, counts as
   `{ count: <=9 }`, `from` uses kind `foothold`, quiet `technique_refused` `save_limit: 10`,
   blocked helpdesk branch `save_limit: 10` per desk. Log user questions now 3.
+- 11:54. SKIN trim pass committed `923088f9f` (1031 lines, accepted). R4 delta review running
+  (Sonnet, aedac230b57faa436) to `OPS_REALISM_SKIN_R4.md`, told to check nothing was lost in the
+  trim (compare against `288139643`). "ready" ends the skin's rounds; else a Fable fix pass.
+  All five live plans are now in R4 or R5 review: CORE R4 (a14ec25a85499bccc), PRIVILEGE R5
+  (a6f8f5a57b1050dde), SKIN R4 (aedac230b57faa436), MFA R4 full (a507d1abc5320b61a), LOG_ROWS R4
+  (ad1f8c88a66ac2edb).
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
