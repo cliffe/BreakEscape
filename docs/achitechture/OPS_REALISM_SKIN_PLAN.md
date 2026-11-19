@@ -51,11 +51,13 @@ A sweep and a service scan are the same single request and answer in both skins.
 progress bar labelled "Scanning" shows while the request is out. The Terminal prints the
 simulated scanner's start line as soon as the request is sent, then, when the answer lands, the
 full report built from it: host lines, the port table with service names and versions, and the
-script output for a check. Every name in that output (a service word such as `microsoft-ds`, a
-banner, a host address, a module path) is either written by the scenario's author for that
-service or weakness or is a generic default built from the fields the core already sends, so a
-scenario written before this feature still prints complete output. The output is drawn, not a
-second request.
+script output for a check. Every name in that output is one of three things: network layout the
+scenario's author writes (a host address, a range, a service word such as `microsoft-ds`, a
+banner); vulnerability detail (a script title, a module path, advisory ids, script output lines)
+taken from an entry of the realism catalog, a file kept apart from every scenario, which a
+weakness or decoy links to by a plain id (section 4.3); or a generic default built from the
+fields the core already sends, so a scenario written before this feature still prints complete
+output. The output is drawn, not a second request.
 
 The player can switch at any time, in the middle of a task, and loses nothing: the hosts found,
 the findings and the sessions held all live on the server. A finding is `f2` in
@@ -96,12 +98,17 @@ and one who wants the prompt can have it on every ops network.
    do ("sweep the office network"), never how one skin does it ("click Sweep", "type sweep").
 4. **It stays a simulation.** Nothing runs against a real host and nothing leaves the game's own
    routes. The output holds no working payload, no shellcode, no real credential and no option
-   that would configure one. Module paths, banners and addresses are labels the author writes,
-   validated as plain text (section 9). Generators format the answer and the author's labels;
+   that would configure one; the framework's options are `RHOSTS`, `RPORT` and `TECHNIQUE` and
+   nothing else, and every address is in a private range. Banners and addresses are labels the
+   scenario's author writes; module paths, advisory ids and script output are labels held in the
+   realism catalog (section 4.3). All of them are validated as plain text (section 9). Every
+   line is printed bare, in the tools' own layout, with no mark added. Generators format the
+   answer and these labels;
    they never invent exploit content, and a scenario's console text teaches no attack step
    beyond what its lab sheet already covers. No validator or test can see that last point: it
    is checked by the scenario design review and the lab-sheet step of every scenario that
-   authors `cli` fields, and the validator enforces only the text rules of section 9.
+   authors `cli` fields or links catalog entries, and the validators enforce only the text
+   rules of section 9.
 
 Rule 1 is what lets the feature ship without mission playtests of its own: a mission that is
 solvable in one skin is solvable in the other because the requests, the server and the text shown
@@ -171,8 +178,8 @@ What already does part of the job, and what does not:
   `version`, and for a checked finding `class`, `severity` and `summary`. Those are enough for
   every generator's default output. The core's validator already keeps `product` invented
   (`scripts/real_product_names.txt`) and warns on a `summary` that reads as a procedure. For the
-  skin's `cli` strings, section 9's command-form error takes the place of the procedure warning,
-  and the real-product list applies under either option, in the forms row 15(a) of section 9 gives.
+  skin's `cli` strings and catalog entries, section 9's command-form error takes the place of the
+  procedure warning, and the real-product list applies in the forms section 9 gives.
 - Networks today carry `name`, `offWhen` and `wifi` and nothing address-like
   (`scripts/scenario-schema.json`, `properties.networks`, server-only). No host, network or
   service has an address, a protocol or a banner, so those are new optional fields (section 4).
@@ -186,7 +193,7 @@ by tests and runs that exist when it lands. Total size M.
 |---|---|---|---|
 | K1 Split | The private control list and `offers()`; the Panels drawing moved out of the scene into a renderer that takes its buttons from the list; the fixed texts moved to a constants file; the text exports added to `ops-model.js`, so any line the Panels compose inline from answer fields has one source both renderers call; each renderer routed through the core's `perform` path and pending guard (core 5.3), which K1 neither builds nor replaces, with `offers()` marking an offer `pending` by reading the pending set and `pendingKey` that the core's scene exposes (core 5.3). K1 uses `perform` as the core built it; the echo and the two hooks of section 14, request 4 are first used in K2. No visible change, and no change to what a press sends | The existing network-view node tests and the core's, with no edit to an assertion; the byte comparison of old and new DOM over every fixture, a locked remote session and a block with a held technique session among them; the control-list tests of 11.1; a rerun of the scripted playtests of `test_access_networks` and `test_ops_access` | S |
 | K2 Terminal | The skin choice and its storage; the header switch on ops views; the Panels "Scanning" bar for a pending sweep or scan (and its pixel-art rules, 5.4, with its rules in `network-view-minigame.css`), `SCANNING_TEXT` and `REQUEST_FAILED_TEXT` in `view-texts.js`, and the scene's `recordSent` and `recordResult` calls, made from the core's `onSent` and `onEnded` hooks (section 14, request 4); the Terminal renderer, grammar (the game verbs, the scanner command shape and the framework prompt), help and completion for every control in the list; the generator registry and the two generators, printing their defaults only; `window.__test.network`; the `--net-skin` option of the playtest tools; the feature scenario `test_ops_skin` | All node tests of 11.1 and 11.2, the generators' golden files for the defaults among them; the unchanged-scenarios check of section 10; the scripted beats of 11.4 run through the bridge once in each skin, with the request and server-record checks of the scenario's `PLAYTEST.md`; the screenshot set, the UI rules audit over the Terminal and the phone keyboard check of 11.6, looked at before the stage lands | M |
-| K3 Scenario fields | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts, services, weaknesses and decoys, served by the core's answers (section 14, request 3) and declared in the schema here, with the validator (until K3 the core's closed blocks refuse `cli`); `scripts/validate_realism_skin.rb` with every check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects | The Rails and validator tests of 11.3; the golden files with authored fields; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
+| K3 Scenario fields and catalog | The scenario field `networkView.defaultSkin`; the optional `cli` display fields on networks, hosts and services and the optional `realism` link on weaknesses and decoys, served by the core's answers (section 14, request 3) and declared in the schema here, with the validator (until K3 the core's closed blocks refuse `cli` and `realism`); the realism catalog's JSON schema, its first entries and its validator `scripts/validate_realism_catalog.rb` (section 4.3); `scripts/validate_realism_skin.rb` with every scenario check of section 9, the wording warning among them; `test_ops_skin` gains display fields on some of its objects and catalog links on its findings | The Rails and validator tests of 11.3; the golden files with authored fields and catalog entries; the no-exposure tests for the new fields; beat D1 of 11.4 | S to M |
 | K4 Live proof | The live parity runner and the docs, which change nothing a player sees (README feature index N16, `docs/ACCESS_AND_NETWORKS.md`, `docs/test-bridge.md`) | The live parity run green on `test_ops_skin`; the leak scan clean | S |
 
 ## 4. Scenario fields
@@ -209,12 +216,15 @@ view with no `ops` block. A scenario cannot force a skin: it sets a default and 
 wins. The default lives in the scenario rather than in `mission.json` beside `ui_theme`, because
 it concerns the scenario's network and is validated with it.
 
-### 4.2 Console display fields (`cli`)
+### 4.2 Console display fields (`cli`) and the catalog link (`realism`)
 
-One optional closed object named `cli` on four things the core already declares. Every field in
-it is display text for the Terminal only: no server check reads it, Panels never show it, and it
-changes no answer the game gives. Each is served with the thing it belongs to, at the moment the
-core already serves that thing (section 7), never earlier.
+The scenario holds the network layout and nothing that names a real vulnerability. One optional
+closed object named `cli` sits on three things the core already declares (networks, their hosts
+and services), and one optional field, `realism`, sits on each weakness and decoy, linking it
+to an entry of the realism catalog (section 4.3). Every field and every catalog entry is display
+text for the Terminal only: no server check reads it, Panels never show it, and it changes no
+answer the game gives. Each is served with the thing it belongs to, at the moment the core
+already serves that thing (section 7), never earlier.
 
 | Where | Field | Shape | Printed as | Default when absent |
 |---|---|---|---|---|
@@ -223,42 +233,58 @@ core already serves that thing (section 7), never earlier.
 | a service's `cli` | `protocol` | `"tcp"` or `"udp"`; the service's `port` is unique on its host whatever the protocol (section 9) | the `<port>/<protocol>` cell, and `-sU` in the service's check line | `tcp` |
 | a service's `cli` | `service` | a lower-case word, `^[a-z][a-z0-9-]{0,23}$`, such as `microsoft-ds` or `http` | the `SERVICE` cell | the service's `name` |
 | a service's `cli` | `banner` | plain text, 1 to 80 characters | a `\|_banner: <text>` line under the port row | no banner line |
-| a weakness's or decoy's `cli` | `title` | plain text, 1 to 80 characters | the finding's title in the script report and in the framework's `search`, `info` and `use` lines | the finding label words of `ops-model.js` (class and severity) and the service's label or name |
-| a weakness's or decoy's `cli` | `module` | a path label, `^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, at most 80 characters, unique in the scenario | the framework's module path in `search`, `use`, `info` and the prompt | `simulated/<class>/<alias>`, for example `simulated/default_creds/f2` |
-| a weakness's or decoy's `cli` | `script` | `^[a-z][a-z0-9-]{0,39}$` | the script name heading the finding in the script report | `<service word>-<class with _ as ->`, for example `microsoft-ds-default-creds` |
+| a weakness or a decoy | `realism` | a catalog id, `^[a-z][a-z0-9_]{2,47}$`, naming an entry of the realism catalog; linked at most once in the scenario | nothing itself: the entry's `title`, `module`, `script`, `advisories` and `output` are served as the finding's `cli` object (section 4.3) | the generic defaults below |
 
 Host addresses sit under the network rather than on the host, because a sign-in host is a room
 object and room objects ride in the bootstrap, while `networks` is already server-only and the
-address belongs to the network's range. Weakness and decoy carry the same three keys and the same
-defaults. **A decoy's labels must be indistinguishable in form from a weakness's**: before a
-confirm, the console may tell them apart by nothing the Panels do not also show. The validator
-enforces the parts of this it can see (section 9), across the whole scenario rather than per
-service, because the core allows a service with decoys and no weakness, and such a service has
-nothing beside it to be compared with:
+address belongs to the network's range. The service fields are network layout: a protocol, the
+tool's service word and a banner naming the (invented) product. None of them names a real
+advisory or module; section 9 refuses advisory patterns, framework-path forms and named
+vulnerabilities in every scenario `cli` string and in every `realism` id.
 
-- all or none: for each of `title`, `module` and `script`, either every weakness and every decoy
-  in the scenario authors it or none does (an authored module beside a default
-  `simulated/...` one, on any service, gives the decoy away); `banner` is on the service, so the
-  same rule runs over the services that hold at least one finding: either all of them author a
-  `banner` or none does (a decoy-only service with no banner beside weakness services that all
-  have one is the same tell);
-- one module form: on a service, every finding's `module` has the same first segment (such as
+**Generic defaults, when a finding has no `realism` link.** The browser builds them from fields
+the core already sends, the same way for a weakness and a decoy:
+
+| Catalog field | Default |
+|---|---|
+| `title` | the finding label words of `ops-model.js` (class and severity) and the service's label or name |
+| `module` | `auxiliary/scanner/<service word, - as _>/<class>_<alias>`, for example `auxiliary/scanner/microsoft_ds/default_creds_f2` |
+| `script` | `<service word>-<class with _ as ->`, for example `microsoft-ds-default-creds` |
+| `advisories` | none: no `IDs:` line and no references in `info` |
+| `output` | none: no extra lines in the script report |
+
+**A decoy's console text must be indistinguishable in form from a weakness's**: before a
+confirm, the console may tell them apart by nothing the Panels do not also show. A catalog entry
+has no kind: whether it is a real weakness or a decoy is the scenario's choice, made by which
+object links it, so a decoy links an entry of exactly the same form as a weakness's (a real
+scanner's false positive is a real advisory that does not apply). The validators enforce the
+parts of this they can see (section 9), across the whole scenario rather than per service,
+because the core allows a service with decoys and no weakness, and such a service has nothing
+beside it to be compared with:
+
+- links all or none: either every weakness and every decoy in the scenario has a `realism` link
+  or none has (a linked module beside a default one gives the decoy away); among the linked
+  entries, each optional catalog field (`advisories`, `output`) is held by all of them or by
+  none, and a decoy's entry holds as many advisories and as many output lines as some weakness's
+  entry in the scenario does; `banner` is on the service, so the same all-or-none rule runs over
+  the services that hold at least one finding (a decoy-only service with no banner beside
+  weakness services that all have one is the same tell);
+- one module form: on a service, every linked `module` has the same first segment (such as
   `auxiliary` or `exploit`) and the same number of segments; across the scenario, every (first
   segment, number of segments) pair a decoy's `module` uses is also used by some weakness's
   `module`;
-- no telltale word in any `cli` string of a weakness or a decoy;
-- and a warning when a decoy's text shares a content word with its own `falseBecause`.
+- no telltale word in any catalog string (checked over the whole catalog, since any entry may be
+  linked from a decoy) or any service `cli` string;
+- and a warning when a decoy's linked entry shares a content word with the decoy's own
+  `falseBecause`.
 
-The author is left with the wording of each title, as in Panels.
+The author is left with the choice of entries, as with the wording of a summary in Panels.
 
-Every authored string is a label. It carries no command, flag, path to a real file, payload,
-shellcode, escaped byte, encoded blob, credential, public address, URL or markup, and the
-validator refuses each of those (section 9). It is plain text that the Terminal sets with
-`textContent`.
-Whether a label may also hold a real advisory identifier or a real product name and version is
-open (section 15, question a). The generators print whatever label is authored and have no rule
-of their own about it, so the answer changes validator rules (section 9) and nothing else in
-this plan.
+Every authored string, in the scenario or the catalog, is a label. It carries no command, flag,
+path to a real file, payload, shellcode, escaped byte, encoded blob, credential, public address,
+URL or markup, and the validators refuse each of those (section 9). It is plain text that the
+Terminal sets with `textContent`. The generators print whatever label is served and have no rule
+of their own about where it came from.
 
 A minimal example, one network and one service with a weakness and a decoy:
 
@@ -272,24 +298,22 @@ A minimal example, one network and one service with a weakness and a decoy:
     { "name": "files", "port": 445, "product": "Brackley ShareServe", "version": "3.1",
       "cli": { "service": "microsoft-ds", "banner": "Brackley ShareServe ready" },
       "weaknesses": [ { "id": "guest_share", "class": "default_creds", "severity": "high",
-        "cli": { "title": "ShareServe guest account left enabled",
-                 "module": "auxiliary/scanner/brackley/shareserve_guest_login",
-                 "script": "shareserve-guest" } } ],
+        "realism": "share_guest_login" } ],
       "decoys": [ { "id": "old_banner", "class": "unpatched", "severity": "medium",
         "falseBecause": "The version string is stale; the vendor fix is installed.",
-        "cli": { "title": "ShareServe 3.1 out-of-date build",
-                 "module": "auxiliary/scanner/brackley/shareserve_old_build",
-                 "script": "shareserve-build" } } ] } ] } }
+        "realism": "share_old_build" } ] } ] } }
 }
 ```
+
+The two linked entries live in the catalog (section 4.3), not in the scenario.
 
 **What a scenario with none of these fields prints.** The same commands work and the output has
 every section, filled from the core's fields: a sweep of `office_lan` prints `Nmap scan report
 for files01` and `Host is up.` per host, ending `Nmap done: 1 host up`; a version scan prints
 `445/tcp  open  files  Brackley ShareServe 3.1`; a script scan prints a `files-default-creds`
 script heading over the finding's alias, status, label and summary; the framework lists the
-finding as `simulated/default_creds/f2` with the label words as its title. No address and no
-banner line appear.
+finding as `auxiliary/scanner/files/default_creds_f2` with the label words as its title. No
+address, no banner line, no `IDs:` line and no extra script output appear.
 
 **Which skin an ops view is drawn in**, first that applies:
 
@@ -310,21 +334,120 @@ player who needs buttons (a phone, a switch device, a screen reader set up for t
 able to keep them. An event organiser has no setting in this stage; the URL value covers
 previews and demos.
 
+### 4.3 The realism catalog
+
+The Terminal may print real advisory ids (CVE-style) and real framework module paths, as the
+real tools do. Those strings are kept out of scenario files altogether, in one catalog of
+vulnerability details that scenarios link to by a plain id. The catalog is the only place in
+the project where real advisory ids and real module paths live. Scenario files, ink, objectives,
+hints, mails, `PLAYTEST.md` files and the examples in this plan hold none, and the validator
+refuses them there (section 9).
+
+**Where it lives.** `config/break_escape/realism_catalog/`, one or more JSON files grouped by
+topic (for example `file_sharing.json`, `web.json`), all loaded together. It sits outside
+`scenarios/`, outside `public/` and outside the asset pipeline, so no static path serves it and
+no route lists it. The engine gem ships it with the rest of `config/`. It is read on the server
+only, by one loader, `lib/break_escape/realism_catalog.rb` (section 14, request 3), which reads
+every file once on first use into a frozen map from id to entry, refuses to load when an id or a
+`module` appears twice, and takes another folder in tests. The browser never receives the
+catalog, a file of it, or a link id: it receives, per finding, only the fields of the one entry
+that finding links, at the stage section 7 gives.
+
+**File form.** Each file is one closed object: `entries`, a map from catalog id to entry, and
+`_` note keys for authors. Each entry is a closed object:
+
+| Field | Required | Shape | Printed as |
+|---|---|---|---|
+| `title` | yes | plain text, 1 to 80 characters | the finding's title in the script report and in the framework's `search`, `info` and `use` lines |
+| `module` | yes | a path label, `^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, at most 80 characters, unique in the whole catalog | the framework's module path in `search`, `use`, `info` and the prompt |
+| `script` | yes | `^[a-z][a-z0-9-]{0,39}$` | the script name heading the finding in the script report |
+| `advisories` | no | 1 to 4 strings, each in one of the forms `CVE-\d{4}-\d{4,7}`, `MS\d\d-\d{3}`, `GHSA-[2-9cfghjmpqrvwx]{4}(-[2-9cfghjmpqrvwx]{4}){2}` or `ZDI-\d\d-\d{3,5}` | one `IDs:` line in the script report (`\|     IDs: CVE:CVE-...`, each id after its scheme name) and a `References:` list in `info` |
+| `output` | no | 1 to 6 lines, each plain text of 1 to 80 characters | lines under the title in the script report, before the game's own `Finding`, `State`, `Risk` and summary lines |
+| `_` keys | no | author notes | never served |
+
+A catalog id is `^[a-z][a-z0-9_]{2,47}$` and describes the weakness in plain words
+(`share_guest_login`, never an advisory number or a vulnerability's nickname), so the link a
+scenario holds names no real identifier. An entry has no kind and no reference to any scenario:
+whether it shows a real weakness or a decoy is decided by the object that links it, and one
+entry may be linked from several scenarios, at most once in each.
+
+A sketch of one file, with made-up ids (this plan holds no real ones):
+
+```json
+{
+  "_about": "File-sharing services. Display text for the Terminal only.",
+  "entries": {
+    "share_guest_login": {
+      "title": "ShareServe guest account left enabled",
+      "module": "auxiliary/scanner/brackley/shareserve_guest_login",
+      "script": "shareserve-guest",
+      "advisories": ["CVE-2031-24117"],
+      "output": ["Guest sessions are accepted on the file service."] },
+    "share_old_build": {
+      "title": "ShareServe 3.1 out-of-date build",
+      "module": "auxiliary/scanner/brackley/shareserve_old_build",
+      "script": "shareserve-build",
+      "advisories": ["CVE-2031-24502"],
+      "output": ["The reported build predates the vendor's update."] }
+  }
+}
+```
+
+**What an entry may hold.** Real advisory ids, in `advisories` and in the text of `title`,
+`module`, `script` and `output`; real framework module paths in `module`; and real product names
+only where the tools spell them inside a `module`, `script` or advisory id. Everything else
+follows the brief's limits, and the catalog validator enforces the parts a pattern can see:
+
+- no payload, shellcode, encoded blob, escaped byte or working exploit content, and no command,
+  flag, URL, file path or credential (the text rules of section 9, run over every catalog
+  string);
+- no address of any kind: a dotted quad in a catalog string is an error, since every address the
+  Terminal prints comes from the scenario's private range;
+- no options: the entry has no field for one, so `RHOSTS`, `RPORT` and `TECHNIQUE` stay the only
+  options `show options` prints, filled from the scenario and the player's held cards, and no
+  payload or listener option can be written anywhere;
+- `title` and `output` name no entry of the core's `scripts/real_product_names.txt`: products
+  stay invented, and the `VERSION` column prints the scenario's invented `product`, so a real
+  product name in the lines under it would contradict its own row.
+
+**Agreement with the `VERSION` column.** The core's `product` and `version` are invented and are
+printed in the version table. Two rules keep every line under that row in agreement with it, both
+run by the scenario validator because they need the service: a service's `banner` names no
+entry of the real-product list, and a version number directly after the service's own `product`
+in the banner equals the service's `version`; and for each link, the linked entry's `title` and
+`output` lines hold no version number directly after the linking service's `product` other than
+its `version`. An entry that names a product and version therefore fits only services that match
+it, and the validator says so at the link.
+
+**Who opens it.** Scenario review and fix agents (design reviews, dialogue reviews, puzzle and
+room passes, playtests, validator runs) never need to open the catalog. A finding is understood
+from its scenario fields (class, severity, summary, `falseBecause`, needs); the catalog's text is
+console dress that is never needed to win (section 1.3, rule 1); the scripted playtest beats name
+actions, not console text; and both validators report a catalog problem by catalog id, field
+name and rule, never by quoting the catalog's text. Adding or changing catalog entries is its own
+task, briefed on its own, and runs the catalog validator before it finishes.
+
 ## 5. Engine behaviour
 
 ### 5.1 Server
 
 S6 adds no route, no check and no state. The server-side changes are:
 
-- the schema entry for `networkView`, the schema rows for the `cli` objects (section 9), and the
-  checks in `scripts/validate_realism_skin.rb`, all at K3. Until K3 the core's closed blocks
-  refuse `cli`; the core copies the fields in its row builders from S1 and S2 (request 3 of
-  section 14) and tests that on a test-only fixture;
+- the schema entry for `networkView`, the schema rows for the `cli` objects and the `realism`
+  link (section 9), and the checks in `scripts/validate_realism_skin.rb`, all at K3. Until K3
+  the core's closed blocks refuse `cli` and `realism`; the core copies the fields and resolves
+  the link in its row builders from S1 and S2 (request 3 of section 14) and tests that on
+  test-only fixtures;
+- the realism catalog's files, their JSON schema
+  (`config/break_escape/realism_catalog.schema.json`) and its validator
+  (`scripts/validate_realism_catalog.rb`), at K3 (section 4.3). The loader that reads the
+  catalog is the core's (request 3);
 - a test that `networkView` reaches the bootstrap (section 7);
-- the `cli` fields riding in the core's existing answers beside the fields they belong to. The
-  core's row builders copy them (section 14, request 3); S6 relies on that and writes no
-  serialiser of its own. No answer gains a field for a scenario that declares none: an absent
-  `cli` object is left out of the answer, not sent as `{}` or `null`.
+- the `cli` fields, and a linked entry's fields as the finding's `cli`, riding in the core's
+  existing answers beside the fields they belong to. The core's row builders copy them
+  (section 14, request 3); S6 relies on that and writes no serialiser of its own. No answer
+  gains a field for a scenario that declares none: an absent `cli` object, or a finding with no
+  link, is left out of the answer, not sent as `{}` or `null`.
 
 ### 5.2 Client: the parts
 
@@ -538,7 +661,7 @@ node harness needs no stub at import.
 +--[ Drop box: Desks, Spare wall port ]------------------[Panels][X]+
 | Type help, or pick a command below.                               |
 | $ nmap -sV files01                                                |
-| Starting Nmap (simulated) against files01                         |
+| Starting Nmap against files01                                     |
 | Nmap scan report for files01 (10.20.0.15)                         |
 | PORT     STATE  SERVICE       VERSION                             |
 | 445/tcp  open   microsoft-ds  Brackley ShareServe 3.1             |
@@ -555,7 +678,7 @@ node harness needs no stub at import.
 ```
 
 The sketch shows the arrangement only, with the authored `cli` fields of the example in section
-4.2. Lines after a result stand in for the Panels' own sentences, which the Terminal prints word
+4.2 and the linked catalog entry of section 4.3. Lines after a result stand in for the Panels' own sentences, which the Terminal prints word
 for word (below).
 
 - **Log**: `role="log"`, `aria-live="polite"`, pixel scrollbar, capped at 300 lines (oldest
@@ -621,7 +744,7 @@ the piece comparison of section 11.2 still finds it.
 | Link lines | `show`, and on opening | the view's `message`; the link-off sentence; the stale sentence; the unplug hint of a planted box's view ("You can unplug the box at its port (...)", `NV:813`); for each block its heading, the "through <host>" note and its "(Locked)" mark |
 | Host table `HOST NAME STATUS` | `show` (plain layout); a sweep's answer (scanner generator, one report block per host) | host id; the shown hostname where it differs; name; in the status column the status text Panels shows on the row (remote sign-in off, powered down, no route, the down tags, Locked), left blank for a host Panels shows only a button on; the "Session kept" line; a held session's account (the `<who>` of the Panels' Open button) and the "admin" tag where Panels draw it, from the same `ops-model.js` export |
 | Service table | `show` for a scanned host (plain layout, `SERVICE PORT PRODUCT VERSION`); a host scan's answer (scanner generator, `PORT STATE SERVICE VERSION`) | service `name`, `label` when it differs, port, product, version; in the generator's table also the `cli` protocol, service word and banner, or their defaults |
-| Findings list | `show` for a checked service (plain layout); a check's answer (scanner generator, script report) | alias, the finding label (class and severity words), `summary` and status; in the generator's report also the `cli` script name and title, or their defaults |
+| Findings list | `show` for a checked service (plain layout); a check's answer (scanner generator, script report) | alias, the finding label (class and severity words), `summary` and status; in the generator's report also the `cli` script name and title, or their defaults, and the `advisories` and `output` lines when the finding's `cli` holds them |
 | Finding detail | a confirm's answer (framework generator, after `check`); `show` for a settled finding (plain layout) | alias and status; for a confirmed finding each need with its label and "yes" or "no"; for a false one the `falseBecause` text; the Fixed mark for one that carries `fixed` |
 | Technique list `TECHNIQUE WORKS ON` | `show` | technique id, `name`, `summary`, the core's works-on line |
 | Share and resource table; Look | `show`; an `observe` | id, name, kind label, "on <host>", the lock label and the locked-share sentence; for a look, the resource's `observations` and the notice, as Panels shows them |
@@ -703,7 +826,7 @@ output loses nothing.
 is the host id, `(<address>)` is printed only when the host has an `address` (section 4.2), and
 every other value is a field of the view or the answer or a default of section 4.2.
 
-- `started`, for all three actions: `Starting Nmap (simulated) against <target>`, where the
+- `started`, for all three actions: `Starting Nmap against <target>`, where the
   target is the range (or the network id) for a sweep and the host for a scan or a check. A
   check adds `Running vuln scripts on <port>/<protocol> (<service word>)`.
 - **Sweep result.** For each host row of the answer, in the answer's order: `Nmap scan report
@@ -725,8 +848,10 @@ every other value is a field of the view or the answer or a default of section 4
   Terminal list the same services.
 - **Script scan result** (a check). The report line, `Host is up.`, the header `PORT STATE
   SERVICE` and the checked service's row, then for each finding of the answer: `| <script>:`,
-  `|   <title>`, `|     Finding: <alias>`, `|     State: <status>`, `|     Risk: <finding
-  label>` and `|_    <summary>`, the prefixes and each Panels piece in separate spans. A check
+  `|   <title>`, the `|     IDs: <scheme>:<id> ...` line when the finding's `cli` holds
+  `advisories`, one `|     <line>` per entry of its `output`, then `|     Finding: <alias>`,
+  `|     State: <status>`, `|     Risk: <finding label>` and `|_    <summary>`, the prefixes and
+  each Panels piece in separate spans. A check
   that found nothing prints the Panels' words for an empty check as a note line. The run ends
   `Nmap done: 1 IP address (1 host up) scanned`.
 - No timestamps, latencies, MAC addresses, OS guesses, closed-port counts or traceroutes: the
@@ -734,17 +859,17 @@ every other value is a field of the view or the answer or a default of section 4
 
 **Framework console** (`cli-gen/framework-console.js`, modelled on Metasploit). The Terminal has
 two prompt modes. The shell mode is where it starts, with the prompt `$`. `msfconsole` (local,
-sends nothing) enters framework mode: it prints `Metasploit Framework console (simulated)` and
+sends nothing) enters framework mode: it prints `Metasploit Framework console` and
 `Type help for the console's commands.`, and the prompt becomes `msf >`, or `msf (<module>) >`
 while a module is selected. `back` clears the module; `exit` or `quit` leave framework mode.
-Each finding the view lists is one module, named by its `cli.module` or the default of section
-4.2; weaknesses and decoys are listed alike.
+Each finding the view lists is one module, named by its `cli.module` (from its linked catalog
+entry) or the default of section 4.2; weaknesses and decoys are listed alike.
 
 | Command | Sends | Prints |
 |---|---|---|
 | `search [word]` | nothing | a numbered table `#  Name  Alias  Description` of the modules whose path, title, alias, host or service contains the word (all of them with no word), in the view's finding order |
 | `use <module, alias or search number>` | nothing | selects the module; a target the view does not list answers with the list of modules, the same answer whether or not the id exists elsewhere |
-| `info` | nothing | the selected module's path and title, its target (`<host> (<address>)`, port, service word), and the finding's alias, status, label and summary as the Panels show them |
+| `info` | nothing | the selected module's path and title, its target (`<host> (<address>)`, port, service word), a `References:` list of the `cli.advisories` ids when there are any (ids only, no links), and the finding's alias, status, label and summary as the Panels show them |
 | `show options` | nothing | a table `Name  Current Setting  Required  Description` with exactly three rows: `RHOSTS` (the address, or the host id, of the module's host), `RPORT` (its port) and `TECHNIQUE` (the set card's technique id, or blank), then the held techniques by id and name |
 | `set TECHNIQUE <id>`, `unset TECHNIQUE` | nothing | `TECHNIQUE => <id>` for a technique the player holds (a unique prefix is accepted); any other id answers with the held list. `set` of any other name answers `RHOSTS and RPORT come from the module in this simulation.` for those two and `No such option in this simulation.` for the rest, including any payload option |
 | `check` | the selected finding's `confirm` offer | `started`: `[*] Checking <host>:<port>`; `result`: below |
@@ -787,7 +912,8 @@ settled, the card spent) answers locally and sends nothing.
 
 **What it may print**: constants from `terminal-format.js`, `view-texts.js` and `ops-model.js`;
 each generator's `TEMPLATES`; the ids, aliases and fields of the view answer and of a result;
-the `cli` fields served with them and the defaults of section 4.2; counts computed from the
+the `cli` fields served with them (a linked catalog entry's fields among them) and the defaults
+of section 4.2; counts computed from the
 answer and the range (hosts up, addresses in the range, search numbers); `REQUEST_FAILED_TEXT`;
 and the player's own line. Nothing else: no invented host, port, service, version or filler
 row, and no random text.
@@ -799,7 +925,7 @@ state:
 | Entry | Text |
 |---|---|
 | Fixed lines and marks | the opening line "Type help, or pick a command below."; the prompt marks `$`, `msf >` and `msf (<module>) >`, the block cursor and the prompt's visible label; the strip label "Commands:" and the label of the use strip's X; the change line "-- network changed. show lists it again --"; the pending line "Still waiting for the last answer."; the line-rule answers "One action at a time.", "One target at a time in this simulation." and "Pipes and redirects are not part of this simulation."; the player's own echoed line |
-| Generator text | each generator's `TEMPLATES` (framing lines, `[*]`, `[+]`, `[-]` and `\|` prefixes, table headers, the framework's local answers); the authored `cli` strings and the defaults of section 4.2 built from the core's fields |
+| Generator text | each generator's `TEMPLATES` (framing lines, `[*]`, `[+]`, `[-]` and `\|` prefixes, table headers, the `IDs:` and `References:` labels, the framework's local answers); the served `cli` strings (a linked catalog entry's among them) and the defaults of section 4.2 built from the core's fields. No template carries a mark such as "(simulated)": every framing line is printed bare, as the tool prints it |
 | Table headers | `HOST`, `NAME`, `STATUS`, `SERVICE`, `PORT`, `PRODUCT`, `VERSION`, `TECHNIQUE`, `WORKS ON` and the headers of the findings, share and resource tables of the plain layouts |
 | Help | the output of `help`: verb names, their argument forms and the verb aliases (the descriptions are the Panels' `title` texts and are not on this list) |
 | Command line | a verb from `CONTROLS` followed by ids or aliases the view lists: the `<code>` part of a quick command, and the line a use button writes into the prompt |
@@ -989,16 +1115,21 @@ browser only.
 ## 7. What reaches the browser, and what never does
 
 Two things change. `GET /scenario` (the bootstrap) sends `networkView.defaultSkin`, which holds
-nothing to withhold. The core's network answers carry the authored `cli` fields beside the
-objects they belong to, each only once the player has earned that object (core 14, request 3):
+nothing to withhold. The core's network answers carry the authored `cli` fields, and for each
+linked finding its catalog entry's fields, beside the objects they belong to, each only once the
+player has earned that object (core 14, request 3):
 
 | `cli` field | Served in | From when |
 |---|---|---|
 | `networks.<id>.cli.range` | the view's block for that network (`GET /network`) | whenever the block is listed |
 | `networks.<id>.cli.hosts.<hostId>.address` | `address` on the host row, in `GET /network` and, on a discovery network, in the sweep answer | with the host row, whenever the core lists that row as discovered: on an open network from the first answer; on a discovery network from the sweep. A held-session row the core lists on an unswept discovery network carries no `address` until the sweep |
 | a service's `cli` (`protocol`, `service`, `banner`) | the service, in the host scan answer and in `GET /network` | once the host is scanned |
-| a weakness's or a decoy's `cli` (`title`, `module`, `script`) | the finding, in the check answer and in `GET /network` | once the service is checked; the same keys for a weakness and a decoy |
+| a weakness's or a decoy's linked catalog entry (`title`, `module`, `script`, and `advisories` and `output` where the entry has them), resolved on the server | `cli` on the finding, in the check answer and in `GET /network` | once the service is checked; the same keys for a weakness and a decoy |
 
+- The `realism` link id and the catalog itself never reach the browser. The server looks the
+  link up when it builds a checked finding and copies the entry's fields by name; no route
+  lists, searches or serves the catalog, and an entry no scenario finding has reached in this
+  game is never sent.
 - None of the `cli` fields is in the bootstrap or in any room answer: the core removes
   `networks` and `hosts` from the bootstrap by name (`WITHHELD_SCENARIO_KEYS`) and `services`
   from room objects (`WITHHELD_OBJECT_FIELDS`), and its no-exposure tests already check that the
@@ -1007,8 +1138,10 @@ objects they belong to, each only once the player has earned that object (core 1
   defaults of section 4.2 from fields it already has. A finding's `cli` is served on the finding
   whatever its status, so a decoy and a weakness arrive with the same keys.
 - The core's leak collector, which lists the strings each stage may show, gains the `cli`
-  strings at the stage their object is served, so a string seen before its stage fails the
-  core's leak test. An address on an open network is staged with the view's first answer, under
+  strings at the stage their object is served (for a linked finding, the strings of its catalog
+  entry, read from the catalog by the collector), so a string seen before its stage fails the
+  core's leak test, and so does a link id, or the `module` of an entry the scenario does not
+  link, at any stage. An address on an open network is staged with the view's first answer, under
   the collector tag `listed` (the tag the core uses for `range`); one on
   a discovery network with its sweep, including the address of a PC the player held a session on
   before the sweep.
@@ -1062,41 +1195,64 @@ ignored, and blocked storage leaves the switch working for the page.
 `enum: ["gui", "cli"]` and a description naming its reader (`skin-choice.js`). It is structure,
 not an id map and not free data. It is not marked `x-serverOnly`.
 
-The `cli` objects are declared here, at K3, as rows in the same shared file, on the core's
-`networks.<id>`, `definitions.service`, `definitions.weakness` and `definitions.decoy`. Until K3
-those blocks are closed and refuse `cli`; the core's row builders copy the fields from S1 and S2
-(section 14, request 3) and test that on a test-only fixture that does not load the schema. The
-rows are closed (`additionalProperties: false`, note pattern `^_`), have no required key, and
-carry a description naming their reader (`cli-gen/`). A `_` note is for authors only: the core
-copies each `cli` object by its named keys, so a note never reaches the browser and nothing in
-this plan reads one there:
+The `cli` objects and the `realism` link are declared here, at K3, as rows in the same shared
+file, on the core's `networks.<id>`, `definitions.service`, `definitions.weakness` and
+`definitions.decoy`. Until K3 those blocks are closed and refuse `cli` and `realism`; the core's
+row builders copy the fields and resolve the link from S1 and S2 (section 14, request 3) and
+test that on test-only fixtures that do not load the schema. The `cli` rows are closed
+(`additionalProperties: false`, note pattern `^_`), have no required key, and carry a
+description naming their reader (`cli-gen/`). A `_` note is for authors only: the core copies
+each `cli` object and each catalog entry by its named keys, so a note never reaches the browser
+and nothing in this plan reads one there:
 
-| On | `cli` properties |
+| On | Properties |
 |---|---|
-| `networks.<id>` | `range` (string, IPv4 CIDR pattern, max 18); `hosts`, an id map (`x-id-map: true`, keys plain strings of 1 to 64 characters, so a room-object id such as `kit_deviceA` or `P1` fits) of closed objects with one property `address` (string, dotted IPv4 pattern) |
-| `definitions.service` | `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`), `banner` (1 to 80 characters) |
-| `definitions.weakness` and `definitions.decoy`, one shared `definitions.cliFinding` | `title` (1 to 80 characters), `module` (`^[a-z][a-z0-9_]*(/[a-z0-9_]+){1,5}$`, max 80), `script` (`^[a-z][a-z0-9-]{0,39}$`) |
+| `networks.<id>` | `cli`: `range` (string, IPv4 CIDR pattern, max 18); `hosts`, an id map (`x-id-map: true`, keys plain strings of 1 to 64 characters, so a room-object id such as `kit_deviceA` or `P1` fits) of closed objects with one property `address` (string, dotted IPv4 pattern) |
+| `definitions.service` | `cli`: `protocol` (`enum: ["tcp", "udp"]`), `service` (`^[a-z][a-z0-9-]{0,23}$`), `banner` (1 to 80 characters) |
+| `definitions.weakness` and `definitions.decoy` | `realism`: string, `^[a-z][a-z0-9_]{2,47}$`, with a description naming its reader (the core's finding builder, through the catalog loader). Neither object has a `cli` property |
 
 They inherit the server-only marks of the objects they sit in (`networks`, `hosts` and
 `services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already name
 the routes that serve them.
 
-**Validator** (K3). The checks are one new file, `scripts/validate_realism_skin.rb`, with one
-function `check_realism_skin(json_data)`, required and run from `scripts/validate_scenario.rb`
-by one line beside the core's `check_network_ops`. It reads hosts, services and findings through
-the core's `NetworkModel` helpers. The ink half of the wording check runs in the dialogue lint
-the validator already has.
+**Catalog schema** (`config/break_escape/realism_catalog.schema.json`, K3): the file form and
+entry form of section 4.3, every object closed with note pattern `^_`, `title`, `module` and
+`script` required, `advisories` an array of 1 to 4 strings each matching one of the four
+advisory forms, `output` an array of 1 to 6 strings of 1 to 80 characters. It is not part of
+`scenario-schema.json` and no scenario refers to it.
 
-| Level | Check |
-|---|---|
-| Error | `networkView.defaultSkin` is not `gui` or `cli` (from the schema) |
-| Error | An unknown key in `networkView` or in any `cli` object (closed blocks, with the usual "did you mean") |
-| Error | `range` is not inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, or its prefix is outside /16 to /30, or it has host bits set, or it overlaps another network's `range` in the scenario |
-| Error | An `address` on a network with no `range`, outside the range, equal to its network or broadcast address, or used twice anywhere in the scenario |
-| Error | Two services of one host with the same `port`, whatever their `protocol`, so `-p` names one service |
-| Error | A key of `cli.hosts` that is not a host (a `hosts` entry or a sign-in object) on that network |
-| Error | A network id equal to a host, room object or resource id. The core's one id space covers hosts, objects and resources but not networks, and `nmap -sn <id>` must name one thing |
-| Error | Range all or none: on a scenario's discovery networks, one has a `range` and another has none. Either every discovery network has a range or none does; otherwise a range's presence would mark which networks hold content |
+**Validators** (K3). Two new files:
+
+- `scripts/validate_realism_catalog.rb`, with `check_realism_catalog(dir)`, checks the catalog
+  on its own: the catalog schema, ids and `module` values unique across all files, and every
+  rule of the table below marked **Catalog**. It runs from the command line, from a Rails test
+  on every build (section 11.3), and at the end of every task that edits the catalog.
+- `scripts/validate_realism_skin.rb`, with `check_realism_skin(json_data)`, required and run
+  from `scripts/validate_scenario.rb` by one line beside the core's `check_network_ops`. It reads
+  hosts, services and findings through the core's `NetworkModel` helpers and the catalog through
+  the core's loader, and runs the rules marked **Scenario**. When the catalog itself has errors
+  it reports one error, "the realism catalog does not validate: run
+  scripts/validate_realism_catalog.rb", and checks no link against it.
+
+Neither validator's message quotes a catalog string: a catalog problem is named by file,
+catalog id, field and rule; a link problem by the scenario path of the weakness or decoy, its
+link id and the rule. The ink half of the wording check runs in the dialogue lint the validator
+already has.
+
+In the table, a **text string** is a scenario `cli` string (`range`, an `address`, `protocol`,
+`service`, `banner`) or a catalog string (`title`, `module`, `script`, each advisory, each
+`output` line). A **prose string** is a `banner`, a `title` or an `output` line.
+
+| Level | Runs in | Check |
+|---|---|---|
+| Error | Scenario | `networkView.defaultSkin` is not `gui` or `cli` (from the schema) |
+| Error | Both | An unknown key in `networkView`, in any `cli` object, on a catalog file or on a catalog entry (closed blocks, with the usual "did you mean") |
+| Error | Scenario | `range` is not inside 10.0.0.0/8, 172.16.0.0/12 or 192.168.0.0/16, or its prefix is outside /16 to /30, or it has host bits set, or it overlaps another network's `range` in the scenario |
+| Error | Scenario | An `address` on a network with no `range`, outside the range, equal to its network or broadcast address, or used twice anywhere in the scenario |
+| Error | Scenario | Two services of one host with the same `port`, whatever their `protocol`, so `-p` names one service |
+| Error | Scenario | A key of `cli.hosts` that is not a host (a `hosts` entry or a sign-in object) on that network |
+| Error | Scenario | A network id equal to a host, room object or resource id. The core's one id space covers hosts, objects and resources but not networks, and `nmap -sn <id>` must name one thing |
+| Error | Scenario | Range all or none: on a scenario's discovery networks, one has a `range` and another has none. Either every discovery network has a range or none does; otherwise a range's presence would mark which networks hold content |
 | Error | A `module` used twice in the scenario, or one beginning `simulated/` (the default's prefix) |
 | Error | Uneven authoring in the scenario: one of `title`, `module` or `script` is set on some of the scenario's weaknesses and decoys and not on the others, or `banner` is set on some of the services that hold at least one finding and not on the others, on any service, a decoy-only service included. Each field is authored on every finding (for `banner`, every finding-holding service) or on none, so a default label never sits beside authored ones and cannot tell a decoy from a weakness before a confirm |
 | Error | A decoy's module form differs from a weakness's: on one service, the `module` paths of its findings do not all share the same first segment (`auxiliary` against `exploit`) and the same number of segments; or, in a scenario with at least one weakness, a decoy's `module` has a (first segment, number of segments) pair that no weakness's `module` in the scenario has |
