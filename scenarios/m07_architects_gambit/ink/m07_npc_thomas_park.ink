@@ -25,11 +25,6 @@ VAR park_returns = 0
 VAR park_hold_seen = false
 // Blind A m2: the splice is in this room; reading it gives the player one more thing to put to him.
 VAR splice_found = false
-// Confirm-run minor: counted in ink variables (visit counts don't survive a reload).
-// The two refusals are offered until each has been heard twice; the second one
-// carries the "signed number" cue, and then the dead options leave the hub.
-VAR refuse_count = 0
-VAR paid_count = 0
 
 === start ===
 {park_ko:
@@ -54,11 +49,11 @@ Thomas Park: Four minutes and I'd have been out. Four.
 -> hub
 
 === hub ===
-+ {refuse_count < 2} [Step away from the cable.]
++ [Step away from the cable.]
     -> refuse
 + {casualty_projection_found} [Read this. It's the projection for what you're covering.]
     -> projection
-+ {paid_count < 2} [Who's paying you to cut the backup?]
++ [Who's paying you to cut the backup?]
     -> paid
 * {splice_found} [The north trunk's spliced. Someone's been listening to this building for months.]
     -> splice
@@ -73,8 +68,7 @@ Thomas Park: Four minutes and I'd have been out. Four.
 
 // Blind A m2: a repeat gets a shorter answer, not the same speech again.
 === refuse ===
-~ refuse_count = refuse_count + 1
-{refuse_count > 1:
+{refuse > 1:
     Thomas Park: {&Still no.|You heard me the first time.|Words aren't going to move this wire.}
     {not casualty_projection_found:
         Narrator: A page with a number on it might move him. Somebody in this building signed one.
@@ -89,8 +83,7 @@ Thomas Park: I lean four inches and this building goes to candles. Talk quieter.
 -> hub
 
 === paid ===
-~ paid_count = paid_count + 1
-{paid_count > 1:
+{paid > 1:
     Thomas Park: {&Same answer. A building.|I told you. I don't ask.}
     {not casualty_projection_found:
         Narrator: He wants a reason he can't wave away. Look for a signed number.
