@@ -48,7 +48,7 @@ Lorna's recap matched the appendix word for word on every route. Barks were stil
 
 ## Still open
 
-- Camila's sprite, voice and age (D193). After it: proof 7's look, the visitor persona playtests, and the fallback holding-tile look.
+- Camila's sprite (D193: name OK, mid 40s, 4 bust variants approved, rest waits on the pick) and voice (D202 C). After them: proof 7's look, the visitor persona playtests, and the fallback holding-tile look.
 - The twin's host line (m7, wording with the owner, Q5).
 - The course-shell form (D195). The build follows Form A.
 - Voicing: 21 appendix clips and 6 chatter clips, with the owner via AC0.
