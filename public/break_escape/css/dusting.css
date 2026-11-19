@@ -196,7 +196,7 @@
    accessible name). A rejected or matched card puts its tag on its own line and gives the name one line, so a caption never
    passes two lines and a long name cannot push the cards onto a second row or past the frame. */
 .dusting-ref-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
-.dusting-ref-name:not(:last-child) { -webkit-line-clamp: 1; line-clamp: 1; }
+.dusting-ref-name:not(:last-child) { display: block; white-space: nowrap; text-overflow: ellipsis; }
 .dusting-ref-tag { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 /* Cards in one row share the tallest card's height, so a wrapped label never leaves its View button lower than the rest */
 .dusting-refs:not([data-count="4"]) .dusting-ref { flex: 1 1 auto; }

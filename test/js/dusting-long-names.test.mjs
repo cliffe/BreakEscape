@@ -28,7 +28,8 @@ test('the card name is clamped to two lines, one line once a tag follows it', ()
     assert.match(r, /overflow: hidden/);
     assert.match(r, /overflow-wrap: anywhere/);
     const one = rule('.dusting-ref-name:not(:last-child)');
-    assert.match(one, /-webkit-line-clamp: 1/);
+    assert.match(one, /white-space: nowrap/);
+    assert.match(one, /text-overflow: ellipsis/);
     const tag = rule('.dusting-ref-tag');
     assert.match(tag, /display: block/);
     assert.match(tag, /text-overflow: ellipsis/);
@@ -69,4 +70,18 @@ test('desktop compare: heading and quality share a row, rows sit 4 px apart', ()
     assert.match(css, /\[data-step="compare"\] \.dusting-panel > h3 \{ float: left;/);
     assert.match(css, /\[data-step="compare"\] \.dusting-panel > p:not\(\.dusting-result\) \{ clear: both; \}/);
     assert.match(css, /\[data-step="compare"\] \.dusting-panel p \{ margin-bottom: 4px; \}/);
+});
+
+test('a side-by-side pair that would leave the panel under 640 px is stacked at the same scale when the height allows', () => {
+    const sbs = M.zoomPlan({ side: 82, availW: 924 - 52 - 480, budgetH: 480 });
+    assert.equal(sbs.stacked, false, 'plain zoomPlan still picks side by side on a tie');
+    const p = M.zoomPlanBeside({ side: 82, rootW: 924, cards: 3, budgetH: 480 });
+    assert.equal(p.stacked, true);
+    assert.equal(p.S, sbs.S);
+    assert.ok(924 - 32 - 16 - (p.W + 4) >= M.PANEL_ROOMY_W);
+    // no height for a stacked pair: stay side by side
+    const flat = M.zoomPlanBeside({ side: 82, rootW: 924, cards: 3, budgetH: 240 });
+    assert.equal(flat.stacked, false);
+    assert.equal(flat.S, 2);
+    assert.equal(M.PANEL_ROOMY_W, 640);
 });

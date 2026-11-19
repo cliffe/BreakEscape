@@ -556,6 +556,8 @@ export const REF_CARD_W = 144, REF_GAP = 10, REF_GAP_GRID = 8, PANEL_SLACK = 32;
 export const PANEL_COMFORT_W = 420;
 /** The panel is never narrower than this beside the pair on a desktop-sized window, whatever the card count or the names on the cards. */
 export const PANEL_MIN_W = 480;
+/** Below this panel width (beside a side-by-side pair) the pair is stacked instead, when it fits the height at the same scale. */
+export const PANEL_ROOMY_W = 640;
 /** The panel width the cards need in one row (four cards: the 600 px at which dusting.css switches 2x2 to 4x1), plus the button row's room. */
 export function comparePanelMin(cards) {
     if (cards >= 4) return 4 * REF_CARD_W + 3 * REF_GAP_GRID;
@@ -598,6 +600,11 @@ export function zoomPlan({ side, availW, budgetH, maxS = 6 }) {
 export function zoomPlanBeside({ side, rootW, cards, budgetH, maxS = 6 }) {
     const availW = rootW - 36 - 16 - comparePanelMin(cards);
     let p = zoomPlan({ side, availW, budgetH, maxS });
+    if (!p.limited && !p.stacked && rootW - 32 - 16 - (2 * (p.W + 4) + 8) < PANEL_ROOMY_W) {
+        // side by side would leave the panel cramped (its paragraphs and messages wrap to extra lines): stack the pair at the same scale if that fits
+        const st = zoomPlan({ side, availW: p.W + 4, budgetH, maxS: p.S });
+        if (st.stacked && !st.limited && st.S === p.S) p = st;
+    }
     if (!p.limited && p.S > 2) {
         const pairW = p.stacked ? p.W + 4 : 2 * (p.W + 4) + 8;
         if (rootW - 36 - 16 - pairW < PANEL_COMFORT_W) p = zoomPlan({ side, availW, budgetH, maxS: 2 });
