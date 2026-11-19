@@ -457,7 +457,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "tasks": [
         {
           "taskId": "submit_launch_code",
-          "title": "Enter the launch authorisation code on Derek's launch device",
+          "title": "Enter the launch authorisation code on the ENTROPY Launch Device",
           "type": "submit_flags",
           <%# flag_3 (launch authorisation) is only accepted at the launch device
               taken from Derek at the finale; the drop-site echoes a hint for it.
@@ -1227,7 +1227,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "decode_derek_notes"
             },
             {
-              "_comment": "Confirm-minors fix, appended so saved-game indices hold: the first time the player is refused at Derek's door before they have seen the manager's office, HaX points at it. Not sent once the office has been entered, so a player who arrives with the key is not sent back.",
+              "_comment": "Confirm-minors fix, appended so saved-game indices hold: the first attempt at Derek's door (including a successful pick, since the event fires before the outcome) before the manager's office has been seen, HaX points at it. Not sent once the office has been entered, so a player who arrives with the key is not sent back.",
               "eventPattern": "room_entered:manager_office",
               "onceOnly": true,
               "setGlobal": { "manager_office_seen": true }
@@ -1237,7 +1237,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "data.connectedRoom === 'derek_office' && globalVars.manager_office_seen !== true",
               "onceOnly": true,
               "sendTimedMessage": {
-                "delay": 4000,
+                "delay": 6000,
                 "message": "Patricia kept her things in the manager's office, so start there."
               }
             }

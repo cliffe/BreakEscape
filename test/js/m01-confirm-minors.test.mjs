@@ -21,14 +21,14 @@ test('HaX points at the manager office only until it has been entered', () => {
     assert.ok(/"manager_office_seen":\s*false/.test(erb), 'flag declared');
 });
 
-test('ready_for_debrief is declared and set by the abort', () => {
+test('precondition guard: ready_for_debrief is declared and set by the abort', () => {
     assert.ok(/"ready_for_debrief":\s*false/.test(erb), 'declared in globalVariables');
     assert.ok(/"onAbort"[\s\S]{0,400}"ready_for_debrief":\s*true/.test(erb), 'onAbort sets it');
 });
 
 test('drop-site task titles and terminal description say where the keys go', () => {
     assert.ok(erb.includes('"title": "Enter the decryption key at the ENTROPY archive"'), 'archive title');
-    assert.ok(erb.includes('"title": "Enter the launch authorisation code on Derek\'s launch device"'), 'launch title');
+    assert.ok(erb.includes('"title": "Enter the launch authorisation code on the ENTROPY Launch Device"'), 'launch title');
     assert.ok(erb.includes('those go into the archive and the launch device'), 'terminal description');
 });
 
@@ -57,4 +57,27 @@ test('Sarah hides "Where exactly is the IT room?" once ready_for_debrief', () =>
     assert.ok(before.includes(q), 'offered before the abort');
     assert.ok(!after.includes(q), 'hidden after the abort');
     assert.ok(after.some(c => c.includes('Thanks')), 'other choices remain');
+});
+
+test('the Derek-door pointer fires through the real mapping check only before the office is seen', async () => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { pathToFileURL } = await import('node:url');
+    const sys = join(root, 'public/break_escape/js/systems');
+    const d = mkdtempSync(join(tmpdir(), 'm01cm-'));
+    writeFileSync(join(d, 'npc-los.mjs'), readFileSync(join(sys, 'npc-los.js'), 'utf8'));
+    writeFileSync(join(d, 'phone-chat-speaker.mjs'), readFileSync(join(sys, '../minigames/phone-chat/phone-chat-speaker.js'), 'utf8'));
+    writeFileSync(join(d, 'npc-manager.mjs'), readFileSync(join(sys, 'npc-manager.js'), 'utf8')
+        .replace("'./npc-los.js'", "'./npc-los.mjs'").replace("'../minigames/phone-chat/phone-chat-speaker.js'", "'./phone-chat-speaker.mjs'"));
+    globalThis.window = { gameState: { globalVariables: {} } };
+    const { default: NPCManager } = await import(pathToFileURL(join(d, 'npc-manager.mjs')).href);
+    const m = new NPCManager({ on() {}, off() {}, emit() {} }, null);
+    const cfg = { eventPattern: 'door_unlock_attempt', onceOnly: true, once: true, cooldown: 0, handlerIndex: 61,
+        condition: "data.connectedRoom === 'derek_office' && globalVars.manager_office_seen !== true" };
+    const fire = (room) => m._mappingWouldFire('agent_0x99', 'door_unlock_attempt', cfg, { connectedRoom: room }).fire === true;
+    assert.ok(fire('derek_office') === true, 'fires before the office is seen');
+    assert.ok(fire('server_room') === false, 'not for another door');
+    window.gameState.globalVariables.manager_office_seen = true;
+    assert.ok(fire('derek_office') === false, 'silent once the office is seen');
+    delete globalThis.window;
 });
