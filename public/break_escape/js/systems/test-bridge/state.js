@@ -18,7 +18,7 @@ import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
 import { interactionLineClear, wallClearFrom, sameRoomFrom, playerFeet as wallsPlayerFeet } from '../interaction-walls.js';
 // Reach runs to the nearest part of a wide object, in the game and here
-import { reachX, reachY, aimX, TALL_PROP_PX } from '../interaction-reach.js';
+import { reachX, reachY, aimX, aimY, TALL_PROP_PX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -730,7 +730,10 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
-            const dir = quantiseDirection((target ? aimX(target) : targetX) - sx, targetY - sy); // the game faces the object's centre
+            // the game faces the object's centre, from the player's feet (interactions.js)
+            const fx = sx + (target && feetOffset ? feetOffset.x : 0);
+            const fy = sy + (target && feetOffset ? feetOffset.y : 0);
+            const dir = quantiseDirection((target ? aimX(target) : targetX) - fx, (target ? aimY(target) : targetY) - fy);
             const off = interactionOffset(dir);
             // Two conditions, and PLAIN distance is the binding one. A click
             // gathers only interactables within plain range; with one it acts

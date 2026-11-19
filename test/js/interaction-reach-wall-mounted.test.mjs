@@ -183,7 +183,7 @@ test('objectStandPoint: without reachX/reachY deps an object is judged by its po
 test('test bridge: state.js and index.js measure y with reachY wherever they measure x with reachX', () => {
     const state = readFileSync(join(js, 'systems/test-bridge/state.js'), 'utf8');
     const index = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
-    assert.match(state, /import \{ reachX, reachY, aimX, TALL_PROP_PX \} from '\.\.\/interaction-reach\.js'/);
+    assert.match(state, /import \{ reachX, reachY, aimX, aimY, TALL_PROP_PX \} from '\.\.\/interaction-reach\.js'/);
     assert.match(index, /import \{ reachX, reachY \} from '\.\.\/interaction-reach\.js'/);
     assert.match(state, /const ry = reachY\(sprite, py\);[\s\S]{0,80}const d = dist\(px, py, rx, ry\);/, 'describeObject');
     assert.match(state, /const ty = target \? reachY\(target, sy\) : targetY;/, 'solveStandingPointWhere');
@@ -192,14 +192,14 @@ test('test bridge: state.js and index.js measure y with reachY wherever they mea
     assert.match(index, /targetSprite \? reachY\(targetSprite, p2\.y\) : after\.y/, 'moveToNear landing check');
 });
 
-test('engine: the range checks and the E key measure y with reachY, the facing angle keeps the top edge', () => {
+test('engine: the range checks and the E key measure y with reachY, the facing angle aims at the centre (aimY)', () => {
     const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
     assert.match(src, /const dy = reachY\(obj, py\) - py;/, 'highlight');
     assert.match(src, /getInteractionDistance\(player, reachX\(sprite, player\.x\), reachY\(sprite, player\.y\)\)/, 'handleObjectInteraction');
-    assert.match(src, /consider\(reachX\(obj, px\), reachY\(obj, py\), \(\) => handleObjectInteraction\(obj\), INTERACTION_RANGE_SQ, null, obj, aimX\(obj\), obj\.y\)/, 'E key');
+    assert.match(src, /consider\(reachX\(obj, px\), reachY\(obj, py\), \(\) => handleObjectInteraction\(obj\), INTERACTION_RANGE_SQ, null, obj, aimX\(obj\), aimY\(obj\)\)/, 'E key');
     assert.match(src, /const dy = reachY\(sprite, player\.y\) - player\.y;/, 'isObjectInInteractionRange');
     const label = readFileSync(join(js, 'ui/info-label.js'), 'utf8');
-    assert.match(label, /consider\(reachX\(obj, px\), reachY\(obj, py\), text, INTERACTION_RANGE_SQ, obj, aimX\(obj\), obj\.y\)/, 'info label');
+    assert.match(label, /consider\(reachX\(obj, px\), reachY\(obj, py\), text, INTERACTION_RANGE_SQ, obj, aimX\(obj\), aimY\(obj\)\)/, 'info label');
     const game = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(game, /reachX: \(o, x\) => reachX\(o, x\),[\s\S]{0,120}reachY: \(o, y\) => reachY\(o, y\)/, 'walkToObjectThenUse passes reachY to objectStandPoint');
     assert.equal(typeof reachX, 'function');

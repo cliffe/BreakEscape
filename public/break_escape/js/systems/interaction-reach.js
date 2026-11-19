@@ -89,6 +89,27 @@ export function aimX(sprite) {
 }
 
 /**
+ * The y to aim the facing angle at: the vertical centre of the object, the
+ * counterpart of aimX. A scenario object's origin is its top-left, so aiming at
+ * sprite.y read a short prop's top edge as far off the player's facing (the
+ * 30px safe beside the 47px cabinet in m01). Doors, NPCs and sprites without
+ * scenario data keep sprite.y.
+ */
+export function aimY(sprite) {
+    if (!sprite || !Number.isFinite(sprite.y)) return sprite ? sprite.y : 0;
+    if (sprite._isNPC || sprite.doorProperties || !sprite.scenarioData) return sprite.y;
+    if (sprite.rotation && typeof sprite.getBounds === 'function') {
+        try {
+            const b = sprite.getBounds();
+            if (b && b.height > 0) return b.centerY ?? (b.top + b.height / 2);
+        } catch (e) { /* fall through */ }
+    }
+    const h = sprite.displayHeight ?? sprite.height ?? 0;
+    if (!(h > 0)) return sprite.y;
+    return sprite.y - (sprite.originY ?? 0.5) * h + h / 2;
+}
+
+/**
  * Drop swivel chairs from a tap's pick list when anything else was gathered with
  * them: a chair pushed under a desk shouldn't turn "the keyboard" into a
  * "Mail Workstation / chair" menu. Chairs on their own are left as they are.
