@@ -774,9 +774,13 @@ module ValidateNpcNeeds
     @room_maps[type] = tj.is_a?(Hash) ? tj : nil
   end
 
+  # @room_tiles is a cache a test may pre-seed with a room type's [width, height]
   def self.room_tiles(type)
+    @room_tiles ||= {}
+    return @room_tiles[type] if @room_tiles.key?(type)
+
     tj = room_map(type)
-    tj && tj['width'] ? [tj['width'].to_i, tj['height'].to_i] : nil
+    @room_tiles[type] = tj && tj['width'] ? [tj['width'].to_i, tj['height'].to_i] : nil
   end
 
   # ── Tiled-claimed objects (decision D174) ───────────────────────────────────
