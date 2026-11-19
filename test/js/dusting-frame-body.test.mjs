@@ -75,6 +75,10 @@ test('the root is a flex column that does not scroll; the body is the scroll reg
     assert.match(css, /\.dusting-short \.dusting-body \{ display: contents; \}/);
 });
 
+test('short landscape scrolls the root, so it keeps a focused control 6px clear of the edge too', () => {
+    assert.match(rule('.dusting-short'), /scroll-padding: 6px/);
+});
+
 test('the pinned primary follows the body padding: bottom -6px, so it sits inside the body and its ring is not cut', () => {
     assert.match(css, /\.dusting-primary \{[^}]*position: sticky; bottom: -6px;/);
 });

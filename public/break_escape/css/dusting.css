@@ -261,6 +261,7 @@
 .dusting-short {
     display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto auto;
     column-gap: 12px; height: calc(100dvh - 24px); overflow: hidden; padding: 6px 10px; font-size: 18px;
+    scroll-padding: 6px;   /* a control scrolled into view keeps its focus ring clear of the root's scroll edge */
 }
 .dusting-short .dusting-title { grid-column: 1; grid-row: 1; margin-bottom: 4px; padding-right: 0; gap: 0 8px; }
 .dusting-short .dusting-steps { grid-column: 2; grid-row: 1; margin: 0 0 4px; flex-wrap: nowrap; padding-right: 44px; }
