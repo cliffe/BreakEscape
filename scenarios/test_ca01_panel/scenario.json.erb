@@ -912,7 +912,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca01_agn_there",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.kit_quiet === true",
               "onceOnly": true,
               "delayMs": 4000,
               "setGlobal": {
@@ -996,7 +996,7 @@
             },
             {
               "eventPattern": "npc_arrived:kit_agnieszka_duda",
-              "condition": "globalVars.kit_ca01_walk === true && data.owner !== 'needs'",
+              "condition": "globalVars.kit_ca01_walk === true && data.owner !== 'needs' && globalVars.kit_quiet === true",
               "onceOnly": true,
               "setGlobal": {
                 "kit_ca01_walk": false,
