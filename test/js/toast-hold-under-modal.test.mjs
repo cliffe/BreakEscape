@@ -363,3 +363,72 @@ test('modalDialogOpened and modalDialogClosed tolerate a document without queryS
   }
   end();
 });
+
+test('a warning and an error already on screen are not paused when a gameDisplay opens', () => {
+  start();
+  N.gameAlert('Warn on screen', 'warning', 'Warn', DUR);
+  N.gameAlert('Error on screen', 'error', 'Error', DUR);
+  mock.timers.tick(1000);
+  assert.ok(has('Warn on screen') && has('Error on screen'), 'both on screen before the modal');
+  N.gameDisplay('A note', 'Note');
+  assert.ok(N.modalDialogOpen() === true, 'modal open');
+  assert.ok(has('Warn on screen') && has('Error on screen'), 'both still on screen as the modal opens');
+  mock.timers.tick(DUR * 3);   // well past any normal expiry, modal still open
+  assert.ok(N.modalDialogOpen() === true, 'modal still open');
+  assert.ok(!has('Warn on screen'), 'warning expired on its normal schedule under the modal');
+  assert.ok(!has('Error on screen'), 'error expired on its normal schedule under the modal');
+  document.querySelector('.game-modal-close').click();
+  end();
+});
+
+test('opening and closing modals leaves exactly one poll while open and none after', () => {
+  start();
+  const realSet = globalThis.setInterval;
+  const realClear = globalThis.clearInterval;
+  const live = new Set();
+  let created = 0;
+  globalThis.setInterval = (...args) => {
+    const id = realSet(...args);
+    live.add(id);
+    created++;
+    return id;
+  };
+  globalThis.clearInterval = (id) => {
+    live.delete(id);
+    return realClear(id);
+  };
+  try {
+    N.clearWaitingToasts();
+    mock.timers.tick(2000);   // let any release poll from earlier tests finish
+    live.clear();
+    created = 0;
+    for (let round = 0; round < 3; round++) {
+      N.gameDisplay('Note ' + round, 'Note');
+      assert.ok(live.size === 1, 'one poll after open, round ' + round + ' (live ' + live.size + ')');
+      N.gameConfirm('Sure?', 'Yes', 'No');   // stacked open
+      N.gameDisplay('Another ' + round, 'Note');   // and a third
+      assert.ok(live.size === 1, 'still one poll with three stacked, round ' + round + ' (live ' + live.size + ')');
+      esc();
+      esc();
+      assert.ok(live.size === 1, 'poll stays while one modal remains, round ' + round + ' (live ' + live.size + ')');
+      esc();
+      assert.ok(N.modalDialogOpen() === false, 'all closed, round ' + round);
+      assert.ok(live.size === 0, 'no poll left after the last close, round ' + round + ' (live ' + live.size + ')');
+    }
+    assert.ok(created === 3, 'one interval created per open-close cycle, not per open (created ' + created + ')');
+    // Nothing left polling the page once the toasts have settled.
+    const probe = document.querySelector;
+    let queries = 0;
+    document.querySelector = function (...a) { queries++; return probe.apply(this, a); };
+    mock.timers.tick(1000);
+    queries = 0;
+    mock.timers.tick(HOLD_POLL * 10);
+    document.querySelector = probe;
+    assert.ok(live.size === 0, 'still no poll after further ticks');
+    assert.ok(queries === 0, 'no polling queries after the last close (' + queries + ')');
+  } finally {
+    globalThis.setInterval = realSet;
+    globalThis.clearInterval = realClear;
+  }
+  end();
+});
