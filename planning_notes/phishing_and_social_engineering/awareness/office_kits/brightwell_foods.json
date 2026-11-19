@@ -54,21 +54,21 @@
     }
   },
   "setPieces": {
-    "_note": "ca01 layer-3 recall. kit_ca01_notice is the corkboard notice on the payments board (an EARLIER, separate case, so it reads true after both a catch and a miss; consistent with Agnieszka's 'a different case, one that got through' bark). Sprite notes6 (14x18 taped paper notice, preloaded) on type notice_board1, wallMounted on the back wall. Placement (R3 dressing, 2026-11-19): the back wall of room_aw_brightwell has no gap wide enough for the 42x31 corkboard (window 36-76, RANGE 96-126, BRIGHTWELL sign 146-210, chart 226-270, side walls slant in; every gap is about 20-24 px), so the notice is the 14x18 taped paper in the 20 px gap between RANGE and the sign: x 129-143, y 22-40 (position {4.03125, 0.6875}, the same wall height as other boards), directly above Agnieszka's walk target {4,3}. Real bespoke board-notice art is still approved-but-ungenerated.",
+    "_note": "ca01 layer-3 recall. kit_ca01_notice is the payments team's taped notice on the back wall (an EARLIER, separate case, so it reads true after both a catch and a miss; consistent with Agnieszka's 'a different case, one that got through' bark). Sprite notes6 (14x18 taped paper notice, preloaded) on type notice_board1, wallMounted on the back wall. Placement (R3 dressing, 2026-11-19): the back wall of room_aw_brightwell has no gap wide enough for the 42x31 corkboard (window 36-76, RANGE 96-126, BRIGHTWELL sign 146-210, chart 226-270, side walls slant in; every gap is about 20-24 px), so the notice is the 14x18 taped paper in the 20 px gap between RANGE and the sign: x 129-143, y 22-40 (position {4.03125, 0.6875}, the same wall height as other boards), directly above Agnieszka's walk target {4,3}. Real bespoke board-notice art is still approved-but-ungenerated.",
     "ca01_recall_fallback": {
       "globals": { "kit_ca01_host_said": false, "kit_fraud_caught": false },
       "objects": [
         {
           "type": "notice_board1",
           "id": "kit_ca01_notice",
-          "name": "Payments board notice",
+          "name": "Payments team notice",
           "sprite": "notes6",
           "wallMounted": true,
           "position": { "x": 4.03125, "y": 0.6875 },
           "takeable": false,
           "interactable": true,
           "revealOnGlobal": "kit_defend_done",
-          "observations": "A notice pinned to the payments board about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
+          "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
         }
       ]
     },
@@ -78,14 +78,14 @@
         {
           "type": "notice_board1",
           "id": "kit_ca01_notice",
-          "name": "Payments board notice",
+          "name": "Payments team notice",
           "sprite": "notes6",
           "wallMounted": true,
           "position": { "x": 4.03125, "y": 0.6875 },
           "takeable": false,
           "interactable": true,
           "revealOnGlobal": "{out}",
-          "observations": "A notice pinned to the payments board about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
+          "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
         }
       ],
       "staff": {
