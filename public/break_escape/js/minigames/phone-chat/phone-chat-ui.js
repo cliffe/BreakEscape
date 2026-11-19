@@ -264,6 +264,8 @@ export default class PhoneChatUI {
         timer.textContent = shown;
         bar.classList.add('call-ended');
         this.elements.choicesContainer && (this.elements.choicesContainer.innerHTML = '');
+        // no replies left, so no "more choices" cue either
+        this.elements.choicesMoreCue?.classList.remove('visible');
         return true;
     }
 
@@ -967,6 +969,7 @@ export default class PhoneChatUI {
      * @param {string} npcId - NPC identifier
      */
     showConversation(npcId) {
+        this._refocusChoices = false;
         if (!npcId) {
             console.error('❌ No NPC ID provided');
             return;
@@ -1474,6 +1477,12 @@ export default class PhoneChatUI {
         }
         if (this.isCallMode) this.elements.conversationView?.classList.add('call-has-choices');
         
+        const box = this.elements.choicesContainer;
+        // Honour the hand-off only while focus has not gone anywhere else since the pick
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        const focusFree = !active || active === document.body || box.contains(active);
+        const refocus = this._refocusChoices && focusFree;
+        this._refocusChoices = false;
         this.elements.choicesContainer.innerHTML = '';
         
         choices.forEach((choice, index) => {
@@ -1487,6 +1496,13 @@ export default class PhoneChatUI {
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });
+
+        // A new reply set starts at the top: the old set may have been scrolled to its last
+        // reply, which would hide replies 1-3 and the "more choices" cue (call mode, short screens).
+        // Reset after the buttons are in: Chromium restores the old offset on the emptied box
+        // once content comes back, so a reset before the append is undone (live, 844x390)
+        box.scrollTop = 0;
+        if (refocus) box.querySelector('.choice-button')?.focus({ preventScroll: true });
 
         this.scrollToBottom();
         this.updateChoicesScrollCue();
@@ -1512,6 +1528,16 @@ export default class PhoneChatUI {
      * Clear all choice buttons
      */
     clearChoices() {
+        // A reply picked from the keyboard leaves focus on a button that is about to go:
+        // remember it so the next reply set takes focus instead of dropping it to BODY
+        const box = this.elements.choicesContainer;
+        // (keyboard picks only: a mouse pick keeps today's behaviour, where Space/Enter skip the typewriter)
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        if (box && active && box.contains(active)) {
+            let keyboard = false;
+            try { keyboard = active.matches(':focus-visible'); } catch { keyboard = false; }
+            this._refocusChoices = keyboard;
+        }
         this.elements.choicesContainer.innerHTML = '';
         this.elements.choicesMoreCue?.classList.remove('visible');
         if (this.isCallMode) this.elements.conversationView?.classList.remove('call-has-choices');
@@ -1734,6 +1760,7 @@ export default class PhoneChatUI {
 
     cleanup() {
         this.hideIncomingCall();
+        this._refocusChoices = false;
         this.stopCallTimer();
         this._chatInfluence?.destroy();
         this._chatInfluence = null;
