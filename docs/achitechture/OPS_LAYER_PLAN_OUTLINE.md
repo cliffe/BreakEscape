@@ -1,9 +1,11 @@
 # Ops layer: plan outline
 
 Status: outline, 2026-11-19. Each stage below gets its own full plan (and review rounds) before it
-is built. The action model with actors, the team of characters and the defence game (stages S0,
-S10 and S12) moved to `ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, to be planned later; stage numbers
-here are unchanged, so S0, S10 and S12 are simply absent. Each stage here is built as its own
+is built. Two groups of stages are parked in their own outlines, to be planned later: the action
+model with actors, the team of characters and the defence game (S0, S10, S12) in
+`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, and hosts backed by a VM or by the game (S11) in
+`VM_OR_GAME_BACKING_PLAN_OUTLINE.md`. Stage numbers here are unchanged, so this outline runs S1 to
+S9 with S0 and S10 to S12 absent. Each stage here is built as its own
 feature with its own server routes, as N1 to N12 were; a shared model of moves as data is not
 needed yet (user, 2026-11-19) and belongs to the other outline. Nothing here is scheduled until
 the m01 to m10 release is out (user pick Q8).
@@ -13,7 +15,7 @@ Source: the user's picks on the access and network proposals page (2026-11-18), 
 
 **Naming.** The picks page used A1, B2 and so on for *proposals*. Those clash with the built
 feature ids in `docs/ACCESS_AND_NETWORKS.md`. In this outline a proposal is "pick B2"; a stage is
-S1 to S11 here (S0, S10 and S12 in the other outline); a built feature gets the next free id (A18 onwards, N13 onwards) when its stage lands,
+S1 to S9 here (S0 and S10 to S12 in the parked outlines); a built feature gets the next free id (A18 onwards, N13 onwards) when its stage lands,
 and goes into the README feature index and the detail doc in the same commit.
 
 ## 1. What we are building
@@ -22,8 +24,8 @@ Additions to the built access and network features so that the player can break 
 organisation by combining social engineering, physical security and abstract network attacks, all
 simulated in the game. Each stage extends something already built (hosts, sessions, policies,
 the keyring, the network view), for the player only. Defending an organisation, a rival NPC and a
-team of characters are in the other outline. Real VMs stay available: a host can be backed by the game or by a SecGen VM
-(user pick Q3), so m01 could ship a VM version and a game version.
+team of characters are in the other outline. Real VMs stay as they are today; letting one host
+be backed by either a VM or the game (user pick Q3) is parked in its own outline.
 
 ## 2. Decisions taken (user picks, 2026-11-18)
 
@@ -31,7 +33,7 @@ team of characters are in the other outline. Real VMs stay available: a host can
 |---|---|---|
 | Q1 | Schema uses industry neutral terms, accurate but clearly abstract | `weakness`, `finding`, `technique`, `foothold`, `access: user/admin`, `fixed`. Glossary in the S1 plan |
 | Q2 | Realism skin toggle | One set of actions, two skins: an abstract "film-hacker" GUI and a command-line simulation with scanner-like and framework-like commands. A skin never adds or removes a move, so it needs no playtests of its own (S6) |
-| Q3 | No content restriction rule; VM or game backing per host | `backing` on a host (S11). Neutral wording in code and schema still applies (Q7) |
+| Q3 | No content restriction rule; VM or game backing per host | Parked: `VM_OR_GAME_BACKING_PLAN_OUTLINE.md`. Neutral wording in code and schema still applies (Q7) |
 | Q5 | Docs: Opus review then AC0 train | Done (Train 209, 211) |
 | Q6 | Where the terminology rule lives: TBC | The glossary lives in the S1 plan for now |
 | Q7 | Neutral vocabulary, everyone works everywhere; VM work stays on opus48 | Briefs and code stay neutral; SecGen/VM steps route to opus48 |
@@ -134,17 +136,9 @@ Sizes: S, M, L. Each stage is shippable and testable alone; later stages only ad
   outline reads the same rows.
 - **Test:** each `test_ops_*` scenario asserts its rows. Size S to M.
 
-### S11. VM or game backing — pick Q3
-- `backing: "game"` (default) or `backing: { "vm": ..., "flags": [...] }` on a host. A VM-backed
-  host shows the VM launcher and its scan, check and technique card steps are replaced by submitting the VM flags; the rest
-  of the chain (footholds, sessions, keyring) is shared.
-- Pilot: an m01 game alternative alongside its VM version, after release. SecGen work routes to
-  opus48.
-- **Test:** one host run both ways in `test_ops_backing`. Size M to L.
-
 ## 5. Suggested order
 
-S1, S2, S3 (the core loop), then S4, S5, S6, S8a, S7, S9, S11, S8b. B6 sniffing and
+S1, S2, S3 (the core loop), then S4, S5, S6, S8a, S7, S9, S8b. B6 sniffing and
 B7 Wi-Fi handshake (both P3) slot in after S7, since both reuse the cracking minigame or the
 credential effects.
 
@@ -152,5 +146,4 @@ credential effects.
 
 1. CLI skin fidelity: which commands, and how close to real tools' output it gets.
 2. Whether a scan, a check or a technique card costs game time on the needs clock (patch windows need it, and so will the rival).
-3. How a VM-backed host's flags map to the effects a game-backed technique card would grant.
-4. Where the terminology rule ends up (Q6, to be decided).
+3. Where the terminology rule ends up (Q6, to be decided).
