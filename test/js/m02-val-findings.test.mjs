@@ -36,7 +36,9 @@ test('vindicated beat leaves the locked task alone before cover is restored', ()
 
 test('after the vindicated beat the report-back choice is gone from the hub', () => {
     const { s } = run('reeves_vindicated', { cover_restored: true, insider_identified: true, talked_about_reeves: true, backdoor_fully_exploited: true });
-    while (s.currentChoices.length === 0 && s.canContinue) s.Continue();
+    s.ChooseChoiceIndex(0);
+    while (s.canContinue) s.Continue();
+    assert.ok(s.currentChoices.length > 3, 'hub not reached: ' + JSON.stringify(s.currentChoices.map((c) => c.text)));
     const labels = s.currentChoices.map((c) => c.text);
     assert.ok(!labels.some((t) => t.includes("I said I'd tell you")), 'report_back still offered: ' + JSON.stringify(labels));
 });
