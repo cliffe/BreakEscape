@@ -344,3 +344,17 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   MFA codes use real server time; log rows keep up to 300 rows in `player_state`.
 - Outside this stream (tell the user, do not fix): the anomaly row in the sis01/sis02 log
   terminals is visibly tinted (`log-filter-minigame.css:336-342`).
+
+## 12:05 state (after compaction)
+
+- R4 findings committed: core `d2e5740c0`, skin `65eea6358`, log rows `ceb248f83`, MFA `1754dfe69`.
+- S8c (second step as an attribute on any lock) is leaving the MFA plan for its own file,
+  `docs/achitechture/OPS_LOCK_SECOND_STEP_PLAN.md` (feature A25, builds L1 then L2). Planner (Fable) running.
+- Core R4 revision done (1703 lines): core builds the shared `perform` pending guard. Next: R5 delta on Opus.
+- Running at 12:05: skin R4 fix pass (Fable), log rows R4 reviser (Opus), lock second-step planner (Fable),
+  MFA R4 reviser (Fable, removes S8c, trims under 1150).
+- Next per plan: skin R5 delta on Sonnet (guard text must agree with core); log rows R5 delta on Fable;
+  MFA R5 delta on Opus; lock plan full review on Opus; then a second cross-plan review on Fable.
+- Open for the log plan: whether noisy refusals spend the same per-host `save_limit` count as quiet ones.
+- Still owed: picks page republish (new question groups), outline build order (L1a first, A25 separate plan).
+- Cracking plan stays held for the user's BLOCK-1 answer.
