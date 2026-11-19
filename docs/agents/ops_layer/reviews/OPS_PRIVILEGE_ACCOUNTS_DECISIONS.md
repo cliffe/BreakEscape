@@ -31,3 +31,10 @@ Findings not acted on as suggested, one line each.
 ## Round 5
 
 - **M2 (comment keys).** Allowed every `_`-prefixed key on an `accountOnly` NPC, not only `_comment`, matching the schema's `patternProperties: {"^_": {}}` convention elsewhere (the `npc` definition declares neither `_comment` nor closed properties); `staff` is also made required, not just allowed, and the two `accountOnly` examples now say `"staff": false`.
+
+## Picks 2026-11-19
+
+- **SHARED-3 c (always a hash).** Applied: the collect yields only a `hash` record (one authored per candidate PC and account, validator error otherwise), S5b adds the `harvested` proof kind, the collect panel and keyring row offer S7's crack; the password-by-default path, the harvest password row and their tests are gone; S5b now builds after S5a and S7; cross-plan lines to S7, S8 and S9.
+- **PRIV-7 b (any admin session overrides USB).** Applied: `keyboard_admin?` and the client `keyboardAdmin` replaced by `session_admin?` / `sessionAdmin` at the implant path, plant proof and `plantRefusal`; off-PC and locked sessions still never override; the implant path's own keyboard-session rule is unchanged; tests and the S5a playtest beat updated; S9 told.
+- **SHARED-2 a (admin sign-in gives admin).** Already written; the question's rationale moved into section 5.
+- **PRIV-2, 5, 6, 8, 9, 10 a.** Already written; each question's reasoning moved into the body (cache candidates and borrow, no game-minute cost, domain lockout in section 1, sign-in tiles in S5c, owner collectable only when listed) and section 15 left with defaults only.
