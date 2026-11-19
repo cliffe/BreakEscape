@@ -11,7 +11,44 @@ The engine reads it from social.awareness.ruleOfThumb ({ text } here, so the deb
 heading "The habit to keep" is used). See episode-model.js awarenessSettings and debrief-view.js.
 """
 
+import os
 import re
+import sys
+from pathlib import Path
+
+
+def repo_root():
+    """Repository root for a generator or the splice tool: --repo <path> (removed from sys.argv),
+    else $BREAKESCAPE_REPO, else the checkout this script sits in. Never a hard-coded main checkout,
+    so a run from a worktree reads and writes that worktree."""
+    argv = sys.argv[1:]
+    repo = None
+    if '--repo' in argv:
+        i = argv.index('--repo')
+        if i + 1 >= len(argv):
+            sys.exit('--repo needs a path')
+        repo = argv[i + 1]
+        del argv[i:i + 2]
+        sys.argv[1:] = argv
+    return repo or os.environ.get('BREAKESCAPE_REPO') or str(Path(__file__).resolve().parents[3])
+
+
+def hand_authored_ids():
+    """Shell folder names that episodes.json marks handAuthored: generators must not write them."""
+    import json
+    path = Path(__file__).resolve().parent / 'office_kits' / 'episodes.json'
+    if not path.exists():
+        return set()
+    rows = json.loads(path.read_text()).get('episodes', [])
+    return {r['id'] for r in rows if r.get('handAuthored')}
+
+
+def required_out_dir(script):
+    """The output folder argument, required: there is no default into the repo's scenarios/."""
+    argv = sys.argv[1:]
+    if not argv or argv[0].startswith('-'):
+        sys.exit(f'usage: {script} [--repo <checkout>] <out_dir>   (the output folder is required)')
+    return argv[0]
 
 AWARENESS_RULE_OF_THUMB_TEXT = (
     "When a message pressures you to move money, grant access, sign in or read back a code, "

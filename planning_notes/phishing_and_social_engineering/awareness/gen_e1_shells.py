@@ -10,7 +10,7 @@ from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
-REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
+REPO = awareness_deploy.repo_root()
 FRAG = json.load(open(f'{REPO}/planning_notes/phishing_and_social_engineering/awareness/e1/defend.json'))
 SETS = {s['id']: s for s in FRAG['triageSets']}
 EP = FRAG['awarenessEpisode']
@@ -472,7 +472,7 @@ def with_title_screen_name(sc, mission):
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
+    out = awareness_deploy.required_out_dir('gen_e1_shells.py')
     built = [defend_only()] + [check(p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta in built:
         sc = with_title_screen_name(sc, mission)

@@ -380,6 +380,8 @@ def build():
         ("You're set", "That's the brief. Start your first episode whenever you're ready."))
     # scenario() keys the kiosk's "done" variant on episode_<id>_defend_done; a brief has none, so use DONE.
     for o in sc['rooms']['training_room']['objects']:
+        if o.get('type') != 'kiosk':     # only the kiosk's variants; kit objects carry their own
+            continue
         for v in o.get('observationVariants', []):
             v['condition'] = f'globalVars.{DONE}'
     ink = open(f'{AW}/core00/ink/anjali_rao.ink').read()

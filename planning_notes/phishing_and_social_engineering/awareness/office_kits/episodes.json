@@ -1,0 +1,10 @@
+{
+  "_note": "One row per shell. Wave 0 holds only the hand-authored flag; the office-kit wave adds tier, ambient ids, set piece and stepAway. A row with handAuthored true is never written by a generator (it is touched only by apply_training_room.py).",
+  "episodes": [
+    {
+      "id": "ca13_ai_assistant_defend",
+      "handAuthored": true,
+      "why": "Carries Gwen's optional deepfake demo call (e13_demo_offered, her event mapping and ink knots), which gen_e8_e17_shells.py does not write."
+    }
+  ]
+}

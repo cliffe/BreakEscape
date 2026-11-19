@@ -927,7 +927,12 @@ def main():
         # Two agents created a stray ./--help/ folder by running this with --help; refuse it.
         sys.exit(f'refusing an output folder that starts with "-": {out!r}\n{USAGE}')
     built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16', 'e20', 'e14', 'e13', 'e12', 'e10', 'e18')]
+    hand = awareness_deploy.hand_authored_ids()
     for mission, sc, meta, ink_name, ink in built:
+        if mission in hand:
+            # office_kits/episodes.json: only apply_training_room.py touches this shell
+            print('skipped (hand-authored)', mission)
+            continue
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
