@@ -1341,9 +1341,9 @@ that pattern; the validator's "not a host on that network" error does the checki
 objects inherit the server-only marks of the objects they sit in (`networks`, `hosts` and
 `services` are already `x-serverOnly`), and the `x-servedBy` lists of those objects already name
 the routes that serve them. Their rules beyond the schema (the address inside the range and
-unique on its network, the module unique in the scenario, a service whose findings author a field
-unevenly, strings holding a password or a command form, a range on every discovery network or on
-none) are checked by the skin plan's `check_realism_skin` in `scripts/validate_realism_skin.rb`
+unique in the scenario, the module unique in the scenario, findings that author a field unevenly
+anywhere in the scenario, strings holding a password or a command form, a range on every discovery
+network or on none, a network id equal to a host, object or resource id) are checked by the skin plan's `check_realism_skin` in `scripts/validate_realism_skin.rb`
 (its section 9), which reads hosts, services and findings through `NetworkModel`.
 `check_network_ops` does not read a `cli` field.
 
