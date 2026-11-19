@@ -36,6 +36,7 @@ function rules(src, media = '') {
     return out;
 }
 const all = rules(css);
+const allIdx = m => all.findIndex(r => r.media === m);
 const land = all.filter(r => /max-height:\s*500px/.test(r.media));
 const V = '.phone-call-mode #conversation-view';
 const SHARED_MEDIA = '@media screen and (max-height: 820px)';
@@ -45,6 +46,7 @@ const DESK_MEDIA = '@media (min-height: 500.02px)';
 const TALL_MEDIA = '@media (min-height: 680.02px)';
 const SHORT_MEDIA = '@media (min-height: 500.02px) and (max-height: 680px)';
 const LEGEND_MEDIA = '@media (min-height: 500.02px) and (max-height: 820px)';
+const MID_MEDIA = '@media (min-height: 680.02px) and (max-height: 820px)';
 // The end-call button rules serve every call screen up to 820px tall, so they live in one shared block
 const shared = all.filter(r => r.media === SHARED_MEDIA);
 const L = sel => { const r = land.concat(shared).find(x => x.selector.split(', ').includes(V + ' ' + sel)); assert.ok(r, 'landscape or shared rule ' + sel); return r; };
@@ -267,7 +269,7 @@ check('portrait and tall-desktop (over 820px) base call rules are unchanged', ()
     assert.match(B('.phone-call-mode .conversation-header'), /padding:\s*16px/);
     assert.match(B('.phone-call-mode .call-status-bar'), /padding:\s*8px 14px/);
     // call mode rules live only in the two exact blocks (shared end-button, taller than 500px) (nothing in the tablet block)
-    assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.media !== LEGEND_MEDIA && r.selector.includes('phone-call-mode')));
+    assert.ok(!all.some(r => /820px/.test(r.media) && r.media !== SHARED_MEDIA && r.media !== LEGEND_MEDIA && r.media !== MID_MEDIA && r.selector.includes('phone-call-mode')));
 });
 
 check('landscape call: the influence bar stacks (head over a full-width track) inside the 40px header row', () => {
@@ -432,6 +434,13 @@ check('desktop-height call: thread cap is 112px, 131px above 680px (two-line tel
     const pad = 8, tellH = 2 * 16 * 1.3 + 4, gap = 6, devH = 3 * 16 * 1.3;
     assert.ok(2 * pad + tellH + gap + devH <= 131 + 0.5, 'cap holds a two-line tell and a three-line line: ' + (2 * pad + tellH + gap + devH));
     beats(CH + ' .messages-container', '.phone-call-mode .messages-container');
+});
+check('681 to 820px call: the one-line legend frees room, so the thread cap is 160px (a three-line tell above a two-line Dev line, whole)', () => {
+    const cap = px(Dm(MID_MEDIA, CH + ' .messages-container').body, 'max-height');
+    assert.equal(cap, 160);
+    const tellH = 3 * 16 * 1.3 + 4, devH = 2 * 16 * 1.3;
+    assert.ok(8 + 8 + tellH + 6 + devH <= cap + 0.5, 'holds it: ' + (16 + tellH + 6 + devH));
+    assert.ok(allIdx(MID_MEDIA) > allIdx(TALL_MEDIA), 'the 681-820 block comes after the 131px block so it wins');
 });
 // Height budget. The phone screen is screenAt(vh); inside it the phone status header (signal, battery, Notepad) takes 48px
 // (4 + 4 padding, 2 border, 38 row at desktop) before the conversation view starts.

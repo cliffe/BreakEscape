@@ -1128,6 +1128,12 @@
     .phone-call-mode #conversation-view.call-has-choices .messages-container { max-height: 131px; }
 }
 
+/* 681 to 820 px: the one-line legend frees about 50px, so the thread has room for a three-line tell
+   above a two-line contact line: 8 + 8 + 66 + 6 + 42 = 130 plus the thread's padding, cap 160px. */
+@media (min-height: 680.02px) and (max-height: 820px) {
+    .phone-call-mode #conversation-view.call-has-choices .messages-container { max-height: 160px; }
+}
+
 /* Short screens (501 to 680 px: a 1366x768 laptop's browser, 800x600): the replies box, the "more
    choices" cue and the thread all have to share about 340px with the influence header, so
    - the thread gives way first, down to two lines (44px), and scrolls to the contact's line;
