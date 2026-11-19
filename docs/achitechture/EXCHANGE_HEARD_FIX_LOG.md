@@ -69,7 +69,7 @@ the next meeting is the repeat the rule forbids. One who never heard a line has 
 exchange stays available. Completed exchanges stay heard as before, since the start already needs the
 player in earshot.
 
-A heard cut emits `npc_exchange_heard:<knot>` with `complete: false`, so a scenario task bound to
+(Superseded by NPC_NEEDS_SYSTEM.md 5.6a: the event now goes out at the first overheard line and carries no `complete` field; the log's `exchange_heard { complete }` keeps that distinction.) A heard cut emits `npc_exchange_heard:<knot>` with `complete: false`, so a scenario task bound to
 the event (test_needs_sims `hear_parcel_exchange`) still completes; without it the task could never
 complete, because the exchange never plays again. The log has `exchange_cut { knot, reason, line,
 of, heardLines, heard }` and then `exchange_heard { knot, complete }`.
@@ -140,12 +140,12 @@ Review: `docs/achitechture/EXCHANGE_HEARD_FIX_REVIEW_R1.md` (0 blockers, 0 major
 
 - **m1.** `NPC_NEEDS_SYSTEM.md` 5.6a states the heard rule (played to the end, or cut after at least
   one overheard line; cut before any: unplayed, played whole at a later meeting), the hold and its
-  60 s cap, the queue front's wait, `data.complete === true` for a task that needs the whole
+  60 s cap, the queue front's wait, `data.complete === true` (superseded: the event has no `complete` field now; a binding that reads it never fires, and the validator warns) for a task that needs the whole
   exchange, and the validator warning. The decision log lists `exchange_cut` (`knot`, `reason`,
   `line`, `of`, `heardLines`, `heard`) and `exchange_heard` (`knot`, `complete`); the event list gives
-  `complete` in the `npc_exchange_heard` payload and says it fires on completion or a heard cut.
+  `complete` in the `npc_exchange_heard` payload and says it fires on completion or a heard cut. (superseded, see 5.6a)
 - **m2.** The `exchanges` description in `scripts/scenario-schema.json` says a heard cut counts
-  (`complete: false`, the rest never played), to bind with `condition: "data.complete === true"` when
+  (`complete: false`, the rest never played), to bind with `condition: "data.complete === true"` (superseded, see above) when
   the whole exchange is needed, to put what the player must learn in the first line, and to keep a
   knot under 60 s. `README_scenario_design.md` does not document NPC exchanges anywhere (its only
   "exchange" is the HashChain Exchange room), so nothing was mirrored there.

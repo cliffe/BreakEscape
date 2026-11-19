@@ -161,7 +161,7 @@ Machines switch off on a single bounded global, and the needs layer does the res
 
 The exchange gates are the real m03 ones (`scenario.json.erb` on `build/ol-m03`, lines 838 to 840); only the chatter lines are elided.
 
-- Declare `heard_<knot>` for every exchange in `globalVariables`. A knot is heard once; it counts as heard after one overheard line (`_exchangeHeard` read at `npc-needs.js:2954`, the `heard_<knot>` write at `:3062`; both on `build/ol-m03`).
+- Declare `heard_<knot>` for every exchange in `globalVariables`. A knot is heard once; it counts as heard after one overheard line (`_exchangeHeard` is read when an exchange is chosen; the `heard_<knot>` write and the `npc_exchange_heard:<knot>` event are in `_markExchangeHeard` and `_tickChats` in `npc-needs.js`, both at the first overheard line, not at the finish; the event has no `complete` field).
 - The exchange knots live in the owner's ink and end `-> DONE`. A conversation hub in the same ink needs a line for the "upset" state that exits at once (`#exit_conversation`) and re-entry lines for after a goodbye ("Still about?").
 - A bark is an `eventMappings` entry with a `bark` string, listed with its cooldown and gate, appended last: `npc_ko:ffion_rees` for Yusuf (day, `clone_call_done` not true, neither staffer KO, `onceOnly`), `npc_caught_at_post:<npc>` (`npc-needs.js:3377`) with a 30 s cooldown.
 - Barks are extracted by the normal tts-audio batch and counted by V6 once build/tts-barks is on main (before that, count them by hand), and the client voices them (`npc-barks.js` `_speakBark`) for a person NPC with a `voice`; see `gotchas.md`, "Voicing". Prefer pools and knots.
