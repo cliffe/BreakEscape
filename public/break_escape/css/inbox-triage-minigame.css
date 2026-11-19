@@ -230,7 +230,7 @@
     padding: 6px;
     background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
     color: var(--ui-text, #eef1f8);
-    border: 1px solid var(--ui-line, #4c5b80);
+    border: 2px solid var(--ui-line, #4c5b80);
 }
 
 /* Result */
