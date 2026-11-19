@@ -172,7 +172,7 @@ function phoneUnderTest({ closeDuringChoice }) {
             addMessage() {}, clearChoices() {}, addChoices() {}, showNotification() {}
         },
         cleanup() { this.conversation = null; this.isConversationActive = false; this.ui = { elements: {} }; },
-        _pace: () => Promise.resolve(), _resetSkip() {},   // skip helpers (browser timers)
+        _pace: () => Promise.resolve(), _resetSkip() {}, _setBatchBudget() {}, _setRepliesCue() {}, _scaledPause: (ms) => ms,   // skip helpers (browser timers)
         _showStoryLine: async () => true,
         saveStoryState() { this._saveStoryStateFor(this.currentNPCId, this.conversation); },
         complete() {}
