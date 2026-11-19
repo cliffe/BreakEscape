@@ -242,7 +242,7 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
 
 // ---- plan 4.5 chain rules ----------------------------------------------------------------------
 // A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
-const ALLOWED_MAPPING_FIELDS = ['eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'needs', 'patrolOverride', 'setVisible'];
+const ALLOWED_MAPPING_FIELDS = ['eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible'];
 const globalsRead = (cond) => [...String(cond || '').matchAll(/globalVars\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
 // the gate A fixture (test_ca_office_kit) is a hand-built probe with its own targetKnot chain: not held to the generated-chain rules
 const chainShells = () => kitShellNames().filter((n) => readShell(n).social.awarenessEpisode.stepAway === true && !kitRows.find((r) => r.id === n)?.fixture);

@@ -17,3 +17,14 @@ Form chosen for the build: Form A (course shell = panel `ca12_visitor`, test she
 - Existing tests glob `^(ca\d\d_|test_ca)` (social-awareness-office-kit.test.mjs:130), so the new shells join the conformance walk automatically; chainShells() are those with stepAway true.
 - test_office_kit.py has hard-coded ca01 names; new ca12 checks should be added beside, not by editing them.
 - The conformance tests and validator V3/V3b rules apply to the visitor's mappings (arrival filter `data.owner !== 'needs'`, once-only, out global, suspender-with-resume).
+
+## Builder 2 (kit, set pieces, shells, tests) at the 150k note
+Commits: 7030b94e9 (kit, episodes rows, shells, conceptPanel, A7), then the JS tests and the kiosk fix (see git log). Form A.
+Done: office_kits/merrin_sallow.json (panel + fallback set pieces), 3 episodes rows, scenarios/test_ca12_fallback/{scenario.json.erb,mission.json}, --kit run (needed `--allow-drop ca12_visitor_tailgater` once, for the knot to targetKnot change only), conceptPanel layers in all three shells (+ "word with Lorna" in the fallback; twin gets layer 1 only, fragment e12/defend.json updated), Delphine A7 mapping in the panel shell, JS tests (pc1_break preload, set-piece npc conformance). Validator --strict-social --no-graph: 0 errors on all three shells. test_office_kit.py 59 OK. JS suite: 14/15.
+Deviations: (1) bark mappings use `targetKnot`, not the sheet's `knot` (validator errors on `knot`; the engine reads both). ALLOWED_MAPPING_FIELDS in the JS test gained 'targetKnot'. (2) The panel shell's kiosk finished variant was hand-edited to the KIOSK_FINISHED condition, because patch_kiosk skips handAuthored rows. (3) Camila uses the generic `female_blowse` sprite/talk/visemes: TODO until camila_ospina art exists (Q2). (4) No Julian/Thandiwe 'person' warnings fixed: same as ca01.
+Open: 
+- JS test 10 fails: scenarios/_office_kit/ink/camila_ospina_ca12.ink must mention kit_defend_done and kit_ep (ink agent's file; sheet 1.3 says it declares them).
+- Validator warnings left: twin undeclared-VAR kit_ca12_screen_asked (sheet-expected), ca12 panel VAR kit_ca12_door_choice synced-global comment wanted in camila_ospina_ca12.ink.
+- dialoguelint on _office_kit: exit-no-reply=9 (ink files, not mine).
+- Tile coordinates (PC 3.5,6.75; Thandiwe 3.9,6.0; walk tiles) are guesses, need live proof 4. Julian/Thandiwe chatterLines are my own drafts (sheet says 3 each, no text).
+- Not run: full bin/test-js, ink staleness test, pin test, validator on other shells, live proofs. No Ruby touched, so no rubocop. Twin was not regenerated with gen_e8_e17_shells (text edited in the fragment and the shell; they agree).
