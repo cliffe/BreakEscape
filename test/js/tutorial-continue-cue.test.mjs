@@ -65,10 +65,10 @@ const tick = () => ticks.slice().forEach(fn => fn && fn());
 
 const { TutorialManager } = await import(dataUrl(readFileSync(join(js, 'systems/tutorial-manager.js'), 'utf8')));
 
-async function begin() {
+async function begin(touch = false) {
     ticks = [];
     hiddenModal = mkDialog(modalSel); extraDialogs = [];
-    touchFirst = false; window.gameMenu = { isOpen: false }; window.gameConfirmOpen = undefined;
+    touchFirst = touch; window.gameMenu = { isOpen: false }; window.gameConfirmOpen = undefined;
     window.MinigameFramework = undefined; window.currentConversationNPCId = undefined;
     window.currentConversationMinigameType = undefined; window.openModalCount = undefined;
     docListeners.keydown = [];
@@ -205,17 +205,14 @@ test('Enter listener: one after relaunch twice, none after the last step complet
 });
 
 test('touch-first devices are not told to press Enter; others are', async () => {
-    touchFirst = true;
-    let t = await begin();
+    let t = await begin(true);
     t.notifyPlayerMoved(); tick();
     assert.ok(ready() === 'Done. Tap Continue.', 'touch wording');
-    touchFirst = false;
-    t = await begin();
+    t = await begin(false);
     t.notifyPlayerMoved(); tick();
     assert.ok(ready() === 'Done. Press Continue (or Enter).', 'pointer wording');
-    touchFirst = true;
     window.matchMedia = (q) => ({ matches: true });
-    t = await begin();
+    t = await begin(true);
     t.notifyPlayerMoved(); tick();
     assert.ok(ready() === 'Done. Press Continue (or Enter).', 'coarse primary with a fine pointer available keeps Enter');
     window.matchMedia = mediaFor;
