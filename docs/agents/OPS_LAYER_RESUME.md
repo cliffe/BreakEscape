@@ -149,6 +149,14 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   display only; cost of the loop, noise recommended; technique session against sign-in rules; the
   word `technique`); Privilege group now 7 (adds admin tile, remote USB override, owner
   collectable); drop LOG-2.
+- 11:25. MFA R2 revision committed `e16680e5c` (1125 lines, grew; not re-read end to end, needs
+  a trim: handover in `ops_layer/HANDOVER_OPS_MFA_HELPDESK_PLAN_reviser.md`). MFA R3 full review
+  running (Opus, a7c73074fc9a9b4d1) to `reviews/OPS_MFA_HELPDESK_R3.md`, asked for a trim list.
+  MFA questions for the picks page are now 4: the code clock; whether NPCs react to pestering or
+  a reset; borrowing and giving back; typed form or dialogue choices. Possible fifth: 30 wrong
+  codes closes an account's code step for the game (reviewer asked whether that can strand a
+  player). MFA's log requests sent to the log reviser (`own_phone` code, no `request` or
+  `credential` detail, `as: nil`).
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
