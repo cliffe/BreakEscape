@@ -258,6 +258,23 @@ check('portrait and desktop call rules are unchanged', () => {
     assert.ok(!all.some(r => /max-height:\s*820px/.test(r.media) && r.selector.includes('phone-call-mode')));
 });
 
+check('landscape call: the influence bar stacks (head over a full-width track) inside the 40px header row', () => {
+    const bar = L('.se-chat-header .influence-bar').body;
+    assert.match(bar, /grid-template-columns:\s*minmax\(0, 1fr\)/, 'one column: head above track');
+    const pad = bar.match(/padding:\s*(\d+)px/); const gap = px(bar, 'row-gap');
+    const track = L('.se-chat-header .ib-infl-track').body;
+    assert.match(track, /box-sizing:\s*content-box/);
+    assert.match(track, /margin:\s*0;/);
+    const trackBox = px(track, 'height') + 2 * 2;            // 2px borders kept
+    const head = 14;                                          // label and number line-height
+    const total = 4 + 2 * Number(pad[1]) + head + gap + trackBox;
+    assert.ok(total <= headerH - 2 * Number(pads[1]), 'bar ' + total + ' fits the header row');
+    assert.match(L('.se-chat-header .ib-infl-label, ' + V + ' .se-chat-header .ib-infl-number').body, /line-height:\s*14px/);
+    // the 16px mark icons are replaced by 2px ticks across the track; the legend is not brought back
+    assert.match(L('.se-chat-header .ib-infl-mark').body, /width:\s*2px/);
+    assert.match(L('.se-chat-header .ib-infl-mark::after, ' + V + ' .se-chat-header .ib-infl-mark-icon').body, /display:\s*none/);
+    assert.ok(!land.some(x => /ib-infl-legend/.test(x.selector) && /display:\s*(block|flex|grid)/.test(x.body)));
+});
 // appendTellBubbles scrolls the thread to the newest tell, and leaves it alone when nothing was added
 globalThis.document = {
     createElement: () => {

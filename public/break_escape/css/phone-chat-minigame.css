@@ -1259,7 +1259,36 @@
         order: 1;
     }
     .phone-call-mode #conversation-view:has(.se-chat-header) .conversation-info { flex: 1 1 0; min-width: 0; }
-    .phone-call-mode #conversation-view .se-chat-header .influence-bar { flex-wrap: nowrap; }
+    /* The bar stacks: label and number on top, the track below at the bar's full width. 4 (border) +
+       2 (padding) + 14 (head) + 1 (gap) + 10 (track 6 + 2 x 2 border) = 31, inside the 36px row. The
+       16px mark icons would not fit, so each threshold shows as a 2px tick across the track; the
+       words stay in the hidden legend and the number carries the sign. */
+    .phone-call-mode #conversation-view .se-chat-header .influence-bar {
+        flex-wrap: nowrap;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 1px;
+        padding: 1px 6px;
+        line-height: 1;
+    }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-head { gap: 6px; min-width: 0; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-label,
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-number { font-size: 16px; line-height: 14px; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-track {
+        box-sizing: content-box;
+        height: 6px;
+        margin: 0;
+    }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark {
+        top: 0;
+        width: 2px;
+        height: 100%;
+        margin-left: -1px;
+        opacity: 1;
+        background: var(--ui-text-dim, #a8b2c8);
+    }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark.is-reached { background: var(--ui-text, #eef1f8); }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark::after,
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark-icon { display: none; }
     .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container {
         height: 44px;
         min-height: 44px;
