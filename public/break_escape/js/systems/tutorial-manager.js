@@ -40,12 +40,26 @@ function isShown(el) {
     }
 }
 
-/** True on a touch-first device: coarse primary pointer and no fine pointer to fall back on. */
-function isTouchFirst() {
+/** Touch-only by pointer: coarse primary pointer and no fine pointer to fall back on. False without matchMedia. */
+function isTouchOnlyPointer() {
     try {
         const mm = window.matchMedia;
         if (typeof mm !== 'function') return false;
         return !!mm.call(window, '(pointer: coarse)').matches && !mm.call(window, '(any-pointer: fine)').matches;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * True on a touch-first device: touch-only by pointer (iPadOS Safari with a Mac user agent,
+ * an Android tablet in desktop mode) or a mobile user agent. A narrow window with a mouse is
+ * not touch-first (it gets the mobile steps, see detectMobile, but keeps Enter wording).
+ */
+function isTouchFirst() {
+    try {
+        if (isTouchOnlyPointer()) return true;
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     } catch (e) {
         return false;
     }
@@ -104,8 +118,8 @@ export class TutorialManager {
      * Detect if the user is on a mobile device
      */
     detectMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-            || window.innerWidth < 768;
+        // Same helper as the ready wording, plus the narrow-window rule
+        return isTouchFirst() || window.innerWidth < 768;
     }
 
     /**
