@@ -63,3 +63,19 @@ Plan: `docs/achitechture/OPS_CRACKING_PLAN.md`. Review: `OPS_CRACKING_R1.md`.
 - n7 fixed: hash row `cracked` comes from `password_held_for?`.
 - n8 fixed: `running` at 0 until the next post; the scene posts once by itself; the row reads "Ready to finish".
 - n9 fixed: validator refuses duplicate item ids where either carries `revealsFacts`.
+
+## R3 fixes (2026-11-19)
+
+- M1 fixed: the stamp reads `revealsFacts` from the stored, server-built copy after the notepad/decor-cup skips, never by id lookup; section 2 drops the false "client-added" guard and describes the KO-drop id path; forged KO-drop test added to `ops_crack_test.rb`. The same path's `credential` re-stamp is named as a dependency the fix does not rely on (raised with the user separately).
+- m1 fixed: `Game#stamp_earned_facts!` shared by `process_flag_rewards` and `tools/playtest/new-game.rb`'s reward replay; `new-game.rb:416` passes `fact_source: true` (it replays a flag's `give_item`, a server-accepted source); listed in section 12 and C2 steps, with a seeder test.
+- m2 fixed: `crackFacts` digested only when present, so `[digested, captures]` and `rev` are unchanged without hash rows; test compares `rev` to the pre-C2 value.
+- m3 fixed: validator error for `revealsFacts` with no `id`; test rows for it and for a `guessable` habit with no `crack`.
+- m4 decided as mirror-the-habit: error when `crack.passwordPattern` names no object, warning when it does not back the password, warning on a non-guessable class. Reason: the crack yields on `crack.facts`, not the readable clue, so an unbacked clue is a teaching weakness, not a dead puzzle; and the habit and privilege plan already treat it as a warning. Three test rows.
+- m5 fixed: NPC-held source must be takeable (rule, error text, section 5 table, test row).
+- n1 fixed by accepting the tell: a salted `strong` answers at once; section 5 says so and points to section 7.
+- n2 fixed: core's rule adopted; a string `hash_id` not of the id form answers `not_found`.
+- n3 fixed: "This hash can't be cracked."
+- n4 fixed: `keyring-client.test.mjs` covers `readyInSeconds` on an `unchanged` answer.
+- n5 fixed: section 14's privilege requests marked taken (privilege plan L280-296, L888-893, commit 79ce67a33), kept as a record; one line on the core code count going from twelve to fourteen.
+- n6 fixed: the case is named as a transient Hacktivity error on a flag lock, rolled back before rewards run; test reworded.
+- Coordinator nit fixed: the core's `grants.credential` `connectsTo`/policy check is called "the core's S3 error rule" (core L1381) in section 9, the C1 test rows, section 12 and section 14, not a warning.
