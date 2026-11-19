@@ -33,12 +33,12 @@ export function skipHintText() {
     return 'Space, Enter or click to skip';
 }
 
-/** Terminal typing speed: 28 ms a character, but no line takes longer than about 8 s (never under 8 ms a character). */
+/** Terminal typing speed: 28 ms a character, but a whole batch of lines types in about 12 s at most (never under 10 ms a character). */
 export const TERMINAL_CHAR_DELAY_MS = 28;
-export const TERMINAL_LINE_MAX_MS = 8000;
-export function typewriterCharDelay(length) {
-    const n = Math.max(1, Number(length) || 1);
-    return Math.max(8, Math.min(TERMINAL_CHAR_DELAY_MS, Math.floor(TERMINAL_LINE_MAX_MS / n)));
+export const TERMINAL_BLOCK_MAX_MS = 12000;
+export function typewriterCharDelay(totalChars) {
+    const n = Math.max(1, Number(totalChars) || 1);
+    return Math.max(10, Math.min(TERMINAL_CHAR_DELAY_MS, Math.floor(TERMINAL_BLOCK_MAX_MS / n)));
 }
 
 /** The player's OS asks for less motion: terminal lines appear whole. */
@@ -168,6 +168,8 @@ export default class PhoneChatUI {
             const cue = document.createElement('div');
             cue.className = 'phone-skip-hint-cue';
             cue.textContent = 'Your reply options follow';
+            // aria-hidden with the pill: replies take focus when they arrive
+            cue.hidden = true;
             hint.appendChild(cue);
             this.container.querySelector('.phone-screen')?.appendChild(hint);
         }
@@ -1333,13 +1335,24 @@ export default class PhoneChatUI {
         return true;
     }
 
+    /** Characters in the batch about to type (0 clears), so the whole block shares one time budget. */
+    setBlockChars(n) {
+        this._blockChars = Number(n) || 0;
+    }
+
+    /** Show the "reply options follow" cue only when choices will come after the lines. */
+    setRepliesExpected(on) {
+        const cue = this.container?.querySelector?.('.phone-skip-hint-cue');
+        if (cue) cue.hidden = !on;
+    }
+
     /** While on, terminal lines appear whole (the remaining queued lines after a second skip). */
     setInstantType(on) {
         this._instantType = !!on;
     }
 
     _typewriterMessage(text, scrollToBottom) {
-        const CHAR_DELAY = typewriterCharDelay(text.length);
+        const CHAR_DELAY = typewriterCharDelay(this._blockChars || text.length);
         const BLINK_DURATION = 700;
 
         const messageBubble = document.createElement('div');

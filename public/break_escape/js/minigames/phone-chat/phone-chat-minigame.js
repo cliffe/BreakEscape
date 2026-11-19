@@ -957,6 +957,11 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('⚠️ No tags to process');
         }
 
+        // One time budget for the whole batch, and the reply cue only when choices follow the lines
+        this.ui?.setBlockChars?.(accumulatedMessages.reduce((n, m) => n + String(m).trim().length, 0));
+        this.ui?.setRepliesExpected?.(!!(lastResult.choices && lastResult.choices.length > 0)
+            && !accumulatedTags.some(tag => /exit_conversation|place_call/.test(String(tag))));
+
         // Display accumulated NPC messages one at a time with typing indicator.
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
@@ -966,6 +971,7 @@ export class PhoneChatMinigame extends MinigameScene {
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
         this._resetSkip();
+        this.ui?.setBlockChars?.(0);
         this._pendingNpcMessages = [];
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)

@@ -289,15 +289,16 @@ test('n3: the pretext debrief path tells the phone UI to hide and restore the hi
     assert.match(src, /onDone: \(\) => \{[\s\S]*setOverlayOpen\?\.\(false\)/);
 });
 
-test('p1: long terminal lines are capped at about 8 s; short lines keep 28 ms a character', () => {
+test('p1: a whole batch types in about 12 s at most; short batches keep 28 ms a character', () => {
     const { typewriterCharDelay } = uiMod;
-    assert.ok(typewriterCharDelay(40) === 28, 'a short line keeps 28 ms');
-    assert.ok(typewriterCharDelay(285) === 28, 'at the cap boundary still 28 ms');
-    assert.ok(typewriterCharDelay(1400) * 1400 <= 11200, "a 1400 character block types in 11 s at most, not 39 s");
-    assert.ok(typewriterCharDelay(1400) < 28, 'a long block types faster than 28 ms');
-    assert.ok(typewriterCharDelay(100000) === 8, 'never faster than 8 ms a character');
-    assert.ok(typewriterCharDelay(0) === 28, 'empty text is safe');
-    assert.ok(/CHAR_DELAY = typewriterCharDelay\(text\.length\)/.test(uiSrc), 'the typewriter uses the capped delay');
+    assert.ok(typewriterCharDelay(40) === 28, 'a short batch keeps 28 ms');
+    assert.ok(typewriterCharDelay(428) === 28, 'at the boundary still 28 ms');
+    assert.ok(typewriterCharDelay(800) * 800 <= 12000, 'Ghost opening block (800 chars) types in 12 s, not 22 s');
+    assert.ok(typewriterCharDelay(800) < 28, 'a long batch types faster than 28 ms');
+    assert.ok(typewriterCharDelay(100000) === 10, 'never faster than 10 ms a character');
+    assert.ok(typewriterCharDelay(0) === 28, 'empty is safe');
+    assert.ok(/typewriterCharDelay\(this\._blockChars \|\| text\.length\)/.test(uiSrc), 'the typewriter uses the batch budget');
+    assert.ok(/setBlockChars\?\.\(accumulatedMessages/.test(mgSrc), 'the minigame sets the batch size');
 });
 
 test('p2: the terminal hint says the reply options follow', () => {
@@ -310,4 +311,20 @@ test('p2: the terminal hint says the reply options follow', () => {
     const cue = document.querySelector('#phone-skip-hint .phone-skip-hint-cue');
     assert.ok(cue !== null, 'cue line exists');
     assert.ok(/reply options follow/i.test(cue.textContent), 'cue wording');
+});
+
+test('p3: the cue shows only when replies are expected; landscape hides it', () => {
+    document.body.innerHTML = '<div id="host"></div>';
+    const ui = Object.create(UI.prototype);
+    ui.container = document.getElementById('host');
+    ui.params = { theme: 'terminal' };
+    ui.isTerminalTheme = true; ui.isSocialTheme = false; ui.isCallMode = false; ui.appChrome = false; ui.app = null;
+    ui.render();
+    const cue = document.querySelector('.phone-skip-hint-cue');
+    assert.ok(cue.hidden === true, 'hidden until replies are expected');
+    ui.setRepliesExpected(true);
+    assert.ok(cue.hidden === false, 'shown when choices follow');
+    ui.setRepliesExpected(false);
+    assert.ok(cue.hidden === true, 'hidden when the story ends or exits');
+    assert.ok(/max-height: 500px[\s\S]*phone-skip-hint-cue \{ display: none; \}/.test(readFileSync(join(chat, '../../../css/phone-chat-minigame.css'), 'utf8')), 'landscape hides the cue');
 });

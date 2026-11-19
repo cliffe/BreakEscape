@@ -718,15 +718,19 @@
     font-size: 16px;
     line-height: 1.2;
     letter-spacing: 0.05em;
+    text-align: right;
     pointer-events: none;
     -webkit-font-smoothing: none;
     font-smooth: never;
 }
 
 .phone-terminal-theme .phone-skip-hint-cue {
-    font-size: 14px;
+    font-size: 16px;
     opacity: 0.8;
-    text-align: right;
+}
+
+.phone-terminal-theme .phone-skip-hint-cue[hidden] {
+    display: none;
 }
 
 .phone-terminal-theme .phone-skip-hint[hidden] {
@@ -1341,6 +1345,7 @@
        inside the 36px strip (at 10px it poked 1.2px above it). */
     .phone-terminal-theme .conversation-view .choices-container:empty { min-height: 36px; }
     .phone-terminal-theme .phone-skip-hint { bottom: 8px; }
+    .phone-terminal-theme .phone-skip-hint-cue { display: none; }
     /* Social (DM) chat header on one row: the stacked name, handle and "View profile" button came to
        about 64px and grew the header to about 74px, which clipped the replies and hid the "more
        choices" cue. Name and button share the row (button 32px tall, inside the 36px headshot row);
