@@ -316,9 +316,18 @@ test('p1b: pauses shrink so a whole batch (typing plus pauses) is about 15 s at 
     assert.ok(batchPauseScale(100000, 20000) === 0.15, 'floor at 0.15');
     const ui = Object.create(UI.prototype);
     ui.setBlockChars(chars, pauses);
+    assert.ok(ui.scalePause(1000) === 1000, 'not the terminal theme: pauses unscaled');
+    ui.isTerminalTheme = true; ui.isCallMode = false;
+    ui.setBlockChars(chars, pauses);
+    ui.isCallMode = true; ui.setBlockChars(chars, pauses);
+    assert.ok(ui.scalePause(1000) === 1000, 'call screen: pauses unscaled');
+    ui.isCallMode = false; ui.setBlockChars(chars, pauses);
     assert.ok(ui.scalePause(1000) < 1000 && ui.scalePause(1000) >= 150, 'scalePause shortens a pause');
     ui.setBlockChars(0);
     assert.ok(ui.scalePause(1000) === 1000, 'cleared budget leaves pauses alone');
+    assert.ok(/_setRepliesCue\(lastResult/.test(mgSrc) && (mgSrc.match(/_setRepliesCue\(lastResult, accumulatedTags\)/g) || []).length === 2, 'both paths set the cue');
+    assert.ok(/setBlockChars\?\.\(0\);\s*this\.ui\?\.setRepliesExpected\?\.\(false\)/.test(mgSrc), '_resetSkip clears the budget and cue');
+    assert.ok(batchPauseScale(800, 16400, false) === 0.15 || batchPauseScale(800, 16400, false) > batchPauseScale(800, 16400, true), 'no typing time leaves more for pauses');
     assert.ok(/_scaledPause\(TYPING_DELAY_MS\)/.test(mgSrc) && /_scaledPause\(INTER_MESSAGE_MS\)/.test(mgSrc), 'the minigame scales both pauses');
 });
 

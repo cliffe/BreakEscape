@@ -959,8 +959,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         // One time budget for the whole batch, and the reply cue only when choices follow the lines
         this._setBatchBudget(accumulatedMessages, TYPING_DELAY_MS, INTER_MESSAGE_MS);
-        this.ui?.setRepliesExpected?.(!!(lastResult.choices && lastResult.choices.length > 0)
-            && !accumulatedTags.some(tag => /exit_conversation|place_call/.test(String(tag))));
+        this._setRepliesCue(lastResult, accumulatedTags);
 
         // Display accumulated NPC messages one at a time with typing indicator.
         for (let i = 0; i < accumulatedMessages.length; i++) {
@@ -1039,6 +1038,9 @@ export class PhoneChatMinigame extends MinigameScene {
         this._skipAll = false;
         this._paceWake?.();   // a wait left running by a closed thread ends now
         this.ui?.setInstantType?.(false);
+        // A batch left early (thread closed or swapped) must not leave its typing rate or cue behind
+        this.ui?.setBlockChars?.(0);
+        this.ui?.setRepliesExpected?.(false);
     }
 
     /**
@@ -1107,6 +1109,12 @@ export class PhoneChatMinigame extends MinigameScene {
         const lines = messages.map(m => String(m).trim()).filter(Boolean);
         const pauses = lines.length * typingMs + Math.max(0, lines.length - 1) * gapMs;
         this.ui?.setBlockChars?.(lines.reduce((n, m) => n + m.length, 0), pauses);
+    }
+
+    /** The "reply options follow" cue: only when choices come after the lines and the tags do not end the thread. */
+    _setRepliesCue(lastResult, tags) {
+        this.ui?.setRepliesExpected?.(!!(lastResult?.choices && lastResult.choices.length > 0)
+            && !tags.some(tag => /exit_conversation|place_call/.test(String(tag))));
     }
 
     _scaledPause(ms) {
@@ -1433,6 +1441,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
         // Display accumulated NPC messages one at a time with typing indicator.
         this._setBatchBudget(accumulatedMessages, TYPING_DELAY_MS, INTER_MESSAGE_MS);
+        this._setRepliesCue(lastResult, accumulatedTags);
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;

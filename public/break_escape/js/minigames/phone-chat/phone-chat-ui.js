@@ -48,11 +48,11 @@ export const TERMINAL_BATCH_TOTAL_MS = 15000;
  * with `pauseMs` of pauses in all, fits the total budget. 1 for a short batch; never under 0.15,
  * so the "typing" indicator still shows for a moment.
  */
-export function batchPauseScale(totalChars, pauseMs) {
+export function batchPauseScale(totalChars, pauseMs, typed = true) {
     const chars = Math.max(0, Number(totalChars) || 0);
     const pauses = Math.max(0, Number(pauseMs) || 0);
     if (!pauses) return 1;
-    const typing = chars ? typewriterCharDelay(chars) * chars : 0;
+    const typing = chars && typed ? typewriterCharDelay(chars) * chars : 0;
     if (typing + pauses <= TERMINAL_BATCH_TOTAL_MS) return 1;
     return Math.max(0.15, (TERMINAL_BATCH_TOTAL_MS - typing) / pauses);
 }
@@ -1354,7 +1354,11 @@ export default class PhoneChatUI {
     /** Characters in the batch about to type (0 clears), so the whole block shares one time budget. */
     setBlockChars(n, pauseMs = 0) {
         this._blockChars = Number(n) || 0;
-        this._pauseScale = this._blockChars ? batchPauseScale(this._blockChars, pauseMs) : 1;
+        // Only the terminal types lines out (not a call screen), so only it shares a time budget;
+        // under reduced motion the lines appear whole, so the pauses get the whole budget
+        const terminal = this.isTerminalTheme && !this.isCallMode;
+        this._pauseScale = this._blockChars && terminal
+            ? batchPauseScale(this._blockChars, pauseMs, !prefersReducedMotion()) : 1;
     }
 
     /** A pause (typing indicator, gap between lines) shortened so the batch fits its total budget. */
