@@ -256,6 +256,11 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   LOG_ROWS: R3 reviser running (Opus, a9ce153bf9d06d65f), told to add `foothold` and plain
   object/door place kinds. Next: R4 delta (Fable).
   CRACKING: held for BLOCK-1.
+- 11:47. SKIN R3 revision committed `288139643` (1123 lines; content done, read-through and trim
+  not). Sonnet editing pass running (a0915c731b1052170): consistency and trim only, under 1000
+  lines. Next: commit, R4 delta review on Sonnet (diff since `b0fa7afee` + `OPS_REALISM_SKIN_R3.md`).
+  Rulings sent to the core reviser: Panels show no quiet/noisy note; the pending-request guard is
+  in the scene's shared `perform` (sweep, scan, check, confirm, use, unplug).
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
