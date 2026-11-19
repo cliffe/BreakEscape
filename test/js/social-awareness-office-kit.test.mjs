@@ -367,14 +367,19 @@ test('kit data: Brightwell pool lines and ambient ids are well formed', () => {
   }
 });
 
-test('ca01 twin: has the conceptPanel but no kit, chain, step-away or timer, and nothing fires', () => {
+test('ca01 twin: tier S kit (staff, pool, stubs) with the conceptPanel, and no chain, step-away, timer or walk', () => {
   const twin = readFileSync(join(scenarios, 'ca01_invoice_fraud_defend/scenario.json.erb'), 'utf8');
   const sc = JSON.parse(twin);
+  const row = kitRows.find((r) => r.id === 'ca01_invoice_fraud_defend');
+  assert.ok(row && row.tier === 'S' && !row.setPiece && row.stepAway !== true, 'the twin has a tier S row, no set piece, no step-away (plan 5)');
   const cp = sc.social.awarenessEpisode.strings.conceptPanel;
   assert.ok(typeof cp === 'object' && cp.heading === 'If one gets through');
-  assert.ok(!twin.includes('kit_'));
-  assert.ok(!/patrolOverride|stepAway|"needs"|npc_arrived|"timer"/i.test(twin));
+  assert.ok(!/patrolOverride|stepAway|npc_arrived|"timers"|_out"|resume|suspend/i.test(twin), 'no chain');
+  assert.ok(!('timers' in sc) && !Object.keys(sc.globalVariables).some((k) => /^kit_.*_out$/.test(k)));
   assert.ok(sc.social.awarenessEpisode.stepAway !== true);
+  for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_'))) {
+    assert.ok(!(n.eventMappings || []).length, `${n.id}: a twin's kit staff carry no mappings`);
+  }
   const allMaps = [];
   const walk = (o) => {
     if (Array.isArray(o)) o.forEach(walk);
@@ -384,8 +389,7 @@ test('ca01 twin: has the conceptPanel but no kit, chain, step-away or timer, and
     }
   };
   walk(sc);
-  assert.ok(allMaps.every((m) => !JSON.stringify(m).includes('kit_')));
-  assert.ok(allMaps.every((m) => !m.timer && !m.delayMs && !m.needs));
+  assert.ok(allMaps.every((m) => !m.timer && !m.needs && !m.patrolOverride && !m.bark));
   // the four check shells never gain a conceptPanel
   for (const n of pinnedShells().filter((x) => /^ca_(pre|post)_/.test(x))) {
     assert.ok(!readFileSync(join(scenarios, n, 'scenario.json.erb'), 'utf8').includes('conceptPanel'), n);

@@ -321,12 +321,13 @@ def brand_block():
     return {k: copy.deepcopy(EP[k]) for k in ('role', 'company', 'brand')}
 
 
-def defend_only():
+def defend_only(bare=False):
+    """bare=True builds the shell as if it had no kit row (tests use it as the kit-free input)."""
     mission = 'ca01_invoice_fraud_defend'
     ep_id = 'e1_invoice_fraud_defend'
     prefix = f'episode_{ep_id}_defend_'
     done = f'{prefix}complete'
-    row = office_kit.row_for(mission)   # None until the shell has a kit row: tier 'none', output unchanged
+    row = None if bare else office_kit.row_for(mission)   # None: tier 'none', no kit
     s = clean_set('e1_payments_inbox')
     # C2-m23: the defend-only shell has no write/flip stage, so it never replays a
     # player-sent message; drop the authored sender profile the full set carries.

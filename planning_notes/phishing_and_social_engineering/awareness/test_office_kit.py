@@ -31,9 +31,9 @@ def fixture_at_commit():
 
 
 def twin_shell():
-    """The ca01 twin as the generator builds it with no kit (tier none)."""
+    """The ca01 twin as the generator builds it with no kit (tier none), whatever its episodes.json row says."""
     import gen_e1_shells as g
-    return g.defend_only()[1]
+    return g.defend_only(bare=True)[1]
 
 
 def row(**kw):
@@ -626,6 +626,100 @@ class RegenerateTheChain(unittest.TestCase):
                     m['bark'] = 'an old wording'
         new = atr.kit_text(dumped(sc), ok.load_kit(r['company']), r, name)
         self.assertIn('That notice on the wall is from last spring', new)
+
+    def test_twin_has_a_tier_s_kit_and_strip_kit_inverts_it(self):
+        # The twin's episodes.json row is tier S, so the generator builds it WITH the kit; twin_shell()
+        # asks for the bare build. strip_kit must give the bare shell back from the kitted one.
+        import gen_e1_shells as g
+        r = ok.row_for('ca01_invoice_fraud_defend')
+        self.assertEqual((r['tier'], r['setPiece'], bool(r.get('stepAway')), bool(r.get('attack'))), ('S', None, False, False))
+        kitted = g.defend_only()[1]
+        self.assertIn('npcThoughts', kitted)
+        self.assertNotIn('npcThoughts', twin_shell())
+        self.assertEqual(ok.strip_kit(copy.deepcopy(kitted)), twin_shell())
+        # kit, no chain: no timers, walk, step-away or barks
+        self.assertNotIn('timers', kitted)
+        self.assertNotIn('kit_ca01_walk', kitted['globalVariables'])
+        self.assertFalse([k for k in kitted['globalVariables'] if k.endswith('_out')])
+        self.assertTrue(any(n['id'].startswith('kit_') for n in kitted['rooms']['training_room']['npcs']))
+        for n in kitted['rooms']['training_room']['npcs']:
+            self.assertFalse([m for m in n.get('eventMappings', []) if 'bark' in m or 'patrolOverride' in m], n['id'])
+
+    def test_allow_drop_is_per_shell_and_lists_what_it_drops(self):
+        import contextlib
+        import io
+        name = 'test_ca01_panel'
+        r = ok.row_for(name)
+        sc = json.loads(shell_text(name))
+        host = ok._find_host(sc)
+        host['eventMappings'].append({'eventPattern': 'x', 'setGlobal': {'kit_hand': True}})
+        sc['timers'].append({'id': 'kit_hand_t', 'startOnGlobal': 'kit_ca01_out', 'delayMs': 1})
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            atr.kit_text(dumped(sc), ok.load_kit(r['company']), r, name, allow_drop=True)
+        out = err.getvalue()
+        self.assertIn(f'{name}: --allow-drop {name}: DROPPING', out)
+        self.assertIn("host mapping on x setting ['kit_hand']", out)
+        self.assertIn('timer kit_hand_t', out)
+        # nothing dropped: nothing printed about dropping
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            atr.kit_text(shell_text(name), ok.load_kit(r['company']), r, name, allow_drop=True)
+        self.assertNotIn('DROPPING', err.getvalue())
+
+    def test_allow_drop_cli_bare_flag_and_unknown_shell_error(self):
+        exe = [sys.executable, os.path.join(HERE, 'apply_training_room.py'), '--repo', REPO, '--kit']
+        with tempfile.TemporaryDirectory() as out:
+            for args, want in (([out, '--allow-drop'], '--allow-drop needs a shell name'),
+                               ([out, '--allow-drop', '--other'], '--allow-drop needs a shell name'),
+                               ([out, '--allow-drop', 'no_such_shell'], '--allow-drop names no kit shell: no_such_shell')):
+                r = subprocess.run(exe + args, capture_output=True, text=True, cwd=tempfile.gettempdir())
+                self.assertNotEqual(r.returncode, 0, args)
+                self.assertIn(want, r.stderr + r.stdout)
+            # a check shell (tier none, no kit) is not a kit shell either
+            r = subprocess.run(exe + [out, '--allow-drop', 'ca_pre_finance_ab'], capture_output=True, text=True, cwd=tempfile.gettempdir())
+            self.assertNotEqual(r.returncode, 0)
+            self.assertEqual(os.listdir(out), [])     # refused before anything was written
+            # a known shell is accepted (repeatable)
+            r = subprocess.run(exe + [out, '--allow-drop', 'test_ca01_panel', '--allow-drop', 'ca01_invoice_fraud'],
+                               capture_output=True, text=True, cwd=tempfile.gettempdir())
+            self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_reverts_warning_lists_a_hand_edit_and_stays_quiet_otherwise(self):
+        import contextlib
+        import io
+        name = 'test_ca01_panel'
+        r = ok.row_for(name)
+        kit = ok.load_kit(r['company'])
+        text = shell_text(name)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            atr.kit_text(text, kit, r, name)
+        self.assertNotIn('WARNING', err.getvalue())
+        sc = json.loads(text)
+        edited = None
+        for n in sc['rooms']['training_room']['npcs']:
+            for m in n.get('eventMappings', []):
+                if 'bark' in m and edited is None:
+                    m['bark'] = 'an old wording'
+                    edited = n['id']
+        self.assertTrue(edited)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            atr.kit_text(dumped(sc), kit, r, name)       # a warning, never a refusal
+        out = err.getvalue()
+        self.assertIn(f'{name}: WARNING, --kit rewrites', out)
+        self.assertIn(' mapping on ', out)
+        self.assertIn('field bark', out)
+        self.assertIn('  ~ ', out)
+        # office_kit.reverts itself: a changed host mapping condition and a changed global are listed
+        sc = json.loads(text)
+        prefix, state = ok.shell_ids(sc, r)
+        b = ok.build(kit, r, prefix, state)
+        mine = ok.kit_owned(sc, ok._find_host(sc)['id'])
+        self.assertEqual(ok.reverts(mine, b), [])
+        mine['globals'][next(iter(mine['globals']))] = 'changed by hand'
+        self.assertTrue(any(x.startswith('global ') for x in ok.reverts(mine, b)))
 
     def test_kit_cli_needs_an_out_folder_and_writes_nothing_without_one(self):
         before = subprocess.run(['git', '-C', REPO, 'status', '--short', '--', 'scenarios'], capture_output=True, text=True).stdout

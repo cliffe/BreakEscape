@@ -6,6 +6,7 @@
   "endGoal": "Sort the six messages in the payments inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,25 @@
     "se_awareness_records": [],
     "episode_e1_invoice_fraud_defend_defend_percent": 0,
     "episode_e1_invoice_fraud_defend_defend_reportRate": 0,
-    "episode_e1_invoice_fraud_defend_defend_complete": false
+    "episode_e1_invoice_fraud_defend_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca01",
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_brightwell": {
+      "lines": [
+        "Busy inbox today.",
+        "Kettle's on in a sec.",
+        "Audit week again."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -75,7 +94,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e1_invoice_fraud_defend_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e1_lookalike_bank": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -399,8 +421,144 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_payments_inbox"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_defend_complete",
+              "condition": "value === true && globalVars.episode_e1_invoice_fraud_defend_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "person": "agnieszka_duda",
+          "npcType": "person",
+          "position": {
+            "x": 6,
+            "y": 4
+          },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/agnieszka_duda_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 6,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Callirrhoe",
+            "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Long week.",
+                "Any biscuits left?",
+                "Just need a top-up."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_gwen_pritchard",
+          "displayName": "Gwen Pritchard",
+          "person": "gwen_pritchard",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "spriteSheet": "gwen_pritchard",
+          "spriteTalk": "assets/characters/gwen_pritchard_talk.png",
+          "spriteVisemes": "assets/characters/gwen_pritchard_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/gwen_pritchard_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Sulafat",
+            "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Morning, all.",
+                "Tea round shortly?",
+                "Kettle's just boiled."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -421,6 +579,44 @@
           ],
           "minigameData": {
             "episodeId": "e1_invoice_fraud_defend"
+          }
+        },
+        {
+          "type": "coffee_station",
+          "id": "kit_coffee",
+          "name": "Coffee station",
+          "sprite": "coffee_station1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office coffee station. Staff drift over for a top-up.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 30,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_brightwell"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A water cooler by the far wall.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
           }
         }
       ]
