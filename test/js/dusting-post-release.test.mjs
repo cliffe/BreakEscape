@@ -45,7 +45,7 @@ test('m4: after jitter, any two different layouts keep a largest-point gap of at
     let worst = Infinity, worstPair = '';
     for (let a = 0; a < WHORL_SHAPES.length; a++) for (let b = 0; b < WHORL_SHAPES.length; b++) {
         if (a === b) continue;   // easy and medium decoys never share the lift layout
-        for (let i = 0; i < 3000; i++) {
+        for (let i = 0; i < 20000; i++) {
             const g = gap(sp('Lift ' + i, a), sp('Decoy ' + i, b));
             if (g < worst) { worst = g; worstPair = `${a}/${b} seed ${i}`; }
         }

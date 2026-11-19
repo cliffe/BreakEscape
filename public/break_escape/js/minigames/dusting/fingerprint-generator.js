@@ -95,7 +95,7 @@ export const WHORL_SHAPES = [
     { cores: [[-0.06, 0.46], [0.06, 0.52]], deltas: [[-0.18, 0.74], [0.18, 0.74]] },
     { cores: [[-0.06, 0.54], [0.06, 0.44]], deltas: [[-0.14, 0.68], [0.22, 0.80]] },
     { cores: [[-0.11, 0.47], [0.11, 0.51]], deltas: [[-0.25, 0.69], [0.25, 0.69]] },
-    { cores: [[-0.03, 0.43], [0.03, 0.55]], deltas: [[-0.12, 0.79], [0.12, 0.79]] }
+    { cores: [[-0.03, 0.40], [0.03, 0.58]], deltas: [[-0.12, 0.79], [0.12, 0.79]] }
 ];
 
 /** Whorl layout index for an owner (deterministic), unless a `whorlShape` option overrides it. */
