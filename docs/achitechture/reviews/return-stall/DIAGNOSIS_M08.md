@@ -1,0 +1,27 @@
+# Diagnosis: Agnieszka's return stall on the m08 operations floor (fixed engine)
+
+Games 9336 and 9356 (fixed engine, f48c80af8 on the branch), driver drivers/diag.js via drivers/rundiag.sh, raw records in a scratch diag.jsonl (not kept) (calls = every findWorldPath from her position with tier and path; holds = snapshots at 2 s and 8 s still, with a 1 s per-frame probe). 9336 trip 1 and 9356 trip 1 both stalled (return_resumed x3, return_stuck, home after 31.9 s and 29.2 s).
+
+All positions below are physics body centres (the sprite is about 37 px higher: sprite (506,127) = body (506,164)).
+
+## What the planner saw at the first hold
+- Walker body 20x10 at (505.5..506.3, 162.7..163.5), velocity 0, not touching anything, path index 1 or 2 of [(508,164),(500,164),(492,164),(484,172),(476,172),(468,172),(460,164)...(420,164)]. Home (422.4,162.9).
+- Vector (agent_vector, movable, standing): body box l 476.4 t 147.7 r 496.4 b 157.7, centre (486.4,152.7). The two boxes miss each other by 0.5 px at the corner; passing along y 164 keeps 11.3 px between centres, more than the 10 px two 10 px tall bodies need.
+- Nothing else within 90 px blocks: julian_sallow (462.9,215), background_analyst (582,224), two chair-exec bodies at y 178..186 and 226..234 (x 416..434), desks zds_desk1 (457..515, 200..210), zds_desk3 (566..597, 160..170). The static grid row y 164 is open from x 432 to 551. The chair near (520,112) and desk near (556,131) from the earlier note are sprite positions, not near the path.
+- Search tiers: the first return plan is plain: (532,188) diagonal to (508,164), then along y 164 past Vector. Every later plan (re-issue tries 2 and 3 with reroute, and every local detour) ran the RING tier from (508,164) and it FOUND a path, the same one: (508,164),(500,164),(492,164),(484,172).... The tight tier never ran (it only runs when the ring tier fails), so f48c80af8 could not change anything here.
+
+## Why she holds
+- Per-frame probe during the hold: updatePatrol runs every frame in state patrol, _handleBlockerAhead returns true on every frame (13 of 13), _avoid.gaveUp false, no settling. Local avoidance (npc-behavior.js _handleBlockerAhead, nearestBlockerOnPath) stops for any movable NPC within AVOID_LANE_HALF_PX = 13 px of the path; Vector is 11.3 px off the y 164 leg, so she stops, waits, asks for a detour, and gets the same path.
+- The ring tier put that leg there because of the near-end softening (npc-pathfinding.js _avoidDynamicPositions, END_RING_CELLS = 2): Vector's ring cells (cells x 58..62, y 17..20, i.e. x 464..503, y 136..167) within 2 cells of the start cell (63,20) are left open, so cells (62,20) (500,164) and (61,20) (492,164) are walkable for the search, 11.3 px from Vector's centre. That softening was meant for chairs and seated colleagues round a home (round 7, game 5439); it was applied to standing NPCs too.
+- The loop: stop (lane) -> 3 s -> return_resumed (plain, same leg) -> 3 s -> return_resumed (ring, same leg) x2 -> return_stuck -> cancelMove, idle 15 s (RETURN_STUCK_BACKOFF_MS) at body (526..535,181..189) = the "second hold" at sprite (529..533,154..157) -> re-plan from there: start now 3+ cells from Vector, ring closed, path along y 172 (19 px from Vector) -> home. Total about 30 s, matching every stalled trip in LIVE_PROOF_M08.md.
+- Why some trips do not stall: Vector gets shoved. When his body centre is above y 151 (trips where it was 140 to 145) the y 164 leg is more than 13 px away and the lane check never fires. Vector's height is necessary, not sufficient: the stall also needs a plain plan from the start cell (508,164) along y 164. The m3 runs (LIVE_RETURN_STALL.md, a97e9f8d8 and the R3 run) put him at 152.7 to 157 on f48c80af8 in 4 of 4 and then 9 of 9 more trips without a stall, so 1 of 9 against 4 of 9 is not explained by his position alone; her start cell and the plan sequence matter too.
+
+## Fix (this branch, uncommitted in this pass until the handover commit)
+- npc-pathfinding.js _avoidDynamicPositions: the near-end softening (ring tier and the new tight end rule) applies only to soft bodies: chairs, held/seated (immovable) NPCs and the player. A standing movable NPC keeps its whole ring and its whole tight reach (14 px across, wider than the 13 px lane), so no held-aware plan puts the walker in the lane of a body local avoidance stops for.
+- Same function: tight tier gets the start/goal rule for soft bodies (R1 M1) and keeps the ring for the player (R1 m4).
+- npc-behavior.js: _requestDetour runs held -> tight -> plain (R1 m3); _planTier / _detourTier record the tier used (R1 m2); comment on where _moveReroute is set (R1 m5); _tightOpts helper keeps the leash on both tight calls (R1 m6).
+
+
+## R3 live run (instrumented, 18 trips)
+
+f48c80af8 against the branch, six fresh games, Vector a movable, enabled lane blocker on every trip (`_dynamicBlockers()` held `agent_vector`). f48c80af8 held on 0 of 9 trips; the first return plan was clear of the lane in 7 and at its edge (lat 12.6, 12.7) in 2. The branch engine held once in 9 (game 9532 trip 1, 9.6 s home, return_resumed twice, no return_stuck): the ring plan was clear of the lane, but the plain re-issue plan from (508,164) ran along y 164, 10.6 px from Vector, and local avoidance stopped her until the next ring plan. So the branch removes the ring-tier cause (a ring plan never enters the lane) and the 30 s return_stuck loop did not recur, but a plain re-issue plan can still put her in the lane for a few seconds. Detail: scenarios/m08_the_mole/office_life/LIVE_RETURN_STALL.md.

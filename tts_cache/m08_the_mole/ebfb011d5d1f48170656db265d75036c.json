@@ -1,0 +1,13 @@
+{
+  "key": "ebfb011d5d1f48170656db265d75036c",
+  "npc": "julian_sallow",
+  "text": "The readers, the board, the log. Nothing glamorous, and nothing anyone will thank us for.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:03Z"
+}

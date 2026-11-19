@@ -23,6 +23,8 @@ put('config.js', 'export const ASSETS_PATH = "/break_escape/assets";\n');
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 copy('utils/escape-html.js');
 copy('utils/lock-scope-refusal.js');
+copy('utils/dispense-on-unlock.js'); // unlock-system.js imports it (dispenses containers)
+copy('minigames/container/container-item-image.js');
 copy('utils/computer-keywords.js');
 copy('utils/pc-monitor.js');
 copy('utils/npc-headshot.js');

@@ -254,7 +254,8 @@ test('the phone contact list shows a hostile NPC name as text', () => {
     item = item || root.querySelector('.contact-item');
     root.appendChild(item);
     assertText(item.querySelector('.contact-name'), 'phone contact name', { dashes: false });
-    assertAttr(item.querySelector('.contact-avatar img'), 'alt', 'phone contact avatar');
+    // The avatar is decorative (alt empty) so the row's name is the contact name alone
+    assert.equal(item.querySelector('.contact-avatar img').getAttribute('alt'), '', 'phone contact avatar: decorative');
     const img = item.querySelector('.contact-avatar img');
     assert.equal(img.hasAttribute('onerror'), false, 'phone contact avatar src: no onerror');
     assert.ok(img.getAttribute('src').endsWith(HOSTILE), 'phone contact avatar src: reads back as typed');

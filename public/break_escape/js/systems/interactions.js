@@ -874,6 +874,11 @@ export function handleObjectInteraction(sprite) {
     try { window.playerPoses?.use?.(sprite); } catch (e) { /* cosmetic */ }
 
     // Emit object interaction event (for NPCs to react)
+    // A mapping on this event may start a scripted call (the duty handset's call from Ghost).
+    // The call opens after a short start delay and waits behind any minigame open by then, so
+    // an examine view or observation toast raised below would hold it back. callStartedByClick
+    // lets the final observation step stand aside for it.
+    const callWasStarting = window.npcManager?.scriptedConversationActive?.() === true;
     if (window.eventDispatcher && sprite.scenarioData) {
         window.eventDispatcher.emit('object_interacted', {
             objectType: sprite.scenarioData.type,
@@ -881,6 +886,7 @@ export function handleObjectInteraction(sprite) {
             roomId: window.currentPlayerRoom
         });
     }
+    const callStartedByClick = !callWasStarting && window.npcManager?.scriptedConversationActive?.() === true;
     
     // A chair: sit on it, or stand on it when the avatar has no seated frames (seating.js)
     if (window.seating?.trySit(sprite)) return;
@@ -2189,6 +2195,8 @@ export function handleObjectInteraction(sprite) {
     // only text or observations, opens the examine view (sprite at twice its room size, name, text).
     // Readable text, observationDisplay "gameDisplay", onInteract, keys and takeable
     // room objects keep their own handling (examine.js shouldExamine).
+    // A call this click started has the screen: no examine view or toast in front of it.
+    if (callStartedByClick && !isInventoryItem) return;
     if (shouldExamine(data, { inInventory: isInventoryItem, resolvedText, resolvedObservations })) {
         if (startExamine(sprite, { observations: resolvedObservations, text: resolvedText })) return;
     }

@@ -676,7 +676,7 @@ Agent HaX: He authorised the fire drill that put ENTROPY's device on the LAN, si
 }
 
 {reeves_stance == "quiet":
-    Agent HaX: You took him quietly. No scene in the boardroom, and he gave us the cell without being asked twice.
+    Agent HaX: You took him quietly. No scene in the boardroom, and he held his wrists out before you asked.
 }
 
 {insider_asset_exposed:

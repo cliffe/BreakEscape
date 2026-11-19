@@ -101,7 +101,8 @@ function recordLift(item, result) {
     const message = stored.sample.identified
         ? `Lifted ${ownerName}'s print (${rating}, ${pct}%).`
         : `Lifted a print${sourceName ? ` from ${sourceName}` : ''} (${rating}, ${pct}%).`;
-    window.gameAlert(message, 'success', 'Print Lifted', 4000);
+    // Closing the compare screen records the print too; its one toast says so (the Log the print button keeps "Print Lifted")
+    window.gameAlert(message, 'success', result.viaClose ? 'Print Logged' : 'Print Lifted', 4000, { html: false });   // plain text: the owner and object names go through textContent
 }
 
 // Start fingerprint dusting minigame
@@ -131,7 +132,9 @@ export function startDustingMinigame(item) {
                 setTimeout(() => window.handleObjectInteraction?.(item), 0);
             }
             // Cancelled: nothing to show.
-        }
+        },
+        // endMinigame(false, null) from a scripted call skips complete(); a mounted lift is still recorded
+        onForcedEnd: result => recordLift(item, result || {})
     });
 }
 

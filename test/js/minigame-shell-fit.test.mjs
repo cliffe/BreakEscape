@@ -233,7 +233,7 @@ test('notes: the notepad fits a phone and the nav row is in the flow under it (A
     assert.equal(tape.border, undefined, 'no grey box that reads as an empty field');
     const js = src('minigames/notes/notes-minigame.js');
     assert.match(js, /this\.gameContainer\.after\(navContainer\)/);
-    assert.match(js, /closeAnchor\(\) \{\s*return this\.gameContainer\?\.querySelector\?\.\('\.notes-minigame-notepad'\)/);
+    assert.match(js, /closeAnchor\(\) \{\s*return this\.gameContainer\?\.querySelector\?\.\('\.notes-minigame-page-edge'\)\s*\|\| this\.gameContainer\?\.querySelector\?\.\('\.notes-minigame-notepad'\)/);
     assert.match(js, /notes-minigame-content-area pixel-scroll/);
 });
 
@@ -386,7 +386,7 @@ test('BLE scanner list uses the pixel scrollbar, a More below cue and an accent 
 test('notes: the page scroll box starts below the X, so its scrollbar never runs under it (M3)', () => {
     const r = rule(css('notes.css'), '.notes-minigame-content-area');
     assert.equal(r.top, '48px');
-    assert.match(r.height, /calc\(90% - 48px\)/);
+    assert.match(r.height, /calc\(85% - 48px\)/);
 });
 
 test('notes: the short-landscape rule keeps the 48px offset in its height and drops the top padding (R2 M1)', () => {
@@ -394,7 +394,7 @@ test('notes: the short-landscape rule keeps the 48px offset in its height and dr
     const m = c.match(/@media \(orientation: landscape\) and \(max-height: 640px\) \{([\s\S]*?)\n\}\n/);
     assert.ok(m, 'short-landscape block found');
     const line = m[1].match(/\.notes-minigame-content-area \{([^}]*)\}/)[1];
-    assert.match(line, /height: calc\(90% - 48px\)/);
+    assert.match(line, /height: calc\(85% - 48px\)/);
     assert.match(line, /padding: 0 /, 'no top padding on top of the 48px offset');
 });
 

@@ -165,8 +165,8 @@ require 'base64'
       "name": "Albion Site Phone",
       "takeable": true,
       "phoneId": "site_phone",
-      "npcIds": ["marcus_webb", "tom_hadley"],
-      "observations": "The facility duty phone. Contacts: Marcus Webb (OT Security Manager) and CastleTech SOC."
+      "npcIds": ["marcus_webb", "tom_hadley", "helen_marsh_phone"],
+      "observations": "The facility duty phone. Contacts: Marcus Webb (OT Security Manager), CastleTech SOC, and Helen Marsh's texts."
     }
   ],
 
@@ -380,7 +380,8 @@ require 'base64'
       "description": "Trent Water shares Albion's file server. Decide whether CastleTech should warn them, and when.",
       "status": "locked",
       "order": 8,
-      "unlockCondition": { "aimCompleted": "verify_anomaly" },
+      // No unlockCondition: Tom's jump_server_confirmed mapping (unlockAim) opens it, with his text
+      // about the shared server. Opening it after the dial gave the jump server away early.
       "tasks": [
         {
           "taskId": "call_trent_water",
@@ -689,8 +690,7 @@ require 'base64'
               "condition": "value === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true",
               "onceOnly": true,
               "unlockAim": ["verify_anomaly", "initiate_esd"],
-              "completeTask": "check_thermometer",
-              "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Come and tell me which one you believe." }
+              "completeTask": "check_thermometer"
             },
             {
               // P7 (round 1b): the ESD went in before anyone read the dial ("Go and see if we needed
@@ -699,8 +699,7 @@ require 'base64'
               "condition": "value === true && globalVars.esd_before_dial === true",
               "onceOnly": true,
               "unlockAim": ["verify_anomaly", "initiate_esd"],
-              "completeTask": "check_thermometer",
-              "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Then we needed that ESD." }
+              "completeTask": "check_thermometer"
             },
             {
               // R2-1 (round 2): dial read in a gas alarm or after the evacuation. The entry bark has
@@ -726,30 +725,24 @@ require 'base64'
               "unlockAim": "contact_marcus_investigate"
             },
             {
-              // P4 (round 1b): "message Marcus" only if nobody has yet. Four radios, disjoint on
-              // esd_activated and marcus_webb_contacted.
               "eventPattern": "global_variable_changed:historian_flatline_found",
               "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in, then message Marcus." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:historian_flatline_found",
               "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:historian_flatline_found",
               "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Message Marcus." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:historian_flatline_found",
               "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               // SL2: "Isolate the Attacker" opens here, once the session is found, not on the
@@ -758,53 +751,37 @@ require 'base64'
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "incident_aware": true },
-              "unlockAim": ["investigate_sis", "isolate_network"],
-              "sendTimedMessage": { "delay": 2000, "message": "The Ellison account? He left over a year ago. And the engineering workstation can reach the safety controller. Have a look at that SIS panel." }
+              "unlockAim": ["investigate_sis", "isolate_network"]
             },
             {
-              // ESD pressed on the dial, before the historian (HEL-5): "good call" only when the press
-              // followed evidence. A press before anyone read the dial gets a wry line instead.
-              // mn11: the esd_activated radios below are disjoint (early_esd_activation, esd_before_dial,
-              // esd_pressed_inside_in_alarm, network_isolated, jump_server_confirmed); the overlap
-              // warning comes from the safe-state setGlobal mapping, which is meant to fire with them.
               "eventPattern": "global_variable_changed:esd_activated",
               "condition": "value === true && globalVars.early_esd_activation === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. Good call. We'll find out why later." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:esd_activated",
               "condition": "value === true && globalVars.esd_before_dial === true && globalVars.early_esd_activation === true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "ESD's in, and nobody's read the dial yet. Well. Go and see if we needed it." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
-              // Later ESD (N10, m3): the radio follows what is known. Inside-station press in a gas
-              // alarm gets no praise; once the network is already isolated the safe-state radio speaks.
               "eventPattern": "global_variable_changed:esd_activated",
               "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now let's find out who did this." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:esd_activated",
               "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now get them off our network." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:esd_activated",
               "condition": "value === true && globalVars.esd_pressed_inside_in_alarm === true && globalVars.hydrogen_alarm === true && globalVars.facility_evacuated !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "ESD's in. Now come out of that hall, and use the door station next time." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
-              // Hydrogen at 1.0% by volume (S1, S2): stay out, use a station outside, fire service called.
-              // mn11: fires with the N1 skipTask/unlockAim mapping further down; intended.
               "eventPattern": "global_variable_changed:hydrogen_alarm",
               "condition": "value === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Hydrogen alarm in Hall 1. One per cent and rising. Stay out of the hall and use the station by the door. I'm ringing the fire service." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               // SL4: the evacuation scene's outcomes, set with facility_evacuated so a reload mid-scene
@@ -851,29 +828,24 @@ require 'base64'
               "setGlobal": { "priya_s_visible": true }
             },
             {
-              // Safe-state radio follows where the notification stands (playtest B m2).
               "eventPattern": "global_variable_changed:facility_safe_state",
               "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read !== true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Now the NIS notification. The form's on the clipboard by the workshop door." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:facility_safe_state",
               "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice !== 'wait'",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Now the notification. Message Marcus and he'll sign it." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:facility_safe_state",
               "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice === 'wait'",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. You're holding the notification. Your call, but the clock's running." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:facility_safe_state",
               "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Good work, all of you." }
+              "_comment": "Index placeholder: the text this sent now comes from helen_marsh_phone (same event and condition). Do not remove: once-only records are keyed by handler index."
             },
             {
               "eventPattern": "global_variable_changed:nis_notified",
@@ -1030,6 +1002,145 @@ require 'base64'
               "unlockAim": "post_incident_debrief",
               "bark": "Priya, from the NCSC. I was the nearest when this came in. Finish what you're doing, then come and find me.",
               "barkDelay": 1500
+            }
+          ]
+        },
+
+        {
+          // Helen's texts. Helen is met in person (npcType person), and a person NPC has no phone
+          // thread, so the radio calls she sends as texts were toasts the player could not reread.
+          // This phone twin (the m04 robert_vance_phone pattern) owns those texts, so the site
+          // phone's Messages list holds her thread. The distinct display name keeps "Helen Marsh:"
+          // speaker prefixes in her person-chat ink on helen_marsh. Unvoiced; the ink has only a
+          // start line. The conditions are the ones her mappings carried when they sent these.
+          "id": "helen_marsh_phone",
+          "displayName": "Helen Marsh (radio)",
+          "npcType": "phone",
+          "phoneId": "site_phone",
+          "storyPath": "scenarios/sis02_energy/ink/npc_helen_text.json",
+          "currentKnot": "start",
+          "avatar": "assets/characters/female_telecom_v2_headshot.png",
+          "eventMappings": [
+            {
+              // The dial has been read: the historian and the ESD aims open. Helen asks a question
+              // instead of deciding for the player (HEL-1); her hub then holds the gauge decision.
+              // R2-1 (round 2): not in a gas alarm, where Helen offers no gauge debate (D3-2).
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Come and tell me which one you believe." }
+            },
+            {
+              // P7 (round 1b): the ESD went in before anyone read the dial ("Go and see if we needed
+              // it"), so Helen closes that loop instead of opening the dial-or-screen debate.
+              "eventPattern": "global_variable_changed:anomaly_detected",
+              "condition": "value === true && globalVars.esd_before_dial === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 3000, "message": "Fifty-one on that dial? Then we needed that ESD." }
+            },
+            {
+              // P4 (round 1b): "message Marcus" only if nobody has yet. Four radios, disjoint on
+              // esd_activated and marcus_webb_contacted.
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in, then message Marcus." }
+            },
+            {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated !== true && globalVars.marcus_webb_contacted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Get that ESD in." }
+            },
+            {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it. Message Marcus." }
+            },
+            {
+              "eventPattern": "global_variable_changed:historian_flatline_found",
+              "condition": "value === true && globalVars.esd_activated === true && globalVars.marcus_webb_contacted === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Dead flat since twelve minutes past eleven. Somebody's writing it." }
+            },
+            {
+              // SL2: "Isolate the Attacker" opens here, once the session is found, not on the
+              // first message to Marcus.
+              "eventPattern": "global_variable_changed:jump_server_confirmed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "The Ellison account? He left over a year ago. And the engineering workstation can reach the safety controller. Have a look at that SIS panel." }
+            },
+            {
+              // ESD pressed on the dial, before the historian (HEL-5): "good call" only when the press
+              // followed evidence. A press before anyone read the dial gets a wry line instead.
+              // mn11: the esd_activated radios below are disjoint (early_esd_activation, esd_before_dial,
+              // esd_pressed_inside_in_alarm, network_isolated, jump_server_confirmed); the overlap
+              // warning comes from the safe-state setGlobal mapping, which is meant to fire with them.
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.early_esd_activation === true && globalVars.esd_before_dial !== true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. Good call. We'll find out why later." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.esd_before_dial === true && globalVars.early_esd_activation === true && globalVars.hydrogen_alarm !== true && globalVars.facility_evacuated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in, and nobody's read the dial yet. Well. Go and see if we needed it." }
+            },
+            {
+              // Later ESD (N10, m3): the radio follows what is known. Inside-station press in a gas
+              // alarm gets no praise; once the network is already isolated the safe-state radio speaks.
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now let's find out who did this." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.early_esd_activation !== true && globalVars.facility_evacuated !== true && globalVars.esd_pressed_inside_in_alarm !== true && globalVars.network_isolated !== true && globalVars.jump_server_confirmed === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "ESD's in. The A racks are off charge and the fans are on full. Now get them off our network." }
+            },
+            {
+              "eventPattern": "global_variable_changed:esd_activated",
+              "condition": "value === true && globalVars.esd_pressed_inside_in_alarm === true && globalVars.hydrogen_alarm === true && globalVars.facility_evacuated !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "ESD's in. Now come out of that hall, and use the door station next time." }
+            },
+            {
+              // Hydrogen at 1.0% by volume (S1, S2): stay out, use a station outside, fire service called.
+              // mn11: fires with the N1 skipTask/unlockAim mapping further down; intended.
+              "eventPattern": "global_variable_changed:hydrogen_alarm",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1000, "message": "Hydrogen alarm in Hall 1. One per cent and rising. Stay out of the hall and use the station by the door. I'm ringing the fire service." }
+            },
+            {
+              // Safe-state radio follows where the notification stands (playtest B m2).
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Now the NIS notification. The form's on the clipboard by the workshop door." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice !== 'wait'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Now the notification. Message Marcus and he'll sign it." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified !== true && globalVars.nis_form_read === true && globalVars.nis_initial_choice === 'wait'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. You're holding the notification. Your call, but the clock's running." }
+            },
+            {
+              "eventPattern": "global_variable_changed:facility_safe_state",
+              "condition": "value === true && globalVars.facility_evacuated !== true && globalVars.nis_notified === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "That's the hall safe and them out of our network. Good work, all of you." }
             }
           ]
         },
@@ -1406,7 +1517,7 @@ require 'base64'
               ]
             },
             {
-              "label": "H₂ GAS",
+              "label": "H2 GAS",
               "multiState": true,
               "variables": ["facility_evacuated", "hydrogen_alarm"],
               "states": [
