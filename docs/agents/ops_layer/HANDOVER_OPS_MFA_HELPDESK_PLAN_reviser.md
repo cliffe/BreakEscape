@@ -1,46 +1,39 @@
-# Handover: OPS_MFA_HELPDESK_PLAN reviser, round 2
+# Handover: OPS_MFA_HELPDESK_PLAN reviser, after review round 3
 
-Stopped at the context limit on 2026-11-19. Nothing committed.
+Stopped at the context limit on 2026-11-19. Nothing is committed.
 
 ## Done
 
-- Every R2 major (R2-1, R2-2) and minor (R2-3 to R2-11, R2-13, R2-14) is written into
-  `docs/achitechture/OPS_MFA_HELPDESK_PLAN.md`, plus nit R2-12 (sign-in steps named, not numbered).
-  Round 1 items F7, F10, F8, F13 are closed by the same edits.
-- Orchestrator rulings 1 to 4 and the mid-task log ruling (snake_case names, merged prompt rows,
-  "saved by" per row) are in sections 3, 5.2, 13 and 14.
-- Round 2 decisions appended to `docs/agents/ops_layer/reviews/OPS_MFA_HELPDESK_DECISIONS.md`.
-- Open questions cut from six to four; "talking an owner into a code" settled in section 5.5.
+- Every R3 finding (N1 to N13) is acted on in `docs/achitechture/OPS_MFA_HELPDESK_PLAN.md`.
+  Findings fixed differently from the suggestion are in
+  `docs/agents/ops_layer/reviews/OPS_MFA_HELPDESK_DECISIONS.md` (rows `R3-*`).
+- The R3 trim list is applied, with further cuts. The plan is 1101 lines and 14354 words (it was
+  1125 lines and 14178 words).
+- Coordinator requirement of 2026-11-19: section 5.2 says the second step is written as functions
+  taking an owner and a subject, and "Later slices" in section 3 names S8c. S8c is not designed.
 
-## Open
+## Not done
 
-1. **The plan is not smaller.** 1013 lines before, 1125 after. The cuts (stage M4, the keyring
-   re-judge, the phone-menu approval) were outweighed by the new rules. A trimming pass is needed.
-   Likely places: section 2 (tables restate code a builder can read), section 5.2's device-gate
-   prose, section 5.3's sign-in screen bullets, section 7's general-rule paragraph, section 9's
-   warning list, section 11's controller bullets (they repeat the beats table).
-2. **Not re-read after editing.** The whole file was edited by string, never read end to end
-   afterwards. Read it once for leftovers: a grep for `M4`, `credential_login_checks`,
-   `generation`, `codeExpired`, `step 5` and `six users` is clean, but check section 4.1's field
-   table, section 7's table, section 8's reload paragraph and section 9's graph paragraph for
-   wording that still assumes a saved connection takes the step or a phone menu entry exists.
-3. Section 5.5 still has the row "A code device's read code"; check it against the new `used`
-   rule (a used code is not carried back).
+1. **The end-to-end read in ranges was not done.** A grep for stale wording was clean
+   (`lastRead`, `typeToSignIn`, `mfa: true`, "rest of the game", `as: nil`, `agent`, review
+   ids), but nobody has read the whole plan since the edits. Read it once and fix contradictions.
+   Places most likely to hold one: the M1a row of the section 3 table (it lists what M1a adds and
+   does not name the code-step closure or `mfa_code_locked`); the section 12 shared files table;
+   section 8's reload paragraph (it does not mention `closedAt` or `typed`); section 9's errors
+   paragraph against the new warnings table; beats F16 to F18 against the cast table in section 11.
+2. **The 1000-line target is missed by about 100 lines.** Candidates that cost nothing a builder
+   needs: section 2.4's first two bullets against 5.3; section 1's "Which ways in" paragraph
+   against 5.2; the JS test paragraph in section 11 as a table; section 10's table rows that only
+   say "read only when the field is set".
+3. Section 5.4 (determinism) and the shortened section 5.5 could merge into one short section;
+   section 15's opening line points at 5.5.
 
 ## Gotchas
 
-- A player drop keeps the item's `owner` in `objects_added` (`game.rb:1143-1166`), so the pickup
-  test must skip player drops as well as authored objects. The plan uses `droppedItems` for that.
-- Grep finds three sites that build the lockout key, not four (`game.rb:3483`, `:3580`,
-  `access_work.rb:1393`); `credential_login.rb:59` calls `account_locked_out_at?`.
-- `mfa_prompt_sent` carries no `request` detail on purpose: the log helper merges only exact
-  repeats, so a per-request number would stop the run merging.
-- Unverified pointers taken from the review: `episode-model.js:518-547`,
-  `minigame-starters.js:1334-1350`, `games_controller.rb:3384-3399` (declared grants),
-  `social_feed.rb:265-273`.
-
-## Files touched
-
-- `docs/achitechture/OPS_MFA_HELPDESK_PLAN.md`
-- `docs/agents/ops_layer/reviews/OPS_MFA_HELPDESK_DECISIONS.md`
-- this note
+- The edits were made with two scratch scripts (line ranges and anchor pairs), not Edit; the
+  scripts are gone with the scratchpad and are not needed.
+- The log plan's helper contract was read at its "The helper" and "What the helper does, in
+  order" sections while it was still being finished. Section 13 here cites them by name. Check the
+  merge wording and the `once:` and `stored?` behaviour still match.
+- Dropping `agent` from `helpdesk_request` rests on an estimate that a typed username plus a
+  40-character agent passes the 400-byte row ceiling. S9 is asked to recompute (request 8).
