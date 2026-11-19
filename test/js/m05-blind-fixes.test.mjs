@@ -71,3 +71,8 @@ test('F1: found_upload_schedule is not set by the log (it gates the operator-nam
     const logBlock = erb.slice(erb.indexOf('"name": "transfer_queue.log"'), erb.indexOf('"id": "talentstack_envelope"'));
     assert.doesNotMatch(logBlock, /found_upload_schedule/);
 });
+
+test('F6: the HaX Recruiter text says she is on the phone, not that there is a number to find', () => {
+    assert.ok(erb.includes('"message": "That TalentStack call was the Recruiter. She stays on your phone, so ring her back'), 'new wording present');
+    assert.ok(!erb.includes('That TalentStack number is the Recruiter'), 'old wording gone');
+});
