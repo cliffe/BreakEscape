@@ -50,8 +50,9 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 Cross-plan R2 (`CROSS_PLAN_R2.md`, X1 to X26) and R3 (`CROSS_PLAN_R3.md`, Y1 to Y15, decisions in
 `CROSS_PLAN_R3_DECISIONS.md`, fixes `c6d80bf4c` and `8286ad26c`) are settled. R3 moved the shared
 golden mechanism (`bin/ops-golden-compare`, `ops_unchanged/`, the capture rake task) into the log
-plan's L1a and gave `MfaModel.held_item_sources` to MFA M1a. R3 found nothing above one major, now
-fixed, so no R4. Planning is complete apart from cracking.
+plan's L1a and gave `MfaModel.held_item_sources` to MFA M1a. R3 had one major (Y1), so a short R4
+delta over those two fix commits follows (`CROSS_PLAN_R4.md`); if it finds nothing above minor,
+planning is complete apart from cracking.
 
 ## 4. Model routing from here
 
