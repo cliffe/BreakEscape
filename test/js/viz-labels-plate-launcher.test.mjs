@@ -57,37 +57,45 @@ test('the MOTION tag stays below the CAM/time header row and inside its cell', (
   const src = /function motionTagPos[\s\S]*?\n}\n/.exec(js)[0];
   const pos = new Function(`const PIX = 4; ${src}; return motionTagPos;`)();
   const x = 100, y = 50, w = 168, fontPx = 8, tw = 48, header = y + 8 + fontPx; // header baseline
-  const high = pos(x + 40, y + 6, x, y, w, fontPx, tw); // box top near the cell top
+  const high = pos(x + 40, y + 6, 40, x, y, w, fontPx, tw); // box top near the cell top
   assert.ok(high.y - fontPx >= header, `glyph top ${high.y - fontPx} is below the header baseline ${header}`);
-  const normal = pos(x + 40, y + 60, x, y, w, fontPx, tw);
+  const normal = pos(x + 40, y + 60, 40, x, y, w, fontPx, tw);
   assert.equal(normal.y, y + 60 - 8, 'a box well down the cell keeps the usual two-pixel-unit lift');
-  const right = pos(x + w - 10, y + 60, x, y, w, fontPx, tw);
+  const right = pos(x + w - 10, y + 60, 40, x, y, w, fontPx, tw);
   assert.ok(right.x + tw <= x + w - 8, 'right edge inside the cell');
-  const left = pos(x - 20, y + 60, x, y, w, fontPx, tw);
+  const left = pos(x - 20, y + 60, 40, x, y, w, fontPx, tw);
   assert.ok(left.x >= x + 8, 'left edge inside the cell');
   for (const r of [high, normal, right, left]) assert.ok(Number.isInteger(r.x) && Number.isInteger(r.y));
-  assert.match(js, /motionTagPos\(bx, by, x, y, w, fontPx, _visCtx\.measureText\('MOTION'\)\.width\)/);
+  assert.match(js, /motionTagPos\(bx, by, bw, x, y, w, fontPx, _visCtx\.measureText\('MOTION'\)\.width\)/);
+  assert.match(js, /if \(mp\) _visCtx\.fillText\('MOTION', mp\.x, mp\.y\)/, 'a null position skips the tag');
 });
 
-test('the clamped MOTION tag keeps clear of the box brackets on short cells', () => {
+test('the clamped MOTION tag never touches any bracket arm, or is skipped', () => {
   const src = /function motionTagPos[\s\S]*?\n}\n/.exec(js)[0];
   const pos = new Function(`const PIX = 4; ${src}; return motionTagPos;`)();
   const hit = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3];
-  let clampedSeen = 0;
-  for (const fontPx of [8, 16]) for (const h of [80, 100, 108, 140]) for (const w of fontPx === 8 ? [168, 240] : [240, 320]) // 16px text only appears on wide windows
-    for (const mid of [0.51, 0.75, 1]) for (const dx of [-1, 0, 1]) {
-    const x = 100, y = 50, tw = fontPx * 6, k = 12, PIX = 4;
+  const PIX = 4, k = 12, x = 100, y = 50;
+  let clampedSeen = 0, shown = 0;
+  for (const fontPx of [8, 16]) for (let h = 72; h <= 140; h += h < 112 ? 4 : 28) for (let w = 140; w <= 420; w += 20)
+    for (const mid of [0.51, 0.6, 0.75, 0.9, 1]) for (const dx of [-1, -0.5, 0, 0.5, 1]) for (const dy of [-1, -0.5, 0, 0.5, 1]) {
+    const tw = fontPx * 6;
     const bw = w * (0.18 + mid * 0.15), bh = h * (0.25 + mid * 0.2);
-    const bx = x + w * 0.5 + dx * w * 0.2 - bw / 2, by = y + h * 0.55 - h * 0.08 - bh / 2;
-    const p = pos(bx, by, x, y, w, fontPx, tw);
+    const bx = x + w * 0.5 + dx * w * 0.2 - bw / 2, by = y + h * 0.55 + dy * h * 0.08 - bh / 2; // dy is the cos drift
+    const p = pos(bx, by, bw, x, y, w, fontPx, tw);
+    if (y + 8 + fontPx * 2 + 4 > by - 4) clampedSeen++;
+    if (!p) continue;
+    shown++;
     const tag = [p.x, p.y - fontPx, tw, fontPx];
-    if (by - 8 < y + 8 + fontPx * 2 + 4) clampedSeen++; else continue;
-    const arms = [[bx, by, k, PIX], [bx, by, PIX, k], [bx + bw - k, by, k, PIX], [bx + bw - PIX, by, PIX, k]];
-    for (const a of arms.slice(0, 2)) assert.ok(!hit(tag, a), `tag ${tag} hits left arm ${a} (h=${h} font=${fontPx} w=${w} mid=${mid})`);
+    const arms = [[bx, by, k, PIX], [bx, by, PIX, k], [bx + bw - k, by, k, PIX], [bx + bw - PIX, by, PIX, k],
+                  [bx, by + bh - PIX, k, PIX], [bx, by + bh - k, PIX, k], [bx + bw - k, by + bh - PIX, k, PIX], [bx + bw - PIX, by + bh - k, PIX, k]];
+    arms.forEach((a, i) => assert.ok(!hit(tag, a), `tag ${tag} hits arm ${i} ${a} (h=${h} font=${fontPx} w=${w} mid=${mid} dx=${dx} dy=${dy})`));
     assert.ok(Number.isInteger(p.x) && Number.isInteger(p.y));
     assert.ok(p.x >= x + 8 && p.x + tw <= x + w - 8, 'inside the cell');
   }
-  assert.ok(clampedSeen > 10, 'the clamp case is exercised');
+  assert.ok(clampedSeen > 1000, 'the clamp case is exercised');
+  assert.ok(shown > 1000, 'the tag is normally shown');
+  // nothing fits: a tiny cell with a box that fills it
+  assert.equal(pos(x + 4, y + 10, 100, x, y, 140, 16, 96), null, 'no clear spot: tag skipped');
 });
 
 test('MITRE labels: full names, else 3-letter codes, else none', () => {
@@ -107,8 +115,9 @@ test('MITRE labels: full names, else 3-letter codes, else none', () => {
   assert.equal(mode(m, tac, 300, 200, 120, 190, 220), 'none', 'spacing fine but even codes leave the panel');
   assert.equal(mode(m, tac, 300, 200, 80, 224, 150), 'none', 'codes fit the spacing but not the panel');
   assert.doesNotMatch(js, /t\.slice\(0,\s*5\)/, 'no tactic name is sliced');
-  const drawn = (rIn) => { const mm = mode(m, tac, 300, 600, rIn, 0, 800); return mm === 'full' ? tac : mm === 'code' ? cds : []; };
-  for (const r of [40, 60, 80, 120, 160, 169, 171, 200, 300]) for (const l of drawn(r)) assert.ok(tac.includes(l) || cds.includes(l), `${l} at R=${r} is a whole name or a code`);
+  const block = js.slice(js.indexOf('const tacticMode=mitreLabelMode'), js.indexOf('const tacticMode=mitreLabelMode') + 1500);
+  assert.match(block, /fillText\(tacticMode==='code'\?MITRE_CODES\[i\]:t,/, 'draws a whole name or a code');
+  assert.doesNotMatch(block.split('\n').slice(0, 25).join('\n'), /\bt\.(slice|substring|substr)\(/, 'no tactic name is cut in the MITRE label block');
   assert.match(js, /tacticMode!=='none'/);
   assert.match(js, /tacticMode==='code'\?MITRE_CODES\[i\]/);
 });
@@ -136,7 +145,7 @@ test('city labels are drawn after the dots and pulses, and keep a gap from each 
 });
 
 test('8px canvas text is drawn at whole-pixel origins', () => {
-  for (const re of [/MITRE_CODES\[i\]:t,Math\.round\(tx-8\),Math\.round\(ty-4\)\)/, /const tx = Math\.round\(Math\.max\(x \+ pad/, /Math\.round\(col1X\+col1W\/2\),Math\.round\(c1y\+40\)/, /_visCtx\.fillText\(l\.name,l\.lx,l\.ly\)/, /lx=Math\.round\(lx\)/]) assert.match(js, re);
+  for (const re of [/MITRE_CODES\[i\]:t,Math\.round\(tx-8\),Math\.round\(ty-4\)\)/, /x: Math\.round\(Math\.max\(x \+ pad/, /Math\.ceil\(bx \+ PIX \* 4\)/, /Math\.round\(col1X\+col1W\/2\),Math\.round\(c1y\+40\)/, /_visCtx\.fillText\(l\.name,l\.lx,l\.ly\)/, /lx=Math\.round\(lx\)/]) assert.match(js, re);
 });
 
 test('SIEM panel titles reach 4.5:1 on the panel background and the plate fallback matches its token', () => {

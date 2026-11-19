@@ -83,21 +83,25 @@ function cctvCellLabel(measure, label, cellW, fontPx) {
 }
 
 /**
- * Where the CCTV MOTION tag goes: its baseline is kept below the CAM/time header row, and its
- * left edge inside the cell. Whole pixels. Pure: textW is the drawn width of "MOTION".
+ * Where the CCTV MOTION tag goes, or null when it has nowhere clear to sit (it is decoration, the
+ * caller skips it). Its baseline is kept below the CAM/time header row and its left edge inside the
+ * cell. When the baseline would land beside the box rows (floorY > by - PIX) the tag tries, in order,
+ * just inside the left bracket arm, right of the box, left of the box, and takes the first that is
+ * inside the cell and clear of every bracket arm. Whole pixels. Pure: textW is the drawn width of
+ * "MOTION"; bw is the box width.
  */
-function motionTagPos(bx, by, x, y, w, fontPx, textW) {
-    const pad = PIX * 2;
+function motionTagPos(bx, by, bw, x, y, w, fontPx, textW) {
+    const pad = PIX * 2, armLen = PIX * 3;
     const floorY = y + pad + fontPx * 2 + PIX;
-    const clamped = by - PIX * 2 < floorY; // the lift would put it on the header, so it sits beside the box
     const ty = Math.round(Math.max(by - PIX * 2, floorY));
-    let want = bx;
-    if (clamped) { // past the 3-unit bracket arm, not under it; left of the box when the right edge is short
-        want = bx + PIX * 4;
-        if (want + textW > x + w - pad && bx - PIX - textW >= x + pad) want = bx - PIX - textW;
+    const inCell = c => c >= x + pad && c + textW <= x + w - pad;
+    if (floorY <= by - PIX) { // already above the box rows: nothing to clear
+        return { x: Math.round(Math.max(x + pad, Math.min(bx, x + w - pad - textW))), y: ty };
     }
-    const tx = Math.round(Math.max(x + pad, Math.min(want, x + w - pad - textW)));
-    return { x: tx, y: ty };
+    const clear = c => c + textW <= bx + bw - armLen - PIX || c >= bx + bw + PIX || c + textW <= bx - PIX;
+    const candidates = [Math.ceil(bx + PIX * 4), Math.ceil(bx + bw + PIX), Math.floor(bx - PIX - textW)];
+    for (const c of candidates) if (inCell(c) && clear(c)) return { x: c, y: ty };
+    return null;
 }
 
 const MITRE_CODES = ['REC','RES','INI','EXE','PER','PRV','DEF','CRE','DIS','LAT','COL','C2','EXF','IMP'];
@@ -1507,8 +1511,8 @@ function drawCCTV(data, W, H, audio) {
                 _visCtx.fillRect(dx > 0 ? cx : cx - PIX, dy > 0 ? cy : cy - k, PIX, k);
             });
             _visCtx.font = `${fontPx}px "Press Start 2P"`;
-            const mp = motionTagPos(bx, by, x, y, w, fontPx, _visCtx.measureText('MOTION').width);
-            _visCtx.fillText('MOTION', mp.x, mp.y);
+            const mp = motionTagPos(bx, by, bw, x, y, w, fontPx, _visCtx.measureText('MOTION').width);
+            if (mp) _visCtx.fillText('MOTION', mp.x, mp.y);
             if (t - cctvLastMotionLog > 10) { cctvLastMotionLog = t; addLog(`> MOTION: ${feed.label}`, 'alert'); }
         }
 
