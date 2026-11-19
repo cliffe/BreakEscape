@@ -1297,7 +1297,7 @@ test('R5 m2, m3, n2 to n5: the CSS', () => {
         assert.equal(+m[1] % 8, 0, `Press Start 2P at ${m[1]}px`);
     }
     assert.match(rule('.password-info h4'), /font-size: 16px;[\s\S]*font-weight: normal;/);
-    // the frame's X (the framework gives it Press Start 2P at 18px)
+    // the frame's X (the framework gave it Press Start 2P at 18px, now 16px)
     assert.match(rule('.password-frame > .minigame-close-button'), /font-size: 16px;/);
     // no synthetic bold on GNF, and no 13.33px button default
     assert.match(rule('.attempts-counter span'), /font-weight: normal;/);
