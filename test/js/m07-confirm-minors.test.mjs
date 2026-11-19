@@ -30,6 +30,37 @@ test('Ray: contractor-list option is offered once, then hidden', () => {
   assert.ok(/already tried that one/.test(after.out) === false, 'no repeat line is reachable from the hub');
 });
 
+test('Park: each dead refusal leaves the hub after its second hearing, with the cue shown', () => {
+  const st = story('m07_npc_thomas_park.json');
+  st.ChoosePathString('hub');
+  let r = run(st);
+  const has = (re) => r.choices.some(c => re.test(c));
+  assert.ok(has(/Step away/) === true && has(/Who's paying/) === true, 'both offered at first');
+  const pick = (re) => { st.ChooseChoiceIndex(r.choices.findIndex(c => re.test(c))); r = run(st); };
+  pick(/Step away/);
+  assert.ok(has(/Step away/) === true, 'still offered after one hearing');
+  pick(/Step away/);
+  assert.ok(/number on it/.test(r.out) === true, 'second hearing carries the signed-number cue');
+  assert.ok(has(/Step away/) === false, 'hidden after the cue');
+  assert.ok(has(/Who's paying/) === true, 'the other refusal is unaffected');
+  pick(/Who's paying/);
+  pick(/Who's paying/);
+  assert.ok(/signed number/.test(r.out) === true, 'second hearing of the money question carries its cue');
+  assert.ok(has(/Who's paying/) === false, 'hidden after the cue');
+  assert.ok(has(/Fight him/) === true && has(/Back off/) === true, 'fight and back off remain');
+});
+
+test('Park: a read projection still opens his way out, and the cue is withheld once found', () => {
+  const st = story('m07_npc_thomas_park.json');
+  st.variablesState['casualty_projection_found'] = true;
+  st.ChoosePathString('hub');
+  let r = run(st);
+  assert.ok(r.choices.some(c => /Read this/.test(c)) === true, 'projection option is offered');
+  st.ChooseChoiceIndex(r.choices.findIndex(c => /Step away/.test(c))); r = run(st);
+  st.ChooseChoiceIndex(r.choices.findIndex(c => /Step away/.test(c))); r = run(st);
+  assert.ok(/number on it/.test(r.out) === false, 'no cue when the projection is already in hand');
+});
+
 test('Substation map reads in place (readDisplay) and keeps its text', () => {
   const src = readFileSync(join(dir, 'scenario.json.erb'), 'utf8');
   const i = src.indexOf('"id": "substation_map"');
