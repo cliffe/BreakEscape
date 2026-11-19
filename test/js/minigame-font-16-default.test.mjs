@@ -42,7 +42,7 @@ function varFace(value) {
 // Form controls inside .minigame-container draw in GNF whatever the sheet root says:
 // `.minigame-container button { font-family: 'GNF' }` is (0,1,1), which beats a sheet's (0,1,0)
 // `.x-btn { font-family: inherit }` or `{ font-family: 'VT323' }`. Odd button class names go here.
-const EXTRA_CONTROLS = new Set(['lf-filter-token-remove', 'dusting-view', 'fdp-tab']);
+const EXTRA_CONTROLS = new Set(['lf-filter-token-remove', 'dusting-view', 'fdp-tab', 'fpr-card']);
 function lastCompound(sel) {
     const last = sel.split(',').pop().trim();
     return last.split(/[\s>+~]+/).pop();
@@ -52,7 +52,7 @@ function isControl(sel) {
     return sel.split(',').some((part) => {
         const c = lastCompound(part);
         return /^(button|input|select|textarea)\b/.test(c) || /(?:^|[^\w-])(button|input|select|textarea)\b/.test(c)
-            || /\.[\w-]*-(btn|button)\b/.test(c) || [...EXTRA_CONTROLS].some((n) => c.includes('.' + n));
+            || /\.[\w-]*-(btn|button)\b/.test(c) || [...EXTRA_CONTROLS].some((n) => new RegExp('\\.' + n + '(?![\\w-])').test(c));
     });
 }
 function specificity(sel) {
