@@ -2286,16 +2286,24 @@ export function tryInteractWithNearest() {
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
-        // A scenario object is aimed at from the feet to its centre: from the sprite centre (about 31px up) a short prop's
-        // top edge read far off the facing and lost to a taller neighbour (m01 safe beside the cabinet)
-        const fromFeet = !!target && !npcSprite && !target.doorProperties;
-        const from = fromFeet ? footOf(player) : { x: px, y: py };
-        let score = angularDiff(faceX, faceY, from.x, from.y) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        // A scenario object is aimed at from the feet to its centre. From the sprite centre (about 31px up) to its top edge, a
+        // short prop read far off the facing and lost to a taller neighbour (m01 safe beside the cabinet). That older
+        // aim still counts when it is the better of the two: a player level with a low prop beside them faces it from
+        // the body, and the feet-to-centre angle alone would call it 45 degrees off. The smaller angle wins.
+        let aim = { x: faceX, y: faceY, fromX: px, fromY: py };
+        if (target && !npcSprite && !target.doorProperties) {
+            const foot = footOf(player);
+            const feetAim = { x: faceX, y: faceY, fromX: foot.x, fromY: foot.y };
+            const bodyAim = { x: faceX, y: target.y, fromX: px, fromY: py };
+            const d = (a) => angularDiff(a.x, a.y, a.fromX, a.fromY);
+            aim = d(feetAim) <= d(bodyAim) ? feetAim : bodyAim;
+        }
+        let score = angularDiff(aim.x, aim.y, aim.fromX, aim.fromY) * 1000 + dist; // angle to the object's centre, range to its nearest part
         // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
         // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
         if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, fromX: from.x, fromY: from.y, handleFn }; }
+        if (score < bestScore) { bestScore = score; best = { objX: aim.x, objY: aim.y, fromX: aim.fromX, fromY: aim.fromY, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
