@@ -57,13 +57,21 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
 
 | Plan | Draft | R1 | R2 | R3 | R4 | R5 |
 |---|---|---|---|---|---|---|
-| OPS_CORE | | | | | | |
-| OPS_PRIVILEGE_ACCOUNTS | | | | | | |
-| OPS_REALISM_SKIN | | | | | | |
-| OPS_CRACKING | | | | | | |
-| OPS_MFA_HELPDESK | | | | | | |
-| OPS_LOG_ROWS | | | | | | |
+| OPS_CORE | partial `23d08537c` (9-12 being written, Fable) | waits for draft (Opus) | | | | |
+| OPS_PRIVILEGE_ACCOUNTS | `9f5216ba8` (opus48) | running (Fable) | | | | |
+| OPS_REALISM_SKIN | `1f9fc50e3` | running (Opus) | | | | |
+| OPS_CRACKING | `5e88e7aff` (opus48) | running (Fable) | | | | |
+| OPS_MFA_HELPDESK | `6995773a9` | running (Opus) | | | | |
+| OPS_LOG_ROWS | `aa595c30d` | running (Fable) | | | | |
 
 ## Decisions and questions for the user
 
-(none yet)
+- 10:50. Cross-plan R1 review running (Fable), findings to `reviews/CROSS_PLAN_R1.md`: request
+  ledger with recommended rulings, conflicts, one merged list of open questions.
+- Open questions raised by the drafts: core 8, skin 8, cracking 4, MFA 11, privilege 5, log rows 7.
+  They go on one picks page after R1, from the cross-plan reviewer's merged list.
+- To watch: the skin plan's client `MOVES` table against the user's "no moves registry" decision;
+  privilege S5b declares cached accounts statically, not from NPC routine as the outline says;
+  MFA codes use real server time; log rows keep up to 300 rows in `player_state`.
+- Outside this stream (tell the user, do not fix): the anomaly row in the sis01/sis02 log
+  terminals is visibly tinted (`log-filter-minigame.css:336-342`).
