@@ -108,10 +108,15 @@ const exportKit = (shell) => {
 };
 const hostOf = (sc) => {
   const npcs = sc.rooms.training_room.npcs.filter((n) => !n.id.startsWith('kit_'));
-  return npcs.find((n) => (n.storyPath || '').startsWith(`scenarios/${sc.scenario_id}/ink/`)) || npcs[0];
+  return npcs.find((n) => n.position && (n.storyPath || '').startsWith(`scenarios/${sc.scenario_id}/ink/`)) || npcs[0];
 };
+// mirrors office_kit.KIT_NAME: a kit_ name, not the tail of another (skit_x, payload_kit_x)
+const KIT_NAME = /(?<![A-Za-z0-9_])kit_/;
 const isKitMapping = (m) => Object.keys(m.setGlobal || {}).some((k) => k.startsWith('kit_')) ||
-  String(m.condition || '').includes('kit_') || String(m.knot || '').includes('kit_');
+  KIT_NAME.test(String(m.condition || '')) || KIT_NAME.test(String(m.knot || ''));
+// key-order independent, so the tool's export and the shell compare by content
+const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x)
+  ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
 const kitShellNames = () => readdirSync(scenarios, { withFileTypes: true })
   .filter((d) => d.isDirectory() && /^(ca\d\d_|test_ca_office_kit)/.test(d.name))
   .map((d) => d.name)
@@ -119,7 +124,10 @@ const kitShellNames = () => readdirSync(scenarios, { withFileTypes: true })
     readShell(n).rooms.training_room.npcs.some((x) => x.id.startsWith('kit_'))); // not payloadKit ids such as ca02's
 
 test('kit: every non-fixture kit row has its shell, and the shell holds exactly what the tool exports', () => {
-  for (const r of kitRows.filter((x) => !x.fixture)) {
+  const rows = kitRows.filter((x) => !x.fixture);
+  assert.ok(rows.length > 0, 'no non-fixture kit row: this test would pass without comparing anything');
+  let compared = 0;
+  for (const r of rows) {
     const sc = readShell(r.id);
     const want = exportKit(r.id);
     const tr = sc.rooms.training_room;
@@ -128,10 +136,21 @@ test('kit: every non-fixture kit row has its shell, and the shell holds exactly 
       objects: tr.objects.filter((o) => o.id.startsWith('kit_')),
       globals: Object.fromEntries(Object.entries(sc.globalVariables).filter(([k]) => k.startsWith('kit_'))),
       mappings: (hostOf(sc).eventMappings || []).filter(isKitMapping),
+      timers: (sc.timers || []).filter((t) => String(t.id || '').startsWith('kit_')),
+      scenario: {
+        ...(sc.npcThoughts !== undefined ? { npcThoughts: sc.npcThoughts } : {}),
+        ...(sc.officePresets !== undefined ? { officePresets: sc.officePresets } : {}),
+        ...(Object.keys(sc.chatter || {}).some((k) => k.startsWith('kit_'))
+          ? { chatter: Object.fromEntries(Object.entries(sc.chatter).filter(([k]) => k.startsWith('kit_'))) } : {}),
+      },
       stepAway: sc.social.awarenessEpisode.stepAway === true,
     };
-    for (const k of Object.keys(got)) assert.ok(JSON.stringify(got[k]) === JSON.stringify(want[k]), `${r.id}: ${k} differs from the tool's export`);
+    for (const k of Object.keys(got)) {
+      assert.ok(canon(got[k]) === canon(want[k]), `${r.id}: ${k} differs from the tool's export`);
+      compared += 1;
+    }
   }
+  assert.ok(compared >= rows.length * 7, `compared ${compared} sections`);
 });
 
 test('kit: the gate A fixture still carries everything the tool exports for it (it may add a chain on top)', () => {

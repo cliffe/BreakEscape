@@ -46,8 +46,8 @@ def row(**kw):
 class FixtureEquivalence(unittest.TestCase):
     def setUp(self):
         self.fx = fixture_at_commit()
-        if self.fx is None:
-            self.skipTest('pinned fixture commit not available')
+        if self.fx is None:     # a shallow clone must fail here, not skip the equivalence proof
+            self.fail(f'pinned fixture commit {FIXTURE_COMMIT} is not available (git fetch --unshallow)')
 
     def test_kit_owned_members_equal_the_tool_output(self):
         r = ok.row_for('test_ca_office_kit')
@@ -269,8 +269,8 @@ class Generators(unittest.TestCase):
                 for f in ('scenario.json.erb', 'mission.json'):
                     new = open(os.path.join(out, d, f), 'rb').read()
                     old = subprocess.run(['git', '-C', REPO, 'show', f'HEAD:scenarios/{d}/{f}'], capture_output=True).stdout
-                    if old:
-                        self.assertEqual(new, old, f'{d}/{f}')
+                    self.assertTrue(old, f'{d}/{f} has no HEAD copy to compare with')
+                    self.assertEqual(new, old, f'{d}/{f}')
 
     def test_checks_pass_tier_none(self):
         import gen_e1_shells as g
@@ -292,7 +292,7 @@ class KitMode(unittest.TestCase):
     def setUp(self):
         self.fx = fixture_at_commit()
         if self.fx is None:
-            self.skipTest('pinned fixture commit not available')
+            self.fail(f'pinned fixture commit {FIXTURE_COMMIT} is not available (git fetch --unshallow)')
         text = subprocess.run(['git', '-C', REPO, 'show', f'{FIXTURE_COMMIT}:scenarios/test_ca_office_kit/scenario.json.erb'],
                               capture_output=True, text=True).stdout
         self.text = text
@@ -329,6 +329,182 @@ class KitMode(unittest.TestCase):
                                capture_output=True, text=True, cwd=tempfile.gettempdir())
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertTrue(os.path.exists(os.path.join(out, 'test_ca_office_kit', 'scenario.json.erb')))
+
+
+def shell_text(name):
+    return open(os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')).read()
+
+
+def dumped(sc):
+    return json.dumps(sc, indent=2, ensure_ascii=False) + '\n'
+
+
+class ReviewFixes(unittest.TestCase):
+    """W1A tools review R1, findings 1 to 4 and 6 to 8."""
+
+    def kit(self):
+        return ok.load_kit('brightwell_foods')
+
+    # 1: host lookup ignores an unpositioned NPC with the same ink; kit() writes nothing until all build
+    def test_host_lookup_ignores_the_unpositioned_second_story_npc(self):
+        sc = json.loads(shell_text('ca03_helpdesk_reset'))
+        npcs = sc['rooms']['training_room']['npcs']
+        self.assertEqual([('position' in n) for n in npcs], [True, False])
+        self.assertEqual(ok._find_host(sc)['id'], npcs[0]['id'])
+        r = row(id='ca03_helpdesk_reset', ep='ca03', stub='ca03')
+        out = ok.apply_kit(sc, self.kit(), r)
+        self.assertEqual(ok.strip_kit(out), ok.strip_kit(sc))
+        new = atr.kit_text(shell_text('ca03_helpdesk_reset'), self.kit(), r, 'ca03_helpdesk_reset')
+        self.assertEqual(json.loads(new), out)
+
+    def test_kit_writes_nothing_when_a_later_row_fails(self):
+        rows = [row(id='ca01_invoice_fraud', ep='ca01', setPiece=None, attack=True),
+                row(id='ca99_no_such_shell')]
+        saved = ok.load_rows
+        ok.load_rows = lambda kits_dir=None: rows
+        try:
+            with tempfile.TemporaryDirectory() as out:
+                with self.assertRaises(SystemExit):
+                    atr.kit(out)
+                self.assertEqual(os.listdir(out), [])
+        finally:
+            ok.load_rows = saved
+
+    # 2: a shell with no triage set (ca00)
+    def test_shell_ids_without_a_triage_set(self):
+        sc = json.loads(shell_text('ca00_first_play'))
+        self.assertEqual(sc['social'].get('triageSets', []), [])
+        with self.assertRaises(ValueError) as cm:
+            ok.shell_ids(sc)
+        self.assertIn("'prefix'", str(cm.exception))
+        self.assertEqual(ok.shell_ids(sc, {'prefix': 'episode_core_00_first_play_'}),
+                         ('episode_core_00_first_play_', 'episode_core_00_first_play_state'))
+        # a shell with a set is unchanged, and the row wins when it names a prefix
+        tw = twin_shell()
+        self.assertEqual(ok.shell_ids(tw)[0], 'episode_e1_invoice_fraud_defend_defend_')
+        self.assertEqual(ok.shell_ids(tw, {'prefix': 'p_'})[0], 'p_')
+
+    # 3: top-level chatter is shared; only kit_ keys belong to the kit
+    def own_chatter_shell(self):
+        sc = twin_shell()
+        sc['chatter'] = {'shell_pool': {'lines': ['Hello.'], 'requireGlobal': {'x': True}}}
+        return sc
+
+    def test_strip_keeps_the_shells_own_chatter(self):
+        sc = self.own_chatter_shell()
+        out = ok.apply_kit(sc, self.kit(), row())
+        self.assertEqual(set(out['chatter']), {'shell_pool', 'kit_brightwell'})
+        self.assertEqual(ok.strip_kit(out), sc)
+        self.assertEqual(set(ok.kit_owned(out)['scenario']['chatter']), {'kit_brightwell'})
+        bare = ok.strip_kit(ok.apply_kit(twin_shell(), self.kit(), row()))
+        self.assertNotIn('chatter', bare)        # an all-kit chatter object goes entirely
+
+    def test_splice_keeps_the_shells_own_chatter(self):
+        sc = self.own_chatter_shell()
+        new = atr.kit_text(dumped(sc), self.kit(), row(), 'x')
+        self.assertEqual(json.loads(new), ok.apply_kit(sc, self.kit(), row()))
+        self.assertEqual(json.loads(atr.kit_text(new, self.kit(), row(), 'x')), json.loads(new))
+        self.assertEqual(json.loads(dumped(ok.strip_kit(json.loads(new)))), sc)
+
+    # 4: whole-name matching
+    def test_kit_ownership_matches_a_whole_name_only(self):
+        for cond in ('globalVars.kit_quiet === false', 'kit_x', "value === true && !kit_x"):
+            self.assertTrue(ok.is_kit_mapping({'condition': cond}), cond)
+        for cond in ('globalVars.skit_x === true', 'globalVars.payload_kit_x', 'ghost_kit_1'):
+            self.assertFalse(ok.is_kit_mapping({'condition': cond}), cond)
+        self.assertFalse(ok.is_kit_mapping({'knot': 'skit_one'}))
+        self.assertTrue(ok.is_kit_mapping({'knot': 'kit_one'}))
+        sc = twin_shell()
+        host = sc['rooms']['training_room']['npcs'][0]
+        host['eventMappings'].append({'eventPattern': 'e', 'condition': 'globalVars.skit_x === true', 'setGlobal': {'other': True}})
+        self.assertEqual(ok.strip_kit(sc), sc)
+
+    # 6: the splice and apply_kit agree on key order; kit resources and roles are emitted
+    def test_splice_matches_apply_kit_key_order(self):
+        for kw in ({}, {'attack': True, 'stepAway': True}):
+            sc = twin_shell()
+            r = row(**kw)
+            new = json.loads(atr.kit_text(dumped(sc), self.kit(), r, 'x'))
+            want = ok.apply_kit(sc, self.kit(), r)
+            self.assertEqual(json.dumps(new), json.dumps(want))
+            self.assertEqual(list(new)[list(new).index('disableAttacks') + 1], 'npcThoughts')
+            self.assertEqual(list(new)[list(new).index('globalVariables') + 1], 'chatter')
+
+    def test_kit_resources_and_roles_are_emitted_and_stripped(self):
+        kit = copy.deepcopy(self.kit())
+        kit['resources'] = {'kit_mug': {'label': 'Mug'}}
+        kit['roles'] = [{'id': 'kit_role_a', 'label': 'A'}]
+        sc = twin_shell()
+        sc['resources'] = {'own_res': {'label': 'Own'}}
+        out = ok.apply_kit(sc, kit, row())
+        self.assertEqual(out['resources'], {'own_res': {'label': 'Own'}, 'kit_mug': {'label': 'Mug'}})
+        self.assertEqual(out['roles'], [{'id': 'kit_role_a', 'label': 'A'}])
+        self.assertEqual(ok.build(kit, row(), 'p_', 's')['roles'], out['roles'])
+        self.assertEqual(ok.kit_owned(out)['resources'], {'kit_mug': {'label': 'Mug'}})
+        self.assertEqual(ok.strip_kit(out), sc)
+        new = atr.kit_text(dumped(sc), kit, row(), 'x')
+        self.assertEqual(json.dumps(json.loads(new)), json.dumps(out))
+        self.assertEqual(atr.kit_text(new, kit, row(), 'x'), new)
+        kit['roles'] = [{'id': 'plain'}]
+        with self.assertRaises(ValueError):
+            ok.build(kit, row(), 'p_', 's')
+
+    # 7: generator and kit() refuse rows they must never write
+    def test_hand_authored_and_check_rows_are_refused(self):
+        import gen_e1_shells as g
+        with self.assertRaises(ValueError):
+            ok.refuse_hand_authored_row(row(id='ca01_invoice_fraud', handAuthored=True))
+        ok.refuse_hand_authored_row(row(handAuthored=True, tier='none'))
+        for name in ('ca_pre_general_v2_ab', 'ca_post_x', 'ca_annual_y'):
+            with self.assertRaises(ValueError):
+                ok.refuse_check_row(row(id=name))
+        ok.refuse_check_row(row(id='ca01_invoice_fraud'))
+        with self.assertRaises(ValueError):
+            g.scenario('m', 'n', 'b', 'e', ('a', 't', 'd'), ('t', 'T'), 'd', {}, {'awarenessEpisode': {'id': 'e', 'company': 'brightwell_foods'}},
+                       g.HOSTS['adaeze'], 'x', ('o', 'o'), {}, tier='S', kit_row=row(handAuthored=True))
+
+    def test_kit_refuses_a_check_row_before_writing(self):
+        rows = [row(id='ca01_invoice_fraud', ep='ca01', attack=True), row(id='ca_pre_general_v2_ab')]
+        saved = ok.load_rows
+        ok.load_rows = lambda kits_dir=None: rows
+        try:
+            with tempfile.TemporaryDirectory() as out:
+                with self.assertRaises(SystemExit) as cm:
+                    atr.kit(out)
+                self.assertIn('never carry the office kit', str(cm.exception))
+                self.assertEqual(os.listdir(out), [])
+        finally:
+            ok.load_rows = saved
+
+    # 8: _splice_object on a compact object; a host with no eventMappings; no empty list left behind
+    def test_splice_object_handles_a_compact_first_line(self):
+        text = '{\n  "a": {"x": 1, "kit_y": 2},\n  "b": 3\n}\n'
+        start = atr._member(text, 0, 'a')[0]
+        new = atr._splice_object(text, start, lambda k: k.startswith('kit_'), [('kit_z', 9)])
+        self.assertEqual(json.loads(new), {'a': {'x': 1, 'kit_z': 9}, 'b': 3})
+        self.assertIn('\n    "x": 1', new)            # members sit 2 deeper than the brace line, not at its text offset
+        self.assertEqual(json.loads(atr._splice_object(text, start, lambda k: False, [])), {'a': {'x': 1, 'kit_y': 2}, 'b': 3})
+
+    def test_host_with_no_event_mappings(self):
+        sc = twin_shell()
+        host = sc['rooms']['training_room']['npcs'][0]
+        host.pop('eventMappings')
+        r = row(attack=True, stepAway=True)
+        out = ok.apply_kit(sc, self.kit(), r)
+        self.assertTrue(out['rooms']['training_room']['npcs'][0]['eventMappings'])
+        new = atr.kit_text(dumped(sc), self.kit(), r, 'x')
+        self.assertEqual(json.dumps(json.loads(new)), json.dumps(out))
+        self.assertEqual(atr.kit_text(new, self.kit(), r, 'x'), new)
+        # the round trip gives the shell back without an empty eventMappings
+        stripped = ok.strip_kit(json.loads(new))
+        self.assertNotIn('eventMappings', stripped['rooms']['training_room']['npcs'][0])
+        self.assertEqual(stripped, sc)
+
+    def test_strip_keeps_an_eventmappings_list_the_shell_already_had_empty(self):
+        sc = twin_shell()
+        sc['rooms']['training_room']['npcs'][0]['eventMappings'] = []
+        stripped = ok.strip_kit(sc)
+        self.assertEqual(stripped['rooms']['training_room']['npcs'][0]['eventMappings'], [])
 
 
 if __name__ == '__main__':

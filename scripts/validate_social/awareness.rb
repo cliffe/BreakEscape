@@ -857,10 +857,14 @@ module ValidateSocial
       return [] unless gv.is_a?(Hash) && gv.keys.any? { |k| k.to_s.start_with?('kit_') }
 
       sets = []
+      events = []   # eventPatterns of mappings that set any kit_ global, named in the warning
       walk = lambda do |node|
         case node
         when Hash
-          sets << node['setGlobal'] if node['eventPattern'] && node['setGlobal'].is_a?(Hash)
+          if node['eventPattern'] && node['setGlobal'].is_a?(Hash)
+            sets << node['setGlobal']
+            events << node['eventPattern'] if node['setGlobal'].keys.any? { |k| k.to_s.start_with?('kit_') }
+          end
           node.each_value { |v| walk.call(v) }
         when Array
           node.each { |v| walk.call(v) }
@@ -869,7 +873,8 @@ module ValidateSocial
       walk.call(ctx.json['rooms'])
       return [] if sets.any? { |h| h.key?('kit_defend_done') }
 
-      [warn_("stepAway is true but no eventMapping sets kit_defend_done; the panel's Look up button would stay disabled")]
+      found = events.uniq.empty? ? 'none' : events.uniq.join(', ')
+      [warn_("stepAway is true but no eventMapping sets kit_defend_done; the panel's Look up button would stay disabled (events that set other kit_ globals: #{found})")]
     end
 
     # ---- the defend set ----------------------------------------------------------

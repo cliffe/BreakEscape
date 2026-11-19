@@ -310,6 +310,8 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     sc['rooms'] = {'training_room': tr}
     if tier != 'none':
         assert kit_row and office_kit.tier_of(kit_row) == tier, f'{mission}: tier {tier!r} needs its episodes.json row'
+        office_kit.refuse_hand_authored_row(kit_row)   # hand-authored shells are touched only by apply_training_room.py --kit
+        office_kit.refuse_check_row(kit_row)
         sc = office_kit.apply_kit(sc, office_kit.load_kit(kit_row['company']), kit_row, host_id=host['id'])
         sc = office_kit.patch_kiosk(sc, kit_row)
     return sc

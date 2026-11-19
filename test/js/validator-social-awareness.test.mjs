@@ -1123,6 +1123,10 @@ test('living office: stepAway in a kit shell with no mapping that sets kit_defen
   assert.ok(hits(lint(j), lookUp) === 0);
   j.globalVariables = { ...(j.globalVariables || {}), kit_defend_done: false, kit_quiet: false };
   assert.ok(hits(lint(j), lookUp) === 1, lint(j).join('\n'));
+  // the warning names the event it did find (here a mistyped one setting another kit_ global)
+  const typo = structuredClone(j);
+  host(typo).eventMappings = [...(host(typo).eventMappings || []), { eventPattern: 'global_variable_changed:episode_e1_stub_defnd_complete', onceOnly: true, setGlobal: { kit_quiet: true } }];
+  assert.ok(hits(lint(typo), /events that set other kit_ globals: global_variable_changed:episode_e1_stub_defnd_complete/) === 1, lint(typo).join('\n'));
   host(j).eventMappings = [
     ...(host(j).eventMappings || []),
     { eventPattern: 'global_variable_changed:episode_e1_stub_defend_complete', condition: 'value === true', onceOnly: true, setGlobal: { kit_defend_done: true } },

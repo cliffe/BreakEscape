@@ -352,24 +352,28 @@ def _rebuild(text, start, pieces, pad, close_pad):
     return text[:start] + body + text[end:]
 
 
-def _splice_object(text, start, drop, add):
-    """Object at `start`: drop members whose key satisfies `drop`, append (key, value) pairs `add`.
-    Kept members keep their own text. Returns new text."""
+def _splice_object(text, start, drop, add, after=None):
+    """Object at `start`: drop members whose key satisfies `drop`, add (key, value) pairs `add` right
+    after the kept member `after` (else at the end). Kept members keep their own text. Returns new text."""
     kept, olds = [], []
     first_key = None
+    after_at = None
     for key, ks, vs, ve in _members_full(text, start):
         first_key = ks if first_key is None else first_key
         s = text[ks:ve]
         olds.append(s)
         if not drop(key):
             kept.append(s)
-    pad = _line_indent(text, first_key) if first_key is not None else _line_indent(text, start).rstrip() + '  '
-    if first_key is None:
-        pad = ' ' * (len(_line_indent(text, start)) - len(_line_indent(text, start).lstrip()) + 2)
+            if key == after:
+                after_at = len(kept)
     close_pad = _line_indent(text, start)
     close_pad = close_pad[:len(close_pad) - len(close_pad.lstrip())]
+    if first_key is None or '\n' not in text[start:first_key]:
+        pad = close_pad + '  '        # empty or compact object ({"a": 1}): members go one per line, 2 deeper than the brace
+    else:
+        pad = _line_indent(text, first_key)
     fresh = [json.dumps(k) + ': ' + _indented(v, len(pad)) for k, v in add]
-    pieces = kept + fresh
+    pieces = kept + fresh if after_at is None else kept[:after_at] + fresh + kept[after_at:]
     if pieces == olds:
         return text
     return _rebuild(text, start, pieces, pad, close_pad)
@@ -407,14 +411,22 @@ def kit_text(text, kit, row, shell):
     old = json.loads(text)
     host_id = office_kit._find_host(old)['id']
     expect = office_kit.apply_kit(old, kit, row, host_id=host_id)
-    prefix, state_global = office_kit.shell_ids(old)
+    prefix, state_global = office_kit.shell_ids(old, row)
     b = office_kit.build(kit, row, prefix, state_global)
     is_kit = lambda e: office_kit.is_kit_member(e)  # noqa: E731
 
     # host mappings (deepest first, so the spans above are re-found afterwards)
     ha, _ = find_host_span(text, host_id, shell)
-    em = _member(text, ha, 'eventMappings')
-    text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'])
+    em = _try_member(text, ha, 'eventMappings')
+    cur = json.loads(text[em[0]:em[1]]) if em else []
+    if em and not (cur and all(office_kit.is_kit_mapping(m) for m in cur)):
+        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'])
+    else:
+        # none yet, or only kit mappings (strip_kit drops the key then): (re)create it at the host's end
+        if em:
+            text = _splice_object(text, ha, lambda k: k == 'eventMappings', [])
+        ha, _ = find_host_span(text, host_id, shell)
+        text = _splice_object(text, ha, lambda k: False, [('eventMappings', b['mappings'])])
     # room npcs and objects
     tr = _training_room(text)
     text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'])
@@ -427,41 +439,64 @@ def kit_text(text, kit, row, shell):
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
     text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()))
-    # top-level keys: npcThoughts, chatter, officePresets, and the kit's timers
-    root = _root(text)
-    tl = _try_member(text, root, 'timers')
+    # top-level keys, in the same places as office_kit.apply_kit: npcThoughts after disableAttacks;
+    # officePresets, chatter, timers, resources and roles after globalVariables
+    tl = _try_member(text, _root(text), 'timers')
     if tl:
         text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'])
-        root = _root(text)
-        tl = _try_member(text, root, 'timers')
-        if tl and json.loads(text[tl[0]:tl[1]]) == []:
-            text = _splice_object(text, root, lambda k: k == 'timers', [])
-    for key in ('resources', 'roles'):   # kit-owned entries are removed; the kit data adds none yet
+        tl = _try_member(text, _root(text), 'timers')
+        if json.loads(text[tl[0]:tl[1]]) == []:
+            text = _splice_object(text, _root(text), lambda k: k == 'timers', [])
+            tl = None
+    ch = _try_member(text, _root(text), 'chatter')
+    ch_own = bool(ch) and any(not str(k).startswith('kit_') for k in json.loads(text[ch[0]:ch[1]]))
+    if ch and ch_own:    # the shell's own pools stay; only the kit_ keys are replaced
+        text = _splice_object(text, ch[0], lambda k: k.startswith('kit_'), list(b['scenario']['chatter'].items()))
+    adds = []
+    for k, v in b['scenario'].items():
+        if k != 'npcThoughts' and not (k == 'chatter' and ch_own):
+            adds.append((k, v))
+    if b['timers'] and not tl:
+        adds.append(('timers', b['timers']))
+    for key in office_kit.KIT_KEYED:   # kit-owned entries are replaced inside the shell's collection, or the collection is created
         mem = _try_member(text, _root(text), key)
         if mem:
             if text[mem[0]] == '{':
-                text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), [])
+                text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), list(b.get(key, {}).items()))
             else:
-                text = _splice_array(text, mem[0], is_kit, [])
+                text = _splice_array(text, mem[0], is_kit, b.get(key, []))
             mem = _try_member(text, _root(text), key)
             if not json.loads(text[mem[0]:mem[1]]):
                 text = _splice_object(text, _root(text), lambda k, key=key: k == key, [])
-    adds = list(b['scenario'].items()) + ([('timers', b['timers'])] if b['timers'] and not tl else [])
-    text = _splice_object(text, _root(text), lambda k: k in office_kit.KIT_TOP_KEYS, adds)
-    assert json.loads(text) == expect, f'{shell}: kit splice differs from office_kit.apply_kit'
+                mem = None
+        if not mem and key in b:
+            adds.append((key, b[key]))
+    text = _splice_object(text, _root(text), lambda k: k in office_kit.KIT_TOP_KEYS or (k == 'chatter' and not ch_own),
+                          [(k, v) for k, v in b['scenario'].items() if k == 'npcThoughts'], after='disableAttacks')
+    text = _splice_object(text, _root(text), lambda k: False, adds, after='globalVariables')
+    # compared as text, not dict equality, so key order must agree too (a later --kit run changes nothing)
+    assert json.dumps(json.loads(text)) == json.dumps(expect), f'{shell}: kit splice differs from office_kit.apply_kit'
     return text
 
 
 def kit(outdir):
+    """Splice the kit into every tiered row's shell. Every text is built (and every row checked) before
+    any file is written, so a failure on a later shell leaves the earlier ones untouched."""
+    plan = []
     for row in office_kit.load_rows():
         if office_kit.tier_of(row) == 'none':
             continue
         name = row['id']
+        try:
+            office_kit.refuse_check_row(row)
+        except ValueError as e:
+            sys.exit(str(e))
         path = os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')
         if not os.path.exists(path):
             sys.exit(f'episodes.json row {name} has no shell at {path}')
         text = open(path).read()
-        new = kit_text(text, office_kit.load_kit(row['company']), row, name)
+        plan.append((name, path, text, kit_text(text, office_kit.load_kit(row['company']), row, name)))
+    for name, path, text, new in plan:
         dest = path
         if outdir:
             d = os.path.join(outdir, name)
