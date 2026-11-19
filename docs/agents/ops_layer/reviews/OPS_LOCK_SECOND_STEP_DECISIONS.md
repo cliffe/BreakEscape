@@ -51,3 +51,12 @@
 - m5: adopted. Section 6 states the kept bodies; no new `{ success: false, reason }` answer.
 - Nits: beats renamed B1-B11 (B unused before); MFA stages written M1a to M3 and log stages L1a, L1b; n3 `<record key>`; n4 `alreadyOpen` by Rule B; n5 room NPCs and headless records; n6 `tableItems` warning added; n7 stays as request 3.
 - Plan trimmed to 729 lines by shortening open-question wording.
+
+## R4 fixes (2026-11-19)
+
+- M1: rule restored to "and", per kind. `push` never passes only with the phone untakeable and the owner never approving; `push_number_match` and `code` have one route each (held phone, device). Number matching needs the phone in hand: the MFA plan's `POST /mfa/approve` and M3 graph edge say so. `moira_pc`, `moira_locker`, `records_room` no longer match.
+- m1: `resolved: nil` resolves a door through `room_data` (no path), an object through `resolve_unlock_target`.
+- m2: new `MfaModel.held_item_sources(scenario)`, a plain-Ruby walk beside `device_for` covering room objects, room NPCs, headless records' `itemsHeld`, declared grants (`declared_grants.rb`) and start items. `Game.headless_npc_records` and the validator copy are left alone.
+- m3: fixtures name `test_objectives`, `test_simple_success`, `test_pin_dust`, `m01_first_contact`, `m02_ransomed_trust` and the fixed script (every lock wrong and right, `GET /container`, `filtered_room_data`), written by the core plan's capture task. The controller tests build inline scenarios, so they could not be named as fixtures.
+- m4: `lock_step_never_passes?` and `held_item_sources` listed in 5.1 and the shared-files row; unit test moved to `mfa_model_test.rb`.
+- Nits: graph uses the MFA plan's require; "never passes" label; "L1a and L1b first". Plan at 740 lines or under by trimming open-question wording.
