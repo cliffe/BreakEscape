@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant, isSeatedDeskPc, seatedPcWins, reachYSeated } from './interaction-reach.js';
+import { reachX, reachY, aimX, aimY, aimDiff, npcGivesWay, objectIdOf, seatOccupant, isSeatedDeskPc, seatedPcWins, reachYSeated, directionAngle } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -2253,18 +2253,7 @@ export function tryInteractWithNearest() {
     // Phaser canvas coords: right=0°, down=90°, left=180°, up=270°
     const playerDirection = player.direction || 'down';
     const ANGLE_TOLERANCE = 70; // used to decide whether to turn before interacting
-    let facingAngle;
-    switch (playerDirection) {
-        case 'right':      facingAngle = 0;   break;
-        case 'down-right': facingAngle = 45;  break;
-        case 'down':       facingAngle = 90;  break;
-        case 'down-left':  facingAngle = 135; break;
-        case 'left':       facingAngle = 180; break;
-        case 'up-left':    facingAngle = 225; break;
-        case 'up':         facingAngle = 270; break;
-        case 'up-right':   facingAngle = 315; break;
-        default:           facingAngle = 90;  break;
-    }
+    const facingAngle = directionAngle(playerDirection);
 
     // The angle is taken from (fromX, fromY): the player's centre by default (NPCs); scenario objects are scored by aimDiff
     function angularDiff(objX, objY, fromX = px, fromY = py) {
