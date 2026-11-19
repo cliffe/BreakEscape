@@ -1474,6 +1474,10 @@ export default class PhoneChatUI {
         }
         if (this.isCallMode) this.elements.conversationView?.classList.add('call-has-choices');
         
+        const box = this.elements.choicesContainer;
+        const refocus = this._refocusChoices
+            || (typeof document !== 'undefined' && box.contains(document.activeElement));
+        this._refocusChoices = false;
         this.elements.choicesContainer.innerHTML = '';
         // A new reply set starts at the top: the old set may have been scrolled to its last
         // reply, which would hide replies 1-3 and the "more choices" cue (call mode, short screens)
@@ -1490,6 +1494,8 @@ export default class PhoneChatUI {
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });
+
+        if (refocus) box.querySelector('.choice-button')?.focus({ preventScroll: true });
 
         this.scrollToBottom();
         this.updateChoicesScrollCue();
@@ -1515,6 +1521,12 @@ export default class PhoneChatUI {
      * Clear all choice buttons
      */
     clearChoices() {
+        // A reply picked from the keyboard leaves focus on a button that is about to go:
+        // remember it so the next reply set takes focus instead of dropping it to BODY
+        const box = this.elements.choicesContainer;
+        if (box && typeof document !== 'undefined' && box.contains(document.activeElement)) {
+            this._refocusChoices = true;
+        }
         this.elements.choicesContainer.innerHTML = '';
         this.elements.choicesMoreCue?.classList.remove('visible');
         if (this.isCallMode) this.elements.conversationView?.classList.remove('call-has-choices');

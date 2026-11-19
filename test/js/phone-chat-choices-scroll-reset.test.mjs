@@ -35,6 +35,9 @@ function makeUi(callMode) {
         scrollTop: 123, clientHeight: 93, get scrollHeight() { return 216; },
         set innerHTML(v) { children.length = 0; }, get innerHTML() { return ''; },
         appendChild(c) { children.push(c); },
+        contains(el) { return !!el && children.includes(el); },
+        querySelector() { return children[0] || null; },
+        children,
     };
     const cue = { visible: false, classList: { toggle(_, on) { cue.visible = on; }, remove() { cue.visible = false; } } };
     const ui = Object.create(UI.prototype);
@@ -44,7 +47,13 @@ function makeUi(callMode) {
     ui.syncSkipHint = () => {};
     return { ui, box, cue };
 }
-globalThis.document = { createElement: () => ({ dataset: {}, className: '' }) };
+globalThis.document = {
+    activeElement: null,
+    createElement: () => {
+        const b = { dataset: {}, className: '', focus() { globalThis.document.activeElement = b; } };
+        return b;
+    },
+};
 
 for (const callMode of [true, false]) {
     test(`addChoices resets the reply box scroll and re-shows the cue (${callMode ? 'call' : 'DM chat'})`, () => {
@@ -54,3 +63,23 @@ for (const callMode of [true, false]) {
         assert.equal(cue.visible, true);
     });
 }
+
+test('a reply picked from the keyboard hands focus to the first reply of the next set', () => {
+    const { ui, box } = makeUi(true);
+    ui.addChoices([{ text: 'a' }, { text: 'b' }]);
+    box.children[1].focus();               // keyboard player on reply 2
+    ui.clearChoices();                     // the pick clears the set; focus would drop to BODY
+    document.activeElement = null;
+    ui.addChoices([{ text: 'c' }, { text: 'd' }]);
+    assert.equal(document.activeElement, box.children[0]);
+});
+
+test('focus is left alone when it was not on a reply', () => {
+    const { ui, box } = makeUi(false);
+    ui.addChoices([{ text: 'a' }]);
+    const elsewhere = { focus() {} };
+    document.activeElement = elsewhere;
+    ui.clearChoices();
+    ui.addChoices([{ text: 'b' }]);
+    assert.equal(document.activeElement, elsewhere);
+});
