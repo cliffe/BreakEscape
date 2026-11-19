@@ -100,3 +100,10 @@ entries below took a different fix from the one suggested.
 - n6: the password column of the `needsSession` row reads "only once settled at the keyboard", with `NA:498`.
 - Cross-plan F3 (`CORE:1435`): same edit as m5.
 - Cross-plan F7 (`CORE:1443`): the `network_technique_session_test` row says the device is still held and that the reason is the privilege plan's test.
+
+## Round 2 picks (2026-11-19)
+
+- R2-6 b: the pretext line key stays `technique`; the card is `technique_card`; `se_technique` removed everywhere (S3 stage row, 4.3 bullets, schema row, 9.2 warning and info rows, section 10 rename row and part 5, 11.3 pretext-key test, steps 1 and 9, 12.2 row, item 13 of 14). Part 5 is now one snapshot test, renamed `pretext-verdicts-unchanged.test.mjs`. 4.3 says which key is which.
+- R2-6 b: question removed from section 15, which is now "Decisions".
+- R2-7 a: session-type implants stay keyboard-only; the question is removed and the rule stated as a decision in section 15 (already in 5.4).
+- R2-11 a: the plan mentions neither existing-code bug, so no change.

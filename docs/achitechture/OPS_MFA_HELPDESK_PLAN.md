@@ -1169,18 +1169,14 @@ No field holds a code, a number to match, an answer or a password. The only free
     pending record's fields or to the counts is checked against
     `OPS_LOCK_SECOND_STEP_PLAN.md` before it is made.
 
-## 15. Open questions for the user
+## 15. Decisions
 
-One open, with a working answer built in. Points with an obvious default are settled in section
-5.4. Two settled answers that shape later work follow it.
+No question is open. Points with an obvious default are settled in section 5.4. Three settled
+answers that shape later work follow.
 
-- **Does a helpdesk request need a sign-in?** Working answer, built as written in section 5.2:
-  a request made from a PC's desktop needs an open session at that PC (any kind), and a request
-  in person at the desk needs none. Alternative: a desk field (for example `needsSignIn: true`)
-  that says whether the desk wants a sign-in at all, so an author could have a desk that serves
-  only people already inside, or one that serves a request over any PC with no session. It would
-  add a field to section 4.2, a validator rule and a test per setting. Waiting for the user's
-  choice; the working answer needs no desk field.
+- **A helpdesk request over a PC needs a session there; in person it needs none.** As written in
+  section 5.2: a request made from a PC's desktop needs an open session at that PC (any kind),
+  and a request in person at the desk needs none. There is no desk field for it.
 
 - **NPCs do not react to what the player does to their account.** Only the log rows are
   written, and the event `mfa_prompt_sent:<npcId>` lets a scenario voice a bark. Reactions

@@ -955,8 +955,8 @@ A scenario that sets none of the new fields behaves exactly as before:
   object that could take a refused item is USB-governed, so the two-items case (one refused, one
   accepted) cannot arise in one, and every shipped remove keeps today's order and timing. The
   implant path answers `needs_console` where it answered `not_ready` for a live non-keyboard
-  session. **This is the one visible change in an existing scenario**, and it needs the user's yes
-  (section 15, Q2): in `test_access_networks` (`sam_dock`, `kiosk_dock`) and `demo_access_tour`
+  session. **This is the one visible change in an existing scenario**, and it is accepted
+  (section 15): in `test_access_networks` (`sam_dock`, `kiosk_dock`) and `demo_access_tour`
   (`implant_socket`), the only shipped scenarios besides `test_author_notes` with a `needsSession`
   grant, a player who holds only a remote session on the PC and plugs the BadUSB into its socket
   now sees "Nobody is signed in at this keyboard." where today nothing happens. It grants and
@@ -1350,34 +1350,27 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   new empty `ACCESS_STATE_DEFAULTS` keys and freezes the clock; and one test directory for unit tests (this plan uses
   `test/models/`).
 
-## 15. Open questions for the user
+## 15. Decisions
 
-**Q1. Which admin session may plant a device that needs a session (a BadUSB on a USB-blocked PC)?**
-Any admin session overrides the USB policy for an ordinary plant. A session-shaped implant is
-different: it gives a foothold through whoever is signed in.
-- (a) Keyboard only (recommended, and what the plan describes). A device that types into a PC
-  reaches whoever is signed in at that keyboard, and a remote or technique session is not at that
-  console. A player holding only remote or technique admin on the PC who plugs a BadUSB into its
-  socket opens the confirm (the socket itself carries no policy) and then sees the implant path's
-  `needs_console` toast, "Nobody is signed in at this keyboard.", with the device still held.
-- (b) Any admin session takes the implant. This follows "any admin session overrides" to the
-  letter, but it needs the implant path's session rule (`network_access.rb:498-501`) widened to
-  remote and technique sessions in this plan and the core plan, and it teaches a less accurate
-  model of what a plugged-in device reaches.
+No question is open. Two choices shape later work:
 
-**Q2. May the new "Nobody is signed in at this keyboard." toast appear in two shipped scenarios?**
-Today a player who holds only a remote session on a PC and plugs a BadUSB into its socket sees
-nothing happen: the implant path answers a quiet `not_ready`. With this plan it answers
-`needs_console` and the player sees the toast; nothing is granted or recorded and the device stays
-held. The shipped scenarios that can show it are `test_access_networks` (`sam_dock`, `kiosk_dock`)
-and `demo_access_tour` (`implant_socket`). Every other existing behaviour is unchanged.
-- (a) Accept the new toast in those two scenarios (recommended). Both are test and demo scenarios,
-  and the toast replaces a silent failure with the reason.
-- (b) Keep today's silence there: a scenario opt-in (a top-level `quietNeedsConsole: true`, set in
-  those two scenarios) makes the implant path answer `not_ready` as today; the new reason then
-  appears only in scenarios that do not set it.
+- **A session-type implant takes a keyboard session only.** Any admin session overrides the USB
+  policy for an ordinary plant, but a session-shaped implant gives a foothold through whoever is
+  signed in. A device that types into a PC reaches whoever is signed in at that keyboard, and a
+  remote or technique session is not at that console. A player holding only remote or technique
+  admin on the PC who plugs a BadUSB into its socket opens the confirm (the socket itself carries
+  no policy) and then sees the implant path's `needs_console` toast, "Nobody is signed in at this
+  keyboard.", with the device still held. The implant path's session rule
+  (`network_access.rb:498-501`) is not widened.
+- **The new toast is accepted in two shipped scenarios.** Today a player who holds only a remote
+  session on a PC and plugs a BadUSB into its socket sees nothing happen: the implant path answers
+  a quiet `not_ready`. Now it answers `needs_console` and the player sees the toast; nothing is
+  granted or recorded and the device stays held. The scenarios that show it are
+  `test_access_networks` (`sam_dock`, `kiosk_dock`) and `demo_access_tour` (`implant_socket`),
+  both test and demo scenarios, and there is no scenario option to keep the old silence. Every
+  other existing behaviour is unchanged (section 10).
 
-**Defaults this plan settles** (not user choices):
+**Defaults this plan settles:**
 - An account with no `accountKind` is unscoped, as every account is today: any other default would
   change existing scenarios.
 - A locked admin session takes an implant the policy allows but never overrides the policy: a

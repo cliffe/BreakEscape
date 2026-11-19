@@ -85,3 +85,8 @@ Cross-plan round 2 (`CROSS_PLAN_R2.md`), items naming this plan.
 - Z7: section 2.1 knock-out row and the section 9 information line state the full rule (`koImmune`, `npcType: "phone"`; `disableAttacks` is the client's).
 - Z8: section 9 names the log plan's L1a mechanism for the unchanged-scenario proof.
 - Z9: `held_item_sources` returns `{ type:, id:, via: }` entries.
+
+## Round 2 picks (2026-11-19)
+
+- R2-9 a: a helpdesk request over a PC needs a session there, in person none; the open question and its desk-field alternative are removed from section 15, which is now "Decisions" and states it as a decision.
+- R2-11 a: the plan mentions neither existing-code bug, so no change.

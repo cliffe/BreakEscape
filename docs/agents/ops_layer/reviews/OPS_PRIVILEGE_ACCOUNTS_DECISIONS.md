@@ -76,3 +76,9 @@ Findings not acted on as suggested, one line each.
 - **n2.** Client reads only `error`; the route's `message` refusals and 500 `rescue` text never reach a toast; a 5xx after the retry is the generic network line.
 - **n3.** First grant stated as depth-first in list order, conditions ignored as in `removes_item?`; took the optional validator warning for one object whose grants name two different PCs, with server and validator tests.
 - **n4.** One clause: `give_item` promises from a resumed list never reach the first call's `gives`, and the timer dispatcher (the only reader) never makes a gated remove.
+
+## Round 2 picks (2026-11-19)
+
+- R2-7 a: Q1 removed from section 15; keyboard-only session-type implants stated as a decision there.
+- R2-8 a: Q2 and the `quietNeedsConsole` option removed; section 15 states the accepted "Nobody is signed in at this keyboard." change in `test_access_networks` and `demo_access_tour`, and section 10 now says "accepted" in place of "needs the user's yes". Section 15 is now "Decisions".
+- R2-11 a: the plan mentions neither existing-code bug, so no change.

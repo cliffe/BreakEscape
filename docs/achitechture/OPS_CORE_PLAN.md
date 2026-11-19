@@ -215,7 +215,7 @@ today, `technique_card` here), and `offWhen` in the requireGlobal form (the mode
 |---|---|---|---|
 | S1 (N13) | `hosts` map, `services[]`, `networks.<id>.discovery`, `POST /network/scan`, host and service rows in the view | `test_ops_scan`: a discovery network opens empty; a sweep lists its hosts; a host scan lists services; a pivot then lets a second network be swept | M |
 | S2 (N14) | `weaknesses[]`, `decoys[]`, `fixedIf`, `POST /network/check` and `/confirm`, the findings panel | `test_ops_findings`: findings appear only after a check; a decoy confirms false; a real one confirms and lists its needs; a fixed weakness yields no finding; a global set by the scenario patches a weakness. No weakness in it has `grants`, so it passes the validator at S2 and unchanged after S3 | M |
-| S3 (N15) | `techniques`, the item type `technique_card` and its field `technique_card`, the pretext key rename to `se_technique`, `POST /network/technique`, `via: "technique"` sessions, the keyring proof kind `technique_card`, the techniques panel, the desktop at the keyboard through a technique session with its remote-view marker, the compromised marker on world sprites, the validator's grant checks (a granted credential's `connectsTo` PC must take it) | `test_ops_access`: a wrong card is refused with its reason; a card on a finding that grants nothing gets `no_grant`; the right card with needs met opens the desktop or adds the credential; the PC then shows the marker and clicking it opens the remote view; unplugging ends the session and clears the marker | L |
+| S3 (N15) | `techniques`, the item type `technique_card` and its field `technique_card`, `POST /network/technique`, `via: "technique"` sessions, the keyring proof kind `technique_card`, the techniques panel, the desktop at the keyboard through a technique session with its remote-view marker, the compromised marker on world sprites, the validator's grant checks (a granted credential's `connectsTo` PC must take it) | `test_ops_access`: a wrong card is refused with its reason; a card on a finding that grants nothing gets `no_grant`; the right card with needs met opens the desktop or adds the credential; the PC then shows the marker and clicking it opens the remote view; unplugging ends the session and clears the marker | L |
 
 No field is reserved ahead of its stage. What happens to a scenario that writes a field before
 its stage is built depends on where the field sits, because the schema is closed in some places
@@ -419,25 +419,16 @@ and a session grant, on a weakness of a sign-in host's service:
   carried by several items; a weakness may be matched by several techniques.
 - **One word, two separate keys.** `technique` was already a field of a social engineering
   pretext line (`SC:3603`; read by `pretext-judge.js:240`, `:258` and `:276`), naming one of six
-  persuasion techniques. S3 renames that key to `se_technique` and gives the card its own key,
-  `technique_card` (on the item and as the keyring proof kind), so an author's search for either
-  finds only its own. The rename touches the six scenarios that write the pretext key
+  persuasion techniques. That key keeps its name: this plan's card uses its own key,
+  `technique_card` (on the item and as the keyring proof kind). `technique` is only ever the
+  pretext line key, and `technique_card` is only ever the card, so an author's search for
+  either finds only its own. The pretext block is unchanged: the six scenarios that write it
   (`ca03_helpdesk_reset`, `ca12_visitor_tailgater`, `lab_social_engineering`, `test_dm_social`,
   `test_social_m5_channels`, `test_social_slice`), the schema's pretext line definition,
-  `pretext-judge.js`, the social pretext validator (`scripts/validate_social/pretext.rb`), the JS test fixtures under
-  `test/js/fixtures/social_pretext/` and `social_role_swap/`, and the README's pretext section.
-  It is a key rename only: no line text changes, so no audio is re-voiced, and every
-  `test/js/social-*` and `validator-social-*` test passes unchanged in meaning. The nested
-  `tells.techniques` map of an NPC keeps its name. Prose, schema descriptions and validator
-  messages always say "technique card" and "technique card registry", never "technique" alone.
-- **The old pretext key is still read.** `pretext-judge.js` reads `se_technique ?? technique` in
-  each of the three places it reads the key today (`:240`, `:258`, `:276`), and
-  `scripts/validate_social/pretext.rb` reads the same pair wherever it reads `line['technique']`
-  (`:290`, `:418`, `:497`). A scenario not yet migrated therefore judges and validates exactly
-  as before. The old key is never an error or a warning: the validator reports it at most as an
-  info line naming the new key, and the six shipped scenarios are migrated in the same step, so
-  none of them shows even that. When a line carries both keys, `se_technique` wins, and the
-  validator warns on that line, since the two may disagree.
+  `pretext-judge.js`, the social pretext validator and its fixtures read `technique` as today.
+  The nested `tells.techniques` map of an NPC keeps its name. Prose, schema descriptions and
+  validator messages about the card always say "technique card" and "technique card registry",
+  never "technique" alone.
 - A grant of a credential names a `credentials.<id>` entry whose `proof` is `{ "technique_card":
   "<findingId>" }` (new proof kind). The validator requires the two to name each other. The
   entry's kind must be `saved_connection`: it needs no item text and opens its `connectsTo` PC
@@ -1242,7 +1233,6 @@ neighbouring blocks use, and every new open location carries the `x-id-map` mark
 | S3 | top level | `techniques`: id map, `x-serverOnly: true`, `x-servedBy: ["GET /network"]`, `maxProperties: 32`, keys at most 40 characters. Entry: `name` (required, max 40), `summary` (max 200), `worksOn` (required; `class` required, `product`, `versions` as 1 to 8 strings) |
 | S3 | `definitions.item.properties`, beside `credential` (`SC:5158`) | `technique_card`: a key of the technique card registry, allowed only on an item of type `technique_card`; the description says so. It stays on the item the browser receives, as `credential` does; the registry entry it names does not |
 | S3 | `credentials.<id>.proof` (`SC:293-306`) | `technique_card`: a finding id, with its own pattern (three ids joined by dots), which the description states. The description's list of proof kinds gains it |
-| S3 | the pretext line definition (`socialPretextLine`, `SC:3603`, a closed block) | `se_technique` added with the same enum and description; the description names the technique card as unrelated. `technique` stays declared with the same enum, its description saying it is the older name of `se_technique`, so a scenario not yet migrated still passes the schema stage |
 
 The top level and `definitions.item` are open, so declaring a key there adds a known name and
 nothing more; section 3 says what refuses each field before its stage.
@@ -1309,13 +1299,6 @@ Warnings:
 | S3 | A technique that matches only decoys' classes and no weakness (a card with no use) |
 | S3 | A weakness that grants a session on a host whose only other way in is also that weakness's own need (a loop) |
 | S1 to S3 | A `product` string found in `scripts/real_product_names.txt`, a short list kept beside the validator so that examples stay invented |
-| S3 | A pretext line that carries both `se_technique` and the old key `technique` (`se_technique` wins; the two may disagree), reported by `scripts/validate_social/pretext.rb` |
-
-Info, never an error or a warning:
-
-| Stage | Info |
-|---|---|
-| S3 | A pretext line with only the old key `technique`, reported by `scripts/validate_social/pretext.rb` as an info line naming `se_technique`. The line judges and validates as before (section 4.3). The six shipped scenarios are migrated in step 9, so none of them shows it |
 
 The schema stage catches the enums, the caps on a single list and unknown properties. The
 validator's known-failures list (`scripts/validator_known_failures.json`) must not grow: no
@@ -1361,7 +1344,6 @@ None. A scenario without the new fields takes the old path at every point this p
 | The click path in `interactLoginPc` and `openLoginPc`, `remoteViewFoothold`, the remote-view frame, line and wipe | the reader answers null for every copy that is not `via: "technique"`, so the click takes today's path; the frame class and the new line are added only for such a session, and every other desktop keeps the "Remote session through <link name>" line it has today |
 | The unplug button | the unplug guard moves into `perform` with the same pending label and notice, and `test/js/network-view.test.mjs` passes with no assertion changed |
 | `systems/compromise-marks.js` | the one intended visible change: in a scenario that already lets the player plant a jack device (N1) or implant a PC (N10), (`test_access_networks`, `test_access_devices`, `test_access_keyring`, `demo_access_tour`, `lab_physical_pentest`), that jack or PC now shows the red tint and bolt while the foothold is held. It is client drawing only: no route answer, state key or event changes, so the golden answers below are unaffected, and the existing playtests' steps and leak scans pass as before. A scenario with no such foothold draws nothing new |
-| The pretext key rename | the six scenarios that write a pretext line (section 4.3) change one key name per line and nothing else; the judge reads `se_technique ?? technique`, so every verdict is the same before and after the migration, and a scenario outside the repo that still writes the old key judges as before and gets at most an info line. Part 5 of the check below proves both |
 | `pcSessions.displaced()`, `record_borrow_done!` | both now keep a remote session (one with `foothold` or `from`) at a PC an NPC sits at or borrows. A foothold-based remote session needs `networks`, and a `from` session needs `credentials` (`credentials_declared?`, `NA:1504-1507`); none of the eight scenarios that declare `networks` has an NPC borrow, and the two with `wk_borrow` (`test_access_social`, `test_access_work`) declare neither `networks` nor `credentials`; the two `pc-sessions.test.mjs` tests that assert displacement of a remote copy change as part 3 of section 10 says; the scenarios with borrows (`test_access_social`, among others) declare no `networks`, so every session an NPC can displace or end there is a keyboard one and is handled as today |
 | `core/game.js`, `public/break_escape/assets/objects/technique_card.png` | one more image loaded; no existing item has the type |
 | `GET /network` top level and blocks | `techniques` is sent only when a card is held; `swept` only on a discovery network, and `ops` only where a host has services, none of which an existing scenario has |
@@ -1415,15 +1397,11 @@ come from the log rows plan's stage L1a; that plan's stages L1a and L1b are both
    campaign missions m01 to m10 declare no `networks` and are covered by parts 2 and 3. Where a
    script plants a jack or implants a PC, the rerun also reads `compromiseMarks()` and finds that
    object listed while the foothold is held and gone after the unplug.
-5. **Pretext verdicts.** A node test, `test/js/pretext-rename-unchanged.test.mjs`, runs
+5. **Pretext verdicts.** A node test, `test/js/pretext-verdicts-unchanged.test.mjs`, runs
    `pretext-judge.js` over every pretext line of the six scenarios of section 4.3 and records each
-   verdict and its reason keys. Step 1 writes the snapshot from main; after the S3 rename the
-   same run, reading `se_technique`, must match it exactly, and the validator lines of part 2 for
-   those six scenarios must be unchanged. The same test then runs the judge a second time over a
-   copy of those lines made in memory with `se_technique` turned back into the old key
-   `technique`: every verdict must again match the snapshot, which proves a scenario not yet
-   migrated judges as before. A third copy carrying both keys with different values must judge
-   as the `se_technique` value alone does.
+   verdict and its reason keys. Step 1 writes the snapshot from main; after S3 the same run must
+   match it exactly, and the validator lines of part 2 for those six scenarios must be unchanged.
+   The shipped SE scenarios judge as before.
 
 Hacktivity's tests load `test_objectives` and `test_simple_success` from this repo; neither
 declares networks and neither is touched.
@@ -1479,8 +1457,7 @@ a scenario with no `logSources`.
 | `desktop-remote-view.test.mjs` | S3 | a desktop opened for a technique session, from the world and from the network view, has the class `desktop-frame--remote-view` and the line "Remote view: <account> through <link>" from `remote-host-text.js`, set as text, with hostile account and link names shown literally; the wipe runs its four steps and is skipped under the reduced-motion setting; a technique copy opened by `openLoginDesktop` (no route, the keyboard fallback) has the same class and line; with its foothold gone the line reads "Remote view: <account>" with no link part; the taskbar model of a technique copy has no `switch` on a host whose row carries `remoteSignIn: false` and has it otherwise, in both the container and the text-file minigames, and a password copy keeps `canSwitch` as today; a foothold desktop of a password session keeps today's line, no class and no wipe; a folder opened from the remote-view desktop sends its foothold |
 | `compromise-marks.test.mjs` | S3 | each source marks its object (a technique session, an implanted PC, a planted jack) and each end clears it (`pc_signed_out` from an unplug, the player's Sign out and a newer sign-in that replaces the session; `network_device_unplugged`; `network_foothold_dropped` from a `_dropFoothold` after a 404 and after a `GET /network` answer that leaves the foothold out, clearing the jack's or implanted PC's mark and a technique session's mark through that foothold); a technique copy whose foothold has been dropped (the copy still in `pcSessions`, `remoteViewFoothold` null) stays unmarked after `syncRoom` of its room and after a reload before the server's answer catches up; an NPC sitting down at a PC with a technique session leaves the mark on; a password, credential, claim or relay session, a joined Wi-Fi access point and a share are never marked; a sprite with an authored tint or `spriteVariants` gets the bolt and keeps its look; `sprite.compromiseTint` set with the mark and deleted when it comes off, and `setTint`/`clearTint` not called while `isHighlighted` is true; `syncRoom` marks the sprites of a room made after the event; no timer is set; `compromiseMarks()` lists exactly the applied marks, each with the sprite's live `tint`; the network view's row bolt on a `hosts` entry held by a technique session |
 | `interactions-compromise-tint.test.mjs` | S3 | a marked sprite (`compromiseTint` set) walked into range shows the highlight blue, walked out of range shows the mark's red again (`tintTopLeft`), and the same after leaving the viewport and after `interactable` turns false; an unmarked sprite walked in and out ends with no tint, as today; a mark that ends while the sprite is highlighted leaves no red after the hover ends; the proximity ghost is blue in every case. A second case in the same file loads `biometrics-minigame.js` with a marked sprite that has prints: the dusting view's `clearHighlights()` leaves the mark's red on it, and an unmarked sprite ends with no tint |
-| `validator-social-pretext-key.test.mjs` | S3 | a pretext line with `se_technique` validates as the old key did; one with only `technique` gives the same errors and warnings as before plus one info line naming `se_technique`, and no error or warning of its own; one with both keys gives the both-keys warning and is checked on the `se_technique` value; the six shipped SE scenarios, after the migration, show no pretext-key line at all |
-| `pretext-rename-unchanged.test.mjs` | step 1, S3 | section 10, part 5 |
+| `pretext-verdicts-unchanged.test.mjs` | step 1, S3 | section 10, part 5: the shipped SE scenarios judge as before |
 | `technique-card-item.test.mjs` | S3 | a picked-up `technique_card` gets a tray slot and a pickup toast, from a room, a container and an NPC gift; a `notes1` item in the same test gets neither, which pins why the card has its own type |
 | `network-view-ops.test.mjs` | S1 to S3 | the actions each row state offers, found by their `data-action` and row hooks; no such attribute on any control of a view built from an existing scenario's answer; select-then-Use and a drag sending the same request; the "admin" tag drawn from `access` and absent without it; Fixed drawn only from `fixed`; `hostAction` for a blocked-host row with and without `openHere`, for a powered-down row that has it (not responding), and unchanged for every existing row shape; one Confirm control per unconfirmed finding; `getTestState` fields; for each action the guard holds at that stage (unplug, sweep and scan at S1; check and confirm from S2; use from S3), the control disabled in the same tick as the press, before any `await`, while its request is pending, and a second press making no second call (one call counted); a refetch that lands while a request is pending keeping that control disabled; a `use` of another card on the same finding, or of the same card on another finding, making its own call; the unplug's pending label and notice unchanged and drawn by the renderer; the refetch after each ops success; the test bridge's `networkView` returning the blocks; hostile strings in host names, products, summaries, reasons and technique names rendered as text |
 | `api-client-network-ops.test.mjs` | S1 to S3 | the four calls: path, body, error mapping, and no retry of a refused or failed request |
@@ -1688,7 +1665,7 @@ the branch after each landing.
 
 | Step | Stage | Work | Proof before moving on |
 |---|---|---|---|
-| 1 | before S1 | The unchanged-behaviour fixtures and tests of section 10, parts 1, 2 and 5 (part 5 is the pretext verdict snapshot, taken before the key rename of step 9), recorded on main with the shared helper, folder and rake task the log plan's L1a built; L1a and L1b are already on main, and this step builds none of them | they pass on main |
+| 1 | before S1 | The unchanged-behaviour fixtures and tests of section 10, parts 1, 2 and 5 (part 5 is the pretext verdict snapshot), recorded on main with the shared helper, folder and rake task the log plan's L1a built; L1a and L1b are already on main, and this step builds none of them | they pass on main |
 | 2 | S1 | Schema (9.1, S1 rows); `NetworkModel` helpers; `check_network_ops` S1 rules and the not-built-yet table; the two withheld-list names | unit and validator node tests; step 1 tests |
 | 3 | S1 | `network_ops.rb` with `ops_listed?`, the one 404 answer, the 400, `scan_network!` and `scan_host!`; `opsDiscovered`; the route, both controller lists, `network_scan?` in the policy and its name in the role test; the `network_swept` and `host_scanned` events and their calls; `network_rows` and block changes (the unswept block lists rows of PCs the player holds a session on; sign-in, desktop and shares are not gated by discovery) | `network_scan_test`, `network_discovery_display_test`, `network_ops_indistinguishable_test`, no-exposure and delta tests; step 1 tests |
 | 4 | S1 | Client: `ops-model.js`, the scene's `perform` path and pending guard with the unplug guard folded in, Sweep and Scan in the view, the row icon, `api-client.js`, events, `getTestState`, the test bridge's `networkView` comment and test, copy lists | node tests; `bin/test-js` whole |
@@ -1696,7 +1673,7 @@ the branch after each landing.
 | 6 | S2 | Schema (S2 rows); model helpers; validator S2 rules; `check_service!`, `confirm_finding!` (free), `opsFindings` with aliases; the two routes with their policy methods; the `service_checked` and `finding_confirmed` events and calls; findings on rows | `network_findings_test`, `network_ops_free_test`, and the extended exposure and indistinguishable tests |
 | 7 | S2 | Client: Check and Confirm, the findings panel with needs and reasons; graph: weakness nodes (9.3, without cards) | node tests |
 | 8 | S2 | `test_ops_findings`, playtest, leak collector steps, docs (N14) | scripted playtest, live proof, full suites; land S2 |
-| 9 | S3 | Schema (S3 rows); `techniques` helpers; validator S3 rules, among them the card type rule, the `connectsTo` checks on a granted credential, and the warnings for a weakness with no `grants`, for `needs` on one, and for a card that can stand in for a sign-in; `PROOF_KINDS` and `credential_proof_holds?`; the `technique_card` type: the placeholder PNG, its `load.image` line, the grep of section 4.3; the pretext line key rename to `se_technique` in the six scenarios, the schema, `pretext-judge.js`, `scripts/validate_social/pretext.rb`, the JS fixtures and the README, with the old key still read (`se_technique ?? technique`), and the pretext rows of 9.2 (the both-keys warning, the old-key info line, which needs a new `info` helper in `scripts/validate_social/pretext.rb` beside its `err` and `warn_` (`:76-82`), returning `"ℹ️ INFO: SOCIAL: #{msg}"`, the `ℹ️ INFO:` form of `validate_scenario.rb:7317`) | unit, validator and keyring tests; `technique-card-item.test.mjs`; `validator-social-pretext-key.test.mjs`; the part 5 snapshot of section 10 unchanged under the new key, the old key and both keys |
+| 9 | S3 | Schema (S3 rows); `techniques` helpers; validator S3 rules, among them the card type rule, the `connectsTo` checks on a granted credential, and the warnings for a weakness with no `grants`, for `needs` on one, and for a card that can stand in for a sign-in; `PROOF_KINDS` and `credential_proof_holds?`; the `technique_card` type: the placeholder PNG, its `load.image` line, the grep of section 4.3 | unit, validator and keyring tests; `technique-card-item.test.mjs`; the part 5 snapshot of section 10 unchanged |
 | 10 | S3 | `start_login_session!` keywords; `access` through `login_session_answer` and `session_for_client`; `use_technique!` with the repeat test (the 403 `not_responding` and every 422 write a `technique_refused` row with `save_limit: true`); `opsUsed`; the route and its policy method; the `technique_used` and `technique_refused` events and calls; the credential grant; `techniques` with `itemId` on `GET /network` | `network_technique_test`, `network_technique_hostile_test`, `network_ops_free_test` |
 | 11 | S3 | The access check changes alone: `technique_session_through?`; its use in `desktop_request_allowed?` and `desktop_refusal`; the foothold argument of `network_rows` and `host_row` with `openHere`; the `technique` skip in `settle_session_at_keyboard!` (the keyboard branch is otherwise unchanged); the no-route line in `folder_route_allowed?`, passing only where the keyboard desktop would | `network_technique_blocked_host_test`, `network_technique_session_test`, and every existing network and keyring controller test, unmodified |
 | 12 | S3 | Client: the Techniques panel, Use, `REFUSAL_TEXT`, `hostAction`, `access` in `pc-sessions.js`, the `remoteViewFoothold` reader and the click path that opens the desktop through the foothold (`networkLinks.openSession`), the remote-view frame, line and wipe (`ui-themes.css`, `remote-host-text.js`, `screen-states.js` neighbours), `systems/compromise-marks.js` and `utils/compromise-bolt.js` with the bolt on host rows, the desktop handover and keyring refetch; graph: cards, needs, grants | node tests, among them `pc-remote-view-click`, `desktop-remote-view` and `compromise-marks` |
@@ -1741,7 +1718,6 @@ are in flight at once, their sessions agree who goes first on each file.
 | `app/models/break_escape/npc_frustration.rb` `record_borrow_done!` | the player's record is deleted only when it has neither `foothold` nor `from` (`:391-396`) | office-life and access work on borrows |
 | `public/break_escape/js/utils/remote-host-text.js`, `public/break_escape/css/ui-themes.css`, the importers of `screen-states.js`, `public/break_escape/js/core/rooms.js` | the remote-view line, the red frame class `desktop-frame--remote-view` and the wipe; the marker module is imported where `screen-states.js` is; `rooms.js` applies the room-side marks | the skin plan restyles the same screens (section 14, request 6) |
 | `app/models/break_escape/game.rb` `settle_session_at_keyboard!` | one `technique` skip | S5a and S8 change the sign-in order just above |
-| the six shipped SE scenarios, `public/break_escape/js/systems/pretext-judge.js`, `scripts/validate_social/pretext.rb`, the pretext line in `scripts/scenario-schema.json` | the pretext line key `technique` becomes `se_technique`; the judge and the validator read `se_technique ?? technique`, and the schema keeps the old key declared (sections 4.3, 9.1) | the social-engineering plans; the golden comparison proves no behaviour change |
 | `public/break_escape/js/core/game.js`, `public/break_escape/assets/objects/` | one `load.image` line and `technique_card.png` | any plan or art pass that adds an object sprite |
 | `app/controllers/break_escape/games_controller.rb` `folder_route_allowed?` | one line | none known |
 | `public/break_escape/js/api-client.js` | four functions | every plan with a route |
@@ -1919,30 +1895,16 @@ Each is a statement of what this plan provides or needs, for the plan named.
 13. **Cracking (S7), password harvest (S5b) and the log plan.** None of them names the proof
     kind `technique_card` today (the log plan's `technique` is a row kind, a different thing).
     A plan that adds a proof or an item field naming a card uses `technique_card`, never
-    `technique`, and a plan that reads a pretext line key uses `se_technique`, the old key
-    still being read.
+    `technique`, which stays the pretext line key (one of six persuasion techniques).
 
-## 15. Open questions for the user
+## 15. Decisions
 
-One choice is the user's. The plan is written to its recommendation. Every other design point
-is settled in the body, with its reason, where it applies.
+No question is open. Every design point is settled in the body, with its reason, where it
+applies. Two choices shape later work:
 
-1. **The key name on a pretext line.** Social engineering scenarios already use the word
-   `technique`: a pretext line has a `technique` key (one of six persuasion techniques) and an
-   NPC's `tells` has a `techniques` map, in six scenarios, the schema, `pretext-judge.js`,
-   `scripts/validate_social/pretext.rb`, the JS fixtures and the README. This plan's card keys
-   are `technique_card` (item field and proof kind) and the registry `techniques`, which sit at
-   the top level and nowhere inside a pretext block. `tells.techniques` keeps its name in both
-   options.
-
-   | Option | Change | Cost |
-   |---|---|---|
-   | (a) Rename the pretext line key `technique` to `se_technique` | in the six shipped scenarios, the schema, the engine, the validator, the fixtures and the README; `pretext-judge.js` and the validator read `se_technique ?? technique`, so a scenario not yet migrated judges as before and gets at most an info line naming the new key, never an error or a warning; a line with both keys is judged on `se_technique` and gets a warning (section 4.3) | six scenario files change but no behaviour (section 10 part 5 proves it for the new key, the old key and both keys); a search of scenarios for `"technique"` then finds only this plan's keys and `tells.techniques`, though the judge and the validator keep the old name in the one fallback read |
-   | (b) Leave the pretext key as `technique` | `technique_card` is used only for the new card keys; prose always says "technique card" | none in code; an author's search for `"technique"` returns both, and a validator message saying "technique" alone could mean either |
-
-   Recommend (a), but only if the old key stays readable, because without that a scenario
-   outside the six (a draft, a branch) breaks silently the day the engine drops the old name. The
-   plan as written is (a) with the old key read. If the answer is (b), 4.3 (the rename and old-key
-   bullets), 9.1 (the pretext row), 9.2 (the both-keys warning and the info table), section 10
-   (the pretext row and part 5), the two pretext tests of 11.3, the part 3 exception of 11.2,
-   step 9 and the pretext rows of 12.2 come out, and nothing else moves.
+- **The pretext line key stays `technique`.** The new card uses `technique_card` (item field and
+  proof kind) and the registry is `techniques` at the top level; neither appears inside a pretext
+  block, and `tells.techniques` keeps its name. Prose always says "technique card" (section 4.3).
+- **A session-type implant (`needsSession`) takes a keyboard session only.** A technique session
+  is not one, even though a click on the PC serves its desktop through the foothold (section 5.4,
+  and the privilege plan's USB policy).
