@@ -126,7 +126,7 @@
 }
 
 .file-name {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     color: #212529;
     margin-bottom: 4px;
@@ -135,7 +135,7 @@
 .file-meta {
     display: flex;
     gap: 12px;
-    font-size: 18px;
+    font-size: 16px;
     color: #6c757d;
 }
 
@@ -171,7 +171,7 @@
 }
 
 .content-label {
-    font-size: 18px;
+    font-size: 16px;
     color: #495057;
     font-weight: 500;
 }
@@ -188,7 +188,7 @@
     color: #374151;
     padding: 4px 12px;
     /* border-radius: 6px; */
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
@@ -240,14 +240,14 @@
 
 .file-observations h4 {
     color: #856404;
-    font-size: 18px;
+    font-size: 16px;
     margin: 0 0 8px 0;
     font-weight: bold;
 }
 
 .file-observations p {
     color: #6c5700;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.4;
     margin: 0;
 }
@@ -326,7 +326,7 @@
     }
     
     .window-title {
-        font-size: 18px;
+        font-size: 16px;
         margin: 0 15px;
     }
     
@@ -339,7 +339,7 @@
     }
     
     .file-meta {
-        font-size: 18px;
+        font-size: 16px;
         gap: 8px;
     }
     
@@ -351,7 +351,7 @@
     }
     
     .content-label {
-        font-size: 18px;
+        font-size: 16px;
     }
     
     /* Readable on a phone: the toolbar wraps rather than shrinking its text (critique A36) */
@@ -365,7 +365,7 @@
     }
 
     .file-text {
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .file-observations {
@@ -373,11 +373,11 @@
     }
     
     .file-observations h4 {
-        font-size: 18px;
+        font-size: 16px;
     }
     
     .file-observations p {
-        font-size: 18px;
+        font-size: 16px;
     }
 }
 

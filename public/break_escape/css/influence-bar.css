@@ -20,7 +20,7 @@
 
 .ib-infl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .ib-infl-label { color: var(--ui-text-dim, #a8b2c8); font-weight: 600; }
-.ib-infl-number { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ib-infl-number { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .ib-infl-track {
     position: relative;
