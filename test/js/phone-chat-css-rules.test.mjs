@@ -153,7 +153,9 @@ check('landscape: phone status header padding trimmed', () => {
     assert.match(L('.phone-header').body, /padding-top:\s*4px/);
 });
 check('landscape SE chats: legend hidden, empty change hidden, one-row bar, budget with and without the cue', () => {
-    assert.match(L('.conversation-header .ib-infl-legend').body, /display:\s*none/);
+    // visually hidden, still read by screen readers (it is the only text for threshold state)
+    assert.match(L('.conversation-header .ib-infl-legend').body, /clip-path:\s*inset\(50%\)/);
+    assert.match(L('.conversation-header .ib-infl-legend').body, /position:\s*absolute/);
     assert.match(L('.conversation-header .ib-infl-change:empty').body, /display:\s*none/);
     assert.match(L('.conversation-header .se-chat-header .influence-bar').body, /padding:\s*0 8px/);
     // bar: border 2 + 2, one row = track margin 8 + (12 + 2 + 2) + 2 = 26 (taller than the 22.5 head), padding 0

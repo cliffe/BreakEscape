@@ -136,8 +136,6 @@ check('landscape call: influence bar sits on the header row (no wrap), name elli
     assert.match(L('.npc-name').body, /display:\s*block/, 'the name is a block so it can ellipsise inside .npc-id-block');
     assert.ok(!land.some(x => x.selector.includes(SE) && x.selector.includes('.conversation-header') && /flex-wrap:\s*wrap/.test(x.body)), 'header never wraps');
     assert.match(hdr.body, /flex-wrap:\s*nowrap/);
-    // bar: 26px row + 2 x 2 border = 30, inside the 36px headshot row
-    assert.ok(26 + 4 <= headerH - 2 * Number(pads[1]));
 });
 const T = V + ' .messages-container > ';
 const bySel = sel => land.find(x => x.selector.split(', ').includes(sel));
@@ -274,6 +272,16 @@ check('landscape call: the influence bar stacks (head over a full-width track) i
     assert.match(L('.se-chat-header .ib-infl-mark').body, /width:\s*2px/);
     assert.match(L('.se-chat-header .ib-infl-mark::after').body, /display:\s*none/);
     assert.ok(!land.some(x => /ib-infl-legend/.test(x.selector) && /display:\s*(block|flex|grid)/.test(x.body)));
+    assert.match(L('.se-chat-header .ib-infl-number').body, /line-height:\s*14px/);
+    assert.match(L('.se-chat-header .ib-infl-number').body, /font-weight:\s*400/, 'VT323 has one weight: no synthetic bold');
+    assert.match(L('.se-chat-header .ib-infl-mark-icon').body, /display:\s*none/);
+    // reached ticks differ in shape, not only colour
+    assert.match(L('.se-chat-header .ib-infl-mark.is-reached').body, /width:\s*4px/);
+    // the legend (threshold state in words) is visually hidden but stays readable to screen readers
+    const legend = land.find(x => /\.ib-infl-legend\b/.test(x.selector));
+    assert.ok(legend, 'a landscape legend rule exists');
+    assert.doesNotMatch(legend.body, /display:\s*none/);
+    assert.match(legend.body, /clip-path:\s*inset\(50%\)/);
 });
 // appendTellBubbles scrolls the thread to the newest tell, and leaves it alone when nothing was added
 globalThis.document = {

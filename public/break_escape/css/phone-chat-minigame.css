@@ -1077,7 +1077,11 @@
     /* Influence bar: one tight row (label and number beside the track), no legend, the change line
        takes no room (it stays in the page for screen readers) */
     .conversation-header .se-chat-header .influence-bar { padding: 0 8px; }
-    .conversation-header .ib-infl-legend { display: none; }
+    /* the legend is the only text for threshold state: hidden visually, kept for screen readers */
+    .conversation-header .ib-infl-legend {
+        position: absolute; width: 1px; height: 1px; margin: 0; padding: 0;
+        overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+    }
     .conversation-header .ib-infl-track { margin: 8px 8px 2px; }
     .conversation-header .ib-infl-change:empty { display: none; }
     .conversation-header .ib-infl-change {
@@ -1272,7 +1276,8 @@
     }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-head { gap: 6px; min-width: 0; }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-label,
-    .phone-call-mode #conversation-view .se-chat-header .ib-infl-number { font-size: 16px; line-height: 14px; }
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-number { font-size: 16px; line-height: 14px; font-weight: 400; }
+    /* VT323 ships one weight: 400 keeps it crisp (no synthetic bold) */
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-track {
         box-sizing: content-box;
         height: 6px;
@@ -1286,7 +1291,8 @@
         opacity: 1;
         background: var(--ui-text-dim, #a8b2c8);
     }
-    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark.is-reached { background: var(--ui-text, #eef1f8); }
+    /* reached ticks are twice as wide, so the state is a shape cue as well as a colour one */
+    .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark.is-reached { background: var(--ui-text, #eef1f8); width: 4px; margin-left: -2px; }
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark::after,
     .phone-call-mode #conversation-view .se-chat-header .ib-infl-mark-icon { display: none; }
     .phone-call-mode #conversation-view:has(.se-chat-header) .messages-container {
