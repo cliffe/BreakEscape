@@ -37,7 +37,18 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**NEWEST-5, read this first.** Round 3 answered and recorded (`f5ee445a0`, picks file "Round 3";
+**NEWEST-6, read this first.** Lock round 3 `72fa1a349` (G4 plain carried containers) and
+cracking round 3 `61a8bc8bc` (`crack.difficulty`) committed; delta `35d1064b3` passed both with
+fixes. RUNNING: Sonnet lock+cracking delta fixer (id-less carriers warning; `passwordDifficulty`
+NPC habit parameter, record's `crack.difficulty` wins); opus55 skin catalog part 2 from
+`ops_layer/HANDOVER_OPS_SKIN_catalog.md` (part 1 `095f1fe02`: catalog in
+`config/break_escape/realism_catalog/*.json`, link `realism: "<id>"`, named keys copied into
+`cli` at check; banners stay scenario-side, no real ids (my ruling); default module
+`auxiliary/scanner/...` stands); opus55 bug fix `p-knockout-drop` (no report yet). NEXT: commit
+each; apply skin requests 3 and 5 to core; opus55 skin delta (catalog serving); cross-plan delta;
+fix-branch hash → AC0.
+
+**NEWEST-5.** Round 3 answered and recorded (`f5ee445a0`, picks file "Round 3";
 brief rule 4 changed: real ids allowed only in a separate realism catalog). RUNNING: opus55 skin
 reviser (realism catalog outside scenarios/ linked by plain id; no "(simulated)" mark; new core
 requests in skin section 14 → apply to core after); opus55 cracking (salt confirmed, `common`
