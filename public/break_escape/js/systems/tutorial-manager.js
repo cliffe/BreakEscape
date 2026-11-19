@@ -65,6 +65,13 @@ function isTouchFirst() {
     }
 }
 
+// The phone layout of ui/hud-lanes.js (isCompactViewport): there the objectives panel is a
+// sheet over the map, so the tutorial panel and it compete for space. Wider screens, touch
+// or not, have room for both. Inlined so this module needs no new import.
+function isCompactHud() {
+    return window.innerWidth < 900 || window.innerHeight <= 500;
+}
+
 // Same selector the game's key handler (core/player.js) uses for "a control has the focus"
 const FOCUSABLE_CONTROL = 'button, input, textarea, select, a[href], [contenteditable]:not([contenteditable="false"])';
 
@@ -102,6 +109,8 @@ export class TutorialManager {
         this.promptOpen = false;
         this.stepReady = false;
         this.keyHandler = null;
+        // True while the panel is collapsed by this tutorial (not by the player)
+        this.collapsedObjectives = false;
 
         // Track player actions for tutorial progression
         this.playerMoved = false;
@@ -229,43 +238,52 @@ export class TutorialManager {
         this.isMobile = this.detectMobile();
         this.touchFirst = isTouchFirst();
 
+        // Collapse the objectives panel only where it would crowd the tutorial (the compact
+        // phone layout); the objectives step then goes, since the panel is out of the way
+        const collapseObjectives = this.isMobile && isCompactHud();
+        if (!collapseObjectives) this.restoreObjectivesPanel();
+
         // Define tutorial steps based on device type
+        // Wording follows the run: touch-first devices are told to tap, never click
+        const tap = this.touchFirst;
         if (this.isMobile) {
             this.steps = [
                 {
                     title: 'Movement',
-                    instruction: 'Click or tap on the ground where you want to move. Your character will walk to that position.',
-                    objective: 'Try moving around by clicking different locations',
+                    instruction: (tap ? 'Tap' : 'Click or tap') + ' on the ground where you want to move. Your character will walk to that position.',
+                    objective: 'Try moving around by ' + (tap ? 'tapping' : 'clicking') + ' different locations',
                     checkComplete: () => this.playerMoved
                 },
                 {
                     title: 'Hold to Walk',
-                    instruction: 'Press and hold anywhere on the ground to keep walking toward your finger. Drag around to steer your character.',
+                    instruction: tap
+                        ? 'Touch and hold anywhere on the ground to keep walking toward your finger. Drag around to steer your character.'
+                        : 'Press and hold anywhere on the ground to keep walking toward the pointer. Drag around to steer your character.',
                     objective: 'Hold down and drag to walk continuously',
                     checkComplete: () => this.playerUsedHoldWalk
                 },
                 {
                     title: 'Interaction',
-                    instruction: 'Click or tap on objects, items, or characters to interact with them.',
+                    instruction: (tap ? 'Tap' : 'Click or tap') + ' on objects, items, or characters to interact with them.',
                     objective: 'Look for highlighted objects you can interact with',
                     checkComplete: () => this.playerInteracted
                 },
                 {
                     title: 'Inventory',
-                    instruction: 'Your inventory is at the bottom of the screen. Click on items like the Notepad to use them.',
-                    objective: 'Click on the Notepad in your inventory to open it',
+                    instruction: 'Your inventory is at the bottom of the screen. ' + (tap ? 'Tap' : 'Click') + ' on items like the Notepad to use them.',
+                    objective: (tap ? 'Tap' : 'Click') + ' the Notepad in your inventory to open it',
                     checkComplete: () => this.playerClickedInventoryItem
                 },
                 {
                     title: 'Combat Mode',
-                    instruction: 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.',
-                    objective: 'Tap Punch, then hold Block',
+                    instruction: tap
+                        ? 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.'
+                        : 'Clicking the ground always walks or interacts. To fight, use the buttons at the bottom right: click Punch (click again quickly for jab, jab, cross) and hold Block to guard.',
+                    objective: (tap ? 'Tap' : 'Click') + ' Punch, then hold Block',
                     checkComplete: () => this.playerToggledCombatMode && this.playerAttackedInCombatMode
                 }
             ];
 
-            // Don't add objectives step on mobile since the objectives panel is stacked under the tutorial and would be difficult to interact with - players can learn about it on desktop or discover it on their own
-            
         } else {
             this.steps = [
                 {
@@ -312,15 +330,18 @@ export class TutorialManager {
                 }
             ];
 
-            // Only add objectives step if scenario has objectives
-            if (this.hasObjectives()) {
-                this.steps.push({
-                    title: 'Objectives',
-                    instruction: 'The objectives panel in the top-left corner tracks your current tasks. Click the panel header to expand and collapse it.',
-                    objective: 'Expand and collapse the objectives panel by clicking it',
-                    checkComplete: () => this.playerToggledObjectives
-                });
-            }
+        }
+
+        // Only add objectives step if scenario has objectives and the panel stays open
+        // (on a compact phone the panel is collapsed below, so the step is dropped there)
+        if (!collapseObjectives && this.hasObjectives()) {
+            this.steps.push({
+                title: 'Objectives',
+                instruction: 'The objectives panel in the top-left corner tracks your current tasks. ' +
+                    (tap ? 'Tap' : 'Click') + ' the panel header to expand and collapse it.',
+                objective: 'Expand and collapse the objectives panel by ' + (tap ? 'tapping' : 'clicking') + ' it',
+                checkComplete: () => this.playerToggledObjectives
+            });
         }
 
         // Scenarios with attacks disabled have no combat to teach (see attacksDisabled() in player-combat.js)
@@ -328,13 +349,25 @@ export class TutorialManager {
             this.steps = this.steps.filter(step => step.title !== 'Combat Mode');
         }
 
-        // Collapse objectives panel on mobile so it doesn't obscure the tutorial
-        if (this.isMobile && window.objectivesPanel && !window.objectivesPanel.isCollapsed) {
-            window.objectivesPanel.toggleCollapse();
+        // Collapse objectives panel on a compact phone so it doesn't obscure the tutorial.
+        // setCollapsed keeps this out of the player's own toggle record and the Objectives step
+        if (collapseObjectives && window.objectivesPanel && !window.objectivesPanel.isCollapsed) {
+            window.objectivesPanel.setCollapsed(true);
+            this.collapsedObjectives = true;
         }
 
         this.createTutorialOverlay();
         this.showStep(0);
+    }
+
+    /**
+     * Reopen the objectives panel if this tutorial collapsed it. A panel the player
+     * collapsed (or reopened) themselves is left as it is.
+     */
+    restoreObjectivesPanel() {
+        if (!this.collapsedObjectives) return;
+        this.collapsedObjectives = false;
+        if (window.objectivesPanel?.isCollapsed) window.objectivesPanel.setCollapsed(false);
     }
 
     /**
@@ -555,6 +588,7 @@ export class TutorialManager {
         this.active = false;
         this.markCompleted();
         this.removeKeyHandler();
+        this.restoreObjectivesPanel();
 
         if (this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
@@ -588,6 +622,7 @@ export class TutorialManager {
         this.active = false;
         this.markCompleted();
         this.removeKeyHandler();
+        this.restoreObjectivesPanel();
 
         if (this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
@@ -685,6 +720,8 @@ export class TutorialManager {
      * Notify tutorial that the player toggled the objectives panel
      */
     notifyObjectivesToggled() {
+        // The player's own toggle: the panel is theirs now, so the end of the run leaves it alone
+        this.collapsedObjectives = false;
         if (this.active) {
             this.playerToggledObjectives = true;
         }
