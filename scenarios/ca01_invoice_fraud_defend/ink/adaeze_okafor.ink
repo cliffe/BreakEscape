@@ -28,14 +28,18 @@ VAR hub_quiet = false
 - else:
     { kit_defend_done && not kit_ca01_host_said:
         { kit_key_caught:
-            Adaeze Okafor: You spotted that bank-change email, so the run paid Harlow's real account, not the one the email asked for. That's the one these usually go wrong on, and you had it.
+            Adaeze Okafor: You spotted that bank-change email, so the run paid Harlow's real account, not the one the email asked for.
+            Adaeze Okafor: That's the one these usually go wrong on, and you had it.
         - else:
-            Adaeze Okafor: That bank-change email was the one to stop. It went through, so the run paid an account that was never Harlow's. On a busy afternoon it's an easy one to wave through.
+            Adaeze Okafor: That bank-change email was the one to stop.
+            Adaeze Okafor: It went through, so the run paid an account that was never Harlow's. On a busy afternoon it's an easy one to wave through.
         }
         ~ kit_ca01_host_said = true
     - else:
         { episode_e1_invoice_fraud_defend_defend_complete:
-            Adaeze Okafor: That's the inbox sorted, thank you. We got caught by one of these once, a bank-change email we took at face value, and it took an age to get the money back. So now we ring the supplier back on a number we already hold before any payee change.
+            Adaeze Okafor: That's the inbox sorted, thank you.
+            Adaeze Okafor: We got caught by one of these once, a bank-change email we took at face value, and it took an age to get the money back.
+            Adaeze Okafor: So now we ring the supplier back on a number we already hold before any payee change.
         - else:
             Adaeze Okafor: Thanks for covering the payments inbox before the three o'clock run. It's open on the kiosk.
         }
