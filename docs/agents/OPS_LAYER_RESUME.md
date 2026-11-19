@@ -86,6 +86,13 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   obtained the hash); the skin's control list is view-local on core's `ops-model.js`, build order
   unchanged, with a confirm question to the user. Still to apply in round 2: rulings touching CORE
   (B, D, E, G's item-id request) and CRACKING (E, F, named state keys, `crackRuns` server-owned).
+- 11:13. Round 1 revisions committed: PRIVILEGE `86e8bc159`, MFA `1ac5579be`, SKIN `b40e9c1eb`,
+  LOG_ROWS `354171b88`; R2 reviews running on all four (findings to `reviews/<PLAN>_R2.md`).
+  CORE: reviser (Fable) running on R1 + cross-plan rulings; R1b findings `OPS_CORE_R1b.md`
+  (4 majors, 13 minors) need a second reviser pass after it reports. Rulings added: the log
+  plan's L1 (helper only) lands before core S1; a hash file read on a share is the log plan's own
+  plain "file read" row. Picks page builder running, writes scratchpad `ops_plan_picks.html`
+  (localStorage key `be-ops-plan-picks-v1`); publish it when it reports.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
