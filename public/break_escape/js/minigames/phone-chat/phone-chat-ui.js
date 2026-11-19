@@ -264,6 +264,8 @@ export default class PhoneChatUI {
         timer.textContent = shown;
         bar.classList.add('call-ended');
         this.elements.choicesContainer && (this.elements.choicesContainer.innerHTML = '');
+        // no replies left, so no "more choices" cue either
+        this.elements.choicesMoreCue?.classList.remove('visible');
         return true;
     }
 
@@ -1482,9 +1484,6 @@ export default class PhoneChatUI {
         const refocus = this._refocusChoices && focusFree;
         this._refocusChoices = false;
         this.elements.choicesContainer.innerHTML = '';
-        // A new reply set starts at the top: the old set may have been scrolled to its last
-        // reply, which would hide replies 1-3 and the "more choices" cue (call mode, short screens)
-        this.elements.choicesContainer.scrollTop = 0;
         
         choices.forEach((choice, index) => {
             const choiceButton = document.createElement('button');
@@ -1498,6 +1497,11 @@ export default class PhoneChatUI {
             this.elements.choicesContainer.appendChild(choiceButton);
         });
 
+        // A new reply set starts at the top: the old set may have been scrolled to its last
+        // reply, which would hide replies 1-3 and the "more choices" cue (call mode, short screens).
+        // Reset after the buttons are in: Chromium restores the old offset on the emptied box
+        // once content comes back, so a reset before the append is undone (live, 844x390)
+        box.scrollTop = 0;
         if (refocus) box.querySelector('.choice-button')?.focus({ preventScroll: true });
 
         this.scrollToBottom();

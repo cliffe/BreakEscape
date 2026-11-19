@@ -33,8 +33,11 @@ function makeUi(callMode) {
     const children = [];
     const box = {
         scrollTop: 123, clientHeight: 93, get scrollHeight() { return 216; },
-        set innerHTML(v) { children.length = 0; }, get innerHTML() { return ''; },
-        appendChild(c) { children.push(c); },
+        // Chromium keeps the old offset of an emptied scroller and restores it when content
+        // comes back, so only a reset made after the append sticks (live run 2, 844x390)
+        set innerHTML(v) { children.length = 0; box._restore = box.scrollTop; },
+        get innerHTML() { return ''; },
+        appendChild(c) { children.push(c); if (box._restore != null) { box.scrollTop = box._restore; box._restore = null; } },
         contains(el) { return !!el && children.includes(el); },
         querySelector() { return children[0] || null; },
         children,
