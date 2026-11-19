@@ -28,3 +28,15 @@
 - m8: adopted; section 8 says passed records persist and resets drop them.
 - n1: room `lockType` pointer fixed; `infusion_pump`, `backup_recovery` removed. n2: in request 5. n3: `object:<id>`/`door:<room>` key as `PinDust`. n4: section 10.
 - Orchestrator notes: `save_limit: true` wording; closed method list. Length not yet under 650 (709); see handover.
+
+## R2 (third reviser, 2026-11-19; stopped at the context limit, partly applied)
+
+- M2: adopted (path form). `resolve_unlock_target` returns `{ object:, path: }`; Rule C reads ids on the path; `step_ancestors` removed; other finders carry the path. Validator error for `secondStep` inside any `usb` item; copied-source controller test added. Verified `held_usb_sticks` deep_dups (`game.rb:5011-5020`).
+- m1: partly; 5.2 gate now recomputes from the record with `numbers(...)` and `nonce`. Item 8 still to drop from section 14.
+- m2: adopted; empty list for `GET /mfa/phone`, generic 422 for the three posts; ids only.
+- m3: adopted; `validate_unlock(..., resolved: nil)`, nil keeps today's find (controller is the only production caller, `games_controller.rb:1226`).
+- m4: adopted; `finishLock` posts via `ApiClient.post` with a fresh `nextClientTs()`, one re-post per pass, JS test.
+- m6: adopted as a validator error (smaller: only the payload filter reads `tableItems`, `game.rb:7287`).
+- n1: adopted in the live proof. n2: section 2 client paragraph, 5.2 subject table, section 7, section 4 owner rules, merged test rows done.
+- Unreviewed items checked: validator sites (new `scripts/validate_lock_step.rb`, run list `:8948`, door loop `:8058-8065`, world room path `game.rb:153-159`, task reads `:1602`/`:1719`); the "graph marks needed" rule rewritten (graph computes no reachability); graph edge from the owner's NPC node.
+- Not yet done: M1, m5, m7, request 1 trim, Q8 trim; see handover.
