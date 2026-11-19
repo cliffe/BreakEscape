@@ -276,8 +276,9 @@ S7; a scenario that does not teach cracking leaves it out.
 
 **How a cached hash is cracked.** The cracking plan cracks a hash from its account's `password`
 habit. A person's account has one; an `accountOnly` account (S5c) has no habits at all, so its hash
-record carries its own crack recipe, `crack`, with the habit's class key,
-`password` (`strong`, `guessable`, `reused` or `common`; required here, since the account has no
+record carries its own crack recipe, `crack`, with the recipe's class,
+`password` (the cracking plan's classes: the habit's `strong`, `guessable` and `reused`, plus
+`common`, which only a recipe takes; required here, since the account has no
 habit to supply it), and `facts` for `guessable` (the cracking plan's recipe shape). The cracking
 plan owns every rule on `crack`, in its `validate_cracking.rb` (facts count and reachability, the
 optional `passwordPattern` and its backing check, the `reused` source check); this plan adds none
@@ -741,6 +742,9 @@ Refusals follow the ops convention: `{ success: false, reason: "not_admin" | "lo
 "not_reachable" | "bad_request" }`, and the 404 of check 2, which is `GET /container`'s own body
 and not a reason on this list. It mirrors that route on purpose (so a real and an invented id look
 alike) and stays as that route gives it; a test that walks the closed list accepts it by name.
+S5b adds `not_admin`, `locked` and `not_reachable` to `test/fixtures/files/ops_refusal_codes.json`
+(`bad_request` is already there) and gives each a line in `REFUSAL_TEXT` (`ops-model.js`), and the
+collect panel turns a refusal's `reason` into words with `REFUSAL_TEXT`, with no table of its own.
 
 Checks in order:
 1. `pc_id` missing, not a string or too long → 400 `{ success: false, reason: "bad_request" }`;
@@ -773,7 +777,9 @@ account collected at this PC so far, `portrait` and `avatar` are built as `login
 builds them (`GM:3876-3881`; null for an `accountOnly` account, which the allow-list leaves no
 sprite), and `hashId` is the registry id of that pair's `hash` record, the id the keyring row and
 the crack route use. A repeat (say after a lost answer) returns `harvested: []` with the same
-`held`, writes nothing and writes no log row. `keyringRev` is in every success answer. The answer
+`held`, writes nothing and writes no log row. `keyringRev` is in every success answer and is `keyring_for_client(...)[:rev]`, the one builder,
+so it includes the cracking plan's `crackFacts` member; a test asserts it equals the next
+`GET /keyring` rev. The answer
 never contains a password or a hash token; the token arrives through `GET /keyring` as the cracking
 plan defines, and a password only through a successful crack. `Cache-Control: no-store`, as the
 keyring route.
@@ -873,8 +879,8 @@ unchanged.
   strings, at least one), `creds.domain` (string, pattern `^[A-Za-z0-9.-]{1,32}$`); all under the
   existing `x-serverOnly` `creds`.
 - On a room NPC: `accountOnly` (boolean).
-- On a sign-in PC object: `cachedAccounts` (array, at most 8, of `{ npc: string, after?: "borrow" }`,
-  `x-serverOnly`) and `domain` (string, same pattern, sent).
+- On a sign-in PC object: `cachedAccounts` (array, at most 8, of `{ npc: string, after?: "borrow" }`, closed:
+  `additionalProperties: false`, `^_` notes allowed; `x-serverOnly`) and `domain` (string, same pattern, sent).
 - Nothing on `policies`.
 
 **Validator** (new file `scripts/validate_privilege.rb`, one function `check_privilege(json_data)`,
@@ -886,10 +892,10 @@ required and run from `scripts/validate_scenario.rb` by one line beside the core
   credential whose `account` is the candidate and whose proof is `{ "harvested": "<this PC's
   id>" }`, else error ("cached accounts are hashes: author one hash record per PC and account").
   Those records count toward the registry's existing cap of 64 entries, which is the only cap on
-  declared pairs. A candidate that is an `accountOnly` account (or any account with no
-  `habits.password`) needs `crack` on its hash record, else error ("an account with no password
-  habit needs a crack recipe on its hash record"). This plan checks nothing else on `crack`: the facts, an optional
-  `passwordPattern` and a `reused` source are all checked by `validate_cracking.rb`. An `after: "borrow"` candidate on a PC
+  declared pairs. This plan checks nothing on `crack`: whether the recipe's class resolves (a
+  candidate with no `habits.password`, such as an `accountOnly` account, needs the recipe's
+  `password` class), the facts, an optional `passwordPattern` and a `reused` source are all
+  checked by `validate_cracking.rb`, by the cracking plan's "class resolves" rule. An `after: "borrow"` candidate on a PC
   with an `owner` or on a headless PC, error (the engine never performs that borrow,
   `performable?`). An `after: "borrow"` candidate
   needs a `borrow_session` workaround whose `pc` resolves through `find_login_pc`'s rule to this
@@ -1056,7 +1062,9 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
 - `account_kind_test.rb`. S5c: every cell of the truth table on both the typed and keyring paths,
   each refusal uncounted; the shared local administrator collected and cracked on `pc01` signs in as admin on
   `pc02`; `lab1Admin` is refused on `pc01`; the domain administrator signs in as admin on every
-  domain PC and is refused on a PC without the domain.
+  domain PC and is refused on a PC without the domain. Row tests: a `local` and a `domain`
+  account refused by kind each write one `signin_refused` row whose detail has that `kind`; an
+  account refused only by the PC's `access` list writes a row with no `kind`.
 - `account_only_readers_test.rb` (S5c, section 5): the reader cases and the manifest check there;
   the NPC signs in by typed username.
 - `login_tiles_test.rb`. S5c: a `local` account has tiles only on its `localTo` PCs, a `domain`
@@ -1209,8 +1217,7 @@ Files this plan changes:
   `test/unit/break_escape/policy_test.rb` adds the action to `DEVICE_ACTIONS`.
 - The network host row's serialiser (the core plan's), for the `access` rule.
 - `scripts/scenario-schema.json` (the section 9 fields, `harvested` (string) in the credential
-  proof properties at `:293-305`, and `crack` on a `hash` entry if the cracking plan has not added
-  it), `scripts/generate_dungeon_graph.rb`; `scripts/validate_scenario.rb` gains one
+  proof properties at `:293-305`), `scripts/generate_dungeon_graph.rb`; `scripts/validate_scenario.rb` gains one
   `require_relative` and one call line only.
 - Client: `pc-sessions.js` (`sessionAdmin`, `keyboardAdmin`, `plantAdmin`), `interactions.js`
   (`objectData` in the opts of both calls, the predicate per object via `plantAdmin`, the wait on a
@@ -1235,6 +1242,8 @@ Files this plan changes:
 - `credential_model.rb`: S7 and S8 may read `pcs_accepting`; this plan changes only its admission.
 - The unchanged-scenario fixture folder and `bin/ops-golden-compare` (section 10), built in the log
   plan's L1a and shared by every ops plan's unchanged test.
+- `GamesController#container`: the log plan's L3 (`share_folder_opened`) and the lock plan (Rules
+  C and D) edit the same action as this plan's profile branch; agree the order.
 - `credential_keyring.rb` and `credential_model.rb`: S7 lands first with the `hash` kind, its
   crack grant and its keyring row; S5b then adds only the `harvested` proof kind.
 - `ACCESS_STATE_DEFAULTS`, `AccessIdentities.reach`, the dungeon graph and the validator.
@@ -1265,7 +1274,10 @@ enforces it there. The collect route caps `pc_id` at 40 in every scenario, so th
 also makes an id over 40 on a PC with `cachedAccounts` an error whatever `logSources` says. An
 account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is the log rows plan's
 `signin_refused` row; this plan writes none, and S5c registers that row's optional `kind` detail
-(`local`, `domain`).
+(`local`, `domain`). S5c also adds `detail: { 'kind' => <the account's accountKind> }` to the log
+plan's L1b `signin_refused` call, only when `account_kind_admits?` is what refused (it runs first,
+so a false from it is the kind refusal; a refusal by the PC's `access` list, which runs after it,
+passes no `kind`).
 
 ## 14. Cross-plan requests
 

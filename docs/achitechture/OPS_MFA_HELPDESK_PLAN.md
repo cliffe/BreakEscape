@@ -527,8 +527,9 @@ A grant writes `accountResets[npcId]` with `'password' => true` or `'mfa' => tru
   `creds.password`. `attempt_login!` (`game.rb:3486-3487`) changes to call it, so the old
   password fails at sign-in. Readers of things written before the reset keep the authored value
   on purpose: a post-it (`game.rb:3425`), an earlier capture (`game.rb:2697`) and the privilege
-  plan's harvest collect (`creds.password`) are out of date, as they would be. A collect after a
-  reset therefore yields the old password, which no longer signs in.
+  plan's crack of a collected hash (which reads `creds.password`) are out of date, as they would
+  be. A crack after a reset therefore yields the old password, which no longer signs in. A
+  collected cached account is always a hash; the collect itself yields no password.
   The keyring lists a new implicit entry `<npcId>.reset` (kind `password`) built beside the
   captured-account entries (`credential_keyring.rb:263-285`).
 - **A password reset unlocks the account.** Lockouts never expire, and a locked key is refused
@@ -948,7 +949,7 @@ The feature scenario's beats are each asserted in a controller case too. Cases n
 | Code | Device route refused with a forged item and with another type's id; another owner's device gives a code that fails; verify with no pending record; a code two windows old answers `stale: "expired"` and counts nowhere; five wrong codes drop the record with no `maxAttempts`; wrong codes reach the policy lockout; a re-enrolled account's old device answers `enrolled: false` with no code |
 | Code step closure | Thirty wrong codes across attempts and PCs close the step; a right code is then refused with `retryIn`; one `mfa_code_locked` row exists; with time moved on `CODE_CLOSED_SECONDS` a right code is accepted and the count starts from 0; a second-factor grant reopens it at once |
 | Route re-judge | The account removed from the access list between steps is refused |
-| Technique sessions (`mfa_keyring_test.rb`, added once S3 exists) | A technique session on a `code` PC opens with no pending record. A saved connection granted by a technique, signed in at that PC, answers `mfaRequired` |
+| Technique sessions (`mfa_keyring_test.rb`, added once S3 exists) | A technique session on a `code` PC opens with no pending record. A saved connection granted by a technique, used at that PC, answers 422 `typeToSignIn: "second_step"` with no session and no pending record; typing the same account's password then answers `mfaRequired` |
 | Withheld key | The hostile-input scan finds no `helpdesks` key, desk NPC id or `maxTries` in the scenario sent to the browser |
 | Saved connection (`mfa_keyring_test.rb`) | Refused with `typeToSignIn: "second_step"` at a `push` and a number matching PC and over a foothold, with no session, pending record or counter moved; a locked-out account answers `lockedOut`; an exempt account's saved connection signs in; at a PC with no `mfa`, a saved connection is unchanged before a password reset, refused with `typeToSignIn: "password_changed"` after it, and works again once the new password has been typed at any PC |
 | Push | The count survives a new attempt; requests caught on a held phone do not raise it; a knocked-out owner approves nothing; `tooSoon` |
@@ -1040,7 +1041,7 @@ Shared files (re-read just before editing, own block only, explicit paths):
 | File | This plan's edit | Also touched by |
 |---|---|---|
 | `app/models/break_escape/game.rb` | `attempt_login!` second step, `typed_route_refusal`, the lockout key sites (`attempt_login!`, `account_locked_out_at?`, `lockout_pcs_for_client`, `account_login_key?`, `record_login_failure!`, `add_login_lockout!`; `AccessWork.locked_out_at?` is in `access_work.rb`), `login_lockout_keys_for`, the sourceless room-add test (`:1171`), five state keys | S5a, S5c (sign-in order, lockout scope), S3 (sessions) |
-| `app/models/break_escape/network_access.rb` | `helpdesks` added to `WITHHELD_SCENARIO_KEYS` (`:18`), so the scenario sent to the browser never carries it; the desk reaches the client only as `helpdeskForms`. Test: the hostile-input scan | S1, S5a |
+| `app/models/break_escape/network_access.rb` | `helpdesks` added to `WITHHELD_SCENARIO_KEYS` (`:18`), so the scenario sent to the browser never carries it; the desk reaches the client only as `helpdeskForms`. Test: the hostile-input scan | S1, S5a, the log plan's L1a (adds `logSources` to the same line, and lands first) |
 | `lib/break_escape/access_identities.rb`, `access_work.rb` | `lockout_key`, `lockout_key_parts`; `locked_out_at?` calls them | S5c if a later slice rescopes lockouts |
 | `lib/break_escape/ops_log_events.rb` | this plan's entries in `OpsLog::EVENTS` | every plan that writes rows |
 | `credential_login.rb`, `credential_model.rb` | the two saved-connection refusals before the session write; `password` flag on the kind | S5b, S7 (keyring), S5c (account kind on the keyring path) |
@@ -1142,8 +1143,8 @@ No field holds a code, a number to match, an answer or a password. The only free
 5. **Technique cards (S3).** A session a card grants meets no second step; a password or saved
    connection a card yields goes to the keyring, and using it does meet the step.
 6. **Recovered passwords (S5b, S7).** A harvested or cracked password is typed at sign-in and
-   meets the step; neither plan starts a session from one. The collect action keeps reading
-   `creds.password` after a reset, on purpose (section 5.2).
+   meets the step; neither plan starts a session from one. The cracking plan's crack of a
+   collected hash keeps reading `creds.password` after a reset, on purpose (section 5.2).
 7. **Policy fields in the browser (S5a, S5c, any plan adding a policy field).** A policy's kind
    is public, its answers are not (section 7); the others are asked to state it for their fields.
 8. **Log rows (S9).** Section 13 is written to the log plan's helper and to its registration of
@@ -1175,7 +1176,7 @@ No question is open. Points with an obvious default are settled in section 5.4. 
 answers that shape later work follow.
 
 - **A helpdesk request over a PC needs a session there; in person it needs none.** As written in
-  section 5.2: a request made from a PC's desktop needs an open session at that PC (any kind),
+  section 5.2: a request made from a PC's desktop needs an open, unlocked session at that PC (any kind),
   and a request in person at the desk needs none. There is no desk field for it.
 
 - **NPCs do not react to what the player does to their account.** Only the log rows are

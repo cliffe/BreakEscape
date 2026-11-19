@@ -359,9 +359,12 @@ account with no `creds.password` answers `no_recipe` and records nothing.
 
 **Who holds a password.** One predicate, `password_held_for?(npcId)`, answers "the player already
 holds this account's password" everywhere this plan asks it. It is true when the account is in
-`crackedAccounts`, or the keyring lists a `password` entry for the account from any other source:
-a capture entry (whether or not `revealSecret` attaches the value) or a `registry` password entry
-whose proof holds (these never carry a value, `CK:330-343`). It is used by the already-cracked
+`crackedAccounts`, or the keyring lists, for the account, a capture entry (whether or not
+`revealSecret` attaches the value) or a `registry` `password` entry whose proof holds (these never
+carry a value, `CK:330-343`). The MFA plan's implicit `<npcId>.reset` entry does not count: it
+holds the new password, not the one the hash was made from, so a reset neither marks the old hash
+`cracked` nor makes a `reused` crack hit on another account whose password equals the old one. A
+test row at S8b time (section 11) asserts both. It is used by the already-cracked
 test, by the `reused` comparison, by the hash row's `cracked` status, and by the one-row rule of
 the grant. Holding is the test, not seeing the value.
 
@@ -644,6 +647,9 @@ existing tests that should.
 with token, username and `status: "ready"`, and no password; a technique grant lists the same row;
 the token is stable across reloads, differs between games, and is equal for two unsalted records
 whose passwords are equal; a salted record's token matches nothing; a hash never signs in.
+At S8b time, once the MFA plan's `<npcId>.reset` entry exists: after an account's reset the hash
+row still reads `ready` (not `cracked`) and a crack of it is not answered `cracked`; and a `reused`
+crack on another account whose password equals the reset account's old `creds.password` misses.
 
 **C1, `test/unit/validate_cracking_test.rb`** (built as `test/unit/validate_plant_hiding_test.rb`
 is). One minimal scenario per rule, each asserting the error or warning appears, and a clean
@@ -776,7 +782,7 @@ Files other plans also touch (agree the order with their owners):
 - `test/fixtures/files/ops_refusal_codes.json` and the client's `REFUSAL_TEXT` table
 - `app/controllers/break_escape/games_controller.rb` (`games#crack`, `process_flag_rewards`),
   `config/routes.rb`, `app/policies/break_escape/game_policy.rb`
-- `scripts/scenario-schema.json`, `scripts/validate_scenario.rb` (one hook line)
+- `scripts/scenario-schema.json`, `scripts/validate_scenario.rb` (the require and the run line)
 - `scripts/generate_dungeon_graph.rb`
 - `public/break_escape/js/systems/keyring.js`,
   `public/break_escape/js/minigames/capture-log/signin-rows.js`, the remote-host text helper
@@ -834,8 +840,10 @@ L888-893), kept here as a record:
 `hash` and the `connectsTo` skip applies to it; S7 skips the `connectsTo` and
 policy checks for it, and builds both, with their test. S7 adds `no_recipe` and `fact_not_held` to
 `ops_refusal_codes.json` and `REFUSAL_TEXT`, and uses the core list's `bad_request` and
-`not_found`. The core's count of twelve codes (the core's "refusal codes, in one list" paragraph, and the skin plan's matching text) becomes
-fourteen with S7, as the core expects later plans to add codes (the core's "later plans add codes" row).
+`not_found`. The core's "refusal codes, in one list" paragraph already counts these two beside its twelve
+network-route codes (and the privilege plan's three collect codes), as the core expects later
+plans to add codes (the core's "later plans add codes" row); the file holds each code any ops
+route sends.
 
 **Second-step and lock plans.** A cracked password is a first factor and meets a second step as any
 other password does. It joins the second-step plan's list of credentials that keep the authored
@@ -850,7 +858,8 @@ shows in the simulated command-line output, the skin plan should say what it wan
 per run, from the `POST /crack` answer only: the record label and token, the fact labels picked, a
 progress line while `running`, and the status.
 
-**Sync deltas plan.** Add the four state keys of section 8 to its growth table when it is built.
+**Sync deltas plan.** Add the four state keys of section 8, and `crackFacts` (up to 64 ids, sent
+whole in each keyring answer whose `rev` changed), to its growth table when it is built.
 
 **Intel and scenario authors.** A recipe fact that today comes only from dialogue, an object
 action, an OSINT page or a mail highlight needs a second, server-visible source: a takeable item

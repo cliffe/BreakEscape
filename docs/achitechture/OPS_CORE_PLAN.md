@@ -1181,10 +1181,12 @@ and is left out of the table.
 **The refusal codes, in one list.** The ops routes send twelve: `bad_request` (400),
 `not_found` (404), `not_responding` (403), and with 422 `not_needed`, `not_confirmed`,
 `false_positive`, `no_grant`, `fixed`, `wrong_class`, `wrong_product`, `wrong_version` and
-`need_unmet`. The desktop route gains none. The twelve are kept in
-`test/fixtures/files/ops_refusal_codes.json`; the controller tests assert that no
-ops answer carries a code outside it, and the node test that `REFUSAL_TEXT` has a line for
-each.
+`need_unmet`. The desktop route gains none. The file
+`test/fixtures/files/ops_refusal_codes.json` holds every code any ops route sends in a
+`reason`: these twelve from the network routes, two more that the cracking plan adds in S7
+(`no_recipe`, `fact_not_held`) and three that the privilege plan adds in S5b for the collect
+route (`not_admin`, `locked`, `not_reachable`). The controller tests assert that no ops answer
+carries a code outside it, and the node test that `REFUSAL_TEXT` has a line for each.
 
 | Route | Params | Checks in order | Writes and answer |
 |---|---|---|---|
@@ -1971,8 +1973,9 @@ Each is a statement of what this plan provides or needs, for the plan named.
    The validator applies `pc_admits_account?`, with the account-kind rule once that exists, to
    `grants.session.account`. Both plans should say this from their side. The MFA plan adds two
    controller tests once S3 exists: a technique session on a `code` PC opens with no pending
-   record; a saved connection granted by a technique, signed in at that PC, answers
-   `mfaRequired`.
+   record; a saved connection granted by a technique, used at that PC, answers 422
+   `typeToSignIn: "second_step"` with no session and no pending record, and typing the same
+   account's password then answers `mfaRequired`.
 5. **Account kinds (S5c) and MFA (S8).** `host_reachable_through?` and `from_route_refusal` are
    not changed by this plan: discovery gates no sign-in, desktop or share, so their check order
    is as it is today, and new sign-in checks go where each plan puts them. The one change near

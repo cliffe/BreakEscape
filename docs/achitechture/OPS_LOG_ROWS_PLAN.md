@@ -1221,7 +1221,7 @@ records nothing for these, and the gap is the lesson.
    keyring entry, `hash` entries included.
 5. **OPS_MFA_HELPDESK (S8):** the rows, the `approver` key, the route codes, the secret sources
    (`creds.resetPassword` registered, no seed, recovery answers not registered) and the 10 to 99
-   matching number are taken as that plan writes them. Two changes remain in that plan:
+   matching number are taken as that plan writes them. Two changes, both taken in that plan (it names the `{ id: 'test_any' }` kind):
    - The helper's last argument is the switch `save_limit: false`. `helpdesk_request` registers
      `save_limit: { 'blocked' => 10 }`, and the blocked call is exactly
      `write_log_row!('helpdesk_request', as: { typed: username }, where: { kind: 'desk', id: desk_id }, result: 'blocked', detail: { 'what' => what }, save_limit: true)`,
