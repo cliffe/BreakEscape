@@ -37,7 +37,17 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**Update evening 2026-11-19: ALL SIX revised plans settled (core R7 fixed, 1948 lines; cross-plan
+**Round 2 answered (picks file end, `3a879f440`). Running, each on its own files: opus55
+cracking reviser (brief file); opus55 skin realism revision (simulated nmap/msf-style output from
+per-tool JS generators; deny-list withdrawn; may file core requests in skin section 14); opus55
+lock round 2 (R2-5 b inventory-path audit + carried-item step); Sonnet core/priv/MFA picks (R2-6 b
+revert se_technique, R2-7/8/9 to decisions); Sonnet bug fixes in worktree
+`.claude/worktrees/p-keyring-fix` branch `fix/keyring-revocation-validator-cards` from main
+98284ca85 (hash goes to AC0 for a train). Next: commit each, route skin's core requests, delta
+reviews (opus55 for skin realism, lock audit and cracking; Sonnet for the picks tidy), then a
+cross-plan delta.**
+
+**Earlier, evening 2026-11-19: ALL SIX revised plans settled (core R7 fixed, 1948 lines; cross-plan
 R5 fixed `185becfb7`). Two log-plan wording nits left as noted (lock R8 n4, core R7 n4, LOG:607,
 :939, :992). Waiting on the user: round 2 page answers (then apply them, Sonnet delta per touched
 plan) and R2-1 (cracking route). Nothing running.**
