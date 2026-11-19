@@ -1293,10 +1293,8 @@ Each entry names what this plan needs from another plan and the section of that 
    (section 5.4 of this plan), so the "approving from the phone" slice needs no lock form. The lock
    form's subject check leaves one hook before the record is read; this plan's G1 puts
    `carried_step_reachable?(object, path)` (section 5.5) in it, answering the lock form's 404 when
-   it fails, so G1 does not depend on the MFA plan for its own refusal. (not yet in
-   `OPS_MFA_HELPDESK_PLAN.md` — open: its section 6 says only that the routes take a non-PC
-   subject once this plan lands, and its section 9 does not admit a lock's owner on the
-   `code_device` owner error.)
+   it fails, so G1 does not depend on the MFA plan for its own refusal. The MFA plan's section 6
+   ("The lock subject") and section 9 state both, and its section 11 tests them with G1 and G2.
 3. **`OPS_LOG_ROWS_PLAN.md`, section 13 (log rows) and its L1b stage.** The eight `mfa_*` events
    list `door` and `object` among their `places`; `mfa_challenge` registers the `method` detail
    key with the closed code list of section 13 here; `{ npc: }` is allowed as `as` on those

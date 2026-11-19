@@ -741,8 +741,21 @@ would. "Lockout" is the account's lockout key at that PC (422 `lockedOut`).
 A refused second step never says more than the first step already did: the `mfaRequired` answer
 itself tells the player the password was right, as a real second prompt does.
 
-In this plan every second-step route names a PC. The routes accept a subject that is not a PC
-only once the lock plan (A25) lands; until then a request without `pc_id` is the generic 422.
+**The lock subject.** The four step routes (`GET /mfa/device`, `POST /mfa/verify`,
+`POST /mfa/prompt`, `POST /mfa/approve`) and `GET /mfa/phone` take one subject: a PC by `pc_id`,
+or a lock by `target_type` (`object` or `door`) with `target_id` in place of `pc_id`, the subject
+`OPS_LOCK_SECOND_STEP_PLAN.md` (A25) defines in its section 6. A request naming both a PC and a
+lock, or neither, is the generic 422. `target_id` is resolved by id only: an object id must be in
+`second_step_ids` and a door id must name a room with `secondStep`; the name-matching finder is
+never used. The lock form's checks and answers are that plan's section 6 table; this plan's
+routes leave one hook in the lock form's subject check, before the record is read, which that
+plan fills with its reach test (`carried_step_reachable?`, its 5.5) and answers 404 when it
+fails. `GET /mfa/device` also answers when no policy declares an `mfa` kind but a lock carries
+`kind: "code"`. `GET /mfa/phone` lists a lock request only for a named lock (`target_type` and
+`target_id`), never in its `own=1` form or a form with no lock named. The `object` form lands
+with the lock plan's G1 and the `door` form with its G2; before G1, `pc_id` is the only subject
+and a request without it is the generic 422.
+
 The table above is the `pc` column of the subject rules in 5.2. The record drop and the session
 write on a pass, "Route still holds", "Lockout", `record_login_failure!`, and every re-enrolled
 form (`npc_id` on the device route, `own=1` on the phone route, the re-enrolled branch of
@@ -849,7 +862,9 @@ two habit keys and the per-parameter check.
 
 Errors: unknown `mfa` value; kind `code` on a policy whose PCs admit an enrolled account with no
 `code_device`; two code devices for one owner; a `code_device` with no `owner`, or an owner that
-is not an account; push kind where an admitted enrolled account's NPC has `phone: false`;
+is neither an account nor the owner of a lock's `secondStep` (the owner `MfaModel.lock_step`
+resolves: `secondStep.owner`, or the object's single `owner` id when that is left out; this
+widening lands with the lock plan's G1, and a door's `secondStep.owner` counts from its G2); push kind where an admitted enrolled account's NPC has `phone: false`;
 `approvesPrompts` or `promptPatience` invalid or on a non-room NPC; a helpdesk `npc` that is not a
 room NPC or serves two desks; a `questions` id missing from any account's `recovery` that the desk
 could be asked about; `minCorrect` above the number of questions; `resets` naming `password` when no
@@ -955,7 +970,8 @@ The feature scenario's beats are each asserted in a controller case too. Cases n
 | Push | The count survives a new attempt; requests caught on a held phone do not raise it; a knocked-out owner approves nothing; `tooSoon` |
 | Phone | Approve refused without the phone; the three numbers are stable for one attempt and differ for the next; deny cancels; own-phone list refused with no re-enrolled account |
 | Helpdesk | Unknown user and wrong answers give the same body and rows of the same shape (section 13); `maxTries` refusals stop the desk with `retryIn`, and with time moved on `DESK_STOP_SECONDS` the same account is served again with the count at 0; a request over a PC with a `pc_id` is granted with a keyboard session, a remote session and a technique session at that PC (one case each), and is `unavailable` with no session held, with a session held only at another PC, with a locked session, and with a `pc_id` that is not a sign-in PC (the last two bodies equal); the same request in person, with no `pc_id` and no session, passes the check; a non-string or 65-code-point `pc_id` is `bad_request`; a blocked desk posted to twenty times inside five minutes, with one username or twenty, stores and saves ten times and no more, and stores again once the window has passed; retry of a granted request gets the same body and leaves a lockout earned since the grant in place; an account locked out at two PCs is unlocked at both and `lockoutPcIds` shrinks; a second-factor grant leaves lockouts alone; desk NPC not met refused; hostile text in `answers` and `username` (long, HTML, control characters) is cut and cleaned before any use, echoed in no answer, and stored only as the normalised 64 code point key and the log row's capped `typed` field |
-| Subject rules (`test/models/break_escape/mfa_access_subject_test.rb`) | The `MfaAccess` functions called with a test-only subject kind and its own map, since no route takes one in this plan: a `passed` record survives the tidy past `PENDING_SECONDS` and an unpassed one does not; a right code, an owner approval and a player approval each return `:passed` and leave the record; no route re-judge and no lockout key is touched; `numbers` for that subject differs from a PC's with the same owner and nonce; `started`, `wrong` and `mfaPrompts` move on the shared per-owner entries; with the owner re-enrolled, push case 1 is skipped, approve needs the held phone, verify compares against the authored device, and `device_in_use?` keeps the old device's code live. The same calls with a `pc` subject give exactly the sign-in results above |
+| Subject rules (`test/models/break_escape/mfa_access_subject_test.rb`) | The `MfaAccess` functions called with a test-only subject kind and its own map, since no route takes a non-PC subject before the lock plan's G1: a `passed` record survives the tidy past `PENDING_SECONDS` and an unpassed one does not; a right code, an owner approval and a player approval each return `:passed` and leave the record; no route re-judge and no lockout key is touched; `numbers` for that subject differs from a PC's with the same owner and nonce; `started`, `wrong` and `mfaPrompts` move on the shared per-owner entries; with the owner re-enrolled, push case 1 is skipped, approve needs the held phone, verify compares against the authored device, and `device_in_use?` keeps the old device's code live. The same calls with a `pc` subject give exactly the sign-in results above |
+| Lock subject (lands with the lock plan's G1; the `door` cases with its G2) | Each step route takes `target_type: "object"` with a `target_id` in `second_step_ids` in place of `pc_id`; a request naming both a PC and a lock, or neither, is the generic 422; an object id not in `second_step_ids`, or a lock the reach hook refuses, is 404; a target named by display name is 404, never matched; `GET /mfa/device` answers for a lock owner's `code_device` in a scenario where no policy declares an `mfa` kind; `GET /mfa/phone` with `own=1`, or with no lock named, lists no lock request. With G2, `target_type: "door"` naming a room with `secondStep` is taken, and one naming a room without it is 404 |
 | No inline key | A unit test greps `app/` and `lib/` for a lockout key built or split outside `AccessIdentities` and fails on any hit |
 
 **JS** (`test/js/`), beside the existing authenticator and episode-runner tests, which pass
@@ -968,6 +984,7 @@ unedited, and `authenticator-live`, `authenticator-snapshot` (section 10), `help
 | `mfa-signin-pane.test.mjs` | Pane swap with no reject sound; `teachAfter` only after the second step; a reopened instance resumes from `MfaClient` and accepts a completed session; the code field is filled after a read of the pending account's device, and empty after a read of another account's device, of an item device when the answer said `ownPhone`, and of a device that answered `enrolled: false`; each `typeToSignIn` reason shows its own line |
 | `mfa-child-handover.test.mjs` | Against the real minigame manager, for each child scene: the sign-in screen suspends, the child ends by X, the `password` scene reopens on the second pane; a forced close releases the screen once, with no failure event and no completed note left behind |
 | `code-device.test.mjs` | A `used` code is greyed and not noted; an `enrolled: false` answer shows no digits |
+| `validator-mfa.test.mjs` (the lock owner cases land with the lock plan's G1) | A `code_device` whose owner has no `creds` but is the owner `MfaModel.lock_step` resolves for an object's `secondStep` (by `secondStep.owner`, and by the object's single `owner` id) raises no owner error; one whose owner is neither an account nor a lock's step owner still raises it |
 | `mfa-client.test.mjs` | Notes are kept per subject key; a passing answer for `pc` goes to `completeSecondStep`, and one for a test-only kind is handed out once by `takeCompleted` and never reaches the mirror; `noteRequired` and each route answer emit the matching `mfa_*` event, plain and as `<name>:<npcId>`, with `pcId` for a PC and `targetType`, `targetId` for the test kind; no `pc_signin_failed` for the test kind |
 
 **Feature scenario** `scenarios/test_ops_mfa/`: three rooms, one foothold, five sign-in PCs
@@ -1097,10 +1114,11 @@ tests and scenario beats. "When" names the model method and branch, inside the g
 This plan authors no second-step seed: the code key comes from the application's secret and is
 in no scenario or game row, so there is no seed field to register. Each stage's controller
 tests include one case that tries to write a row holding its secret and asserts the guard
-refuses it with the guard's own `secret in` error, not the type check's (for H1, a test-only
-event whose `detail` value is forced to a `creds.resetPassword` that equals no username, id or
-code; for M1a and M3, the same with the code or number just passed to `note_issued_secret`,
-since no row of this plan has a field that could hold either). Typed text in `as.typed` is the
+refuses it with the guard's own `secret in` error, not the type check's. The case uses a
+test-only event whose `detail` kind is `{ id: 'test_any' }` (its lookup resolves any string, so
+the value passes its type rule and reaches the matcher): for H1 its value is forced to a
+`creds.resetPassword` that equals no username, id or code; for M1a and M3, to the code or number
+just passed to `note_issued_secret`, since no row of this plan has a field that could hold either. Typed text in `as.typed` is the
 normalised username (section 6), stored whatever it equals and never checked against secrets,
 so it cannot serve as the guard case.
 

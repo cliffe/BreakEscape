@@ -1367,8 +1367,7 @@ Each entry names what this plan needs from another plan and the section of that 
   comes from any admin session on the PC, keyboard or remote, except for a session-shaped implant,
   which only a keyboard admin session at the grant's PC overrides; its fields are unchanged. A plant
   the server refuses (`usb_refused` from the inventory action, `needs_console` from the implant path)
-  writes no row. (The implant exception and the no-row rule for refused plants are not yet in
-  OPS_LOG_ROWS_PLAN.md - open.)
+  writes no row. The log plan's 13.7 carries both rules.
 - **All ops plans.** One fixture folder, `test/fixtures/files/ops_unchanged/`, and one helper,
   `bin/ops-golden-compare` (section 10), both built by the log plan's L1a (OPS_LOG_ROWS_PLAN.md,
   sections 11 and 12), which strips each plan's new empty `ACCESS_STATE_DEFAULTS` keys and freezes

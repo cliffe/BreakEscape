@@ -72,3 +72,7 @@ Round 6 (two minors, five nits), orchestrator's rulings applied.
 | n1, n2, n4, n5 | `badge_swipe` `EVENTS` line shown; section 14 item 6 `method` list marked met; "(the default `false`)" added; open question 4 "written to accepting it" | One-line fixes |
 | n3 | Clause added: only a `save_limit: true` merge refreshes `last` for protection | Bounded already; stated for clarity |
 | Not applied | Core plan wording at `OPS_CORE_PLAN.md:621` (n4) and the MFA plan's guard tests | Outside the two files this pass may edit; section 14 now states what the MFA plan must do |
+
+## Section 14 dependency closure (2026-11-19)
+
+- From the privilege plan: 13.7's `usb_install_overridden` row takes the implant exception (only a keyboard admin session at the grant's PC overrides a session-shaped implant), a bullet states that a refused plant (`usb_refused`, `needs_console`) writes no row, and section 11's per-call-site tests gain a line for both; the privilege plan's open marker is removed, and this plan's own marker on the MFA plan's `test_any` kind is removed now the MFA plan names it.

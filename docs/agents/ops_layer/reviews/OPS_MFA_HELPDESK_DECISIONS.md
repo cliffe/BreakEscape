@@ -90,3 +90,8 @@ Cross-plan round 2 (`CROSS_PLAN_R2.md`), items naming this plan.
 
 - R2-9 a: a helpdesk request over a PC needs a session there, in person none; the open question and its desk-field alternative are removed from section 15, which is now "Decisions" and states it as a decision.
 - R2-11 a: the plan mentions neither existing-code bug, so no change.
+
+## Section 14 dependency closure (2026-11-19)
+
+- From the lock plan: section 6 gains "The lock subject" (`target_type` `object` or `door` with `target_id`, resolved by id only, the reach hook, the device and phone route rules, `object` with G1 and `door` with G2), section 9's `code_device` owner error admits a lock's `secondStep` owner, and section 11 gains a controller "Lock subject" row and a `validator-mfa.test.mjs` row, both landing with G1; the lock plan's open marker is removed.
+- From the log plan: section 13 names the guard test's `detail` kind `{ id: 'test_any' }` in the log plan's words; the log plan's open marker is removed.

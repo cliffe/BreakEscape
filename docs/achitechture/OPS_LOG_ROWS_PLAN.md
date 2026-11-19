@@ -631,6 +631,11 @@ re-read game (`Game.find(id).player_state`), never the in-memory object, so a mi
   session and lock state the access model suite builds (run over that suite's cases), including
   the admin branch once the privilege plan has added it.
 - A card copy and an implanted foothold write nothing.
+- `usb_install_overridden` (lands with the privilege plan's S5a): an ordinary plant the PC's USB
+  policy refuses writes one row under a keyboard admin session and one under a remote admin
+  session; a session-shaped implant writes one row under a keyboard admin session at the grant's
+  PC, and with only a remote or technique admin session it answers `needs_console` and writes no
+  row; a plant refused with `usb_refused` writes no row. Each case reads a re-read game.
 - In development, a call site forced to make a malformed call (a test-only stub of its detail)
   makes the route fail and leaves the game row unchanged on a re-read: no grant without its row.
 
@@ -1129,7 +1134,7 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
 | S3 | `technique_refused` | nil | `host`, `pc` | refused | `finding` (alias), `technique` (`{ id: 'technique' }`), `reason` (the closed list: `not_responding` and the eight 422 codes) | every refusal past the two 404s writes; merged repeats; every one written with `save_limit: true`, 10 per host (registered for `refused`) | a refusal changes nothing else: `save!` only when `r&.stored?` |
 | S3 | `technique_used` | `{ account: }` for a session grant, nil for a credential grant | `host`, `pc` | ok | `finding`, `technique`, `grant` (`session`, `credential`), `access` (`user`, `admin`; session grants only) | every use writes: a grant, and each repeat (`already: true`) with `save_limit: true`, 10 per host (registered for `ok`); merged repeats | a new grant: the route's own save. A repeat changes nothing else: `save!` only when `r&.stored?` |
 | S5a | `admin_profile_read` | `{ account: }` (the session's) | `pc` | ok | `profile` (`{ id: 'profile' }`) | `once: true`: one per PC, profile and account | `GET /container`, which saves nothing of its own: `save!` only when `r&.stored?` |
-| S5a | `usb_install_overridden` | `{ account: }` (any admin session on the PC, at its keyboard or remote) | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and plant proof, which already save (`network_access.rb:535`) |
+| S5a | `usb_install_overridden` | `{ account: }` (any admin session on the PC, at its keyboard or remote, except for a session-shaped implant, which only a keyboard admin session at the grant's PC overrides) | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and plant proof, which already save (`network_access.rb:535`) |
 | S5b | `credentials_harvested` | `{ account: }` | `pc` | ok | `count` (`{ count: 9 }`: hashes added; a collect always yields hashes) | one per collect that adds a pair; a repeat adds none and writes nothing | the collect route, which saves when a pair is added |
 | S8a | `mfa_challenge` | `{ account: }` | `pc` | ok | `route` (the shared route codes, below) | merged repeats | the save that stores the pending record |
 | S8a | `mfa_code_ok` | `{ account: }` | `pc` | ok | none | one per sign-in | the save that writes the session |
@@ -1149,6 +1154,10 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
   second-step screen names its owner to the player; otherwise nil. Never `{ account: }`, even
   when the owner has credentials. The largest such row is below the `technique_used` ceiling of
   13.1, and it reaches sources by the rule of 13.2 step 3.
+- **A refused plant writes no row.** `usb_install_overridden` is written only when an admin
+  session's override lets a plant through. A plant the server refuses (`usb_refused` from the
+  inventory action, `needs_console` from the implant path) writes no row, so a remote or technique
+  admin session that plugs a session-shaped implant into a PC leaves nothing in its log.
 - A step up to admin is S3's `technique_used` with `access: admin`; no other row records it.
 - A refused sign-in caused by an account's kind is this plan's `signin_refused` (13.8); the
   privilege plan registers its optional `kind` detail (`local`, `domain`) in S5c.
@@ -1235,8 +1244,7 @@ Each entry names what this plan needs from another plan and the section of that 
      (its lookup resolves any string, so the value passes its type rule and reaches the matcher),
      and assert the error message starts with `secret in`, not a `typed` value: typed text is
      stored normalised and never reaches the matcher. The blocked and other `helpdesk_request`
-     calls pass the `normalise_username` form (the route's own key). (The MFA plan does not yet
-     name the `{ id: 'test_any' }` kind — open.)
+     calls pass the `normalise_username` form (the route's own key).
 6. **`OPS_LOCK_SECOND_STEP_PLAN.md` sections 5.1 and 13 (G1, G2):** at a gated rfid lock the
    `badge_swipe` ok row is written after the second-step gate (13.8). Its rows use `approver`
    (not `by`) and `as: { npc: }` only when the second-step screen shows the owner, nil

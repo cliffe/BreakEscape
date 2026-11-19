@@ -610,8 +610,9 @@ password is never stored: the cracked keyring entry reads `creds.password` from 
 time.
 
 On reload the hash row comes back with its status from these keys, so a salted wait in progress
-resumes. A saved game from before S7 has none of the keys and reads them as empty. The sync deltas
-plan's growth table gains these four rows when it is built. `bin/ops-golden-compare` strips the new
+resumes. A saved game from before S7 has none of the keys and reads them as empty. The four keys
+follow the sync deltas plan's state rules (`SYNC_DELTAS_PLAN.md` section 11; section 14 here).
+`bin/ops-golden-compare` strips the new
 keys while empty, so unchanged scenarios compare equal.
 
 ## 9. Validator, schema and dungeon graph
@@ -833,6 +834,10 @@ scenario asserting none:
 - A captured and then cracked account shows one password row, with the value when the capture
   hides it. A row whose account is held from any source reads `cracked`. No answer body holds the
   password.
+- State deltas (`SYNC_DELTAS_PLAN.md` section 11): across the C2 cases, the bootstrap and every
+  sync, `GET /keyring` and `POST /crack` answer captured hold none of `earnedFacts`, `crackRuns`,
+  `crackStarted` or `crackedAccounts`, and a sync that carries any of them leaves the re-read
+  game's copies unchanged.
 - The leak scanner (`tools/playtest/lib/access_leak_scanner.rb:1270`) learns the `cracked` entries:
   it asserts a `cracked` entry is present only when `crackedAccounts` holds its account, and that
   no hash row carries `password`.
@@ -979,9 +984,16 @@ output, the skin plan says what it wants. This plan can offer, per run, from the
 answer only: the record label and token, the fact labels picked, a progress line while `running`,
 and the status.
 
-**Sync deltas plan (`SYNC_DELTAS_PLAN.md`) (not yet in SYNC_DELTAS_PLAN.md — open).** Its growth
-table must include the four state keys of section 8, and `crackFacts` (up to 64 ids, sent whole in
-each keyring answer whose `rev` changed), when this plan is built.
+**Sync deltas plan (`SYNC_DELTAS_PLAN.md`, section 11 "How to keep state deltas", with its
+section 8 growth table).** This plan's build follows that mechanism; it changes nothing in that
+plan. The four state keys of section 8 (`earnedFacts`, `crackRuns`, `crackStarted`,
+`crackedAccounts`) are server-owned records, written only by the server under the game lock and
+bounded by authoring (at most 64 entries, keys only registry hash ids). None is sent to the
+browser as state, in the bootstrap or in any answer, so none is ever re-sent whole, and a sync that
+carries one is ignored. Section 8 here is their growth table, and section 11 (C2) tests it.
+(`crackFacts` is open: up to 64 ids sent whole in each keyring answer whose `rev` changed, which
+rule 4 of that section 11, "Answers carry what changed", does not allow. Whether it becomes a
+delta of newly earned ids, and how the client keeps the set across answers, is not settled.)
 
 **Intel and scenario authors.** A recipe fact that today comes only from dialogue, an object
 action, an OSINT page or a mail highlight needs a second, server-visible source: a takeable item

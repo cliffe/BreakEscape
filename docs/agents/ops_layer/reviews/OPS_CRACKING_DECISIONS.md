@@ -113,3 +113,7 @@ Plan: `docs/achitechture/OPS_CRACKING_PLAN.md`. Review: `OPS_CRACKING_R1.md`.
 - n1: the request lead-in reads "Four requests ... all taken" and request 4 points to privilege plan section 4, L283-286.
 - n2: "the band warning above" now reads "below".
 - n3: the overview names the NPC `passwordDifficulty` as the second place to grade a record, the record's grade winning.
+
+## Section 14 dependency closure (2026-11-19)
+
+- Sync deltas: the entry is now this plan's own obligation under `SYNC_DELTAS_PLAN.md` section 11 (that plan is not edited); the four state keys are server-only, never sent, never re-sent whole, with a C2 test line; section 8's "growth table gains these rows" sentence now points to section 14. `crackFacts` stays marked open: it goes whole in each changed-`rev` keyring answer, which that section's rule 4 forbids, and making it a delta is a design choice no plan settles.
