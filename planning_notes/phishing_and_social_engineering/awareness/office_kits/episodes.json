@@ -48,7 +48,7 @@
       "attack": true,
       "stepAway": false,
       "keyMessage": "e1_lookalike_bank",
-   "hostLine": true
+      "hostLine": true
     },
     {
       "id": "test_ca01_panel",
@@ -64,7 +64,7 @@
       "attack": true,
       "stepAway": true,
       "keyMessage": "e1_lookalike_bank",
-   "hostLine": true
+      "hostLine": true
     },
     {
       "id": "ca01_invoice_fraud_defend",
