@@ -24,7 +24,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e7_voice_ceo_defend_complete:
-        Agnieszka Duda: Both ends done now, thank you. Whoever's voice it is, ringing back on a number we already hold is what settles it.
+        Agnieszka Duda: Both ends done now, thank you. Whoever's voice it is, ring back on a number we already hold and that settles it.
     - else:
         { phish_ceo_voice_target_attempts > 0:
             Agnieszka Duda: Your message has gone over to accounts payable. Now take the other seat at the kiosk and cover the finance line the way a call like that would land.

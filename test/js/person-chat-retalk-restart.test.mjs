@@ -95,7 +95,7 @@ test('helper: only a resumed, empty, ended result with no end_conversation tag r
     assert.equal(resumedStoryHadOnlyTheEnd({ isReopen: true, result: { ...ended, tags: [' End_Conversation '] } }), false, 'a deliberate close');
 });
 
-test('Fatima: closed before the tag was read, the second talk restarts and plays her opening line', async () => {
+test('Fatima: closed before the tag was read, the second talk restarts and plays her return line', async () => {
     const npc = { id: 'fatima_begum', currentKnot: 'start', lastEnteredKnot: 'start' };
     const saved = await savedBeforeTheTagIsRead(fatimaJson, npc.id, npc);
     const conv = await conversation(fatimaJson, npc.id, npc);
@@ -107,7 +107,8 @@ test('Fatima: closed before the tag was read, the second talk restarts and plays
     assert.deepEqual(shown.over, [], 'no "(End of conversation)" message');
     assert.equal(shown.ended, 0);
     assert.equal(shown.accumulated.length, 1, 'the restarted knot is displayed');
-    assert.match(shown.accumulated[0], /halfway through a candidate/, 'her opening line is shown again');
+    // The state was saved after the greeting (greeted = true), so the restart plays her return line, not the greeting.
+    assert.match(shown.accumulated[0], /Three interviews today/, 'her return line is shown again');
     assert.deepEqual(conv.engine.story.currentChoices.map(c => c.text), ["Don't let me keep you."], 'and her choice is back');
 });
 

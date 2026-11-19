@@ -399,6 +399,23 @@ async function preloadPhoneIntroMessages(phoneId, allowedNpcIds = null) {
     console.log(`📱 Finished preloading for phone ${phoneId}`);
 }
 
+/**
+ * True when the saved item is the one the tray element already holds. Two items that
+ * both carry an identity (id, else the lock a key opens) are the same item only when
+ * those match: a second "Cup of coffee" with its own id is another cup, and the restore
+ * used to skip it on type + name, so a reload held fewer cups than the server (sis02
+ * engineering workshop). An item with no identity on either side (a start item such as
+ * the phone or lockpick set, which the server may hold again with an id) still matches
+ * on type + name, as before.
+ */
+export function isSameHeldItem(itemData, existing) {
+    const itemId = itemData?.id || window.lockRef(itemData);
+    const existingId = existing?.scenarioData?.id || window.lockRef(existing?.scenarioData);
+    if (itemId && existingId) return itemId === existingId;
+    const existingType = existing?.scenarioData?.type || existing?.name;
+    return itemData?.type === existingType && itemData?.name === existing?.scenarioData?.name;
+}
+
 // Process initial inventory items
 export function processInitialInventoryItems() {
     console.log('Processing initial inventory items');
@@ -439,24 +456,7 @@ export function processInitialInventoryItems() {
             if (/^notes\d*$/.test(itemData.type)) restoreNoteFromSave(itemData);
 
             // Check if item already exists in inventory (by ID, type, or name)
-            const itemId = itemData.id || window.lockRef(itemData);
-            const alreadyExists = window.inventory.items.some(existing => {
-                const existingId = existing.scenarioData?.id || window.lockRef(existing.scenarioData);
-                const existingType = existing.scenarioData?.type || existing.name;
-                const existingName = existing.scenarioData?.name;
-                
-                // Match by ID if both have IDs
-                if (itemId && existingId && itemId === existingId) {
-                    return true;
-                }
-                
-                // Match by type and name combination
-                if (itemData.type === existingType && itemData.name === existingName) {
-                    return true;
-                }
-                
-                return false;
-            });
+            const alreadyExists = window.inventory.items.some(existing => isSameHeldItem(itemData, existing));
             
             if (alreadyExists) {
                 console.log(`Skipping duplicate item: ${itemData.name || itemData.type} (already in inventory)`);
@@ -488,24 +488,7 @@ export function processInitialInventoryItems() {
             }
             
             // Check if item already exists in inventory (by ID, type, or name)
-            const itemId = itemData.id || window.lockRef(itemData);
-            const alreadyExists = window.inventory.items.some(existing => {
-                const existingId = existing.scenarioData?.id || window.lockRef(existing.scenarioData);
-                const existingType = existing.scenarioData?.type || existing.name;
-                const existingName = existing.scenarioData?.name;
-                
-                // Match by ID if both have IDs
-                if (itemId && existingId && itemId === existingId) {
-                    return true;
-                }
-                
-                // Match by type and name combination
-                if (itemData.type === existingType && itemData.name === existingName) {
-                    return true;
-                }
-                
-                return false;
-            });
+            const alreadyExists = window.inventory.items.some(existing => isSameHeldItem(itemData, existing));
             
             if (alreadyExists) {
                 console.log(`Skipping duplicate item: ${itemData.name || itemData.type} (already in inventory)`);

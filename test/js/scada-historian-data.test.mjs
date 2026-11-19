@@ -121,3 +121,102 @@ test('values do not depend on the browser time zone', () => {
         assert.deepEqual(a, b); assert.deepEqual(a, c);
     } finally { if (saved === undefined) delete process.env.TZ; else process.env.TZ = saved; }
 });
+
+// D167 (post-release): the viewer must not name the anomaly before the player finds it.
+test('before the finding, tooltips show the raw reading only; after it, the anomaly text', () => {
+    const { points, anomaly } = setup(SD);
+    const flat = points[points.length - 1];
+    for (const p of [flat, anomaly.firstInjected]) {
+        const before = H.tooltipText(p, anomaly, false);
+        assert.equal(before.kind, 'normal');
+        assert.doesNotMatch(before.text, /ANOMALY|INJECTION|DISCONTINUITY|Flat since|impossible/);
+        assert.match(before.text, /Temperature: 28\.0°C/);
+    }
+    assert.equal(H.tooltipText(flat, anomaly, true).kind, 'anomaly');
+    assert.equal(H.tooltipText(anomaly.firstInjected, anomaly, true).kind, 'injection');
+});
+
+test('a mark is accepted near the first flat reading, with a gentle retry too early or too late', () => {
+    const { points, anomaly } = setup(SD);
+    const at = (clock) => points.find(p => H.fmtClock(p.ts) === clock);
+    assert.equal(H.judgeMark(at('22:00:00'), anomaly).kind, 'early');
+    assert.match(H.judgeMark(at('22:00:00'), anomaly).message, /^22:00:00: \d+\.\d°C\. Still moving like a real sensor reading\./);
+    assert.equal(H.judgeMark(at('23:09:00'), anomaly).kind, 'early');
+    for (const c of ['23:11:00', '23:12:06', '23:12:07', '23:20:00', '23:22:00']) {
+        assert.ok(H.judgeMark(at(c), anomaly).ok, `${c} accepted`);
+    }
+    const late = H.judgeMark(at('23:23:00'), anomaly);
+    assert.equal(late.kind, 'late');
+    assert.match(late.message, /Find where it starts/);
+    assert.equal(H.judgeMark(at('04:00:00'), anomaly).kind, 'late');
+    assert.equal(H.judgeMark(points[0], null).ok, false);
+});
+
+test('the finding choices: one right, and each wrong one gets a reason from the data', () => {
+    const { anomaly } = setup(SD);
+    assert.deepEqual(H.FINDING_CHOICES.map(c => c.id).sort(), ['cooling', 'dropout', 'written']);
+    assert.ok(H.judgeFinding('written', anomaly).ok);
+    const drop = H.judgeFinding('dropout', anomaly);
+    assert.equal(drop.ok, false);
+    assert.match(drop.message, new RegExp(`last real reading, ${anomaly.lastReal.value.toFixed(1)}°C.*28\\.0°C`));
+    const cool = H.judgeFinding('cooling', anomaly);
+    assert.equal(cool.ok, false);
+    assert.match(cool.message, new RegExp(`cool by ${Math.abs(anomaly.delta).toFixed(1)}°C in 1 second, and a real sensor never reads exactly the same`));
+});
+
+test('every choice is a plain claim of the same shape; none quotes a figure the chart shows (R1 m1)', () => {
+    for (const c of H.FINDING_CHOICES) {
+        assert.match(c.label, /^[A-Z][a-z ]+: [^:]+\.$/, c.id);
+        assert.doesNotMatch(c.label, /\d|—/, `${c.id} has no figures or em dashes`);
+    }
+    const lens = H.FINDING_CHOICES.map(c => c.label.length);
+    assert.ok(Math.max(...lens) - Math.min(...lens) < 20, 'similar length, so length gives nothing away');
+});
+
+test('a mark within MARK_TOUCH_PX of the cliff counts at phone scale; one just outside does not (R1 M1)', () => {
+    const { points, anomaly } = setup(SD);
+    const at = (clock) => points.find(p => H.fmtClock(p.ts) === clock);
+    const pxPerMs = 276 / (12 * 3600000); // the 390px plot over a 12-hour window
+    assert.ok(30 * 0.383 < H.MARK_TOUCH_PX, '30 minutes is 11.5px at 390px, inside the band');
+    // 23:42 is 30 min late: time window says late, pixels say near
+    assert.equal(H.judgeMark(at('23:42:00'), anomaly).kind, 'late');
+    assert.ok(H.judgeMark(at('23:42:00'), anomaly, { pxPerMs }).ok, 'late but within 14px');
+    // 22:40 is 32 min early: 12px, but the early radius is 4px (R2 m2)
+    assert.equal(H.judgeMark(at('22:40:00'), anomaly, { pxPerMs }).kind, 'early');
+    assert.ok(H.judgeMark(at('23:05:00'), anomaly, { pxPerMs }).ok, '7 minutes early is within the 2 minute window or 4px');
+    assert.equal(H.MARK_EARLY_PX, 4);
+    // 00:00 is 48 min late: 18px, outside
+    assert.equal(H.judgeMark(at('00:00:00'), anomaly, { pxPerMs }).kind, 'late');
+    assert.equal(H.judgeMark(at('21:00:00'), anomaly, { pxPerMs }).kind, 'early');
+    // at desktop scale the band is about the same size in pixels, so far readings stay rejected
+    assert.equal(H.judgeMark(at('23:50:00'), anomaly, { pxPerMs: 968 / (12 * 3600000) }).kind, 'late');
+});
+
+test('a late mark when the cliff is left of the time range says to widen the range (R1 M2)', () => {
+    const { points, anomaly, cfg } = setup(SD);
+    const at = (clock) => points.find(p => H.fmtClock(p.ts) === clock);
+    const oneHourStart = cfg.histEndTs - 3600000; // 05:30: the 23:12 cliff is not in view
+    const off = H.judgeMark(at('05:40:00'), anomaly, { rangeStartTs: oneHourStart });
+    assert.equal(off.kind, 'late');
+    assert.match(off.message, /widen the range/);
+    assert.doesNotMatch(off.message, /Find where it starts/);
+    const inView = H.judgeMark(at('04:00:00'), anomaly, { rangeStartTs: cfg.histEndTs - 12 * 3600000 });
+    assert.match(inView.message, /Find where it starts/);
+});
+
+test('the hint no longer says tap inspects (R1 m3)', () => {
+    assert.doesNotMatch(H.DEFAULT_HINT, /tap a reading to inspect|Hover or tap/);
+    assert.match(H.DEFAULT_HINT, /Click or tap it \(or press Enter\)/);
+    assert.doesNotMatch(H.compareNeutralText(4), /Hover or tap/);
+});
+
+test('compare mode reads every rack at one time, and the neutral banner names no time', () => {
+    const { cfg } = setup(SD);
+    const trend = new Map(cfg.racks.map(r => [r.id, H.buildRackTrend(r, cfg)]));
+    const after = trend.get('A1').find(p => H.fmtClock(p.ts) === '23:30:00');
+    assert.match(H.compareValuesText(after.ts, cfg.racks, trend), /Rack A1: 28\.0°C\nRack A2: 28\.0°C$/);
+    const before = trend.get('A1').find(p => H.fmtClock(p.ts) === '22:00:00');
+    const txt = H.compareValuesText(before.ts, cfg.racks, trend);
+    assert.notEqual(txt.match(/A1: ([\d.]+)/)[1], txt.match(/A2: ([\d.]+)/)[1]);
+    assert.doesNotMatch(H.compareNeutralText(4), /\d\d:\d\d|INJECTION|identical/);
+});

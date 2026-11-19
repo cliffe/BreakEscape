@@ -14,6 +14,16 @@ VAR hub_quiet = false
 // Dialogue C1 (D6-5): the latest thing about Irina Dani has reacted to
 // (1 sitting detained, 2 walked out, 3 knocked down), so each reaction plays once.
 VAR irina_news = 0
+// Confirm minors (m06): sub-menu siblings stay on the hub until taken, so a
+// one-shot branch is never lost. seen_* are set by the target knots.
+VAR seen_monero_talk = false
+VAR seen_focus = false
+VAR trader_flagged = false
+VAR seen_mixing = false
+VAR seen_ideology = false
+VAR seen_illegal = false
+VAR seen_compliance = false
+VAR seen_impression = false
 
 // External variables
 VAR player_name = "Agent 0x00"
@@ -114,11 +124,32 @@ Dani Okonkwo: Fast, cheap, loads of volume. It's a tough market, to be fair.
 + {not topic_volume} [How much goes through here in a day?]
     -> volume_discussion
 
-+ {not topic_monero} [Why is so much of this in Monero?]
++ {not seen_focus} [Why focus on privacy coins?]
+    -> privacy_coin_focus
+
++ {not seen_monero_talk} [Why is so much of this in Monero?]
     -> monero_discussion
+
++ {seen_monero_talk and not trader_flagged} [Is this place being used to launder?]
+    -> laundering_opinion
+
++ {seen_monero_talk and not seen_mixing} [How does the mixing work?]
+    -> mixing_explanation
+
++ {seen_focus and not seen_ideology} [Sounds more like a religion than a business plan.]
+    -> ideology_response
+
++ {seen_focus and not seen_illegal} [Privacy also hides crime.]
+    -> illegal_activity_response
 
 + {not topic_irina and not irina_arrested and not irina_ko} [What's Dr Volkova like to work for?]
     -> irina_discussion
+
++ {topic_irina and not seen_compliance and not irina_arrested and not irina_ko} [Does she take compliance seriously?]
+    -> irina_compliance
+
++ {topic_irina and not seen_impression and not irina_arrested and not irina_ko} [Do you get on with her?]
+    -> irina_impression
 
 + [That's all, thanks.]
     #speaker:trader
@@ -185,6 +216,7 @@ Dani Okonkwo: That's your job, innit?
 
 === privacy_coin_focus ===
 #speaker:trader
+~ seen_focus = true
 ~ topic_monero = true
 
 Dani Okonkwo: Satoshi's thing. "Financial freedom through cryptography." It's on the brochure.
@@ -199,6 +231,7 @@ Dani Okonkwo: Pay who you like without the government watching. Privacy's a righ
 
 === ideology_response ===
 #speaker:trader
+~ seen_ideology = true
 
 Dani Okonkwo: Bit of both. Satoshi believes it, and it pays.
 
@@ -208,6 +241,7 @@ Dani Okonkwo: Privacy traders pay top fees. We do all right.
 
 === illegal_activity_response ===
 #speaker:trader
+~ seen_illegal = true
 
 Dani Okonkwo: So does cash. You going to shut every bank because some people launder?
 
@@ -221,6 +255,7 @@ Dani Okonkwo: We follow the law. We file reports. After that it's their business
 
 === monero_discussion ===
 #speaker:trader
+~ seen_monero_talk = true
 ~ topic_monero = true
 
 Dani Okonkwo: Monero can't be traced. That's the point of it.
@@ -248,6 +283,7 @@ Dani Okonkwo: Irina and Satoshi do compliance. I just watch the charts.
 
 === trader_suspicions ===
 #speaker:trader
+~ trader_flagged = true
 // Review M1: this is the "flagged the wallets" conversation the task names.
 #complete_task:question_the_trader
 
@@ -263,6 +299,7 @@ Dani Okonkwo: Honestly? I just want to keep my job and not think about it too ha
 
 === mixing_explanation ===
 #speaker:trader
+~ seen_mixing = true
 
 Dani Okonkwo: Bitcoin comes in. We turn it into Monero, bounce it round a few wallets, turn it back into Bitcoin somewhere new.
 
@@ -290,6 +327,7 @@ Dani Okonkwo: She wrote all our privacy stuff. Zero-knowledge proofs, homo-somet
 
 === irina_compliance ===
 #speaker:trader
+~ seen_compliance = true
 
 Dani Okonkwo: Obsessively. Every flagged trade goes past her personally.
 
@@ -299,6 +337,7 @@ Dani Okonkwo: She's been stressed lately, mind. Something's bothering her. She w
 
 === irina_impression ===
 #speaker:trader
+~ seen_impression = true
 
 Dani Okonkwo: Intense. Bit distant. Fair, though.
 

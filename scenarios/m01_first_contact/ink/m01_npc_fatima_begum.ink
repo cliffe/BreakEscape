@@ -7,11 +7,22 @@ VAR heard_ex_biscuits = false
 VAR talked_to_kevin = false
 VAR talked_to_maya = false
 VAR told_derek_rumour = false
+// NPC-local: set after the greeting, so a re-talk goes straight to the choices instead of replaying it.
+VAR greeted = false
 
 -> start
 
 === start ===
+{ greeted:
+    // Return greeting: reuses her voiced cooler chatter line (same text, no #delivery tag, so the same cached audio).
+    Fatima Begum: Three interviews today. Three!
+    -> hub
+}
+~ greeted = true
 Fatima Begum: Sorry, I'm halfway through a candidate's file. #delivery: brisk, apologetic
+-> hub
+
+=== hub ===
 + {not told_derek_rumour and (talked_to_kevin or talked_to_maya)} [Do you know anything about Patricia leaving?]
     ~ told_derek_rumour = true
     Fatima Begum: I'm not meant to say, but Patricia's file was pulled the morning she went. Derek's name was on the request. #delivery: lowering her voice

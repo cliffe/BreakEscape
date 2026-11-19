@@ -142,6 +142,26 @@ function claimValue(claim, blanks) {
   return claim.value; // a claim may carry its value id directly
 }
 
+// True when a claim draws from a blank the player left unfilled. Only consulted for a
+// line with `optionalBlanks: true` (06 §5): that line's blanks fill independently, so it
+// speaks only the facts the card carried and the empty ones are not stated this turn.
+// Such a claim is skipped, not read as a wrong value, so a player who prepared only one of
+// a line's blanks is neither credited nor penalised for the other, and the ink choice label
+// shows the same partial line. This reads the blank's `value`; the lab opener's ink guards
+// read the paired `_name` (label) VAR instead, but they agree on what "unstated" means:
+// fillPretextVars writes a fact's value and label together from the card, so a blank the
+// card did not carry has both empty (lab post-release m2). The default (no flag) keeps the
+// strict rule a missing blank for a known fact is a mismatch, not a free pass. A fixed-value
+// claim (`from` not a blank, or a bare `value`) is never unstated.
+function claimUnstated(claim, blanks) {
+  if (!claim || !isStr(claim.from) || !claim.from.startsWith('blank:')) return false;
+  const name = claim.from.slice('blank:'.length);
+  const rec = blankRecord(blanks, name, claim.fact);
+  if (rec == null) return true;
+  const v = rec && typeof rec === 'object' ? rec.value : rec;
+  return v === undefined || v === null || v === '';
+}
+
 // Display label for a value id: a blank's own label, or spec.labels, else the id.
 function labelFor(spec, valueId, blanks, blankName, factId) {
   const rec = blankRecord(blanks, blankName, factId);
@@ -288,8 +308,13 @@ export function judgeUtterance(spec, session, utteranceId, blanks, influence) {
   }
 
   // Remaining claims.
+  const optionalBlanks = !!line.optionalBlanks;
   for (const claim of claims) {
     if (!claim || !isStr(claim.fact)) continue;
+    // On an optional-blanks line, a claim from a blank the player did not fill is not
+    // spoken this turn: skip it whole, so the opener judges only the facts the card
+    // actually carried.
+    if (optionalBlanks && claimUnstated(claim, blanks)) continue;
     const fact = claim.fact;
     const value = claimValue(claim, blanks);
     const known = spec && spec.knows && spec.knows[fact];
