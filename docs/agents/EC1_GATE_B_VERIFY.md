@@ -25,3 +25,33 @@ Event counts (init.js) in every run: mission_concluded fires at the defend save 
 
 ## 5. Look up, never reopen, 60 s, reload: PASS (fresh game 10334)
 Polls +10 s to +60 s: overlay false, held true, step-away count 1, scene null. After reload: overlay false; episode state stage debrief, done [brief, osint, write, flip, defend], defend {percent 100, reportRate 1, verifyCount 0, teamProtected 2}, defendProgress 5 answers, no debriefSeen, kit_defend_done true, defend_complete true.
+
+## Fix proof steps (for a Haiku live runner, branch fix/ec1-reopen-hold)
+
+Use the same harness as above (keyless server, mission test_ca_office_kit, the driver copy with page.route, the in-page fetch blocker and init.js emit counters in sessionStorage). Create a fresh game per proof through the POST form. Record screenshots and the counts named below; report PASS or FAIL per step.
+
+### D3: reload at the triage result
+1. Play to the defend triage and finish the sort so the result screen shows (do not press Continue).
+2. Reload the page. Poll the success overlay for 30 s: it must stay hidden (the hold reads `defend_complete` true with the stage still defend). Read the state: stage defend, `episode_e1_stub_defend_complete` true.
+3. Open the kiosk. It shows the defend launch. Launch it: the triage shows the result again with the stored answers (no re-sort).
+4. Press Continue. The step-away panel shows, with Look up enabled. Press Carry on: the debrief shows. Press Finish and close.
+5. PASS when the overlay never showed before Finish or close, and `kit_defend_done` was counted once across the reload.
+
+### D1: Look up then reopen against Carry on
+1. Game A: answer 5 items with two wrong (bank trust, laptop report, as in game 10325/10326). At the panel press Look up, wait for the kiosk to close, reopen it (it lands on the debrief).
+2. Game B: same answers, at the panel press Carry on.
+3. In each debrief count `article.aw-card` and read the `.aw-summary` text. Expect 1 card (ep_bank) and the summary "Phish caught: 1 of 2 (1 reported)" in both. Before the fix game A gave 2 cards and "Reported 50% of the phish".
+4. Reload game A and reopen: same cards and summary again. Read the episode state before and after the reopen: no new field (keys unchanged apart from `debriefSeen` after the first close).
+
+### D2: keepalive-only save
+1. Install the persistent in-page fetch wrapper (init.js, sessionStorage flag) that rejects every `PUT /sync_state` whose body contains `episode_e1_stub_defend_complete:true`. Play the defend triage to the result. Expect the "We couldn't save your result yet" notice and `kit_defend_done` false.
+2. Let the pagehide keepalive through: use route-only interception (page.route, as game 10328) so the keepalive flush bypasses it and lands; do not use the in-page block on the reload. Reload.
+3. Check the server state: `defend_complete` true, `kit_defend_done` false before the kiosk opens.
+4. Open the kiosk. Expect exactly one `global_variable_changed:episode_e1_stub_defend_complete` in the counter (gb_ev), `kit_defend_done` true after a moment, and the Look up button enabled where the panel shows.
+5. Close and reopen the kiosk, then reload and reopen: no second emit on the same page, none when `kit_defend_done` is already true. PASS on count 1 for the first open and no further emits.
+
+### Non-stepAway reopen
+1. Use a non-stepAway episode (a plain full shell, or the stub with `stepAway` removed). Finish the defend round, reach the debrief, close without Finish, reopen at the debrief.
+2. Expect what it showed before the fix: the stored figures (percent and report rate) with no per-item cards and an empty answer list, no step-away panel, no Look up, and no re-emit of the complete event on open (counter unchanged).
+3. PASS when this matches a run on main for the same episode.
+
