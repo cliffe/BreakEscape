@@ -106,3 +106,10 @@ Plan: `docs/achitechture/OPS_CRACKING_PLAN.md`. Review: `OPS_CRACKING_R1.md`.
 - Minor 1: "Where it lives" now says a person's account is graded on its hash record (`guessable` also needs `facts`, `accountOnly` needs `crack.password`) and names the habit-side default.
 - Minor 2: the validator test row now reads "`crackSeconds` on a record that does not resolve salted", matching the resolution rule.
 - Nit 1: `resolve` returns nil for an unknown value (record or NPC); the keyring row lister lists no hash row and `POST /crack` answers `no_recipe`. Added a validator warning for a difficulty on a `strong` record (no band warning), with a test.
+
+## Cross-plan R8 fixes (2026-11-19)
+
+- m3: the `crackSeconds` rule resolves the grade as the record's `crack.difficulty`, else the NPC habit `passwordDifficulty`, else none, matching the validator test.
+- n1: the request lead-in reads "Four requests ... all taken" and request 4 points to privilege plan section 4, L283-286.
+- n2: "the band warning above" now reads "below".
+- n3: the overview names the NPC `passwordDifficulty` as the second place to grade a record, the record's grade winning.

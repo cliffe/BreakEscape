@@ -927,11 +927,12 @@ apart; its own loop over `rooms[].doors[]` covers the two door rules.
 - A carrier (5.5) at or above a `secondStep` object with no `id`: leg 1 of Rule D tests held
   items by id, and the take route and the NPC-container release match a carrier by name, so a
   bag without an id would be refused as an invented id while the player holds it.
-- Warning (G4, a plain carrier, no `secondStep` needed): a plain carried container (an NPC
-  `itemsHeld` entry or a start item, with a lock or `contents`) that has no `id`: "not covered by
-  the carried check; give it an id". Rule D keys by id, so the container keeps today's
-  best-effort behaviour (5.5, "Plain carried containers"). A warning, not an error, because the
-  shipped `ceo_exfil` tablet is one.
+- Warning (G4, a plain carrier, no `secondStep` needed): any plain carrier the validator sees
+  with no `id` (an NPC `itemsHeld` entry, a start item, a granted item or a `takeable` room object,
+  with a lock or `contents`): "not covered by the carried check; give it an id". Rule D keys by
+  id, so the container keeps today's best-effort behaviour (5.5, "Plain carried containers"). A
+  warning, not an error, because the shipped `ceo_exfil` tablet, a `takeable` room object in
+  `reception`, is one.
 - An `unlock_object` task whose `targetObject` names a `secondStep` object by anything but its `id`.
 - G2: `secondStep` on a room that some room's `doors[]` entry with `connectedRoom` naming it
   marks with a `gate` (raised by `validate_lock_step.rb`), on the `startRoom`, or on the room named
@@ -1046,8 +1047,8 @@ a passed record. Secret guard, as the MFA plan has per stage: a row holding a co
 
 **Validator and graph.** One validator spec per error and warning of section 9, each with a
 passing twin, including a task target inside a never-passable gated object.
-The G4 warning has its own spec: an NPC `itemsHeld` entry and a start item, each with a lock or
-`contents` and no `id`, warn; the same with an `id` is clean; a note or key with no `id` is clean.
+The G4 warning has its own spec: an NPC `itemsHeld` entry, a start item and a `takeable` room
+object, each with a lock or `contents` and no `id`, warn; the same with an `id` is clean; a note or key with no `id` is clean.
 `test/js/dungeon-graph-lock-step.test.mjs`: the second edge per kind, the dashed "never passes"
 edge, and a scenario without the field drawn unchanged.
 

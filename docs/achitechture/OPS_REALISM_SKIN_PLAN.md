@@ -1656,8 +1656,8 @@ links its three findings to three entries of
 `config/break_escape/realism_catalog/training_fixtures.json`, a catalog file of invented text
 and made-up advisory ids added with it, each with the year `0000` (`CVE-0000-24117`), which is
 never assigned, and linked only from `test_*` scenarios (11.3) (the decoy's entry of the same form as the weaknesses',
-each with `advisories` and `output`). The printer and the sign-in hosts keep the defaults, so
-one run shows both kinds of output; every finding in the scenario is linked, as the all-or-none
+each with `advisories` and `output`). The printer and the sign-in hosts keep the default service and address output and hold no
+findings, so one run shows both kinds of output; every finding in the scenario is linked, as the all-or-none
 rule requires.
 
 The beats are written once in the scenario's `PLAYTEST.md` and run twice in K2, once with

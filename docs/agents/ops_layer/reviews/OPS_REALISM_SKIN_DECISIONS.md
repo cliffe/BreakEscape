@@ -270,3 +270,8 @@ Findings: `OPS_REALISM_SKIN_R4.md`. Entries are items declined or fixed differen
 - n1: catalog ids are read by the telltale and `real_product_names.txt` rows.
 - n2: separation test treats the index as a scenario file expecting zero hits, with the `public/` check on its scenario paths.
 - n3: "Changed from the core's current text" clause dropped from request 3.
+
+## Cross-plan R8 fixes (2026-11-19)
+
+- m2: already fixed before this round (request 3 marked taken by the core); no edit.
+- n4: `test_ops_skin` says the printer and sign-in hosts keep default service and address output and hold no findings.

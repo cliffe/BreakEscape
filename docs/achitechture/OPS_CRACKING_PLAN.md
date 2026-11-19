@@ -50,7 +50,8 @@ is used because the two simpler pictures fall short: a count of extra Crack pres
 picture of work and says nothing about shared tokens, and showing salt only through unsalted
 records cracking together makes a lone salted hash look like an unsalted one.
 
-An author can grade a hash record `easy`, `medium` or `hard` (section 4). The grade sets the
+An author can grade a hash record `easy`, `medium` or `hard` (section 4) or, for every record of
+a person's account, through the NPC's `passwordDifficulty`; the record's grade wins. The grade sets the
 record's salt and wait and how many facts a guessable recipe is expected to use, and any field the
 author writes overrides it. It never lets a password fall without the right facts.
 
@@ -657,8 +658,9 @@ Its rules, each an error unless marked:
 - Warning: a scenario whose `social.captures.revealSecret` is not true has a hash record whose
   account's `creds.password` equals a capture target's, so a crack would show a password the
   capture hides.
-- `crackSeconds` only on a record that resolves salted (its own `salted: true`, or a `medium` or
-  `hard` difficulty with no `salted: false`), and within 10 to 600.
+- `crackSeconds` only on a record that `CrackDifficulty.resolve` gives as salted (its own
+  `salted: true`, or a `medium` or `hard` grade with no `salted: false`; the grade is the record's
+  `crack.difficulty`, else the NPC habit `passwordDifficulty`, else none), and within 10 to 600.
 - `crack.difficulty` is one of `easy`, `medium`, `hard`; any other value is refused.
 - `habits.passwordDifficulty` (checked in `scripts/validate_npc_habits.rb`, beside the
   `passwordPattern` checks) is one of `easy`, `medium`, `hard`; any other value is an error. A
@@ -666,7 +668,7 @@ Its rules, each an error unless marked:
   password habit".
 - Warning: a `difficulty` (the record's, or its account's `passwordDifficulty`) on a record whose
   class is `strong`: "difficulty has no effect on a strong password; it is a dead end at every
-  grade". The band warning above stays silent for it.
+  grade". The band warning below stays silent for it.
 - Warning: a `guessable` recipe whose number of `facts` is outside its difficulty's band (`easy` 1,
   `medium` 2, `hard` 3 or 4): "difficulty `hard` expects 3 or 4 facts; this recipe has 1". A
   warning, not an error, because the author's list is the override. No warning on a record with no
@@ -939,7 +941,7 @@ it.
 - The graph edge from `admin@<pcId>` to the hash node, continuing to the password: yes (section 9).
 - After a password reset the crack yields the scenario's password: confirmed (section 5).
 
-Three requests to the privilege plan, all taken, and a fourth for its next edit (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` L280-296 and
+Four requests to the privilege plan, all taken (`OPS_PRIVILEGE_ACCOUNTS_PLAN.md` L280-296 and
 L888-893), kept here as a record:
 
 1. **Who owns the recipe rules.** Taken: this plan owns every rule on a hash record's `crack`
@@ -950,7 +952,7 @@ L888-893), kept here as a record:
    equal `creds.password`, section 9) and adds no check of its own.
 3. **Its example fact `it_rota_poster_seen`.** Taken: the poster is a takeable `notes` item with
    `revealsFacts`, so it is a server-visible source (section 5 table).
-4. **Habit parameter `passwordDifficulty`** (taken by the privilege plan, section 6). Where it lists the NPC habit parameters beside
+4. **Habit parameter `passwordDifficulty`** (taken: privilege plan section 4, L283-286). Where it lists the NPC habit parameters beside
    `passwordPattern`, add the optional `passwordDifficulty` (`easy`, `medium`, `hard`), owned and
    validated by this plan, for an NPC whose account the privilege plan collects as a hash.
 

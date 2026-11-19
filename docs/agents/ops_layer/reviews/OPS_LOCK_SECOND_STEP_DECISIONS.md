@@ -185,3 +185,7 @@
 - Minor 1: the Rule D reach paragraph ends "(From G4 the trigger also includes plain carriers, below.)"; section 10 names the G4 trigger as well.
 - Minor 2: G4 fixture row gains a takeable `usb` stick with `contents` after a plant (`network_access.rb:262`, `:516`); a later `GET /container` is refused.
 - Nit 1: section 10 names the five `ops_unchanged` scenarios (`test_objectives`, `test_simple_success`, `test_pin_dust`, `m01_first_contact`, `m02_ransomed_trust`).
+
+## Cross-plan R8 fixes (2026-11-19)
+
+- m1: the G4 id-less warning now covers every plain carrier the validator sees with no `id` (NPC `itemsHeld`, start item, granted item, `takeable` room object, such as the `ceo_exfil` tablet); its spec adds a `takeable` room object.
