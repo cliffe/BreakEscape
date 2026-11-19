@@ -352,7 +352,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         },
         {
           "taskId": "submit_ssh_flag",
-          "title": "Unlock the ENTROPY encrypted archive",
+          "title": "Enter the decryption key at the ENTROPY archive",
           "type": "submit_flags",
           "targetFlags": ["shatter_server:flag_1"],
           "targetCount": 1,
@@ -457,7 +457,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "tasks": [
         {
           "taskId": "submit_launch_code",
-          "title": "Enter the launch authorisation code",
+          "title": "Enter the launch authorisation code on the ENTROPY Launch Device",
           "type": "submit_flags",
           <%# flag_3 (launch authorisation) is only accepted at the launch device
               taken from Derek at the finale; the drop-site echoes a hint for it.
@@ -1225,6 +1225,21 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "decode_derek_notes"
+            },
+            {
+              "_comment": "Confirm-minors fix, appended so saved-game indices hold: the first attempt at Derek's door (including a successful pick, since the event fires before the outcome) before the manager's office has been seen, HaX points at it. Not sent once the office has been entered, so a player who arrives with the key is not sent back.",
+              "eventPattern": "room_entered:manager_office",
+              "onceOnly": true,
+              "setGlobal": { "manager_office_seen": true }
+            },
+            {
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'derek_office' && globalVars.manager_office_seen !== true",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 6000,
+                "message": "Patricia kept her things in the manager's office, so start there."
+              }
             }
           ]
         },
@@ -2350,7 +2365,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "id": "flag_station_dropsite",
           "name": "SAFETYNET Drop-Site Terminal",
           "takeable": false,
-          "observations": "Secure SAFETYNET terminal for submitting intercepted intelligence and VM flags captured from the ENTROPY attack server (172.16.0.2) with the IT Audit Station (Kali).",
+          "observations": "Secure SAFETYNET terminal for submitting intercepted intelligence and VM flags captured from the ENTROPY attack server (172.16.0.2) with the IT Audit Station (Kali). Submit the directory-traversal and deployment flags here. It recognises the archive key and launch code, but those go into the archive and the launch device.",
           "acceptsVms": ["shatter_server"],
           "acceptsVmLabels": { "shatter_server": "ENTROPY attack server (172.16.0.2)" },
           "flags": ["shatter_server:flag_2", "shatter_server:flag_4"],
@@ -2460,6 +2475,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "kevin_warned": false,
     "framing_evidence_seen": false,
     "derek_office_locked_seen": false,
+    "manager_office_seen": false,
     "contingency_file_read": false,
     "security_audit_completed": false,
     "audit_correct_answers": 0,
