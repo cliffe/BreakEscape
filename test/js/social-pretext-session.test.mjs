@@ -352,6 +352,7 @@ test('a mid-call reload keeps the saved blanks when the resumed card re-picks no
     assert.deepEqual(P.loadSession(CALL).blanks, CARD, 'and the persisted session is not wiped');
 });
 
+// Guards the replace path: passes on old and new code alike. The bug's own test is the one above.
 test('a mid-call reload that does re-pick blanks still takes the new picks', async () => {
     const { service } = setup({ start: -10 });
     const saved = new P.PretextSession({ callId: CALL, character: 'dev', npcId: 'dev_service_desk', channel: 'phone' });
