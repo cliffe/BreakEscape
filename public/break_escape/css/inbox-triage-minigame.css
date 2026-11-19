@@ -191,7 +191,7 @@
     background-color: #10152a;
     border: 2px solid var(--ui-line, #4c5b80);
 }
-.tri-review-card .tri-card-title { margin: 0 0 6px; font-size: 24px; }
+.tri-review-card .tri-card-title { margin: 0 0 6px; font-size: 16px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
 .tri-review-card p { margin: 6px 0; font-size: 16px; }
 .tri-card-verdict { display: flex; align-items: flex-start; gap: 4px; font-weight: 600; }
 .tri-card-verdict.right { color: var(--ui-success, #6ee08f); }

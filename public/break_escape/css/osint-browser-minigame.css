@@ -310,7 +310,7 @@
     outline: none;
 }
 
-.ob-props-title { margin: 0 0 8px; font-size: 24px; }
+.ob-props-title { margin: 0 0 8px; font-size: 16px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
 .ob-fields { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 
 /* ── tools ── */
@@ -332,7 +332,7 @@
 
 .ob-tool.is-picked { border-color: #1f4fa3; background: #eaf0fb; }
 .ob-results { padding-top: 8px; border-top: 2px solid #c9c2b2; }
-.ob-results-title { margin: 0 0 8px; font-size: 24px; }
+.ob-results-title { margin: 0 0 8px; font-size: 16px; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
 .ob-result-list { display: flex; flex-direction: column; gap: 8px; }
 
 /* ── concept card ── */

@@ -104,6 +104,8 @@
     margin: 16px 0 6px;
     font-size: 16px;
     font-weight: 700;
+    padding-bottom: 2px;
+    border-bottom: 2px solid currentColor;
 }
 
 .er-empty {

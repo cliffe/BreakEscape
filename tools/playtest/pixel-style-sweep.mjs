@@ -128,7 +128,7 @@ const SETUP = {
     // network-view needs a held foothold; stand one in for the link's answer (no server state)
     'network-view': { pre: (p) => {
         const f = { id: 'jack_sweep', via: 'jack', name: 'Drop box: comms room', itemId: 'netlink_jack_sweep', sourceId: 'comms_port', network: { id: 'office_lan', name: 'Harbour office LAN' }, hosts: p.hosts };
-        window.__sweepSaved = { networkLinks: window.networkLinks };
+        if (!window.__sweepSaved) window.__sweepSaved = { networkLinks: window.networkLinks };
         window.networkLinks = { get: () => f, view: async () => ({ ok: true, view: f }), footholds: new Map(), views: new Map() };
     } },
     'infusion-pump': { pre: () => { window.gameState.globalVariables.paper_charts_collected = true; } },
