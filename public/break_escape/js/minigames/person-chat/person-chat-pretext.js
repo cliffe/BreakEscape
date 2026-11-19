@@ -627,7 +627,13 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     const session = resuming ? saved : new PretextSession({ callId, character: spec.character, npcId, channel: chat });
     session.npcId = npcId;
     session.channel = chat;
-    if (isObject(params.blanks)) session.blanks = { ...params.blanks };
+    // A mid-call reload (resuming) must keep the saved blanks: the resumed card can
+    // re-pick nothing when the held intel has not come back, and an empty re-pick
+    // would otherwise wipe a filled opener. A fresh call still takes whatever it is
+    // handed, empty included.
+    if (isObject(params.blanks) && (!resuming || Object.keys(params.blanks).length)) {
+        session.blanks = { ...params.blanks };
+    }
     persistSession(session);
 
     // Influence does NOT carry between calls: each new call (not a mid-call reload)

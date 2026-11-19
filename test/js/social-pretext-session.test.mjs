@@ -334,6 +334,37 @@ test('influence does not carry between calls: a fresh call resets to the start (
     assert.equal(service.getInfluence('dev'), -10, 'a new call starts fresh at the character start');
 });
 
+test('a mid-call reload keeps the saved blanks when the resumed card re-picks nothing', async () => {
+    const { service } = setup({ start: -10 });
+    // An open call was saved mid-conversation with the opener blanks filled in.
+    const saved = new P.PretextSession({ callId: CALL, character: 'dev', npcId: 'dev_service_desk', channel: 'phone' });
+    saved.blanks = { ...CARD };
+    P.persistSession(saved);
+    assert.equal(P.loadSession(CALL).open, true, 'the saved call is still open');
+
+    // The reload re-attaches while no held intel has come back, so the card hands over
+    // empty blanks. The resumed session must keep what it had, not be wiped to {}.
+    const engine = { story: { variablesState: { _defaultGlobalVariables: new Map(), $() {} }, BindExternalFunction() {}, bindExternalFunction() {} }, bindExternalFunction() {} };
+    const minigame = { params: { pretextCallId: CALL, blanks: {} }, inkEngine: engine, npcId: 'dev_service_desk',
+        ui: {}, complete() {}, gameResult: {} };
+    const handle = await quiet(() => P.attachPretext(minigame, { chat: 'phone', judge }));
+    assert.deepEqual(handle.session.blanks, CARD, 'the resumed session keeps Sofia Lord and Finance, not {}');
+    assert.deepEqual(P.loadSession(CALL).blanks, CARD, 'and the persisted session is not wiped');
+});
+
+test('a mid-call reload that does re-pick blanks still takes the new picks', async () => {
+    const { service } = setup({ start: -10 });
+    const saved = new P.PretextSession({ callId: CALL, character: 'dev', npcId: 'dev_service_desk', channel: 'phone' });
+    saved.blanks = { intern: { value: 'lord_full', label: 'Sofia Lord' } };
+    P.persistSession(saved);
+
+    const engine = { story: { variablesState: { _defaultGlobalVariables: new Map(), $() {} }, BindExternalFunction() {}, bindExternalFunction() {} }, bindExternalFunction() {} };
+    const minigame = { params: { pretextCallId: CALL, blanks: { ...CARD } }, inkEngine: engine, npcId: 'dev_service_desk',
+        ui: {}, complete() {}, gameResult: {} };
+    const handle = await quiet(() => P.attachPretext(minigame, { chat: 'phone', judge }));
+    assert.deepEqual(handle.session.blanks, CARD, 'a non-empty re-pick on resume replaces the saved blanks');
+});
+
 test('finalise on a reported call hands the outcome line to the chat to speak (voiced call)', async () => {
     const { service } = setup({ start: -10 });
     globals()[`pretext_${CALL}_state`] = null;
