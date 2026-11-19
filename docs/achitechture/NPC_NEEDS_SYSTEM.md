@@ -742,20 +742,24 @@ during the walk home (exists). Player-facing behaviour:
   exchange counts as heard when the player overheard at least one of its lines (each line checked
   at the chat's radius for its speaker), whether it played to the end or was cut (the pair breaks
   up: a use or queue that ends, a player conversation, a knock-out). Heard: the global
-  `heard_<knot>` is set the moment the first overheard line plays (not at the finish), so a reload
-  during the exchange or in the gap after its last line does not play it again; the running
-  exchange keeps going, since the flag is read only when an exchange is chosen. The flag is saved,
-  so once per game survives a reload. `npc_exchange_heard:<knot>` still fires at the finish
-  with `complete` true (played to the end) or false (a heard cut); it is never played again,
-  so the lines after a heard cut are lost. No line reached the player (cut, or played to the end to
+  `heard_<knot>` is set and `npc_exchange_heard:<knot>` fires the moment the first overheard line
+  plays (not at the finish), so a reload during the exchange, including while its last line is
+  still showing, does not play it again and does not lose the event. The running exchange keeps
+  going: the needs system reads the flag only when it chooses an exchange. Ink, `requireGlobal`
+  gates and mapping conditions do see it from the first heard line. The flag goes up with the next
+  sync or the page-hide flush, so once per game survives a normal reload (a crash before either
+  can still replay it). The event carries no `complete` field; the finish only logs `exchange_heard`
+  (`complete` true or false) or `exchange_cut`. It is never played again, so the lines after a heard
+  cut are lost. Phone calls keep the stricter rule: a call is heard only when every line reached the
+  player and it ran to the end, so a reload mid-call replays it. No line reached the player (cut, or played to the end to
   an empty room, logged `exchange_unheard { knot, of }`): unplayed, and a later meeting in earshot
   plays it from the start; a meeting plays at most one exchange either way. With the start gate the
   first line is heard whenever it starts on that tick; the unheard case arises when the first line
   waits for the speech lock and the player leaves meanwhile. So an exchange gated on another's
   `heard_<knot>` always follows news the player heard. This replaces the rule in
   `EXCHANGE_HEARD_FIX_LOG.md` (played to the end, or cut after a heard line). A hush from an earlier bark in the same chat is
-  cleared when an exchange starts. A task that needs the whole exchange binds with `condition:
-  "data.complete === true"`; put anything the player must learn in the first line. The validator
+  cleared when an exchange starts. An event binding fires at the first heard line, so
+  put anything the player must learn in the first line. The validator
   warns when a knot's lines add up to more than 60 s (the last lines would never play). Afterwards
   the same meeting carries on with barks, then pictures.
 - **Order.** Each turn: unheard exchange (with audience), then a bark (if lines, off cooldown, lock
@@ -1053,8 +1057,9 @@ events.
 - `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
 - Slice 15: `npc_chatted` also carries `picture` (an icon name, with `line: null`) for picture chat
   and `exchange` (the knot) for an exchange line. `npc_exchange_heard:<knot>` `{ knot, ownerId, npcIds,
-  objectId, complete }` fires once per game (global `heard_<knot>`) when the player overheard at least
-  one line of an exchange, played to the end (`complete: true`) or cut (`complete: false`; 5.6a, E9).
+  objectId }` fires once per game (global `heard_<knot>`), with the global, at the first line of an
+  exchange the player overheard, whether it is later played to the end or cut (5.6a, E9). It does
+  not fire again after a reload.
   An exchange played to the end with no line overheard fires nothing (decision log `exchange_unheard`).
 - `npc_job_failed:<npcId>` gains `reason: "no_beside_cell"` (E8, 5.6): a second user of a shared
   object found no reachable side cell.

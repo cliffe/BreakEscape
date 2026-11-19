@@ -3103,7 +3103,7 @@ export class NPCNeedsSystem {
         if (!c.queue && B.job && B.job.useUntil < end) B.job.useUntil = end;
     }
 
-    /** Record an exchange as heard: the session set and the saved scalar global heard_<knot>. Idempotent. */
+    /** Record an exchange or call as heard: the session set and the saved scalar global heard_<knot>. Idempotent. */
     _markExchangeHeard(knot) {
         if (this._exPlayed.has(knot)) return;
         this._exPlayed.add(knot);
@@ -3117,7 +3117,8 @@ export class NPCNeedsSystem {
      * a hush cannot cut it, since _startExchange clears the chat's hush). The rule for heard (E9,
      * NPC_NEEDS_SYSTEM.md 5.6a): the player overheard at least one of its lines, whether it played to
      * the end or was cut. Heard: heard_<knot> (a global: one key per knot, set once) and
-     * npc_exchange_heard:<knot> { complete }, never played again. No line reached the player (cut, or
+     * npc_exchange_heard:<knot>, both at the first overheard line (_tickChats), never played again;
+     * this finish only logs exchange_heard or exchange_cut. No line reached the player (cut, or
      * played to the end to an empty room, logged exchange_unheard): unplayed, so a later meeting in
      * earshot plays it from the start. c.exDone stays true either way: not again in this meeting.
      */
@@ -3131,9 +3132,7 @@ export class NPCNeedsSystem {
         if (!complete) this._log(ex.ownerId, 'exchange_cut', { knot: ex.knot, reason, line: ex.i, of: ex.lines.length, heardLines: ex.heardLines, heard });
         else if (!heard) this._log(ex.ownerId, 'exchange_unheard', { knot: ex.knot, of: ex.lines.length });
         if (!heard) return;
-        this._markExchangeHeard(ex.knot);   // idempotent: already set at the first overheard line
         this._log(ex.ownerId, 'exchange_heard', { knot: ex.knot, complete });
-        this._emit(`npc_exchange_heard:${ex.knot}`, { knot: ex.knot, ownerId: ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId, complete });
     }
 
     /**
@@ -4558,13 +4557,11 @@ export class NPCNeedsSystem {
                 // lock, since cutting an exchange line would break the exchange)
                 c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot, faint: exHears && !h.overheard };
                 c.ex.i++;
-                if (h.overheard) {
-                    c.ex.heardLines++;
-                    // Heard from the first line the player overhears, not at the finish: a reload during the
-                    // exchange or in the gap after its last line must not play it again (5.6a). The running
-                    // exchange is not affected: _exchangeHeard is only read when choosing an exchange.
-                    if (c.ex.heardLines === 1) this._markExchangeHeard(c.ex.knot);
-                }
+                // Heard from the first line the player overhears, not at the finish (5.6a): the flag and
+                // npc_exchange_heard go out together, so a reload during the exchange loses neither.
+                // The running exchange is not affected: _exchangeHeard is only read when choosing one.
+                let firstHeard = false;
+                if (h.overheard) { c.ex.heardLines++; firstHeard = c.ex.heardLines === 1; }
                 this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, radius: this._chatRadius(c, l.speakerId) });
                 const pa = this.world.npcPos(partnerId);
                 if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
@@ -4574,6 +4571,10 @@ export class NPCNeedsSystem {
                 };
                 this._emit(`npc_chatted:${oid}`, data);
                 if (data.overheard) this._emit(`npc_overheard:${l.speakerId}`, { ...data });
+                if (firstHeard) {
+                    this._markExchangeHeard(data.exchange);
+                    this._emit(`npc_exchange_heard:${data.exchange}`, { knot: data.exchange, ownerId: c.ex.ownerId, npcIds: [c.a, c.b].sort(), objectId: c.objectId });
+                }
                 c.speaker = partnerId;
                 c.nextAt = c.current.until + CHAT_GAP_MS;
                 continue;
@@ -4948,12 +4949,7 @@ export class NPCNeedsSystem {
             if (c.kind === 'colleague' && s.job?.phone) s.job.useUntil = Math.min(s.job.useUntil, this.clockMs);
         }
         const heard = !!(c.knot && c.heardAll);
-        if (heard) {
-            this._exPlayed.add(c.knot);
-            if (typeof this.world.setGlobal === 'function') {
-                try { this.world.setGlobal(`heard_${c.knot}`, true); } catch (e) { /* keep the session flag */ }
-            }
-        }
+        if (heard) this._markExchangeHeard(c.knot);   // a call keeps the heard-to-the-end rule
         this._log(c.speakerId, 'call_ended', { target: c.phoneId, reason: 'done', knot: c.knot || undefined, heard: c.knot ? heard : undefined });
         if (heard) this._emit(`npc_call_heard:${c.knot}`, { knot: c.knot, speakerId: c.speakerId, ownerId: c.ownerId, phoneId: c.phoneId });
     }

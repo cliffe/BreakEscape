@@ -835,7 +835,7 @@ module ValidateNpcNeeds
   # exchanges: [{ with, knot, requireGlobal }]. The knot must be in the NPC's compiled story; every
   # speaker it names ("Name: line", by id or displayName) must be an NPC in the scenario (error) with
   # a voice (warning), and should be the owner or the `with` NPC (the engine plays only the pair's
-  # lines). No { } in the knot's text (rule 2). heard_<knot> is set when it ends: declare it.
+  # lines). No { } in the knot's text (rule 2). heard_<knot> is set at the first overheard line: declare it.
   # A knot longer than EXCHANGE_MAX_MS outlives its hold, so its last lines never play (warning).
   REPO_ROOT = File.expand_path('..', __dir__)
   # Line timing, as npc-needs.js exchangeLineMs and _startExchange (keep in step with the engine)

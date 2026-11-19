@@ -1,5 +1,7 @@
 # Live proof: an exchange is heard from its first overheard line
 
+The proof ran on m04_critical_failure, not on test_needs_sims; the note sits here beside the other exchange proofs. Round 1 review fixes were proved separately (section at the end).
+
 Branch fix/exchange-heard-on-first-line. Keyless server on port 3094, m04_critical_failure, headless browser at 20 fps with fixed steps, TTS blocked. Setup as in the office-life sweep probe: vance_met then vance_provided_keycard (kettle opens), player into operations_office with `__test.enterRoom`, thirst and caffeine of both staff set to 5 every 40 s. Exchange under test: `ex_not_on_the_rota` (4 lines, Ibrahim and Joanne). A fresh game for each case.
 
 | Case | Game | Result |

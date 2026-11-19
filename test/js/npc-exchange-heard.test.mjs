@@ -91,7 +91,8 @@ test('completed: heard once, heard_<knot> set, npc_exchange_heard complete, no r
     assert.equal(o.exLines().length, LINES.length);
     const heard = o.emitted('npc_exchange_heard:ex_parcel');
     assert.equal(heard.length, 1);
-    assert.equal(heard[0].data.complete, true);
+    assert.equal(heard[0].data.complete, undefined, 'the event carries no complete flag');
+    assert.equal(o.evs('exchange_heard')[0].complete, true);
     assert.equal(o.globals.heard_ex_parcel, true);
     assert.equal(o.evs('exchange_cut').length, 0);
     o.meetAgain();
@@ -123,7 +124,7 @@ test('root cause: lines held up by the speech lock keep the pair at the cooler u
     o.sys.step(60000);
     assert.equal(o.exLines().length, LINES.length, 'every line played');
     assert.equal(o.evs('exchange_cut').length, 0, 'not cut');
-    assert.equal(o.emitted('npc_exchange_heard:ex_parcel')[0]?.data.complete, true);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
     assert.equal(o.globals.heard_ex_parcel, true);
 });
 
@@ -156,7 +157,8 @@ test('cut by a player conversation after a heard line: heard (complete false), n
     assert.equal(cut[0].heardLines, 2);
     const heard = o.emitted('npc_exchange_heard:ex_parcel');
     assert.equal(heard.length, 1);
-    assert.equal(heard[0].data.complete, false);
+    assert.equal(heard[0].data.complete, undefined);
+    assert.equal(o.evs('exchange_heard')[0].complete, false, 'the log still tells a cut from a complete');
     assert.equal(o.globals.heard_ex_parcel, true);
     o.w.setChat(null);
     o.sys.step(30000);
@@ -400,7 +402,7 @@ test('room change: the player leaves after the first line, the pair plays on to 
     o.sys.step(40000);
     assert.equal(o.exLines().length, LINES.length);
     assert.deepEqual(o.exLines().map(e => e.data.overheard), [true, false, false, false]);
-    assert.equal(o.emitted('npc_exchange_heard:ex_parcel')[0]?.data.complete, true);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
     assert.equal(o.globals.heard_ex_parcel, true);
 });
 
@@ -435,7 +437,7 @@ test('hush: a hush from an earlier bark does not cut the exchange after its firs
     o.sys.step(40000);
     assert.equal(o.evs('exchange_cut').length, 0, 'not hushed');
     assert.equal(o.exLines().length, LINES.length, 'every line played');
-    assert.equal(o.emitted('npc_exchange_heard:ex_parcel')[0]?.data.complete, true);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
     assert.equal(o.globals.heard_ex_parcel, true);
 });
 
@@ -529,12 +531,12 @@ test('first line: heard_<knot> is set at once and the exchange still plays to th
     const o = office();
     o.until(() => o.exLines().length === 1, 20000, 'the first line');
     assert.equal(o.globals.heard_ex_parcel, true, 'set at the first overheard line');
-    assert.equal(o.emitted('npc_exchange_heard:').length, 0, 'the event still waits for the finish');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'the event goes out with the flag');
+    assert.equal(o.evs('exchange_heard').length, 0, 'the log waits for the finish');
     o.sys.step(40000);
     assert.equal(o.exLines().length, LINES.length, 'plays to the end');
-    const heard = o.emitted('npc_exchange_heard:ex_parcel');
-    assert.equal(heard.length, 1);
-    assert.equal(heard[0].data.complete, true);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'still one event');
+    assert.equal(o.evs('exchange_heard')[0].complete, true);
     assert.equal(o.evs('exchange_heard').length, 1);
     assert.equal(o.evs('exchange_cut').length, 0);
 });
@@ -545,13 +547,15 @@ test('reload after the first line (mid-exchange): a fresh session built from the
     const p = office({ globals: { ...o.globals } });   // the reload: the exchange never reached its finish
     p.sys.step(60000);
     assert.equal(p.exLines().length, 0, 'not played again');
-    assert.equal(p.emitted('npc_exchange_heard:ex_parcel').length, 0);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'the event went out before the reload');
+    assert.equal(p.emitted('npc_exchange_heard:ex_parcel').length, 0, 'and is not sent twice');
 });
 
-test('reload in the gap after the last line: not played again', () => {
+test('reload while the last line is still showing: not played again', () => {
     const o = office();
     o.until(() => o.exLines().length === LINES.length, 60000, 'the last line');
-    assert.equal(o.emitted('npc_exchange_heard:').length, 0, 'the finish has not run yet');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'the event went out at the first line');
+    assert.equal(o.evs('exchange_heard').length, 0, 'the finish has not run yet');
     const p = office({ globals: { ...o.globals } });
     p.sys.step(60000);
     assert.equal(p.exLines().length, 0);
@@ -587,4 +591,17 @@ test('sync: one heard line writes exactly one heard_<knot> key through setGlobal
     o.meetAgain();
     o.sys.step(60000);
     assert.equal(writes.length, 1, 'not again at the next meeting');
+});
+
+test('sync: a heard cut writes heard_<knot> once (line 1), not again at the finish; one event', () => {
+    const o = office();
+    const writes = [];
+    const inner = o.w.world.setGlobal;
+    o.w.world.setGlobal = (name, value) => { writes.push([name, value]); inner(name, value); };
+    o.until(() => o.exLines().length === 2, 30000, 'two lines');
+    o.w.setChat('bob');
+    o.sys.step(NEEDS_TICK_MS * 2);
+    assert.equal(o.evs('exchange_cut').length, 1);
+    assert.deepEqual(writes, [['heard_ex_parcel', true]]);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1);
 });
