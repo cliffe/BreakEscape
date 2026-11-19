@@ -14,6 +14,7 @@ VAR phish_supplier_contact_attempts = 0
 VAR episode_e1_invoice_fraud_defend_complete = false
 VAR kit_defend_done = false
 VAR kit_caught = false
+VAR kit_fraud_caught = false
 VAR kit_ca01_host_said = false
 VAR hub_quiet = false
 
@@ -25,10 +26,14 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { kit_defend_done && not kit_ca01_host_said:
-        { kit_caught:
-            Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
+        { kit_fraud_caught:
+            { kit_caught:
+                Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
+            - else:
+                Adaeze Okafor: You stopped the bank-change email, so Harlow got paid the right way. One of the others did get past us this round, though. The debrief lays out which one, so take a look before you go.
+            }
         - else:
-            Adaeze Okafor: That change went onto the supplier file, so the run paid the account from the email, not Harlow. It got picked up afterwards and the bank's been asked to recall it, but the money moved that same afternoon.
+            Adaeze Okafor: That bank-details email went onto the supplier file, so the run paid the account it named, not Harlow. We spotted it afterwards and asked the bank to recall it, but the money had gone out that same afternoon. The attacker had the whole run, £6,412.80, in an account they control.
         }
         Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.
         ~ kit_ca01_host_said = true

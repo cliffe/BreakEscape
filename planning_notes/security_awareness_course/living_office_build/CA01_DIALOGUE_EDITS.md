@@ -211,3 +211,80 @@ live proof should confirm the catch run speaks the catch branch.
 `test/js/office-kit-quiet-and-stub.test.mjs`: "host layer-2: a catch reads as a catch, a miss reads as a
 miss (not the catch line)" runs the real Adaeze ink through the conversation class on both `kit_caught`
 branches and asserts the catch/miss lines differ and neither leaks into the other. Boolean asserts only.
+
+## Round 4 (REVIEW_R3.md + the new `kit_fraud_caught` global; 2026-11-19)
+
+Commit `161c39646` added a global, `kit_fraud_caught`: true when the learner reported, deleted or verified
+the fraud email `e1_lookalike_bank`, false when they trusted or left it. It is set before `kit_caught`
+(`kit_caught` is still percent >= 85). That gives the host three truthful outcomes and fixes R3 finding 1
+(the miss line keyed on the score, not on the fraud's own verdict).
+
+| R3 item | Disposition |
+|---|---|
+| 1 (MAJOR) | Fixed. Host now branches on `kit_fraud_caught` then `kit_caught`: catch / partial / miss. The miss line fires only when the fraud itself was trusted or left, so it is never spoken to a learner who actually caught it. |
+| 2 (MINOR) | Fixed. Notice: "a few months back" -> "last spring" (a time marker that reads as an older, separate case, not in tension with the panel's fortnight for the current one); "are still clawing the money back" -> "spent weeks getting the money back" (past tense, "weeks" agrees with "fortnight", drops "clawing"). |
+| 3 (MINOR) | Fixed. Bark at test_ca01_panel:1005 reworded so it no longer implies the learner's own case did not get through, is past tense, and ties to the notice's "last spring". |
+| 4 (MINOR) | Addressed by 2. The notice loses "clawing"; "recall" (host) and "chasing the bank" (panel) kept as the real terms. |
+| 5 (MINOR) | Fixed in the miss line: antecedent ("That bank-details email"), "the account it named" (no "from the email" stumble), active "We spotted it" (who dealt with it), and the attacker's gain in plain attacker terms with the figure. |
+| 6 (MINOR) | Fixed in both panels: em-dash parenthesis -> "(£6,412.80 on this invoice)", "in play" jargon dropped, and "If a change like this is saved instead" -> "When a change like this is saved instead" (truer to both runs). |
+| 7 (NIT) | Left. The "ring back" rule in bark 921, the host line and the panel is spaced reinforcement for an awareness exercise; changing bark 921 would also force a re-voice. Logged, not actioned. |
+| 8 (NIT) | Left. The shared second host line ("the wrong account never sees a penny") is already voiced and reads as a general maxim, not a claim about this run; changing it forces a re-voice. Logged, not actioned. |
+| 9 (NIT) | Notice sprite/position untouched (a separate dressing pass owns it, per the task). |
+
+### Host ink, three-way branch (identical in `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink` and `scenarios/test_ca01_panel/ink/adaeze_okafor.ink`)
+
+`VAR kit_fraud_caught = false` added. The first host line now branches `{ kit_fraud_caught: { kit_caught: ... } else: ... } else: ...`:
+- **catch** (`kit_fraud_caught && kit_caught`, UNCHANGED from R3): `Adaeze Okafor: The moment you reported that one, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.`
+- **partial** (`kit_fraud_caught && not kit_caught`, NEW): `Adaeze Okafor: You stopped the bank-change email, so Harlow got paid the right way. One of the others did get past us this round, though. The debrief lays out which one, so take a look before you go.`
+- **miss** (`not kit_fraud_caught`, REWORDED from the R3 miss line, never voiced): `Adaeze Okafor: That bank-details email went onto the supplier file, so the run paid the account it named, not Harlow. We spotted it afterwards and asked the bank to recall it, but the money had gone out that same afternoon. The attacker had the whole run, £6,412.80, in an account they control.`
+- **shared second line** (UNCHANGED, all three outcomes): `Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.`
+
+### Stubs now gate on `kit_fraud_caught`
+
+`scenarios/_office_kit/ink/agnieszka_duda_ambient.ink` and `gwen_pritchard_ambient.ink`: `VAR kit_caught`
+-> `VAR kit_fraud_caught`, and the ca01 knot's `{ kit_caught: }` -> `{ kit_fraud_caught: }`. The praise is
+about catching the bank-details email specifically, so the fraud's own verdict is the right gate: a learner
+who catches the fraud but over-reports (percent < 85) now gets the praise, which is true, instead of the
+neutral line. **Stub text UNCHANGED** (gate variable only), so no re-voice.
+
+`kit_fraud_caught` declared (declaration only, not the hand-authored chain) in the two test shells that also
+load the stubs: `scenarios/test_ca_office_kit/scenario.json.erb` and
+`scenarios/test_ca_office_kit_defend/scenario.json.erb`. Note: those shells' hand-authored chains set
+`kit_caught` (not `kit_fraud_caught`), so their in-game praise demo no longer fires from the chain; the node
+test injects `kit_fraud_caught` directly, so coverage is unaffected. Restoring the live demo would need a
+`setGlobal kit_fraud_caught` in each chain, which this task was told not to add - flagged for the orchestrator.
+
+### Notice / bark / panel (before / after)
+
+Notice `kit_ca01_notice` (`office_kits/brightwell_foods.json` both set pieces `ca01_recall_fallback` /
+`ca01_recall`; re-applied into `scenarios/ca01_invoice_fraud/scenario.json.erb` via
+`apply_training_room.py --kit`, copied back; hand-edited in `scenarios/test_ca01_panel/scenario.json.erb`):
+- before: `A notice pinned to the payments board about an earlier case: a supplier redirect that got through here a few months back. The run paid an account that wasn't the supplier's, and finance are still clawing the money back from the bank.`
+- after: `A notice pinned to the payments board about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank.`
+
+Bark test_ca01_panel:1005 (Agnieszka at the board):
+- before: `That notice on the board is a different case, one that got through. Wrong account, and the supplier's still waiting to be paid.`
+- after: `That notice on the board is an older one, a case from last spring. A redirect that went through, and the supplier was left waiting to be paid.`
+
+conceptPanel cost sentence (both `scenarios/ca01_invoice_fraud/scenario.json.erb` and `scenarios/test_ca01_panel/scenario.json.erb`):
+- before: `…If a change like this is saved instead, the run pays the wrong account — £6,412.80, on the invoice in play — and finance spend the next fortnight chasing the bank and the real supplier to put it right.`
+- after: `…When a change like this is saved instead, the run pays the wrong account (£6,412.80 on this invoice), and finance spend the next fortnight chasing the bank and the real supplier to put it right.`
+
+### Voicing (re-voice needs a yes via AC0)
+
+New host lines to voice: the **partial** line and the **miss** line (both never voiced). Changed bark:
+test_ca01_panel:1005. Unchanged/already-voiced and left alone: host catch line, host shared second line,
+bark 921, both stub lines. Notice "observations" and the conceptPanel are read text, not TTS.
+
+### Tests updated
+
+`test/js/office-kit-quiet-and-stub.test.mjs`: the host test now covers three branches (catch / partial /
+miss) and asserts no two outcomes share an opening line; the stub test injects `kit_fraud_caught` instead of
+`kit_caught`; `openHost` base declares `kit_fraud_caught`. Boolean asserts only. 10/10 pass.
+
+### Verification
+
+inklecate 0 errors (4 inks); `validate_scenario.rb --strict-social --no-graph --skip-ink` 0 errors on
+ca01_invoice_fraud, ca01_invoice_fraud_defend, test_ca01_panel, test_ca_office_kit; `python3 -m unittest
+test_office_kit test_apply_training_room` 53 OK; `node --test office-kit-quiet-and-stub social-awareness-office-kit`
+10 + 20 pass.

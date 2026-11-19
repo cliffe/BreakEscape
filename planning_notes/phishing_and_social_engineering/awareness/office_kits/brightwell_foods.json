@@ -68,7 +68,7 @@
           "takeable": false,
           "interactable": true,
           "revealOnGlobal": "kit_defend_done",
-          "observations": "A notice pinned to the payments board about an earlier case: a supplier redirect that got through here a few months back. The run paid an account that wasn't the supplier's, and finance are still clawing the money back from the bank."
+          "observations": "A notice pinned to the payments board about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
         }
       ]
     },
@@ -85,7 +85,7 @@
           "takeable": false,
           "interactable": true,
           "revealOnGlobal": "{out}",
-          "observations": "A notice pinned to the payments board about an earlier case: a supplier redirect that got through here a few months back. The run paid an account that wasn't the supplier's, and finance are still clawing the money back from the bank."
+          "observations": "A notice pinned to the payments board about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
         }
       ],
       "staff": {

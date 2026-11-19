@@ -124,8 +124,9 @@ async function openStub({ person, npcId }, globals) {
 }
 
 for (const stub of STUBS) {
-    test(`${stub.person} stub: the ca01 line shows on both kit_caught branches, not "(End of conversation)"`, async () => {
-        // The ca01 knot branches on kit_caught: praise when caught, a neutral on-topic line when not.
+    test(`${stub.person} stub: the ca01 line shows on both kit_fraud_caught branches, not "(End of conversation)"`, async () => {
+        // The ca01 knot branches on kit_fraud_caught (the fraud email's own verdict): praise when the
+        // learner caught that email, a neutral on-topic line when not.
         const knot = readFileSync(join(root, `scenarios/_office_kit/ink/${stub.person}_ambient.ink`), 'utf8')
             .split('=== ca01 ===')[1].split('=== bye ===')[0];
         const speakerLines = knot.split('\n').map(l => l.trim()).filter(l => /^[A-Z][A-Za-z ]*:\s/.test(l));
@@ -133,11 +134,11 @@ for (const stub of STUBS) {
         const [caught, notCaught] = speakerLines;
         assert.ok(caught !== notCaught);
 
-        for (const [kitCaught, expected] of [[true, caught], [false, notCaught]]) {
-            const conv = await openStub(stub, { kit_defend_done: true, kit_ep: 'ca01', kit_caught: kitCaught });
+        for (const [kitFraudCaught, expected] of [[true, caught], [false, notCaught]]) {
+            const conv = await openStub(stub, { kit_defend_done: true, kit_ep: 'ca01', kit_fraud_caught: kitFraudCaught });
             const r = conv.continue();
             assert.ok(r.hasEnded === false, 'first continue reported the story ended');
-            assert.ok(typeof r.text === 'string' && r.text.trim() === expected, `kit_caught ${kitCaught}: got "${r.text.trim()}"`);
+            assert.ok(typeof r.text === 'string' && r.text.trim() === expected, `kit_fraud_caught ${kitFraudCaught}: got "${r.text.trim()}"`);
             assert.ok(r.choices.length === 1);
             conv.engine.choose(0);
             const end = conv.continue();
@@ -156,14 +157,17 @@ for (const stub of STUBS) {
     });
 }
 
-// ---- host (Adaeze) layer-2 line branches on kit_caught (R3 F1: a miss must not read as a catch) ----
-// The hub knot speaks the catch line only when kit_caught; on a miss it states what the run cost,
-// in attacker terms, without claiming success. The panel and fallback inks are identical.
+// ---- host (Adaeze) layer-2 line is a three-way branch (R3 F1 + R4) ----
+// kit_fraud_caught (did the learner catch the fraud email) gates the outer branch; kit_caught (>= 85%)
+// splits the caught side. Catch = fraud caught and >= 85%; partial = fraud caught but another phish got
+// through; miss = fraud not caught, which states what the attacker took in plain terms. No two outcomes
+// share an opening line. The panel and fallback inks are identical.
 async function openHost(globals) {
     const json = JSON.parse(
         readFileSync(join(root, 'scenarios/test_ca01_panel/ink/adaeze_okafor.json'), 'utf8').replace(/^﻿/, ''));
     const base = { hub_quiet: false, kit_ca01_host_said: false, phish_supplier_contact_attempts: 0,
-        episode_e1_invoice_fraud_defend_complete: false, kit_defend_done: false, kit_caught: false };
+        episode_e1_invoice_fraud_defend_complete: false, kit_defend_done: false, kit_caught: false,
+        kit_fraud_caught: false };
     window.gameScenario = { globalVariables: base };
     window.gameState = { globalVariables: { ...base, ...globals } };
     window.npcConversationStateManager = undefined;
@@ -187,19 +191,34 @@ function hostLines(conv) {
     return texts.join(' ');
 }
 
-test('host layer-2: a catch reads as a catch, a miss reads as a miss (not the catch line)', async () => {
-    const caught = hostLines(await openHost({ kit_defend_done: true, kit_caught: true }));
+test('host layer-2: catch, partial (fraud caught, other phish through), and miss each read as themselves', async () => {
+    // Catch: fraud caught and percent >= 85.
+    const caught = hostLines(await openHost({ kit_defend_done: true, kit_fraud_caught: true, kit_caught: true }));
     assert.ok(caught.includes('went out clean') === true);
     assert.ok(caught.includes('That was down to you') === true);
     assert.ok(caught.includes('recall it') === false);
+    assert.ok(caught.includes('get past us this round') === false);
     assert.ok(caught.includes('Ring the person back') === true);
 
-    const miss = hostLines(await openHost({ kit_defend_done: true, kit_caught: false }));
+    // Partial: fraud caught but another phish got through (percent < 85).
+    const partial = hostLines(await openHost({ kit_defend_done: true, kit_fraud_caught: true, kit_caught: false }));
+    assert.ok(partial.includes('stopped the bank-change email') === true);
+    assert.ok(partial.includes('get past us this round') === true);
+    assert.ok(partial.includes('went out clean') === false);
+    assert.ok(partial.includes('recall it') === false);
+    assert.ok(partial.includes('Ring the person back') === true);
+
+    // Miss: fraud not caught (trusted or left the fraud email).
+    const miss = hostLines(await openHost({ kit_defend_done: true, kit_fraud_caught: false, kit_caught: false }));
     assert.ok(miss.includes('onto the supplier file') === true);
     assert.ok(miss.includes('recall it') === true);
+    assert.ok(miss.includes('£6,412.80') === true);
     assert.ok(miss.includes('went out clean') === false);
+    assert.ok(miss.includes('get past us this round') === false);
     assert.ok(miss.includes('Ring the person back') === true);
 
-    // The two outcomes must not speak the same opening line (R3 F1).
+    // No two outcomes speak the same opening line (R3 F1 / R4 three-way).
+    assert.ok((caught === partial) === false);
     assert.ok((caught === miss) === false);
+    assert.ok((partial === miss) === false);
 });
