@@ -6,6 +6,7 @@
   "endGoal": "Send the email in Derek's name, then sort the payments inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -83,6 +84,18 @@
     "kit_caught": false,
     "kit_ep": "ca01",
     "kit_ca01_host_said": false
+  },
+  "chatter": {
+    "kit_brightwell": {
+      "lines": [
+        "Busy inbox today.",
+        "Kettle's on in a sec.",
+        "Audit week again."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -1065,19 +1078,6 @@
           "observations": "A printed notice on the payments board: a supplier payment went to the wrong account and is being chased with the bank."
         }
       ]
-    }
-  },
-  "npcThoughts": false,
-  "chatter": {
-    "kit_brightwell": {
-      "lines": [
-        "Busy inbox today.",
-        "Kettle's on in a sec.",
-        "Audit week again."
-      ],
-      "requireGlobal": {
-        "kit_quiet": false
-      }
     }
   }
 }
