@@ -212,6 +212,18 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   After the R4 rounds: second cross-plan review (Fable) over the five plans; picks page
   republish (Core 5 questions, Privilege 7 with changed 1 and 5, MFA 5, Skin 1, Log 2); outline
   build order and status paragraph.
+- 11:42 USER REQUIREMENT (verbatim): "MFA should (also?) be flexible to apply to various kinds
+  of locks as a push accept, for example: the player walks up to a locked PC, or even open an
+  encrypted zip file -- as an attribute to the object." My reading: a second step as an
+  attribute on any lockable object, in addition to the sign-in policy. Plan: new stage S8c in
+  `OPS_MFA_HELPDESK_PLAN.md`. The running MFA R3 reviser was told only to keep the second-step
+  server logic as functions taking an owner and a target reference, and to add a "Later slices"
+  pointer. A Haiku reader (aa5c442487f5b3f30) is writing
+  `ops_layer/digests/D6_locks_unlock_paths.md`. When BOTH the MFA reviser and D6 have reported:
+  commit both, then launch a Fable planner to add S8c to the MFA plan from D6 (schema attribute
+  on a lock, which kinds each lock type supports, server unlock path order, what reaches the
+  browser, state, validator and graph, tests, log rows), then a FULL R4 review on Opus (not a
+  delta). Tell the log plan's next reviser about any new rows.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
