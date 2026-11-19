@@ -648,6 +648,10 @@ test('knot already in _exPlayed before line 1: line 1 gives no event and no writ
     assert.equal(o.exLines()[0].data.overheard, true, 'line 1 is heard');
     assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 0, 'no event');
     assert.deepEqual(writes, [], 'no write');
+    // and no event at a later line either
+    o.sys.step(40000);
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 0, 'no event at a later line');
+    assert.deepEqual(writes, [], 'no write at a later line');
 });
 
 // ── validator: a binding that reads data.complete (EXCHANGE_HEARD R2 m3) ─────
@@ -660,6 +664,7 @@ test('validator: a npc_exchange_heard mapping that reads data.complete is a warn
                 { eventPattern: 'npc_exchange_heard:ex_a', condition: 'data.complete === true', completeTask: 't1' },
                 { eventPattern: 'npc_exchange_heard:ex_a', completeTask: 't2' },
                 { eventPattern: 'npc_chatted:cooler', condition: 'data.complete === true', completeTask: 't3' },
+                // data.completed is a different word: no hit for it
                 { eventPattern: 'npc_exchange_heard:ex_a', condition: 'data.completed === true', completeTask: 't4' }
             ] },
             { id: 'bob', voice: {} }
@@ -669,6 +674,5 @@ test('validator: a npc_exchange_heard mapping that reads data.complete is a warn
     const hits = issues.filter(s => s.includes('reads data.complete'));
     assert.equal(hits.length, 1, issues.join('\n'));
     assert.match(hits[0], /WARNING/);
-    // data.completed is a different word: no hit for it
     assert.match(hits[0], /NPC 'ann' mapping 'npc_exchange_heard:ex_a'/);
 });

@@ -58,7 +58,12 @@ const playerRoom = () => page.evaluate(() => window.currentPlayerRoom);
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const events = () => page.evaluate(() => window.__s4.slice());
 // The needs decision log: exchange_heard { knot, complete } and exchange_cut come from here, not from the event (it carries no complete field)
-const needsLog = () => page.evaluate(() => window.__test.needs.log().filter(e => /^exchange_(heard|cut)$/.test(e.ev)).map(e => ({ t: e.t, ev: e.ev, knot: e.knot, complete: e.complete, heard: e.heard, heardLines: e.heardLines })));
+// sinceTick scopes the lookup to entries after that needs tick (the log is cumulative and a 2000-entry ring)
+const needsLog = (sinceTick = 0) => page.evaluate((since) => window.__test.needs.log(since).filter(e => /^exchange_(heard|cut)$/.test(e.ev)).map(e => ({ t: e.t, ev: e.ev, knot: e.knot, complete: e.complete, heard: e.heard, heardLines: e.heardLines })), sinceTick);
+const needsTick = () => page.evaluate(() => window.npcNeedsSystem.tickCount);
+// ms per needs tick, read from the page (clockMs and tickCount advance together); 250 is the fallback before the first tick
+const DEFAULT_TICK_MS = 250;
+const tickMs = () => page.evaluate((d) => { const n = window.npcNeedsSystem; return n.tickCount ? n.clockMs / n.tickCount : d; }, DEFAULT_TICK_MS);
 const npc = (id) => page.evaluate((id) => { const st = window.npcNeedsSystem.getState(id) || {}; const b = window.npcBehaviorManager && window.npcBehaviorManager.getBehavior(id); const sp = b && b.sprite; return { mode: st.mode, phase: st.job && st.job.phase, target: st.job && st.job.targetId, x: sp ? +sp.x.toFixed(0) : null, y: sp ? +sp.y.toFixed(0) : null, caffeine: st.levels && st.levels.caffeine != null ? +st.levels.caffeine.toFixed(0) : null, thirst: st.levels && st.levels.thirst != null ? +st.levels.thirst.toFixed(0) : null }; }, id);
 const tasks = () => page.evaluate(() => Object.values((window.objectivesManager && window.objectivesManager.taskIndex) || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 const hudState = () => page.evaluate(() => ({
@@ -205,9 +210,9 @@ function crossing(evs, fromMs, objId) {
 // so no exchange is left over for the crossing.
 async function firstVisitHeard(capMs = 150000) {
     await enterRoom('staff_room'); await standNear('staff_boiler');
-    const t0 = Date.now();
+    const t0 = Date.now(); const since = await needsTick();
     // the event fires at line 1; wait for the log's finish entry so the exchange is over before the caller settles
-    while (Date.now() - t0 < capMs) { if ((await needsLog()).some(l => l.ev === 'exchange_heard' && l.knot === 'exchange_waiting')) return true; await t(2000); }
+    while (Date.now() - t0 < capMs) { if ((await needsLog(since)).some(l => l.ev === 'exchange_heard' && l.knot === 'exchange_waiting')) return true; await t(2000); }
     return false;
 }
 
@@ -356,9 +361,10 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         await page.evaluate(() => { clearInterval(window.__tripWatch); if (window.game.sys.game.loop.sleeping) window.game.sys.game.loop.wake(); });
         r.jodie_jobs = await page.evaluate(() => window.__jodieJobs);
         const used = evs.find(e => e.ev === 'npc_used:staff_lockers');
-        // npc_exchange_heard fires at the first overheard line; the exchange ends at the log's exchange_heard entry (tick t, 250 ms a tick)
-        const callFinish = (await needsLog()).find(l => l.ev === 'exchange_heard' && l.knot === 'exchange_job_called');
-        const callFinishMs = callFinish ? callFinish.t * 250 : null;
+        // npc_exchange_heard fires at the first overheard line; the exchange ends at the log's exchange_heard entry (tick t, ms per tick read from the page)
+        const ms = await tickMs();
+        const callFinish = (await needsLog(Math.floor(closeMs / ms) - 1)).find(l => l.ev === 'exchange_heard' && l.knot === 'exchange_job_called');
+        const callFinishMs = callFinish ? callFinish.t * ms : null;
         const lockerStart = evs.find(e => e.ev === 'npc_use_started:staff_lockers');
         r.lockers = {
             use_started_by: lockerStart ? lockerStart.data.npcId : null,
@@ -374,6 +380,7 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         r.jodie_chat = await talkJodie('sorted');
         // The next break: the private office starts the cooler break; the cleared exchange should play.
         const c0 = await clock();
+        const sinceC0 = Math.floor(c0 / ms) - 1;
         await enterRoom('it_room'); await t(400); await enterRoom('manager_office'); await t(900);
         await enterRoom('it_room'); await t(400); await enterRoom('staff_room'); await standNear('staff_cooler');
         const t1 = Date.now(); let shotEx = false;
@@ -381,10 +388,12 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
             evs = await events();
             if (!shotEx && evs.some(e => e.ev === 'npc_chatted:staff_cooler' && e.data.exchange === 'exchange_job_cleared' && e.clockMs >= c0)) { await shot('05-cleared-exchange'); shotEx = true; }
             // the event fires at line 1; wait for the finish entry so every line is in the report
-            if ((await needsLog()).some(l => l.ev === 'exchange_heard' && l.knot === 'exchange_job_cleared')) break;
+            if ((await needsLog(sinceC0)).some(l => l.ev === 'exchange_heard' && l.knot === 'exchange_job_cleared')) break;
             await t(1500);
         }
+        const clearedFin = (await needsLog(sinceC0)).find(l => l.ev === 'exchange_heard' && l.knot === 'exchange_job_cleared');
         r.cleared_exchange = {
+            complete: clearedFin ? clearedFin.complete : null,
             heard: evs.filter(e => e.ev === 'npc_exchange_heard:exchange_job_cleared').map(e => e.data),
             lines: crossing(evs, c0, 'staff_cooler').exchange_lines
         };
