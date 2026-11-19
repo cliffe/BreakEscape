@@ -101,15 +101,15 @@ export const POWDERS = {
  *   cards can be told apart by eye; the right card carries the same marks in the same places.
  * @type {Object<string, {pfog:number, minCoverage:number, residueStrength:number, candidates:number,
  *   decoySamePattern:'never'|'one'|'all', findFloor:number, partial:'never'|'maybe'|'always', sheenScale:number,
- *   marks:number}>}
+ *   marks:number, hintAfterMs:number, nearRadius:number}>}
  */
 export const DIFFICULTY = {
     // easy: decoys have a different pattern class by default, so the compare is by class; near-identical
     // whorls on easy were not a fair comparison (m08 E16). A scenario may force a same-class decoy with a
     // { name, pattern } entry in fingerprintCandidates (m05's mug does). Medium and hard keep the minutiae test.
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.24, partial: 'never', sheenScale: 1.0, marks: 3 },
-    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, marks: 3 },
-    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findFloor: 0, partial: 'always', sheenScale: 0.7, marks: 2 }
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.24, partial: 'never', sheenScale: 1.0, hintAfterMs: 8000, nearRadius: 8, marks: 3 },
+    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, hintAfterMs: 10000, nearRadius: 8, marks: 3 },
+    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findFloor: 0, partial: 'always', sheenScale: 0.7, hintAfterMs: 15000, nearRadius: 5, marks: 2 }
 };
 
 const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];
@@ -495,3 +495,120 @@ export function findSheen({ lit, ridge, mask, res, floor, floorScale = 1, dotted
     if (dotted) s = Math.max(s, mask * Math.min(FIND_FLOOR_MAX, (floor + (hc ? FIND_HC_FLOOR_BONUS : 0)) * floorScale));
     return s;
 }
+
+/** Default Hint delay; each difficulty sets its own (DIFFICULTY.*.hintAfterMs: 8 s easy, 10 s medium, 15 s hard). */
+export const HINT_AFTER_MS = 8000;
+/** The torch is "near the print" within `radius` canvas px of a mask pixel (DIFFICULTY.*.nearRadius) and stays near until radius + FIND_LEAVE_MARGIN (no flicker). */
+export const FIND_NEAR_RADIUS = 8;
+export const FIND_LEAVE_MARGIN = 6;
+export const FIND_LEAVE_RADIUS = FIND_NEAR_RADIUS + FIND_LEAVE_MARGIN;
+/**
+ * Is any print-mask pixel (above 0.3, as the click test uses) within `radius` px of (x, y)?
+ * @param {ArrayLike<number>} mask n x n @param {number} n @param {number} x @param {number} y @param {number} radius
+ */
+export function torchNearPrint(mask, n, x, y, radius) {
+    const r = Math.ceil(radius), px = Math.round(x), py = Math.round(y);
+    for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy > radius * radius) continue;
+            const xx = px + dx, yy = py + dy;
+            if (xx >= 0 && yy >= 0 && xx < n && yy < n && mask[yy * n + xx] > 0.3) return true;
+        }
+    }
+    return false;
+}
+/** Next "near" state with hysteresis: enters at `radius`, leaves only past radius + FIND_LEAVE_MARGIN. */
+export function nextNearState(wasNear, mask, n, x, y, radius = FIND_NEAR_RADIUS) {
+    return torchNearPrint(mask, n, x, y, wasNear ? radius + FIND_LEAVE_MARGIN : radius);
+}
+
+/**
+ * Scale of the magnified compare pair: a whole number from 2 to 6 that fits `availW` per pane and, above 2x,
+ * `maxH` tall (2x is the floor, so a wide crop can still be taller than maxH).
+ */
+export function zoomScale(side, availW, maxH) {
+    return Math.max(2, Math.min(6, Math.floor(availW / side), Math.floor(maxH / side)));
+}
+export const ZOOM_MAX_H = 160;
+/** Height (px) of everything in the frame except the main row while comparing on a desktop-sized window, as a fallback
+ *  when it cannot be measured: padding and border 20, title 32, step row 44, status line (three lines, the lift's mark
+ *  list can run to three) 65, options 32. The game measures the real chrome in _layout and passes it to zoomBudgetH. */
+export const ZOOM_STATUS_MAX_H = 65;
+export const ZOOM_CHROME_H = 20 + 32 + 44 + ZOOM_STATUS_MAX_H + 32;
+/** Height the pair may use in the stage column: the frame is the window less 24 px, less the chrome. */
+export function zoomBudgetH(innerH, chrome = ZOOM_CHROME_H) { return Math.max(240, innerH - 24 - chrome); }
+/** Overheads of the pair, px. A pane is its canvas plus the 4 px box border (2 + 2). The caption is 19.8 px, plus the 2 px gap. */
+export const ZOOM_PANE_BORDER = 4, ZOOM_PANE_GAP = 8;
+export const ZOOM_CAP_H = 20 + 2;
+/** Zoom margin 6 + 6, and the note's 8 px top margin. */
+export const ZOOM_MARGIN_H = 6 + 6 + 8;
+/** Side by side: W + caption + border + margins (46). Stacked: 2 (W + caption + border) + the 8 px pane gap + margins (80). */
+export const ZOOM_SBS_EXTRA = ZOOM_CAP_H + ZOOM_PANE_BORDER + ZOOM_MARGIN_H;
+export const ZOOM_STACK_EXTRA = 2 * (ZOOM_CAP_H + ZOOM_PANE_BORDER) + ZOOM_PANE_GAP + ZOOM_MARGIN_H;
+/**
+ * Reference card width: 128 canvas + 2 x 6 padding + 2 x 2 border. The CSS caps every card (and its View button) at this
+ * width, so a long label wraps inside the card instead of widening it. Gap between cards 10 (flex row) or 8 (the four-card grid).
+ * PANEL_SLACK is slack, not padding: room the row needs beyond the cards themselves, e.g. the pressed "Back to my lift (V)"
+ * button (about 163 px) and the panel's own scrollbar and borders.
+ */
+export const REF_CARD_W = 144, REF_GAP = 10, REF_GAP_GRID = 8, PANEL_SLACK = 32;
+/** The panel is never squeezed below this by a 3x or larger pair: it falls back to 2x instead. */
+export const PANEL_COMFORT_W = 420;
+/** The panel is never narrower than this beside the pair on a desktop-sized window, whatever the card count or the names on the cards. */
+export const PANEL_MIN_W = 480;
+/** Below this panel width (beside a side-by-side pair) the pair is stacked instead, when it fits the height at the same scale. */
+export const PANEL_ROOMY_W = 640;
+/** The panel width the cards need in one row (four cards: the 600 px at which dusting.css switches 2x2 to 4x1), plus the button row's room. */
+export function comparePanelMin(cards) {
+    if (cards >= 4) return 4 * REF_CARD_W + 3 * REF_GAP_GRID;
+    return Math.max(PANEL_MIN_W, cards * REF_CARD_W + (cards - 1) * REF_GAP + PANEL_SLACK);
+}
+/**
+ * The pair for the stage column (non-short screens). Panes sit side by side (width 2 (S side + 4) + 8, height S side + 46)
+ * or stacked, lift above card (width S side + 4, height 2 S side + 80). The largest whole S from 2 to `maxS` that fits
+ * the width `availW` and the height budget wins; side by side on a tie, stacked only when that gives a larger scale.
+ * If even 2x does not fit, the crop is limited to what fits (stacked, 2x) and `limited` is true:
+ * a mark near the edge of a wide crop may then lose its margin.
+ * @returns {{side:number, S:number, W:number, stacked:boolean, limited:boolean}}
+ */
+export function zoomPlan({ side, availW, budgetH, maxS = 6 }) {
+    const capSbs = budgetH - ZOOM_SBS_EXTRA, capStack = Math.floor((budgetH - ZOOM_STACK_EXTRA) / 2);
+    const best = (stacked) => {
+        const cap = stacked ? capStack : capSbs;
+        for (let S = maxS; S >= 2; S--) {
+            const W = S * side;
+            if (W > cap) continue;
+            if ((stacked ? W + 4 : 2 * (W + 4) + 8) > availW) continue;
+            return S;
+        }
+        return 0;
+    };
+    const a = best(false), b = best(true);
+    if (a || b) {
+        const stacked = b > a;
+        const S = stacked ? b : a;
+        return { side, S, W: S * side, stacked, limited: false };
+    }
+    const lim = Math.max(48, 2 * Math.floor(Math.min(capStack, availW - 4) / 4));
+    const s2 = Math.min(side, lim);
+    return { side: s2, S: 2, W: 2 * s2, stacked: true, limited: s2 < side };
+}
+/**
+ * zoomPlan for the stage column beside the panel: `rootW` is the frame's width, `cards` the candidate count. The panel
+ * keeps comparePanelMin; a 3x or larger pair that would leave it under PANEL_COMFORT_W is capped at 2x.
+ */
+export function zoomPlanBeside({ side, rootW, cards, budgetH, maxS = 6 }) {
+    const availW = rootW - 36 - 16 - comparePanelMin(cards);
+    let p = zoomPlan({ side, availW, budgetH, maxS });
+    if (!p.limited && !p.stacked && rootW - 32 - 16 - (2 * (p.W + 4) + 8) < PANEL_ROOMY_W) {
+        // side by side would leave the panel cramped (its paragraphs and messages wrap to extra lines): stack the pair at the same scale if that fits
+        const st = zoomPlan({ side, availW: p.W + 4, budgetH, maxS: p.S });
+        if (st.stacked && !st.limited && st.S === p.S) p = st;
+    }
+    if (!p.limited && p.S > 2) {
+        const pairW = p.stacked ? p.W + 4 : 2 * (p.W + 4) + 8;
+        if (rootW - 36 - 16 - pairW < PANEL_COMFORT_W) p = zoomPlan({ side, availW, budgetH, maxS: 2 });
+    }
+    return p;
+}
+export const ZOOM_MAX_H_SHORT = 128;

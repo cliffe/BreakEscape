@@ -393,7 +393,9 @@ export class KeyOperations {
         this.parent.keyInsertion.updateFeedback("Key selected! Inserting into lock...");
         
         // Automatically trigger key insertion after a short delay
-        setTimeout(() => {
+        clearTimeout(this.parent._keyInsertTimer);
+        this.parent._keyInsertTimer = setTimeout(() => {
+            this.parent._keyInsertTimer = null;
             this.startKeyInsertion();
         }, 300); // Small delay to let the key appear first
         

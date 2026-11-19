@@ -835,7 +835,7 @@ module ValidateNpcNeeds
   # exchanges: [{ with, knot, requireGlobal }]. The knot must be in the NPC's compiled story; every
   # speaker it names ("Name: line", by id or displayName) must be an NPC in the scenario (error) with
   # a voice (warning), and should be the owner or the `with` NPC (the engine plays only the pair's
-  # lines). No { } in the knot's text (rule 2). heard_<knot> is set when it ends: declare it.
+  # lines). No { } in the knot's text (rule 2). heard_<knot> is set at the first overheard line: declare it.
   # A knot longer than EXCHANGE_MAX_MS outlives its hold, so its last lines never play (warning).
   REPO_ROOT = File.expand_path('..', __dir__)
   # Line timing, as npc-needs.js exchangeLineMs and _startExchange (keep in step with the engine)
@@ -880,6 +880,17 @@ module ValidateNpcNeeds
     ids = npcs.map { |_r, n| n['id'] }
     groups = npcs.flat_map { |_r, n| Array(n.is_a?(Hash) ? n.dig('needsCompany', 'groups') : nil) }.uniq
     globals = json['globalVariables'].is_a?(Hash) ? json['globalVariables'] : {}
+    # npc_exchange_heard carries { knot, ownerId, npcIds, objectId } and fires at the first overheard
+    # line: a condition reading data.complete is always false (EXCHANGE_HEARD R2 m3)
+    npcs.each do |_r, n|
+      next unless n.is_a?(Hash)
+
+      Array(n['eventMappings']).each do |m|
+        next unless m.is_a?(Hash) && m['eventPattern'].to_s.start_with?('npc_exchange_heard') && m['condition'].to_s.match?(/\bdata\.complete\b/)
+
+        issues << "⚠️ WARNING: NPC '#{n['id']}' mapping '#{m['eventPattern']}' reads data.complete, but npc_exchange_heard carries no complete field; it fires at the first overheard line, so the condition is never true."
+      end
+    end
     npcs.each do |_r, n|
       next unless n.key?('exchanges')
 

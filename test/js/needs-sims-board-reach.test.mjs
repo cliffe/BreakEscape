@@ -33,10 +33,10 @@ test('the lowest stand points in front of the board are within reach', () => {
     }
 });
 
-test('the same board unmarked is out of reach from there (the old behaviour)', () => {
+test('the same board unmarked is in reach too: any prop 48 px or taller is reached at its footprint', () => {
     const plain = { ...sprite, scenarioData: { ...board, wallMounted: false } };
     const d = Math.hypot(reachX(plain, 217) - 217, reachY(plain, 52) - 52);
-    assert.ok(d > RANGE, `unmarked distance ${d}`);
+    assert.ok(d <= RANGE, `unmarked distance ${d}`);
 });
 
 test('a player far from the board is still out of reach', () => {

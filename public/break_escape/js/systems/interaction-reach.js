@@ -12,11 +12,16 @@
  * object's horizontal span, so standing below any part of it counts as being at
  * that part. The vertical measure is the sprite's y, which keeps every
  * existing stand point valid; this only ever shortens a reach. reachY() is
- * the vertical counterpart, for objects marked "wallMounted" only.
+ * the vertical counterpart, and applies to every scenario object: a tall prop
+ * against the back wall (a 47px filing cabinet) is reached at its footprint,
+ * not its top edge, which a player's feet cannot get within 32px of.
  *
  * Doors and NPCs keep their own measures (DOOR_INTERACTION_RANGE_SQ,
  * npc-reach.js). No imports, so the node tests can load this file on its own.
  */
+
+/** Objects at least this tall (px) are reached at their footprint, not their top edge (reachY). */
+export const TALL_PROP_PX = 32;
 
 /** The x to measure reach to for `sprite`, seen from player x `fromX`. */
 export function reachX(sprite, fromX) {
@@ -39,21 +44,26 @@ export function reachX(sprite, fromX) {
 
 /**
  * The y to measure reach to for `sprite`, seen from player y `fromY`: the
- * vertical counterpart of reachX, but opt-in. Only a scenario object marked
- * `"wallMounted": true` gets it (a tall wall fixture such as a power socket
- * whose plate is high on the back wall and whose cable reaches the floor line).
- * For it, the player's y is clamped into the sprite's vertical span, so standing
- * level with any part of it counts as being at that part. Every other sprite
- * (bookcases, vending machines, doors, NPCs, anything unmarked) keeps sprite.y,
- * so their reach is unchanged. Like reachX it only ever shortens a reach: the
- * clamped point is never further from fromY than sprite.y is.
+ * vertical counterpart of reachX. The player's y is clamped into the sprite's
+ * vertical span, so standing level with any part of it counts as being at that
+ * part. A scenario object's origin is its top-left, so measuring to sprite.y
+ * put a floor-standing 47px cabinet against the back wall (m01 derek_cabinet)
+ * about 27px beyond the nearest the player's feet can reach, and the walk
+ * stopped short. This applies to every scenario object at least TALL_PROP_PX (32) tall,
+ * or marked "wallMounted"; shorter props, doors, NPCs, rotated sprites and sprites without
+ * scenario data keep sprite.y. Like reachX it only ever shortens a reach: the
+ * clamped point is never further from fromY than sprite.y is. It does not
+ * loosen the wall rule: interactionLineClear still runs the line to the base
+ * of the object, in the object's own room.
  */
 export function reachY(sprite, fromY) {
     if (!sprite || !Number.isFinite(sprite.y)) return sprite ? sprite.y : 0;
-    if (sprite._isNPC || sprite.doorProperties || sprite.scenarioData?.wallMounted !== true) return sprite.y;
+    if (sprite._isNPC || sprite.doorProperties || !sprite.scenarioData) return sprite.y;
     if (!Number.isFinite(fromY) || sprite.rotation) return sprite.y;
     const h = sprite.displayHeight ?? sprite.height ?? 0;
-    if (!(h > 0)) return sprite.y;
+    // Only a tall prop needs it: a low one (under 32px: a short box, a desk top) is near enough its top edge, and
+    // the overlap and pick logic is tuned to that measure. A "wallMounted" mark always opts in.
+    if (!(h >= TALL_PROP_PX || (h > 0 && sprite.scenarioData.wallMounted === true))) return sprite.y;
     const top = sprite.y - (sprite.originY ?? 0.5) * h;
     return Math.max(top, Math.min(fromY, top + h));
 }
