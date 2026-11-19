@@ -636,6 +636,20 @@ test('first overheard line is the second: no flag or event after line 1, both on
     assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 1, 'still one event');
 });
 
+test('knot already in _exPlayed before line 1: line 1 gives no event and no write', () => {
+    const o = office();
+    const writes = [];
+    const inner = o.w.world.setGlobal;
+    o.w.world.setGlobal = (name, value) => { writes.push([name, value]); inner(name, value); };
+    // line 1 can play in the same tick as the start, so mark the knot from the start's own log entry
+    const log = o.sys._log.bind(o.sys);
+    o.sys._log = (npc, ev, extra) => { if (ev === 'exchange_started') o.sys._exPlayed.add('ex_parcel'); return log(npc, ev, extra); };
+    o.until(() => o.exLines().length === 1, 30000, 'line one');
+    assert.equal(o.exLines()[0].data.overheard, true, 'line 1 is heard');
+    assert.equal(o.emitted('npc_exchange_heard:ex_parcel').length, 0, 'no event');
+    assert.deepEqual(writes, [], 'no write');
+});
+
 // ── validator: a binding that reads data.complete (EXCHANGE_HEARD R2 m3) ─────
 
 test('validator: a npc_exchange_heard mapping that reads data.complete is a warning; one without is not', { skip: skipRuby }, () => {
@@ -645,7 +659,8 @@ test('validator: a npc_exchange_heard mapping that reads data.complete is a warn
             { id: 'ann', voice: {}, eventMappings: [
                 { eventPattern: 'npc_exchange_heard:ex_a', condition: 'data.complete === true', completeTask: 't1' },
                 { eventPattern: 'npc_exchange_heard:ex_a', completeTask: 't2' },
-                { eventPattern: 'npc_chatted:cooler', condition: 'data.complete === true', completeTask: 't3' }
+                { eventPattern: 'npc_chatted:cooler', condition: 'data.complete === true', completeTask: 't3' },
+                { eventPattern: 'npc_exchange_heard:ex_a', condition: 'data.completed === true', completeTask: 't4' }
             ] },
             { id: 'bob', voice: {} }
         ] } }
@@ -654,5 +669,6 @@ test('validator: a npc_exchange_heard mapping that reads data.complete is a warn
     const hits = issues.filter(s => s.includes('reads data.complete'));
     assert.equal(hits.length, 1, issues.join('\n'));
     assert.match(hits[0], /WARNING/);
+    // data.completed is a different word: no hit for it
     assert.match(hits[0], /NPC 'ann' mapping 'npc_exchange_heard:ex_a'/);
 });

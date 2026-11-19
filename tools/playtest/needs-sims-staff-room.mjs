@@ -58,7 +58,7 @@ const playerRoom = () => page.evaluate(() => window.currentPlayerRoom);
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const events = () => page.evaluate(() => window.__s4.slice());
 // The needs decision log: exchange_heard { knot, complete } and exchange_cut come from here, not from the event (it carries no complete field)
-const needsLog = () => page.evaluate(() => window.__test.needs.log().filter(e => /^exchange_(heard|cut)$/.test(e.ev)).map(e => ({ ev: e.ev, knot: e.knot, complete: e.complete, heard: e.heard, heardLines: e.heardLines })));
+const needsLog = () => page.evaluate(() => window.__test.needs.log().filter(e => /^exchange_(heard|cut)$/.test(e.ev)).map(e => ({ t: e.t, ev: e.ev, knot: e.knot, complete: e.complete, heard: e.heard, heardLines: e.heardLines })));
 const npc = (id) => page.evaluate((id) => { const st = window.npcNeedsSystem.getState(id) || {}; const b = window.npcBehaviorManager && window.npcBehaviorManager.getBehavior(id); const sp = b && b.sprite; return { mode: st.mode, phase: st.job && st.job.phase, target: st.job && st.job.targetId, x: sp ? +sp.x.toFixed(0) : null, y: sp ? +sp.y.toFixed(0) : null, caffeine: st.levels && st.levels.caffeine != null ? +st.levels.caffeine.toFixed(0) : null, thirst: st.levels && st.levels.thirst != null ? +st.levels.thirst.toFixed(0) : null }; }, id);
 const tasks = () => page.evaluate(() => Object.values((window.objectivesManager && window.objectivesManager.taskIndex) || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 const hudState = () => page.evaluate(() => ({
@@ -206,7 +206,8 @@ function crossing(evs, fromMs, objId) {
 async function firstVisitHeard(capMs = 150000) {
     await enterRoom('staff_room'); await standNear('staff_boiler');
     const t0 = Date.now();
-    while (Date.now() - t0 < capMs) { if ((await events()).some(e => e.ev === 'npc_exchange_heard:exchange_waiting')) return true; await t(2000); }
+    // the event fires at line 1; wait for the log's finish entry so the exchange is over before the caller settles
+    while (Date.now() - t0 < capMs) { if ((await needsLog()).some(l => l.ev === 'exchange_heard' && l.knot === 'exchange_waiting')) return true; await t(2000); }
     return false;
 }
 
@@ -355,11 +356,13 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         await page.evaluate(() => { clearInterval(window.__tripWatch); if (window.game.sys.game.loop.sleeping) window.game.sys.game.loop.wake(); });
         r.jodie_jobs = await page.evaluate(() => window.__jodieJobs);
         const used = evs.find(e => e.ev === 'npc_used:staff_lockers');
-        const callHeard = evs.find(e => e.ev === 'npc_exchange_heard:exchange_job_called');
+        // npc_exchange_heard fires at the first overheard line; the exchange ends at the log's exchange_heard entry (tick t, 250 ms a tick)
+        const callFinish = (await needsLog()).find(l => l.ev === 'exchange_heard' && l.knot === 'exchange_job_called');
+        const callFinishMs = callFinish ? callFinish.t * 250 : null;
         const lockerStart = evs.find(e => e.ev === 'npc_use_started:staff_lockers');
         r.lockers = {
             use_started_by: lockerStart ? lockerStart.data.npcId : null,
-            start_after_call_s: (lockerStart && callHeard) ? +((lockerStart.clockMs - callHeard.clockMs) / 1000).toFixed(1) : null,
+            start_after_call_s: (lockerStart && callFinishMs !== null) ? +((lockerStart.clockMs - callFinishMs) / 1000).toFixed(1) : null,   // from the exchange's finish (log entry), not its first heard line
             used_by: used ? used.data.npcId : null,
             used_ms: used ? used.clockMs : null
         };
@@ -377,7 +380,8 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         while (Date.now() - t1 < 70000) {
             evs = await events();
             if (!shotEx && evs.some(e => e.ev === 'npc_chatted:staff_cooler' && e.data.exchange === 'exchange_job_cleared' && e.clockMs >= c0)) { await shot('05-cleared-exchange'); shotEx = true; }
-            if (evs.some(e => e.ev === 'npc_exchange_heard:exchange_job_cleared')) break;
+            // the event fires at line 1; wait for the finish entry so every line is in the report
+            if ((await needsLog()).some(l => l.ev === 'exchange_heard' && l.knot === 'exchange_job_cleared')) break;
             await t(1500);
         }
         r.cleared_exchange = {

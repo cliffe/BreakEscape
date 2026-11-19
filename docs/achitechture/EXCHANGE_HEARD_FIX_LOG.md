@@ -143,7 +143,7 @@ Review: `docs/achitechture/EXCHANGE_HEARD_FIX_REVIEW_R1.md` (0 blockers, 0 major
   60 s cap, the queue front's wait, `data.complete === true` (superseded: the event has no `complete` field now; a binding that reads it never fires, and the validator warns) for a task that needs the whole
   exchange, and the validator warning. The decision log lists `exchange_cut` (`knot`, `reason`,
   `line`, `of`, `heardLines`, `heard`) and `exchange_heard` (`knot`, `complete`); the event list gives
-  `complete` in the `npc_exchange_heard` payload and says it fires on completion or a heard cut.
+  `complete` in the `npc_exchange_heard` payload and says it fires on completion or a heard cut. (superseded, see 5.6a)
 - **m2.** The `exchanges` description in `scripts/scenario-schema.json` says a heard cut counts
   (`complete: false`, the rest never played), to bind with `condition: "data.complete === true"` (superseded, see above) when
   the whole exchange is needed, to put what the player must learn in the first line, and to keep a
