@@ -32,9 +32,9 @@ const stubs = {
   './inventory.js': 'export function addToInventory(){return true;} export function createItemIdentifier(){return "";}',
   './ui-sounds.js': 'export function playUISound(){} export function playGameSound(){}',
   './apply-actions.js': 'export function applyActions(actions, opts){ (globalThis.__applied ||= []).push({ actions, opts }); }',
-  // resolveObjectField is stubbed as obj[key]: observationVariants/textVariants are NOT exercised
+  // resolveObjectField is stubbed as obj[key] ?? null (the real resolver returns null for a missing key): observationVariants/textVariants are NOT exercised
   // here (gameDisplayParts takes already-resolved values; the variant path was proved live).
-  '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? obj[key] : undefined; }',
+  '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? (obj[key] ?? null) : null; }',
   '../utils/flag-lock.js': 'export function isRemoteFlagLock(){return false;} export function remoteFlagLockMessage(){return "";}',
   './npc-reach.js': 'export function npcReachDistSq(){return 0;}',
   './examine.js': 'export function shouldExamine(){return false;} export function startExamine(){return false;}',
