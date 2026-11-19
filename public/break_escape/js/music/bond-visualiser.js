@@ -38,6 +38,24 @@ import { ASSETS_PATH } from '../config.js';
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
 
+// Press Start 2P is drawn on its 8px grid: no canvas label is smaller than this. The canvas is
+// 1:1 with CSS pixels, so a map on a phone is not scaled down; a label that will not fit its
+// space at 8px is hidden (fitLabelText) rather than shrunk.
+const MIN_LABEL_PX = 8;
+
+/**
+ * The text to draw for a label at MIN_LABEL_PX or larger, or '' when it will not fit.
+ * Tries the full text, then the text without a leading "▸ " marker. Pure: measure(txt) gives
+ * the drawn width in px.
+ */
+function fitLabelText(measure, txt, maxW) {
+    const s = String(txt || '');
+    if (measure(s) <= maxW) return s;
+    const bare = s.replace(/^▸\s*/, '');
+    if (bare !== s && measure(bare) <= maxW) return bare;
+    return '';
+}
+
 // ── Module-level DOM/canvas refs ──────────────────────────────────────────
 let _overlay  = null;
 let _matrixCv = null;
@@ -328,7 +346,7 @@ function _drawLogoSprite() {
     const shieldPx = [[3,1],[4,1],[5,1],[6,1],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[3,5],[4,5],[5,5],[6,5],[3,6],[4,6],[5,6],[4,7]];
     ctx.fillStyle = '#00FF41';
     shieldPx.forEach(([x,y]) => ctx.fillRect(x*s, y*s-4, s, s));
-    ctx.font = 'bold 7px "Press Start 2P", monospace';
+    ctx.font = `bold ${MIN_LABEL_PX}px "Press Start 2P", monospace`;
     ctx.fillStyle = '#FFD700';
     ctx.fillText('S/N', 2, 38);
 }
@@ -981,7 +999,13 @@ function drawCyberMap(data, wave, W, H, audio) {
         const col=REGION_COLS[city[3]]||'#00FF41';
         const isActive=attackArcs.some(a=>(Math.abs(a.x1-cx2)<8&&Math.abs(a.y1-cy2)<8)||(Math.abs(a.x2-cx2)<8&&Math.abs(a.y2-cy2)<8));
         pixDot(cx2,cy2,isActive?PIX*3:PIX*2,isActive?'#FFFFFF':col);
-        if (isActive) { _visCtx.font='4px "Press Start 2P"'; _visCtx.fillStyle=col; _visCtx.fillText(city[0],cx2+PIX*2,cy2-PIX*2); }
+        if (isActive) {
+            _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle=col;
+            const lw=_visCtx.measureText(city[0]).width;
+            // beside the dot, or to its left when that would run off the canvas; hidden when neither fits
+            if (cx2+PIX*2+lw<=W) _visCtx.fillText(city[0],cx2+PIX*2,cy2-PIX*2);
+            else if (cx2-PIX*2-lw>=0) _visCtx.fillText(city[0],cx2-PIX*2-lw,cy2-PIX*2);
+        }
     }
     mapPulses=mapPulses.filter(p=>p.alpha>0);
     for (const p of mapPulses) {
@@ -991,8 +1015,10 @@ function drawCyberMap(data, wave, W, H, audio) {
         _visCtx.globalAlpha=1;
     }
     if (bass>0.72) { _visCtx.fillStyle=`rgba(255,60,0,${(bass-0.72)*0.25})`; _visCtx.fillRect(0,0,W,H); }
-    _visCtx.font='6px "Press Start 2P"'; _visCtx.fillStyle='rgba(255,215,0,0.35)'; _visCtx.textAlign='right';
-    _visCtx.fillText('BREAK ESCAPE // GLOBAL THREAT MAP',W-PIX*2,PIX*8); _visCtx.textAlign='left';
+    _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle='rgba(255,215,0,0.6)'; _visCtx.textAlign='right';
+    const mapTitle=fitLabelText(t=>_visCtx.measureText(t).width,'BREAK ESCAPE // GLOBAL THREAT MAP',W-PIX*4); // hidden on a narrow map
+    if (mapTitle) _visCtx.fillText(mapTitle,W-PIX*2,PIX*8);
+    _visCtx.textAlign='left';
 }
 
 // ── SIEM ──────────────────────────────────────────────────────────────────
@@ -1049,10 +1075,12 @@ function drawSIEM(data, W, H, audio) {
         });
         if (title) {
             _visCtx.fillStyle='rgba(0,0,0,0.7)'; _visCtx.fillRect(x+1,y+1,w-2,11);
-            _visCtx.font='5px "Press Start 2P"'; _visCtx.fillStyle=titleCol||'#00FF41'; _visCtx.fillText(title,x+4,y+9);
+            _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle=titleCol||'#00FF41';
+            const shown=fitLabelText(t=>_visCtx.measureText(t).width,title,w-8); // hidden when the panel is too narrow at 8px
+            if (shown) _visCtx.fillText(shown,x+4,y+9);
         }
     }
-    function ptext(txt,x,y,col,size=5) { _visCtx.font=`${size}px "Press Start 2P"`; _visCtx.fillStyle=col; _visCtx.fillText(txt,x,y); }
+    function ptext(txt,x,y,col,size=MIN_LABEL_PX) { _visCtx.font=`${Math.max(MIN_LABEL_PX,size)}px "Press Start 2P"`; _visCtx.fillStyle=col; if (x+_visCtx.measureText(txt).width<=W) _visCtx.fillText(txt,x,y); } // hidden if it would run off the canvas
     function vtext(txt,x,y,col,size=12) { _visCtx.font=`${size}px "VT323"`; _visCtx.fillStyle=col; _visCtx.fillText(txt,x,y); }
 
     // ── COL 1: threat score + sparkline + freq bands + event totals ──────────
@@ -1164,7 +1192,7 @@ function drawSIEM(data, W, H, audio) {
         _visCtx.fillRect(Math.round((tx-3)/PIX)*PIX, Math.round((ty-3)/PIX)*PIX, PIX*2, PIX*2);
         _visCtx.strokeStyle=active?'#FF6600':'#110400'; _visCtx.lineWidth=1;
         _visCtx.beginPath(); _visCtx.moveTo(tcx,tcy); _visCtx.lineTo(tx,ty); _visCtx.stroke();
-        if (active) { _visCtx.font='4px "Press Start 2P"'; _visCtx.fillStyle='#FF6600'; _visCtx.fillText(t.slice(0,5),tx-8,ty-4); }
+        if (active) { _visCtx.font=`${MIN_LABEL_PX}px "Press Start 2P"`; _visCtx.fillStyle='#FF6600'; _visCtx.fillText(t.slice(0,5),tx-8,ty-4); }
     });
     _visCtx.font='8px "Press Start 2P"'; _visCtx.fillStyle=`rgba(255,102,0,${0.3+avg*0.7})`; _visCtx.textAlign='center';
     _visCtx.fillText(String(siemRuleHits['CRITICAL']+siemRuleHits['HIGH']).padStart(4,'0'),tcx,tcy+4);
@@ -1336,7 +1364,7 @@ function drawCCTV(data, W, H, audio) {
     }
 
     const t = performance.now() / 1000; // the clock, not frames: slow machines draw fewer
-    const fontPx = Math.max(6, Math.min(10, Math.floor(layout[0].w / 40)));
+    const fontPx = layout[0].w >= 640 ? 2 * MIN_LABEL_PX : MIN_LABEL_PX; // 8 or 16: the font's grid, never under 8
     const stamp = _cctvTimestamp();
     const recOn = Math.floor(t * 2) % 2 === 0;
 
@@ -1361,7 +1389,7 @@ function drawCCTV(data, W, H, audio) {
             _visCtx.fillStyle = `rgba(200,255,210,${kickNSmooth * 0.08})`; _visCtx.fillRect(x, y, w, h);
         } else {
             _cctvStatic(x, y, w, h, 0.5);
-            _visCtx.font = `${fontPx + 2}px "Press Start 2P"`; _visCtx.textAlign = 'center';
+            _visCtx.font = `${fontPx}px "Press Start 2P"`; _visCtx.textAlign = 'center';
             _visCtx.fillStyle = '#E0FFE8'; _visCtx.fillText('NO SIGNAL', x + w / 2, y + h / 2);
             _visCtx.textAlign = 'left';
         }
