@@ -391,8 +391,8 @@ when `admin` is true; every other caller is unchanged, so the NPC-side readers
 - the implant path (`network_access.rb:509`): `admin: keyboard_admin?(pc_id)` (only a keyboard
   session reaches that line, so this equals `session_admin?` there);
 - the plant proof (`capture_proofs.rb:52`) and the remove check below: `admin:
-  session_admin?(found[:object]['id'])` when the target is a sign-in PC, `keyboard_admin?` in its
-  place when the object needs a session (next paragraph), else false.
+  session_admin?(found[:object]['id'])` when the target is a sign-in PC, `keyboard_admin?(pc)`
+  for the grant's PC when the object needs a session (next paragraph), else false.
 So the override needs an unlocked admin session on that PC whose service is on, however it was
 reached: a typed or keyring sign-in with an administrator account, a remote credential session of
 one, or a technique step up to admin. A relay session and a claim are never admin (step 5), so
@@ -403,12 +403,26 @@ comment at `network_access.rb:502`) but has no level, so a locked admin session 
 about which session takes a session-shaped implant (a blank `foothold`, not a relay or `from`
 session, `network_access.rb:498-501`); that rule is about the implant, not the policy, and this plan
 keeps it. A device that types into a PC reaches whoever is signed in at that keyboard, and a remote
-or technique session is not at that console. So an object whose `triggerOnInteract` holds a
-`grant_foothold` action with `needsSession` (`apply-actions.js:441-449`) is satisfied only by a
-session at the PC's own keyboard, and the policy override for it comes only from a keyboard admin
-session. One helper states this, `keyboard_admin?(pc_id)`: `session_admin?(pc_id)` and the session
-has a blank `foothold` and is not `remote_route_session?`. The plant proof's predicate (above) is
-`keyboard_admin?` for a `needsSession` object and `session_admin?` for any other.
+or technique session is not at that console. An object needs a session when its
+`triggerOnInteract`, at any depth of `confirm_action` `onConfirm` lists, holds a `grant_foothold`
+action with `needsSession` (`apply-actions.js:441-449`); the PC it judges is that grant's `pc`, not
+the object itself. Every shipped BadUSB is a separate socket whose grant sits inside a
+`confirm_action` and names another PC: `sam_dock` names `sam_pc` and `kiosk_dock` names `kiosk_pc`
+(`scenarios/test_access_networks/scenario.json.erb:770-787`, `:885-901`), `implant_socket` names
+`reception_pc` (`scenarios/demo_access_tour/scenario.json.erb:455-475`). One walk finds it on each
+side: `CaptureModel.session_grant_pc(obj)` on the server and `sessionGrantPc(objectData)` in
+`pc-policy.js`, both recursing into `confirm_action` `onConfirm` as `CaptureModel.removes_item?`
+does (`capture_model.rb:400-414`), and answering the first such grant's `pc`, or nil. Such a
+device is satisfied only by a session at that PC's own keyboard, and the policy override for it
+comes only from a keyboard admin session there. One helper states this, `keyboard_admin?(pc_id)`:
+`session_admin?(pc_id)` and the session has a blank `foothold` and is not `remote_route_session?`.
+The plant proof's predicate (above) is `keyboard_admin?(session_grant_pc(obj))` for a
+`needsSession` object and `session_admin?` for any other. The policy read stays where it is today:
+the client's `plantRefusal` reads the object's own policy (a shipped socket has none, so
+`usb_governed?` is false for it, `access_work.rb:1181-1187`, and the client lets the stick
+through), and the implant path reads the grant's PC policy with `keyboard_admin?(pc_id)`
+(`network_access.rb:507-512`). The client and the implant path therefore judge the same PC for the
+override, and an existing socket still opens its confirm exactly as today.
 
 Today a remote session meets that rule as `implant_not_ready` (`:498`, `:501`), which
 `network-links.js:498-501` keeps quiet. S5a gives it a reason of its own: when the PC has a live
@@ -418,7 +432,9 @@ signed in at this keyboard." `not_ready` keeps every other case (no session at a
 dropped device whose save has not yet arrived). `network-links.js` handles `needs_console` beside
 `usb_refused` (`:483-487`): a toast with the server's line and a `network_device_refused` event with
 that reason, never the quiet path. The item stays in the tray, because the implant path refuses
-before it copies the device.
+before it copies the device. This toast is the normal feedback for a player who holds only a remote
+or technique session on the PC and plugs a BadUSB into its socket: the socket is ungoverned, so the
+client opens the confirm, and the implant path answers `needs_console` after it.
 
 Any other plant takes the override from any admin session. A remote admin session's override
 shows at the plant proof and in the client: a stick the policy refuses leaves the tray and the
@@ -434,18 +450,53 @@ inventory `remove` action (`games_controller.rb:1454-1460`) calls `record_plante
 answers false for a policy refusal (`capture_proofs.rb:52`), and then removes the item anyway. S5a
 puts a check in that branch before both calls: when `used_on` is present, a new
 `Game#plant_policy_refusal(item_id, used_on)` finds the held item and the target object as
-`record_planted_item!` does, and answers the USB refusal line when the object takes the item, the
-policy refuses it, and the admin predicate above is false; otherwise nil. A line means the action
-answers `422 { success: false, reason: "usb_refused", error: <line> }` and returns, so nothing is
-removed and nothing is recorded. On the client, `interactions.js:1081-1088` today removes the item
-from the tray before the answer and fires `triggerOnInteract` first. For a plant that passes
-`plantRefusal` only through the override (the policy refuses the item with `admin: false`), the
-client instead sends the remove first and waits: on success it removes the item from the tray and
-fires `triggerOnInteract`; on `usb_refused` it keeps the item, shows the server's line through
-`gameAlert` and emits `usb_refused:<objectId>` as the local refusal does. `sendInventoryRemove`
-gains an option, `withBody: true`, that resolves the refusal body instead of `false`; its other
-callers are unchanged. A plant the policy accepts without admin keeps today's order, so an existing
-scenario plays exactly as before.
+`record_planted_item!` does, early returns included (a hideable item, a client-forged item,
+`capture_proofs.rb:32`, `:39`, an object that does not take the item), so it never refuses a
+remove that the plant proof would not have judged. It answers the USB refusal line when the object
+takes the item, the policy refuses it, and the admin predicate above is false; otherwise nil. A line
+means the action answers `422 { success: false, reason: "usb_refused", error: <line> }` and returns,
+so nothing is removed and nothing is recorded.
+
+Two client paths send a plant remove (a `used_on`), and both today drop the item from the tray
+before the answer and ignore it: the `consumesItem` branch of `interactions.js:1081-1088`, which
+also fires `triggerOnInteract` first, and the `remove_item` action (`apply-actions.js:271-293`),
+which removes the first held match by its own list (`:276-279`) then sends the remove (`:290`), the
+documented way to consume an item only once a `confirm_action` is confirmed (`:267-274`). The
+server counts both as a plant (`CaptureModel.object_takes_item?`, `capture_model.rb:419-439`, takes
+a `consumesItem` object and one whose `triggerOnInteract` removes the item at any `confirm_action`
+depth). S5a changes both the same way, and only for a **gated remove**: one whose target object is
+USB-governed and whose policy refuses the item being removed with `admin: false`. The caller knows
+by one call, `pcPolicy.gatedRemove(item, objectData, scenario)`, true exactly when
+`usbRefused(usbPolicyFor(objectData, scenario), classOf(item))`; these are the only removes the
+server's new check can refuse on an honest client. Every other remove keeps today's order and its
+fire-and-forget send.
+
+- **`consumesItem`.** For a gated remove, the client sends the remove first and waits, and fires
+  `triggerOnInteract` and removes the item from the tray only on success.
+- **`remove_item`.** It first picks the item: among held matches of its own list, the first one the
+  object's policy accepts under the same `admin` value as `plantRefusal`, else the first match (so a
+  player holding two matching items, one refused and one accepted, spends the accepted one, the one
+  `plantRefusal` let through, `pc-policy.js:71-78`). When that remove is gated, `applyActions`
+  stops the list at that action: it sends the remove and waits, and on success removes the item from
+  the tray and runs the rest of the list (`applyActions(rest, opts)`). Actions before it have already
+  run, so the validator warns when a `remove_item` on a USB-governed object is not the first action
+  of its list. An object with no `policy` and no workstation fields is never gated, so the
+  `remove_item` order is unchanged for it.
+- **The answer.** `sendInventoryRemove` gains an option, `withBody: true`, that resolves `true` on
+  success, the refusal body on a refusal that has one, and `false` after the retried network failure
+  or a refusal with no body; its other callers are unchanged. On anything other than success the
+  item stays in the tray and nothing after it runs: on `usb_refused` the client shows the server's
+  line through `gameAlert` and emits `usb_refused:<objectId>` as the local refusal does; on another
+  refusal it shows the server's `error` when there is one; on a network failure it shows "That did
+  not go through. Try again." The player can try again at once, because the item is still held.
+- **One request at a time.** From the send until the answer, the object's id is in a client set,
+  `plantsInFlight`; a further interact with that object, and a `remove_item` for it, does nothing
+  (a console line only). The id leaves the set on every answer, failure included.
+
+No shipped scenario has a gated remove: the `remove_item` objects (`wall_port` in
+`test_capture_log`, `network_port` in `test_remove_item`, the bin in `test_wearable`) carry no
+`policy` and no workstation fields, and a `consumesItem` object whose policy refuses every held item
+is refused by `plantRefusal` before any remove. So every existing scenario keeps today's order.
 
 **S5b: the cached set.** `cached_accounts_at(pc)` answers the account NPCs cached at the PC now, in
 `cachedAccounts` order: each candidate without `after`, and each `after: "borrow"` candidate whose
@@ -604,11 +655,17 @@ through when `admin` is true. `interactions.js:1056` has no PC id in hand, only 
 "admin"` and is not `locked`. A governed object that is not a sign-in PC has no mirror entry, so the
 answer is false, matching the server's "else false". It covers remote, relay and technique entries
 alike, since only the server decides which carry `access`. For an object that needs a session
-(its `triggerOnInteract` holds a `grant_foothold` with `needsSession`), `interactions.js` passes
-`admin: keyboardAdmin(objectId)` instead: `sessionAdmin` and the entry is a keyboard session (no
-`foothold`, `relay` or `from` on it). So a player holding only remote admin still sees the authored
-USB refusal line for a BadUSB, as today, and never meets the server's `needs_console` refusal on an
-honest client. Power reaches the client through `access`: an answer that
+(section 5: `sessionGrantPc(objectData)` finds a `needsSession` grant at any `confirm_action`
+depth), `interactions.js` passes `admin: keyboardAdmin(sessionGrantPc(objectData))` instead, the
+grant's PC rather than the object. `keyboardAdmin(pcId)` is `sessionAdmin(pcId)` and the mirror
+entry has none of `remote === true`, a non-empty `footholdId`, `relay === true` or a non-empty
+`fromPcId` (the fields the mirror carries, `pc-sessions.js:8`, `:20`, `:30`, `:183`, `:256`; a
+technique copy carries `remote` and `footholdId`). For a shipped socket this changes nothing in the
+client, since the socket is ungoverned and `plantRefusal` lets the stick through whatever `admin`
+is; a player holding only a remote or technique session on the PC opens the confirm and gets the
+implant path's `needs_console` toast, "Nobody is signed in at this keyboard." (section 5). If an
+author gives the socket a `policy` of its own, the client override is judged at the grant's PC, as
+the implant path judges it. Power reaches the client through `access`: an answer that
 follows power-off has no `access`, so the entry is cleared, and the desktop's 403, which carries no
 session, also drops `access` from that PC's entry when its `serverReason` is `'off'` or
 `'not_responding'` (`pc-sessions.js:509-547`, `:665-667`).
@@ -616,9 +673,10 @@ session, also drops `access` from that PC's entry when its `serverReason` is `'o
 When the two disagree (a tampered client, or a mirror not yet updated after a session ended, such
 as a borrow hand-over, an expired token or a lost route) the server wins and the player keeps the
 item: the inventory `remove` action refuses with `usb_refused` before it removes or records
-anything, and the client, which waited for that answer because the plant rested on the override,
-keeps the item in the tray and shows the server's line (section 5, "A lapsed override never costs
-the item"). The next room answer corrects the mirror.
+anything, and the client, which waited for that answer because the remove was gated, keeps the
+item in the tray and shows the server's line (section 5, "A lapsed override never costs the item"),
+whether the remove came from `consumesItem` or a `remove_item` action. The next room answer
+corrects the mirror.
 
 No client code decides privilege. The client learns about account kinds only through the existing
 `notPermitted` refusal and through which tiles a PC shows (above).
@@ -819,6 +877,10 @@ required and run from `scripts/validate_scenario.rb` by one line beside the core
 - Two profiles with top-level items of the same name that meet on a PC only through an admin
   session (a `creds.admin` account or an admin technique grant that can hold that PC), warn. A
   scenario with neither gets no such warning; the validator snapshot of section 10 checks it.
+- A `remove_item` that is not the first action of its list (a `triggerOnInteract` or an `onConfirm`)
+  on a USB-governed object, warn: a gated remove stops its list there and waits (section 5), so the
+  actions before it run even when the server refuses the plant. No shipped `remove_item` object is
+  governed, so no shipped scenario gets it.
 - Every check here that asks whether a PC admits an account uses `CredentialModel.pc_admits_account?`
   (`validate_scenario.rb:7583`), which carries the account-kind rule.
 - A `hash` credential with a `harvested` proof: the PC is a sign-in PC and `account.npc` is in its
@@ -845,15 +907,21 @@ password text in any label.
 A scenario that sets none of the new fields behaves exactly as before:
 - **S5a.** No account has `creds.admin` and no technique session exists, so `session_access` never
   answers admin, no session answer gains `access`, and every admin branch is a guard not taken.
-  Two refusals are new in every scenario but reachable only where an honest client never goes: the
-  inventory `remove` action refuses a plant the USB policy refuses (today it removes the item
-  silently, and only a client that skipped `plantRefusal` sends one). The implant path answers
-  `needs_console` where it answered `not_ready` for a live non-keyboard session; on a PC whose
-  policy allows the device, an honest player plugging a BadUSB in while holding only a remote
-  session now sees "Nobody is signed in at this keyboard." where today nothing happens. That is the
-  one visible change in an existing scenario, it grants and records nothing, and the unchanged
-  test expects `needs_console` in place of `not_ready` for that one answer and nothing else. The golden sequences add one plant the
-  policy allows, which must answer and record as before.
+  Two refusals are new in every scenario. The inventory `remove` action refuses a plant the USB
+  policy refuses (today it removes the item silently). An honest client sends such a remove only as
+  a gated remove (section 5), and no shipped scenario has one: no `remove_item` or `consumesItem`
+  object that could take a refused item is USB-governed, so the two-items case (one refused, one
+  accepted) cannot arise in one, and every shipped remove keeps today's order and timing. The
+  implant path answers `needs_console` where it answered `not_ready` for a live non-keyboard
+  session. **This is the one visible change in an existing scenario**, and it needs the user's yes
+  (section 15, Q2): in `test_access_networks` (`sam_dock`, `kiosk_dock`) and `demo_access_tour`
+  (`implant_socket`), the only shipped scenarios besides `test_author_notes` with a `needsSession`
+  grant, a player who holds only a remote session on the PC and plugs the BadUSB into its socket
+  now sees "Nobody is signed in at this keyboard." where today nothing happens. It grants and
+  records nothing, the device stays held, and the unchanged test expects `needs_console` in place of
+  `not_ready` for that one answer and nothing else. `test_author_notes` holds its grant only inside
+  a note, which no path runs. The golden sequences add one plant the policy allows, which must
+  answer and record as before.
 - **S5b.** No `cachedAccounts` and no admin, so the collect route answers 422 `reason: "not_admin"` and
   `cachedAt`, `harvestedAccounts` stay empty. `record_borrow_done!` adds nothing without a declared
   candidate. No registry entry has a `harvested` proof, so the keyring lists the same rows, in the
@@ -905,7 +973,11 @@ A validator snapshot over every shipped scenario shows no new error, warning or 
   implant refused with `needs_console` and its line for a remote or technique session, admin or
   not, with the device still held, and `not_ready` kept for a PC with no session at all; the plant
   proof for a `needsSession` object refused under a remote admin session and allowed under a
-  keyboard one; NPC-side `usb_habit_refused?` unchanged under player admin. Lapsed override: a
+  keyboard one, with the grant nested in a `confirm_action` and naming another PC, and judged by
+  that PC's session (`session_grant_pc` finds it there and answers nil for no grant); a
+  `plant_policy_refusal` of nil for a hideable item, a client-forged item and an object that does
+  not take the item; the same lapsed-override refusal through an object that takes the item by a
+  confirm's `remove_item`; NPC-side `usb_habit_refused?` unchanged under player admin. Lapsed override: a
   token admin session past its expiry, a foothold admin session after the foothold is unplugged, and
   one whose route an outage drops each plant a blocked stick through the inventory `remove`
   action and get 422 `usb_refused` with the policy's line, the item still in the inventory and no
@@ -960,12 +1032,23 @@ relay entry (which never carries it); a later answer for the same PC with no `ac
 off) clears it from the entry and `sessionAdmin` is then false; after a desktop 403 with reason
 `off` for that PC, `sessionAdmin` is false and a refused stick stays in the tray; a stick refused
 for a `remote` user entry shows the policy's refusal message and stays in the tray; `keyboardAdmin`
-is false for a `remote`, relay or `from` admin entry, so a BadUSB (`needsSession`) on a blocked PC
-under remote admin shows the USB refusal line and stays in the tray; `sessionAdmin` takes the
-object's id and is false for a governed object with no mirror entry; a plant that rests on the
-override waits for the remove answer, and a 422 `usb_refused` keeps the item, shows the server's
-line, emits `usb_refused:<objectId>` and fires no `triggerOnInteract`; a plant the policy accepts
-without admin keeps today's order; `network-links.js` shows a toast and emits
+is false for an admin entry with `remote: true`, a `footholdId`, `relay: true` or a `fromPcId`, and
+for a technique copy (`remote` and `footholdId`), and true for a keyboard admin entry;
+`sessionGrantPc` finds the grant's `pc` inside a `confirm_action` `onConfirm` (the `sam_dock` shape)
+and at top level, and answers null for an object with no `needsSession` grant; for a `sam_dock`-shaped
+socket with a policy of its own, the client override follows `keyboardAdmin` of the grant's PC, not
+of the socket's id; `sessionAdmin` takes the object's id and is false for a governed object with no
+mirror entry; `gatedRemove` is true only for a governed object whose policy refuses the item; a
+gated `consumesItem` plant waits for the remove answer, and a 422 `usb_refused` keeps the item,
+shows the server's line, emits `usb_refused:<objectId>` and fires no `triggerOnInteract`; a gated
+`remove_item` inside a confirm's `onConfirm` under a lapsed override keeps the item and runs none of
+the actions after it, and on success removes the item and runs them; with two matching items, one
+refused and one accepted, `remove_item` removes the accepted one; another refusal and a network
+failure each keep the item with their line (the server's `error`, else "That did not go through.
+Try again."); a second interact, and a second `remove_item`, while the object is in
+`plantsInFlight` sends nothing and fires nothing, and the object leaves the set on a failure; a
+remove that is not gated (an ungoverned `wall_port`-style object) keeps today's order and
+fire-and-forget send; `network-links.js` shows a toast and emits
 `network_device_refused` for `needs_console`; the desktop
 shows the marker and the collect control only for admin; the collect calls `keyring.refresh()`,
 the panel uses the answer's `portrait`, shows the username, "hash" and a Crack button that opens
@@ -977,7 +1060,9 @@ importing it (grep `test/js` for the importer's name before finishing).
 **Feature scenario** `test_ops_privilege`, grown per stage (the schema is closed, so each stage
 adds only its own fields):
 - S5a: an ordinary user and an administrator account (`creds.admin`); an owned PC with the owner's
-  profile; one PC with `usb: "blocked"`; one profile per account.
+  profile; one PC with `usb: "blocked"`; one profile per account; beside that PC, a BadUSB socket
+  whose `needsSession` grant sits inside a `confirm_action` and names the PC (the shipped socket
+  shape), and a governed port that takes a stick through a confirm's `remove_item` listed first.
 - S5b adds: an unowned hot desk with one start candidate and one `after: "borrow"` candidate whose
   `borrow_session` workaround names it; the owned PC listing its owner as a candidate; one `hash`
   record with a `harvested` proof per candidate, each crackable through the cracking plan's
@@ -992,10 +1077,13 @@ Each stage ships `mission.json`, a regenerated graph and `PLAYTEST.md`.
 - S5a: sign in as the user, see no other profile and no collect; sign in as the administrator, see
   the owner's profile; plant a refused stick at the keyboard under admin; lock the screen and see
   the same stick refused; sign in to the same PC remotely as the administrator from another
-  desktop, walk to it and plant a second refused stick, which is accepted; try a BadUSB there under
-  the same remote admin session and see the USB refusal line with the device still held; let a
-  token admin session expire without a client update, plant a refused stick and see the server's
-  refusal with the stick still in the tray; turn the PC's service off and see a third refused.
+  desktop, walk to it and plant a second refused stick, which is accepted; plug a BadUSB into the
+  PC's separate socket (a `sam_dock`-shaped object whose grant, inside a confirm, names the PC) under
+  the same remote admin session, confirm, and see "Nobody is signed in at this keyboard." with the
+  device still held; sign in at the keyboard as the administrator and see the same socket take it;
+  let a token admin session expire without a client update, plant a refused stick through a
+  confirm's `remove_item` and see the server's refusal with the stick still in the tray and the
+  confirm's later actions not run; turn the PC's service off and see a third refused.
 - S5b: collect on the owned PC and on the hot desk; make the borrow candidate's need fail until
   its frustration reaches the workaround's `at` level (the counted fails after which `choose_run!`
   hands a workaround over, `npc_frustration.rb:526-547`), using the same steps as the borrow in
@@ -1039,8 +1127,10 @@ Files this plan changes:
 - `app/models/break_escape/network_access.rb`: implant call site; the `needs_console` refusal in
   place of `implant_not_ready` at `:498` and `:501` when a live non-keyboard session is there;
   `cachedAccounts` in `WITHHELD_OBJECT_FIELDS`.
-- `app/models/break_escape/capture_proofs.rb`: plant proof call site, with `keyboard_admin?` for a
-  `needsSession` object.
+- `app/models/break_escape/capture_proofs.rb`: plant proof call site, with `keyboard_admin?` of the
+  grant's PC for a `needsSession` object.
+- `lib/break_escape/capture_model.rb`: `session_grant_pc(obj)`, the nested walk beside
+  `removes_item?`.
 - `app/models/break_escape/npc_frustration.rb`: `record_borrow_done!` writes `cachedAt`.
 - `app/models/break_escape/credential_keyring.rb`: the `harvested` branch in
   `credential_proof_holds?`.
@@ -1059,9 +1149,11 @@ Files this plan changes:
   proof properties at `:293-305`, and `crack` on a `hash` entry if the cracking plan has not added
   it), `scripts/generate_dungeon_graph.rb`; `scripts/validate_scenario.rb` gains one
   `require_relative` and one call line only.
-- Client: `pc-sessions.js` (`sessionAdmin`, `keyboardAdmin`), `pc-policy.js`, `interactions.js`
-  (the predicate per object and the wait on an override plant), `apply-actions.js`
-  (`sendInventoryRemove`'s `withBody` option), `network-links.js` (`needs_console`), the desktop
+- Client: `pc-sessions.js` (`sessionAdmin`, `keyboardAdmin`), `interactions.js`
+  (the predicate per object, the wait on a gated `consumesItem` plant and the `plantsInFlight`
+  guard), `pc-policy.js` (`sessionGrantPc`, `gatedRemove`), `apply-actions.js`
+  (`sendInventoryRemove`'s `withBody` option; the `remove_item` action's item pick and its wait on
+  a gated remove), `network-links.js` (`needs_console`), the desktop
   view and collect panel, `keyring.js` call, and a call that opens the cracking plan's scene for a
   `hashId`.
 - `docs/ACCESS_AND_NETWORKS.md` and the `README_scenario_design.md` feature index (A18 to A20).
@@ -1125,7 +1217,12 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   that types into a PC reaches whoever is signed in at that console, and your technique record
   keeps its `foothold`, so the implant path refuses it with `needs_console`. Please change your
   session-kinds table's "counts for `needsSession`: yes" cell for a technique session, and the
-  matching sentence in section 0, to "no (keyboard sessions only)". Please also confirm whether your
+  matching sentence in section 0, to "no (keyboard sessions only)". Your
+  `network_technique_session_test` row "`needsSession` for an implant refused for a technique
+  session" (your section 11 test table) answers `not_ready` at S3; once S5a lands that answer is
+  `needs_console` with the line "Nobody is signed in at this keyboard." Please have that row assert
+  `reason: "needs_console"` from S5a on (or assert only "refused, device still held" at S3 and leave
+  the reason to this plan's `admin_usb_test.rb`), so the S5a commit does not break it. Please also confirm whether your
   added terms in `desktop_request_allowed?` let a technique admin session on a `remote: "blocked"`
   headless host through: the collect (section 6, step 3) passes only if they do.
 - **To OPS_CRACKING (S7).** Your draft asks for an admin-dump marker "per host, per account" with a
@@ -1180,9 +1277,9 @@ account-kind refusal is an ordinary refused sign-in (422 `notPermitted`) and is 
   detail: every collected pair is a hash, so `count` alone says how many hashes a collect added
   (your `OpsLog::EVENTS` entry, your S5 row table and your note that a hash obtained by collect is
   counted by `hashes` all change with it).
-  `usb_install_overridden` now comes from any admin session on the PC, keyboard or remote, not only
-  a keyboard one, except for a session-shaped implant, which only a keyboard admin session
-  overrides; its fields are unchanged. A plant the server refuses (`usb_refused` from the inventory
+  `usb_install_overridden` comes from any admin session on the PC, keyboard or remote, except for a
+  session-shaped implant, which only a keyboard admin session at the grant's PC overrides; its
+  fields are unchanged. A plant the server refuses (`usb_refused` from the inventory
   action, `needs_console` from the implant path) writes no row.
 - **To all ops plans.** One fixture folder, `test/fixtures/files/ops_unchanged/`, and one helper,
   `bin/ops-golden-compare` (section 10), both built by the log plan's L1a, which strips each plan's
@@ -1196,12 +1293,25 @@ Any admin session overrides the USB policy for an ordinary plant. A session-shap
 different: it gives a foothold through whoever is signed in.
 - (a) Keyboard only (recommended, and what the plan describes). A device that types into a PC
   reaches whoever is signed in at that keyboard, and a remote or technique session is not at that
-  console. A player holding only remote admin sees the USB refusal line in the client, and a
-  tampered or stale client gets `needs_console` ("Nobody is signed in at this keyboard.").
+  console. A player holding only remote or technique admin on the PC who plugs a BadUSB into its
+  socket opens the confirm (the socket itself carries no policy) and then sees the implant path's
+  `needs_console` toast, "Nobody is signed in at this keyboard.", with the device still held.
 - (b) Any admin session takes the implant. This follows "any admin session overrides" to the
   letter, but it needs the implant path's session rule (`network_access.rb:498-501`) widened to
   remote and technique sessions in this plan and the core plan, and it teaches a less accurate
   model of what a plugged-in device reaches.
+
+**Q2. May the new "Nobody is signed in at this keyboard." toast appear in two shipped scenarios?**
+Today a player who holds only a remote session on a PC and plugs a BadUSB into its socket sees
+nothing happen: the implant path answers a quiet `not_ready`. With this plan it answers
+`needs_console` and the player sees the toast; nothing is granted or recorded and the device stays
+held. The shipped scenarios that can show it are `test_access_networks` (`sam_dock`, `kiosk_dock`)
+and `demo_access_tour` (`implant_socket`). Every other existing behaviour is unchanged.
+- (a) Accept the new toast in those two scenarios (recommended). Both are test and demo scenarios,
+  and the toast replaces a silent failure with the reason.
+- (b) Keep today's silence there: a scenario opt-in (a top-level `quietNeedsConsole: true`, set in
+  those two scenarios) makes the implant path answer `not_ready` as today; the new reason then
+  appears only in scenarios that do not set it.
 
 **Defaults this plan settles** (not user choices):
 - An account with no `accountKind` is unscoped, as every account is today: any other default would

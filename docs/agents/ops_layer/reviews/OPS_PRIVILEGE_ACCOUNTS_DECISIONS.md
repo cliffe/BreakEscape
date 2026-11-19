@@ -53,3 +53,15 @@ Findings not acted on as suggested, one line each.
 - **n2.** `sessionAdmin` takes the object's id; a governed non-PC object has no mirror entry and answers false.
 - **n2b.** Both "ruling" phrases replaced with "by design, the comment at `:502`".
 - **n3.** S5a now says it is ordered after S3 so the `access:` answer parameter exists.
+
+## R7 fixes (2026-11-19)
+
+- **M1.** Checked `apply-actions.js:275-293` (sends `used_on` after removing, ignores the answer). Only a "gated remove" (governed object whose policy refuses the item with `admin: false`, `pcPolicy.gatedRemove`) waits; both `consumesItem` and `remove_item` then send first and act only on success; `remove_item` stops its list there and runs the rest on success, and picks the policy-accepted item of two matches; validator warns on a governed `remove_item` not first in its list; no shipped `remove_item` object (`wall_port`, `network_port`, bin) is governed, so shipped scenarios keep today's order; tests in sections 11 and 12 updated.
+- **M2.** "Needs a session" now keyed on the grant's `pc` via a nested walk (`session_grant_pc` / `sessionGrantPc`, recursing `confirm_action` as `removes_item?` does); checked against `sam_dock`, `kiosk_dock`, `implant_socket`; client keeps reading the socket's own policy (none on shipped sockets), override judged at the grant's PC; `needs_console` toast stated as the normal feedback; Q1(a), playtest step and JS test rewritten.
+- **m1.** Section 10 names `test_access_networks` and `demo_access_tour` as the one visible change (`test_author_notes` holds its grant only in a note); new Q2: (a) accept, recommended, (b) a `quietNeedsConsole` scenario opt-in.
+- **m2.** Section 14 asks the core plan's `network_technique_session_test` to expect `needs_console` from S5a (or assert only "refused, device held").
+- **m3.** `keyboardAdmin` defined on the mirror's real fields (`remote`, `footholdId`, `relay`, `fromPcId`); technique copy added to the JS test.
+- **m4.** `plantsInFlight` guard per object; `withBody` resolves true / body / false; any non-success keeps the item with the server's line, else "That did not go through. Try again."; both in JS tests.
+- **n1.** "authored" dropped from the USB refusal line (the Q1 text now describes the toast instead).
+- **n2.** S9 request states the `usb_install_overridden` rule as it is.
+- **n3.** `plant_policy_refusal` names `record_planted_item!`'s early returns (`capture_proofs.rb:32`, `:39`), with a server test.
