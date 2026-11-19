@@ -85,7 +85,7 @@ export const handScenes = [
         name: 'the same NPC and crate with no give-way record (bob keeps his place in the pick)',
         build() { reset(); seatingFor(null);
             return { r: { objects: { crate: obj('crate', 120, 100, 24, 24) }, npcSprites: [npc('bob', 140, 112, { body: { velocity: { x: 50, y: 0 } } })] } }; },
-        stances: [[132, 140, 'up'], [132, 140, 'right'], [150, 140, 'right'], [118, 140, 'right'], [130, 124, 'right'], [138, 128, 'right']],   // the last three: the penalty moves the pick from bob to the crate
+        stances: [[132, 140, 'up'], [132, 140, 'right'], [150, 140, 'right'], [118, 140, 'right'], [130, 124, 'right'], [138, 128, 'right']],   // control: with no record, bob keeps the pick at the last three stances
     },
     {
         name: 'a walking-away NPC with a give-way record for a different object (no penalty)',
@@ -104,7 +104,7 @@ export const handScenes = [
         name: 'a blocked NPC beside an open prop',
         build() { reset(); seatingFor(null);
             return { r: { objects: { crate: obj('crate', 170, 100, 24, 24) }, npcSprites: [npc('bob', 148, 112, { __blocked: true })] } }; },
-        stances: [[148, 140, 'up'], [160, 140, 'up'], [160, 140, 'up-right']],
+        stances: [[148, 151, 'up'], [152, 151, 'up'], [160, 151, 'up-left'], [176, 151, 'up'], [160, 140, 'up-right']],   // bob stands 8 px ahead of the first three, so only his block keeps him from the pick
     },
     {
         name: 'a knocked-out NPC beside a mug, and a knocked-out sitter on a chair',
@@ -114,7 +114,20 @@ export const handScenes = [
             const kosit = npc('kosit', 200, 112);
             seatNpc(kosit, chair);
             return { r: { objects: { mug: obj('mug', 160, 100, 12, 12), chair }, npcSprites: [npc('ko', 148, 112), kosit, npc('alive', 176, 126)] } }; },
-        stances: [[148, 140, 'up'], [160, 140, 'up'], [190, 140, 'up'], [176, 150, 'up'], [196, 140, 'up']],
+        stances: [[148, 151, 'up'], [166, 140, 'up'], [200, 151, 'up'], [196, 151, 'up'], [176, 165, 'up'], [190, 140, 'up']],   // each NPC is level with a stance that faces it; the mug is the control
+    },
+    {
+        name: 'seated with a mug and a crate out of reach (E stands up)',
+        build() { reset(); const mine = obj('mine', 130, 150, 24, 27, { seat: true });
+            seatingFor(mine);
+            return { r: { objects: { mine, mug: obj('mug', 140, 100, 12, 12), crate: obj('crate', 220, 150, 24, 24) } } }; },
+        stances: [[142, 172, 'down'], [142, 172, 'left'], [142, 172, 'right'], [142, 172, 'up']],
+    },
+    {
+        name: 'standing with everything out of reach',
+        build() { reset(); seatingFor(null);
+            return { r: { objects: { crate: obj('crate', 220, 100, 24, 24), far: obj('far', 60, 60, 16, 16) }, npcSprites: [npc('bob', 230, 60)] } }; },
+        stances: [[140, 150, 'up'], [140, 150, 'right'], [140, 120, 'left'], [140, 170, 'down']],
     },
     {
         name: 'hidden, inactive and non-interactable objects near a visible one',
@@ -137,15 +150,15 @@ export const handScenes = [
         stances: [[112, 132, 'up'], [148, 132, 'up'], [130, 132, 'up'], [130, 140, 'up'], [168, 135, 'right']],
     },
     {
-        name: 'a sofa with two sitters, one of them knocked out, and a free place',
+        name: 'a sofa with two sitters, one of them knocked out, and a free place between them',
         build() { reset(); seatingFor(null);
             window.npcHostileSystem = koSystem('s2');
-            const sofa = obj('sofa', 100, 100, 64, 30, { seat: true, _places: { 0: 's1', 1: 's2' }, seatedBy: 'full' });
+            const sofa = obj('sofa', 100, 100, 64, 30, { seat: true, _places: { 0: 's1', 2: 's2' } });   // not 'full': place 1 is free
             const s1 = npc('s1', 112, 112), s2 = npc('s2', 148, 112);
-            const places = [[12, -2], [48, -2]];
-            seatNpc(s1, sofa, places, 0); seatNpc(s2, sofa, places, 1);
+            const places = [[12, -2], [30, -2], [48, -2]];
+            seatNpc(s1, sofa, places, 0); seatNpc(s2, sofa, places, 2);
             return { r: { objects: { sofa }, npcSprites: [s1, s2] } }; },
-        stances: [[112, 132, 'up'], [148, 132, 'up'], [130, 132, 'up']],
+        stances: [[112, 132, 'up'], [148, 132, 'up'], [130, 132, 'up'], [131, 126, 'up'], [118, 140, 'up-right']],
     },
     {
         name: 'wall-mounted and tall props against the back wall',
@@ -154,14 +167,15 @@ export const handScenes = [
                 cabinet: obj('cabinet', 120, 70, 30, 47),
                 poster: obj('poster', 170, 76, 20, 20, { scenarioData: { id: 'poster', wallMounted: true } }),
                 stool: obj('stool', 150, 130, 16, 16) } } }; },
-        stances: [[130, 120, 'up'], [135, 112, 'up'], [180, 112, 'up'], [180, 100, 'up'], [150, 150, 'up'], [150, 140, 'up-left']],
+        stances: [[130, 120, 'up'], [135, 112, 'up'], [180, 112, 'up'], [180, 100, 'up'], [150, 150, 'up'], [150, 140, 'up-left'],
+            [135, 140, 'up'], [135, 148, 'up'], [128, 145, 'up'], [180, 150, 'up'], [180, 140, 'up'], [175, 145, 'up-right']],
     },
     {
         name: 'seated at a desk PC with an NPC beside it',
         build() { reset(); const mine = obj('mine', 130, 150, 24, 27, { seat: true });
             seatingFor(mine);
             return { r: { objects: { mine, desk: obj('desk', 120, 80, 40, 16), pc: obj('pc', 130, 96, 24, 27, { scenarioData: { id: 'pc', type: 'pc' } }), mug: obj('mug', 150, 130, 12, 12) },
-                npcSprites: [npc('bob', 168, 120)] } }; },
+                npcSprites: [npc('bob', 160, 138)] } }; },
         stances: [[142, 172, 'up'], [142, 172, 'up-right'], [142, 172, 'right'], [150, 172, 'up']],
     },
     {
