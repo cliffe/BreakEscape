@@ -3137,6 +3137,8 @@
             "reportedPct": {"type": "string", "description": "The stored-reopen summary line 'Reported {pct}% of the phish' ({pct} is the percentage). Hidden when the set has no phish at all. For a non-phishing set (batch-6 C3). batch-8: the defend set's resultCopy.reportedPct wins over this and also covers the reopened result card; prefer setting it there so both read the same"},
             "weakestTell": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when one skill was missed most ({names} is the skill, {counts} is 'caught X of Y'; default 'The tell most often missed: {names} ({counts}).'). For a non-phishing set where 'tell' reads as phishing jargon"},
             "weakestTells": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when skills tied ({names} is the joined list, {counts} is 'caught X of Y'; default 'The tells most often missed: {names} ({counts} each).'). For a non-phishing set where 'tells' reads as phishing jargon"},
+            "stepAway": {"type": "string", "description": "EC1: the step-away panel's line; default 'Look up to see what a case like this one looks like here. It takes about 20 seconds, and your place is saved.'"},
+            "stepAwayHeading": {"type": "string", "description": "EC1: the step-away panel's heading; default 'Before the debrief'"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
             "writeReloadNote": {"type": "string", "description": "batch-6 (E14 F11): the write-stage launch note that a close/reload starts the compose draft again (default 'If you close or reload before you send, your draft starts again.'). '' suppresses it"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
@@ -3372,6 +3374,7 @@
           "additionalProperties": false
         },
         "facilitated": {"type": "boolean"},
+        "stepAway": {"type": "boolean", "description": "EC1 (living office): true shows the step-away panel when the runner reopens after the defend triage: Look up (enabled once kit_defend_done is true) closes the kiosk and emits episode_step_away; Carry on shows the debrief. The debrief keeps the defend answers in the state, and the success screen waits until the debrief closes. A full episode only (never a twin, brief or check); a facilitated run shows Look up on the pause after defend"},
         "assistant": {"$ref": "#/definitions/socialAssistant"}
       },
       "patternProperties": {"^_": {}},
