@@ -1,0 +1,13 @@
+{
+  "key": "a0b9f96ce2e626c8773826df1203ae45",
+  "npc": "anjali_rao",
+  "text": "That's them handled. Your login is you, offers get reported, and a concern that comes to nothing is never a failure.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:49:02Z"
+}

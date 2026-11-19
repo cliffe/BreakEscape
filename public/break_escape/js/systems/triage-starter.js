@@ -361,6 +361,47 @@ export function reemitTriageDone(ctx = {}, deps = {}) {
 }
 
 /**
+ * EC1 gate B D2: re-emit global_variable_changed:<prefix>complete for a round whose save reached
+ * the server with no event (every confirmed-save retry failed, but the pagehide keepalive flush
+ * landed). The caller decides the event never fired (the episode runner: kit_defend_done still
+ * false). Awaits a confirmed sync first, as a save does. Does nothing when <prefix>complete is not
+ * true, or while a save of the same prefix is queued (that save emits on its own confirm);
+ * `ctx.stillNeeded()` is asked again after the sync, so an emit that happened meanwhile is not
+ * doubled. Shares the reopen re-emit's in-flight slot, so the two never run together.
+ *
+ * @param {Object} ctx  { prefix, stillNeeded?() }
+ * @returns {Promise<{confirmed:boolean, emitted:string[], skipped?:string}>}
+ */
+export function reemitTriageComplete(ctx = {}, deps = {}) {
+    const d = defaults(deps);
+    const prefix = ctx.prefix;
+    const globals = d.globals;
+    const none = (skipped, confirmed = false) => ({ confirmed, emitted: [], skipped });
+    if (!prefix || !globals) return Promise.resolve(none('no-prefix'));
+    const n = triageGlobalNames(prefix);
+    if (globals[n.complete] !== true) return Promise.resolve(none('not-done'));
+    if (queue.has(prefix)) return Promise.resolve(none('saving'));
+    if (reemits.has(prefix)) return reemits.get(prefix);
+    const needed = () => typeof ctx.stillNeeded !== 'function' || ctx.stillNeeded() === true;
+
+    const run = (async () => {
+        if (!(await confirm(d))) return none('unconfirmed');
+        if (queue.has(prefix) || globals[n.complete] !== true || !needed()) return none('not-needed', true);
+        heldFor(prefix).delete(n.complete);
+        const events = eventsFor(prefix, globals, new Set([n.complete]));
+        d.emitGlobals(events);
+        return { confirmed: true, emitted: events.map(e => e.data.name) };
+    })();
+    reemits.set(prefix, run);
+    run.finally(() => reemits.delete(prefix)).catch(() => {});
+    return run;
+}
+
+// The episode runner reaches this through window (as it reaches startInboxTriageMinigame), so it
+// shares this module's save queue and in-flight slot without a static import of its own.
+if (typeof window !== 'undefined') window.reemitTriageComplete = reemitTriageComplete;
+
+/**
  * Tell the open triage overlay about the save, or fall back to an alert when
  * it has closed (the save outlives the overlay).
  */

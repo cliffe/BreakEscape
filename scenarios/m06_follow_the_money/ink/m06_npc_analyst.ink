@@ -27,6 +27,12 @@ VAR irina_ko = false
 // promise and tell her what she was drawing; the debrief reads analyst_told.
 VAR satoshi_confronted = false
 VAR analyst_told = false
+// Confirm minors (m06): the untaken sibling of a one-shot sub-menu stays on
+// the hub, so a 6-option hub never collapses to "Thanks for your time".
+VAR seen_monero_forensics = false
+VAR seen_illegal_patterns = false
+VAR seen_pattern_meaning = false
+VAR seen_source_ident = false
 
 // ===========================================
 // INITIAL MEETING
@@ -132,8 +138,20 @@ Priya Raghavan: Big money through our mixer. Big round sums, always late in the 
 + {not topic_forensics} [How does the forensics side of this work?]
     -> forensics_discussion
 
++ {topic_forensics and not seen_monero_forensics} [Can you trace privacy coins like Monero?]
+    -> monero_forensics
+
++ {topic_forensics and not seen_illegal_patterns} [What patterns indicate illegal activity?]
+    -> illegal_patterns
+
 + {not topic_patterns} [Has anything in the flow looked wrong to you?]
     -> pattern_concerns
+
++ {topic_patterns and not seen_pattern_meaning} [What do you think it means?]
+    -> pattern_interpretation
+
++ {topic_patterns and not seen_source_ident} [Can you identify the source wallets?]
+    -> source_identification
 
 + {not topic_concerns} [Does any of this worry you?]
     -> personal_concerns
@@ -171,6 +189,7 @@ Priya Raghavan: You watch how wallets behave, group the ones that move together,
 
 === monero_forensics ===
 #speaker:analyst
+~ seen_monero_forensics = true
 
 Priya Raghavan: Not from outside. Ring signatures, stealth addresses. It's a black box.
 
@@ -197,6 +216,7 @@ Priya Raghavan: Which is why Irina guards them like a dragon. Privacy customers 
 
 === illegal_patterns ===
 #speaker:analyst
+~ seen_illegal_patterns = true
 
 Priya Raghavan: Big mixing with no business reason. Amounts sitting just under the reporting line.
 
@@ -332,6 +352,7 @@ Priya Raghavan: Into our mixer on a schedule, and I'd swear it all lands in the 
 
 === pattern_interpretation ===
 #speaker:analyst
+~ seen_pattern_meaning = true
 
 Priya Raghavan: Lots of income streams feeding one pot. Could be a business with one accounts team.
 
@@ -341,6 +362,7 @@ Priya Raghavan: Could be a criminal network pooling its money. Depends who owns 
 
 === source_identification ===
 #speaker:analyst
+~ seen_source_ident = true
 
 Priya Raghavan: They name themselves! Somebody paid for vanity wallets with ENTROPY in the address.
 

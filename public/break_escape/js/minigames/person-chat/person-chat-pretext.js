@@ -629,10 +629,13 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     session.channel = chat;
     // A mid-call reload (resuming) must keep the saved blanks: the resumed card can
     // re-pick nothing when the held intel has not come back, and an empty re-pick
-    // would otherwise wipe a filled opener. A fresh call still takes whatever it is
-    // handed, empty included.
+    // would otherwise wipe a filled opener. A partial re-pick (one fact back, the other
+    // still missing) merges over the saved blanks rather than replacing them, so the
+    // fact that did not come back is kept and the spoken label and the judge stay in
+    // step (lab post-release m3). A fresh call still takes whatever it is handed,
+    // empty included.
     if (isObject(params.blanks) && (!resuming || Object.keys(params.blanks).length)) {
-        session.blanks = { ...params.blanks };
+        session.blanks = resuming ? { ...session.blanks, ...params.blanks } : { ...params.blanks };
     }
     persistSession(session);
 

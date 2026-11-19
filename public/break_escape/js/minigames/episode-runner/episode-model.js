@@ -57,6 +57,42 @@ export function variantOf(episode) {
     return episode?.variant === 'brief' ? 'brief' : 'full';
 }
 
+/**
+ * EC1 (living office): the global whose true value enables the step-away panel's Look up. The
+ * shell's mapping sets it on the confirmed defend save only, so a failed save leaves it false.
+ */
+export const STEP_AWAY_READY_GLOBAL = 'kit_defend_done';
+/** EC1: the event Look up emits; the host's one mapping on it starts the room's chain. */
+export const STEP_AWAY_EVENT = 'episode_step_away';
+
+/**
+ * EC1: whether this episode takes the step-away panel (awarenessEpisode.stepAway true). Only a
+ * full episode whose debrief follows its defend stage: never a twin (defendOnly), a brief or a
+ * check mission, whatever is authored.
+ */
+export function stepAwayOn(episode) {
+    if (episode?.stepAway !== true || isCheck(episode) || variantOf(episode) !== 'full') return false;
+    const stages = stagesFor(episode);
+    const at = stages.indexOf('defend');
+    return at >= 0 && stages.indexOf('debrief') > at;
+}
+
+/**
+ * EC1 (d): whether the success screen waits, read from saved state alone so it holds after a
+ * reload: a step-away episode whose defend round is complete and whose debrief is neither
+ * finished nor closed (debriefSeen). The round counts as complete when the defend stage is done,
+ * or when the stage still reads defend but the round's done global (`<defendPrefix>complete`) is
+ * true: the learner reloaded on the triage result before Continue, after the round had saved and
+ * the mission had concluded (gate B D3). Look up changes none of this, so it releases nothing.
+ */
+export function stepAwayHeld(episode, raw, globals = null) {
+    if (!stepAwayOn(episode)) return false;
+    const state = readState(episode, raw);
+    if (state.done.includes('debrief') || state.debriefSeen === true) return false;
+    if (state.done.includes('defend')) return true;
+    return state.stage === 'defend' && isObj(globals) && globals[`${defendPrefix(episode.id)}complete`] === true;
+}
+
 /** A check mission: its stages list names 'check'. */
 export function isCheck(episode) {
     return Array.isArray(episode?.stages) && episode.stages.includes('check');
@@ -449,6 +485,8 @@ export function readState(episode, raw) {
     // item 8: an in-progress triage round's per-verdict answers, so a reload resumes it.
     const defendProgress = cleanAnswerList(src.defendProgress);
     if (defendProgress) state.defendProgress = defendProgress;
+    // EC1 (d): a step-away episode's debrief was closed (any route), so the success screen may open.
+    if (src.debriefSeen === true && stepAwayOn(episode)) state.debriefSeen = true;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -465,8 +503,12 @@ export function completeStage(episode, state, stageId, patch = {}) {
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
     // item 8: writing the defend summary means the round finished, so the saved per-verdict
-    // progress is no longer needed and is cleared.
-    if ('defend' in patch) { next.defend = cleanDefend(patch.defend); delete next.defendProgress; }
+    // progress is no longer needed and is cleared. EC1 (c): a step-away episode keeps the cleaned
+    // list (verdicts only, no answer key), so the debrief's per-item cards survive a look-up.
+    if ('defend' in patch) {
+        next.defend = cleanDefend(patch.defend);
+        if (!(stageId === 'defend' && stepAwayOn(episode) && next.defendProgress)) delete next.defendProgress;
+    }
     if ('defendProgress' in patch) { const p = cleanAnswerList(patch.defendProgress); if (p) next.defendProgress = p; else delete next.defendProgress; }
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
     if ('concern' in patch) { const concern = cleanConcern(patch.concern); if (concern) next.concern = concern; }

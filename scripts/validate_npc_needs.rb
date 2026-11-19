@@ -763,18 +763,112 @@ module ValidateNpcNeeds
 
   GAME_JS = File.expand_path('../public/break_escape/js/core/game.js', __dir__)
 
-  def self.room_tiles(type)
-    @room_tiles ||= {}
-    return @room_tiles[type] if @room_tiles.key?(type)
+  def self.room_map(type)
+    @room_maps ||= {}
+    return @room_maps[type] if @room_maps.key?(type)
 
     @tilemaps ||= File.exist?(GAME_JS) ? File.read(GAME_JS).scan(/tilemapTiledJSON\('([^']+)',\s*'rooms\/([^']+)'\)/).to_h : {}
     file = @tilemaps[type]
     path = file && File.expand_path("../public/break_escape/assets/rooms/#{file}", __dir__)
     tj = path && File.exist?(path) ? (JSON.parse(File.read(path)) rescue nil) : nil
+    @room_maps[type] = tj.is_a?(Hash) ? tj : nil
+  end
+
+  # @room_tiles is a cache a test may pre-seed with a room type's [width, height]
+  def self.room_tiles(type)
+    @room_tiles ||= {}
+    return @room_tiles[type] if @room_tiles.key?(type)
+
+    tj = room_map(type)
     @room_tiles[type] = tj && tj['width'] ? [tj['width'].to_i, tj['height'].to_i] : nil
   end
 
+  # ── Tiled-claimed objects (decision D174) ───────────────────────────────────
+  # An object with no scenario position claims a Tiled object of its type from the room's map
+  # (rooms.js TiledItemPool.findMatchFor: the items layer first, then table_items,
+  # conditional_items, conditional_table_items; the first one not yet claimed, in scenario order).
+  # Its sprite is placed at (x, y - height) with origin 0,0, so its centre is (x + w/2, y - h/2).
+  # Returns { object id => [centre px x, centre px y] or nil when no Tiled object matched }.
+  TILED_LAYERS = %w[items table_items conditional_items conditional_table_items].freeze
+  GRID_PX = 8   # the walkable grid the engine snaps approach and queue cells to (cell centres at 4 mod 8)
+
+  def self.tiled_base_type(name)
+    name.to_s.sub(/\.png\z/, '').sub(/\d+\z/, '')
+  end
+
+  # Image name of a Tiled object, as rooms.js getImageNameFromObjectWithMap: only the object
+  # tilesets name an image, and among those the highest index wins
+  def self.tiled_image_name(tj, gid)
+    best = nil
+    Array(tj['tilesets']).each do |ts|
+      next unless ts.is_a?(Hash) && ts['firstgid'].is_a?(Integer) && gid.is_a?(Integer)
+
+      max = ts['tilecount'] ? ts['firstgid'] + ts['tilecount'].to_i : ts['firstgid'] + 1
+      next unless gid >= ts['firstgid'] && gid < max
+      next unless ts['name'] == 'objects' || ts['name'].to_s.include?('objects/') || ts['name'].to_s.include?('tables/')
+
+      best = [ts, gid - ts['firstgid']]
+    end
+    return nil unless best
+
+    ts, local = best
+    tile = Array(ts['tiles']).find { |t| t.is_a?(Hash) && t['id'] == local }
+    if tile && tile['image']
+      File.basename(tile['image'].to_s, '.png')
+    elsif ts['name'].to_s.include?('objects/') || ts['name'].to_s.include?('tables/')
+      File.basename(ts['name'].to_s, '.png')
+    end
+  end
+
+  def self.tiled_claims(room)
+    tj = room_map(room['type'])
+    return {} unless tj
+
+    pool = TILED_LAYERS.map do |layer|
+      by_type = {}
+      Array(tj['layers']).select { |l| l.is_a?(Hash) && l['name'] == layer && l['type'] == 'objectgroup' }.each do |l|
+        Array(l['objects']).each do |t|
+          img = tiled_image_name(tj, t['gid'])
+          (by_type[tiled_base_type(img)] ||= []) << t if img
+        end
+      end
+      by_type
+    end
+    taken = []
+    find = lambda do |type|
+      pool.each do |by_type|
+        hit = Array(by_type[type]).find { |t| !taken.include?(t) }
+        next unless hit
+
+        taken << hit
+        return hit
+      end
+      nil
+    end
+    out = {}
+    Array(room['objects']).each do |o|
+      next unless o.is_a?(Hash) && !o['panelOf'] && !o['hiddenWith']
+
+      if o['type'] == 'table' && o['tableItems'].is_a?(Array)
+        o['tableItems'].each { |ti| find.call(ti['type']) if ti.is_a?(Hash) }
+        next
+      end
+      as = o['position'].is_a?(String) && o['position'].start_with?('as-type:') ? o['position'].sub('as-type:', '') : nil
+      t = if as then find.call(as)
+      elsif o['sprite'].is_a?(String) then find.call(o['sprite']) || find.call(o['type'])
+      else find.call(o['type'])
+      end
+      out[o['id']] = t ? [t['x'].to_f + (t['width'].to_f / 2), t['y'].to_f - (t['height'].to_f / 2)] : nil if o['id']
+    end
+    out
+  end
+
+  def self.snap_px(v)
+    ((v / GRID_PX).floor * GRID_PX) + (GRID_PX / 2)
+  end
+
   def self.check_queues(json, npcs, objs, issues)
+    claims = {}
     objs.each do |o|
       aff = o.data['affordance']
       next unless aff.is_a?(Hash) && aff.key?('queue')
@@ -797,13 +891,35 @@ module ValidateNpcNeeds
       next if dims.nil? || o.room.nil?
 
       uf = aff['useFrom'].is_a?(Hash) ? aff['useFrom'] : {}
-      bx = o.x.floor + uf['dx'].to_i
-      by = o.y.floor + uf['dy'].to_i
       conns = room['connections'].is_a?(Hash) ? room['connections'] : {}
       needers = npcs.select { |_r, n| n['needs'].is_a?(Hash) && (n['needs'].keys & satisfies).any? }
+      tiled = !positioned?(o)
+      if tiled
+        # No scenario position: the engine uses the claimed Tiled object's pixel centre, so do the
+        # same (approach cell, then each offset, snapped to the 8 px grid) and take the tile it is in.
+        # Not modelled: walkability, duplicate-cell dropping, a scenario sprite's own size, and a
+        # position with only one axis (the engine overrides per axis); a table with no Tiled table
+        # (the engine then claims nothing for its tableItems), and the random spot the engine uses when no
+        # Tiled object matches.
+        centre = (claims[o.room] ||= tiled_claims(room))[o.id]
+        if centre.nil?
+          issues << "ℹ️ NPC needs: #{where}: the object's position could not be resolved (no unclaimed Tiled object matches it in the '#{room['type']}' map, or it is nested in another object), so its queue cell geometry is not checked."
+          next
+        end
+        ax = snap_px(centre[0] + (uf['dx'].is_a?(Numeric) ? uf['dx'] : 0) * 32)
+        ay = snap_px(centre[1] + (uf['dy'].is_a?(Numeric) ? uf['dy'] : 0) * 32)
+      else
+        bx = o.x.floor + uf['dx'].to_i
+        by = o.y.floor + uf['dy'].to_i
+      end
       cells.each_with_index do |c, i|
-        cx = bx + c['dx'].round
-        cy = by + c['dy'].round
+        if tiled
+          cx = (snap_px(ax + (c['dx'] * 32)) / 32).floor
+          cy = (snap_px(ay + (c['dy'] * 32)) / 32).floor
+        else
+          cx = bx + c['dx'].round
+          cy = by + c['dy'].round
+        end
         side = if cx.negative? then 'west' elsif cx >= dims[0] then 'east' elsif cy.negative? then 'north' elsif cy >= dims[1] then 'south' end
         if side
           nbr = Array(conns[side]).first

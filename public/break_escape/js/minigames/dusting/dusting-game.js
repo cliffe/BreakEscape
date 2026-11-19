@@ -11,10 +11,10 @@
  * with `{ cancelled: true }`; "Use normally" with `{ cancelled: true, useNormally: true }`.
  */
 import { MinigameScene } from '../framework/base-minigame.js';
-import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS } from './fingerprint-generator.js';
+import { generatePrint, hashString, mulberry32, patternForOwner, PATTERNS, whorlShapeFor, WHORL_SHAPES } from './fingerprint-generator.js';
 import {
     SURFACES, POWDERS, TOOLS, DIFFICULTY, DustField, TapeGrid, surfaceForObject, contrastFactor, findSheen, findGlint, findFloorScale,
-    liftQuality, ratingFor, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
+    liftQuality, ratingFor, brushFeel, packProgress, upsampleInto, saveProgress, loadProgress, clearProgress, hintNudgeDue, NUDGE_TEXT, NUDGE_MISSES, NUDGE_IDLE_MS, developedDensity, wrongPowderReason, decoyPatterns, nextNearState, zoomScale, zoomPlan, zoomBudgetH, ZOOM_MAX_H_SHORT,
     zoomPlanBeside, ZOOM_STATUS_MAX_H, ZOOM_CHROME_H
 } from './dusting-model.js';
 import { pickLiftMarks, pickDecoyMarks, compareFeatures, featuresOf, mismatchReason, REF_WORDS, pairMarkTags, cropAround, cropSide, fitCropToMarks, markGlyph, describeMarks, uprightMarks, rotateUpright } from './print-features.js';
@@ -71,8 +71,8 @@ const STORE_HC = 'breakEscape.dusting.highContrast';
 const STORE_STEADY = 'breakEscape.dusting.steadyHand';
 const TAPE_RADIUS = 9;
 const PUFF_RADIUS = 30;
-// UI-side only: the brush lays powder a little faster, so over-brushing is reachable in a normal sitting.
-const BRUSH_BOOST = 1.3;
+// A held Space ticks in place (about 14 a second): gentler per tick than a moving stroke (see BRUSH_FEEL in the model).
+const KEY_HOLD_GENTLE = 0.4;
 // UI-side only: extra haze drawn over fogged furrows so over-brushing is visible (the model's scores are unchanged).
 const FOG_HAZE = 1.4;
 
@@ -122,9 +122,25 @@ const PATTERN_SVG = {
     arch: '<svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 38Q24 8 45 38"/><path d="M3 44Q24 20 45 44"/><path d="M3 32Q24 0 45 32"/></g></svg>'
 };
 
+/**
+ * Whorl layout for a decoy card. A whorl decoy beside a whorl lift is the hard case: two whorls from the same
+ * jittered layout read as one print (m09 confirm). On easy and medium the decoy always uses a layout other than the
+ * lift's (cores and deltas moved 5 to 10 px, visible at card size); on hard it takes the lift's own layout, so only
+ * the minutiae tell them apart. Any other pairing keeps the person's own layout. Returns null for "use the owner's".
+ * @returns {number|null}
+ */
+export function decoyWhorlShape(decoyName, decoyPattern, liftPattern, liftOwner, rule, k = 0) {
+    if (decoyPattern !== 'whorl' || liftPattern !== 'whorl') return null;
+    const liftShape = whorlShapeFor(liftOwner);
+    if (rule === 'all') return liftShape;
+    const own = whorlShapeFor(decoyName);
+    if (own !== liftShape) return null;
+    return (liftShape + 1 + (k % (WHORL_SHAPES.length - 1))) % WHORL_SHAPES.length;
+}
+
 const printCache = new Map();
 function cachedPrint(opts) {
-    const key = `${opts.owner}|${opts.pattern || ''}|${opts.variant ?? ''}|${opts.partial ? 1 : 0}`;
+    const key = `${opts.owner}|${opts.pattern || ''}|${opts.variant ?? ''}|${opts.partial ? 1 : 0}|${opts.whorlShape ?? ''}`;
     if (!printCache.has(key)) {
         if (printCache.size > 24) printCache.clear();
         printCache.set(key, generatePrint({ size: N, ...opts }));
@@ -224,6 +240,8 @@ export class DustingMinigame extends MinigameScene {
         this.reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || params.reducedMotion === true;
         this.highContrast = readStore(STORE_HC);
         this.steady = readStore(STORE_STEADY);
+        this.gameId = (window.breakEscapeConfig && window.breakEscapeConfig.gameId) || null;
+        this.resume = loadProgress(this.gameId, this.objectId);   // per-viewer localStorage only; null when absent or storage fails
 
         this.step = 'examine';
         this.powder = null;
@@ -239,6 +257,8 @@ export class DustingMinigame extends MinigameScene {
         this.found = false;
         this.hintReady = false;
         this.hintOn = false;
+        this.misses = 0;      // failed checks in the find step (drives the Hint nudge)
+        this.nudged = false;
         this.message = '';
         this.coach = '';
         this.metrics = { coverage: 0, clarity: 0, foggy: 0 };
@@ -307,6 +327,7 @@ export class DustingMinigame extends MinigameScene {
                 <ol class="dusting-steps" aria-label="Steps">
                     ${STEPS.map((s, i) => `<li data-step="${s}"><span class="dusting-step-num">${i + 1}</span> ${STEP_NAMES[s]}</li>`).join('')}
                 </ol>
+                <div class="dusting-body pixel-scroll" data-region="dusting-body">
                 <div class="dusting-main">
                     <div class="dusting-stage">
                         <canvas class="dusting-canvas" width="${N}" height="${N}" tabindex="0" role="img" aria-label=""></canvas>
@@ -320,6 +341,7 @@ export class DustingMinigame extends MinigameScene {
                     <label><input type="checkbox" class="dusting-opt-hc"> High contrast</label>
                     <label><input type="checkbox" class="dusting-opt-steady"> Steady hand (gentler powder)</label>
                     <span class="dusting-keys" data-keys>Keys: arrows move, Space acts, Shift = big steps</span>
+                </div>
                 </div>
             </div>`;
         this.root = this.gameContainer.querySelector('.dusting-root');
@@ -359,22 +381,7 @@ export class DustingMinigame extends MinigameScene {
         this.addEventListener(cv, 'pointerup', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointercancel', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; if (this.nearPrint) this._clearNear(); } });
-        this.addEventListener(this.panel, 'click', e => {
-            const el = e.target.closest('[data-action]');
-            if (el && !el.disabled) this._action(el.dataset.action, el.dataset);
-        });
-        // Compare: the magnified pair follows the card under the pointer or the keyboard focus (no re-render, so focus stays).
-        const zoomTo = (e, speak) => {
-            const w = e.target.closest && e.target.closest('.dusting-ref-wrap');
-            const b = w && w.querySelector('[data-index]');
-            const i = b ? Number(b.dataset.index) : NaN;
-            if (!Number.isInteger(i) || this.step !== 'compare' || this.identified || this.zoomIdx === i) return;
-            this.zoomIdx = i;
-            this._drawZoom();
-            if (speak && this._zoomSpeech) this.announce(this._zoomSpeech);   // the card's words only; the lift was read on entering compare
-        };
-        this.addEventListener(this.panel, 'pointerover', e => zoomTo(e, false));
-        this.addEventListener(this.panel, 'focusin', e => zoomTo(e, true));
+        this._bindPanel();
         this.addEventListener(document, 'keydown', e => this._onKeyDown(e));
         this.addEventListener(document, 'keyup', e => this._onKeyUp(e));
         this.addEventListener(window, 'resize', () => this._layout());
@@ -387,6 +394,27 @@ export class DustingMinigame extends MinigameScene {
             this.field.fogRate = this.steady ? 0.5 : 1;
             this.announce(this.steady ? 'Steady hand on: powder fogs half as fast.' : 'Steady hand off.');
         });
+    }
+
+    /** The panel's click, hover and focus routes (split out so a test can wire them on a JSDOM panel). */
+    _bindPanel() {
+        this.addEventListener(this.panel, 'click', e => {
+            const el = e.target.closest('[data-action]');
+            // a click with detail 0 comes from the keyboard (Enter or Space on a focused button); a pointer click has detail 1 or more
+            if (el && !el.disabled) this._action(el.dataset.action, el.dataset, e.detail === 0);
+        });
+        // Compare: the magnified pair follows the card under the pointer or the keyboard focus (no re-render, so focus stays).
+        const zoomTo = (e, speak) => {
+            const w = e.target.closest && e.target.closest('.dusting-ref-wrap');
+            const b = w && w.querySelector('[data-index]');
+            const i = b ? Number(b.dataset.index) : NaN;
+            if (this._refocusing || !Number.isInteger(i) || this.step !== 'compare' || this.identified || this.zoomIdx === i) return;
+            this.zoomIdx = i;
+            this._drawZoom();
+            if (speak && this._zoomSpeech) this.announce(this._zoomSpeech);   // the card's words only; the lift was read on entering compare
+        };
+        this.addEventListener(this.panel, 'pointerover', e => zoomTo(e, false));
+        this.addEventListener(this.panel, 'focusin', e => zoomTo(e, true));
     }
 
     _layout() {
@@ -434,10 +462,13 @@ export class DustingMinigame extends MinigameScene {
         clearInterval(this._keyTimer);
         cancelAnimationFrame(this._raf);
         if (this._unsubArt) this._unsubArt();
+        // Closed mid-dust without a result (X, or a scripted call before the peel): keep what is on the surface for a resume.
+        if (!this.final && this.step === 'dust') this._saveProgress();
         // A scripted call or conversation ends the minigame with endMinigame(false, null) and never reaches
         // complete(): a lift mounted on the compare screen is still recorded, through the opener's callback.
         if (this.mounted && this.final && !this._resultSent) {
             this._resultSent = true;
+            this._clearProgress();   // the lift is logged, so the next interact shows "Lift on file", not Resume
             const forced = this.params && this.params.onForcedEnd;
             if (typeof forced === 'function') {
                 try { forced({ ...this._buildResult(), viaClose: true }); } catch (e) { console.error('dusting forced-end record failed', e); }
@@ -506,6 +537,8 @@ export class DustingMinigame extends MinigameScene {
             host.appendChild(slotCanvas(host.dataset.slot, Number(host.dataset.scale || 2)));
         });
         this._zoomShort = this.root.classList.contains('dusting-short');
+        // the reference cards are DOM-built: candidate names are set with textContent, never parsed as markup
+        p.querySelectorAll('.dusting-refs').forEach(host => host.appendChild(this._refCards(host.dataset.done === '1')));
         if (this.step === 'compare' && this.patternOk) this._drawReferences();
         // The pair stands in for the lift in the stage column (non-short screens); in short landscape it is in the panel.
         const inStage = this._zoomInStage(this._zoomShort);
@@ -543,16 +576,36 @@ export class DustingMinigame extends MinigameScene {
     _htmlExamine() {
         const d = this.data;
         const best = this.objectId ? bestLiftFromObject(this.objectId) : null;
-        const prior = best ? `<p class="dusting-note">Lifted before: ${Math.round(best.quality * 100)}%. Dust again for a cleaner lift?</p>` : '';
         // textVariants / observationVariants apply here as everywhere else (m08 E5)
         const observations = resolveObjectField(d, 'observations', null);
         const text = resolveObjectField(d, 'text', null);
-        return `
+        const head = `
             <h3>${escapeHtml(d.name || 'Surface')}</h3>
             ${observations ? `<p>${escapeHtml(observations)}</p>` : ''}
             ${text ? `<p class="dusting-quote">${escapeHtml(text)}</p>` : ''}
-            <p class="dusting-surface-line"><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>
-            ${prior}
+            <p class="dusting-surface-line"><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>`;
+        if (this.resume) {
+            return `${head}
+            <p class="dusting-note">You were part way through dusting this. Pick up where you left off?</p>
+            <div class="dusting-buttons">
+                <button class="dusting-btn dusting-primary" data-action="resume">Resume dusting</button>
+                <button class="dusting-btn" data-action="start">Start again</button>
+                <button class="dusting-btn" data-action="use-normally">Use normally</button>
+            </div>`;
+        }
+        if (best) {
+            // A lift is already on file: that is the main view. Dusting again is the secondary choice.
+            const who = best.identified ? ` Identified as ${escapeHtml(best.ownerName || best.owner)}.` : '';
+            return `${head}
+            <h3 class="dusting-lift-head">Lift on file</h3>
+            <p class="dusting-note" data-lift-result>Lifted: ${Math.round(best.quality * 100)}%, ${escapeHtml(best.rating || ratingFor(best.quality))}.${who}</p>
+            <p class="dusting-note">The lift is kept. Close with X, or dust again for a better one.</p>
+            <div class="dusting-buttons">
+                <button class="dusting-btn" data-action="start">Dust again</button>
+                <button class="dusting-btn" data-action="use-normally">Use normally</button>
+            </div>`;
+        }
+        return `${head}
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="start">Dust for prints</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>
@@ -572,8 +625,9 @@ export class DustingMinigame extends MinigameScene {
             of fine curved ridges. Long straight streaks are only reflections.</p>
             <p class="dusting-keys">${this._findKeyLine()}</p>
             <p class="dusting-feedback" data-dyn="feedback"></p>
+            <p class="dusting-nudge" data-dyn="nudge"></p>
             <div class="dusting-buttons">
-                <button class="dusting-btn dusting-hint" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
+                <button class="dusting-btn dusting-hint${this.nudged ? ' dusting-nudged' : ''}" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
             </div>`;
     }
 
@@ -664,7 +718,7 @@ export class DustingMinigame extends MinigameScene {
             return `${head}<p class="dusting-feedback good">Match: ridge detail agrees at the ${this.print.pattern === 'arch' ? 'ridge flow' : this.print.deltas.length > 1 ? 'core and both deltas' : 'core and the delta'}. The numbered tags mark the same ridge detail on both cards.</p>
                 <p>This is ${escapeHtml(this.ownerName)}'s print.</p>
                 ${this._zoomShort ? this._zoomHtml() : ''}
-                <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(true)}</div>
+                <div class="dusting-refs" data-count="${this.candidates.length}" data-done="1"></div>
                 <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn dusting-primary" data-action="finish">Log the print</button></div>`;
         }
         const opens = this.print.pattern === 'loop' && this.print.canonical && this.print.canonical.opens
@@ -673,7 +727,7 @@ export class DustingMinigame extends MinigameScene {
             <p class="dusting-feedback" data-dyn="feedback"></p>
             ${this._zoomShort ? this._zoomHtml() : ''}
             ${this._compareNote()}
-            <div class="dusting-refs" data-count="${this.candidates.length}">${this._refButtons(false)}</div>
+            <div class="dusting-refs" data-count="${this.candidates.length}" data-done="0"></div>
             <div class="dusting-buttons">${this._wholeLiftButton()}<button class="dusting-btn" data-action="unidentified">Log as unidentified</button></div>`;
     }
 
@@ -708,30 +762,65 @@ export class DustingMinigame extends MinigameScene {
         return `<button class="dusting-btn" data-action="fulllift" aria-pressed="${!!this.fullLift}" aria-keyshortcuts="L">Whole lift (L)</button>`;
     }
 
-    _refButtons(done) {
-        // Picking and viewing are separate controls: the card button picks, "View large" only shows the
-        // card at the lift's size in the big frame (F26 follow-up), so viewing never counts as a pick.
-        return this.candidates.map(c => {
+    /** The reference cards as DOM (a fragment): each card's button picks, "View large" only shows the card at the lift's size
+     *  in the big frame (F26 follow-up), so viewing never counts as a pick. Names go in with textContent. */
+    _refCards(done) {
+        const mk = (tag, cls, text) => {
+            const e = document.createElement(tag);
+            if (cls) e.className = cls;
+            if (text !== undefined) e.textContent = text;
+            return e;
+        };
+        const frag = document.createDocumentFragment();
+        for (const c of this.candidates) {
             const viewing = !done && this.viewing === c.index;
-            const view = done ? '' : `
-                <button class="dusting-btn dusting-view" data-action="view" data-index="${c.index}" aria-pressed="${viewing}" aria-label="${viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${escapeHtml(c.label)}`}">${viewing ? 'Back to my lift (V)' : 'View large (V)'}</button>`;
-            return `
-            <div class="dusting-ref-wrap">
-            <button class="dusting-ref" data-action="ref" data-index="${c.index}" ${c.rejected || done ? 'disabled' : ''} ${c.rejected ? 'data-rejected="1"' : ''} ${viewing ? 'data-viewing="1"' : ''} aria-label="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}${done && c.correct ? ', match' : ''}" title="Reference card ${c.index + 1}: ${escapeHtml(c.label)}${c.rejected ? ', not a match' : ''}${done && c.correct ? ', match' : ''}">
-                <canvas class="dusting-ref-canvas" data-ref="${c.index}" width="${N}" height="${N}"></canvas>
-                <span><span class="dusting-ref-name">${c.index + 1}. ${escapeHtml(c.label)}</span>${c.rejected ? ' <span class="dusting-ref-tag">(not a match)</span>' : ''}${done && c.correct ? ' <span class="dusting-ref-tag">(match)</span>' : ''}</span>
-            </button>${view}
-            </div>`;
-        }).join('');
+            // The match state is drawn as text under the name (a touch screen shows no title). After the match every other card
+            // reads "not a match" too, so no card is left unlabelled.
+            const state = done && c.correct ? 'match' : (c.rejected || (done && this.identified)) ? 'not a match' : '';
+            const wrap = mk('div', 'dusting-ref-wrap');
+            const btn = mk('button', 'dusting-ref');
+            btn.dataset.action = 'ref';
+            btn.dataset.index = String(c.index);
+            if (c.rejected || done) btn.disabled = true;
+            if (c.rejected) btn.setAttribute('data-rejected', '1');
+            if (viewing) btn.setAttribute('data-viewing', '1');
+            if (done && c.correct) btn.setAttribute('data-match', '1');
+            const label = `Reference card ${c.index + 1}: ${c.label}${state ? ', ' + state : ''}`;
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
+            const cv = mk('canvas', 'dusting-ref-canvas');
+            cv.dataset.ref = String(c.index);
+            cv.width = N; cv.height = N;
+            const cap = mk('span', 'dusting-ref-caption');
+            cap.appendChild(mk('span', 'dusting-ref-name', `${c.index + 1}. ${c.label}`));
+            if (state) {
+                cap.appendChild(document.createTextNode(' '));
+                const tag = mk('span', 'dusting-ref-tag', `(${state})`);
+                tag.dataset.state = state === 'match' ? 'match' : 'no';
+                cap.appendChild(tag);
+            }
+            btn.append(cv, cap);
+            wrap.appendChild(btn);
+            if (!done) {
+                const v = mk('button', 'dusting-btn dusting-view', viewing ? 'Back to my lift (V)' : 'View large (V)');
+                v.dataset.action = 'view';
+                v.dataset.index = String(c.index);
+                v.setAttribute('aria-pressed', String(viewing));
+                v.setAttribute('aria-label', viewing ? 'Back to my lift (V)' : `View large (V): card ${c.index + 1}, ${c.label}`);
+                wrap.appendChild(v);
+            }
+            frag.appendChild(wrap);
+        }
+        return frag;
     }
 
     // ------------------------------------------------------------------ actions
 
-    _action(action, ds = {}) {
+    _action(action, ds = {}, viaKey = false) {
         switch (action) {
-            case 'start': this._setStep('find'); break;
-            case 'use-normally': this.gameResult = { cancelled: true, useNormally: true }; this._resultSent = true; super.complete(false); break;
-            case 'close': this.complete(false); break;
+            case 'start': this._clearProgress(); this.resume = null; this._setStep('find'); break;
+            case 'resume': this._resumeDusting(); break;
+            case 'use-normally': this._clearProgress(); this.gameResult = { cancelled: true, useNormally: true }; this._resultSent = true; super.complete(false); break;
             case 'hint': this.hintOn = true; this.dirty = true; this.announce('The ring marks where the print is.'); break;
             case 'powder': this._choosePowder(ds.powder); break;
             case 'tool': this._chooseTool(ds.tool); break;
@@ -741,13 +830,43 @@ export class DustingMinigame extends MinigameScene {
             case 'back-dust': this._setStep('dust'); break;
             case 'peel': this._peel(); break;
             case 'pattern': this._choosePattern(ds.pattern); break;
-            case 'ref': this._chooseRef(Number(ds.index)); break;
+            case 'ref': this._chooseRef(Number(ds.index), viaKey); break;
             case 'view': this._viewCard(Number(ds.index)); break;
             case 'fulllift': this._toggleWholeLift(); break;
             case 'unidentified': this.identified = false; this._finish(); break;
             case 'finish': this._finish(); break;
             default: break;
         }
+    }
+
+    // ------------------------------------------------------------------ resume (per viewer, localStorage only)
+
+    /** Saves the dust step (powder, tool, quality estimate, downsampled powder and fog) so a reload can resume it. */
+    _saveProgress() {
+        if (this._resultSent || this.step !== 'dust' || !this.powder || !this.found || !this.field) return false;
+        let quality = 0;
+        try { quality = this._currentQuality(1); } catch (e) { quality = this.metrics ? this.metrics.coverage : 0; }
+        const entry = packProgress({ step: 'dust', powder: this.powder, tool: this.tool, quality }, this.field);
+        if (!entry.p.some(v => v > 0)) return false;   // nothing dusted yet: no resume to offer
+        return saveProgress(this.gameId, this.objectId, entry);
+    }
+
+    _clearProgress() { clearProgress(this.gameId, this.objectId); }
+
+    _resumeDusting() {
+        const r = this.resume;
+        this.resume = null;
+        if (!r || !POWDERS[r.powder]) { this._setStep('find'); return; }
+        this.found = true;
+        this.powder = r.powder;
+        this.tool = POWDERS[r.powder].tools.includes(r.tool) ? r.tool : POWDERS[r.powder].tools[0];
+        this.toolStrokes = 0;
+        upsampleInto(this.field.P, this.field.size, r.p);
+        upsampleInto(this.field.FP, this.field.size, r.f);
+        this._setStep('dust');
+        this._refreshMetrics(true);
+        this._setBrushed(true);
+        this.announce('Resumed where you left off.');
     }
 
     _choosePowder(id) {
@@ -772,6 +891,7 @@ export class DustingMinigame extends MinigameScene {
         if (!TOOLS[t] || !POWDERS[this.powder].tools.includes(t)) return;
         if (this.tool !== t) this.toolStrokes = 0;
         this.tool = t; this.puffMode = false; this.advice = '';
+        this._brushCarry = 0;   // the old tool's carry can exceed the new, finer step
         if (this.step === 'dust') this._renderPanel();
         this.announce(`${TOOLS[t].label} selected.`);
     }
@@ -877,7 +997,7 @@ export class DustingMinigame extends MinigameScene {
         this._viewCard(nextView(this.viewing, this.candidates.length));
     }
 
-    _chooseRef(i) {
+    _chooseRef(i, viaKey = false) {
         const c = this.candidates[i];
         if (!c || c.rejected) return;
         if (this.viewing !== null) { this.viewing = null; this.dirty = true; this._updateAria(); this._drawCard(); }
@@ -887,6 +1007,7 @@ export class DustingMinigame extends MinigameScene {
             this._renderPanel();
             this._drawCard();
             this.forensicEl.textContent = `${FORENSIC.compare} ${FORENSIC_MATCH}`;
+            if (viaKey) this._refocus('[data-action="finish"]');   // focus first, so a screen reader queues the message after the focus speech
             this.announce(`Match. This is ${this.ownerName}'s print. The numbered tags mark the same ridge detail on both cards.`);
         } else {
             c.rejected = true;
@@ -896,8 +1017,29 @@ export class DustingMinigame extends MinigameScene {
                 ? 'No match: the ridge endings and forks near the core sit in different places. Compare them card by card.'
                 : mismatchReason(diff, this.liftFeatures, c.features);
             this._renderPanel();
+            if (viaKey) this._refocusAfterPick(i);   // focus first, then the polite message
             this.announce(this.message);
         }
+    }
+
+    /** The re-render replaces the panel, so a keyboard player's focus would fall to the page. Put it back on a control (a mouse
+     *  pick never gets here). The picked card is disabled once rejected, so focus goes to the next open card after it, else
+     *  "Log as unidentified". The zoom is left alone (the rejected card stays on show) and the live message is not overwritten. */
+    _refocusAfterPick(i) {
+        const n = this.candidates.length;
+        for (let k = 1; k <= n; k++) {
+            const c = this.candidates[(i + k) % n];
+            if (c && !c.rejected && this._refocus(`.dusting-ref[data-index="${c.index}"]`)) return;
+        }
+        this._refocus('[data-action="unidentified"]');
+    }
+
+    _refocus(selector) {
+        const b = this.panel && this.panel.querySelector(selector);
+        if (!b || b.disabled || !b.focus) return false;
+        this._refocusing = true;
+        try { b.focus(); } finally { this._refocusing = false; }
+        return true;
     }
 
     _buildResult() {
@@ -914,6 +1056,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _finish() {
+        this._clearProgress();
         this.gameResult = this._buildResult();
         this._resultSent = true;
         super.complete(true);
@@ -922,7 +1065,9 @@ export class DustingMinigame extends MinigameScene {
     /** Closing after the peel keeps the lift (as unidentified); closing earlier is a plain cancel. */
     complete(success) {
         if (this._resultSent) return super.complete(success);
+        if (!this.final && this.step === 'dust') this._saveProgress();   // X mid-dust keeps the work for a resume
         if (!success && this.mounted && this.final) {
+            this._clearProgress();
             this.gameResult = this._buildResult();
             this._resultSent = true;
             // viaClose: recordLift titles its one toast "Print Logged" (the Log the print button path keeps "Print Lifted")
@@ -997,7 +1142,7 @@ export class DustingMinigame extends MinigameScene {
         free.forEach((k, j) => { decoyClasses[k] = freeClasses[j]; });
         const decoys = decoyNames.map((nm, k) => {
             const pattern = forced.get(String(nm)) || decoyClasses[k];
-            return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern }), correct: false };
+            return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern, whorlShape: decoyWhorlShape(nm, pattern, lp, this.owner, this.diff.decoySamePattern, k) }), correct: false };
         });
         const correct = { label: this.ownerName, pattern: lp, print: cachedPrint({ owner: this.owner, pattern: lp }), correct: true };
         const at = seed % n;
@@ -1044,6 +1189,8 @@ export class DustingMinigame extends MinigameScene {
     _onPointerDown(e) {
         if (!['find', 'dust', 'lift', 'examine', 'powder'].includes(this.step)) return;
         e.preventDefault();
+        if (this.pointerDown && e.pointerId !== this._pointerId) return;   // a second finger never joins or replaces the stroke
+        this._pointerId = e.pointerId;
         const pos = this._canvasPos(e);
         this.reticle = pos; this.pointerInside = true; this.pointerDown = true;
         // Touch in the Find step: dragging shows the proximity cue first; the check happens on lift (m5).
@@ -1051,12 +1198,14 @@ export class DustingMinigame extends MinigameScene {
         try { this.canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointers can't be captured */ }
         this.canvas.focus({ preventScroll: true });
         this._countStroke();
+        this._brushCarry = 0;   // a new stroke: spacing restarts (the tick below covers the start)
         this._act(pos, null);
         this.lastPt = pos;
         this.dirty = true;
     }
 
     _onPointerMove(e) {
+        if (this.pointerDown && e.pointerId !== this._pointerId) return;
         const pos = this._canvasPos(e);
         this.pointerInside = true;
         const prev = this.reticle;
@@ -1093,6 +1242,8 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _onPointerUp(e) {
+        if (this.pointerDown && e && e.pointerId !== this._pointerId) return;   // only the stroke's own pointer ends it
+        if (this.step === 'dust') this._saveProgress();
         if (this._touchFind && e && e.type === 'pointerup' && this.step === 'find') this._attemptFind(this.reticle);
         this._touchFind = false;
         this.pointerDown = false;
@@ -1121,14 +1272,15 @@ export class DustingMinigame extends MinigameScene {
     }
 
     /** One brush/press/mark at pos; with `from`, a continuous stroke from there. */
-    _act(pos, from) {
+    _act(pos, from, keyed = false) {
         if (this.step === 'find') { if (!from && !this._touchFind) this._attemptFind(pos); return; }
         if (this.step === 'dust') {
             if (this.puffMode) { this.field.puff(pos.x, pos.y, PUFF_RADIUS); this.field.puff(pos.x, pos.y, PUFF_RADIUS); }
             else {
-                const base = TOOLS[this.tool];
-                const tool = { ...base, strength: base.strength * BRUSH_BOOST };
-                if (from) this.field.brushLine(from.x, from.y, pos.x, pos.y, tool); else this.field.brush(pos.x, pos.y, tool);
+                const tool = brushFeel(TOOLS[this.tool], this.difficultyId);
+                // a held key ticks in place every KEY_TICK_MS, so it lays powder more gently than a moving stroke
+                if (keyed) tool.strength *= KEY_HOLD_GENTLE;
+                if (from) this._brushCarry = this.field.brushLine(from.x, from.y, pos.x, pos.y, tool, this._brushCarry || 0); else this.field.brush(pos.x, pos.y, tool);
             }
             this.dirty = true;
         } else if (this.step === 'lift') {
@@ -1164,16 +1316,17 @@ export class DustingMinigame extends MinigameScene {
             e.preventDefault();
             if (this.step === 'find') { if (!e.repeat) this._attemptFind(this.reticle); return; }
             if (this.step === 'dust' && k === 'Enter') {
-                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) this._countStroke(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); if (this.metrics) this._refreshDynamic(); }
+                if (!e.repeat) { this.stickyBrush = !this.stickyBrush; if (this.stickyBrush) { this._brushCarry = 0; this._countStroke(); } else if (this.step === 'dust') this._saveProgress(); this.announce(this.stickyBrush ? 'Brushing on. Arrow keys now brush. Press Enter to stop.' : 'Brushing off.'); if (this.metrics) this._refreshDynamic(); }
                 return;
             }
             if (this.step === 'dust' || this.step === 'lift') {
                 if (!this.spaceHeld) {
                     this.spaceHeld = true;
+                    this._brushCarry = 0;
                     this._countStroke();
                     this._act(this.reticle, null);
                     clearInterval(this._keyTimer);
-                    this._keyTimer = setInterval(() => this._act(this.reticle, null), KEY_TICK_MS);
+                    this._keyTimer = setInterval(() => this._act(this.reticle, null, true), KEY_TICK_MS);
                 }
             }
             return;
@@ -1183,7 +1336,7 @@ export class DustingMinigame extends MinigameScene {
         if (this.step === 'powder' && ['1', '2', '3'].includes(lower)) { this._choosePowder(Object.keys(POWDERS)[Number(lower) - 1]); return; }
         if (this.step === 'compare' && this.patternOk && !this.identified && /^[1-9]$/.test(lower) && Number(lower) <= this.candidates.length) {
             e.preventDefault();
-            this._chooseRef(Number(lower) - 1);
+            this._chooseRef(Number(lower) - 1, !!(this.panel && this.panel.contains(document.activeElement)));
             return;
         }
         if (this.step === 'compare' && this.patternOk && lower === 'l' && !this._zoomShort) {
@@ -1216,6 +1369,7 @@ export class DustingMinigame extends MinigameScene {
     }
 
     _onKeyUp(e) {
+        if (e.key === ' ' && this.step === 'dust') this._saveProgress();
         if (e.key === ' ') { this.spaceHeld = false; clearInterval(this._keyTimer); this._keyTimer = null; }
     }
 
@@ -1232,6 +1386,9 @@ export class DustingMinigame extends MinigameScene {
             }
         }
         if (!hit) {
+            this.misses = (this.misses || 0) + 1;
+            this._armNudge();
+            if (hintNudgeDue({ misses: this.misses })) this._showNudge();
             this.message = 'Nothing there. Keep the light low and look for a small patch of curved ridges, not a straight reflection.';
             this._refreshDynamic();
             this.announce(this.message);
@@ -1245,6 +1402,21 @@ export class DustingMinigame extends MinigameScene {
         this.announce('Found the print.');
         this.dirty = true;
         this._later(() => this._setStep('powder'), this.reduceMotion ? 0 : 450);
+    }
+
+    /** Idle nudge: restarts on every miss and on entering the find step; fires after NUDGE_IDLE_MS without a find. */
+    _armNudge() {
+        if (this._nudgeTimer) { clearTimeout(this._nudgeTimer); this._timers = (this._timers || []).filter(x => x !== this._nudgeTimer); }
+        this._nudgeTimer = this._later(() => { this._nudgeTimer = null; if (this.step === 'find' && !this.found && hintNudgeDue({ idleMs: NUDGE_IDLE_MS })) this._showNudge(); }, NUDGE_IDLE_MS);
+    }
+
+    /** Shows the Hint button if it was still hidden, outlines it, and says so in words ("Stuck? Try Hint"). A UI label, not spoken text. */
+    _showNudge() {
+        if (this.nudged || this.step !== 'find') return;
+        this.nudged = true;
+        this.hintReady = true;
+        this._renderPanel();
+        this.announce(NUDGE_TEXT);
     }
 
     // ------------------------------------------------------------------ rendering
@@ -1299,6 +1471,7 @@ export class DustingMinigame extends MinigameScene {
         const word = v => (v >= 0.85 ? 'good' : v >= 0.6 ? 'fair' : v >= 0.3 ? 'faint' : 'low');
         if (this.step === 'find' || this.step === 'compare') {
             this._setDyn('feedback', el => { el.textContent = this.message; });
+            this._setDyn('nudge', el => { el.textContent = this.nudged ? NUDGE_TEXT : ''; });
             return;
         }
         if (this.step === 'dust') {
@@ -1500,17 +1673,29 @@ export class DustingMinigame extends MinigameScene {
             d[j] = r; d[j + 1] = g; d[j + 2] = b; d[j + 3] = 255;
         }
         if (hc) this._outlineMask(d, hcInk);
+        else if (holes === null) this._outlineMask(d, null, true);   // the dust step only (the lift card passes its holes)
     }
 
-    _outlineMask(d, ink) {
+    /**
+     * Dotted edge of the print. High contrast draws it solid grey. By default (`faint`) the dust step draws it half as
+     * strong in the tone that stands out from the surface (light on dark, dark on light), dashed so it is a pattern and
+     * not only a colour, and it stays under the powder once the ridges show (m04 blind run: nothing said where the print was).
+     */
+    _outlineMask(d, ink, faint = false) {
         const m = this.print.mask;
+        const f = this.field;
+        const FAINT = 0.55;
         for (let y = 1; y < N - 1; y++) {
             for (let x = 1; x < N - 1; x++) {
                 const i = y * N + x;
                 const inside = m[i] > 0.5;
                 if (inside && (m[i - 1] <= 0.5 || m[i + 1] <= 0.5 || m[i - N] <= 0.5 || m[i + N] <= 0.5) && ((x + y) & 3) < 2) {
                     const j = i * 4;
-                    d[j] = 128; d[j + 1] = 128; d[j + 2] = 128;
+                    if (!faint) { d[j] = 128; d[j + 1] = 128; d[j + 2] = 128; continue; }
+                    const lum = 0.3 * d[j] + 0.59 * d[j + 1] + 0.11 * d[j + 2];
+                    const to = lum > 128 ? 0 : 255;
+                    const k = FAINT * (1 - Math.min(1, f.reveal(i)));
+                    d[j] += (to - d[j]) * k; d[j + 1] += (to - d[j + 1]) * k; d[j + 2] += (to - d[j + 2]) * k;
                 }
             }
         }
@@ -1553,7 +1738,7 @@ export class DustingMinigame extends MinigameScene {
     _drawReticle() {
         if (!this.pointerInside || this.step === 'find') return;
         const c = this.ctx, r = this.reticle;
-        const rad = this.step === 'lift' ? TAPE_RADIUS : this.puffMode ? PUFF_RADIUS : TOOLS[this.tool] ? TOOLS[this.tool].radius : 5;
+        const rad = this.step === 'lift' ? TAPE_RADIUS : this.puffMode ? PUFF_RADIUS : TOOLS[this.tool] ? brushFeel(TOOLS[this.tool], this.difficultyId).radius : 5;
         c.save();
         c.strokeStyle = this.highContrast ? (POWDERS[this.powder] && POWDERS[this.powder].id === 'silver' ? '#fff' : '#000') : '#00ff41';
         c.lineWidth = 1;
@@ -1714,7 +1899,9 @@ export class DustingMinigame extends MinigameScene {
             const S = zoomScale(side, avail, ZOOM_MAX_H_SHORT);
             return { side, S, W: side * S, stacked: false, limited: false };
         }
-        const rootW = this.root.clientWidth || (this.wide ? 960 : 360);
+        // the body's inner width (its own scrollbar is excluded) plus the root's horizontal padding, as the old root.clientWidth was
+        const body = this.root.querySelector('.dusting-body');
+        const rootW = (body && body.clientWidth ? body.clientWidth + (this.root.clientWidth - body.offsetWidth) : this.root.clientWidth) || (this.wide ? 960 : 360);
         const budgetH = zoomBudgetH(window.innerHeight || 720, this._zoomChrome());
         let p;
         if (this.wide) {
@@ -1737,7 +1924,9 @@ export class DustingMinigame extends MinigameScene {
      */
     _zoomChrome() {
         const main = this.root.querySelector && this.root.querySelector('.dusting-main');
-        const total = this.root.scrollHeight, mh = main ? main.offsetHeight : 0;
+        // The frame is capped and the body scrolls inside it, so the content height is the frame's own chrome plus the body's scroll height.
+        const body = this.root.querySelector('.dusting-body');
+        const total = body && body.clientHeight ? this.root.clientHeight - body.clientHeight + body.scrollHeight : this.root.scrollHeight, mh = main ? main.offsetHeight : 0;
         if (!total || !mh) return ZOOM_CHROME_H;
         const sh = this.statusEl ? (this.statusEl.offsetHeight || 0) : 0;
         const chrome = total - mh + Math.max(0, ZOOM_STATUS_MAX_H - sh);
@@ -1927,6 +2116,8 @@ export class DustingMinigame extends MinigameScene {
 const baseSetStep = DustingMinigame.prototype._setStep;
 DustingMinigame.prototype._setStep = function (step) {
     baseSetStep.call(this, step);
+    if (step === 'dust') this._saveProgress();
+    if (step === 'find' && !this.nudged && !this.found) this._armNudge();
     if (step === 'find' && !this.hintReady && !this._hintTimer) {
         this._hintTimer = true;
         this._later(() => { this.hintReady = true; if (this.step === 'find') this._renderPanel(); }, this.diff.hintAfterMs);

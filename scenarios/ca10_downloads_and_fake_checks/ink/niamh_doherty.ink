@@ -24,8 +24,8 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e10_downloads_and_fake_checks_defend_complete:
-        Niamh Doherty: That's both sides done. Three habits are the whole of it.
-        Niamh Doherty: Software from Quayholt Apps, read the address, and never let a page drive your computer.
+        Niamh Doherty: That's both sides done. It comes down to three habits.
+        Niamh Doherty: Get your software from Quayholt Apps, read the address, and never let a page drive your computer.
         Niamh Doherty: And if you ever slip, tell us straight away. Nobody's in trouble for it.
     - else:
         { phish_order_colleague_attempts > 0:

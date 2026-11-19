@@ -991,6 +991,8 @@ read `noteContent` instead: it is the note's own text, kept whole up to 20,000
 characters (`noteContentTruncated` marks a cut there too). Check a long document's
 paragraphs against `noteContent`, never against `text`.
 
+The phone and person chat scenes cut the other end, because their newest lines come last: `text` then opens with `[... earlier text cut, newest lines below ...]`, ends with the latest line, and the reply adds `textKeeps: 'tail'` (absent for every other scene, which keeps the head).
+
 ```json
 {
   "id": "notes",

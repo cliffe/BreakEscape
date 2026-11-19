@@ -36,6 +36,9 @@ const TERMINAL_CLIP_POLL_MS = 200;
 const TERMINAL_CLIP_WAIT_CAP_MS = 8000;
 
 export class PhoneChatMinigame extends MinigameScene {
+    // Newest lines are last, so getState().text keeps the tail when it must cut.
+    static keepsTextTail = true;
+
     /**
      * Create a PhoneChatMinigame instance
      * @param {HTMLElement} container - Container element
