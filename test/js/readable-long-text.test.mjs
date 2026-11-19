@@ -33,7 +33,7 @@ const stubs = {
   './apply-actions.js': 'export function applyActions(actions, opts){ (globalThis.__applied ||= []).push({ actions, opts }); }',
   // resolveObjectField is stubbed as obj[key]: observationVariants/textVariants are NOT exercised
   // here (gameDisplayParts takes already-resolved values; the variant path was proved live).
-  '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? obj[key] : undefined; }',
+  '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? (obj[key] ?? null) : null; }',
   '../utils/flag-lock.js': 'export function isRemoteFlagLock(){return false;} export function remoteFlagLockMessage(){return "";}',
   './npc-reach.js': 'export function npcReachDistSq(){return 0;}',
   './examine.js': 'export function shouldExamine(){return false;} export function startExamine(){return false;}',
@@ -90,11 +90,11 @@ test('long text opens the gameDisplay modal, not the toast', () => {
   assert.ok(alerts.length === 0, 'no 5 s toast');
 });
 
-test('short text keeps the toast exactly as before', () => {
+test('short text stays a toast with the plain text as its body', () => {
   const { shown, toasts: alerts } = run(mon('Baseline readings.'));
   assert.ok(shown.length === 0, 'no modal');
   assert.ok(alerts.length === 1, 'one toast');
-  assert.ok(alerts[0][0] === 'Bedside Monitor Text: Baseline readings.\n', 'message unchanged: ' + alerts[0][0]);
+  assert.ok(alerts[0][0] === 'Baseline readings.', 'plain body: ' + alerts[0][0]);
   assert.ok(alerts[0][1] === 'info' && alerts[0][2] === 'Bedside Monitor' && alerts[0][3] === 5000, 'args unchanged');
 });
 
@@ -183,4 +183,93 @@ test('observation identical to the text counts once and shows once', () => {
   assert.ok(b.shown[0].body === chars(130), 'shown once, plain: ' + b.shown[0].body);
   const c = run(mon(chars(76), { observations: chars(75) + 'b' }));
   assert.ok(c.shown.length === 1, 'different pieces still add up');
+});
+
+test('toast body: observation then text on its own line, no labels, no repeated name', () => {
+  const { toasts } = run(mon('Reads steady.', { observations: 'A grey monitor.' }));
+  assert.ok(toasts.length === 1, 'one toast');
+  assert.ok(toasts[0][0].trim() === 'A grey monitor.\nReads steady.', 'body: ' + toasts[0][0]);
+  assert.ok(!/Observations:|Text:/.test(toasts[0][0]), 'no labels');
+  assert.ok(toasts[0][0].indexOf('Bedside Monitor') === -1, 'name not repeated');
+  assert.ok(toasts[0][2] === 'Bedside Monitor', 'title is the name');
+});
+
+test('toast body: identical observation and text show once', () => {
+  const { toasts } = run(mon('Same words.', { observations: 'Same words.' }));
+  assert.ok(toasts[0][0].trim() === 'Same words.', 'once: ' + toasts[0][0]);
+});
+
+test('toast body: observation only is the observation alone', () => {
+  const { toasts } = run({ id: 'lamp', type: 'generic', name: 'Lamp', observations: 'It is warm.' });
+  assert.ok(toasts[0][0].trim() === 'It is warm.', 'body: ' + toasts[0][0]);
+});
+
+test('long-text rule counts what the toast shows: 120 observation chars and text of 1 char is a modal, identical 120 is a toast', () => {
+  assert.ok(run(mon('b', { observations: chars(120) })).shown.length === 1, 'obs + text over 120');
+  assert.ok(run(mon(chars(120), { observations: chars(120) })).shown.length === 0, 'identical counted once');
+});
+
+// The game resolves a missing observation to null (conditional-text.js `?? null`), so the stub
+// above returns null too. A readable object with text and no observation must still show its text.
+test('toast body: text with observations null is the text, not the name', () => {
+  const { toasts } = run(mon('Baseline readings.', { observations: null }));
+  assert.ok(toasts.length === 1, 'one toast');
+  assert.ok(toasts[0][0].trim() === 'Baseline readings.', 'body: ' + toasts[0][0]);
+});
+
+test('toast body: text with the observations key absent is the text, not the name', () => {
+  const { toasts } = run(mon('Baseline readings.'));
+  assert.ok(toasts[0][0].trim() === 'Baseline readings.', 'body: ' + toasts[0][0]);
+});
+
+test('long text with observations null still opens the modal', () => {
+  const { shown, toasts } = run(mon(chars(300), { observations: null }));
+  assert.ok(shown.length === 1 && toasts.length === 0, 'modal, no toast');
+  assert.ok(shown[0].body === chars(300), 'body is the text alone');
+});
+
+test('toast body: nothing to show falls back to the name, then to the sprite name', () => {
+  const named = run({ id: 'box', type: 'generic', name: 'Grey Box' });
+  assert.ok(named.toasts[0][0] === 'Grey Box', 'name: ' + named.toasts[0][0]);
+  const unnamed = run({ id: 'box', type: 'generic' });
+  assert.ok(unnamed.toasts[0][0] === 'box', 'sprite name: ' + unnamed.toasts[0][0]);
+});
+
+test('onInteract.confirmationText toast body is the plain observation', async () => {
+  const alerts = [];
+  globalThis.window = {
+    player: { x: 0, y: 0 },
+    gameState: { globalVariables: {} },
+    gameDisplay: () => {},
+    gameAlert: (...a) => alerts.push(a),
+    gameConfirm: () => Promise.resolve(true),
+    addNote: () => true,
+  };
+  const data = { id: 'lamp', type: 'generic', name: 'Lamp', observations: 'It is warm.',
+    onInteract: { confirmationText: 'Touch the lamp?' } };
+  handleObjectInteraction({ name: data.id, objectId: data.id, scenarioData: data });
+  await new Promise(r => setTimeout(r, 0));
+  assert.ok(alerts.length === 1, 'one toast');
+  assert.ok(alerts[0][0].trim() === 'It is warm.', 'body: ' + alerts[0][0]);
+  assert.ok(alerts[0][2] === 'Lamp', 'title is the name');
+});
+
+test('onInteract toast with nothing to show falls back to the name and sprite name', async () => {
+  const alerts = [];
+  globalThis.window = {
+    player: { x: 0, y: 0 },
+    gameState: { globalVariables: {} },
+    gameDisplay: () => {},
+    gameAlert: (...a) => alerts.push(a),
+    gameConfirm: () => Promise.resolve(true),
+    addNote: () => true,
+  };
+  const d1 = { id: 'a', type: 'generic', name: 'Plain Box', onInteract: { confirmationText: 'Open?' } };
+  handleObjectInteraction({ name: 'a', objectId: 'a', scenarioData: d1 });
+  const d2 = { id: 'b', type: 'generic', onInteract: { confirmationText: 'Open?' } };
+  handleObjectInteraction({ name: 'b', objectId: 'b', scenarioData: d2 });
+  await new Promise(r => setTimeout(r, 0));
+  assert.ok(alerts.length === 2, 'two toasts');
+  assert.ok(alerts[0][0] === 'Plain Box', 'name: ' + alerts[0][0]);
+  assert.ok(alerts[1][0] === 'b', 'sprite name: ' + alerts[1][0]);
 });
