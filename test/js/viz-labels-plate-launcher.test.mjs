@@ -24,7 +24,7 @@ test('no Press Start 2P canvas label is set under 8px', () => {
 });
 
 test('every Press Start 2P canvas font is on the 8px grid with no weight keyword', () => {
-  const fonts = [...js.matchAll(/(?:font\s*=\s*)[`'"]([^`'"\n]*Press Start 2P[^`'"\n]*)[`'"]/g)].map(m => m[1]);
+  const fonts = [...js.matchAll(/font\s*=\s*(['`])((?:(?!\1)[^\n])*Press Start 2P(?:(?!\1)[^\n])*)\1/g)].map(m => m[2]);
   assert.ok(fonts.length >= 10, `found ${fonts.length} fonts`);
   for (const f of fonts) {
     assert.doesNotMatch(f, /\b(bold|bolder|[1-9]00)\b/, f);
