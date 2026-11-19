@@ -37,7 +37,14 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**NEWEST-6, read this first.** Lock round 3 `72fa1a349` (G4 plain carried containers) and
+**NEWEST-7, read this first.** Skin catalog done `b0ccefae4` (1811); core took requests 3 and 5
+(2110). RUNNING: opus55 skin R12 delta → `OPS_REALISM_SKIN_R12.md`; opus55 knock-out drop fix
+(tests). SKIN FIX ROUND must also take the core agent's three gaps: (a) the catalog "does not
+validate" error only for scenarios with links; (b) the network-id-clash rule limited to scenarios
+with `services` (or accept: no clash in today's 8 networks scenarios); (c) skin validator tests
+use test catalog folder `test/fixtures/realism_catalog/` (core's name). Then cross-plan delta.
+
+**NEWEST-6.** Lock round 3 `72fa1a349` (G4 plain carried containers) and
 cracking round 3 `61a8bc8bc` (`crack.difficulty`) committed; delta `35d1064b3` passed both with
 fixes. RUNNING: Sonnet lock+cracking delta fixer (id-less carriers warning; `passwordDifficulty`
 NPC habit parameter, record's `crack.difficulty` wins); opus55 skin catalog part 2 from
