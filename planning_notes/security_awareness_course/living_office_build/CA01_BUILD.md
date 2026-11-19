@@ -163,14 +163,20 @@ commit `.ink` + `.json` together; node asserts are booleans (`assert.ok(a === b)
 - **Pin test:** `ca01_invoice_fraud` is NOT pinned (pins are `ca_pre_*`/`ca_post_*`/`ca_annual_*` only),
   so no pin update is needed. Confirm the pin test still passes.
 
-## New spoken lines (for the dialogue review that follows) — target 2/2/2/0 = 6
+## New spoken lines (for the dialogue review that follows) — 2/2/2/0 = 6 (no request)
 
-Stub (DONE, in repo):
-- `scenarios/_office_kit/ink/gwen_pritchard_ambient.ink:17` — "Good spot on that invoice. Phone the supplier next time too."
-- `scenarios/_office_kit/ink/agnieszka_duda_ambient.ink:17` — "Nice work flagging that one. Reporting it helps the whole floor."
-Host layer 2 (TO WRITE, in `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`): 2 lines — file:line after writing.
-Chain (TO WRITE, panel build only, in `scenarios/test_ca01_panel/...`): 2 lines (Agnieszka at the board; host) — file:line after writing.
-Pool/chatter lines are not counted here (shared, counted once in the master); the new 3rd lines are in `brightwell_foods.json`.
+DONE 2026-11-19 (panel build). The recipe carries no request, so request lines = 0; the count holds at 6.
+
+| file:line | speaker | line | layer |
+|---|---|---|---|
+| `scenarios/_office_kit/ink/agnieszka_duda_ambient.ink:12` | Agnieszka Duda | Nice work flagging that one. Reporting it helps the whole floor. | stub (ca01 knot, shared) |
+| `scenarios/_office_kit/ink/gwen_pritchard_ambient.ink:12` | Gwen Pritchard | Good spot on that invoice. Phone the supplier next time too. | stub (ca01 knot, shared) |
+| `scenarios/test_ca01_panel/ink/adaeze_okafor.ink:28` | Adaeze Okafor | The moment you reported that one, we had the right account confirmed and the payment run went out clean. Our supplier got paid, and nobody chased a thing. {kit_caught: You flagged it before a single detail was saved, so there was nothing to unwind.} | host layer 2 (hub, gated `kit_defend_done && not kit_ca01_host_said`) |
+| `scenarios/test_ca01_panel/ink/adaeze_okafor.ink:29` | Adaeze Okafor | That's the whole of it, honestly. Ring the person back on a number you already hold before you change who gets paid, and it never reaches the bank. | host layer 2 (hub, same branch) |
+| `scenarios/test_ca01_panel/scenario.json.erb:1000` | Agnieszka Duda (bark) | That's the one up on the board - a payment that landed in the wrong account. Finance are still clawing it back from the bank. | chain (arrival at board, `npc_arrived` owner≠needs) |
+| `scenarios/test_ca01_panel/scenario.json.erb:916` | Adaeze Okafor (bark) | One call to confirm the details first, and it never moves. That beats a fortnight chasing the bank. | chain (host follow-up, +4 s on `kit_ca01_agn_there`) |
+
+Notes: the two host layer-2 lines are shared text with the fallback shell (`scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink:28-29`); the panel reuses them via its own ink copy. The two chain barks are new, authored here. Pool/chatter lines are not counted (shared, counted once in the master; the 3rd pool lines are in `brightwell_foods.json`). The attacker-cost + defence framing lives in the conceptPanel ("Where that email leads"); the barks are the staff-side echo (payment chased with the bank; one call-back breaks the chain), no line blames the learner or a colleague. Dialogue review on the 2 new chain lines before any voicing.
 
 ## Live-check runner steps (for a Haiku agent, later)
 
@@ -181,6 +187,25 @@ Agnieszka walks to the board tile (`npc_arrived` owner ≠ needs) and barks; hos
 never queued. For the committed fallback: finish the defend+debrief, reopen the kiosk, confirm the notice
 is revealed on `kit_defend_done` and Adaeze's hub speaks the layer-2 line once. Gate-A driving gotchas are
 in `GATE_A.md` run 4 (chip ticking by eval, Confirm/Trust flow, "Finish" twice drops kit_quiet).
+
+**test_ca01_panel live-check (3 runs, panel build; added 2026-11-19):**
+1. **Look-up / step-away**: finish attack+defend+debrief so `kit_defend_done` true and `kit_quiet`
+   released to false; emit `episode_step_away`. Expect `kit_ca01_out` true, the board notice
+   (`kit_ca01_notice`) revealed at 0 s (it is keyed on `kit_ca01_out`, not `kit_defend_done`), and
+   both Agnieszka and Gwen `suspended`. (Seed-and-emit shortcut for a quick run: set
+   `kit_defend_done` true + `kit_quiet` false, then emit `episode_step_away`.)
+2. **Chain timing against the panel sentence**: the conceptPanel's last line about the board notice is
+   "The notice on the payments board is that redirected run landing." Confirm the board notice is up
+   before/while that reads, then Agnieszka walks to tile (4,3) (`npc_arrived:kit_agnieszka_duda` with
+   `data.owner !== 'needs'`, `kit_ca01_walk` true→false, `kit_ca01_agn_there` true) and barks the
+   board line; Agnieszka `resumed` ~3 s later; Adaeze's follow-up bark fires ~4 s after Agnieszka's
+   (≥4 s apart); `kit_ca01_done` true, Gwen `resumed`. Gwen never queued behind Agnieszka at coffee
+   (Agnieszka's caffeine is held at decay 0.01 and she is script-suspended, so she takes no coffee run).
+3. **Nothing heard while the kiosk is open**: during the attack/defend/debrief kiosk session
+   `kit_quiet` is true, so the gated chatter pool (`kit_brightwell`, `requireGlobal {kit_quiet:false}`)
+   and the two staff pools stay silent; confirm no bark or chatter plays until the panel closes and
+   `kit_quiet` is released. The kiosk's finished text (`kit_defend_done === true && kit_quiet ===
+   false`) shows only after release, not mid-session.
 
 ## Persona-playtest setup for the two builds
 
