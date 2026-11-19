@@ -420,7 +420,7 @@ export function swallowHeldKey(armed = 'Enter') {
                 // Still held: restart the timeout, so a long hold never leaks a repeat
                 // (the timeout only covers a keyup that never arrives)
                 clearTimeout(g.timer);
-                g.timer = setTimeout(() => releaseHeldEnter(), HELD_ENTER_TIMEOUT_MS);
+                g.timer = setTimeout(() => { if (heldEnterGuard === g) releaseHeldEnter(); }, HELD_ENTER_TIMEOUT_MS);
                 g.timer?.unref?.();
                 return;
             }
@@ -434,7 +434,7 @@ export function swallowHeldKey(armed = 'Enter') {
             if (armed === ' ') stop(e);
             releaseHeldEnter();
         },
-        timer: setTimeout(() => releaseHeldEnter(), HELD_ENTER_TIMEOUT_MS)
+        timer: setTimeout(() => { if (heldEnterGuard === g) releaseHeldEnter(); }, HELD_ENTER_TIMEOUT_MS)
     };
     g.timer?.unref?.();
     heldEnterGuard = g;
