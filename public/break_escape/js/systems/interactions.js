@@ -831,8 +831,11 @@ function gameDisplayParts(data, sprite, observations, text) {
 const LONG_TOAST_TEXT_CHARS = 120;
 const LONG_TOAST_TEXT_LINES = 3;
 // An observation identical to the text is one piece: counted and shown once.
+function sameToastText(observations, text) {
+    return String(observations || '').trim() === String(text || '').trim();
+}
 function toastObs(observations, text) {
-    return String(observations || '').trim() === String(text || '').trim() ? null : observations;
+    return sameToastText(observations, text) ? null : observations;
 }
 function isLongToastText(observations, text) {
     const all = [observations, text].filter(Boolean).join('\n');
@@ -2025,7 +2028,8 @@ export function handleObjectInteraction(sprite) {
             }
         }
     } else if (data.readable && resolvedText) {
-        if (toastObs(resolvedObservations, resolvedText) !== null) message += `${resolvedText}\n`;
+        // (toastObs returns null for both 'identical' and 'no observation', so compare directly)
+        if (!sameToastText(resolvedObservations, resolvedText)) message += `${resolvedText}\n`;
 
         // All notes-family items (notes, notes2, notes3, ...) use the notes minigame.
         // They go to notepad (autoAddToNotes in the minigame), never to inventory UI.
@@ -2168,7 +2172,7 @@ export function handleObjectInteraction(sprite) {
                         data.readable ? resolvedText : null);
                     window.gameDisplay(body, title, { html: true });
                 } else {
-                    window.gameAlert(message.trim() || data.name, 'info', data.name, 5000);
+                    window.gameAlert(message.trim() || data.name || sprite.name || '', 'info', data.name, 5000);
                 }
             }
         };
@@ -2241,7 +2245,7 @@ export function handleObjectInteraction(sprite) {
             window.gameDisplay(body, title, { html: true });
         } else {
             // whole: a readable object's text is never cut to the phone's two lines
-            window.gameAlert(message.trim() || data.name, 'info', data.name, 5000,
+            window.gameAlert(message.trim() || data.name || sprite.name || '', 'info', data.name, 5000,
                 data.readable && resolvedText ? { whole: true } : undefined);
         }
     }
