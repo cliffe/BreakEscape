@@ -19,14 +19,16 @@ export const STEP_AWAY_HOLD = 'episode-step-away';
 /**
  * EC1 (d): the success screen's step-away hold. Read live from the saved episode state on each of
  * the screen's idle polls, so it is in place from boot and after a reload with no write of its
- * own: it holds while a stepAway episode has its defend stage done and its debrief neither
- * finished nor closed. Registered on window.successScreenHolds (the success screen's registry)
- * without importing that module.
+ * own: it holds while a stepAway episode has its defend round complete (the stage done, or the
+ * round's done global true while the stage still reads defend) and its debrief neither finished
+ * nor closed. Registered on window.successScreenHolds (the success screen's registry) without
+ * importing that module.
  */
 export function stepAwayHoldNow(w = win()) {
     const episode = w.gameScenario?.social?.awarenessEpisode;
     if (!episode || typeof episode !== 'object' || !episode.id) return false;
-    return stepAwayHeld(episode, w.gameState?.globalVariables?.[stateKey(episode.id)]);
+    const globals = w.gameState?.globalVariables;
+    return stepAwayHeld(episode, globals?.[stateKey(episode.id)], globals);
 }
 
 export function installStepAwayHold(w = win()) {

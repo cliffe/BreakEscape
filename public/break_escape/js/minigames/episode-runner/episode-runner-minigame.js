@@ -58,13 +58,14 @@
 //     success screen's hold (systems/episode-starter.js).
 //
 // Test seams: params.deps may replace renderStepStrip, renderFlipView, renderDebrief,
-// measure (recordTriageResult), startTriage, write (writeGlobal), now, schedule and
+// measure (recordTriageResult), startTriage, reemitDone (reemitTriageComplete), write (writeGlobal), now, schedule and
 // clearScheduled (the call watcher's timer).
 
 import { SocialOverlayScene, socialOverlayParams } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { recordTriageResult } from '../../systems/awareness-measure.js';
-import { resolvePlayerSent, plainSentMessage } from '../inbox-triage/triage-messages.js';
+import { resolvePlayerSent, plainSentMessage, buildTriageMessages } from '../inbox-triage/triage-messages.js';
+import { scoreTriage } from '../inbox-triage/triage-scoring.js';
 import { renderStepStrip, applyBrand } from './step-strip.js';
 import { renderFlipView } from './flip-view.js';
 import { renderDebrief } from './debrief-view.js';
@@ -77,7 +78,7 @@ import {
     drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
     concernPending, concernLaunchCopy, concernLaunchParams, concernRecord, concernRecap,
     privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord,
-    stepAwayOn, STEP_AWAY_READY_GLOBAL, STEP_AWAY_EVENT
+    stepAwayOn, STEP_AWAY_READY_GLOBAL, STEP_AWAY_EVENT, defendPrefix
 } from './episode-model.js';
 
 /**
@@ -230,6 +231,11 @@ function el(tag, className, text) {
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
+// Gate B D2: episode ids whose defend complete event this page has re-emitted (once per page).
+const REEMITTED = new Set();
+/** Test seam: forget the re-emits of this page. */
+export function _resetDefendReemitsForTests() { REEMITTED.clear(); }
+
 export class EpisodeRunnerMinigame extends SocialOverlayScene {
     constructor(container, params) {
         super(container, { title: 'Exercise', ...(params || {}) });
@@ -237,6 +243,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             renderStepStrip, renderFlipView, renderDebrief,
             measure: recordTriageResult,
             startTriage: (lockable, options) => win().startInboxTriageMinigame?.(lockable, options) ?? null,
+            // Gate B D2: triage-starter.js reemitTriageComplete, on window like startTriage.
+            reemitDone: (ctx) => win().reemitTriageComplete?.(ctx) ?? null,
             write: writeGlobal,
             now: () => Date.now(),
             schedule: (fn, ms) => setTimeout(fn, ms),
@@ -394,6 +402,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         }
 
         this.state = this._readState();
+        this._reemitDefendDone();
         this.alreadySeen = this._seenAlready();
         this._settleCall();
         this._settleWorld();
@@ -560,6 +569,32 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         } catch (e) {
             console.error('[episode] could not emit the step-away event:', e);
         }
+    }
+
+    /**
+     * Gate B D2: a step-away episode whose defend round reached the server with no event (every
+     * confirmed-save retry failed, the pagehide keepalive flush landed) has <defendPrefix>complete
+     * true and kit_defend_done false for good. On each open, re-emit the complete event once a sync
+     * confirms (triage-starter.js reemitTriageComplete), so the shell's mapping sets
+     * kit_defend_done. In the normal case kit_defend_done is already true and nothing is sent; a
+     * successful re-emit is not repeated in this page even if no mapping sets the global.
+     */
+    _reemitDefendDone() {
+        const g = this.globals;
+        const id = this.episode.id;
+        if (!g || !id || !stepAwayOn(this.episode) || REEMITTED.has(id)) return;
+        const prefix = defendPrefix(id);
+        if (g[`${prefix}complete`] !== true || g[STEP_AWAY_READY_GLOBAL] === true) return;
+        let run = null;
+        try {
+            run = this.deps.reemitDone({ prefix, stillNeeded: () => this.globals?.[STEP_AWAY_READY_GLOBAL] !== true });
+        } catch (e) {
+            console.error('[episode] could not re-emit the defend round:', e);
+            return;
+        }
+        Promise.resolve(run).then((r) => {
+            if (Array.isArray(r?.emitted) && r.emitted.length) REEMITTED.add(id);
+        }).catch((e) => console.error('[episode] re-emitting the defend round failed:', e));
     }
 
     /** EC1 (d): the debrief view closed (Finish or the kiosk's X): release the success screen once. */
@@ -818,6 +853,40 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (!child) this._complete('flip'); // the scene did not open: do not strand the learner
     }
 
+    /**
+     * Gate B D1: the debrief's result rebuilt from the stored verdicts (a step-away reopen), scored
+     * by scoreTriage over the same built messages the triage round scored, so the cards and the
+     * summary equal the live debrief's. Answers carry score and isPhish as the live result's do
+     * (inbox-triage-minigame.js _buildResult). Null with no stored verdicts or no defend set.
+     */
+    _rescoreDefend(kept) {
+        if (!Array.isArray(kept) || !kept.length) return null;
+        try {
+            const set = this.defendSet;
+            if (!isObj(set)) return null;
+            const { messages } = buildTriageMessages(set, { mailState: this.mailState, social: this.social, globals: this.globals || {} });
+            const s = scoreTriage({
+                messages, answers: kept, profile: set.scoringProfile === 'analyst' ? 'analyst' : 'awareness',
+                bands: set.bands, scoring: set.scoring || null
+            });
+            const byId = new Map(kept.map((a) => [a.id, a]));
+            const { perMessage, ...rest } = s;
+            return {
+                ...rest,
+                answers: perMessage.map((pm) => {
+                    const a = byId.get(pm.id) || {};
+                    const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0, isPhish: pm.isPhish === true };
+                    if (a.action) out.action = a.action;
+                    if (a.none === true) out.none = true;
+                    return out;
+                })
+            };
+        } catch (e) {
+            console.warn('[episode] could not score the stored defend answers:', e);
+            return null;
+        }
+    }
+
     /** Above a P7-B view, the stage's group prompt (facilitated mode). */
     _prependPrompt(stage) {
         const prompt = this._groupPrompt(this.body, stage);
@@ -829,7 +898,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // EC1 (c): a step-away episode keeps the defend answers in the state, so the per-item
         // cards survive a look-up and a reload; every other episode passes an empty list as before.
         const kept = stepAwayOn(this.episode) && Array.isArray(this.state.defendProgress) ? this.state.defendProgress : [];
-        const raw = isObj(this.params.triageResult) ? this.params.triageResult : { ...stored, answers: kept };
+        // Gate B D1: the stored list keeps verdicts only (no score, no isPhish), so a reopen scores
+        // it again with the live round's scorer; the stored figures win where both have one.
+        let raw = this.params.triageResult;
+        if (!isObj(raw)) {
+            const rescored = this._rescoreDefend(kept);
+            raw = rescored ? { ...rescored, ...stored, answers: rescored.answers } : { ...stored, answers: kept };
+        }
         // aw1, aw4, aw6: the deployment's report route, shared rule of thumb and team size
         // (social.awareness, with the host page's breakEscapeConfig.awareness winning).
         const config = win().breakEscapeConfig;
