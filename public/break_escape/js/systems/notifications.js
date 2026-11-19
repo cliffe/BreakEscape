@@ -78,8 +78,48 @@ if (typeof window !== 'undefined') {
     window.settleAfterPanelClose = settleAfterPanelClose;
 }
 
+// gameDisplay and gameConfirm dim the whole game with an overlay but are not minigames, so
+// fullScreenPanelOpen() never saw them: a toast raised with or just before a note ("Note
+// Added") or a once-only hint played out under the dimmed overlay and could expire unseen.
+// They hold toasts the way a minigame does (same types, same hold queue and poll): info and
+// success toasts wait until the last of them closes and then show for their full time, a toast
+// barely on screen when one opens is pulled back, and older ones pause and carry on after.
+// Errors and warnings are feedback on what the player just did, so they still show at once.
+let openModalDialogs = 0;
+
+export function modalDialogOpen() {
+    return openModalDialogs > 0;
+}
+
+function anyPanelOpen() {
+    return fullScreenPanelOpen() || modalDialogOpen();
+}
+
+function setModalHold(on) {
+    if (typeof document === 'undefined') return;
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    container.querySelectorAll('.notification').forEach((el) => {
+        if (!el._toast || el._toast.closing || !HOLDABLE_TYPES.has(el._toast.type)) return;
+        setHold(el, '_modalHeld', on);
+    });
+}
+
+function modalDialogOpened() {
+    openModalDialogs++;
+    if (openModalDialogs !== 1) return;
+    holdRecentNotifications(Date.now(), { dismissStale: false });
+    setModalHold(true);
+}
+
+function modalDialogClosed() {
+    if (openModalDialogs === 0) return;
+    openModalDialogs--;
+    if (openModalDialogs === 0) setModalHold(false);
+}
+
 function releaseHeldNotifications() {
-    if (fullScreenPanelOpen() || panelExpected()) return;
+    if (anyPanelOpen() || panelExpected()) return;
     clearInterval(holdTimer);
     holdTimer = null;
     heldNotifications.splice(0).forEach((args) => renderNotification(...args));
@@ -139,7 +179,7 @@ export function isQueuedDuplicate(queue, message, type, title, options = {}) {
         && sameRenderMode(toastRenderMode(q[5]), mode));
 }
 
-export function holdRecentNotifications(now = Date.now()) {
+export function holdRecentNotifications(now = Date.now(), { dismissStale = true } = {}) {
     if (typeof document === 'undefined') return 0;
     const container = document.getElementById('notification-container');
     if (!container) return 0;
@@ -161,7 +201,7 @@ export function holdRecentNotifications(now = Date.now()) {
     // order ahead of toasts raised while the panel is open (code review R1 n2).
     holdForPanel(takeWaiting());
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
-    pickStaleHoldable(shown, now).forEach(({ el }) => {
+    if (dismissStale) pickStaleHoldable(shown, now).forEach(({ el }) => {
         el._toast.pulled = true;
         removeNotification(el);
     });
@@ -191,7 +231,7 @@ export function toastDuration(type, duration) {
 // for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
     duration = toastDuration(type, duration);
-    if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
+    if (shouldHoldNotification(type, anyPanelOpen() || panelExpected())) {
         // Toasts still waiting for a place go into the hold first, so they stay ahead of
         // this one: a workstation popup (CyberChef, a lab sheet) holds toasts without
         // calling holdRecentNotifications (code review R2 n1).
@@ -258,7 +298,7 @@ function startCountdown(notification, duration, total = duration) {
 // Every timed toast stops its countdown while the pointer is over it or focus is inside it,
 // and carries on with the time it had left when both are gone.
 function isHeld(notification) {
-    return notification._hoverHeld === true || notification._focusHeld === true;
+    return notification._hoverHeld === true || notification._focusHeld === true || notification._modalHeld === true;
 }
 
 function pauseCountdown(notification) {
@@ -831,7 +871,7 @@ function takeWaiting() {
 function showWaitingToast(args, overLimit) {
     clearTimeout(args.waitTimer);
     args.waitTimer = null;
-    if (shouldHoldNotification(args[1], fullScreenPanelOpen() || panelExpected())) {
+    if (shouldHoldNotification(args[1], anyPanelOpen() || panelExpected())) {
         holdForPanel([args]);
         return true;
     }
@@ -1081,11 +1121,13 @@ export function gameDisplay(message, title = '', options = {}) {
             done = true;
             unregister();
             overlay.remove();
+            modalDialogClosed();
             try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve();
         };
         closeBtn.addEventListener('click', finish);
         document.body.appendChild(overlay);
+        modalDialogOpened();
         try { closeBtn.focus(); } catch (e) { /* best effort */ }
     });
 }
@@ -1146,6 +1188,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             if (typeof window.removeEventListener === 'function') window.removeEventListener('keyup', onKeyUp, true);
             unregister();
             overlay.remove();
+            modalDialogClosed();
             // Give focus back to whatever had it (the game canvas, a minigame field).
             try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve(result);
@@ -1192,6 +1235,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         openConfirms++;
         countText(message, 1);
         document.body.appendChild(overlay);
+        modalDialogOpened();
         // Focus the safe choice, so a stray Enter or Space never says yes.
         try { cancelBtn.focus(); } catch (e) { /* best effort */ }
     });
