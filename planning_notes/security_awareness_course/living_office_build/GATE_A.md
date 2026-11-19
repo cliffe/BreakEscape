@@ -333,3 +333,22 @@ Commits on `feat/ca-living-office-build`: `dd94ee640` (both fixes + tests), `56f
 - **Cause: stub ink shape.** The divert itself worked (globals sync into the story; reproduced: the engine read "Gwen: Good spot on that invoice..."). But a knot that prints its line and ends at `-> DONE` with no choice leaves `canContinue` false with no choices on that same continue, so `PhoneChatConversation.continue` marks it ended (`public/break_escape/js/minigames/phone-chat/phone-chat-conversation.js:399-402`), and person-chat's `showCurrentDialogue` discards the text and shows "(End of conversation)" (`person-chat-minigame.js:676-725`). The pre-defend line was lost the same way. The driver did not skip anything.
 - **Fix:** both stubs (`scenarios/_office_kit/ink/*_ambient.ink`) end each knot with `-> bye`, a sticky `+ [See you later.]` / `#exit_conversation` / `-> DONE`. Also the speaker prefix is now the display name (`Gwen Pritchard:`): a first name alone does not resolve (`normalizeSpeakerId`, id or displayName) and showed as text.
 - **Live re-check:** before defend, Gwen now shows "Morning. Grab a coffee..." with the exit choice (game 10275). The post-defend line was **not re-driven live** (needs a full episode run); it is covered by the unit test through the real `PhoneChatConversation` + `syncGlobalVariablesToStory` with kit_defend_done true and kit_ep "ca01". Run 2 already proved the mapping that sets kit_defend_done.
+
+## Results, run 4 (2026-11-19, partial)
+
+Keyless server on :3002 from this worktree, started and stopped by this run (PID 2055561, killed by PID). Headless, throttle 20 (after 16.7 to 17.9 steps/s), fixedStep on. Scenario fix first: both kit finish objectives got a plain-text `conclusionScreen` (commit 8894b8879; validator 0 errors, 5 and 4 warnings). The finish step now concludes with a screen (`mission_concluded` and `objective_aim_completed:finish_episode_aim` fired in the twin run).
+
+Log paths (scratchpad `gate_a_run4/`): `a_twin_session.jsonl` (session log), `a_drain.json` (event log, 85 events, pageErrors 0). The full-shell session log is `b_full_session.jsonl`; that run is not a result.
+
+- **a. Twin (test_ca_office_kit_defend): PASS.** Game 10282. `kit_quiet` true at the first save (Start, seq 25), false at the debrief Finish (seq 84). `kit_defend_done` once (seq 68), `kit_caught` once (seq 69), `kit_attack_done` never changed, `done` = brief, defend, debrief. Score 100, all five messages right.
+- **b. Full shell, score below 85: NOT RUN.** Game 10286 reached the OSINT browser and stopped there. Brief, OSINT, Write and Flip still need driving before the Defend triage.
+- **c. Reload on the result screen: NOT RUN.** Depends on b's run.
+- **d. Quiet guard, 90 s per stage: NOT RUN.** Not started.
+- **e. Proof 6, close and resume: NOT RUN.** Not started.
+- **f. Gwen after defend, kit_ep "ca01" divert: NOT RUN.** Needs defend complete in a full-shell run. The twin has no Gwen.
+
+Driving gotchas found in this run:
+- `mg clickText` takes a plain substring, not a regex. `^Confirm` and `^Report` return no-control-matching.
+- Tell chips are checkbox inputs that `clickText` does not match. Tick them by eval: `document.querySelector('input[data-chip="changed_bank_details"]').click()`. Chip ids are in each message's `flags` in the scenario (ep_bank: changed_bank_details, ep_lookalike: lookalike_domain).
+- Confirm with no tells asks for a second Confirm to lock. A genuine message needs Trust, then Confirm, then Confirm again, then "Next message". "See result" then "Finish" leads to the debrief, and a second "Finish" on the debrief screen drops `kit_quiet`.
+- Full shell: Start, then "Open the browser" (OSINT). Do not assume the first stage is the Defend triage.
