@@ -1,4 +1,4 @@
-# Handover: ca12 fix batch 1 (diagnosis done, no edits made yet)
+# Handover: ca12 fix batch 1 (edits applied and tested, live re-check still to do)
 
 Branch feat/ca-living-office-1b at 203a7fb99 (worktree .claude/worktrees/b-ca-lo-1b). Stopped at the context note before any file edit. Everything below is diagnosis; Items 2-5 of the brief are untouched.
 
@@ -30,3 +30,21 @@ The setting is morning: Delphine "Morning. Can I help you?" (delphine_reception.
 ## Gotchas
 - A new game row is needed after any scenario change (mk_game.sh). Game 10574 was made for the grid probe only.
 - Camila ink knot stays; no Ruby touched so far; nothing committed except this note.
+
+
+## Done (commit 3ba62b332 plus the follow-up test commit)
+
+Edits, regeneration (scratch outdir, diff showed only the intended lines, copied back to the 3 shells) and offline tests are complete. Nothing was run live.
+
+New tile values for the live run (merrin_sallow.json, sheet CA12_BUILD.md):
+- Camila step-in: (6.5, 4.5) in the panel patrolOverride and the fallback position (was 7.5, 3.5).
+- Camila exit: kept at the east door tile (8.5, 2.5). With the 1-tile arrival guard she is hidden about 1 tile short, so from the step-in she vanishes near the door edge (about (7.8, 3.2)), not mid-room. Check this live; if she reads as mid-room, the door cannot be moved (wall), so pick an exit target nearer the door edge that is still free floor.
+- Julian J2: (7.0, 5.5) (was 6.0, 8.0); free floor per the live grid dump; his rest spot (6.9, 8.1) is 2.6 tiles away. Julian home (6, 8) unchanged. Live check still needed that the sofa use cell is free when Thandiwe goes.
+- Sheet proofs reworded to "within 1 tile of" (Lorna post, desks, door); A7 says it plays only once the lobby has loaded (toast elsewhere) and proof 5/9 visit the lobby first.
+- Dialogue: pool "Client's in this morning."; Thandiwe chatter "Rev C or Rev D?"; Julian chatter "That roof pitch still won't work." (kit, 3 shells, sheet appendix).
+- m1 comment moved, ink recompiled (json unchanged); panel validator warnings 4 to 3. m2 test_ca12_fallback scenario_id/name renamed (only reference to the old id is the test, which now asserts it). m3 targetKnot guards (JS isKitMapping, "knot only beside bark", office_kit.is_kit_mapping) plus a new test that each targetKnot names an ink knot. m4 pc1_break flagged PLACEHOLDER in the kit _note, sheet Q6, and game.js comment fixed. m5 JS tests are data-driven over office_kits/*.json (spriteVariants preload, set-piece NPC records, fallback layer 0/1).
+- The conformance test skips the "a bark is gated" rule for the hand-authored fixture test_ca_office_kit (its barks use kit_e1_* targetKnots, which the wider isKitMapping now picks up).
+
+Results: test_office_kit.py 59 OK; social-awareness-office-kit.test.mjs 17/17; dialoguelint-wordcap-exempt 7/7; validator (--strict-social --no-graph --skip-ink) ERROR lines 0 on ca12_visitor_tailgater, test_ca12_fallback and the twin.
+
+Still to do: the live re-check (item 5 above), proof of (d) the caption, m6/m7 from the review (record measured tiles; twin host line wording is Q5).

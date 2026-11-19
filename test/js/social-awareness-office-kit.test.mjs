@@ -225,7 +225,8 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
     const maps = (hostOf(sc).eventMappings || []).filter(isKitMapping);
     for (const m of maps) {
       assert.ok(!String(m.condition || '').includes('||'), where('no || in a condition'));
-      if (m.bark) assert.ok(/kit_defend_done|kit_[a-z0-9]+_out/.test(m.condition || ''), where('a bark is gated'));
+      // test_ca_office_kit is the hand-authored chain fixture: its barks carry kit_e1_* targetKnots and gate on the event itself
+      if (m.bark && name !== 'test_ca_office_kit') assert.ok(/kit_defend_done|kit_[a-z0-9]+_out/.test(m.condition || ''), where('a bark is gated'));
       if (m.eventPattern.endsWith('_state')) assert.ok(m.onceOnly === true && Object.keys(m.setGlobal).every((k) => k.startsWith('kit_')), where('state mappings set kit_ only, once'));
     }
     assert.ok(maps.some((m) => m.setGlobal && m.setGlobal.kit_defend_done === true), where('sets kit_defend_done'));
