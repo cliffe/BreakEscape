@@ -1,0 +1,208 @@
+# ca01 living-office build (wave 1A)
+
+Branch `feat/ca-living-office-build`, worktree `.claude/worktrees/b-ca-lo-build`.
+Status: **Step 1 done and committed. Steps 2-6 not started** — this is a handover written at the
+150k context limit. A fresh agent continues from here. Everything below is checked in source.
+
+## What was built (Step 1, commit edb86b506)
+
+Kit data moved to the plan's 4.3 real values, with a fixture override so the equivalence tests stay green.
+
+- `office_kits/brightwell_foods.json`: sources `kit_coffee`/`kit_cooler` now carry **no `position`**
+  (an object with no `position` binds to the drawn prop of its `type` on the room's Tiled map —
+  `rooms.js` `findMatchFor` :261-284, placement :2495), `useSeconds` **30/20**; staff each gained a
+  **`voice`** (from the cast records: Gwen = Sulafat/South-Wales, from `ca13_ai_assistant`;
+  Agnieszka = Callirrhoe/Polish-accented, from `ca07_voice_ceo`) and a **3rd pool line**. `setPieces` still `{}`.
+- `office_kits/episodes.json`: the `test_ca_office_kit` fixture row gained an **`override`** block
+  (sources → position + 8/6 `useSeconds`; staff → `voice:null` to delete it + the frozen 2-line pools),
+  so the tool reproduces the pinned fixture exactly. `_note` documents the field.
+- `office_kit.py`: `apply_override()`/`_merge_override()` (deep-merge, `null` deletes) applied inside
+  `build()`; `patch_kiosk()` now rewrites **only** the `_defend_complete` finished variant and
+  asserts one was patched (it was clobbering every variant — orchestrator review note).
+- `test_office_kit.py`: two new `patch_kiosk` tests.
+
+**Tests green after Step 1:** `python3 test_office_kit.py` 29/29; `python3 test_apply_training_room.py`
+10/10; `node --test test/js/social-awareness-office-kit.test.mjs` 9/9.
+
+Run tools from `planning_notes/phishing_and_social_engineering/awareness/` (abbreviated `AW/` below).
+
+## Decision for Step 2: which build lives where
+
+**Committed course shell `scenarios/ca01_invoice_fraud` = the FALLBACK form (stepAway false, no chain).
+The PANEL build goes in a test scenario `scenarios/test_ca01_panel` (not in the course collection).**
+Reason: the EC1 step-away panel engine code is **not on this branch** (GATE_A.md run 5: "this branch
+has no panel"), so a chain gated on `episode_step_away` would never fire in production. This matches
+the task's fallback instruction. **Before creating `test_ca01_panel`, grep the Hacktivity repo's
+`test/` for that name** (memory: Hacktivity fixtures load BE test scenarios).
+
+## ca01 facts (verified)
+
+- `scenario_id` `ca01_invoice_fraud`; `awarenessEpisode.id` `e1_invoice_fraud`;
+  `setGlobalPrefix` `episode_e1_invoice_fraud_defend_`; so `kit_ep` = `"ca01"`, `chainId` defaults to
+  `ca01` → `kit_ca01_out`.
+- Host `adaeze_okafor` (story `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.json`), one host NPC,
+  found by `_find_host`. Existing eventMappings: `land_supplier_contact` (on
+  `phish_supplier_contact_attempts > 0`) and `sort_payments_inbox` (on `..._defend_complete`). Kit
+  mappings append after these.
+- Kiosk `training_kiosk` has ONE observationVariant, condition
+  `globalVars.episode_e1_invoice_fraud_defend_complete`, value "…Episode finished." In the PANEL shell
+  this condition becomes `globalVars.kit_defend_done === true && globalVars.kit_quiet === false`
+  (= `office_kit.KIOSK_FINISHED`). In the fallback shell it stays unchanged (kiosk_condition returns
+  None when stepAway is false).
+- Debrief config `social.awarenessEpisode.debrief = {"mondayCard":"slot:customer_report_route","noBlameLine":true}`;
+  `aftermath` is null. Layer 0/1 text lives in `social.awarenessEpisode.strings` (keys seen:
+  brief, flipHeading, flipIntro, flipDefenderLine, **and more — the fresh agent must read the full
+  strings object**; the "cost/aftermath" string is where layer 0+1 go). "paid for by replacing one
+  debrief sentence and trimming one flip sentence" (appendix §8).
+
+## Step 2 — remaining work
+
+1. **Add two set pieces to `brightwell_foods.json` `setPieces`:**
+   - `ca01_recall_fallback` (for the committed shell): `globals {"kit_ca01_host_said": false}`,
+     `objects [{"id":"kit_ca01_notice","type":<prop>,"takeable":false,"revealOnGlobal":"kit_defend_done"}]`.
+     No timers, no chain mappings, no staff patch. (Fallback reveals the notice on `kit_defend_done`,
+     objects only, no speech — plan 6.2.)
+   - `ca01_recall` (for the panel test shell): `globals {"kit_ca01_host_said": false}` (`kit_ca01_out`
+     is added automatically by `kit_globals` because stepAway is true), `objects
+     [{"id":"kit_ca01_notice","type":<prop>,"takeable":false,"revealOnGlobal":"{out}"}]`, `staff`
+     patch holding Agnieszka still (`{"agnieszka_duda":{"needs":{"caffeine":{"decayPerMin":0.01,
+     "urgentAt":50,"initial":100}}}}`). **The per-NPC chain mappings (Agnieszka's walk, Gwen
+     suspend/resume, arrival bark) CANNOT go in the set piece** — `office_kit.host_mappings` only
+     appends set-piece `mappings` to the HOST, and the chain mappings must sit on the NPC records
+     (plan 6.3). The gate-A fixture hand-spliced its chain onto the NPCs. So: hand-author the panel
+     chain directly in `test_ca01_panel` after the tool runs (it is a test shell — hand editing is
+     fine). Do NOT try to make the tool own per-NPC chain mappings for one shell.
+   - `<prop>`: real board-notice art is approved but not yet generated (dressing pass). Use an existing
+     prop sprite/type that renders for now (the fixture's fake set piece used `type:"notes4"`), and
+     leave an art/dressing TODO.
+2. **Add the ca01 row to `episodes.json`** (handAuthored):
+   `{"id":"ca01_invoice_fraud","handAuthored":true,"tier":"O","company":"brightwell_foods","ep":"ca01",
+   "ambient":["agnieszka_duda","gwen_pritchard"],"setPiece":"ca01_recall_fallback","attack":true,
+   "stepAway":false}`. (Appendix §40 names ambient as Agnieszka then Gwen. `kit: each kit row matches
+   its shell` only checks the ids order equals the shell's — stay consistent.)
+3. **Apply the kit to the committed shell:** run `apply_training_room.py --repo <repo> --kit <outdir>`
+   into the scratchpad dir `…/scratchpad/w1a_ca01/`, then copy only
+   `scenarios/ca01_invoice_fraud/scenario.json.erb` back. **VERIFY FIRST** that the tool's refresh /
+   "exactly one NPC has a position" assertion (plan 4.4 step 3) was fixed in gate A and tolerates two
+   positioned kit staff plus the positioned host — I did not re-read `apply_training_room.py` in full.
+4. **Build `test_ca01_panel`:** copy the ca01 shell, apply the kit with a panel row
+   (`setPiece:"ca01_recall","stepAway":true`), set the kiosk finished variant to `KIOSK_FINISHED`
+   (patch_kiosk now does this safely, or hand-edit), then hand-author the chain per the gate-B recipe
+   (`GATE_B_CONTENT.md` "What was added"): Agnieszka `patrolOverride` to a free floor tile in front of
+   the board (tiles only, must be free floor or the walk never arrives), arrival bark on
+   `npc_arrived:kit_agnieszka_duda` filtered `data.owner !== 'needs'` + `globalVars.kit_ca01_out === true`
+   + `globalVars.kit_quiet === true`, onceOnly; Gwen suspend on `global_variable_changed:kit_ca01_out`
+   and resume on the last step. `targetKnot` not `knot` (validator); mapping `delayMs` is the fire-later
+   field. Two chain barks at least 4 s apart (Agnieszka at board, then host).
+
+   **Agnieszka's walk — separate-mapping rule (gate B proof 9, live-proven):** a `needs:"suspend"` in
+   the SAME mapping as the `patrolOverride` cancels the walk — the NPC stops short with path left, and
+   an arrival mapping listening for any non-needs arrival then fires anyway (false positive). So put
+   **suspend, patrolOverride, resume in three separate mappings, in that order** (the separate-mapping
+   run gave arrival at 4.6 s and needs resumed after). And **key each arrival mapping to its own
+   scripted walk** so it can't fire on an unrelated arrival: use the patrolOverride's own completion, or
+   gate the arrival mapping on a `kit_` walk flag that the walk mapping sets and the arrival clears, in
+   addition to `data.owner !== 'needs'`.
+
+## Step 3 — content (what to write)
+
+- **Stub knots: DONE already.** `scenarios/_office_kit/ink/gwen_pritchard_ambient.ink` and
+  `agnieszka_duda_ambient.ink` each hold a `ca01` knot reached by the `start` divert on
+  `kit_defend_done` + `kit_ep=="ca01"`, ending on the sticky `bye` / `#exit_conversation`. These are the
+  "stub 2" lines (list below). `.json` compiled. No new stub work unless a review changes the lines.
+- **Host layer 2 (2 lines), new, in `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`:** add a
+  hub-first branch gated `{ kit_defend_done && not kit_ca01_host_said }` that speaks ≤2 lines then sets
+  `~ kit_ca01_host_said = true`. Declare VARs `kit_defend_done`, `kit_caught`, `kit_ca01_host_said` (and
+  it already has `phish_supplier_contact_attempts`). With `kit_caught`, add the "what the report limited"
+  clause. Give what the report bought + human colour; recap the habit (call-back on a known number), no
+  blame, no money figure, do not repeat layer 1's figure. The host's existing hub is the resting point
+  (`hub_quiet` pattern) — fold layer 2 in as a higher-priority branch above the existing
+  `episode_..._complete` branch. `kit_ca01_host_said` must also be a declared globalVariable (the
+  `ca01_recall*` set piece adds it).
+- **Layer 0 + Layer 1 debrief text** in `social.awarenessEpisode.strings`: read the full strings object,
+  find the cost/aftermath string. Layer 0 (2-3 sentences, attacker's terms): the change request the
+  learner sent was worth a redirected supplier payment; one believable email moves a scheduled run to an
+  attacker account and the money is passed on within hours; the call-back on a known number before any
+  payee change (the defend habit) breaks the chain because the change is never saved. The board notice
+  is that redirected run landing. **No reusable method.** Layer 1 (1-2 sentences): a change like the
+  exercise was saved to the supplier file, the run paid the wrong account, and the finance team spent the
+  afternoon with the bank and the supplier. **Only in the committed FALLBACK shell**, layer 1's last
+  sentence = "Before you leave, take a look around the office and have a word with Adaeze." The PANEL
+  shell's debrief omits that sentence (the panel does the inviting). Keep "likely not ICO-reportable"
+  framing for a bank-detail change; money as a description, no number (§15, appendix §9).
+- **Twin `ca01_invoice_fraud_defend`** (generated by `gen_e1_shells.py` from a fragment): gets layer 1
+  in full + one host line on the doubled `episode_e1_invoice_fraud_defend_defend_complete` global, no
+  room beat, no look-up. Layer-0/1 edits that touch `debrief` reach the twin through the fragment
+  (`gen_e1_shells.py`) but must never reach a check shell (appendix 4.4 step 4) — regenerate the twin
+  and diff.
+
+## Step 4 rules (already enforced for the committed shell by the tool; hold them in the hand-authored panel)
+
+targetKnot (not knot); conditions `&&` only; every chain bark condition includes
+`globalVars.kit_quiet === true`; kit_ pools object-form with `requireGlobal {kit_quiet:false}`; coffee
+affordance `chatter:"kit_brightwell"` capacity 2; stub knots end on sticky `+ [See you later.]` /
+`#exit_conversation`; speaker prefix = full display name; both quiet releases
+(`done.includes('debrief')` and `debriefSeen === true`); kiosk finished keyed on
+`kit_defend_done === true && kit_quiet === false`; npcThoughts top-level false; twin id ends `_defend`;
+mappings use `targetKnot`/`delayMs`; nothing kit in a check or annual shell; compile changed ink and
+commit `.ink` + `.json` together; node asserts are booleans (`assert.ok(a === b)`).
+
+## Step 5 — tests to run (not yet run for ca01)
+
+- `ruby scripts/validate_scenario.rb scenarios/ca01_invoice_fraud/scenario.json.erb --strict-social
+  --no-graph --skip-ink` and the same for `test_ca01_panel`: expect 0 errors. Move any `dungeon_graph.*`
+  into `tmp/delete/` (never `rm`).
+- **Proof 8:** `grep -l payload test/js/social-*.test.mjs`, run those against the panel build; no class
+  1/2 finding and no class 4 leaf matching an answer.
+- **Twin check:** assert the ca01 twin has no chain mapping, timer or step-away mapping. Add a node test.
+- `python3 AW/test_office_kit.py`, `python3 AW/test_apply_training_room.py`,
+  `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs test/js/validator-office-life.test.mjs`.
+- **Pin test:** `ca01_invoice_fraud` is NOT pinned (pins are `ca_pre_*`/`ca_post_*`/`ca_annual_*` only),
+  so no pin update is needed. Confirm the pin test still passes.
+
+## New spoken lines (for the dialogue review that follows) — target 2/2/2/0 = 6
+
+Stub (DONE, in repo):
+- `scenarios/_office_kit/ink/gwen_pritchard_ambient.ink:17` — "Good spot on that invoice. Phone the supplier next time too."
+- `scenarios/_office_kit/ink/agnieszka_duda_ambient.ink:17` — "Nice work flagging that one. Reporting it helps the whole floor."
+Host layer 2 (TO WRITE, in `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`): 2 lines — file:line after writing.
+Chain (TO WRITE, panel build only, in `scenarios/test_ca01_panel/...`): 2 lines (Agnieszka at the board; host) — file:line after writing.
+Pool/chatter lines are not counted here (shared, counted once in the master); the new 3rd lines are in `brightwell_foods.json`.
+
+## Live-check runner steps (for a Haiku agent, later)
+
+Keyless server on **:3002** (never :3000/:3001/:3003; never any `db:` task). Headless, `window.__test`,
+`throttleFps(20)` after ~17/s, fixedStep ON. New game on `test_ca01_panel`. Seed `kit_defend_done` true
+and `kit_quiet` true via the test bridge, then emit `episode_step_away`. Expect: notice visible at 0 s;
+Agnieszka walks to the board tile (`npc_arrived` owner ≠ needs) and barks; host line ≥4 s later; Gwen
+never queued. For the committed fallback: finish the defend+debrief, reopen the kiosk, confirm the notice
+is revealed on `kit_defend_done` and Adaeze's hub speaks the layer-2 line once. Gate-A driving gotchas are
+in `GATE_A.md` run 4 (chip ticking by eval, Confirm/Trust flow, "Finish" twice drops kit_quiet).
+
+## Persona-playtest setup for the two builds
+
+Pilot compares panel vs fallback. Run one persona through `test_ca01_panel` (sees the chain + panel) and
+one through `ca01_invoice_fraud` (fallback: notice on close + host hub line), same attack/defend answers,
+and compare whether the consequence reads without the panel.
+
+## Open questions
+
+- Does `apply_training_room.py` refresh tolerate two positioned kit staff + a positioned host? (plan 4.4
+  step 3 said to fix it; confirm gate A did, or fix before Step 2.3.)
+- `test_ca01_panel` name clash in the Hacktivity `test/` fixtures — grep before creating.
+- Exact `strings` key that carries the debrief cost passage (read the full object).
+- Board-notice prop: which existing sprite to stand in with until the art/dressing pass.
+- Tier label for the committed fallback row: used "O"; tests don't check tier, but confirm with the plan
+  owner that an O row with stepAway false is the intended record for the no-EC1 pilot.
+- Gate-A run-5 open question: end-of-mission screen after a reload at the triage result, before the
+  debrief — decide bug vs expected (affects the panel live proof).
+
+## Plan points found wrong/needing care in source
+
+- `office_kit.patch_kiosk` (AW/office_kit.py:342-352 pre-fix) overwrote every kiosk observationVariant
+  condition and silently no-op'd when there were none — fixed in Step 1 (now patches only
+  `_defend_complete`, asserts ≥1). The ca01 kiosk has exactly one variant so the old code happened to
+  work there, but it was unsafe generally.
+- The office-kit set-piece schema has **no per-NPC eventMappings** channel; chain mappings that must sit
+  on NPC records (plan 6.3) cannot be tool-owned. The gate-A fixture hand-spliced them. Confirmed by
+  `host_mappings` appending set-piece `mappings` only to the host (AW/office_kit.py:199, :329).
