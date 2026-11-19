@@ -830,6 +830,7 @@ module ValidateSocial
         end
       end
       issues.concat(step_away_checks(ep))
+      issues.concat(step_away_look_up_checks(ctx, ep))
       issues
     end
 
@@ -844,6 +845,31 @@ module ValidateSocial
       return [err('stepAway is true in a check mission; only a full episode takes the step-away panel')] if check_mission?(ep)
       return [err("stepAway is true on a #{ep['variant'].inspect} episode; only a full episode takes the step-away panel")] unless ep['variant'] == 'full'
       []
+    end
+
+    # Living office: the panel's Look up button reads kit_defend_done, which only a host eventMapping can
+    # set (setGlobal on the defend-complete event). A kit shell (one that declares a kit_ global) with
+    # stepAway true and no such mapping would leave Look up disabled for ever. Shells with no kit_ globals
+    # are left alone: without the kit the panel has nothing to look up.
+    def self.step_away_look_up_checks(ctx, ep)
+      return [] unless ep['stepAway'] == true
+      gv = ctx.json['globalVariables']
+      return [] unless gv.is_a?(Hash) && gv.keys.any? { |k| k.to_s.start_with?('kit_') }
+
+      sets = []
+      walk = lambda do |node|
+        case node
+        when Hash
+          sets << node['setGlobal'] if node['eventPattern'] && node['setGlobal'].is_a?(Hash)
+          node.each_value { |v| walk.call(v) }
+        when Array
+          node.each { |v| walk.call(v) }
+        end
+      end
+      walk.call(ctx.json['rooms'])
+      return [] if sets.any? { |h| h.key?('kit_defend_done') }
+
+      [warn_("stepAway is true but no eventMapping sets kit_defend_done; the panel's Look up button would stay disabled")]
     end
 
     # ---- the defend set ----------------------------------------------------------

@@ -1114,3 +1114,22 @@ test('EC1: stepAway is a boolean, for a full episode only', { skip }, () => {
   ep(j).stepAway = true;
   assert.ok(hits(lint(j), /stepAway is true in a check mission/) === 1, String(/stepAway is true in a check mission/));
 });
+
+test('living office: stepAway in a kit shell with no mapping that sets kit_defend_done is a warning', { skip }, () => {
+  const lookUp = /no eventMapping sets kit_defend_done/;
+  const j = fx('clean_full.json');
+  ep(j).stepAway = true;
+  // no kit_ globals: not a kit shell, nothing to say
+  assert.ok(hits(lint(j), lookUp) === 0);
+  j.globalVariables = { ...(j.globalVariables || {}), kit_defend_done: false, kit_quiet: false };
+  assert.ok(hits(lint(j), lookUp) === 1, lint(j).join('\n'));
+  host(j).eventMappings = [
+    ...(host(j).eventMappings || []),
+    { eventPattern: 'global_variable_changed:episode_e1_stub_defend_complete', condition: 'value === true', onceOnly: true, setGlobal: { kit_defend_done: true } },
+  ];
+  assert.ok(hits(lint(j), lookUp) === 0, lint(j).join('\n'));
+  // without stepAway the lint stays quiet even with no mapping
+  const k = fx('clean_full.json');
+  k.globalVariables = { ...(k.globalVariables || {}), kit_defend_done: false };
+  assert.ok(hits(lint(k), lookUp) === 0);
+});
