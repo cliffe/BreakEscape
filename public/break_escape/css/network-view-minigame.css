@@ -7,7 +7,7 @@
     gap: 6px;
     padding: 10px;
     color: #e8eef2;
-    font-size: 18px;
+    font-size: 16px;
     /* Pixel fonts have no italic or bold cut: never let the browser fake one */
     font-style: normal;
     font-synthesis: none;
@@ -58,7 +58,7 @@
     padding: 6px 10px;
     background: #10161c;
     border-bottom: 2px solid #2d3a44;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .network-view-header[hidden] {
@@ -367,7 +367,7 @@
     background: #2a2016;
     border: 2px solid #8a6420;
     color: #ffe0a0;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 /* The badge never shrinks under the share's text; the text column wraps instead, and on a
