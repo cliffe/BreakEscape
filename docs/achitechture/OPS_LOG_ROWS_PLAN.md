@@ -23,11 +23,9 @@ What it teaches:
 Rows exist only where the scenario declares a log source. A scenario without one writes nothing
 and plays exactly as before.
 
-Two parked pieces of work will read the same rows: the defence game's debrief
-(`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, S12d) and the investigator missions
-(`docs/IDEAS_BACKLOG.md:198`). Seed rows can plant an insider's trail, and 13.6 says how "who
-really acted" is added later. The other ops features write through the same helper (section 13),
-so one log can mix them.
+The parked defence debrief (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`, S12d) and investigator missions
+(`docs/IDEAS_BACKLOG.md:198`) will read the same rows; 13.6 says how "who really acted" is added
+later. The other ops features write through the same helper (section 13), so one log mixes them.
 
 ## 2. What the code does today (verified)
 
@@ -65,10 +63,9 @@ alert sets and `localStorage` state, not a log of play.
 | Implant foothold | `implant_foothold!` (`network_access.rb:468`) | |
 | Card copy | `GamesController#clone_card` (`games_controller.rb:1655`) | |
 
-`start_login_session!` is the one writer every successful sign-in passes through, with its `via`
-argument (`'password'`, `'credential'`, `'claim'`), so the sign-in row goes there, once.
-
-`rfid_unlock_card_answer` never names a copied card (`game.rb:4064-4069`); section 7 keeps that.
+Every successful sign-in passes through `start_login_session!` with its `via` (`'password'`,
+`'credential'`, `'claim'`), so the sign-in row goes there, once. `rfid_unlock_card_answer` never
+names a copied card (`game.rb:4064-4069`); section 7 keeps that.
 
 **Game time.** The client runs the game clock (`game-clock.js`, `GameClock` `:70`) and sends it in
 `PUT /sync_state`; `merge_scenario_clock!` (`game.rb:5846-5899`) keeps `elapsedMs`, which only
@@ -132,10 +129,8 @@ A map of source id to a source. A source says which events it records and, optio
 | `maxRows` | integer 10 to 150, default 50 | this source's cap on stored play rows; the sum over all sources is at most 300. A stored snapshot is not re-validated when a game starts, so the helper also clamps, once, when it reads the block: each source to 10..150, then in declaration order each to at most 300 less the caps before it and 10 for each source after it. The validator refuses more than 30 sources |
 | `seedRows` | array, at most 100 | L2b, section 4.2 |
 
-With no `where`, the source takes its events anywhere; the validator warns when such a source uses
-a prefix wildcard, because it then records every matching event in the mission. A row two sources
-take is stored in each, and each source's cap applies to its own list only.
-
+With no `where`, the source takes its events anywhere (the validator warns when it also uses a
+prefix wildcard). A row two sources take is stored in each, under each source's own cap.
 `logSources` joins the withheld scenario keys, so the bootstrap never ships it.
 
 ### 4.2 L2a and L2b: the reader and seed rows
@@ -171,13 +166,10 @@ or PC desktop like other minigame objects:
 
 Its `minigameData` gets its own entry in `scripts/minigame-data-schemas.json` (required
 `logSource`; optional `title`, `anomaly`, `flagActionLabel`, `flagActions`, `completionActions`),
-loaded by the validator's minigame check (`scripts/validate_scenario.rb:902-950`). The
-`log_filter_terminal` entry (`:63-87`, which requires `logEntries`) is unchanged. With the new
-entry in place the example above validates with no error or warning.
-
-`anomaly.rowId` is optional and names a seed row, never a play row (a play row's id is not stable
-across games, and flagging one needs a server check of its own, later). Without `anomaly`, the
-terminal is a plain log browser with no flag button.
+loaded by the validator's minigame check (`scripts/validate_scenario.rb:902-950`); the
+`log_filter_terminal` entry (`:63-87`) is unchanged, and the example above validates clean.
+`anomaly.rowId` is optional and names a seed row, never a play row (whose id is not stable across
+games). Without `anomaly`, the terminal is a plain log browser with no flag button.
 
 ### 4.3 L3
 
@@ -214,10 +206,12 @@ helper write seeds it.
   `where` is the PC parsed from the key. Its caller saves.
 - `attempt_login!` (`game.rb:3444`), two refusals that save nothing today:
   - `notPermitted` (`:3489-3492`, a right password at a PC that does not admit the account):
-    `signin_refused` `denied`, with `save_limit: 10`. The branch gains a `save!` when `r&.stored?`.
+    `signin_refused` `denied`, with `save_limit: true`. The branch gains a `save!` when
+    `r&.stored?`.
   - the locked-out return (`:3484`, before any account lookup): `signin_refused` `blocked`,
-    `as: { typed: }`, with `save_limit: 10`, saving when `r&.stored?`. The two results keep
-    separate counts (13.2 step 4), so each branch costs at most ten saves per PC in a window.
+    `as: { typed: }`, with `save_limit: true`, saving when `r&.stored?`. Both results register a
+    limit of 10 and keep separate counts (13.2 step 4), so each branch costs at most ten saves per
+    PC in a window.
 - `logout_session!` (`game.rb:3660`): `session_end`, only when the deleted record is a Hash, so a
   forged `/logout` writes nothing. `lock_session!` (`game.rb:3836`): `session_lock`, past its
   refusals. Both methods save.
@@ -232,7 +226,8 @@ helper write seeds it.
   - Refused (`:1252`): only for an rfid lock in force, in reach (a door into a room connected to
     an unlocked room, or an object in an unlocked room outside an unpromoted route room), with an
     rfid card or clone held in server state (`held_rfid_cards`, `game.rb:3951`; `:4054-4061`).
-    `badge_swipe` `denied`, no identity, `save_limit: 10`, saving when `r&.stored?`.
+    `badge_swipe` `denied`, no identity, `save_limit: true` (10 registered), saving when
+    `r&.stored?`.
 
 **L3 call sites:** `plant_device!` (`net_link_up`), `unplug_device!` (`net_link_down`),
 `join_network!` on success (`net_wifi_join`); each saves after the call (`network_access.rb:282`,
@@ -269,7 +264,7 @@ The viewer, `public/break_escape/js/minigames/ops-log/ops-log-minigame.js` (abou
   nothing else. Reopening sends the last `rev`; an unchanged answer keeps the rows. A `REFRESH`
   button fetches again.
 - Columns: TIME, EVENT, IDENTITY, LOCATION, RESULT, DETAIL. A merged row shows its count after the
-  result (`FAIL x3`, or `DENIED x10+` while its save limit is spent). Play rows' TIME is
+  result (`FAIL x3`), and a `+` when later calls were dropped (`DENIED x10+`). Play rows' TIME is
   `window.gameClock.formatStamp(elapsedMs)` (`game-clock.js:173-177`, "Tue 07:42"); seed rows show
   their `at`.
 - Filters built from the rows on load: EVENT, RESULT and LOCATION as the values present, IDENTITY as
@@ -342,8 +337,9 @@ session admits it, over that session's route, foothold and `from` included.
 ## 7. What reaches the browser, and what never does
 
 **Never:** the `logSources` block (withheld from the bootstrap), `player_state['opsLog']`,
-`opsLogSeq` and `opsLogClockAt` (not on the bootstrap's named-key list, never read from a sync
-body), a row's `seq`, `serverMs`, the server time in `last`, raw ids, any detail key registered
+`opsLogSeq`, `opsLogClockAt`, `opsLogOnce` and `opsLogSaves` (not on the bootstrap's named-key
+list, never read from a sync body), a row's `seq`, `serverMs`, the server time in `last`, `p`
+(shown only as the `+`), raw ids, any detail key registered
 `show: false`, and any stored key added later (such as `by`, 13.6). No row carries a secret (13.3).
 
 **Only through `GET /log_rows`, for a reached reader**, each row built from an allow-list of
@@ -356,7 +352,7 @@ exactly these keys:
 | `event` | the event's `label` (`BADGE`, `SIGN_IN`, `LOCKOUT`, ...) |
 | `as` | an account's username or the typed username, both in the `normalise_username` form, a cut typed one with a trailing `~`; an NPC's or card's display name; or `-` |
 | `where` | the display name of the place (room, object, PC, host, desk ...), or `-` |
-| `result` | the result word, upper-cased, with `xN` when `n` is above 1 (`FAIL x3`), and `xN+` while the row's save limit is spent (13.2 step 6: later calls were dropped) |
+| `result` | the result word, upper-cased, with `xN` when `n` is above 1 (`FAIL x3`), and a trailing `+` when the stored row has `p` (`BLOCKED+`, `DENIED x10+`: later calls were dropped, 13.2 step 6) |
 | `detail` | the shown detail keys, each as value or display name, joined as `key: value` |
 
 A test asserts the answer's row keys are exactly these seven, so a stored field added by another
@@ -391,7 +387,7 @@ standing as log-filter's anomaly today; a server check belongs to the investigat
 | `opsLog` | map of source id to an array of rows (13.1) | each row at most 400 bytes (`to_json.bytesize`); each source at most its `maxRows` (default 50, at most 150); all sources together at most 300 rows; the whole value at most 128 KB (`MAX_OPS_LOG_BYTES`). Typical: 10 to 15 KB for one full default source; the 300-row ceiling is at most 120 KB | `write_log_row!` only | never |
 | `opsLogSeq` | integer | one number | `write_log_row!` only | never |
 | `opsLogOnce` | array of 12-hex-character digests (13.2 step 4) | at most 256 entries, about 4 KB, oldest dropped past that | `write_log_row!`, when a `once: true` call stored | never |
-| `opsLogSaves` | map of a 12-hex-character digest of event, `where` and `result` to `[count, windowStartMs, rowSeq]`, a negative count marking a spent entry (13.2 steps 4 and 6) | at most 256 entries of 42 bytes, about 11 KB; an entry resets when its five-minute window has passed, and a new key on a full map reclaims passed entries | `write_log_row!`, when a `save_limit:` call stored | never |
+| `opsLogSaves` | map of a 12-hex-character digest of event, `where` and `result` to `[count, windowStartMs]`, spent at the registered limit (13.2 steps 4 and 6) | at most 256 entries of 34 bytes, about 9 KB; an entry resets when its five-minute window has passed, and a new key on a full map reclaims passed entries | `write_log_row!`, when a `save_limit: true` call stored | never |
 | `opsLogClockAt` | integer, server epoch ms | one number | `initialize_player_state` (seed), `merge_scenario_clock!` and `prepare_bootstrap_state!` (refresh, only while the key exists), or the first helper write in a game started before L1a | never |
 
 - `opsLogClockAt` is created at game start for a scenario with `logSources`; `opsLog` and
@@ -435,11 +431,7 @@ object type enum. `scripts/minigame-data-schemas.json` gains the `ops_log_termin
   repeated `id`, or more than 100 rows.
 - A seed row whose text equals any declared password or credential value (a secret written into a
   log by mistake).
-- In a scenario with `logSources`: more than 30 sources. Warnings: a declared secret equal to a
-  username or an id (a row naming that thing would trip the guard); a source whose `maxRows` is
-  below the number of events it takes plus its limited places (protected rows may be evicted,
-  13.2 step 6); more possible save-counter keys than 256, counted as, for each event written with
-  `save_limit:` and each of its limited results, the places of its kinds that some source admits.
+- In a scenario with `logSources`: more than 30 sources.
 - An `ops_log_terminal` with no `id`, no `logSource` or one naming an undeclared source; an
   `anomaly.rowId` that is not one of that source's seed rows. The minigame schema check reports
   missing and undeclared fields.
@@ -449,7 +441,12 @@ object type enum. `scripts/minigame-data-schemas.json` gains the `ops_log_termin
 
 Warnings: a source no reader names (rows written, never shown; fine for a defence-only source); a
 source with a prefix wildcard and no `where`; a reader whose source records no event the scenario
-can produce (for example `badge_swipe` with no rfid lock in its `where`).
+can produce (for example `badge_swipe` with no rfid lock in its `where`). In a scenario with
+`logSources` also: a declared secret equal to a username or an id (a row naming that thing shows
+text equal to the secret; the guard skips it, 13.2 step 2); a source whose `maxRows` is below the
+number of events it takes plus its limited places (protected rows may be evicted, 13.2 step 6);
+more possible save-counter keys than 256, counted from `EVENTS`: for each event and each result
+in its `save_limit` map, the places of its kinds that some source admits.
 
 **Dungeon graph** (`scripts/generate_dungeon_graph.rb`): a log source is neither a lock nor a key,
 so it adds no gating edge of its own. Each source becomes one note node (`add_node`, `:77`)
@@ -503,15 +500,19 @@ No scenario in the repo has `logSources`, so:
 - Merging: an identical repeat raises `n` and the last times, and appends nothing; a repeat that
   differs in any of event, `as`, `where`, `result`, `detail` appends. A, B, A, B twenty times
   leaves two rows with `n: 10` each.
-- **Save counter**, every case under `OpsLog.with_clock(t)` with `t` set by the test. With
-  `save_limit: 10`: eleven distinct rows at one place sent in rotation for five rounds within one
-  window answer `stored?` ten times in all, then nil with state untouched (`opsLogSaves`, `opsLog`
-  and `updated_at` unchanged on a re-read). At `t + 300_000` the same call stores again and starts
-  a new window; at `t + 299_999` it does not. The spent entry is stored with a negative count and
-  the row it names shows its count with a trailing `+`. Two results of one event at one place (`signin_refused` denied and blocked) keep separate counts.
-  A second place keeps its own count. With `opsLogSaves` full and one entry past its window, a new
-  key reclaims it and stores; with every entry inside its window, a new key answers nil and no
-  entry is dropped. `save_limit: 0` and `100` are malformed.
+- **Save counter**, every case under `OpsLog.with_clock(t)` with `t` set by the test, on a
+  test-only event registering `save_limit: { 'denied' => 10 }`. With `save_limit: true`: eleven
+  distinct rows at one place sent in rotation for five rounds within one window answer `stored?`
+  ten times in all, then nil with state untouched (`opsLogSaves`, `opsLog` and `updated_at`
+  unchanged on a re-read). At `t + 300_000` the same call stores again and starts a new window;
+  at `t + 299_999` it does not. The tenth call sets `p` on the rows it stored or merged into, in
+  each of two sources; the reader shows `+` on them, and still does after the window resets and a
+  later row is marked. An entry whose `windowStartMs` lies after the clock is treated as passed.
+  Two results of one event at one place (`signin_refused` denied and blocked) keep separate
+  counts. A second place keeps its own count. With `opsLogSaves` full and one entry past its
+  window, a new key reclaims it and stores; with every entry inside its window, a new key answers
+  nil and no entry is dropped. `save_limit: true` for a result with no registered limit, and with
+  `once: true`, is malformed; the `EVENTS` spec fails a registered limit of 0 or 100.
 - `once: true` writes nothing and answers nil when its digest is in `opsLogOnce`, even after the
   row has been evicted; the digest is added only when a source stored; the 257th distinct
   once-row drops the oldest digest; `once: true` with `as: { typed: }` is malformed. With no
@@ -519,9 +520,9 @@ No scenario in the repo has `logSources`, so:
 - Eviction and caps: a source past its `maxRows` evicts by the order in 13.2 step 6 and never
   touches another source. A first refusal that has merged to `n: 3`, then fifty distinct forged
   refusals and fifty `ok` rows, leaves that first refusal and the first `ok` row in place. A
-  source holding the protected "limit reached" row (named by a spent entry whose window is open)
-  keeps that row through a flood of fifty distinct refusals and fifty `ok` rows; once the window
-  passes and the entry resets, classes 1 to 3 can take it. A source whose `maxRows` is below the
+  source holding a row with `p` whose latest time is inside the window keeps that row through a
+  flood of fifty distinct refusals and fifty `ok` rows; once that time is five minutes old,
+  classes 1 to 3 can take it. A source whose `maxRows` is below the
   number of its events never exceeds `maxRows`. The clamp holds for a snapshot with
   `maxRows: 500`, gives three sources of 150 the caps 150, 140 and 10, and ignores a thirty-first
   source. The largest legal row is at most 400 bytes; a 64-character typed username of four-byte
@@ -533,9 +534,13 @@ No scenario in the repo has `logSources`, so:
   nil, store nothing and log one warning. A `count` of 1234 is stored as 9, in production too.
 - **Secret registry and guard.** The fixture holds only the secrets L1a registers: an account
   password, an NPC password, a PIN, a code-lock `requires`, a credential value and a wifi key.
-  `OpsLog.secret_values` on it holds each of them and no display name, id or username. A secret
-  source registered in the test adds its values; a value passed to `OpsLog.note_issued_secret`
-  is in the list for that request and gone in the next. The walk: for every registered event,
+  `OpsLog.secret_values` on it holds each of them, nothing from a display-name, id or username
+  field, and no `requires` of a key, biometric, bluetooth or rfid lock. A secret source
+  registered in the test adds its values; a value passed to `OpsLog.note_issued_secret` is in the
+  list for that request and gone in the next (model tests run outside the Rails executor, so the
+  test calls `OpsLog::Current.reset` between the two). A second fixture, where one account's
+  password equals its username, another's is `password` (a `method` code) and a PIN lock's answer
+  equals a room id, writes `signin_ok` rows and a door row with no raise. The walk: for every registered event,
   siblings' included, a call is built with each detail key and each `as` form other than `typed`
   set to each secret, to the number form of the PIN, and to secret-shaped strings such as
   `Hunter2!` and `5f4dcc3b5aa765d6`. Run 1 with the guard switched off: every call is refused by
@@ -546,8 +551,9 @@ No scenario in the repo has `logSources`, so:
   fixture's secrets, and so does the production warning line. A clean row whose `seq`, `n` or
   `serverMs` equals a numeric secret does not raise, and a harvest row with `count: 4` does not
   raise beside a one-digit secret. `typed` is exercised on its own: a typed username equal to the
-  account password writes no row and answers nil in test and in production, and any other typed
-  text is stored, cut, and nothing else. The walk reads `EVENTS` at run time, so each sibling
+  account password, and one equal to the PIN, is stored as typed and the row is written, in test
+  and in production, with no raise; the response and the stored row differ from those for a
+  non-secret candidate only in the text. The walk reads `EVENTS` at run time, so each sibling
   event is covered the moment it lands.
 - `EVENTS` and `KINDS` spec: every entry well formed (13.5), with no numeric rule other than
   `{ count: max }` and `max` at most 9; every place kind used by an event has a `KINDS` entry; an
@@ -573,7 +579,7 @@ seconds old, and writes nothing in a game that does not have it.
 re-read game (`Game.find(id).player_state`), never the in-memory object, so a missing save fails:
 
 - Each event writes exactly one row on its validated branch, and none on each other refusal.
-- A call made without `save_limit` (a noisy refusal on a route that saves anyway) neither spends
+- A call made with `save_limit: false` (a noisy refusal on a route that saves anyway) neither spends
   a limited count nor is stopped by it: with the count spent for that event, place and result, it
   still stores, and the entry is unchanged.
 - `start_login_session!` with `via` `claim` or `technique` writes no `signin_ok` and does not raise.
@@ -597,6 +603,8 @@ re-read game (`Game.find(id).player_state`), never the in-memory object, so a mi
   opening it writes its own row; a refused open writes nothing. With two sessions that both admit
   the share, the row names the account of the one signed in first, on every open.
 - A card copy and an implanted foothold write nothing.
+- In development, a call site forced to make a malformed call (a test-only stub of its detail)
+  makes the route fail and leaves the game row unchanged on a re-read: no grant without its row.
 
 **Controller** (`test/controllers/break_escape/log_rows_test.rb`, L2a): each refusal in section 6
 with its status; the same 404 for missing, wrong type, undeclared source, unreached room, a reader
@@ -613,7 +621,8 @@ position, including rows written later; `rev` unchanged; `no-store`;
 **JS** (`test/js/ops-log-viewer.test.mjs`, with its own harness copy list): columns; filters from
 the rows present, including TIME on `HH:MM` and `Tue 07:42` stamps; selection kept across a
 refresh; flag button only with an anomaly; no row tinted; `LOADING`, `NO ACCESS`, `unchanged`;
-`textContent` with a hostile typed username; merged rows show their count; a reader opened from a
+`textContent` with a hostile typed username; merged rows show their count, and a `+` exactly as
+the answer's `result` text carries it; a reader opened from a
 desktop through `handleInteractiveItem` requests its own `scenarioData.id` with the screen's route.
 
 **Feature scenario** `scenarios/test_ops_logs/` (with a `gameClock`), created in L1b with a lobby,
@@ -726,7 +735,7 @@ recorded (`as` below), and "When" names the method and branch that writes the ro
 # request that holds the game lock, on a branch the server has validated, before that request's
 # own save!. A branch that would not otherwise save calls save! only when r&.stored?.
 # Never raises in production.
-def write_log_row!(event, as:, where:, result: 'ok', detail: nil, once: false, save_limit: nil)
+def write_log_row!(event, as:, where:, result: 'ok', detail: nil, once: false, save_limit: false)
 # => OpsLog::Result, or nil
 ```
 
@@ -738,7 +747,7 @@ def write_log_row!(event, as:, where:, result: 'ok', detail: nil, once: false, s
 | `result` | String | one word from the event's registered list (13.5) |
 | `detail` | Hash or nil | at most 4 keys, each registered on the event with a typed rule (13.5) |
 | `once` | Boolean | write only the first time this game sees the same event, `as`, `where`, `result` and `detail`. Checked against a set of once-keys (13.2 step 4), never by scanning rows, so an evicted row is not written again. Malformed with `as: { typed: }`, so player text never feeds the set |
-| `save_limit` | Integer 1 to 99, or nil | for a branch with no save of its own: the most calls for this event, place and result (whatever `as` holds) that may store in one five-minute window of server time (13.2 step 4). Past it, until the window ends, the call changes nothing and answers nil, so nothing is saved. Counted in a stored map, not by looking at rows, so neither merging nor eviction can reopen a spent limit. Any other value is malformed. nil: no limit, and the call neither spends nor is stopped by any count |
+| `save_limit` | Boolean | for a branch with no save of its own: true applies the limit registered for this event and result in `EVENTS` (13.5), the most calls for this event, place and result (whatever `as` holds) that may store in one fixed five-minute window of server time (13.2 step 4). Past it, until the window ends, the call changes nothing and answers nil, so nothing is saved. Counted in a stored map, not by looking at rows, so neither merging nor eviction can reopen a spent limit. The number lives only in `EVENTS`, so two callers cannot use different limits for one key. Malformed when the result has no registered limit, or with `once: true`. false: the call neither spends nor is stopped by any count |
 
 The four forms of `as`, each checked against the scenario (a value that does not resolve makes
 the call malformed, 13.2 step 2):
@@ -748,7 +757,7 @@ the call malformed, 13.2 step 2):
 | `{ account: }` | a username | must be an account the scenario declares; at most 32 characters |
 | `{ npc: }` | an NPC id | must be an NPC in the scenario; a card or record tied to one person |
 | `{ card: }` | an item id | must be an rfid card or clone item in the scenario; a card with no single holder |
-| `{ typed: }` | text as the player entered it | the only free text a row may hold: stripped of control characters (case kept), cut to 32 characters, then by whole characters until its JSON form is at most 96 bytes, a cut value marked `cut: true` and shown with a trailing `~`. Stored for the player's own username input only, never for text the server holds. Text equal to a registered secret (13.2 step 2) writes no row |
+| `{ typed: }` | text as the player entered it | the only free text a row may hold: stripped of control characters (case kept), cut to 32 characters, then by whole characters until its JSON form is at most 96 bytes, a cut value marked `cut: true` and shown with a trailing `~`. Stored for the player's own username input only, never for text the server holds. Stored as typed whatever it equals, a registered secret included: the matcher never reads it (13.2 step 2) |
 
 `OpsLog::Result` answers three questions about one call:
 
@@ -760,9 +769,8 @@ the call malformed, 13.2 step 2):
 
 The helper returns nil when nothing could change: the scenario has no `logSources`,
 `scenario_data` is not loaded, no source takes the event, the call is malformed, or `once: true`
-found the row's key already in the once-key set, `save_limit` is spent for the event, place and
-result in the current window (or a new key finds `opsLogSaves` full of open windows), or a typed
-username equals a registered secret. In a scenario with no `logSources` every call answers nil, so
+found the row's key already in the once-key set, or the save limit is spent for the event, place
+and result in the current window (or a new key finds `opsLogSaves` full of open windows). In a scenario with no `logSources` every call answers nil, so
 a branch that saves only on `r&.stored?` adds no save there.
 
 Stored row, in `player_state['opsLog'][source_id]`:
@@ -775,14 +783,17 @@ Stored row, in `player_state['opsLog'][source_id]`:
 ```
 
 A row that absorbed repeats (13.2 step 5) also carries `"n": 4` and `"last": [elapsedMs,
-serverMs]`, the times of the latest repeat. Measured with `to_json.bytesize`, the row above is
+serverMs]`, the times of the latest repeat, and a row that a call spending its save limit stored
+or merged into carries `"p": 1` (13.2 step 6). Measured with `to_json.bytesize`, the row above is
 207 bytes.
 
 **The 400-byte cap, by calculation.** Each value has a fixed ceiling, and a value past it makes
 the call malformed (13.2 step 2): an id 40 characters from `[A-Za-z0-9_.:-]`, an account 32, a
 typed username 96 bytes plus `"cut":true`, an alias 4, a count 1 digit, `seq` 6 digits,
-`elapsedMs` 9, `serverMs` 13, a code the longest in its list. With `n` at 99999 the two largest
-rows are `signin_refused` blocked (391 bytes) and `technique_used` (386). A spec builds the
+`elapsedMs` 9, `serverMs` 13, a code the longest in its list, and `"p":1` on an event with a
+registered save limit. With `n` at 99999 and compact JSON, the largest rows are `technique_used`
+at a host (388 bytes), blocked `helpdesk_request` (382 with `p`) and blocked `signin_refused`
+(349 with `p`, 343 without). A spec builds the
 ceiling-filled row for every registered event, siblings' included, and fails any registration
 over 400 bytes, so the run-time check never fires.
 
@@ -798,16 +809,22 @@ over 400 bytes, so the run-time check never fires.
    `where.id` resolves to a thing of that kind; `as` is one of the four forms of 13.1 and resolves;
    the result is in the event's list; each detail key is registered and each value fits its typed
    rule. A `count` above its maximum is clamped to the maximum; a negative or non-integer count
-   is malformed (checked in production too). The save limit is an integer from 1 to 99.
+   is malformed (checked in production too). `save_limit: true` needs a limit registered for the
+   result, and is malformed with `once: true`.
 
    **The secret registry.** `OpsLog.secret_values(game)` is the union of the registered secret
    sources. A feature registers its own with `OpsLog.register_secret_source(:name) { |game| [...] }`
    beside its `EVENTS` entries (13.5), a block that returns the secret values its scenario fields
    and stored state hold. L1a registers only the secrets the engine has today: account and NPC
-   passwords and credential values, PINs and the `requires` of every pin, password or other code
-   lock (a key or rfid lock's `requires` names an item, which a row may name), and wifi keys and
-   other key material. Each sibling registers its own fields in the stage that adds them (hashes
-   in S5b, second-step seeds and helpdesk answers in S8). A derived value that is never stored,
+   passwords (`creds.password`, an account's `password`) and credential values; lock answers,
+   which are the `requires` of a `pin` or `password` lock, a `combination` lock's `combination`
+   and a cryptex's `cryptexConfig.answer` (the fields `filter_requires_recursive` and
+   `strip_lock_answers!` strip, `games_controller.rb:2902-2918`, `game.rb:4532-4537`); a wifi
+   network's `psk`; and the capture `secret` fields (`CAPTURE_SECRET_KEYS`). The `requires` of a
+   key lock names an item, and of a `biometric`, `bluetooth` or `rfid` lock a person, a device or
+   cards (`CARD_REFERENCE_LOCK_TYPES`, `game.rb:7304`); none is registered. Each sibling registers
+   its own fields in the stage that adds them (hashes in S5b; reset passwords in S8b). S8 authors
+   no seed, and recovery answers are not registered, since no row has a field for one. A derived value that is never stored,
    such as a second-step code or a matching number, is registered by the function that issues it
    with `OpsLog.note_issued_secret(value)`, held in `OpsLog::Current` (an
    `ActiveSupport::CurrentAttributes`, cleared at the end of the request). Across requests nothing
@@ -816,17 +833,22 @@ over 400 bytes, so the run-time check never fires.
    or file's name is the "nothing unearned" rule (13.3).
 
    **The matcher**, one function used by the guard, the helper, `assert_ops_log_holds_no_secret`
-   and `verify-run.rb --ops-log`: each string value under `as` (other than `typed`), `where` and
-   `detail` is compared exactly with each secret, and each count with each numeric secret of 10
-   or more (a one-digit secret is not compared, since every count is one digit). Counters and
-   times (`seq`, `n`, `elapsedMs`, `serverMs`) are not compared. `as.typed` is compared exactly on
-   its own, in every environment: a typed username equal to a secret (a player who types a
-   password into the username box) writes no row and answers nil, with no error, since it is the
-   player's mistake, not the code's.
+   and `verify-run.rb --ops-log`: each value under `as`, `where` and `detail` that its type rule
+   did not resolve (an alias, and any later rule that admits a value without looking it up) is
+   compared exactly with each secret, and each count with each numeric secret of 10 or more (a
+   one-digit secret is not compared, since every count is one digit). A value the type rule
+   resolved, a registered code, a scenario id or a declared username, is skipped: it is already
+   known not to be free text, and an author's password equal to a username or a code (a classic
+   weak password) must not make a validated scenario raise. Counters and times (`seq`, `n`,
+   `elapsedMs`, `serverMs`) are not compared. `as.typed` is never compared, by any of the four
+   users of the matcher: it is the player's own text, echoed to the same player, so any branch on
+   its value would tell them whether what they typed is a secret.
 
    **The guard** runs the matcher in test and development. A hit, or any failed check above,
    raises `ArgumentError` whose message names the event and the key path (`detail.route`) and
-   never the value. In production the checks other than the guard still run: a mismatch writes
+   never the value. The raise must reach `with_game_lock`, so the transaction rolls back the
+   grant with the row; a call site inside a broad `rescue` re-raises `ArgumentError` first. In
+   production the checks other than the guard still run: a mismatch writes
    nothing and logs one `Rails.logger.warn` line naming the event and key path, so a typo can
    never turn a game route into a 500. `tools/playtest/lib/access_leak_scanner.rb` keeps its own
    redaction list and reads `OpsLog.secret_values` only to scan `/log_rows` bodies, with its
@@ -839,17 +861,19 @@ over 400 bytes, so the run-time check never fires.
    listed; a host, network or share matches only `where.places` (4.1). None: nil.
 4. **Once and the save counter.** With `once: true`, the helper takes a 12-hex-character digest
    of the event, `as`, `where`, `result` and `detail`; if `player_state['opsLogOnce']` holds it,
-   the call answers nil. With `save_limit: k`, it takes a 12-hex-character digest of the event,
-   `where` and `result` (never `as`), and looks it up in `player_state['opsLogSaves']`, whose
-   entries are `[count, windowStartMs, rowSeq]`. An entry whose window began five minutes or more
-   ago is reset to a count of 0. A spent entry (a negative count, step 6) or one with `count` at `k`
-   or more answers nil. Both checks run
-   before anything is built, and both maps are written only in step 6, once the call has stored.
+   the call answers nil. With `save_limit: true`, `k` is the limit `EVENTS` registers for the
+   event and result; the helper takes a 12-hex-character digest of the event, `where` and
+   `result` (never `as`), and looks it up in `player_state['opsLogSaves']`, whose entries are
+   `[count, windowStartMs]`. An entry whose window has passed (`now - windowStartMs` of
+   `SAVE_WINDOW_MS` or more) or whose start lies in the future (a server clock that stepped back)
+   is reset to a count of 0. An entry with `count` at `k` or more is spent and answers nil. Both
+   checks run before anything is built, and both maps are written only in step 6, once the call
+   has stored.
 
-   **The save window** is five minutes (300,000 ms of `serverMs`), the interval at which the
-   client already saves its clock (`CLOCK_ONLY_INTERVAL_MS`, 13.4). A place under a stream of
-   refusals costs at most `save_limit` extra saves per window, and goes quiet only for minutes, so
-   a later attempt is still recorded. Real time only bounds saves: no row, count or window gates a
+   **The save window** is `OpsLog::SAVE_WINDOW_MS`, 300,000 ms of `serverMs`, fixed from the first
+   store in it (not sliding), so a burst across a window's edge may store `2k` times in a few
+   seconds. A place under a stream of refusals costs at most `k` extra saves per fixed window, and
+   goes quiet only for minutes, so a later attempt is still recorded. Real time only bounds saves: no row, count or window gates a
    door, an objective, a reader or a score. The helper reads time through `OpsLog.clock` (also the
    source of `serverMs`); tests set it with `OpsLog.with_clock(ms) { ... }`.
 5. **Merge.** Builds the row: the next `opsLogSeq` (assigned under the game lock, so order is
@@ -863,8 +887,9 @@ over 400 bytes, so the run-time check never fires.
 6. **Append, evict, record.** Otherwise it appends the row. While that source holds more than its
    `maxRows`, it evicts one row from that source, taking the first class that has one. A
    **protected** row is the first row of its event in that source (per event, not per event and
-   result), or the row named by a spent `opsLogSaves` entry whose window is still open (the row
-   that records "limit reached"). Classes 1 to 3 never take a protected row:
+   result), or a row with `p` whose latest server time (`last`, else `serverMs`) is from 0 to
+   under `SAVE_WINDOW_MS` before now (the row that records "limit reached" in the open window).
+   Classes 1 to 3 never take a protected row:
    1. the oldest refusal row (result other than `ok` or `granted`) with `n` above 1;
    2. the oldest other refusal row;
    3. the oldest `ok` or `granted` row (a `signin_lockout`, result `ok`, sits here);
@@ -881,14 +906,16 @@ over 400 bytes, so the run-time check never fires.
 
    When any source stored: with `once: true` the digest is added to `opsLogOnce` (at most 256,
    oldest dropped; a dropped digest lets that one row be written once more). With
-   `save_limit`, the entry's count goes up by 1, its window starts now if the count was 0, and its
-   `rowSeq` becomes the `seq` of the row just stored or merged into. When the count reaches `k`
-   the entry is stored as `-k`: spent, the limit-reached marker. The marker lives in the entry,
-   not the row. The reader shows the named row's count as `xN+` while its entry is spent, since
-   later calls in the window were dropped.
+   `save_limit: true`, the entry's count goes up by 1 and its window starts now if the count was
+   0. When the count reaches `k`, the helper sets `"p": 1` on each row that call stored or merged
+   into, in every source. The mark lives on the row, so it outlasts the entry's reset and needs
+   no lookup: the reader shows `+` after the result or count of any row with `p` (`BLOCKED+`,
+   `DENIED x10+`), meaning later calls of that event and result at that place were not recorded,
+   whoever they named. It does not claim the dropped calls were that row's identity. A later
+   merge into a marked row keeps the mark.
 
    **The `opsLogSaves` map** holds at most 256 entries. One entry,
-   `"0123456789ab":[-10,1763550000000,123456],`, is 42 bytes, so the map is at most about 11 KB.
+   `"0123456789ab":[10,1763550000000],`, is 34 bytes, so the map is at most about 9 KB.
    A new key when the map is full first reclaims every entry whose window has passed; if none has,
    the call is dropped like a spent one. Keys come from validated places and registered results
    only, never from `as`, so a player cannot invent one. The validator warns when a scenario could
@@ -906,17 +933,17 @@ over 400 bytes, so the run-time check never fires.
   A request that changes nothing (a door already open, a session already ended, a replay) writes
   nothing, or merges into an earlier row by step 5.
 - **Bounded.** Each per-attempt event states its bound in its plan's table: once (`once: true`, or
-  the caller's own state check), `save_limit:` per window, merged repeats (step 5), or a cap the
+  the caller's own state check), the registered save limit per window, merged repeats (step 5), or a cap the
   feature already enforces (a lockout's `maxAttempts`, an MFA request cap). Merging and eviction
   bound rows; `maxRows` is the last line of defence, not the bound.
 - **Saves.** Each row in a table says what saves it. A route that already saves after the call
   needs nothing more. A branch that saves nothing today saves only when `r&.stored?`, and is
-  bounded by `once:` (a key with no player text) or by `save_limit:`, never by merging, which a
-  rotation of distinct rows defeats (step 5). Only calls made with `save_limit` spend its count:
-  a noisy refusal on a route that saves anyway passes none, so it neither spends the count nor
-  is stopped by it.
+  bounded by `once:` (a key with no player text) or by `save_limit: true`, never by merging,
+  which a rotation of distinct rows defeats (step 5). Only calls made with `save_limit: true`
+  spend the registered count: a noisy refusal on a route that saves anyway passes false, so it
+  neither spends the count nor is stopped by it.
 - **Typed identities.** `as: { typed: }` is never written with `once:`. On a branch whose only
-  save is the row's, it is written with `save_limit:`, so made-up usernames cost at most that
+  save is the row's, it is written with `save_limit: true`, so made-up usernames cost at most that
   many saves per place and window and cannot churn the once-set. A result whose username the
   player typed records it as `typed` whether or not it is an account (every `helpdesk_request`
   result; `signin_refused` blocked); a result that follows a correct password records
@@ -931,7 +958,8 @@ over 400 bytes, so the run-time check never fires.
   registered maximum (at most 9, in production too), too small to carry a PIN, a code or a
   two-digit matching number (13.5). No rule admits free text, so a password, hash, PIN, code,
   key, MFA number, security answer or file content has no field to land in. The only free text
-  in a row is `as.typed`. The guard of step 2 is a second, separate check in tests (section 11
+  in a row is `as.typed`, and it is the one place a row may hold a secret: only one the player
+  typed there, stored as typed (real logs catch passwords typed into the username box). The guard of step 2 is a second, separate check in tests (section 11
   runs the walk with it off to prove the type rules alone).
 - **Nothing unearned.** Ids and display names of findings, techniques, networks, shares, folders,
   services, hosts and accounts may be stored and shown, because the player reaches the row only by
@@ -981,6 +1009,7 @@ EVENTS = {
   'signin_ok'       => { label: 'SIGN_IN',   places: %w[pc],      results: %w[ok], detail: { 'method' => %w[password credential], 'route' => %w[keyboard foothold from relay] } },
   'network_swept'   => { label: 'NET_SWEEP', places: %w[network], results: %w[ok], detail: { 'from' => { id: 'foothold' } } },
   'credentials_harvested' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 9 }, 'hashes' => { count: 9 } } },
+  'signin_refused'  => { label: 'SIGN_IN',   places: %w[pc],      results: %w[denied blocked], save_limit: { 'denied' => 10, 'blocked' => 10 } },
   # ...
 }.freeze
 ```
@@ -988,6 +1017,9 @@ EVENTS = {
 - `places`: the `where.kind` values allowed; `[]` or absent means the event has no place.
 - `results`: the closed list for this event, lowercase words of 2 to 16 letters. Shared words:
   `ok`, `fail`, `denied`, `granted`, `refused`, `blocked`, `expired`.
+- `save_limit`: optional, a map of result to its limit, an Integer from 1 to 99 (the
+  `signin_refused` line above). A call passing `save_limit: true` uses it; the validator counts
+  possible keys from it (section 9).
 - `detail` rules, four types and no other:
 
   | Rule | Admits | Shown as |
@@ -1023,8 +1055,8 @@ the core plan also treats as a sign-in PC is logged as `pc`. A kind with no disp
 yet, or an id that no longer resolves when the row is read, is shown as `-`.
 
 A spec test walks `EVENTS` and `KINDS` and fails on a malformed entry, a place kind or `{ id: }`
-kind with no `KINDS` entry, a numeric rule other than `{ count: max }` with `max` at most 9, or
-an event whose ceiling-filled row (13.1) passes 400 bytes, so a sibling plan's registration is
+kind with no `KINDS` entry, a numeric rule other than `{ count: max }` with `max` at most 9, a
+`save_limit` naming a result the event lacks or a limit outside 1 to 99, or an event whose ceiling-filled row (13.1) passes 400 bytes, so a sibling plan's registration is
 checked by this suite as soon as it lands.
 
 ### 13.6 Who really acted, later
@@ -1045,7 +1077,7 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
 | S2 | `service_checked` | nil | `host`, `pc` | ok | `service` (`{ id: 'service' }`, shown by name) | once per service (caller: written when the service is first added to `opsDiscovered.services`, whatever the check found) | `POST /network/check` |
 | S2 | `finding_confirmed` | nil | `host`, `pc` | ok | `finding` (`{ alias: 'finding' }`), `status` (`confirmed`, `false`), `how` (`quiet`, `probe`) | once per finding (caller) | `POST /network/confirm` |
 | S2 | `network_alerted` | nil | `network` | ok | none | once per network (caller: the request that sets the alert global) | the confirm or technique route that raised the noise |
-| S3 | `technique_refused` | nil | `host`, `pc` | refused | `finding` (alias), `technique` (`{ id: 'technique' }`), `reason` (the closed list of 422 codes) | merged repeats; a quiet refusal also `save_limit: 10` per host | a noisy refusal: the route's own save. A quiet refusal saves nothing today: `save!` only when `r&.stored?`, written with `save_limit: 10` (the core plan matches) |
+| S3 | `technique_refused` | nil | `host`, `pc` | refused | `finding` (alias), `technique` (`{ id: 'technique' }`), `reason` (the closed list of 422 codes) | merged repeats; a quiet refusal also `save_limit: true`, 10 per host (registered for `refused`) | a noisy refusal: the route's own save, `save_limit: false`. A quiet refusal saves nothing today: `save!` only when `r&.stored?`, written with `save_limit: true` |
 | S3 | `technique_used` | `{ account: }` for a session grant, nil for a credential grant | `host`, `pc` | ok | `finding`, `technique`, `grant` (`session`, `credential`), `access` (`user`, `admin`; session grants only) | one per grant (caller: a repeat with `already: true` writes nothing) | `POST /network/technique` |
 | S5a | `admin_profile_read` | `{ account: }` (the session's) | `pc` | ok | `profile` (`{ id: 'profile' }`) | `once: true`: one per PC, profile and account | `GET /container`, which saves nothing of its own: `save!` only when `r&.stored?` |
 | S5a | `usb_install_overridden` | `{ account: }` | `pc` | ok | `device` (the closed list of `usbClass` values the schema allows) | merged repeats | the implant action and plant proof, which already save (`network_access.rb:535`) |
@@ -1058,10 +1090,10 @@ Taken from each plan's own section 13. Detail values follow the typed rules of 1
 | S8a | `mfa_prompt_approved` | `{ account: }` | `pc` | ok | `approver` (`owner`, `held_phone`, `own_phone`) | one per sign-in | the save that writes the session |
 | S8a | `mfa_prompt_denied` | `{ account: }` | `pc` | denied | none | one per attempt | the save that drops the record |
 | S8a | `mfa_expired` | `{ account: }` | `pc` | expired | none | one per attempt | the save that drops the record |
-| S8b | `helpdesk_request` | `{ typed: }`, the username as asked, for every result and whether or not it is an account | `desk` | granted, refused, blocked | `what` (`password`, `mfa`) | granted, refused: merged repeats and the desk's `maxTries`. Blocked: `save_limit: 10` per desk, whatever username is typed | granted, refused: the save that stores the grant or the tries. Blocked changes nothing else: `save!` only when `r&.stored?` |
+| S8b | `helpdesk_request` | `{ typed: }`, the username as asked, for every result and whether or not it is an account | `desk` | granted, refused, blocked | `what` (`password`, `mfa`) | granted, refused: merged repeats and the desk's `maxTries`. Blocked: `save_limit: true`, 10 per desk (registered for `blocked`), whatever username is typed | granted, refused: the save that stores the grant or the tries. Blocked changes nothing else: `save!` only when `r&.stored?` |
 | S8b | `account_password_reset`, `account_mfa_reenrolled` | `{ account: }` | `desk` | ok | `agent` | once per account (caller: first grant) | the save that stores the grant |
 
-- **S8c, a second step on any lock**, adds no events: the seven `mfa_*` events also register
+- **S8c, a second step on any lock**, adds no events: the eight `mfa_*` events also register
   `places: %w[pc door object]`, and `mfa_challenge` gains a `method` detail from a closed code
   list. A row at a door or object follows "Locks name no account" (13.3): `as: { npc: ownerId }`
   (the id must resolve to a scenario NPC), shown by the NPC's display name, only when the lock's
@@ -1085,12 +1117,12 @@ Sources match these by prefix: `badge_*`, `signin_*`, `session_*`, `net_*`, `sha
 | Event | Who (`as`) | Where | When | Result | Detail | Bound | Saved by |
 |---|---|---|---|---|---|---|---|
 | `badge_swipe` | holder's own keycard: `{ npc: holder }`; a copy: the holder when the request carried one card, none when several, always the holder with `showCardHolder` (question 1); a card with no single holder: `{ card: id }` | `door`, `object` | `#unlock`, rfid lock in force, target not open, `validate_unlock` passed (5.1) | ok | none | one per unlock | the unlock's save |
-| `badge_swipe` | none | `door`, `object` | `#unlock` refusal: rfid lock in force, target in reach, an rfid card held (5.1) | denied | none | merged repeats; `save_limit: 10` per door | `save!` only when `r&.stored?` |
+| `badge_swipe` | none | `door`, `object` | `#unlock` refusal: rfid lock in force, target in reach, an rfid card held (5.1) | denied | none | merged repeats; `save_limit: true`, 10 per door | `save!` only when `r&.stored?` |
 | `signin_ok` | `{ account: }` | `pc` | `start_login_session!`, `via` `password` or `credential` | ok | `method` (`password`, `credential`), `route` (shared codes, 13.7) | one per sign-in | both callers |
 | `signin_fail` | `{ typed: }` | `pc` | `record_login_failure!` | fail | none | merged repeats; `maxAttempts` | the method's save |
 | `signin_lockout` | `{ typed: }` | `pc` | `add_login_lockout!` | ok | none | one per lockout | `record_login_failure!` |
-| `signin_refused` | `{ account: }` | `pc` | `attempt_login!` `notPermitted` | denied | `kind` (`local`, `domain`; S5c) | merged repeats; `save_limit: 10` per PC (result `denied`) | `save!` only when `r&.stored?` |
-| `signin_refused` | `{ typed: }` | `pc` | `attempt_login!` locked-out return | blocked | none | `save_limit: 10` per PC (result `blocked`), whatever username is typed | `save!` only when `r&.stored?` |
+| `signin_refused` | `{ account: }` | `pc` | `attempt_login!` `notPermitted` | denied | `kind` (`local`, `domain`; S5c) | merged repeats; `save_limit: true`, 10 per PC (result `denied`) | `save!` only when `r&.stored?` |
+| `signin_refused` | `{ typed: }` | `pc` | `attempt_login!` locked-out return | blocked | none | `save_limit: true`, 10 per PC (result `blocked`), whatever username is typed | `save!` only when `r&.stored?` |
 | `session_end` | `{ account: }` | `pc` | `logout_session!`, explicit sign-out only | ok | none | one per session | the method's save |
 | `session_lock` | `{ account: }` | `pc` | `lock_session!`, past its refusals | ok | none | merged repeats | the method's save |
 | `net_link_up`, `net_link_down` | none | `jack` | `plant_device!`, `unplug_device!` (L3) | ok | none | one per plant or unplug | the methods' saves |
@@ -1118,41 +1150,38 @@ records nothing for these, and the gap is the lesson.
 
 1. **All plans that write rows:** list rows in the shape of 13.7, with Bound and Saved by columns,
    and register events and kinds in the stage that adds the action (13.5). A branch with no save
-   of its own saves only when `r&.stored?` and is bounded by `once:` or `save_limit:`, never by
-   merging. Each plan that adds a secret field registers it with `OpsLog.register_secret_source`
+   of its own saves only when `r&.stored?` and is bounded by `once:` or `save_limit: true`, never
+   by merging; the limit's number goes in that event's `EVENTS` entry, never at the call. Each plan that adds a secret field registers it with `OpsLog.register_secret_source`
    in that stage, and each function that issues a derived secret calls
    `OpsLog.note_issued_secret` (13.2 step 2). Each `test_ops_*` scenario that asserts rows declares
    `logSources` and a `gameClock` and calls `assert_ops_log_holds_no_secret`.
 2. **Orchestrator, ordering:** L1a lands before the first stage of every other ops plan; L1b lands
    before the S3, S5a, S5c and S8 stages that edit `attempt_login!` and `start_login_session!`.
-3. **OPS_CORE (S1 to S3):** a quiet `technique_refused` is written with `save_limit: 10` and saves
-   only on `r&.stored?` (a noisy one keeps the route's save); a repeat of one of a source's 10
-   newest rows merges.
+3. **OPS_CORE (S1 to S3):** `technique_refused` registers `save_limit: { 'refused' => 10 }`; a
+   quiet refusal is written with `save_limit: true` (not `10`) and saves only on `r&.stored?`, a
+   noisy one passes none and keeps the route's save; a repeat of one of a source's 10 newest rows
+   merges.
 4. **OPS_PRIVILEGE_ACCOUNTS (S5):** `admin_profile_read` is one per PC, profile and account; the
    harvest detail is `count` and `hashes`, each `{ count: 9 }`, a collect adding at most 8 pairs;
    S5b registers hash values as a secret source.
-5. **OPS_MFA_HELPDESK (S8):** the rows are taken as that plan writes them (`mfa_code_locked`,
-   `own_phone`, no `request` or `credential` detail, `helpdesk_request` with no `agent`), with
-   these changes in that plan:
-   - The helper signature is `write_log_row!(event, as:, where:, result: 'ok', detail: nil, once:
-     false, save_limit: nil)`; there is no `merge_limit:`.
-   - The blocked `helpdesk_request` call is exactly
-     `write_log_row!('helpdesk_request', as: { typed: username }, where: { kind: 'desk', id: desk_id }, result: 'blocked', detail: { 'what' => what }, save_limit: 10)`,
-     with no `once:` (refused with a typed identity), saving only when `r&.stored?`. Its Saved by
-     cell reads "at most ten times per desk in each five-minute window, whatever username is
-     typed".
-   - The `mfa_prompt_approved` detail key is `approver` (`by` is reserved, 13.6).
-   - `mfa_challenge`'s `route` uses the shared list `keyboard`, `foothold`, `from`, `relay`, or
-     the plan states that a challenge never starts over a relay.
-   - The S8c `method` detail is a closed list of codes, each at most 16 lowercase characters.
-   - S8c rows at a door or object follow 13.7; they use the `door` and `object` place kinds
-     (13.5). The `desk` entry of `KINDS` is that plan's.
-   - S8 registers its seeds and helpdesk answers as secret sources, and the functions that issue a
-     second-step code or a matching number call `OpsLog.note_issued_secret`; the matching
-     number's range is 10 to 99.
-6. **OPS_CRACKING (S7):** writes no rows, and registers any hash or cracked value it stores as a
+5. **OPS_MFA_HELPDESK (S8):** the rows, the `approver` key, the route codes, the secret sources
+   (`creds.resetPassword` registered, no seed, recovery answers not registered) and the 10 to 99
+   matching number are taken as that plan writes them. Two changes remain in that plan:
+   - The helper's last argument is the switch `save_limit: false`. `helpdesk_request` registers
+     `save_limit: { 'blocked' => 10 }`, and the blocked call is exactly
+     `write_log_row!('helpdesk_request', as: { typed: username }, where: { kind: 'desk', id: desk_id }, result: 'blocked', detail: { 'what' => what }, save_limit: true)`,
+     saving only when `r&.stored?`.
+   - Its guard tests for a second-step code and a matching number force a `detail` value to the
+     issued value in a test-only event (the walk of section 11 already builds such calls), not a
+     `typed` value: typed text is stored as typed and never reaches the matcher.
+6. **OPS_LOCK_SECOND_STEP (S8c):** met for `approver` (not `by`) and for `as: { npc: }` only
+   when the second-step screen shows the owner, nil otherwise, never `{ account: }`. Still asked:
+   the `method` detail on `mfa_challenge` is a closed list of codes, each at most 16 lowercase
+   characters, listed in that plan; its rows use the `door` and `object` place kinds (13.5) and
+   follow 13.7; the `mfa_*` events it extends number eight.
+7. **OPS_CRACKING (S7):** writes no rows, and registers any hash or cracked value it stores as a
    secret source.
-7. **Orchestrator:** `log_rows_for` and the key `by` (13.6) are reserved for the parked defence
+8. **Orchestrator:** `log_rows_for` and the key `by` (13.6) are reserved for the parked defence
    debrief and the investigator idea; S6's parity run compares `log_rows_for(source_id, compare:
    true)` across skins.
 
@@ -1169,7 +1198,8 @@ records nothing for these, and the gap is the lesson.
    - (d) Show the holder when the request carried one card only, `-` when it carried several. The
      row tells nothing the player did not choose to test.
    **Recommend (d):** it keeps the existing guarantee where it matters (several copies at once) and
-   teaches the lesson by default; `showCardHolder` stays for a mission that wants (b).
+   teaches the lesson by default; `showCardHolder` stays for a mission that wants (b). This plan
+   is written to (d).
 2. **Rows from NPCs and office life.** Staff badge swipes, sign-ins and workarounds happen in the
    browser's office-life systems, so the server cannot vouch for them.
    - (a) Leave them out until the defence work, which needs a server-side NPC model anyway.
@@ -1184,3 +1214,7 @@ records nothing for these, and the gap is the lesson.
    **Recommend (a):** it needs no change to the share reader, keeps file names out of rows, and
    a hash file on a share still leaves a trace (the folder that holds it). This plan is written
    to (a).
+4. **Typed text before another player.** A typed username is stored as typed, so a password
+   typed into the username box sits in the row; the parked defence game would show it to another
+   player. **Recommend accepting it:** passwords typed into a username box are a real thing a
+   defender sees.

@@ -48,3 +48,17 @@ Every major, minor and partly closed item in `OPS_LOG_ROWS_R3.md` was acted on, 
 | R4 m7 | Count above max is clamped to max with no `9+` mark | A mark needs a stored flag for a case no sibling can reach (8 pairs per PC) |
 | R4 m8 | Lock rows take `{ npc: }` only when the second-step screen names the owner, else nil; never `{ account: }` | What the S8c screens show was not checked here; the MFA plan's editor decides per screen |
 | R4 trim | Trim list applied except 13.2 step 6 prose (grew with the save window); plan is 1221 lines, over the 1150 target | The N1/N3/m5 fixes added about 60 lines; the remaining cut is left to the next pass |
+
+# Round 5
+
+Every blocker, major and minor in `OPS_LOG_ROWS_R5.md` was acted on, with the orchestrator's rulings, except as below.
+
+| Finding | Decision | Why |
+|---|---|---|
+| B1 | Typed text stored as typed whatever it equals; matcher never reads `as.typed`; open question 4 added | Orchestrator ruling; any branch on its value is the oracle |
+| M2 | Limit registered per result in `EVENTS` (`save_limit: { 'blocked' => 10 }`); the call passes the switch `save_limit: true`, never a number | `technique_refused` has limited (quiet) and unlimited (noisy) callers for one result, so a switch is needed; a switch with no number is simpler than a number that must match |
+| m1 | The mark moves onto the row as `"p": 1`; `rowSeq` and the negative count are dropped (entry is `[count, windowStartMs]`, 34 bytes); protection is "a row with `p` whose latest time is inside the window" | The ceiling row is 343 bytes (349 with `p`), and the largest `p` row is blocked `helpdesk_request` at 382, so it fits under 400 and survives the entry's reset |
+| m1 (identity) | `+` is documented as "later calls of that event and result at that place were dropped, whoever they named"; no per-identity tracking | Keying on `as` would let typed text multiply keys |
+| m3 | Matcher skips values its type rule resolved (codes, scenario ids, declared usernames); validator warning kept | Cannot block an author; the type rules already prove those are not free text |
+| m6, M1, M3, m7 | Section 14 items 5 and 6; lock plan marked met for `approver` and `{ npc: }` per the orchestrator's note, `method` list still asked | Sibling edits |
+| technique_used ceiling | Recomputed as 388 at a `host` place (was 386) | Measured with compact JSON |
