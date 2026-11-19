@@ -134,7 +134,7 @@ def _pool(kit):
 
 
 def room_npcs(kit, row, prefix=None):
-    """The two ambient staff as room NPC records. Empty for tier none."""
+    """The two ambient staff as room NPC records, then the set piece's own `npcs`. Empty for tier none."""
     if not active(row):
         return []
     pool_key = kit['pool']['key']
@@ -164,6 +164,9 @@ def room_npcs(kit, row, prefix=None):
         npc['chatter'] = {pool_key: {'lines': lines, 'requireGlobal': copy.deepcopy(kit['pool']['requireGlobal'])}}
         npc.update(patches.get(person, {}))
         out.append(npc)
+    # a set piece's own `npcs` (ca12's visitor): kit-owned records, after the ambient pair, written as the
+    # set piece has them (placeholders filled in; no currentKnot/storyPath defaults, the record carries them)
+    out.extend(_subst(copy.deepcopy(_set_piece(kit, row).get('npcs', [])), prefix, row))
     return out
 
 

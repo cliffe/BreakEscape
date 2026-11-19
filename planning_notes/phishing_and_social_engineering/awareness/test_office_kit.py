@@ -210,6 +210,30 @@ class Rules(unittest.TestCase):
         out = ok.apply_kit(twin_shell(), kit, r)
         self.assertEqual([t['id'] for t in out['timers']], ['kit_ca01_t'])
 
+    def test_set_piece_npcs_are_kit_records_after_the_ambient_pair_and_round_trip(self):
+        """ca12's visitor: a set piece `npcs` record is built after the ambient pair, filled in, and survives
+        build -> strip_kit -> apply_kit unchanged and without a duplicate."""
+        kit = copy.deepcopy(ok.load_kit('brightwell_foods'))
+        kit['setPieces'] = {'demo': {'npcs': [{
+            'id': 'kit_visitor', 'npcType': 'person', 'displayName': 'Vee', 'spriteSheet': 'x',
+            'behavior': {'initiallyHidden': True}, 'position': {'x': 1, 'y': 2},
+            'storyPath': 'scenarios/_office_kit/ink/v.json', 'currentKnot': 'start',
+            'eventMappings': [{'eventPattern': 'global_variable_changed:{out}', 'condition': 'value === true',
+                               'onceOnly': True, 'setVisible': True}]}]}}
+        r = row(setPiece='demo', stepAway=True, attack=True)
+        b = ok.build(kit, r, 'p_', 'episode_e_state')
+        self.assertEqual([n['id'] for n in b['npcs']], ['kit_gwen_pritchard', 'kit_agnieszka_duda', 'kit_visitor'])
+        self.assertEqual(b['npcs'][2]['eventMappings'][0]['eventPattern'], 'global_variable_changed:kit_ca01_out')
+        self.assertNotIn('person', b['npcs'][2])
+        once = ok.apply_kit(twin_shell(), kit, r)
+        twice = ok.apply_kit(once, kit, r)
+        self.assertEqual(once, twice)
+        self.assertEqual([n['id'] for n in once['rooms']['training_room']['npcs']].count('kit_visitor'), 1)
+        stripped = ok.strip_kit(once)
+        self.assertNotIn('kit_visitor', [n['id'] for n in stripped['rooms']['training_room']['npcs']])
+        self.assertEqual(ok.apply_kit(stripped, kit, r), once)
+        self.assertEqual(ok.kit_owned(once)['npcs'], b['npcs'])
+
     def test_unknown_set_piece_is_an_error(self):
         with self.assertRaises(KeyError):
             ok.room_npcs(ok.load_kit('brightwell_foods'), row(setPiece='nope'))
