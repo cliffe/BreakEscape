@@ -297,6 +297,10 @@ the user says how. Brief: `docs/agents/OPS_LAYER_BRIEF.md`.
   All five live plans are now in R4 or R5 review: CORE R4 (a14ec25a85499bccc), PRIVILEGE R5
   (a6f8f5a57b1050dde), SKIN R4 (aedac230b57faa436), MFA R4 full (a507d1abc5320b61a), LOG_ROWS R4
   (ad1f8c88a66ac2edb).
+- 11:55. PRIVILEGE R5 findings `99df47fc7` (0B 0M 2m 5n; reviewer: no sixth round needed). Final
+  fix pass running (Opus, a6392caf7249cf81b): client drops `access` on an `off` refusal;
+  `accountOnly` must state `staff` explicitly; five nits. When it reports: commit; PRIVILEGE
+  ROUNDS ARE DONE (five rounds). Do not launch another review for it.
 - User decisions pending: does a typed sign-in with an admin's password give an admin session; how the cracking revision proceeds; forged intel facts (cracking B2);
   how the server learns cached accounts (privilege, four options).
 
