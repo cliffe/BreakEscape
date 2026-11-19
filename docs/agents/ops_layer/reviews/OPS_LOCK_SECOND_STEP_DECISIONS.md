@@ -109,3 +109,15 @@
 - n2: fallback and its JS row cut (both server checks are static); the retry has no refusal path. LOCK 5.4.
 - n3: section 10 names `npcStepGrants`. n4: LOG section 11 badge bullet left (review says no contradiction; not in this file set). n5: reworded. LOCK 5.4.
 - n6: not cut. Cost of each answer and the cut options added to open question 1; the wait-for-conversation question added as 9 so it stays open (decision belongs to the user).
+
+## R9 fixes (2026-11-19)
+
+- m1: the door retry handles the real rejection (`body.reason === 'second_step_cancelled'` returns via `cancelFeedback`; any other rejection shows "Failed to verify access"); no unhandled rejection; both tested. LOCK 5.4, JS rows.
+- m2: a queued request re-posts `/unlock` at the head before opening; success settles with no pane, already-open target is dropped quietly, expired record opens on the new one; stale and already-open cases tested. LOCK 5.4, JS rows.
+- m3: the queue serialises on an open pane only; a waiting `npc` request holds no place, so a pad's own step opens at once; tested. LOCK 5.4, JS rows.
+- m4: `door_unlocked_by_npc` fires once per open from whichever path opens it (bridge on the conversation path, the retry with `retry: true` otherwise); doors with no second step unchanged; listeners checked: m09 `restricted_cage` (`cage_opened`), m10 five `setGlobal` mappings (lines 1806, 1840, 1848, 1951, 1984), `objectives-manager.js:348`. B12c, B12e, JS rows updated. Differs from the earlier R8 choice (no emit on retry).
+- n1: shared-files rows name the sixth argument and the queue, knock-out check and `npcStepOpener` writer.
+- n2: a `fromDoor` request whose single check is not clear settles as a silent cancel and never queues behind a waiting request.
+- n3: the bootstrap adds `npcStepOpener` only for a room not in `unlockedRooms`.
+- n4: `opener` wording fixed: the grant's value, also on a re-answer from any method.
+- Open questions 1 and 9 left open and undecided.
