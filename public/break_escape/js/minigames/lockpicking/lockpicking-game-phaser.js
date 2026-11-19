@@ -358,6 +358,12 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             more.className = 'lockpicking-obs-more';
             more.setAttribute('aria-hidden', 'true');
             obs.insertAdjacentElement('afterend', more);
+            // The button's name is its own text (the observations can hold clues). This visually
+            // hidden tail adds the action after it; it is empty while the text is not a button.
+            const hint = document.createElement('span');
+            hint.className = 'lockpicking-obs-hint';
+            obs.appendChild(hint);
+            this._obsHint = hint;
             this._obsEl = obs;
             this._obsMore = more;
             this._obsSection = itemDisplayDiv;
@@ -633,12 +639,20 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             obs.setAttribute('role', 'button');
             obs.tabIndex = 0;
             obs.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            obs.setAttribute('aria-label', expanded ? 'Hide full description' : 'Show full description');
-            obs.setAttribute('aria-describedby', obs.id);
+            if (this._obsHint) this._obsHint.textContent = expanded ? ' Show less.' : ' Show more.';
             if (this._obsMore) this._obsMore.textContent = expanded ? '- LESS' : '+ MORE';
         } else {
-            ['role', 'aria-expanded', 'aria-label', 'aria-describedby'].forEach((a) => obs.removeAttribute(a));
+            // Focus must not fall to the page when the button goes: hand it to the mode button,
+            // or the minigame's X
+            if (typeof document !== 'undefined' && document.activeElement === obs) {
+                const root = this.container || document;
+                const next = sec.querySelector('.lockpicking-mode-row button:not([disabled])')
+                    || root.querySelector?.('#minigame-close') || document.getElementById('minigame-close');
+                next?.focus?.();
+            }
+            ['role', 'aria-expanded'].forEach((a) => obs.removeAttribute(a));
             obs.removeAttribute('tabindex');
+            if (this._obsHint) this._obsHint.textContent = '';
         }
     }
 
@@ -654,6 +668,13 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     _releaseLockWatchers() {
         this._lockBoxObserver?.disconnect?.();
         this._lockBoxObserver = null;
+        // Timers that would otherwise reach a destroyed scene
+        clearInterval(this._keySelPoll);
+        this._keySelPoll = null;
+        clearTimeout(this._keyInsertTimer);
+        this._keyInsertTimer = null;
+        clearTimeout(this.keyRetryTimer);
+        this.keyRetryTimer = null;
         if (this._lockZoomOnResize) window.removeEventListener('resize', this._lockZoomOnResize);
         if (this._obsOnResize) window.removeEventListener('resize', this._obsOnResize);
         this._obsOnResize = null;
@@ -696,9 +717,11 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // this.scene, but that may not have fired by the time minigame-starters.js
         // calls us (500 ms after game creation).  Poll until the scene is ready.
         if (!this.scene) {
-            const pollId = setInterval(() => {
+            clearInterval(this._keySelPoll);
+            this._keySelPoll = setInterval(() => {
                 if (this.scene) {
-                    clearInterval(pollId);
+                    clearInterval(this._keySelPoll);
+                    this._keySelPoll = null;
                     this._doStartWithKeySelection(inventoryKeys, correctKeyId);
                 }
             }, 50);

@@ -210,19 +210,22 @@ test('the observations are a button only while they overflow or are open, named 
         assert.equal(strip.classList.contains('lockpicking-obs-overflow'), false);
         p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
         assert.equal(open(), false);
-        // overflows: a button with a name that says what it does, described by its own text
+        // overflows: a button whose name is its own text (no aria-label, no aria-describedby),
+        // with a visually hidden action after it
         sh = 72; sync();
         assert.equal(p.getAttribute('role'), 'button');
         assert.equal(p.tabIndex, 0);
         assert.equal(p.getAttribute('aria-expanded'), 'false');
-        assert.equal(p.getAttribute('aria-label'), 'Show full description');
-        assert.equal(p.getAttribute('aria-describedby'), p.id);
+        assert.equal(p.hasAttribute('aria-label'), false, 'aria-label would replace the text as the name');
+        assert.equal(p.hasAttribute('aria-describedby'), false);
+        assert.equal(p.textContent, long + ' Show more.', 'name from content: the text, then the action');
         assert.equal(strip.querySelector('.lockpicking-obs-more').textContent, '+ MORE');
         assert.equal(strip.classList.contains('lockpicking-obs-overflow'), true);
         p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
         assert.equal(open(), true);
         assert.equal(p.getAttribute('aria-expanded'), 'true');
-        assert.equal(p.getAttribute('aria-label'), 'Hide full description');
+        assert.equal(p.hasAttribute('aria-label'), false);
+        assert.equal(p.textContent, long + ' Show less.');
         assert.equal(strip.querySelector('.lockpicking-obs-more').textContent, '- LESS');
         p.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
         assert.equal(open(), false);
@@ -239,7 +242,7 @@ test('the observations are a button only while they overflow or are open, named 
         window.innerHeight = 800; sync();
         assert.equal(open(), false);
         assert.equal(p.getAttribute('role'), null);
-        assert.equal(p.getAttribute('aria-label'), null);
+        assert.equal(p.textContent, long, 'plain text again: no hidden action');
         // cleanup removes the listeners
         sh = 72; window.innerHeight = 390; sync();
         LockpickingMinigamePhaser.prototype._releaseLockWatchers.call(fake);
@@ -315,4 +318,63 @@ test('the box observer refreshes Phaser on a size change and is disconnected on 
             assert.equal(superCleaned, 1);
         } finally { window.removeEventListener = realRemove; }
     } finally { delete globalThis.ResizeObserver; }
+});
+
+test('the "+ MORE" plate covers the whole 24px line and the hint is visually hidden', () => {
+    const more = rule(short.body, '.lockpicking-item-section.lockpicking-obs-overflow .lockpicking-obs-more');
+    assert.match(more, /line-height\s*:\s*24px/);
+    assert.match(more, /(^|[;\s])height\s*:\s*24px/);
+    assert.match(more, /background\s*:\s*#000/);
+    const hint = rule(short.body, '.lockpicking-obs-hint');
+    assert.match(hint, /position\s*:\s*absolute/);
+    assert.match(hint, /clip\s*:\s*rect\(0 0 0 0\)/);
+});
+
+test('removing the role while the observations hold focus moves focus to the mode button, else the X', () => {
+    const long = 'A heavy cage door with a standard pin tumbler lock. The brass is scratched around the keyhole.';
+    const savedH = window.innerHeight;
+    try {
+        window.innerHeight = 390;
+        for (const withMode of [true, false]) {
+            const strip = render(long);
+            const fake = lastFake;
+            const p = strip.querySelector('.lockpicking-item-info p');
+            Object.defineProperty(p, 'scrollHeight', { get: () => 72, configurable: true });
+            Object.defineProperty(p, 'clientHeight', { get: () => 48, configurable: true });
+            const x = document.createElement('button');
+            x.id = 'minigame-close';
+            document.body.appendChild(x);
+            let mode = null;
+            if (withMode) {
+                const row = document.createElement('div');
+                row.className = 'lockpicking-mode-row';
+                mode = document.createElement('button');
+                row.appendChild(mode);
+                strip.appendChild(row);
+            }
+            document.body.appendChild(strip);
+            LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
+            p.focus();
+            assert.equal(document.activeElement, p);
+            window.innerHeight = 800;
+            LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
+            assert.equal(p.getAttribute('role'), null);
+            assert.equal(document.activeElement, withMode ? mode : x, withMode ? 'the mode button' : 'the X');
+            window.innerHeight = 390;
+        }
+    } finally { window.innerHeight = savedH; }
+});
+
+test('a lock that ends before its scene exists leaves no poll or insertion timer running', async () => {
+    const fake = { keySelectionMode: false, scene: null, _doStartWithKeySelection: () => { throw new Error('ran on a dead lock'); } };
+    const h = LockpickingMinigamePhaser.prototype;
+    h.startWithKeySelection.call(fake, [], 'k');
+    assert.ok(fake._keySelPoll, 'the poll handle is stored');
+    fake._keyInsertTimer = setTimeout(() => { throw new Error('insertion timer fired'); }, 20);
+    h._releaseLockWatchers.call(fake);
+    assert.equal(fake._keySelPoll, null);
+    assert.equal(fake._keyInsertTimer, null);
+    await new Promise((r) => setTimeout(r, 120));
+    // the key-selection path stores its 300ms timer on the lock, so release can clear it
+    assert.match(readFileSync(join(root, 'js/minigames/lockpicking/key-operations.js'), 'utf8'), /this\.parent\._keyInsertTimer = setTimeout/);
 });

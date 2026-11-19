@@ -430,7 +430,10 @@
         padding: 0 0 0 4px;
         font-family: 'Press Start 2P', monospace;
         font-size: 8px;
-        line-height: 12px;
+        /* a plate over the whole 24px line, or the tops of the glyphs under it show above it.
+           The strip is rgba(0,0,0,0.3) on the shell's rgba(0,0,0,0.95): black to within 9/255 */
+        line-height: 24px;
+        height: 24px;
         color: #ffcc44;
         background: #000;
         pointer-events: none;
@@ -441,6 +444,16 @@
         top: 0;
         right: 0;
         line-height: 24px;
+    }
+
+    /* the action after the observations' text, for screen readers only */
+    .lockpicking-obs-hint {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
     }
 
     /* the heading leaves room for "- LESS" on its line */
