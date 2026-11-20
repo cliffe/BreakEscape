@@ -83,7 +83,7 @@ test('the prompt counts as open from the call, through the delay, until answered
     elements.clear();
     const answer = tutorial.showTutorialPrompt({ delayMs: 20 });
     assert.equal(tutorial.isPromptOpen(), true, 'open during the settle delay');
-    assert.equal(document.getElementById('tutorial-no'), null, 'modal not shown yet');
+    assert.ok(document.getElementById('tutorial-no') === null, 'modal not shown yet');
     await new Promise(r => setTimeout(r, 40));
     assert.equal(tutorial.isPromptOpen(), true, 'open while the modal is showing');
     document.getElementById('tutorial-yes').click();

@@ -417,7 +417,7 @@ test('the consent dialog is a modal dialog with the wording, focus on Unlock, an
     assert.equal(w.document.getElementById(box.getAttribute('aria-labelledby')).textContent, 'Unlock your purchase?');
     assert.equal(w.document.getElementById(box.getAttribute('aria-describedby')).textContent,
         'There’s a purchase of Licence to Hack on this Google account that isn’t linked to a Hacktivity account. Unlock Licence to Hack for agent7?');
-    assert.equal(w.document.activeElement, d.querySelector('[data-play-consent-no]'), 'first focus is the safe button');
+    assert.ok(w.document.activeElement === d.querySelector('[data-play-consent-no]'), 'first focus is the safe button');
     assert.equal(called, false);
     w.__skew += 400;
     d.querySelector('[data-play-consent-yes]').click();
@@ -430,15 +430,15 @@ test('the consent dialog traps Tab and Shift+Tab, and focus coming from outside 
     const w = load({ manual: true, fake: fakeOne('fake-ok-m2'), answers: [UNOWNED] });
     await settle(w); await settle(w);
     const yes = w.document.querySelector('[data-play-consent-yes]'), no = w.document.querySelector('[data-play-consent-no]');
-    assert.equal(w.document.activeElement, no);
+    assert.ok(w.document.activeElement === no);
     assert.equal(press(w, 'Tab').defaultPrevented, false, 'Tab from Not now moves on to Unlock naturally');
     yes.focus();
     assert.equal(press(w, 'Tab').defaultPrevented, true);
-    assert.equal(w.document.activeElement, no, 'Tab from the last button wraps to the first');
+    assert.ok(w.document.activeElement === no, 'Tab from the last button wraps to the first');
     assert.equal(press(w, 'Tab', true).defaultPrevented, true);
-    assert.equal(w.document.activeElement, yes, 'Shift+Tab from the first wraps to the last');
+    assert.ok(w.document.activeElement === yes, 'Shift+Tab from the first wraps to the last');
     button(w).focus();
-    assert.equal(w.document.activeElement, no, 'focus outside the dialog comes back in');
+    assert.ok(w.document.activeElement === no, 'focus outside the dialog comes back in');
 });
 
 test('Escape cancels the consent dialog, remembers the no, and returns focus', async () => {
@@ -450,7 +450,7 @@ test('Escape cancels the consent dialog, remembers the no, and returns focus', a
     await settle(w);
     assert.equal(dlg(w), null);
     assert.equal(w.requests.length, 1, 'no consent claim sent');
-    assert.equal(w.document.activeElement, button(w));
+    assert.ok(w.document.activeElement === button(w));
     assert.equal(w.localStorage.getItem('hacktivity.restoreDeclined.k1abc').length > 2, true);
     assert.equal(w.localStorage.getItem('hacktivity.restoreDeclined.agent7'), null, 'the handle is never a storage key');
 });
@@ -527,13 +527,13 @@ test('restore tells an account that already has the game so, once per purchase, 
     const saved = w.localStorage.getItem('hacktivity.restoreOwnedShown.k1abc');
     const again = load({ buy: false, fake: fakeOne('fake-ok-o1'), answers: [owned], seed: (x) => x.localStorage.setItem('hacktivity.restoreOwnedShown.k1abc', saved) });
     await settle(again); await settle(again);
-    assert.equal(again.document.querySelector('[data-play-banner]'), null);
+    assert.ok(again.document.querySelector('[data-play-banner]') === null);
 });
 
 test('an explicit restore always says it, even for the row this account already holds', async () => {
     const w = load({ buy: false, fake: fakeOne('fake-ok-o2'), answers: [reply(200, { status: 'owned' }), reply(200, { status: 'owned' })] });
     await settle(w); await settle(w);
-    assert.equal(w.document.querySelector('[data-play-banner]'), null, 'launch restore stays quiet for a normal owner');
+    assert.ok(w.document.querySelector('[data-play-banner]') === null, 'launch restore stays quiet for a normal owner');
     await w.HacktivityPlatform.restoreNow();
     assert.match(w.document.querySelector('[data-play-banner]').textContent, /already own Licence to Hack/);
 });

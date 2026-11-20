@@ -222,7 +222,7 @@ test('header panel on a record with no auth block: three "None" rows, no summary
         const rows = [...p.querySelectorAll('.tri-auth-row')];
         assert.equal(rows.length, 3);
         assert.ok(rows.every((r) => r.dataset.result === 'none'));
-        assert.equal(p.querySelector('.tri-auth-summary'), null);
+        assert.ok(p.querySelector('.tri-auth-summary') === null);
     }
 });
 
@@ -238,8 +238,8 @@ test('header panel: results map pass/fail and anything else to none; envelope an
 test('header panel: forwardedBy true or a string shows a banner; a falsy value shows none', () => {
     assert.match(panel({ forwardedBy: 'Jed' }).querySelector('.tri-forwarded').textContent, /Forwarded by Jed/);
     assert.match(panel({ forwardedBy: true }).querySelector('.tri-forwarded').textContent, /a colleague/);
-    assert.equal(panel({ forwardedBy: '' }).querySelector('.tri-forwarded'), null);
-    assert.equal(panel({ forwardedBy: false }).querySelector('.tri-forwarded'), null);
+    assert.ok(panel({ forwardedBy: '' }).querySelector('.tri-forwarded') === null);
+    assert.ok(panel({ forwardedBy: false }).querySelector('.tri-forwarded') === null);
 });
 
 test('header panel: only the explained mechanism shows its three lines; Explain buttons call the handler with the mechanism', () => {
@@ -257,11 +257,11 @@ test('header panel: only the explained mechanism shows its three lines; Explain 
 });
 
 test('header panel: the glossary button follows the handler mode; "off" and a missing mode show none; open shows all three entries', () => {
-    assert.equal(panel({}, { glossaryOpen: false }, {}).querySelector('.tri-glossary'), null);
-    assert.equal(panel({}, { glossaryOpen: false }, { glossary: 'off' }).querySelector('.tri-glossary'), null);
+    assert.ok(panel({}, { glossaryOpen: false }, {}).querySelector('.tri-glossary') === null);
+    assert.ok(panel({}, { glossaryOpen: false }, { glossary: 'off' }).querySelector('.tri-glossary') === null);
     const closed = panel({}, { glossaryOpen: false }, { glossary: 'closed' });
     assert.ok(closed.querySelector('.tri-glossary-btn'));
-    assert.equal(closed.querySelector('.tri-glossary-list'), null);
+    assert.ok(closed.querySelector('.tri-glossary-list') === null);
     const open = panel({}, { glossaryOpen: true }, { glossary: 'closed' });
     assert.equal(open.querySelectorAll('.tri-glossary-list dt').length, 3);
 });
@@ -277,7 +277,7 @@ test('header panel plain skin: plain labels and title; technical default uses SP
 
 test('header panel writes authored text as text, never markup', () => {
     const p = panel({ from: { name: '<img src=x onerror=alert(1)>', address: '<b>a</b>@x.example' }, auth: { summary: '<script>1</script>' } });
-    assert.equal(p.querySelector('img[src="x"]'), null);
-    assert.equal(p.querySelector('script'), null);
+    assert.ok(p.querySelector('img[src="x"]') === null);
+    assert.ok(p.querySelector('script') === null);
     assert.match(p.textContent, /<img src=x onerror=alert\(1\)>/);
 });

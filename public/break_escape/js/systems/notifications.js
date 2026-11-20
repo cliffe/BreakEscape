@@ -72,14 +72,75 @@ export function settleAfterPanelClose(now = Date.now()) {
 }
 
 if (typeof window !== 'undefined') {
+    window.modalDialogOpened = modalDialogOpened;
+    window.modalDialogClosed = modalDialogClosed;
     window.expectContainerAfterUnlock = expectContainerAfterUnlock;
     window.expectPanelWithin = expectPanelWithin;
     window.clearExpectedPanel = clearExpectedPanel;
     window.settleAfterPanelClose = settleAfterPanelClose;
 }
 
+// gameDisplay and gameConfirm dim the whole game with an overlay but are not minigames, so
+// fullScreenPanelOpen() never saw them: a toast raised with or just before a note ("Note
+// Added") or a once-only hint played out under the dimmed overlay and could expire unseen.
+// They hold toasts the way a minigame does (same types, same hold queue and poll): info and
+// success toasts wait until the last of them closes and then show for their full time, a toast
+// barely on screen when one opens is pulled back, and older ones pause and carry on after.
+// Errors and warnings are feedback on what the player just did, so they still show at once.
+// Read from the page, not counted: an overlay removed by anything other than its own close
+// (a test or a scene teardown wiping the body) must never leave toasts held for good.
+export function modalDialogOpen() {
+    return typeof document !== 'undefined' && typeof document.querySelector === 'function'
+        && !!document.querySelector('.game-confirm-overlay');
+}
+
+function anyPanelOpen() {
+    return fullScreenPanelOpen() || modalDialogOpen();
+}
+
+function setModalHold(on) {
+    if (typeof document === 'undefined') return;
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    container.querySelectorAll('.notification').forEach((el) => {
+        if (!el._toast || el._toast.closing || !HOLDABLE_TYPES.has(el._toast.type)) return;
+        setHold(el, '_modalHeld', on);
+    });
+}
+
+// Backstop for the hold: while toasts are paused for a modal, look at the page every
+// HOLD_POLL_MS and let them go once no .game-confirm-overlay is left, whichever code removed
+// the last one (an overlay with that class that never calls the close hook, a teardown).
+let modalPoll = null;
+
+function modalDialogCount() {
+    if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return 0;
+    return document.querySelectorAll('.game-confirm-overlay').length;
+}
+
+function armModalPoll() {
+    if (modalPoll || typeof setInterval !== 'function') return;
+    modalPoll = setInterval(modalDialogClosed, HOLD_POLL_MS);
+    if (modalPoll && typeof modalPoll.unref === 'function') modalPoll.unref();   // never keep a node test process alive
+}
+
+// The ending check (ending-check.js) has no imports and calls these two through window.
+export function modalDialogOpened() {
+    if (typeof document === 'undefined') return;
+    armModalPoll();
+    if (modalDialogCount() !== 1) return;   // already held by another
+    holdRecentNotifications(Date.now(), { dismissStale: false });
+    setModalHold(true);
+}
+
+export function modalDialogClosed() {
+    if (modalDialogOpen()) return;   // another is still up: keep holding
+    setModalHold(false);
+    if (modalPoll) { clearInterval(modalPoll); modalPoll = null; }
+}
+
 function releaseHeldNotifications() {
-    if (fullScreenPanelOpen() || panelExpected()) return;
+    if (anyPanelOpen() || panelExpected()) return;
     clearInterval(holdTimer);
     holdTimer = null;
     heldNotifications.splice(0).forEach((args) => renderNotification(...args));
@@ -139,7 +200,7 @@ export function isQueuedDuplicate(queue, message, type, title, options = {}) {
         && sameRenderMode(toastRenderMode(q[5]), mode));
 }
 
-export function holdRecentNotifications(now = Date.now()) {
+export function holdRecentNotifications(now = Date.now(), { dismissStale = true } = {}) {
     if (typeof document === 'undefined') return 0;
     const container = document.getElementById('notification-container');
     if (!container) return 0;
@@ -161,7 +222,7 @@ export function holdRecentNotifications(now = Date.now()) {
     // order ahead of toasts raised while the panel is open (code review R1 n2).
     holdForPanel(takeWaiting());
     if (pulled.length && !holdTimer) holdTimer = setInterval(releaseHeldNotifications, HOLD_POLL_MS);
-    pickStaleHoldable(shown, now).forEach(({ el }) => {
+    if (dismissStale) pickStaleHoldable(shown, now).forEach(({ el }) => {
         el._toast.pulled = true;
         removeNotification(el);
     });
@@ -191,7 +252,7 @@ export function toastDuration(type, duration) {
 // for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
     duration = toastDuration(type, duration);
-    if (shouldHoldNotification(type, fullScreenPanelOpen() || panelExpected())) {
+    if (shouldHoldNotification(type, anyPanelOpen() || panelExpected())) {
         // Toasts still waiting for a place go into the hold first, so they stay ahead of
         // this one: a workstation popup (CyberChef, a lab sheet) holds toasts without
         // calling holdRecentNotifications (code review R2 n1).
@@ -258,7 +319,7 @@ function startCountdown(notification, duration, total = duration) {
 // Every timed toast stops its countdown while the pointer is over it or focus is inside it,
 // and carries on with the time it had left when both are gone.
 function isHeld(notification) {
-    return notification._hoverHeld === true || notification._focusHeld === true;
+    return notification._hoverHeld === true || notification._focusHeld === true || notification._modalHeld === true;
 }
 
 function pauseCountdown(notification) {
@@ -831,7 +892,7 @@ function takeWaiting() {
 function showWaitingToast(args, overLimit) {
     clearTimeout(args.waitTimer);
     args.waitTimer = null;
-    if (shouldHoldNotification(args[1], fullScreenPanelOpen() || panelExpected())) {
+    if (shouldHoldNotification(args[1], anyPanelOpen() || panelExpected())) {
         holdForPanel([args]);
         return true;
     }
@@ -1081,11 +1142,13 @@ export function gameDisplay(message, title = '', options = {}) {
             done = true;
             unregister();
             overlay.remove();
+            try { modalDialogClosed(); } catch (e) { /* a hold fault must never keep a dialog open */ }
             try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve();
         };
         closeBtn.addEventListener('click', finish);
         document.body.appendChild(overlay);
+        try { modalDialogOpened(); } catch (e) { /* a hold fault must never break the dialog */ }
         try { closeBtn.focus(); } catch (e) { /* best effort */ }
     });
 }
@@ -1146,6 +1209,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             if (typeof window.removeEventListener === 'function') window.removeEventListener('keyup', onKeyUp, true);
             unregister();
             overlay.remove();
+            try { modalDialogClosed(); } catch (e) { /* a hold fault must never break the dialog */ }
             // Give focus back to whatever had it (the game canvas, a minigame field).
             try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve(result);
@@ -1192,6 +1256,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         openConfirms++;
         countText(message, 1);
         document.body.appendChild(overlay);
+        try { modalDialogOpened(); } catch (e) { /* a hold fault must never break the dialog */ }
         // Focus the safe choice, so a stray Enter or Space never says yes.
         try { cancelBtn.focus(); } catch (e) { /* best effort */ }
     });

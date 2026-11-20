@@ -99,7 +99,7 @@ test('after a take the focus moves to the next item, or the one before when it w
     await open([A, B, C]);
     let s = slots();
     s[0].focus(); key(s[0], 'Enter'); await settle();
-    assert.equal(document.activeElement, slots()[0], 'next item');
+    assert.ok(document.activeElement === slots()[0], 'next item');
     assert.equal(document.activeElement.getAttribute('aria-label'), 'Red Folder');
     s = slots();
     s[1].focus(); key(s[1], 'Enter'); await settle();
@@ -116,7 +116,7 @@ test('the last take moves the focus to Take Container, else the X, never the bod
     s = slots();
     s[0].focus(); key(s[0], 'Enter'); await settle();
     assert.equal(document.activeElement.id, 'minigame-close');
-    assert.notEqual(document.activeElement, document.body);
+    assert.ok(document.activeElement !== document.body);
 });
 
 test('a click still takes the item, and an item with nothing to do is reachable but unavailable', async () => {
@@ -177,7 +177,7 @@ test('focus is not moved when it went elsewhere during the server round trip', a
         other.focus();
         release(); await settle();
         assert.equal(slots().length, 2, 'taken');
-        assert.equal(document.activeElement, other, 'focus left alone');
+        assert.ok(document.activeElement === other, 'focus left alone');
     } finally { hooks.gate = null; }
 });
 
@@ -186,7 +186,7 @@ test('after a take by Enter, repeated Enter keydowns are swallowed until the key
     const s = slots();
     s[0].focus(); key(s[0], 'Enter'); await settle();
     const btn = document.getElementById('take-container-btn');
-    assert.equal(document.activeElement, btn);
+    assert.ok(document.activeElement === btn);
     let clicks = 0;
     btn.addEventListener('click', () => clicks++);
     const bubbled = [];

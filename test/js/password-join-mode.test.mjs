@@ -106,7 +106,7 @@ test('an AP name with HTML-special characters is escaped in the join header', ()
     const h3 = q('.minigame-header h3');
     assert.ok(h3, 'the join header renders');
     // No element was injected from the name; the characters survive only as text
-    assert.equal(h3.querySelector('script'), null, 'no script element injected');
+    assert.ok(h3.querySelector('script') === null, 'no script element injected');
     assert.ok(h3.innerHTML.includes('&lt;script&gt;'), 'angle brackets are escaped');
     assert.ok(h3.innerHTML.includes('&amp;'), 'ampersand is escaped');
     assert.ok(h3.textContent.includes('Harbour <script> & "guest"'), 'the name reads back as typed');

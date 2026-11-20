@@ -124,7 +124,7 @@ test('close() closes an open game-display modal with a click on its X', async ()
     assert.equal(res.closed, 'game-display');
     assert.equal(res.stillOpen, false);
     assert.equal(d.clicks(), 1);
-    assert.equal(document.querySelector('.game-display-dialog'), null);
+    assert.ok(document.querySelector('.game-display-dialog') === null);
 });
 
 test('close() with a game-display modal open over a popup closes the modal first', async () => {

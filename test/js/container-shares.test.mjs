@@ -704,11 +704,11 @@ test('slice 2a: a mapped share opens as a folder window: UNC title bar, file lis
     const m = current();
     assert.equal(m.shareFolder, true);
     assert.equal(m.desktopMode, false);
-    assert.equal(document.querySelector('.desktop-wallpaper'), null, 'no wallpaper');
-    assert.equal(document.querySelector('.container-monitor-bezel'), null, 'no old desktop bezel');
+    assert.ok(document.querySelector('.desktop-wallpaper') === null, 'no wallpaper');
+    assert.ok(document.querySelector('.container-monitor-bezel') === null, 'no old desktop bezel');
     // The folder window fills the screen of the one PC monitor frame (UX slice 2c)
     assert.ok(document.querySelector('.pc-monitor .pc-monitor-screen .share-folder-window'), 'the folder window on the monitor screen');
-    assert.equal(document.querySelector('.desktop-icons'), null, 'no desktop icons');
+    assert.ok(document.querySelector('.desktop-icons') === null, 'no desktop icons');
     assert.equal(document.querySelector('.share-folder-path').textContent, '\\\\HB-FS01\\Ledger-Archive');
     const files = [...document.querySelectorAll('.share-folder-files .container-content-label')].map(el => el.textContent);
     assert.deepEqual(files, ['IT handover.txt', 'Year-end']);
@@ -822,7 +822,7 @@ test('slice 2a R1: the folder window header icon is marked for x2; files carry n
     icon('Ledger-Archive').click();
     await settle();
     // In the PC monitor (UX slice 2c) there is no header box: the icon is the title bar's
-    assert.equal(document.querySelector('.container-image-section'), null, 'no header box on the monitor');
+    assert.ok(document.querySelector('.container-image-section') === null, 'no header box on the monitor');
     assert.equal(document.querySelectorAll('.share-folder-files .container-content-tooltip').length, 0, 'no tooltip box to clip');
     for (const img of document.querySelectorAll('.share-folder-files .container-content-item')) {
         assert.equal(img.title, '', `${img.alt}: no title repeating the label`);
@@ -1022,14 +1022,14 @@ test('icon focus return: a key-opened interactive file returns focus to its icon
     assert.deepEqual(window.pendingContainerReturn.focusReturn, { key: 'strongbox', byKey: true });
     returnToContainerAfterNotes();
     await settle();
-    assert.equal(document.activeElement, icon('Strongbox'), 'the icon has the focus again');
+    assert.ok(document.activeElement === icon('Strongbox'), 'the icon has the focus again');
     // opened by mouse: the same trip, no focus
     await desk();
     current().handleInteractiveItem(memo, null);
     assert.deepEqual(window.pendingContainerReturn.focusReturn, { key: 'strongbox', byKey: false });
     returnToContainerAfterNotes();
     await settle();
-    assert.notEqual(document.activeElement, icon('Strongbox'), 'no focus after a mouse open');
+    assert.ok(document.activeElement !== icon('Strongbox'), 'no focus after a mouse open');
     // key open whose return never happens (the reader closed by a hit): a fresh open later focuses nothing
     await desk();
     { const mg = current(); mg.openedByKey = true; mg.handleInteractiveItem(memo, null); mg.openedByKey = false; }
@@ -1037,7 +1037,7 @@ test('icon focus return: a key-opened interactive file returns focus to its icon
     window.startContainerMinigame({ scenarioData: { id: 'drawer', name: 'Drawer', type: 'safe', locked: false } }, null, false, false);
     await settle();
     await desk();
-    assert.notEqual(document.activeElement, icon('Strongbox'), 'a fresh open focuses no old icon');
+    assert.ok(document.activeElement !== icon('Strongbox'), 'a fresh open focuses no old icon');
 });
 
 // Icon labels R4 n1: the real startContainerMinigame and the text-file network-screen reopen

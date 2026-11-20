@@ -139,7 +139,7 @@ test('mail reader: a hiddenTextLabel overrides the button label', () => {
 
 test('mail reader: no hiddenText means no reveal (ordinary mail unchanged)', () => {
     const pane = readerFor(sentRec({}));
-    assert.equal(pane.querySelector('.tri-hidden'), null);
+    assert.ok(pane.querySelector('.tri-hidden') === null);
 });
 
 test('mail reader: hiddenReveal:false suppresses the reader reveal (the host draws its own, e.g. triage)', () => {
@@ -147,7 +147,7 @@ test('mail reader: hiddenReveal:false suppresses the reader reveal (the host dra
     const reader = new MailReader(parent, { hiddenReveal: false });
     reader.setMessages([sentRec({ hiddenText: 'planted' })], 'sent');
     reader.select('m1');
-    assert.equal(parent.querySelector('.tri-hidden'), null);
+    assert.ok(parent.querySelector('.tri-hidden') === null);
 });
 
 // ── E13 F-2: the conditional landed-send global ─────────────────────────────────

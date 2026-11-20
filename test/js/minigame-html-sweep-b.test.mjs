@@ -69,7 +69,7 @@ function assertClean(label) {
         assert.deepEqual(names, ['alt', 'class', 'height', 'src', 'width'], `${label}: icon ${cls} carries only class, src, alt, width and height`);
         assert.ok(!names.some((n) => n.startsWith('on')), `${label}: icon ${cls} has no event handler attribute`);
     }
-    assert.equal(root.querySelector('u'), null, `${label}: no injected element`);
+    assert.ok(root.querySelector('u') === null, `${label}: no injected element`);
     for (const el of root.querySelectorAll('*')) {
         const handler = Array.from(el.attributes).find((a) => a.name.startsWith('on'));
         assert.equal(handler, undefined, `${label}: no injected handler (${handler?.name} on ${el.tagName})`);
@@ -95,7 +95,7 @@ test('warranty checklist: a verdict restored from saved state cannot reach the m
     quietly(() => mg.init());
     assertClean('warranty');
     assert.equal(document.querySelector('.wcc-row-title').textContent, HOSTILE);
-    assert.equal(document.querySelector('.wcc-verdict-badge'), null, 'an unknown verdict shows no badge');
+    assert.ok(document.querySelector('.wcc-verdict-badge') === null, 'an unknown verdict shows no badge');
 });
 
 function explorer() {
@@ -215,15 +215,15 @@ test('NCSC brief: an entity-encoded tag stays text and a stray tag cannot restyl
     mg._renderContent();
     assertClean('stray tags');
     const meta = document.querySelector('.ncsc-brief-meta');
-    assert.equal(meta.querySelector('b'), null, 'no real <b> from &lt;b&gt;');
+    assert.ok(meta.querySelector('b') === null, 'no real <b> from &lt;b&gt;');
     assert.equal(meta.textContent, 'Shown as <b>x</b>');
     const [one, two] = document.querySelectorAll('.ncsc-section p');
-    assert.equal(one.querySelector('i'), null, 'an unclosed <i> stays text');
+    assert.ok(one.querySelector('i') === null, 'an unclosed <i> stays text');
     assert.equal(one.querySelectorAll('b').length, 0, 'a </b> without its own opening tag stays text');
     assert.ok(one.textContent.includes('<i>italic and <b onclick=1>bad</b>'), one.textContent);
     assert.equal(one.querySelectorAll('br').length, 1, 'upper-case <BR> works');
     assert.equal(one.querySelector('strong')?.textContent, 'Bold', 'mixed-case <Strong> pair works, lower case out');
-    assert.equal(two.closest('i, b'), null, 'the next section is not inside a carried-over tag');
+    assert.ok(two.closest('i, b') === null, 'the next section is not inside a carried-over tag');
     assert.equal(two.querySelector('b > i')?.textContent, 'both', 'one level of nesting is restored');
 });
 
@@ -232,8 +232,8 @@ test('coverage decision form: an entity-encoded tag stays text and a stray tag s
     const mg = new CoverageDecisionFormMinigame(fresh(), lockable(md));
     quietly(() => mg.init());
     assert.equal(document.querySelector('.cdf-section-title').textContent, 'Show <em>this</em>');
-    assert.equal(document.querySelector('.cdf-section-title em'), null);
-    assert.equal(document.querySelector('.cdf-section-desc em'), null);
+    assert.ok(document.querySelector('.cdf-section-title em') === null);
+    assert.ok(document.querySelector('.cdf-section-desc em') === null);
     assert.equal(document.querySelector('.cdf-section-desc').textContent, 'Open <em>never closed');
     assert.equal(document.querySelector('.cdf-radio-row b')?.textContent, 'A1');
 });

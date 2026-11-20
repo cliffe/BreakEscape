@@ -297,4 +297,5 @@ Agent HaX: WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole 
 }
 Agent HaX: Meet Sterling, clone her card, then come back after dark. Go.
 #start_gameplay
+#exit_conversation
 -> DONE

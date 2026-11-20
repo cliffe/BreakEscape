@@ -38,8 +38,8 @@
 }
 
 #password-modal-input {
-    /* the modal is zoomed by --hud-zoom; divided back so rendered text stays at least 20px */
-    font-size: max(20px, calc(20px / var(--hud-zoom, 1)));
+    /* the modal is zoomed by --hud-zoom; divided back so rendered text stays at least 24px (GNF grid: 16/24/32) */
+    font-size: max(24px, calc(24px / var(--hud-zoom, 1)));
     font-family: 'GNF', monospace;
     padding: 8px 12px;
     /* border-radius: 4px; */

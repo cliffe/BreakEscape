@@ -109,7 +109,7 @@ test('a filed item (autoAddToNotes false) is not added and its own page stays', 
     assert.equal(window.gameState.notes.length, 3);
     assert.equal(m.container.querySelector('.notes-minigame-title').textContent, 'Filed page');
     assert.match(m.container.querySelector('.notes-minigame-text').textContent, /filed body/);
-    assert.equal(m.container.querySelector('.notes-minigame-counter'), null, 'no counter for a page outside the list');
+    assert.ok(m.container.querySelector('.notes-minigame-counter') === null, 'no counter for a page outside the list');
 });
 
 test('autoAddToNotes defaults on and honours false', () => {
@@ -126,11 +126,11 @@ test('a filed page has no edit button and a save attempt leaves every note uncha
     const before = JSON.stringify(notes);
     const item = { scenarioData: { type: 'text_file', name: 'Filed page', text: 'filed body' } };
     const m = open({ title: 'Filed page', item, noteContent: 'filed body', observationText: 'seen', autoAddToNotes: false, navigateToNote: null }, notes);
-    assert.equal(m.container.querySelector('.notes-minigame-edit-btn'), null, 'no pencil on a filed page');
+    assert.ok(m.container.querySelector('.notes-minigame-edit-btn') === null, 'no pencil on a filed page');
     m.saveObservationToNote('overwritten');
     m.editObservations(m.container.querySelector('.notes-minigame-observation'));
     assert.equal(JSON.stringify(window.gameState.notes), before, 'note text unchanged');
-    assert.equal(m.container.querySelector('.notes-minigame-edit-textarea'), null);
+    assert.ok(m.container.querySelector('.notes-minigame-edit-textarea') === null);
     const st = m.getTestState();
     assert.equal(st.noteCount, 0);
     assert.equal(st.filed, true);
@@ -182,7 +182,7 @@ test('searchNotes("") after a no-match re-enables both nav buttons', () => {
 test('a filed page with no observations shows no placeholder, pencil or edit title', () => {
     const item = { scenarioData: { type: 'text_file', name: 'Filed page', text: 'filed body' } };
     const m = open({ title: 'Filed page', item, noteContent: 'filed body', observationText: '', autoAddToNotes: false, navigateToNote: null }, mk(3));
-    assert.equal(m.container.querySelector('.notes-minigame-edit-btn'), null);
+    assert.ok(m.container.querySelector('.notes-minigame-edit-btn') === null);
     assert.ok(!/Click edit to add/.test(m.container.textContent));
-    assert.equal(m.container.querySelector('[title^="Click to"]'), null);
+    assert.ok(m.container.querySelector('[title^="Click to"]') === null);
 });

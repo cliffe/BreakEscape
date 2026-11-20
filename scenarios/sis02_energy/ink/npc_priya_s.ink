@@ -132,6 +132,10 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 // Gas alarm before the dial: leaving it was right (round 4). The early press before the dial is
 // already covered above, so the dial isn't mentioned twice.
 // mn2: not after someone went into the hall in the alarm (said just above).
+// D173 (owner-approved): read the dial, never said which to believe (same condition as the credits line).
+- anomaly_detected and gauge_verdict == "" and not esd_before_dial:
+    Priya S.: You read the dial and never said whether you believed it. Helen was waiting on that answer.
+    Priya S.: The screen was the one thing an attacker could reach. That's why the choice mattered.
 - not anomaly_detected and hydrogen_alarm and not entered_hall_in_gas_alarm:
     Priya S.: The gas came up before anyone read the dial. Leaving it was right by then.
 }

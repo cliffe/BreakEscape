@@ -412,7 +412,7 @@ test('renderChecklist on a minimal result does not throw and lands/not-lands the
     const open = { opened: true };
     const landed = B.renderChecklist({ landed: true, open, factors: [], tells: [] }, t, {});
     assert.ok(landed.querySelector('.mail-checklist-banner.landed'));
-    assert.equal(landed.querySelector('.mail-checklist-hint'), null);
+    assert.ok(landed.querySelector('.mail-checklist-hint') === null);
     assert.ok(landed.querySelector('.mail-checklist-done'));
     const failed = B.renderChecklist({ landed: false, open, hint: '✗ Try the CV', factors: [{ id: 'senderTrust', mode: 'required', pass: false, line: '✗ No' }, { id: 'senderAuth', mode: 'advisory', pass: false, line: '✗ Weak' }, { id: 'x', mode: 'advisory', pass: true, line: 'fine' }], tells: [] }, t, { onEdit: () => {} });
     assert.equal(failed.querySelectorAll('.mail-checklist-advisory').length, 1);

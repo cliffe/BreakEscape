@@ -821,6 +821,28 @@ function gameDisplayParts(data, sprite, observations, text) {
 }
 
 /**
+ * Readable room text that would not survive the 5 s toast. The toast is 600 px wide with
+ * 20 px GNF (about 50 characters a line, notifications.css) and a phone's compact HUD clamps
+ * a message to 2 lines (3 for warnings), so past about two lines of text, or more than three
+ * newline-separated lines, it is clipped or gone before it can be read. Such text opens in
+ * the gameDisplay modal (same layout as readDisplay "gameDisplay") instead. Measured on the
+ * observation plus the text, the two things the toast prints. "readDisplay": "toast" opts out.
+ */
+const LONG_TOAST_TEXT_CHARS = 120;
+const LONG_TOAST_TEXT_LINES = 3;
+// An observation identical to the text is one piece: counted and shown once.
+function sameToastText(observations, text) {
+    return String(observations || '').trim() === String(text || '').trim();
+}
+function toastObs(observations, text) {
+    return sameToastText(observations, text) ? null : observations;
+}
+function isLongToastText(observations, text) {
+    const all = [observations, text].filter(Boolean).join('\n');
+    return all.length > LONG_TOAST_TEXT_CHARS || all.split('\n').length > LONG_TOAST_TEXT_LINES;
+}
+
+/**
  * "Examine" in the inventory click menu (inventory-menu.js): the examine view
  * of a held item, with the chain's own text. Without the examine scene (it is
  * always registered in the game) the observation is shown as the chain's last
@@ -832,7 +854,7 @@ export function examineHeldItem(sprite) {
     if (startExamine(sprite, { observations, text })) return true;
     const data = sprite.scenarioData;
     const name = data.name || sprite.name || '';
-    const message = observations ? `${name} Observations: ${observations}\n` : name;
+    const message = observations || name;
     if (data.observationDisplay === 'gameDisplay' && window.gameDisplay) {
         const { body, title } = gameDisplayParts(data, sprite, observations, null);
         window.gameDisplay(body, title, { html: true });
@@ -1841,9 +1863,10 @@ export function handleObjectInteraction(sprite) {
 
     const { observations: resolvedObservations, text: resolvedText } = examineTextFor(sprite);
 
-    let message = `${data.name || sprite.name} `;
+    // Toast body: the observation, then the text on its own line. The toast title is the name.
+    let message = '';
     if (resolvedObservations) {
-        message += `Observations: ${resolvedObservations}\n`;
+        message += `${resolvedObservations}\n`;
     }
     
     // SE pretext call (06 N5, 00 S10): a desk phone carrying a callId opens
@@ -1990,6 +2013,8 @@ export function handleObjectInteraction(sprite) {
     // "readDisplay": "gameDisplay" shows the text in a modal instead of opening it as a
     // notebook page. A copy is still saved to notes unless "addToNotes": false (use that
     // for flavour, or for live displays whose text changes with textVariants).
+    // Without readDisplay, long readable text opens in the same modal (isLongToastText) rather
+    // than the 5 s toast; "readDisplay": "toast" keeps the toast whatever the length.
     let readInPlace = false;
     // An item filed in a holder (storeIn, the capture log: engine plan section 6) is in the
     // holder, never also in the Notepad, whatever addToNotes says.
@@ -2003,7 +2028,8 @@ export function handleObjectInteraction(sprite) {
             }
         }
     } else if (data.readable && resolvedText) {
-        message += `Text: ${resolvedText}\n`;
+        // (toastObs returns null for both 'identical' and 'no observation', so compare directly)
+        if (!sameToastText(resolvedObservations, resolvedText)) message += `${resolvedText}\n`;
 
         // All notes-family items (notes, notes2, notes3, ...) use the notes minigame.
         // They go to notepad (autoAddToNotes in the minigame), never to inventory UI.
@@ -2146,7 +2172,7 @@ export function handleObjectInteraction(sprite) {
                         data.readable ? resolvedText : null);
                     window.gameDisplay(body, title, { html: true });
                 } else {
-                    window.gameAlert(message, 'info', data.name, 5000);
+                    window.gameAlert(message.trim() || data.name || sprite.name || '', 'info', data.name, 5000);
                 }
             }
         };
@@ -2210,8 +2236,17 @@ export function handleObjectInteraction(sprite) {
             const { body, title } = gameDisplayParts(data, sprite, resolvedObservations,
                 data.readable ? resolvedText : null);
             window.gameDisplay(body, title, { html: true });
+        } else if (data.readable && resolvedText && data.readDisplay !== 'toast' && window.gameDisplay &&
+                   isLongToastText(toastObs(resolvedObservations, resolvedText), resolvedText)) {
+            // Long readable text would be clipped in the 5 s toast: the readDisplay layout instead.
+            // The notes copy was already decided by the readable branch above.
+            const { body, title } = gameDisplayParts(data, sprite,
+                toastObs(resolvedObservations, resolvedText), resolvedText);
+            window.gameDisplay(body, title, { html: true });
         } else {
-            window.gameAlert(message, 'info', data.name, 5000);
+            // whole: a readable object's text is never cut to the phone's two lines
+            window.gameAlert(message.trim() || data.name || sprite.name || '', 'info', data.name, 5000,
+                data.readable && resolvedText ? { whole: true } : undefined);
         }
     }
 }

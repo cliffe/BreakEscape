@@ -179,7 +179,7 @@ test('is-below-start / is-above-start follow the value against the start; at the
 test('a character with no thresholds has no legend and no marks and still draws', () => {
     setup({ characters: chars({ thresholds: [] }) });
     const b = mount();
-    assert.equal(b.el.querySelector('.ib-infl-legend'), null);
+    assert.ok(b.el.querySelector('.ib-infl-legend') === null);
     assert.equal(b.el.querySelectorAll('.ib-infl-mark').length, 0);
 });
 
@@ -194,7 +194,7 @@ test('unknown threshold icon keys fall back to a question mark icon, never a bro
 test('number:false removes the number but keeps the track; bar:false removes everything; bar:false with number:true is still nothing', () => {
     setup({ display: { number: false } });
     const noNumber = mount();
-    assert.equal(noNumber.el.querySelector('.ib-infl-number'), null);
+    assert.ok(noNumber.el.querySelector('.ib-infl-number') === null);
     assert.equal(noNumber.getState().numberShown, false);
     assert.equal(noNumber.getState().numberText, null);
     assert.ok(noNumber.el.querySelector('[role="meter"]'));
@@ -318,7 +318,7 @@ test('destroy unsubscribes both listeners, removes the element, and a second des
     b.destroy();
     assert.equal(d.count('npc_influence_changed'), 0);
     assert.equal(d.count('global_variable_changed:amy_influence'), 0);
-    assert.equal(document.querySelector('.influence-bar'), null);
+    assert.ok(document.querySelector('.influence-bar') === null);
     assert.doesNotThrow(() => b.destroy());
     emit({ character: 'amy', delta: 5 });
 });

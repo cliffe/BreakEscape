@@ -98,14 +98,14 @@ test('sentTells: Sent records only, latest record per tell, seeded stubs, quick 
 test('off by default: no indicators authored draws no section and the state lists none', () => {
     setup();
     const s = open(socialWith(null));
-    assert.equal(s.container.querySelector('.ib-indicators'), null);
+    assert.ok(s.container.querySelector('.ib-indicators') === null);
     assert.deepEqual(s.getTestState().board.defender.indicators, []);
 });
 
 test('no sent mail: authored indicators stay hidden and nothing is drawn', () => {
     setup();
     const s = open(socialWith(), { mailboxes: {} });
-    assert.equal(s.container.querySelector('.ib-indicators'), null);
+    assert.ok(s.container.querySelector('.ib-indicators') === null);
     assert.ok(s.getTestState().board.defender.indicators.every((i) => i.shown === false));
 });
 
@@ -136,7 +136,7 @@ test('a wrong mark shows why and can be changed; the right mark locks and is sav
     assert.equal(c.querySelector('[data-mark="block"]').disabled, true);
     assert.equal(s.markIndicator('ind_urgent', 'block'), false, 'locked');
     assert.deepEqual(G().se_board_state.defender.indicators, { ind_urgent: 'allow' });
-    assert.equal(document.activeElement, card(s, 'ind_urgent').querySelector('[data-mark="allow"]'));
+    assert.ok(document.activeElement === card(s, 'ind_urgent').querySelector('[data-mark="allow"]'));
 });
 
 test('hidden or unknown indicators and bad marks are refused', () => {

@@ -204,7 +204,7 @@ test('a reopened voiced call hands each fresh line\'s note to the line it types 
     const shown = [];
     const deps = { processGameActionTags() {}, deliveryFromTags };
     const mg = {
-        _resetSkip() {}, _pace: () => Promise.resolve(),   // skip helpers (real ones need the browser timers)
+        _resetSkip() {}, _setBatchBudget() {}, _setRepliesCue() {}, _scaledPause: (ms) => ms, _pace: () => Promise.resolve(),   // skip helpers (real ones need the browser timers)
         currentNPCId: 'agent', isConversationActive: true, _pendingNpcMessages: [],
         ui: { showNotification() {}, addChoices() {} },
         async _showStoryLine(raw, delay, delivery) { shown.push({ raw, delivery }); return true; },

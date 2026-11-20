@@ -283,7 +283,7 @@ test('bridge: take A, close, take B at once, with a slow fetch: both work, no no
     const c = await minigameBridge.close();
     assert.equal(c.nowActive, 'container');
     assert.equal(c.returnedToContainer, true);
-    assert.equal(document.querySelector('.loading'), null, 'close() waited for the contents to load');
+    assert.ok(document.querySelector('.loading') === null, 'close() waited for the contents to load');
     const b = await minigameBridge.take('Reading 2');
     assert.equal(b.ok, true, JSON.stringify(b));
     assert.equal(b.took, 'Reading 2');

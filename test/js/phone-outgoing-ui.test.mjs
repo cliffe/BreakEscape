@@ -72,7 +72,7 @@ test('setCallButton: a green button in the header with the label, an aria label 
     assert.equal(ui.elements.conversationHeader.querySelectorAll('.call-button').length, 1, 'replaced, not stacked');
     assert.equal(ui.elements.conversationHeader.querySelector('.call-button-text').textContent, 'Call back');
     ui.setCallButton(null);
-    assert.equal(ui.elements.conversationHeader.querySelector('.call-button'), null);
+    assert.ok(ui.elements.conversationHeader.querySelector('.call-button') === null);
 });
 
 test('setCallButton: the press does not reach the header\'s own handlers (the profile link, the back arrow)', () => {

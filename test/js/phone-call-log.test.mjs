@@ -203,9 +203,9 @@ test('UI: a call row draws as a centred row with a phone glyph, text set as plai
     assert.ok(row, 'row drawn');
     assert.equal(row.dataset.callEvent, 'missed');
     assert.ok(row.classList.contains('missed'));
-    assert.equal(row.querySelector('b'), null, 'no markup');
+    assert.ok(row.querySelector('b') === null, 'no markup');
     assert.match(row.textContent, /Missed call <b>x<\/b>/);
-    assert.equal(ui.elements.messagesContainer.querySelector('.message-bubble'), null);
+    assert.ok(ui.elements.messagesContainer.querySelector('.message-bubble') === null);
 });
 
 test('UI: the contact preview shows the last row, red for a missed call, and a missed row counts as unread', async () => {
@@ -223,7 +223,7 @@ test('UI: the contact preview shows the last row, red for a missed call, and a m
     const ended = mk([{ type: 'call', callEvent: 'incoming', text: 'Incoming call, 0:30', read: true, timestamp: 2 }]);
     assert.equal(ended.querySelector('.contact-last-message').textContent, 'Incoming call, 0:30');
     assert.ok(!ended.querySelector('.contact-last-message').classList.contains('missed'));
-    assert.equal(ended.querySelector('.unread-badge'), null);
+    assert.ok(ended.querySelector('.unread-badge') === null);
 });
 
 test('rows are not a conversation: preload, first open and history checks skip them', () => {
@@ -249,7 +249,7 @@ test('m3: a legacy voiced call screen skips a call row, and still draws the cont
     ui.addMessages([{ type: 'call', callEvent: 'missed', text: 'Missed call' }, { type: 'npc', text: 'Hello there' }]);
     await Promise.resolve();
     assert.deepEqual(subtitles, [['npc', 'Hello there']]);
-    assert.equal(box.querySelector('.message-call-row'), null);
+    assert.ok(box.querySelector('.message-call-row') === null);
 });
 
 // ---- A4 review round 1 m5: wiring the handover claims ----
