@@ -80,9 +80,11 @@ const mediaBlock = (file, query) => {
 
 test('SIEM descriptions and queue text wrap instead of ellipsising', () => {
     for (const cls of ['siem-description', 'siem-queue-text']) {
+        // The first rule for the class is the base rule (the 1100px query comes later and
+        // also says normal/anywhere, so take only the base one for the positive checks)
         const base = rulesFor('siem-dashboard-minigame.css', cls).filter((r) => r.sel.trim() === '.' + cls);
         assert.ok(base.length > 0, `.${cls} base rule exists`);
-        const b = base.map((r) => r.body).join(';');
+        const b = base[0].body;
         assert.ok(/white-space:\s*normal/.test(b), `.${cls} wraps`);
         assert.ok(!/text-overflow:\s*ellipsis/.test(b), `.${cls} has no ellipsis`);
         assert.ok(/overflow-wrap:\s*anywhere/.test(b), `.${cls} breaks long tokens`);
@@ -99,7 +101,7 @@ test('SIEM alert row grows with its message and keeps cells centred', () => {
     assert.ok(/min-height:\s*42px/.test(q) && !/(^|[;\s])height:/.test(q), 'queue item grows too');
 });
 
-test('SIEM phone footer is compact: GNF 16, two lines, no min-height', () => {
+test('SIEM phone footer declared values add up to a compact bar (a declared-values check, not a layout measurement)', () => {
     const m = mediaBlock('siem-dashboard-minigame.css', '@media (max-width: 600px)');
     const re = /([^{}]+)\{([^{}]*)\}/g;
     let mm, body = '';
@@ -115,6 +117,12 @@ test('SIEM phone footer is compact: GNF 16, two lines, no min-height', () => {
     const h = 2 * line + 2 + 2 * Number(pad[1]) + 2;
     assert.ok(h <= 70, `footer height ${h}px is at most half of the old 140px`);
     assert.ok(/grid-column:\s*1\s*\/\s*-1/.test(m.slice(m.indexOf('nth-child(3)'))), 'time remaining spans its own line');
+});
+
+test('SIEM desktop host column fits FIREWALL-CORE and FILESERVER-02 (154px at GNF 16)', () => {
+    const b = rulesFor('siem-dashboard-minigame.css', 'siem-alert-row').find((r) => r.sel.trim() === '.siem-alert-row').body;
+    const cols = b.match(/grid-template-columns:\s*([^;]+);/)[1].trim().split(/\s+/);
+    assert.ok(/^\d+px$/.test(cols[2]) && parseInt(cols[2], 10) >= 156, `host track ${cols[2]} is at least 156px`);
 });
 
 test('SIEM footer spans stay text-only (no new controls to size)', () => {

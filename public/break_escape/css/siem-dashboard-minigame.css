@@ -100,7 +100,7 @@
 
 .siem-alert-row {
     display: grid;
-    grid-template-columns: 70px 86px 140px minmax(0, 1fr) 200px;
+    grid-template-columns: 70px 86px 156px minmax(0, 1fr) 200px;
     gap: 10px;
     align-items: center;
     min-height: 60px;
@@ -590,7 +590,7 @@
         overflow-wrap: anywhere;
     }
 
-    /* Compact footer: GNF 16, two lines (pending and clock; then time remaining), about 58px
+    /* Compact footer: GNF 16, two lines (pending and clock; then time remaining), about 56px
        instead of three lines of GNF 24 at about 140px. Text only, no controls */
     .siem-status-bar {
         display: grid;
