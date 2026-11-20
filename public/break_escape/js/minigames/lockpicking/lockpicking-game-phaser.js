@@ -27,6 +27,20 @@ import { escapeHtml as escapeItemText } from '../../utils/escape-html.js';
 const LOCK_ZOOM_FLOOR = 0.5;
 // Below this zoom the full-size item strip gives way to the compact one, when that gives the lock more
 const LOCK_COMPACT_BELOW = 0.75;
+// Big desktop windows (1600 wide and up). The lock only grows by whole zooms (a fraction above 1
+// blurs the pixels), and with the full item strip above it a 2x lock (1200x800) does not fit at
+// 1920x1080, so it stays 1x in a mostly empty window. One of:
+//   'A' no change: the strip stays full size and the lock stays at the zoom that fits.
+//   'B' the compact strip is used when that unlocks a whole zoom of 2 or more.
+//   'C' the full strip moves to a column beside the lock when that unlocks a whole zoom of 2 or more.
+// The window decides nothing here: the room is measured with each layout and the bigger zoom wins,
+// as for LOCK_COMPACT_BELOW. Phones and short windows return before any of it. Switchable at run
+// time by LockpickingMinigamePhaser.setWideOption (the live matrix and the tests use it).
+let LOCK_WIDE_OPTION = 'B';
+const LOCK_WIDE_OPTIONS = ['A', 'B', 'C'];
+// Smallest whole zoom a wide layout may be kept for
+const LOCK_WIDE_MIN_ZOOM = 2;
+const LOCK_SIDE_CLASS = 'lockpicking-side';
 
 export class LockpickingMinigamePhaser extends MinigameScene {
     constructor(container, params) {
@@ -627,7 +641,9 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             // rules, so a stale mark would leave the observations a dead expanded button (R2 m1).
             // The caller resyncs the observation button after this.
             this._itemSection?.classList?.remove('lockpicking-compact');
+            this.container?.classList?.remove(LOCK_SIDE_CLASS);
             this._lockCompact = false;
+            this._lockSide = false;
             this._portraitCameraOffset = { x: 0, y: st.portrait ? 20 : 30 };
             scale.scaleMode = Phaser.Scale.FIT;
             scale.autoCenter = Phaser.Scale.CENTER_BOTH;
@@ -699,6 +715,15 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         return Math.max(LOCK_ZOOM_FLOOR, Math.floor(f * 100) / 100);
     }
 
+    static wideOption() { return LOCK_WIDE_OPTION; }
+
+    // Switch the big-window layout (see LOCK_WIDE_OPTION); false for an unknown option
+    static setWideOption(opt) {
+        if (!LOCK_WIDE_OPTIONS.includes(opt)) return false;
+        LOCK_WIDE_OPTION = opt;
+        return true;
+    }
+
     // True when the lock would need a zoom below LOCK_COMPACT_BELOW in this room: the item strip
     // then goes compact (if that frees more room). A whole zoom or a fraction at or above it
     // needs no compaction.
@@ -744,27 +769,46 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // .lockpicking-compact), which gives the lock about 250px more. Relax passes remeasure
         // from the full-size strip; sticky passes keep compact once it is on (see above).
         const sec = this._itemSection;
+        const host = this.container;
+        const LZ = LockpickingMinigamePhaser.lockZoom;
         if (sec) {
-            const sticky = !relax && !!this._lockCompact;
-            if (sticky) {
-                sec.classList.add('lockpicking-compact');
-                room = this._lockRoom() || room;
-            } else {
-                sec.classList.remove('lockpicking-compact');
-                room = this._lockRoom() || room;
-            }
-            if (!sticky && LockpickingMinigamePhaser.lockNeedsCompact(room.w, room.h)) {
+            const stickySide = !relax && !!this._lockSide && !!host;
+            const sticky = !relax && !!this._lockCompact && !stickySide;
+            sec.classList.remove('lockpicking-compact');
+            host?.classList?.remove(LOCK_SIDE_CLASS);
+            if (stickySide) host.classList.add(LOCK_SIDE_CLASS);
+            else if (sticky) sec.classList.add('lockpicking-compact');
+            room = this._lockRoom() || room;
+            if (!sticky && !stickySide) {
                 const full = room;
-                sec.classList.add('lockpicking-compact');
-                room = this._lockRoom() || room;
-                // Keep the compact strip only when it really gives the lock a bigger zoom
-                if (LockpickingMinigamePhaser.lockZoom(room.w, room.h) <= LockpickingMinigamePhaser.lockZoom(full.w, full.h)) {
-                    sec.classList.remove('lockpicking-compact');
-                    room = full;
+                let sideKept = false;
+                // Option C: the full strip in a column beside the lock, kept only for a whole zoom
+                if (LOCK_WIDE_OPTION === 'C' && host && LZ(full.w, full.h) >= 1) {
+                    host.classList.add(LOCK_SIDE_CLASS);
+                    const r2 = this._lockRoom() || full;
+                    const z2 = LZ(r2.w, r2.h);
+                    if (z2 >= LOCK_WIDE_MIN_ZOOM && z2 > LZ(full.w, full.h)) { room = r2; sideKept = true; }
+                    else host.classList.remove(LOCK_SIDE_CLASS);
+                }
+                // Short room (LOCK_COMPACT_BELOW), and for option B a roomy one: the compact strip is
+                // kept only when it really gives the lock a bigger zoom (for the roomy case, a whole
+                // zoom of LOCK_WIDE_MIN_ZOOM or more)
+                const short = LockpickingMinigamePhaser.lockNeedsCompact(full.w, full.h);
+                const wideB = LOCK_WIDE_OPTION === 'B' && LZ(full.w, full.h) >= 1;
+                if (!sideKept && (short || wideB)) {
+                    sec.classList.add('lockpicking-compact');
+                    room = this._lockRoom() || room;
+                    const zc = LZ(room.w, room.h);
+                    const keep = zc > LZ(full.w, full.h) && (short || zc >= LOCK_WIDE_MIN_ZOOM);
+                    if (!keep) {
+                        sec.classList.remove('lockpicking-compact');
+                        room = full;
+                    }
                 }
             }
             const was = !!this._lockCompact;
             this._lockCompact = sec.classList.contains('lockpicking-compact');
+            this._lockSide = !!host?.classList?.contains(LOCK_SIDE_CLASS);
             if (was !== this._lockCompact) this._syncObsButton();
         }
         const z = LockpickingMinigamePhaser.lockZoom(room.w, room.h);
