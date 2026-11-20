@@ -101,7 +101,7 @@ VAR guard_asked_name = false
 #set_variable:guard_waved_through=true
 Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
 #unlock_door:trading_floor
-Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+Checkpoint Guard: Door's open. Don't touch the screens. The traders bite.
 #exit_conversation
 -> start.waved_choices
 

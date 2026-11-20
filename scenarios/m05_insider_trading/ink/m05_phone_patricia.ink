@@ -148,7 +148,7 @@ VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wr
 + {(server_door_seen or it_notice_read) and owen_refused_password and not server_password_obtained and not patricia_authorised_server} [Owen won't give me the server-room password.]
     ~ patricia_authorised_server = true
     ~ topic_taken = true
-    I sign the access log; IT holds the password. I'll tell Owen it's on my authority.
+    I sign the access log. IT holds the password. I'll tell Owen it's on my authority.
     -> hub
 // M3: "Just checking in." fits only when no topic was taken on this call; otherwise a plain goodbye.
 + {not topic_taken} [Just checking in.]

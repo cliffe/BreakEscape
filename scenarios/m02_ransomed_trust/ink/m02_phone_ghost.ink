@@ -535,9 +535,9 @@ It's relevant to what you decide when you reach that recovery console.
 ~ ghost_offer_made = true
 
 #set_global:ghost_offer_made:true
-Before you touch that console -- look up.
+Before you touch that console. Look up.
 
-Narrator: The terminal text goes dark. A video window opens in its place -- a hooded figure, backlit, the face held in deliberate shadow.
+Narrator: The terminal text goes dark. A video window opens in its place. A hooded figure, backlit, the face held in deliberate shadow.
 
 There. I have been a cursor to you all night. That was the idea. It is easier to despise a cursor.
 
@@ -553,7 +553,7 @@ Now. You're standing at the recovery console.
 
 I'm going to make you an offer. Once. Listen carefully.
 
-The decryption keys. All of them. Free. No payment. No ransom. No ENTROPY funding.
+The decryption keys, all of them, free. No payment, no ransom, no ENTROPY funding.
 
 Clean recovery. Under an hour. Those patients have their systems before the next manual obs check.
 
@@ -624,7 +624,7 @@ Narrator: The screen cuts to black. One line of text holds: Ghost protocol, clos
 
 Then you'll do it the long way, and you already know what the long way costs, because you've been standing in it all night.
 
-When your agency comes for us -- and I know they're coming -- I hope it's you leading it.
+When your agency comes for us, and I know they're coming, I hope it's you leading it.
 
 You'll understand why we did this. Even if you never agree.
 

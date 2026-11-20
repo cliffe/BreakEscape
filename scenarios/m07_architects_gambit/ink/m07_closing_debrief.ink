@@ -407,8 +407,6 @@ Director Magnus Netherton: Then the health record systems. Eighteen thousand hos
     Agent HaX: You had it before you sent them anywhere. That goes in the report too.
 - projection_revised:
     Agent HaX: You found it after the window shut. I'm writing that down too, in those words.
-- found_coordination_traffic:
-    Agent HaX: It was in your hands. Nine days, in their own table.
 }
 ->->
 
@@ -668,7 +666,7 @@ Director Magnus Netherton: One question, then, and it goes in your file in your 
     - revision_found_open and not team_redirected and not redirect_declined:
         Director Magnus Netherton: The numbers you had changed while the window was open, and the team stayed where it was. That answer will need more than one sentence in a review room.
     - found_coordination_traffic and not projection_revised and team_assignment != "trojan_horse":
-        Director Magnus Netherton: That answer will stand up in a review room. You also had their schedule in your hands tonight, and you didn't put it next to the brief.
+        Director Magnus Netherton: That answer will stand up in a review room, until someone asks why their schedule never went next to the brief.
     - else:
         Director Magnus Netherton: Good. That answer will stand up in any review room you ever sit in.
     }
@@ -715,7 +713,7 @@ Director Magnus Netherton: One question, then, and it goes in your file in your 
     // PASS 5 puzzle chains r1 (N3, fixer's addition): the same speed praise
     // would follow "Nobody put it next to the brief".
     - found_coordination_traffic and not projection_revised and team_assignment != "trojan_horse":
-        Director Magnus Netherton: Yes. Their schedule was in your hands tonight. Next time it goes next to the brief.
+        Director Magnus Netherton: Yes. Next time their schedule goes next to the brief.
     // Phase 4 dialogue C1 (D7-4)
     - team_assignment == "":
         Director Magnus Netherton: Yes. Next time, make the call while you work it out.

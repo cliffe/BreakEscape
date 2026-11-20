@@ -338,7 +338,7 @@ Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords.
     #influence_increased
     ~ badge_handed = true
     #give_item:keycard:m06_cto_badge
-    Dr. Irina Volkova: Bring it back. And don't tell facilities I handed it over; they'll write a memo about it. #delivery: handing it over, wry
+    Dr. Irina Volkova: Bring it back. And don't tell facilities I handed it over. They'll write a memo about it. #delivery: handing it over, wry
 
     Dr. Irina Volkova: West door. Try not to judge the whiteboard.
     -> hub
@@ -412,7 +412,7 @@ Narrator: She keeps talking.
 }
 #give_item:keycard:executive_access_badge
 Dr. Irina Volkova: I put the readers in on his floor. Facilities lent me a spare to do it and never asked for it back. Here.
-Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he always is.
+Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk. He always is.
 {irina_fate_decided:
     -> after_choice
 }
@@ -575,7 +575,7 @@ Narrator: You give her your word.
 #set_variable:irina_recruited=true
 #set_variable:irina_fate_decided=true
 {not found_architects_fund:
-    Dr. Irina Volkova: His wallet is one of our cold slots. Not 6120; that's the one he shows auditors.
+    Dr. Irina Volkova: His wallet is one of our cold slots. Not 6120. That's the one he shows auditors.
     Dr. Irina Volkova: And my pool holds everything six hours. Anything that landed sooner isn't his.
 }
 {not architect_identity_found:

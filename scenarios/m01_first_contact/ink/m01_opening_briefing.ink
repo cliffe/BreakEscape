@@ -70,8 +70,6 @@ Agent HaX: Large-scale data aggregation. Personal profiles, vulnerability assess
 
 Agent HaX: Whatever they're building, it's targeted and sophisticated.
 
-Agent HaX: Your job is to get inside and find out what they're actually planning.
-
 + [Who's running this?]
     ~ asked_about_derek = true
     -> operative_identity

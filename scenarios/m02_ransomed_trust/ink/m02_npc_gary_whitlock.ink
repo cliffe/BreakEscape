@@ -162,7 +162,7 @@ Gary Whitlock: Bit pathetic when you say it out loud.
 
 Gary Whitlock: Finally. Someone who wants the technical version. #delivery: swinging round, suddenly interested
 
-Gary Whitlock: Backup server. ProFTPD -- the poisoned one, one point three point three c.
+Gary Whitlock: Backup server. ProFTPD. The poisoned one, one point three point three c.
 
 Gary Whitlock: Somebody trojaned the actual source release back in 2010 and it shipped with a backdoor built in. It's been public and patchable since. Fourteen years.
 

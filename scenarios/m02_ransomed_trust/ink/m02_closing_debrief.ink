@@ -139,9 +139,9 @@ Agent HaX: {&What do you want to know?|What else?|Anything more before we get to
 
 === q_pin_cracker ===
 ~ asked_about_cracker = true
-Agent HaX: Funny you ask -- I had our hardware man look at it the second it came in. He's still grinning about it. Nightshade, say hello.
+Agent HaX: Funny you ask. I had our hardware man look at it the second it came in. He's still grinning about it. Nightshade, say hello.
 Narrator: A wiry man in a lab coat leans into frame, turning the device over in gloved hands like it is a small, fascinating animal.
-Agent 0x47 'Nightshade': Agent 0x00. Lovely piece of kit you brought me. It's a keypad oracle -- brute-force with a brain. It doesn't guess the PIN blind.
+Agent 0x47 'Nightshade': Agent 0x00. Lovely piece of kit you brought me. It's a keypad oracle, brute-force with a brain. It doesn't guess the PIN blind.
 Agent 0x47 'Nightshade': Every wrong try, it tells you how many digits were right and in place, and how many in the wrong slot.
 
 Agent 0x47 'Nightshade': Each answer narrows the field. Mastermind, in silicon.
@@ -153,7 +153,6 @@ Agent 0x47 'Nightshade': The firmware is how I know it's ENTROPY, not some catal
 Agent 0x47 'Nightshade': Somebody manufactures these at scale, for people they trust with buildings.
 Agent 0x47 'Nightshade': I'll write it up properly. Short version: the people you're chasing have a supply chain.
 
-Agent 0x47 'Nightshade': That should worry you more than the one device.
 Agent HaX: He's not wrong. He usually isn't. #delivery: quietly
 -> debrief_hub
 
@@ -232,8 +231,7 @@ Agent HaX: Yes. ENTROPY. The same network that ran Social Fabric out of Viral Dy
 Agent HaX: Somebody taught both of them to do the sums and sleep at night. That's a method.
 
 * [So the cells don't even know each other?]
-    Agent HaX: Compartmentalised. Social Fabric never heard of Ransomware Incorporated. That's by design -- you can't burn a network you can't see.
-    Agent HaX: But they all learned from the same source.
+    Agent HaX: Compartmentalised. Social Fabric never heard of Ransomware Incorporated. That's by design. You can't burn a network you can't see.
     -> debrief_hub
 * [Then Derek was never the end of it.]
     Agent HaX: Derek was one node. Whatever happened to him at Viral Dynamics, the network kept moving. Ghost is proof.
@@ -245,7 +243,7 @@ Agent HaX: Somebody taught both of them to do the sums and sleep at night. That'
 
 Agent HaX: The Architect. Derek's letter named them. Ghost's logs point the same way, without ever saying it.
 
-Agent HaX: One person -- or one mind -- coordinating every cell. Social Fabric. Ransomware Incorporated. The two you haven't met yet.
+Agent HaX: One person, or one mind, coordinating every cell. Social Fabric. Ransomware Incorporated. The two you haven't met yet.
 
 Agent HaX: We don't have a name. We have a philosophy, a signature, and now two data points that rhyme. That's more than we had a week ago.
 
@@ -261,7 +259,6 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
 // Round 1 (VM alignment): the projections are in the manifesto, not the flag-4 log.
 {lore_ghosts_manifesto_found:
     Agent HaX: You found Ghost's manifesto. The mortality calculations.
-    Agent HaX: Pre-planned. Spreadsheet-precise. They knew what the statistics meant before the operation started and ran it anyway.
 }
 
 // R6: the technical-arc recap is unconditional now. It used to be gated to
@@ -269,10 +266,10 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
 // completionist -- who most earned the reflection -- was routed to the manifesto
 // lines and never heard it. Same line, always fires; it sits alongside, not
 // instead of, the manifesto beats above.
-Agent HaX: The exploit chain was exactly what Ghost's communications suggested -- the ProFTPD 1.3.3c backdoor, fourteen years unpatched. Standard ENTROPY playbook.
+Agent HaX: The exploit chain was exactly what Ghost's communications suggested. The ProFTPD 1.3.3c backdoor, fourteen years unpatched. Standard ENTROPY playbook.
 
 {ghost_keys_used:
-    Agent HaX: And you took Ghost's keys. Free, on Ghost's terms -- the restore ran on the attacker's goodwill, and the price was a promise.
+    Agent HaX: And you took Ghost's keys. Free, on Ghost's terms. The restore ran on the attacker's goodwill, and the price was a promise.
     Agent HaX: The ethics of it depend entirely on what you did at the press terminal.
 - else:
     {ghost_deal_accepted:
@@ -425,15 +422,7 @@ Agent HaX: Ghost's next hospital target is delayed. Possibly cancelled.
     Agent HaX: Which means Ransomware Incorporated is funded for their next two or three operations, and we have a very tidy report about the first six hours of it.
 }
 {not paid_ransom:
-    Agent HaX: No transaction means no financial trail -- which cuts both ways. Less to trace, but they have less too.
-}
-
-Agent HaX: Either way, Crypto Anarchists handle ENTROPY's payment infrastructure across all cells. That's a mission for another day.
-
-{paid_ransom:
-    Agent HaX: Your ransom gives us a fresh transaction to trace. Specific wallets. Specific timing. That's data.
-- else:
-    Agent HaX: ENTROPY goes into their next operation short-funded. That changes what they can afford to do.
+    Agent HaX: No transaction means no financial trail, which cuts both ways. Less to trace, but they have less too.
 }
 
 -> hospital_status
@@ -461,7 +450,7 @@ Agent HaX: "Hospital Ignored IT Warnings for Six Months Before Ransomware Attack
 Agent HaX: A Health and Social Care Committee inquiry. Forty-plus hospitals implementing emergency security audits within a fortnight.
 
 {ghost_deal_accepted:
-    Agent HaX: Ghost got exactly what they wanted -- the public lesson. Without spending a penny.
+    Agent HaX: Ghost got exactly what they wanted, the public lesson. Without spending a penny.
     Agent HaX: Whether that matters depends on what you think counts as winning.
 }
 
@@ -474,7 +463,7 @@ Agent HaX: A Health and Social Care Committee inquiry. Forty-plus hospitals impl
 === exposure_reflection ===
 #speaker:agent_0x99
 
-Agent HaX: Long-term lives saved -- hard to count, but real.
+Agent HaX: Long-term lives saved. Hard to count, but real.
 
 Agent HaX: St. Catherine's is going to spend years in legal proceedings. Their reputation is damaged in ways that will cost the patients who still need care there.
 
@@ -508,7 +497,7 @@ Agent HaX: 214 hospitals scanned. 147 with critical vulnerabilities. None of the
 
 Agent HaX: Some of them will be hit before someone publishes the lesson. I don't know how many.
 
-Agent HaX: St. Catherine's is safer. The rest of the sector -- unchanged.
+Agent HaX: St. Catherine's is safer. The rest of the sector, unchanged.
 
 -> npc_outcomes_quiet
 
@@ -519,7 +508,7 @@ Agent HaX: St. Catherine's is safer. The rest of the sector -- unchanged.
 === npc_outcomes_exposed ===
 #speaker:agent_0x99
 
-Agent HaX: Dr. Kim resigned under pressure. Gave evidence to a select committee. Reputation damaged, not destroyed -- she's consulting in healthcare tech now.
+Agent HaX: Dr. Kim resigned under pressure. Gave evidence to a select committee. Reputation damaged, not destroyed. She's consulting in healthcare tech now.
 
 {kim_guilt_revealed:
     Agent HaX: She told investigators she recommended the budget cuts. Accepted responsibility publicly.
@@ -550,7 +539,7 @@ Agent HaX: He asked us to pass something on: "Tell the agent who documented my w
 
 Agent HaX: He was fired within 48 hours of the attack. Scapegoated.
 
-Agent HaX: But when the story broke -- his emails were in it. Seven warnings, ignored. The backlash forced St. Catherine's to rehire him. He's IT Security Director now.
+Agent HaX: But when the story broke, his emails were in it. Seven warnings, ignored. The backlash forced St. Catherine's to rehire him. He's IT Security Director now.
 
 Agent HaX: He survived it. But he asked me: "Does the agency know what happened to me here?"
 
@@ -593,7 +582,7 @@ Agent HaX: He sent a message. "Thank whoever documented the warnings. Saved my c
 === gary_unprotected_quiet ===
 #speaker:agent_0x99
 
-Agent HaX: He was fired quietly. No public scapegoat narrative -- but the career's gone.
+Agent HaX: He was fired quietly. No public scapegoat narrative, but the career's gone.
 
 Agent HaX: Blacklisted in healthcare IT. "Failed to prevent catastrophic breach."
 
@@ -700,7 +689,7 @@ Agent HaX: Underpaid, ignored, radicalised by the same negligence he helped puni
     Agent HaX: And you put down the inside asset yourself. Graham Reeves, badge SC-4471.
     Agent HaX: No interrogation, so the thread's thinner than an arrest would've given us. But he's off the board and contained.
 - else:
-    Agent HaX: One more thing. The night security supervisor you put down in the boardroom -- we ran him afterwards. Graham Reeves, badge SC-4471. He authorised the fire drill that planted ENTROPY's device.
+    Agent HaX: One more thing. The night security supervisor you put down in the boardroom. We ran him afterwards. Graham Reeves, badge SC-4471. He authorised the fire drill that planted ENTROPY's device.
     Agent HaX: You had the right man. You just never knew what you were holding. We recovered what we could from his post logs, but he wasn't talking.
 }
 
@@ -712,7 +701,7 @@ Agent HaX: Underpaid, ignored, radicalised by the same negligence he helped puni
 #speaker:agent_0x99
 #set_global:reeves_fate:flagged
 
-Agent HaX: You identified Ghost's inside asset -- Graham Reeves, night security supervisor, badge SC-4471. You didn't get to close it out yourself, but your identification was enough.
+Agent HaX: You identified Ghost's inside asset, Graham Reeves, night security supervisor, badge SC-4471.
 
 Agent HaX: SAFETYNET moved on your identification and picked Reeves up before he could disappear. His access logs and handler contacts are ours now. A thread into the cell.
 
@@ -725,7 +714,7 @@ Agent HaX: SAFETYNET moved on your identification and picked Reeves up before he
 
 // Round 1 (B4): only claim Ghost said it if the player heard it.
 {ghost_affiliate_heard:
-    Agent HaX: There's one more thing you should know. Ghost told you the truth -- there was an affiliate inside the building. Graham Reeves, the night security supervisor.
+    Agent HaX: There's one more thing you should know. Ghost told you the truth. There was an affiliate inside the building. Graham Reeves, the night security supervisor.
 - else:
     Agent HaX: There's one more thing you should know. There was an affiliate inside the building. Graham Reeves, the night security supervisor.
 }
@@ -740,7 +729,7 @@ Agent HaX: SAFETYNET moved on your identification and picked Reeves up before he
     Agent HaX: And you spent your suspicion on the wrong person first. The evidence pointed where he wanted it to.
 }
 
-Agent HaX: Vanished. No trace. The same way Ghost went. That one's on the clock we were racing -- but if we'd read the signs earlier, we'd have had him.
+Agent HaX: Vanished, no trace, the same way Ghost went. That one's on the clock we were racing, but if we'd read the signs earlier, we'd have had him.
 
 -> entropy_coordination_reveal
 
@@ -748,7 +737,7 @@ Agent HaX: Vanished. No trace. The same way Ghost went. That one's on the clock 
 #speaker:agent_0x99
 #set_global:reeves_fate:missed
 
-Agent HaX: One loose end. Ghost wasn't bluffing about an inside affiliate -- there was one. And you spent your suspicion on the wrong person.
+Agent HaX: One loose end. Ghost wasn't bluffing about an inside affiliate. There was one. And you spent your suspicion on the wrong person.
 
 Agent HaX: The real asset was Graham Reeves, on the boardroom post. Badge SC-4471. He walked out the same night, unquestioned.
 
@@ -773,16 +762,12 @@ Agent HaX: Next time we go into one of these, we look harder for the person hold
 
 // Round 1 (VM alignment): the ZDS link comes from the boardroom-safe invoice.
 {lore_zds_invoice_found:
-    Agent HaX: That invoice from the boardroom safe confirmed it -- Zero Day Syndicate sourced the ProFTPD exploit.
+    Agent HaX: That invoice from the boardroom safe confirmed it. Zero Day Syndicate sourced the ProFTPD exploit.
 }
 Agent HaX: Crypto Anarchists handle payment processing across all cells.
 
 {lore_cryptosecure_found:
-    Agent HaX: The CryptoSecure intelligence you recovered -- that's their financial front. We're building a picture of the network.
-}
-
-{lore_zds_invoice_found:
-    Agent HaX: The Zero Day Syndicate invoice you found -- specific evidence of the procurement chain between ENTROPY cells. That's going straight into planning for what comes next.
+    Agent HaX: The CryptoSecure intelligence you recovered. That's their financial front. We're building a picture of the network.
 }
 
 {lore_ghosts_manifesto_found:
@@ -834,7 +819,6 @@ Agent HaX: One last section, and then I'll let you go. The people.
     Agent HaX: Val Okonkwo, security officer, north corridor. Concussion, four days off, and a written statement that she was assaulted by an intruder.
     Agent HaX: She'd spent six weeks logging Graham Reeves and getting told to drop it.
     Agent HaX: The closest thing you had to an ally in that building, and you put her on the floor.
-    Agent HaX: I'm not going to lecture you. You've read the file. I just want it said out loud once.
 - else:
     // Round 1 (B3): a fight with Val that didn't end with her on the floor.
     {attacked_guard and player_was_ko:
@@ -928,8 +912,8 @@ Agent HaX: You made it anyway, at four in the morning, with half the facts and f
 
 * [I'm still not sure it was the right call.]
     {paid_ransom:
-        Agent HaX: 45 people are alive today. That's real. Those are real families not burying someone.
-        Agent HaX: ENTROPY has funding. That's also real. Both things are true simultaneously.
+        Agent HaX: Forty-five people are alive today, and their families aren't burying anyone.
+        Agent HaX: And ENTROPY has funding. Both of those are true at once.
     - else:
         {ghost_keys_used:
             {exposed_hospital:
@@ -980,9 +964,7 @@ Agent HaX: Operation Cyber Arsenal.
 === architect_tease ===
 #speaker:agent_0x99
 
-Agent HaX: The Architect runs the cells -- more of them than we've confirmed, and we don't know who they are yet.
-
-Agent HaX: But each mission reveals more. Social Fabric, Ransomware Incorporated -- patterns emerging in how the cells communicate, how they're structured.
+Agent HaX: The Architect runs the cells, more of them than we've confirmed, and we don't know who they are yet.
 
 Agent HaX: Eventually we'll have enough to identify them. Then we end this.
 

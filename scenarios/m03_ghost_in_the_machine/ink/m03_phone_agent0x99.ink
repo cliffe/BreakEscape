@@ -481,7 +481,7 @@ Client roster, transaction records, anything to the Architect.
 There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
 And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
 Target line: St. Catherine's Regional. Sable's sign-off on the approval.
-St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name.
+St. Catherine's had the buyer's invoice. Now we have the seller's ledger, and a case with a name.
 -> m2_revelation_choices
 
 // Pass 3c: choices live in text-free knots. When the phone reopens with changed
