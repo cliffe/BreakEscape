@@ -293,6 +293,24 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
 def ink_source(header, host, done, lines):
     before, after, choice, reply = lines
     n = host['displayName']
+    # `after` is normally one line. When it is a {'catch': (c1, c2), 'miss': (m1, m2)} dict
+    # (ca12 only, mirroring the ca01 twin), the done-branch splits on kit_key_caught into a
+    # two-clip catch and a two-clip miss. kit_key_caught comes from the defend set's
+    # keyMessage (office_kit), so the ink declares it and only reads it.
+    if isinstance(after, dict):
+        extra_var = 'VAR kit_key_caught = false\n'
+        after_block = (
+            '{ kit_key_caught:\n'
+            f"            {n}: {after['catch'][0]}\n"
+            f"            {n}: {after['catch'][1]}\n"
+            '        - else:\n'
+            f"            {n}: {after['miss'][0]}\n"
+            f"            {n}: {after['miss'][1]}\n"
+            '        }'
+        )
+    else:
+        extra_var = ''
+        after_block = f'{n}: {after}'
     return f"""// ================================================
 // {header}: {n} (person, Training Room)
 // {host['about']}
@@ -304,7 +322,7 @@ def ink_source(header, host, done, lines):
 // ================================================
 
 VAR {done} = false
-VAR hub_quiet = false
+{extra_var}VAR hub_quiet = false
 
 === start ===
 -> hub
@@ -314,7 +332,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     {{ {done}:
-        {n}: {after}
+        {after_block}
     - else:
         {n}: {before}
     }}
@@ -380,9 +398,15 @@ LINES = {
         "Brightwell's switched on its assistant, and the kiosk has the inbox beside it: supplier emails, voicemails and video calls. Some are real, some aren't.",
         "That's them all handled, thanks. A voice or a face can be faked. Check another way, on a number you already hold: that always works.",
         'Thanks, Gwen.', 'Any time.'),
+    # ca12 twin: the done-branch mirrors the ca01 twin's catch/miss split (owner pick A), each side
+    # two clips, on kit_key_caught (keyMessage e12_call_tailgater). No lobby or visitor here, so the
+    # line speaks of the reception call the learner handled and what it meant for the studio.
     ('e12', 'defend'): (
         "You're on reception this morning. Visitors arrive one at a time, some expected and some not. Sign people in, escort them, and report anyone who won't be checked.",
-        "That's the desk cleared, thanks. The move that works for every pushy visitor is the same: check the list, escort them, and report anyone who won't be checked.",
+        {'catch': ("You kept that visitor with no badge at the gate, so they never got a quiet walk through the studio.",
+                   "That's the one that leans on a busy morning and a friendly face, and you didn't wave it through."),
+         'miss': ("That visitor with no badge was the one to stop at the gate.",
+                  "They went through, so a stranger had the run of the studio floor for a while. On a busy morning it's an easy one to wave through.")},
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
         "You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.",
