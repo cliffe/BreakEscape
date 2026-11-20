@@ -235,6 +235,7 @@
       "attack": true,
       "stepAway": false,
       "keyMessage": "e6_parking_permit",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {
@@ -267,6 +268,7 @@
       "attack": true,
       "stepAway": false,
       "keyMessage": "e8_push_abroad",
+      "keyCaughtVerdicts": ["report"],
       "hostLine": true
     },
     {
@@ -314,6 +316,7 @@
       "attack": true,
       "stepAway": false,
       "keyMessage": "e11_wrong_sam_breach",
+      "keyCaughtVerdicts": ["report"],
       "hostLine": true
     },
     {
@@ -362,6 +365,7 @@
       "attack": true,
       "stepAway": false,
       "keyMessage": "e15_posted_stick",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {
@@ -378,6 +382,7 @@
       "attack": true,
       "stepAway": false,
       "keyMessage": "e16_shared_login_req",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {
@@ -410,6 +415,7 @@
       "attack": true,
       "stepAway": false,
       "keyMessage": "e19_ransom_note",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {
@@ -501,6 +507,7 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e6_parking_permit",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {
@@ -531,6 +538,7 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e8_push_abroad",
+      "keyCaughtVerdicts": ["report"],
       "hostLine": true
     },
     {
@@ -575,6 +583,7 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e11_wrong_sam_breach",
+      "keyCaughtVerdicts": ["report"],
       "hostLine": true
     },
     {
@@ -605,6 +614,7 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e15_posted_stick",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {
@@ -620,6 +630,7 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e16_shared_login_req",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {
@@ -650,6 +661,7 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e19_ransom_note",
+      "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true
     },
     {

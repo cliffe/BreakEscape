@@ -486,6 +486,17 @@ def kit_text(text, kit, row, shell, allow_drop=False):
             # (old kit_ entries are dropped first, as office_kit.strip_kit does: wrap-fix review m4)
             mg = {**{k: v for k, v in own_mg[0].items() if not str(v).startswith('kit_')}, **b.get('messageGlobals', {})}
             text = _splice_object(text, oc, lambda k: k == 'messageGlobals', [('messageGlobals', mg)])
+        # social.triageSets[0].outcome.messageCaughtVerdicts (the row's keyCaughtVerdicts): the kit owns
+        # the entries for its own messageGlobals ids, old and new; any other entry stays
+        kit_ids = ({k for k, v in own_mg[0].items() if str(v).startswith('kit_')} if own_mg else set()) \
+            | set(b.get('messageGlobals', {}))
+        oc = _first_set_outcome(text)
+        own_mcv = [json.loads(text[a:bb]) for k, a, bb in _members(text, oc) if k == 'messageCaughtVerdicts']
+        mcv = {**{k: v for k, v in (own_mcv[0] if own_mcv else {}).items() if k not in kit_ids},
+               **b.get('messageCaughtVerdicts', {})}
+        if own_mcv or mcv:
+            text = _splice_object(text, oc, lambda k: k == 'messageCaughtVerdicts',
+                                  [('messageCaughtVerdicts', mcv)] if mcv else [])
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
     text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()))

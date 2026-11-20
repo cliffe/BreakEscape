@@ -266,6 +266,22 @@ def message_globals(row):
     return {row['keyMessage']: KEY_GLOBAL}
 
 
+CAUGHT_VERDICTS = ('report', 'delete', 'verify')
+
+
+def message_caught_verdicts(row):
+    """The outcome.messageCaughtVerdicts entry for the row's keyMessage: the verdicts that count as
+    caught for it (the row's keyCaughtVerdicts, e.g. ['report'] for a breach notice whose lesson is to
+    report it), so a Delete does not set kit_key_caught (W2 build review M1). Empty when the row has no
+    keyMessage or no keyCaughtVerdicts: the engine default (Report, Delete or Verify) then applies."""
+    v = row.get('keyCaughtVerdicts')
+    if not message_globals(row) or not v:
+        return {}
+    if not isinstance(v, list) or not all(x in CAUGHT_VERDICTS for x in v):
+        raise ValueError(f"{row['id']}: keyCaughtVerdicts must be a list drawn from {CAUGHT_VERDICTS}, not {v!r}")
+    return {row['keyMessage']: list(v)}
+
+
 def kit_timers(kit, row, prefix=None):
     if not active(row):
         return []
@@ -383,6 +399,8 @@ def build(kit, row, prefix, state_global):
     }
     if message_globals(row):
         out['messageGlobals'] = message_globals(row)
+    if message_caught_verdicts(row):
+        out['messageCaughtVerdicts'] = message_caught_verdicts(row)
     out.update(kit_keyed(kit, row))     # resources / roles: present only when the kit has them
     return out
 
@@ -451,6 +469,14 @@ def _kit_message_globals(outcome):
     return {k: v for k, v in mg.items() if str(v).startswith('kit_')} if isinstance(mg, dict) else {}
 
 
+def _kit_caught_verdicts(outcome):
+    """The kit-owned outcome.messageCaughtVerdicts entries: those for a message the kit's
+    messageGlobals lists (a kit_ global)."""
+    mcv = (outcome or {}).get('messageCaughtVerdicts')
+    ids = _kit_message_globals(outcome)
+    return {k: v for k, v in mcv.items() if k in ids} if isinstance(mcv, dict) else {}
+
+
 def strip_kit(sc, host_id=None):
     """A deep copy of a parsed shell with every kit-owned member removed."""
     sc = copy.deepcopy(sc)
@@ -486,6 +512,12 @@ def strip_kit(sc, host_id=None):
             del sc[key]
     sc['social']['awarenessEpisode'].pop('stepAway', None)
     oc = key_outcome(sc)
+    if _kit_caught_verdicts(oc):
+        rest = {k: v for k, v in oc['messageCaughtVerdicts'].items() if k not in _kit_message_globals(oc)}
+        if rest:
+            oc['messageCaughtVerdicts'] = rest
+        else:
+            del oc['messageCaughtVerdicts']
     if _kit_message_globals(oc):
         rest = {k: v for k, v in oc['messageGlobals'].items() if not str(v).startswith('kit_')}
         if rest:
@@ -558,6 +590,9 @@ def apply_kit(sc, kit, row, host_id=None):
         if oc is None:
             raise ValueError(f"{row['id']}: keyMessage needs a triage set with an outcome")
         oc['messageGlobals'] = {**oc.get('messageGlobals', {}), **b['messageGlobals']}
+    if b.get('messageCaughtVerdicts'):
+        oc = key_outcome(out)
+        oc['messageCaughtVerdicts'] = {**oc.get('messageCaughtVerdicts', {}), **b['messageCaughtVerdicts']}
     return out
 
 
@@ -598,6 +633,9 @@ def kit_owned(sc, host_id=None):
     mg = _kit_message_globals(key_outcome(sc))
     if mg:
         out['messageGlobals'] = mg
+    mcv = _kit_caught_verdicts(key_outcome(sc))
+    if mcv:
+        out['messageCaughtVerdicts'] = mcv
     for key in KIT_KEYED:
         v = sc.get(key)
         mine = ({k: x for k, x in v.items() if str(k).startswith('kit_')} if isinstance(v, dict)
@@ -637,6 +675,8 @@ def hand_written(old, new):
              for m in old['mappings'] if _map_id(m) not in have]
     lost += [f'chatter pool {k}' for k in old['scenario'].get('chatter', {}) if k not in new['scenario'].get('chatter', {})]
     lost += [f'messageGlobals {k}' for k in old.get('messageGlobals', {}) if k not in new.get('messageGlobals', {})]
+    lost += [f'messageCaughtVerdicts {k}' for k in old.get('messageCaughtVerdicts', {})
+             if k not in new.get('messageCaughtVerdicts', {})]
     for key in KIT_KEYED:
         have = set(new.get(key, {}) if isinstance(new.get(key), dict) else [r.get('id') for r in new.get(key, [])])
         mine = old.get(key, {})
@@ -677,6 +717,8 @@ def reverts(old, new):
     out += [f'chatter pool {k} changed' for k in oc if k in nc and oc[k] != nc[k]]
     om, nm = old.get('messageGlobals', {}), new.get('messageGlobals', {})
     out += [f'messageGlobals {k} value {om[k]!r} -> {nm[k]!r}' for k in om if k in nm and om[k] != nm[k]]
+    ov, nv = old.get('messageCaughtVerdicts', {}), new.get('messageCaughtVerdicts', {})
+    out += [f'messageCaughtVerdicts {k} value {ov[k]!r} -> {nv[k]!r}' for k in ov if k in nv and ov[k] != nv[k]]
     return out
 
 
