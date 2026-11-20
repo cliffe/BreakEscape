@@ -23,6 +23,9 @@ import { escapeHtml as escapeItemText } from '../../utils/escape-html.js';
 // Item names and observations are scenario text: escaped before they reach HTML
 
 // Phaser Lockpicking Minigame Scene implementation
+// Smallest desktop zoom: labels still reach 16px on screen at it (the solver raises the font)
+const LOCK_ZOOM_FLOOR = 0.5;
+
 export class LockpickingMinigamePhaser extends MinigameScene {
     constructor(container, params) {
         super(container, params);
@@ -336,6 +339,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // Create container for the item display
         const itemDisplayDiv = document.createElement('div');
         itemDisplayDiv.className = 'lockpicking-item-section';
+        this._itemSection = itemDisplayDiv;
         itemDisplayDiv.innerHTML = `
             <img src="${escapeItemText(itemImage)}" 
                  alt="${escapeItemText(itemName)}" 
@@ -681,7 +685,14 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const f = Math.min(availW / baseW, availH / baseH);
         if (!Number.isFinite(f) || f <= 0) return 1;
         if (f >= 1) return LockpickingMinigamePhaser.wholeZoom(availW, availH, baseW, baseH);
-        return Math.max(0.5, Math.floor(f * 100) / 100);
+        return Math.max(LOCK_ZOOM_FLOOR, Math.floor(f * 100) / 100);
+    }
+
+    // True when the lock would need a zoom below the floor in this room: the item strip then goes
+    // compact. A whole zoom or any fraction at or above the floor needs no compaction.
+    static lockNeedsCompact(availW, availH, baseW = 600, baseH = 400) {
+        const f = Math.min(availW / baseW, availH / baseH);
+        return Number.isFinite(f) && f > 0 && f < LOCK_ZOOM_FLOOR;
     }
 
     // Room for the canvas: the game area's width, and its height less the strips around the
@@ -708,8 +719,25 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         if (!game?.scale || !box || window.innerWidth <= 768 || window.innerHeight <= 560) return;
         // The layout the game is in decides, not the window: a refit is pending after a resize
         if (this._lockFitApplied?.fit) return;
-        const room = this._lockRoom();
+        let room = this._lockRoom();
         if (!room) return;
+        // The room measured decides whether the item strip stays full size: when the lock would
+        // need a zoom under the floor (a short desktop window, a long observation, a tall
+        // feedback box) the strip takes the compact form the short windows use (lockpicking.css,
+        // .lockpicking-compact), which gives the lock about 250px more. Remeasured from the
+        // full-size strip each pass so it relaxes again when the room allows.
+        const sec = this._itemSection;
+        if (sec) {
+            sec.classList.remove('lockpicking-compact');
+            room = this._lockRoom() || room;
+            if (LockpickingMinigamePhaser.lockNeedsCompact(room.w, room.h)) {
+                sec.classList.add('lockpicking-compact');
+                room = this._lockRoom() || room;
+            }
+            const was = !!this._lockCompact;
+            this._lockCompact = sec.classList.contains('lockpicking-compact');
+            if (was !== this._lockCompact) this._syncObsButton();
+        }
         const z = LockpickingMinigamePhaser.lockZoom(room.w, room.h);
         if (game.scale.zoom !== z) game.scale.setZoom(z);
         box.style.maxWidth = (600 * z) + 'px';
@@ -751,7 +779,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const obs = this._obsEl;
         const sec = this._obsSection;
         if (!obs || !sec) return;
-        const short = window.innerHeight <= 560;
+        const short = window.innerHeight <= 560 || !!this._lockCompact;
         if (!short) sec.classList.remove('lockpicking-info-expanded');
         const expanded = sec.classList.contains('lockpicking-info-expanded');
         const active = short && (expanded || obs.scrollHeight > obs.clientHeight + 1);
