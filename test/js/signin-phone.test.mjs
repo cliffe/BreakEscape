@@ -66,6 +66,7 @@ test('CSS: the short frame still hides the username line, and the line keeps GNF
 const TILES = [{ username: 'sokafor', displayName: 'Sam Okafor', portrait: null, avatar: null }];
 
 const INNER = 844;
+let activeLayout = null;
 function fakeViewport(over = {}) {
     const vv = { added: [], removed: [], handlers: new Set(), height: INNER, offsetTop: 0, scale: 1, ...over };
     vv.addEventListener = (type, h) => { vv.added.push(type); vv.handlers.add(h); };
@@ -75,9 +76,13 @@ function fakeViewport(over = {}) {
 }
 
 function open() {
+    activeLayout = null;
     document.body.innerHTML = '<div id="mg"></div>';
     const scrolls = [];
-    dom.window.HTMLElement.prototype.scrollIntoView = function (opts) { scrolls.push({ el: this, opts }); };
+    dom.window.HTMLElement.prototype.scrollIntoView = function (opts) {
+        scrolls.push({ el: this, opts });
+        if (activeLayout) activeLayout.scrollNearest(this);
+    };
     const frames = [];
     window.requestAnimationFrame = (cb) => { frames.push(cb); return frames.length; };
     const flush = () => { while (frames.length) frames.shift()(); };
@@ -106,12 +111,36 @@ function open() {
     return { mg, scrolls, vv, flush, scrollTos };
 }
 const rectBottom = (el, bottom) => { el.getBoundingClientRect = () => ({ top: bottom - 40, bottom, left: 0, right: 100, width: 100, height: 40 }); };
+// A fake layout with rects: the panel's bottom is fixed at P (drawn px); the targets' bottoms move up
+// as the panel scrolls. scrollNearest follows the browser's rule for block 'nearest': the target's
+// bottom must end at or above P minus the panel's scroll-padding (inline value times the zoom), and
+// the panel can only scroll as far as its bottom padding (times the zoom) allows.
+function lay(mg, { submit, msg = 0, P = 700, z = 1 }) {
+    const panel = mg.gameContainer;
+    const L = { scroll: 0, base: new Map([[mg.submitBtn, submit], [mg.signInMessageEl, msg]]), P, z };
+    const rect = (bottom) => ({ top: bottom - 40, bottom, left: 0, right: 100, width: 100, height: 40 });
+    panel.getBoundingClientRect = () => rect(P);
+    if (z !== 1) panel.currentCSSZoom = z;
+    for (const [el, b] of L.base) el.getBoundingClientRect = () => rect(L.base.get(el) - L.scroll);
+    L.bottomOf = (el) => L.base.get(el) - L.scroll;
+    L.scrollNearest = (el) => {
+        if (!L.base.has(el)) return;
+        const px = (v) => (parseFloat(v) || 0) * z;
+        const limit = P - px(panel.style.scrollPaddingBottom);
+        const bottom = L.bottomOf(el);
+        if (bottom <= limit) return;
+        const room = Math.max(0, px(panel.style.paddingBottom) - L.scroll);
+        L.scroll += Math.min(bottom - limit, room);
+    };
+    activeLayout = L;
+    return L;
+}
 const focusOn = (field) => { field.focus(); }; // jsdom fires the real focus and blur events
 const keyboard = (vv, h = 544) => { vv.height = h; };
 
 test('keyboard up: Sign in is the lowest, padding is added and Sign in is revealed once, nearest', () => {
     const { mg, scrolls, vv, flush } = open();
-    rectBottom(mg.submitBtn, 700); rectBottom(mg.signInMessageEl, 650);
+    const L = lay(mg, { submit: 700, msg: 650 });
     mg.signInMessageEl.textContent = '';
     focusOn(mg.passwordField); flush();
     assert.ok(scrolls.length === 0, 'focus with no keyboard up reveals nothing');
@@ -120,18 +149,21 @@ test('keyboard up: Sign in is the lowest, padding is added and Sign in is reveal
     flush();
     assert.ok(scrolls.length === 1, `exactly one reveal (got ${scrolls.length})`);
     assert.ok(scrolls[0].el === mg.submitBtn && scrolls[0].opts.block === 'nearest', 'Sign in, block nearest');
-    assert.ok(mg.gameContainer.style.paddingBottom === '156px', `padding is how far Sign in sits below 544 (got ${mg.gameContainer.style.paddingBottom})`);
-    assert.ok(mg.gameContainer.style.scrollPaddingBottom === '156px', 'scroll-padding matches so the nearest edge has a target');
+    // the panel's bottom (700) is 156 below the keyboard edge (544), plus an 8px margin
+    assert.ok(mg.gameContainer.style.paddingBottom === '164px', `padding is the panel's part under the keyboard (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(mg.gameContainer.style.scrollPaddingBottom === '164px', 'scroll-padding matches so the nearest edge has a target');
+    assert.ok(L.bottomOf(mg.submitBtn) <= 544 - 8, `Sign in ends above the keyboard (bottom ${L.bottomOf(mg.submitBtn)})`);
     mg.cleanup();
 });
 
 test('keyboard up: a lower message line is the one revealed', () => {
     const { mg, scrolls, vv, flush } = open();
-    rectBottom(mg.submitBtn, 600); rectBottom(mg.signInMessageEl, 660);
+    const L = lay(mg, { submit: 600, msg: 660 });
     mg.signInMessageEl.textContent = 'Incorrect username or password. 2 attempts left.';
     focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
     assert.ok(scrolls.length === 1 && scrolls[0].el === mg.signInMessageEl, 'the message line');
-    assert.ok(mg.gameContainer.style.paddingBottom === '116px', `padding from the message line (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(mg.gameContainer.style.paddingBottom === '164px', `padding from the panel (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 544 - 8, `the message ends above the keyboard (bottom ${L.bottomOf(mg.signInMessageEl)})`);
     mg.cleanup();
 });
 
@@ -155,10 +187,10 @@ test('keyboard up and already visible: one reveal, no padding', () => {
 
 test('keyboard closes: padding is removed and window scroll drift is put back to 0', () => {
     const { mg, vv, flush, scrollTos } = open();
-    rectBottom(mg.submitBtn, 700); mg.signInMessageEl.textContent = '';
+    lay(mg, { submit: 700 }); mg.signInMessageEl.textContent = '';
     mg.gameContainer.style.paddingBottom = '3px';
     focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
-    assert.ok(mg.gameContainer.style.paddingBottom === '159px', 'added on top of the existing 3px');
+    assert.ok(mg.gameContainer.style.paddingBottom === '167px', `added on top of the existing 3px (got ${mg.gameContainer.style.paddingBottom})`);
     window.scrollY = 120; // iOS pan drift
     vv.height = INNER; vv.fire(); flush();
     assert.ok(mg.gameContainer.style.paddingBottom === '3px', `restored to the earlier value (got ${mg.gameContainer.style.paddingBottom})`);
@@ -169,9 +201,9 @@ test('keyboard closes: padding is removed and window scroll drift is put back to
 
 test('blur with the keyboard up: padding is removed and scrollY reset', () => {
     const { mg, vv, flush } = open();
-    rectBottom(mg.submitBtn, 700); mg.signInMessageEl.textContent = '';
+    lay(mg, { submit: 700 }); mg.signInMessageEl.textContent = '';
     focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
-    assert.ok(mg.gameContainer.style.paddingBottom === '156px', 'padding on');
+    assert.ok(mg.gameContainer.style.paddingBottom === '164px', 'padding on');
     window.scrollY = 80;
     mg.passwordField.blur(); flush();
     assert.ok(mg.gameContainer.style.paddingBottom === '', 'padding off after blur');
@@ -199,11 +231,12 @@ test('resize with no field focused does nothing', () => {
 
 test('Other user: the username field gets the same reveal, once per focus and resize', () => {
     const { mg, scrolls, vv, flush } = open();
-    rectBottom(mg.submitBtn, 720); mg.signInMessageEl.textContent = '';
+    const L = lay(mg, { submit: 720, P: 720 }); mg.signInMessageEl.textContent = '';
     focusOn(mg.usernameField); flush();
     keyboard(vv); vv.fire(); flush();
     assert.ok(scrolls.length === 1 && scrolls[0].el === mg.submitBtn, `one reveal of Sign in (got ${scrolls.length})`);
-    assert.ok(mg.gameContainer.style.paddingBottom === '176px', 'padded');
+    assert.ok(mg.gameContainer.style.paddingBottom === '184px', `padded (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(L.bottomOf(mg.submitBtn) <= 544 - 8, 'Sign in ends above the keyboard');
     scrolls.length = 0;
     focusOn(mg.passwordField); flush(); // Enter moves to the password: keyboard stays up
     assert.ok(scrolls.length === 1, `moving to the password field reveals once (got ${scrolls.length})`);
@@ -235,8 +268,65 @@ test('after cleanup the field focus and resize no longer reveal', () => {
     assert.ok(scrolls.length === 0, 'no reveal after cleanup');
 });
 
-test('the Other user hint is short enough for a compact tile (76px of content at GNF 16)', () => {
+test('the Other user hint: "type name" (9 characters) on a compact tile, "type a name" as before elsewhere', () => {
     const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
-    const m = src.match(/signin-other[^]*?<span class="signin-username">([^<]*)<\/span>/);
-    assert.ok(m && m[1].length <= 6, `hint is "${m && m[1]}"`);
+    const m = src.match(/signin-other[^]*?<span class="signin-hint-long">([^<]*)<\/span><span class="signin-hint-short">([^<]*)<\/span>/);
+    assert.ok(m, 'the Other user tile has a long and a short hint');
+    assert.ok(m[1] === 'type a name', `desktop text is what it was (got "${m[1]}")`);
+    assert.ok(m[2] === 'type name' && m[2].length <= 9, `compact hint is "${m[2]}"`);
+    assert.ok(/\.pc-monitor\[data-compact\] \.signin-hint-long\s*\{[^}]*display:\s*none/.test(css), 'compact hides the long hint');
+    assert.ok(/\.signin-hint-short\s*\{[^}]*display:\s*none/.test(css), 'the short hint is hidden by default');
+});
+
+// ── Where the target ends up (fake layout with rects) ───────────────────────
+test('the keyboard fires resize several times: padding is the same each time and Sign in stays above it', () => {
+    const { mg, vv, flush } = open();
+    const L = lay(mg, { submit: 700 }); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField);
+    keyboard(vv); vv.fire(); flush();
+    const first = mg.gameContainer.style.paddingBottom;
+    vv.fire(); flush(); vv.fire(); flush();
+    assert.ok(mg.gameContainer.style.paddingBottom === first, `padding unchanged (${first} then ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(mg.gameContainer.style.scrollPaddingBottom === first, 'scroll-padding unchanged');
+    assert.ok(first === '164px', `sized to the panel's hidden part (got ${first})`);
+    assert.ok(L.bottomOf(mg.submitBtn) <= 544 - 8, `Sign in above the keyboard (bottom ${L.bottomOf(mg.submitBtn)})`);
+    keyboard(vv, 444); vv.fire(); flush(); // the suggestion strip: a taller keyboard
+    assert.ok(mg.gameContainer.style.paddingBottom === '264px', `a taller keyboard grows it from the base (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(L.bottomOf(mg.submitBtn) <= 444 - 8, 'still above the taller keyboard');
+    mg.cleanup();
+});
+
+test('a message set while the field is focused and the keyboard is up is revealed above the keyboard', () => {
+    const { mg, scrolls, vv, flush } = open();
+    const L = lay(mg, { submit: 600, msg: 690 });
+    mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    const before = scrolls.length;
+    mg.setSignInMessage('Incorrect username or password. 2 attempts left.', 'error');
+    flush();
+    assert.ok(scrolls.length > before + 1, `the keyboard reveal ran again after the message (${scrolls.length - before} scrolls)`);
+    assert.ok(scrolls[scrolls.length - 1].el === mg.signInMessageEl, 'the message is the last thing revealed');
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 544 - 8, `the message ends above the keyboard (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    mg.cleanup();
+});
+
+test('zoom 2 (--pc-ui-scale 2): padding and scroll-padding are in the panel\'s own pixels, so halved', () => {
+    const { mg, vv, flush } = open();
+    const L = lay(mg, { submit: 700, z: 2 }); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    assert.ok(mg.gameContainer.style.paddingBottom === '82px', `padding (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(mg.gameContainer.style.scrollPaddingBottom === '82px', `scroll-padding (got ${mg.gameContainer.style.scrollPaddingBottom})`);
+    assert.ok(L.bottomOf(mg.submitBtn) <= 544 - 8, `Sign in above the keyboard (bottom ${L.bottomOf(mg.submitBtn)})`);
+    mg.cleanup();
+});
+
+test('a browser that resizes the layout for the keyboard: Sign in is revealed with no padding', () => {
+    const { mg, scrolls, vv, flush } = open();
+    lay(mg, { submit: 600 }); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); flush();
+    window.innerHeight = 544; vv.height = 544; vv.fire(); flush();
+    assert.ok(scrolls.length === 1 && scrolls[0].el === mg.submitBtn, `Sign in revealed once (got ${scrolls.length})`);
+    assert.ok(mg.gameContainer.style.paddingBottom === '', 'no padding: the layout already has the range');
+    window.innerHeight = INNER; vv.height = INNER; vv.fire(); flush();
+    mg.cleanup();
 });

@@ -1741,15 +1741,25 @@ export class PasswordMinigame extends MinigameScene {
      * The on-screen keyboard covers the lower part of the screen, and with it the message line and
      * the Sign in button. While the username or password field has focus and the visual viewport
      * is shrunk (a keyboard is up, and not a pinch-zoom), find the lower of the message line (when
-     * it has text) and Sign in, see how far it sits below the visual viewport's bottom edge, give
-     * the scrolling panel that much bottom padding (and scroll-padding, so the nearest-edge reveal
-     * has a target) and reveal it with revealInFrame, in a requestAnimationFrame so a layout that
-     * the same resize changed is measured after it settles. The panel often has no scroll range
-     * at 390x844, so the padding is what lets it scroll. When the keyboard closes, or on blur,
-     * the padding goes and any window scroll drift is put back to 0 (iOS can leave the fixed
-     * overlay offset). Bound on every device and a no-op unless the visual viewport is shrunk,
-     * so a desktop is unaffected. The listeners go through this.addEventListener, so cleanup()
-     * removes them.
+     * it has text) and Sign in. If it sits below the keyboard edge (visualViewport offsetTop plus
+     * height), size the panel's bottom padding to the panel's own part hidden under that edge (plus
+     * 8px) and set scroll-padding to the same, so the panel's own scroll brings the target 8px
+     * above the keyboard whether or not the browser pans the visual viewport. Each pass starts from
+     * the saved base padding, so repeated resizes (a keyboard slides in over several events) do not
+     * stack. Both values are divided by the panel's CSS zoom (--pc-ui-scale), because rects are in
+     * drawn pixels and inline styles are in the panel's own. It runs in a requestAnimationFrame so a
+     * layout the same resize changed is measured after it settles. A message set while the keyboard
+     * is up re-runs it (setSignInMessage via _keyboardReveal). On browsers that resize the layout for
+     * the keyboard (innerHeight shrinks with the visual viewport) the panel already has a scroll
+     * range, so only the reveal runs, with no padding. When the keyboard closes, or on blur, the
+     * padding goes and any window scroll drift is put back to 0. Bound on every device and a no-op
+     * unless a keyboard is up, so a desktop is unaffected. The listeners go through
+     * this.addEventListener, so cleanup() removes them.
+     *
+     * Sign-in always opens in the PC monitor (isPcScreen is true for it, and mountPcMonitor only
+     * returns null with no container or no document), so the panel here is the monitor's scrolling
+     * screen with a fixed height. The old password-frame fallback, where padding would grow the
+     * frame instead of adding range, cannot be reached by a sign-in in a browser.
      */
     bindKeyboardReveal(fields) {
         if (typeof window === 'undefined') return;
@@ -1760,7 +1770,11 @@ export class PasswordMinigame extends MinigameScene {
         const raf = (cb) => (typeof window.requestAnimationFrame === 'function' ? window.requestAnimationFrame(cb) : cb());
         let applied = false;
         let saved = null;
+        let dead = false;
+        let focusH = 0; // the tallest innerHeight seen while a field had focus
         const keyboardUp = () => vv.scale === 1 && (window.innerHeight - vv.height) > 100;
+        // A browser that resizes the layout for the keyboard: innerHeight itself has dropped
+        const layoutShrunk = () => vv.scale === 1 && focusH > 0 && (focusH - window.innerHeight) > 100;
         const focused = () => list.includes(document.activeElement);
         const clear = () => {
             if (applied) {
@@ -1771,9 +1785,7 @@ export class PasswordMinigame extends MinigameScene {
             }
             if (window.scrollY !== 0) { try { window.scrollTo(0, 0); } catch (e) { /* no scrollTo: leave it */ } }
         };
-        const reveal = () => {
-            if (!focused() || !keyboardUp()) return;
-            const edge = vv.offsetTop + vv.height;
+        const lowestTarget = () => {
             const msg = this.signInMessageEl;
             const cands = [];
             if (msg?.textContent) cands.push(msg);
@@ -1784,30 +1796,46 @@ export class PasswordMinigame extends MinigameScene {
                 const bottom = el.getBoundingClientRect().bottom;
                 if (bottom > lowestBottom) { lowest = el; lowestBottom = bottom; }
             }
-            if (!lowest) return;
-            const below = Math.max(0, Math.ceil(lowestBottom - edge));
-            if (below > 0) {
+            return lowest ? { el: lowest, bottom: lowestBottom } : null;
+        };
+        const reveal = () => {
+            if (dead || !focused()) return;
+            if (!keyboardUp()) {
+                if (layoutShrunk()) { const t = lowestTarget(); if (t) revealInFrame(t.el); }
+                return;
+            }
+            const edge = vv.offsetTop + vv.height;
+            const target = lowestTarget();
+            if (!target) return;
+            if (target.bottom > edge) {
                 if (!applied) {
                     saved = { pad: panel.style.paddingBottom, scrollPad: panel.style.scrollPaddingBottom };
                     applied = true;
                 }
-                const have = parseFloat(panel.style.paddingBottom) || 0;
-                panel.style.paddingBottom = `${have + below}px`;
-                panel.style.scrollPaddingBottom = `${have + below}px`;
+                // How much of the panel is under the keyboard; the panel's own bottom, not the target's
+                const hidden = Math.max(0, Math.ceil(panel.getBoundingClientRect().bottom - edge)) + 8;
+                const z = cssZoomOf(panel) || 1;
+                const base = parseFloat(saved.pad) || 0;
+                panel.style.paddingBottom = `${base + hidden / z}px`;
+                panel.style.scrollPaddingBottom = `${hidden / z}px`;
             }
-            revealInFrame(lowest);
+            revealInFrame(target.el);
         };
         const onViewport = () => {
             if (vv.scale !== 1) return; // a pinch-zoom is not a keyboard
-            if (!keyboardUp()) { raf(clear); return; }
+            if (!keyboardUp() && !layoutShrunk()) { raf(clear); return; }
             raf(reveal);
         };
         for (const f of list) {
-            this.addEventListener(f, 'focus', () => { if (keyboardUp()) raf(reveal); });
-            this.addEventListener(f, 'blur', () => raf(() => { if (!focused()) clear(); }));
+            this.addEventListener(f, 'focus', () => {
+                focusH = Math.max(focusH, window.innerHeight);
+                if (keyboardUp()) raf(reveal);
+            });
+            this.addEventListener(f, 'blur', () => raf(() => { if (!focused()) { clear(); focusH = 0; } }));
         }
         this.addEventListener(vv, 'resize', onViewport);
-        this._clearKeyboardReveal = clear;
+        this._keyboardReveal = () => { if (!dead && focused()) raf(reveal); };
+        this._clearKeyboardReveal = () => { dead = true; clear(); this._keyboardReveal = null; };
     }
 
     /**
@@ -1843,7 +1871,7 @@ export class PasswordMinigame extends MinigameScene {
                 <button type="button" class="signin-tile signin-other" data-tile-index="other" title="Other user">
                     <span class="signin-portrait signin-portrait-initials">?</span>
                     <span class="signin-name">Other user</span>
-                    <span class="signin-username">name?</span>
+                    <span class="signin-username"><span class="signin-hint-long">type a name</span><span class="signin-hint-short">type name</span></span>
                 </button>`;
     }
 
@@ -2522,6 +2550,9 @@ export class PasswordMinigame extends MinigameScene {
         if (text && kind !== 'info') {
             revealInFrame(this.gameContainer?.querySelector?.('.signin-mode.signin-chosen .postit-note'));
             revealInFrame(this.signInMessageEl);
+            // With the keyboard still up (Enter keeps the field focused) the padding was sized for
+            // Sign in: run the keyboard reveal again so it covers this line
+            this._keyboardReveal?.();
         }
     }
 
