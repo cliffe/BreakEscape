@@ -849,6 +849,9 @@ export function preload() {
     // The key `pc` is pc1.png, so `pc_locked` is an alias of `pc1_locked`, made in create()
     // (one fetch instead of two).
     this.load.image('pc1_locked', 'objects/pc1_locked.png');
+    // ca12's break reminder: Thandiwe's screen left on a break notice while she steps away.
+    // Preloaded so the swap shows at 0 s with a cold cache (core/rooms.js loads variant keys on demand otherwise).
+    this.load.image('pc1_break', 'objects/pc1_break.png');
     this.load.image('pc3_locked', 'objects/pc3_locked.png');
     this.load.image('pc4_locked', 'objects/pc4_locked.png');
     this.load.image('pc5_locked', 'objects/pc5_locked.png');
