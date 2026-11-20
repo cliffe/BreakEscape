@@ -212,14 +212,14 @@ try {
 } finally { globalThis.window = savedWin; globalThis.document = savedDoc; }
 
 // R1 M1, m3, m4, m5: parser rules
-const idx2 = "registerScene('a', A);\nregisterScene('cf', CF);";
+const idx2 = "registerScene('a', A);\nregisterScene('concern-form', CF);";
 assert.ok(SX.parseNoXScenes(idx2, ['class A extends SocialOverlayScene {}', "class CF extends SocialOverlayScene { m() { this.q('#minigame-close').style.display = ''; } }"]).join() === 'a,title-screen', 'an overlay class that turns the X back on is not listed');
 assert.throws(() => SX.parseNoXScenes('nothing here', []), /no registerScene/, 'an index with no registrations is a setup error');
 assert.throws(() => SX.parseNoXScenes("registerScene('p', P);", ['class P extends MinigameScene {}']), /derivation is broken/, 'no overlay scenes found is a setup error even though title-screen is an extra');
 assert.ok(SX.parseNoXScenes('registerScene("q", Q);', ['class Q extends SocialOverlayScene {}']).join() === 'q,title-screen', 'double quotes parse');
 assert.ok(SX.parseNoXScenes("// registerScene('x', A);\n/* registerScene('y', A); */\nregisterScene('a', A);", ['class A extends SocialOverlayScene {}']).join() === 'a,title-screen', 'commented registrations are ignored');
 assert.ok(SX.parseNoXScenes("registerScene('a', A);\nregisterScene('pin', P);", ['class A extends SocialOverlayScene {}\n// class P extends SocialOverlayScene {}\nclass P extends MinigameScene {}']).join() === 'a,title-screen', 'a commented class is ignored');
-assert.throws(() => SX.parseNoXScenes("registerScene('a', A);", ['class A extends SocialOverlayScene {}', 'class A extends MinigameScene {}']), /more than one file/, 'a duplicate class name is a setup error');
+assert.throws(() => SX.parseNoXScenes("registerScene('a', A);", ['class A extends SocialOverlayScene {}', 'class A extends SocialOverlayScene {}']), /more than one file/, 'a duplicate class name is a setup error');
 const noXSet = new Set(['mail-client']);
 assert.ok(SX.caseFor({ kind: 'ready', sample: { noX: true } }, 'mail-client', noXSet).noXAllowed === true, 'a listed scene is allowed by its name');
 assert.ok(SX.caseFor({ kind: 'ready', sample: { noX: true } }, 'pin', noXSet).noXAllowed === false, 'an unlisted scene is not');
@@ -255,5 +255,24 @@ assert.ok(SX.caseFor({ kind: 'ready', sample: { noX: true } }, 'mail-client 915x
         rel(); await late;
         assert.ok(liveBox.removed === false && win.MinigameFramework.currentMinigame === liveInst, 'a stale call that returns null does not close the later case scene');
     } finally { globalThis.window = sw; globalThis.document = sd; }
+}
+
+// R2 m1: the exception list and the source scan must agree
+assert.ok(SX.NO_X_EXCEPT.join() === 'concern-form', 'concern-form is the explicit exception');
+const cfSrc = "class CF extends SocialOverlayScene { m() { this.q('#minigame-close').style.display = ''; } }";
+assert.throws(() => SX.parseNoXScenes("registerScene('a', A);\nregisterScene('other', CF);", ['class A extends SocialOverlayScene {}', cfSrc]), /disagree/, 'a scene that shows the X but is not in the exception list is a setup error');
+assert.throws(() => SX.parseNoXScenes("registerScene('a', A);\nregisterScene('concern-form', CF);", ['class A extends SocialOverlayScene {}', 'class CF extends SocialOverlayScene {}']), /disagree/, 'an exception whose source no longer shows the X is a setup error');
+assert.ok(SX.parseNoXScenes("registerScene('a', A);\nregisterScene('concern-form', CF);", ['class A extends SocialOverlayScene {}', cfSrc.replace("''", '""')]).join() === 'a,title-screen', 'a double-quoted blank display is read too');
+// R2 m2: duplicates matter only on an overlay chain
+assert.ok(SX.parseNoXScenes("registerScene('a', A);", ['class A extends SocialOverlayScene {}', 'class Inner extends Phaser.Scene {}', 'class Inner extends Phaser.Scene {}']).join() === 'a,title-screen', 'unrelated duplicate inner classes do not throw');
+assert.throws(() => SX.parseNoXScenes("registerScene('a', A);", ['class A extends Base {}', 'class A extends Base {}', 'class Base extends SocialOverlayScene {}']), /more than one file/, 'a duplicate on an overlay chain still throws');
+// R2 gap: the runtime setup error closes the browser first
+{
+    let closed = 0, code = null; const logs = [];
+    await SX.failSetup({ browser: { close: async () => { closed++; } }, message: 'm', log: (x) => logs.push(x), exit: (c) => { code = c; } });
+    assert.ok(closed === 1 && code === 2 && logs[0] === 'm', 'failSetup closes the browser once, then exits 2');
+    closed = 0; code = null;
+    await SX.failSetup({ browser: { close: () => new Promise(() => {}) }, message: 'm', log: () => {}, exit: (c) => { code = c; } });
+    assert.ok(code === 2, 'a browser that never closes is raced and still exits 2');
 }
 console.log('playtest-shellx-open-wait ok');

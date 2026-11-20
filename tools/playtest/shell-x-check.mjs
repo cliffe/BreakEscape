@@ -37,8 +37,8 @@
 // derived from the scene sources: every registered scene whose class extends SocialOverlayScene (which
 // switches the framework X off), minus classes whose source turns #minigame-close back on
 // (concern-form shows it as its one Close), plus NO_X_EXTRA (title-screen). A failed or empty
-// derivation, or a listed scene that is not registered at runtime, is a setup error (exit 2), checked
-// before the browser launches. A scene with no X that is not on the list fails.
+// derivation, a disagreement with NO_X_EXCEPT, or a listed scene that is not registered at runtime, is a
+// setup error (exit 2; the runtime one closes the browser first). A scene with no X that is not on the list fails.
 //
 // Exits 1 on any failure, 2 on a setup error. A scene that throws from startMinigame and leaves no shell
 // is reported as "not open" and does not fail the run (the audit's --strict is the gate for those).
@@ -302,27 +302,44 @@ export function pageOpenError(token) {
 // sources is every other minigame source text. A registered scene counts when its class extends
 // SocialOverlayScene, directly or through another class.
 export const NO_X_EXTRA = ['title-screen'];
+// Overlay scenes that show the framework X on purpose (concern-form: its shared bar Close). Source of truth;
+// the source scan below must agree with it or the run stops with a setup error.
+export const NO_X_EXCEPT = ['concern-form'];
 const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/.*$/gm, '$1');
 export function parseNoXScenes(indexSrc, sources) {
     const reg = {};
     for (const m of stripComments(indexSrc).matchAll(/registerScene\(\s*['"]([^'"]+)['"]\s*,\s*(\w+)\s*\)/g)) reg[m[1]] = m[2];
     if (!Object.keys(reg).length) throw new Error('no registerScene calls found in minigames/index.js');
-    const parent = {}, shows = {};
+    const parent = {}, shows = {}, defs = {};
     for (const raw of sources) {
         const src = stripComments(raw);
         // a class whose file turns #minigame-close back on shows the framework X by design
-        const showsX = /#minigame-close/.test(src) && /style\.display\s*=\s*''/.test(src);
+        const showsX = /#minigame-close/.test(src) && /style\.display\s*=\s*(''|"")/.test(src);
         for (const m of src.matchAll(/class\s+(\w+)\s+extends\s+([\w.]+)/g)) {
-            if (m[1] in parent) throw new Error(`class ${m[1]} is defined in more than one file`);
+            defs[m[1]] = (defs[m[1]] || 0) + 1;
             parent[m[1]] = m[2]; shows[m[1]] = showsX;
         }
     }
-    const isOverlay = (cls, depth = 0) => !!cls && depth < 10 && (cls === 'SocialOverlayScene' || isOverlay(parent[cls], depth + 1));
-    const showsXOf = (cls, depth = 0) => !!cls && depth < 10 && (shows[cls] === true || showsXOf(parent[cls], depth + 1));
-    const out = Object.keys(reg).filter(n => isOverlay(reg[n]) && !showsXOf(reg[n]));
-    if (!out.length) throw new Error('no SocialOverlayScene scenes found: the derivation is broken');
+    const chain = (cls) => { const c = []; for (let d = 0; cls && d < 10; d++) { c.push(cls); cls = parent[cls]; } return c; };
+    const isOverlay = (cls) => chain(cls).includes('SocialOverlayScene');
+    const showsXOf = (cls) => chain(cls).some(c => shows[c] === true);
+    // a duplicate class name matters only on the chain of an overlay scene (last-wins could change the list)
+    for (const n of Object.keys(reg)) if (isOverlay(reg[n])) for (const c of chain(reg[n])) if (defs[c] > 1) throw new Error(`class ${c} is defined in more than one file`);
+    const overlays = Object.keys(reg).filter(n => isOverlay(reg[n]));
+    if (!overlays.length) throw new Error('no SocialOverlayScene scenes found: the derivation is broken');
+    const scanned = overlays.filter(n => showsXOf(reg[n])).sort().join();
+    if (scanned !== NO_X_EXCEPT.filter(n => overlays.includes(n)).sort().join()) throw new Error(`the sources and NO_X_EXCEPT disagree on which overlay scenes show the X (sources: ${scanned || 'none'}; list: ${NO_X_EXCEPT.join()})`);
+    const out = overlays.filter(n => !NO_X_EXCEPT.includes(n));
     for (const n of NO_X_EXTRA) if (!out.includes(n)) out.push(n);
     return out.sort();
+}
+
+// A setup error that must still close the browser (raced) before exit 2.
+export async function failSetup({ browser, message, log = console.error, exit = process.exit }) {
+    log(message);
+    const c = await timedEval(browser.close(), BROWSER_CLOSE_TIMEOUT_MS);
+    if (c.timedOut) log('browser.close() did not return in time; exiting anyway');
+    exit(2);
 }
 
 export function loadNoXScenes(root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'break_escape', 'js', 'minigames')) {
@@ -402,7 +419,7 @@ async function main() {
         process.exit(2);
     };
     const missingScene = [...noXScenes].find(n => !registered.includes(n));
-    if (missingScene) { console.error(`the derived disableClose list names '${missingScene}', which is not registered at runtime: stale or misparsed index.js`); process.exit(2); }
+    if (missingScene) { await failSetup({ browser, message: `the derived disableClose list names '${missingScene}', which is not registered at runtime: stale or misparsed index.js` }); return; }
     let openSeq = 0;
     const openScene = async (s) => {
         const token = `${s}#${++openSeq}`;
