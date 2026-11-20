@@ -520,6 +520,14 @@
     }
 }
 
+/* The queue pane is 212px wide at 800x600: 24px wraps "12 alerts queued", so 16px, on one line */
+@media (min-width: 601px) and (max-width: 1100px) {
+    .siem-queue-count {
+        font-size: 16px;   /* GNF scale 16/24/32 */
+        white-space: nowrap;
+    }
+}
+
 @media (max-width: 1100px) {
     /* Two lines: badge, time, host and the buttons; then the whole message below them, so
        the message keeps the row's full width (at 800 it was squeezed to one letter a line) */
@@ -531,12 +539,6 @@
     .siem-description {
         grid-column: 1 / -1;
         grid-row: 2;
-    }
-
-    .siem-time,
-    .siem-source,
-    .siem-description {
-        font-size: 16px;
     }
 
     /* The message wraps to more lines instead of collapsing to one letter (critique B SIEM2) */

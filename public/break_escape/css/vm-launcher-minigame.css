@@ -35,7 +35,8 @@
     padding-right: 40px;
 }
 
-.vm-launcher-frame > .minigame-close-button {
+/* the framework keeps #minigame-close a child of the fixed container (placeCloseButton), never of the frame */
+.vm-launcher-minigame > .minigame-close-button {
     width: 32px;   /* a 32 px tap target; the shared X is 30 */
     height: 32px;
 }
