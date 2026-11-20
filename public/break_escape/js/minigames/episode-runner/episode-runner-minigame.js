@@ -869,6 +869,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                     const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0, isPhish: pm.isPhish === true };
                     if (a.action) out.action = a.action;
                     if (a.none === true) out.none = true;
+                    if (a.sheetless === true) out.sheetless = true;
                     return out;
                 })
             };

@@ -226,7 +226,10 @@ function buildCard(answer, msg, set = null, routeName = null, showScore = true) 
             const li = el('li', `aw-flag ${caught ? 'aw-flag-caught' : 'aw-flag-missed'}`);
             li.dataset.flag = id;
             const sentence = redFlagString(id, msg, set);
-            li.append(el('span', 'aw-flag-word', caught ? 'Spotted: ' : 'Look for: '),
+            // D227 A3: a risky item the learner let in with no tick sheet names its tells as
+            // "What gave them away:", as the removed result card did.
+            const missWord = answer.sheetless === true && wrongVerdict(answer, msg, 'awareness', set?.scoring) ? 'What gave them away: ' : 'Look for: ';
+            li.append(el('span', 'aw-flag-word', caught ? 'Spotted: ' : missWord),
                 el('span', 'aw-flag-text', typeof notes[id] === 'string' && notes[id] ? `${sentence} (${notes[id]})` : sentence));
             ul.appendChild(li);
         }

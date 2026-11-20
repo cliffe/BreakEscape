@@ -1523,6 +1523,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 // batch-12 item 3: "Nothing looks wrong" is a graded answer, so the debrief can tell
                 // it apart from a learner who named no flags (the "nothing to grade" case).
                 if (a.none === true) out.none = true;
+                // D227 A3: a Trust with no sheet, so the debrief names its tells neutrally.
+                if (a.sheetless === true) out.sheetless = true;
                 return out;
             })
         };

@@ -267,3 +267,39 @@ test('A1: a folded round reloaded after its last answer lands on the last review
     await new Promise((r) => setTimeout(r, 10));
     assert.equal(ended.length, 1);
 });
+
+test('A3: the folded debrief names the tells of a let-in risky item "What gave them away:"; other rows and hosts keep "Look for:"', async () => {
+    const set = awareSet([phishMail, realMail]);
+    const s = open(set, TRIMS);
+    click($(s, '.tri-start'));
+    pick(s, 'phish_mail');
+    click($(s, '.tri-verdict[data-verdict="trust"]'));
+    click($(s, '.tri-next'));
+    act(s, 'real_mail', 'trust');
+    click($(s, '.tri-next'));
+    const result = s.gameResult;
+    const trusted = result.answers.find((a) => a.id === 'phish_mail');
+    assert.equal(trusted.sheetless, true, 'the result carries the flag');
+    const words = (opts) => {
+        const c = document.createElement('div');
+        renderDebrief(c, { result, set, ...opts });
+        return [...c.querySelectorAll('[data-message-id="phish_mail"] .aw-flag-word')].map((e) => e.textContent.trim());
+    };
+    const folded = words({ folded: true, bandHeadline: 'x' });
+    assert.ok(folded.length >= 2);
+    assert.ok(folded.every((w) => w === 'What gave them away:'), folded.join('|'));
+    // a reported (ticked) round has no sheetless flag: stays "Look for:"
+    const rep = open(set, TRIMS);
+    click($(rep, '.tri-start'));
+    act(rep, 'phish_mail', 'report', ['urgencyCalibrated']);
+    click($(rep, '.tri-next'));
+    act(rep, 'real_mail', 'trust');
+    click($(rep, '.tri-next'));
+    const c2 = document.createElement('div');
+    renderDebrief(c2, { result: rep.gameResult, set, folded: true, bandHeadline: 'x' });
+    const w2 = [...c2.querySelectorAll('.aw-flag-word')].map((e) => e.textContent.trim());
+    assert.ok(!w2.includes('What gave them away:'));
+    // the stored progress list keeps the flag too (reload mid-debrief)
+    const { cleanAnswerList } = await import(pathToFileURL(join(js, 'minigames/episode-runner/episode-model.js')));
+    assert.equal(cleanAnswerList([{ id: 'a', verdict: 'trust', flags: [], ms: 1, sheetless: true }])[0].sheetless, true);
+});
