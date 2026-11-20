@@ -16,7 +16,7 @@
       "takeable": false,
       "interactable": false,
       "observations": "The depot drinks machine. Staff wander over for something cold.",
-      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": -1 }, "capacity": 2, "chatter": "pool" }
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": -1.25 }, "capacity": 2, "chatter": "pool" }
     }
   ],
   "staff": {
