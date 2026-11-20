@@ -27,9 +27,10 @@ const MINW = L.COMPACT_MAX_WIDTH_EXCL;                    // min-width bound: 90
 const HP1 = H + 1;                                        // min-height companion: 501
 const HP002 = (H + 0.02).toFixed(2);                      // hud.css companion: 500.02
 const norm = x => x.replace(/\s+/g, ' ').trim();
+// The selector is a lookahead, so a nested @media (inside @media print, say) is read too.
 const mediaQueries = text => {
   const t = text.replace(/\/\*[\s\S]*?\*\//g, '');
-  return [...t.matchAll(/@media([^{]+)\{\s*([^{}]*?)\s*\{/g)].map(m => ({ prelude: norm(m[1]), selector: norm(m[2].split(',')[0]) }));
+  return [...t.matchAll(/@media([^{]+)\{(?=\s*([^{}]*?)\s*\{)/g)].map(m => ({ prelude: norm(m[1]), selector: norm(m[2].split(',')[0]) }));
 };
 // [file, first selector inside the query, the exact prelude the constants give]
 const COMPACT_QUERIES = [
@@ -42,6 +43,9 @@ const COMPACT_QUERIES = [
   ['hud.css', '#combat-buttons', `(min-width: ${MINW}px), (orientation: landscape) and (max-height: ${H}px)`],
   ['hud.css', 'body:has(#combat-buttons) #hud-info-label', `(max-width: ${W}px) and (orientation: portrait), (max-width: ${W}px) and (min-height: ${HP002}px)`],
 ];
+// Queries that carry a compact-rule number for another reason. [file, prelude, reason]. Add here, not to
+// COMPACT_QUERIES, unless the query really is the compact layout.
+const OTHER_QUERIES = [];
 const numbersOfRule = new RegExp(`\\b(${W.replace('.', '\\.')}|${MINW}|${H}|${HP1}|${HP002.replace('.', '\\.')})(px)?\\b`);
 for (const f of ['objectives.css', 'ui-themes.css', 'hud.css']) {
   const qs = mediaQueries(readFileSync(join(root, 'css', f), 'utf8'));
@@ -54,10 +58,11 @@ for (const f of ['objectives.css', 'ui-themes.css', 'hud.css']) {
   // Any query with a rule number in it must be one of the expected preludes: no unpinned copy.
   for (const q of qs) {
     if (!numbersOfRule.test(q.prelude)) continue;
-    assert.ok(expected.some(e => e[2] === q.prelude), `${f}: @media (${q.prelude}) restates the compact rule but is not pinned`);
+    assert.ok(expected.some(e => e[2] === q.prelude) || OTHER_QUERIES.some(o => o[0] === f && o[1] === q.prelude && o[2]),
+      `${f}: @media ${q.prelude} uses a compact-rule number: add it to COMPACT_QUERIES if it is the compact layout, or to OTHER_QUERIES with a reason if not`);
   }
   // The compact query must keep its selector: count queries by the compact shapes with any numbers.
-  const shapes = qs.filter(q => /^\(max-width: [\d.]+px\)(, \(max-height: [\d.]+px\)| and \(min-height: [\d.]+px\) and \(orientation: portrait\))$/.test(q.prelude) && !/^\(max-width: (768|420|480)px\)$/.test(q.prelude));
+  const shapes = qs.filter(q => !OTHER_QUERIES.some(o => o[0] === f && o[1] === q.prelude) && /^\(max-width: [\d.]+px\)(, \(max-height: [\d.]+px\)| and \(min-height: [\d.]+px\) and \(orientation: portrait\))$/.test(q.prelude));
   const wantShapes = expected.filter(e => /^\(max-width: [\d.]+px\)(, \(max-height|\sand \(min-height)/.test(e[2])).length;
   assert.ok(shapes.length === wantShapes, `${f}: ${shapes.length} compact-shaped @media queries, expected ${wantShapes}`);
 }
@@ -66,14 +71,16 @@ for (const f of ['objectives.css', 'ui-themes.css', 'hud.css']) {
 const walk = d => readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)]);
 const VIEWPORT = /innerWidth|innerHeight|visualViewport|clientWidth|clientHeight|\bvw\b|\bvh\b|matchMedia/;
 const NUM = '(?:899(?:\\.98)?|900|500(?:\\.02)?|501)';
-const COMPARE = new RegExp(`(?:[<>]=?\\s*${NUM}\\b)|(?:\\b${NUM}\\s*[<>]=?)|(?:max-(?:width|height):\\s*${NUM}px)`);
+const COMPARE = new RegExp(`(?:[<>]=?\\s*${NUM}\\b)|(?:\\b${NUM}\\s*[<>]=?)|(?:m(?:ax|in)-(?:width|height):\\s*${NUM}px)`);
 for (const f of walk(join(root, 'js')).filter(p => p.endsWith('.js'))) {
   if (f.endsWith('ui/hud-lanes.js')) continue;
   readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
     if (!VIEWPORT.test(line)) return;
-    if (/matchMedia/.test(line) && !/max-width/.test(line)) return;   // height-only subtitle rule (base-minigame.js), not the compact rule
-    assert.ok(!COMPARE.test(line), `${f}:${i + 1} restates the compact rule: ${line.trim()}`);
+    // A matchMedia query with no width term is a height-only rule (base-minigame.js subtitles), not the compact rule.
+    // Drop just that call, so the rest of the line is still checked.
+    const rest = line.replace(/matchMedia\??\.?\(\s*(['"`])((?:(?!\1).)*)\1\s*\)/g, (m, q, mq) => /width/.test(mq) ? m : '');
+    assert.ok(!COMPARE.test(rest), `${f}:${i + 1} restates the compact rule: ${line.trim()}`);
   });
 }
 for (const f of ['js/ui/objectives-panel.js', 'js/systems/tutorial-manager.js']) {
