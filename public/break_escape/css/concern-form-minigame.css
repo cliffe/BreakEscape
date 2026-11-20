@@ -35,6 +35,11 @@
 .cf-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .cf-panel { padding: 14px 16px; max-width: 920px; }
+/* The intro's Start lives here, under the scrolling stage, so copy never sits beneath it. The
+   footer paints the same opaque surface as the root, so nothing shows through the button skin. */
+.cf-foot { flex: none; padding: 0 16px 14px; background-color: var(--cf-surface); border-top: 2px solid var(--cf-line); }
+.cf-foot:empty { display: none; }
+.cf-foot .cf-button { margin-top: 12px; }
 .cf-heading { margin: 0 0 8px; font-size: 20px; color: var(--cf-accent); }
 .cf-heading:focus,
 .cf-text[data-autofocus]:focus { outline: none; }
@@ -78,5 +83,20 @@
 
 @media (max-width: 767px) {
     .cf-panel { padding: 10px 12px; }
+    .cf-foot { padding: 0 12px 10px; }
     .cf-chip { flex: 1 1 100%; }
+}
+
+/* Short landscape (844x390, 915x412, 568x320): the console frame and title bar take about a third of
+   the height. Tighter spacing and full-width copy shorten the card; Start is in the footer under the
+   scrolling stage, so it is in view at open and the copy scrolls above it. Layout only: no font sizes
+   change. */
+@media (max-height: 500px) {
+    .cf-panel { padding: 8px 12px; max-width: none; }
+    .cf-intro .cf-text,
+    .cf-intro .cf-guidance,
+    .cf-intro .cf-reload-note { max-width: none; margin-bottom: 6px; }
+    .cf-heading { margin-bottom: 4px; }
+    .cf-foot { padding: 0 12px 8px; }
+    .cf-foot .cf-button { margin-top: 8px; }
 }

@@ -163,6 +163,23 @@ test('chips render by kind, with the conclusions in their own group', () => {
     assert.match($(s, '.cf-report-empty').textContent, /Nothing picked/);
 });
 
+test('Start sits in .cf-foot, a sibling after .cf-stage under .cf-root, outside the stage; the footer empties on build', () => {
+    const s = open(config());
+    const start = $(s, '.cf-start');
+    const foot = $(s, '.cf-foot');
+    const stage = $(s, '.cf-stage');
+    assert.ok(!!start && !!foot && !!stage, 'start, footer and stage exist');
+    assert.ok(start.parentElement === foot, 'Start is a direct child of .cf-foot');
+    assert.ok(foot.parentElement.classList.contains('cf-root'), '.cf-foot is a child of .cf-root');
+    assert.ok(stage.parentElement === foot.parentElement, '.cf-stage and .cf-foot are siblings');
+    assert.ok(!stage.contains(start) && !stage.contains(foot), 'neither Start nor the footer is inside .cf-stage');
+    assert.ok(!!(stage.compareDocumentPosition(foot) & window.Node.DOCUMENT_POSITION_FOLLOWING), '.cf-foot follows .cf-stage');
+    assert.ok(foot.children.length === 1, 'the footer holds only Start');
+    begin(s);
+    assert.ok(foot.children.length === 0 && foot.textContent === '', 'the footer is empty after Start, so :empty hides it');
+    assert.ok(!$(s, '.cf-start'), 'Start is gone on the build step');
+});
+
 test('a kind with no chips gets no group, and no conclusion chips means no conclusion group', () => {
     const s = open(config({ factChips: [{ id: 'a', kind: 'what', label: 'A' }, { id: 'b', kind: 'who', label: 'B' }], conclusionChips: [] }));
     begin(s);
