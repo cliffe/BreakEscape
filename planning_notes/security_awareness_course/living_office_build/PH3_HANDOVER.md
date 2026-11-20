@@ -6,9 +6,33 @@ Model routing: opus48 writes the lines (this file is the drafted copy); a Sonnet
 
 ## Status
 
-- **Design and all text: done** (below, ready to paste).
-- **Files edited on disk: none yet.** Nothing committed except this handover.
-- **Remaining = mechanical:** apply the drafted text to each file, confirm the `keyMessage` ids against each shell's first triage set, compile ink, validate, run node tests + proof5, commit explicit paths.
+### APPLIED + COMMITTED (Sonnet pass, commit `51caba7be`)
+- **Host blocks: done** for all 7 full shells (ca13 Gwen, ca14 Julian, ca15 Nilesh, ca16 Anjali, ca18 Ama, ca19 Anjali, ca20 Zainab). Added VARs `kit_defend_done/kit_caught/kit_key_caught/kit_ca<NN>_host_said`; kit block nested above the existing hub body (existing defend-complete branch preserved in `- else:`). HABIT pulled out once after the outcome conditional (single habit clip; behaviourally identical to the template's two-branch habit). All 7 `.ink`+`.json` compiled clean (bin/inklecate).
+- **conceptPanel layers 0/1: done** for all 7 full shells. Single-object (ca13, ca15) appended to `.text`; arrays (ca16, ca18, ca19, ca20) appended to the **last card** (none conditional). Cuts made: ca13 `No hacking.`; ca15 `We name nobody.`; ca16 `Facts, not a verdict...fairly.`; ca18 `These are set up for you...switch them on.`; ca19 `If you didn't start it, deny it and report it.`; ca20 `, and keep work devices for work, not for family or a quick game`. ca13 layer-0 inner semicolon changed to `, and` (panel-cosmetic). All panels end `have a word with <first name>.`
+- **ca14 panel CREATED** (not appended): ca14 has NO conceptPanel anywhere (it has `privacyPanel`). Matching wave-1 siblings ca02/04/05/06/07 (erb-only conceptPanel, no fragment one), I created `social.awarenessEpisode.strings.conceptPanel` = `{heading:"Where your posts lead", text: layer0\n\nlayer1}`. Parity-safe: `conceptPanel` is in STRINGS_VALUE_EXEMPT + STRINGS_ERB_ONLY_OK. **Reviewer: confirm the heading "Where your posts lead".**
+
+### CONFIRMED keyMessage ids (D13) — in triageSets[0] (has outcome) of both full shell + fragment (ids identical across the two):
+- ca13 → `e13_supplier_injection` (prompt-injection invoice; the AI-assistant-specific lesson. Handover's voicemail guess corrected.)
+- ca14 → `e14_fake_merrin` (second account in the partner's name)
+- ca15 → `e15_posted_stick`
+- ca16 → `e16_shared_login_req`
+- ca17 → `e17_meeting_app` (install-an-app ask-first; the clearest "ask first" card. Alt: e17_free_tool.)
+- ca18 → `e18_lockout_fake` (fake lockout → look-alike page)
+- ca19 → `e19_ransom_note` (host block narrates an incident that happened + reporting limited it, so the key is the reported ransomware, not a prevented entry)
+- ca20 → `e20_wifi_page_fake` (the fake sign-in page that captures the work password)
+
+### REMAINING (next agent):
+1. **Fragments e13-e20** (`AW/e<N>/defend.json`): put the twin layer 1 into `awarenessEpisode.strings.conceptPanel`. Interpretation used/decided: **APPEND** the twin-layer-1 to the existing panel (to `.text` for objects e13/e15; to the **last card** for arrays e16/e17/e18/e19/e20), per the e12 model (fragment = teaching + twin cost). **e14 fragment has NO conceptPanel** → CREATE `{heading, text: twin-layer-1}` (mirror the erb). Parity exempts conceptPanel either way. (If a reviewer prefers "replace" per the literal "set .text", note e8/e9/e10 wave-1 fragments kept arrays, so append is the safer, teaching-preserving reading.)
+2. **ca13 twin** `scenarios/ca13_ai_assistant_defend/`: layer 1 in its erb conceptPanel + the two-way twin host line in `ink/gwen_pritchard.ink` (declare `VAR kit_key_caught`, split the existing `episode_e13_ai_assistant_defend_defend_complete` branch; caught/miss lines in the DRAFTED TEXT below). Compile.
+3. **proof5.py** in AW (`python3 proof5.py tmp/w2_p5`): expect only P-H3's changed paths (+ the expected ca00 anjali_rao.ink) to differ.
+4. **Build `W2_LINES_H3.md`** (brief 4.2 table): host lines `voiced`, layer0/layer1 `written`, ca13 twin `written`; counts vs budget (host 14 + twin 1 = 15); npc-dialog-review verdict + commit. **Note for reviewer: O/E layer 0 is scene-free in wave 2 (setPiece null, D3); ca13-H lines pulled HABIT out of the two template branches.**
+
+### CHECK RESULTS so far (on the 7 committed shells):
+- validator `--strict-social --no-graph`: 0 ERROR on each.
+- dialoguelint: clean on each.
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 2826 pass / **1 fail** = `test/js/social-mail-ink-runner.test.mjs`, which **PASSES when run alone** (flaky under the combined run; other agents were mid-edit on ambient inks in this shared worktree). Not caused by P-H3's changes (mail runner, outside scope). Re-run to confirm green.
+- proof5: NOT yet run (P-GEN step-1 deliverable; run in remaining step 3).
+
 - **D225 / O1 hold:** none of the held shells (ca02, ca03, ca05, ca08, ca11) are P-H3's, so **no D225 placeholder applies here.** Nothing to mark `// D225 pending`.
 
 ## Files P-H3 owns (brief 2.7)
