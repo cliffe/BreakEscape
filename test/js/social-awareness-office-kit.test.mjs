@@ -785,3 +785,51 @@ test('ca00 convention: no kit host mapping, each kit NPC opens on a knot of its 
     }
   }
 });
+
+// W2 build review R2 minor 3: the row field keyCaughtVerdicts is checked in Python; this ties each shell to it.
+// Returns the problems for rows (read from episodes.json or a scratch copy) against the shells read by readFn.
+const caughtVerdictProblems = (rows, readFn) => {
+  const problems = []; let visited = 0, withField = 0;
+  for (const r of rows) {
+    const sc = readFn(r.id);
+    if (!sc) continue;
+    visited++;
+    const got = sc.social?.triageSets?.[0]?.outcome?.messageCaughtVerdicts;
+    if (r.keyCaughtVerdicts) {
+      withField++;
+      if (canon(got) !== canon({ [r.keyMessage]: r.keyCaughtVerdicts })) problems.push(`${r.id}: messageCaughtVerdicts ${canon(got)}, want ${canon({ [r.keyMessage]: r.keyCaughtVerdicts })}`);
+    } else if (got !== undefined) problems.push(`${r.id}: has messageCaughtVerdicts ${canon(got)} but the row has no keyCaughtVerdicts`);
+  }
+  return { problems, visited, withField };
+};
+
+test('keyCaughtVerdicts: each kit row\'s shell (and twin row) carries messageCaughtVerdicts equal to the row, and rows without the field carry none', () => {
+  const { problems, visited, withField } = caughtVerdictProblems(kitRows, tryShell);
+  assert.deepEqual(problems, []);
+  assert.ok(withField >= 6, `only ${withField} rows with keyCaughtVerdicts visited`);
+  assert.ok(visited >= 6, `only ${visited} rows visited`);
+});
+
+test('keyCaughtVerdicts: the check fails on a mutated scratch copy (lost entry, wrong verdicts, stray entry)', () => {
+  const rows = JSON.parse(JSON.stringify(kitRows));
+  const withF = rows.filter((r) => r.keyCaughtVerdicts);
+  assert.ok(withF.length >= 2);
+  const lost = new Set([withF[0].id]), wrong = new Set([withF[1].id]);
+  const without = rows.find((r) => !r.keyCaughtVerdicts && tryShell(r.id)?.social?.triageSets?.[0]?.outcome);
+  assert.ok(without, 'a row without the field to stray into');
+  const mutated = (id) => {
+    const sc = JSON.parse(JSON.stringify(tryShell(id) || null));
+    if (!sc) return sc;
+    const oc = sc.social?.triageSets?.[0]?.outcome;
+    if (!oc) return sc;
+    if (lost.has(id)) delete oc.messageCaughtVerdicts;
+    if (wrong.has(id)) oc.messageCaughtVerdicts = { [withF[1].keyMessage]: ['delete'] };
+    if (id === without.id) oc.messageCaughtVerdicts = { x: ['report'] };
+    return sc;
+  };
+  const { problems } = caughtVerdictProblems(rows, mutated);
+  assert.equal(problems.length, 3, problems.join('\n'));
+  // and dropping the field from a row (a mutated episodes copy) is caught the other way round
+  const rows2 = JSON.parse(JSON.stringify(kitRows)); delete rows2.find((r) => r.keyCaughtVerdicts).keyCaughtVerdicts;
+  assert.equal(caughtVerdictProblems(rows2, tryShell).problems.length, 1);
+});

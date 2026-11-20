@@ -425,6 +425,8 @@ export class NPCNeedsSystem {
         this.world = world;
         this._holds = cond => this._globalHolds(cond);   // bound once: the chatterPool gate check
         this.seed = opts.seed !== undefined ? opts.seed : 0;
+        // The chatter shuffle bag alone may draw from its own seed (per game); every other roll uses this.seed.
+        this.bagSeed = opts.bagSeed !== undefined ? opts.bagSeed : this.seed;
         this.manualClock = !!opts.manualClock;
         this.clockMs = 0;
         this.speakers = [];   // slice 21: who is speaking, rebuilt each tick (_buildSpeakers)
@@ -617,7 +619,7 @@ export class NPCNeedsSystem {
     }
 
     reset(seed) {
-        if (seed !== undefined) this.seed = seed;
+        if (seed !== undefined) { this.seed = seed; this.bagSeed = seed; }
         const ids = [...this.states.keys()];
         for (const id of ids) {
             const s = this.states.get(id);
@@ -2866,7 +2868,7 @@ export class NPCNeedsSystem {
         const sig = lines.join('\n');
         let b = this._bags.get(key);
         if (!b || b.sig !== sig) { b = { sig, order: [], round: 0, last: -1 }; this._bags.set(key, b); }
-        if (!b.order.length) b.order = bagOrder(lines.length, createSeededRng(hash32(`${this.seed}:${key}:bag:${b.round++}`)), b.last);
+        if (!b.order.length) b.order = bagOrder(lines.length, createSeededRng(hash32(`${this.bagSeed}:${key}:bag:${b.round++}`)), b.last);
         b.last = b.order.shift();
         return b.last;
     }
@@ -2901,7 +2903,7 @@ export class NPCNeedsSystem {
         const fresh = !b || b.sig !== lines.join('\n');
         if (!fresh && b.order.length) return b.order;
         const round = fresh ? 0 : b.round, last = fresh ? -1 : b.last;
-        return bagOrder(lines.length, createSeededRng(hash32(`${this.seed}:${key}:bag:${round}`)), last);
+        return bagOrder(lines.length, createSeededRng(hash32(`${this.bagSeed}:${key}:bag:${round}`)), last);
     }
 
     /**
@@ -6222,15 +6224,25 @@ export function createEngineWorld() {
 }
 
 /**
- * The seed for the live system. An explicit seed (opts.seed, then the scenario's npcNeedsSeed) is
- * used exactly as given. Otherwise the scenario name is mixed with the game id, so each game draws
- * its chatter in its own order (the same game gets the same order on reload). Without a game id it
- * falls back to the scenario name alone.
+ * The seed for every roll except the chatter bag (lockChance, prints, left items, exchange order,
+ * chattiness, call gaps): opts.seed, then the scenario's npcNeedsSeed, then the scenario name.
+ * It never includes the game id, so those rolls are the same function of the scenario as ever.
  */
-export function resolveNeedsSeed(optSeed, scenario, gameId) {
+export function resolveNeedsSeed(optSeed, scenario) {
     if (optSeed !== undefined) return optSeed;
     if (scenario?.npcNeedsSeed !== undefined) return scenario.npcNeedsSeed;
-    const name = scenario?.scenario_name || scenario?.name || 'scenario';
+    return scenario?.scenario_name || scenario?.name || 'scenario';
+}
+
+/**
+ * The seed for the chatter shuffle bag only. An explicit seed (opts.seed, then npcNeedsSeed) is
+ * used exactly as given. Otherwise the scenario name is mixed with the game id, so each game
+ * draws its chatter in its own order (the same game gets the same order on reload). Without a
+ * game id it falls back to the scenario name alone.
+ */
+export function resolveBagSeed(optSeed, scenario, gameId) {
+    if (optSeed !== undefined || scenario?.npcNeedsSeed !== undefined) return resolveNeedsSeed(optSeed, scenario);
+    const name = resolveNeedsSeed(undefined, scenario);
     return (gameId === undefined || gameId === null || gameId === '') ? name : `${name}#${gameId}`;
 }
 
@@ -6239,8 +6251,9 @@ export function installNpcNeeds(opts = {}) {
     const w = typeof window !== 'undefined' ? window : null;
     if (!w) return null;
     if (!w.npcNeedsSystem) {
-        const seed = resolveNeedsSeed(opts.seed, w.gameScenario, w.breakEscapeConfig?.gameId);
-        w.npcNeedsSystem = new NPCNeedsSystem(createEngineWorld(), { seed });
+        const seed = resolveNeedsSeed(opts.seed, w.gameScenario);
+        const bagSeed = resolveBagSeed(opts.seed, w.gameScenario, w.breakEscapeConfig?.gameId);
+        w.npcNeedsSystem = new NPCNeedsSystem(createEngineWorld(), { seed, bagSeed });
         w.eventDispatcher?.on('npc_arrived:*', (data) => {
             if (data?.npcId) w.npcNeedsSystem.onArrived(data.npcId, data.owner, data);
         });
