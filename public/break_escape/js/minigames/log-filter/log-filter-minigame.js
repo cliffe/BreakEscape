@@ -349,6 +349,7 @@ export class LogFilterMinigame extends MinigameScene {
         this._updateTabActiveClass();
 
         const body = this._dom.body;
+        this._destroyScrollCues();
         body.innerHTML = '';
 
         if (tabId === 'session_log') {
@@ -364,6 +365,12 @@ export class LogFilterMinigame extends MinigameScene {
         }
 
         this._updateStatusBar();
+    }
+
+    // Cues belong to the table wraps that body.innerHTML clears: drop them before the wraps go.
+    _destroyScrollCues() {
+        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
+        if (this._auditScrollCue) { this._auditScrollCue.destroy(); this._auditScrollCue = null; }
     }
 
     // ── Session Log Tab ────────────────────────────────────────────────────
@@ -631,7 +638,7 @@ export class LogFilterMinigame extends MinigameScene {
             pane.appendChild(wrap);
         }
         this._dom.logTableWrap = wrap;
-        this._scrollCue = attachScrollCue(wrap);
+        this._scrollCue = attachScrollCue(wrap, { viewport: this._dom.body });
 
         const fields = LogFilterMinigame.LOG_FIELDS[this._logType] || [];
         const filtered = this._applyFilters(this._logEntries);
@@ -1243,6 +1250,7 @@ export class LogFilterMinigame extends MinigameScene {
 
         const tableWrap = this._el('div', 'lf-audit-table-wrap pixel-scroll');
         pane.appendChild(tableWrap);
+        this._auditScrollCue = attachScrollCue(tableWrap, { viewport: this._dom.body });
 
         const table = this._el('table', 'lf-audit-table');
         const thead = document.createElement('thead');
@@ -1439,7 +1447,7 @@ export class LogFilterMinigame extends MinigameScene {
 
     cleanup() {
         if (this._closeTimer) clearTimeout(this._closeTimer);
-        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
+        this._destroyScrollCues();
         super.cleanup();
     }
 }

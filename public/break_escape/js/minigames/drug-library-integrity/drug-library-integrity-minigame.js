@@ -180,11 +180,9 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
         const panel = this.gameContainer.querySelector('#dli-panel');
         if (!panel) return;
-        if (!this._scrollCue || this._scrollCuePanel !== panel) {
-            if (this._scrollCue) this._scrollCue.destroy();
-            this._scrollCue = attachScrollCue(panel);
-            this._scrollCuePanel = panel;
-        }
+        // Old cues sit on elements the render below replaces: drop them first.
+        this._destroyScrollCues();
+        this._scrollCue = attachScrollCue(panel);
         panel.scrollLeft = 0;
 
         switch (tabId) {
@@ -193,6 +191,18 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
             case 'verify':    this._renderVerifyTab(panel);    break;
             case 'fleet':     this._renderFleetTab(panel);     break;
         }
+    }
+
+    _destroyScrollCues() {
+        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
+        (this._diffScrollCues || []).forEach(c => c.destroy());
+        this._diffScrollCues = [];
+    }
+
+    // Each diff panel scrolls itself sideways, so each gets its own cue (the outer panel does not overflow).
+    _attachDiffCues(panel) {
+        this._diffScrollCues = Array.from(panel.querySelectorAll('.dli-diff-panel'))
+            .map(el => attachScrollCue(el, { viewport: panel }));
     }
 
     _enableTab(tabId) {
@@ -514,6 +524,7 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
   &nbsp;|&nbsp; Current: <strong style="color:#cc3333">${escapeHtml(c.tamperedValue)}</strong>
   &nbsp;|&nbsp; Backup: <strong style="color:#33cc66">${escapeHtml(c.correctValue)}</strong>`).join('<br>')}`}
 </div>`;
+        this._attachDiffCues(panel);
     }
 
     _buildDiffRow(drug, i, side) {
@@ -954,7 +965,7 @@ ${activePump ? `
         // Clear all pending scan timers
         this._scanTimers.forEach(id => { clearTimeout(id); clearInterval(id); });
         this._scanTimers = [];
-        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
+        this._destroyScrollCues();
         super.cleanup();
     }
 }
