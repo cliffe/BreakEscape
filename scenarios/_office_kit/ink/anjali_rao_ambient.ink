@@ -13,7 +13,7 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 
 === ca03 ===
 { kit_key_caught:
-    Anjali Rao: Well caught. That reset request was convincing, and it would have cost us.
+    Anjali Rao: Well caught. That sign-in prompt nobody started would have let them straight in.
 - else:
     Anjali Rao: We've had a few callers pushing for password resets this week. Worth a second look.
 }

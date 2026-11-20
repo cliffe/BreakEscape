@@ -20,7 +20,7 @@ Niamh Doherty: Hiya, welcome in. Give us a shout if you need anything at all.
 
 === ca03 ===
 { kit_key_caught:
-    Niamh Doherty: Good spot on that reset call. They nearly talked a password straight out of someone.
+    Niamh Doherty: Good spot turning down that sign-in prompt nobody started. One tap and they'd have been in.
 - else:
     Niamh Doherty: Helpdesk's had a run of odd reset calls lately. Keeps us all on our toes.
 }
