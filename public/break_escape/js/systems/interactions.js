@@ -833,6 +833,7 @@ function gameDisplayParts(data, sprite, observations, text) {
 const LONG_TOAST_TEXT_CHARS = 120;
 const LONG_TOAST_TEXT_LINES = 3;
 // An observation identical to the text is one piece: counted and shown once.
+// Keep in sync with utils/same-toast-text.js (a test compares the two bodies).
 function sameToastText(observations, text) {
     return String(observations || '').trim() === String(text || '').trim();
 }
