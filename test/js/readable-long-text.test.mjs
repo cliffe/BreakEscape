@@ -273,3 +273,26 @@ test('onInteract toast with nothing to show falls back to the name and sprite na
   assert.ok(alerts[0][0] === 'Plain Box', 'name: ' + alerts[0][0]);
   assert.ok(alerts[1][0] === 'b', 'sprite name: ' + alerts[1][0]);
 });
+
+test('gameDisplay modal: an observation identical to the text shows once', () => {
+  const same = 'Server room access is logged.';
+  const rd = run(mon(same, { observations: same, readDisplay: 'gameDisplay' }));
+  assert.ok(rd.shown.length === 1, 'readDisplay: one modal');
+  assert.ok(rd.shown[0].body === same, 'readDisplay: text once, no em: ' + rd.shown[0].body);
+  const od = run(mon(same, { observations: ' ' + same + ' ', observationDisplay: 'gameDisplay' }));
+  assert.ok(od.shown.length === 1 && od.shown[0].body === same, 'observationDisplay: once: ' + od.shown[0].body);
+  const long = run(mon(chars(300), { observations: chars(300) }));
+  assert.ok(long.shown.length === 1 && long.shown[0].body === chars(300), 'long rule: once');
+});
+
+test('gameDisplay modal: a different observation still shows both', () => {
+  const rd = run(mon('The text.', { observations: 'A note.', readDisplay: 'gameDisplay' }));
+  assert.ok(rd.shown[0].body === '<em>A note.</em>\n\nThe text.', rd.shown[0].body);
+});
+
+test('gameDisplay modal: a null or missing observation shows just the text', () => {
+  const a = run(mon('The text.', { observations: null, readDisplay: 'gameDisplay' }));
+  assert.ok(a.shown[0].body === 'The text.', 'null: ' + a.shown[0].body);
+  const b = run(mon('The text.', { readDisplay: 'gameDisplay' }));
+  assert.ok(b.shown[0].body === 'The text.', 'missing: ' + b.shown[0].body);
+});
