@@ -1,0 +1,658 @@
+#!/usr/bin/env python3
+"""The awareness "living office" kit (LIVING_OFFICE_PLAN.md 4.1 to 4.4, 6.1, 6.7).
+
+Pure functions: a company kit (office_kits/<company>.json) plus an episode row
+(office_kits/episodes.json) in; room NPCs, room objects, globals, timers, host mappings and
+top-level scenario fields out. Tier 'none' (or no row) returns empty lists and dicts and
+adds no key anywhere, so a generator that passes 'none' stays byte-identical.
+
+Row fields are described in the _note of episodes.json. `prefix` is always the shell's own
+setGlobalPrefix and `state_global` its episode_<id>_state, read from the shell by the caller
+(see shell_ids), never built here.
+
+Ownership: every kit-owned record (a kit NPC, object, timer, global, chatter pool or host mapping, and
+its conditions, delays and other fields) is regenerated from the kit data. A hand edit to one in a shell
+is reverted by the next --kit run; apply_training_room.py warns (reverts()) and refuses to erase a
+record the kit data does not produce (hand_written()). Make changes in the set piece in the kit file.
+
+CLI (nothing writes into the repo):
+  office_kit.py [--repo <checkout>] export <shell folder>   print the kit-owned members as JSON
+"""
+import copy
+import json
+import os
+import re
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+KITS_DIR = os.path.join(HERE, 'office_kits')
+
+TIERS = ('none', 'S', 'T', 'O', 'E')
+SHARED_BOOLS = ('kit_attack_done', 'kit_defend_done', 'kit_quiet', 'kit_caught')
+CAUGHT_PERCENT = 85   # the one threshold in the course (plan 6.1)
+KEY_GLOBAL = 'kit_key_caught'   # the one generic global a row's keyMessage writes (plan 4.2)
+KIOSK_FINISHED = 'globalVars.kit_defend_done === true && globalVars.kit_quiet === false'
+
+
+# ---- data ----------------------------------------------------------------------
+
+def load_kit(company, kits_dir=None):
+    with open(os.path.join(kits_dir or KITS_DIR, f'{company}.json')) as f:
+        return json.load(f)
+
+
+def load_rows(kits_dir=None):
+    with open(os.path.join(kits_dir or KITS_DIR, 'episodes.json')) as f:
+        return json.load(f)['episodes']
+
+
+def row_for(shell, kits_dir=None):
+    """The episodes.json row for a shell folder name, or None."""
+    for r in load_rows(kits_dir):
+        if r.get('id') == shell:
+            return r
+    return None
+
+
+def tier_of(row):
+    t = (row or {}).get('tier', 'none')
+    if t not in TIERS:
+        raise ValueError(f'unknown tier {t!r}; expected one of {TIERS}')
+    return t
+
+
+def active(row):
+    return tier_of(row) != 'none'
+
+
+def chain_id(row):
+    return row.get('chainId') or row['ep']
+
+
+def out_global(row):
+    return f'kit_{chain_id(row)}_out'
+
+
+def shell_ids(sc, row=None):
+    """(prefix, state_global) read from a shell: the row's `prefix` if it has one, else its defend set's
+    setGlobalPrefix, plus the episode state global. ca00_first_play has no triage set (a brief episode
+    ends on episode_<id>_done, which is not <prefix>complete), so a ca00 row must name its own `prefix`:
+    the row is the one place that already carries per-shell kit decisions, and guessing a prefix from the
+    shell would wire host mappings to an event that never fires."""
+    ep = sc['social']['awarenessEpisode']
+    prefix = (row or {}).get('prefix')
+    if prefix is None:
+        sets = sc['social'].get('triageSets') or []
+        if not sets:
+            raise ValueError(f"shell {ep['id']!r} has no triage set: its episodes.json row needs a 'prefix'")
+        prefix = sets[0]['outcome']['setGlobalPrefix']
+    return prefix, f"episode_{ep['id']}_state"
+
+
+CHECK_ID = re.compile(r'^ca_(pre|post|annual)_')
+
+
+def refuse_check_row(row):
+    """Check and annual shells never carry the kit (plan 4.4); refuse a tiered row for one."""
+    if active(row) and CHECK_ID.match(str(row.get('id', ''))):
+        raise ValueError(f"{row['id']}: check and annual shells never carry the office kit")
+
+
+def refuse_hand_authored_row(row):
+    """A generator never writes a hand-authored shell; only apply_training_room.py --kit touches it."""
+    if active(row) and row.get('handAuthored'):
+        raise ValueError(f"{row['id']}: hand-authored, a generator must not write it")
+
+
+def _set_piece(kit, row):
+    name = row.get('setPiece')
+    if not name:
+        return {}
+    pieces = kit.get('setPieces', {})
+    if name not in pieces:
+        raise KeyError(f'kit {kit.get("company")!r} has no set piece {name!r}')
+    return pieces[name]
+
+
+def _subst(node, prefix, row):
+    """Fill {prefix}, {ep}, {chain} and {out} in every string of a set-piece fragment."""
+    if isinstance(node, str):
+        return (node.replace('{prefix}', prefix or '').replace('{ep}', row['ep'])
+                .replace('{chain}', chain_id(row)).replace('{out}', out_global(row)))
+    if isinstance(node, list):
+        return [_subst(v, prefix, row) for v in node]
+    if isinstance(node, dict):
+        return {_subst(k, prefix, row): _subst(v, prefix, row) for k, v in node.items()}
+    return node
+
+
+# ---- kit output ----------------------------------------------------------------
+
+def _pool(kit):
+    p = kit['pool']
+    return {'lines': list(p['lines']), 'requireGlobal': copy.deepcopy(p['requireGlobal'])}
+
+
+def room_npcs(kit, row, prefix=None):
+    """The two ambient staff as room NPC records. Empty for tier none."""
+    if not active(row):
+        return []
+    pool_key = kit['pool']['key']
+    out = []
+    patches = _subst(_set_piece(kit, row).get('staff', {}), prefix, row)
+    for person in row['ambient']:
+        s = copy.deepcopy(kit['staff'][person])
+        lines = s.pop('chatterLines')
+        sheet = s.pop('spriteSheet')
+        npc = {
+            'id': f'kit_{person}',
+            'displayName': s.pop('displayName'),
+            'person': person,
+            'npcType': 'person',
+            'position': s.pop('position'),
+            'spriteSheet': sheet,
+            'spriteTalk': f'assets/characters/{sheet}_talk.png',
+            'spriteVisemes': f'assets/characters/{sheet}_visemes.png',
+            'storyPath': f'scenarios/_office_kit/ink/{person}_ambient.json',
+            'currentKnot': 'start',
+            'needsHome': s.pop('needsHome'),
+            'needsRooms': ['training_room'],
+        }
+        npc.update(s)
+        # the pool is spoken only through the engine-spoken coffee topic, in the object form
+        # that carries the same gate as the top-level pool (validator V13)
+        npc['chatter'] = {pool_key: {'lines': lines, 'requireGlobal': copy.deepcopy(kit['pool']['requireGlobal'])}}
+        npc.update(patches.get(person, {}))
+        out.append(npc)
+    return out
+
+
+def room_objects(kit, row, prefix=None):
+    """Need sources plus the set piece's objects. Empty for tier none."""
+    if not active(row):
+        return []
+    pool_key = kit['pool']['key']
+    out = []
+    for src in kit.get('sources', []):
+        o = copy.deepcopy(src)
+        aff = o.get('affordance', {})
+        if aff.get('chatter') == 'pool':
+            aff['chatter'] = pool_key
+        out.append(o)
+    out.extend(_subst(copy.deepcopy(_set_piece(kit, row).get('objects', [])), prefix, row))
+    return out
+
+
+def kit_globals(kit, row, prefix=None):
+    """Globals to declare in globalVariables. Empty for tier none."""
+    if not active(row):
+        return {}
+    g = {k: False for k in SHARED_BOOLS}
+    g['kit_ep'] = row['ep']
+    if row.get('stepAway'):
+        g[out_global(row)] = False
+    g.update(_subst(copy.deepcopy(_set_piece(kit, row).get('globals', {})), prefix, row))
+    if row.get('hostLine'):
+        # The hub-first host layer-2 "said once" flag (plan 6.6), declared only for a row whose shell
+        # has a host line (the explicit hostLine field; keyMessage is a different thing). Set pieces
+        # no longer hard-code it. setdefault keeps its position if a set piece still declares it.
+        g.setdefault(f"kit_{row['ep']}_host_said", False)
+    if row.get('keyMessage'):
+        g[KEY_GLOBAL] = False
+    return g
+
+
+def message_globals(row):
+    """The outcome.messageGlobals entry the row's keyMessage writes into the shell's triage set: the one
+    message the episode's key lesson rides on (did the learner catch it) -> the generic kit_key_caught.
+    Empty for tier none or a row with no keyMessage."""
+    if not active(row) or not row.get('keyMessage'):
+        return {}
+    return {row['keyMessage']: KEY_GLOBAL}
+
+
+def kit_timers(kit, row, prefix=None):
+    if not active(row):
+        return []
+    return _subst(copy.deepcopy(_set_piece(kit, row).get('timers', [])), prefix, row)
+
+
+def host_mappings(kit, row, prefix, state_global):
+    """Host eventMappings, to be appended after the host's existing ones (plan 6.1)."""
+    if not active(row):
+        return []
+    state = f'global_variable_changed:{state_global}'
+    complete = f'global_variable_changed:{prefix}complete'
+    m = [{'eventPattern': state, 'onceOnly': True, 'setGlobal': {'kit_quiet': True}}]
+    if row.get('attack'):
+        m.append({'eventPattern': state, 'condition': "data.value.stage === 'defend'",
+                  'onceOnly': True, 'setGlobal': {'kit_attack_done': True}})
+    m.append({'eventPattern': complete, 'condition': 'value === true', 'onceOnly': True,
+              'setGlobal': {'kit_defend_done': True}})
+    m.append({'eventPattern': complete,
+              'condition': f'value === true && globalVars.{prefix}percent >= {CAUGHT_PERCENT}',
+              'onceOnly': True, 'setGlobal': {'kit_caught': True}})
+    m.append({'eventPattern': state, 'condition': "data.value.done.includes('debrief')",
+              'onceOnly': True, 'setGlobal': {'kit_quiet': False}})
+    if row.get('stepAway'):
+        # The panel's Close can leave done without 'debrief'; debriefSeen is the second release.
+        # Conditions support && only, never ||, so it is its own mapping.
+        m.append({'eventPattern': state, 'condition': 'data.value.debriefSeen === true',
+                  'onceOnly': True, 'setGlobal': {'kit_quiet': False}})
+        step = {'eventPattern': 'episode_step_away', 'condition': 'globalVars.kit_defend_done === true',
+                'onceOnly': True, 'setGlobal': {out_global(row): True}}
+        if row.get('stepAwayBark'):
+            step['bark'] = row['stepAwayBark']
+        m.append(step)
+    m.extend(_subst(copy.deepcopy(_set_piece(kit, row).get('mappings', [])), prefix, row))
+    return m
+
+
+def scenario_fields(kit, row):
+    """Top-level scenario keys the kit adds: npcThoughts and the shared pool (the coffee topic).
+    Empty for tier none."""
+    if not active(row):
+        return {}
+    f = copy.deepcopy(kit.get('scenario', {}))
+    f['chatter'] = {kit['pool']['key']: _pool(kit)}
+    return f
+
+
+def kiosk_condition(row):
+    """The kiosk's finished-text condition in a shell with the step-away panel, else None."""
+    return KIOSK_FINISHED if active(row) and row.get('stepAway') else None
+
+
+def _merge_override(dst, patch):
+    """Deep-merge patch into dst in place. A patch value of None deletes that key."""
+    for k, v in patch.items():
+        if v is None:
+            dst.pop(k, None)
+        elif isinstance(v, dict) and isinstance(dst.get(k), dict):
+            _merge_override(dst[k], v)
+        else:
+            dst[k] = copy.deepcopy(v)
+    return dst
+
+
+def apply_override(kit, row):
+    """A copy of the kit with the row's `override` applied (sources by id, staff by person).
+    Used only to pin a test fixture to its frozen placeholder positions and timings (4.3)."""
+    ov = (row or {}).get('override')
+    if not ov:
+        return kit
+    kit = copy.deepcopy(kit)
+    for src in kit.get('sources', []):
+        patch = ov.get('sources', {}).get(src.get('id'))
+        if patch:
+            _merge_override(src, patch)
+    for person, patch in ov.get('staff', {}).items():
+        if person in kit.get('staff', {}):
+            _merge_override(kit['staff'][person], patch)
+    return kit
+
+
+def kit_keyed(kit, row):
+    """Kit `resources` / `roles` to add to the shell's own collections (a dict keyed by id, or a list of
+    records with an id). Empty for tier none or a kit with none; every id must start kit_ so strip_kit owns it."""
+    if not active(row):
+        return {}
+    out = {}
+    for key in KIT_KEYED:
+        v = kit.get(key)
+        if not v:
+            continue
+        ids = list(v) if isinstance(v, dict) else [r.get('id') for r in v]
+        bad = [i for i in ids if not str(i).startswith('kit_')]
+        if bad:
+            raise ValueError(f'kit {key} ids must start with kit_: {bad}')
+        out[key] = copy.deepcopy(v)
+    return out
+
+
+def build(kit, row, prefix, state_global):
+    """Everything the kit owns for one shell, in one dict (the form the tests compare)."""
+    kit = apply_override(kit, row)
+    out = {
+        'npcs': room_npcs(kit, row, prefix),
+        'objects': room_objects(kit, row, prefix),
+        'globals': kit_globals(kit, row, prefix),
+        'timers': kit_timers(kit, row, prefix),
+        'mappings': host_mappings(kit, row, prefix, state_global),
+        'scenario': scenario_fields(kit, row),
+        'stepAway': bool(active(row) and row.get('stepAway')),
+    }
+    if message_globals(row):
+        out['messageGlobals'] = message_globals(row)
+    out.update(kit_keyed(kit, row))     # resources / roles: present only when the kit has them
+    return out
+
+
+# ---- ownership (plan 4.2) ------------------------------------------------------
+
+# a kit_ name, not the tail of another one (skit_x, payload_kit_x)
+KIT_NAME = re.compile(r'(?<![A-Za-z0-9_])kit_')
+
+
+def _mentions_kit(v):
+    if isinstance(v, str):
+        return bool(KIT_NAME.search(v))
+    if isinstance(v, dict):
+        return any(_mentions_kit(k) or _mentions_kit(x) for k, x in v.items())
+    if isinstance(v, list):
+        return any(_mentions_kit(x) for x in v)
+    return False
+
+
+def is_kit_member(m):
+    return isinstance(m, dict) and str(m.get('id', '')).startswith('kit_')
+
+
+def is_kit_mapping(m):
+    """A host mapping is kit-owned when its setGlobal key, knot or condition names a kit_ global."""
+    sg = m.get('setGlobal')
+    if isinstance(sg, dict) and any(str(k).startswith('kit_') for k in sg):
+        return True
+    return bool(KIT_NAME.search(str(m.get('condition', '')))) or bool(KIT_NAME.search(str(m.get('knot', ''))))
+
+
+# top-level keys the kit owns whole; `chatter` is shared with the shell, so only its kit_ keys are the kit's
+KIT_TOP_KEYS = ('npcThoughts', 'officePresets')
+KIT_KEYED = ('resources', 'roles')   # shell-owned collections the kit may add kit_ entries to
+
+
+def kit_chatter(sc):
+    c = sc.get('chatter')
+    return {k: v for k, v in c.items() if str(k).startswith('kit_')} if isinstance(c, dict) else {}
+
+
+def _find_host(sc, host_id=None):
+    npcs = sc['rooms']['training_room']['npcs']
+    if host_id:
+        hits = [n for n in npcs if n.get('id') == host_id]
+    else:
+        own = f"scenarios/{sc.get('scenario_id')}/ink/"
+        # positioned only, as find_host_span does: ca03's Leila shares the host's ink but has no position
+        hits = [n for n in npcs if not is_kit_member(n) and 'position' in n and str(n.get('storyPath', '')).startswith(own)]
+        if not hits:
+            hits = [n for n in npcs if not is_kit_member(n)][:1]
+    if len(hits) != 1:
+        raise ValueError(f'expected one host NPC, found {len(hits)}')
+    return hits[0]
+
+
+def key_outcome(sc):
+    """The outcome object of the shell's first triage set (the one shell_ids reads), or None."""
+    sets = sc.get('social', {}).get('triageSets') or []
+    return sets[0].get('outcome') if sets and isinstance(sets[0].get('outcome'), dict) else None
+
+
+def _kit_message_globals(outcome):
+    mg = (outcome or {}).get('messageGlobals')
+    return {k: v for k, v in mg.items() if str(v).startswith('kit_')} if isinstance(mg, dict) else {}
+
+
+def strip_kit(sc, host_id=None):
+    """A deep copy of a parsed shell with every kit-owned member removed."""
+    sc = copy.deepcopy(sc)
+    tr = sc['rooms']['training_room']
+    tr['npcs'] = [n for n in tr['npcs'] if not is_kit_member(n)]
+    tr['objects'] = [o for o in tr.get('objects', []) if not is_kit_member(o)]
+    host = _find_host(sc, host_id)
+    if 'eventMappings' in host:
+        kept = [m for m in host['eventMappings'] if not is_kit_mapping(m)]
+        if kept or len(kept) == len(host['eventMappings']):
+            host['eventMappings'] = kept
+        else:
+            del host['eventMappings']      # the kit created it: leave no empty list behind
+    gv = sc.get('globalVariables', {})
+    for k in [k for k in gv if k.startswith('kit_')]:
+        del gv[k]
+    for k in KIT_TOP_KEYS:
+        sc.pop(k, None)
+    if isinstance(sc.get('chatter'), dict):
+        sc['chatter'] = {k: v for k, v in sc['chatter'].items() if not str(k).startswith('kit_')}
+        if not sc['chatter']:
+            del sc['chatter']
+    if 'timers' in sc:
+        sc['timers'] = [t for t in sc['timers'] if not str(t.get('id', '')).startswith('kit_')]
+        if not sc['timers']:
+            del sc['timers']
+    for key in ('resources', 'roles'):
+        if isinstance(sc.get(key), dict):      # keyed by id
+            sc[key] = {k: v for k, v in sc[key].items() if not str(k).startswith('kit_')}
+        elif isinstance(sc.get(key), list):
+            sc[key] = [r for r in sc[key] if not is_kit_member(r)]
+        if key in sc and not sc[key]:
+            del sc[key]
+    sc['social']['awarenessEpisode'].pop('stepAway', None)
+    oc = key_outcome(sc)
+    if _kit_message_globals(oc):
+        rest = {k: v for k, v in oc['messageGlobals'].items() if not str(v).startswith('kit_')}
+        if rest:
+            oc['messageGlobals'] = rest
+        else:
+            del oc['messageGlobals']       # the kit created it: leave no empty object behind
+    return sc
+
+
+def _insert_after(d, after_key, items):
+    """d with the (key, value) pairs of `items` placed right after after_key (else at the end)."""
+    out = {}
+    done = False
+    for k, v in d.items():
+        out[k] = v
+        if k == after_key:
+            for ik, iv in items:
+                out[ik] = iv
+            done = True
+    if not done:
+        for ik, iv in items:
+            out[ik] = iv
+    return out
+
+
+def apply_kit(sc, kit, row, host_id=None):
+    """The shell with the kit's content applied (a new dict). Tier none returns an unchanged copy.
+    Old kit-owned members are removed first, so applying twice gives the same result."""
+    if not active(row):
+        return copy.deepcopy(sc)
+    out = strip_kit(sc, host_id)
+    prefix, state_global = shell_ids(out, row)
+    b = build(kit, row, prefix, state_global)
+    tr = out['rooms']['training_room']
+    tr['npcs'] = tr['npcs'] + b['npcs']
+    tr['objects'] = tr['objects'] + b['objects']
+    host = _find_host(out, host_id)
+    host['eventMappings'] = host.get('eventMappings', []) + b['mappings']
+    out['globalVariables'].update(b['globals'])
+    top = [(k, v) for k, v in b['scenario'].items() if k == 'npcThoughts']
+    out = _insert_after(out, 'disableAttacks', top)
+    after = []
+    for k, v in b['scenario'].items():
+        if k == 'npcThoughts':
+            continue
+        if k == 'chatter' and isinstance(out.get('chatter'), dict):
+            out['chatter'] = {**out['chatter'], **v}      # the shell's own pools stay; the kit adds its kit_ ones
+        else:
+            after.append((k, v))
+    if b['timers']:
+        if 'timers' in out:
+            out['timers'] = out['timers'] + b['timers']
+        else:
+            after.append(('timers', b['timers']))
+    for key in KIT_KEYED:
+        if key in b:
+            cur = out.get(key)
+            if isinstance(cur, dict):
+                out[key] = {**cur, **b[key]}
+            elif isinstance(cur, list):
+                out[key] = cur + b[key]
+            else:
+                after.append((key, b[key]))
+    out = _insert_after(out, 'globalVariables', after)
+    if b['stepAway']:
+        out['social']['awarenessEpisode']['stepAway'] = True
+    if b.get('messageGlobals'):
+        oc = key_outcome(out)
+        if oc is None:
+            raise ValueError(f"{row['id']}: keyMessage needs a triage set with an outcome")
+        oc['messageGlobals'] = {**oc.get('messageGlobals', {}), **b['messageGlobals']}
+    return out
+
+
+def patch_kiosk(sc, row):
+    """Kiosk 'finished' variants keyed on the kit's quiet state, in a shell with the panel. Used for
+    generated shells only; a hand-authored shell edits its kiosk by hand (plan 4.4)."""
+    cond = kiosk_condition(row)
+    if not cond:
+        return sc
+    patched = 0
+    for o in sc['rooms']['training_room']['objects']:
+        if o.get('type') == 'kiosk':
+            for v in o.get('observationVariants', []):
+                # only the existing "finished" variant, keyed on the defend-complete global;
+                # other variants (and kiosks with none) are left untouched
+                if '_defend_complete' in str(v.get('condition', '')):
+                    v['condition'] = cond
+                    patched += 1
+    assert patched, 'patch_kiosk: no finished (_defend_complete) kiosk variant to key on the panel'
+    return sc
+
+
+def kit_owned(sc, host_id=None):
+    """The kit-owned members of a parsed shell, in the same form as build() (for comparisons)."""
+    tr = sc['rooms']['training_room']
+    host = _find_host(sc, host_id)
+    gv = sc.get('globalVariables', {})
+    out = {
+        'npcs': [n for n in tr['npcs'] if is_kit_member(n)],
+        'objects': [o for o in tr.get('objects', []) if is_kit_member(o)],
+        'globals': {k: v for k, v in gv.items() if k.startswith('kit_')},
+        'timers': [t for t in sc.get('timers', []) if str(t.get('id', '')).startswith('kit_')],
+        'mappings': [m for m in host.get('eventMappings', []) if is_kit_mapping(m)],
+        'scenario': {**{k: sc[k] for k in KIT_TOP_KEYS if k in sc},
+                     **({'chatter': kit_chatter(sc)} if kit_chatter(sc) else {})},
+        'stepAway': sc['social']['awarenessEpisode'].get('stepAway') is True,
+    }
+    mg = _kit_message_globals(key_outcome(sc))
+    if mg:
+        out['messageGlobals'] = mg
+    for key in KIT_KEYED:
+        v = sc.get(key)
+        mine = ({k: x for k, x in v.items() if str(k).startswith('kit_')} if isinstance(v, dict)
+                else [x for x in v if is_kit_member(x)] if isinstance(v, list) else None)
+        if mine:
+            out[key] = mine
+    return out
+
+
+def _map_id(m):
+    """What a mapping is, apart from its wording: the event, the globals it sets and the kinds of effect it has.
+    Conditions, delays, bark text and values can change in the kit data and be regenerated; a mapping whose
+    identity the kit data does not produce was written by hand."""
+    return (m.get('eventPattern'), tuple(sorted((m.get('setGlobal') or {}))),
+            tuple(k for k in ('needs', 'patrolOverride', 'bark', 'knot', 'targetKnot') if k in m))
+
+
+def hand_written(old, new):
+    """What a regeneration would erase: kit-owned members of the old shell (`old` is kit_owned()) that the kit
+    data (`new` is build()) does not produce. Members are matched by id or name (npcs, objects, timers,
+    globals, chatter pools), mappings by _map_id (host and per-NPC). Returns a list of readable strings."""
+    lost = []
+    new_npcs = {n['id']: n for n in new['npcs']}
+    for n in old['npcs']:
+        t = new_npcs.get(n['id'])
+        if t is None:
+            lost.append(f"npc {n['id']}")
+            continue
+        have = {_map_id(m) for m in t.get('eventMappings', [])}
+        lost += [f"npc {n['id']} mapping on {m.get('eventPattern')}" for m in n.get('eventMappings', []) if _map_id(m) not in have]
+    for kind, key in (('object', 'objects'), ('timer', 'timers')):
+        ids = {x.get('id') for x in new[key]}
+        lost += [f"{kind} {x.get('id')}" for x in old[key] if x.get('id') not in ids]
+    lost += [f'global {k}' for k in old['globals'] if k not in new['globals']]
+    have = {_map_id(m) for m in new['mappings']}
+    lost += [f"host mapping on {m.get('eventPattern')} setting {sorted(m.get('setGlobal') or {})}"
+             for m in old['mappings'] if _map_id(m) not in have]
+    lost += [f'chatter pool {k}' for k in old['scenario'].get('chatter', {}) if k not in new['scenario'].get('chatter', {})]
+    lost += [f'messageGlobals {k}' for k in old.get('messageGlobals', {}) if k not in new.get('messageGlobals', {})]
+    for key in KIT_KEYED:
+        have = set(new.get(key, {}) if isinstance(new.get(key), dict) else [r.get('id') for r in new.get(key, [])])
+        mine = old.get(key, {})
+        lost += [f'{key} {i}' for i in (list(mine) if isinstance(mine, dict) else [r.get('id') for r in mine]) if i not in have]
+    return lost
+
+
+def _fields(a, b, skip=()):
+    return sorted(k for k in set(a) | set(b) if k not in skip and a.get(k) != b.get(k))
+
+
+def reverts(old, new):
+    """Kit-owned records the regeneration keeps (matched by id, mappings by _map_id) but whose fields it
+    would change: a hand edit to a condition, delay, position or any other field is reverted without
+    the guard refusing. Covers kit NPC fields and mappings, kit objects and timers (every field), kit
+    global values, host mappings, the kit's chatter pool lines (per NPC id) and the kit_ entries of
+    outcome.messageGlobals. Not covered: the host's other fields and any record that is not kit-owned.
+    A kit-data edit shows up here too, so the caller warns and does not refuse (hand_written lists what
+    would be erased outright). Returns readable strings."""
+    out = []
+    new_npcs = {n['id']: n for n in new['npcs']}
+    for n in old['npcs']:
+        t = new_npcs.get(n['id'])
+        if t is None:
+            continue
+        out += [f"npc {n['id']} field {f}" for f in _fields(n, t, skip=('eventMappings',))]
+        out += _mapping_changes(f"npc {n['id']}", n.get('eventMappings', []), t.get('eventMappings', []))
+    for kind, key in (('object', 'objects'), ('timer', 'timers')):
+        by_id = {x.get('id'): x for x in new[key]}
+        for x in old[key]:
+            t = by_id.get(x.get('id'))
+            if t is not None:
+                out += [f"{kind} {x.get('id')} field {f}" for f in _fields(x, t)]
+    out += [f'global {k} value {old["globals"][k]!r} -> {new["globals"][k]!r}'
+            for k in old['globals'] if k in new['globals'] and old['globals'][k] != new['globals'][k]]
+    out += _mapping_changes('host', old['mappings'], new['mappings'])
+    oc, nc = old['scenario'].get('chatter', {}), new['scenario'].get('chatter', {})
+    out += [f'chatter pool {k} changed' for k in oc if k in nc and oc[k] != nc[k]]
+    om, nm = old.get('messageGlobals', {}), new.get('messageGlobals', {})
+    out += [f'messageGlobals {k} value {om[k]!r} -> {nm[k]!r}' for k in om if k in nm and om[k] != nm[k]]
+    return out
+
+
+def _mapping_changes(who, old_ms, new_ms):
+    out = []
+    groups = {}
+    for m in new_ms:
+        groups.setdefault(_map_id(m), []).append(m)
+    seen = {}
+    for m in old_ms:
+        i = _map_id(m)
+        k = seen.get(i, 0)
+        seen[i] = k + 1
+        cands = groups.get(i, [])
+        if k < len(cands):
+            out += [f"{who} mapping on {m.get('eventPattern')} (sets {sorted(m.get('setGlobal') or {})}) field {f}"
+                    for f in _fields(m, cands[k])]
+    return out
+
+
+def main():
+    sys.path.insert(0, HERE)
+    import awareness_deploy
+    repo = awareness_deploy.repo_root()
+    argv = sys.argv[1:]
+    if len(argv) != 2 or argv[0] != 'export':
+        sys.exit('usage: office_kit.py [--repo <checkout>] export <shell folder>')
+    shell = argv[1]
+    row = row_for(shell)
+    if not row or not active(row):
+        sys.exit(f'no kit row with a tier for {shell}')
+    with open(os.path.join(repo, 'scenarios', shell, 'scenario.json.erb')) as f:
+        sc = json.load(f)
+    prefix, state_global = shell_ids(sc, row)
+    print(json.dumps(build(load_kit(row['company']), row, prefix, state_global), indent=2, ensure_ascii=False))
+
+
+if __name__ == '__main__':
+    main()

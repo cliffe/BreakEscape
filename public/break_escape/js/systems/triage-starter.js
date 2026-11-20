@@ -52,7 +52,7 @@
  */
 
 import { writeGlobal, emitGlobalEvents } from './global-writer.js';
-import { bandFor } from '../minigames/inbox-triage/triage-scoring.js';
+import { bandFor, isCaughtVerdict } from '../minigames/inbox-triage/triage-scoring.js';
 
 export const TRIAGE_DONE_EVENT = 'inbox_triage_completed';
 export const SAVING_NOTICE = 'Saving your result...';
@@ -145,6 +145,25 @@ function isRoundComplete(globals, n) {
     return globals[n.complete] === true || globals[n.legacyDone] === true;
 }
 
+/**
+ * outcome.messageGlobals as [messageId, globalName] pairs: only string-to-string entries, so a set
+ * without the option (or with a malformed one) gives []. Names are never prefixed.
+ */
+export function messageGlobalPairs(set) {
+    const m = set?.outcome?.messageGlobals;
+    if (!m || typeof m !== 'object' || Array.isArray(m)) return [];
+    return Object.entries(m).filter(([id, name]) => id && typeof name === 'string' && name);
+}
+
+/**
+ * Whether the learner's verdict on a listed message counts as caught: the scorer's own test
+ * (isCaughtVerdict, a phish answered Report, Delete or Verify). A message with no answer is false.
+ */
+function messageCaught(result, messageId) {
+    const a = Array.isArray(result?.answers) ? result.answers.find(x => x && x.id === messageId) : null;
+    return !!a && isCaughtVerdict(a.verdict);
+}
+
 /** The set with this id from scenario.social.triageSets, or null. */
 export function findTriageSet(setId, scenario = win().gameScenario) {
     const sets = scenario?.social?.triageSets;
@@ -186,21 +205,26 @@ function heldFor(prefix) {
  * from the globals as they are now. `extra` adds names regardless of a change
  * (a reopen, or a conclusion task still open).
  */
-function eventsFor(prefix, globals, names) {
+function eventsFor(prefix, globals, names, set = null) {
     const n = triageGlobalNames(prefix);
     const events = [];
+    const push = (name) => events.push({ event: `global_variable_changed:${name}`, data: { name, value: globals[name] } });
     for (const f of EMIT_ORDER) {
-        if (!names.has(n[f])) continue;
-        events.push({ event: `global_variable_changed:${n[f]}`, data: { name: n[f], value: globals[n[f]] } });
+        if (f === 'complete') {
+            // outcome.messageGlobals: before complete, so a mapping on complete sees them
+            for (const [, name] of messageGlobalPairs(set)) if (names.has(name)) push(name);
+        }
+        if (names.has(n[f])) push(n[f]);
     }
     return events;
 }
 
 /** The done globals a reopen re-emits: pass when it is true, then complete. */
-function doneNames(prefix, globals) {
+function doneNames(prefix, globals, set = null) {
     const n = triageGlobalNames(prefix);
     const names = new Set();
     if (globals[n.pass] === true) names.add(n.pass);
+    for (const [, name] of messageGlobalPairs(set)) if (globals[name] === true) names.add(name);
     if (globals[n.complete] === true) names.add(n.complete);
     return names;
 }
@@ -251,6 +275,11 @@ async function saveRound(result, ctx, d) {
     // <prefix>pass only when a pass mark applies (above 0): the host's after-check mark
     // when set, else the set's own. With no mark a check has no pass/fail. Never cleared.
     if (passPercent > 0) writes.push([n.pass, globals[n.pass] === true || percent >= passPercent]);
+    // outcome.messageGlobals: one boolean per listed message, before complete in the same batch.
+    // True once caught in any round and never cleared by a later, lower one (as pass is not).
+    for (const [messageId, name] of messageGlobalPairs(ctx.set)) {
+        writes.push([name, globals[name] === true || messageCaught(result, messageId)]);
+    }
     writes.push([n.complete, true]);
     for (const [name, value] of writes) {
         const r = d.write(name, value, { deferEmit: true });
@@ -270,9 +299,9 @@ async function saveRound(result, ctx, d) {
 
     // A conclusion task still open gets the done globals again, as a reopen would
     if (ctx.conclusionTaskId && !isTaskCompleted(ctx.conclusionTaskId, d.objectives)) {
-        for (const name of doneNames(prefix, globals)) names.add(name);
+        for (const name of doneNames(prefix, globals, ctx.set)) names.add(name);
     }
-    const events = eventsFor(prefix, globals, names);
+    const events = eventsFor(prefix, globals, names, ctx.set);
     names.clear();
     d.emitGlobals(events);
     d.emit(TRIAGE_DONE_EVENT, doneEventData(ctx, prefix, globals, { reemit: false }));
@@ -347,9 +376,9 @@ export function reemitTriageDone(ctx = {}, deps = {}) {
             if (notified) d.onSaving?.('saved');
             return { confirmed: true, emitted: [], skipped: 'task-completed' };
         }
-        const names = doneNames(prefix, globals);
+        const names = doneNames(prefix, globals, ctx.set);
         for (const name of names) heldFor(prefix).delete(name);
-        const events = eventsFor(prefix, globals, names);
+        const events = eventsFor(prefix, globals, names, ctx.set);
         d.emitGlobals(events);
         d.emit(TRIAGE_DONE_EVENT, doneEventData(ctx, prefix, globals, { reemit: true }));
         if (notified) d.onSaving?.('saved');
@@ -369,7 +398,7 @@ export function reemitTriageDone(ctx = {}, deps = {}) {
  * `ctx.stillNeeded()` is asked again after the sync, so an emit that happened meanwhile is not
  * doubled. Shares the reopen re-emit's in-flight slot, so the two never run together.
  *
- * @param {Object} ctx  { prefix, stillNeeded?() }
+ * @param {Object} ctx  { prefix, stillNeeded?(), set? } (set: for outcome.messageGlobals)
  * @returns {Promise<{confirmed:boolean, emitted:string[], skipped?:string}>}
  */
 export function reemitTriageComplete(ctx = {}, deps = {}) {
@@ -387,8 +416,12 @@ export function reemitTriageComplete(ctx = {}, deps = {}) {
     const run = (async () => {
         if (!(await confirm(d))) return none('unconfirmed');
         if (queue.has(prefix) || globals[n.complete] !== true || !needed()) return none('not-needed', true);
-        heldFor(prefix).delete(n.complete);
-        const events = eventsFor(prefix, globals, new Set([n.complete]));
+        // The message globals that are true go first (outcome.messageGlobals), then complete; the
+        // runner passes ctx.set. Without it, or without the option, only complete is re-emitted.
+        const names = new Set([n.complete]);
+        for (const [, name] of messageGlobalPairs(ctx.set)) if (globals[name] === true) names.add(name);
+        for (const name of names) heldFor(prefix).delete(name);
+        const events = eventsFor(prefix, globals, names, ctx.set);
         d.emitGlobals(events);
         return { confirmed: true, emitted: events.map(e => e.data.name) };
     })();

@@ -51,7 +51,7 @@ test('appendWithAddresses wraps an address in the address-font span and leaves p
     // Prose with no address gets a single text node, unchanged.
     const q = document.createElement('p');
     appendWithAddresses(q, 'Please action this invoice.');
-    assert.equal(q.querySelector('.mail-blank-address'), null);
+    assert.ok(q.querySelector('.mail-blank-address') === null);
     assert.equal(q.textContent, 'Please action this invoice.');
     assert.equal(isAddressValue('operations@quayholt.example'), true);
     assert.equal(isAddressValue('Quayholt Operations'), false);
@@ -135,7 +135,7 @@ test('Hampshire opens with the pretext unchosen; Send waits until one is picked'
     let s = composer.getState();
     assert.equal(s.targetId, 'hampshire');
     assert.deepEqual(s.blanks, []);                       // no blanks at all
-    assert.equal(host.querySelector('.mail-blank'), null); // nothing to pick
+    assert.ok(host.querySelector('.mail-blank') === null); // nothing to pick
     // The pretext is a deliberate choice, so Send is disabled until the player picks one (P1-T).
     assert.equal(s.sendEnabled, false);
     assert.equal(s.gateReason, 'pretext-unchosen');
@@ -174,7 +174,7 @@ test('an empty blank shows the slot\'s "Stuck?" pointer when the template gives 
     const contacts = [{ id: 'pierce', name: 'Melanie Pierce', role: 'Finance', addresses: ['m.pierce@ledgerwell.example'], targetId: 'pierce' }];
     let { composer, host } = makeComposer({}, { contacts });
     composer.chooseTemplate('greeting', 'greet_named');
-    assert.equal(host.querySelector('.mail-blank-field[data-slot="name"] .mail-blank-stuck'), null, 'no pointer without slot.stuck');
+    assert.ok(host.querySelector('.mail-blank-field[data-slot="name"] .mail-blank-stuck') === null, 'no pointer without slot.stuck');
     const fx = fixture();
     const tpl = fx.templates.greet_named;
     tpl.slots = tpl.slots.map((sl) => (sl.id === 'name' ? { ...sl, stuck: 'Their social profile shows the name they go by.' } : sl));
@@ -190,7 +190,7 @@ test('an empty blank shows the slot\'s "Stuck?" pointer when the template gives 
     // Once evidence is held the blank is a picker and the pointer goes.
     ({ composer, host } = makeComposer(grant('pierce_role'), { contacts, templates: fx.templates }));
     composer.chooseTemplate('greeting', 'greet_named');
-    assert.equal(host.querySelector('.mail-blank-stuck'), null);
+    assert.ok(host.querySelector('.mail-blank-stuck') === null);
 });
 
 test('after the fact is granted the picker offers it, and choosing it enables Send', () => {
@@ -229,7 +229,7 @@ test('an account that cannot spoof forces the From to itself (no claimed-From bl
     assert.equal(composer.getState().templates.from, 'from_own');
     assert.ok(host.querySelector('.mail-compose-from-own'));
     // No sender blanks are offered from a non-spoofing account
-    assert.equal(host.querySelector('.mail-blank[data-slot="sender_name"]'), null);
+    assert.ok(host.querySelector('.mail-blank[data-slot="sender_name"]') === null);
     assert.deepEqual(composer.buildMessage().headerFrom, { account: true });
 });
 
@@ -244,7 +244,7 @@ test('a single From template with blanks is still drawn, so the gate and the scr
     // The "own account" shortcut must not hide a From template that has blanks.
     assert.equal(composer.templateSet('from').length, 1);
     assert.equal(composer._fromIsOwn(), false);
-    assert.equal(host.querySelector('.mail-compose-from-own'), null);
+    assert.ok(host.querySelector('.mail-compose-from-own') === null);
     assert.ok(host.querySelector('.mail-blank[data-slot="sender_name"]'), 'sender_name blank drawn');
     assert.ok(host.querySelector('.mail-blank[data-slot="sender_address"]'), 'sender_address blank drawn');
     // P7 invariant: every blank the gate counts toward Send has a button the player can reach.
@@ -262,7 +262,7 @@ test('a single blank-free From wording still hides the From row (the account row
     assert.equal(composer.templateSet('from').length, 1);
     assert.equal(composer._fromIsOwn(), true);
     assert.ok(host.querySelector('.mail-compose-from-own'));
-    assert.equal(host.querySelector('.mail-blank[data-slot="sender_name"]'), null);
+    assert.ok(host.querySelector('.mail-blank[data-slot="sender_name"]') === null);
     assert.deepEqual(composer.buildMessage().headerFrom, { account: true });
 });
 
@@ -311,14 +311,14 @@ test('the mail client Compose button opens the composer over the reader', () => 
     window.MinigameFramework = { currentMinigame: scene, endMinigame() { scene.cleanup(); } };
     scene.init();
     scene.start();
-    assert.equal(host.querySelector('.mail-composer'), null);
+    assert.ok(host.querySelector('.mail-composer') === null);
     host.querySelector('.mail-compose-btn').click();
     assert.ok(host.querySelector('.mail-composer'));
     assert.ok(scene.composer);
     assert.equal(scene.composer.getState().targetId, 'hampshire');
     // Esc closes the compose layer before the overlay
     document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-    assert.equal(host.querySelector('.mail-composer'), null);
+    assert.ok(host.querySelector('.mail-composer') === null);
     assert.equal(scene.gameState.isActive, true);
     scene.cleanup();
 });
@@ -375,7 +375,7 @@ test('red-flag meter: on by meterDefault, lists the draft red flags and clears t
     assert.equal(m.flags.length, 0);
     assert.equal(host.querySelector('.mail-redflag-meter').dataset.count, '0');
     assert.ok(host.querySelector('.mail-redflag-clean'), 'a clean draft shows the reassuring line');
-    assert.equal(host.querySelector('.mail-redflag-item'), null);
+    assert.ok(host.querySelector('.mail-redflag-item') === null);
 });
 
 test('red-flag meter: off when neither the target nor the default turns it on, and the per-target flag overrides the default', () => {
@@ -383,14 +383,14 @@ test('red-flag meter: off when neither the target nor the default turns it on, a
     const a = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { meterDefault: false });
     a.composer.chooseTemplate('pretext', 'pretext_enquiry');
     assert.equal(a.composer.getState().redFlagMeter.on, false);
-    assert.equal(a.host.querySelector('.mail-redflag-meter'), null);
+    assert.ok(a.host.querySelector('.mail-redflag-meter') === null);
 
     // Default on, but the target sets redFlagMeter:false -> off (the per-target flag wins).
     const fx = fixture();
     fx.phishTargets.find((t) => t.id === 'hampshire').redFlagMeter = false;
     const b = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { meterDefault: true, fx });
     assert.equal(b.composer.getState().redFlagMeter.on, false);
-    assert.equal(b.host.querySelector('.mail-redflag-meter'), null);
+    assert.ok(b.host.querySelector('.mail-redflag-meter') === null);
 });
 
 // ── batch-12 item 9: a template's dropdown label can differ from its body ───────
@@ -495,10 +495,10 @@ test('a blank with only wrong options shows its stuckUntil pointer until the rig
     // A different target gets none; holding the right fact removes it.
     const other = fixture();
     other.templates.from_named.slots = other.templates.from_named.slots.map((sl) => (sl.id === 'sender_name' ? { ...sl, stuckUntil: su('lord') } : sl));
-    assert.equal(build(grant('pierce_trusts_jed'), other.templates).querySelector('.mail-blank-stuck'), null);
+    assert.ok(build(grant('pierce_trusts_jed'), other.templates).querySelector('.mail-blank-stuck') === null);
     const held = fixture();
     held.templates.from_named.slots = held.templates.from_named.slots.map((sl) => (sl.id === 'sender_name' ? { ...sl, stuckUntil: { target: 'pierce', value: 'baker_full', text: 'x' } } : sl));
-    assert.equal(build(grant('pierce_trusts_jed'), held.templates).querySelector('.mail-blank-stuck'), null, 'gone once the named option is offered');
+    assert.ok(build(grant('pierce_trusts_jed'), held.templates).querySelector('.mail-blank-stuck') === null, 'gone once the named option is offered');
 });
 
 // E10 F-E10-9: an address inside a composed value reads in the address font, not the pixel font.
@@ -518,7 +518,7 @@ test('appendWithAddresses wraps an email/URL in a .mail-blank-address span and l
 
     const c = document.createElement('div');
     mod.appendWithAddresses(c, 'Quayholt Operations');
-    assert.equal(c.querySelector('.mail-blank-address'), null, 'a plain name is not wrapped');
+    assert.ok(c.querySelector('.mail-blank-address') === null, 'a plain name is not wrapped');
     assert.equal(c.childNodes.length, 1);
     assert.equal(c.childNodes[0].nodeType, 3, 'plain text stays a single text node');
 });

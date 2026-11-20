@@ -10,8 +10,7 @@ Helpers are copied from gen_e6_e7_shells.py (not imported, so a change there can
 check() reads the company from cfg['company'].
 
 Safe by construction (01_PIPELINE.md P0 and P4):
-  - the repo comes from --repo <path>, else $BREAKESCAPE_REPO, else this script's own path
-    (Path(__file__).resolve().parents[3], right only when run from AW/ in the real checkout);
+  - the repo comes from --repo <path>, else the checkout this script sits in (no environment variable);
   - the output folder is a required argument, so this can never default into scenarios/.
 
 Usage: gen_checks_v2_shells.py [--repo REPO] OUT_DIR
@@ -29,26 +28,8 @@ import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
 
-def _parse_args(argv):
-    repo = os.environ.get('BREAKESCAPE_REPO')
-    out = None
-    i = 0
-    while i < len(argv):
-        if argv[i] == '--repo' and i + 1 < len(argv):
-            repo = argv[i + 1]
-            i += 2
-        elif out is None and not argv[i].startswith('--'):
-            out = argv[i]
-            i += 1
-        else:
-            sys.exit('Usage: gen_checks_v2_shells.py [--repo REPO] OUT_DIR')
-    if out is None:
-        sys.exit('Usage: gen_checks_v2_shells.py [--repo REPO] OUT_DIR   (the output folder is required)')
-    return repo or str(Path(__file__).resolve().parents[3]), out
-
-
-REPO, OUT_DIR = _parse_args(sys.argv[1:]) if __name__ == '__main__' else (
-    os.environ.get('BREAKESCAPE_REPO') or str(Path(__file__).resolve().parents[3]), None)
+REPO = awareness_deploy.repo_root()
+OUT_DIR = awareness_deploy.required_out_dir('gen_checks_v2_shells.py') if __name__ == '__main__' else None
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
 GEN = 'planning_notes/phishing_and_social_engineering/awareness/gen_checks_v2_shells.py'
 

@@ -36,6 +36,8 @@ VAR backup_recovery_source = ""
 VAR backup_reinfected = false
 VAR ransom_advice = ""
 VAR vpn_anomaly_identified = false
+VAR siem_escalated = false
+VAR siem_missed_alerts = false
 VAR pump_console_advice = ""
 VAR safety_claim_hc003_assessed = false
 VAR debrief_complete = false
@@ -330,6 +332,11 @@ Priya S.: Now, how did they get in?
 * [Both: the phishing email and the stolen VPN password.]
     Priya S.: Both. Two ways in on the same Monday morning.
 -
+// D173 (owner-approved): the SIEM miss, gated on the console's own outcome globals.
+{siem_missed_alerts and not siem_escalated:
+    Priya S.: The SIEM had the alerts that mattered, and the clock ran out before anyone escalated them.
+    Priya S.: An alert nobody passes on is no alert at all. It's how this was missed yesterday morning, too.
+}
 {not vpn_anomaly_identified:
     Priya S.: Nobody checked the VPN log during the incident. Until the password is changed, they can walk back in the same way.
 }

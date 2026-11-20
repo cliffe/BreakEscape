@@ -138,7 +138,7 @@ test('the X is a button labelled Close, not focused on show; Enter and Space sto
   assert.equal(x.tagName, 'BUTTON');
   assert.equal(x.getAttribute('type'), 'button');
   assert.equal(x.getAttribute('aria-label'), 'Close');
-  assert.notEqual(document.activeElement, x);
+  assert.ok(document.activeElement !== x);
   const key = (type, k) => x.dispatchEvent(new win.KeyboardEvent(type, { key: k, bubbles: true, cancelable: true }));
   key('keydown', 'Enter');
   key('keyup', 'Enter');

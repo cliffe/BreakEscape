@@ -12,6 +12,10 @@
 
 VAR phish_supplier_contact_attempts = 0
 VAR episode_e1_invoice_fraud_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca01_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -21,6 +25,20 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca01_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Adaeze Okafor: The moment that bank-details email was flagged, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.
+            - else:
+                Adaeze Okafor: You stopped the bank-change email, so Harlow got paid the right way. A few of the others are worth a second look, and the debrief goes through them, so have a read before you go.
+            }
+            Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny.
+        - else:
+            Adaeze Okafor: The new bank details from that email went onto the supplier file, so the run paid the account it named, not Harlow. We spotted it afterwards and asked the bank to recall the payment, but the money was gone that same afternoon. That was just over six thousand four hundred pounds, in an account the attacker controls.
+            Adaeze Okafor: Ring the person back on a number you already hold before you change who gets paid. That one call is what stops this.
+        }
+        ~ kit_ca01_host_said = true
+    - else:
     { episode_e1_invoice_fraud_defend_complete:
         Adaeze Okafor: You've worked it from both ends now.
         Adaeze Okafor: Anyone asking you to move money or change bank details, ring them back on a number you already hold before you act. That's what I want from my team.
@@ -30,6 +48,7 @@ VAR hub_quiet = false
         - else:
             Adaeze Okafor: Welcome to the Brightwell exercise. Start at the kiosk: research us and our supplier, write one email as the red team, then swap seats and cover the payments inbox.
         }
+    }
     }
 }
 + [Thanks, Adaeze.]

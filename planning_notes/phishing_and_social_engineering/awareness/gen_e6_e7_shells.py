@@ -16,7 +16,7 @@ matching the rules the shells have to meet now:
 E7 has no check missions: its role is everyone, and it reuses the general-staff forms
 (ca_{pre,post}_general_{ab,ba}), which already have shells.
 
-Usage: gen_e6_e7_shells.py [out_dir]   (default: the repo's scenarios/)
+Usage: gen_e6_e7_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
 """
 import copy
 import json
@@ -28,7 +28,7 @@ from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
-REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
+REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
 GEN = 'planning_notes/phishing_and_social_engineering/awareness/gen_e6_e7_shells.py'
 
@@ -372,7 +372,7 @@ LINES = {
         'Thanks, Chidi.', 'Any time.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
-        "All five done, thanks. Whoever's voice it is, ringing back on the number we already hold settles it.",
+        "All five done, thanks. Whoever's voice it is, ring back on the number we already hold and that settles it.",
         'Thanks, Agnieszka.', 'See you after the meeting.'),
 }
 
@@ -635,7 +635,7 @@ def with_title_screen_name(sc, mission):
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
+    out = awareness_deploy.required_out_dir('gen_e6_e7_shells.py')
     built = [defend_only('e6')]
     built += [check('e6', p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     built.append(defend_only('e7'))

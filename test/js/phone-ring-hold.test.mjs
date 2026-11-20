@@ -47,11 +47,11 @@ test('row 12: a call rings over a keypad with the "put them on hold" status; Ans
 test('row 12: a forced call has no Hang up on the pill and no Decline on the banner', async () => {
     const w = await ringOverKeypad({ disableClose: true });
     try {
-        assert.equal(w.banner().querySelector('.incoming-call-decline'), null);
+        assert.ok(w.banner().querySelector('.incoming-call-decline') === null);
         w.click('.incoming-call-answer');
         await w.advance(100);
         assert.ok(pill(w));
-        assert.equal(pill(w).querySelector('button'), null, 'no Hang up');
+        assert.ok(pill(w).querySelector('button') === null, 'no Hang up');
     } finally { w.restore(); }
 });
 
@@ -63,7 +63,7 @@ test('row 17: Hang up on the pill is Decline (phone_call_declined) and clears th
         w.click('#phone-ring-layer .incoming-call-decline');
         assert.equal(emitted(w, 'phone_call_declined:caller'), 1);
         assert.equal(w.ringer.stateOf('caller'), null);
-        assert.equal(w.win.document.querySelector('#phone-ring-layer .incoming-call'), null);
+        assert.ok(w.win.document.querySelector('#phone-ring-layer .incoming-call') === null);
     } finally { w.restore(); }
 });
 
@@ -278,7 +278,7 @@ test('row 22: a forced call auto-answers after 6 s; while hits keep coming it wa
         w.win.lastPlayerHitAt = () => hitAt;
         w.nm._handleEventMapping('caller', 'room_entered', ringConfig({ disableClose: true }), {});
         await w.advance(300);
-        assert.equal(w.banner().querySelector('.incoming-call-decline'), null);
+        assert.ok(w.banner().querySelector('.incoming-call-decline') === null);
         await w.advance(4000);
         hitAt = w.win.performance.now();
         await w.advance(3500);

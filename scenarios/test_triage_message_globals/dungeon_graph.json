@@ -1,0 +1,10 @@
+{
+  "scenario": "test_triage_message_globals",
+  "start_room": "tmg_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

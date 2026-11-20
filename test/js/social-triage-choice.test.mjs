@@ -148,7 +148,7 @@ test('the option buttons do not give the right one away', () => {
     pick(s, 'c_words');
     for (const b of $$(s, '.tri-choice-option')) {
         assert.doesNotMatch(b.className, /verdict-/);
-        assert.equal(b.querySelector('img'), null);
+        assert.ok(b.querySelector('img') === null);
     }
 });
 

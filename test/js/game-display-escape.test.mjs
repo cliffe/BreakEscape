@@ -167,8 +167,8 @@ test('Escape closes the note, returns focus and never reaches a window-level (ga
     assert.equal(document.activeElement.className, 'game-modal-close', 'focus starts on the X');
     const { ev, reachedBubble } = esc();
     await done;
-    assert.equal(document.querySelector('.game-display-dialog'), null);
-    assert.equal(document.activeElement, prev, 'focus returns');
+    assert.ok(document.querySelector('.game-display-dialog') === null);
+    assert.ok(document.activeElement === prev, 'focus returns');
     assert.equal(ev.defaultPrevented, true);
     assert.equal(reachedBubble, false, 'the Escape does not leak to the game menu');
 });
@@ -243,7 +243,7 @@ test('objectives sheet open (compact viewport) with a note over it: the first Es
     assert.ok(document.querySelector('.game-display-dialog'));
     esc();
     await done;
-    assert.equal(document.querySelector('.game-display-dialog'), null, 'the note closed');
+    assert.ok(document.querySelector('.game-display-dialog') === null, 'the note closed');
     assert.equal(panel.isCollapsed, false, 'the sheet stayed open');
     esc();
     assert.equal(panel.isCollapsed, true, 'the second Escape folds the sheet');

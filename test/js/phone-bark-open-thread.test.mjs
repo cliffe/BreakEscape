@@ -261,11 +261,11 @@ test('phone UI focuses its visible view, but never steals from a field outside',
     };
     const a = make();
     assert.equal(a.ui.focusIntoPhone(), true);
-    assert.equal(a.doc.activeElement, a.view);
+    assert.ok(a.doc.activeElement === a.view);
     assert.equal(a.view.attrs.tabindex, '-1');
     const b = make({ tagName: 'INPUT' });
     assert.equal(b.ui.focusIntoPhone(), false);
-    assert.notEqual(b.doc.activeElement, b.view);
+    assert.ok(b.doc.activeElement !== b.view);
 });
 
 test('each phone view is a labelled region (m3)', () => {

@@ -185,7 +185,7 @@ test('end screen button: a refused shell link is not followed; a safe menu link 
 test('game menu: "Back to missions" exists only in the app', () => {
     setup(BROWSER_UA);
     let menu = new GameMenu();
-    assert.equal(menu.overlay.querySelector('[data-action="leave"]'), null);
+    assert.ok(menu.overlay.querySelector('[data-action="leave"]') === null);
 
     setup(APP_UA);
     menu = new GameMenu();

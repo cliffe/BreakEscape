@@ -287,7 +287,7 @@ test('a hostile label in the expired line never becomes markup on the showFailur
         call(m);
         const box = m.messageContainer.querySelector('.minigame-failure-message');
         assert.ok(box, `${name}: the fallback box shows`);
-        assert.equal(box.querySelector('img'), null, `${name}: no element came from the label`);
+        assert.ok(box.querySelector('img') === null, `${name}: no element came from the label`);
         assert.equal(box.textContent, hostile, `${name}: the label is text`);
     }
     delete globalThis.document;

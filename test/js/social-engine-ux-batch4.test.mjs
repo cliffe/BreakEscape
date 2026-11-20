@@ -73,7 +73,7 @@ test('a trailing full stop stays outside the address span', () => {
 test('a body with no address renders as before (one text node, no span)', () => {
     const body = openBody({ id: 'm3', from: { name: 'A', address: 'p@h.example' }, subject: 's',
         body: 'Just an ordinary note from a colleague.' });
-    assert.equal(body.querySelector('.mail-body-url'), null);
+    assert.ok(body.querySelector('.mail-body-url') === null);
     assert.equal(body.childNodes.length, 1);
     assert.equal(body.textContent, 'Just an ordinary note from a colleague.');
 });

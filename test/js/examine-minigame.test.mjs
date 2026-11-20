@@ -312,7 +312,7 @@ test('examineHeldItem: without the examine view, the observation is shown as the
         assert.equal(examineHeldItem(invImg({ type: 'usb', id: 'u', name: 'BadUSB', droppable: true, observations: 'Types.' })), true);
         assert.deepEqual(started, []);
         assert.equal(alerts.length, 1);
-        assert.match(alerts[0][0], /Observations: Types\./);
+        assert.ok(alerts[0][0] === 'Types.', 'plain observation, no label: ' + alerts[0][0]);
     } finally {
         framework.registeredScenes = scenes;
     }

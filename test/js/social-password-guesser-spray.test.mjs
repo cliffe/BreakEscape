@@ -347,7 +347,7 @@ test('lines are set as text and come from config.strings over the defaults', () 
     const root = cur().container;
     assert.equal(root.querySelector('[data-panel="roster"] .epr-gs-heading').textContent, 'The staff');
     assert.equal(root.querySelector('[data-row="stuff_1"] .epr-gs-text').textContent, '<b>x</b>: ***');
-    assert.equal(root.querySelector('.epr-gs-text b'), null);
+    assert.ok(root.querySelector('.epr-gs-text b') === null);
 });
 
 // ── the runner: osint -> guess -> flip ───────────────────────────────────────
@@ -381,7 +381,7 @@ test('E18 flow: a campaign that opened nothing shows the did-not-land flip with 
     playConsole();
     assert.equal(window.gameState.globalVariables.spray_fixture_landed, false);
     const flip = cur().container.querySelector('.aw-flip');
-    assert.equal(flip.querySelector('.aw-flip-aftermath'), null);
+    assert.ok(flip.querySelector('.aw-flip-aftermath') === null);
     assert.equal(flip.querySelector('.aw-missed').textContent, 'Nothing opened.');
 });
 

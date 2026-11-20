@@ -166,7 +166,7 @@ test('a not-responding host row shows the text and no control, and its test stat
     links.open('jack_comms_port');
     await settle();
     const lena = row('data-host-id', 'lena_pc');
-    assert.equal(lena.querySelector('[data-action]'), null, 'nothing to click');
+    assert.ok(lena.querySelector('[data-action]') === null, 'nothing to click');
     assert.match(lena.textContent, /\(powered down\)/);
     assert.doesNotMatch(lena.textContent, new RegExp(NOT_RESPONDING_TEXT), 'the tag alone says it (R1 n1)');
     const st = window.MinigameFramework.currentMinigame.getTestState();
@@ -183,7 +183,7 @@ test('a not-responding row names a session that is kept there (review R1 nit 6)'
     await settle();
     const lena = row('data-host-id', 'lena_pc');
     assert.match(lena.textContent, /Session kept: <b>Lena<\/b>/, 'the name is shown as text');
-    assert.equal(lena.querySelector('b'), null, 'and never as markup');
+    assert.ok(lena.querySelector('b') === null, 'and never as markup');
 });
 
 test('the view lists each row with its action and the row attributes, from GET /network only', async () => {
@@ -196,7 +196,7 @@ test('the view lists each row with its action and the row attributes, from GET /
     // The subtitle names the network, so the own block is headed "Reachable" (code review R2 m1)
     assert.equal(document.querySelector('.network-block-own .network-block-title').textContent, OWN_HEADING);
     // The inventory line repeated the subtitle: no view shows it (code review R1 m1)
-    assert.equal(document.querySelector('.network-view-observations'), null);
+    assert.ok(document.querySelector('.network-view-observations') === null);
     assert.doesNotMatch(document.querySelector('.network-view').textContent, /Your Network drop box/);
     // Display order: computers by host name, then shares, then printers, under group headings
     assert.deepEqual([...document.querySelectorAll('[data-host-id], [data-resource-id]')].map(el => el.dataset.hostId || el.dataset.resourceId),
@@ -205,12 +205,12 @@ test('the view lists each row with its action and the row attributes, from GET /
         ['Computers', 'File shares', 'Printers and devices']);
     assert.match(row('data-resource-id', 'ledger_archive').querySelector('.network-row-locked').textContent, /Needs account/);
     assert.equal(row('data-host-id', 'door_box').querySelector('[data-action]').dataset.action, 'sign-in');
-    assert.equal(row('data-host-id', 'kiosk_pc').querySelector('[data-action]'), null);
+    assert.ok(row('data-host-id', 'kiosk_pc').querySelector('[data-action]') === null);
     assert.match(row('data-host-id', 'kiosk_pc').textContent, new RegExp(REMOTE_OFF_TEXT));
     assert.equal(row('data-host-id', 'lena_pc').querySelector('[data-action]').dataset.action, 'open');
     assert.match(row('data-host-id', 'lena_pc').textContent, /Open \(Lena Fox\)/);
     assert.match(row('data-host-id', 'sam_pc').textContent, /Open \(Sam Okafor\)/);
-    assert.equal(row('data-resource-id', 'ledger_archive').querySelector('[data-action]'), null);
+    assert.ok(row('data-resource-id', 'ledger_archive').querySelector('[data-action]') === null);
     assert.ok(row('data-resource-id', 'ledger_archive').textContent.includes(SHARE_LOCKED_TEXT));
     assert.equal(row('data-resource-id', 'scanned_inbox').querySelector('[data-action]').dataset.action, 'open');
     assert.equal(row('data-resource-id', 'print_queue').querySelector('[data-action]').dataset.action, 'observe');
@@ -311,9 +311,9 @@ test('a link whose PC is off says "This link is not responding" and offers no co
     await settle();
     const text = document.querySelector('.network-view').textContent;
     assert.ok(text.includes(linkOffText('<i>HB-FIN-02</i>')), 'the line names the PC as text');
-    assert.equal(document.querySelector('.network-view i'), null, 'never as markup');
+    assert.ok(document.querySelector('.network-view i') === null, 'never as markup');
     assert.doesNotMatch(text, /Nothing answers on this network/);
-    assert.equal(document.querySelector('[data-action]'), null, 'nothing to click');
+    assert.ok(document.querySelector('[data-action]') === null, 'nothing to click');
     assert.equal(view().getTestState().responding, false);
 });
 
@@ -326,7 +326,7 @@ test('a down block is greyed with "No route" and offers no control', async () =>
     assert.match(block.querySelector('.network-block-title').textContent, /Server network \(down\)/);
     assert.match(block.textContent, /SV-FS02 \(down\)/, 'the row carries the down tag');
     assert.match(block.querySelector('.network-row-off').textContent, /^No route$/);
-    assert.equal(block.querySelector('[data-action]'), null, 'a down row has no control');
+    assert.ok(block.querySelector('[data-action]') === null, 'a down row has no control');
     assert.deepEqual(named('network_viewed:server_net'), [], 'a down block emits no network_viewed');
 });
 
@@ -340,7 +340,7 @@ test('a down block draws each row as its own kind, under group headings (code re
     assert.deepEqual(kinds, ['pc', 'file_share'], 'computers first, the share drawn as a share');
     assert.match(block.querySelector('[data-kind="file_share"] img').getAttribute('src'), /folder/);
     assert.equal(block.querySelectorAll('.network-row-group').length, 2, 'a heading for each group');
-    assert.equal(block.querySelector('[data-action]'), null, 'still no control');
+    assert.ok(block.querySelector('[data-action]') === null, 'still no control');
 });
 
 // Review R2 M1 (plan 5.2): the own network down, a session held there. The server sends no
@@ -357,7 +357,7 @@ test('a session held on the own network shows greyed while the own network is do
     assert.match(block.querySelector('.network-block-title').textContent, /Harbour office LAN \(down\)/);
     assert.match(block.textContent, /HB-FIN-02 \(down\)/);
     assert.match(block.textContent, /No route/);
-    assert.equal(document.querySelector('[data-action]'), null, 'nothing to click');
+    assert.ok(document.querySelector('[data-action]') === null, 'nothing to click');
     assert.doesNotMatch(document.querySelector('.network-view').textContent, /Nothing answers on this network/);
     assert.deepEqual(view().getTestState().networks.map(b => [b.id, b.route]), [['office_lan', 'down']]);
 });
@@ -521,7 +521,7 @@ test('a stale view shows the "may be out of date" line and refetches once when t
     await view().refetched;
     await settle();
     assert.equal(requests.filter(r => r[0] === 'network').length, 2, 'fetched once more');
-    assert.equal(document.querySelector('.network-view-stale'), null, 'the fresh view drops the line');
+    assert.ok(document.querySelector('.network-view-stale') === null, 'the fresh view drops the line');
     assert.equal(syncs, 1, 'the refetch sends no second sync: the globals have landed');
     document.querySelector('#minigame-close')?.click();
     delete links.viewSyncWaitMs;
@@ -607,11 +607,11 @@ test('a powered-down row is tagged and greyed; a remote sign-in off row is reada
     const lena = row('data-host-id', 'lena_pc');
     assert.ok(lena.classList.contains('network-row-down'));
     assert.equal(lena.querySelector('.network-row-tag').textContent, '(powered down)');
-    assert.equal(lena.querySelector('.network-row-off'), null, 'no "Powered down" beside the tag (R1 n1)');
+    assert.ok(lena.querySelector('.network-row-off') === null, 'no "Powered down" beside the tag (R1 n1)');
     assert.equal(lena.querySelector('.network-row-kept').textContent, 'Session kept: Lena Fox');
     const kiosk = row('data-host-id', 'kiosk_pc');
     assert.ok(!kiosk.classList.contains('network-row-down'), 'remote sign-in off stays readable');
-    assert.equal(kiosk.querySelector('.network-row-tag'), null);
+    assert.ok(kiosk.querySelector('.network-row-tag') === null);
     assert.equal(kiosk.querySelector('.network-row-off').textContent, 'Remote sign-in off');
 });
 
@@ -636,7 +636,7 @@ test('no reason or tag is in italics: no markup and no italic style', async () =
     withBlocks([{ id: 'server_net', name: 'Server network', via: null, route: 'down', hosts: [{ ...SERVER_ROW }] }]);
     links.open('jack_comms_port');
     await settle();
-    assert.equal(document.querySelector('.network-view i, .network-view em'), null);
+    assert.ok(document.querySelector('.network-view i, .network-view em') === null);
     assert.doesNotMatch(cssText, /font-style:\s*italic|oblique/);
     assert.match(ruleBody('.network-view *') || '', /font-style:\s*normal/);
 });
@@ -705,7 +705,7 @@ test('the shared bar shows the subtitle under the title', async () => {
     await settle();
     assert.equal(document.querySelector('.console-subtitle').textContent, 'On Harbour office LAN, at Spare wall port');
     assert.equal(view().getTestState().subtitle, 'On Harbour office LAN, at Spare wall port');
-    assert.equal(document.querySelector('.network-view-status'), null, 'a jack link has no joined line');
+    assert.ok(document.querySelector('.network-view-status') === null, 'a jack link has no joined line');
 });
 
 test('a joined Wi-Fi view: icon by the title, "Joined. Reaches <n> hosts." and not the stale line', async () => {
@@ -721,7 +721,7 @@ test('a joined Wi-Fi view: icon by the title, "Joined. Reaches <n> hosts." and n
     await settle();
     assert.ok(document.querySelector('.network-view-status .network-view-title-icon'), 'the Wi-Fi icon is by the status line');
     assert.equal(document.querySelector('.network-view-status').textContent, 'Joined. Reaches 1 host.');
-    assert.equal(document.querySelector('.network-view-observations'), null, 'the observations line is replaced');
+    assert.ok(document.querySelector('.network-view-observations') === null, 'the observations line is replaced');
     assert.doesNotMatch(document.querySelector('.network-view').textContent, /Open it to see what it reaches/);
     assert.equal(document.querySelector('.console-subtitle').textContent, 'Access point: Guest access point, Lobby');
     assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent), ['File shares'],
@@ -759,7 +759,7 @@ test('no header line repeats another, for the jack and both implant views (R1 m1
             assert.ok(!line.includes(heading) && !heading.includes(line), `${name}: heading "${heading}" repeats "${line}"`);
         }
         assert.ok(!heading.includes(officeNet.name), `${name}: the heading does not name the network`);
-        assert.equal(document.querySelector('.network-view-observations'), null);
+        assert.ok(document.querySelector('.network-view-observations') === null);
         assert.equal(view().getTestState().status, 'ready', 'the load state, not the status line (R1 m3)');
         assert.equal(view().getTestState().statusLine, '');
     }
@@ -769,7 +769,7 @@ test('the view closes with the X or Esc only: no Close button, the X in the shar
     setup();
     links.open('jack_comms_port');
     await settle();
-    assert.equal(document.querySelector('#minigame-cancel'), null, 'no framework Close button');
+    assert.ok(document.querySelector('#minigame-cancel') === null, 'no framework Close button');
     // The shared shell may keep an empty controls row (slice 7); it must hold no button
     assert.equal(document.querySelectorAll('.minigame-controls button').length, 0, 'no button in the controls row');
     const win = document.querySelector('.console-window');
@@ -1029,7 +1029,7 @@ test('UI PC 2 (N05): the view opened from the inventory has no Unplug', async ()
     links.open('jack_comms_port');
     await settle(6);
     assert.ok(view() instanceof NetworkViewMinigame);
-    assert.equal(document.querySelector('[data-unplug]'), null);
+    assert.ok(document.querySelector('[data-unplug]') === null);
     assert.equal(view().getTestState().unplug, null);
     // Fix round 1 (nit): a line says where the box can be unplugged, naming the room and port
     const hint = document.querySelector('.network-view-hint');
@@ -1043,7 +1043,7 @@ test('UI PC 2 fix round 1 (m1, nit): the view at the jack has Unplug and no hint
     await links.interactJack(plantedJackSprite());
     await settle(6);
     assert.ok(document.querySelector('[data-unplug]'));
-    assert.equal(document.querySelector('.network-view-hint'), null);
+    assert.ok(document.querySelector('.network-view-hint') === null);
 });
 
 test('UI PC 2 fix round 1 (m3): short landscape puts Unplug on the title row, left of the X', () => {
@@ -1424,13 +1424,13 @@ test('R2 m1: a press on Unplug holds the redraw, and an unchanged header keeps t
     const btn = document.querySelector('.network-view-header [data-unplug]');
     // Unchanged answer: the header is not rewritten, so the button element stays
     await m.refetch();
-    assert.equal(document.querySelector('.network-view-header [data-unplug]'), btn, 'unchanged header keeps its button');
+    assert.ok(document.querySelector('.network-view-header [data-unplug]') === btn, 'unchanged header keeps its button');
     // A press on Unplug (outside the list) holds a changed redraw
     btn.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
     answer = withNewPc();
     await m.refetch();
     assert.equal(row('data-host-id', 'new_pc'), null, 'held behind the Unplug press');
-    assert.equal(document.querySelector('.network-view-header [data-unplug]'), btn, 'same button under the press');
+    assert.ok(document.querySelector('.network-view-header [data-unplug]') === btn, 'same button under the press');
     closeView();
 });
 

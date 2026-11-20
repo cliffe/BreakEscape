@@ -12,7 +12,7 @@ Adapted from gen_e3_e5_shells.py (P7-Y1). Differences from that script:
     top-level `_conceptPanel`) as `strings.conceptPanel`, and E4's copied-voice panel
     (`awarenessEpisode._voicePanel`) as `strings.voicePanel`.
 
-Usage: gen_e2_e4_shells.py [out_dir]   (default: the repo's scenarios/)
+Usage: gen_e2_e4_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
 """
 import copy
 import json
@@ -24,7 +24,7 @@ from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
-REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
+REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
 GENERATOR = 'planning_notes/phishing_and_social_engineering/awareness/gen_e2_e4_shells.py'
 
@@ -70,11 +70,11 @@ HOSTS = {
 LINES = {
     ('e2', 'defend'): (
         "Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.",
-        "That's the inbox sorted, thanks. A real CV opens fine in the viewer, so anything that asks for more than that gets a second look from me.",
+        "That's the inbox sorted, thanks. A real CV just opens in the viewer. Anything that asks for more than that gets a second look from me.",
         'Thanks, Fatima.', 'Any time.'),
     ('e4', 'defend'): (
         "Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.",
-        "That's everything cleared, thanks. When it's money and it's in a hurry, ring her on the number you already have, or ask Yasmin.",
+        "That's everything cleared, thanks. Money, in a hurry: ring her on the number you already have, or ask Yasmin.",
         'Thanks, Thandiwe.', 'Shout if anything else comes in.'),
     ('e2', 'pre'): (
         "Hi. Before the training there's a short check on the kiosk: ten emails from the recruitment inbox. Just do what you'd normally do with them.",
@@ -707,7 +707,7 @@ def with_title_screen_name(sc, mission):
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
+    out = awareness_deploy.required_out_dir('gen_e2_e4_shells.py')
     built = []
     for ekey in ('e2', 'e4'):
         built.append(defend_only(ekey))

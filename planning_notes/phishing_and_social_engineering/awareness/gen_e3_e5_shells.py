@@ -7,7 +7,7 @@ committed E1 shells rather than the script that made them:
   - the post check does not redeclare the names it imports (the validator rejects the collision);
   - the host's one-line ink is written here too, so a re-run rebuilds the whole folder.
 
-Usage: gen_e3_e5_shells.py [out_dir]   (default: the repo's scenarios/)
+Usage: gen_e3_e5_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
 """
 import copy
 import json
@@ -19,7 +19,7 @@ from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
-REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
+REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
 
 PLAYER = {
@@ -670,7 +670,7 @@ def with_title_screen_name(sc, mission):
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
+    out = awareness_deploy.required_out_dir('gen_e3_e5_shells.py')
     built = []
     for ekey in ('e3', 'e5'):
         built.append(defend_only(ekey))

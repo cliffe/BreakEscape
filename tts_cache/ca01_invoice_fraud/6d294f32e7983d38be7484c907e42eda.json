@@ -1,0 +1,13 @@
+{
+  "key": "6d294f32e7983d38be7484c907e42eda",
+  "npc": "adaeze_okafor",
+  "text": "The moment that bank-details email was flagged, we confirmed the right account and the run went out clean. Our supplier got paid, and nobody had to chase anything. That was down to you, before it went anywhere.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:52:30Z"
+}

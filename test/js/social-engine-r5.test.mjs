@@ -97,7 +97,7 @@ test('P5-15: a missed tick alone (every verdict right) shows no no-blame line', 
         { id: 'p1', verdict: 'report', flags: [], score: 60, isPhish: true }
     ]);
     assert.ok(c.querySelector('.aw-card')); // the missed tick still gets its card
-    assert.equal(c.querySelector('.aw-no-blame'), null);
+    assert.ok(c.querySelector('.aw-no-blame') === null);
     assert.equal(view.getState().noBlame, false);
 });
 

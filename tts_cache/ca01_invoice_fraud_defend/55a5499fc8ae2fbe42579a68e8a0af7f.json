@@ -1,0 +1,13 @@
+{
+  "key": "55a5499fc8ae2fbe42579a68e8a0af7f",
+  "npc": "adaeze_okafor",
+  "text": "It went through, so the run paid an account that was never Harlow's. On a busy afternoon it's an easy one to wave through.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T23:42:52Z"
+}

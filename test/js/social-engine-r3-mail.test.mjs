@@ -201,7 +201,7 @@ test('P3 N4: an awareness send that misses schedules no reply text and promises 
     assert.equal(jobs.length, 1, 'the job still runs (it reveals the checklist under withReply)');
     assert.equal(jobs[0].text, '');
     assert.equal(scene.root.querySelector('.mail-checklist-banner').textContent, 'It did not land.');
-    assert.equal(scene.root.querySelector('.mail-checklist-reply'), null);
+    assert.ok(scene.root.querySelector('.mail-checklist-reply') === null);
     scene.cleanup();
 });
 

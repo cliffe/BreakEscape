@@ -108,7 +108,7 @@ test('applyStepStates: done and skipped classes plus the screen-reader suffix', 
     assert.ok(items.get('b').classList.contains('aw-step-skipped'));
     assert.equal(items.get('b').querySelector('.aw-step-sr').textContent, ' (skipped)');
     assert.ok(items.get('c').classList.contains('aw-step-current'));
-    assert.equal(items.get('c').querySelector('.aw-step-sr'), null);
+    assert.ok(items.get('c').querySelector('.aw-step-sr') === null);
 });
 
 test('applyStepStates: the sr suffix is not duplicated across re-applies', () => {

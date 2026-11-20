@@ -53,9 +53,9 @@ function initQuietly(mg) {
 
 // Nothing injected anywhere under root, no handler attribute, no handler ran
 function assertClean(root, label) {
-    assert.equal(root.querySelector('img[onerror]'), null, `${label}: no img with onerror`);
-    assert.equal(root.querySelector('b'), null, `${label}: no injected <b>`);
-    assert.equal(root.querySelector('[onmouseover]'), null, `${label}: no onmouseover attribute`);
+    assert.ok(root.querySelector('img[onerror]') === null, `${label}: no img with onerror`);
+    assert.ok(root.querySelector('b') === null, `${label}: no injected <b>`);
+    assert.ok(root.querySelector('[onmouseover]') === null, `${label}: no onmouseover attribute`);
     assert.equal(window.__pwned, undefined, `${label}: no handler ran`);
 }
 
@@ -109,7 +109,7 @@ test('forensic allow-list: handlers, script, links and unsafe styles go', () => 
         + '<p style="color:red">ok</p><!-- c -->');
     const box = document.createElement('div');
     box.innerHTML = out;
-    assert.equal(box.querySelector('[onclick], script, a, svg'), null, out);
+    assert.ok(box.querySelector('[onclick], script, a, svg') === null, out);
     assert.equal(box.querySelector('strong').hasAttribute('style'), false, 'a url() style is dropped');
     assert.equal(box.querySelector('p').getAttribute('style'), 'color:red', 'a plain style is kept');
     assert.equal(box.textContent, 'alinkok');
@@ -123,7 +123,7 @@ test('forensic allow-list: an overlay style is cut down to its allowed propertie
     box.innerHTML = sanitizeRich(`<strong style="${OVERLAY};color:#f85149">a</strong><p style="${OVERLAY}">b</p>`);
     assert.equal(box.querySelector('strong').getAttribute('style'), 'color:#f85149', 'only color survives');
     assert.equal(box.querySelector('p').hasAttribute('style'), false, 'nothing allowed: the style goes');
-    assert.equal(box.querySelector('[style*="position"], [style*="z-index"], [style*="width"]'), null);
+    assert.ok(box.querySelector('[style*="position"], [style*="z-index"], [style*="width"]') === null);
 });
 
 test('forensic callout: style2 goes through the same allow-list', () => {

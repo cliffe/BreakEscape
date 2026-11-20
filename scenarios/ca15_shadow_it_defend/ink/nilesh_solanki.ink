@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e15_shadow_it_defend_defend_complete:
-        Nilesh Solanki: That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it, we can't mend what we don't know about.
+        Nilesh Solanki: That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it.
     - else:
         Nilesh Solanki: Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.
     }

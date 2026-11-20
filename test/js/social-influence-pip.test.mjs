@@ -237,8 +237,8 @@ test('header bar is absent when display.bar is false, and the reports threshold 
     personChat.mountPretext({ session, spec: priyaSpec, characterId: 'dev' });
     phoneChat.mountPretext({ session, spec: priyaSpec, characterId: 'dev' });
 
-    assert.equal(person.querySelector('.influence-bar'), null);
-    assert.equal(phone.querySelector('.influence-bar'), null);
+    assert.ok(person.querySelector('.influence-bar') === null);
+    assert.ok(phone.querySelector('.influence-bar') === null);
     assert.match(person.querySelector('.pretext-tells').textContent, /WARY|REPORTED|Manager/);
     assert.match(phone.querySelector('.pretext-tells').textContent, /Manager/);
 
@@ -248,7 +248,7 @@ test('header bar is absent when display.bar is false, and the reports threshold 
     assert.equal(window.gameState.globalVariables.dev_reported, true);
     assert.equal(window.gameState.globalVariables.dev_wary, true);
     assert.equal(window.gameState.globalVariables.dev_influence, -90);
-    assert.equal(document.querySelector('.influence-bar'), null);
+    assert.ok(document.querySelector('.influence-bar') === null);
 
     personChat.destroy();
     phoneChat.destroy();

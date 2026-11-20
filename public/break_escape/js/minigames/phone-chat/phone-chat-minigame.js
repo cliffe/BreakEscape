@@ -960,13 +960,17 @@ export class PhoneChatMinigame extends MinigameScene {
             console.log('⚠️ No tags to process');
         }
 
+        // One time budget for the whole batch, and the reply cue only when choices follow the lines
+        this._setBatchBudget(accumulatedMessages, TYPING_DELAY_MS, INTER_MESSAGE_MS);
+        this._setRepliesCue(lastResult, accumulatedTags);
+
         // Display accumulated NPC messages one at a time with typing indicator.
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, deliveries?.[i] || null))) { this._resetSkip(); return; }
+            if (!(await this._showStoryLine(message, this._scaledPause(TYPING_DELAY_MS), deliveries?.[i] || null))) { this._resetSkip(); return; }
             this._pendingNpcMessages.shift();
-            if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
+            if (i < accumulatedMessages.length - 1) await delay(this._scaledPause(INTER_MESSAGE_MS));
         }
         this._resetSkip();
         this._pendingNpcMessages = [];
@@ -1036,6 +1040,9 @@ export class PhoneChatMinigame extends MinigameScene {
         this._skipAll = false;
         this._paceWake?.();   // a wait left running by a closed thread ends now
         this.ui?.setInstantType?.(false);
+        // A batch left early (thread closed or swapped) must not leave its typing rate or cue behind
+        this.ui?.setBlockChars?.(0);
+        this.ui?.setRepliesExpected?.(false);
     }
 
     /**
@@ -1088,6 +1095,24 @@ export class PhoneChatMinigame extends MinigameScene {
         if (openModalCount() > 0) return false;
         const box = this.ui.elements?.messagesContainer;
         return !!box && box.getClientRects().length > 0;
+    }
+
+    /** One time budget for a batch: typing speed and the pauses between lines share it (see phone-chat-ui.js). */
+    _setBatchBudget(messages, typingMs, gapMs) {
+        const lines = messages.map(m => String(m).trim()).filter(Boolean);
+        // the 700 ms cursor blink after each typed line (TERMINAL_BLINK_MS in the UI) counts as a pause too
+        const pauses = lines.length * (typingMs + 700) + Math.max(0, lines.length - 1) * gapMs;
+        this.ui?.setBlockChars?.(lines.reduce((n, m) => n + m.length, 0), pauses);
+    }
+
+    /** The "reply options follow" cue: only when choices come after the lines and the tags do not end the thread. */
+    _setRepliesCue(lastResult, tags) {
+        this.ui?.setRepliesExpected?.(!!(lastResult?.choices && lastResult.choices.length > 0)
+            && !tags.some(tag => /exit_conversation|place_call/.test(String(tag))));
+    }
+
+    _scaledPause(ms) {
+        return this.ui?.scalePause ? this.ui.scalePause(ms) : ms;
     }
 
     /**
@@ -1418,12 +1443,14 @@ export class PhoneChatMinigame extends MinigameScene {
         // (the batch's tags already ran line by line above)
 
         // Display accumulated NPC messages one at a time with typing indicator.
+        this._setBatchBudget(accumulatedMessages, TYPING_DELAY_MS, INTER_MESSAGE_MS);
+        this._setRepliesCue(lastResult, accumulatedTags);
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, accumulatedDeliveries[i] || null))) { this._resetSkip(); return; }
+            if (!(await this._showStoryLine(message, this._scaledPause(TYPING_DELAY_MS), accumulatedDeliveries[i] || null))) { this._resetSkip(); return; }
             this._pendingNpcMessages.shift();
-            if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
+            if (i < accumulatedMessages.length - 1) await delay(this._scaledPause(INTER_MESSAGE_MS));
         }
         this._resetSkip();
         this._pendingNpcMessages = [];

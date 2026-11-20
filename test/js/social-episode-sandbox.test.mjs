@@ -339,7 +339,7 @@ test('a full consequence episode runs brief -> mistake -> flip -> defend -> debr
     assert.equal(beats[0].querySelector('.aw-montage-line').textContent, 'Your choice. The rota was lost.');
     assert.ok(beats[0].classList.contains('aw-montage-taken'));
     assert.equal(beats[2].querySelector('.aw-montage-line').textContent, 'The version where the stick was plugged in instead.');
-    assert.equal(cur().container.querySelector('.aw-defender-line'), null, 'no default attacker-flavoured defender line');
+    assert.ok(cur().container.querySelector('.aw-defender-line') === null, 'no default attacker-flavoured defender line');
     click('.aw-continue');
     assert.equal(epState().stage, 'defend');
     assert.equal(epState().mistakeHeld, false);
@@ -401,7 +401,7 @@ test('without mistake and flip.mode the output is exactly as before: the same st
     document.body.innerHTML = '<div id="h"></div>';
     const view = renderFlipView(document.getElementById('h'), { strings: {}, onContinue() {} });
     assert.equal(view.getState().shown, 'noSend');
-    assert.equal(document.querySelector('.aw-montage'), null);
+    assert.ok(document.querySelector('.aw-montage') === null);
 });
 
 // ── the montage view ─────────────────────────────────────────────────────────
@@ -428,7 +428,7 @@ test('renderFlipView montage: heading, one beat each with the flipBeat first, ge
     button.click();
     assert.equal(continued, 1);
     view.destroy();
-    assert.equal(document.querySelector('.aw-flip'), null);
+    assert.ok(document.querySelector('.aw-flip') === null);
 });
 
 test('montage beats carry safe / unsafe classes and a words tag on the learner\'s own pick', () => {
@@ -448,7 +448,7 @@ test('montage beats carry safe / unsafe classes and a words tag on the learner\'
     assert.equal(b.querySelector('.aw-montage-tag').textContent, 'Your call: the safe route');
     assert.equal(b.dataset.option, 'y');
     assert.ok(c.classList.contains('aw-montage-unsafe') && !c.classList.contains('aw-montage-taken'));
-    assert.equal(c.querySelector('.aw-montage-tag'), null);
+    assert.ok(c.querySelector('.aw-montage-tag') === null);
 });
 
 test('a montage line is set as text, never markup', () => {
@@ -457,7 +457,7 @@ test('a montage line is set as text, never markup', () => {
         montage: true, flipBeat: 'a', strings: {},
         beats: [{ id: 'a', situation: '<i>s</i>', optionId: 'x', taken: true, line: '<b>bold</b>' }], onContinue() {}
     });
-    assert.equal(document.querySelector('.aw-montage-line b'), null);
+    assert.ok(document.querySelector('.aw-montage-line b') === null);
     assert.equal(document.querySelector('.aw-montage-line').textContent, '<b>bold</b>');
 });
 

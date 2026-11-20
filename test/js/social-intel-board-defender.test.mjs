@@ -225,5 +225,5 @@ test('keyboard: an option is a native button, Enter/Space activate it, and focus
     assert.equal(b.tagName, 'BUTTON');
     assert.equal(b.getAttribute('type'), 'button');
     b.click();
-    assert.equal(document.activeElement, opt(s, 'email_pattern', 'hide_page'));
+    assert.ok(document.activeElement === opt(s, 'email_pattern', 'hide_page'));
 });

@@ -100,13 +100,13 @@ test('the player\'s own send is marked on the flip when flagPlayerSent is set', 
 test('a message the player did not send carries no marker', () => {
     const s = open(makeSet({ flagPlayerSent: 'You sent this one.' }));
     verdict(s, 'supplier', 'report');
-    assert.equal($(s, '.tri-review-card').querySelector('.tri-player-sent'), null);
+    assert.ok($(s, '.tri-review-card').querySelector('.tri-player-sent') === null);
 });
 
 test('without flagPlayerSent, no marker is shown (other missions unaffected)', () => {
     const s = open(makeSet());
     verdict(s, 'own_pierce', 'report');
-    assert.equal($(s, '.tri-review-card').querySelector('.tri-player-sent'), null);
+    assert.ok($(s, '.tri-review-card').querySelector('.tri-player-sent') === null);
 });
 
 test('flagPlayerSent: true uses the default line', () => {

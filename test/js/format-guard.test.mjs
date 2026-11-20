@@ -98,7 +98,7 @@ test('held 0, header 0: nothing happens', async () => {
   s.setResponse(makeResponse({ format: 0 }));
   await s.call();
   assert.equal(s.counters.reloads, 0);
-  assert.equal(document.getElementById('be-format-banner'), null);
+  assert.ok(document.getElementById('be-format-banner') === null);
 });
 
 test('header absent: nothing happens', async () => {
@@ -107,7 +107,7 @@ test('header absent: nothing happens', async () => {
   s.setResponse(makeResponse({})); // no header
   await s.call();
   assert.equal(s.counters.reloads, 0);
-  assert.equal(document.getElementById('be-format-banner'), null);
+  assert.ok(document.getElementById('be-format-banner') === null);
 });
 
 test('held null (bootstrap not read): nothing is compared', async () => {
@@ -125,7 +125,7 @@ test('header 1 against 0 flushes the pending sync and reloads once; a repeat sho
   await s.call();
   assert.equal(s.counters.reloads, 1, 'first mismatch reloads once');
   assert.equal(s.counters.syncs, 1, 'pending sync flushed before reload');
-  assert.equal(document.getElementById('be-format-banner'), null, 'no banner on the reload path');
+  assert.ok(document.getElementById('be-format-banner') === null, 'no banner on the reload path');
 
   // After the (mocked) reload the session key for 0:1 is present, so a repeat shows the banner.
   await s.call();
@@ -160,7 +160,7 @@ test('a mismatch on the keepalive flush does nothing', async () => {
   s.setResponse(makeResponse({ format: 1 }));
   await s.call({ keepalive: true, method: 'PUT' });
   assert.equal(s.counters.reloads, 0);
-  assert.equal(document.getElementById('be-format-banner'), null);
+  assert.ok(document.getElementById('be-format-banner') === null);
 });
 
 test('a 409 format refusal (no header) reloads once, then the banner carries the message and the not-saved line', async () => {

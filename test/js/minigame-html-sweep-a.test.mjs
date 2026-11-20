@@ -41,8 +41,8 @@ function fresh() {
 
 // Nothing from the hostile string became an element, and it reads back as typed
 function assertPlain(root, label, times = 1) {
-    assert.equal(root.querySelector('[onerror]'), null, `${label}: no onerror element`);
-    assert.equal(root.querySelector('.pwn'), null, `${label}: no injected element`);
+    assert.ok(root.querySelector('[onerror]') === null, `${label}: no onerror element`);
+    assert.ok(root.querySelector('.pwn') === null, `${label}: no injected element`);
     const count = root.textContent.split(MARK).length - 1;
     assert.ok(count >= times, `${label}: the text reads back ${times} time(s), got ${count}`);
     assert.ok(!root.textContent.includes('&amp;'), `${label}: escaped once, not twice`);

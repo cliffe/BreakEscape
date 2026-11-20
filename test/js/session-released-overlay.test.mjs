@@ -33,8 +33,8 @@ test('not released: nothing changes', () => {
     const doc = overlay();
     assert.equal(applyReleasedState({ doc, released: false, cfg: { shellMenuUrl: '/m' }, base: BASE }), false);
     assert.ok(shown(doc, 'session-restart-btn') && shown(doc, 'session-new-btn'));
-    assert.equal(doc.getElementById('session-back-link'), null);
-    assert.equal(doc.getElementById('session-released-note'), null);
+    assert.ok(doc.getElementById('session-back-link') === null);
+    assert.ok(doc.getElementById('session-released-note') === null);
 });
 
 test('released: both buttons hidden, note shown, Resume kept, link to the menu', () => {
@@ -56,7 +56,7 @@ test('released: falls back to shellReturnUrl; a foreign or unsafe URL gives no l
     for (const bad of ['javascript:alert(1)', 'https://evil.example/x', '//evil.example/x']) {
         const d = overlay();
         applyReleasedState({ doc: d, released: true, cfg: { shellMenuUrl: bad }, base: BASE });
-        assert.equal(d.getElementById('session-back-link'), null, bad);
+        assert.ok(d.getElementById('session-back-link') === null, bad);
         assert.ok(d.getElementById('session-released-note'));
         assert.ok(!shown(d, 'session-new-btn'));
     }

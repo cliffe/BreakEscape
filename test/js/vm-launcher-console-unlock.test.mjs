@@ -108,8 +108,8 @@ test('flagNote shows under the VM steps, as literal text, and only when set (bli
         const withNote = render('Flags go back to <b>the Drop-Site</b>.');
         assert.ok(withNote.querySelector('.vm-flag-note'));
         assert.equal(withNote.querySelector('.vm-flag-note p').textContent, 'Flags go back to <b>the Drop-Site</b>.');
-        assert.equal(withNote.querySelector('.vm-flag-note b'), null, 'no element made from the note');
-        assert.equal(render('').querySelector('.vm-flag-note'), null);
+        assert.ok(withNote.querySelector('.vm-flag-note b') === null, 'no element made from the note');
+        assert.ok(render('').querySelector('.vm-flag-note') === null);
     } finally {
         globalThis.document = saved;
     }

@@ -33,6 +33,32 @@ export function skipHintText() {
     return 'Space, Enter or click to skip';
 }
 
+/** Terminal typing speed: 28 ms a character, but a whole batch of lines types in about 12 s at most (never under 10 ms a character). */
+export const TERMINAL_CHAR_DELAY_MS = 28;
+export const TERMINAL_BLOCK_MAX_MS = 12000;
+export function typewriterCharDelay(totalChars) {
+    const n = Math.max(1, Number(totalChars) || 1);
+    return Math.max(10, Math.min(TERMINAL_CHAR_DELAY_MS, Math.floor(TERMINAL_BLOCK_MAX_MS / n)));
+}
+
+/** A whole batch (typing plus the "typing" pauses and gaps between lines) aims to finish in about 15 s. */
+export const TERMINAL_BATCH_TOTAL_MS = 15000;
+/** The cursor blink after each terminal line: part of the pauses, so it shrinks with them. */
+export const TERMINAL_BLINK_MS = 700;
+/**
+ * Factor to multiply the pauses by so a batch of `lines` lines and `totalChars` characters,
+ * with `pauseMs` of pauses in all, fits the total budget. 1 for a short batch; never under 0.15,
+ * so the "typing" indicator still shows for a moment.
+ */
+export function batchPauseScale(totalChars, pauseMs, typed = true) {
+    const chars = Math.max(0, Number(totalChars) || 0);
+    const pauses = Math.max(0, Number(pauseMs) || 0);
+    if (!pauses) return 1;
+    const typing = chars && typed ? typewriterCharDelay(chars) * chars : 0;
+    if (typing + pauses <= TERMINAL_BATCH_TOTAL_MS) return 1;
+    return Math.max(0.15, (TERMINAL_BATCH_TOTAL_MS - typing) / pauses);
+}
+
 /** The player's OS asks for less motion: terminal lines appear whole. */
 function prefersReducedMotion() {
     try { return globalThis.window?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true; } catch (e) { return false; }
@@ -156,6 +182,13 @@ export default class PhoneChatUI {
             hint.setAttribute('aria-hidden', 'true');
             hint.hidden = true;
             hint.textContent = skipHintText();
+            // Second line: says what the wait is for, so the player knows the choices are coming
+            const cue = document.createElement('div');
+            cue.className = 'phone-skip-hint-cue';
+            cue.textContent = 'Your reply options follow';
+            // aria-hidden with the pill: replies take focus when they arrive
+            cue.hidden = true;
+            hint.appendChild(cue);
             this.container.querySelector('.phone-screen')?.appendChild(hint);
         }
         if (this.isCallMode) this._renderCallChrome();
@@ -1320,14 +1353,35 @@ export default class PhoneChatUI {
         return true;
     }
 
+    /** Characters in the batch about to type (0 clears), so the whole block shares one time budget. */
+    setBlockChars(n, pauseMs = 0) {
+        this._blockChars = Number(n) || 0;
+        // Only the terminal types lines out (not a call screen), so only it shares a time budget;
+        // under reduced motion the lines appear whole, so the pauses get the whole budget
+        const terminal = this.isTerminalTheme && !this.isCallMode;
+        this._pauseScale = this._blockChars && terminal
+            ? batchPauseScale(this._blockChars, pauseMs, !prefersReducedMotion()) : 1;
+    }
+
+    /** A pause (typing indicator, gap between lines) shortened so the batch fits its total budget. */
+    scalePause(ms) {
+        return Math.round(ms * (this._pauseScale ?? 1));
+    }
+
+    /** Show the "reply options follow" cue only when choices will come after the lines. */
+    setRepliesExpected(on) {
+        const cue = this.container?.querySelector?.('.phone-skip-hint-cue');
+        if (cue) cue.hidden = !on;
+    }
+
     /** While on, terminal lines appear whole (the remaining queued lines after a second skip). */
     setInstantType(on) {
         this._instantType = !!on;
     }
 
     _typewriterMessage(text, scrollToBottom) {
-        const CHAR_DELAY = 28;
-        const BLINK_DURATION = 700;
+        const CHAR_DELAY = typewriterCharDelay(this._blockChars || text.length);
+        const BLINK_DURATION = this.scalePause(TERMINAL_BLINK_MS);
 
         const messageBubble = document.createElement('div');
         messageBubble.className = 'message-bubble npc';
@@ -1376,10 +1430,16 @@ export default class PhoneChatUI {
             // Reduced motion: lines appear whole (no character-by-character typing)
             if (this._instantType || prefersReducedMotion()) { finish(); return; }
 
+            // Timers run late (nested timeouts, a busy frame), so type by elapsed time: the line
+            // takes chars x CHAR_DELAY however late each tick is, and the batch keeps its budget
+            const startedAt = Date.now();
             const tick = () => {
                 if (cancelled) return;
                 if (i < chars.length) {
-                    messageText.textContent += chars[i++];
+                    const due = Math.max(i + 1, Math.floor((Date.now() - startedAt) / CHAR_DELAY));
+                    const upTo = Math.min(chars.length, due);
+                    messageText.textContent += chars.slice(i, upTo).join('');
+                    i = upTo;
                     if (scrollToBottom) this.scrollToBottom(false);
                     setTimeout(tick, CHAR_DELAY);
                 } else {

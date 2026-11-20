@@ -60,7 +60,7 @@ test('hostile VM title, IP and flag note render as literal text (Hacktivity link
     window.breakEscapeConfig = { vmPanelUrl: '/break_escape/games/7/vm_panel' };
     const s = launcher({ vm: { title: HOSTILE, ip: HOSTILE }, vmPanelUrl: 'https://game.example/break_escape/games/7/vm_panel', flagNote: HOSTILE });
     const box = render(s);
-    assert.equal(box.querySelector('img'), null, 'no element created from the text');
+    assert.ok(box.querySelector('img') === null, 'no element created from the text');
     assert.equal(box.querySelector('.vm-title').textContent, HOSTILE);
     assert.equal(box.querySelector('.vm-ip-value').textContent, HOSTILE);
     assert.equal(box.querySelector('.vm-flag-note p').textContent, HOSTILE);
@@ -75,7 +75,7 @@ test('hostile VM title, IP and flag note render as literal text (Hacktivity link
 
 test('hostile title and IP are literal text in the standalone instructions', () => {
     const box = render(launcher({ hacktivityMode: false, vm: { title: HOSTILE, ip: HOSTILE } }));
-    assert.equal(box.querySelector('img'), null);
+    assert.ok(box.querySelector('img') === null);
     const codes = [...box.querySelectorAll('.standalone-instructions code')].map(c => c.textContent);
     assert.deepEqual(codes, [HOSTILE, HOSTILE]);
     assert.equal(box.querySelector('.vm-status').textContent, 'Console');

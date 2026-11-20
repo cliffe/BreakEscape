@@ -156,7 +156,7 @@ test('the password device panel shows a hostile lockable name as text (lockable 
     // the observations on the screen, no device picture
     assertText(document.querySelector('.pc-monitor-name'), 'password lockable name (monitor bezel)');
     assertText(document.querySelector('.pc-screen-note'), 'password lockable observations (screen note)');
-    assert.equal(document.querySelector('img.password-image'), null, 'no device picture in the monitor');
+    assert.ok(document.querySelector('img.password-image') === null, 'no device picture in the monitor');
 });
 
 test('the password device panel shows a hostile lockable name as text (a non-computer lockable)', () => {
@@ -192,7 +192,7 @@ test('the text file window shows a hostile file name, type and observations as t
     const type = document.querySelector('.file-type');
     assert.equal(type.children.length, 0, 'text file type: no element injected');
     assert.equal(type.textContent, HOSTILE.toUpperCase(), 'text file type: reads back as typed (upper case)');
-    assert.equal(document.querySelector('#mg img[onerror]'), null, 'text file: no img with onerror');
+    assert.ok(document.querySelector('#mg img[onerror]') === null, 'text file: no img with onerror');
 });
 
 test('the container header shows a hostile name and observations as text', async () => {
@@ -231,7 +231,7 @@ test('the container panel shows a hostile name and observations as text (desktop
     // In the PC monitor (UX slice 2c): the name on the bezel; the observations are no longer
     // printed on the desktop (UI PC polish item 1), so the hostile text has nowhere to land
     assertText(document.querySelector('.pc-monitor-name'), 'desktop monitor name');
-    assert.equal(document.querySelector('.desktop-taskbar-note'), null, 'no observations on the desktop');
+    assert.ok(document.querySelector('.desktop-taskbar-note') === null, 'no observations on the desktop');
 });
 
 test('the lockpicking item panel shows a hostile item name as text', () => {
