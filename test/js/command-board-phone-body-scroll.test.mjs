@@ -183,6 +183,16 @@ test('sweep 6 R2 m1: the timestamp reserves room for the badge beside it', () =>
     assert.ok(pr && Number(pr[1]) >= 76, 'padding-right at least the widest badge (76px)');
 });
 
+test('sweep 6 R2 m1: on a column too narrow for time plus badge, the badge goes under the time', () => {
+    const b = block('@media (max-width: 420px) and (max-height: 520px)');
+    assert.ok(lastDecl(b, '.cb-entry-timestamp', 'padding-right') === '0', 'no reserved gap once the badge drops');
+    assert.ok(lastDecl(b, '.cb-entry-badge', 'grid-row') === 'auto', 'badge auto-placed on its own row');
+    assert.ok(lastDecl(b, '.cb-entry-main', 'grid-row') === 'auto', 'text column auto-placed on the row above');
+    assert.ok(lastDecl(b, '.cb-entry-badge', 'justify-self') === 'start', 'badge starts at the left');
+    const at = (q) => new RegExp(q.replace(/[().]/g, '\\$&') + '\\s*\\{').exec(css).index;
+    assert.ok(at('@media (max-width: 600px) and (max-height: 520px)') < at('@media (max-width: 420px) and (max-height: 520px)'), 'narrow block comes after the combined block');
+});
+
 test('sweep 6 R1 m1: POST keeps 44px in the combined block', () => {
     const b = block('@media (max-width: 600px) and (max-height: 520px)');
     const h = lastDecl(b, '.cb-post-btn', 'min-height');

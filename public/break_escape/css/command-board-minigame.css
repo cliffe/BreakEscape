@@ -529,6 +529,24 @@
     }
 }
 
+/* Narrow and short (a 360px phone with the keyboard up): the timeline column cannot hold the
+   time and the badge side by side, so the badge goes back under the time as in the 600px block */
+@media (max-width: 420px) and (max-height: 520px) {
+    .cb-entry-timestamp {
+        padding-right: 0;
+    }
+
+    .cb-entry-main,
+    .cb-entry-badge {
+        grid-row: auto;
+    }
+
+    .cb-entry-badge {
+        justify-self: start;
+        margin-top: 2px;
+    }
+}
+
 /* Layout shrunk for the keyboard: let the whole panel scroll so POST stays reachable */
 @media (max-height: 260px) {
     .cb-panel {
