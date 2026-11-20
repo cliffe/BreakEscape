@@ -757,3 +757,11 @@
 /* GNF 16px items are wider than the old 8px ones: let the footer and status bar wrap at 390 */
 .bce-mx .bce-footer { flex-wrap: wrap; }
 .bce-mx .bce-status-bar { flex-wrap: wrap; gap: 8px 20px; }
+
+/* Short screens (844x390 and below): the header, rules, prompt and footer left the deposit columns
+   51px, cut to a heading and a bar. Let the whole mixer scroll and give every band its own height. */
+@media (max-height: 500px) {
+    .bce-mx { overflow-y: auto; }
+    .bce-mx > * { flex-shrink: 0; }
+    .bce-mx-body { flex: 0 0 auto; }
+}

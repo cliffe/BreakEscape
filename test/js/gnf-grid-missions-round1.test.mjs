@@ -57,3 +57,13 @@ test('container account and transfer buttons carry no dead font-size (the framew
     assert.ok(prop(bodyOf('container-minigame.css', '.desktop-account-btn'), 'font-size') === null, 'account btn');
     assert.ok(prop(bodyOf('container-minigame.css', '.desktop-transfer-btn'), 'font-size') === null, 'transfer btn');
 });
+
+test('mixer: on short screens the panel scrolls and the deposit columns keep their height (live 844x390: 51px)', () => {
+    const src = readFileSync(join(css, 'blockchain-explorer-minigame.css'), 'utf8');
+    const i = src.indexOf('@media (max-height: 500px)');
+    assert.ok(i >= 0, 'a max-height 500px block exists');
+    const block = src.slice(i, src.indexOf('\n}', i) + 2);
+    assert.ok(/\.bce-mx\s*\{[^}]*overflow-y:\s*auto/.test(block), 'the mixer panel scrolls');
+    assert.ok(/\.bce-mx > \*\s*\{[^}]*flex-shrink:\s*0/.test(block), 'no band is squeezed');
+    assert.ok(/\.bce-mx-body\s*\{[^}]*flex:\s*0 0 auto/.test(block), 'the body takes its content height');
+});
