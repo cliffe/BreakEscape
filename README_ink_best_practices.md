@@ -944,9 +944,13 @@ VAR quest_complete = false
 
 ## Concision
 
-Conversations should be quick, entertain, immerse and tell the story, then get out of the way. Most lines are fine; the failure is a line that speaks a lot and says little. Write each line tight the first time, so review has little to cut (the `npc-dialog-review` skill, check 2l, applies these as P1 to P8).
+Conversations should be quick, entertain, immerse and tell the story, then get out of the way. Most lines are fine; the failure is a line that speaks a lot and says little. Write each line tight the first time, so review has little to cut (the `npc-dialog-review` skill, check 2l, applies these as P1 to P13).
 
 - **One thought, one sentence.** Three short sentences saying one thing become one. Not "So. Here we are. You've heard my reasoning. You've seen the evidence." but "You've heard my reasoning. Your call."
+- **One well-made sentence, not stubs.** Don't break one instruction or list into fragments with full stops ("A different password for every account. Kept in a manager. And deny anything you didn't start."). Write it as one sentence a person would say. Short sentences are fine when each makes a different point. Read it aloud: if you wouldn't pause at a full stop, join the sentences.
+- **Don't announce.** Skip "It comes down to three habits." and "do the same thing every time:". Say the habits.
+- **No tails.** Don't end on a softener, a sum-up or directions the screen already gives ("so have a read before you go").
+- **Speech punctuation.** No semicolons, dashes or list colons in spoken lines; use a full stop, a comma or "and".
 - **Start at the point.** No "Look, here's the thing", "Wait. I want to be sure I've read this right." before a plain statement.
 - **Do not retell.** Before writing a fact, check whether the player already has it (briefing, objective, item, another NPC, an earlier knot). If so, give a nod ("the projections") or say nothing. Tell each fact once, in the best place.
 - **Stop when it lands.** Do not explain a joke, a clue or a feeling, and do not close with a moral ("Not every agent would have cared").

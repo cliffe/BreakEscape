@@ -240,6 +240,17 @@ Aim: quick, snappy conversations that entertain, immerse and tell the story with
 | P6 | Exposition not needed now, or already shown by the scene or an item | HaX reading back the player's own VM route in the debrief (m01 :151-153) |
 | P7 | Explains a joke, clue or feeling after it landed | "That's how you know it's serious." after "a lanyard with my name spelt right" (m09 Gary): end on the lanyard |
 | P8 | Padding: inflated phrasing, empty intensifiers, lists of three where one carries it, "not X, it's Y" | "This is the part where your choices matter most." (m01 HaX): cut. "It means we're not fighting criminals. We're fighting true believers." becomes "We're fighting true believers." |
+| P9 | Choppy stubs: one instruction or list broken into fragments with full stops, often ending on "And …". The over-correction of P1 | "Both sides done. A different password for every account, kept in a manager. Three random words for the few you must remember by heart. And deny anything you didn't start." (ca09 Nilesh) becomes "Both sides done. Use a different password for every account and keep them in a manager, with three random words for the few you have to remember." |
+| P10 | Announcing: a line previews what it is about to say | "On a phone, do the same thing every time: if a message wants a code scanned or a link tapped, open the app yourself instead." (ca06 Chidi) becomes "If a message wants a code scanned or a link tapped, open the app yourself instead." "It comes down to three habits." before the habits (ca10 Niamh): cut, and give the habits |
+| P11 | Padding tail: a softener, sum-up or routing the UI already gives, tacked on the end | "A few of the others are worth a second look, and the debrief goes through them, so have a read before you go." becomes "The debrief covers a few others worth a second look." |
+| P12 | Telling the player what they just did, with nothing added | Keep it only when it adds the consequence or the attacker's reason ("You stopped the bank-change email, so Harlow got paid the right way."); otherwise cut |
+| P13 | Written punctuation in speech: semicolons, em or en dashes, colons introducing a list | Use a full stop, a comma or "and". The TTS key strips punctuation, so a punctuation-only fix keeps the clip and costs nothing |
+
+**Short is not the same as choppy.** Short sentences are fine when each one makes a different point: "Read the address bar before you type a password. A padlock doesn't make a page ours." (ca05 Niamh) stays. They are P9 when they are pieces of one instruction or one list. The fix for P1 is one well-made sentence, never a string of fragments. At most one verbless fragment per line, and only as an opener or handover ("Both sides done."). Read the line aloud once: if you would not pause where the full stops are, join it; if you would run out of breath, split it. A rewrite may not be longer than the original unless it merges two lines.
+
+**Refrains.** A course- or campaign-wide rule said in fixed words ("on a number you already hold", "Nobody's in trouble for …") is a refrain, not P2, when it is heard at most once per sitting. Keep its wording identical across files so players recognise it. Two speakers or two knots saying it in one sitting is P2.
+
+**Spoken and written layers.** A point said aloud and also shown in writing (brief, concept panel, debrief card) is not P2: the written copy is for reading back. P2 applies within the spoken lines.
 
 Also check:
 
@@ -278,7 +289,7 @@ Before recommending that a line be cut, grep the later missions for the line or 
 
 **Concision (2l), always its own section in the report**
 
-- Counts: P1 to P8 findings (strong / mild), repeat facts across NPCs, monologues of four or more lines, mannerism speakers skipped (named).
+- Counts: P1 to P13 findings (strong / mild), repeat facts across NPCs, monologues of four or more lines, mannerism speakers skipped (named).
 - Then the strong findings only, by file:line with the proposed line. Mild ones as a count unless asked.
 - Strong concision findings go under Should fix; mild under Worth considering.
 
