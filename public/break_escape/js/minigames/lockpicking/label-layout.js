@@ -117,15 +117,16 @@ function range(from, to, step) {
  * @param {number[]} o.pinXs      x of each pin, in canvas world pixels
  * @param {{left,top,right,bottom}} o.view   the visible window of the world
  * @param {(lines:string[], font:number)=>{w:number,h:number}} o.measure   box of a label, padding included
+ * @param {{x,y,w,h}[]} [o.blocked]   world rects that page elements cover: no label goes there
 
  * @returns {{font:number, fallbacks:number, labels:Object<string,{x,y,w,h,lines:string[],leader:object|null}>}}
  */
-export function layoutLockLabels({ scale, pinXs, view, measure, prev = null }) {
+export function layoutLockLabels({ scale, pinXs, view, measure, prev = null, blocked = [] }) {
     const font = layoutFontSize(scale);
-    const memoKey = layoutKey(font, pinXs, view, measure, prev);
+    const memoKey = layoutKey(font, pinXs, view, measure, prev, blocked);
     const hit = LAYOUT_MEMO.get(memoKey);
     if (hit) return hit;
-    const result = solveLayout({ font, pinXs, view, measure, prev });
+    const result = solveLayout({ font, pinXs, view, measure, prev, blocked });
     if (LAYOUT_MEMO.size >= MEMO_MAX) LAYOUT_MEMO.delete(LAYOUT_MEMO.keys().next().value);
     LAYOUT_MEMO.set(memoKey, result);
     return result;
@@ -141,13 +142,16 @@ function prevSig(prev, font) {
     if (!prev || !prev.labels || prev.font === font) return '';
     return Object.keys(prev.labels).map((id) => { const l = prev.labels[id]; return id + ':' + l.lines.join('_') + ':' + l.pin + ':' + l.x + ':' + l.y; }).join(';');
 }
-function layoutKey(font, pinXs, view, measure, prev) {
+function blockedSig(blocked) {
+    return (blocked || []).map((r) => r.x + ',' + r.y + ',' + r.w + ',' + r.h).join(';');
+}
+function layoutKey(font, pinXs, view, measure, prev, blocked) {
     const m = WORDINGS.map((w) => { const b = measure(w, font); return b.w + 'x' + b.h; }).join(',');
-    return [font, pinXs.length, pinXs.join(','), view.left, view.top, view.right, view.bottom, m, prevSig(prev, font)].join('|');
+    return [font, pinXs.length, pinXs.join(','), view.left, view.top, view.right, view.bottom, m, prevSig(prev, font), blockedSig(blocked)].join('|');
 }
 export function clearLayoutMemo() { LAYOUT_MEMO.clear(); }
 
-function solveLayout({ font, pinXs, view, measure, prev }) {
+function solveLayout({ font, pinXs, view, measure, prev, blocked = [] }) {
     const pinBoxes = pinXs.map((x) => ({ x: x - PIN_HALF_WIDTH, y: PIN_TOP, w: PIN_HALF_WIDTH * 2, h: PIN_BOTTOM - PIN_TOP }));
     const n = pinXs.length;
     const pinAt = (i) => pinXs[Math.min(Math.max(i, 0), n - 1)];
@@ -163,7 +167,9 @@ function solveLayout({ font, pinXs, view, measure, prev }) {
         { ...WRENCH_UPRIGHT, h: WRENCH_UPRIGHT.h + 4 }, // plus a 4px gap for a leader
         WRENCH_ARM,
         { x: view.left - 200, y: HOOK_SHAFT_Y, w: lastX + 6 - (view.left - 200), h: HOOK_SHAFT_H },
-        { x: lastX - 20, y: 215, w: 30, h: HOOK_SHAFT_Y - 215 }
+        { x: lastX - 20, y: 215, w: 30, h: HOOK_SHAFT_Y - 215 },
+        // Canvas areas a page element covers (the feedback box, a band over the top): no label there
+        ...(blocked || [])
     ];
     // Checks that do not depend on the other labels: parts, the view, and every pin the label
     // does not name (the box and its leader). Run once per candidate, before the search.
@@ -529,10 +535,11 @@ export class LockLabels {
             return { w: Math.ceil(probe.width), h: Math.ceil(probe.height) };
         };
         const pinXs = p.pins.map((pin) => pin.container.x);
-        const key = [font, view.left, view.top, view.right, view.bottom, pinXs.join(',')].join('|');
+        const blocked = this.coveredRects(view);
+        const key = [font, view.left, view.top, view.right, view.bottom, pinXs.join(','), blockedSig(blocked)].join('|');
         if (key === this._last) return null;
         this._last = key;
-        const result = layoutLockLabels({ scale, pinXs, view, measure, prev: this._result });
+        const result = layoutLockLabels({ scale, pinXs, view, measure, prev: this._result, blocked });
         const wc = p.tensionWrench;
         const offX = wc ? wc.x : 0, offY = wc ? wc.y : 0;
         for (const id of Object.keys(t)) {
@@ -550,6 +557,47 @@ export class LockLabels {
         }
         this.drawLeaders(result);
         return result;
+    }
+
+    // Canvas areas (world pixels) that a page element covers: the feedback box over the foot of
+    // the canvas, and anything else on top of it (a band over the top on a desktop window). No
+    // label goes there. The feedback box is measured directly; the rest is found by asking the
+    // page what is on top of the canvas down its left, middle and right.
+    coveredRects(view) {
+        const p = this.parent;
+        const out = [];
+        try {
+            const canvas = p.game?.canvas;
+            const r = canvas?.getBoundingClientRect?.();
+            if (!r || !(r.width > 0) || !(r.height > 0)) return out;
+            const sx = (view.right - view.left) / r.width, sy = (view.bottom - view.top) / r.height;
+            const toWorld = (b) => {
+                const left = Math.max(b.left, r.left), right = Math.min(b.right, r.right);
+                const top = Math.max(b.top, r.top), bottom = Math.min(b.bottom, r.bottom);
+                if (!(right > left) || !(bottom > top)) return null;
+                const x = Math.floor(view.left + (left - r.left) * sx), y = Math.floor(view.top + (top - r.top) * sy);
+                return { x, y, w: Math.ceil(view.left + (right - r.left) * sx) - x, h: Math.ceil(view.top + (bottom - r.top) * sy) - y };
+            };
+            const fb = p.feedback?.getBoundingClientRect?.();
+            if (fb && fb.height > 0 && p.feedback.offsetParent !== null) { const w = toWorld(fb); if (w) out.push(w); }
+            if (typeof document !== 'undefined' && document.elementsFromPoint) {
+                const xs = [0.15, 0.5, 0.85].map((f) => r.left + r.width * f);
+                const step = 6; // page pixels between samples down the canvas
+                let runStart = null;
+                const flush = (end) => {
+                    if (runStart === null) return;
+                    const w = toWorld({ left: r.left, right: r.right, top: runStart, bottom: end });
+                    if (w) out.push(w);
+                    runStart = null;
+                };
+                for (let y = r.top + 1; y < r.bottom; y += step) {
+                    const covered = xs.some((x) => { const top = document.elementsFromPoint(x, y)[0]; return top && top !== canvas; });
+                    if (covered) { if (runStart === null) runStart = y - step / 2; } else flush(y - step / 2);
+                }
+                flush(r.bottom);
+            }
+        } catch (e) { /* no page: nothing covers the canvas */ }
+        return out;
     }
 
     // Leaders follow their label: a label that is hidden (first pin press, key mode) has no leader
@@ -590,6 +638,7 @@ export class LockLabels {
         for (const id of this._timers || []) clearTimeout(id);
         this._timers = [];
         try { if (this._again) this.parent.game?.scale?.off?.('resize', this._again); } catch (e) { /* game gone */ }
+        try { this._feedbackObserver?.disconnect?.(); } catch (e) { /* observer gone */ }
     }
 
     // Lay out again whenever the canvas is rescaled (rotation, resize, layout change)
@@ -598,6 +647,13 @@ export class LockLabels {
         const again = () => { try { this.apply(); } catch (e) { /* scene gone */ } };
         this._again = again;
         try { p.game?.scale?.on?.('resize', again); } catch (e) { /* no scale */ }
+        // The feedback box grows and shrinks with its line count without the window resizing
+        try {
+            if (typeof ResizeObserver !== 'undefined' && p.feedback) {
+                this._feedbackObserver = new ResizeObserver(again);
+                this._feedbackObserver.observe(p.feedback);
+            }
+        } catch (e) { /* no observer */ }
         // The FIT scale settles after the first frames
         this._timers = [150, 600].map((ms) => setTimeout(again, ms));
         // VT323 may load after the first layout: measure again with the real glyph widths

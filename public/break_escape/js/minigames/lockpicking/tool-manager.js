@@ -298,10 +298,11 @@ export class ToolManager {
         if (this.parent.hookGroup) {
             this.parent.hookGroup.setVisible(true);
         }
-        if (this.parent.wrenchText) {
+        // After the first pin press the teaching labels stay hidden (LockLabels._hidden)
+        if (this.parent.wrenchText && !this.parent.lockLabels?._hidden) {
             this.parent.wrenchText.setVisible(true);
         }
-        if (this.parent.hookPickLabel) {
+        if (this.parent.hookPickLabel && !this.parent.lockLabels?._hidden) {
             this.parent.hookPickLabel.setVisible(true);
         }
         this.parent.lockLabels?.syncLeaders();
@@ -323,10 +324,11 @@ export class ToolManager {
         }
         
         // Show labels
-        if (this.parent.wrenchText) {
+        // After the first pin press the teaching labels stay hidden (LockLabels._hidden)
+        if (this.parent.wrenchText && !this.parent.lockLabels?._hidden) {
             this.parent.wrenchText.setVisible(true);
         }
-        if (this.parent.hookPickLabel) {
+        if (this.parent.hookPickLabel && !this.parent.lockLabels?._hidden) {
             this.parent.hookPickLabel.setVisible(true);
         }
         this.parent.lockLabels?.syncLeaders();

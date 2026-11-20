@@ -299,7 +299,8 @@ function legRects(l) {
 }
 const rectsHit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-let worstMs = 0, worstReal = 0;
+let maxNodes = 0, maxNodes45 = 0;
+const checked = new Set();
 test('across scales 0.24 to 1.0, 1 to 8 pins, both views: clean at 0.40 and above, the 0.40 layout below (D219 R4 M2)', () => {
     let cases = 0;
     for (let k = 24; k <= 100; k++) {
@@ -307,12 +308,18 @@ test('across scales 0.24 to 1.0, 1 to 8 pins, both views: clean at 0.40 and abov
         for (let n = 1; n <= 8; n++) {
             for (const view of [views.portrait, views.landscape]) {
                 const pinXs = pinXsFor(n);
-                clearLayoutMemo();
-                const t0 = process.hrtime.bigint();
+                // Scale reaches the solver only through the font, so scales sharing a font share one
+                // solve (the memo); each distinct font is still solved fresh the first time
                 const r = layoutLockLabels({ scale, pinXs, view, measure: realMeasure });
-                const ms = Number(process.hrtime.bigint() - t0) / 1e6;
-                worstMs = Math.max(worstMs, ms);
-                if (n === 4 || n === 5) worstReal = Math.max(worstReal, ms);
+                maxNodes = Math.max(maxNodes, r.nodes);
+                if (n === 4 || n === 5) maxNodes45 = Math.max(maxNodes45, r.nodes);
+                if (checked.has(r)) {
+                    // The same layout object as an earlier scale: only the scale-dependent checks differ
+                    if (scale >= MIN_LAYOUT_SCALE - 1e-9) assert.ok(r.font * scale >= 16 - 1e-9, `font ${r.font} x ${scale} >= 16 (${n} pins)`);
+                    cases++;
+                    continue;
+                }
+                checked.add(r);
                 const tag = `scale ${scale}, ${n} pins, view top ${view.top}`;
                 for (const id of Object.keys(r.labels)) {
                     const l = r.labels[id].leader;
@@ -384,9 +391,10 @@ test('leaders stay 6px apart, even with pins placed so that two would line up (D
     }
 });
 
-test('layout time: a solve stays well under a second at every scale (guard, generous for CI)', () => {
-    assert.ok(worstReal < 500, `worst 4 or 5 pin solve ${worstReal.toFixed(0)} ms`);
-    assert.ok(worstMs < 1500, `worst solve ${worstMs.toFixed(0)} ms`);
+test('layout cost: search node counts stay bounded at every scale (deterministic, no wall clock; D219 R5 m2)', () => {
+    // R4 measured 81,644 nodes at the worst grid point (12 pins) and a few thousand at 4 and 5 pins
+    assert.ok(maxNodes45 < 30000, `worst 4 or 5 pin solve used ${maxNodes45} nodes`);
+    assert.ok(maxNodes < 250000, `worst solve used ${maxNodes} nodes (budget 250000)`);
 });
 
 test('below 0.40 the layout is the 0.40 layout: the same boxes and leaders (D219 R4 M2)', () => {
@@ -480,3 +488,137 @@ test('the tension wrench container draws above the hook pick, so the hook shaft 
     assert.ok(/this\.parent\.tensionWrench\.setDepth\(1\)/.test(body), 'wrench container has depth 1');
     assert.ok(!/hookGroup\.setDepth/.test(g), 'hook group stays at the default depth 0');
 });
+
+// ---- D219 R5: page elements over the canvas (desktop band, feedback box) are no-go areas ----
+// 1280x720 with a three-line observation: a band over world y 58-116 and the feedback box over y 282-342
+const covered1280 = [{ x: 0, y: 58, w: 600, h: 58 }, { x: 0, y: 282, w: 600, h: 60 }];
+const covered1024 = [{ x: 0, y: 10, w: 600, h: 50 }, { x: 0, y: 330, w: 600, h: 60 }];
+
+for (const [name, blocked] of [['1280x720', covered1280], ['1024x768', covered1024]]) {
+    test(`no label goes into an area a page element covers (desktop ${name}, 4 pins; D219 R5 M)`, () => {
+        for (const n of [3, 4, 5]) {
+            clearLayoutMemo();
+            const r = layoutLockLabels({ scale: 1, pinXs: pinXsFor(n), view: views.desktop, measure: realMeasure, blocked });
+            assert.ok(r.solved && r.fallbacks === 0, `solved cleanly (${n} pins), fallbacks ${r.fallbacks}`);
+            for (const id of Object.keys(r.labels)) {
+                for (const b of blocked) {
+                    assert.ok(!rectsHit(r.labels[id], b), `${id} sits in a covered area (${name}, ${n} pins): ${r.labels[id].x},${r.labels[id].y} ${r.labels[id].w}x${r.labels[id].h}`);
+                }
+            }
+        }
+    });
+}
+
+test('the covered areas are part of the layout memo key: a different box or band is solved again (D219 R5 M)', () => {
+    clearLayoutMemo();
+    const args = { scale: 1, pinXs: pinXsFor(4), view: views.desktop, measure: realMeasure };
+    const open = layoutLockLabels(args);
+    assert.ok(layoutLockLabels({ ...args, blocked: [] }) === open, 'no covered area is the same entry as the default');
+    const a = layoutLockLabels({ ...args, blocked: covered1280 });
+    assert.ok(a !== open, 'a covered area is solved again');
+    assert.ok(layoutLockLabels({ ...args, blocked: covered1280.map((r) => ({ ...r })) }) === a, 'the same areas are remembered');
+    const taller = [covered1280[0], { ...covered1280[1], y: 250, h: 92 }];
+    const b = layoutLockLabels({ ...args, blocked: taller });
+    assert.ok(b !== a, 'a taller feedback box (more lines) is solved again');
+    for (const id of Object.keys(b.labels)) assert.ok(!rectsHit(b.labels[id], taller[1]), `${id} clear of the taller box`);
+});
+
+test('LockLabels measures the feedback box and anything over the canvas in canvas pixels and lays labels out clear of them (D219 R5 M)', () => {
+    const p = fakeParent({ canvasW: 600, scrollY: 0 });
+    p.scene.cameras.main.width = 600;
+    p.scene.cameras.main.height = 400;
+    // Canvas at page (340,354) 600x400; the feedback box is over its foot, a band over its top
+    p.game.canvas.getBoundingClientRect = () => ({ left: 340, top: 354, right: 940, bottom: 754, width: 600, height: 400 });
+    p.feedback = { offsetParent: {}, getBoundingClientRect: () => ({ left: 340, top: 636, right: 940, bottom: 696, width: 600, height: 60 }) };
+    const band = { top: 412, bottom: 470 };
+    const saved = globalThis.document;
+    globalThis.document = { elementsFromPoint: (x, y) => [(y >= band.top && y < band.bottom) ? { id: 'band' } : p.game.canvas] };
+    try {
+        const ll = new LockLabels(p);
+        const cov = ll.coveredRects({ left: 0, top: 0, right: 600, bottom: 400 });
+        assert.ok(cov.some((r) => r.x === 0 && r.w === 600 && r.y === 282 && r.h === 60), 'feedback box measured: ' + JSON.stringify(cov));
+        const bandRect = cov.find((r) => r.y >= 50 && r.y <= 64 && r.h >= 52 && r.h <= 66);
+        assert.ok(!!bandRect, 'band found over the canvas top: ' + JSON.stringify(cov));
+        const res = ll.apply();
+        assert.ok(!!res, 'laid out');
+        for (const id of Object.keys(res.labels)) {
+            for (const r of cov) assert.ok(!rectsHit(res.labels[id], r), `${id} clear of ${JSON.stringify(r)}`);
+        }
+        // The feedback box changing size changes the layout key, so the next apply lays out again
+        p.feedback.getBoundingClientRect = () => ({ left: 340, top: 606, right: 940, bottom: 696, width: 600, height: 90 });
+        const again = ll.apply();
+        assert.ok(!!again && again !== res, 'a taller feedback box lays out again');
+        ll.dispose();
+    } finally {
+        globalThis.document = saved;
+    }
+});
+
+test('LockLabels observes the feedback box and stops on dispose (D219 R5 M)', () => {
+    const p = fakeParent();
+    p.feedback = {};
+    const seen = [];
+    const savedRO = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class { constructor(cb) { this.cb = cb; seen.push(this); } observe(el) { this.el = el; } disconnect() { this.gone = true; } };
+    try {
+        const ll = new LockLabels(p);
+        ll.watch();
+        assert.ok(seen.length === 1 && seen[0].el === p.feedback, 'one observer on the feedback box');
+        ll.dispose();
+        assert.ok(seen[0].gone === true, 'disconnected on dispose');
+    } finally {
+        globalThis.ResizeObserver = savedRO;
+    }
+});
+
+// ---- D219 R5 m1: the wrench and hook labels stay hidden after the first pin press ----
+{
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const d = mkdtempSync(join(tmpdir(), 'label-hide-test-'));
+    writeFileSync(join(d, 'tool-manager.mjs'), src('tool-manager.js'));
+    const { ToolManager } = await import(pathToFileURL(join(d, 'tool-manager.mjs')).href);
+    globalThis.Phaser = globalThis.Phaser || { Geom: { Rectangle: class {} } };
+    globalThis.Phaser.Geom = globalThis.Phaser.Geom || { Rectangle: class {} };
+    globalThis.Phaser.Geom.Rectangle = globalThis.Phaser.Geom.Rectangle || class {};
+    globalThis.Phaser.Geom.Rectangle.Contains = globalThis.Phaser.Geom.Rectangle.Contains || (() => true);
+
+    const toolParent = () => {
+        const p = fakeParent();
+        const vis = () => ({ visible: true, setVisible(v) { this.visible = v; return this; }, setInteractive() { return this; }, destroy() {} });
+        p.tensionWrench = Object.assign(vis(), { x: 80, y: 160 });
+        p.hookGroup = vis();
+        p.pins = p.pins.map((q) => ({ ...q, container: Object.assign(vis(), q.container) }));
+        p.lockConfig = { resetPinsToOriginalPositions() {} };
+        p.keyInsertion = { updateFeedback() {} };
+        p.lockLabels = new LockLabels(p);
+        p.toolMgr = new ToolManager(p);
+        return p;
+    };
+
+    test('after the first pin press the wrench and hook labels stay hidden through a pick/key switch and a resize (D219 R5 m1)', () => {
+        const p = toolParent();
+        p.lockLabels.apply();
+        p.lockLabels.hideTeachingLabels();
+        assert.ok(p.wrenchText.visible === false && p.hookPickLabel.visible === false, 'hidden by the press');
+        p.toolMgr.showLockpickingTools();
+        assert.ok(p.wrenchText.visible === false && p.hookPickLabel.visible === false, 'showLockpickingTools leaves them hidden');
+        p.keyMode = true;
+        p.toolMgr.switchToPickMode();
+        assert.ok(p.wrenchText.visible === false && p.hookPickLabel.visible === false, 'switchToPickMode leaves them hidden');
+        p.game.canvas.getBoundingClientRect = () => ({ width: 300 });
+        assert.ok(p.lockLabels.apply() === null, 'a resize does no layout');
+        assert.ok(p.wrenchText.visible === false && p.hookPickLabel.visible === false, 'still hidden after the resize');
+        p.lockLabels.dispose();
+    });
+
+    test('before any pin press the mode switch still shows the wrench and hook labels (D219 R5 m1)', () => {
+        const p = toolParent();
+        p.lockLabels.apply();
+        p.wrenchText.setVisible(false);
+        p.hookPickLabel.setVisible(false);
+        p.toolMgr.showLockpickingTools();
+        assert.ok(p.wrenchText.visible === true && p.hookPickLabel.visible === true, 'shown again when nothing has been pressed');
+        p.lockLabels.dispose();
+    });
+}
