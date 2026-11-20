@@ -315,7 +315,10 @@ test('R1 M2: the pill shows the count first, has a title, and takes the room up 
     const c = css('objectives.css');
     assert.match(c, /\.objectives-panel\.collapsed \{[^}]*width: var\(--hud-pill-room/);
     assert.match(c, /\.objectives-pill-count \{[^}]*flex: 0 0 auto;/);
-    assert.match(c, /\.objectives-panel\.collapsed \.objectives-controls,/, 'no chevron on the pill');
+    // K12 B: the pill now shows the toggle's chevron as a tap cue; only the title is hidden
+    assert.ok(!/\.objectives-panel\.collapsed \.objectives-controls,/.test(c), 'the pill keeps its chevron');
+    assert.match(c, /\.objectives-panel\.collapsed \.objectives-controls \{[^}]*flex: 0 0 auto;/, 'the chevron never shrinks');
+    assert.match(c, /\.objectives-panel\.collapsed \.objectives-toggle \{[^}]*padding: 4px 0 4px 8px;/, 'tight chevron padding');
     assert.match(css('ui-themes.css'), /\[data-ui-theme\] \.objectives-panel\.collapsed \{\s*border-width: var\(--ui-square-px\);/, 'small square frame on phones');
 });
 
