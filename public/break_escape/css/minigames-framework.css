@@ -615,6 +615,13 @@
     image-rendering: pixelated;
 }
 
+/* The authenticator card is capped at 420px (authenticator-minigame.css), so its frame wraps
+   the card instead of standing 720px wide with empty side bands (sweep A9). */
+.minigame-container.minigame-framed[data-minigame="authenticator"] > .minigame-game-container {
+    width: fit-content;
+    max-width: min(720px, 96vw);
+}
+
 .se-overlay-close {
     flex: 0 0 auto;
     box-sizing: border-box;
@@ -696,7 +703,7 @@
    Shared console window (UI decision X8; MinigameScene.consoleWindow)
    Every console, SIS and network scene draws inside this one window: the
    theme's 9-slice frame, at most 1280x880, centred over the dimmed game; on
-   phones the whole window less 8px. One title bar holds the title (Press
+   phones the full width less 8px each side, and the full height only for a fill scene. One title bar holds the title (Press
    Start 2P 16px), an optional GNF subtitle and the X, laid out in the bar so
    it never covers the title. The scene fills .console-body under the bar and
    scrolls there; its own inner panels keep their colours and device look.
@@ -818,7 +825,7 @@ html .minigame-container .console-window > .console-body {
     background: transparent;
 }
 
-/* The scene's root fills the body; a root that sets height:100% scrolls inside it */
+/* The scene's root fills the body; a root that sets height:100% scrolls inside it only in a fill window (consoleWindowFill); a wrap scene scrolls in the body or in its own flex:1, min-height:0 scroller */
 html .minigame-container .console-window > .console-body > * {
     flex: 1 1 auto;
     min-height: 0;
@@ -834,12 +841,17 @@ html .minigame-container .console-window > .console-body > * {
     margin: 0;
 }
 
-/* Phones and short windows: the whole window less 8px each side */
+/* Phones and short windows: the whole window width less 8px each side. The frame wraps its
+   content and stops at the screen height (the body scrolls past that); only a fill scene
+   (consoleWindowFill) takes the full height so its own panes scroll. */
 @media (max-width: 600px), (max-height: 500px) {
     .console-window {
         width: 100%;
-        height: 100%;
+        height: auto;
         max-height: 100%;
+    }
+    .console-window.console-window-fill {
+        height: 100%;
     }
     .console-titlebar {
         padding: 4px 4px 4px 8px;
