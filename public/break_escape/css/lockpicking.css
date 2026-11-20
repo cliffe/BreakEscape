@@ -472,57 +472,6 @@
     }
 }
 
-/* A big desktop window, wide layout option C (LOCK_WIDE_OPTION in the lockpicking JS): the JS adds
-   .lockpicking-side to the shell when the full item strip, moved to a column on the left, leaves
-   room for a lock at a whole zoom of 2 or more. The shell turns from a column into a row: the
-   strip is the left column (picture over name over observations, the mode switch under them) and
-   the lock's frame takes the rest. Only a marked shell is touched, and only in a window the
-   desktop rules own (769px wide, 561px tall). */
-@media (min-width: 769px) and (min-height: 561px) {
-    .minigame-container.lockpicking-side {
-        flex-direction: row;
-        justify-content: safe center;
-        align-items: safe center;
-    }
-
-    .minigame-container.lockpicking-side > .lockpicking-item-section {
-        flex: 0 0 320px;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        align-items: stretch;
-        align-self: center;
-        text-align: left;
-        gap: 16px;
-        width: 320px;
-        box-sizing: border-box;
-        margin: 0 0 0 20px;
-    }
-
-    .minigame-container.lockpicking-side > .lockpicking-item-section .lockpicking-item-image {
-        align-self: flex-start;
-    }
-
-    .minigame-container.lockpicking-side > .lockpicking-item-section .lockpicking-item-info {
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .minigame-container.lockpicking-side > .lockpicking-item-section .lockpicking-mode-row {
-        margin-top: 0;
-        justify-content: flex-start;
-    }
-
-    /* The frame's own 20px margin plus height 100% would run it 40px past the shell and push the
-       feedback box off the foot of the window: 8px each side, and the height less both */
-    .minigame-container.lockpicking-side > .minigame-game-container {
-        flex: 1 1 0;
-        width: auto;
-        min-width: 0;
-        height: calc(100% - 16px);
-        margin: 8px auto;
-    }
-}
-
 /* Short windows (a landscape phone: 667x375, 740x360, 844x390; 560px tall or less): the lock
    must be usable without scrolling. The info strip becomes one compact row (picture at 48px,
    name over one line of observations, the mode switch as an icon button) and the lock's frame
