@@ -213,15 +213,91 @@ module BreakEscape
       end
     end
 
-    test 'm01 to m10 offer the noir starters and keep their earlier options' do
+    def spy_scenario(name)
+      Mission.new(name: name, display_name: name).generate_scenario_data({})
+    end
+
+    test 'm01 to m10 list the eight noir spies in order, then the two hood-up hackers, and nothing else' do
       catalogue = PlayerPreference::AVAILABLE_SPRITES.to_h { |s| [s, { 'sprite' => s, 'name' => s, 'missions' => [] }] }
       SPY_MISSIONS.each do |name|
-        data = Mission.new(name: name, display_name: name).generate_scenario_data({})
+        data = spy_scenario(name)
+        assert_equal NOIR_STARTERS, data['validSprites'].first(8), name
+        assert_equal 10, data['validSprites'].size, name
         here = AvatarUnlocks.mission_sprites(data, catalogue)
-        assert_equal NOIR_STARTERS, here.last(8), name
-        earlier = name.start_with?('m01') ? %w[male_hacker_hood_v2 male_hacker_hood_down_v2 female_hacker_hood_v2 female_hacker_hood_down_v2] : PlayerPreference::AVAILABLE_SPRITES
-        assert_equal earlier.sort, here.first(here.size - 8).sort, name
+        assert_equal NOIR_STARTERS, here.first(8), name
+        assert_equal PlayerPreference::HOOD_STARTERS.sort, here.last(2).sort, name
+        assert_equal 10, here.size, name
       end
+    end
+
+    test 'a saved generic starter that m01 to m10 dropped becomes the first spy, leaving the saved row alone' do
+      SPY_MISSIONS.each do |name|
+        data = spy_scenario(name)
+        %w[female_hacker_hood_down_v2 male_office_worker_v2 male_spy_v2 male_scientist].each do |saved|
+          pref = PlayerPreference.find_or_initialize_by(player: @player)
+          pref.update!(selected_sprite: saved)
+          expected = saved == 'male_scientist' ? 'male_hacker_hood_v2' : 'vivian_ashby' # retired key reads as the hood-up hacker
+          assert pref.sprite_valid_for_scenario?(data), "#{name} #{saved}"
+          assert_equal expected, pref.sprite_for_scenario(data), "#{name} #{saved}"
+          assert_equal PlayerPreference.current_sprite(saved), PlayerPreference.find(pref.id).selected_sprite
+        end
+      end
+    end
+
+    test 'hood-up hackers and saved spies stay as chosen in m01 to m10' do
+      data = spy_scenario('m01_first_contact')
+      (PlayerPreference::HOOD_STARTERS + %w[daniel_seo]).each do |saved|
+        pref = PlayerPreference.find_or_initialize_by(player: @player)
+        pref.scenario_context = data
+        pref.update!(selected_sprite: saved)
+        assert_equal saved, pref.sprite_for_scenario(data)
+      end
+    end
+
+    test 'outside the spy missions a saved generic is not swapped, and the menu preview keeps DEFAULT_SPRITE' do
+      pref = PlayerPreference.create!(player: @player, selected_sprite: 'female_office_worker_v2')
+      assert_equal 'female_office_worker_v2', pref.sprite_for_scenario(nil)
+      assert_equal 'female_office_worker_v2', pref.sprite_for_scenario('rooms' => {}, 'validSprites' => %w[female_office_worker])
+      assert_equal 'vivian_ashby', PlayerPreference.new.default_sprite_for(spy_scenario('m01_first_contact'))
+      assert_equal PlayerPreference::DEFAULT_SPRITE, PlayerPreference.new.default_sprite_for(nil)
+    end
+
+    test 'an unlocked generic stays choosable in the spy missions, after the spies and hoods' do
+      conclude(create_game(encountered: %w[guard]))
+      pref = PlayerPreference.create!(player: @player, selected_sprite: 'male_spy_v2')
+      data = spy_scenario('m01_first_contact')
+      assert_equal 'male_spy_v2', pref.sprite_for_scenario(data)
+      menu = AvatarUnlocks.menu(pref.unlocked_avatars, data)
+      assert_equal NOIR_STARTERS, menu.first(8).map { |e| e['sprite'] }
+      assert_equal %w[mission], menu.first(10).map { |e| e['status'] }.uniq
+      assert_equal 'unlocked', menu.find { |e| e['sprite'] == 'male_spy_v2' }['status']
+      assert_equal 'locked', menu.find { |e| e['sprite'] == 'male_nerd_v2' }['status']
+    end
+
+    test 'an NPC wearing an original key unlocks its v2 redraw' do
+      scenario = { 'rooms' => { 'a' => { 'npcs' => [
+        { 'id' => 'minder', 'displayName' => 'Minder', 'npcType' => 'person', 'spriteSheet' => 'female_blowse' }
+      ] } } }
+      conclude(create_game(encountered: %w[minder], scenario: scenario))
+      assert_equal %w[female_blowse_v2], AvatarUnlocks.for_player(@player).keys
+    end
+
+    test 'each m01 to m10 mission unlocks the generics its NPCs wear' do
+      expected = {
+        'female_office_worker_v2' => %w[m01], 'female_scientist_v2' => %w[m01],
+        'female_security_guard_v2' => %w[m02 m10], 'male_spy_v2' => %w[m02 m05 m06 m10],
+        'male_hacker_hood_down_v2' => %w[m03], 'male_security_guard_v2' => %w[m10], 'female_blowse_v2' => %w[m10]
+      }
+      found = Hash.new { |h, k| h[k] = [] }
+      SPY_MISSIONS.each do |name|
+        AvatarUnlocks.candidates(spy_scenario(name)).each do |e|
+          sprite = PlayerPreference::LEGACY_SPRITES.fetch(e['sprite'], e['sprite'])
+          found[sprite] << name[0, 3] if PlayerPreference::AVAILABLE_SPRITES.include?(sprite)
+        end
+      end
+      assert_equal expected, found.transform_values(&:uniq).slice(*expected.keys)
+      orphans = PlayerPreference::AVAILABLE_SPRITES - PlayerPreference::HOOD_STARTERS - found.keys
+      assert_equal %w[female_hacker_hood_down_v2 female_telecom_v2 male_office_worker_v2 male_telecom_v2 male_nerd_v2].sort, orphans.sort
     end
 
     test 'a sprite with no walk atlas is never an avatar' do

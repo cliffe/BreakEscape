@@ -40,9 +40,15 @@ module BreakEscape
     RETIRED_SPRITES = %w[male_scientist male_scientist_v2 female_spy female_spy_v2].freeze
     RETIRED_FALLBACK_SPRITE = 'male_hacker_hood_v2'
 
-    # Sprite the avatar menu previews before the player has chosen one. selected_sprite
-    # itself stays NULL until the player picks (see set_defaults).
+    # Sprite the avatar menu previews before the player has chosen one outside a game
+    # (inside a mission with validSprites it previews that mission's first character; see
+    # default_sprite_for). selected_sprite itself stays NULL until the player picks
+    # (see set_defaults).
     DEFAULT_SPRITE = 'female_hacker_hood_v2'
+
+    # The two hood-up hackers stay starters in m01 to m10 next to the noir spies.
+    # The other generics unlock only as NPC avatars of completed missions (see AvatarUnlocks).
+    HOOD_STARTERS = %w[female_hacker_hood_v2 male_hacker_hood_v2].freeze
 
     # Map a legacy sprite key to its v2 replacement; other keys pass through unchanged.
     def self.current_sprite(sprite_name)
@@ -107,12 +113,28 @@ module BreakEscape
       super
     end
 
-    # Check if selected sprite is valid for a given scenario
+    # Check if selected sprite is valid for a given scenario. A saved starter
+    # sprite the mission no longer offers (m01 to m10 list only the noir spies)
+    # counts as valid: sprite_for_scenario swaps in the mission's first character.
     def sprite_valid_for_scenario?(scenario_data)
       # If no sprite selected, invalid (player must choose)
       return false if selected_sprite.blank?
 
-      available_sprites(scenario_data).include?(selected_sprite)
+      available_sprites(scenario_data).include?(selected_sprite) || substitute_sprite(scenario_data).present?
+    end
+
+    # The sprite this player wears in a scenario: their saved choice, or, when it
+    # is a starter sprite the mission's validSprites no longer offer, the mission's
+    # first character. The saved preference is left alone, so other scenarios
+    # (labs, Cyber Aware) still see the starter they picked.
+    def sprite_for_scenario(scenario_data = scenario_context)
+      substitute_sprite(scenario_data) || selected_sprite
+    end
+
+    # What the avatar menu previews: the player's sprite in the scenario, else
+    # the mission's first character, else DEFAULT_SPRITE.
+    def default_sprite_for(scenario_data = scenario_context)
+      sprite_for_scenario(scenario_data).presence || AvatarUnlocks.mission_sprites(scenario_data).first || DEFAULT_SPRITE
     end
 
     # Pattern matching for sprite validation
@@ -147,6 +169,19 @@ module BreakEscape
     end
 
     private
+
+    # First mission character for a saved starter sprite a spy-only scenario does
+    # not offer; nil when the saved sprite is fine, blank, or not a starter.
+    def substitute_sprite(scenario_data)
+      saved = selected_sprite
+      return nil if saved.blank? || !AVAILABLE_SPRITES.include?(saved)
+      return nil if available_sprites(scenario_data).include?(saved)
+
+      # Only a mission whose list leads with a character of its own (the spies in
+      # m01 to m10) swaps; one that leads with starters just refuses the rest.
+      first = AvatarUnlocks.mission_sprites(scenario_data).first
+      first unless AVAILABLE_SPRITES.include?(first)
+    end
 
     # Checked only when the sprite changes, so renaming outside a game keeps a
     # character that only the previous mission made available.

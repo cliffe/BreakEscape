@@ -165,7 +165,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const sprites = <%= raw @avatar_menu.reject { |e| e['status'] == 'locked' }.map { |e| e['sprite'] }.to_json %>;
       // Use preferred sprite for Mission 1 if none selected
-      let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
+      let selectedSprite = '<%= @player_preference.default_sprite_for %>';
 
       initializeSpritePreview(sprites, selectedSprite);
 
