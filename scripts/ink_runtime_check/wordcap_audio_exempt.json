@@ -150,12 +150,6 @@
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
   },
   {
-    "file": "m01_first_contact/ink/m01_closing_debrief.ink",
-    "text_md5": "4d53613a01cdce15b7de585ef71cf49f",
-    "start": "i want to be clear about something we",
-    "reason": "cached voice audio in tts_cache/m01_first_contact"
-  },
-  {
     "file": "ca01_invoice_fraud/ink/adaeze_okafor.ink",
     "text_md5": "bd9037b4412ac73e14828d64841b6b92",
     "start": "the new bank details from that email went",
