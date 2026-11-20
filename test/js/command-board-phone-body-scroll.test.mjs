@@ -102,14 +102,38 @@ test('m4: phone landscape keeps input and POST on one row', () => {
 });
 
 // Round 2 fixes
-test('R2 m2: phone landscape caps the timeline at 25dvh', () => {
+// Sweep 6 (B2 R3 m1): the 25dvh list cap of round 2 is gone. At 568x320 it showed one whole
+// tile; the combined block now puts the timeline beside status so the list takes the body's height.
+test('R2 m2 (sweep 6): phone landscape has no 25dvh cap; the list fills a side column', () => {
     const b = block('@media (max-width: 600px) and (max-height: 520px)');
-    assert.ok(/max-height:\s*25dvh/.test(rule(b, '.cb-timeline-list')), '25dvh cap');
+    const list = rule(b, '.cb-timeline-list');
+    assert.ok(!/25d?vh/.test(b), 'no 25vh or 25dvh cap left in the combined block');
+    assert.ok(/max-height:\s*none/.test(list), 'the 45dvh cap is lifted');
+    assert.ok(/flex:\s*1 1 auto/.test(list), 'the list takes the column height');
 });
 
-test('R2 m3: each dvh cap has a vh fallback just before it', () => {
+test('sweep 6: phone landscape puts timeline and status side by side without a body scroll', () => {
+    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    const body = rule(b, '.cb-body');
+    assert.ok(/grid-template-columns:\s*\d+fr \d+fr/.test(body), 'two columns, not the stacked 1fr');
+    assert.ok(/grid-auto-rows:\s*minmax\(0, 1fr\)/.test(body), 'the row is the body height, not max-content');
+    assert.ok(/overflow-y:\s*hidden/.test(body), 'the body does not scroll');
+    assert.ok(/border-right:\s*2px solid/.test(rule(b, '.cb-timeline-col')), 'divider is on the right again');
+    assert.ok(/border-bottom:\s*0/.test(rule(b, '.cb-timeline-col')), 'no stacked divider');
+});
+
+test('sweep 6: phone landscape compacts tiles and the entry bar so two tiles fit', () => {
+    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    assert.ok(/font-size:\s*16px/.test(rule(b, '.cb-entry-timestamp')), 'timestamp on the GNF 16 floor');
+    assert.ok(/line-height:\s*16px/.test(rule(b, '.cb-entry-timestamp')), 'whole-pixel line');
+    assert.ok(/padding:\s*4px 6px/.test(rule(b, '.cb-entry-tile')), 'tile padding trimmed');
+    assert.ok(/min-height:\s*0/.test(rule(b, '.cb-entry-bar')), 'entry bar sheds its 50px floor');
+    assert.ok(/min-height:\s*40px/.test(rule(b, '.cb-post-btn')), 'POST stays at least 40px tall');
+    assert.ok(/min-width:\s*0/.test(rule(b, '.cb-status-badge')), 'status badge can narrow in the side column');
+});
+
+test('R2 m3: the 45dvh cap keeps its vh fallback just before it', () => {
     assert.ok(/max-height:\s*45vh;\s*max-height:\s*45dvh/.test(css), '45vh then 45dvh');
-    assert.ok(/max-height:\s*25vh;\s*max-height:\s*25dvh/.test(css), '25vh then 25dvh');
 });
 
 test('R2 m4: media blocks keep their cascade order', () => {
