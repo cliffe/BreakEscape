@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mod = await import(pathToFileURL(join(here, '../../public/break_escape/js/minigames/lockpicking/label-layout.js')).href);
-const { layoutLockLabels, labelFontSize, segmentHitsRect, leaderRects, LockLabels, PIN_TOP, PIN_BOTTOM, PIN_HALF_WIDTH } = mod;
+const { layoutLockLabels, labelFontSize, segmentHitsRect, leaderRects, LockLabels, PIN_TOP, PIN_BOTTOM, PIN_HALF_WIDTH, WRENCH_UPRIGHT } = mod;
 const src = (f) => readFileSync(join(here, '../../public/break_escape/js/minigames/lockpicking/' + f), 'utf8');
 
 // VT323 is about 0.4em wide per character; the estimate is a little wider than that
@@ -17,6 +17,8 @@ const measure = (lines, font) => {
     const chars = Math.max(...lines.map((l) => l.length));
     return { w: Math.ceil(chars * font * 0.42) + 6, h: lines.length * Math.ceil(font * 1.25) + 2 };
 };
+// VT323 as measured live: 0.4em advance, 1em line (the estimate above is a little wider)
+const realMeasure = (lines, font) => ({ w: Math.ceil(Math.max(...lines.map((l) => l.length)) * font * 0.4) + 6, h: lines.length * font + 2 });
 const pinXsFor = (n) => {
     const spacing = 400 / (n + 1), margin = spacing * 0.75;
     return Array.from({ length: n }, (_, i) => 100 + margin + i * spacing);
@@ -28,13 +30,14 @@ const views = {
 };
 const named = { spring: 0, driver: 1, key: 2 };
 
-for (const scale of [0.67, 1, 0.55]) {
+for (const scale of [0.67, 1, 0.56, 0.55, 0.47]) {
     for (const n of [3, 4, 5, 6]) {
         for (const [vn, view] of Object.entries(views)) {
             if (vn === "desktop" && scale !== 1) continue;
             const tag = `scale ${scale}, ${n} pins, ${vn}`;
             const pinXs = pinXsFor(n);
-            const r = layoutLockLabels({ scale, pinXs, view, measure });
+            // 0.47 and below only fit with the real glyph widths
+            const r = layoutLockLabels({ scale, pinXs, view, measure: scale <= 0.5 ? realMeasure : measure });
             const ids = Object.keys(r.labels);
 
             test(`six labels, drawn at least 16px on screen (${tag})`, () => {
@@ -74,8 +77,8 @@ for (const scale of [0.67, 1, 0.55]) {
                     const l = a.leader;
                     if (!l) continue;
                     assert.ok([l.x1, l.y1, l.x2, l.y2].every(Number.isInteger), `${id} leader endpoints whole, got ${JSON.stringify(l)}`);
-                    // At 0.55 (30px type, outside the phone range) a label can sit off its pin: that leader is diagonal
-                    if (scale >= 0.67) assert.ok(l.x1 === l.x2 || l.y1 === l.y2, `${id} leader axis-aligned, got ${JSON.stringify(l)}`);
+                    // 0.47 is a real phone scale (740x360 with the observations open): leaders stay straight
+                    assert.ok(l.x1 === l.x2 || l.y1 === l.y2, `${id} leader axis-aligned, got ${JSON.stringify(l)}`);
                 }
             });
 
@@ -230,13 +233,21 @@ test('key mode: a hidden wrench or hook label has no leader stub', () => {
     assert.ok(tm.split('lockLabels?.syncLeaders()').length - 1 === 4, 'tool-manager syncs leaders on all four show/hide paths');
 });
 
-test('labels re-lay out on resize, and dispose releases the listener and timers', () => {
+test('labels re-lay out on resize, and dispose releases the listener and both timers', () => {
     const p = fakeParent();
     const ll = new LockLabels(p);
     ll.apply();
-    ll.watch();
-    assert.ok(typeof p.handlers.resize === 'function', 'resize listener added');
-    ll.dispose();
+    const realSet = globalThis.setTimeout, realClear = globalThis.clearTimeout;
+    const set = [], cleared = [];
+    globalThis.setTimeout = (fn, ms) => { const id = 9000 + set.length; set.push(id); return id; };
+    globalThis.clearTimeout = (id) => { cleared.push(id); };
+    try {
+        ll.watch();
+        assert.ok(typeof p.handlers.resize === 'function', 'resize listener added');
+        assert.ok(set.length === 2, 'two layout timers set, got ' + set.length);
+        ll.dispose();
+    } finally { globalThis.setTimeout = realSet; globalThis.clearTimeout = realClear; }
+    assert.ok(set.every((id) => cleared.includes(id)), `both timers cleared: set ${set}, cleared ${cleared}`);
     assert.ok(p.handlers.resize === undefined, 'resize listener removed');
     p.springLabel.x = -5;
     ll._last = '';
@@ -271,4 +282,59 @@ test('Phaser glue: layout re-runs after the fit switch sets the camera scroll, a
     const again = g.indexOf('this.lockLabels?.apply()', scroll);
     assert.ok(scroll > 0 && again > scroll && again - scroll < 400, 'apply follows setScroll');
     assert.ok(/cleanup\(\) \{[\s\S]{0,120}this\.lockLabels\?\.dispose\(\)/.test(g), 'cleanup disposes the labels');
+});
+
+// ---- The whole phone range of canvas scales (0.40 to 1.0) with real VT323 metrics (0.4em advance, 1em line) ----
+const hits = (seg, r) => segmentHitsRect(seg, r);
+
+test('across scales 0.40 to 1.0 and 3 to 8 pins: no leader crosses a pin it does not name, the wrench label clears its upright', () => {
+    let cases = 0;
+    for (let k = 40; k <= 100; k++) {
+        const scale = k / 100;
+        for (let n = 3; n <= 8; n++) {
+            for (const view of [views.portrait, views.landscape]) {
+                const pinXs = pinXsFor(n);
+                const r = layoutLockLabels({ scale, pinXs, view, measure: realMeasure });
+                const tag = `scale ${scale}, ${n} pins, view top ${view.top}`;
+                for (const id of Object.keys(r.labels)) {
+                    const l = r.labels[id].leader;
+                    if (!l) continue;
+                    pinXs.forEach((x, p) => {
+                        if (p === Math.min(named[id] ?? -1, n - 1)) return;
+                        const pinBox = { x: x - PIN_HALF_WIDTH, y: PIN_TOP, w: PIN_HALF_WIDTH * 2, h: PIN_BOTTOM - PIN_TOP };
+                        assert.ok(!hits(l, pinBox), `${id} leader crosses pin ${p + 1} (${tag}): ${JSON.stringify(l)}`);
+                    });
+                }
+                const w = r.labels.wrench;
+                const onUpright = w.x < WRENCH_UPRIGHT.x + WRENCH_UPRIGHT.w && WRENCH_UPRIGHT.x < w.x + w.w
+                    && w.y < WRENCH_UPRIGHT.y + WRENCH_UPRIGHT.h && WRENCH_UPRIGHT.y < w.y + w.h;
+                assert.ok(!onUpright, `wrench label covers the upright (${tag}): ${JSON.stringify(w)}`);
+                // Where everything fits (no fallback), up to 6 pins keep every leader straight
+                if (r.fallbacks === 0 && n <= 6) {
+                    for (const id of Object.keys(r.labels)) {
+                        const l = r.labels[id].leader;
+                        if (l) assert.ok(l.x1 === l.x2 || l.y1 === l.y2, `${id} leader straight (${tag})`);
+                    }
+                }
+                cases++;
+            }
+        }
+    }
+    assert.ok(cases === 61 * 6 * 2, 'grid size ' + cases);
+});
+
+test('740x360 with the observations open (scale 0.47): a 4-pin lock keeps Driver Pin over pin 2 with a vertical leader', () => {
+    const pinXs = pinXsFor(4);
+    const r = layoutLockLabels({ scale: 0.47, pinXs, view: views.landscape, measure: realMeasure });
+    const d = r.labels.driver;
+    assert.ok(r.fallbacks === 0, 'no fallback, got ' + r.fallbacks);
+    assert.ok(d.leader.x1 === d.leader.x2 && d.leader.x1 === Math.round(pinXs[1]), 'vertical leader at pin 2: ' + JSON.stringify(d.leader));
+});
+
+test('a wide wrench label goes under the upright foot with a leader up to it, and the hook label slides clear', () => {
+    const r = layoutLockLabels({ scale: 0.5, pinXs: pinXsFor(4), view: views.portrait, measure: realMeasure });
+    const w = r.labels.wrench, h = r.labels.hook;
+    assert.ok(w.y > WRENCH_UPRIGHT.y + WRENCH_UPRIGHT.h, 'under the foot: ' + JSON.stringify(w));
+    assert.ok(w.leader && w.leader.x1 === w.leader.x2 && w.leader.x1 > WRENCH_UPRIGHT.x && w.leader.x1 < WRENCH_UPRIGHT.x + WRENCH_UPRIGHT.w, 'leader lands on the upright');
+    assert.ok(!segmentHitsRect(h.leader, w), 'hook leader does not run through the wrench label');
 });

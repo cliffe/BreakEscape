@@ -25,6 +25,7 @@ export const SHEAR_Y = 155;
 export const WRENCH_ARM_X = 80;   // left edge of the tension wrench's upright
 export const HOOK_BAR_Y = 260;    // the hook pick's bar, 2/3 down the keyway
 export const KEYWAY_BOTTOM = 290;
+export const WRENCH_UPRIGHT = { x: 80, y: 40, w: 10, h: 170 }; // lock-graphics.js:44, :55
 
 const GAP = 2;
 
@@ -93,7 +94,9 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
 
     // A candidate is acceptable when its box misses every placed label, every pin it does not
     // name, and its leader (if any) passes through no placed label
+    let blockers = [];
     function fits(box, leader, namedPin) {
+        for (const b of blockers) if (overlaps(box, b, 0)) return false;
         if (box.x < lo || box.x + box.w > view.right - 1 || box.y < view.top || box.y + box.h > view.bottom - 1) return false;
         for (const id of Object.keys(placed)) {
             if (overlaps(box, placed[id])) return false;
@@ -102,6 +105,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         for (let i = 0; i < pinBoxes.length; i++) {
             if (i === namedPin) continue;
             if (overlaps(box, pinBoxes[i], 1)) return false;
+            if (segmentHitsRect(leader, pinBoxes[i])) return false; // a leader never crosses a pin it does not name
         }
         return true;
     }
@@ -123,16 +127,28 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
     }
 
     // Last resort (a very small canvas, so very large type): the first clear spot in the view,
-    // keeping labels apart from each other even if it must cross a pin
-    function fallback(id, lines, size, leaderFor) {
+    // keeping labels apart from each other even if it must cross a pin. A label that names a
+    // pin (target tx) always spans that pin's column, so its leader stays straight and never
+    // runs across another pin.
+    function fallback(id, lines, size, leaderFor, tx, fromBottom) {
         fallbacks++;
-        for (let y = view.top; y + size.h <= view.bottom - 1; y += 4) {
-            for (let x = lo; x + size.w <= view.right - 1; x += 4) {
+        const xs = [];
+        if (tx === undefined) for (let x = lo; x + size.w <= view.right - 1; x += 4) xs.push(x);
+        else {
+            const t = Math.round(tx);
+            const from = Math.max(lo, t - size.w + 2), to = Math.min(t - 2, view.right - size.w - 1);
+            for (const x of around(t - size.w / 2, from, Math.max(from, to), 4)) xs.push(x);
+        }
+        const ys = [];
+        for (let y = view.top; y + size.h <= view.bottom - 1; y += 4) ys.push(y);
+        if (fromBottom) ys.reverse();
+        for (const y of ys) {
+            for (const x of xs) {
                 const box = { x, y, w: size.w, h: size.h };
                 if (Object.keys(placed).every((k) => !overlaps(box, placed[k]))) { put(id, lines, box, leaderFor(box)); return; }
             }
         }
-        const box = { x: lo, y: view.top, w: size.w, h: size.h };
+        const box = { x: xs[0] ?? lo, y: view.top, w: size.w, h: size.h };
         put(id, lines, box, leaderFor(box));
     }
 
@@ -148,7 +164,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
 
     // Rows above the springs: the label's foot sits just over the spring tops
     const topRows = (h) => {
-        const first = PIN_TOP - 4 - h;
+        const first = Math.max(view.top, PIN_TOP - 4 - h);
         return [...range(first, view.top, -(h + GAP)), ...range(first + 4, PIN_BOTTOM, 4)];
     };
     // Rows under the keyway, inside the lock body
@@ -171,9 +187,23 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         const size = measure(lines, font);
         const x = Math.max(lo, WRENCH_ARM_X - 3 - size.w);
         const ys = around(150 - size.h / 2, view.top, KEYWAY_BOTTOM - size.h, 4);
-        const leader = (box) => (box.x + box.w < WRENCH_ARM_X - 1
-            ? downTo({ x: box.x + box.w, y: Math.round(box.y + box.h / 2) }, { x: WRENCH_ARM_X, y: Math.round(box.y + box.h / 2) }) : null);
-        if (!place('wrench', lines, size, ys, () => [x], leader, -1)) fallback('wrench', lines, size, leader);
+        const foot = WRENCH_UPRIGHT.y + WRENCH_UPRIGHT.h;
+        const leader = (box) => {
+            if (box.x + box.w < WRENCH_ARM_X - 1) {
+                return downTo({ x: box.x + box.w, y: Math.round(box.y + box.h / 2) }, { x: WRENCH_ARM_X, y: Math.round(box.y + box.h / 2) });
+            }
+            if (box.y <= foot) return null;
+            const tx = clamp(WRENCH_ARM_X + 5, box.x + 2, box.x + box.w - 2);
+            return tx > WRENCH_ARM_X && tx < WRENCH_ARM_X + 10 ? downTo({ x: tx, y: box.y }, { x: tx, y: foot }) : null;
+        };
+        // The upright (plus a 4px gap for a leader) is an obstacle: a label too wide for the strip
+        // left of it (below about 0.62) goes under its foot instead, with a leader up to it
+        blockers = [{ ...WRENCH_UPRIGHT, h: WRENCH_UPRIGHT.h + 4 }];
+        const ok = place('wrench', lines, size, ys, () => [x], leader, -1)
+            || place('wrench', lines, size, range(foot + 4, view.bottom - size.h - 1, 4),
+                () => range(lo, WRENCH_ARM_X + 3, 4), leader, -1);
+        blockers = [];
+        if (!ok) fallback('wrench', lines, size, leader);
     }
 
     // 3. Hook Pick: left of the lock, under the hook's bar, leader up to the bar
@@ -183,7 +213,8 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         const x = Math.max(lo, WRENCH_ARM_X - 3 - size.w);
         const ys = range(HOOK_BAR_Y + 8, view.bottom - size.h - 1, 4);
         const leader = (box) => downTo({ x: Math.floor(box.x + box.w / 2), y: box.y }, { x: Math.floor(box.x + box.w / 2), y: HOOK_BAR_Y + 4 });
-        if (!place('hook', lines, size, ys, () => [x], leader, -1)) fallback('hook', lines, size, leader);
+        // The bar runs from far off-screen to the last pin, so the label may slide right to clear the wrench label's leader
+        if (!place('hook', lines, size, ys, () => [x, ...range(lo, Math.floor(pinAt(n - 1) - size.w / 2), 4)], leader, -1)) fallback('hook', lines, size, leader);
     }
 
     // 4. Spring: above the first pin's spring
@@ -193,7 +224,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         const tx = pinAt(0), ty = PIN_TOP + 2;
         const ok = place('spring', lines, size, topRows(size.h),
             (s) => around(tx - s.w / 2, lo, view.right - s.w - 1), vertLeaderDown(tx, ty), 0);
-        if (!ok) fallback('spring', lines, size, vertLeaderDown(tx, ty));
+        if (!ok) fallback('spring', lines, size, vertLeaderDown(tx, ty), tx);
     }
 
     // 5. Driver Pin: in the top row beside Spring, leader down to the second pin's driver pin
@@ -203,7 +234,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         const tx = pinAt(1), ty = SHEAR_Y + 8;
         const ok = place('driver', lines, size, topRows(size.h),
             (s) => around(tx - s.w / 2, lo, view.right - s.w - 1), vertLeaderDown(tx, ty), idxAt(1));
-        if (!ok) fallback('driver', lines, size, vertLeaderDown(tx, ty));
+        if (!ok) fallback('driver', lines, size, vertLeaderDown(tx, ty), tx);
     }
 
     // 6. Key Pin: under the keyway, leader up to the foot of the third pin's key pin
@@ -213,7 +244,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         const tx = pinAt(2), ty = PIN_BOTTOM - 2;
         const ok = place('key', lines, size, bottomRows(size.h),
             (s) => around(tx - s.w / 2, lo, view.right - s.w - 1), vertLeaderUp(tx, ty), idxAt(2));
-        if (!ok) fallback('key', lines, size, vertLeaderUp(tx, ty));
+        if (!ok) fallback('key', lines, size, vertLeaderUp(tx, ty), tx, true);
     }
 
     return { font, labels: placed, fallbacks };
