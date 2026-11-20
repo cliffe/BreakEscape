@@ -18,7 +18,7 @@ module BreakEscape
   # sprite, named after the NPC who wears it. A mission's own characters come
   # first and are always available in it: those its validSprites patterns
   # match (an exact key also offers an avatar no NPC wears, such as the m01 to
-  # m10 noir starters), or the starter set (PlayerPreference::AVAILABLE_SPRITES) when it
+  # m10 noir starters; the two hood-up hackers also start there), or the starter set (PlayerPreference::AVAILABLE_SPRITES) when it
   # declares none or there is no mission. Then the characters the player has
   # unlocked, also choosable, then the rest, locked.
   module AvatarUnlocks
@@ -134,9 +134,12 @@ module BreakEscape
         completed_games(player).each do |game_id, mission_title, stored|
           entries = stored.is_a?(Array) ? stored : backfill(game_id)
           entries.each do |entry|
-            next unless entry.is_a?(Hash) && unlockable_sprite?(entry['sprite'])
+            next unless entry.is_a?(Hash)
 
-            item = unlocked[entry['sprite']] ||= { 'sprite' => entry['sprite'], 'name' => entry['name'], 'missions' => [] }
+            sprite = PlayerPreference::LEGACY_SPRITES.fetch(entry['sprite'], entry['sprite'])
+            next unless unlockable_sprite?(sprite)
+
+            item = unlocked[sprite] ||= { 'sprite' => sprite, 'name' => entry['name'], 'missions' => [] }
             item['missions'] |= [mission_title].compact
           end
         end
@@ -152,7 +155,9 @@ module BreakEscape
       def npc_entry(npc)
         return nil unless npc.is_a?(Hash) && npc['unlockableAvatar'] != false
 
-        sprite = npc['spriteSheet']
+        # An NPC on an original key (female_blowse) unlocks its v2 redraw, the key the menu and
+        # selected_sprite use.
+        sprite = PlayerPreference::LEGACY_SPRITES.fetch(npc['spriteSheet'], npc['spriteSheet'])
         return nil unless unlockable_sprite?(sprite)
 
         { 'sprite' => sprite, 'name' => npc['displayName'].presence || sprite.humanize, 'npcId' => npc['id'] }

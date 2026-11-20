@@ -7694,8 +7694,9 @@ module BreakEscape
 
       return unless player_pref&.selected_sprite # Safety: don't inject if nil
 
-      # Map simplified sprite name to actual filename
-      sprite_filename = PlayerPreference.sprite_filename(player_pref.selected_sprite)
+      # Map simplified sprite name to actual filename. A saved starter sprite the
+      # mission no longer offers becomes the mission's first character.
+      sprite_filename = PlayerPreference.sprite_filename(player_pref.sprite_for_scenario(scenario_data))
 
       scenario_data['player'] ||= {}
       scenario_data['player']['spriteSheet'] = sprite_filename
