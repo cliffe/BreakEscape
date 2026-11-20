@@ -11,11 +11,15 @@
 //
 //   node tools/playtest/shell-x-check.mjs --port 3450 --game 3084 [--scenes a,b] [--sizes 915x412,800x600,390x844]
 //
-// Open wait budget: up to 5 s for the shell to exist, be visible and stop moving (shell and X rects),
-// then up to 1.5 s more (from when those first hold) for the X to be hit-testable, at most about 6.5 s
-// a case. If only the hit test is unmet then, the run hands over to the X report so an off-screen,
+// Open wait budget: a case is never measured sooner than 600 ms after the open, and only once the shell
+// rect and the X rect have held still for 400 ms (a late async paint can still shift the X; the old fixed
+// wait was 1.2 s). It waits up to 5 s for the shell to exist, be visible and settle, then up to 1.5 s more
+// (from when it first held) for the X to be hit-testable: at most about 6.5 s a case, typically about
+// 0.65 s. If only the hit test is unmet then, the run hands over to the X report so an off-screen,
 // frame-clipped or covered X gets its specific message, and counts as a failure. This keeps --legacy
-// (which moves the X on most of the 120 cases) well under the 900 s test limit.
+// (which moves the X on most of the 180 X cases of 240) well under the 900 s test limit.
+// Each page sample has a 2 s timeout (a stalled page cannot hang the run), and 10 cases in a row with no
+// shell and no thrown error stop the run with exit 2 (a broken build or a knocked-out player).
 // Trade-off: an X covered by something that clears within the 1.5 s hit window passes (the old fixed
 // 1.2 s wait failed it if still covered at 1.2 s); an X covered for longer fails.
 //
@@ -122,12 +126,13 @@ export async function xSample() {
         hitHtml = hit ? hit.outerHTML.slice(0, 300) : '(nothing under the X)';
     }
     // stable = the shell rect held still; xStable = the X rect held still (reported separately, m3)
-    return { shell: true, visible, noX, stable: r1.every((v, i) => v === r2[i]), xStable: !x1 || x1.every((v, i) => v === x2[i]), hitOk, hitHtml };
+    return { shell: true, visible, noX, rects: JSON.stringify([r2, x2]), stable: r1.every((v, i) => v === r2[i]), xStable: !x1 || x1.every((v, i) => v === x2[i]), hitOk, hitHtml };
 }
 
 // Pure: the "hard" open conditions still unmet (shell exists, visible, shell and X rects stable).
 // These wait up to OPEN_TIMEOUT_MS and a miss at the deadline is a timeout failure.
 export function hardUnmet(sample) {
+    if (sample && sample.sampleTimeout) return ['the page did not answer a sample within the sample timeout'];
     if (!sample || !sample.shell) return ['the minigame shell (.minigame-container) does not exist'];
     const unmet = [];
     if (!sample.visible) unmet.push('the minigame shell is not visible (hidden or zero size)');
@@ -148,7 +153,8 @@ export function openTimeoutMessage(scene, sample, unmet, openError) {
     return `${scene}: open wait timed out; unmet: ${unmet.join('; ')}.${openError ? ` (open threw: ${openError})` : ''} Element under the X: ${sample && sample.hitHtml ? sample.hitHtml : '(not measured)'}`;
 }
 
-// Pure decision for one sample. state = { hardExpired, hitExpired } says which waits have run out.
+// Pure decision for one sample. state = { hardExpired, hitExpired, settled } says which waits have run
+// out and whether the settle floor (SETTLE_MS still, MIN_AFTER_OPEN_MS since open) has been met.
 //   ready    open and the X is on top (and startMinigame threw nothing)
 //   wait     keep sampling
 //   notOpen  no shell and startMinigame said why: the "(not open)" report, not a failure
@@ -166,6 +172,11 @@ export function openOutcome(scene, sample, openError, state) {
     // Shell is open and steady. A constructor or init() throw leaves the container behind (m2):
     // that is a failure, not a disableClose skip.
     if (openError) return { kind: 'fail', message: `${scene}: open threw: ${openError}` };
+    // m5: not measured until the rects held still for SETTLE_MS and MIN_AFTER_OPEN_MS have passed.
+    if (!state.settled) {
+        if (!state.hardExpired) return { kind: 'wait' };
+        return { kind: 'fail', message: `${scene}: open wait timed out; unmet: the shell and X did not hold still for ${SETTLE_MS} ms and ${MIN_AFTER_OPEN_MS} ms did not pass. Element under the X: ${sample.hitHtml || '(not measured)'}` };
+    }
     if (sample.noX || sample.hitOk) return { kind: 'ready' };
     if (!state.hitExpired) return { kind: 'wait' };
     return { kind: 'report', message: openTimeoutMessage(scene, sample, unmetConditions(sample)) };
@@ -173,14 +184,20 @@ export function openOutcome(scene, sample, openError, state) {
 
 // Injectable wait loop: sampleFn() -> sample, now() -> ms, sleep(ms). Waits up to OPEN_TIMEOUT_MS for
 // the hard conditions, then up to HIT_TIMEOUT_MS (counted from when they first held) for the hit test.
-export async function waitForOpen({ scene, sampleFn, now, sleep, openError = null, openMs = OPEN_TIMEOUT_MS, hitMs = HIT_TIMEOUT_MS }) {
-    const hardDeadline = now() + openMs;
-    let hitSince = null;
+export async function waitForOpen({ scene, sampleFn, now, sleep, openError = null, openMs = OPEN_TIMEOUT_MS, hitMs = HIT_TIMEOUT_MS, settleMs = SETTLE_MS, minAfterOpenMs = MIN_AFTER_OPEN_MS }) {
+    const start = now();
+    const hardDeadline = start + openMs;
+    let hitSince = null, stillSince = null, lastRects = null;
     for (;;) {
         const sample = await sampleFn();
         const t = now();
-        if (sample && sample.shell && hardUnmet(sample).length === 0) { if (hitSince === null) hitSince = t; } else hitSince = null;
-        const out = openOutcome(scene, sample, openError, { hardExpired: t >= hardDeadline, hitExpired: hitSince !== null && t - hitSince >= hitMs });
+        if (sample && sample.shell && hardUnmet(sample).length === 0) {
+            if (hitSince === null) hitSince = t;
+            if (stillSince === null || sample.rects !== lastRects) stillSince = t;
+            lastRects = sample.rects;
+        } else { hitSince = null; stillSince = null; lastRects = null; }
+        const settled = stillSince !== null && t - stillSince >= settleMs && t - start >= minAfterOpenMs;
+        const out = openOutcome(scene, sample, openError, { hardExpired: t >= hardDeadline, hitExpired: hitSince !== null && t - hitSince >= hitMs, settled });
         if (out.kind !== 'wait') return { ...out, sample };
         await sleep(50);
     }
@@ -188,6 +205,43 @@ export async function waitForOpen({ scene, sampleFn, now, sleep, openError = nul
 
 export const OPEN_TIMEOUT_MS = 5000;
 export const HIT_TIMEOUT_MS = 1500;
+export const SETTLE_MS = 400;
+export const MIN_AFTER_OPEN_MS = 600;
+export const SAMPLE_TIMEOUT_MS = 2000;
+export const MISSING_LIMIT = 10;
+
+// Pure: race a promise against a timer (m4). Resolves with `fallback` if it takes longer than ms.
+export function withTimeout(promise, ms, fallback) {
+    let timer;
+    const timeout = new Promise(res => { timer = setTimeout(() => res(fallback), ms); });
+    return Promise.race([Promise.resolve(promise), timeout]).finally(() => clearTimeout(timer));
+}
+
+// Pure (m4): a guard that trips after `limit` consecutive cases with no shell and no thrown error.
+export function makeMissingGuard(limit = MISSING_LIMIT) {
+    let run = 0;
+    return (isMissing) => { run = isMissing ? run + 1 : 0; return run >= limit; };
+}
+
+// Pure (m2, m3): the main loop's counting for one case. o = the open result, r = the xReport result
+// (or null when it was not run), issues = flattened xReport issues. Returns { checked, fail, text }.
+// A hand-over from the hit-test wait (o.hitOnly) is always a failure, including when xReport then
+// finds no shell or no X.
+export function tally(o, r, issues = []) {
+    if (!o.ready && !o.notOpen && !o.hitOnly) return { checked: 1, fail: true, text: `FAIL ${o.message}` };
+    if (!r || !r.open) {
+        if (o.hitOnly) return { checked: 1, fail: true, text: `FAIL after the open wait: ${o.message} (shell gone when measured)` };
+        return { checked: 0, fail: false, text: '(not open)' };
+    }
+    if (r.noX) {
+        if (o.hitOnly) return { checked: 1, fail: true, text: `FAIL after the open wait: ${o.message} (X hidden when measured)` };
+        return { checked: 0, fail: false, text: 'no X (disableClose scene)' };
+    }
+    if (o.hitOnly) return { checked: 1, fail: true, text: `FAIL after the open wait: ${issues.length ? issues.join('; ') : o.message}` };
+    if (issues.length) return { checked: 1, fail: true, text: `FAIL ${issues.join('; ')}` };
+    const last = r.results[1];
+    return { checked: 1, fail: false, text: `ok${last.scrollsX || last.scrollsY ? ` (shell scrolls ${last.scrollsX ? 'x' : ''}${last.scrollsY ? 'y' : ''})` : ''}` };
+}
 
 async function main() {
     if (!GID) { console.error('--game is required'); process.exit(2); }
@@ -205,6 +259,7 @@ async function main() {
     const scenes = opt('scenes', null)?.split(',') || registered;
     const skipped = new Set((opt('skip', 'person-chat,network-view') || '').split(','));
     let fails = 0, checked = 0;
+    const missingGuard = makeMissingGuard();
     const openScene = async (s) => {
         await page.evaluate(async ({ s, p }) => {
             try { window.MinigameFramework.forceCloseMinigame?.(); } catch { /* none */ }
@@ -215,7 +270,13 @@ async function main() {
         }, { s, p: PARAMS[s] || { title: s } });
         // Condition wait in place of a fixed delay (budget in the header).
         const openError = await page.evaluate(() => window.__openError || null);
-        const o = await waitForOpen({ scene: s, sampleFn: () => page.evaluate(xSample), now: () => Date.now(), sleep: (ms) => page.waitForTimeout(ms), openError });
+        const sampleFn = () => withTimeout(page.evaluate(xSample).catch(() => ({ shell: false, sampleTimeout: true })), SAMPLE_TIMEOUT_MS, { shell: false, sampleTimeout: true });
+        const o = await waitForOpen({ scene: s, sampleFn, now: () => Date.now(), sleep: (ms) => page.waitForTimeout(ms), openError });
+        if (missingGuard(o.kind === 'fail' && !(o.sample && o.sample.shell))) {
+            console.error(`SHELL-X-CHECK stopped: ${MISSING_LIMIT} cases in a row had no minigame shell and no thrown error (last: ${s}). Broken build or knocked-out player? ${checked} checked, ${fails} failed so far.`);
+            await browser.close();
+            process.exit(2);
+        }
         if (o.kind === 'ready') return { ready: true };
         if (o.kind === 'notOpen') return { ready: false, notOpen: true };
         if (o.kind === 'report') return { ready: false, hitOnly: true, message: o.message };
@@ -227,16 +288,11 @@ async function main() {
             await page.setViewportSize({ width: w, height: h });
             const o = await openScene(s);
             const tag = `${s} ${w}x${h}`;
-            if (!o.ready && !o.notOpen && !o.hitOnly) { checked++; fails++; console.log(`${tag.padEnd(40)} FAIL ${o.message}`); continue; }
-            const r = (o.ready || o.hitOnly) ? await page.evaluate(xReport) : { open: false };
-            if (!r.open) { console.log(`${tag.padEnd(40)} (not open)`); continue; }
-            if (r.noX) { console.log(`${tag.padEnd(40)} no X (disableClose scene)`); continue; }
-            checked++;
-            const issues = r.results.flatMap(x => x.issues.map(i => `${x.label}: ${i}`));
-            // Hit test unmet for the whole wait: the specific xReport issues, or the timeout text if xReport saw none.
-            if (o.hitOnly) { fails++; console.log(`${tag.padEnd(40)} FAIL after the open wait: ${issues.length ? issues.join('; ') : o.message}`); continue; }
-            if (issues.length) { fails++; console.log(`${tag.padEnd(40)} FAIL ${issues.join('; ')}`); }
-            else console.log(`${tag.padEnd(40)} ok${r.results[1].scrollsX || r.results[1].scrollsY ? ` (shell scrolls ${r.results[1].scrollsX ? 'x' : ''}${r.results[1].scrollsY ? 'y' : ''})` : ''}`);
+            const r = (o.ready || o.hitOnly) ? await page.evaluate(xReport) : null;
+            const issues = r && r.results ? r.results.flatMap(x => x.issues.map(i => `${x.label}: ${i}`)) : [];
+            const t = tally(o, r, issues);
+            checked += t.checked; if (t.fail) fails++;
+            console.log(`${tag.padEnd(40)} ${t.text}`);
         }
         try { await page.evaluate(() => window.MinigameFramework.forceCloseMinigame?.()); } catch { /* ignore */ }
     }
