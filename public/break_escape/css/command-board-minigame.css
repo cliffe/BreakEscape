@@ -476,11 +476,12 @@
     }
 }
 
-/* Wide enough for two columns (481px and up: the timeline column is then 238px or more, its
-   text 188px, enough for the time plus the badge's 80px; at 440px they are 197px and 147px,
-   and at 360px a 100px column wraps the time): timeline beside status, so the list takes the body's whole height: two whole tiles when
+/* Wide enough for two columns: from 481px the timeline column is 238px or more and its text
+   188px, enough for the time plus the badge's 80px. At 440px they are 197px and 147px, and at
+   360px a 100px column wraps the time.
+   Timeline beside status, so the list takes the body's whole height: two whole tiles when
    entries are 3 lines or shorter, one whole tile for the 4 to 6 line sis01 entries (accepted
-   limit); nothing stacks, so the body does not scroll and SYSTEM STATUS and the clock stay in view */
+   limit). Nothing stacks, so the body does not scroll and SYSTEM STATUS and the clock stay in view */
 @media (min-width: 481px) and (max-width: 600px) and (max-height: 520px) {
     .cb-entry-bar {
         min-height: 0;

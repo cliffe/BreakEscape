@@ -200,6 +200,28 @@ test('sweep 6 R3: side-by-side only from 481px wide; narrow short windows stay s
     assert.ok(lastDecl(a, '.cb-entry-badge', 'grid-row') === null, 'badge stays under the time in the shared block');
     assert.ok(lastDecl(a, '.cb-entry-timestamp', 'padding-right') === null, 'no reserved badge gap in the shared block');
     assert.ok(/25vh;\s*max-height:\s*25dvh/.test(a), '25vh fallback precedes 25dvh');
+    // R3 review m2: row sizing and flex on the body leak the side-by-side behaviour too
+    assert.ok(lastDecl(a, '.cb-body', 'grid-auto-rows') === null, 'no body row sizing in the shared block');
+    assert.ok(lastDecl(a, '.cb-body', 'flex') === null, 'no body flex change in the shared block');
+});
+
+// R3 review m2: a second query that matches 480px wide or less must not set two columns either
+test('sweep 6 R3: no other query that matches 480px wide or less sets a two-column body', () => {
+    let seen = 0;
+    for (const m of css.matchAll(/@media([^{]*)\{/g)) {
+        const query = m[1].trim();
+        const min = /min-width:\s*(\d+)px/.exec(query);
+        if (min && Number(min[1]) >= 481) continue;
+        seen++;
+        let depth = 0, end = css.indexOf('{', m.index);
+        for (let i = end; i < css.length; i++) {
+            if (css[i] === '{') depth++;
+            if (css[i] === '}' && --depth === 0) { end = i; break; }
+        }
+        const cols = lastDecl(css.slice(m.index, end + 1), '.cb-body', 'grid-template-columns');
+        assert.ok(cols === null || cols.trim().split(/\s+/).length === 1, 'query "' + query + '" sets columns ' + cols);
+    }
+    assert.ok(seen >= 4, 'inspected the narrow-capable queries, got ' + seen);
 });
 
 test('sweep 6 R1 m1: POST keeps 44px in the combined block', () => {
