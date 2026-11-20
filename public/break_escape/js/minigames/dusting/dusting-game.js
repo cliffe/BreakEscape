@@ -383,6 +383,8 @@ export class DustingMinigame extends MinigameScene {
         this.addEventListener(cv, 'pointermove', e => this._onPointerMove(e));
         this.addEventListener(cv, 'pointerup', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointercancel', e => this._onPointerUp(e));
+        // capture lost mid-stroke (element hidden, re-laid out, OS takeover) ends the stroke as pointerup would
+        this.addEventListener(cv, 'lostpointercapture', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; if (this.nearPrint) this._clearNear(); } });
         this._bindPanel();
         this.addEventListener(document, 'keydown', e => this._onKeyDown(e));
@@ -447,7 +449,8 @@ export class DustingMinigame extends MinigameScene {
         // Comparing on a non-short screen: the magnified pair takes the lift's place in the stage column
         // (My whole lift, View large and L bring the lift back).
         this.canvas.hidden = this._zoomInStage(short);
-        this.wide = window.innerWidth >= 760;
+        // same test as the CSS (max-width: 760px) and _placeFoot: exactly 760 is phone; innerWidth is the fallback without matchMedia
+        this.wide = window.matchMedia ? !window.matchMedia('(max-width: 760px)').matches : window.innerWidth > 760;
         if (this.step === 'compare' && this.patternOk && this.panel) {
             // the pair sits in the stage column, or in the panel in short landscape; moving between them re-renders
             if (this._zoomShort !== undefined && this._zoomShort !== short) this._renderPanel(); else this._drawZoom();
@@ -1287,11 +1290,18 @@ export class DustingMinigame extends MinigameScene {
 
     _onPointerUp(e) {
         if (this.pointerDown && e && e.pointerId !== this._pointerId) return;   // only the stroke's own pointer ends it
+        if (!this.pointerDown && e && e.type === 'lostpointercapture') return;   // pointerup already ended it; capture release follows
+        const cv = this.canvas;
+        if (e && e.pointerId !== undefined && cv && cv.hasPointerCapture && cv.releasePointerCapture) {
+            try { if (cv.hasPointerCapture(e.pointerId)) cv.releasePointerCapture(e.pointerId); } catch (err) { /* already gone */ }
+        }
         if (this.step === 'dust') this._saveProgress();
         if (this._touchFind && e && e.type === 'pointerup' && this.step === 'find') this._attemptFind(this.reticle);
         this._touchFind = false;
         this.pointerDown = false;
         this.lastPt = null;
+        this._pointerId = null;
+        this._brushCarry = 0;
     }
 
     /** First stroke on this powder: short landscape then hides the instruction paragraph (CSS, [data-brushed]) to make room
