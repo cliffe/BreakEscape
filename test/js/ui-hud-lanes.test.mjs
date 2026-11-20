@@ -317,8 +317,9 @@ test('R1 M2: the pill shows the count first, has a title, and takes the room up 
     assert.match(c, /\.objectives-pill-count \{[^}]*flex: 0 0 auto;/);
     // K12 B: the pill now shows the toggle's chevron as a tap cue; only the title is hidden
     assert.ok(!/\.objectives-panel\.collapsed \.objectives-controls,/.test(c), 'the pill keeps its chevron');
-    assert.match(c, /\.objectives-panel\.collapsed \.objectives-controls \{[^}]*flex: 0 0 auto;/, 'the chevron never shrinks');
-    assert.match(c, /\.objectives-panel\.collapsed \.objectives-toggle \{[^}]*padding: 4px 0 4px 8px;/, 'tight chevron padding');
+    assert.ok(/\.objectives-panel\.collapsed \.objectives-controls \{[^}]*flex: 0 0 auto;/.test(c), 'the chevron never shrinks');
+    assert.ok(/\.objectives-panel\.collapsed \.objectives-toggle \{[^}]*padding: 4px 0 4px 4px;[^}]*margin-right: -3px;/.test(c), 'tight chevron padding (15px)');
+    assert.ok(!/\.objectives-panel\.collapsed [^{]*(objectives-toggle|obj-chevron|objectives-controls)[^{]*\{[^}]*display:\s*none/.test(c), 'nothing hides the pill chevron');
     assert.match(css('ui-themes.css'), /\[data-ui-theme\] \.objectives-panel\.collapsed \{\s*border-width: var\(--ui-square-px\);/, 'small square frame on phones');
 });
 
@@ -347,6 +348,20 @@ test('R1 M2: a finished task on a phone is a short line with its full text; the 
     assert.ok(t.classList.contains('brief'));
     assert.ok(t.querySelector('.notification-title') === null, 'no title line');
     document.body.className = '';
+});
+
+test('K12 B: tapping the chevron or the text on the collapsed phone pill opens it once', () => {
+    for (const sel of ['.objectives-toggle', '.objectives-pill-text']) {
+        document.body.innerHTML = '';
+        setWindow(390, 844);
+        const aims = [{ aimId: 'b', title: 'Find', status: 'active', tasks: [] }];
+        const panel = new ObjectivesPanel({ addListener() {}, removeListener() {}, getActiveAims: () => aims });
+        assert.ok(panel.isCollapsed === true, 'starts as a pill');
+        panel.container.querySelector(sel).click();
+        assert.ok(panel.isCollapsed === false && panel.container.classList.contains('objectives-sheet'), 'a tap on ' + sel + ' opens the pill');
+        panel.destroy();
+    }
+    setWindow(1400, 1000);
 });
 
 test('R1 M3: Esc closes the objectives sheet first, and the pause menu does not open', () => {

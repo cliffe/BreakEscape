@@ -508,9 +508,11 @@
     flex: 0 0 auto;
     align-self: center;
   }
-  /* Tight padding so the cue takes 22px, not the desktop 30px; the whole pill is still the tap target */
+  /* Tight padding so the cue takes 15px, not the desktop 30px (the rotated 14x8 glyph shows 8px;
+     the negative margin trims its blank layout box); the whole pill is still the tap target */
   .objectives-panel.collapsed .objectives-toggle {
-    padding: 4px 0 4px 8px;
+    padding: 4px 0 4px 4px;
+    margin-right: -3px;
   }
   .objectives-panel.collapsed .objectives-clipboard {
     margin-right: 0;
