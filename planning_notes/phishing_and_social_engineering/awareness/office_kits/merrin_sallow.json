@@ -359,7 +359,7 @@
             },
             {
               "eventPattern": "npc_arrived:kit_camila_ospina",
-              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true && data.x >= 232",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true",
               "onceOnly": true,
               "setVisible": false,
               "setGlobal": {
@@ -367,16 +367,10 @@
               }
             },
             {
+              "_comment": "Retired 2026-11-20: V11r (re-walk after an early door arrival) is no longer needed now the engine no longer emits npc_arrived at an avoidance sidestep. Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_arrived:kit_camila_ospina",
-              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true && !globalVars.kit_ca12_done && data.x < 232",
-              "delayMs": 300,
-              "patrolOverride": {
-                "targetTile": {
-                  "x": 8.5,
-                  "y": 2.5
-                },
-                "speed": 90
-              }
+              "condition": "data.retired_2026_11_20 === true && data.owner !== 'needs' && globalVars.kit_ca12_out === true",
+              "onceOnly": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca12_door_choice",
@@ -441,7 +435,7 @@
           "eventPattern": "global_variable_changed:kit_ca12_host_there",
           "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
           "onceOnly": true,
-          "delayMs": 3000,
+          "delayMs": 1000,
           "patrolOverride": {
             "targetTile": {
               "x": 5.5,
@@ -454,7 +448,7 @@
           "eventPattern": "global_variable_changed:kit_ca12_at_desks",
           "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
           "onceOnly": true,
-          "delayMs": 3000,
+          "delayMs": 1000,
           "patrolOverride": {
             "targetTile": {
               "x": 5.5,

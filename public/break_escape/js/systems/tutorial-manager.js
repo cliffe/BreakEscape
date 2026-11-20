@@ -3,6 +3,8 @@
  * Handles the basic actions tutorial for new players
  */
 
+import { isCompactViewport } from '../ui/hud-lanes.js';
+
 const TUTORIAL_STORAGE_KEY = 'tutorial_completed';
 const TUTORIAL_DECLINED_KEY = 'tutorial_declined';
 
@@ -67,9 +69,9 @@ function isTouchFirst() {
 
 // The phone layout of ui/hud-lanes.js (isCompactViewport): there the objectives panel is a
 // sheet over the map, so the tutorial panel and it compete for space. Wider screens, touch
-// or not, have room for both. Inlined so this module needs no new import.
+// or not, have room for both. The rule is hud-lanes.js's, not a copy.
 function isCompactHud() {
-    return window.innerWidth < 900 || window.innerHeight <= 500;
+    return isCompactViewport(window.innerWidth, window.innerHeight);
 }
 
 // Same selector the game's key handler (core/player.js) uses for "a control has the focus"
