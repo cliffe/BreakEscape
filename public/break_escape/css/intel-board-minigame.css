@@ -164,6 +164,8 @@ ul.ib-contacts { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 
 .ib-name {
     margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-size: 24px;
     font-weight: 700;
 }
@@ -246,8 +248,8 @@ ul.ib-exposures {
     gap: 22px 16px;
 }
 
-.ib-reduce { margin: 6px 0 0; font-weight: 700; color: #4a3b2c; }
-.ib-ask { margin: 10px 0 6px; }
+.ib-reduce { margin: 6px 0 0; font-weight: 700; color: #4a3b2c; overflow-wrap: anywhere; }
+.ib-ask { margin: 10px 0 6px; overflow-wrap: anywhere; }
 
 ul.ib-options { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 
@@ -257,6 +259,7 @@ ul.ib-options { list-style: none; margin: 0; padding: 0; display: flex; flex-dir
     min-height: 40px;
     padding: 8px 12px;
     text-align: left;
+    overflow-wrap: anywhere;
     font-family: inherit;
     font-size: 16px;
     line-height: 1.3;

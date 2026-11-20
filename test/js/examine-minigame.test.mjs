@@ -461,6 +461,13 @@ test('phone body text is 24px GNF, the conversation dialogue size; the name stay
     assert.ok(size(phone, '.examine-text') === null, 'the phone block does not need to restate the body size');
     assert.ok(/\.examine-text\s*\{[^}]*line-height:\s*36px/.test(desktop), 'examine text line height is a whole 36px');
     assert.ok(/\.examine-observations\s*\{[^}]*line-height:\s*36px/.test(desktop), 'examine observations line height is a whole 36px');
+    // every rule in every block (a short-landscape @media before the 600px block included): the
+    // two body classes never take a size other than 24, and no block sizes them differently
+    for (const sel of ['examine-text', 'examine-observations']) {
+        const sizes = [...src.matchAll(new RegExp(`[^{}]*\\.${sel}\\b[^{}]*\\{([^{}]*)\\}`, 'g'))]
+            .map((r) => (r[1].match(/font-size:\s*([^;]+)/) || [])[1]).filter(Boolean).map((x) => x.trim());
+        assert.ok(sizes.length === 1 && sizes[0] === '24px', `.${sel} font-size across all rules: ${sizes.join(' | ')}`);
+    }
     assert.equal(size(phone, '.examine-name'), 16);
     assert.match(desktop, /\.examine-name\s*\{[^}]*Press Start 2P/);
     assert.doesNotMatch(src, /\.examine-(text|observations)[^{}]*\{[^}]*font-family/, 'body text inherits GNF');

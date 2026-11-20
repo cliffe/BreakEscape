@@ -40,7 +40,7 @@
 .sd-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .sd-panel { padding: 14px 16px; max-width: 920px; }
-.sd-heading { margin: 0 0 8px; font-size: 24px; color: var(--sd-accent); }
+.sd-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; overflow-wrap: anywhere; color: var(--sd-accent); }
 .sd-heading:focus, .sd-situation:focus { outline: none; }
 .sd-text { margin: 0 0 12px; max-width: 60ch; }
 .sd-bin-legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0; font-size: 16px; }
@@ -107,7 +107,7 @@
 .sd-mark-caution, .sd-mark-suggest { color: var(--sd-dim); }
 .sd-mark-wrong { color: var(--sd-bad); }
 .sd-miss .sd-col-text { text-decoration: underline; text-decoration-color: var(--sd-bad); }
-.sd-score { margin: 0 0 8px; font-size: 24px; font-weight: 700; }
+.sd-score { margin: 0 0 8px; font-size: 24px; line-height: 32px; font-weight: 700; }
 
 .sd-close-ask { margin: 8px 12px; padding: 10px 12px; border: 2px solid var(--sd-accent); background: var(--sd-raised); }
 .sd-close-ask-text { margin: 0 0 8px; }

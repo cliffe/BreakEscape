@@ -19,6 +19,25 @@ function decl(file, sel, prop) {
     return d ? d[1].trim() : null;
 }
 
+// Every declaration value of `prop` in every rule (all @media blocks too) that names `sel` as the
+// last compound of one of its selectors. A media override cannot slip past a first-rule read.
+function all(file, sel, prop) {
+    const src = read(file);
+    const out = [];
+    for (const m of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const names = m[1].split(',').map((x) => x.trim());
+        if (!names.some((n) => n === sel || n.endsWith(' ' + sel))) continue;
+        const d = m[2].match(new RegExp(`(?:^|[;\\s])${prop}:\\s*([^;]+)`));
+        if (d) out.push(d[1].trim());
+    }
+    return out;
+}
+function everyIs(file, sel, prop, want) {
+    const v = all(file, sel, prop);
+    assert.ok(v.length > 0, `${sel} declares ${prop}`);
+    assert.ok(v.every((x) => x === want), `${sel} ${prop} in every rule is ${want}, got ${v.join(' | ')}`);
+}
+
 const HEADINGS = [
     ['awareness-skin.css', '.aw-flip-section'],
     ['osint-browser-minigame.css', '.ob-heading'],
@@ -30,8 +49,40 @@ const HEADINGS = [
 
 test('M1: former 17-19px headings are GNF 24, above the 16px body', () => {
     for (const [file, sel] of HEADINGS) {
-        assert.ok(decl(file, sel, 'font-size') === '24px', `${sel} is 24px, not ${decl(file, sel, 'font-size')}`);
+        everyIs(file, sel, 'font-size', '24px');
+        if (sel !== '.ib-name') everyIs(file, sel, 'line-height', '32px'); // .ib-name inherits the card's
     }
+});
+
+// m3: a section heading at 24 would match its page heading, so the page headings take GNF 32
+const PAGE_HEADINGS = [
+    ['awareness-skin.css', '.aw-heading'],
+    ['episode-runner.css', '.epr-heading'],
+    ['osint-browser-minigame.css', '.ob-page-title'],
+    ['privacy-panel-minigame.css', '.pp-heading'],
+    ['sort-drill-minigame.css', '.sd-heading'],
+];
+test('m3: page headings are GNF 32 on a 40px line, above their 24px section headings', () => {
+    for (const [file, sel] of PAGE_HEADINGS) {
+        everyIs(file, sel, 'font-size', '32px');
+        everyIs(file, sel, 'line-height', '40px');
+    }
+    for (const [file, sel] of PAGE_HEADINGS.filter((p) => p[1] !== '.epr-heading')) {
+        assert.ok(all(file, sel, 'overflow-wrap').includes('anywhere'), `${sel} wraps an unbroken word at 32px`);
+    }
+});
+
+test('M1: the defender exposure card wraps long text instead of overflowing', () => {
+    const f = 'intel-board-minigame.css';
+    for (const sel of ['.ib-name', '.ib-reduce', '.ib-ask', '.ib-option']) {
+        assert.ok(all(f, sel, 'overflow-wrap').includes('anywhere'), `${sel} has overflow-wrap: anywhere`);
+    }
+    assert.ok(all(f, '.ib-name', 'min-width').includes('0'), '.ib-name has min-width 0');
+});
+
+test('m1: CTA letter-spacing is a whole pixel', () => {
+    everyIs('ncsc-brief-minigame.css', '.ncsc-open-btn', 'letter-spacing', '1px');
+    everyIs('coverage-decision-form-minigame.css', '.cdf-submit-btn', 'letter-spacing', '1px');
 });
 
 test('m1: NCSC and coverage CTA buttons are GNF 24', () => {

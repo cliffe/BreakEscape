@@ -21,7 +21,7 @@ test('phone examine panel keeps 44px above the content for the X', () => {
 
 test('the card scrolls inside the viewport on short landscape', () => {
     const base = css.slice(0, css.indexOf('.examine-panel'));
-    assert.ok(/max-height:\s*calc\(100vh - 160px\)/.test(base) && /overflow-y:\s*auto/.test(base), 'bounded and scrolling');
+    assert.ok(/max-height:\s*calc\(100dvh - 32px\)/.test(base) && /overflow-y:\s*auto/.test(base), 'bounded and scrolling');
 });
 
 // Round 1 fixes

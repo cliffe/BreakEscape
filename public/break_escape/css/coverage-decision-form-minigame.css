@@ -112,7 +112,7 @@
     font-size: 24px;
     cursor: not-allowed;
     padding: 8px 16px;
-    letter-spacing: 0.04em;
+    letter-spacing: 1px;
     text-align: center;
     opacity: 0.6;
     transition: all 0.2s;

@@ -71,7 +71,7 @@
 /* F13: the accent at heading size sits near the AA floor on the light surface; darken it a
    step so headings clear AA comfortably. color-mix keeps a brand's overridden accent in play
    (older engines fall back to the raw accent, which still meets AA on the default skin). */
-.aw-heading { margin: 0 0 8px; font-size: 24px; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
+.aw-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; overflow-wrap: anywhere; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
 .aw-lead, .aw-summary { margin: 0 0 12px; font-size: 16px; }
 /* C-X9: one awareness primary button, square with a 2px border, matching .epr-button and the
    password-guesser's action button so every action in the awareness windows reads the same.
@@ -82,7 +82,7 @@
 
 /* flip: a built page (E5) and a pretext call (E3) as well as a sent email */
 .aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; }
-.aw-flip-section { margin: 14px 0 4px; font-size: 24px; }
+.aw-flip-section { margin: 14px 0 4px; font-size: 24px; line-height: 32px; }
 .aw-missed { padding: 10px 12px; background: #fff; border-left: 4px solid var(--aw-line); }
 
 /* flip */

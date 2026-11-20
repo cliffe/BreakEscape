@@ -4,7 +4,10 @@
     width: auto;
     height: auto;
     max-width: min(640px, calc(100vw - 32px));
-    max-height: calc(100vh - 160px);
+    /* the card has no header or controls row to leave room for: keep only a 32px margin, so a
+       844x390 phone shows about 358px of card instead of 230px */
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     margin: 0 auto;
     overflow-y: auto;
     background: #1a1a1a;

@@ -108,7 +108,7 @@
 .epr-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
 
 .epr-panel { padding: 16px; line-height: 1.45; }
-.epr-heading { margin: 0 0 8px; font-size: 24px; color: var(--aw-accent); }
+.epr-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; color: var(--aw-accent); }
 .epr-heading:focus { outline: none; }
 .epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
 /* batch 13: the send-off under the Episode finished panel */
