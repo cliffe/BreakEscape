@@ -352,6 +352,7 @@
     font-family: 'GNF', monospace;
     font-size: 24px;
     padding: 0 8px;
+    min-height: 44px;   /* touch target: on a 390px phone the bar stacks and the field was 31px tall */
 }
 
 .cb-entry-input::placeholder {

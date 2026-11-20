@@ -257,3 +257,11 @@ test('sweep 6 R3 m1: the entry placeholder is short enough for a 360px window', 
     assert.ok(m !== null && m[1].trim().length > 0, 'the manual input has a placeholder');
     assert.ok(m[1].length <= 10, 'at most 10 characters (about 130px at GNF 24), got ' + JSON.stringify(m[1]));
 });
+
+// Live R4: at 390x844 the entry bar stacks and the field was 31px tall; it is a touch target, so 44px minimum
+test('sweep 6 R4: the entry input is at least 44px tall', () => {
+    assert.ok(/\.cb-entry-input\s*\{[^}]*min-height:\s*44px/.test(css), 'base .cb-entry-input min-height 44px');
+    const lowered = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter((r) => /\.cb-entry-input(?![\w-])/.test(r[1]) && [...r[2].matchAll(/min-height:\s*([^;]+)/g)].some((d) => d[1].trim() !== '44px'));
+    assert.ok(lowered.length === 0, 'no rule lowers the input min-height: ' + lowered.map((r) => r[1].trim()).join(' | '));
+});
