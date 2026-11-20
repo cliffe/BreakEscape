@@ -95,6 +95,7 @@ test('the toast text is the helper the world pickup uses (one wording)', () => {
 test('a normal item take keeps its in-window message and raises no note toast', async () => {
     setup();
     const key = { type: 'key', id: 'k1', name: 'Brass Key', takeable: true };
+    window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ contents: [{ ...key }] }) });
     const mg = new ContainerMinigame(document.getElementById('mg'), {
         title: 'Floor Safe', containerItem: { scenarioData: { id: 'safe1', type: 'safe', name: 'Floor Safe', locked: false } },
         contents: [{ ...key }], isTakeable: false });
