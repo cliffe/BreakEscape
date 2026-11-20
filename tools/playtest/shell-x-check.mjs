@@ -18,9 +18,10 @@
 // 0.65 s. If only the hit test is unmet then, the run hands over to the X report so an off-screen,
 // frame-clipped or covered X gets its specific message, and counts as a failure. This keeps --legacy
 // (which moves the X on most of the 180 X cases of 240) well under the 900 s test limit.
-// Every page call has a timeout, so a stalled page cannot hang the run: a sample 2 s, startMinigame 30 s,
+// Each case's page calls have a timeout, so a stalled scene cannot hang the run: a sample 2 s, startMinigame 30 s,
 // the openError read 5 s, xReport 10 s (all counted failures), forceClose 5 s (logged, the run carries on)
-// and browser.close() 10 s on the guard's way out. 10 cases in a row with no shell and no thrown error
+// the PIN message probe 10 s, and browser.close() 10 s on the way out. Viewport resizes and the one-off setup
+// (load, Mission Brief) are not timed. 10 cases in a row with no shell and no thrown error
 // (including samples that timed out) stop the run with exit 2 (a broken build, a knocked-out player or
 // a page that has stopped answering).
 // Trade-off: an X covered by something that clears within the 1.5 s hit window passes (the old fixed
@@ -346,7 +347,7 @@ async function main() {
             const tag = `pin message ${w}x${h}`;
             if (o.notOpen) { checked++; console.log(`${tag.padEnd(40)} (not open)`); continue; }
             if (!o.ready) { checked++; fails++; console.log(`${tag.padEnd(40)} FAIL ${o.message}`); continue; }
-            const m = await page.evaluate(async () => {
+            const pm = await timedEval(page.evaluate(async () => {
                 const mg = window.MinigameFramework.currentMinigame;
                 const pad = document.querySelector('.pin-minigame-keypad');
                 if (!mg || !pad) return null;
@@ -358,14 +359,17 @@ async function main() {
                 await new Promise(r => setTimeout(r, 200));
                 const longer = pad.getBoundingClientRect().top;
                 return { before, long, longer };
-            });
+            }), REPORT_TIMEOUT_MS);
             checked++;
+            if (!('value' in pm)) { fails++; console.log(`${tag.padEnd(40)} FAIL PIN probe ${pm.timedOut ? 'timed out' : 'threw: ' + pm.error}`); continue; }
+            const m = pm.value;
             if (!m) { console.log(`${tag.padEnd(40)} (not open)`); continue; }
             if (Math.abs(m.before - m.long) > 0.5 || Math.abs(m.before - m.longer) > 0.5) { fails++; console.log(`${tag.padEnd(40)} FAIL keys moved ${m.before} -> ${m.long} -> ${m.longer}`); }
             else console.log(`${tag.padEnd(40)} ok keys stay at ${Math.round(m.before)}`);
         }
     }
-    await browser.close();
+    const bc = await timedEval(browser.close(), BROWSER_CLOSE_TIMEOUT_MS);
+    if (bc.timedOut) console.error('browser.close() did not return in time');
     console.log(`SHELL-X-CHECK ${checked} checked, ${fails} failed`);
     if (fails) process.exit(1);
 }
