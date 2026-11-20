@@ -102,7 +102,7 @@ export function barkSource({ npcType = null, channel = null, hasClickHandler = f
 // (npc-barks.js _shouldDefer), review R1 M1. Minigames and conversations have their own hold.
 // The tutorial's step panel holds them too while it shows (review R2 M3): it covers the notify lane.
 export const DIALOG_SELECTORS = ['.tutorial-prompt-overlay', '.tutorial-overlay .tutorial-panel', '.game-confirm-overlay', '#game-menu-overlay.visible',
-  '#password-modal', '#player-preferences-modal', '.ending-check-overlay', '.success-screen-overlay'];
+  '#player-preferences-modal', '.ending-check-overlay', '.success-screen-overlay'];
 
 /** True while one of DIALOG_SELECTORS shows, or the tutorial prompt is due (it counts from the call). */
 export function dialogLayerOpen(doc = (typeof document !== 'undefined' ? document : null),
