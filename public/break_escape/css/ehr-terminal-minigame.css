@@ -102,7 +102,7 @@
     background: rgba(8, 20, 10, 0.85);
     color: #d6ffd6;
     font-family: 'GNF', monospace;
-    font-size: 23px;
+    font-size: 24px;
     line-height: 1.2;
     white-space: pre-wrap;
 }
@@ -137,7 +137,7 @@
     padding: 8px;
     text-align: left;
     font-family: 'GNF', monospace;
-    font-size: 22px;
+    font-size: 16px;
     cursor: pointer;
     display: grid;
     grid-template-columns: 1fr auto auto;
@@ -187,7 +187,7 @@
     border: 2px solid #3b6d46;
     padding: 8px;
     font-family: 'GNF', monospace;
-    font-size: 22px;
+    font-size: 16px;
     color: #d6ffd6;
 }
 
@@ -195,7 +195,7 @@
     border: 2px solid #3b6d46;
     padding: 8px;
     font-family: 'GNF', monospace;
-    font-size: 22px;
+    font-size: 16px;
 }
 
 .ehr-allergy-box.has-allergy {
@@ -212,7 +212,7 @@
     width: 100%;
     border-collapse: collapse;
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 16px;
     color: #d6ffd6;
 }
 
@@ -233,7 +233,7 @@
 
 .ehr-dose-label {
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 16px;
     color: #d6ffd6;
 }
 
@@ -264,7 +264,7 @@
     background: rgba(7, 12, 25, 0.85);
     color: #ffb2b2;
     font-family: 'GNF', monospace;
-    font-size: 23px;
+    font-size: 24px;
     line-height: 1.2;
     white-space: pre-wrap;
 }
