@@ -340,6 +340,10 @@
     /* Stacked in a column, flex: 1 1 0 would set each button's height basis to 0 and squash it to
        its 44px min-height, so the word and hint spilled onto the next button (live 390x844). */
     .tri-verdict { width: 100%; flex: 0 0 auto; }
+    /* Icon beside the word, hint across the full width: keeps the sticky stack about 60px shorter,
+       so more of the message shows above it (live 390x844: the stack took 290px of the pane). */
+    .tri-verdict { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; row-gap: 2px; align-items: center; }
+    .tri-verdict .tri-verdict-hint { grid-column: 1 / -1; }
     .tri-sheet-backdrop { align-items: flex-end; }
     .tri-sheet { width: 100%; max-height: 80%; }
     .triage-client .tri-toolbar { flex-wrap: wrap; }

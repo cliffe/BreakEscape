@@ -137,3 +137,10 @@ test('inbox-triage: stacked verdict buttons grow to their content on phones (liv
     // In a column, a 0 flex-basis squashes each button to its 44px min-height and the text overflows
     assert.ok(/flex:\s*0 0 auto/.test(rule), 'narrow .tri-verdict sets flex: 0 0 auto, got: ' + rule.trim());
 });
+
+test('inbox-triage: on phones the verdict icon sits beside the word and the hint spans the button', () => {
+    const block = mediaBlock('inbox-triage-minigame.css', '(max-width: 767px)');
+    const rules = [...block.matchAll(/\.tri-verdict\s*\{([^}]*)\}/g)].map((m) => m[1]).join(';');
+    assert.ok(/display:\s*grid/.test(rules) && /grid-template-columns:\s*auto 1fr/.test(rules), 'icon and word share a row');
+    assert.ok(/\.tri-verdict \.tri-verdict-hint\s*\{[^}]*grid-column:\s*1 \/ -1/.test(block), 'hint spans both columns');
+});
