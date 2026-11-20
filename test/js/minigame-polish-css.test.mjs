@@ -153,8 +153,40 @@ test('terminal-theme phone header fits Notepad plus the status line in 350px (m1
     assert.match(after, /font-size: 18px/);
 });
 
-test('se-overlay-close touch hit area is 44px (m2)', () => {
-    assert.match(read('minigames-framework.css'), /\.se-overlay-close::after \{[^}]*inset: -11px/);
+// D216 (R1 B1): the SE X wears the themed 6px border, and a ::after inset is measured from the
+// padding box, so the border width counts against it. Read every width from the CSS, not a constant.
+test('se-overlay-close touch hit area is at least 44px with the border it really draws (m2, B1)', () => {
+    const fw = read('minigames-framework.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const themes = read('ui-themes.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const base = fw.match(/\.se-overlay-close \{[^}]*\}/)?.[0] || '';
+    const box = Number((base.match(/(?:^|[\s;{])width:\s*(\d+)px/) || [])[1]);
+    const fallback = Number((base.match(/border:\s*(\d+)px solid/) || [])[1]);
+    assert.ok(box === 30, 'the X is drawn 30px square, got ' + box);
+    assert.ok(fallback >= 2, 'the unthemed border width is read from the CSS: ' + fallback);
+    const themed = [...themes.matchAll(/--ui-small-button-px:\s*(\d+)px/g)].map((m) => Number(m[1]));
+    assert.ok(themed.length >= 7, 'every theme sets --ui-small-button-px, found ' + themed.length);
+    const ruleBlock = fw.match(/\.se-overlay-close::after \{[^}]*\}/)?.[0] || '';
+    const insetText = ruleBlock.match(/inset:\s*([^;]+);/)?.[1] || '';
+    assert.ok(insetText !== '', 'the ::after rule sets an inset');
+    // Inset magnitude for a given border: -Npx, or calc(-Apx - var(--ui-small-button-px, Fpx)).
+    const insetFor = (border) => {
+        const c = insetText.match(/^calc\(\s*-(\d+)px\s*-\s*var\(--ui-small-button-px,\s*(\d+)px\)\s*\)$/);
+        if (c) return Number(c[1]) + border; // the var resolves to the border actually drawn
+        const n = insetText.match(/^-(\d+)px$/);
+        assert.ok(n !== null, 'the inset is a plain px value or the calc form: ' + insetText);
+        return Number(n[1]);
+    };
+    const check = (border, label) => {
+        const inset = insetFor(border);
+        const side = (box - 2 * border) + 2 * inset; // the inset starts at the padding box
+        const past = inset - border; // reach beyond the drawn edge
+        assert.ok(side >= 44, label + ': hit area ' + side + 'px is under 44px (border ' + border + 'px)');
+        assert.ok(past <= 8, label + ': reach past the X is ' + past + 'px, over the 8px title-bar gap');
+    };
+    check(fallback, 'unthemed');
+    for (const px of new Set(themed)) check(px, 'themed ' + px + 'px');
+    // The reach must name the variable the themed border uses, or the arithmetic above is moot.
+    assert.ok(/border-width:\s*var\(--ui-small-button-px\)/.test(themes), 'the themed X border is --ui-small-button-px');
 });
 
 test('dusting key marks are shown at a whole-number 2x (m3)', () => {

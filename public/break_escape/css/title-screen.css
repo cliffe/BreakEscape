@@ -28,9 +28,10 @@
 }
 
 /* CRT scanlines — same technique as bond-visualiser.css.
-   Recorded exception (D220, 2026-11-20): the boot and credits screens keep their CRT effects
-   (scanlines, vignette, logo glow below). They are not flattened to 2px stripes, and no other
-   screen takes them. */
+   Recorded exception (D220, 2026-11-20): the boot and credits screens keep their full-screen CRT
+   overlays: scanlines, the smooth vignette and the logo glow below, which the no-gradient and
+   no-blur rules would otherwise remove. No other full-screen overlay takes them (the faint button
+   scanlines in utilities.css are a separate texture). */
 .title-screen-container::before {
     content: '';
     position: absolute;

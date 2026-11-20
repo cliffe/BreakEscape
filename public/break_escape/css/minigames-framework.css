@@ -648,10 +648,17 @@
     box-shadow: none;
 }
 .se-overlay-close:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
-/* A 44 px touch target on small or touch screens, without changing the drawn 30 px square. */
+/* No themed skin (no data-ui-theme): the X still shows hover feedback, brightness only (D216). */
+.se-overlay-close:hover { filter: brightness(1.3); }
+/* A 44 px touch target on small or touch screens, without changing the drawn 30 px square.
+   The ::after is positioned against the X's padding box, so the border width counts against the
+   inset: 30 - 2*border + 2*reach = 44 needs reach = 7 + border. The border is 4px unthemed and
+   --ui-small-button-px (6px in every theme, D216) themed, so the inset is calc(-7px - border).
+   The reach past the drawn edge is 7px, inside the 8px gap every SE title bar keeps between the
+   X and its neighbours. */
 @media (max-width: 600px), (pointer: coarse) {
     .se-overlay-close { position: relative; }
-    .se-overlay-close::after { content: ''; position: absolute; inset: -11px; }
+    .se-overlay-close::after { content: ''; position: absolute; inset: calc(-7px - var(--ui-small-button-px, 4px)); }
 }
 
 /* Open in new tab button for workstations */
