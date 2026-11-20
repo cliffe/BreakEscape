@@ -60,3 +60,13 @@ rows 278/279 as gates B/C did.
   skipped by the registry and tests; staleness test covers the new files.
 
 Record game ids here per proof.
+
+## Verdict: Anjali never sat after the cooler (Quayholt, 2026-11-20)
+
+Cause: kit data, not the engine and not the cooler useFrom. Anjali's `needsHome.facing` was `north`, but her chair (`aw_chair_south_charcoal`, foot at about (245,265), home (237,266)) is a south-facing static chair, drawn north of the desk. In seating.js the post seat only accepts a static chair when `staticFacesToward(seat, feet, toward)` holds (within 67 degrees), and `toward` comes from the coordinate home's `facing`. North against a south chair fails, so `near` was empty, a static chair is never fetched, and the try ended with "work standing" (no `seat_gave_up` line, `_seatRetries` 0). Meanwhile the walk home accepted arrival within 1 tile (npc-behavior.js ~1432) and `_acceptArrival` within ARRIVAL_NEAR_PX 48, so `returned_post` fired 28 px short of the home, at about (262,253). Darren and Niamh face `south`, which matches their south chairs.
+
+Fix: `needsHome.facing` for Anjali `north` to `south` in quayholt_insurance.json (commit 08fad620f). Any ca shell that bakes the Quayholt kit needs a re-splice. Engine: no change. (Possible hardening, not needed: log `seat_no_chair` when the chair is rejected on facing, since the failure left no log line.)
+
+dy 1 control (game 10992, useFrom dy 1, facing north): Anjali stood after both returns, so the failure predates the dy 1.25 change and is independent of it.
+
+Re-test with the fix (dy 1.25, facing south), games 10975, 10989, 10990, 10991, 10998, 10999, 11007, 11008, five 270 s sessions plus extras: Anjali 9 of 9 returns sat (sit_south at (245,263)), Darren 8 of 8 sat, Niamh 14 of 14 sat. Game ids 10931 to 10938 (before) and 10992 (control) show the failure.
