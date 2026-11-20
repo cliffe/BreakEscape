@@ -98,6 +98,10 @@
 .ap-amber { fill: #f59e0b; }
 .ap-red   { fill: #ef4444; }
 .ap-off   { fill: #1e2635; }
+/* m10 board classes: warning is amber, critical is red. A lit lamp also changes its status word
+   (and critical flashes), so state is never colour alone. */
+.ap-warning  { fill: #f59e0b; }
+.ap-critical { fill: #ef4444; }
 
 /* Flash — 1 Hz, step-start for hard blink */
 .ap-flash {
