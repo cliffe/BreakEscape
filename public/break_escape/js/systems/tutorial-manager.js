@@ -22,7 +22,7 @@ const READY_OUTLINE_PX = 4; // Continue's ready outline: 2px plus 2px offset
 // Dialogs that hold the keyboard while shown. Most are built once and hidden, so the
 // check below counts only the ones actually rendered. The tutorial's own panel and
 // prompt are left out on purpose (this is the same list as ui/hud-lanes.js DIALOG_SELECTORS).
-const OTHER_DIALOG_SELECTOR = '[aria-modal="true"], .game-confirm-overlay, #password-modal, ' +
+const OTHER_DIALOG_SELECTOR = '[aria-modal="true"], .game-confirm-overlay, ' +
     '#player-preferences-modal, .ending-check-overlay, .success-screen-overlay';
 
 function isShown(el) {

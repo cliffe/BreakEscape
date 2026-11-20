@@ -2,6 +2,7 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { examineDisplaySize } from '../../systems/examine.js';
 import { escapeHtml as esc } from '../../utils/escape-html.js';
+import { sameToastText } from '../../utils/same-toast-text.js';
 
 /**
  * Examine: the object's sprite at twice its on-screen room size (whole-number
@@ -18,7 +19,9 @@ export class ExamineMinigame extends MinigameScene {
         this.container.classList.add('examine-minigame');
 
         const p = this.params || {};
-        const observations = p.observations ? esc(displayDashes(p.observations)) : '';
+        // An observation identical to the text shows once, as the text
+        const dup = p.text && sameToastText(p.observations, p.text);
+        const observations = p.observations && !dup ? esc(displayDashes(p.observations)) : '';
         const text = p.text ? esc(displayDashes(p.text)) : '';
 
         this.gameContainer.innerHTML = `
