@@ -49,7 +49,7 @@ import {
     FACTOR_ORDER, NONE_ID, chipIdsFor, chipLabel, redFlagString, skillName
 } from './triage-flags.js';
 import {
-    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, clearKindTimers, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
+    awarenessWeakestLineFor, kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, clearKindTimers, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
     shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
@@ -1339,14 +1339,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      * A tell row's text: the red-flag sentence and the author's note in brackets. D227 A2: under
      * the episode trims, a row with a note prints the chip label and the note instead, because
      * the generic sentence repeats what the label says and every specific detail is in the note.
-     * A message's own sentence for the tell (factorStrings) is specific, so it is kept as before;
-     * a row with no note keeps the sentence.
+     * A message's own sentence for the tell (factorStrings.redFlag) is dropped too: in the episode
+     * sets it restates the tell's definition (ca12 "Someone followed an authorised person through a
+     * secure door"), and the specifics are in the note. A row with no note keeps the sentence.
      */
     _flagRowText(rec, id, note) {
         const sentence = redFlagString(id, rec, this.set);
         if (!note) return sentence;
-        const ownSentence = isObj(rec?.factorStrings) && isObj(rec.factorStrings[id]);
-        if (this.episodeTrims && !ownSentence) {
+        if (this.episodeTrims) {
             const label = String(chipLabel(this.set, id) || '').trim().replace(/[.:;,]+$/, '');
             if (label) return `${label}${/[!?]$/.test(label) ? '' : '.'} ${note}`;
         }
@@ -1404,9 +1404,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // D227 A1: a folded round skips its result card; the episode debrief that follows opens
         // with the band headline and the score. The starter's onComplete saves the result.
         if (this.foldResult) {
-            this.result = this._buildResult();
-            this.gameResult = this.result;
-            if (this.gameState?.isActive) this.complete(true);
+            // The result card's own save still runs (_notifyResult), and the overlay closes once it
+            // settles, as Finish would have.
+            const result = this._buildResult();
+            this.result = result;
+            this.gameResult = result;
+            const saving = this._notifyResult(result);
+            const done = () => { if (this.gameState?.isActive) this.complete(true); };
+            if (saving) saving.then(done, done); else done();
             return;
         }
         this._showStep('result');
@@ -1467,19 +1472,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      * team. A mixed set falls back to the inbox wording.
      */
     _awarenessWeakestLine(it = 'it') {
-        const kinds = this.messages.map((m) => kindOf(m));
-        const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
-        const ask = 'and if you are not sure, ask your IT or security team.';
-        if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
-            return `Look for ${it} in the next messages you get at work, ${ask}`;
-        }
-        if (every(['page'])) return `Read the address bar before you sign in to any page, ${ask}`;
-        if (every(['call', 'push', 'voicemail'])) {
-            return `If a caller, prompt or voicemail pushes you to act, stop and check through a channel you already trust, ${ask}`;
-        }
-        if (every(['choice'])) return `Think back to the choices you missed the next time they come up at work, ${ask}`;
-        if (every(['sms', 'qr'])) return `Be wary of links and codes you did not ask for, ${ask}`;
-        return `Look for ${it} in the next messages you get at work, ${ask}`;
+        return awarenessWeakestLineFor(this.messages.map((m) => kindOf(m)), it);
     }
 
     _score() {
@@ -1856,9 +1849,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     _notifyResult(result) {
         const fn = this.params.persistResult || this.params.onResult;
-        if (typeof fn !== 'function') return;
+        if (typeof fn !== 'function') return null;
         let out;
-        try { out = fn(result); } catch (err) { console.error('triage persistResult failed:', err); return; }
+        try { out = fn(result); } catch (err) { console.error('triage persistResult failed:', err); return null; }
         if (out && typeof out.then === 'function') {
             // Hold Finish quietly on the first attempt. The saving notice is for a
             // retry (05: shown while syncConfirmed is retrying), which the starter
@@ -1866,7 +1859,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             this.setSavingState('pending');
             const settle = (state) => { if (this.result === result) this.setSavingState(state); };
             out.then((res) => settle(res === false || res?.confirmed === false ? 'failed' : 'saved'), () => settle('failed'));
+            return out;
         }
+        return null;
     }
 
     /** The starter reports the save: 'saving' holds Finish, 'saved' clears the note, 'failed' says it will save on the next open. */

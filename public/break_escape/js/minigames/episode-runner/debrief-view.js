@@ -428,7 +428,7 @@ function conceptEntryShown(entry, globals) {
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
     reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
-    concernRecap = null, showScore = true, globals = null, folded = false, bandHeadline = null } = {}) {
+    concernRecap = null, showScore = true, globals = null, folded = false, bandHeadline = null, weakestNudge = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -544,7 +544,10 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
                 ? (isObj(strings) && isStr(strings.weakestTell) ? strings.weakestTell : 'The tell most often missed: {names} ({counts}).')
                 : (isObj(strings) && isStr(strings.weakestTells) ? strings.weakestTells : 'The tells most often missed: {names} ({counts} each).');
             // D227 A1: the folded card's next step for that skill, when the set authors one (set.nudges).
-            const nudge = folded === true && isObj(set?.nudges) && isStr(set.nudges[weak.id]) ? ` ${set.nudges[weak.id]}` : '';
+            // With no authored line, the generic next step (weakestNudge) so the pointer is not lost.
+            let nudgeText = isObj(set?.nudges) && isStr(set.nudges[weak.id]) ? set.nudges[weak.id] : null;
+            if (!nudgeText && typeof weakestNudge === 'function') nudgeText = weakestNudge(ids.length > 1);
+            const nudge = folded === true && isStr(nudgeText) ? ` ${nudgeText}` : '';
             root.appendChild(el('p', 'aw-weakest', tmpl.replace(/\{names\}/g, joined).replace(/\{counts\}/g, counts) + nudge));
         }
     }

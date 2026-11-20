@@ -66,6 +66,7 @@ import { writeGlobal } from '../../systems/global-writer.js';
 import { recordTriageResult } from '../../systems/awareness-measure.js';
 import { resolvePlayerSent, plainSentMessage, buildTriageMessages } from '../inbox-triage/triage-messages.js';
 import { scoreTriage, bandFor } from '../inbox-triage/triage-scoring.js';
+import { awarenessWeakestLineFor } from '../inbox-triage/triage-kinds.js';
 import { renderStepStrip, applyBrand } from './step-strip.js';
 import { renderFlipView } from './flip-view.js';
 import { renderDebrief } from './debrief-view.js';
@@ -915,6 +916,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             showScore,
             folded,
             bandHeadline,
+            weakestNudge: folded ? (several) => foldedWeakestNudge(this.defendSet, several) : null,
             set: this.defendSet,
             strings: this.strings,
             globals: this.globals,
@@ -1409,6 +1411,18 @@ export function foldedHeadline(result, set) {
     if (!Number.isFinite(result.percent)) return null;
     const band = bandFor(result.percent, Array.isArray(set?.bands) ? set.bands : undefined);
     return isStr(band?.headline) ? band.headline : null;
+}
+
+/**
+ * D227 A1: the folded card's next step for the weakest skill when the set authors no `nudges` line:
+ * the set's resultCopy.weakest ({it} becomes it/them), else the awareness line for its message kinds.
+ */
+export function foldedWeakestNudge(set, several = false) {
+    const it = several ? 'them' : 'it';
+    const own = isObj(set?.resultCopy) && isStr(set.resultCopy.weakest) ? set.resultCopy.weakest : null;
+    if (own) return own.split('{it}').join(it);
+    const kinds = (Array.isArray(set?.messages) ? set.messages : []).filter(isObj).map((m) => (isStr(m.kind) ? m.kind : 'email'));
+    return awarenessWeakestLineFor(kinds, it);
 }
 
 function isNormal(success, result) {
