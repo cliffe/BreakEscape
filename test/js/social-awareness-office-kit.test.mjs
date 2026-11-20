@@ -24,6 +24,23 @@ const pins = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)
 
 const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
 
+// The text of strings.conceptPanel in every shape the debrief draws (debrief-view.js, ENG-09b): a
+// string, one { heading?, text } object, or an array of them. Reading `.text` alone saw nothing in
+// an array panel, so checks on array panels passed without looking.
+function conceptPanelTexts(cp) {
+  if (typeof cp === 'string') return [cp];
+  if (Array.isArray(cp)) return cp.map((e) => (typeof e === 'string' ? e : e && e.text));
+  if (cp && typeof cp === 'object') return [cp.text];
+  return [];
+}
+
+// A chain shell invites through the chain, so no entry of its panel carries "have a word with".
+function assertChainPanelNoInvite(cp, label) {
+  const texts = conceptPanelTexts(cp);
+  assert.ok(texts.length > 0 && texts.every((t) => typeof t === 'string' && t.length > 0), `${label}: every conceptPanel entry has text`);
+  for (const t of texts) assert.ok(!/have a word with/.test(t), `${label}: a chain shell invites through the chain, not the panel text`);
+}
+
 // Folders whose files are pinned: every check shell (ca_pre_*, ca_post_*) and the annual shell.
 function pinnedShells() {
   return readdirSync(scenarios, { withFileTypes: true })
@@ -345,9 +362,8 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     const deb = JSON.stringify(sc.social.awarenessEpisode.strings) + JSON.stringify(sc.social.awarenessEpisode.debrief);
     // layer 1 pointer: the "have a word with <host>" sentence lives in strings.conceptPanel.text. A chain shell
     // (the panel build) leaves it out because the chain does the inviting; the committed fallback shell keeps it.
-    const panelText = sc.social.awarenessEpisode.strings.conceptPanel.text;
-    assert.ok(!/have a word with/.test(panelText), where('a chain shell invites through the chain, not the panel text'));
-    assert.match(readShell('ca01_invoice_fraud').social.awarenessEpisode.strings.conceptPanel.text, /Before you leave, take a look around the office and have a word with Adaeze\.$/, 'the fallback shell keeps the layer 1 pointer');
+    assertChainPanelNoInvite(sc.social.awarenessEpisode.strings.conceptPanel, where('panel'));
+    assert.match(conceptPanelTexts(readShell('ca01_invoice_fraud').social.awarenessEpisode.strings.conceptPanel).join('\n'), /Before you leave, take a look around the office and have a word with Adaeze\.$/, 'the fallback shell keeps the layer 1 pointer');
     if (row && row.attack) assert.ok(/To a real attacker/.test(deb), where('layer 0 passage in the debrief'));
     // no ambient displayName (full or first name) in the social block
     for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_') && x.displayName)) {
@@ -462,9 +478,27 @@ test('every set-piece NPC in every kit is a hidden record with no person, and is
 test('test_ca12_fallback keeps the layer 1 pointer and layer 0 passage', () => {
   const sc = readShell('test_ca12_fallback');
   assert.equal(sc.scenario_id, 'test_ca12_fallback');
-  assert.match(sc.social.awarenessEpisode.strings.conceptPanel.text, /have a word with Lorna\.$/);
+  assert.ok(conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel).some((t) => /have a word with Lorna\.$/.test(t)));
   const deb = JSON.stringify(sc.social.awarenessEpisode.strings) + JSON.stringify(sc.social.awarenessEpisode.debrief);
   assert.match(deb, /To a real attacker/);
+});
+
+// conceptPanel may be an array (ENG-09b): the chain-shell panel check must read every entry
+test('kit chain: the panel check reads every entry of an array conceptPanel', () => {
+  const invite = { heading: 'Before you go', text: 'Before you leave, take a look around the office and have a word with Lorna.' };
+  const plain = { heading: 'What these visitors relied on', text: 'A parcel and a familiar name.' };
+  assert.deepEqual(conceptPanelTexts([plain, invite]), [plain.text, invite.text]);
+  assert.deepEqual(conceptPanelTexts(plain), [plain.text]);
+  assert.deepEqual(conceptPanelTexts('Just text.'), ['Just text.']);
+  assert.throws(() => assertChainPanelNoInvite([plain, invite], 'array'), /invites through the chain/);
+  assert.throws(() => assertChainPanelNoInvite([plain, { heading: 'No text' }], 'array'), /every conceptPanel entry has text/);
+  assert.doesNotThrow(() => assertChainPanelNoInvite([plain], 'array'));
+  // and the same check on every real chain shell, with its panel wrapped into an array plus an invite entry
+  for (const name of chainShells()) {
+    const cp = readShell(name).social.awarenessEpisode.strings.conceptPanel;
+    const asArray = Array.isArray(cp) ? cp : [cp];
+    assert.throws(() => assertChainPanelNoInvite([...asArray, invite], name), /invites through the chain/, name);
+  }
 });
 
 // a bark's targetKnot must name a real knot in the NPC's own ink (a missing knot only fails at runtime)
