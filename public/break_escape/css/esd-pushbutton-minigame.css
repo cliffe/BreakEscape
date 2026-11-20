@@ -30,7 +30,7 @@
     margin: 0 auto;
     padding: 20px;
     border: 2px solid #ffd12a;
-    background: rgba(16, 16, 16, 0.9);
+    background: #101010;
     color: #f2f2f2;
     box-sizing: border-box;
 }
@@ -154,7 +154,7 @@
     min-height: 26px;
     padding: 8px 10px;
     border: 2px solid #414141;
-    background: #14161d;
+    background: #000;
     color: #ffc447;
     font-family: 'GNF', monospace;
     font-size: 24px;

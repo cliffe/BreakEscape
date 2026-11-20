@@ -535,7 +535,8 @@
 .lpb-root .cc-image { max-width: 100%; image-rendering: pixelated; }
 
 /* ── invalid ── */
-.lpb-invalid { padding: 24px; display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+.lpb-invalid { display: flex; flex-direction: column; }
+.lpb-invalid-text { margin: 0; flex: 1 1 auto; }
 
 /* ── captures view (read-only) ── */
 .lpb-captures { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; height: 100%; box-sizing: border-box; overflow: hidden; }
