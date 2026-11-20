@@ -55,6 +55,30 @@ test('VM launcher and PC monitor X are at least 32px', () => {
     assert.ok(/-\s*32px/.test(pb), 'pc X top centring uses 32px');
 });
 
+test('the VM launcher X rule matches the DOM the framework builds (parent is the container, not the frame)', () => {
+    const vmJs = readFileSync(join(root, 'js/minigames/vm-launcher/vm-launcher-minigame.js'), 'utf8');
+    const baseJs = readFileSync(join(root, 'js/minigames/framework/base-minigame.js'), 'utf8');
+    assert.ok(/static closeInsideFrame\s*=\s*true/.test(vmJs), 'the scene places the X over its frame');
+    const cls = (vmJs.match(/container\.classList\?*\.add\('([\w-]+)'\)/) || [])[1];
+    assert.ok(cls === 'vm-launcher-minigame', `the scene tags its container (${cls})`);
+    // Outside console mode the framework's template makes the X a direct child of the container, before any frame
+    assert.ok(/\} else this\.container\.innerHTML = `\s*<button class="minigame-close-button" id="minigame-close"/.test(baseJs), 'the X is a direct child of the container');
+    assert.ok(!/consoleWindow\s*=\s*true/.test(vmJs), 'the VM launcher is not a console window (whose X lives in the titlebar)');
+    const sels = rulesFor('vm-launcher-minigame.css', 'minigame-close-button').map((r) => r.sel);
+    assert.ok(sels.length > 0, 'a rule for the X exists');
+    for (const sel of sels) {
+        assert.ok(!/vm-launcher-frame\s*>\s*\.minigame-close-button/.test(sel), `(${sel}) the X is never a child of the frame`);
+    }
+    assert.ok(sels.some((s) => /\.vm-launcher-minigame\s*>\s*\.minigame-close-button/.test(s)), 'the rule targets the container child');
+});
+
+test('the compact PC bezel strip holds the 32px X with 2px clear, and the SIEM queue count stays one line', async () => {
+    const { PC_BEZEL } = await import('../../public/break_escape/js/utils/pc-monitor.js');
+    assert.ok(PC_BEZEL.compact.top >= 36 && PC_BEZEL.full.top >= 36, `strips ${PC_BEZEL.compact.top}/${PC_BEZEL.full.top} are 36 or more`);
+    const q = rulesFor('siem-dashboard-minigame.css', 'siem-queue-count').filter((r) => /nowrap/.test(r.body));
+    assert.ok(q.length > 0 && px(q[0].body, 'font-size')[0] === 16, 'the narrow-pane band is 16px, nowrap');
+});
+
 test('queued alerts text pluralises', async () => {
     const { queuedAlertsText } = await import('../../public/break_escape/js/minigames/siem/siem-dashboard-minigame.js');
     assert.ok(queuedAlertsText(0) === '0 alerts queued', 'zero');
