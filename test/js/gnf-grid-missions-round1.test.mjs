@@ -38,6 +38,7 @@ test('m2: the BLE name span shrinks and the icon group does not', () => {
     assert.ok(prop(name, 'min-width') === '0', 'name min-width 0');
     assert.ok(prop(name, 'overflow-wrap') === 'anywhere', 'name breaks long tokens');
     assert.ok(prop(bodyOf('ble-scanner.css', '.ble-device-icons'), 'flex') === 'none', 'icons do not shrink');
+    assert.ok(prop(bodyOf('ble-scanner.css', '.ble-device-name'), 'gap') === '8px', 'a shrunk name keeps 8px from SAVE (R2 m1)');
 });
 
 test('m3: ransomware body and container-info p use whole-pixel line heights', () => {
