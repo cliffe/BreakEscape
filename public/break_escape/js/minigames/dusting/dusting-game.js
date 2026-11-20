@@ -151,6 +151,11 @@ function cachedPrint(opts) {
     return printCache.get(key);
 }
 
+/** The one phone-width rule, same as the CSS (max-width: 760px): exactly 760 is phone. innerWidth is the fallback without matchMedia. */
+function isPhoneWidth() {
+    return window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
+}
+
 function readStore(key) { try { return window.localStorage.getItem(key) === '1'; } catch (e) { return false; } }
 function writeStore(key, on) { try { window.localStorage.setItem(key, on ? '1' : '0'); } catch (e) { /* ignore */ } }
 
@@ -383,6 +388,8 @@ export class DustingMinigame extends MinigameScene {
         this.addEventListener(cv, 'pointermove', e => this._onPointerMove(e));
         this.addEventListener(cv, 'pointerup', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointercancel', e => this._onPointerUp(e));
+        // capture lost mid-stroke (element hidden, re-laid out, OS takeover) ends the stroke as pointerup would
+        this.addEventListener(cv, 'lostpointercapture', e => this._onPointerUp(e));
         this.addEventListener(cv, 'pointerleave', () => { if (!this.pointerDown) { this.pointerInside = false; this.dirty = true; if (this.nearPrint) this._clearNear(); } });
         this._bindPanel();
         this.addEventListener(document, 'keydown', e => this._onKeyDown(e));
@@ -447,7 +454,7 @@ export class DustingMinigame extends MinigameScene {
         // Comparing on a non-short screen: the magnified pair takes the lift's place in the stage column
         // (My whole lift, View large and L bring the lift back).
         this.canvas.hidden = this._zoomInStage(short);
-        this.wide = window.innerWidth >= 760;
+        this.wide = !isPhoneWidth();   // same rule as _placeFoot and the CSS
         if (this.step === 'compare' && this.patternOk && this.panel) {
             // the pair sits in the stage column, or in the panel in short landscape; moving between them re-renders
             if (this._zoomShort !== undefined && this._zoomShort !== short) this._renderPanel(); else this._drawZoom();
@@ -546,8 +553,7 @@ export class DustingMinigame extends MinigameScene {
         const body = root.querySelector('.dusting-body');
         const foot = root.querySelector('.dusting-foot');
         if (!body || !foot) return;
-        // same test as the CSS (max-width: 760px); innerWidth is the fallback where matchMedia is missing (JSDOM)
-        const narrow = window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
+        const narrow = isPhoneWidth();
         const short = root.classList.contains('dusting-short');
         const phone = narrow && !short;
         // short landscape compare: .dusting-root is the scroller (the panel does not scroll), so the row is its last child
@@ -1287,11 +1293,22 @@ export class DustingMinigame extends MinigameScene {
 
     _onPointerUp(e) {
         if (this.pointerDown && e && e.pointerId !== this._pointerId) return;   // only the stroke's own pointer ends it
-        if (this.step === 'dust') this._saveProgress();
-        if (this._touchFind && e && e.type === 'pointerup' && this.step === 'find') this._attemptFind(this.reticle);
+        if (!this.pointerDown && e && e.type === 'lostpointercapture') return;   // pointerup already ended it; capture release follows
+        // Snapshot, then clear the stroke first: releasing capture may fire lostpointercapture synchronously, and that
+        // nested call must find no stroke and do nothing (no second save, no lost touch Find attempt).
+        const touchFind = this._touchFind;
+        const pid = e ? e.pointerId : undefined;
         this._touchFind = false;
         this.pointerDown = false;
         this.lastPt = null;
+        this._pointerId = null;
+        this._brushCarry = 0;
+        if (this.step === 'dust') this._saveProgress();
+        if (touchFind && e && e.type === 'pointerup' && this.step === 'find') this._attemptFind(this.reticle);
+        const cv = this.canvas;
+        if (pid !== undefined && cv && cv.hasPointerCapture && cv.releasePointerCapture) {
+            try { if (cv.hasPointerCapture(pid)) cv.releasePointerCapture(pid); } catch (err) { /* already gone */ }
+        }
     }
 
     /** First stroke on this powder: short landscape then hides the instruction paragraph (CSS, [data-brushed]) to make room

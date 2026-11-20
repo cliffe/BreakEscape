@@ -18,7 +18,8 @@ globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.document = { querySelector: () => null };
 const panelSrc = readFileSync(join(js, 'ui/objectives-panel.js'), 'utf8')
     .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
-    .split("'./modal-stack.js'").join(`'${dataUrl('export const openModalCount = () => 0;')}'`);
+    .split("'./modal-stack.js'").join(`'${dataUrl('export const openModalCount = () => 0;')}'`)
+    .split("'./hud-lanes.js'").join(`'${dataUrl(readFileSync(join(js, 'ui/hud-lanes.js'), 'utf8'))}'`);
 const { ObjectivesPanel } = await import(dataUrl(panelSrc));
 
 const aim = (aimId, status = 'active') => ({ aimId, title: aimId, status, tasks: [{ taskId: `${aimId}_t`, title: `Task of ${aimId}`, status: 'active' }] });

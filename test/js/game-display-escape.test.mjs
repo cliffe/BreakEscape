@@ -140,7 +140,7 @@ test('an active minigame keeps its refusal even with a note up', async () => {
 const dom = new JSDOM('<!doctype html><html><body><button id="prev">prev</button></body></html>', { pretendToBeVisual: true });
 const eng = mkdtempSync(join(tmpdir(), 'gd-escape-eng-'));
 writeFileSync(join(eng, 'package.json'), '{"type":"module"}\n');
-for (const f of ['systems/notifications.js', 'ui/modal-stack.js', 'utils/display-dashes.js', 'utils/overlay-open.js', 'ui/objectives-panel.js']) {
+for (const f of ['systems/notifications.js', 'ui/modal-stack.js', 'utils/display-dashes.js', 'utils/overlay-open.js', 'ui/objectives-panel.js', 'ui/hud-lanes.js']) {
     mkdirSync(dirname(join(eng, f)), { recursive: true });
     writeFileSync(join(eng, f), readFileSync(join(js, f), 'utf8'));
 }
