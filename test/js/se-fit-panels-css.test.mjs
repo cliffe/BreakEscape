@@ -78,6 +78,34 @@ test('concern form: Start is never positioned over the copy (no position or bott
     assert.ok(/overflow-y:\s*auto/.test(stage.body), 'the stage is the scroller');
 });
 
+test('concern form: the flex chain keeps the stage shrinking and the footer fixed', () => {
+    const src = read('concern-form-minigame.css');
+    const rules = allRules(src);
+    const stages = rules.filter((r) => r.sel.split(',').some((s) => /\.cf-stage$/.test(s.trim())));
+    assert.ok(stages.length >= 1, 'a .cf-stage rule exists');
+    const stage = stages.find((r) => r.sel === '.cf-stage');
+    assert.ok(!!stage, 'exact .cf-stage rule');
+    assert.ok(/(^|[;\s])flex:\s*1\s*;/.test(stage.body) || /flex:\s*1 1 /.test(stage.body), '.cf-stage grows and shrinks (flex: 1)');
+    assert.ok(/min-height:\s*0/.test(stage.body), '.cf-stage has min-height: 0 so it can shrink');
+    for (const r of stages) {
+        assert.ok(!/(^|[;\s])flex(-shrink)?:\s*(none|0)/.test(r.body), `${r.sel} must not stop shrinking: ${r.body.trim()}`);
+    }
+    const empty = rules.find((r) => r.sel === '.cf-foot:empty');
+    assert.ok(!!empty && /display:\s*none/.test(empty.body), '.cf-foot:empty is hidden');
+    for (const r of rules.filter((x) => x.sel.split(',').some((s) => /\.cf-foot$/.test(s.trim())))) {
+        assert.ok(!/(^|[;\s])(overflow(-x|-y)?|max-height|height)\s*:/.test(r.body), `${r.sel} must not scroll or cap the footer: ${r.body.trim()}`);
+    }
+});
+
+test('concern form: the footer lines up with the panel copy at phone width', () => {
+    const block = mediaBlock(read('concern-form-minigame.css'), '@media (max-width: 767px)');
+    assert.ok(block !== null, 'has the 767px block');
+    const panel = /\.cf-panel\s*\{[^}]*padding:\s*\d+px\s+(\d+)px/.exec(block);
+    const foot = /\.cf-foot\s*\{[^}]*padding:\s*0\s+(\d+)px/.exec(block);
+    assert.ok(!!panel && !!foot, 'both .cf-panel and .cf-foot set padding in the 767px block');
+    assert.ok(panel[1] === foot[1], `footer side padding ${foot && foot[1]}px matches the panel ${panel && panel[1]}px`);
+});
+
 test('concern form JS: Start goes in the footer outside the stage, the footer is a sibling of the stage', () => {
     const js = readFileSync(join(root, 'js', 'minigames', 'concern-form', 'concern-form-minigame.js'), 'utf8');
     assert.ok(/this\.footEl\.appendChild\(start\)/.test(js), 'start is appended to footEl');
