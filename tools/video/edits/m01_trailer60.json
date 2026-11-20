@@ -1,10 +1,10 @@
 {
  "mission": "m01",
- "id": "m01_trailer60_v8",
+ "id": "m01_trailer60_v9",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v8.5: the cards Uncover the Mystery (now 22.5 s, before the NPC lines) and Choices with Consequences (now 36.5 s) swap places (user: the NPC lines are not consequences of the player's actions). v8.4: the server-room shot at 16 s is gone; Real Hacking card at 16.0, walk up to the Kali station 2 s, then only this mission's Kali footage (Hydra and the SSH shell, slowed to 2 s; sqlmap and dirb are from other missions and are out). v8.3: Real Hacking section is now card, walk to the Kali station, hacking clip, CyberChef (the first CyberChef cut is gone from montage A); montage B drops its keypad, the chair walk is a walk to the north-west door that knocks a swivel chair (1.5 s); the crescendo's last cut is the launch device instead of the Kali launcher. v8.2: montage B's Kevin walk (the player bumped into him) replaced by a walk that pushes a swivel chair. v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
+ "status": "v9 (2026-11-20): re-recorded on build 1f651abce with the spy starter avatars (one avatar per take, none shared by adjacent visible shots, see docs/video/edits/M01_TRAILER60_AVATARS.md) and every window re-timed to the v3 takes (docs/video/takes_v2.md, v3 edit windows); m_lights is the new take t03b_lights_on in the NPC-free motion-sensor storage_closet (the main office starts lit now, so the strike no longer shows there); the NPC lines are 4.0 / 4.0 / 4.5 s on the grid with their real line ends; derek_wide is cropped (cx .5 cy .4 zoom 1.3) so the Derek Lawson name bar stays out, and Derek's J-cut still starts 2.43 s into his line. Keep out: the Anniversary post-it, the Kali launcher post-it, the Derek name bar. v8.5: the cards Uncover the Mystery (now 22.5 s, before the NPC lines) and Choices with Consequences (now 36.5 s) swap places (user: the NPC lines are not consequences of the player's actions). v8.4: the server-room shot at 16 s is gone; Real Hacking card at 16.0, walk up to the Kali station 2 s, then only this mission's Kali footage (Hydra and the SSH shell, slowed to 2 s; sqlmap and dirb are from other missions and are out). v8.3: Real Hacking section is now card, walk to the Kali station, hacking clip, CyberChef (the first CyberChef cut is gone from montage A); montage B drops its keypad, the chair walk is a walk to the north-west door that knocks a swivel chair (1.5 s); the crescendo's last cut is the launch device instead of the Kali launcher. v8.2: montage B's Kevin walk (the player bumped into him) replaced by a walk that pushes a swivel chair. v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -74,8 +74,8 @@
    },
    "source": {
     "file": "t10_hax_hook.trimmed.mkv",
-    "in": 19.665,
-    "out": 22.665
+    "in": 16.8,
+    "out": 19.8
    },
    "dialogue": true,
    "lines": [
@@ -83,7 +83,7 @@
      "speaker": "Agent HaX",
      "text": "Whatever they're building, it's targeted and sophisticated.",
      "start": -1.2,
-     "end": 2.626
+     "end": 2.52
     }
    ],
    "framing": {
@@ -120,7 +120,7 @@
     "keypad_partial": null,
     "note": "HaX hook: names no cell, culprit, code or ending"
    },
-   "note": "v4 J-cut: HaX's line (take 18.465-22.291) starts 1.2 s before the cut, under the held title (audio from take 18.365 = 1.3 s pre-roll); picture cuts to her portrait at take 19.665 (mid-line, subtitle on screen) and ends 22.665, before the next line's subtitle at 22.75"
+   "note": "v9 J-cut: HaX's line (take 15.60-19.32) starts 1.2 s before the cut, under the held title (audio from take 15.50 = 1.3 s pre-roll); picture cuts to her portrait at take 16.80 (mid-line, subtitle on screen) and ends 19.80"
   },
   {
    "id": "card_mission",
@@ -152,11 +152,11 @@
     "type": "glitch"
    },
    "source": {
-    "file": "t03_lights_on.trimmed.mkv",
-    "in": 3.55,
-    "out": 5.05
+    "file": "t03b_lights_on.trimmed.mkv",
+    "in": 2.9,
+    "out": 4.4
    },
-   "note": "2.5 s: 1.5 s dark office lead-in (player through the door), lights strike on the drop at 12.0 s (marker lights-on at 5.13 s in the take; draft in-point 5.05 kept)",
+   "note": "v9: t03b_lights_on (ngozi_adeyemi), the agent steps from the lit hallway_east into the dark NPC-free storage_closet; the lights strike on at 3.406 s in the take; the first v9 render showed it lit only at 11.95 (about 0.25 s later than the ffmpeg frames of the take), then the window moved to 2.9-4.4 because the strike flickers (lit 3.6, dark 3.7-3.9, steady from 4.0): dark start, flicker, 0.4 s steady before the cut at 12.0 s",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -183,7 +183,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "lit reception and office, no text, no code"
+    "note": "lit hallway and storage closet, no text, no code"
    }
   },
   {
@@ -196,8 +196,8 @@
    },
    "source": {
     "file": "t04_lockpick.trimmed.mkv",
-    "in": 8.9,
-    "out": 9.9
+    "in": 6.4,
+    "out": 7.4
    },
    "note": "minigame fills the screen: 1x shows the whole panel",
    "framing": {
@@ -239,8 +239,8 @@
    },
    "source": {
     "file": "t05_phone.trimmed.mkv",
-    "in": 7.4,
-    "out": 8.9
+    "in": 7.2,
+    "out": 8.7
    },
    "note": "phone panel x .40-.61, y .02-.67 of the frame: 1.3x keeps it whole. 7.4-8.9: HaX reply on screen, then the reply choices appear at 7.83 (the later Maya reply starts at 9.4, not shown)",
    "framing": {
@@ -398,8 +398,8 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.48,
+     "zoom": 1.25
     },
     "9:16": {
      "cx": 0.5,
@@ -422,7 +422,8 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "m01 Hydra/SSH terminal; cracked password mosaicked; login name and lab IP visible by earlier decision"
-   }
+   },
+   "note": " v9: 16:9 crop zoom 1.25 cy .48 cuts the Kali post-it (bottom left, y .89 to 1.0) out of frame; check the frame."
   },
   {
    "id": "m_cyberchef",
@@ -434,8 +435,8 @@
    },
    "source": {
     "file": "t14_cyberchef.trimmed.mkv",
-    "in": 6.567,
-    "out": 7.567
+    "in": 6.57,
+    "out": 7.57
    },
    "note": "moved after the real-hacking clip (user, v8.2 review: Real Hacking card, walk to Kali, hacking clip, CyberChef). CyberChef workstation, 2x crop on the input/output panes (x .475-.975, rows y .135-.635): input pasted at 6.63, decode 'Meet at the server room' visible from 6.77 (take's marks lag by 0.5 s; cut on frames)",
    "framing": {
@@ -498,16 +499,16 @@
    },
    "source": {
     "file": "t11_kevin_line.trimmed.mkv",
-    "in": 12.2,
-    "out": 16.2
+    "in": 8.24,
+    "out": 12.24
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "Kevin Park",
      "text": "I flagged it to management three times. Nothing happened.",
-     "start": 0.102,
-     "end": 3.615
+     "start": 0.06,
+     "end": 3.54
     }
    ],
    "framing": {
@@ -555,16 +556,16 @@
    },
    "source": {
     "file": "t12_maya_line.trimmed.mkv",
-    "in": 34.2,
-    "out": 38.2
+    "in": 27.5,
+    "out": 31.5
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "Maya Chen",
      "text": "Anyone who gets too close gets removed.",
-     "start": 0.118,
-     "end": 3.645
+     "start": 0.0,
+     "end": 3.39
     }
    ],
    "framing": {
@@ -612,16 +613,16 @@
    },
    "source": {
     "file": "t13_sarah_line.trimmed.mkv",
-    "in": 17.6,
-    "out": 22.1
+    "in": 15.45,
+    "out": 19.95
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "Sarah O'Brien",
      "text": "Next thing you know, HR calls her in and she's gone.",
-     "start": 0.095,
-     "end": 4.326
+     "start": 0.0,
+     "end": 4.09
     }
    ],
    "framing": {
@@ -842,8 +843,8 @@
    },
    "source": {
     "file": "t04_lockpick.trimmed.mkv",
-    "in": 6.5,
-    "out": 7.0
+    "in": 6.85,
+    "out": 7.35
    },
    "note": "minigame crescendo: lockpicking, 'Pin 2 set!'",
    "framing": {
@@ -891,18 +892,18 @@
    "note": "minigame crescendo: Derek's office key, the last half second of insertion: the pins ride the key and lift onto the shear line (t19 re-recorded after the key-insertion pin fix)",
    "framing": {
     "16:9": {
-     "cx": 0.45,
-     "cy": 0.42,
+     "cx": 0.5,
+     "cy": 0.64,
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.45,
-     "cy": 0.42,
+     "cx": 0.5,
+     "cy": 0.64,
      "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.45,
-     "cy": 0.42,
+     "cx": 0.5,
+     "cy": 0.64,
      "zoom": 1.125
     }
    },
@@ -935,17 +936,17 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.22,
-     "zoom": 2.5
+     "cy": 0.5,
+     "zoom": 2.2
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.22,
+     "cy": 0.5,
      "zoom": 1.40625
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.22,
+     "cy": 0.5,
      "zoom": 1.40625
     }
    },
@@ -1014,8 +1015,8 @@
    },
    "source": {
     "file": "t06_keypad_v3.trimmed.mkv",
-    "in": 4.62,
-    "out": 4.8867
+    "in": 4.25,
+    "out": 4.5167
    },
    "note": "minigame crescendo: PIN pad, first non-answer digit lands",
    "framing": {
@@ -1064,17 +1065,17 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.28,
+     "cy": 0.5,
      "zoom": 3
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.27,
+     "cy": 0.5,
      "zoom": 3
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.27,
+     "cy": 0.5,
      "zoom": 3
     }
    },
@@ -1143,8 +1144,8 @@
    },
    "source": {
     "file": "t05_phone.trimmed.mkv",
-    "in": 5.4,
-    "out": 5.5333
+    "in": 4.2,
+    "out": 4.3333
    },
    "note": "minigame crescendo: phone chat, reply choice",
    "framing": {
@@ -1192,18 +1193,18 @@
    "note": "minigame crescendo: flag station, 'flag{' typed",
    "framing": {
     "16:9": {
-     "cx": 0.3,
-     "cy": 0.25,
-     "zoom": 1.6
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.2
     },
     "9:16": {
-     "cx": 0.4,
-     "cy": 0.3,
+     "cx": 0.5,
+     "cy": 0.5,
      "zoom": 1
     },
     "1:1": {
-     "cx": 0.4,
-     "cy": 0.3,
+     "cx": 0.5,
+     "cy": 0.5,
      "zoom": 1
     }
    },
@@ -1236,17 +1237,17 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.2,
+     "cy": 0.5,
      "zoom": 2.5
     },
     "9:16": {
-     "cx": 0.6,
-     "cy": 0.3,
+     "cx": 0.5,
+     "cy": 0.5,
      "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.6,
-     "cy": 0.3,
+     "cx": 0.5,
+     "cy": 0.5,
      "zoom": 1.125
     }
    },
@@ -1272,11 +1273,11 @@
    },
    "source": {
     "file": "t09_derek_v5.trimmed.mkv",
-    "in": 49.54,
-    "out": 51.84
+    "in": 58.84,
+    "out": 61.14
    },
    "dialogue": true,
-   "note": "derek_6 wide portrait view; v8: the line starts 2.5 s earlier under the minigame crescendo (audio.pre 2.5), picture joins mid-line, still cut at the silence before \"Security\" (t09_derek_v5 silence 51.46-52.06 s, cut at 51.84)",
+   "note": "v9: derek_6 wide portrait view, cropped (cx .5 cy .4 zoom 1.3) so the Derek Lawson name bar and Skip button stay out; the line starts 2.5 s earlier under the minigame crescendo (audio.pre 2.5, take line-start 56.41), picture joins mid-line, cut at the silence before \"Security\" (take silence 60.77-61.39, cut at 61.14)",
    "lines": [
     {
      "speaker": "Derek Lawson",
@@ -1288,8 +1289,8 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.4,
+     "zoom": 1.3
     },
     "9:16": {
      "cx": 0.65,
@@ -1336,8 +1337,8 @@
    },
    "source": {
     "file": "t09_derek_v5.trimmed.mkv",
-    "in": 51.84,
-    "out": 56.04
+    "in": 61.14,
+    "out": 65.34
    },
    "dialogue": true,
    "note": "hard cut to a 3x close-up of the face (no UI), 3-frame glitch on the cut",
