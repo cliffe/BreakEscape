@@ -24,7 +24,7 @@ for (const rel of [
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
     'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
-    'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
+    'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js', 'systems/triage-starter.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js',
     'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-scoring.js', 'systems/phish-rules.js',
@@ -398,6 +398,20 @@ test('EC1 (c): a reopen after Look up lands on the debrief, no panel, with the a
     setup(plain, { [M.stateKey(plain.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 50, reportRate: 0.5, verifyCount: 0 }, defendProgress: CLEANED } });
     open(plain);
     assert.ok(isDeepStrictEqual(calls.debrief.at(-1).result.answers, []));
+});
+
+test('conceptPanel condition: the debrief is handed the live globals after Carry on and after Look up', () => {
+    const ep = fullEpisode();
+    playDefend(ep, { kit_defend_done: true, kit_ep_out: false });
+    click('.epr-carry-on');
+    assert.ok(calls.debrief.at(-1).globals === window.gameState.globalVariables, 'the live global table is passed');
+    assert.ok(calls.debrief.at(-1).globals.kit_ep_out === false, 'out is still false after Carry on');
+    // Look up, then the out global is raised by the mapping; the reopened debrief reads it live
+    playDefend(ep, { kit_defend_done: true, kit_ep_out: false });
+    click('.epr-look-up');
+    window.gameState.globalVariables.kit_ep_out = true;
+    open(ep);
+    assert.ok(calls.debrief.at(-1).globals.kit_ep_out === true, 'a reopen after Look up reads the raised global');
 });
 
 // ── (d) the success screen's hold ────────────────────────────────────────────

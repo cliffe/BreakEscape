@@ -24,7 +24,7 @@ const js = join(root, 'public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-p7-followups-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
-    'utils/conditional-text.js', 'minigames/episode-runner/debrief-view.js',
+    'utils/conditional-text.js', 'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js',
     'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-kinds.js',
     'minigames/inbox-triage/triage-scoring.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',

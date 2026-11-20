@@ -24,6 +24,16 @@ function lint(json) {
   assert.equal(r.status, 0, r.stderr);
   return JSON.parse(r.stdout.trim().split('\n').pop());
 }
+// As lint, but with validate_scenario.rb loaded, so the shared condition grammar is available.
+function lintWithGrammar(json) {
+  const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+    json = JSON.parse(${JSON.stringify(JSON.stringify(json))})
+    ctx = ValidateSocial::Context.new(json: json, repo_root: '.', social: json['social'], imports: json['importGlobals'])
+    puts JSON.generate(ValidateSocial::Awareness.check(ctx))`;
+  const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout.trim().split('\n').pop());
+}
 const hits = (arr, re) => arr.filter((s) => re.test(s)).length;
 const expectIn = (arr, re, n = 1) => assert.equal(hits(arr, re), n, `${re}: ${hits(arr, re)} hit(s)\n${arr.join('\n')}`);
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -412,6 +422,29 @@ test('conceptPanel: an array needs text in every entry; the string and object fo
   expectIn(lint(j), /strings\.voicePanel has no text/);
 });
 
+// conceptPanel entry `condition` (ca12 debrief panel): grammar error, undeclared global warning,
+// all-conditional warning; the schema takes the key on array entries only.
+test('conceptPanel: an entry condition is checked for grammar and declared globals', { skip }, () => {
+  const withPanel = (panels, globals = {}) => {
+    const j = fx('clean_full.json');
+    ep(j).strings.conceptPanel = panels;
+    Object.assign(j.globalVariables, globals);
+    return j;
+  };
+  const plain = { heading: 'One', text: 'First.' };
+  let j = withPanel([plain, { heading: 'Two', text: 'Second.', condition: 'globalVars.kit_x === true && !globalVars.kit_y' }], { kit_x: false, kit_y: false });
+  assert.deepEqual(lintWithGrammar(j), []);
+  j = withPanel([plain, { text: 'Second.', condition: 'globalVars.a (' }], { a: false });
+  expectIn(lintWithGrammar(j), /conceptPanel entry 2 condition has a term the engine cannot read/);
+  j = withPanel([plain, { text: 'Second.', condition: 7 }]);
+  expectIn(lintWithGrammar(j), /conceptPanel entry 2 condition is not a string/);
+  j = withPanel([plain, { text: 'Second.', condition: '!globalVars.not_declared_anywhere' }]);
+  expectIn(lint(j), /entry 2 condition reads globalVars\.not_declared_anywhere, which is not declared/);
+  j = withPanel([{ text: 'A.', condition: 'globalVars.a' }, { text: 'B.', condition: '!globalVars.a' }], { a: false });
+  expectIn(lint(j), /every strings\.conceptPanel entry has a condition/);
+  assert.equal(hits(lint(withPanel([plain, { text: 'B.', condition: 'globalVars.a' }], { a: false })), /every strings\.conceptPanel entry/), 0);
+});
+
 // ENG-01: flipAftermath and stepLabels.
 const aftermathBlock = () => ({
   heading: 'Now you are Kieran', victimName: 'Kieran', intro: 'His account a few minutes later.',
@@ -464,7 +497,16 @@ test('schema: flipAftermath, stepLabels and a conceptPanel array pass; typos fai
   ep(noText).strings.conceptPanel = [{ heading: 'No text' }];
   const labels = fx('clean_full.json');
   ep(labels).stepLabels = { flip: 3 };
-  const [r0, r1, r2, r3, r4] = schemaRun([ok, typo, noKind, noText, labels]);
+  const cond = fx('clean_full.json');
+  ep(cond).strings.conceptPanel = [{ text: 'A.' }, { heading: 'B', text: 'B.', condition: 'globalVars.kit_x === true' }];
+  const typoCond = fx('clean_full.json');
+  ep(typoCond).strings.conceptPanel = [{ text: 'A.' }, { text: 'B.', conditon: 'globalVars.kit_x' }];
+  const objCond = fx('clean_full.json');
+  ep(objCond).strings.conceptPanel = { text: 'A.', condition: 'globalVars.kit_x' };
+  const [r0, r1, r2, r3, r4, r5, r6, r7] = schemaRun([ok, typo, noKind, noText, labels, cond, typoCond, objCond]);
+  assert.deepEqual(r5, { social: [], other: [] }, 'an array entry condition passes the schema');
+  assert.ok(r6.social.length > 0, 'a mistyped condition key fails');
+  assert.ok(r7.social.length > 0, 'condition is allowed on array entries only');
   assert.deepEqual(r0, { social: [], other: [] });
   assert.ok(r1.social.some((e) => e.includes('headin')), r1.social.join('\n'));
   assert.ok(r2.social.some((e) => e.includes('kind')), r2.social.join('\n'));
