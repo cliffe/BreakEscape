@@ -17,7 +17,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
-    'minigames/episode-runner/debrief-view.js', 'minigames/inbox-triage/triage-flags.js',
+    'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'utils/display-dashes.js', 'ui/influence-bar.js', 'systems/social-influence.js',
@@ -548,6 +548,49 @@ test('debrief (ENG-09b): a conceptPanel array renders one panel per entry, in or
     const d3 = renderDebrief(h3, { result: result(), set: set(), variant: 'full', onFinish() {}, strings: { conceptPanel: { heading: 'One', text: 'Only.' } } });
     assert.equal(h3.querySelectorAll('.aw-concept-panel').length, 1);
     assert.equal('conceptPanels' in d3.getState(), false);
+});
+
+test('debrief: a conceptPanel entry with a condition draws only when it holds against the live globals', () => {
+    const panels = [
+        { heading: 'Always', text: 'Shown to everyone.' },
+        { heading: 'Only after', text: 'Needs the global.', condition: 'globalVars.kit_x === true' },
+        { heading: 'Tail', text: 'Also unconditional.' }
+    ];
+    const heads = (globals, cp = panels, extra = {}) => {
+        const h = host();
+        const d = renderDebrief(h, { result: result(), set: set(), variant: 'full', onFinish() {}, globals, strings: { conceptPanel: cp }, ...extra });
+        return { heads: [...h.querySelectorAll('.aw-concept-panel .aw-panel-heading')].map((n) => n.textContent), state: d.getState(), h };
+    };
+    // holds: all three, order kept; the count reads what was drawn
+    let r = heads({ kit_x: true });
+    assert.deepEqual(r.heads, ['Always', 'Only after', 'Tail']);
+    assert.equal(r.state.conceptPanels, 3);
+    // does not hold, missing, or no globals at all: the entry is skipped, the rest keep their order
+    for (const g of [{ kit_x: false }, {}, null, undefined]) {
+        r = heads(g);
+        assert.deepEqual(r.heads, ['Always', 'Tail'], JSON.stringify(g));
+        assert.equal(r.state.conceptPanels, 2);
+    }
+    // a negated term on a missing global holds in the evaluator, but with no globals object it is hidden
+    const neg = [{ heading: 'Plain', text: 'Plain.' }, { heading: 'Neg', text: 'Negated.', condition: '!globalVars.kit_y' }];
+    assert.deepEqual(heads(null, neg).heads, ['Plain']);
+    assert.deepEqual(heads({}, neg).heads, ['Plain', 'Neg']);
+    // a malformed or non-string condition fails closed
+    for (const bad of ['globalVars.a (', '', 7, null, {}]) {
+        r = heads({ a: true }, [{ text: 'Plain.', heading: 'P' }, { heading: 'Bad', text: 'Bad.', condition: bad }]);
+        assert.deepEqual(r.heads, ['P'], String(bad));
+    }
+    // every entry conditional and none holds: no panel at all
+    r = heads({}, [{ text: 'A.', condition: 'globalVars.q' }]);
+    assert.equal(r.state.conceptPanel, false);
+    // the single-object and string forms ignore condition
+    r = heads({}, { heading: 'One', text: 'Only.', condition: 'globalVars.q' });
+    assert.deepEqual(r.heads, ['One']);
+    // hostile text is drawn as text; the condition string is never drawn
+    const evil = '<img src=x onerror=alert(1)>';
+    r = heads({ kit_x: true }, [{ heading: evil, text: evil, condition: `globalVars.kit_x === true` }, { text: 'P.', condition: `globalVars.kit_x || '${evil}'` }]);
+    assert.ok(r.h.querySelector('img') === null, 'never parsed as HTML');
+    assert.ok(!r.h.innerHTML.includes('globalVars.kit_x'), 'the condition is not in the DOM');
 });
 
 test('P3 N-6 / flip split: nothing to replay gets the miss heading; a landing with no tells has its own line', () => {

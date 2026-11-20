@@ -34,6 +34,22 @@ function conceptPanelTexts(cp) {
   return [];
 }
 
+// The social block as the no-kit-NPC-names rule reads it: a conceptPanel array entry with a
+// `condition` is left out, because only a learner who met that NPC sees it (owner ruling for ca12,
+// D214/AC0, 20 Nov 2026). Every other part of the block, and every unconditional panel entry, is kept.
+function socialForNameRule(social) {
+  const copy = JSON.parse(JSON.stringify(social));
+  const strings = copy && copy.awarenessEpisode && copy.awarenessEpisode.strings;
+  if (strings && Array.isArray(strings.conceptPanel)) {
+    strings.conceptPanel = strings.conceptPanel.filter((e) => !(e && typeof e === 'object' && 'condition' in e));
+  }
+  return JSON.stringify(copy);
+}
+const nameOffenders = (social, displayNames) => {
+  const text = socialForNameRule(social);
+  return displayNames.filter((n) => text.includes(n) || text.includes(n.split(' ')[0]));
+};
+
 // A chain shell invites through the chain, so no entry of its panel carries "have a word with".
 function assertChainPanelNoInvite(cp, label) {
   const texts = conceptPanelTexts(cp);
@@ -289,6 +305,20 @@ test('kit chain: a bark\'s condition never reads a global its own mapping sets (
   assert.ok(barks >= 3, 'compared the chain barks');
 });
 
+test('kit chain: a conditional conceptPanel entry is exempt from the no-kit-NPC-names rule, nothing else is', () => {
+  const panel = (extra) => ({ awarenessEpisode: { strings: { conceptPanel: [{ heading: 'Plain', text: 'Nobody named here.' }, ...extra] } }, other: 'x' });
+  const names = ['Camila Ospina'];
+  // exempt: the conditional entry names her
+  assert.deepEqual(nameOffenders(panel([{ heading: 'What Camila tried', text: 'Camila used a pretext.', condition: 'globalVars.kit_x === true' }]), names), []);
+  // not exempt: the same text with no condition, in the same array
+  assert.deepEqual(nameOffenders(panel([{ heading: 'What Camila tried', text: 'Camila used a pretext.' }]), names), names);
+  // not exempt: a name in the heading of an unconditional entry, in a single-object or string panel, or elsewhere in social
+  assert.deepEqual(nameOffenders({ awarenessEpisode: { strings: { conceptPanel: { heading: 'Camila', text: 'x', condition: 'globalVars.a' } } } }, names), names);
+  assert.deepEqual(nameOffenders({ awarenessEpisode: { strings: { conceptPanel: 'Camila Ospina did it' } } }, names), names);
+  assert.deepEqual(nameOffenders({ ...panel([{ text: 'ok', condition: 'globalVars.a' }]), debrief: { x: 'Camila' } }, names), names);
+  assert.deepEqual(nameOffenders({ awarenessEpisode: { strings: { habitLine: 'Camila' }, } }, names), names);
+});
+
 test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)', () => {
   const names = chainShells();
   assert.ok(names.includes('test_ca01_panel') && names.includes('ca01_invoice_fraud') === false);
@@ -311,9 +341,11 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
       if (m.setVisible !== undefined) assert.ok(who.startsWith('kit_'), where('setVisible only on a kit_ NPC'));
       assert.ok(!String(m.condition || '').includes('||'), where('no || in a condition'));
     }
-    // at most two chain barks, each gated on kit_quiet and on the out global, at least 4 s apart is a timing proof
+    // at most two chain barks (three for ca12, the flagship: owner ruling D212, 20 Nov 2026, which adds
+    // Thandiwe's departure bark), each gated on kit_quiet and on the out global, at least 4 s apart is a timing proof
     const barks = staffMaps.filter((x) => x.m.bark);
-    assert.ok(barks.length >= 1 && barks.length <= 2, where(`1 or 2 chain barks, found ${barks.length}`));
+    const barkCap = name === 'ca12_visitor_tailgater' ? 3 : 2;
+    assert.ok(barks.length >= 1 && barks.length <= barkCap, where(`1 to ${barkCap} chain barks, found ${barks.length}`));
     for (const { m, who } of barks) {
       assert.ok(/globalVars\.kit_quiet === true/.test(m.condition || ''), where(`${who} bark needs kit_quiet === true`));
       assert.ok(globalsRead(m.condition).includes(outG), where(`${who} bark needs ${outG} (plan 4.5)`));
@@ -367,8 +399,7 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     if (row && row.attack) assert.ok(/To a real attacker/.test(deb), where('layer 0 passage in the debrief'));
     // no ambient displayName (full or first name) in the social block
     for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_') && x.displayName)) {
-      const social = JSON.stringify(sc.social);
-      assert.ok(!social.includes(n.displayName) && !social.includes(n.displayName.split(' ')[0]), where(`${n.displayName} appears in social`));
+      assert.deepEqual(nameOffenders(sc.social, [n.displayName]), [], where(`${n.displayName} appears in social`));
     }
     // the shared stub diverts on kit_defend_done and kit_ep
     for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_'))) {

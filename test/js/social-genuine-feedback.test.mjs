@@ -34,7 +34,7 @@ for (const rel of [
     'minigames/framework/minigame-manager.js',
     'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/phish-rules.js',
     'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js',
-    'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/flip-view.js',
+    'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/role-swap.js',
     'systems/awareness-measure.js'

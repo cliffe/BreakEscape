@@ -102,6 +102,7 @@
     "kit_ca12_at_desks": false,
     "kit_ca12_visitor_leaving": false,
     "kit_ca12_done": false,
+    "kit_ca12_screen_seen": false,
     "kit_ca12_host_said": false,
     "kit_key_caught": false
   },
@@ -139,7 +140,7 @@
     {
       "id": "kit_ca12_t_door",
       "startOnGlobal": "kit_ca12_visitor_go",
-      "delayMs": 6000,
+      "delayMs": 7500,
       "condition": "!globalVars.kit_ca12_visitor_there",
       "setGlobal": {
         "kit_ca12_visitor_there": true
@@ -148,7 +149,7 @@
     {
       "id": "kit_ca12_t_door_tail",
       "startOnGlobal": "kit_ca12_visitor_there",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done",
       "setGlobal": {
         "kit_ca12_door_choice": "silent"
@@ -653,15 +654,24 @@
         "noBlameLineCritical": "These visitors are played by people whose job is to look like they belong, so a miss here says more about the attack than about you. The points only show where to look next time.",
         "mondayCard": "On Monday: if you don't recognise someone, help them, 'Can I help you find someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes past a check, using the route in the box below.",
         "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. The ones worth a second look are shown below, with what gave each one away.",
-        "conceptPanel": {
-          "heading": "What these visitors relied on",
-          "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. To a real attacker, an unescorted visitor is time alone on the studio floor. A client list left on an open screen can be read and copied there, and a friendly \"she said to come straight up\" is often all it takes to get that far. At a practice like this, an earlier visitor was walked up without signing in while a screen sat unlocked. Nobody could say what had been seen, so the partners and reception spent an afternoon working out who had been on the floor."
-        },
+        "conceptPanel": [
+          {
+            "heading": "What these visitors relied on",
+            "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. To a real attacker, an unescorted visitor is time alone on the studio floor. A client list left on an open screen can be read and copied there, and a friendly \"she said to come straight up\" is often all it takes to get that far. At a practice like this, an earlier visitor was walked up without signing in while a screen sat unlocked. Nobody could say what had been seen, so the partners and reception spent an afternoon working out who had been on the floor."
+          },
+          {
+            "heading": "What Camila tried",
+            "text": "Camila used the same three things as the courier you played: a real name from the practice, a reason to be there, and the confidence to keep walking. She never needed a badge, only for nobody to stop and ask. Walking her back to the desk, and a locked screen behind you, leave her nothing to take.",
+            "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_visitor_there === true"
+          }
+        ],
         "stages": {
           "osint": {
             "text": "Open the browser and read what you can find about the people and the building. Click a line that looks useful to add it to your notes. Close the browser when you have what you need."
           }
         },
+        "stepAwayHeading": "Before the debrief",
+        "stepAway": "Look up from the kiosk and watch the studio for a couple of minutes. People come and go, and someone may ask you something. Your place is saved.",
         "defendIntro": "Now you're the one on the Merrin & Sallow desk. Visitors arrive one at a time: some are expected, some are not, and one or two will try to talk their way past a check. Take each as it comes; there's no clock on you here."
       },
       "debrief": {
@@ -1189,6 +1199,14 @@
                 },
                 "speed": 90
               }
+            },
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectName === \"Thandiwe's workstation\" && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_screen_seen": true
+              }
             }
           ]
         },
@@ -1276,17 +1294,24 @@
               "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_asked === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
               "setGlobal": {
-                "kit_ca12_screen_done": true,
-                "kit_ca12_visitor_go": true
+                "kit_ca12_screen_done": true
               }
             },
             {
               "eventPattern": "global_variable_changed:kit_ca12_screen_done",
               "condition": "value === true && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
+              "delayMs": 3000,
               "setGlobal": {
                 "kit_ca12_visitor_go": true
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "bark": "Right, five minutes on the sofa. The plans can wait."
             }
           ]
         },
@@ -1405,7 +1430,7 @@
               "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
               "condition": "value === true && globalVars.kit_ca12_out === true",
               "onceOnly": true,
-              "delayMs": 500,
+              "delayMs": 2000,
               "patrolOverride": {
                 "targetTile": {
                   "x": 6.5,
@@ -1576,6 +1601,10 @@
           "observations": "A touch-screen training kiosk for the Merrin & Sallow visitor exercise: first the red-team brief and the front-desk approach, then the visitors to handle on the reception seat.",
           "observationVariants": [
             {
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_done !== true",
+              "value": "The kiosk. Your place is saved."
+            },
+            {
               "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Merrin & Sallow visitor exercise. That's this one finished."
             }
@@ -1629,6 +1658,16 @@
           "requiresItem": "merrin_screen_lock_token",
           "triggerOnInteract": [],
           "requiresItemHint": "That's Thandiwe's session, signed in as her. It's hers to lock before she steps away.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca12_screen_choice === 'mention'",
+              "value": "Locked now. Hers to unlock."
+            },
+            {
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_done !== true",
+              "value": "Thandiwe's still signed in, with the Harbour job's client list open. Anyone passing could read it, or take a photo."
+            }
+          ],
           "position": {
             "x": 3.28125,
             "y": 6.96875,
@@ -1642,6 +1681,12 @@
             {
               "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_choice !== 'mention' && globalVars.kit_ca12_done !== true",
               "value": "pc1_break"
+            }
+          ],
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca12_screen_choice === 'mention'",
+              "value": "Thandiwe's workstation. The screen is locked."
             }
           ],
           "observations": "Thandiwe's workstation. The screen is still on."

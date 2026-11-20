@@ -25,7 +25,7 @@ const fixture = () => JSON.parse(readFileSync(join(here, 'fixtures/social_role_s
 const dir = mkdtempSync(join(tmpdir(), 'social-fun-engine-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
-    'minigames/episode-runner/episode-model.js', 'minigames/episode-runner/debrief-view.js',
+    'minigames/episode-runner/episode-model.js', 'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js',
     'minigames/episode-runner/role-swap.js',
     'minigames/helpers/step-stepper.js',
     'minigames/inbox-triage/inbox-triage-minigame.js', 'minigames/inbox-triage/triage-scoring.js',
