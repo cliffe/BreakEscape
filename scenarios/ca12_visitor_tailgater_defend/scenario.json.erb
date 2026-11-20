@@ -6,6 +6,7 @@
   "endGoal": "Work the reception desk at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,26 @@
     "se_awareness_records": [],
     "episode_e12_visitor_tailgater_defend_defend_percent": 0,
     "episode_e12_visitor_tailgater_defend_defend_reportRate": 0,
-    "episode_e12_visitor_tailgater_defend_defend_complete": false
+    "episode_e12_visitor_tailgater_defend_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca12",
+    "kit_ca12_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_merrin": {
+      "lines": [
+        "Deadline on the Harbour job.",
+        "Printer's warm again.",
+        "Client's in this morning."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -179,7 +199,10 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e12_visitor_tailgater_defend_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e12_call_tailgater": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -569,7 +592,7 @@
         "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. The ones worth a second look are shown below, with what gave each one away.",
         "conceptPanel": {
           "heading": "What these visitors relied on",
-          "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. A genuine visitor never minds being signed in and escorted; the one who pushes to skip it is the one to report. The same visitor, once inside, reads whatever is left open, so a locked screen when you step away is part of the same habit."
+          "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. At a practice like this, an earlier visitor was walked up without signing in while a screen sat unlocked. Nobody could say what had been seen, so the partners and reception spent an afternoon working out who had been on the floor."
         },
         "defendIntro": "Work through the visitors at the reception desk and decide what to do with each one. A genuine visitor never minds being signed in and escorted; the one who pushes to skip a check is the one to report. There's no clock on you here."
       },
@@ -651,8 +674,139 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "work_reception_desk"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_defend_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_defend_defend_complete",
+              "condition": "value === true && globalVars.episode_e12_visitor_tailgater_defend_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e12_visitor_tailgater_defend_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_thandiwe_moyo",
+          "displayName": "Thandiwe Moyo",
+          "person": "thandiwe_moyo",
+          "npcType": "person",
+          "position": {
+            "x": 2.5,
+            "y": 4.5
+          },
+          "spriteSheet": "thandiwe_moyo",
+          "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
+          "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/thandiwe_moyo_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Pulcherrima",
+            "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 10,
+              "urgentAt": 50,
+              "initial": 90
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Rev C or Rev D?",
+                "Anyone seen the scale rule?",
+                "Studio's quiet today."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_julian_sallow",
+          "displayName": "Julian Sallow",
+          "person": "julian_sallow",
+          "npcType": "person",
+          "position": {
+            "x": 6.0,
+            "y": 8.0
+          },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/julian_sallow_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 6.0,
+            "y": 8.0,
+            "facing": "north"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Rasalgethi",
+            "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Planning panel on Thursday.",
+                "Where's that elevation?",
+                "That roof pitch still won't work."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -673,6 +827,26 @@
           ],
           "minigameData": {
             "episodeId": "e12_visitor_tailgater_defend"
+          }
+        },
+        {
+          "type": "leather_sofa",
+          "id": "kit_sofa",
+          "name": "Sofa",
+          "sprite": "leather_sofa1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A studio sofa by the wall. Staff drop onto it for a breather.",
+          "affordance": {
+            "satisfies": "rest",
+            "restores": 70,
+            "useSeconds": 8,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_merrin"
           }
         }
       ]

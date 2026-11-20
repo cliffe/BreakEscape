@@ -190,6 +190,16 @@
       "use": "9870eb87-4f46-46a2-b8a3-d922bf9b60bc"
     }
   },
+  "camila_ospina": {
+    "character_id": "8aee1629-8246-478d-9543-22c29e2a649d",
+    "name": "Make portrait for Camila Ospina, a visitor to a de...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-20",
+    "sit_from": "8dacc26a-67a2-4111-8073-4b1aba7298bd"
+  },
   "chidi_okeke": {
     "character_id": "fc63077f-7737-4610-ae6a-3e9250ad8e24",
     "name": "Make portrait for Chidi Okeke\nA Nigerian-British m...",
