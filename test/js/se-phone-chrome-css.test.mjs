@@ -75,6 +75,9 @@ test('mail-client and inbox-triage sheets: no radius, blur, 1px border or outlin
                 .split(/\s+/).filter((t) => /^-?\d*\.?\d+([a-z]+)?$/i.test(t));
             // calc() or a var() that is not the trailing colour hides lengths from the token split: reject it
             if (/\b(calc|var)\(/.test(layer.replace(/\bvar\((?:[^()]|\([^)]*\))*\)\s*(!important)?\s*$/, ''))) return true;
+            // a layer whose only value is a var() leaves no lengths to read: a var can hold any blur (R1 m3)
+            if (nums.length < 2 && !/^\s*(?:none\s*)?(?:!important)?\s*$/i.test(layer.replace(/^[^:]*:/, '').replace(/\bnone\b/i, ''))) return true;
+            if (nums.length < 2) return false;
             return nums.length >= 3 && parseFloat(nums[2]) > 0;
         }));
         assert.ok(blurred.length === 0, `${f}: blurred shadow ${blurred[0]}`);
@@ -124,6 +127,21 @@ test('the toolbar width arithmetic behind calc(100% - 40px) is pinned: 8px gap, 
     assert.ok(/(?:^|[\s;])margin:\s*0\s*;/.test(x), 'the X has no margin');
     // 30 + 8 = 38 of the 40px that calc(100% - 40px) reserves, leaving 2px of slack
     assert.ok(!/(?:^|[\s;])margin-(left|right):\s*[1-9]/.test(x), 'the X has no side margin');
+    // every mail-sheet rule on the toolbar or the X, base and inside media blocks, keeps the arithmetic (R1 m2)
+    const bad = [];
+    for (const r of s.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const sels = r[1].split(',').map((q) => q.replace(/^[\s\S]*\*\/|@media[^{]*$/g, '').trim());
+        const onBar = sels.some((q) => /\.mail-toolbar$/.test(q));
+        const onX = sels.some((q) => /\.se-overlay-close$/.test(q));
+        if (!onBar && !onX) continue;
+        for (const d of r[2].split(';').map((q) => q.trim()).filter(Boolean)) {
+            const [prop, ...rest] = d.split(':'); const val = rest.join(':').trim();
+            if (onBar && prop.trim() === 'gap' && val !== '8px') bad.push(sels.join(',') + ' { ' + d + ' }');
+            if (onX && /^(width|min-width)$/.test(prop.trim())) bad.push(sels.join(',') + ' { ' + d + ' }');
+            if (onX && /^margin-(left|right)$/.test(prop.trim()) && val !== 'auto') bad.push(sels.join(',') + ' { ' + d + ' }');
+        }
+    }
+    assert.ok(bad.length === 0, 'mail-sheet toolbar/X rules change the arithmetic: ' + bad.join(' ; '));
 });
 
 test('wifi bars are border-box so the tallest bar fits its 14px meter', () => {

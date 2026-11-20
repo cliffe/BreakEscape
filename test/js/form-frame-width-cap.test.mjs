@@ -83,7 +83,9 @@ for (const [file, cls, cap, jsFile, group] of cases) {
         assert.ok(sels.slice().sort().join(' | ') === want.slice().sort().join(' | '), 'cap selector list is exactly: ' + want.join(', ') + ' (got ' + sels.join(', ') + ')');
         const body = enclosingMediaBody(css, m.index);
         assert.ok((body.match(/\.console-window(?![\w-])/g) || []).length === 3, 'the media block names .console-window exactly three times (cf, ncsc, sis)');
-        assert.ok((body.match(/\{/g) || []).length === 2, 'the media block holds exactly the two cap rules');
+        // rules whose selector list names .console-window: exactly the two cap rules; unrelated rules in the block are fine (R1 m1)
+        const capRules = [...body.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((r) => /\.console-window(?![\w-])/.test(r[1]));
+        assert.ok(capRules.length === 2, 'the media block holds exactly two rules naming .console-window, got ' + capRules.length);
         for (const [w, h] of PHONES) assert.ok(mediaMatches(media, w, h) === false, `phone ${w}x${h} keeps full width`);
         for (const [w, h] of DESKTOPS) assert.ok(mediaMatches(media, w, h) === true, `desktop ${w}x${h} gets the cap`);
     });

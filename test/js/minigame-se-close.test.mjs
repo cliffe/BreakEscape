@@ -69,8 +69,8 @@ test('C-X2 framed opt-in: default off, and a framed scene tags the container', (
 const rulesOf = (src) => [...src.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
     .map((m) => ({ sel: m[1].trim(), body: m[2] }));
 const RED = /#e74c3c|#c0392b|#a93226/i;
-// Any border radius (incl. per-corner longhands) that is not exactly 0 or 0px: catches 0.5px, .5em, 50% and var(--r).
-const ROUNDED = /(?:^|[\s;{])border(?:-[a-z]+)*-radius\s*:(?!\s*0(?:px)?(?:\s*!important)?\s*(?:;|}|$))/i;
+// Any border radius (incl. per-corner longhands) that is not zero (0 or 0px, one to four values): catches 0.5px, .5em, 50% and var(--r).
+const ROUNDED = /(?:^|[\s;{])border(?:-[a-z]+)*-radius\s*:(?!\s*(?:0(?:px)?\s*){1,4}(?:!important\s*)?(?:;|}|$))/i;
 
 test('C-X1/C-X2 shared CSS rules exist', () => {
     const fw = readFileSync(join(css, 'minigames-framework.css'), 'utf8');
