@@ -815,6 +815,8 @@ export function examineTextFor(sprite) {
 function gameDisplayParts(data, sprite, observations, text) {
     const esc = (s) => escapeHtml(displayDashes(String(s)));
     const title = esc(data.name || sprite?.name || '');
+    // An observation identical to the text is one piece: shown once, as the text (sameToastText).
+    if (text && sameToastText(observations, text)) observations = null;
     const body = (observations ? `<em>${esc(observations)}</em>` : '') +
         (observations && text ? '\n\n' : '') + (text ? esc(text) : '');
     return { body: body || title, title };
