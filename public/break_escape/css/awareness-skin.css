@@ -19,7 +19,7 @@
     color: var(--aw-ink);
     box-sizing: border-box;
 }
-.aw-flip, .aw-debrief { background: var(--aw-surface); padding: 16px; line-height: 1.45; }
+.aw-flip, .aw-debrief { background: var(--aw-surface); padding: 16px; line-height: 24px; }
 /* The flip embeds the mail reader and the triage page/call cards, which default to the dark
    mail/triage theme. On the flip's light surface their text inherited the skin's dark ink and
    landed dark-on-dark navy (E5-4). Re-point the --ui-* tokens inside the flip/debrief to a light
@@ -81,7 +81,10 @@
 .aw-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
 /* flip: a built page (E5) and a pretext call (E3) as well as a sent email */
-.aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; }
+.aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; min-width: 0; overflow-wrap: anywhere; }
+/* A long URL in the flip view's address bar: the bar's flex child needs min-width 0 and an
+   anywhere wrap, or its min-content width pushes the card past its column (6px at 390 wide). */
+.aw-flip-page .tri-browser-bar .tri-address { min-width: 0; overflow-wrap: anywhere; }
 .aw-flip-section { margin: 14px 0 4px; font-size: 24px; line-height: 32px; }
 .aw-missed { padding: 10px 12px; background: #fff; border-left: 4px solid var(--aw-line); }
 

@@ -70,13 +70,13 @@
     padding: 16px;
     font-family: var(--se-font-readable);
     font-size: 16px;
-    line-height: 1.45;
+    line-height: 24px;
     /* C-IT2: a flat surface fill as a plain background-color, not a single-colour gradient
        (which trips the UI audit). */
     background-color: var(--ui-surface-raised, rgba(38, 48, 74, 1));
     border: 2px solid var(--ui-line, #4c5b80);
 }
-.tri-panel h3 { margin: 0 0 8px; font-size: 24px; }
+.tri-panel h3 { margin: 0 0 8px; font-size: 24px; line-height: 32px; }
 .tri-panel p { margin: 6px 0; }
 .tri-brief-buttons { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0; }
 .tri-brief-buttons dt { font-weight: 700; }
@@ -295,7 +295,7 @@
     background-color: var(--ui-surface, rgba(24, 30, 48, 1));
     border: 2px solid var(--ui-line, #4c5b80);
 }
-.tri-sheet-title { margin: 0; font-size: 24px; }
+.tri-sheet-title { margin: 0; font-size: 24px; line-height: 32px; }
 .tri-sheet-chosen { margin: 0; font-size: 16px; color: var(--ui-text-dim, #c3ccdf); }
 .tri-chips { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 3px; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .tri-chips > * { flex: none; }
@@ -378,8 +378,8 @@
     color: #10152a;
     background: var(--ui-accent, #ffcc44);
 }
-.tri-kind { margin: 4px 0 8px; font-family: var(--se-font-readable); font-size: 16px; line-height: 1.45; }
-.tri-kind .tri-kind-title { margin: 0 0 4px; font-size: 24px; }
+.tri-kind { margin: 4px 0 8px; font-family: var(--se-font-readable); font-size: 16px; line-height: 24px; }
+.tri-kind .tri-kind-title { margin: 0 0 4px; font-size: 24px; line-height: 32px; }
 .tri-kind-label { margin: 0 0 4px; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ui-text-dim, #a8b2c8); }
 
 /* Phone frame: sms and push */
@@ -456,7 +456,7 @@
     box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
 }
 .tri-notice .tri-kind-label { color: #6b604a; }
-.tri-notice .tri-kind-title { color: #1d1d1d; font-size: 24px; }
+.tri-notice .tri-kind-title { color: #1d1d1d; font-size: 24px; line-height: 32px; }
 .tri-notice-text { margin: 4px 0 10px; white-space: pre-wrap; }
 .tri-qr {
     --tri-qr-size: 21;
@@ -639,7 +639,7 @@
 .tri-compare.no-baseline { border-left-color: var(--ui-text-dim, #a8b2c8); }
 .tri-compare-title { margin: 0 0 4px; font-size: 24px; line-height: 32px; }
 .tri-compare-line { margin: 2px 0; }
-.tri-brief-kind { font-size: 16px; line-height: 1.45; color: #e6ebf6; }
+.tri-brief-kind { font-size: 16px; line-height: 24px; color: #e6ebf6; }
 
 @media (max-width: 767px) {
     .tri-phone, .tri-notice, .tri-browser { max-width: none; }
@@ -676,7 +676,7 @@
     text-align: left;
     font-family: var(--se-font-readable);
     font-size: 16px;
-    line-height: 1.35;
+    line-height: 24px;
 }
 .tri-choice-why, .tri-choice-better { margin: 6px 0; font-size: 16px; }
 .tri-choice-better { font-weight: 700; }

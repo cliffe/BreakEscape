@@ -20,7 +20,7 @@
     box-sizing: border-box;
     font-family: var(--se-font-readable);
     font-size: 16px;
-    line-height: 1.45;
+    line-height: 24px;
     color: var(--pp-ink);
     background: var(--pp-surface);
 }

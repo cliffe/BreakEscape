@@ -19,7 +19,7 @@
     box-sizing: border-box;
     font-family: var(--se-font-readable);
     font-size: 16px;
-    line-height: 1.45;
+    line-height: 24px;
     color: var(--sd-ink);
     background: var(--sd-surface);
 }
@@ -60,7 +60,7 @@
     border: 2px solid var(--sd-line);
     border-left: 6px solid var(--sd-accent);
 }
-.sd-situation { margin: 0; font-size: 24px; font-weight: 700; }
+.sd-situation { margin: 0; font-size: 24px; line-height: 32px; font-weight: 700; }
 .sd-new {
     display: inline-block;
     margin: 0 0 6px;

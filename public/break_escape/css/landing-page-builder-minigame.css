@@ -248,7 +248,7 @@
 .lpb-logo.is-unavailable { min-height: 0; margin-bottom: 0; }
 
 .lpb-purpose { margin: 0 0 6px; font-size: 16px; }
-.lpb-copy { margin: 0 0 14px; font-size: 16px; line-height: 1.4; }
+.lpb-copy { margin: 0 0 14px; font-size: 16px; line-height: 24px; }
 
 .lpb-field {
     margin-bottom: 10px;
@@ -312,7 +312,7 @@
 }
 
 .lpb-fakecheck-heading { margin: 0 0 10px; font-size: 16px; }
-.lpb-fakecheck-steps { margin: 0 0 14px; font-size: 16px; line-height: 1.4; }
+.lpb-fakecheck-steps { margin: 0 0 14px; font-size: 16px; line-height: 24px; }
 
 .lpb-fakecheck-reveal { margin-top: 4px; }
 .lpb-fakecheck-reveal-btn {

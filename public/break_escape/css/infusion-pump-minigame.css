@@ -58,7 +58,7 @@
     color: #00e060;
     font-family: 'GNF', monospace;
     font-size: 16px;
-    line-height: 1.4;
+    line-height: 24px;
     border: 2px solid #1a3a1a;
     padding: 8px 10px;
     min-height: 100px;
@@ -82,6 +82,7 @@
 
 .ip-pump-display {
     font-size: 24px;
+    line-height: 32px;
     color: #00ff88;
     border-bottom: 2px solid #1a5a1a;
     padding: 2px 0;

@@ -107,7 +107,7 @@
    button is fully scrollable into view at a tall viewport (1400x1000) rather than clipped at the fold. */
 .epr-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
 
-.epr-panel { padding: 16px; line-height: 1.45; }
+.epr-panel { padding: 16px; line-height: 24px; }
 .epr-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; color: var(--aw-accent); }
 .epr-heading:focus { outline: none; }
 .epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }

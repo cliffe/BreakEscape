@@ -17,7 +17,7 @@
     box-sizing: border-box;
     font-family: var(--se-font-readable);
     font-size: 16px;
-    line-height: 1.45;
+    line-height: 24px;
     color: var(--cf-ink);
     background: var(--cf-surface);
 }
@@ -40,7 +40,7 @@
 .cf-foot { flex: none; padding: 0 16px 14px; background-color: var(--cf-surface); border-top: 2px solid var(--cf-line); }
 .cf-foot:empty { display: none; }
 .cf-foot .cf-button { margin-top: 12px; }
-.cf-heading { margin: 0 0 8px; font-size: 24px; color: var(--cf-accent); }
+.cf-heading { margin: 0 0 8px; font-size: 24px; line-height: 32px; color: var(--cf-accent); }
 .cf-heading:focus,
 .cf-text[data-autofocus]:focus { outline: none; }
 .cf-text { margin: 0 0 12px; max-width: 60ch; }

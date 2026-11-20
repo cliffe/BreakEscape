@@ -151,7 +151,7 @@
     font-family: 'GNF', monospace;
     font-size: 16px;
     color: #1a1008;
-    line-height: 1.3;
+    line-height: 24px;
     flex: 1;
 }
 
@@ -236,6 +236,21 @@
         flex: 1 0 100%;
         justify-content: flex-end;
     }
+
+    /* 44px touch targets as real boxes. The coarse-pointer block above draws the hit area with an
+       ::after at inset -11px, which counts as scrollable overflow (scrollWidth 11px over
+       clientWidth on every button, 9px on the controls row). At phone width the boxes are 44px
+       themselves and the pseudo-element is dropped. */
+    .sdm-move-btn,
+    .sdm-flip-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .sdm-move-btn::after,
+    .sdm-flip-btn::after {
+        content: none;
+    }
 }
 
 /* ── Completed state ─────────────────────────────────────── */
@@ -257,7 +272,7 @@
     color: #c8ffcc;
     font-family: 'GNF', monospace;
     font-size: 16px;
-    line-height: 1.4;
+    line-height: 24px;
     flex-shrink: 0;
 }
 
