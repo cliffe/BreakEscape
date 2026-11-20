@@ -350,6 +350,37 @@ never the durable folder.
 - **Report to the orchestrator in the fixed allowlist format**; all mechanism and the mask log go to
   the handover note, not the report.
 
+## Known rig pitfalls
+
+Fixes found across the release-playtest console runs (m01, m03–m10). Fold them into any driver you
+reuse; most live only in the scratch orchestrator + beats today.
+
+- **A guest browser steals focus from the terminal.** The off-camera greeter login reactivates the
+  player's desktop session, which may still have the in-game portal open in a browser. It grabs
+  window focus from the `--open-term` terminal, so typed beats land in the browser and the first
+  beat after it loses keystrokes. Close the guest browser (by name, from the guest, via `vm_exec`)
+  **after READY and before `--open-term`**.
+- **The first keystrokes after a `clear` are dropped.** Even with the terminal focused, the first
+  ~10 characters of a beat typed right after a `clear` can be lost, mangling the command. Pad every
+  beat's text with ~16 leading spaces (the shell ignores them), so the dropped characters are
+  spaces, not the command. Frame-verify the head of each command renders in full.
+- **`--open-term --hold` is capped at 600 s.** A larger value is refused and no terminal opens
+  (another way beats end up in the browser). Keep `--hold ≤ 600` and size each full-solution take's
+  beat settles so the whole run finishes well under it.
+- **Never put an underscore in a typed beat or a staged script name.** Over the "gb" VNC layout an
+  underscore (Shift+hyphen) mistranslates to a hyphen, so `bash a_b.sh` arrives as `a-b.sh` → "No
+  such file or directory" and the take is dead. Use single-word, underscore-free script names
+  (`foothold.sh`, not `ssh_user.sh`); the gb symbol rule above is the same hazard for typed text.
+- **The attack VM's title is not always `attack_vm`.** Some missions title the Kali `kali`. Read the
+  set's VM titles first and pass the right `--vm TITLE` to every `vm_exec`/`vm_display` call, rather
+  than assuming `attack_vm`.
+- **Record only while the box is quiet.** Other lanes' HD game captures spike the load; a loaded box
+  drops frames. Gate each take on the 1-minute load average (abort/wait if it is ≥ 6) and record in
+  a quiet window; then still run `check-take` and retake once if drops exceed the threshold.
+- **Pick a free display and leave the others alone.** Check for an existing `/tmp/.X<N>-lock` and
+  `Xvfb :<N>` before choosing a display number; other lanes own theirs. Tear down only your own
+  (`env-down.sh <N>`).
+
 ## Related
 
 - `video-takes` — the in-game approach take this cuts with; `video-scout`, `video-edit` (the cut and

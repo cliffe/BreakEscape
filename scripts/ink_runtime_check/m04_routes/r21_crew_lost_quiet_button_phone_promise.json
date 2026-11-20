@@ -32,7 +32,7 @@
 "talk": "voltage",
 "picks": ["It's over", "Make me understand", "Why infrastructure", "How many does the hall take", "Say their names", "Go for the button"]
 },
-{"said": ["And Static let you walk up to my bench", "You cannot reach both"], "notSaid": ["not one of my people"]},
+{"said": ["And Static let you walk up to my bench", "Fight me and the keystroke lands before you get to your button"], "notSaid": ["not one of my people"]},
 {"expect": {"asked_the_number": true, "voltage_escaped": true}},
 {"set": {"voltage_neutralised": true, "esd_authorized": true, "attack_prevented": true}},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},

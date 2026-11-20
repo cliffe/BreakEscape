@@ -16,6 +16,7 @@
 },
 {
 "talk": "vance_phone",
+"knot": "support_call",
 "picks": [
 "night crew",
 "Sound it",
@@ -53,6 +54,7 @@
 },
 {
 "talk": "vance_phone",
+"knot": "support_call",
 "picks": [
 "How bad is it",
 "That's everything"
@@ -117,6 +119,7 @@
 },
 {
 "talk": "vance_phone",
+"knot": "support_call",
 "reload": "page",
 "picks": [
 "That's everything"

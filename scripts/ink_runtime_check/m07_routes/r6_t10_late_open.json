@@ -20,9 +20,9 @@
    "advance": 31
   },
   {
-   "said": [
-    "Ten minutes before your team is too committed to move"
-   ]
+   "expect": {
+    "architect_t10_played": true
+   }
   },
   {
    "advance": 10
@@ -36,6 +36,7 @@
   },
   {
    "talk": "architect",
+   "knot": "taunt_t10",
    "picks": [
     "You're not as clever"
    ]

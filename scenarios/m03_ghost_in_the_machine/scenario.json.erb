@@ -1851,8 +1851,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Training Network Map",
               "takeable": true,
               "readable": true,
-              "text": "TRAINING NETWORK // SERVICE MAP\nReturned by your scan of Zero Day's isolated lab.\n\nHOST          SERVICE\nftp box       file transfer -- the exact build that opened St. Catherine's\nweb box       internal price board\nlegacy box    distcc, a compile service long past end of life\n\nThey rehearse on a copy of what they sell.",
-              "observations": "The map your scan returned: every box on Zero Day's training lab and what it runs. The file-transfer service is the one that should look familiar.",
+              "text": "TRAINING NETWORK // SERVICE MAP\nReturned by your scan of Zero Day's isolated lab: one target host, three services.\n\nSERVICE       WHAT IT IS\nftp           file transfer -- the exact build that opened St. Catherine's\nweb           internal price board\ndistcc        a compile service on a high port, long past end of life\n\nThey rehearse on a copy of what they sell.",
+              "observations": "The map your scan returned: the one host on Zero Day's training lab and every service it runs. The file-transfer service is the one that should look familiar.",
               "puzzle_graph_role": "reward"
             },
             {
