@@ -93,16 +93,8 @@
    }
   },
   {
-   "said": [
-    "A word about doors, Agent 0x00."
-   ],
-   "notSaid": [
-    "A word about Austin",
-    "Ten minutes before"
-   ]
-  },
-  {
    "talk": "architect",
+   "knot": "taunt_t10",
    "picks": [
     "Then I'll be in this one"
    ]
@@ -113,6 +105,8 @@
    ],
    "notSaid": [
     "The door closed behind you",
+    "A word about Austin",
+    "Ten minutes before",
     "You've sent your team.",
     "Almost nobody picks the one with no bodies in the brief"
    ]
