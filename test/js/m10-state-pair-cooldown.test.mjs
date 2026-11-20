@@ -11,13 +11,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+// A command-line -r (or -rjson) loads before the -rbundler/setup that `bundle exec` puts in
+// RUBYOPT, so it activates the default json gem and Bundler then refuses the locked one
+// (Gem::LoadError, CI node-tests). These children need only stdlib: run them without Bundler.
+const PLAIN_RUBY_ENV = { ...process.env, RUBYOPT: (process.env.RUBYOPT || '').replace(/-r\S*bundler\/setup\S*/g, '').trim() };
 const ruby = spawnSync('ruby', ['--version']);
 const skip = ruby.status !== 0 && 'ruby not found';
 
 function render() {
     const r = spawnSync('ruby', ['-I', join(root, 'lib'), '-rjson', '-e',
         `require "break_escape/scenario_binding"; puts BreakEscape::ScenarioBinding.render(File.read(ARGV[0]), {})`,
-        join(root, 'scenarios/m10_full_disclosure/scenario.json.erb')], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+        join(root, 'scenarios/m10_full_disclosure/scenario.json.erb')], { env: PLAIN_RUBY_ENV, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     assert.equal(r.status, 0, r.stderr);
     return JSON.parse(r.stdout);
 }
