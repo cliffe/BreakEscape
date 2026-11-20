@@ -170,7 +170,8 @@ test('SIEM: the narrow layout starts at 1239px, so the wide description column s
     const descAt = (vw) => 236 + (vw - 1280) * 0.7;
     assert.ok(fixed === 552, 'fixed tracks and gaps are 552px');
     assert.ok(descAt(BREAK + 1) >= 200, `description at ${BREAK + 1}px is ${descAt(BREAK + 1)}px, 200 or more`);
-    assert.ok(descAt(1280) > descAt(BREAK + 1), '1280 is wide');
+    assert.ok(BREAK < 1280, 'the two-line layout ends below 1280, so 1280 stays wide');
+    assert.ok(descAt(1280) > descAt(BREAK + 1), '1280 is wider than the narrowest wide layout');
     const css = read(f);
     assert.ok(css.includes('@media (max-width: ' + BREAK + 'px)'), 'the two-line query is max-width ' + BREAK);
     assert.ok(css.includes('@media (min-width: 601px) and (max-width: ' + BREAK + 'px)'), 'the queue-count band ends at the same width');
