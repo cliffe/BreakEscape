@@ -1565,6 +1565,11 @@ export class NPCNeedsSystem {
 
         // idle or returning: an urgent need may start a job
         if (this.selectBackoff && s.selectRetryAt && this.tickCount < s.selectRetryAt) return;
+        // The world path grid is built a moment after the needs NPCs register on a load (a reload
+        // above all): until then every source reads as unreachable and an urgent need would park
+        // `no_source` for the full defer (CA0 wave 2 gate D). Wait instead; a world without
+        // pathReady (the node stub) is always ready.
+        if (typeof this.world.pathReady === 'function' && !this.world.pathReady()) return;
         this._selectSearched = false;
         const pick = this._select(s, pos);
         if (pick) {
@@ -5550,6 +5555,14 @@ export function createEngineWorld() {
                 return pm.findNearestWalkableWorldCell(obj.x, obj.y, 3);
             }
             return { x: obj.x, y: obj.y + TILE };
+        },
+        // The world path grid is built (npc-pathfinding.js): before it, findWorldPath answers null
+        // and approachCell finds no cell, so the needs layer waits rather than park. No
+        // pathfinding manager at all reads as ready, as reachable() treats it.
+        pathReady() {
+            const pm = W().pathfindingManager;
+            if (!pm?.findWorldPath) return true;
+            return !!(pm.worldPathfinder && pm.worldGrid && pm.worldGridBounds);
         },
         reachable(id, obj, opts) {
             const pm = W().pathfindingManager;
