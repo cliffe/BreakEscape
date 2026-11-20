@@ -92,6 +92,45 @@ export function xReport() {
     }, 250));
 }
 
+// Open wait. Run in the page: sample the shell and the X over two animation frames.
+export async function xSample() {
+    const mg = document.querySelector('.minigame-container');
+    const x = mg && mg.querySelector('.minigame-close-button');
+    const rect = (el) => { const b = el.getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; };
+    const frame = () => new Promise(r => requestAnimationFrame(() => r()));
+    if (!mg) return { shell: false };
+    const r1 = rect(mg), x1 = x ? rect(x) : null;
+    await frame(); await frame();
+    const r2 = rect(mg), x2 = x ? rect(x) : null;
+    const cs = getComputedStyle(mg);
+    const visible = cs.display !== 'none' && cs.visibility !== 'hidden' && r2[2] > 0 && r2[3] > 0;
+    const noX = !x || getComputedStyle(x).display === 'none';
+    let hitOk = false, hitHtml = '';
+    if (!noX) {
+        const hit = document.elementFromPoint(x2[0] + x2[2] / 2, x2[1] + x2[3] / 2);
+        hitOk = !!hit && (hit === x || x.contains(hit));
+        hitHtml = hit ? hit.outerHTML.slice(0, 300) : '(nothing under the X)';
+    }
+    return { shell: true, visible, noX, stable: r1.every((v, i) => v === r2[i]) && (!x1 || x1.every((v, i) => v === x2[i])), hitOk, hitHtml };
+}
+
+// Pure: which open conditions are still unmet for a sample from xSample (empty list = ready).
+// A shell with no X (disableClose scene) has nothing to hit-test, so it is ready once visible and stable.
+export function unmetConditions(sample) {
+    if (!sample || !sample.shell) return ['the minigame shell (.minigame-container) does not exist'];
+    const unmet = [];
+    if (!sample.visible) unmet.push('the minigame shell is not visible (hidden or zero size)');
+    if (!sample.stable) unmet.push('the shell rect is still changing across two animation frames');
+    if (!sample.noX && !sample.hitOk) unmet.push('the element at the X centre is not the X or inside it');
+    return unmet;
+}
+
+export function openTimeoutMessage(scene, sample, unmet) {
+    return `${scene}: open wait timed out; unmet: ${unmet.join('; ')}. Element under the X: ${sample && sample.hitHtml ? sample.hitHtml : '(not measured)'}`;
+}
+
+export const OPEN_TIMEOUT_MS = 5000;
+
 async function main() {
     if (!GID) { console.error('--game is required'); process.exit(2); }
     const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE, headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
@@ -113,17 +152,32 @@ async function main() {
             try { window.MinigameFramework.forceCloseMinigame?.(); } catch { /* none */ }
             document.querySelectorAll('.minigame-container').forEach(n => n.remove());
             await new Promise(r => setTimeout(r, 250));
+            window.__openError = null;
             try { await window.MinigameFramework.startMinigame(s, null, p); } catch (e) { window.__openError = String(e.message || e); }
-            await new Promise(r => setTimeout(r, 1200));
         }, { s, p: PARAMS[s] || { title: s } });
+        // Condition wait in place of a fixed delay: shell visible, rect stable, X hit-testable.
+        const deadline = Date.now() + OPEN_TIMEOUT_MS;
+        let sample = null, unmet = [];
+        for (;;) {
+            sample = await page.evaluate(xSample);
+            unmet = unmetConditions(sample);
+            if (!unmet.length || Date.now() > deadline) break;
+            await page.waitForTimeout(50);
+        }
+        if (!unmet.length) return { ready: true };
+        const openError = await page.evaluate(() => window.__openError || null);
+        // Never opened and startMinigame said why: the old "(not open)" report, not a failure.
+        if (!sample.shell && openError) return { ready: false, notOpen: true };
+        return { ready: false, message: openTimeoutMessage(s, sample, unmet) };
     };
     for (const s of scenes) {
         if (skipped.has(s)) continue;
         for (const [w, h] of SIZES) {
             await page.setViewportSize({ width: w, height: h });
-            await openScene(s);
-            const r = await page.evaluate(xReport);
+            const o = await openScene(s);
             const tag = `${s} ${w}x${h}`;
+            if (!o.ready && !o.notOpen) { checked++; fails++; console.log(`${tag.padEnd(40)} FAIL ${o.message}`); continue; }
+            const r = o.ready ? await page.evaluate(xReport) : { open: false };
             if (!r.open) { console.log(`${tag.padEnd(40)} (not open)`); continue; }
             if (r.noX) { console.log(`${tag.padEnd(40)} no X (disableClose scene)`); continue; }
             checked++;
