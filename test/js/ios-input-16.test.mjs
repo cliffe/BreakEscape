@@ -155,7 +155,7 @@ test('the control matcher sees the known text controls (guards against a matcher
         let m;
         while ((m = re.exec(t))) if (targetsTextControl(m[1].trim().replace(/\s+/g, ' '))) seen.add(f);
     }
-    for (const f of ['game-menu.css', 'mail-client-minigame.css', 'music-widget.css', 'notes.css', 'password-minigame.css', 'player_preferences.css', 'modals.css', 'ble-scanner.css', 'inbox-triage-minigame.css']) {
+    for (const f of ['game-menu.css', 'mail-client-minigame.css', 'music-widget.css', 'notes.css', 'password-minigame.css', 'player_preferences.css', 'ble-scanner.css', 'inbox-triage-minigame.css']) {
         assert.ok(seen.has(f), `${f} has a rule the matcher recognises as a text control`);
     }
 });
@@ -164,7 +164,7 @@ test('the control matcher sees the known text controls (guards against a matcher
 // must divide the zoom back. Each one is named here with the size it must keep.
 const ZOOMED_CONTROLS = [
     { file: 'game-menu.css', sel: '.game-menu-field select', px: 16 },
-    { file: 'modals.css', sel: '#password-modal-input', px: 24 },
+    // #password-modal-input (24px) was removed with the retired, caller-less password modal.
     { file: 'music-widget.css', sel: '.mw-select', px: 16 },
     { file: 'player_preferences.css', sel: '.player-preferences-modal-content .form-control', px: 16 },
 ];

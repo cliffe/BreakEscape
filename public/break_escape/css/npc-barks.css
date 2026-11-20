@@ -49,14 +49,14 @@ body.minigame-holds-barks #npc-speech-container {
   z-index: 1400 !important;
 }
 
-/* An open dialog or modal (tutorial, confirm, pause menu, password, preferences, the ending)
+/* An open dialog or modal (tutorial, confirm, pause menu, preferences, the ending)
    keeps both bark lanes under it, so a line never covers its buttons and a phone text never
    takes a tap meant for them (review R1 M1). New barks wait for it to close (npc-barks.js);
    the tutorial overlay is 1400. ui/hud-lanes.js DIALOG_SELECTORS holds barks for the same
-   layers; it lists #password-modal and #player-preferences-modal by id and checks their computed
+   layers; it lists #player-preferences-modal by id and checks its computed
    display, where this rule needs the classes and inline styles that show them. */
 body:has(.tutorial-prompt-overlay, .tutorial-overlay, .game-confirm-overlay, #game-menu-overlay.visible,
-  #password-modal.show, #password-modal[style*="flex"], #player-preferences-modal[style*="flex"],
+  #player-preferences-modal[style*="flex"],
   .ending-check-overlay, .success-screen-overlay) :is(#npc-bark-container, #npc-speech-container) {
   z-index: 1390 !important;
 }
