@@ -68,6 +68,8 @@ function run(data) {
     gameState: { globalVariables: {} },
     gameDisplay: (body, title, opts) => shown.push({ body, title, opts }),
     gameAlert: (...a) => alerts.push(a),
+    // inventory.js's helper, with the same call
+    announceNoteAdded: (n) => alerts.push([`Added "${n}" to your notes.`, 'info', 'Note Added', 3000]),
     addNote: (name, text, important) => { notes.push({ name, text, important }); return true; },
   };
   handleObjectInteraction({ name: data.id, objectId: data.id, scenarioData: { id: data.id, ...data } });
