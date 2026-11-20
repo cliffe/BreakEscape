@@ -31,6 +31,7 @@ const FALLBACK = {
   '915x412 sis-config-threshold': { rung: 3, side: 'lane', controls: 1, titles: 0 },
   '915x412 log-filter': { rung: 3, side: 'left', width: 240, top: 176, controls: 1 },
   '915x412 cryptex': { rung: 3, side: 'lane-side', width: 240, top: 176, left: 659, controls: 1 },
+  '915x412 backup-recovery': { rung: 3, side: 'lane-side', width: 883, top: 256, left: 16, controls: 1, titles: 0 },   // sticky confirm row now sits in view (estimated box)
   '390x844 siem-dashboard': { rung: 3, side: 'lane', controls: 2 },
   '390x844 log-filter': { rung: 3, side: 'lane-side', width: 358, top: 112, controls: 1 },
   '800x600 backup-recovery': { rung: 3, side: 'lane-side', width: 768, top: 88, left: 16, controls: 1, titles: 0 },   // Batch 4: tiles fill the panel, see the test below
@@ -396,4 +397,18 @@ test('outermostBoxes (sorted by area) agrees with the pairwise definition, equal
     const boxes = Array.from({ length: 2 + rnd(25) }, () => { const l = rnd(6) * 10, t = rnd(6) * 10; return { left: l, top: t, right: l + 10 + rnd(4) * 10, bottom: t + 10 + rnd(4) * 10 }; });
     assert.deepEqual(outermostBoxes(boxes), old(boxes), `round ${round}`);
   }
+});
+
+// ------------------------------------------------------------------ B6: sticky confirm row
+
+test('backup-recovery 390x844: a toast keeps clear of the sticky confirm row, the X and the heading', () => {
+  const c = get('390x844', 'backup-recovery');
+  const confirm = c.controls[c.controls.length - 1];
+  assert.ok(confirm.bottom <= c.vh && confirm.top > c.vh / 2, 'the confirm row sits stuck at the bottom, in view');
+  const one = spotFor(c);
+  assert.deepEqual(hits(one, [confirm, ...c.xs, ...c.titles]), [], 'warning alone: confirm, X, heading');
+  assert.ok(inViewport(c, one), 'warning alone in the viewport');
+  const pair = spotFor(c, { pair: true });
+  assert.deepEqual(hits(pair, c.xs), [], 'pair: X');
+  assert.ok(inViewport(c, pair), 'pair in the viewport');
 });
