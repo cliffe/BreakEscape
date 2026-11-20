@@ -51,7 +51,10 @@ const mediaOk = (media, w) => {
 };
 // compounds of classes joined by > or a space; anything else (tags, attributes, pseudo) never matches
 function parseSel(sel) {
-    if (/[:\[*#+~]/.test(sel)) return null;
+    if (sel.includes('::')) return null; // pseudo-elements never style the element itself
+    // a pseudo-class only narrows when a rule applies; the conservative reading is that it applies
+    sel = sel.replace(/:[\w-]+(\([^)]*\))?/g, '');
+    if (/[\[*#+~:]/.test(sel)) return null;
     const parts = sel.replace(/\s*>\s*/g, ' > ').split(/\s+/);
     const out = [];
     for (let k = 0; k < parts.length; k++) {
@@ -79,8 +82,15 @@ function matches(sel, chain) {
     return classes;
 }
 const px = (v, vars = { '--device-frame-gap': 6 }) => {
+    v = v.trim();
     const m = /^var\((--[\w-]+)\)$/.exec(v);
     if (m) return vars[m[1]];
+    const c = /^calc\((.*)\)$/.exec(v);
+    if (c) { // sums and differences of px terms only; anything else must not slip through unread
+        const expr = c[1].replace(/var\((--[\w-]+)\)/g, (_, k) => `${vars[k]}px`).replace(/\s+/g, '');
+        assert.ok(/^[-+]?\d+(\.\d+)?(px)?([-+]\d+(\.\d+)?(px)?)*$/.test(expr), `unreadable calc() value: ${v}`);
+        return [...expr.matchAll(/[-+]?\d+(\.\d+)?/g)].reduce((n, t) => n + parseFloat(t[0]), 0);
+    }
     return parseFloat(v);
 };
 const side = (v, which) => { // which: 0 top, 2 bottom of a 1 to 4 value shorthand
@@ -125,7 +135,7 @@ const borders = [4, 6]; // the unthemed X border and the themed --ui-small-butto
 
 const frames = {
     'rogue-ap': { frame: ['device-frame', 'rogue-ap'], title: ['device-frame-title', 'rogue-ap-title'], row: ['rogue-ap-tabs'], x: xSize, lead: () => 0 },
-    'patch-panel': { frame: ['device-frame', 'patch-panel'], title: ['device-frame-title'], row: ['patch-panel-scroll'], x: xSize, lead: (w) => (w < 560 ? 16 : 0) }, // 4x6 rows carry a 16px range label on phones
+    'patch-panel': { frame: ['device-frame', 'patch-panel'], title: ['device-frame-title'], row: ['patch-panel-scroll'], x: xSize, lead: (w) => (w < 344 ? 0 : w < 560 ? 16 : 0) }, // 4x6 rows carry a 16px range label on phones; under 344px it is 6x4 with none
     'vm-launcher': { frame: ['device-frame', 'vm-launcher-frame'], title: ['device-frame-title', 'vm-launcher-title-row'], row: ['vm-launcher'], x: vmXSize, lead: () => 0 },
 };
 
@@ -160,7 +170,7 @@ test('the X hit area is at least 44px tall and stays inside the viewport', () =>
     }
 });
 
-for (const w of [390, 1280]) {
+for (const w of [320, 390, 1280]) {
     for (const name of Object.keys(frames)) {
         test(`${name} at ${w}px: the first row clears the X hit area by at least 2px and the drawn X`, () => {
             const g = geometry(name, w);
@@ -178,4 +188,10 @@ test('the cascade reader sees the shared title margin (guards the test itself)',
     assert.ok(g.rowTop === 58, `rogue-ap desktop row top ${g.rowTop}, expected 58 from 16 + 6 + 24 + 12`);
     assert.ok(geometry('rogue-ap', 390).rowTop === 52, 'rogue-ap phone row top 52 from 16 + 6 + 16 + 14');
     assert.ok(geometry('patch-panel', 1280).rowTop === 52, 'patch-panel desktop row top 52 from 16 + 24 + 12');
+});
+
+test('the rogue-ap title comment describes the upward reach, not a downward one', () => {
+    const raw = readFileSync(join(cssDir, 'rogue-ap.css'), 'utf8');
+    assert.ok(!/hit area hangs/.test(raw), 'no comment says the hit area hangs below the title row');
+    assert.ok(/reaches up into the bezel/.test(raw), 'the comment says the reach goes up into the bezel');
 });

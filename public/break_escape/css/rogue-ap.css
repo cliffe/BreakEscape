@@ -34,8 +34,9 @@
     font-style: normal;
 }
 
-/* The X sits inside the frame at its top right: keep the title clear of it. Its 44px hit area hangs
-   below the title row; the gap to the tabs comes from device-frame.css. */
+/* The X sits inside the frame at its top right: keep the title clear of it. The X's 44px hit area
+   reaches up into the bezel and stops at the X's bottom edge (device-frame.css); the title margin
+   there keeps the tabs clear of the drawn X. */
 .rogue-ap .rogue-ap-title {
     padding-right: 40px;
 }
