@@ -372,7 +372,7 @@ LINES = {
         'Thanks, Chidi.', 'Any time.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
-        "All five done, thanks. Whoever's voice it is, ring back on the number we already hold and that settles it.",
+        "All five done, thanks. Whoever's voice it is, ring back on a number you already hold and that settles it.",
         'Thanks, Agnieszka.', 'See you after the meeting.'),
 }
 

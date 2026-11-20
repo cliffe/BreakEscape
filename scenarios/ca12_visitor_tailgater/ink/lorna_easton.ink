@@ -56,7 +56,7 @@ VAR hub_quiet = false
             }
             Lorna Easton: Sign people in, walk them up, and if someone won't be checked, that's your answer.
         - else:
-            Lorna Easton: Welcome to the Merrin & Sallow exercise. Jo's set the red-team scope; I'll see you right.
+            Lorna Easton: Welcome to the Merrin & Sallow exercise. Jo's set the red-team scope. I'll see you right.
             Lorna Easton: Try the front desk first in the hi-vis, then take the reception seat yourself. Nothing here leaves the game.
         }
     }

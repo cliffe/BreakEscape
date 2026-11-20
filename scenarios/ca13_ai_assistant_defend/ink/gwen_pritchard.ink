@@ -29,7 +29,7 @@ VAR hub_quiet = false
     }
 }
 + {episode_e13_ai_assistant_defend_defend_complete and not e13_demo_offered} [Optional: hear what a faked call sounds like]
-    Gwen Pritchard: I'll ring you on Brightwell Meet and play the caller, as someone with a copy of my face and voice could.
+    Gwen Pritchard: I'll ring you on Brightwell Meet and play the caller.
     Gwen Pritchard: Answer it any way you like. It takes a minute or two, and nothing is scored.
     ~ hub_quiet = true
     #set_global:e13_demo_offered:true
@@ -65,7 +65,6 @@ Gwen Pritchard: That's the demo over. It really was me, but someone with a copy 
 Gwen Pritchard: And that was on our own meeting tool. None of it proved who was asking.
 Gwen Pritchard: When a call wants a code, money or data, end it. Ring back on a number you already hold, or ask someone, then report it.
 + [Understood.]
-    Gwen Pritchard: You don't need to spot a deepfake. You need to check another way.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

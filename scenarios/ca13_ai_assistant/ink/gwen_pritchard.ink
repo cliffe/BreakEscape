@@ -42,12 +42,11 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e13_ai_assistant_defend_complete:
-        Gwen Pritchard: That's them handled, thank you. You can't always tell a fake voice or face, so the answer's always the same.
+        Gwen Pritchard: That's them handled, thank you. You can't always tell a fake voice or face.
         Gwen Pritchard: Check another way, on a number you already hold. Nobody's ever in trouble for checking.
     - else:
         { phish_assist_reader_attempts > 0:
-            Gwen Pritchard: Good, that's your brief sent. Now the other side: use the assistant for real, and deal with what lands.
-            Gwen Pritchard: Next, the inbox at the kiosk. Treat what the assistant hands you like a note from a stranger.
+            Gwen Pritchard: That's your brief sent. Now take the inbox at the kiosk, and treat what the assistant hands you like a note from a stranger.
         - else:
             Gwen Pritchard: Welcome. Brightwell Assist is live. First, red team: write a supplier brief for the assistant to read, with or without a line hidden in it.
             Gwen Pritchard: Then swap seats, use it for real, and handle what comes at you. Start at the kiosk.
@@ -55,7 +54,7 @@ VAR hub_quiet = false
     }
 }
 + {episode_e13_ai_assistant_defend_complete and not e13_demo_offered} [Optional: hear what a faked call sounds like]
-    Gwen Pritchard: I'll ring you on Brightwell Meet and play the caller, as someone with a copy of my face and voice could.
+    Gwen Pritchard: I'll ring you on Brightwell Meet and play the caller.
     Gwen Pritchard: Answer it any way you like. It takes a minute or two, and nothing is scored.
     ~ hub_quiet = true
     #set_global:e13_demo_offered:true
@@ -91,7 +90,6 @@ Gwen Pritchard: That's the demo over. It really was me, but someone with a copy 
 Gwen Pritchard: And that was on our own meeting tool. None of it proved who was asking.
 Gwen Pritchard: When a call wants a code, money or data, end it. Ring back on a number you already hold, or ask someone, then report it.
 + [Understood.]
-    Gwen Pritchard: You don't need to spot a deepfake. You need to check another way.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
