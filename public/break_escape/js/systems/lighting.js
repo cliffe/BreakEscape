@@ -199,8 +199,9 @@ export function indicatorMarkPixels(n) {
 // Screen centre of each workstation picture, as an offset in source pixels from the sprite's
 // centre (UX slice 15 R1, m1: the dot sits on the screen, not between the monitor and a
 // tower). Measured from the screen's inner box in each PNG. `<key>_locked` shares its base's.
+// pc1_break (ca12's coffee-break picture) keeps the cup on the left, so the dot sits on the right.
 export const SCREEN_ANCHORS = {
-  pc: [-4, -4.5], pc_desktop: [-4, -4.5], pc1: [-1.5, -4.5], pc3: [0, -4], pc4: [0, -3],
+  pc: [-4, -4.5], pc_desktop: [-4, -4.5], pc1: [-1.5, -4.5], pc1_break: [2, -5.5], pc3: [0, -4], pc4: [0, -3],
   pc5: [-3, -5], pc6: [-2.5, -6], pc7: [0, -5], pc8: [-6.5, -4.5], pc9: [0, -4],
   pc10: [-2, -5], pc11: [-4.5, -3.5], pc12: [0, -4],
 };

@@ -81,6 +81,12 @@ test('UX slice 15 R1 (m1): the dot sits on the screen of each listed PC picture,
   assert.deepEqual(screenAnchor('pc8', { width: 68, height: 44, sourceWidth: 34, sourceHeight: 22 }), { offsetX: -13, offsetY: -9 });
   assert.deepEqual(screenAnchor('pc8', { width: 34, height: 22, sourceWidth: 34, sourceHeight: 22, flipX: true }), { offsetX: 6.5, offsetY: -4.5 });
   assert.deepEqual(screenAnchor('pc8_locked', { width: 34, height: 22, sourceWidth: 34, sourceHeight: 22 }), { offsetX: -6.5, offsetY: -4.5 });
+  // pc1_break: the dot sits right of the cup, inside the screen (x5-19, y2-11 of 28x23), ring included
+  const pb = screenAnchor('pc1_break', { width: 28, height: 23, sourceWidth: 28, sourceHeight: 23 });
+  assert.deepEqual(pb, { offsetX: 2, offsetY: -5.5 });
+  assert.deepEqual(screenAnchor('pc1_break_locked', { width: 28, height: 23, sourceWidth: 28, sourceHeight: 23 }), pb);
+  assert.deepEqual(screenAnchor('pc1', { width: 28, height: 23, sourceWidth: 28, sourceHeight: 23 }), { offsetX: -1.5, offsetY: -4.5 });
+  assert.ok(14 + pb.offsetX - 4 >= 12 && 14 + pb.offsetX + 4 <= 20 && 11.5 + pb.offsetY - 4 >= 2, 'mark and ring clear of the cup (x<=11) and inside the screen');
   // Unknown picture: the sprite centre
   assert.deepEqual(screenAnchor('laptop1', { width: 24, height: 18 }), { offsetX: 0, offsetY: 0 });
   assert.deepEqual(screenAnchor(undefined), { offsetX: 0, offsetY: 0 });
