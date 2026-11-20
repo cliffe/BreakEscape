@@ -264,7 +264,6 @@
 .minigame-close-button,
 .minigame-open-new-tab-button,
 .modal-button,
-.password-modal-button,
 .tutorial-btn,
 .tutorial-skip,
 .btn,
@@ -288,7 +287,6 @@
 /* Ring on hover: uses currentColor so it matches each button's text/border tint */
 .minigame-button:hover,
 .modal-button:hover,
-.password-modal-button:hover,
 .tutorial-btn:hover,
 .tutorial-skip:hover,
 .btn:hover,
@@ -308,7 +306,6 @@
 /* Physical "press" feel on click */
 .minigame-button:active,
 .modal-button:active,
-.password-modal-button:active,
 .tutorial-btn:active,
 .btn:active,
 .person-chat-choice-button:active,
@@ -318,7 +315,6 @@
 }
 .minigame-button:active,
 .modal-button:active,
-.password-modal-button:active,
 .tutorial-btn:active,
 .btn:active,
 .person-chat-choice-button:active,

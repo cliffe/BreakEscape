@@ -48,7 +48,7 @@ test('the has-scan-toggle class is added where the toggle is made (biometrics, b
 
 test('themed focus marker: 2px square outline on :focus-visible only, no radius or blur', () => {
     const rules = rulesOf('ui-themes.css');
-    const sels = ['.person-chat-choice-button', '.person-chat-continue-button', '.minigame-button', '.minigame-close-button', '.tutorial-btn', '.tutorial-next', '.tutorial-skip', '.game-menu-item', '.game-menu-close', '.game-menu-reset', '.modal-button', '.password-modal-button', '#password-modal-ok', '#password-modal-cancel', '.player-preferences-modal-content .btn', '#music-widget-panel .mw-btn', '#music-widget-panel .mw-takeover-btn', '.scanner-panel .scan-toggle', '.scanner-panel .scan-button'].map((x) => `[data-ui-theme] ${x}:focus-visible`);
+    const sels = ['.person-chat-choice-button', '.person-chat-continue-button', '.minigame-button', '.minigame-close-button', '.tutorial-btn', '.tutorial-next', '.tutorial-skip', '.game-menu-item', '.game-menu-close', '.game-menu-reset', '.modal-button', '.player-preferences-modal-content .btn', '#music-widget-panel .mw-btn', '#music-widget-panel .mw-takeover-btn', '.scanner-panel .scan-toggle', '.scanner-panel .scan-button'].map((x) => `[data-ui-theme] ${x}:focus-visible`);
     for (const sel of sels) {
         const r = rulesFor(rules, sel);
         assert.ok(r.length, sel);

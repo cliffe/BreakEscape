@@ -20,7 +20,6 @@
 .tutorial-prompt-modal,
 .tutorial-panel,
 .game-confirm-dialog,
-.password-modal-content,
 .player-preferences-modal-content {
   zoom: var(--hud-zoom, 1);
 }
