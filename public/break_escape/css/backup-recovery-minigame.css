@@ -43,8 +43,8 @@
     grid-template-columns: auto minmax(0, 16em) minmax(0, 1fr);
     gap: 10px;
     font-family: 'GNF', monospace;
-    font-size: 21px;
-    line-height: 1.15;
+    font-size: 24px;
+    line-height: 32px;
 }
 
 .backup-recovery-slot.is-loaded {
@@ -155,10 +155,10 @@
     display: inline-flex;
     justify-self: start;
     font-family: 'GNF', monospace;
-    font-size: 22px;
+    font-size: 24px;
     letter-spacing: 0.5px;
     padding: 1px 8px;
-    line-height: 1.1;
+    line-height: 32px;
     align-self: start;
 }
 
@@ -182,7 +182,8 @@
 
 .backup-recovery-eta {
     font-family: 'GNF', monospace;
-    font-size: 23px;
+    font-size: 24px;
+    line-height: 32px;
     color: var(--mg07-muted);
     align-self: start;
 }
@@ -208,8 +209,8 @@
 .backup-recovery-panel-banner {
     border: 2px solid;
     font-family: 'GNF', monospace;
-    font-size: 23px;
-    line-height: 1.2;
+    font-size: 24px;
+    line-height: 32px;
     padding: 6px 8px;
 }
 
@@ -240,8 +241,8 @@
 
 .backup-recovery-panel-bullets li {
     font-family: 'GNF', monospace;
-    font-size: 23px;
-    line-height: 1.15;
+    font-size: 24px;
+    line-height: 32px;
     color: #d9e4ea;
 }
 
@@ -279,11 +280,6 @@
 @media (max-width: 860px) {
     .backup-recovery-shell {
         padding: 12px;
-    }
-
-    .backup-recovery-shell--outcome .backup-recovery-header {
-        font-size: 8px;
-        line-height: 16px;
     }
 
     /* The slot state goes on its own line under the name (critique B BR3) */

@@ -19,7 +19,7 @@
     color: var(--aw-ink);
     box-sizing: border-box;
 }
-.aw-flip, .aw-debrief { background: var(--aw-surface); padding: 16px; line-height: 1.45; }
+.aw-flip, .aw-debrief { background: var(--aw-surface); padding: 16px; line-height: 24px; }
 /* The flip embeds the mail reader and the triage page/call cards, which default to the dark
    mail/triage theme. On the flip's light surface their text inherited the skin's dark ink and
    landed dark-on-dark navy (E5-4). Re-point the --ui-* tokens inside the flip/debrief to a light
@@ -40,14 +40,14 @@
 .aw-wordmark {
     display: inline-block; padding: 2px 10px; margin-right: 12px;
     background: var(--aw-accent); color: #fff; border-radius: 0;
-    font-weight: 800; letter-spacing: 0.14em; font-size: 14px; text-transform: uppercase;
+    font-weight: 800; letter-spacing: 0.14em; font-size: 16px; text-transform: uppercase;
 }
 
 /* step strip */
 .aw-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 2px solid var(--aw-line); }
 .aw-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.aw-step { display: flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; max-width: 100%; padding: 3px 10px 3px 4px; border: 2px solid var(--aw-line); border-radius: 0; font-size: 14px; color: #52606d; background: #fff; }
-.aw-step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 0; background: var(--aw-line); color: var(--aw-ink); font-size: 13px; font-weight: normal; }
+.aw-step { display: flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; max-width: 100%; padding: 3px 10px 3px 4px; border: 2px solid var(--aw-line); border-radius: 0; font-size: 16px; color: #52606d; background: #fff; }
+.aw-step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 0; background: var(--aw-line); color: var(--aw-ink); font-size: 16px; font-weight: normal; }
 /* The current step also has a thicker (4px) bottom border, so it is not marked by colour alone;
    the 2px it adds comes off the bottom padding, so the tab does not change height. */
 .aw-step-current { border-color: var(--aw-accent); border-bottom-width: 4px; padding-bottom: 1px; color: var(--aw-ink); font-weight: normal; }
@@ -71,7 +71,7 @@
 /* F13: the accent at heading size sits near the AA floor on the light surface; darken it a
    step so headings clear AA comfortably. color-mix keeps a brand's overridden accent in play
    (older engines fall back to the raw accent, which still meets AA on the default skin). */
-.aw-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
+.aw-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; overflow-wrap: anywhere; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
 .aw-lead, .aw-summary { margin: 0 0 12px; font-size: 16px; }
 /* C-X9: one awareness primary button, square with a 2px border, matching .epr-button and the
    password-guesser's action button so every action in the awareness windows reads the same.
@@ -81,8 +81,11 @@
 .aw-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
 /* flip: a built page (E5) and a pretext call (E3) as well as a sent email */
-.aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; }
-.aw-flip-section { margin: 14px 0 4px; font-size: 17px; }
+.aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; min-width: 0; overflow-wrap: anywhere; }
+/* A long URL in the flip view's address bar: the bar's flex child needs min-width 0 and an
+   anywhere wrap, or its min-content width pushes the card past its column (6px at 390 wide). */
+.aw-flip-page .tri-browser-bar .tri-address { min-width: 0; overflow-wrap: anywhere; }
+.aw-flip-section { margin: 14px 0 4px; font-size: 24px; line-height: 32px; }
 .aw-missed { padding: 10px 12px; background: #fff; border-left: 4px solid var(--aw-line); }
 
 /* flip */
@@ -110,10 +113,10 @@
 /* flip aftermath (ENG-01): the victim's seat, a short list of what turns up in their account */
 .aw-flip-aftermath { margin: 14px 0 0; padding-top: 6px; border-top: 1px solid var(--aw-line); }
 .aw-aftermath-item { margin: 8px 0; padding: 8px 12px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; }
-.aw-aftermath-fields { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0; font-size: 15px; }
+.aw-aftermath-fields { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0; font-size: 16px; }
 .aw-aftermath-fields dt { font-weight: 600; }
 .aw-aftermath-fields dd { margin: 0; overflow-wrap: anywhere; }
-.aw-aftermath-note { margin: 6px 0 0; font-size: 15px; font-style: italic; }
+.aw-aftermath-note { margin: 6px 0 0; font-size: 16px; font-style: italic; }
 .aw-aftermath-line { margin: 8px 0 0; font-weight: 600; }
 .aw-aftermath-fields dd.aw-aftermath-address { font-family: var(--se-font-address); }
 /* The triage cards for push, sms, voicemail and call are dark panels with light text; inside the
@@ -148,21 +151,21 @@
 .aw-cards { display: grid; gap: 10px; margin: 8px 0 14px; }
 .aw-card { padding: 10px 12px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; }
 .aw-card-title { margin: 0 0 4px; font-size: 16px; }
-.aw-card-verdict, .aw-card-score { margin: 4px 0; font-size: 15px; }
-.aw-card-score { color: #52606d; font-size: 14px; }
-.aw-flags, .aw-why-fine { margin: 6px 0; padding-left: 20px; font-size: 15px; }
+.aw-card-verdict, .aw-card-score { margin: 4px 0; font-size: 16px; }
+.aw-card-score { color: #52606d; font-size: 16px; }
+.aw-flags, .aw-why-fine { margin: 6px 0; padding-left: 20px; font-size: 16px; }
 .aw-flag-word { font-weight: 700; }
 .aw-flag-caught .aw-flag-word { color: var(--aw-accent); }
 .aw-flag-missed .aw-flag-word { color: var(--aw-warn); }
-.aw-if-trusted { margin: 6px 0; font-size: 15px; }
+.aw-if-trusted { margin: 6px 0; font-size: 16px; }
 /* the real items (disc_visible): trusted, treated as a phish and why both halves matter */
-.aw-genuine { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 15px; }
+.aw-genuine { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 16px; }
 .aw-genuine p { margin: 4px 0; }
 .aw-genuine-list { margin: 4px 0; padding-left: 20px; }
 .aw-genuine-fold summary { cursor: pointer; min-height: 32px; }
 .aw-genuine-cost, .aw-genuine-why { color: #3e4c59; }
 /* batch 13: the concern form's report, looked back at in the debrief */
-.aw-concern-recap { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 15px; }
+.aw-concern-recap { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 16px; }
 .aw-concern-recap-title { margin: 0 0 4px; font-size: 16px; }
 .aw-concern-recap p { margin: 4px 0; }
 .aw-concern-recap-list { margin: 4px 0; padding-left: 20px; }
@@ -170,9 +173,9 @@
 /* optional concept and voice panels (strings.conceptPanel, strings.voicePanel) */
 .aw-panel { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
 .aw-panel-heading { margin: 0 0 4px; font-size: 16px; }
-.aw-panel-text { margin: 4px 0; font-size: 15px; }
+.aw-panel-text { margin: 4px 0; font-size: 16px; }
 .aw-monday { margin: 0 0 10px; padding: 12px 14px; background: #fff; border: 2px solid var(--aw-accent); border-radius: 4px; font-weight: 600; }
-.aw-no-blame { margin: 0; font-size: 15px; }
+.aw-no-blame { margin: 0; font-size: 16px; }
 
 /* the Report button: always visible, never greyed out, a positive pop when used.
    Add .aw-report-win to the button (and show .aw-report-thanks) when a report is made. */
@@ -198,14 +201,14 @@
 /* aw6: the "team kept safe" tally in the triage sort view, and the debrief's team line */
 .triage-client.aw-skin .aw-team-tally { display: inline-flex; align-self: flex-start; width: fit-content; max-width: 100%; box-sizing: border-box;
     align-items: center; gap: 6px; margin: 4px 0 6px; padding: 2px 10px; transform-origin: left center;
-    border: 1px solid #8fe0c4; border-radius: 12px; color: #8fe0c4; font-weight: 700; font-size: 14px; }
+    border: 1px solid #8fe0c4; border-radius: 12px; color: #8fe0c4; font-weight: 700; font-size: 16px; }
 .triage-client.aw-skin .aw-team-tally img, .triage-client.aw-skin .aw-team-tally svg { width: 14px; height: 14px; }
 .aw-team-pop { animation: aw-report-pop 0.6s ease-out 1; }
 .aw-team { margin: 0 0 10px; font-weight: 600; color: var(--aw-accent); }
 /* aw4: the shared rule of thumb; aw1: the organisation's route to report */
 .aw-rule { margin: 0 0 10px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
 .aw-rule-heading, .aw-report-route-heading { margin: 0 0 4px; font-size: 16px; }
-.aw-rule-text, .aw-report-route-text { margin: 4px 0; font-size: 15px; }
+.aw-rule-text, .aw-report-route-text { margin: 4px 0; font-size: 16px; }
 .aw-report-route { margin: 0 0 10px; padding: 10px 14px; background: #fff; border: 1px dashed var(--aw-accent); border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { .aw-team-pop { animation: none; } }
 
@@ -216,7 +219,7 @@
 .aw-montage-taken.aw-montage-unsafe, .aw-montage-taken:not(.aw-montage-safe) { border-left-color: var(--aw-warn); }
 /* A beat the learner handled safely: calm green stripe, the tag says so in words. */
 .aw-montage-taken.aw-montage-safe { border-left-color: #2f7d4f; background: #f3f9f5; }
-.aw-montage-tag { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--aw-warn); }
+.aw-montage-tag { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--aw-warn); }
 .aw-montage-safe .aw-montage-tag { color: #1f5d33; }
-.aw-montage-situation { margin: 0 0 4px; font-size: 14px; color: #52606d; }
+.aw-montage-situation { margin: 0 0 4px; font-size: 16px; color: #52606d; }
 .aw-montage-line { margin: 0; font-size: 16px; font-weight: 600; }

@@ -28,7 +28,7 @@
     border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
     font-family: var(--se-font-readable, "Source Sans 3", "Segoe UI", Arial, sans-serif);
     font-size: 16px;
-    line-height: 1.4;
+    line-height: 24px;
 }
 
 .pretext-head {
@@ -88,7 +88,7 @@
 .pretext-card-title {
     margin: 12px 0 6px;
     font-family: "GNF", monospace;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 400;
     color: var(--ui-text-dim, #a8b2c8);
 }
@@ -188,7 +188,7 @@
 }
 
 .pretext-picker-kind {
-    font-size: 13px;
+    font-size: 16px;
     font-style: italic;
     color: var(--ui-text-dim, #c3ccdf);
     white-space: nowrap;
@@ -261,7 +261,8 @@
 
 .pretext-debrief-title {
     margin: 0 0 8px;
-    font-size: 20px;
+    font-size: 24px;
+    line-height: 32px;
 }
 
 .pretext-debrief-outcome {
@@ -274,8 +275,8 @@
 .pretext-debrief-defender {
     margin: 0 0 12px;
     padding-left: 20px;
-    font-size: 15px;
-    line-height: 1.4;
+    font-size: 16px;
+    line-height: 24px;
 }
 
 .pretext-debrief-lines li,
