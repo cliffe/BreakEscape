@@ -928,25 +928,28 @@ export class ContainerMinigame extends MinigameScene {
             this._loadStatus = response.status;
 
             if (!response.ok) {
-                // The branches below close this window at once: a note notice it carries goes to the
-                // toast first (take-toast R3 m1)
-                this.noticeToToast();
+                // Each branch that closes this window at once sends a note notice it carries to the
+                // toast first (take-toast R3 m1). A 500 or 502 leaves the window open with the notice
+                // in it, so it queues no toast (R4 m1)
                 // A folder from a relay desktop: any 403 only closes the folder. The server sends no
                 // reason for a locked or powered-off folder, so the reopened relay desktop decides
                 // whether the assist ended or the PC is off (K3c R2 m1)
                 if (response.status === 403 && this.sourcePcId && window.pcSessions?.isRelay?.(this.sourcePcId)) {
                     // Said only if the reopened desktop answers 200 (a really locked folder)
                     pendingRelayFolderNote = this.sourcePcId;
+                    this.noticeToToast();
                     this.complete(false);
                     return [];
                 }
                 // A folder or share from a desktop whose PC is now off (review R3 nit 2): say so,
                 // rather than open it empty with a generic error
                 if (offWhenHolds(this.powerPcData())) {
+                    this.noticeToToast();
                     this.closeForPowerOff({ evenIfNotCurrent: true });
                     return [];
                 }
                 if (response.status === 403) {
+                    this.noticeToToast();
                     // No error toast for a screen the player already left (R2 n5)
                     if (window.gameAlert && !this.screenGone()) {
                         window.gameAlert('Container is locked', 'error', 'Locked', 2000);

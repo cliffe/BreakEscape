@@ -354,10 +354,25 @@ test('R3 m1: a reopened folder the server closes at once (403) toasts the note',
     const res = await mg.loadContainerContents();
     assert.ok(Array.isArray(res), 'closed with no contents');
     assert.ok(idx(/your notes/) >= 0, `note toast: ${JSON.stringify(alerts)}`);
-    assert.ok(idx(/Container is locked/) > idx(/your notes/), `note before the error: ${JSON.stringify(alerts)}`);
+    assert.ok(idx(/Container is locked/) >= 0, `error toast raised: ${JSON.stringify(alerts)}`);
+    assert.ok(alerts.filter(a => /your notes/.test(a[0])).length === 1, `note toast once: ${JSON.stringify(alerts)}`);
 });
 
-test('R3 m2: a network error on a reopened desktop toasts the note before the error', async () => {
+test('R4 m1: a 500 on a reopened folder keeps the window open with its notice and queues no note toast', async () => {
+    setup();
+    window.fetch = globalThis.fetch = async () => ({ ok: false, status: 500, statusText: 'Server Error', json: async () => ({}) });
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Folder', containerItem: { scenarioData: { id: 'f1', type: 'folder', name: 'Folder', locked: false } },
+        contents: null, isTakeable: false, fromReturn: true, notice: window.noteAddedText('Memo'), noticeName: 'Memo' });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    const origErr = console.error; console.error = () => {};
+    await mg.loadContainerContents();
+    console.error = origErr;
+    assert.ok(alerts.filter(a => /your notes/.test(a[0])).length === 0, `no note toast: ${JSON.stringify(alerts)}`);
+    assert.ok(mg.params.notice === window.noteAddedText('Memo'), 'notice stays in the window');
+});
+
+test('R3 m2: a network error on a reopened desktop toasts the note once, with the error', async () => {
     setup();
     window.pcSessions = { has: () => true, dropLocal() {}, takeEndedMessage: () => null };
     window.fetch = globalThis.fetch = async () => { throw new Error('offline'); };
@@ -370,5 +385,6 @@ test('R3 m2: a network error on a reopened desktop toasts the note before the er
     console.error = origErr;
     delete window.pcSessions;
     assert.ok(idx(/your notes/) >= 0, `note toast: ${JSON.stringify(alerts)}`);
-    assert.ok(idx(/Could not load the desktop/) > idx(/your notes/), `note before the error: ${JSON.stringify(alerts)}`);
+    assert.ok(idx(/Could not load the desktop/) >= 0, `error toast raised: ${JSON.stringify(alerts)}`);
+    assert.ok(alerts.filter(a => /your notes/.test(a[0])).length === 1, `note toast once: ${JSON.stringify(alerts)}`);
 });
