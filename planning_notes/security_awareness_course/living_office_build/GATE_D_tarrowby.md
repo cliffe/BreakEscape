@@ -28,3 +28,27 @@ Two Tarrowby staff at the pool source (`kit_vending`, capacity 2): a `kit_tarrow
 ## Verdict
 
 Proof 4: PASS. Proofs 11 and 3: pending live run (handover). Game ids to be logged here after the run.
+
+## Live run 1 (2026-11-20, :3002, partial)
+
+Throwaway worktree `.claude/worktrees/x-w2-kt` (detached at c7ad4cc91, not merged). Fixture: scenarios/test_ca_office_kit/scenario.json.erb overwritten there with ca01_invoice_fraud_defend re-kitted by `office_kit.apply_kit` for `tarrowby_logistics` (Fatima, Chidi, Zainab) plus the Tarrowby room fields (script `mkfix.py` in the scratchpad). Keyless server on :3002, mission 278 via the app's new-game form. Driver: playtest-session.js, headless, throttle 20 fps. Game ids: 10905-10907 probes, **10908 run A** (natural thirst, 130 s). Evidence in scratchpad `w2_gateD/tarrowby/` (runA.out/.log, A_00..A_10.png, A_contact.png).
+
+### Proof 11 (one natural cycle each; five cycles NOT yet done)
+
+- **Seats: PASS, no home change.** All three start seated (`sit_south_frame_000`) on the north-side `aw_chair_south_slate1` chairs. Sprite x equals the chair centre exactly (Fatima 60, Chidi 100, Zainab 140; dx 0) and feet y 215. After each drink they walk back and sit again on the same chair (Fatima t=25.4 s, Zainab 33.4 s, Chidi 50.6 s, same dx 0). Homes (2,6), (3,6), (4,6) snap to the chair centres. Screenshots A_contact.png (start, drinking, one back, all back).
+- **Vending bind: PASS.** One `drinks_vending1` sprite, `kit_vending` at (222, 239), size 42x61, matching the drawn tile (6.94, 9.38) bottom edge (y 300); the kit source has no `position`. No second vending sprite, so no fallback. No collision body (`body` false), as the brief expects.
+- **Thirst trip: PASS.** Zainab (55 start) left at 3.6 s, Fatima (45) was already using, Chidi (60) left at 19 s once a slot freed (capacity 2). Each: `npc_arrived` then `npc_use_started:kit_vending` then `npc_used` then `npc_returned_post`.
+- **No stop in a prop footprint: PASS.** Standing stops (use cells) at (237,236), (269,235), (199,238), all outside vending (x 222-264, y 239-300) and stacked chairs (268-288, 255-300). Seated stops have feet on the table's top edge (y 215) and are the seat, not a stop.
+- **Not yet run:** cycles 2-5 (force with `__test.needs.set(id,'thirst',10)`, about 50 s per cycle for three staff); the learner start (6,6.2) to host (5.5,3.8) and kiosk path with staff at the vending (`moveToNear` adaeze_okafor and training_kiosk) and click-to-move round the vending.
+
+### Proof 3 form
+
+- **Kiosk closed (kit_quiet false): PASS.** Pairs at `kit_vending` spoke three lines, all `npc_chatted:kit_vending`, topic `kit_tarrowby`, speakers in the pair: Zainab "Back off the road at last." (her own line), Fatima "Depot's heaving today." (pool), Chidi "Who's on the Shipley run?" (pool). Each also `npc_overheard`.
+- **Kiosk open (kit_quiet true): NOT yet run.** Open `training_kiosk`, click `.epr-start` (state change sets kit_quiet), force two staff to thirst 10, expect no `npc_chatted:kit_vending`.
+- **Stubs open/close on the sticky exit:** NOT yet run (click each colleague, check the start line and `+ [See you later.]` closes).
+
+### Handover for the next agent
+
+Re-create the fixture: `python3 <scratchpad>/w2_gateD/tarrowby/mkfix.py <x-w2-kt>/planning_notes/phishing_and_social_engineering/awareness <x-w2-kt>`; server from x-w2-kt (`env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true BUNDLE_PATH=.../vendor/bundle bundle exec rails server -b 127.0.0.1 -p 3002`); `run.sh <name> <jsonl>` and `mk.py` (monitor) are in the same scratchpad folder. Use a 300000 ms timeout and keep each route under 280 s.
+
+Verdict so far: seats PASS (no kit change), bind PASS, one cycle PASS, footprints PASS, pool closed PASS. Pending: cycles 2-5, learner path, pool kiosk-open, stubs.
