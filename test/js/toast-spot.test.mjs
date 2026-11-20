@@ -412,3 +412,27 @@ test('backup-recovery 390x844: a toast keeps clear of the sticky confirm row, th
   assert.deepEqual(hits(pair, c.xs), [], 'pair: X');
   assert.ok(inViewport(c, pair), 'pair in the viewport');
 });
+
+test('backup-recovery 915x412: the warning may cover the confirm border and padding but never its label text', () => {
+  const c = get('915x412', 'backup-recovery');
+  const confirm = c.controls[c.controls.length - 1];
+  const s = spotFor(c);
+  // The label sits below the 2px border and 12px top padding of the button (estimated box)
+  const labelTop = confirm.top + 14;
+  assert.ok(s.top + s.height <= labelTop, `warning bottom ${s.top + s.height} stays above the label top ${labelTop}`);
+  const err = errorSpot(c);
+  assert.ok(err.top + err.height <= labelTop, `error bottom ${err.top + err.height} stays above the label top ${labelTop}`);
+});
+
+// A warning plus an error in a 412px window: the sticky confirm blocks the right-hand spot, so the
+// pair goes left over two tiles and the console heading (rung 3, the X stays clear). Accepted, see build-b6.md.
+test('backup-recovery 915x412 pair: rung 3, left, covers the heading and two tiles, X clear (recorded)', () => {
+  const c = get('915x412', 'backup-recovery');
+  const p = spotFor(c, { pair: true });
+  assert.equal(p.rung, 3, 'rung');
+  assert.equal(p.side, 'left', 'side');
+  assert.deepEqual([p.left, p.top, p.width], [16, 32, 480], 'place');
+  assert.equal(p.covers.titles, 1, 'covers the heading');
+  assert.equal(p.covers.controls, 2, 'covers two controls');
+  assert.deepEqual(hits(p, c.xs), [], 'X');
+});
