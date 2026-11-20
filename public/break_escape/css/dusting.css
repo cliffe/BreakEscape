@@ -93,7 +93,7 @@
 
 .dusting-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .dusting-btn, .dusting-jar, .dusting-pattern, .dusting-ref {
-    font-family: inherit; font-size: 20px; color: var(--d-text); background: var(--d-panel);
+    font-family: inherit; font-size: 16px; color: var(--d-text); background: var(--d-panel);
     border: 2px solid var(--d-line); border-radius: 0; cursor: pointer; min-height: 40px; padding: 6px 12px; text-align: left;
 }
 .dusting-btn:hover:not(:disabled), .dusting-jar:hover, .dusting-pattern:hover, .dusting-ref:hover:not(:disabled) { border-color: var(--d-accent); }
@@ -215,7 +215,7 @@
 .dusting-ref-tag[data-state="match"] { color: var(--d-accent); }
 /* Cards in one row share the tallest card's height, so a wrapped label never leaves its View button lower than the rest */
 .dusting-refs:not([data-count="4"]) .dusting-ref { flex: 1 1 auto; }
-.dusting-view { font-size: 0.85em; padding: 3px 8px; overflow-wrap: anywhere; }
+.dusting-view { font-size: 16px; padding: 3px 8px; overflow-wrap: anywhere; }
 .dusting-view[aria-pressed="true"] { border-color: var(--d-accent); }
 .dusting-ref[data-viewing] { border-color: var(--d-accent); outline: 2px solid var(--d-accent); }
 .dusting-canvas[hidden] { display: none; }

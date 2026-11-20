@@ -907,9 +907,60 @@ def check_unknown_fields(json_data)
     {}
   end
 
+  # Alarm-panel lamps name CSS classes; the SVG fill comes from alarm-panel-minigame.css. A class with
+  # no `fill:` rule paints the lamp black. A two-state lamp with no class falls back in the engine
+  # (ap-off / ap-amber), so only a class that is named and undefined is flagged there. A multi-state
+  # state has no fallback: a missing cssClass is written as "undefined", so it is flagged too. A value
+  # may be a space-separated list (the engine writes it to className), which is fine when any token
+  # has a fill rule.
+  alarm_css_path = File.expand_path('../public/break_escape/css/alarm-panel-minigame.css', __dir__)
+  alarm_css = File.exist?(alarm_css_path) ? File.read(alarm_css_path) : nil
+  alarm_fill_classes = {}
+  alarm_css&.gsub(%r{/\*.*?\*/}m, '')&.scan(/([^{}]+)\{([^}]*)\}/) do |sel, body|
+    next unless body =~ /(?:\A|[;\s])fill\s*:/
+
+    sel.split(',').each { |one| (m = one.strip.match(/\.([A-Za-z_][\w-]*)\z/)) && alarm_fill_classes[m[1]] = true }
+  end
+  alarm_css_missing_warned = false
+  check_alarm_lamps = lambda do |md, path|
+    next unless md['lamps'].is_a?(Array) && !md['lamps'].empty?
+
+    unless alarm_css
+      unless alarm_css_missing_warned
+        alarm_css_missing_warned = true
+        warnings << "⚠️ WARNING: '#{path}/minigameData/lamps' lamp class check skipped: public/break_escape/css/alarm-panel-minigame.css is missing, so lamp classes cannot be verified."
+      end
+      next
+    end
+
+    md['lamps'].each_with_index do |lamp, li|
+      next unless lamp.is_a?(Hash)
+
+      named = [['onClass', lamp['onClass'], false], ['offClass', lamp['offClass'], false]]
+      (lamp['states'].is_a?(Array) ? lamp['states'] : []).each_with_index do |st, si|
+        named << ["states[#{si}]/cssClass", st['cssClass'], true] if st.is_a?(Hash)
+      end
+      where = "'#{path}/minigameData/lamps[#{li}](#{lamp['label'] || lamp['variable'] || '?'})'"
+      named.each do |field, cls, required|
+        if !cls.is_a?(String) || cls.strip.empty?
+          next unless required
+
+          warnings << "⚠️ WARNING: #{where} #{field} is missing, so the lamp paints black (a multi-state lamp has no fallback class)."
+          next
+        end
+        next if cls.split.any? { |tok| alarm_fill_classes[tok] }
+
+        warnings << "⚠️ WARNING: #{where} #{field} names class '#{cls}', " \
+                    "which has no fill rule in alarm-panel-minigame.css, so the lamp paints black. Add the rule or use an existing class."
+      end
+    end
+  end
+
   check_minigame_data = lambda do |obj, path|
     md = obj['minigameData']
     return unless md.is_a?(Hash)
+
+    check_alarm_lamps.call(md, path)
 
     # Every layer that reads minigameData has its own schema, and an object can hit
     # several: a locked 'pc' (type: the requiresGlobal gate) with lockType

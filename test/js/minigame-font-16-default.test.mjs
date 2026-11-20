@@ -139,12 +139,15 @@ test('no minigame sheet sets 18px on text that draws in GNF or Press Start 2P', 
 // in the JSON is lowered in the same commit, so the list can only shrink.
 const KNOWN_OFF_GRID = JSON.parse(readFileSync(new URL('./minigame-font-16-offgrid.json', import.meta.url), 'utf8'));
 
+// Icon-named rules are counted too (.ble-device-icon holds the words TARGET and PAIRED). Only these
+// are real glyph or emoji boxes, not text, and are skipped.
+const GLYPH_ICONS = /\.(bce-view-icon|nsm-modal-icon|protocol-icon)\b/;
 function offGridCounts() {
     const counts = {};
     for (const f of SHEETS) {
         let n = 0;
         for (const r of rulesOf(f)) {
-            if (r.fam === 'GNF' && !/icon/.test(r.sel) && !(r.size >= 16 && r.size % 8 === 0)) n++;
+            if (r.fam === 'GNF' && !GLYPH_ICONS.test(r.sel) && !(r.size >= 16 && r.size % 8 === 0)) n++;
         }
         if (n) counts[f] = n;
     }
