@@ -367,6 +367,12 @@
               }
             },
             {
+              "_comment": "Retired 2026-11-20: V11r (re-walk after an early door arrival) is no longer needed now the engine no longer emits npc_arrived at an avoidance sidestep. Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.retired_2026_11_20 === true && data.owner !== 'needs' && globalVars.kit_ca12_out === true",
+              "onceOnly": true
+            },
+            {
               "eventPattern": "global_variable_changed:kit_ca12_door_choice",
               "condition": "value === 'silent' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
               "onceOnly": true,
