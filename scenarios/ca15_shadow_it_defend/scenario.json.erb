@@ -167,6 +167,12 @@
           "passPercent": 0,
           "messageGlobals": {
             "e15_posted_stick": "kit_key_caught"
+          },
+          "messageCaughtVerdicts": {
+            "e15_posted_stick": [
+              "report",
+              "verify"
+            ]
           }
         },
         "messages": [
@@ -439,10 +445,16 @@
         "defendIntro": "Now go through the found sticks and 'quicker way' messages and decide what to do with each. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
         "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
         "teamLine": "By reporting or checking {n} of the risky ones rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
-        "conceptPanel": {
-          "heading": "If the quick route is taken",
-          "text": "Six months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client."
-        }
+        "conceptPanel": [
+          {
+            "heading": "About that stick",
+            "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT."
+          },
+          {
+            "heading": "If the quick route is taken",
+            "text": "Six months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client."
+          }
+        ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -654,7 +666,7 @@
             "thirst": {
               "decayPerMin": 30,
               "urgentAt": 50,
-              "initial": 45
+              "initial": 65
             }
           },
           "chatter": {

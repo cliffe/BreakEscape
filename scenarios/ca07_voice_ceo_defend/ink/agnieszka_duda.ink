@@ -21,7 +21,7 @@ VAR hub_quiet = false
 - else:
     { episode_e7_voice_ceo_defend_defend_complete:
         { kit_key_caught:
-            Agnieszka Duda: You rang back before releasing that payment, so a voice that sounded like the boss didn't move money out the door.
+            Agnieszka Duda: You held that payment back, so a voice that sounded like the boss didn't move money out the door.
             Agnieszka Duda: The "keep this quiet" is the real tell. It's there to buy time before anyone checks.
         - else:
             Agnieszka Duda: That call in the boss's voice, asking to release a payment quietly, was the one to stop.

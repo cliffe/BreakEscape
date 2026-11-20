@@ -21,10 +21,10 @@ VAR hub_quiet = false
 - else:
     { episode_e3_helpdesk_reset_defend_defend_complete:
         { kit_key_caught:
-            Darren Price: You turned down that caller pushing for a reset who wouldn't be rung back, so no claims account opened for someone we couldn't place.
+            Darren Price: You turned down that overnight sign-in prompt nobody had started, so no claims account was handed to a stranger.
             Darren Price: Prompt-bombing just wears people down until they tap yes. Number matching takes the idle tap out of it.
         - else:
-            Darren Price: That caller pushing for a reset, the one who wouldn't be rung back, was the one to stop.
+            Darren Price: That overnight sign-in prompt, the one nobody had started, was the one to turn down.
             Darren Price: It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.
         }
     - else:
