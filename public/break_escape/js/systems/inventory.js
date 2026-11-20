@@ -607,21 +607,30 @@ export function restoreNoteFromSave(item) {
 }
 
 /**
+ * The text for a note that went into the Notepad: the world pickup's wording, one source
+ * for the toast and for the in-window message a container shows when it reopens.
+ * A missing name falls back to 'Note', as the Notepad title does.
+ */
+export function noteAddedText(name) {
+    return `Added "${name || 'Note'}" to your notes.`;
+}
+
+/**
+ * The toast for a note that went into the Notepad, used by every route that reopens no
+ * window (a note read in the world, a reward note, the last note of a container).
+ * Returns true when the toast was raised, false when gameAlert is missing.
+ */
+export function announceNoteAdded(name) {
+    if (!window.gameAlert) return false;
+    window.gameAlert(noteAddedText(name), 'info', 'Note Added', 3000);
+    return true;
+}
+
+/**
  * Put a notes item that arrived as a reward (no notes minigame) into the notepad,
  * apply its onRead/onPickup setVariable and emit item_picked_up. Mirrors
  * NPCGameBridge._receiveNote; window.addNote de-duplicates by title and text.
  */
-/**
- * The toast for a note that went into the Notepad: the world pickup's wording, used by
- * every route (a note read in the world, a reward note, a note taken from a container).
- * Returns the gameAlert's result, or false when nothing could be shown.
- */
-export function announceNoteAdded(name) {
-    if (!window.gameAlert) return false;
-    window.gameAlert(`Added "${name}" to your notes.`, 'info', 'Note Added', 3000);
-    return true;
-}
-
 function receiveRewardNote(item) {
     const text = item.text || item.observations || '';
     if (text && window.addNote) {
@@ -1554,6 +1563,7 @@ window.processInitialInventoryItems = processInitialInventoryItems;
 window.addToInventory = addToInventory;
 window.announcePickup = announcePickup;
 window.announceNoteAdded = announceNoteAdded;
+window.noteAddedText = noteAddedText;
 window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;

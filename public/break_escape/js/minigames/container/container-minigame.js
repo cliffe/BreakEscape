@@ -1278,6 +1278,11 @@ export class ContainerMinigame extends MinigameScene {
         // Call parent init first
         super.init();
         if (this.pcView) this.mountMonitor();
+        // Back from reading a note taken from here: say so in the window, as a key take does
+        // (a toast would wait for this window to close). Any mode, so before the layouts.
+        if (this.params?.fromReturn && typeof this.params.notice === 'string' && this.params.notice) {
+            this.showMessage(this.params.notice, 'success');
+        }
 
         // A container opening now means no reader is about to hand back to a network screen
         // recorded earlier (a locked folder that opened after its PIN leaves one behind), so
@@ -2699,7 +2704,17 @@ export class ContainerMinigame extends MinigameScene {
             }
             
             // Show success message
-            this.showMessage(fromSignIn ? `Moved ${displayDashes(item.name)} to inventory` : `Added ${displayDashes(item.name)} to inventory`, 'success');
+            // A notes item that is not readable (so it skipped the viewer route) still belongs in
+            // the Notepad: the server add makes no inventory slot for notes types, so without
+            // this it vanished (take-toast review m4).
+            const noteText = /^notes\d*$/.test(item.type) ? (item.text || item.observations || '') : '';
+            if (noteText && window.addNote) {
+                const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : noteText;
+                window.addNote(item.name || 'Note', body, !!item.important);
+                this.showMessage(window.noteAddedText?.(item.name) || `Added ${displayDashes(item.name)} to your notes`, 'success');
+            } else {
+                this.showMessage(fromSignIn ? `Moved ${displayDashes(item.name)} to inventory` : `Added ${displayDashes(item.name)} to inventory`, 'success');
+            }
             
             // If container is now empty, update display
             if (this.contents.length === 0) {
@@ -2833,6 +2848,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // A reopen after a reader closed: a sign-in desktop never falls through to the
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
+        notice: typeof extra?.notice === 'string' ? extra.notice : '',
         focusReturn: extra?.focusReturn || null,
         slotReturn: extra?.slotReturn || null,
         focusEntry: extra?.focusEntry === true,
@@ -2868,6 +2884,15 @@ function shouldUseDesktopModeForContainer(containerItem) {
     return desktopKeywords.some(keyword => allText.includes(keyword));
 }
 
+// A PC's sign-in desktop whose session ended while a file was open: it is not reopened
+function pcSessionEnded(containerState) {
+    const lockable = containerState.containerItem;
+    const pcData = lockable?.scenarioData;
+    return !containerState.npcOptions && pcData?.lockType === 'login' && !!pcData.id
+        && !isNetworkScreenContainer(lockable) && !!window.pcSessions
+        && typeof window.pcSessions.has === 'function' && !window.pcSessions.has(pcData.id);
+}
+
 // Function to return to container after notes minigame
 export function returnToContainerAfterNotes({ reopen = true } = {}) {
     console.log('Returning to container after notes minigame');
@@ -2878,6 +2903,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
         
         // Clear the pending return state
         window.pendingContainerReturn = null;
+        let noteNotice = '';
         
         // Check if we should remove a notes item after the notes minigame
         if (containerState.itemToTake) {
@@ -2908,16 +2934,24 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
                 containerState.contents.splice(itemIndex, 1);
             }
             
-            // The container reopens just below, so this toast waits for it with the
-            // others. Shown now it was pulled back by the container opening and shown
-            // again when it closed: "has been noted" twice (F13, engine F24).
-            // The last note of an ordinary container reopens nothing, so no panel is expected
-            // and the toast must not wait for one.
-            if (!lastNoteClosesToWorld(containerState)) window.expectPanelWithin?.(1000);
-            else window.clearExpectedPanel?.();
-            window.announceNoteAdded?.(containerState.itemToTake.name);
+            // Said where the player is looking. The container reopens with the message in
+            // its window (a toast would be held until it closed: m09 "no confirmation").
+            // A route that reopens nothing (the last note, a blocked reader, a session that
+            // ended) has no window to carry it, so it gets the toast, shown at once.
+            noteNotice = window.noteAddedText?.(containerState.itemToTake.name) || '';
+            if (!reopen || lastNoteClosesToWorld(containerState) || pcSessionEnded(containerState)) {
+                noteNotice = '';
+                window.clearExpectedPanel?.();
+                window.announceNoteAdded?.(containerState.itemToTake.name);
+            } else if (noteNotice) {
+                window.expectPanelWithin?.(1000);
+            } else {
+                // No text helper loaded: fall back to the toast, held for the reopened window
+                window.expectPanelWithin?.(1000);
+                window.announceNoteAdded?.(containerState.itemToTake.name);
+            }
         }
-        
+
         // A hit, the knockout screen, a conversation or a room change closed the reader
         // (containerReturnBlocked): the note above is still taken, the container stays shut
         if (!reopen) return;
@@ -2934,9 +2968,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
         // (lab UX review M2).
         const lockable = containerState.containerItem;
         const pcData = lockable?.scenarioData;
-        if (!containerState.npcOptions && pcData?.lockType === 'login' && pcData.id
-            && !isNetworkScreenContainer(lockable) && window.pcSessions
-            && typeof window.pcSessions.has === 'function' && !window.pcSessions.has(pcData.id)) {
+        if (pcSessionEnded(containerState)) {
             const ended = window.pcSessions.takeEndedMessage?.(pcData.id);
             window.gameAlert?.(ended?.message || 'Signed out', 'info', pcData.name || 'PC', 3000);
             return;
@@ -2952,7 +2984,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true, focusReturn: containerState.focusReturn || null, slotReturn: containerState.slotReturn || null, scrollTop: containerState.scrollTop || 0 }
+            { fromReturn: true, notice: noteNotice, focusReturn: containerState.focusReturn || null, slotReturn: containerState.slotReturn || null, scrollTop: containerState.scrollTop || 0 }
         );
     } else {
         console.log('No pending container return found');

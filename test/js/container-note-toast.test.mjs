@@ -1,8 +1,11 @@
 /**
  * Taking a readable note out of a container (it goes to the Notepad) says so with the
- * world pickup's toast, once: Added "<name>" to your notes. / Note Added (m09 blind
- * playtest: "silently collected to the Notepad, no toast"). A normal item keeps its own
- * feedback. Uses the real inventory.js helper and the real container code.
+ * world pickup's wording, Added "<name>" to your notes. (m09 blind playtest: "silently
+ * collected to the Notepad, no toast"). Where the player is looking: a container that
+ * reopens shows it in its own window (a toast would be held until the window closed) and
+ * raises no toast; a route that reopens nothing raises the toast at once. A normal item
+ * keeps its own feedback. Uses the real inventory.js helper, the real notifications.js
+ * hold and the real container code.
  * Run: node --max-old-space-size=2048 test/js/container-note-toast.test.mjs
  */
 import test from 'node:test';
@@ -51,16 +54,24 @@ put('real/inventory.mjs', readFileSync(join(js, 'systems/inventory.js'), 'utf8')
     .replace("'../config.js'", "'./config.mjs'").replace("'../ui/info-label.js'", "'./info-label.mjs'")
     .replace("'./forced-minigame-guard.js'", "'./forced-minigame-guard.mjs'").replace("'./consumables.js'", "'./consumables.mjs'"));
 
+const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 await import(pathToFileURL(join(dir, 'real/inventory.mjs'))); // sets window.announceNoteAdded
+// The real toast hold (a minigame open or expected holds an info toast)
+const N = await import(dataUrl(readFileSync(join(js, 'systems/notifications.js'), 'utf8')
+    .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+    .split("'../ui/modal-stack.js'").join(`'${dataUrl('export const registerModal = () => () => {};')}'`)
+    .split("'../utils/overlay-open.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/overlay-open.js'), 'utf8'))}'`)));
 const { ContainerMinigame, returnToContainerAfterNotes } = await import(pathToFileURL(join(dir, 'minigames/container/container-minigame.js')));
 
 const alerts = [];
+const starts = [];
 function setup() {
     alerts.length = 0;
-    document.body.innerHTML = '<div id="mg"></div>';
+    starts.length = 0;
+    document.body.innerHTML = '<div id="notification-container"></div><div id="mg"></div>';
     window.gameAlert = (...a) => alerts.push(a);
     window.expectPanelWithin = () => {};
     window.clearExpectedPanel = () => {};
@@ -69,20 +80,106 @@ function setup() {
     window.eventDispatcher = { emit() {} };
     window.playUISound = () => {};
     window.pendingContainerReturn = null;
-    window.startContainerMinigame = () => {};
+    // The module's own startContainerMinigame hands its params to the framework
+    window.MinigameFramework = { mainGameScene: {}, startMinigame: (...a) => starts.push(a) };
     window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ contents: [] }) });
 }
-
-test('a note taken from a container toasts once, with the world pickup wording', () => {
-    setup();
-    const note = { type: 'notes', id: 'n1', name: 'Candidate Assessment', readable: true, text: 'x', takeable: false };
+const SAFE = () => ({ scenarioData: { id: 'safe1', type: 'safe', name: 'Floor Safe', locked: false } });
+const noteOf = (id, name) => ({ type: 'notes', id, name, readable: true, text: 'x', takeable: false });
+// A note was taken from a container that still holds `left` other things
+function takeFrom(note, left) {
     window.pendingContainerReturn = {
-        containerItem: { scenarioData: { id: 'safe1', type: 'safe', name: 'Floor Safe', locked: false } },
-        contents: [note], isTakeable: false, itemToTake: note, itemElement: null, npcOptions: null
+        containerItem: SAFE(), contents: [note, ...left], isTakeable: false, itemToTake: note, itemElement: null, npcOptions: null
     };
-    returnToContainerAfterNotes({ reopen: false });
+}
+
+test('the last note of a container toasts once at once, with the world pickup wording', () => {
+    setup();
+    const note = noteOf('n1', 'Candidate Assessment');
+    takeFrom(note, []);
+    returnToContainerAfterNotes();
     assert.ok(alerts.length === 1, `one toast, got ${alerts.length}`);
     assert.deepEqual(alerts[0], ['Added "Candidate Assessment" to your notes.', 'info', 'Note Added', 3000]);
+    assert.ok(starts.length === 0, 'nothing reopens');
+});
+
+test('a blocked reopen (a hit, a conversation) toasts once and reopens nothing', () => {
+    setup();
+    takeFrom(noteOf('n1', 'Memo'), [noteOf('n2', 'Other')]);
+    returnToContainerAfterNotes({ reopen: false });
+    assert.ok(alerts.length === 1 && alerts[0][0] === 'Added "Memo" to your notes.', `one toast: ${JSON.stringify(alerts)}`);
+    assert.ok(starts.length === 0, 'nothing reopens');
+});
+
+test('M1: a container that reopens carries the notice in its window and raises no toast', () => {
+    setup();
+    takeFrom(noteOf('n1', 'Candidate Assessment'), [noteOf('n2', 'Other')]);
+    returnToContainerAfterNotes();
+    assert.ok(alerts.length === 0, `no toast (it would be held until the window closed): ${JSON.stringify(alerts)}`);
+    assert.ok(starts.length === 1, 'the container reopens');
+    const extras = starts[0][2];
+    assert.ok(extras && extras.fromReturn === true, 'a return');
+    assert.ok(extras.notice === 'Added "Candidate Assessment" to your notes.', `notice: ${extras && extras.notice}`);
+});
+
+test('M1: the reopened window shows the notice, with the same text the toast uses', async () => {
+    setup();
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Floor Safe', containerItem: SAFE(), contents: [noteOf('n2', 'Other')], isTakeable: false,
+        fromReturn: true, notice: window.noteAddedText('Candidate Assessment') });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    await mg.init();
+    const msgs = [...document.querySelectorAll('.container-message-success')].map(m => m.textContent);
+    assert.deepEqual(msgs, ['Added "Candidate Assessment" to your notes.']);
+    window.announceNoteAdded('Candidate Assessment');
+    assert.ok(alerts[0][0] === msgs[0], 'the toast and the window say the same');
+    // A plain open shows no notice
+    document.body.innerHTML = '<div id="mg"></div>';
+    const plain = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Floor Safe', containerItem: SAFE(), contents: [noteOf('n2', 'Other')], isTakeable: false });
+    window.MinigameFramework = { currentMinigame: plain, endMinigame() {} };
+    await plain.init();
+    assert.ok(document.querySelectorAll('.container-message').length === 0, 'no notice on a plain open');
+});
+
+test('m6: two notes with the same title, taken in one visit, each carry their own notice', () => {
+    setup();
+    takeFrom(noteOf('n1', 'Memo'), [noteOf('n2', 'Memo'), noteOf('n3', 'Memo')]);
+    returnToContainerAfterNotes();
+    takeFrom(noteOf('n2', 'Memo'), [noteOf('n3', 'Memo')]);
+    returnToContainerAfterNotes();
+    assert.ok(starts.length === 2, `two reopens, got ${starts.length}`);
+    assert.ok(starts.every(a => a[2].notice === 'Added "Memo" to your notes.'), 'each reopen has its notice');
+    assert.ok(alerts.length === 0, 'and no merged toast');
+});
+
+test('m3: a note with no name reads Note, as the Notepad title does', () => {
+    setup();
+    assert.ok(window.noteAddedText(undefined) === 'Added "Note" to your notes.', 'text helper');
+    window.announceNoteAdded('');
+    assert.ok(alerts[0][0] === 'Added "Note" to your notes.', `toast: ${alerts[0] && alerts[0][0]}`);
+});
+
+test('m5: with the real hold, the last note shows its toast at once and a reopen shows none behind the window', async () => {
+    setup();
+    window.gameAlert = N.showNotification;
+    window.expectPanelWithin = N.expectPanelWithin;
+    window.clearExpectedPanel = N.clearExpectedPanel;
+    const toasts = () => [...document.querySelectorAll('#notification-container .notification')].map(t => t.textContent);
+    // Reopen route: a panel is expected, the container opens; no note toast is raised at all
+    takeFrom(noteOf('n1', 'Candidate Assessment'), [noteOf('n2', 'Other')]);
+    returnToContainerAfterNotes();
+    window.MinigameFramework = { currentMinigame: {} };
+    await new Promise(r => setTimeout(r, 50));
+    window.MinigameFramework = { currentMinigame: null };
+    N.clearExpectedPanel();
+    await new Promise(r => setTimeout(r, 1200));
+    assert.ok(!toasts().some(t => /your notes/.test(t)), `no late toast after the window closed: ${toasts().join('|')}`);
+    // Last note: no panel expected, the toast shows now
+    takeFrom(noteOf('n3', 'Final Note'), []);
+    returnToContainerAfterNotes();
+    assert.ok(toasts().some(t => /Added "Final Note" to your notes\./.test(t)), `toast shown at once: ${toasts().join('|')}`);
+    N.clearWaitingToasts();
 });
 
 test('the toast text is the helper the world pickup uses (one wording)', () => {
