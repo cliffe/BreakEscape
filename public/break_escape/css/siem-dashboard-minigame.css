@@ -100,7 +100,7 @@
 
 .siem-alert-row {
     display: grid;
-    grid-template-columns: 70px 86px 140px minmax(0, 1fr) 200px;
+    grid-template-columns: 70px 86px 156px minmax(0, 1fr) 200px;
     gap: 10px;
     align-items: center;
     min-height: 60px;
@@ -180,10 +180,12 @@
     text-overflow: ellipsis;
 }
 
+/* The whole message is readable at every width: it wraps and the row grows (the list
+   scrolls; the other cells stay centred on the row) */
 .siem-description {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 20px;
 }
 
 .siem-actions {
@@ -227,6 +229,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    container-type: inline-size;
 }
 
 .siem-queue-item {
@@ -235,6 +238,9 @@
     gap: 8px;
     align-items: center;
     min-height: 42px;
+    /* The list is a flex column with a scrollbar: without this the items shrink to fit the
+       pane and the wrapped text runs past the border. Height is never set, so the item grows. */
+    flex-shrink: 0;
     padding: 6px;
     border: 2px solid #32466f;
     background: #17243f;
@@ -245,6 +251,9 @@
     align-items: center;
     justify-content: center;
     height: 28px;
+    min-width: 56px;
+    box-sizing: border-box;
+    flex-shrink: 0;
     border: 2px solid rgba(255, 255, 255, 0.2);
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
@@ -271,9 +280,24 @@
 .siem-queue-text {
     font-size: 16px;   /* GNF scale 16/24/32 */
     color: #d6e2ff;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Wraps in full; the queue item grows to fit */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 20px;
+}
+
+/* Narrow queue pane (800x600 and similar): when the text column would fall under about 140px
+   (list content under 220px), stack the badge above the text so the text has the full width */
+@container (max-width: 219px) {
+    .siem-queue-item {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: 6px;
+    }
+
+    .siem-queue-sev {
+        justify-self: start;
+    }
 }
 
 .siem-status-bar {
@@ -520,6 +544,12 @@
     }
 }
 
+/* The two-line row starts at 1239px and below, not 1100px. The wide grid keeps 70 86 156 _ 200
+   plus four 10px gaps (552px) and the description gets the rest: about 236px at 1280, and it
+   falls 0.7px per viewport px, so it reaches 200px at about 1229px. With a 1239px cut the
+   narrowest wide layout (1240px) leaves it about 208px, and 1280 is still wide. Keep this query
+   and test/js/phone-390-rule-fixes.test.mjs in step. The queue-count band below has its own cut. */
+
 /* "24 alerts queued" is 196px at GNF 24. Measured in headless Chromium (601 to 1100px wide): the queue
    pane's text box (pane width less 20px padding) is 154px at 601, 192 at 800, 203 at 838 and 204 at 839.
    839 is the narrowest width with 8px to spare, so GNF 24 from 840px up and GNF 16 on one line below it. */
@@ -530,7 +560,7 @@
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1239px) {
     /* Two lines: badge, time, host and the buttons; then the whole message below them, so
        the message keeps the row's full width (at 800 it was squeezed to one letter a line) */
     .siem-alert-row {
@@ -589,5 +619,21 @@
 
     .siem-pane-title {
         overflow-wrap: anywhere;
+    }
+
+    /* Compact footer: GNF 16, two lines (pending and clock; then time remaining), about 56px
+       instead of three lines of GNF 24 at about 140px. Text only, no controls */
+    .siem-status-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 2px 12px;
+        min-height: 0;
+        padding: 6px 12px;
+        font-size: 16px;
+        line-height: 20px;
+    }
+
+    .siem-status-bar > :nth-child(3) {
+        grid-column: 1 / -1;
     }
 }

@@ -76,9 +76,13 @@ for (const file of SHEETS) {
     });
 }
 
-test('a compact PC monitor hides the 16px username line, which no longer fits its 76px tile (R2 M1)', () => {
+// Updated by the sign-in phone work (AC0 card 3, 20 Nov): a short frame still drops the line, but a
+// compact portrait frame keeps it at GNF 16 on one line, cut with an ellipsis inside the 76px tile.
+test('the 16px username line gives way on a short PC monitor and stays, one line with an ellipsis, on a compact one (R2 M1)', () => {
     const css = readFileSync(new URL('../../public/break_escape/css/password-minigame.css', import.meta.url), 'utf8');
-    assert.match(css, /\.pc-monitor\[data-compact\] \.signin-username\s*\{\s*display: none;/);
+    assert.match(css, /\.pc-monitor\[data-short\] \.signin-username\s*\{\s*display: none;/);
+    assert.match(css, /\.pc-monitor\[data-compact\]:not\(\[data-short\]\) \.signin-username\s*\{[^}]*white-space: nowrap;[^}]*text-overflow: ellipsis;/);
+    assert.ok(!/\.pc-monitor\[data-compact\] \.signin-username\s*\{\s*display: none;/.test(css), 'a compact (not short) frame no longer hides the line');
 });
 
 // Elements that set no size of their own inherit the framework's 16px GNF from .minigame-container,
