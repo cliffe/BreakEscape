@@ -237,6 +237,27 @@ test('the compact block and the short block keep the same strip declarations (R1
     }
 });
 
+test('the compact block holds only the mapped strip selectors plus a named exemption list (R2 m3)', () => {
+    const a = declMap(short.body), b = declMap(compact.body);
+    const toCompact = (sel) => sel === '.lockpicking-item-section' ? '.lockpicking-item-section.lockpicking-compact'
+        : sel.startsWith('.lockpicking-item-section.') ? sel.replace('.lockpicking-item-section.', '.lockpicking-compact.')
+        : '.lockpicking-compact ' + sel;
+    // Compact-only selectors, each with its reason. A new compact-only rule fails here until it is
+    // named, so it cannot drift from the short block unnoticed.
+    const EXEMPT = {
+        '.lockpicking-compact .lockpicking-mode-row': 'the desktop mode row keeps its caption (AC1 decision), the short block hides it'
+    };
+    const mapped = new Set(Object.keys(a).filter((s) => /^\.lockpicking-item-(section|image|info)/.test(s)).map(toCompact));
+    for (const sel of Object.keys(b)) {
+        assert.ok(mapped.has(sel) || EXEMPT[sel], 'compact-only selector without a stated exemption: ' + sel);
+    }
+    for (const sel of Object.keys(EXEMPT)) assert.ok(b[sel], 'the exemption still names a real selector: ' + sel);
+    // every short-block rule that names the strip's parts, however written, is mapped or exempted:
+    // a short-block strip rule the filter above misses would otherwise be silently uncompared
+    const strayShort = Object.keys(a).filter((s) => /obs-|item-/.test(s) && !/^\.lockpicking-item-(section|image|info)/.test(s));
+    assert.ok(strayShort.length === 0, 'short-block strip rules the mapping does not cover: ' + strayShort.join(' | '));
+});
+
 test('the JS marks the box, caps FIT at the crop, watches the box and the key panel stays in the crop', () => {
     assert.match(js, /classList\.add\('lockpicking-fit'\)/);
     assert.match(js, /if \(!isPortrait && window\.innerHeight <= 560\) \{\s*config\.scale\.maxWidth = 580;\s*config\.scale\.maxHeight = 340;/);

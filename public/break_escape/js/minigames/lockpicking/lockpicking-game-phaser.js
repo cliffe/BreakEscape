@@ -623,6 +623,11 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             box.style.maxWidth = '';
             box.classList.remove('lockpicking-zoomed');
             box.classList.add('lockpicking-fit');
+            // The compact strip belongs to the desktop layout: the fitted layout has its own
+            // rules, so a stale mark would leave the observations a dead expanded button (R2 m1).
+            // The caller resyncs the observation button after this.
+            this._itemSection?.classList?.remove('lockpicking-compact');
+            this._lockCompact = false;
             this._portraitCameraOffset = { x: 0, y: st.portrait ? 20 : 30 };
             scale.scaleMode = Phaser.Scale.FIT;
             scale.autoCenter = Phaser.Scale.CENTER_BOTH;
@@ -736,8 +741,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // The room measured decides whether the item strip stays full size: when the lock would
         // need a zoom under LOCK_COMPACT_BELOW (a short desktop window, a long observation, a tall
         // feedback box) the strip takes the compact form the short windows use (lockpicking.css,
-        // .lockpicking-compact), which gives the lock about 250px more. Remeasured from the
-        // full-size strip each pass so it relaxes again when the room allows.
+        // .lockpicking-compact), which gives the lock about 250px more. Relax passes remeasure
+        // from the full-size strip; sticky passes keep compact once it is on (see above).
         const sec = this._itemSection;
         if (sec) {
             const sticky = !relax && !!this._lockCompact;
@@ -797,8 +802,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     }
 
     // The observations are a button (role, tab stop, aria-expanded; the accessible name is the
-    // observation text itself) only while they can be opened: short window and the two-line clamp hides text, or
-    // they are already open. Elsewhere they are plain text.
+    // observation text itself) only while they can be opened: a short window or a compact strip,
+    // and the two-line clamp hides text, or they are already open. Elsewhere they are plain text.
     _syncObsButton() {
         const obs = this._obsEl;
         const sec = this._obsSection;

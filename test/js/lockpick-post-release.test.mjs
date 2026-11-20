@@ -52,7 +52,7 @@ function fakeLock(applied) {
         _lockFitApplied: applied,
         _portraitCameraOffset: applied.fit ? { x: 0, y: applied.portrait ? 20 : 30 } : null,
         _syncObsButton: () => {},
-        _fitLockZoom: () => calls.push(['zoomfit']),
+        _fitLockZoom: (relax) => calls.push(['zoomfit', relax]),
         _applyLockFit: H._applyLockFit,
         _watchLockBox: () => calls.push(['watchbox']),
         _placeKeyPanel: H._placeKeyPanel,
@@ -112,6 +112,48 @@ test('a desktop lock resized short or narrow gets the crop, FIT and the camera o
     assert.deepEqual(t.calls.find((c) => c[0] === 'max'), ['max', 580, 340], 'short landscape: no upscaling past the crop');
     assert.deepEqual(t.scroll.pop(), [0, 30]);
     assert.ok(t.calls.some((c) => c[0] === 'watchbox'), 'the box observer is started');
+});
+
+test('a desktop refit relaxes the strip: the refit pass after a trip through the short layout passes no false (R2 m2)', () => {
+    // 1280x720 compact, then 540 tall (fitted), then 900 tall: the immediate resize pass returns
+    // while the fit is pending, so this refit is the only relax pass. A sticky pass would keep
+    // compact on a window where the full strip fits.
+    const t = fakeLock({ fit: true, portrait: false, capped: true });
+    at(1280, 900, () => H._refitLock.call(t.fake));
+    const z = t.calls.filter((c) => c[0] === 'zoomfit');
+    assert.ok(z.length === 1, 'one zoom pass: ' + z.length);
+    assert.ok(z[0][1] !== false, 'the pass relaxes (argument ' + z[0][1] + ')');
+    // and an unchanged desktop layout relaxes too
+    t.calls.length = 0;
+    at(1280, 900, () => H._refitLock.call(t.fake));
+    assert.ok(t.calls.filter((c) => c[0] === 'zoomfit').every((c) => c[1] !== false), 'a repeat refit relaxes');
+});
+
+test('refitting into the fitted layout clears the compact strip and resyncs the observation button (R2 m1)', () => {
+    const t = fakeLock({ fit: false, portrait: false, capped: false });
+    t.box.classList.remove('lockpicking-fit');
+    const sec = document.createElement('div');
+    sec.className = 'lockpicking-item-section lockpicking-compact lockpicking-info-expanded';
+    const obs = document.createElement('p');
+    const more = document.createElement('span');
+    sec.appendChild(obs);
+    document.body.appendChild(sec);
+    Object.defineProperty(obs, 'scrollHeight', { get: () => 72, configurable: true });
+    Object.defineProperty(obs, 'clientHeight', { get: () => 48, configurable: true });
+    Object.assign(t.fake, { _itemSection: sec, _obsSection: sec, _obsEl: obs, _obsMore: more, _lockCompact: true, _syncObsButton: H._syncObsButton });
+    // 1280x720: compact and expanded, a button
+    at(1280, 720, () => H._syncObsButton.call(t.fake));
+    assert.equal(obs.getAttribute('role'), 'button', 'compact on 720: a button');
+    // narrow to 700x720: the fitted layout
+    at(700, 720, () => H._refitLock.call(t.fake));
+    assert.equal(t.fake._lockCompact, false, 'the flag is cleared');
+    assert.equal(sec.classList.contains('lockpicking-compact'), false, 'the class is cleared');
+    assert.equal(obs.getAttribute('role'), null, 'plain text, not a dead expanded button');
+    assert.equal(obs.getAttribute('aria-expanded'), null);
+    assert.equal(sec.classList.contains('lockpicking-info-expanded'), false);
+    assert.ok(js.indexOf("classList?.remove('lockpicking-compact')") > js.indexOf('_applyLockFit(game, box, st) {')
+        && js.indexOf("classList?.remove('lockpicking-compact')") < js.indexOf('this._placeKeyPanel();', js.indexOf('_applyLockFit(game, box, st) {')), 'the clear sits in _applyLockFit');
+    sec.remove();
 });
 
 test('rotating a phone moves the crop offset and the cap, and nothing else changes', () => {
