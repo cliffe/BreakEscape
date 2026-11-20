@@ -64,6 +64,14 @@
     line-height: 24px;
 }
 
+/* padding-right keeps the last glyph clear of the X's hit area, which reaches 64px (66px vm) in from the
+   frame's outer edge; text now stops at 70px or more. Harmless with nowrap and ellipsis. */
+.device-frame > .device-frame-title > span,
+.device-frame > .device-frame-title > h2 {
+    padding-right: 16px;
+    box-sizing: border-box;
+}
+
 @media (max-width: 559px) {
     /* K3 B: the title stays 16px on phones and wraps beside the X, like the SCADA and warranty titles.
        No min-width here: the row is a stretched column item, and 0 would tie the patch panel's
@@ -73,12 +81,10 @@
     }
     /* The vm-launcher and rogue-ap title text sets nowrap + ellipsis: on phones let it wrap instead.
        The element-type step makes (0,2,1), which beats their two-class (0,2,0) rules without editing those files.
-       padding-right keeps the last glyphs clear of the X's tap area (14px past the X plus the 8px gap). */
+       The padding-right that keeps the last glyph clear of the X's hit area is the base rule above. */
     .device-frame > .device-frame-title > span,
     .device-frame > .device-frame-title > h2 {
         min-width: 0;
-        padding-right: 16px;
-        box-sizing: border-box;
         overflow: visible;
         text-overflow: clip;
         white-space: normal;

@@ -54,8 +54,10 @@ test('the title uses Press Start 2P at 16px and stays 16px on phones, wrapping (
     // The row must not set min-width: it would tie the patch panel's min-width: 100% at (0,2,0).
     const row = /\.device-frame > \.device-frame-title\s*\{([^}]*)\}/.exec(phone)?.[1] ?? '';
     assert.ok(!/min-width/.test(row), 'no min-width on the phone title row');
-    // Room for the X tap area past the text.
-    assert.ok(/padding-right:\s*1[4-9]px|padding-right:\s*[2-9]\d px/.test(textRule ? textRule[2] : ''), 'text keeps 14px+ clear on the right');
+    // Room for the X hit area past the text, at every width: the rule sits outside the phone block.
+    const base = css.replace(phone, '');
+    const pad = /\.device-frame > \.device-frame-title > span,\s*\.device-frame > \.device-frame-title > h2\s*\{([^}]*)\}/.exec(base)?.[1] ?? '';
+    assert.ok(/padding-right:\s*(1[4-9]|[2-9]\d)px/.test(pad), 'text keeps 14px+ clear on the right at every width');
 });
 
 test('the game page loads the stylesheet', () => {

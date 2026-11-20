@@ -29,8 +29,8 @@ test('K5 B: the game container shrinks to the card, so no plate and the X sits o
     assert.ok(/margin:\s*auto/.test(b), 'centred on both axes by the shell');
     assert.ok(/background:\s*none/.test(b), 'no #1a1a1a plate');
     const card = rule('infusion-pump-minigame.css', '.ip-no-charts');
-    assert.ok(/margin:\s*0;/.test(card), 'the card itself has no auto margin');
-    assert.ok(/padding:\s*16px 48px 16px 16px/.test(card), 'room on the right for the X');
+    assert.ok(/margin:\s*0 auto;/.test(card), 'the card centres sideways even without :has()');
+    assert.ok(/padding:\s*16px 48px;/.test(card), 'equal side padding: centred content, room for the X');
 });
 
 test('K8 B: the phone ransomware headline is 16px (24px line), above the 16px note, and wraps', () => {
