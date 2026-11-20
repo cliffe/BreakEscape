@@ -92,9 +92,7 @@ test('the VM launcher scroller starts below the 32px X at phone width, from the 
     // top is bezel + gap + line + margin, and must sit at or below the drawn X's bottom (bezel + gap + 32px).
     const strip = (f) => readFileSync(join(root, 'css', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const frame = strip('device-frame.css');
-    const phone = frame.match(/@media \(max-width: 559px\) \{\s*\.device-frame > \.device-frame-title \{([^}]*)\}/);
-    assert.ok(phone, 'a phone-width title rule exists in device-frame.css');
-    assert.ok(!/margin|font-size|line-height/.test(phone[1]), 'the phone title rule leaves size, line and margin to the base rule');
+    assert.ok(!/@media[^{]*\{[^@]*\.device-frame-title\s*\{[^}]*(margin|font-size|line-height)/.test(frame), 'no media query on the title row changes size, line or margin');
     const base = frame.match(/\.device-frame > \.device-frame-title \{([^}]*)\}/)[1];
     const margin = parseFloat(base.match(/margin:\s*0 0 (\d+)px/)[1]);
     const line = parseFloat(base.match(/line-height:\s*(\d+)px/)[1]);
