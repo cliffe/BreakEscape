@@ -556,6 +556,21 @@ module ValidateSocial
           v.each_with_index do |entry, i|
             t = entry.is_a?(Hash) ? entry['text'] : nil
             issues << err("strings.conceptPanel entry #{i + 1} has no text; the debrief would show an empty panel") if !t.is_a?(String) || t.strip.empty?
+            next unless entry.is_a?(Hash) && entry.key?('condition')
+
+            cond = entry['condition']
+            if respond_to?(:action_condition_problem, true) && (problem = send(:action_condition_problem, cond))
+              issues << err("strings.conceptPanel entry #{i + 1} condition #{problem}; the debrief reads the global-condition grammar " \
+                            "(globalVars.x, !globalVars.x, globalVars.x === literal, joined by && or ||, no parentheses) and hides an entry it cannot read")
+            end
+            if cond.is_a?(String)
+              cond.scan(/globalVars\.(\w+)/).flatten.uniq.each do |g|
+                issues << warn_("strings.conceptPanel entry #{i + 1} condition reads globalVars.#{g}, which is not declared in globalVariables; nothing is known to set it (a negated term would hold)") unless ctx.all_globals.key?(g)
+              end
+            end
+          end
+          if v.any? && v.all? { |e| e.is_a?(Hash) && e.key?('condition') }
+            issues << warn_('every strings.conceptPanel entry has a condition; a learner for whom none holds would get no concept panel')
           end
           next
         end

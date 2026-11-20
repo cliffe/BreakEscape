@@ -6902,7 +6902,7 @@ end
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
-  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants)(\[|\/|\z)/
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants|conceptPanel)(\[|\/|\z)/
   walk = nil
   walk = lambda do |node, path, ctx|
     case node
