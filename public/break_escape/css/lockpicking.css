@@ -119,6 +119,14 @@
     display: block;
 }
 
+/* A whole zoom of 2 or more: Phaser keeps the 600x400 backing store and the browser scales the
+   canvas by CSS, so it needs the nearest-neighbour filter or every edge blurs (R1 M1). The class is
+   set on the box only for z > 1; fractions under 1 and the phone Scale.FIT path keep the default
+   filter, so the 2px leaders and glyphs are not thinned. The labels are canvas text, not DOM. */
+#phaser-game-container.lockpicking-zoomed canvas {
+    image-rendering: pixelated;
+}
+
 /* The lock's game area is capped to the window by the shell (UI shell build): what does not
    fit (the feedback strip under the canvas on a phone, critique A07) scrolls inside it */
 .minigame-game-container:has(> #phaser-game-container) {
