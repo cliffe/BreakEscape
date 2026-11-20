@@ -202,9 +202,13 @@ test('SIEM queue items grow to their text and the badge keeps its size (live reg
     assert.ok(/flex-shrink:\s*0/.test(sev), 'badge never shrinks');
     assert.ok(/min-width:\s*56px/.test(sev), 'badge keeps its full width');
     const raw = read('siem-dashboard-minigame.css');
-    assert.ok(/container-type:\s*inline-size/.test(raw), 'queue list is a size container');
+    const list = rulesFor('siem-dashboard-minigame.css', 'siem-queue-list').filter((r) => r.sel.trim() === '.siem-queue-list').map((r) => r.body).join(';');
+    assert.ok(/container-type:\s*inline-size/.test(list), 'the queue list itself is the size container');
     const m = raw.match(/@container \(max-width: (\d+)px\) \{\s*\.siem-queue-item \{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/);
     assert.ok(m !== null, 'narrow queue stacks the badge above the text');
-    assert.ok(raw.indexOf('@container') > raw.indexOf('.siem-queue-item {') && raw.indexOf('@container') > raw.indexOf('.siem-queue-sev {'), 'the stacked rule comes after the base item and badge rules so it wins');
+    const at = raw.indexOf('@container');
+    assert.ok(at > raw.lastIndexOf('.siem-queue-item {', at) && raw.lastIndexOf('.siem-queue-item {', at) >= 0 && at > raw.indexOf('.siem-queue-sev {'), 'the stacked rule comes after the base item and badge rules so it wins');
+    const blockEnd = raw.indexOf('\n}', at);
+    assert.ok(!/(^|\n)\.siem-queue-(item|sev) \{/.test(raw.slice(blockEnd)), 'no base item or badge rule after the stacked block can override it');
     assert.ok(Number(m[1]) >= 199, 'stacks before the text column drops under about 120px');
 });
