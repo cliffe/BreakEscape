@@ -508,7 +508,7 @@
 .tri-wifi-lock::before { content: ''; position: absolute; left: 2px; bottom: 8px; width: 4px; height: 5px; border: 2px solid currentColor; border-bottom: 0; }
 .tri-wifi-open .tri-wifi-lock::before { left: 6px; height: 4px; border-right-color: transparent; }
 .tri-wifi-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
-.tri-wifi-bar { display: block; width: 6px; background: #c9d0e0; border: 2px solid #8792ad; }
+.tri-wifi-bar { display: block; box-sizing: border-box; width: 6px; background: #c9d0e0; border: 2px solid #8792ad; }
 .tri-wifi-bar.on { background: #233b8f; border-color: #233b8f; }
 .tri-wifi-bar-1 { height: 4px; } .tri-wifi-bar-2 { height: 7px; } .tri-wifi-bar-3 { height: 10px; } .tri-wifi-bar-4 { height: 14px; }
 .tri-wifi-note { margin: 4px 0 0; font-size: 13px; }

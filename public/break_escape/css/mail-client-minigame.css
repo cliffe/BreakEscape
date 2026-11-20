@@ -503,13 +503,6 @@
     .mail-client * { max-width: 100%; }
     .mail-toolbar > * { min-width: 0; }
     .mail-account { flex: 1 1 100%; margin-right: 0; }
-    /* B9: the account label and Close share the header row; the buttons take their own row. */
-    .mail-client .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 0; }
-    .mail-client .mail-toolbar:not(.tri-toolbar) .se-overlay-close { order: 1; margin-left: auto; }
-    .mail-client .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; margin: -4px 0; }
-    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-folders,
-    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-contacts-btn,
-    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-toolbar-actions { order: 2; }
     .mail-list-pane, .mail-read-pane { overflow-x: hidden; }
     .mail-chip { max-width: 100%; box-sizing: border-box; }
     .mail-back { min-height: 44px; }
@@ -541,6 +534,16 @@
     .mail-toolbar { flex-wrap: wrap; }
     .mail-account { flex: 1 1 100%; margin-right: 0; }
     .mail-account-select { width: 100%; min-width: 16ch; }
+    /* B9: from 1000px down the account label and Close share the header row and the buttons take
+       their own row. The break is a zero-height ::after line; row-gap 4px on each side of it
+       makes the header-to-buttons gap 8px, matching the toolbar gap. */
+    .mail-client .mail-toolbar:not(.tri-toolbar) { row-gap: 4px; }
+    .mail-client .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 0; }
+    .mail-client .mail-toolbar:not(.tri-toolbar) .se-overlay-close { order: 1; margin-left: auto; }
+    .mail-client .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; }
+    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-folders,
+    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-contacts-btn,
+    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-toolbar-actions { order: 2; }
 }
 
 /* A short window with a pointer: a tighter composer so the form down to Ask fits above the pinned
@@ -638,9 +641,10 @@
 .mail-client--phone * { max-width: 100%; }
 .mail-client--phone .mail-toolbar > * { min-width: 0; }
 .mail-client--phone .mail-account { flex: 1 1 100%; margin-right: 0; }
+.mail-client--phone .mail-toolbar:not(.tri-toolbar) { row-gap: 4px; }
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 0; }
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) .se-overlay-close { order: 1; margin-left: auto; }
-.mail-client--phone .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; margin: -4px 0; }
+.mail-client--phone .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; }
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-folders,
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-contacts-btn,
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-toolbar-actions { order: 2; }
