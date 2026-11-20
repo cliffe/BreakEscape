@@ -254,6 +254,9 @@ test('lockZoom shrinks the lock below 1 when the window leaves it less than 600x
     assert.ok(Z(1280, 399) === 0.99, 'a pixel short still shrinks');
     assert.ok(Z(1280, 799) === 1 && Z(1280, 800) === 2, 'whole zooms above 1 as before');
     assert.ok(Z(300, 800) === 0.5, 'a narrow room stops at the 0.5 floor');
+    // f = 0.167 and 0.375 are below the floor: these fail if the Math.max is removed (R7 m2)
+    assert.ok(Z(100, 800) === 0.5, 'a very narrow room is held at the floor: ' + Z(100, 800));
+    assert.ok(Z(1280, 150) === 0.5, 'a very short room is held at the floor: ' + Z(1280, 150));
     assert.ok(Z(0, 0) === 1 && Z(NaN, 400) === 1, 'no room measured: 1');
 });
 
@@ -292,4 +295,79 @@ test('the feedback box is observed so the zoom follows its line count, and relea
         globalThis.ResizeObserver = RO;
         globalThis.requestAnimationFrame = raf;
     }
+});
+
+test('phones and short windows add no zoom listener and no feedback observer (R7 m3)', () => {
+    const seen = [];
+    const RO = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class { constructor(cb) { this.cb = cb; seen.push(this); } observe() {} disconnect() {} };
+    const raf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = () => 0;
+    try {
+        for (const [w, h] of [[390, 844], [844, 390], [740, 360], [1280, 560], [768, 900]]) {
+            const fake = { feedback: { id: 'fb' }, _watchLockScroll: () => {}, _watchLockRefit: () => {}, _fitLockZoom: () => {} };
+            at(w, h, () => H._watchLockZoom.call(fake));
+            assert.ok(seen.length === 0, w + 'x' + h + ' attached ' + seen.length + ' observers');
+            assert.ok(!fake._lockZoomOnResize, w + 'x' + h + ' added a resize listener');
+        }
+    } finally {
+        globalThis.ResizeObserver = RO;
+        globalThis.requestAnimationFrame = raf;
+    }
+});
+
+test('lockNeedsCompact is true only when the lock would need a zoom under the floor (short desktop window)', () => {
+    const N = LockpickingMinigamePhaser.lockNeedsCompact;
+    assert.ok(N(1200, 156) === true, 'a 156px room (1280x600, one-line feedback): f 0.39');
+    assert.ok(N(1200, 199) === true, 'a pixel under the floor');
+    assert.ok(N(1200, 200) === false, 'exactly the floor needs no compaction');
+    assert.ok(N(1200, 258) === false, 'the 1280x720 three-line room fits at 0.64');
+    assert.ok(N(1200, 800) === false, 'whole zooms need none');
+    assert.ok(N(100, 800) === true, 'a very narrow room');
+    assert.ok(N(0, 0) === false && N(NaN, 400) === false, 'no room measured: no change');
+});
+
+test('_fitLockZoom compacts the item strip when the full-size strip leaves too little room, and relaxes when it does not (short desktop window)', () => {
+    document.body.innerHTML = '<div class="game"><div id="phaser-game-container"></div></div><div id="sec" class="lockpicking-item-section"></div>';
+    const sec = document.getElementById('sec');
+    const zooms = [];
+    let syncs = 0;
+    let room = { full: { w: 1200, h: 156 }, compact: { w: 1200, h: 420 } };
+    const fake = {
+        gameContainer: document.querySelector('.game'),
+        game: { scale: { zoom: 1, setZoom: (z) => { zooms.push(z); fake.game.scale.zoom = z; } } },
+        _lockFitApplied: { fit: false, portrait: false, capped: false },
+        _itemSection: sec,
+        _syncObsButton: () => { syncs++; },
+        _lockRoom: () => (sec.classList.contains('lockpicking-compact') ? room.compact : room.full)
+    };
+    at(1280, 600, () => H._fitLockZoom.call(fake));
+    assert.ok(sec.classList.contains('lockpicking-compact'), 'the strip went compact');
+    assert.ok(fake._lockCompact === true && syncs === 1, 'the observation button was resynced once: ' + syncs);
+    assert.ok(zooms.length === 0 && fake.game.scale.zoom === 1, 'the compact room fits at 1x, no setZoom: ' + zooms);
+    assert.ok(document.querySelector('#phaser-game-container').style.maxWidth === '600px', 'box width for zoom 1');
+    // Same state again: stable, no resync
+    at(1280, 600, () => H._fitLockZoom.call(fake));
+    assert.ok(sec.classList.contains('lockpicking-compact') && syncs === 1, 'stable on a second pass');
+    // Room opens up (a taller window): the full strip fits at the floor or better, so it relaxes
+    room = { full: { w: 1200, h: 330 }, compact: { w: 1200, h: 600 } };
+    at(1280, 700, () => H._fitLockZoom.call(fake));
+    assert.ok(!sec.classList.contains('lockpicking-compact'), 'the full strip is back');
+    assert.ok(fake._lockCompact === false && syncs === 2, 'resynced on the way back');
+    assert.ok(zooms[zooms.length - 1] === 0.82, 'zoom follows the full-size room: ' + zooms);
+});
+
+test('the compact strip is never used by the fitted (phone or short) layout, which returns first', () => {
+    document.body.innerHTML = '<div class="game"><div id="phaser-game-container"></div></div><div id="sec" class="lockpicking-item-section"></div>';
+    const sec = document.getElementById('sec');
+    const fake = {
+        gameContainer: document.querySelector('.game'),
+        game: { scale: { zoom: 1, setZoom: () => {} } },
+        _lockFitApplied: { fit: true, portrait: false, capped: true },
+        _itemSection: sec, _syncObsButton: () => {}, _lockRoom: () => ({ w: 1200, h: 100 })
+    };
+    at(1280, 600, () => H._fitLockZoom.call(fake));
+    assert.ok(!sec.classList.contains('lockpicking-compact'), 'no class added in the fitted layout');
+    at(844, 390, () => H._fitLockZoom.call(fake));
+    assert.ok(!sec.classList.contains('lockpicking-compact'), 'no class added on a phone window');
 });
