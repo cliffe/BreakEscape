@@ -27,7 +27,16 @@ FIXTURE_COMMIT = 'e9ca45939'   # the gate A fixture before its chain set piece w
 def fixture_at_commit():
     r = subprocess.run(['git', '-C', REPO, 'show', f'{FIXTURE_COMMIT}:scenarios/test_ca_office_kit/scenario.json.erb'],
                        capture_output=True, text=True)
-    return json.loads(r.stdout) if r.returncode == 0 else None
+    if r.returncode != 0:
+        return None
+    fx = json.loads(r.stdout)
+    # The one deliberate kit change since the pin (W2 build review R2 minor 1): the two Brightwell caffeine
+    # records started at 45, at or below urgentAt, so both colleagues left on reload. They start at 65 and 60.
+    for n in fx['rooms']['training_room']['npcs']:
+        want = {'kit_gwen_pritchard': 65, 'kit_agnieszka_duda': 60}.get(n.get('id'))
+        if want is not None:
+            n['needs']['caffeine']['initial'] = want
+    return fx
 
 
 def twin_shell():
