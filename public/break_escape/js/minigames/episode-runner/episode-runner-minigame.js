@@ -375,7 +375,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             cap.textContent = 'Security Awareness';
             top.appendChild(cap);
             // R2 m2 (a): a kiosk is a diegetic device like the PC monitor, so it closes with the
-            // themed steel X (the PC monitor's close look), not the flat red SE overlay X.
+            // themed steel X (the PC monitor's close look); the bar's SE overlay X has the same skin since D216.
             this.mountThemedCloseControl(top, 'Close', 'epr-kiosk-close');
             const screen = el('div', 'epr-kiosk-screen');
             screen.appendChild(root);

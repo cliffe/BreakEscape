@@ -252,10 +252,17 @@ test('the compact block holds only the mapped strip selectors plus a named exemp
         assert.ok(mapped.has(sel) || EXEMPT[sel], 'compact-only selector without a stated exemption: ' + sel);
     }
     for (const sel of Object.keys(EXEMPT)) assert.ok(b[sel], 'the exemption still names a real selector: ' + sel);
-    // every short-block rule that names the strip's parts, however written, is mapped or exempted:
-    // a short-block strip rule the filter above misses would otherwise be silently uncompared
-    const strayShort = Object.keys(a).filter((s) => /obs-|item-/.test(s) && !/^\.lockpicking-item-(section|image|info)/.test(s));
-    assert.ok(strayShort.length === 0, 'short-block strip rules the mapping does not cover: ' + strayShort.join(' | '));
+    // Every short-block selector the mapping above does not cover must be on a named list of
+    // non-strip rules (the fitted box, header and mode row). A strip rule written in any other
+    // form (bare `p[role="button"]`, `.lockpicking-info-expanded ...`) is unlisted, so it fails
+    // here instead of going uncompared with the compact block (lockshort R3 m1).
+    const NON_STRIP = [
+        /^\.minigame-container:has\(#phaser-game-container\.lockpicking-fit\) \.minigame-header( p)?$/,
+        /^\.lockpicking-mode-row( |$)/,
+        /^\.minigame-game-container:has\(> #phaser-game-container\.lockpicking-fit\)( > |$)/
+    ];
+    const strayShort = Object.keys(a).filter((s) => !/^\.lockpicking-item-(section|image|info)/.test(s) && !NON_STRIP.some((re) => re.test(s)));
+    assert.ok(strayShort.length === 0, 'short-block rules the mapping and the non-strip list do not cover: ' + strayShort.join(' | '));
 });
 
 test('the JS marks the box, caps FIT at the crop, watches the box and the key panel stays in the crop', () => {
