@@ -138,6 +138,27 @@ def proof(work, full=False):
         elif not same(got, want, shell in JSON_COMPARED):
             fails.append(f'scenarios/{shell}/{f}: differs from HEAD' + (' (as JSON)' if shell in JSON_COMPARED else ' (bytes)'))
 
+    # Second pass: a shell whose row is tiered, generated and not hand-authored is built with its kit by the
+    # generator itself (tier argument), so its raw generator output (no --kit step) must equal the
+    # kit-spliced result in root. A generator that writes the kit differently from the splice fails here.
+    with open(os.path.join(root, AW_REL, 'office_kits', 'episodes.json')) as f:
+        rows = {r['id']: r for r in json.load(f)['episodes']}
+    tiered = {sh for sh, r in rows.items()
+              if r.get('tier', 'none') != 'none' and not r.get('handAuthored') and not r.get('fixture')}
+    n_nokit = 0
+    for shell, files in generated:
+        if shell not in tiered:
+            continue
+        for g in GENERATORS:
+            raw = os.path.join(work, 'gen', g, shell)
+            if not os.path.isdir(raw):
+                continue
+            for f in files:
+                n_nokit += 1
+                if not same(os.path.join(raw, f), os.path.join(root, 'scenarios', shell, f), shell in JSON_COMPARED):
+                    fails.append(f'scenarios/{shell}/{f}: generator output without --kit differs from the kit splice')
+    notes.append(f'no-kit pass: {len(tiered)} tiered generated rows, {n_nokit} files compared')
+
     # HEAD files in a generated shell that no generator writes: reported, not failed (hand-added ink, say)
     for shell, files in generated:
         base = os.path.join(head, 'scenarios', shell)
