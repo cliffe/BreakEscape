@@ -403,6 +403,13 @@ export async function processGameActionTags(tags, ui, options = {}) {
                                 rfid_protocol: npc.rfidCard.rfid_protocol || 'EM4100',
                                 type: 'keycard'
                             };
+                            // Carry the authored RFID fields through so the reader shows the
+                            // card's real number. Without them rfid-data.js hashes card_id into
+                            // a stand-in number (e.g. Owen's badge read 43730 instead of #4430),
+                            // breaking the badge-log cross-check the mission teaches.
+                            for (const key of ['rfid_hex', 'rfid_facility', 'rfid_card_number', 'rfid_data']) {
+                                if (npc.rfidCard[key] !== undefined) cardData[key] = npc.rfidCard[key];
+                            }
                         }
                     }
                     

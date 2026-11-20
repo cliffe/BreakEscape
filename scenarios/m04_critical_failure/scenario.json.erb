@@ -131,7 +131,9 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
   <%# Top-level flags block (m01/m03/m06/m07/m08 pattern; game.rb primary source for
       scenario_data["flags"], the table the VM-step runner matches captured output
       against). Keyed on the SecGen target system name bms_jump_server, flag_1..flag_4
-      in SecGen document order (website -> proftpd -> sudoedit -> erlang), mirroring
+      in SecGen document order (website -> proftpd[coordination_notes] ->
+      proftpd[bms_calibration_override] -> erlang; flags 2 and 3 are both leaked to
+      /root by the one ProFTPD backdoor), mirroring
       the flag-station's own flags array below. vm_flags_json emits flag_1..flag_N;
       in Hacktivity mode the real per-build values replace these placeholders, keyed
       by the same system name. This is additive to the flag-station's flags array,
@@ -436,7 +438,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         },
         {
           "taskId": "submit_privesc_flag",
-          "title": "Submit proof you became root on the jump server",
+          "title": "Submit the root-only charge-ceiling override",
           "type": "submit_flags",
           "targetFlags": ["flag_station_dropsite:bms_jump_server-flag3"],
           "targetCount": 1,
@@ -865,15 +867,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "observations": "Field guide to spotting Base64 and ROT13 and decoding them with CyberChef"
             },
             {
-              "type": "lab-workstation",
-              "id": "safetynet_field_guide_privesc",
-              "name": "SAFETYNET Field Guide: Privilege Escalation via Sudo",
-              "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/privilege-escalation/",
-              "observations": "Field guide to enumerating sudo rights and escalating from a foothold"
-            },
-            {
-              "_comment": "PASS 4 fix 20: flag 2 is the same backdoored ProFTPD build m02 used. Offered on the scan-flag bark, for players who skipped m02.",
+              "_comment": "PASS 4 fix 20: flag 2 is the same backdoored ProFTPD build m02 used. Offered on the scan-flag bark, for players who skipped m02. (2026-11-20: the former sudo/privesc field guide was removed with the escalation stage.)",
               "type": "lab-workstation",
               "id": "safetynet_field_guide_proftpd",
               "name": "SAFETYNET Field Guide: ProFTPD Exploitation Workflow",
@@ -1171,7 +1165,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "eventPattern": "room_entered:engineering_workshop",
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "vuln_guide_offered": true, "server_room_reached": true, "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags make the case: status page, FTP drop, SSH foothold, root." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags: status page, FTP drop, their way back in, root override." }
             },
             <%# Round 2 (re-review m7): the 87-word workshop text split in two. The
                 guides offer and the tool-case pointer (fix 2a) follow it. %>
@@ -1187,31 +1181,24 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "setGlobal": { "erlang_guide_offered": true },
               "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port: the crew's way back in, a brand-new pre-auth RCE. The job card names the port. Want the guide?", "skipIfGlobal": "flag_erlang_rce_submitted" }
             },
-            <%# PASS 3 P15 (review): the sudo offer on the FTP flag, only if the
-                Erlang SSH RCE flag hasn't already made it. %>
+            <%# 2026-11-20 redesign: the file-drop (FTP) stage already gives an
+                unauthenticated root shell, so there is no escalation step and no sudo
+                guide. On the FTP flag, point the player at the SECOND root-only document
+                the same backdoor shell reaches -- the charge-ceiling override (flag_3). %>
             {
               "eventPattern": "objective_task_completed:submit_ftp_intel_flag",
-              "condition": "globalVars.privesc_guide_offered !== true",
               "onceOnly": true,
-              "setGlobal": { "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 7000, "message": "And once you're on the box, I've a sudo guide for getting to root." }
+              "sendTimedMessage": { "delay": 7000, "message": "That backdoor shell is already root. There's a second file under /root worth more than the notes: the charge-ceiling override they pushed to every bank. Pull that one too.", "skipIfGlobal": "flag_privesc_submitted" }
             },
-            <%# PASS 3 P15: if the Erlang SSH RCE flag lands first, offer the privesc guide then. %>
-            {
-              "eventPattern": "objective_task_completed:submit_erlang_rce_flag",
-              "condition": "globalVars.privesc_guide_offered !== true",
-              "onceOnly": true,
-              "setGlobal": { "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 2500, "message": "You're on the box. If you want the sudo guide for getting to root, ask." }
-            },
-            <%# Pass 5 (alignment minor): the privesc flag's story beat. Skipped at
-                delivery when it was the last flag (all_flags_in is set by a mapping
-                on the same event), where the mechanism or what-is-missing texts
-                take over. %>
+            <%# Pass 5 (alignment minor); reworded 2026-11-20: the flag_3 story beat, now
+                the root-only override read over the FTP backdoor's own root shell (no
+                escalation). Skipped at delivery when it was the last flag (all_flags_in is
+                set by a mapping on the same event), where the mechanism or what-is-missing
+                texts take over. %>
             {
               "eventPattern": "objective_task_completed:submit_privesc_flag",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 4000, "message": "Root. Now you can see what they changed from that box: the charge-ceiling override on every bank. That's how they're pushing the racks past safe.", "skipIfGlobal": "all_flags_in" }
+              "sendTimedMessage": { "delay": 4000, "message": "There's the override: the charge ceiling they lifted on every bank, the file only root could read. That's how they're driving the racks past safe while the screens stay green.", "skipIfGlobal": "all_flags_in" }
             },
             <%# PASS 3 P19: m02's exploit, m03's directive. %>
             <%# PASS 4 fix 20: the same message offers the ProFTPD guide. %>
@@ -2030,14 +2017,14 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "key": "flag_ftp_intel_submitted",
               "value": true,
               "label": "Cross-cell plan pulled from their FTP drop",
-              "description": "FTP intelligence submitted - cross-cell coordination revealed"
+              "description": "FTP intelligence submitted - the backdoored transfer channel hands an unauthenticated root shell; cross-cell coordination revealed"
             },
             {
               "type": "set_global",
               "key": "flag_privesc_submitted",
               "value": true,
-              "label": "Root on the BMS jump server",
-              "description": "Root on the jump server - where the charge-ceiling override was pushed from"
+              "label": "Charge-ceiling override recovered",
+              "description": "The root-only calibration override - the charge ceiling they pushed past safe on every bank, read over the FTP backdoor's own root shell"
             },
             {
               "type": "set_global",
@@ -3224,8 +3211,6 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
     "erlang_guide_hint_given": false,
     "cyberchef_guide_offered": false,
     "cyberchef_guide_hint_given": false,
-    "privesc_guide_offered": false,
-    "privesc_guide_hint_given": false,
     "proftpd_guide_offered": false,
     "proftpd_guide_hint_given": false,
 

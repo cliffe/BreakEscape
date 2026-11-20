@@ -668,7 +668,7 @@ You're in. This one helps you work out which of those services will actually giv
 
 Scanning and exploitation guide uploaded.
 
-It runs the whole chain. Nmap fingerprint, research the CVE, feed the scan into Metasploit, set the exploit and payload, validate the shell.
+It runs the whole chain. Nmap fingerprint, research the vulnerability, feed the scan into Metasploit, set the exploit and payload, validate the shell.
 Work it top to bottom and you won't miss a step.
 
 + [Got it.]

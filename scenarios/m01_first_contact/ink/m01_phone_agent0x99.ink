@@ -229,7 +229,7 @@ Command format: hydra -l username -P passwordlist.txt target ssh
     You can try default wordlists, but you may need to search the office for clues.
     -> support_hub
 + [What if I don't have a username?]
-    It's "Derek"'s account you are trying to access.
+    It's Derek's account you are trying to access. The login name is derek, all lower case.
     -> support_hub
 + [Thanks, that helps]
     Good luck. Message me if you hit a wall.
@@ -326,7 +326,7 @@ Covers pin tumbler mechanics, tension control, and how to read pin feedback. Lig
 
 I'm uploading the SSH and Linux basics manual to your secure terminal right now.
 
-You've got Linux fundamentals, SSH bruteforce with Hydra, and the filesystem navigation you need once you're inside their Kali system.
+You've got Linux fundamentals, SSH bruteforce with Hydra, and the filesystem navigation you need once you're inside their server.
 
 The manual is in your inventory. Reference it whenever you need it.
 

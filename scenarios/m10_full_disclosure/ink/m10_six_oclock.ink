@@ -21,6 +21,7 @@ VAR six_v = false          // Voltage visited
 VAR six_g = false          // Gary or Imran visited
 VAR six_w = false          // Wendell visited
 VAR six_vic = false        // Victoria visited
+VAR six_as = false         // Asante visited
 VAR six_quiet = false
 
 === start ===
@@ -56,6 +57,8 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
 ~ temp vic_here = victoria_gallery == "arrested_here" or victoria_gallery == "ko"
 ~ temp kow_here = sleeper_caught or wren_at_core
 ~ temp officer_here = officer_out != "" and officer_out != "quintero"
+// Release playtest 2026-11-20: Asante wrote the release; held at the gate at every stopped-release ending.
+~ temp asante_here = true
 // Regression fix pass m-2: the cap is said in the scene (one more, then Netherton calls the agent over).
 { six_picks >= 3:
     Director Magnus Netherton: Agent. With me.
@@ -82,6 +85,8 @@ Narrator: The forward post, a few minutes before six. Floodlights, engines runni
     -> walk_wendell
 + { not six_vic and vic_here } [(Go to Victoria.)]
     -> walk_victoria
++ { not six_as and asante_here } [(Go to Dr Asante.)]
+    -> walk_asante
 + [That's everyone.]
     -> phone_beat
 
@@ -260,6 +265,10 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
     Gary Whitlock: I sat with Imran till the medics came. He asked who it was. I said I didn't see.
 - m02_gary_protected:
     Gary Whitlock: You kept my name clean at St. Catherine's. Tonight I got to spend it.
+    // Release playtest 2026-11-20: Imran's own closing beat when Gary stands up for the pair and Imran was never engaged.
+    {imran_outcome == "avoided":
+        Imran Siddiqui: Nobody came to my bench all night. I'll take the quiet. It's what I'm used to.
+    }
 - gary_outcome == "talked_round":
     Gary Whitlock: St. Catherine's sacked me for being right. A board finally listened. Shame it's a review board.
 - gary_outcome == "taken_in":
@@ -313,6 +322,12 @@ Agent 0x5E 'Lantern': I liked you. I'd still have pressed it.
 - else:
     Victoria Sterling: I walked out of WhiteHat. I won't walk out of this. You'll want my book one day. Ask nicely.
 }
+-> walk_back
+
+// Asante (group C's voice): the release's author, honest to the last about her work.
+=== walk_asante ===
+~ six_as = true
+Dr Abena Asante: I wrote it to be read, not buried. Whatever you decided tonight, I'll stand behind every line of it.
 -> walk_back
 
 // MC §10 rule 2: tonight's cost only. Netherton signs for each line.

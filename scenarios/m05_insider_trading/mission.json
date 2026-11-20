@@ -51,7 +51,7 @@
   "learning_objectives": [
     "Identify indicators of insider threats through behavioural analysis",
     "Correlate digital evidence (VM flags) with physical evidence (documents, interviews)",
-    "Exploit Bludit CMS via leaked credentials and authenticated image-upload remote code execution",
+    "Exploit Bludit CMS with an admin login recovered on site and an authenticated image-upload remote code execution",
     "Navigate complex moral decisions with lasting consequences",
     "Understand ENTROPY's systematic recruitment and radicalisation methodology"
   ],
@@ -61,7 +61,7 @@
     "provider": "SecGen",
     "flags": 4,
     "challenges": [
-      "Reconnaissance - leaked Bludit admin credentials",
+      "Reconnaissance - the portal handover note that points to the admin login",
       "Web Exploitation - authenticated Bludit image-upload RCE",
       "User Access - Torres' exfiltration staging manifest",
       "Root - The Architect's acquisition authorisation"
