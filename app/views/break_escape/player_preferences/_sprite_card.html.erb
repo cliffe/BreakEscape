@@ -2,7 +2,7 @@
 <%
   sprite = entry['sprite']
   is_valid = entry['status'] != 'locked'
-  is_selected = @player_preference.selected_sprite == sprite
+  is_selected = @player_preference.sprite_for_scenario == sprite
 %>
 
 <label for="<%= id_prefix %><%= sprite %>"
