@@ -191,7 +191,6 @@
     justify-content: space-between;
     align-items: center;
     font-size: 16px;
-    font-weight: bold;
     color: #e0e0e0;
     margin-bottom: 3px;
 }
@@ -210,7 +209,7 @@
     background: transparent;
     border: 2px solid #00bcd4;
     color: #00bcd4;
-    font-size: 13px;
+    font-size: 16px;
     padding: 1px 4px;
     cursor: pointer;
     line-height: 1;
@@ -265,7 +264,7 @@
 }
 
 .ble-device-timestamp {
-    font-size: 14px;
+    font-size: 16px;
     color: #666;
     font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
@@ -279,7 +278,7 @@
 }
 
 .ble-uuid-chip {
-    font-size: 12px;
+    font-size: 16px;
     padding: 1px 5px;
     border: 2px solid #00bcd4;
     color: #00bcd4;
@@ -322,7 +321,7 @@
 
 .ble-action-target-info {
     margin-bottom: 8px;
-    font-size: 15px;
+    font-size: 16px;
     color: #aaa;
 }
 
@@ -434,8 +433,7 @@
 .ble-action-feedback {
     min-height: 22px;
     margin-top: 8px;
-    font-size: 17px;
-    font-weight: bold;
+    font-size: 16px;
 }
 
 .ble-feedback--success { color: #00cc00; }
