@@ -103,7 +103,7 @@
     border-radius: 0;
     color: var(--ui-text-dim, #a8b2c8);
     /* C-X7: the stepper boxes read at the same 14px as the inbox-triage stepper. */
-    font-size: 14px;
+    font-size: 16px;
     min-width: 0;
     max-width: 100%;
     overflow-wrap: break-word;
@@ -184,7 +184,7 @@
     display: inline-flex;
     align-items: center;
     padding: 2px 6px;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: #7a1414;
     background: #f3d2d2;
@@ -239,7 +239,7 @@
 .lpb-logo.is-missing::after {
     content: 'No logo';
     color: #9aa;
-    font-size: 13px;
+    font-size: 16px;
     font-style: italic;
 }
 
@@ -247,7 +247,7 @@
 .lpb-logo.is-unavailable { min-height: 0; margin-bottom: 0; }
 
 .lpb-purpose { margin: 0 0 6px; font-size: 16px; }
-.lpb-copy { margin: 0 0 14px; font-size: 15px; line-height: 1.4; }
+.lpb-copy { margin: 0 0 14px; font-size: 16px; line-height: 1.4; }
 
 .lpb-field {
     margin-bottom: 10px;
@@ -256,7 +256,7 @@
     gap: 4px;
 }
 
-.lpb-field-label { font-size: 13px; color: #334; }
+.lpb-field-label { font-size: 16px; color: #334; }
 
 .lpb-field-input {
     height: 30px;
@@ -311,13 +311,13 @@
 }
 
 .lpb-fakecheck-heading { margin: 0 0 10px; font-size: 16px; }
-.lpb-fakecheck-steps { margin: 0 0 14px; font-size: 15px; line-height: 1.4; }
+.lpb-fakecheck-steps { margin: 0 0 14px; font-size: 16px; line-height: 1.4; }
 
 .lpb-fakecheck-reveal { margin-top: 4px; }
 .lpb-fakecheck-reveal-btn {
     display: inline-block;
     padding: 6px 12px;
-    font-size: 14px;
+    font-size: 16px;
     color: #1b2030;
     background: #eef1f6;
     border: 2px solid #b4b9c7;
@@ -328,7 +328,7 @@
 .lpb-fakecheck-reveal-text {
     margin: 10px 0 0;
     padding: 8px 10px;
-    font-size: 14px;
+    font-size: 16px;
     color: #1b2030;
     background: #fff4d6;
     border: 2px solid #d8b24a;
@@ -354,19 +354,19 @@
 }
 
 .lpb-inspect-intro { margin-bottom: 10px; }
-.lpb-inspect-title { margin: 0 0 4px; font-size: 15px; font-family: 'GNF', 'Courier New', monospace; }
-.lpb-inspect-help { margin: 0; color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
+.lpb-inspect-title { margin: 0 0 4px; font-size: 16px; font-family: 'GNF', 'Courier New', monospace; }
+.lpb-inspect-help { margin: 0; color: var(--ui-text-dim, #a8b2c8); font-size: 16px; }
 .lpb-inspect-progress { margin: 8px 0; font-weight: 700; }
 .lpb-inspect-blocked { margin: 8px 0; color: var(--ui-accent, #ffcc44); }
 
 .lpb-inspect-findings { margin: 8px 0; padding-left: 18px; list-style: disc; }
-.lpb-finding { margin-bottom: 6px; font-size: 14px; }
+.lpb-finding { margin-bottom: 6px; font-size: 16px; }
 
 .lpb-decoy-line,
 .lpb-fine-line {
     margin: 8px 0;
     padding: 8px 10px;
-    font-size: 14px;
+    font-size: 16px;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
     border-left: 3px solid var(--ui-line, #4c5b80);
     border-radius: 0;
@@ -389,7 +389,7 @@
     border-radius: 0;
 }
 
-.lpb-pretext-title { margin: 0 0 8px; font-size: 15px; font-family: 'GNF', 'Courier New', monospace; }
+.lpb-pretext-title { margin: 0 0 8px; font-size: 16px; font-family: 'GNF', 'Courier New', monospace; }
 .lpb-facts { margin: 0 0 8px; padding-left: 18px; }
 .lpb-fact { margin-bottom: 4px; }
 .lpb-pretext-empty { margin: 0 0 8px; color: var(--ui-text-dim, #a8b2c8); }
@@ -401,7 +401,7 @@
     border-bottom: 2px solid var(--ui-line, #4c5b80);
 }
 
-.lpb-row-label { margin: 0 0 8px; font-size: 14px; font-family: 'GNF', 'Courier New', monospace; }
+.lpb-row-label { margin: 0 0 8px; font-size: 16px; font-family: 'GNF', 'Courier New', monospace; }
 
 .lpb-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 
@@ -426,8 +426,8 @@
 
 .lpb-chip:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
 
-.lpb-chip-text { font-size: 14px; }
-.lpb-chip-alt { font-size: 12px; color: var(--ui-text-dim, #a8b2c8); }
+.lpb-chip-text { font-size: 16px; }
+.lpb-chip-alt { font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 
 .lpb-check.is-selected::before { content: '\2713 '; }
 
@@ -440,11 +440,11 @@
 }
 
 .lpb-locked-domain { display: block; font-size: 16px; }
-.lpb-locked-note { display: block; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.lpb-locked-note { display: block; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 
-.lpb-note { margin: 8px 0 0; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
+.lpb-note { margin: 8px 0 0; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 
-.lpb-tell-counter { margin: 12px 0; font-size: 13px; color: var(--ui-accent, #ffcc44); }
+.lpb-tell-counter { margin: 12px 0; font-size: 16px; color: var(--ui-accent, #ffcc44); }
 
 /* ── score panel ── */
 .lpb-score {
@@ -485,7 +485,7 @@
 }
 
 .lpb-credibility { margin: 0 0 6px; font-weight: 700; }
-.lpb-verdict { margin: 0 0 6px; font-size: 15px; }
+.lpb-verdict { margin: 0 0 6px; font-size: 16px; }
 .lpb-gate-line { margin: 0 0 6px; color: var(--ui-danger, #ff7a6b); }
 
 .lpb-checklist { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
@@ -496,7 +496,7 @@
     flex: 0 0 auto;
     min-width: 54px;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -506,7 +506,7 @@
 .lpb-check-item.is-fail .lpb-check-word { color: var(--ui-danger, #ff7a6b); }
 .lpb-check-item.is-neutral .lpb-check-word { color: var(--ui-muted, #b9c0d4); }
 
-.lpb-check-line { font-size: 14px; }
+.lpb-check-line { font-size: 16px; }
 
 .lpb-stale-note { margin: 8px 0 0; color: var(--ui-accent, #ffcc44); font-weight: 700; }
 
@@ -530,8 +530,8 @@
     border-radius: 0;
 }
 
-.lpb-root .cc-title { margin: 0 0 6px; font-size: 13px; }
-.lpb-root .cc-text { margin: 0 0 6px; font-size: 14px; }
+.lpb-root .cc-title { margin: 0 0 6px; font-size: 16px; }
+.lpb-root .cc-text { margin: 0 0 6px; font-size: 16px; }
 .lpb-root .cc-image { max-width: 100%; image-rendering: pixelated; }
 
 /* ── invalid ── */
@@ -549,10 +549,10 @@
     color: var(--ui-text, #eef1f8); display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
 /* C-LP3: no faux-bold; addresses in the shared address font and secrets in GNF, not the
    browser's monospace. */
-.lpb-captures-role { font-weight: normal; font-size: 14px; }
+.lpb-captures-role { font-weight: normal; font-size: 16px; }
 .lpb-captures-address { font-size: 16px; font-family: var(--se-font-address, 'GNF', sans-serif); }
 .lpb-captures-secret { font-size: 16px; font-family: var(--se-font-readable, 'GNF', sans-serif); letter-spacing: 1px; }
-.lpb-captures-foothold { font-size: 13px; }
+.lpb-captures-foothold { font-size: 16px; }
 .lpb-captures-empty { padding: 16px 12px; color: var(--ui-text, #eef1f8); border: 2px dashed var(--ui-line, #4c5b80); }
 @media (max-width: 700px) { .lpb-captures { padding: 8px; } }
 

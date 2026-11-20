@@ -40,14 +40,14 @@
 .sd-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .sd-panel { padding: 14px 16px; max-width: 920px; }
-.sd-heading { margin: 0 0 8px; font-size: 20px; color: var(--sd-accent); }
+.sd-heading { margin: 0 0 8px; font-size: 24px; color: var(--sd-accent); }
 .sd-heading:focus, .sd-situation:focus { outline: none; }
 .sd-text { margin: 0 0 12px; max-width: 60ch; }
-.sd-bin-legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0; font-size: 15px; }
+.sd-bin-legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0; font-size: 16px; }
 .sd-bin-legend dt { font-weight: 700; }
 .sd-bin-legend dd { margin: 0; }
-.sd-reload-note { margin: 0 0 12px; max-width: 60ch; font-size: 14px; color: var(--sd-dim); }
-.sd-counter { margin: 0 0 6px; font-size: 14px; color: var(--sd-dim); }
+.sd-reload-note { margin: 0 0 12px; max-width: 60ch; font-size: 16px; color: var(--sd-dim); }
+.sd-counter { margin: 0 0 6px; font-size: 16px; color: var(--sd-dim); }
 
 .sd-button, .sd-bin-btn { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; }
 .sd-button { margin-top: 12px; padding: 8px 18px; }
@@ -65,7 +65,7 @@
     display: inline-block;
     margin: 0 0 6px;
     padding: 0 8px;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--sd-surface);
     background: var(--sd-accent);
@@ -80,7 +80,7 @@
     padding: 8px 14px;
     text-align: left;
 }
-.sd-bin-key { font-size: 13px; color: var(--sd-dim); }
+.sd-bin-key { font-size: 16px; color: var(--sd-dim); }
 .sd-bin-word { font-weight: 700; }
 .sd-bin-btn.sd-chosen { outline: 3px solid var(--sd-accent); }
 .sd-bin-btn:disabled:not(.sd-chosen) { opacity: 0.55; }
@@ -97,17 +97,17 @@
 .sd-col { padding: 8px 10px; background: var(--sd-raised); border: 2px solid var(--sd-line); min-width: 0; }
 .sd-col-title { margin: 0 0 6px; font-size: 16px; color: var(--sd-accent); }
 .sd-col-list { margin: 0; padding: 0; list-style: none; }
-.sd-col-card { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 15px; overflow-wrap: anywhere; }
-.sd-col-empty { font-size: 14px; color: var(--sd-dim); }
-.sd-col-reason { font-size: 14px; color: var(--sd-dim); }
-.sd-col-mark { font-size: 14px; font-weight: 700; }
+.sd-col-card { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 16px; overflow-wrap: anywhere; }
+.sd-col-empty { font-size: 16px; color: var(--sd-dim); }
+.sd-col-reason { font-size: 16px; color: var(--sd-dim); }
+.sd-col-mark { font-size: 16px; font-weight: 700; }
 /* Each summary verdict reads in words; colour only backs it up. Right and "that works" read as
    good, a safe/cautious choice stays neutral (never red), only a genuine miss is marked red. */
 .sd-mark-right, .sd-mark-fits { color: var(--sd-good); }
 .sd-mark-caution, .sd-mark-suggest { color: var(--sd-dim); }
 .sd-mark-wrong { color: var(--sd-bad); }
 .sd-miss .sd-col-text { text-decoration: underline; text-decoration-color: var(--sd-bad); }
-.sd-score { margin: 0 0 8px; font-size: 17px; font-weight: 700; }
+.sd-score { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
 
 .sd-close-ask { margin: 8px 12px; padding: 10px 12px; border: 2px solid var(--sd-accent); background: var(--sd-raised); }
 .sd-close-ask-text { margin: 0 0 8px; }

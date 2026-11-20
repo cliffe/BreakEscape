@@ -99,8 +99,8 @@
     user-select: text;
 }
 
-.ob-address-label { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
-.ob-address-text { font-size: 17px; overflow-wrap: anywhere; min-width: 0; }
+.ob-address-label { color: var(--ui-text-dim, #a8b2c8); font-size: 16px; }
+.ob-address-text { font-size: 16px; overflow-wrap: anywhere; min-width: 0; }
 
 .ob-strip {
     display: flex;
@@ -117,7 +117,7 @@
     min-height: 44px;
     padding: 6px 12px;
     font: inherit;
-    font-size: 15px;
+    font-size: 16px;
     text-align: left;
     color: var(--ui-text, #eef1f8);
     background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96));
@@ -159,11 +159,11 @@
 
 .ob-page { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
 .ob-site-head { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #c9c2b2; padding-bottom: 8px; }
-.ob-site-title { margin: 0; font-size: 20px; font-weight: 700; }
+.ob-site-title { margin: 0; font-size: 24px; font-weight: 700; }
 /* logos are drawn 20px tall; shown at a whole-number scale */
 .ob-logo { height: 60px; width: auto; image-rendering: pixelated; }
-.ob-page-title { margin: 0; font-size: 22px; font-weight: 700; outline: none; }
-.ob-heading { margin: 8px 0 0; font-size: 17px; }
+.ob-page-title { margin: 0; font-size: 24px; font-weight: 700; outline: none; }
+.ob-heading { margin: 8px 0 0; font-size: 16px; }
 .ob-empty { margin: 0; font-style: italic; color: #4a4f5c; }
 .ob-tools-note { margin: 0; color: #3a3f4c; }
 .ob-image { max-width: 100%; image-rendering: pixelated; }
@@ -222,13 +222,13 @@
 .ob-line { overflow-wrap: anywhere; }
 .ob-staff-name { font-weight: 700; }
 .ob-staff-role,
-.ob-post-date { color: #4a4f5c; font-size: 14px; }
+.ob-post-date { color: #4a4f5c; font-size: 16px; }
 .ob-post-author { display: flex; align-items: center; gap: 8px; font-weight: bold; }
 .ob-post-author .ob-headshot { width: 32px; height: 32px; }
 /* C3: a thread of replies under a feed post, indented, oldest first */
 .ob-thread { margin: -4px 0 10px 24px; padding-left: 10px; border-left: 2px solid #c9ccd4; display: flex; flex-direction: column; gap: 6px; }
 .ob-reply .ob-text { margin: 4px 0 0; }
-.ob-reply-to { color: #4a4f5c; font-size: 14px; }
+.ob-reply-to { color: #4a4f5c; font-size: 16px; }
 .ob-field-label { font-weight: 700; }
 
 .ob-badge {
@@ -238,7 +238,7 @@
     align-self: flex-start;
     margin-top: 4px;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     color: #1d6a35;
 }
 
@@ -251,7 +251,7 @@
     margin-top: 4px;
     padding: 2px 10px;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     color: #4a3f22;
     background: #fff3cf;
     border: 2px solid #c9b878;
@@ -266,7 +266,7 @@
     align-items: flex-start;
     gap: 6px;
     padding: 4px 8px;
-    font-size: 15px;
+    font-size: 16px;
     border-left: 4px solid #6b6f7a;
     background: #ebe7dc;
 }
@@ -378,7 +378,7 @@
     margin: 0;
     min-height: 1.4em;
     font-family: var(--se-font-readable, 'GNF', monospace);
-    font-size: 14px;
+    font-size: 16px;
     color: #4a4f5c;
     overflow-wrap: anywhere;
 }

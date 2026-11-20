@@ -22,7 +22,7 @@
 .tri-step {
     padding: 4px 10px;
     font-family: var(--se-font-readable);
-    font-size: 14px;
+    font-size: 16px;
     color: var(--ui-text-dim, #a8b2c8);
     border: 2px solid var(--ui-line, #4c5b80);
     border-radius: 0;
@@ -60,7 +60,7 @@
 .tri-stage > [hidden] { display: none; }
 
 .tri-sort { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 6px; }
-.tri-progress { margin: 0; font-family: var(--se-font-readable); font-size: 15px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-progress { margin: 0; font-family: var(--se-font-readable); font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 
 /* Panels (brief, review, result): scroll inside the frame, fully opaque against the frame art. */
 .tri-panel {
@@ -69,14 +69,14 @@
     overflow-y: auto;
     padding: 16px;
     font-family: var(--se-font-readable);
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.45;
     /* C-IT2: a flat surface fill as a plain background-color, not a single-colour gradient
        (which trips the UI audit). */
     background-color: var(--ui-surface-raised, rgba(38, 48, 74, 1));
     border: 2px solid var(--ui-line, #4c5b80);
 }
-.tri-panel h3 { margin: 0 0 8px; font-size: 22px; }
+.tri-panel h3 { margin: 0 0 8px; font-size: 24px; }
 .tri-panel p { margin: 6px 0; }
 .tri-brief-buttons { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0; }
 .tri-brief-buttons dt { font-weight: 700; }
@@ -114,14 +114,14 @@
 }
 .tri-verdict-word { font-weight: 700; font-size: 16px; }
 /* Light on the blue button face: the old dim grey was about 2:1 (E8 F14). */
-.tri-verdict-hint { font-family: var(--se-font-readable); font-size: 13px; line-height: 1.25; color: #ffffff; text-shadow: 0 1px 0 rgba(8, 12, 28, 0.8); }
+.tri-verdict-hint { font-family: var(--se-font-readable); font-size: 16px; line-height: 1.25; color: #ffffff; text-shadow: 0 1px 0 rgba(8, 12, 28, 0.8); }
 .triage-client img.tri-icon { width: 16px; height: 16px; margin-right: 4px; }
 .tri-locked { display: flex; align-items: center; gap: 4px; margin: 6px 0; font-size: 16px; }
 
 /* Row badge in the list. A badge carries a tone (F-E19-7): a right or acceptable call keeps the
    success colour and tick; a wrong call turns danger-coloured and shows a cross, so the list never
    reads as if a wrong verdict went well. */
-.triage-client .mail-row-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--ui-success, #6ee08f); }
+.triage-client .mail-row-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 16px; color: var(--ui-success, #6ee08f); }
 .triage-client .mail-row-badge.mail-row-badge-wrong { color: var(--ui-danger, #f0896e); }
 .triage-client .mail-row-badge img.mail-icon { width: 12px; height: 12px; }
 
@@ -139,11 +139,11 @@
 .tri-header-panel {
     margin: 8px 0;
     padding: 8px 10px;
-    font-size: 15px;
+    font-size: 16px;
     background-color: #10152a;
     border: 2px solid var(--ui-line, #4c5b80);
 }
-.tri-header-off { color: var(--ui-text-dim, #a8b2c8); font-size: 15px; }
+.tri-header-off { color: var(--ui-text-dim, #a8b2c8); font-size: 16px; }
 .tri-forwarded {
     margin: 0 0 6px;
     padding: 4px 8px;
@@ -154,7 +154,7 @@
 .tri-header-fields { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0 0 8px; }
 .tri-header-fields dt { color: var(--ui-text-dim, #a8b2c8); }
 .tri-header-fields dd { margin: 0; overflow-wrap: anywhere; }
-.tri-auth-title { margin: 6px 0 4px; font-size: 15px; font-weight: 700; }
+.tri-auth-title { margin: 6px 0 4px; font-size: 16px; font-weight: 700; }
 .tri-auth-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .tri-auth-row { padding: 4px 0; border-top: 2px solid var(--ui-line, #4c5b80); }
 .tri-auth-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -211,7 +211,7 @@
 .tri-false-flag .tri-flag-label { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
 .tri-why-fine { list-style: disc; padding-left: 20px; display: block; }
 .tri-it-reply { padding: 6px 8px; border-left: 4px solid var(--ui-accent, #ffcc44); background: rgba(255, 204, 68, 0.08); }
-.tri-card-score { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
+.tri-card-score { color: var(--ui-text-dim, #a8b2c8); font-size: 16px; }
 .tri-jump { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
 .tri-jump-select {
     min-height: 44px;
@@ -234,7 +234,7 @@
 }
 
 /* Result */
-.tri-score { margin: 4px 0 8px; font-size: 44px; font-weight: 700; line-height: 1; }
+.tri-score { margin: 4px 0 8px; font-size: 48px; font-weight: 700; line-height: 1; }
 .tri-numbers { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 10px 0; }
 .tri-numbers dt { color: var(--ui-text-dim, #c3ccdf); }
 .tri-numbers dd { margin: 0; font-weight: 700; }
@@ -245,7 +245,7 @@
 .tri-genuine { margin: 10px 0; padding: 6px 8px; border-left: 4px solid var(--ui-line, #4c5b80); }
 .tri-genuine p { margin: 4px 0; }
 .tri-genuine-cost, .tri-genuine-why { color: var(--ui-text-dim, #c3ccdf); }
-.tri-item-why { margin: 2px 0 6px 24px; font-size: 14px; color: var(--ui-text-dim, #c3ccdf); }
+.tri-item-why { margin: 2px 0 6px 24px; font-size: 16px; color: var(--ui-text-dim, #c3ccdf); }
 .tri-item-why summary { cursor: pointer; min-height: 32px; }
 .tri-save-note { min-height: 1.4em; color: var(--ui-accent, #ffcc44); }
 .tri-result-bar { display: flex; flex-wrap: wrap; }
@@ -295,8 +295,8 @@
     background-color: var(--ui-surface, rgba(24, 30, 48, 1));
     border: 2px solid var(--ui-line, #4c5b80);
 }
-.tri-sheet-title { margin: 0; font-size: 20px; }
-.tri-sheet-chosen { margin: 0; font-size: 15px; color: var(--ui-text-dim, #c3ccdf); }
+.tri-sheet-title { margin: 0; font-size: 24px; }
+.tri-sheet-chosen { margin: 0; font-size: 16px; color: var(--ui-text-dim, #c3ccdf); }
 .tri-chips { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 3px; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .tri-chips > * { flex: none; }
 .tri-chip {
@@ -305,7 +305,7 @@
     gap: 10px;
     min-height: 40px;
     padding: 4px 8px;
-    font-size: 15px;
+    font-size: 16px;
     cursor: pointer;
     border: 2px solid var(--ui-line, #4c5b80);
 }
@@ -320,13 +320,13 @@
 @media (max-height: 820px) and (hover: hover) {
     .tri-sheet { gap: 6px; padding: 12px 16px; }
     .tri-chips { gap: 2px; }
-    .tri-chip { min-height: 32px; padding: 1px 8px; font-size: 15px; }
+    .tri-chip { min-height: 32px; padding: 1px 8px; font-size: 16px; }
     .tri-chip input { width: 20px; height: 20px; }
     .tri-sheet-bar .minigame-button { min-height: 40px; }
 }
 .tri-sheet-bar { display: flex; gap: 8px; justify-content: flex-end; flex: none; padding-top: 8px; }
 /* E8 F11: the one-line nudge on the review card when the learner confirmed without ticking anything. */
-.tri-card-nudge { margin: 6px 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-card-nudge { margin: 6px 0; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 
 .triage-client button:focus-visible,
 .triage-client select:focus-visible,
@@ -373,14 +373,14 @@
     display: inline-block;
     padding: 0 4px;
     margin-right: 2px;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: #10152a;
     background: var(--ui-accent, #ffcc44);
 }
 .tri-kind { margin: 4px 0 8px; font-family: var(--se-font-readable); font-size: 16px; line-height: 1.45; }
-.tri-kind .tri-kind-title { margin: 0 0 4px; font-size: 20px; }
-.tri-kind-label { margin: 0 0 4px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ui-text-dim, #a8b2c8); }
+.tri-kind .tri-kind-title { margin: 0 0 4px; font-size: 24px; }
+.tri-kind-label { margin: 0 0 4px; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ui-text-dim, #a8b2c8); }
 
 /* Phone frame: sms and push */
 .tri-phone {
@@ -392,7 +392,7 @@
 }
 .tri-phone-top { padding-bottom: 6px; margin-bottom: 8px; border-bottom: 2px solid #3a4566; text-align: center; }
 /* A phone handle/number is an address: the address font, so look-alike letters read (E14-m1). */
-.tri-phone-number { margin: 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); font-family: var(--se-font-address); }
+.tri-phone-number { margin: 0; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); font-family: var(--se-font-address); }
 .tri-sms-thread { display: flex; flex-direction: column; gap: 8px; }
 .tri-sms-bubble {
     align-self: flex-start;
@@ -418,14 +418,14 @@
     cursor: pointer;
 }
 .tri-sms-bubble .mail-chip-link img.mail-icon { display: none; }
-.tri-sms-time { margin: 4px 0 0; font-size: 13px; color: #3a4566; text-align: right; }
+.tri-sms-time { margin: 4px 0 0; font-size: 16px; color: #3a4566; text-align: right; }
 
 /* Voicemail card */
 .tri-kind-voicemail { padding: 10px 12px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid #8f7cf0; }
-.tri-vm-meta { margin: 0 0 6px; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-vm-meta { margin: 0 0 6px; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 .tri-vm-wave { display: flex; align-items: center; gap: 2px; height: 32px; margin: 6px 0 10px; }
 .tri-vm-bar { display: block; width: 4px; background: #8f7cf0; }
-.tri-vm-heading { margin: 4px 0; font-size: 15px; }
+.tri-vm-heading { margin: 4px 0; font-size: 16px; }
 .tri-vm-text { margin: 0; white-space: pre-wrap; font-style: italic; }
 
 /* Transcripts (voicemail and call) */
@@ -437,10 +437,10 @@
 
 /* Call card */
 .tri-kind-call { padding: 10px 12px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid var(--ui-success, #6ee08f); }
-.tri-call-meta { margin: 0 0 8px; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-call-meta { margin: 0 0 8px; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 /* Role swap (11 N15): what the caller claims, as a short checklist above the transcript */
 .tri-call-claims { margin: 0 0 10px; padding: 8px 10px; border: 2px dashed var(--ui-line, #4c5b80); }
-.tri-call-claims-label { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--ui-text-dim, #c3ccdf); }
+.tri-call-claims-label { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--ui-text-dim, #c3ccdf); }
 .tri-call-claims-list { margin: 0; display: grid; gap: 4px; }
 .tri-call-claim { display: grid; grid-template-columns: minmax(110px, max-content) 1fr; gap: 8px; }
 .tri-claim-fact { margin: 0; font-weight: 700; }
@@ -456,7 +456,7 @@
     box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
 }
 .tri-notice .tri-kind-label { color: #6b604a; }
-.tri-notice .tri-kind-title { color: #1d1d1d; font-size: 22px; }
+.tri-notice .tri-kind-title { color: #1d1d1d; font-size: 24px; }
 .tri-notice-text { margin: 4px 0 10px; white-space: pre-wrap; }
 .tri-qr {
     --tri-qr-size: 21;
@@ -471,7 +471,7 @@
 }
 .tri-qr-cell { display: block; }
 .tri-qr-cell.on { background: #111111; }
-.tri-qr-caption { margin: 0 0 8px; text-align: center; font-size: 14px; }
+.tri-qr-caption { margin: 0 0 8px; text-align: center; font-size: 16px; }
 .tri-qr-where { min-height: 44px; }
 
 /* Browser card */
@@ -483,13 +483,13 @@
    opportunities after dots and slashes let a long URL wrap at a sensible point, not mid-label
    (F-E20-3). */
 .tri-browser-bar .tri-address { flex: 1; min-height: 36px; text-align: left; overflow-wrap: break-word; word-break: normal; font-family: var(--se-font-address); }
-.tri-padlock, .tri-no-padlock { flex: none; min-height: 36px; font-size: 13px; }
+.tri-padlock, .tri-no-padlock { flex: none; min-height: 36px; font-size: 16px; }
 .tri-no-padlock { padding: 0 6px; font-weight: 700; color: #8f2a1f; }
 .tri-browser-view { padding: 12px 14px; }
 .tri-browser .tri-kind-title { color: #1d2333; }
 .tri-page-text { margin: 0 0 10px; white-space: pre-wrap; }
 .tri-page-form { display: flex; flex-direction: column; gap: 6px; max-width: 300px; }
-.tri-page-field { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.tri-page-field { display: flex; flex-direction: column; gap: 2px; font-size: 16px; }
 .tri-page-field-box { display: block; height: 28px; background: #ffffff; border: 2px solid #8792ad; }
 /* A drawn tick box for a genuine "I am not a robot" check (E10 MI2): a square, with a tick when
    page.fields[].checked is set. Nothing can be ticked; it is static art, like the text box. */
@@ -504,8 +504,8 @@
 .tri-wifi-venue { margin: 0 0 10px; font-style: italic; }
 .tri-wifi-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .tri-wifi-row { padding: 8px 10px; background: #ffffff; border: 2px solid #8792ad; }
-.tri-wifi-ssid { display: block; font-family: var(--se-font-address); font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
-.tri-wifi-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 4px; font-size: 13px; }
+.tri-wifi-ssid { display: block; font-family: var(--se-font-address); font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.tri-wifi-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 4px; font-size: 16px; }
 .tri-wifi-lock-wrap, .tri-wifi-signal { display: inline-flex; align-items: center; gap: 6px; }
 /* Neutral on purpose: a password on a public network is not what makes it safe (core_09), so
    open and secured share one ink and differ only in the lock shape and the words. */
@@ -517,11 +517,11 @@
 .tri-wifi-bar { display: block; box-sizing: border-box; width: 6px; background: #c9d0e0; border: 2px solid #8792ad; }
 .tri-wifi-bar.on { background: #233b8f; border-color: #233b8f; }
 .tri-wifi-bar-1 { height: 4px; } .tri-wifi-bar-2 { height: 7px; } .tri-wifi-bar-3 { height: 10px; } .tri-wifi-bar-4 { height: 14px; }
-.tri-wifi-note { margin: 4px 0 0; font-size: 13px; }
+.tri-wifi-note { margin: 4px 0 0; font-size: 16px; }
 
 /* 11 N14: phone body around an sms thread */
 .tri-phone-frame { border-radius: 0; border-width: 6px; border-color: #1c2440; padding-top: 6px; }
-.tri-phone-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-phone-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 .tri-phone-speaker { display: block; width: 48px; height: 6px; background: #1c2440; border: 2px solid #3a4566; }
 .tri-phone-battery { justify-self: end; display: block; width: 22px; height: 10px; border: 2px solid #a8b2c8; background: linear-gradient(90deg, #a8b2c8 70%, transparent 70%); }
 .tri-phone-clock { justify-self: start; }
@@ -533,12 +533,12 @@
 .tri-poster-tape-right { right: 10px; transform: rotate(7deg); }
 
 /* 11 N13: certificate check and autofill cue on the page card */
-.tri-cert-btn { flex: none; min-height: 36px; font-size: 13px; }
+.tri-cert-btn { flex: none; min-height: 36px; font-size: 16px; }
 .tri-cert-panel { padding: 8px 12px; background: #fff8dc; border-bottom: 2px solid #8792ad; color: #1d2333; }
 .tri-cert-panel p { margin: 2px 0; }
 .tri-cert-issued { font-weight: 700; overflow-wrap: anywhere; }
-.tri-cert-not { font-size: 14px; }
-.tri-autofill { margin: 8px 0 0; font-size: 14px; font-weight: 700; }
+.tri-cert-not { font-size: 16px; }
+.tri-autofill { margin: 8px 0 0; font-size: 16px; font-weight: 700; }
 .tri-autofill-none { color: #8f2a1f; }
 .tri-autofill-filled { color: #1f6b3a; }
 
@@ -550,11 +550,11 @@
 /* The fake "verify you are human" check: a panel feel, with the reveal under the steps. */
 .tri-fakecheck { background: #f4f6fb; }
 .tri-page-reveal { margin: 10px 0 0; }
-.tri-page-reveal-btn { font-size: 14px; }
+.tri-page-reveal-btn { font-size: 16px; }
 .tri-page-reveal-text {
     margin: 8px 0 0;
     padding: 8px 10px;
-    font-size: 14px;
+    font-size: 16px;
     color: #1d2333;
     background: #fff4d6;
     border: 2px solid #d8b24a;
@@ -594,7 +594,7 @@
 .tri-ext-permission .tri-kind-title { color: #1d2333; }
 .tri-ext-perms-label { margin: 10px 0 4px; font-weight: 700; }
 .tri-ext-perms { margin: 0; padding-left: 20px; }
-.tri-ext-perm { margin: 2px 0; font-size: 15px; }
+.tri-ext-perm { margin: 2px 0; font-size: 16px; }
 
 /* Full-screen alarm overlay: silent, calm, always a visible way out. No flashing. */
 .tri-page-fullScreenAlarm { background: #161b2e; border-color: #3a4566; }
@@ -602,7 +602,7 @@
 .tri-alarm .tri-kind-title { color: #ffd2cc; }
 .tri-alarm-muted {
     margin: 0 0 10px;
-    font-size: 14px;
+    font-size: 16px;
     color: #c3ccdf;
     font-style: italic;
 }
@@ -616,7 +616,7 @@
     background: #ffffff;
     border: 2px solid #ffffff;
 }
-.tri-alarm-hint { margin: 10px 0 0; font-size: 14px; color: #c3ccdf; }
+.tri-alarm-hint { margin: 10px 0 0; font-size: 16px; color: #c3ccdf; }
 /* A gentle, slow breathing of the border only; no colour flash, no shake. */
 .tri-alarm-pulse { animation: tri-alarm-breathe 2.4s ease-in-out infinite; }
 @keyframes tri-alarm-breathe {
@@ -637,9 +637,9 @@
 /* Pre/post comparison (05 N11) */
 .tri-compare { margin: 10px 0; padding: 8px 10px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid var(--ui-accent, #ffcc44); }
 .tri-compare.no-baseline { border-left-color: var(--ui-text-dim, #a8b2c8); }
-.tri-compare-title { margin: 0 0 4px; font-size: 17px; }
+.tri-compare-title { margin: 0 0 4px; font-size: 16px; }
 .tri-compare-line { margin: 2px 0; }
-.tri-brief-kind { font-size: 14px; line-height: 1.45; color: #e6ebf6; }
+.tri-brief-kind { font-size: 16px; line-height: 1.45; color: #e6ebf6; }
 
 @media (max-width: 767px) {
     .tri-phone, .tri-notice, .tri-browser { max-width: none; }
@@ -665,7 +665,7 @@
 /* Authored-choice card (ENG-09a): the prompt, then one wide button per option. The options carry
    no verdict colour, so the right one is not given away. */
 .tri-kind-choice { padding: 10px 12px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid var(--ui-accent, #ffcc44); }
-.tri-choice-note { margin: 8px 0 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-choice-note { margin: 8px 0 0; font-size: 16px; color: var(--ui-text-dim, #a8b2c8); }
 .tri-choice-options { flex-direction: column; align-items: stretch; }
 .tri-choice-option {
     display: block;
@@ -678,14 +678,14 @@
     font-size: 16px;
     line-height: 1.35;
 }
-.tri-choice-why, .tri-choice-better { margin: 6px 0; font-size: 15px; }
+.tri-choice-why, .tri-choice-better { margin: 6px 0; font-size: 16px; }
 .tri-choice-better { font-weight: 700; }
 
 /* ENG-07: the video-call meeting-tool name and participant tag on a `call` card. */
 .tri-call-video { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 8px; }
 .tri-call-video-label { font-weight: 600; }
 .tri-call-video-tag {
-    font-size: 0.72rem;
+    font-size: 16px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     border: 2px solid currentColor;

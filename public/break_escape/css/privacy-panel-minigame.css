@@ -43,33 +43,33 @@
 .pp-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .pp-panel { padding: 14px 16px; max-width: 920px; }
-.pp-heading { margin: 0 0 8px; font-size: 20px; color: var(--pp-accent); }
+.pp-heading { margin: 0 0 8px; font-size: 24px; color: var(--pp-accent); }
 .pp-heading:focus { outline: none; }
 .pp-text { margin: 0 0 10px; max-width: 62ch; }
-.pp-note { margin: 0 0 10px; max-width: 62ch; font-size: 15px; color: var(--pp-dim); }
+.pp-note { margin: 0 0 10px; max-width: 62ch; font-size: 16px; color: var(--pp-dim); }
 .pp-counter { margin: 0 0 10px; padding: 6px 10px; display: inline-block; font-weight: 700; background: var(--pp-raised); border: 2px solid var(--pp-line); }
-.pp-section { margin: 14px 0 6px; font-size: 17px; color: var(--pp-accent); }
+.pp-section { margin: 14px 0 6px; font-size: 16px; color: var(--pp-accent); }
 
 .pp-settings, .pp-facts { margin: 0; padding: 0; list-style: none; }
 .pp-setting { margin: 0 0 10px; padding: 10px 12px; background: var(--pp-raised); border: 2px solid var(--pp-line); border-left: 6px solid var(--pp-line); }
 .pp-setting[data-state="tight"] { border-left-color: var(--pp-good); }
 .pp-switch { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 8px 14px; font-family: var(--se-font-readable); font-size: 16px; text-align: left; }
 .pp-switch-label { font-weight: 700; }
-.pp-switch-state { font-size: 14px; padding: 0 8px; border: 2px solid var(--pp-line); }
+.pp-switch-state { font-size: 16px; padding: 0 8px; border: 2px solid var(--pp-line); }
 .pp-switch[aria-checked="true"] .pp-switch-state { border-color: var(--pp-good); color: var(--pp-good); }
 .pp-switch:focus-visible { outline: 3px solid var(--pp-accent); outline-offset: 2px; }
-.pp-hint { margin: 6px 0 0; font-size: 15px; color: var(--pp-dim); }
+.pp-hint { margin: 6px 0 0; font-size: 16px; color: var(--pp-dim); }
 
 .pp-facts { margin: 8px 0 0; }
-.pp-fact { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 6px; padding: 4px 8px; font-size: 15px; border-left: 4px solid var(--pp-bad); }
+.pp-fact { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 6px; padding: 4px 8px; font-size: 16px; border-left: 4px solid var(--pp-bad); }
 .pp-fact.pp-closed { border-left-color: var(--pp-good); }
 .pp-fact.pp-closed .pp-fact-text { text-decoration: line-through; color: var(--pp-dim); }
-.pp-fact-state { font-size: 13px; font-weight: 700; }
+.pp-fact-state { font-size: 16px; font-weight: 700; }
 .pp-fact.pp-open .pp-fact-state { color: var(--pp-bad); }
 .pp-fact.pp-closed .pp-fact-state { color: var(--pp-good); }
 .pp-fact-text { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
-.pp-fact-board { font-size: 13px; color: var(--pp-dim); }
-.pp-fact-note { flex: 1 1 100%; font-size: 14px; color: var(--pp-dim); }
+.pp-fact-board { font-size: 16px; color: var(--pp-dim); }
+.pp-fact-note { flex: 1 1 100%; font-size: 16px; color: var(--pp-dim); }
 
 .pp-button, .pp-done { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; }
 .pp-done { margin-top: 12px; padding: 8px 18px; }
