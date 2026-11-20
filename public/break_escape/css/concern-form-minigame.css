@@ -80,3 +80,24 @@
     .cf-panel { padding: 10px 12px; }
     .cf-chip { flex: 1 1 100%; }
 }
+
+/* Short landscape (844x390, 915x412, 568x320): the console frame and title bar take about a third of
+   the height, so the intro's Start button fell below the fold. Tighter spacing and full-width copy
+   shorten the card, and Start sticks to the bottom of the scrolling stage so it is in view at open
+   whatever the copy length. Layout only: no font sizes change. */
+@media (max-height: 500px) {
+    .cf-panel { padding: 8px 12px; max-width: none; }
+    .cf-intro .cf-text,
+    .cf-intro .cf-guidance,
+    .cf-intro .cf-reload-note { max-width: none; margin-bottom: 6px; }
+    .cf-heading { margin-bottom: 4px; }
+    .cf-intro .cf-start {
+        position: sticky;
+        bottom: 8px;
+        margin-top: 6px;
+        z-index: 1;
+        background-color: var(--cf-raised);
+        color: var(--cf-ink);
+        border: 2px solid var(--cf-accent);
+    }
+}

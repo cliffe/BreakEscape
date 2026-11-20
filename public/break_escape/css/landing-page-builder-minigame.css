@@ -18,7 +18,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    /* Opaque in every state (scene, invalid params, captures): the room and HUD must not show through. */
+    background: var(--ui-surface-opaque, rgb(24, 30, 48));
     border: 16px solid transparent;
     border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
 }
