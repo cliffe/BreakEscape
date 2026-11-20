@@ -235,7 +235,7 @@ Dr Ruth Halloran: David made Heisenberg work. Two years of his life are in that 
 === ask_vault ===
 #speaker:dr_halloran
 ~ asked_vault = true
-Dr Ruth Halloran: Off me? Not in this lab. Gloves at the bench, always; it's the first rule I wrote.
+Dr Ruth Halloran: Off me? Not in this lab. Gloves at the bench, always. It's the first rule I wrote.
 Dr Ruth Halloran: You'll not lift anything of mine in here. Try it if you like.
 -> hub
 
@@ -248,7 +248,7 @@ Dr Ruth Halloran: You'll not lift anything of mine in here. Try it if you like.
     #influence_increased
     #give_item:keycard:research_lab_badge
     Dr Ruth Halloran: You've been straight with me. Here, the visitor spare. It's signed out through me, and I'm signing it out to you.
-    Dr Ruth Halloran: It's registered to me, and it opens the server hallway. Bring it back when you're done.
+    Dr Ruth Halloran: It opens the server hallway. Bring it back when you're done.
     -> hub
 - else:
     Dr Ruth Halloran: I don't know you well enough to hand you my access.
@@ -293,7 +293,7 @@ Dr Ruth Halloran: Ask what you came to ask.
 }
 Dr Ruth Halloran: The twenty-third I was in Zurich, giving a paper to two hundred people. The lanyard's on my monitor.
 // PASS 5 (m3): three names, not one. The badge log's front-door times decide it.
-Dr Ruth Halloran: Who's in here after hours? Amara some evenings, gone by ten. Ben, for his test runs. David, some nights; he says it's quieter than his office.
+Dr Ruth Halloran: Who's in here after hours? Amara some evenings, gone by ten. Ben, for his test runs. David, some nights. He says it's quieter than his office.
 Dr Ruth Halloran: Any of them could have walked out with it. I never thought to count.
 ~ hub_quiet = true
 -> hub
@@ -310,7 +310,7 @@ Dr Ruth Halloran: Any of them could have walked out with it. I never thought to 
     }
 }
 
-Dr Ruth Halloran: I should have seen it. He was pulling away. Working late, alone. Avoiding my eye.
+Dr Ruth Halloran: I should have seen it. He was pulling away, working late, alone, avoiding my eye.
 
 Dr Ruth Halloran: I signed his overtime every week and never once asked what it was for.
 

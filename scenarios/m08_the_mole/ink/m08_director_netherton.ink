@@ -138,7 +138,7 @@ Director Magnus Netherton: Ask me what you need. Then go and prove something.
 + { not asked_rules } [What are the rules of engagement, sir?]
     ~ asked_rules = true
     Director Magnus Netherton: Quiet. The instant the mole knows the net is out, they burn their access and walk. We lose the thread to The Architect with them.
-    Director Magnus Netherton: Interview all three as if none of them is guilty. Get onto our own systems and bring me proof I can act on. A hunch is not proof.
+    Director Magnus Netherton: Interview all three as if none of them is guilty. Get onto our own systems and bring me proof I can act on.
     Director Magnus Netherton: And Agent. If you are certain before you are sure, come and tell me the name.
     Director Magnus Netherton: I would rather talk you out of a mistake than read about it.
     -> back

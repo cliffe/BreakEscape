@@ -739,7 +739,7 @@ Val Okonkwo: I'll not be dramatic. But when they ask afterwards who knew, and th
 + {not insider_asset_arrested and not insider_asset_escaped and not night_security_supervisor_ko} [Stay out of the boardroom until SAFETYNET arrive. He's not what he looks like.]
     ~ influence += 8
     # influence_increased
-    Val Okonkwo: I've had him in my notebook six weeks. I know exactly what he looks like.
+    Val Okonkwo: I know exactly what he looks like.
     Val Okonkwo: But I'll hold this corridor. Go on.
     ~ hub_quiet = true
     #exit_conversation

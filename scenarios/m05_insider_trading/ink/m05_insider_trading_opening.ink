@@ -63,7 +63,7 @@ Agent 0x47 'Nightshade': So you hunt the pattern. Access a little too broad, hou
 
 Agent 0x47 'Nightshade': And the calm of someone who's decided the rules don't apply to them. Find whose behaviour stopped matching their story.
 
-Director Magnus Netherton: Sound advice. HaX -- the detail.
+Director Magnus Netherton: Sound advice. HaX, the detail.
 
 #speaker:agent_0x99
 
@@ -121,7 +121,7 @@ Agent HaX: Once ENTROPY has the full package, they keep it and use it. Nobody's 
 
 Agent HaX: Lattice-based key exchange parameters. The production candidate set.
 
-Agent HaX: And the rollout schedule: cutover dates, region by region, with the key-rotation windows.
+Agent HaX: And the rollout schedule, cutover dates region by region, with the key-rotation windows.
 
 Agent HaX: Everything ENTROPY needs to own the dispatch network the day it goes live.
 
@@ -147,7 +147,7 @@ Agent HaX: Every ambulance, fire and police call through it runs six to eleven m
 
 Agent HaX: Early modelling: thirty to forty-five excess civilian deaths in the first rollout wave.
 
-Agent HaX: Cardiac arrests. Strokes. Structure fires. The calls where minutes decide it.
+Agent HaX: Cardiac arrests, strokes, structure fires, the calls where minutes decide it.
 
 + [Then we don't let it happen.]
     ~ handler_trust += 5
@@ -170,7 +170,7 @@ Agent HaX: One. Find the insider. QDC's security chief has it down to eight peop
 // PASS 4 (whodunnit): what to look for, and a warning about hunches.
 Agent HaX: Their access is real, so nothing will look like a break-in.
 
-Agent HaX: Look at the edges. A badge at an odd hour. Money that doesn't add up. Someone who's changed.
+Agent HaX: Look at the edges. A badge at an odd hour, money that doesn't add up, someone who's changed.
 
 Agent HaX: And don't take anyone's hunch for proof. Patricia's included.
 
@@ -244,7 +244,7 @@ Agent HaX: Whoever it is, ENTROPY found them before we did. Keep that in mind wh
 
 Agent HaX: You're going in as an external security consultant.
 
-Agent HaX: Your kit goes in with you. Picks, the cloner, and the print kit you brought back from Albion. Auditors carry odd bags; nobody looks.
+Agent HaX: Your kit goes in with you. Picks, the cloner, and the print kit you brought back from Albion. Auditors carry odd bags. Nobody looks.
 
 Agent HaX: Still no PIN cracker. The lab isn't finished with it.
 

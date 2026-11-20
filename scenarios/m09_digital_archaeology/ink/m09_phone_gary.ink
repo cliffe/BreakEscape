@@ -34,7 +34,7 @@ VAR salvage_opened = false   // Synced scenario global (puzzle chains R1 P5)
     There'll be a chart near the keypad.
 }
 + [How's the new job?]
-    Director of Cyber Security, me. They gave me a lanyard with my name spelt right. That's how you know it's serious.
+    Director of Cyber Security, me. They gave me a lanyard with my name spelt right.
     #exit_conversation
     -> DONE
 + [Thanks, Gary.]

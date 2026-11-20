@@ -33,9 +33,9 @@ EXTERNAL player_name()
 === start ===
 Narrator: A secure operations room. On the wall screen, a hospital floor plan gone entirely red. At the head of the table, a tall man in a creased suit you know only by name.
 
-Director Magnus Netherton: Agent 0x00. Magnus Netherton -- I run this shop. I would rather we had met under better circumstances, but circumstances are rather the point tonight.
+Director Magnus Netherton: Agent 0x00. Magnus Netherton. I run this shop. I would rather we had met under better circumstances, but circumstances are rather the point tonight.
 
-Director Magnus Netherton: I have a handler who knows this one cold, and a hospital running out of time while I make introductions. HaX -- it's yours.
+Director Magnus Netherton: I have a handler who knows this one cold, and a hospital running out of time while I make introductions. HaX, it's yours.
 
 Agent HaX: St. Catherine's Regional went dark at 02:47 this morning. Every clinical system encrypted in the same minute.
 

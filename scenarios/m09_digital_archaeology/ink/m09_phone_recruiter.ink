@@ -142,8 +142,6 @@ I can't see which tape you pull, only that you pulled one. Take the name and pul
 {
 - m05_final_choice == "turn_double_agent":
     Agent HaX: Torres gave us what he knew. Her file has the names he couldn't.
-- m05_final_choice == "public_exposure":
-    Agent HaX: Her file has her handlers, and every one of the forty-seven.
 }
 // The first half is the hang-up block's string, so one clip serves both.
 Agent HaX: Her file is her network, all of it. The Alpha tapes are him teaching, recorded.

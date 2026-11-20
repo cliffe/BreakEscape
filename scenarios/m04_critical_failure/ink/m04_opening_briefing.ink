@@ -248,7 +248,7 @@ Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across th
 Agent HaX: One mind behind it, the one the directive named: The Architect. Voltage answers up that chain. Take him, and we're closer to whoever's setting the clock on all of it.
 
 + [So this is the attack the directive warned us about.]
-    Agent HaX: The same one. Stop it, take Voltage if you can, and bring out anything that names the next target.
+    Agent HaX: The same one. Stop it, and bring out anything that names the next target.
     -> mission_objectives
 
 + [Then Voltage is our way to The Architect.]
@@ -275,7 +275,7 @@ Agent HaX: Press it and the banks isolate, once grid control believes you. They'
 
 Agent HaX: And the operatives. Voltage alive, if you can.
 
-Agent HaX: Kit: your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
+Agent HaX: Kit. Your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
 
 * [Got it. I'm on my way.]
     Agent HaX: Go carefully. They've had three days to get ready for you.

@@ -717,7 +717,7 @@ Director Magnus Netherton: Breach. Go.
     Agent 0x47 'Nightshade': Manual.
     He's on the crank. Their reader never saw you.
 - override_held:
-    It's read your badge. Your key kept it off their board. He knows; they don't.
+    It's read your badge. Your key kept it off their board. He knows. They don't.
 - else:
     It's read your badge. They know you're in.
 }

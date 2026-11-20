@@ -193,9 +193,7 @@ Priya Raghavan: You watch how wallets behave, group the ones that move together,
 
 Priya Raghavan: Not from outside. Ring signatures, stealth addresses. It's a black box.
 
-Priya Raghavan: But we're the door either side of it. Bitcoin in, Monero in the middle, Bitcoin out.
-
-Priya Raghavan: The chain can't see the middle. Our own logs can.
+Priya Raghavan: But we're the door either side of it, so our own logs can see the middle.
 
 + [So your logs can see what the chain can't?]
     Priya Raghavan: Every hop of it.
@@ -239,8 +237,6 @@ Priya Raghavan: Privacy mixing gets a certain clientele. Most of it's legal, min
 
 === methodology_discussion ===
 #speaker:analyst
-
-Priya Raghavan: Map who's connected to who, then check whether they move at the same times, then look at the amounts.
 
 Priya Raghavan: Anything odd goes to Irina. She decides what gets reported.
 

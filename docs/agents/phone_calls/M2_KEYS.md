@@ -77,7 +77,7 @@ Key diff of the M2 changes against HEAD before M2 (post-A1). Counts are unique c
 | m10_hax_post.ink:64 | hax_post | hax_post | Not now. |
 | m10_hax_post.ink:66 | hax_post | hax_post | Go with the team. We'll talk at the hear |
 | m10_hax_post.ink:68 | hax_post | hax_post | It's done. Sit down a minute. |
-| m10_hearing.ink:23 | hearing | hearing | He still knows. But the map's gone. He's |
+| m10_hearing.ink:23 | hearing | hearing | The map's gone. He's one man with a memo |
 | m10_hearing.ink:25 | hearing | hearing | Tell them. Short, and true. They can cou |
 | m10_hearing.ink:34 | hearing | hearing | Before they call you. The forty-seven. T |
 | m10_hearing.ink:34 | hearing | hearing | Before they call you. The forty-seven. Y |
