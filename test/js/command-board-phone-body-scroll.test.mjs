@@ -57,3 +57,37 @@ test('UNKNOWN badge meets 4.5:1 and keeps its text label', () => {
     assert.ok((a + 0.05) / (b + 0.05) >= 4.5, 'contrast at least 4.5');
     assert.ok(js.includes('badge.textContent = rowStatus.label'), 'badge carries a text label');
 });
+
+// Round 1 fixes
+test('B1: phone body rows keep their content height', () => {
+    const body = rule(block('@media (max-width: 600px)'), '.cb-body');
+    assert.ok(/grid-auto-rows:\s*max-content/.test(body), 'rows are max-content');
+});
+
+test('M1: phone timeline is capped so status stays near', () => {
+    const list = rule(block('@media (max-width: 600px)'), '.cb-timeline-list');
+    assert.ok(/max-height:\s*45dvh/.test(list), '45dvh cap');
+    assert.ok(/overflow-y:\s*auto/.test(list), 'list scrolls inside the cap');
+});
+
+test('m1: very short layouts let the panel scroll to POST', () => {
+    const b = block('@media (max-height: 260px)');
+    assert.ok(/overflow-y:\s*auto/.test(rule(b, '.cb-panel')), 'panel scrolls');
+    assert.ok(/flex:\s*0 0 auto/.test(rule(b, '.cb-body')), 'body keeps its content height');
+});
+
+test('m2: pixel-scroll sits on the body, not the panel', () => {
+    assert.ok(/class="cb-body pixel-scroll"/.test(js), 'body has pixel-scroll');
+    assert.ok(/class="cb-panel"/.test(js), 'panel has none');
+});
+
+test('m3: subtitle is readable and hidden in short windows', () => {
+    const m = /\.cb-section-subtitle\s*\{[^}]*color:\s*(#\w{6})/.exec(css);
+    assert.ok(m && m[1] === '#8fa3c0', 'subtitle colour lifted');
+    assert.ok(/display:\s*none/.test(rule(block('@media (max-height: 520px)'), '.cb-section-subtitle')), 'hidden when short');
+});
+
+test('m4: phone landscape keeps input and POST on one row', () => {
+    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    assert.ok(/grid-template-columns:\s*minmax\(0, 1fr\) 120px/.test(rule(b, '.cb-entry-bar')), 'two columns');
+});
