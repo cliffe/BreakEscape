@@ -206,7 +206,11 @@
       "noBlameLine": "A convincing profile of a person is built from scraps anyone could find. Nobody is foolish for having posted them; the fix is a setting and a pause, not shame.",
       "defendIntro": "Now the inbox: mark each message Trust, Report or Delete, and tick what gave it away. A friendly opener that steers to your firm's systems or who runs IT is still scouting; report it. There's no clock on you here.",
       "mondayCard": "On Monday: tighten one privacy setting today, and check what's behind you before your next post or video call. And if a stranger asks about your firm's systems or who runs IT, share nothing and report it using the route in the box below.",
-      "defendOnly": "A well-made message is built from scraps anyone could find online, and anyone can be pulled in by one. The ones you were caught out by are shown below, with what gave each one away."
+      "defendOnly": "A well-made message is built from scraps anyone could find online, and anyone can be pulled in by one. The ones you were caught out by are shown below, with what gave each one away.",
+      "conceptPanel": {
+        "heading": "If a trusted reply goes back",
+        "text": "A handful of public posts, a leaving card, a lanyard, a pet, are enough to build the approach, and one trusted reply gives up a security answer that then has to be reset, with a fake partner account reported a week later and an awkward round of comparing notes."
+      }
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e14_social_media_defend), which has no OSINT, write or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). brief equals the generator EPISODES['e14'].defend.brief (keep identical); this is section 8's _defendOnly.brief.",

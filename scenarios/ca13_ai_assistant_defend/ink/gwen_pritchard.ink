@@ -11,6 +11,7 @@
 // ================================================
 
 VAR episode_e13_ai_assistant_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR e13_demo_offered = false
 VAR demo_answer = ""
 VAR hub_quiet = false
@@ -23,7 +24,11 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e13_ai_assistant_defend_defend_complete:
-        Gwen Pritchard: That's them all handled, thanks. A voice or a face can be faked. Check another way, on a number you already hold.
+        { kit_key_caught:
+            Gwen Pritchard: You checked that one on a route you trust instead of taking the assistant's word, so nothing was paid and no list went out.
+        - else:
+            Gwen Pritchard: That was the one to check on a route you trust. On the assistant's word, it's a small payment gone or the customer list shared.
+        }
     - else:
         Gwen Pritchard: Brightwell's switched on its assistant, and the kiosk has the inbox beside it: supplier emails, voicemails and video calls. Some are real, some aren't.
     }
