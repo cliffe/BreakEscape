@@ -1,7 +1,7 @@
 // Post-release UI rule polish (fix/ui-rule-polish): CSS-source pins so each fix fails on regression.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,8 +41,14 @@ test('triage jump select has a 2px border and stays border-box full width', () =
 // The password modal had no caller (showPasswordModal was dead code with a Cancel button and no X),
 // so it was retired. Pin that it stays gone so a stale copy is not restored without an X close.
 test('retired password modal leaves no CSS rule behind', () => {
-    assert.ok(body('modals.css', '#password-modal-input') === null, 'no #password-modal-input rule');
-    assert.ok(body('modals.css', '#password-modal') === null, 'no #password-modal rule');
+    for (const f of readdirSync(css).filter((n) => n.endsWith('.css'))) {
+        assert.ok(!/password-modal/.test(read(f)), `${f} has no password-modal selector`);
+    }
+    for (const f of ['js/systems/tutorial-manager.js', 'js/ui/hud-lanes.js']) {
+        assert.ok(!/password-modal/.test(readFileSync(join(css, '..', f), 'utf8')), `${f} has no password-modal selector`);
+    }
+    const ref = readFileSync(join(css, '..', 'index.html.reference'), 'utf8');
+    assert.ok(!/password-modal/.test(ref), 'index.html.reference has no password modal markup');
 });
 
 test('forensic data platform GNF controls sit on the 16px grid, GNF face, whole-px spacing', () => {
