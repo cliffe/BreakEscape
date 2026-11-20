@@ -320,6 +320,6 @@
 }
 
 /* K4 B: the frame wraps the brief instead of spanning 1280px; phones, in either orientation, keep the full width */
-@media (min-width: 601px) and (min-height: 501px) {
+@media (min-width: 601px) and (min-height: 500.02px), (min-width: 1000px) {
     .ncsc-minigame-container .console-window { width: min(760px, 100%); }
 }

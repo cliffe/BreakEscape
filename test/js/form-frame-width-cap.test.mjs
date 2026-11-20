@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape');
 const read = (p) => readFileSync(join(root, p), 'utf8');
 
-const DESKTOP = '@media (min-width: 601px) and (min-height: 501px)';
+const DESKTOP = '@media (min-width: 601px) and (min-height: 500.02px), (min-width: 1000px)';
 
 // Returns the condition text of the innermost @media block that encloses
 // character index `idx`, or '' when the rule sits at top level.
@@ -42,13 +42,14 @@ for (const [file, cls, cap, jsFile] of cases) {
         assert.ok(m !== null, 'cap rule present');
         assert.ok(Number(m[1]) === cap, 'cap is ' + cap);
         const media = enclosingMedia(css, m.index);
-        assert.ok(media.includes(DESKTOP), 'rule sits inside ' + DESKTOP + ', found: "' + media + '"');
+        assert.ok(media === DESKTOP, 'rule sits inside ' + DESKTOP + ', found: "' + media + '"');
     });
 
     test(`${jsFile} sets the ${cls} class on the scene container`, () => {
         const js = read(jsFile);
         assert.ok(js.includes(cls), 'container class ' + cls + ' set in the scene');
-        const line = js.split('\n').find((l) => l.includes(cls));
-        assert.ok(/this\.container\.(classList\.add\(|className \+= )/.test(line), 'class is applied to this.container');
+        const code = js.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+        const call = new RegExp("^\\s*this\\.container\\.(classList\\.add\\('" + cls + "'\\)|className \\+= ' " + cls + "')", 'm');
+        assert.ok(call.test(code), 'class is applied to this.container by a live (uncommented) call');
     });
 }
