@@ -50,7 +50,7 @@ const HEADINGS = [
 test('M1: former 17-19px headings are GNF 24, above the 16px body', () => {
     for (const [file, sel] of HEADINGS) {
         everyIs(file, sel, 'font-size', '24px');
-        if (sel !== '.ib-name') everyIs(file, sel, 'line-height', '32px'); // .ib-name inherits the card's
+        everyIs(file, sel, 'line-height', '32px'); // .ib-name sets its own: nothing above it sets a line height
     }
 });
 
@@ -70,6 +70,13 @@ test('m3: page headings are GNF 32 on a 40px line, above their 24px section head
     for (const [file, sel] of PAGE_HEADINGS.filter((p) => p[1] !== '.epr-heading')) {
         assert.ok(all(file, sel, 'overflow-wrap').includes('anywhere'), `${sel} wraps an unbroken word at 32px`);
     }
+});
+
+// AC1: the site name leads, so the masthead is not smaller than the page title under it
+test('m3: the OSINT site name is GNF 32 on a 40px line, not smaller than the page title', () => {
+    everyIs('osint-browser-minigame.css', '.ob-site-title', 'font-size', '32px');
+    everyIs('osint-browser-minigame.css', '.ob-site-title', 'line-height', '40px');
+    assert.ok(all('osint-browser-minigame.css', '.ob-site-title', 'overflow-wrap').includes('anywhere'), 'wraps an unbroken word');
 });
 
 test('M1: the defender exposure card wraps long text instead of overflowing', () => {

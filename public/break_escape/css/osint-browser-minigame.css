@@ -159,7 +159,8 @@
 
 .ob-page { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
 .ob-site-head { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #c9c2b2; padding-bottom: 8px; }
-.ob-site-title { margin: 0; font-size: 24px; font-weight: 700; }
+/* the site name leads: not smaller than the page title beneath it */
+.ob-site-title { margin: 0; min-width: 0; font-size: 32px; line-height: 40px; font-weight: 700; overflow-wrap: anywhere; }
 /* logos are drawn 20px tall; shown at a whole-number scale */
 .ob-logo { height: 60px; width: auto; image-rendering: pixelated; }
 .ob-page-title { margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; outline: none; overflow-wrap: anywhere; }
