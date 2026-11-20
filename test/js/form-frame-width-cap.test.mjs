@@ -23,8 +23,8 @@ function mediaMatches(cond, w, h) {
         throw new Error('unparsed media feature: ' + t);
     }));
 }
-const PHONES = [[390, 844], [844, 390], [915, 412], [932, 430], [956, 440], [997, 448]];
-const DESKTOPS = [[1024, 600], [1280, 500], [1280, 500.5], [1280, 720], [1920, 1080]];
+const PHONES = [[390, 844], [844, 390], [915, 412], [932, 430], [956, 440], [997, 448], [1099, 500]];
+const DESKTOPS = [[1024, 600], [1100, 500], [1280, 500], [1280, 500.5], [1280, 720], [1920, 1080]];
 
 // Returns the condition text of the innermost @media block that encloses
 // character index `idx`, or '' when the rule sits at top level.
@@ -86,6 +86,7 @@ for (const [file, cls, cap, jsFile, group] of cases) {
         // rules whose selector list names .console-window: exactly the two cap rules; unrelated rules in the block are fine (R1 m1)
         const capRules = [...body.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((r) => /\.console-window(?![\w-])/.test(r[1]));
         assert.ok(capRules.length === 2, 'the media block holds exactly two rules naming .console-window, got ' + capRules.length);
+        assert.ok(media === '@media (min-width: 601px) and (min-height: 500.02px), (min-width: 1100px)', 'wide branch is 1100px (997x448 phones sit under it; 1099x500 is the boundary), got ' + media);
         for (const [w, h] of PHONES) assert.ok(mediaMatches(media, w, h) === false, `phone ${w}x${h} keeps full width`);
         for (const [w, h] of DESKTOPS) assert.ok(mediaMatches(media, w, h) === true, `desktop ${w}x${h} gets the cap`);
     });
