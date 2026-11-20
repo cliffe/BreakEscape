@@ -38,12 +38,11 @@ test('triage jump select has a 2px border and stays border-box full width', () =
     }
 });
 
-test('password modal input is GNF at 24px on the grid, zoom-compensated', () => {
-    const b = body('modals.css', '#password-modal-input');
-    assert.ok(b !== null, 'rule exists');
-    assert.ok(/font-family:\s*'GNF'/.test(b), 'GNF');
-    assert.ok(/font-size:\s*max\(24px, calc\(24px \/ var\(--hud-zoom, 1\)\)\)/.test(b), 'font-size is 24px, compensated');
-    assert.ok(!/20px/.test(b), 'no 20px left');
+// The password modal had no caller (showPasswordModal was dead code with a Cancel button and no X),
+// so it was retired. Pin that it stays gone so a stale copy is not restored without an X close.
+test('retired password modal leaves no CSS rule behind', () => {
+    assert.ok(body('modals.css', '#password-modal-input') === null, 'no #password-modal-input rule');
+    assert.ok(body('modals.css', '#password-modal') === null, 'no #password-modal rule');
 });
 
 test('forensic data platform GNF controls sit on the 16px grid, GNF face, whole-px spacing', () => {
