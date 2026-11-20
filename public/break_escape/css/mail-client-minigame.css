@@ -388,7 +388,7 @@
     background-color: #10152a;
     background-image: linear-gradient(var(--ui-surface, rgba(24, 30, 48, 1)), var(--ui-surface, rgba(24, 30, 48, 1)));
     border-top: 2px solid var(--ui-line, #4c5b80);
-    box-shadow: 0 -6px 8px -6px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -2px 0 rgba(0, 0, 0, 0.5);
 }
 .mail-compose-foot > .mail-redflag-meter { max-height: 30vh; overflow-y: auto; padding: 6px 10px; gap: 4px; }
 .mail-compose-foot > .mail-compose-send-bar { position: static; margin-top: 0; padding: 0; background: none; border-top: 0; }

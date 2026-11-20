@@ -49,3 +49,18 @@ test('mail-client and inbox-triage have no radius or blurred shadow in the liste
     assert.ok(!/border-radius:\s*(50%|999px)/.test(it), 'inbox-triage radius');
     assert.ok(!/border:\s*1px (solid|dashed) (var\(--ui-line|currentColor)/.test(it), 'inbox-triage 1px borders');
 });
+
+test('mail-client and inbox-triage sheets: no radius, blur or 1px border anywhere', () => {
+    for (const f of ['mail-client-minigame.css', 'inbox-triage-minigame.css']) {
+        const s = read(f).replace(/\/\*[\s\S]*?\*\//g, '');
+        assert.ok(!/border-radius:\s*(?!0\s*[;}])/.test(s), `${f}: radius`);
+        assert.ok(!/filter:\s*blur|backdrop-filter/.test(s), `${f}: filter blur`);
+        const blurred = (s.match(/(?<![a-z-])box-shadow:[^;]*;/g) || []).filter((d) => d.split(/,(?![^(]*\))/).some((layer) => {
+            const nums = layer.replace(/rgba?\([^)]*\)/g, '').match(/-?\d+(\.\d+)?px/g) || [];
+            return nums.length >= 3 && parseFloat(nums[2]) > 0;
+        }));
+        assert.ok(blurred.length === 0, `${f}: blurred shadow ${blurred[0]}`);
+        const thin = s.match(/border(-[a-z]+)?:\s*1px\b/g) || [];
+        assert.ok(thin.length === 0, `${f}: 1px border ${thin[0]}`);
+    }
+});

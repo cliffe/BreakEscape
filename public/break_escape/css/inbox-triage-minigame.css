@@ -131,7 +131,7 @@
     bottom: 0;
     padding: 4px 6px;
     background-color: #10152a;
-    border-top: 1px solid var(--ui-line, #4c5b80);
+    border-top: 2px solid var(--ui-line, #4c5b80);
 }
 .triage-client .mail-link-status:empty { display: none; }
 
@@ -156,7 +156,7 @@
 .tri-header-fields dd { margin: 0; overflow-wrap: anywhere; }
 .tri-auth-title { margin: 6px 0 4px; font-size: 15px; font-weight: 700; }
 .tri-auth-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
-.tri-auth-row { padding: 4px 0; border-top: 1px solid var(--ui-line, #4c5b80); }
+.tri-auth-row { padding: 4px 0; border-top: 2px solid var(--ui-line, #4c5b80); }
 .tri-auth-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .tri-auth-name { font-weight: 700; min-width: 4.5em; }
 .tri-auth-word { font-weight: 700; }
@@ -508,7 +508,7 @@
 .tri-wifi-lock::before { content: ''; position: absolute; left: 2px; bottom: 8px; width: 4px; height: 5px; border: 2px solid currentColor; border-bottom: 0; }
 .tri-wifi-open .tri-wifi-lock::before { left: 6px; height: 4px; border-right-color: transparent; }
 .tri-wifi-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
-.tri-wifi-bar { display: block; width: 4px; background: #c9d0e0; border: 1px solid #8792ad; }
+.tri-wifi-bar { display: block; width: 6px; background: #c9d0e0; border: 2px solid #8792ad; }
 .tri-wifi-bar.on { background: #233b8f; border-color: #233b8f; }
 .tri-wifi-bar-1 { height: 4px; } .tri-wifi-bar-2 { height: 7px; } .tri-wifi-bar-3 { height: 10px; } .tri-wifi-bar-4 { height: 14px; }
 .tri-wifi-note { margin: 4px 0 0; font-size: 13px; }
