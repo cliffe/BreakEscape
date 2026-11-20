@@ -53,7 +53,8 @@ test('mail-client and inbox-triage have no radius or blurred shadow in the liste
 test('mail-client and inbox-triage sheets: no radius, blur or 1px border anywhere', () => {
     for (const f of ['mail-client-minigame.css', 'inbox-triage-minigame.css']) {
         const s = read(f).replace(/\/\*[\s\S]*?\*\//g, '');
-        assert.ok(!/border-radius:\s*(?!0\s*[;}])/.test(s), `${f}: radius`);
+        const radii = (s.match(/border-radius:\s*([^;}]*)/g) || []).filter((d) => !/:\s*0(px)?\s*$/.test(d));
+        assert.ok(radii.length === 0, `${f}: radius ${radii[0]}`);
         assert.ok(!/filter:\s*blur|backdrop-filter/.test(s), `${f}: filter blur`);
         const blurred = (s.match(/(?<![a-z-])box-shadow:[^;]*;/g) || []).filter((d) => d.split(/,(?![^(]*\))/).some((layer) => {
             const nums = layer.replace(/rgba?\([^)]*\)/g, '').match(/-?\d+(\.\d+)?px/g) || [];
