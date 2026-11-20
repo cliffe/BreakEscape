@@ -77,3 +77,36 @@ test('both minigames use the shared helper', () => {
         assert.ok(/attachScrollCue\(/.test(src), `${rel} attaches it`);
     }
 });
+
+test('paired panels: when either overflows, both cues take their line so headers stay level', () => {
+    const phone = { value: true };
+    const a = fakeWorld(phone);
+    const b = fakeWorld(phone);
+    b.scroller.scrollWidth = 300; // the right panel does not overflow
+    const group = [];
+    attachScrollCue(a.scroller, { window: a.win, document: a.doc, group });
+    attachScrollCue(b.scroller, { window: b.win, document: b.doc, group });
+    a.listeners.win.resize(); b.listeners.win.resize();
+    assert.ok(a.cue.style.display === 'block' && a.cue.style.visibility === 'visible', 'overflowing panel: cue shown');
+    assert.ok(b.cue.style.display === 'block', 'non-overflowing partner still takes the line');
+    assert.ok(b.cue.style.visibility === 'hidden', 'but is invisible');
+    a.scroller.scrollWidth = 300; a.listeners.win.resize(); b.listeners.win.resize();
+    assert.ok(a.cue.style.display === 'none' && b.cue.style.display === 'none', 'neither overflows: no space for either');
+});
+
+test('without a group a non-overflowing cue stays display none', () => {
+    const w = fakeWorld({ value: true });
+    w.scroller.scrollWidth = 300;
+    attachScrollCue(w.scroller, { window: w.win, document: w.doc });
+    assert.ok(w.cue.style.display === 'none', 'no overflow, no group: no space');
+});
+
+test('insetToPadding aligns the cue with the scroller padding', () => {
+    const w = fakeWorld({ value: true });
+    w.win.getComputedStyle = () => ({ paddingRight: '16px' });
+    attachScrollCue(w.scroller, { window: w.win, document: w.doc, insetToPadding: true });
+    assert.ok(w.cue.style.marginRight === '16px', 'right margin equals the padding');
+    const v = fakeWorld({ value: true });
+    attachScrollCue(v.scroller, { window: v.win, document: v.doc });
+    assert.ok(v.cue.style.marginRight === undefined, 'no inset unless asked');
+});

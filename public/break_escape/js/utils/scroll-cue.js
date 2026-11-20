@@ -33,6 +33,10 @@ const CUE_STYLE = {
 };
 
 // Attach a cue for `scroller` (an overflow-x:auto element). Returns { update, destroy, cue }.
+// opts.group: an array shared by side-by-side scrollers. When any member overflows every member's
+// cue takes its line (the others visibility:hidden), so paired panels keep their headers level.
+// opts.insetToPadding: right margin = the scroller's own padding-right, so a cue that sits outside
+// a padded scroller lines up with the content inside it.
 export function attachScrollCue(scroller, opts = {}) {
     const doc = opts.document || scroller.ownerDocument || document;
     const win = opts.window || doc.defaultView || globalThis;
@@ -48,9 +52,17 @@ export function attachScrollCue(scroller, opts = {}) {
 
     const isPhone = () => !!(win.matchMedia && win.matchMedia(SCROLL_CUE_PHONE_QUERY).matches);
 
+    const overflowsNow = (el) => (el.scrollWidth - el.clientWidth) > END_SLACK_PX;
+    const group = Array.isArray(opts.group) ? opts.group : null;
+    if (group) group.push(scroller);
+
     function update() {
         const phone = isPhone();
-        const overflows = (scroller.scrollWidth - scroller.clientWidth) > END_SLACK_PX;
+        const overflows = group ? group.some(overflowsNow) : overflowsNow(scroller);
+        if (opts.insetToPadding && typeof win.getComputedStyle === 'function') {
+            const pr = parseFloat(win.getComputedStyle(scroller).paddingRight);
+            cue.style.marginRight = (pr > 0 ? pr : 0) + 'px';
+        }
         const more = shouldShowScrollCue({
             isPhone: phone,
             scrollLeft: scroller.scrollLeft,
@@ -94,6 +106,7 @@ export function attachScrollCue(scroller, opts = {}) {
             if (pendingFrame) { cancelFrame(pendingFrame); pendingFrame = 0; }
             if (observer) observer.disconnect();
             if (mutations) mutations.disconnect();
+            if (group) { const i = group.indexOf(scroller); if (i >= 0) group.splice(i, 1); }
             cue.remove();
         }
     };

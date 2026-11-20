@@ -6,6 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
 for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {};
@@ -218,4 +219,10 @@ test('scroll events are coalesced to one update per animation frame and cancelle
     assert.ok(frames.length === 1, 'a new scroll queues a new frame');
     h.destroy();
     assert.ok(cancelled.length === 1, 'destroy cancels the pending frame');
+});
+
+test('drug library wiring: diff cues share one group and the panel cue insets to padding', () => {
+    const src = readFileSync(new URL('../../public/break_escape/js/minigames/drug-library-integrity/drug-library-integrity-minigame.js', import.meta.url), 'utf8');
+    assert.ok(/attachScrollCue\(el, \{ group \}\)/.test(src), 'diff panels share a group');
+    assert.ok(/attachScrollCue\(panel, \{ insetToPadding: true \}\)/.test(src), 'non-diff cue insets to the panel padding');
 });

@@ -183,7 +183,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
         // Old cues sit on elements the render below replaces: drop them first.
         this._destroyScrollCues();
         // The diff tab's panel does not overflow; its two diff panels carry their own cues.
-        if (tabId !== 'diff') this._scrollCue = attachScrollCue(panel);
+        if (tabId !== 'diff') this._scrollCue = attachScrollCue(panel, { insetToPadding: true });
         panel.scrollLeft = 0;
 
         switch (tabId) {
@@ -202,8 +202,10 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
     // Each diff panel scrolls itself sideways, so each gets its own cue (the outer panel does not overflow).
     _attachDiffCues(panel) {
+        // One shared group: if either panel overflows both cues take their line, so the headers stay level.
+        const group = [];
         this._diffScrollCues = Array.from(panel.querySelectorAll('.dli-diff-panel'))
-            .map(el => attachScrollCue(el));
+            .map(el => attachScrollCue(el, { group }));
     }
 
     _enableTab(tabId) {
