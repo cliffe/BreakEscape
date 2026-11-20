@@ -18,8 +18,11 @@
 // 0.65 s. If only the hit test is unmet then, the run hands over to the X report so an off-screen,
 // frame-clipped or covered X gets its specific message, and counts as a failure. This keeps --legacy
 // (which moves the X on most of the 180 X cases of 240) well under the 900 s test limit.
-// Each page sample has a 2 s timeout (a stalled page cannot hang the run), and 10 cases in a row with no
-// shell and no thrown error stop the run with exit 2 (a broken build or a knocked-out player).
+// Every page call has a timeout, so a stalled page cannot hang the run: a sample 2 s, startMinigame 30 s,
+// the openError read 5 s, xReport 10 s (all counted failures), forceClose 5 s (logged, the run carries on)
+// and browser.close() 10 s on the guard's way out. 10 cases in a row with no shell and no thrown error
+// (including samples that timed out) stop the run with exit 2 (a broken build, a knocked-out player or
+// a page that has stopped answering).
 // Trade-off: an X covered by something that clears within the 1.5 s hit window passes (the old fixed
 // 1.2 s wait failed it if still covered at 1.2 s); an X covered for longer fails.
 //
@@ -209,6 +212,26 @@ export const SETTLE_MS = 400;
 export const MIN_AFTER_OPEN_MS = 600;
 export const SAMPLE_TIMEOUT_MS = 2000;
 export const MISSING_LIMIT = 10;
+export const START_TIMEOUT_MS = 30000;
+export const OPENERR_TIMEOUT_MS = 5000;
+export const REPORT_TIMEOUT_MS = 10000;
+export const CLOSE_TIMEOUT_MS = 5000;
+export const BROWSER_CLOSE_TIMEOUT_MS = 10000;
+
+// Pure (m2): await a page call under a timeout. Resolves { value }, { timedOut: true } or { error }.
+export async function timedEval(promise, ms) {
+    const TIMED_OUT = Symbol('timeout');
+    try {
+        const v = await withTimeout(promise, ms, TIMED_OUT);
+        return v === TIMED_OUT ? { timedOut: true } : { value: v };
+    } catch (e) { return { error: String((e && e.message) || e) }; }
+}
+
+// Pure (m3): does this open result count towards the guard (no shell, no thrown error)? A sample that
+// timed out has shell:false, so it counts too.
+export function isMissingCase(o) {
+    return !!o && o.kind === 'fail' && !(o.sample && o.sample.shell);
+}
 
 // Pure: race a promise against a timer (m4). Resolves with `fallback` if it takes longer than ms.
 export function withTimeout(promise, ms, fallback) {
@@ -229,6 +252,10 @@ export function makeMissingGuard(limit = MISSING_LIMIT) {
 // finds no shell or no X.
 export function tally(o, r, issues = []) {
     if (!o.ready && !o.notOpen && !o.hitOnly) return { checked: 1, fail: true, text: `FAIL ${o.message}` };
+    if (r && r.timedOut) return { checked: 1, fail: true, text: `FAIL xReport did not answer within ${REPORT_TIMEOUT_MS} ms` };
+    // m1: a ready case had a shell and (unless hadX is false) an X a moment ago; losing either is a failure.
+    if (o.ready && (!r || !r.open)) return { checked: 1, fail: true, text: 'FAIL the shell was gone when the X was measured' };
+    if (o.ready && r.noX && o.hadX === true) return { checked: 1, fail: true, text: 'FAIL the X was hidden when it was measured' };
     if (!r || !r.open) {
         if (o.hitOnly) return { checked: 1, fail: true, text: `FAIL after the open wait: ${o.message} (shell gone when measured)` };
         return { checked: 0, fail: false, text: '(not open)' };
@@ -260,24 +287,34 @@ async function main() {
     const skipped = new Set((opt('skip', 'person-chat,network-view') || '').split(','));
     let fails = 0, checked = 0;
     const missingGuard = makeMissingGuard();
+    const stopIfGuard = async (o, s) => {
+        if (!missingGuard(isMissingCase(o))) return false;
+        console.error(`SHELL-X-CHECK stopped: ${MISSING_LIMIT} cases in a row had no minigame shell and no thrown error (last: ${s}). Broken build, knocked-out player or a page that stopped answering? ${checked} checked, ${fails} failed so far.`);
+        const c = await timedEval(browser.close(), BROWSER_CLOSE_TIMEOUT_MS);
+        if (c.timedOut) console.error('browser.close() did not return in time; exiting anyway');
+        process.exit(2);
+    };
     const openScene = async (s) => {
-        await page.evaluate(async ({ s, p }) => {
+        const started = await timedEval(page.evaluate(async ({ s, p }) => {
             try { window.MinigameFramework.forceCloseMinigame?.(); } catch { /* none */ }
             document.querySelectorAll('.minigame-container').forEach(n => n.remove());
             await new Promise(r => setTimeout(r, 250));
             window.__openError = null;
             try { await window.MinigameFramework.startMinigame(s, null, p); } catch (e) { window.__openError = String(e.message || e); }
-        }, { s, p: PARAMS[s] || { title: s } });
+        }, { s, p: PARAMS[s] || { title: s } }), START_TIMEOUT_MS);
+        if (started.timedOut || started.error) {
+            const why = started.timedOut ? `startMinigame did not return within ${START_TIMEOUT_MS} ms` : `the page call failed: ${started.error}`;
+            const o = { kind: 'fail', sample: { shell: false } };
+            if (await stopIfGuard(o, s)) return null;
+            return { ready: false, message: `${s}: ${why}` };
+        }
         // Condition wait in place of a fixed delay (budget in the header).
-        const openError = await page.evaluate(() => window.__openError || null);
+        const oe = await timedEval(page.evaluate(() => window.__openError || null), OPENERR_TIMEOUT_MS);
+        const openError = oe.value || null;
         const sampleFn = () => withTimeout(page.evaluate(xSample).catch(() => ({ shell: false, sampleTimeout: true })), SAMPLE_TIMEOUT_MS, { shell: false, sampleTimeout: true });
         const o = await waitForOpen({ scene: s, sampleFn, now: () => Date.now(), sleep: (ms) => page.waitForTimeout(ms), openError });
-        if (missingGuard(o.kind === 'fail' && !(o.sample && o.sample.shell))) {
-            console.error(`SHELL-X-CHECK stopped: ${MISSING_LIMIT} cases in a row had no minigame shell and no thrown error (last: ${s}). Broken build or knocked-out player? ${checked} checked, ${fails} failed so far.`);
-            await browser.close();
-            process.exit(2);
-        }
-        if (o.kind === 'ready') return { ready: true };
+        if (await stopIfGuard(o, s)) return null;
+        if (o.kind === 'ready') return { ready: true, hadX: !!(o.sample && !o.sample.noX) };
         if (o.kind === 'notOpen') return { ready: false, notOpen: true };
         if (o.kind === 'report') return { ready: false, hitOnly: true, message: o.message };
         return { ready: false, message: o.message };
@@ -288,13 +325,18 @@ async function main() {
             await page.setViewportSize({ width: w, height: h });
             const o = await openScene(s);
             const tag = `${s} ${w}x${h}`;
-            const r = (o.ready || o.hitOnly) ? await page.evaluate(xReport) : null;
+            let r = null;
+            if (o.ready || o.hitOnly) {
+                const rr = await timedEval(page.evaluate(xReport), REPORT_TIMEOUT_MS);
+                r = rr.timedOut ? { timedOut: true } : rr.error ? { open: false } : rr.value;
+            }
             const issues = r && r.results ? r.results.flatMap(x => x.issues.map(i => `${x.label}: ${i}`)) : [];
             const t = tally(o, r, issues);
             checked += t.checked; if (t.fail) fails++;
             console.log(`${tag.padEnd(40)} ${t.text}`);
         }
-        try { await page.evaluate(() => window.MinigameFramework.forceCloseMinigame?.()); } catch { /* ignore */ }
+        const fc = await timedEval(page.evaluate(() => window.MinigameFramework.forceCloseMinigame?.()), CLOSE_TIMEOUT_MS);
+        if (fc.timedOut) console.log(`${s}: forceCloseMinigame did not return within ${CLOSE_TIMEOUT_MS} ms, carrying on`);
     }
     // PIN pad: a wrapped wrong-code message must not move the keys (m2)
     if (scenes.includes('pin')) {

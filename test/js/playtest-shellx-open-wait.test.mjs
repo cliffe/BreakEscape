@@ -1,7 +1,7 @@
 // shell-x-check open wait: pure condition logic, the decision function and the wait loop with a fake
 // clock and sampler (the in-page sampler is proven live by the full run).
 import assert from 'node:assert/strict';
-import { unmetConditions, openTimeoutMessage, openOutcome, waitForOpen, OPEN_TIMEOUT_MS, HIT_TIMEOUT_MS, SETTLE_MS, MIN_AFTER_OPEN_MS, withTimeout, makeMissingGuard, tally, MISSING_LIMIT } from '../../tools/playtest/shell-x-check.mjs';
+import { unmetConditions, openTimeoutMessage, openOutcome, waitForOpen, OPEN_TIMEOUT_MS, HIT_TIMEOUT_MS, SETTLE_MS, MIN_AFTER_OPEN_MS, withTimeout, makeMissingGuard, tally, MISSING_LIMIT, isMissingCase, timedEval } from '../../tools/playtest/shell-x-check.mjs';
 
 const ready = { shell: true, visible: true, stable: true, xStable: true, rects: 'same', noX: false, hitOk: true, hitHtml: '<button>' };
 assert.ok(unmetConditions(ready).length === 0, 'a visible, stable shell with the X on top is ready');
@@ -102,4 +102,35 @@ assert.ok(g(true) === true, 'the tenth consecutive miss trips');
 const g2 = makeMissingGuard(3); g2(true); g2(true); g2(false);
 assert.ok(g2(true) === false, 'a case with a shell resets the run');
 assert.ok(MISSING_LIMIT === 10, 'limit is 10');
+
+// R3 m1: a ready case whose xReport finds no shell, or no X where the sample had one, is a failure
+const lostShell = T({ ready: true, hadX: true }, { open: false });
+assert.ok(lostShell.fail === true && lostShell.checked === 1 && /gone/.test(lostShell.text), 'ready then shell gone is a counted failure');
+assert.ok(T({ ready: true }, null).fail === true, 'ready with no xReport result is a failure');
+const lostX = T({ ready: true, hadX: true }, { open: true, noX: true });
+assert.ok(lostX.fail === true && lostX.checked === 1 && /hidden/.test(lostX.text), 'ready then X hidden is a counted failure');
+assert.ok(T({ ready: true, hadX: false }, { open: true, noX: true }).fail === false, 'a scene that never had an X still passes');
+assert.ok(T({ ready: true, hadX: true }, { timedOut: true }).fail === true, 'an xReport timeout is a counted failure');
+
+// R3 m2: page calls under a timeout
+const t1 = await timedEval(new Promise(() => {}), 30);
+assert.ok(t1.timedOut === true, 'a call that never answers reports timedOut');
+const t2 = await timedEval(Promise.resolve(5), 1000);
+assert.ok(t2.value === 5 && !t2.timedOut, 'a prompt call returns its value');
+const t3 = await timedEval(Promise.reject(new Error('dead page')), 1000);
+assert.ok(/dead page/.test(t3.error), 'a rejected call reports the error');
+const t4 = await timedEval(Promise.resolve(undefined), 1000);
+assert.ok(!t4.timedOut && !t4.error, 'an undefined result is not a timeout');
+
+// R3 m3: the guard predicate, and a sample timeout counting as "no shell"
+const timedOutCase = { kind: 'fail', sample: { shell: false, sampleTimeout: true }, message: 'm' };
+assert.ok(isMissingCase(timedOutCase) === true, 'a sample timeout counts as no shell');
+assert.ok(isMissingCase({ kind: 'fail', sample: { shell: true } }) === false, 'a failure with a shell does not count');
+assert.ok(isMissingCase({ kind: 'notOpen' }) === false && isMissingCase({ kind: 'ready', sample: { shell: true } }) === false, 'notOpen and ready do not count');
+const g3 = makeMissingGuard(MISSING_LIMIT);
+let stop = false; for (let i = 0; i < MISSING_LIMIT; i++) stop = g3(isMissingCase(timedOutCase));
+assert.ok(stop === true, 'ten sample timeouts in a row give the guard stop');
+const g4 = makeMissingGuard(MISSING_LIMIT);
+let stop4 = false; for (let i = 0; i < MISSING_LIMIT - 1; i++) stop4 = g4(isMissingCase(timedOutCase));
+assert.ok(stop4 === false && g4(isMissingCase({ kind: 'ready', sample: { shell: true } })) === false, 'nine then a good case does not stop');
 console.log('playtest-shellx-open-wait ok');
