@@ -1,0 +1,13 @@
+{
+  "key": "92d4fa43ae0924dae2ce97448b79df52",
+  "npc": "kit_thandiwe_moyo",
+  "text": "Anyone seen the scale rule?",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:19:46Z"
+}

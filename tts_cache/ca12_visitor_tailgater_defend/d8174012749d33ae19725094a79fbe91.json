@@ -1,0 +1,13 @@
+{
+  "key": "d8174012749d33ae19725094a79fbe91",
+  "npc": "kit_julian_sallow",
+  "text": "Kettle's calling. Time for a brew, I think.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:20:00Z"
+}
