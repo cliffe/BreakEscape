@@ -147,9 +147,12 @@ test('X8: the shared window has one title bar with the X inside it, a 9-slice fr
 export function consoleWindowFullHeightRules(sheet) {
     const out = [];
     for (const m of sheet.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const sel = m[1].replace(/@media[^{]*$/, '').trim();
-        if (!/\.console-window(?![\w-])/.test(sel) || /\.console-window-fill/.test(sel)) continue;
-        if (/(^|[;\s])height:\s*100%/.test(m[2])) out.push(sel);
+        const list = m[1].replace(/@media[^{]*$/, '').trim();
+        if (!/(^|[;\s])height:\s*100%/.test(m[2])) continue;
+        // Each selector in a list is judged on its own: `.console-window, .console-window-fill` still hits the wrap window.
+        for (const sel of list.split(',').map((x) => x.trim())) {
+            if (/\.console-window(?![\w-])/.test(sel) && !/\.console-window-fill/.test(sel)) out.push(sel);
+        }
     }
     return out;
 }
@@ -160,6 +163,9 @@ test('X8: no rule except the fill pair gives .console-window height 100%, in any
     // The scan itself must catch the regression it guards against, in any later block.
     const bad = fw + '\n@media (max-height: 500px) {\n .console-window {\n  height: 100%;\n }\n}\n';
     assert.equal(consoleWindowFullHeightRules(bad).length, 1, 'a later phone block with height 100% is caught');
+    const listed = fw + '\n@media (max-width: 600px) {\n .console-window, .console-window.console-window-fill {\n  height: 100%;\n }\n}\n';
+    assert.equal(consoleWindowFullHeightRules(listed).length, 1, 'a selector list naming the wrap window and the fill window is caught');
+    assert.deepEqual(consoleWindowFullHeightRules(fw + '\n@media (max-width: 600px) {\n .console-window.console-window-fill {\n  height: 100%;\n }\n}\n'), [], 'the fill rule alone passes');
     assert.equal(consoleWindowFullHeightRules(fw.replace('.console-window.console-window-fill {\n        height: 100%;', '.console-window {\n        height: 100%;')).length, 1, 'the fill rule losing its class is caught');
     for (const f of readdirSync(join(root, 'css')).filter((n) => n.endsWith('.css') && n !== 'minigames-framework.css')) {
         assert.ok(!/\.console-window(?![\w-])/.test(css(f)), `${f} does not restyle .console-window`);
