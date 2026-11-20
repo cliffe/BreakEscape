@@ -37,7 +37,7 @@ VAR hub_quiet = false
             Chidi Okeke: To the people who send these, one scan is a card to drain or a sign-in to walk in behind, and you handed them neither.
         - else:
             Chidi Okeke: Trust a code like that and it can empty a colleague's card, or hand over a sign-in they spend the next day winning back.
-            Chidi Okeke: To the people who send these, one scan is a card to drain or a sign-in to walk in behind, and a new-number text keeps them in your pocket.
+            Chidi Okeke: To whoever sends these, one scan is a card to drain or a sign-in to walk in behind, and a text from a new number keeps the thread going.
         }
         ~ kit_ca06_host_said = true
     - else:

@@ -53,7 +53,7 @@ VAR hub_quiet = false
                 Gwen Pritchard: You caught the one that mattered, the request leaning on the assistant's summary, before it turned into a payment or a shared list.
             }
         - else:
-            Gwen Pritchard: The assistant sounded certain, which is the whole trap, so a small invoice slipped out or the customer list went down a staged call.
+            Gwen Pritchard: The assistant sounded certain, which is the whole trap, so a small invoice slipped out, or the customer list went out on a staged call.
         }
         Gwen Pritchard: When something wants money moved or a list shared, check it on a route you already trust, never through the assistant.
         ~ kit_ca13_host_said = true

@@ -38,7 +38,7 @@ VAR hub_quiet = false
         - else:
             Nilesh Solanki: A deadline makes the quick route look obvious, but that's the one that lands a client's whole file somewhere we can't reach.
         }
-        Nilesh Solanki: Report a found stick or a tool that feels too slow to me. Don't route round it, even for a deadline.
+        Nilesh Solanki: Bring a found stick, or a tool that feels too slow, to me. Don't route round it, even for a deadline.
         ~ kit_ca15_host_said = true
     - else:
     { episode_e15_shadow_it_defend_complete:
