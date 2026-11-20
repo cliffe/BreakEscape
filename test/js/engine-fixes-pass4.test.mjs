@@ -53,7 +53,8 @@ const helpersUrl = copy('utils/helpers.js', 'helpers.mjs', [
     ["'./crypto-workstation.js'", "'./crypto-stub.mjs'"],
     ["'./lab-workstation.js'", "'./lab-stub.mjs'"],
 ]);
-const tutorialUrl = copy('systems/tutorial-manager.js', 'tutorial-manager.mjs');
+copy('ui/hud-lanes.js', 'hud-lanes.mjs');
+const tutorialUrl = copy('systems/tutorial-manager.js', 'tutorial-manager.mjs', [["'../ui/hud-lanes.js'", "'./hud-lanes.mjs'"]]);
 stub('constants-stub.mjs', 'export const TILE_SIZE = 32;');
 stub('pathfinding-stub.mjs', 'export class NPCPathfindingManager {}');
 copy('config/combat-config.js', 'combat-config.mjs');

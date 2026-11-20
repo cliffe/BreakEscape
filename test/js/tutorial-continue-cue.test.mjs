@@ -63,7 +63,8 @@ globalThis.setInterval = (fn) => { ticks.push(fn); return ticks.length; };
 globalThis.clearInterval = (id) => { ticks[id - 1] = null; };
 const tick = () => ticks.slice().forEach(fn => fn && fn());
 
-const { TutorialManager } = await import(dataUrl(readFileSync(join(js, 'systems/tutorial-manager.js'), 'utf8')));
+const { TutorialManager } = await import(dataUrl(readFileSync(join(js, 'systems/tutorial-manager.js'), 'utf8')
+    .split("'../ui/hud-lanes.js'").join(`'${dataUrl(readFileSync(join(js, 'ui/hud-lanes.js'), 'utf8'))}'`)));
 
 async function begin(touch = false) {
     ticks = [];
