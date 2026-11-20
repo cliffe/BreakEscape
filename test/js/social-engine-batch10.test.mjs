@@ -193,7 +193,7 @@ test('batch-10 (E17 B2): the debrief recaps the wrong-bin sort-drill cards with 
 test('batch-10: no drillRecap draws nothing and adds no getState key', () => {
     const h = document.createElement('div');
     const d = renderDebrief(h, { result: recapResult, set: recapSet, variant: 'defendOnly', onFinish() {} });
-    assert.equal(h.querySelector('.aw-drill-recap'), null);
+    assert.ok(h.querySelector('.aw-drill-recap') === null);
     assert.equal('drillRecap' in d.getState(), false);
 });
 

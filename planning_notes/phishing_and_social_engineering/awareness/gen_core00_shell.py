@@ -4,8 +4,7 @@ awareness/core00/defend.json, core00/ink/anjali_rao.ink and core00/WIRING_NOTES.
 
 A small sibling of gen_annual_shells.py (and gen_e8_e17_shells.py) (implementation/01_PIPELINE.md P4): the helpers are copied,
 not imported, so neither generator can change the other's shells. Same safety rules:
-  - the repo comes from --repo <path> or the BREAKESCAPE_REPO environment variable, falling back to
-    this script's own path (right only when it is run from awareness/ in the real checkout);
+  - the repo comes from --repo <path>, else the checkout this script sits in (no environment variable);
   - the output folder is a required argument: there is no default into scenarios/.
 
 The fragment holds the whole awarenessEpisode block (ENG-10 variant brief, seven briefCards, doneGlobal,
@@ -25,18 +24,7 @@ import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
 
-def _arg_repo():
-    argv = sys.argv[1:]
-    if '--repo' in argv:
-        i = argv.index('--repo')
-        repo = argv[i + 1]
-        del argv[i:i + 2]
-        sys.argv[1:] = argv
-        return repo
-    return os.environ.get('BREAKESCAPE_REPO') or str(Path(__file__).resolve().parents[3])
-
-
-REPO = _arg_repo()
+REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
 GEN = 'planning_notes/phishing_and_social_engineering/awareness/gen_core00_shell.py'
 
@@ -380,6 +368,8 @@ def build():
         ("You're set", "That's the brief. Start your first episode whenever you're ready."))
     # scenario() keys the kiosk's "done" variant on episode_<id>_defend_done; a brief has none, so use DONE.
     for o in sc['rooms']['training_room']['objects']:
+        if o.get('type') != 'kiosk':     # only the kiosk's variants; kit objects carry their own
+            continue
         for v in o.get('observationVariants', []):
             v['condition'] = f'globalVars.{DONE}'
     ink = open(f'{AW}/core00/ink/anjali_rao.ink').read()
@@ -387,9 +377,7 @@ def build():
 
 
 def main():
-    if len(sys.argv) < 2:
-        sys.exit('usage: gen_core00_shell.py [--repo <checkout>] <out_dir>')
-    out = sys.argv[1]
+    out = awareness_deploy.required_out_dir('gen_core00_shell.py')
     mission, sc, meta, ink_name, ink = build()
     d = os.path.join(out, mission)
     os.makedirs(os.path.join(d, 'ink'), exist_ok=True)

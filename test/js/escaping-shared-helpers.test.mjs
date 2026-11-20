@@ -44,7 +44,7 @@ function fresh() {
 }
 
 function assertNoInjection(root, label) {
-    assert.equal(root.querySelector('img, script, a, u, [onerror], [class="x"]'), null, `${label}: nothing injected`);
+    assert.ok(root.querySelector('img, script, a, u, [onerror], [class="x"]') === null, `${label}: nothing injected`);
     assert.equal(window.__pwned, undefined, `${label}: no handler ran`);
 }
 
@@ -110,7 +110,7 @@ test('authorHtml: every other tag, any attribute and an entity-encoded tag stay 
     const div = document.createElement('div');
     div.innerHTML = authorHtml(`${HOSTILE} <strong class="x">s</strong> <b onclick="x()">b</b> &lt;em&gt;lit&lt;/em&gt; <em>open`);
     assertNoInjection(div, 'authorHtml');
-    assert.equal(div.querySelector('strong, b, em'), null, 'a tag with an attribute or no partner is not restored');
+    assert.ok(div.querySelector('strong, b, em') === null, 'a tag with an attribute or no partner is not restored');
     assert.ok(div.textContent.includes('<img src=x onerror="window.__pwned=1">'));
     assert.ok(div.textContent.includes('<em>lit</em>'), 'an encoded tag reads as the characters');
     assert.ok(div.textContent.includes('<em>open'));
@@ -204,7 +204,7 @@ test('VM launcher: a refused panel URL in Hacktivity mode says the panel is unav
     assert.equal(mg.vmPanelUrl, null);
     assert.equal(mg.vmPanelRefused, true);
     box.appendChild(mg.buildVmDisplay());
-    assert.equal(box.querySelector('a'), null, 'no link');
+    assert.ok(box.querySelector('a') === null, 'no link');
     assert.match(box.textContent, /VM panel unavailable\./);
     assert.doesNotMatch(box.textContent, /VirtualBox|click the console button/);
     assert.equal(box.textContent.includes('evil.com'), false, 'the refused value is not shown');
@@ -222,9 +222,9 @@ test('VM launcher: a javascript: panel URL gives no console link and no iframe',
     const mg = new VmLauncherMinigame(box, { vm: { title: 'Kali', ip: '10.0.0.5' }, hacktivityMode: true });
     assert.equal(mg.vmPanelUrl, null);
     box.appendChild(mg.buildVmDisplay());
-    assert.equal(box.querySelector('a'), null, 'no link');
+    assert.ok(box.querySelector('a') === null, 'no link');
     try { mg.buildUI(); } catch { /* the standalone card needs more of the page */ }
-    assert.equal(document.querySelector('iframe'), null, 'no iframe');
+    assert.ok(document.querySelector('iframe') === null, 'no iframe');
     assert.equal(window.__pwned, undefined);
 });
 

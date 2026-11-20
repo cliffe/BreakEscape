@@ -141,7 +141,7 @@ test('person chat: Keep going takes nothing; End the mission now takes the choic
     const c2 = personChat(tagged);
     c2.handleChoice(0);
     assert.deepEqual(c2.taken, [0]);
-    assert.equal(document.getElementById(E.ENDING_CHECK_ID), null);
+    assert.ok(document.getElementById(E.ENDING_CHECK_ID) === null);
     // An untagged choice never asks
     fresh();
     window.objectivesManager = manager(['opt_a']);
@@ -239,7 +239,7 @@ test('End the mission now (any trigger) is saved: after a simulated reload the c
     window.gameState = { globalVariables: saved };
     assert.equal(E.endingNeedsAnswer({ manager: manager(['opt_a']) }), false);
     assert.equal(await E.confirmEnding({ reason: 'credits' }, { manager: manager(['opt_a']) }), true);
-    assert.equal(document.getElementById(E.ENDING_CHECK_ID), null);
+    assert.ok(document.getElementById(E.ENDING_CHECK_ID) === null);
     // An objective that opens later is still asked about
     assert.equal(E.endingNeedsAnswer({ manager: manager(['opt_a', 'opt_late']) }), true);
 });

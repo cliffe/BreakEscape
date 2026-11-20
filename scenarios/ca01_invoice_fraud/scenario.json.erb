@@ -6,6 +6,7 @@
   "endGoal": "Send the email in Derek's name, then sort the payments inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -52,7 +53,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Invoice fraud: finished",
-        "body": "You've seen both sides of invoice fraud and worked through the payments inbox. That's this episode finished. The debrief goes through each one."
+        "body": "You've seen both sides of invoice fraud and worked through the payments inbox. That's this episode finished. The debrief stays on the kiosk if you want another look."
       },
       "tasks": [
         {
@@ -76,7 +77,26 @@
     "se_intel_brightwell_open_invoice": false,
     "se_intel_brightwell_quarter_end": false,
     "phish_supplier_contact_landed": false,
-    "phish_supplier_contact_attempts": 0
+    "phish_supplier_contact_attempts": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca01",
+    "kit_ca01_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_brightwell": {
+      "lines": [
+        "Busy inbox today.",
+        "Kettle's on in a sec.",
+        "Audit week again."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -104,7 +124,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e1_invoice_fraud_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e1_lookalike_bank": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -368,7 +391,11 @@
         "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
         "noBlameLine": "Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one. A miss here just shows where to look next time.",
         "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email using the route in the box below.",
-        "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
+        "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "conceptPanel": {
+          "heading": "Where that email leads",
+          "text": "To a real attacker, the change you sent to the payments inbox is a supplier payment redirected to an account they control. One believable email is all it takes to move a scheduled run. Within hours the money is drawn out and moved on through other accounts, long before the real supplier rings to ask where their payment is. The call back in this exercise is what breaks that chain. Ring a number you already hold before any change to a payee, and the new details never reach the file.\n\nWhen a change like this is saved instead, the run pays the wrong account (£6,412.80 on this invoice), and finance spend the next fortnight chasing the bank and the real supplier to put it right. Before you leave, take a look around the office and have a word with Adaeze."
+        }
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -834,8 +861,152 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_payments_inbox"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_complete",
+              "condition": "value === true && globalVars.episode_e1_invoice_fraud_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "person": "agnieszka_duda",
+          "npcType": "person",
+          "position": {
+            "x": 6,
+            "y": 4
+          },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/agnieszka_duda_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 6,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Callirrhoe",
+            "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Long week.",
+                "Any biscuits left?",
+                "Just need a top-up."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_gwen_pritchard",
+          "displayName": "Gwen Pritchard",
+          "person": "gwen_pritchard",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "spriteSheet": "gwen_pritchard",
+          "spriteTalk": "assets/characters/gwen_pritchard_talk.png",
+          "spriteVisemes": "assets/characters/gwen_pritchard_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/gwen_pritchard_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Sulafat",
+            "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Anyone for a brew?",
+                "Tea round shortly?",
+                "Kettle's just boiled."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -857,6 +1028,59 @@
           "minigameData": {
             "episodeId": "e1_invoice_fraud"
           }
+        },
+        {
+          "type": "coffee_station",
+          "id": "kit_coffee",
+          "name": "Coffee station",
+          "sprite": "coffee_station1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office coffee station. Staff drift over for a top-up.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 30,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_brightwell"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A water cooler by the far wall.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          }
+        },
+        {
+          "type": "notice_board1",
+          "id": "kit_ca01_notice",
+          "name": "Payments team notice",
+          "sprite": "notes6",
+          "wallMounted": true,
+          "position": {
+            "x": 4.03125,
+            "y": 0.6875
+          },
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_defend_done",
+          "observations": "A notice the payments team taped to the wall about an earlier case: a supplier redirect that got through last spring. The run paid an account that wasn't the supplier's, and finance spent weeks getting the money back from the bank."
         }
       ]
     }

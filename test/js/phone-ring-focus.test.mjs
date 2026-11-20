@@ -48,7 +48,7 @@ test('m4: Answer on a keyboard-focused banner button moves focus to the new pill
         w.click('.incoming-call-answer');
         await w.advance(100);
         assert.ok(hangOf(doc), 'pill has Hang up');
-        assert.equal(doc.activeElement, hangOf(doc), 'focus is on Hang up, not body');
+        assert.ok(doc.activeElement === hangOf(doc), 'focus is on Hang up, not body');
     } finally { w.restore(); }
 });
 
@@ -61,8 +61,8 @@ test('M1: a mouse-focused Answer does not hand focus to Hang up; focus drops to 
         w.click('.incoming-call-answer');
         await w.advance(100);
         assert.ok(hangOf(doc), 'pill shown');
-        assert.notEqual(doc.activeElement, hangOf(doc), 'Hang up does not take focus after a mouse click');
-        assert.equal(doc.activeElement, doc.body);
+        assert.ok(doc.activeElement !== hangOf(doc), 'Hang up does not take focus after a mouse click');
+        assert.ok(doc.activeElement === doc.body);
     } finally { w.restore(); }
 });
 
@@ -74,7 +74,7 @@ test('M1: a mouse-focused ring button taken down does not move focus into the mi
         focusVisible = false;
         w.click('.incoming-call-decline');
         await w.advance(100);
-        assert.equal(doc.activeElement, doc.body);
+        assert.ok(doc.activeElement === doc.body);
     } finally { w.restore(); }
 });
 
@@ -99,7 +99,7 @@ test('m4/n4: taking the focused ring down hands focus to the first control that 
         hangOf(doc).focus();
         hangOf(doc).click();
         await w.advance(100);
-        assert.equal(doc.querySelector('#phone-ring-layer .incoming-call'), null, 'ring gone');
+        assert.ok(doc.querySelector('#phone-ring-layer .incoming-call') === null, 'ring gone');
         assert.equal(doc.activeElement.id, 'kp-1', 'not #minigame-close, not the disabled key');
     } finally { w.restore(); }
 });
@@ -126,8 +126,8 @@ test('m4: with no minigame open nothing is forced', async () => {
         doc.querySelector('.incoming-call-decline').focus();
         w.click('.incoming-call-decline');
         await w.advance(100);
-        assert.equal(doc.querySelector('#phone-ring-layer .incoming-call'), null);
-        assert.equal(doc.activeElement, doc.body);
+        assert.ok(doc.querySelector('#phone-ring-layer .incoming-call') === null);
+        assert.ok(doc.activeElement === doc.body);
     } finally { w.restore(); }
 });
 
@@ -169,7 +169,7 @@ test('m1/m3: a banner re-render keeps the same control focused for the same call
         await w.advance(100);
         const now = doc.querySelector('.incoming-call-decline');
         assert.ok(now && now !== old, 'the banner was rebuilt');
-        assert.equal(doc.activeElement, now, 'Decline kept keyboard focus');
+        assert.ok(doc.activeElement === now, 'Decline kept keyboard focus');
     } finally { w.restore(); }
 });
 
@@ -201,7 +201,7 @@ test('M1: a mouse-focused control is not passed on by a banner re-render', async
         focusVisible = false;
         w.fw.endMinigame(false);
         await w.advance(100);
-        assert.equal(doc.activeElement, doc.body);
+        assert.ok(doc.activeElement === doc.body);
     } finally { w.restore(); }
 });
 
@@ -234,7 +234,7 @@ test('R4 m1: a repeat Enter at the minigame control focused after Decline is pre
         w.click('.incoming-call-decline');
         await w.advance(100);
         const kp = doc.getElementById('kp-1');
-        assert.equal(doc.activeElement, kp, 'focus hopped to the keypad');
+        assert.ok(doc.activeElement === kp, 'focus hopped to the keypad');
         const rep = keyEv(w, 'keydown', 'Enter', true);
         kp.dispatchEvent(rep);
         assert.equal(rep.defaultPrevented, true, 'held Enter does not press the key again');
@@ -293,7 +293,7 @@ test('R4 m1: the Answer to Hang up hop also swallows a held Enter', async () => 
         w.click('.incoming-call-answer');
         await w.advance(100);
         const hang = hangOf(doc);
-        assert.equal(doc.activeElement, hang);
+        assert.ok(doc.activeElement === hang);
         const rep = keyEv(w, 'keydown', 'Enter', true);
         hang.dispatchEvent(rep);
         assert.equal(rep.defaultPrevented, true);
@@ -317,7 +317,7 @@ test('R4 n3: when :focus-visible throws, focus is treated as keyboard and carrie
         w.click('.incoming-call-answer');
         await w.advance(100);
         assert.ok(hangOf(doc), 'pill shown');
-        assert.equal(doc.activeElement, hangOf(doc), 'keyboard assumed: Hang up kept focus');
+        assert.ok(doc.activeElement === hangOf(doc), 'keyboard assumed: Hang up kept focus');
     } finally { Elem.matches = saved; releaseKeys(w); w.restore(); }
 });
 

@@ -13,6 +13,68 @@ const TUTORIAL_DECLINED_KEY = 'tutorial_declined';
 const TUTORIAL_COMPLETED_GLOBAL = 'engine_tutorial_completed';
 const TUTORIAL_DECLINED_GLOBAL = 'engine_tutorial_declined';
 
+// Shown under the objective when a step is done. Words, not colour, carry the meaning.
+const TUTORIAL_READY_TEXT = 'Done. Press Continue (or Enter).';
+// Touch-first devices have no Enter key to press
+const TUTORIAL_READY_TEXT_TOUCH = 'Done. Tap Continue.';
+const READY_OUTLINE_PX = 4; // Continue's ready outline: 2px plus 2px offset
+
+// Dialogs that hold the keyboard while shown. Most are built once and hidden, so the
+// check below counts only the ones actually rendered. The tutorial's own panel and
+// prompt are left out on purpose (this is the same list as ui/hud-lanes.js DIALOG_SELECTORS).
+const OTHER_DIALOG_SELECTOR = '[aria-modal="true"], .game-confirm-overlay, #password-modal, ' +
+    '#player-preferences-modal, .ending-check-overlay, .success-screen-overlay';
+
+function isShown(el) {
+    if (!el) return false;
+    try {
+        if (typeof el.checkVisibility === 'function') return !!el.checkVisibility({ checkVisibilityCSS: true });
+        if (el.style && el.style.display === 'none') return false;
+        // No checkVisibility (older browsers): an element inside a display:none parent
+        // has no client rects, which its own computed style would not show
+        if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return false;
+        const cs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(el) : null;
+        return !(cs && (cs.display === 'none' || cs.visibility === 'hidden'));
+    } catch (e) {
+        return true;
+    }
+}
+
+/** Touch-only by pointer: coarse primary pointer and no fine pointer to fall back on. False without matchMedia. */
+function isTouchOnlyPointer() {
+    try {
+        const mm = window.matchMedia;
+        if (typeof mm !== 'function') return false;
+        return !!mm.call(window, '(pointer: coarse)').matches && !mm.call(window, '(any-pointer: fine)').matches;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * True on a touch-first device: touch-only by pointer (iPadOS Safari with a Mac user agent,
+ * an Android tablet in desktop mode) or a mobile user agent. A narrow window with a mouse is
+ * not touch-first (it gets the mobile steps, see detectMobile, but keeps Enter wording).
+ */
+function isTouchFirst() {
+    try {
+        if (isTouchOnlyPointer()) return true;
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    } catch (e) {
+        return false;
+    }
+}
+
+// The phone layout of ui/hud-lanes.js (isCompactViewport): there the objectives panel is a
+// sheet over the map, so the tutorial panel and it compete for space. Wider screens, touch
+// or not, have room for both. Inlined so this module needs no new import.
+function isCompactHud() {
+    return window.innerWidth < 900 || window.innerHeight <= 500;
+}
+
+// Same selector the game's key handler (core/player.js) uses for "a control has the focus"
+const FOCUSABLE_CONTROL = 'button, input, textarea, select, a[href], [contenteditable]:not([contenteditable="false"])';
+
 function readStorage(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }
 }
@@ -39,11 +101,16 @@ export class TutorialManager {
         this.currentStep = 0;
         this.steps = [];
         this.isMobile = this.detectMobile();
+        this.touchFirst = isTouchFirst();
         this.tutorialOverlay = null;
         this.onComplete = null;
         // True from the moment the game decides to ask until the player answers,
         // including the settle delay before the modal appears (isPromptOpen)
         this.promptOpen = false;
+        this.stepReady = false;
+        this.keyHandler = null;
+        // True while the panel is collapsed by this tutorial (not by the player)
+        this.collapsedObjectives = false;
 
         // Track player actions for tutorial progression
         this.playerMoved = false;
@@ -61,8 +128,8 @@ export class TutorialManager {
      * Detect if the user is on a mobile device
      */
     detectMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-            || window.innerWidth < 768;
+        // Same helper as the ready wording, plus the narrow-window rule
+        return isTouchFirst() || window.innerWidth < 768;
     }
 
     /**
@@ -166,43 +233,57 @@ export class TutorialManager {
         this.onComplete = onComplete;
         this.currentStep = 0;
 
+        // Decide the step set and the ready wording together, once per run, so a
+        // relaunch after the pointer or window changed still agrees with itself
+        this.isMobile = this.detectMobile();
+        this.touchFirst = isTouchFirst();
+
+        // Collapse the objectives panel only where it would crowd the tutorial (the compact
+        // phone layout); the objectives step then goes, since the panel is out of the way
+        const collapseObjectives = this.isMobile && isCompactHud();
+        if (!collapseObjectives) this.restoreObjectivesPanel();
+
         // Define tutorial steps based on device type
+        // Wording follows the run: touch-first devices are told to tap, never click
+        const tap = this.touchFirst;
         if (this.isMobile) {
             this.steps = [
                 {
                     title: 'Movement',
-                    instruction: 'Click or tap on the ground where you want to move. Your character will walk to that position.',
-                    objective: 'Try moving around by clicking different locations',
+                    instruction: (tap ? 'Tap' : 'Click or tap') + ' on the ground where you want to move. Your character will walk to that position.',
+                    objective: 'Try moving around by ' + (tap ? 'tapping' : 'clicking') + ' different locations',
                     checkComplete: () => this.playerMoved
                 },
                 {
                     title: 'Hold to Walk',
-                    instruction: 'Press and hold anywhere on the ground to keep walking toward your finger. Drag around to steer your character.',
+                    instruction: tap
+                        ? 'Touch and hold anywhere on the ground to keep walking toward your finger. Drag around to steer your character.'
+                        : 'Press and hold anywhere on the ground to keep walking toward the pointer. Drag around to steer your character.',
                     objective: 'Hold down and drag to walk continuously',
                     checkComplete: () => this.playerUsedHoldWalk
                 },
                 {
                     title: 'Interaction',
-                    instruction: 'Click or tap on objects, items, or characters to interact with them.',
+                    instruction: (tap ? 'Tap' : 'Click or tap') + ' on objects, items, or characters to interact with them.',
                     objective: 'Look for highlighted objects you can interact with',
                     checkComplete: () => this.playerInteracted
                 },
                 {
                     title: 'Inventory',
-                    instruction: 'Your inventory is at the bottom of the screen. Click on items like the Notepad to use them.',
-                    objective: 'Click on the Notepad in your inventory to open it',
+                    instruction: 'Your inventory is at the bottom of the screen. ' + (tap ? 'Tap' : 'Click') + ' on items like the Notepad to use them.',
+                    objective: (tap ? 'Tap' : 'Click') + ' the Notepad in your inventory to open it',
                     checkComplete: () => this.playerClickedInventoryItem
                 },
                 {
                     title: 'Combat Mode',
-                    instruction: 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.',
-                    objective: 'Tap Punch, then hold Block',
+                    instruction: tap
+                        ? 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.'
+                        : 'Clicking the ground always walks or interacts. To fight, use the buttons at the bottom right: click Punch (click again quickly for jab, jab, cross) and hold Block to guard.',
+                    objective: (tap ? 'Tap' : 'Click') + ' Punch, then hold Block',
                     checkComplete: () => this.playerToggledCombatMode && this.playerAttackedInCombatMode
                 }
             ];
 
-            // Don't add objectives step on mobile since the objectives panel is stacked under the tutorial and would be difficult to interact with - players can learn about it on desktop or discover it on their own
-            
         } else {
             this.steps = [
                 {
@@ -249,15 +330,18 @@ export class TutorialManager {
                 }
             ];
 
-            // Only add objectives step if scenario has objectives
-            if (this.hasObjectives()) {
-                this.steps.push({
-                    title: 'Objectives',
-                    instruction: 'The objectives panel in the top-left corner tracks your current tasks. Click the panel header to expand and collapse it.',
-                    objective: 'Expand and collapse the objectives panel by clicking it',
-                    checkComplete: () => this.playerToggledObjectives
-                });
-            }
+        }
+
+        // Only add objectives step if scenario has objectives and the panel stays open
+        // (on a compact phone the panel is collapsed below, so the step is dropped there)
+        if (!collapseObjectives && this.hasObjectives()) {
+            this.steps.push({
+                title: 'Objectives',
+                instruction: 'The objectives panel in the top-left corner tracks your current tasks. ' +
+                    (tap ? 'Tap' : 'Click') + ' the panel header to expand and collapse it.',
+                objective: 'Expand and collapse the objectives panel by ' + (tap ? 'tapping' : 'clicking') + ' it',
+                checkComplete: () => this.playerToggledObjectives
+            });
         }
 
         // Scenarios with attacks disabled have no combat to teach (see attacksDisabled() in player-combat.js)
@@ -265,13 +349,25 @@ export class TutorialManager {
             this.steps = this.steps.filter(step => step.title !== 'Combat Mode');
         }
 
-        // Collapse objectives panel on mobile so it doesn't obscure the tutorial
-        if (this.isMobile && window.objectivesPanel && !window.objectivesPanel.isCollapsed) {
-            window.objectivesPanel.toggleCollapse();
+        // Collapse objectives panel on a compact phone so it doesn't obscure the tutorial.
+        // setCollapsed keeps this out of the player's own toggle record and the Objectives step
+        if (collapseObjectives && window.objectivesPanel && !window.objectivesPanel.isCollapsed) {
+            window.objectivesPanel.setCollapsed(true);
+            this.collapsedObjectives = true;
         }
 
         this.createTutorialOverlay();
         this.showStep(0);
+    }
+
+    /**
+     * Reopen the objectives panel if this tutorial collapsed it. A panel the player
+     * collapsed (or reopened) themselves is left as it is.
+     */
+    restoreObjectivesPanel() {
+        if (!this.collapsedObjectives) return;
+        this.collapsedObjectives = false;
+        if (window.objectivesPanel?.isCollapsed) window.objectivesPanel.setCollapsed(false);
     }
 
     /**
@@ -292,6 +388,7 @@ export class TutorialManager {
                     <strong>Objective:</strong>
                     <span class="tutorial-objective-text"></span>
                 </div>
+                <p class="tutorial-ready" role="status" aria-live="polite"></p>
                 <div class="tutorial-actions">
                     <button class="tutorial-next" style="display: none;">Continue</button>
                 </div>
@@ -309,6 +406,105 @@ export class TutorialManager {
         this.tutorialOverlay.querySelector('.tutorial-next').addEventListener('click', () => {
             this.nextStep();
         });
+
+        // Enter continues once the step is done (see onKeyDown for when it does not)
+        if (!this.keyHandler) {
+            this.keyHandler = (event) => this.onKeyDown(event);
+            document.addEventListener('keydown', this.keyHandler);
+        }
+    }
+
+    /**
+     * True when something other than the game owns the keyboard: a minigame, a
+     * conversation, a modal (confirm, game menu, the tutorial prompt) or a focused control.
+     * Mirrors keysBelongToUi in core/player.js, plus the conversation and aria-modal checks.
+     */
+    inputBelongsToOther(event) {
+        if (window.MinigameFramework?.currentMinigame) return true;
+        if (window.currentConversationNPCId || window.currentConversationMinigameType) return true;
+        if ((window.openModalCount?.() || 0) > 0) return true;
+        if (window.gameConfirmOpen?.()) return true;
+        if (this.promptOpen) return true;
+        if (window.gameMenu?.isOpen) return true;
+        if (document.querySelectorAll) {
+            for (const dialog of document.querySelectorAll(OTHER_DIALOG_SELECTOR)) {
+                if (isShown(dialog)) return true;
+            }
+        }
+        const target = event?.target;
+        return !!(target && typeof target.closest === 'function' && target.closest(FOCUSABLE_CONTROL));
+    }
+
+    /**
+     * Enter takes the Continue button once the step is complete. Space is not bound:
+     * the game uses it to jump. A focused button (Continue itself, Skip) is left to its
+     * own Enter handling, so one press never advances twice.
+     */
+    onKeyDown(event) {
+        if (!this.active || !this.stepReady || event.key !== 'Enter') return;
+        if (event.repeat || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+        if (this.inputBelongsToOther(event)) return;
+        event.preventDefault?.();
+        this.nextStep();
+    }
+
+    /**
+     * Put the Continue button into its "ready" state: the words under the objective, a frame
+     * on the button and a short cue. The class stays so the frame stays; only the cue
+     * animation ends, after 3 steps, in CSS. Under prefers-reduced-motion it never animates.
+     */
+    setStepReady(nextButton) {
+        this.stepReady = true;
+        nextButton.classList.add('tutorial-next-ready');
+        const ready = this.tutorialOverlay?.querySelector('.tutorial-ready');
+        if (ready) ready.textContent = this.touchFirst ? TUTORIAL_READY_TEXT_TOUCH : TUTORIAL_READY_TEXT;
+        this.revealReadyCue(ready, nextButton);
+    }
+
+    /**
+     * In short windows (phone landscape) the panel scrolls and the new ready line and
+     * Continue can sit below the fold. Scroll the panel, and only the panel, by the least
+     * amount that shows the button, keeping the ready line in view if both fit. Instant
+     * (assigning scrollTop never animates), no focus change, no window scroll. Does nothing
+     * when already visible or when layout measures are unavailable (tests).
+     */
+    revealReadyCue(readyLine, nextButton) {
+        try {
+            const panel = this.tutorialOverlay?.querySelector('.tutorial-panel');
+            if (!panel || !nextButton || typeof nextButton.getBoundingClientRect !== 'function'
+                || typeof panel.getBoundingClientRect !== 'function') return;
+            if (!(panel.scrollHeight > panel.clientHeight)) return;
+            const box = panel.getBoundingClientRect();
+            const btn = nextButton.getBoundingClientRect();
+            const lineTop = readyLine && typeof readyLine.getBoundingClientRect === 'function'
+                ? readyLine.getBoundingClientRect().top : btn.top;
+            // The scrollport is the padding box: the panel's frame (border or border-image,
+            // 18px in the themed skin) is not part of it. Leave room for the button's focus
+            // outline (2px plus 2px offset).
+            const innerTop = box.top + (panel.clientTop || 0);
+            const innerBottom = innerTop + panel.clientHeight;
+            let delta = btn.bottom + READY_OUTLINE_PX - innerBottom;
+            if (!(delta > 0)) return;
+            if (lineTop - delta < innerTop) delta = Math.max(0, lineTop - innerTop);
+            if (!(delta > 0)) return;
+            panel.scrollTop += delta;
+        } catch (e) { /* cosmetic only */ }
+    }
+
+    clearStepReady() {
+        this.stepReady = false;
+        const overlay = this.tutorialOverlay;
+        overlay?.querySelector('.tutorial-next')?.classList.remove('tutorial-next-ready');
+        const ready = overlay?.querySelector('.tutorial-ready');
+        if (ready) ready.textContent = '';
+    }
+
+    removeKeyHandler() {
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
+            this.keyHandler = null;
+        }
+        this.stepReady = false;
     }
 
     /**
@@ -322,6 +518,11 @@ export class TutorialManager {
 
         this.currentStep = stepIndex;
         const step = this.steps[stepIndex];
+        // A scrolled panel (phone landscape) must start the next step at the top
+        try {
+            const panel = this.tutorialOverlay?.querySelector('.tutorial-panel');
+            if (panel) panel.scrollTop = 0;
+        } catch (e) { /* cosmetic only */ }
 
         // Update UI
         const overlay = this.tutorialOverlay;
@@ -339,6 +540,7 @@ export class TutorialManager {
         // Hide next button initially
         const nextButton = overlay.querySelector('.tutorial-next');
         nextButton.style.display = 'none';
+        this.clearStepReady();
 
         // Start checking for completion
         this.checkStepCompletion(step, nextButton);
@@ -363,6 +565,7 @@ export class TutorialManager {
 
                 nextButton.style.display = 'inline-block';
                 nextButton.textContent = 'Continue →';
+                this.setStepReady(nextButton);
                 clearInterval(interval);
 
                 // Player must click Continue button to proceed
@@ -384,6 +587,8 @@ export class TutorialManager {
     complete() {
         this.active = false;
         this.markCompleted();
+        this.removeKeyHandler();
+        this.restoreObjectivesPanel();
 
         if (this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
@@ -409,18 +614,23 @@ export class TutorialManager {
      * Skip the tutorial
      */
     skip() {
-        if (confirm('Are you sure you want to skip the tutorial?')) {
-            this.active = false;
-            this.markCompleted();
+        if (!confirm('Are you sure you want to skip the tutorial?')) {
+            // Cancelled: do not leave Skip focused, or Enter would reopen this confirm
+            this.tutorialOverlay?.querySelector('.tutorial-skip')?.blur?.();
+            return;
+        }
+        this.active = false;
+        this.markCompleted();
+        this.removeKeyHandler();
+        this.restoreObjectivesPanel();
 
-            if (this.tutorialOverlay) {
-                document.body.removeChild(this.tutorialOverlay);
-                this.tutorialOverlay = null;
-            }
+        if (this.tutorialOverlay) {
+            document.body.removeChild(this.tutorialOverlay);
+            this.tutorialOverlay = null;
+        }
 
-            if (this.onComplete) {
-                this.onComplete();
-            }
+        if (this.onComplete) {
+            this.onComplete();
         }
     }
 
@@ -510,6 +720,8 @@ export class TutorialManager {
      * Notify tutorial that the player toggled the objectives panel
      */
     notifyObjectivesToggled() {
+        // The player's own toggle: the panel is theirs now, so the end of the run leaves it alone
+        this.collapsedObjectives = false;
         if (this.active) {
             this.playerToggledObjectives = true;
         }
@@ -537,6 +749,7 @@ export class TutorialManager {
             globals[TUTORIAL_DECLINED_GLOBAL] = false;
         }
 
+        this.removeKeyHandler();
         if (this.active && this.tutorialOverlay) {
             document.body.removeChild(this.tutorialOverlay);
             this.tutorialOverlay = null;

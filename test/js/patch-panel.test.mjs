@@ -259,7 +259,7 @@ test('the panel draws 24 ports with text labels, a legend row and the shared dev
     assert.equal(port(5).dataset.state, 'unpatched');
     assert.equal(port(9).dataset.state, 'empty');
     assert.equal(document.querySelectorAll('.patch-panel-key').length, LEGEND.length);
-    assert.equal(document.querySelector('.minigame-controls'), null, 'no Cancel');
+    assert.ok(document.querySelector('.minigame-controls') === null, 'no Cancel');
     assert.equal(m.constructor.closeInsideFrame, true);
     assert.equal(m.closeAnchor(), document.querySelector('.device-frame'));
 });
@@ -268,8 +268,8 @@ test('scenario text goes in as text, never markup', () => {
     const hostile = { ...PANEL, name: '<img src=x onerror=1>', panelPorts: [{ port: 1, label: '<b>', desk: '<i>x</i>' }] };
     setup();
     window.MinigameFramework.startMinigame('patch-panel', null, { panel: hostile });
-    assert.equal(document.querySelector('.patch-panel img'), null);
-    assert.equal(document.querySelector('.patch-panel i'), null);
+    assert.ok(document.querySelector('.patch-panel img') === null);
+    assert.ok(document.querySelector('.patch-panel i') === null);
     assert.match(document.querySelector('.patch-panel-title').textContent, /<img/);
     assert.equal(port(1).querySelector('.patch-panel-label').textContent, '<b>');
 });
@@ -400,7 +400,7 @@ test('Esc on a confirm raised over the open panel closes the confirm only; a sec
     const r = await pending;
     assert.equal(r.action, 'cancelled', 'the confirm resolved false');
     assert.equal(plants.length, 0, 'no plant request');
-    assert.equal(document.querySelector('.game-confirm-overlay'), null);
+    assert.ok(document.querySelector('.game-confirm-overlay') === null);
     assert.equal(window.MinigameFramework.currentMinigame, m, 'the panel is still open');
     assert.equal(completed, null);
     esc();
@@ -583,10 +583,10 @@ test('a click or a same-layout resize updates ports in place and keeps keyboard 
     const m = setup();
     const btn = port(2);
     btn.focus();
-    assert.equal(document.activeElement, btn);
+    assert.ok(document.activeElement === btn);
     m.relayout();
     assert.equal(port(2), btn, 'the same node');
-    assert.equal(document.activeElement, btn);
+    assert.ok(document.activeElement === btn);
     links.load([foothold], ['voice_port']);
     m.relayout();
     assert.equal(port(2), btn);
@@ -596,7 +596,7 @@ test('a click or a same-layout resize updates ports in place and keeps keyboard 
     dom.window.innerWidth = 360; dom.window.innerHeight = 740;
     dom.window.dispatchEvent(new dom.window.Event('resize'));
     assert.notEqual(port(2), btn);
-    assert.equal(document.activeElement, port(2));
+    assert.ok(document.activeElement === port(2));
 });
 
 // ---- Pentest B1 R2 ----------------------------------------------------------------------
@@ -671,6 +671,6 @@ test('R2 keyboard: ports are native buttons, so Enter and Space activate them th
     btn.click();
     await settle();
     assert.equal(footer(), UNPATCHED_MESSAGE);
-    assert.equal(document.activeElement, btn);
+    assert.ok(document.activeElement === btn);
     assert.equal(window.MinigameFramework.currentMinigame, m);
 });

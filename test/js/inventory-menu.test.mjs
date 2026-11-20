@@ -367,12 +367,12 @@ test('a number-key menu shows each entry\'s key and focuses its first usable ent
     const buttons = [...document.querySelectorAll('.be-im-item')];
     assert.deepEqual(buttons.map(b => b.querySelector('.be-im-key')?.textContent), ['1.', '2.']);
     assert.deepEqual(buttons.map(b => b.querySelector('.be-im-label').textContent), ['Drop here', 'Examine'], 'the label itself is unchanged');
-    assert.equal(document.activeElement, buttons[1], 'focus on Examine, the first usable entry');
+    assert.ok(document.activeElement === buttons[1], 'focus on Examine, the first usable entry');
     closeInteractionMenu();
 
     // no number keys: no key hints, focus left alone
     showInteractionMenu([{ label: 'Memo', onSelect() {} }, { label: 'Guard', onSelect() {} }], 0, 0);
-    assert.equal(document.querySelector('.be-im-key'), null);
+    assert.ok(document.querySelector('.be-im-key') === null);
     assert.notEqual(document.activeElement?.className, 'be-im-item');
     closeInteractionMenu();
 });

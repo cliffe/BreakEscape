@@ -119,7 +119,7 @@ test('aw1: the debrief draws the route box under the Monday card, as plain text'
     assert.equal(box.dataset.configured, 'true');
     assert.equal(box.querySelector('.aw-report-route-heading').textContent, 'How to report here');
     assert.equal(box.querySelector('.aw-report-route-text').textContent, `Press Report. ${evil}`);
-    assert.equal(box.querySelector('img'), null);
+    assert.ok(box.querySelector('img') === null);
     assert.equal(h.querySelector('.aw-monday').nextElementSibling, box, 'directly under the Monday card');
     assert.equal(d.getState().reportRoute, 'configured');
     const h2 = host();
@@ -127,7 +127,7 @@ test('aw1: the debrief draws the route box under the Monday card, as plain text'
     assert.equal(d2.getState().reportRoute, 'generic');
     const h3 = host();
     assert.equal(renderDebrief(h3, { result: { answers: [] }, set: set(), onFinish() {} }).getState().reportRoute, null);
-    assert.equal(h3.querySelector('.aw-report-route'), null);
+    assert.ok(h3.querySelector('.aw-report-route') === null);
 });
 
 test('aw1: a host route of several lines draws one paragraph per line, in order', () => {
@@ -160,24 +160,24 @@ test('aw1: a Report verdict names the configured route under the verdict line, a
     const route = card.querySelector('.aw-card-route');
     assert.ok(route, 'route line drawn after a Report verdict with a configured route');
     assert.equal(route.textContent, `At work, that means: ${evil}.`);
-    assert.equal(card.querySelector('script'), null, 'organiser text is plain, never HTML');
+    assert.ok(card.querySelector('script') === null, 'organiser text is plain, never HTML');
     // order: the route line sits directly after the verdict line
     assert.equal(card.querySelector('.aw-card-verdict').nextElementSibling, route, 'route line directly after the verdict line');
 
     // no route configured: nothing extra
     const h2 = host();
     renderDebrief(h2, { ...reported(), onFinish() {} });
-    assert.equal(h2.querySelector('.aw-card-route'), null, 'no route configured: no extra line');
+    assert.ok(h2.querySelector('.aw-card-route') === null, 'no route configured: no extra line');
 
     // the generic (unconfigured) fallback never names a route in the verdict
     const h3 = host();
     renderDebrief(h3, { ...reported(), reportRoute: M.reportRouteFor(slotEpisode, {}), onFinish() {} });
-    assert.equal(h3.querySelector('.aw-card-route'), null, 'generic fallback never names a route in the verdict');
+    assert.ok(h3.querySelector('.aw-card-route') === null, 'generic fallback never names a route in the verdict');
 
     // configured but with no organiser heading (the generic heading is not a name): nothing extra
     const h4 = host();
     renderDebrief(h4, { ...reported(), reportRoute: { heading: 'How to report here', text: 'Forward it to security.', configured: true }, onFinish() {} });
-    assert.equal(h4.querySelector('.aw-card-route'), null, 'the generic box heading is not shown as a route name');
+    assert.ok(h4.querySelector('.aw-card-route') === null, 'the generic box heading is not shown as a route name');
 });
 
 test('aw1: the short routeName is preferred over the heading, as plain text, with a fallback', () => {
@@ -190,7 +190,7 @@ test('aw1: the short routeName is preferred over the heading, as plain text, wit
     const route = h.querySelector('.aw-card[data-message-id="p1"] .aw-card-route');
     assert.ok(route, 'route line drawn from the short routeName');
     assert.equal(route.textContent, `At work, that means: ${evil}.`);
-    assert.equal(h.querySelector('script'), null, 'routeName is plain text, never HTML');
+    assert.ok(h.querySelector('script') === null, 'routeName is plain text, never HTML');
 
     // a routeName already ending in punctuation gets no second full stop
     const h2 = host();
@@ -275,7 +275,7 @@ test('aw6: the debrief thanks the learner for phish kept from the team, with no 
     assert.equal(hT.querySelector('.aw-team').textContent, 'You stopped 1 for the team.');
     const h2 = host();
     const d2 = renderDebrief(h2, { result: { reportCount: 0, phishVerified: 0, answers: [] }, set: set(), onFinish() {} });
-    assert.equal(h2.querySelector('.aw-team'), null, 'nothing reported or checked: no line at all');
+    assert.ok(h2.querySelector('.aw-team') === null, 'nothing reported or checked: no line at all');
     assert.equal(d2.getState().teamProtected, null);
 });
 

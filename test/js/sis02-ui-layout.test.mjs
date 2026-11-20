@@ -54,7 +54,7 @@ test('SIS table: a 40-character parameter name is breakable at underscores and h
     const cell = gc.querySelector('.sis-threshold-table tbody td:first-child > div');
     assert.ok(cell.innerHTML.includes('_<wbr>'), 'wbr after each underscore');
     assert.equal(cell.textContent, long);
-    assert.equal(gc.querySelector('.sis-table-wrap'), null);
+    assert.ok(gc.querySelector('.sis-table-wrap') === null);
 });
 
 test('SIS rows: amber and red rows are keyboard reachable and Enter or Space opens the detail', async () => {
@@ -93,9 +93,9 @@ test('SIS detail: focus moves to the close button, and back to the row on close'
     fresh.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
     const closeBtn = fake.overlayEl.querySelector('#sis-detail-close');
     assert.ok(closeBtn, 'detail open');
-    assert.equal(document.activeElement, closeBtn, 'focus is on the detail close button');
+    assert.ok(document.activeElement === closeBtn, 'focus is on the detail close button');
     closeBtn.click();
-    assert.equal(document.activeElement, fresh, 'focus returns to the row');
+    assert.ok(document.activeElement === fresh, 'focus returns to the row');
     gc.remove();
 });
 

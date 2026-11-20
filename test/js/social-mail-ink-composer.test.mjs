@@ -68,9 +68,9 @@ test('an ink contact shows suggested replies, no judged chrome', async () => {
     await tick();
     const chips = [...c.root.querySelectorAll('.mail-suggest-chip')];
     assert.deepEqual(chips.map((x) => x.textContent), ['Nothing yet, still looking.', 'Log attached.']);
-    assert.equal(c.root.querySelector('.mail-redflag-meter'), null);
+    assert.ok(c.root.querySelector('.mail-redflag-meter') === null);
     assert.ok(!/judged|red flag/i.test(c.root.textContent), 'no judged or red-flag wording in plain mode');
-    assert.equal(c.root.querySelector('.mail-compose-sendas'), null, 'no Send-as switch: the thread is on one account');
+    assert.ok(c.root.querySelector('.mail-compose-sendas') === null, 'no Send-as switch: the thread is on one account');
     assert.deepEqual(h.calls.prepare, ['hax']);
     c.destroy();
 });
@@ -97,7 +97,7 @@ test('inkChoice opens with a chip already picked (a chip clicked under an open m
     const { c } = composer({ contacts: [HAX], h, extra: { presetContactId: 'hax', inkChoice: 0 } });
     await tick(); await tick();
     assert.ok(c.root.querySelector('.mail-ink-body'));
-    assert.equal(c.root.querySelector('.mail-suggest-chip'), null);
+    assert.ok(c.root.querySelector('.mail-suggest-chip') === null);
     c.root.querySelector('.mail-ink-another').click();
     assert.ok(c.root.querySelector('.mail-suggest-chip'), 'Choose another reply returns to the list');
     c.destroy();
@@ -139,7 +139,7 @@ test('a judged-only contact is untouched: the judged form, no suggestions, the h
     const h = makeHost();
     const { c } = composer({ contacts: [PIERCE], h });
     await tick();
-    assert.equal(c.root.querySelector('.mail-suggest-chip'), null);
+    assert.ok(c.root.querySelector('.mail-suggest-chip') === null);
     assert.deepEqual(h.calls.prepare, []);
     assert.ok(c.root.querySelector('.mail-compose-sendas'), 'Send-as is still there');
     assert.ok(c.target === null, 'no phishTargets registered in this stub, but the judged path ran');
@@ -155,7 +155,7 @@ test('a contact that is both: suggestions first, "Write your own" opens the judg
     const own = c.root.querySelector('.mail-ink-own');
     assert.ok(own, 'the judged door is open (judgedWhen is true)');
     own.click();
-    assert.equal(c.root.querySelector('.mail-suggest-chip'), null);
+    assert.ok(c.root.querySelector('.mail-suggest-chip') === null);
     assert.ok(c.root.querySelector('.mail-ink-suggestions'), 'a way back to the suggestions');
     c.root.querySelector('.mail-ink-suggestions').click();
     await tick();
@@ -168,7 +168,7 @@ test('a contact that is both with the judged door still closed has no "Write you
     const { c } = composer({ contacts: [BOTH], h, globals: { phish_open: false } });
     await tick();
     assert.ok(c.root.querySelector('.mail-suggest-chip'));
-    assert.equal(c.root.querySelector('.mail-ink-own'), null);
+    assert.ok(c.root.querySelector('.mail-ink-own') === null);
     c.destroy();
 });
 
@@ -182,6 +182,6 @@ test('changing the To contact re-asks the host', async () => {
     assert.deepEqual(h.calls.prepare, ['hax']);
     assert.ok(c.root.querySelector('.mail-suggest-chip'));
     c.selectContact('pierce');
-    assert.equal(c.root.querySelector('.mail-suggest-chip'), null);
+    assert.ok(c.root.querySelector('.mail-suggest-chip') === null);
     c.destroy();
 });

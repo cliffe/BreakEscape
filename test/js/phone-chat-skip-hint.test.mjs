@@ -288,3 +288,78 @@ test('n3: the pretext debrief path tells the phone UI to hide and restore the hi
     assert.match(src, /setOverlayOpen\?\.\(true\)[\s\S]*renderDebrief\(container/);
     assert.match(src, /onDone: \(\) => \{[\s\S]*setOverlayOpen\?\.\(false\)/);
 });
+
+test('p1: a whole batch types in about 12 s at most; short batches keep 28 ms a character', () => {
+    const { typewriterCharDelay } = uiMod;
+    assert.ok(typewriterCharDelay(40) === 28, 'a short batch keeps 28 ms');
+    assert.ok(typewriterCharDelay(428) === 28, 'at the boundary still 28 ms');
+    assert.ok(typewriterCharDelay(800) * 800 <= 12000, 'Ghost opening block (800 chars) types in 12 s, not 22 s');
+    assert.ok(typewriterCharDelay(800) < 28, 'a long batch types faster than 28 ms');
+    assert.ok(typewriterCharDelay(100000) === 10, 'never faster than 10 ms a character');
+    assert.ok(typewriterCharDelay(0) === 28, 'empty is safe');
+    assert.ok(/typewriterCharDelay\(this\._blockChars \|\| text\.length\)/.test(uiSrc), 'the typewriter uses the batch budget');
+    assert.ok(/_setBatchBudget\(accumulatedMessages/.test(mgSrc), 'the minigame sets the batch size');
+    assert.ok((mgSrc.match(/_setBatchBudget\(accumulatedMessages/g) || []).length === 2, 'both the story and the choice paths set the budget');
+});
+
+test('p1b: pauses shrink so a whole batch (typing plus pauses) is about 15 s at most', () => {
+    const { batchPauseScale, typewriterCharDelay } = uiMod;
+    const lines = 12, chars = 800, pauses = lines * (1000 + 700) + (lines - 1) * 400;
+    const total = (sc) => typewriterCharDelay(chars) * chars + pauses * sc;
+    const sc = batchPauseScale(chars, pauses);
+    assert.ok(pauses + typewriterCharDelay(chars) * chars > 25000, 'the unscaled long batch is far over budget');
+    assert.ok(sc < 1 && sc >= 0.15, 'long batch pauses scale down but not to nothing: ' + sc);
+    assert.ok(total(sc) <= 16000, 'scaled batch fits 15 s: ' + total(sc));
+    assert.ok(batchPauseScale(60, 2 * 1000 + 400) === 1, 'a short batch keeps its pauses');
+    assert.ok(batchPauseScale(500, 0) === 1, 'no pauses is safe');
+    assert.ok(batchPauseScale(0, 5000) === 1, 'no text is safe');
+    assert.ok(batchPauseScale(100000, 20000) === 0.15, 'floor at 0.15');
+    const ui = Object.create(UI.prototype);
+    ui.setBlockChars(chars, pauses);
+    assert.ok(ui.scalePause(1000) === 1000, 'not the terminal theme: pauses unscaled');
+    ui.isTerminalTheme = true; ui.isCallMode = false;
+    ui.setBlockChars(chars, pauses);
+    ui.isCallMode = true; ui.setBlockChars(chars, pauses);
+    assert.ok(ui.scalePause(1000) === 1000, 'call screen: pauses unscaled');
+    ui.isCallMode = false; ui.setBlockChars(chars, pauses);
+    assert.ok(ui.scalePause(1000) < 1000 && ui.scalePause(1000) >= 150, 'scalePause shortens a pause');
+    ui.setBlockChars(0);
+    assert.ok(ui.scalePause(1000) === 1000, 'cleared budget leaves pauses alone');
+    assert.ok(/_setRepliesCue\(lastResult/.test(mgSrc) && (mgSrc.match(/_setRepliesCue\(lastResult, accumulatedTags\)/g) || []).length === 2, 'both paths set the cue');
+    assert.ok(/setBlockChars\?\.\(0\);\s*this\.ui\?\.setRepliesExpected\?\.\(false\)/.test(mgSrc), '_resetSkip clears the budget and cue');
+    assert.ok(batchPauseScale(800, 16400, false) === (15000 / 16400), 'no typing time leaves more for pauses');
+    assert.ok(/lines\.length \* \(typingMs \+ 700\)/.test(mgSrc) && /scalePause\(TERMINAL_BLINK_MS\)/.test(uiSrc), 'the cursor blink is inside the budget');
+    assert.ok(/_scaledPause\(TYPING_DELAY_MS\)/.test(mgSrc) && /_scaledPause\(INTER_MESSAGE_MS\)/.test(mgSrc), 'the minigame scales both pauses');
+});
+
+test('p1c: the typewriter types by elapsed time, so late timers do not stretch a line', () => {
+    assert.ok(/Math\.floor\(\(Date\.now\(\) - startedAt\) \/ CHAR_DELAY\)/.test(uiSrc), 'ticks catch up to elapsed time');
+});
+
+test('p2: the terminal hint says the reply options follow', () => {
+    document.body.innerHTML = '<div id="host"></div>';
+    const ui = Object.create(UI.prototype);
+    ui.container = document.getElementById('host');
+    ui.params = { theme: 'terminal' };
+    ui.isTerminalTheme = true; ui.isSocialTheme = false; ui.isCallMode = false; ui.appChrome = false; ui.app = null;
+    ui.render();
+    const cue = document.querySelector('#phone-skip-hint .phone-skip-hint-cue');
+    assert.ok(cue !== null, 'cue line exists');
+    assert.ok(/reply options follow/i.test(cue.textContent), 'cue wording');
+});
+
+test('p3: the cue shows only when replies are expected; landscape hides it', () => {
+    document.body.innerHTML = '<div id="host"></div>';
+    const ui = Object.create(UI.prototype);
+    ui.container = document.getElementById('host');
+    ui.params = { theme: 'terminal' };
+    ui.isTerminalTheme = true; ui.isSocialTheme = false; ui.isCallMode = false; ui.appChrome = false; ui.app = null;
+    ui.render();
+    const cue = document.querySelector('.phone-skip-hint-cue');
+    assert.ok(cue.hidden === true, 'hidden until replies are expected');
+    ui.setRepliesExpected(true);
+    assert.ok(cue.hidden === false, 'shown when choices follow');
+    ui.setRepliesExpected(false);
+    assert.ok(cue.hidden === true, 'hidden when the story ends or exits');
+    assert.ok(/max-height: 500px[\s\S]*phone-skip-hint-cue \{ display: none; \}/.test(readFileSync(join(chat, '../../../css/phone-chat-minigame.css'), 'utf8')), 'landscape hides the cue');
+});

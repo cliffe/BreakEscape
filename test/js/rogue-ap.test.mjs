@@ -307,7 +307,7 @@ test('the chosen template and SSID are marked by class and the word Chosen', () 
     assert.equal(signin.getAttribute('aria-pressed'), 'true');
     assert.equal(signin.querySelector('.rogue-ap-chosen').textContent, ap.CHOSEN_TEXT);
     assert.ok(!key.classList.contains('is-chosen'));
-    assert.equal(key.querySelector('.rogue-ap-chosen'), null);
+    assert.ok(key.querySelector('.rogue-ap-chosen') === null);
     assert.equal(qa('.rogue-ap-ssid-pick .rogue-ap-chosen').length, 1);
 });
 

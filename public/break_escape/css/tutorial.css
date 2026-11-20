@@ -331,6 +331,32 @@
     color: #4ade80;
 }
 
+/* Step done: words under the objective, a frame on Continue, a short hard-step cue */
+.tutorial-ready {
+    color: #4ade80;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.tutorial-ready:empty {
+    display: block;
+    min-height: 0;
+}
+
+.tutorial-next.tutorial-next-ready {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+    animation: tutorial-next-cue 0.6s steps(1, end) 3;
+}
+
+/* Three hard on/off steps, then the frame stays */
+@keyframes tutorial-next-cue {
+    0% { outline-color: transparent; }
+    50% { outline-color: #fff; }
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {
@@ -500,6 +526,11 @@
     }
 
     .tutorial-objective {
+        animation: none !important;
+    }
+
+    /* The frame and the words stay; only the on/off cue goes */
+    .tutorial-next.tutorial-next-ready {
         animation: none !important;
     }
 

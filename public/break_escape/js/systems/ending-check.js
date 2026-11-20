@@ -392,6 +392,7 @@ function openModal(open, done) {
         if (finished) return;
         finished = true;
         overlay.remove();
+        try { w?.modalDialogClosed?.(); } catch (e) { /* a toast-hold fault must never keep the question open */ }
         if (keyHandler) w?.removeEventListener('keydown', keyHandler, true);
         try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
         if (w?.player && movementBefore !== null) w.player.disableMovement = movementBefore;
@@ -413,6 +414,8 @@ function openModal(open, done) {
     closeBtn.addEventListener('click', () => finish(false));
     dialog.appendChild(row);
     doc.body.appendChild(overlay);
+    // Part of the toast hold with gameDisplay and gameConfirm (notifications.js).
+    try { w?.modalDialogOpened?.(); } catch (e) { /* a toast-hold fault must never break the question */ }
 
     if (w?.player) w.player.disableMovement = true;
     keyHandler = (e) => {

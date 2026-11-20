@@ -478,6 +478,6 @@ test('cleanup with a sheet open does not throw and leaves no sheet in the docume
     pick(s, 'm1_it');
     click($(s, '.tri-verdict[data-verdict="trust"]'));
     assert.doesNotThrow(() => s.cleanup());
-    assert.equal(document.querySelector('.tri-sheet'), null);
+    assert.ok(document.querySelector('.tri-sheet') === null);
     current = null;
 });

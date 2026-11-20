@@ -124,7 +124,7 @@ test('the composer shows the sending address once (Send as), with no second From
     const rowsWith = [...root.querySelectorAll('.mail-compose-row')].filter((r) => r.textContent.includes(addr));
     assert.equal(rowsWith.length, 1, 'one row carries the address');
     assert.equal(rowsWith[0].querySelector('.mail-compose-label').textContent, 'Send as');
-    assert.equal(root.querySelector('.mail-compose-part[data-part="from"]'), null);
+    assert.ok(root.querySelector('.mail-compose-part[data-part="from"]') === null);
     assert.ok(root.querySelector('.mail-compose-sendas .mail-compose-from-own'));
 });
 
@@ -153,12 +153,12 @@ test('withReply: the Sent verdict and checklist wait for the job, then both appe
     clock = 0;
     const { scene, scheduler, host } = open('withReply');
     scene._handleComposeSend(message());
-    assert.equal(host.querySelector('.mail-checklist'), null, 'no checklist at send time');
+    assert.ok(host.querySelector('.mail-checklist') === null, 'no checklist at send time');
     assert.equal(scheduler.state.jobs.length, 1);
     const row = sentRow(host);
     row.click();
     assert.equal(host.querySelector('.mail-judged').textContent, 'Sent. Waiting for a reply.');
-    assert.equal(host.querySelector('.mail-judged.landed'), null);
+    assert.ok(host.querySelector('.mail-judged.landed') === null);
 
     clock = 15000;
     scheduler.tick(clock);
@@ -181,7 +181,7 @@ test('withReply: the verdict waits while the job is queued after a reload, then 
     again.init(); again.start();
     sentRow(host).click();
     assert.equal(host.querySelector('.mail-judged').textContent, 'Sent. Waiting for a reply.');
-    assert.equal(host.querySelector('.mail-checklist'), null, 'nothing to explain until the job runs');
+    assert.ok(host.querySelector('.mail-checklist') === null, 'nothing to explain until the job runs');
     clock = 15000;
     scheduler.tick(clock);
     assert.match(host.querySelector('.mail-judged').textContent, /Judged: landed/);
@@ -255,11 +255,11 @@ test('focus returns to the blank after a pick and to the template select after a
     const sel = host.querySelector('.mail-compose-template[data-part="pretext"]');
     assert.ok(sel);
     sel.focus();
-    assert.equal(document.activeElement, sel);
+    assert.ok(document.activeElement === sel);
     c.chooseTemplate('pretext', 'pretext_enquiry');
     const after = host.querySelector('.mail-compose-template[data-part="pretext"]');
     assert.notEqual(after, sel, 'the form was rebuilt');
-    assert.equal(document.activeElement, after, 'focus put back on the rebuilt control');
+    assert.ok(document.activeElement === after, 'focus put back on the rebuilt control');
 });
 
 test('Back returns focus to the row the player left; the details toggle keeps focus', () => {
@@ -272,9 +272,9 @@ test('Back returns focus to the row the player left; the details toggle keeps fo
     scene.refresh();
     rows()[0].click();
     host.querySelector('.mail-details-toggle').click();
-    assert.equal(document.activeElement, host.querySelector('.mail-details-toggle'));
+    assert.ok(document.activeElement === host.querySelector('.mail-details-toggle'));
     scene.reader.back();
-    assert.equal(document.activeElement, rows()[0]);
+    assert.ok(document.activeElement === rows()[0]);
 });
 
 test('every control in the composer is a native, tabbable element (no positive tabindex)', () => {

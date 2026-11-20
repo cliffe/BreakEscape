@@ -293,11 +293,15 @@ export class NPCGameBridge {
         if (window.gameAlert) {
           window.gameAlert(`Could not take ${item.name || item.type}. Try asking again.`, 'error', 'Item Not Received');
         }
-        return;
+        return { success: false, error: `${item.name || item.type} was not added (${reason})` };
       }
 
       // Play item pickup sound (same as picking up world items or taking from containers)
       if (window.playUISound) window.playUISound('item');
+
+      // The toast outlives the chat: held while it is open, shown when it closes
+      // (inventory.js announcePickup: the world-pickup wording, silent for notes and tray-filed items)
+      window.announcePickup?.(tempSprite, addResult);
 
       // Notes-family gifts have no inventory slot (inventory.js skips them), so
       // put them in the notepad the way reading a note in the world does,

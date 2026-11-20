@@ -709,6 +709,13 @@ Val Okonkwo: So it was never my corridor. Thank you for coming back.
 -> hub
 
 === reeves_vindicated ===
+// Telling her this counts as telling her what you found: tick the optional task so the
+// two choices cannot leave it looking done when it is not.
+{cover_restored and not val_reported_back:
+    ~ val_reported_back = true
+    #set_global:val_reported_back:true
+    #complete_task:tell_val_findings
+}
 {val_accused:
     Val Okonkwo: And an hour ago you had me down for it.
 }

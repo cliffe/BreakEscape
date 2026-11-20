@@ -120,7 +120,7 @@ test('foothold row shows host and note and no secret', () => {
     const s = open({ se_captures: SEED() }, { captures: { revealSecret: true } });
     const foot = rows(s)[1];
     assert.equal(foot.querySelector('.lpb-captures-foothold').textContent, 'Foothold on WS-014: macro document opened');
-    assert.equal(foot.querySelector('.lpb-captures-secret'), null);
+    assert.ok(foot.querySelector('.lpb-captures-secret') === null);
 });
 
 test('empty state renders', () => {

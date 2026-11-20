@@ -63,7 +63,7 @@ test('step strip: marks the current stage and done stages', () => {
     assert.equal(h.querySelectorAll('[aria-current="step"]').length, 1);
     assert.equal(h.querySelector('[data-stage="flip"]').getAttribute('aria-current'), 'step');
     strip.destroy();
-    assert.equal(h.querySelector('.aw-strip'), null);
+    assert.ok(h.querySelector('.aw-strip') === null);
 });
 
 test('step strip: a skipped stage is shown as skipped, not done (E3-6)', () => {
@@ -91,7 +91,7 @@ test('wordmark is text from brand.logoText; a bad accent is ignored, a hex accen
     const h = host();
     renderStepStrip(h, { stages: ['brief'], current: 'brief', brand: { name: 'Brightwell Foods', logoText: 'BRIGHTWELL', accent: '#2f6f5e' } });
     assert.equal(h.querySelector('.aw-wordmark').textContent, 'BRIGHTWELL');
-    assert.equal(h.querySelector('.aw-wordmark img'), null);
+    assert.ok(h.querySelector('.aw-wordmark img') === null);
     assert.equal(h.querySelector('.aw-strip').style.getPropertyValue('--aw-accent'), '#2f6f5e');
     const h2 = host();
     renderStepStrip(h2, { stages: ['brief'], current: 'brief', brand: { logoText: 'X', accent: 'red; background:url(x)' } });
@@ -113,7 +113,7 @@ test('flip lists exactly the stored tells with their canonical strings', () => {
     h.querySelector('.aw-continue').click();
     assert.equal(continued, 1);
     flip.destroy();
-    assert.equal(h.querySelector('.aw-flip'), null);
+    assert.ok(h.querySelector('.aw-flip') === null);
 });
 
 test('a tell id with no sentence renders a neutral phrase, not the raw id', () => {
@@ -128,7 +128,7 @@ test('flip with message null shows flipNoSend and no tells', () => {
     const flip = renderFlipView(h, { message: null, strings: { flipNoSend: 'Nothing was sent.' }, onContinue() {} });
     assert.equal(h.querySelector('.aw-no-send').textContent, 'Nothing was sent.');
     assert.equal(h.querySelectorAll('.aw-tell').length, 0);
-    assert.equal(h.querySelector('.mail-reader'), null);
+    assert.ok(h.querySelector('.mail-reader') === null);
     assert.deepEqual(flip.getState(), { shown: 'noSend', parts: ['noSend'], tells: [] });
 });
 
@@ -201,8 +201,8 @@ test('debrief (Cut A): a card only for items got wrong, plus the Monday card and
     const first = h.querySelector('[data-message-id="m1"]');
     assert.ok(first.textContent.includes(redFlagString('changed_bank_details', set().messages[0])));
     assert.ok(first.textContent.includes('The payment would go to the sender.'));
-    assert.equal(h.querySelector('[data-message-id="m2"]'), null, 'a fully-correct item gets no card');
-    assert.equal(h.querySelector('[data-message-id="m3"]'), null);
+    assert.ok(h.querySelector('[data-message-id="m2"]') === null, 'a fully-correct item gets no card');
+    assert.ok(h.querySelector('[data-message-id="m3"]') === null);
     assert.ok(!/fell for|your fault|stupid/i.test(h.textContent));
     h.querySelector('.aw-finish').click();
     assert.equal(finished, 1);
@@ -226,7 +226,7 @@ test('debrief: no strings.habitLine leaves the shared line alone and getState ha
     const h = host();
     const rule = { heading: 'The habit to keep', text: 'Check it yourself.' };
     const d = renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday.' }, ruleOfThumb: rule, variant: 'full', onFinish() {} });
-    assert.equal(h.querySelector('.aw-habit-line'), null, 'no habit line when strings.habitLine is unset');
+    assert.ok(h.querySelector('.aw-habit-line') === null, 'no habit line when strings.habitLine is unset');
     assert.ok(!('habitLine' in d.getState()), 'getState omits habitLine when unset');
 });
 
@@ -244,10 +244,10 @@ test('debrief (Cut A): everything right shows one short line and no cards', () =
     assert.equal(h.querySelectorAll('.aw-card').length, 0);
     assert.equal(d.getState().items, 0);
     assert.ok(h.querySelector('.aw-all-right'), 'a short all-right line stands in for the cards');
-    assert.equal(h.querySelector('.aw-weakest'), null, 'no weakest line when nothing was missed');
+    assert.ok(h.querySelector('.aw-weakest') === null, 'no weakest line when nothing was missed');
     assert.ok(h.querySelector('.aw-monday'), 'the Monday card stays');
     // N-17: "a miss is no reflection on you" answers a miss; with nothing missed it is not shown.
-    assert.equal(h.querySelector('.aw-no-blame'), null, 'no no-blame line when nothing was missed');
+    assert.ok(h.querySelector('.aw-no-blame') === null, 'no no-blame line when nothing was missed');
     assert.equal(d.getState().noBlame, false);
 });
 
@@ -277,7 +277,7 @@ test('round-1 fix E1: showScore false drops the score figures (round score, repo
     assert.doesNotMatch(hs, /Round score/);
     assert.doesNotMatch(hs, /Reported/);
     assert.doesNotMatch(hs, /%/, 'no percentage left in the summary');
-    assert.equal(hidden.querySelector('.aw-card-score'), null, 'no per-message score line');
+    assert.ok(hidden.querySelector('.aw-card-score') === null, 'no per-message score line');
     assert.ok(hidden.querySelector('[data-message-id="m1"]'), 'the missed item still gets a card');
     // a count stays (result() has verifyCount 1)
     assert.match(hs, /Checked by another route: 1/);
@@ -373,7 +373,7 @@ test('debrief defendOnly shows its string and no flip wording', () => {
     assert.ok(!/your message|you wrote|flip/i.test(h.textContent));
     const h2 = host();
     renderDebrief(h2, { result: result(), set: set(), strings: {}, variant: 'full', onFinish() {} });
-    assert.equal(h2.querySelector('.aw-defend-only'), null);
+    assert.ok(h2.querySelector('.aw-defend-only') === null);
 });
 
 test('every string goes through textContent: HTML-like text renders as text', () => {
@@ -483,7 +483,7 @@ test('flip with missed: true shows flipMissed, not flipNoSend', () => {
     const h = host();
     const flip = renderFlipView(h, { message: null, missed: true, strings: { flipMissed: 'It did not land.', flipNoSend: 'Nothing sent.' }, onContinue() {} });
     assert.equal(h.querySelector('.aw-missed').textContent, 'It did not land.');
-    assert.equal(h.querySelector('.aw-no-send'), null);
+    assert.ok(h.querySelector('.aw-no-send') === null);
     assert.deepEqual(flip.getState(), { shown: 'missed', parts: ['missed'], tells: [] });
     const h2 = host();
     renderFlipView(h2, { missed: true, onContinue() {} });
@@ -501,7 +501,7 @@ test('debrief: the optional concept and voice panels render as plain text, betwe
     assert.equal(concept.querySelector('.aw-panel-heading').textContent, 'How it works');
     assert.deepEqual([...concept.querySelectorAll('.aw-panel-text')].map((p) => p.textContent),
         [`Why enable content matters. ${evil}`, 'A real CV never needs it.']);
-    assert.equal(concept.querySelector('img, b'), null, 'never parsed as HTML');
+    assert.ok(concept.querySelector('img, b') === null, 'never parsed as HTML');
     assert.equal(window.pwned, undefined);
     const voice = h.querySelector('.aw-voice-panel');
     assert.equal(voice.querySelector('.aw-panel-heading').textContent, 'Voices can be copied');
@@ -514,7 +514,7 @@ test('debrief: the optional concept and voice panels render as plain text, betwe
     const d2 = renderDebrief(h2, { result: result(), set: set(), variant: 'defendOnly', onFinish() {},
         strings: { voicePanel: 'A voice is not proof of who is speaking.', conceptPanel: '   ' } });
     assert.equal(h2.querySelector('.aw-voice-panel .aw-panel-heading').textContent, 'A voice is not proof');
-    assert.equal(h2.querySelector('.aw-concept-panel'), null);
+    assert.ok(h2.querySelector('.aw-concept-panel') === null);
     assert.equal(d2.getState().conceptPanel, false);
     assert.ok(/\.aw-panel\s*\{/.test(css), 'the skin styles the panels');
 });
@@ -532,7 +532,7 @@ test('debrief (ENG-09b): a conceptPanel array renders one panel per entry, in or
     const panels = [...h.querySelectorAll('.aw-concept-panel')];
     assert.deepEqual(panels.map((p) => p.querySelector('.aw-panel-heading').textContent), ['What happened', 'How it works', 'What to do']);
     assert.deepEqual([...panels[0].querySelectorAll('.aw-panel-text')].map((p) => p.textContent), [`Para one. ${evil}`, 'Para two.']);
-    assert.equal(panels[0].querySelector('b'), null, 'never parsed as HTML');
+    assert.ok(panels[0].querySelector('b') === null, 'never parsed as HTML');
     assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true, conceptPanels: 3, reportRoute: null, ruleOfThumb: false, teamProtected: null, genuine: { trusted: 1, checked: 0, flagged: 1 } });
     // every concept panel sits before the voice panel and the Monday card
     const order = [...h.querySelector('.aw-debrief').children].map((n) => n.className);
@@ -542,7 +542,7 @@ test('debrief (ENG-09b): a conceptPanel array renders one panel per entry, in or
     // an array with no usable text draws none; a single object still draws one and reports no count
     const h2 = host();
     const d2 = renderDebrief(h2, { result: result(), set: set(), variant: 'full', onFinish() {}, strings: { conceptPanel: [{ text: ' ' }] } });
-    assert.equal(h2.querySelector('.aw-concept-panel'), null);
+    assert.ok(h2.querySelector('.aw-concept-panel') === null);
     assert.equal(d2.getState().conceptPanel, false);
     const h3 = host();
     const d3 = renderDebrief(h3, { result: result(), set: set(), variant: 'full', onFinish() {}, strings: { conceptPanel: { heading: 'One', text: 'Only.' } } });

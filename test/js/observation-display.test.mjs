@@ -32,9 +32,9 @@ const stubs = {
   './inventory.js': 'export function addToInventory(){return true;} export function createItemIdentifier(){return "";}',
   './ui-sounds.js': 'export function playUISound(){} export function playGameSound(){}',
   './apply-actions.js': 'export function applyActions(actions, opts){ (globalThis.__applied ||= []).push({ actions, opts }); }',
-  // resolveObjectField is stubbed as obj[key]: observationVariants/textVariants are NOT exercised
+  // resolveObjectField is stubbed as obj[key] ?? null (the real resolver returns null for a missing key): observationVariants/textVariants are NOT exercised
   // here (gameDisplayParts takes already-resolved values; the variant path was proved live).
-  '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? obj[key] : undefined; }',
+  '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? (obj[key] ?? null) : null; }',
   '../utils/flag-lock.js': 'export function isRemoteFlagLock(){return false;} export function remoteFlagLockMessage(){return "";}',
   './npc-reach.js': 'export function npcReachDistSq(){return 0;}',
   './examine.js': 'export function shouldExamine(){return false;} export function startExamine(){return false;}',
@@ -127,10 +127,10 @@ test('observation only (not readable): <em> line alone, no note', () => {
   assert.equal(notes.length, 0);
 });
 
-test('without observationDisplay the alert message keeps its old form', () => {
+test('without observationDisplay the alert message is the plain observation', () => {
   const { shown, alerts } = run({ type: 'generic', name: 'Lamp', observations: 'It is warm.' });
   assert.equal(shown.length, 0);
-  assert.match(alerts[0][0], /^Lamp Observations: It is warm\./);
+  assert.ok(alerts[0][0].trim() === 'It is warm.', 'body: ' + alerts[0][0]);
 });
 
 test('onInteract.confirmationText + display gameDisplay: same layout as the fixed branch', async () => {

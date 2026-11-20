@@ -114,7 +114,7 @@ test('post author: shows the headshot and name of a people id; a post without on
     const s = open(social, { start: `social.${profile.person}` });
     const plain = s.container.querySelector('.ob-block[data-id="p_plain"]');
     const by = s.container.querySelector('.ob-block[data-id="p_by"]');
-    assert.equal(plain.querySelector('.ob-post-author'), null);
+    assert.ok(plain.querySelector('.ob-post-author') === null);
     assert.ok(plain.firstElementChild.classList.contains('ob-post-text'));
     const who = by.querySelector('.ob-post-author');
     assert.ok(who.querySelector('img.ob-headshot'));

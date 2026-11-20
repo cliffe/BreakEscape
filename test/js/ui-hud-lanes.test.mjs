@@ -125,8 +125,8 @@ test('B2: a phone contact\'s bark is a phone notification; a person\'s is a spee
     assert.ok(phone.querySelector('.npc-bark-phone-icon'), 'phone icon');
     assert.ok(phone.querySelector('.npc-bark-dismiss'), 'a text can be dismissed');
     assert.ok(speech.classList.contains('npc-bark--speech'));
-    assert.equal(speech.querySelector('.npc-bark-phone-icon'), null, 'no phone icon on speech');
-    assert.equal(speech.querySelector('.npc-bark-dismiss'), null);
+    assert.ok(speech.querySelector('.npc-bark-phone-icon') === null, 'no phone icon on speech');
+    assert.ok(speech.querySelector('.npc-bark-dismiss') === null);
     assert.ok(speech.querySelector('.npc-bark-head'), 'headshot box from the NPC definition');
     assert.equal(speech.querySelector('.npc-bark-text').textContent, 'Tom: Down the hall.', 'same text as before, nothing new to voice');
     assert.equal(sys.lastRoute.source, 'speech');
@@ -342,7 +342,7 @@ test('R1 M2: a finished task on a phone is a short line with its full text; the 
     N.showNotification('✓ Look', 'success', '', 5000, { brief: true });
     const t = document.querySelector('.notification');
     assert.ok(t.classList.contains('brief'));
-    assert.equal(t.querySelector('.notification-title'), null, 'no title line');
+    assert.ok(t.querySelector('.notification-title') === null, 'no title line');
     document.body.className = '';
 });
 
@@ -600,7 +600,7 @@ test('R2 M2: the phone\'s back button counts unread texts in the other threads; 
     hist.lee[0].read = true;
     hist.max[0].read = true;
     assert.equal(ui.refreshBackUnread(), 0);
-    assert.equal(document.querySelector('#back-button .back-unread'), null, 'no badge with nothing unread');
+    assert.ok(document.querySelector('#back-button .back-unread') === null, 'no badge with nothing unread');
     assert.match(css('phone-chat-minigame.css'), /\.back-button \.back-unread \{/);
 });
 

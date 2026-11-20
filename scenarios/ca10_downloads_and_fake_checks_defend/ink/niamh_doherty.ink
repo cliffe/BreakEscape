@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e10_downloads_and_fake_checks_defend_defend_complete:
-        Niamh Doherty: That's the morning sorted, thanks. The rule holds every time: no honest web page ever needs you to paste, run, install or call.
+        Niamh Doherty: That's the morning sorted, thanks. No honest web page ever needs you to paste, run, install or call.
     - else:
         Niamh Doherty: The kiosk has a morning of web pages, the kind that turn up while you work. For each, decide: carry on, close and report, or go the trusted way.
     }

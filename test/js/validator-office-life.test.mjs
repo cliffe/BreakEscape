@@ -213,6 +213,39 @@ test('V3: npc_arrived:* warns when any NPC has needs', { skip }, () => {
     assertNot(check(scenario({ npcs: [watcher] })), 'V3');
 });
 
+test('V3: an arrival mapping that filters out needs walks (data.owner !== \'needs\') does not warn (wrap-fix m9)', { skip }, () => {
+    const s = scenario({ npcs: [worker(), { id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:gary', condition: "data.owner !== 'needs'", setGlobal: { x: true } }] }] });
+    assertNot(check(s), 'V3: eventMapping');
+});
+
+test('V3: the owner filter skips the warning only as a whole && term, not as part of an || or a negation (review m5)', { skip }, () => {
+    const mk = (cond) => scenario({ npcs: [worker(), { id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:gary', condition: cond, setGlobal: { x: true } }] }] });
+    assertNot(check(mk("globalVars.a === true && data.owner !== 'needs'")), 'V3: eventMapping');
+    assertHas(check(mk("data.owner !== 'needs' || globalVars.a === true")), 'V3: eventMapping');
+    assertHas(check(mk("!(data.owner !== 'needs')")), 'V3: eventMapping');
+    assertHas(check(mk("data.owner !== 'needs_x'")), 'V3: eventMapping');
+});
+
+test('V3b: a knot bark, a message bark and a globalVars[...] condition are checked too (review m6)', { skip }, () => {
+    const mk = (cond, extra) => scenario({ npcs: [{ id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:x', condition: cond, setGlobal: { walk: false }, ...extra }] }] });
+    assertHas(check(mk('globalVars.walk === true', { knot: 'hello' })), 'V3b');
+    assertHas(check(mk('globalVars.walk === true', { message: 'Hi.' })), 'V3b');
+    assertHas(check(mk("globalVars['walk'] === true", { bark: 'Hi.' })), 'V3b');
+    assertNot(check(mk('globalVars.walk === true', { knot: 'hello', conversationMode: true })), 'V3b');
+});
+
+test('V3b: a bark whose condition reads a global its own mapping sets warns; a different global does not', { skip }, () => {
+    const mk = (cond, set) => scenario({ npcs: [{ id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:x', condition: cond, setGlobal: set, bark: 'Hello there.' }] }] });
+    assertHas(check(mk('globalVars.walk === true', { walk: false, there: true })), 'V3b: eventMapping \'npc_arrived:x\' on \'still\' has a bark whose condition reads walk');
+    assertNot(check(mk('globalVars.out === true', { walk: false, there: true })), 'V3b');
+    assertNot(check(scenario({ npcs: [{ id: 'still', displayName: 'S', npcType: 'person', position: { x: 1, y: 1 },
+        eventMappings: [{ eventPattern: 'npc_arrived:x', condition: 'globalVars.walk === true', setGlobal: { walk: false } }] }] })), 'V3b');   // no bark: not at risk
+});
+
 // ── V4 ─────────────────────────────────────────────────────────────────────────────────────
 
 test('V4: an attackable needs NPC in a campaign mission warns; disableAttacks and koImmune clear it', { skip }, () => {
@@ -503,4 +536,42 @@ test('V12: a gate on a security pool (login_aloud, usb_refused, work_fail_*, wk_
     const out = check(s);
     for (const t of ['login_aloud', 'usb_refused', 'work_fail_down', 'wk_share_login']) assertHas(out, `chatter '${t}' is gated by requireGlobal`);
     assertNot(out, "chatter 'coffee' is gated by requireGlobal");
+});
+
+// ── V13 ────────────────────────────────────────────────────────────────────────────────────
+
+test('V13: an NPC pool that escapes the scenario pool gate is a warning; a matching gate is not', { skip }, () => {
+    const gate = { kit_quiet: false };
+    const s = scenario({ npcs: [
+        worker({ id: 'plain', chatter: { coffee: ['Fresh pot.'] } }),
+        worker({ id: 'nogate', chatter: { coffee: { lines: ['Fresh pot.'] } } }),
+        worker({ id: 'other', chatter: { coffee: { lines: ['Fresh pot.'], requireGlobal: { calm: true } } } }),
+        worker({ id: 'good', chatter: { coffee: { lines: ['Fresh pot.'], requireGlobal: gate } } }),
+        worker({ id: 'free', chatter: { cooler: ['Not gated at scenario level.'] } })
+    ], extra: {
+        globalVariables: { kit_quiet: false, calm: true },
+        chatter: { coffee: { lines: ['Mugs.'], requireGlobal: gate }, cooler: ['Hello.'] }
+    } });
+    const out = check(s);
+    const errs = out.filter(l => l.includes('V13'));
+    assert.ok(errs.every(l => l.startsWith('⚠️ WARNING')) === true, errs.join('\n'));
+    assertHas(out, "V13: NPC 'plain' chatter 'coffee' escapes");
+    assertHas(out, "V13: NPC 'nogate' chatter 'coffee' escapes");
+    assertHas(out, "V13: NPC 'other' chatter 'coffee' escapes");
+    assert.ok(!has(out, "V13: NPC 'good'") === true);
+    assert.ok(!has(out, "V13: NPC 'free'") === true);
+});
+
+test('V13: an NPC pool under a kit_ key needs requireGlobal { kit_quiet: false }', { skip }, () => {
+    const s = scenario({ npcs: [
+        worker({ id: 'bad', chatter: { kit_a: ['Line.'] } }),
+        worker({ id: 'wrong', chatter: { kit_b: { lines: ['Line.'], requireGlobal: { kit_quiet: true } } } }),
+        worker({ id: 'ok', chatter: { kit_c: { lines: ['Line.'], requireGlobal: { kit_quiet: false } } } })
+    ], extra: { globalVariables: { kit_quiet: false } } });
+    const out = check(s);
+    const kitLines = out.filter(l => l.includes('is a kit pool'));
+    assert.ok(kitLines.length === 2 && kitLines.every(l => l.startsWith('❌ ERROR')) === true, kitLines.join('\n'));
+    assertHas(out, "V13: NPC 'bad' chatter 'kit_a' is a kit pool");
+    assertHas(out, "V13: NPC 'wrong' chatter 'kit_b' is a kit pool");
+    assert.ok(!has(out, "V13: NPC 'ok'") === true);
 });

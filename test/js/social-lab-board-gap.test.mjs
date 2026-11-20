@@ -108,5 +108,5 @@ test('a Missing slot with no gapString shows its goalString directly (other miss
     const slots = [...card.querySelectorAll('.ib-check .ib-slot')];
     const plainSlot = slots[1];
     assert.match(plainSlot.querySelector('.ib-slot-text').textContent, /Check her social profile\./);
-    assert.equal(plainSlot.querySelector('details.ib-slot-stuck'), null, 'no disclosure when no gapString');
+    assert.ok(plainSlot.querySelector('details.ib-slot-stuck') === null, 'no disclosure when no gapString');
 });

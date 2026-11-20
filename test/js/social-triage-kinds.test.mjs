@@ -505,7 +505,7 @@ test('call card: videoLabel and participantTag render when present, and the card
 
     const plain = kinds.renderKindSurface(
         { id: 'c2', kind: 'call', callerId: 'Adaeze', transcript: [{ text: 'Quick catch-up?' }] }, {});
-    assert.equal(plain.querySelector('.tri-call-video'), null, 'no video row without the keys');
+    assert.ok(plain.querySelector('.tri-call-video') === null, 'no video row without the keys');
 });
 
 // ── ENG-06: the "show hidden text" reveal on an email card ────────────────────

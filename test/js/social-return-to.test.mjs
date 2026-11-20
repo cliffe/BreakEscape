@@ -318,7 +318,7 @@ test('helper: Esc closes the top layer, then blurs a field, then closes as a nor
     const field = b.container.appendChild(el('input'));
     document.activeElement = field;
     press('Escape');
-    assert.equal(document.activeElement, document.body, 'blurred, still open');
+    assert.ok(document.activeElement === document.body, 'blurred, still open');
     assert.equal(FW.currentMinigame, b);
     press('Escape', { repeat: true });
     assert.equal(FW.currentMinigame, b, 'held Esc does not close');

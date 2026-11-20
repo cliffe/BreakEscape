@@ -203,7 +203,7 @@ test('item 3: no flag named → no weakest-skill line (matches the result\'s "no
         perFactor: { senderTrust: { caught: 0, missed: 1 } },
         answers: [{ id: 'm1', verdict: 'trust', flags: [], isPhish: true, score: 0 }] };
     renderDebrief(h, { result, set: dset(), strings: {}, variant: 'full', onFinish() {} });
-    assert.equal(h.querySelector('.aw-weakest'), null, 'the weakest line is suppressed');
+    assert.ok(h.querySelector('.aw-weakest') === null, 'the weakest line is suppressed');
 });
 test('item 3: a named flag brings the weakest-skill line back', () => {
     const h = host();

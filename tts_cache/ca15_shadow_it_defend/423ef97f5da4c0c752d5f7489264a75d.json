@@ -1,0 +1,13 @@
+{
+  "key": "423ef97f5da4c0c752d5f7489264a75d",
+  "npc": "nilesh_solanki",
+  "text": "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:52:18Z"
+}

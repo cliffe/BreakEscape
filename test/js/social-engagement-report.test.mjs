@@ -197,7 +197,7 @@ test('pressing Confirm sets report_results_done and records the press in se_repo
     // ids only: confirmed holds the item's id (its step, as the item carries no id).
     assert.deepEqual(readReportState(stateOf()).confirmed, ['results']);
     // The press now reads as done, not a button.
-    assert.equal(s.container.querySelector('[data-confirm-btn]'), null);
+    assert.ok(s.container.querySelector('[data-confirm-btn]') === null);
     assert.equal(s.getTestState().report.items[0].confirmed, true);
 });
 
@@ -336,7 +336,7 @@ function openWithQuestions(globals = {}) {
 
 test('question items render as option groups, with no Confirm button', () => {
     const s = openWithQuestions();
-    assert.equal(s.container.querySelector('[data-confirm-btn]'), null);
+    assert.ok(s.container.querySelector('[data-confirm-btn]') === null);
     const q = s.container.querySelector('[data-question="unseen"]');
     assert.ok(q, 'the question is shown');
     assert.match(q.textContent, /What can this test not tell you\?/);

@@ -165,7 +165,9 @@ for (const { n, dir } of EPISODES) {
       const inF = fsetKeys.has(k);
       const inE = esetKeys.has(k);
       if (inF && inE) {
-        if (!eq(stripNotes(fset[k]), stripNotes(eset[k]))) mismatches.push(`set[${setId}].${k} differs`);
+        // outcome.messageGlobals is written into a kit shell by office_kit.py from its row's keyMessage, not by the fragment
+        const noKit = (x) => { if (k !== 'outcome' || !x || typeof x !== 'object') return x; const { messageGlobals, ...rest } = x; return rest; };
+        if (!eq(noKit(stripNotes(fset[k])), noKit(stripNotes(eset[k])))) mismatches.push(`set[${setId}].${k} differs`);
       } else if (inE && !inF) {
         if (!SET_ERB_ONLY_OK.has(k)) mismatches.push(`set[${setId}].${k} present only in the erb (not allow-listed)`);
       } else if (inF && !inE) {
