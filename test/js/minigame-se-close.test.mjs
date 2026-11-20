@@ -68,7 +68,8 @@ test('C-X2 framed opt-in: default off, and a framed scene tags the container', (
 test('C-X1/C-X2 shared CSS rules exist', () => {
     const fw = readFileSync(join(css, 'minigames-framework.css'), 'utf8');
     assert.match(fw, /\.se-overlay-close\s*\{/, 'the shared close look is defined');
-    assert.match(fw, /border:\s*4px solid #c0392b/, 'the X keeps a 2px+ pixel border');
+    assert.match(fw.match(/\.se-overlay-close\s*\{[^}]*\}/)[0], /border:\s*4px solid/, 'the X keeps a 2px+ pixel border');
+    assert.doesNotMatch(fw.match(/\.se-overlay-close\s*\{[^}]*\}/)[0], /#e74c3c|#c0392b/, 'D216: no red SE X');
     assert.doesNotMatch(fw.match(/\.se-overlay-close\s*\{[^}]*\}/)[0], /border-radius:\s*[1-9]/, 'no rounded X');
     assert.match(fw, /\.minigame-container\.minigame-framed\s*>\s*\.minigame-game-container/, 'the framed window rule exists');
     assert.match(fw, /width:\s*min\(720px/, 'the framed window is capped at 720px');
@@ -127,12 +128,13 @@ test('C-ER1 the episode runner draws a kiosk bezel in normal play, full-bleed on
         assert.doesNotMatch(rule, /border-radius:\s*[1-9]/, `${sel}: no rounded corners`);
         assert.ok(!/url\(/.test(rule), `${sel}: no image art`);
     }
-    // The kiosk close is themed, not the flat red SE X: ui-themes keeps the themed skin while
-    // the two-class SE rule stays scoped to .minigame-close-button.se-overlay-close only.
+    // The kiosk close is themed, and (D216) so is the SE X: ui-themes lists .se-overlay-close with
+    // the shared themed close buttons and has no red override.
     const kioskClose = er.match(/\.epr-kiosk-top \.epr-kiosk-close\s*\{[^}]*\}/)[0];
     assert.ok(!/se-overlay-close/.test(kioskClose), 'the kiosk close is not the flat SE X');
     const ut = readFileSync(join(css, 'ui-themes.css'), 'utf8');
-    assert.match(ut, /\.minigame-close-button\.se-overlay-close\s*\{/, 'the SE flat close override targets both classes');
+    assert.match(ut, /\[data-ui-theme\] \.se-overlay-close,/, 'D216: the SE close joins the themed close list');
+    assert.ok(!/\.minigame-close-button\.se-overlay-close\s*\{/.test(ut), 'D216: no red SE override remains');
 });
 
 test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {

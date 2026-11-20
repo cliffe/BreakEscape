@@ -599,7 +599,10 @@
 
 /* Social-overlay / exercise close control (C-X1): the shared pixel ×, one look for every
    SE and awareness window. X only, no text 'Close'. It sits in the window header row and
-   the header's own flex rules push it to the right; it never overlaps the header text. */
+   the header's own flex rules push it to the right; it never overlaps the header text.
+   D216: it wears the same themed X as every other window (ui-themes.css lists it with the
+   other close buttons), no red variant. This rule only sets the geometry and a neutral
+   fallback for when no theme skin applies. */
 .minigame-container.minigame-framed > .minigame-game-container {
     box-sizing: border-box;
     width: min(720px, 96vw);
@@ -631,9 +634,9 @@
     min-height: 30px;
     padding: 0;
     margin: 0;
-    background: #e74c3c;
-    color: #fff;
-    border: 4px solid #c0392b;
+    background: var(--ui-surface-raised, #2a3144);
+    color: var(--ui-danger, #ff7a6b);
+    border: 4px solid var(--ui-border, #8a93aa);
     border-radius: 0;
     cursor: pointer;
     font-family: 'Press Start 2P', monospace;
@@ -644,8 +647,6 @@
     justify-content: center;
     box-shadow: none;
 }
-.se-overlay-close:hover { background: #c0392b; }
-.se-overlay-close:active { background: #a93226; }
 .se-overlay-close:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
 /* A 44 px touch target on small or touch screens, without changing the drawn 30 px square. */
 @media (max-width: 600px), (pointer: coarse) {
