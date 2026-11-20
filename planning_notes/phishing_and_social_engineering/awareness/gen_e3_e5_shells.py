@@ -64,9 +64,9 @@ HOSTS = {
 LINES = {
     ('e3', 'defend'): (
         "You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.",
-        {'catch': ("You turned down that caller pushing for a reset who wouldn't be rung back, so no claims account opened for someone we couldn't place.",
+        {'catch': ("You turned down that overnight sign-in prompt nobody had started, so no claims account was handed to a stranger.",
                    'Prompt-bombing just wears people down until they tap yes. Number matching takes the idle tap out of it.'),
-         'miss': ("That caller pushing for a reset, the one who wouldn't be rung back, was the one to stop.",
+         'miss': ("That overnight sign-in prompt, the one nobody had started, was the one to turn down.",
                   'It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.')},
         'Thanks, Darren.', 'Shout if you need me.'),
     ('e5', 'defend'): (

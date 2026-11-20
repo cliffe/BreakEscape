@@ -243,10 +243,16 @@
       "allRight": "You read every one of these the right way. The habit below is the one to keep.",
       "noBlameLine": "Mistakes with personal data happen to careful people, usually when they are busy. What turns a mistake into harm is silence. Nobody at Carrholme is in trouble for reporting, including their own slip.",
       "defendOnly": "Any of these can catch a careful person on a busy morning. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
-      "conceptPanel": {
-        "heading": "Behind every row is a person",
-        "text": "When care records go to the wrong recipient, special-category details about residents, staff and a driver end up with people who have no right to see them, and the data protection lead loses the week to a recall, to deletion requests, and to letters to the families; a breach like this is reported to the regulator unless it is unlikely to be a risk, and the people affected are told only where the risk to them is high."
-      }
+      "conceptPanel": [
+        {
+          "heading": "Behind every row is a person",
+          "text": "If a spreadsheet, a form or an email about someone goes astray, tell the data protection lead straight away. Reporting fast is what limits the harm."
+        },
+        {
+          "heading": "If records go astray",
+          "text": "When care records go to the wrong recipient, special-category details about residents, staff and a driver end up with people who have no right to see them, and the data protection lead loses the week to a recall, to deletion requests, and to letters to the families; a breach like this gets reported so the organisation can act, and the people affected are told."
+        }
+      ]
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e11_misdirected_data_defend), which has no mistake or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (flipHeading is carried in both and simply never shown in the defend-only shell).",
