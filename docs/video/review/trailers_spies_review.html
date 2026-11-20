@@ -63,7 +63,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m02" aria-selected="true" data-cut="m02">m02 · v2</button>
+    <button class="tab" role="tab" id="tab-m02" aria-selected="true" data-cut="m02">m02 · v3</button>
     <button class="tab" role="tab" id="tab-m01" aria-selected="false" data-cut="m01">m01 · v9</button>
   </nav>
 
@@ -80,26 +80,24 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 <script>
 const CUTS = {
   m02: {
-    doc: "feedback/m02_trailer_v2",
-    title: "m02 Ransomed Trust · 60 s trailer · round v2",
-    video: "/_blob/dc1e10a261ab3e5289dcb7e340c967e7", poster: "/_blob/8ee2d9b7a5a82bfe795e6c04796c5429",
+    doc: "feedback/m02_trailer_v3",
+    title: "m02 Ransomed Trust · 60 s trailer · round v3",
+    video: "/_blob/611faee4148a0fc30fccf913b802f23b", poster: "/_blob/8ee2d9b7a5a82bfe795e6c04796c5429",
     stats: ["60.000 s", "1920×1080 30 fps", "−13.8 LUFS", "true peak −1.49 dB", "16:9 only"],
     changed: [
-      "Every gameplay shot re-recorded on today's build: new room dressing and lighting, office-life staff, trimmed HaX briefing, today's dialogue round.",
-      "The player is a different noir spy from shot to shot (all eight used); the two hood-up hackers appear once each.",
-      "The Real Hacking slate is gone: a 2 s cut of the m02 console scan (command and the two open ports, enlarged; no MAC or host details).",
-      "HaX's hook re-timed for the re-voiced line (4.13 s). Flag-station and supply-cabinet crops fixed."
+      "Bernie's line is voiced (\"The cardiac ward's monitoring is down...\") and carries over a walk through the ward.",
+      "Val: the approach now comes first, then \"So. Who are you...\".",
+      "Ward walk trimmed before the player walks into the door; kitchen chatter muted.",
+      "Ghost's Money line plays whole and at the same level as HaX, Bernie and Val (all within about 1 dB).",
+      "Voices start before the cut to each character or run past it (HaX, Bernie, Val, Ghost)."
     ],
     standin: ["None. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
-    srt: "1\n00:00:04,920 --> 00:00:08,700\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:30,033 --> 00:00:34,133\nVal Okonkwo: So. Who are you and who says you're allowed?",
+    srt: "1\n00:00:05,250 --> 00:00:09,030\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:11,267 --> 00:00:16,667\nBernie Nwosu: The cardiac ward's monitoring is down. Nobody's watching those hearts but us.\n\n3\n00:00:31,850 --> 00:00:35,350\nVal Okonkwo: So. Who are you and who says you're allowed?\n\n4\n00:00:47,967 --> 00:00:52,117\nGhost: Money is simply a means to hasten your inevitable end.",
     questions: [
-      {k:"music", t:"Music: Steel Shadows in E Minor (picked from the beat analysis, never by ear)", o:[["keep","Keep it","Lifts land on the cards and the crescendo",1],["fallback","Try Shadowline Protocol","The first fallback from the analysis"],["other","Something else","Name it in the note"]]},
-      {k:"reeves", t:"Graham Reeves is the mystery's answer. He now shows for 3 frames in the crescendo only", o:[["flash","Keep the 3-frame flash","Visible on pause, not a spoiler at speed",1],["cut","Cut him entirely","No antagonist face at all"],["line","Give him his line","As v1 planned: a clear spoiler"]]},
-      {k:"ransom", t:"The ransom screen shows its (fictional) payment line", o:[["keep","Keep as is","It reads as set dressing",1],["crop","Crop to the headline and countdown","Tighter, nothing to read"]]},
-      {k:"console", t:"Real Hacking beat: 2 s of the console scan", o:[["keep","Keep","Short, readable, nothing secret",1],["longer","Longer","Let the scan output hold"],["later","Use a later console beat","e.g. the SSH login, still no credentials"]]},
-      {k:"avatars", t:"Avatar mix: a different spy in each map shot", o:[["keep","Keep the rotation","Shows the cast of starters",1],["one","One spy throughout","Reads as one agent's story"],["more","More visible player shots","The spies are small in some shots"]]},
+      {k:"lookup", t:"Ghost's first line (\"Before you touch that console. Look up.\") is muted: with both voiced they overlapped, and the end bumper leaves no room for both in full. The Money line starts 0.7 s before his on-screen subtitle changes", o:[["keep","Keep: Money line only","Whole, no overlap",1],["both","Both lines, take time elsewhere","Shortens a map shot before the crescendo and moves the beat-locked cuts"],["lookup","\"Look up\" only","Shorter; drops the Money line"]]},
+      {k:"ghostfx", t:"Ghost's voice effect in the game sounds gritty and buzzy (distortion after the filter, plus a 75 Hz ring mod). Change the game's effect? That would mean re-recording his takes", o:[["later","Not for the trailer","Raise it as a game audio fix separately",1],["now","Fix it now","Engine change, then re-record t17 and re-cut"],["fine","It's fine","Keep as is"]]},
       {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
-      {k:"seen", t:"Anything on screen a viewer should not see (an answer, a name, a place)?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null},
       {k:"platform", t:"Which platform first?", o:[["yt","YouTube / Hacktivity page","16:9 as rendered",1],["shorts","Shorts / Reels / TikTok","Needs the 9:16 cut"],["li","LinkedIn","1:1 cut"]]}
     ]
   },
