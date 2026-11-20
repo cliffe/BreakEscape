@@ -19,6 +19,11 @@ function normalizeSeverity(severity) {
     return 'LOW';
 }
 
+/** "1 alert queued", "N alerts queued". */
+export function queuedAlertsText(n) {
+    return `${n} ${n === 1 ? 'alert' : 'alerts'} queued`;
+}
+
 function formatTimer(totalSeconds) {
     const safeSeconds = Math.max(0, totalSeconds);
     const mm = String(Math.floor(safeSeconds / 60)).padStart(2, '0');
@@ -568,7 +573,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         this.queueListEl.appendChild(sourcesSection);
         this.queueListEl.appendChild(sourcesBox);
 
-        this.queueCountEl.textContent = `${escalated.length} alerts queued`;
+        this.queueCountEl.textContent = queuedAlertsText(escalated.length);
     }
 
     renderSeverityChart() {
