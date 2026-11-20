@@ -35,6 +35,11 @@
     padding-right: 40px;
 }
 
+.vm-launcher-frame > .minigame-close-button {
+    width: 32px;   /* a 32 px tap target; the shared X is 30 */
+    height: 32px;
+}
+
 .vm-launcher-frame .vm-launcher-title {
     min-width: 0;
     overflow: hidden;
@@ -258,6 +263,9 @@ a.vm-action-btn {
 }
 
 .standalone-instructions code {
+    font-family: 'VT323', monospace;
+    font-size: 18px;   /* VT323 is 18 or more */
+    line-height: 1;    /* the bigger chip does not open up the 1.6 body lines */
     background: var(--device-palette-button);
     padding: 2px 6px;
     color: var(--device-palette-accent);

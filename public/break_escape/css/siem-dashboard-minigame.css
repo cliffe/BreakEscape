@@ -169,7 +169,7 @@
 .siem-time,
 .siem-source,
 .siem-description {
-    font-size: 20px;
+    font-size: 16px;   /* GNF scale 16/24/32 */
     color: #d0dbf0;
 }
 
@@ -218,7 +218,7 @@
 
 .siem-queue-count {
     padding: 10px;
-    font-size: 22px;
+    font-size: 24px;   /* GNF scale 16/24/32 */
     color: #d2e0ff;
     border-bottom: 2px solid #2e3957;
 }
@@ -269,7 +269,7 @@
 }
 
 .siem-queue-text {
-    font-size: 19px;
+    font-size: 16px;   /* GNF scale 16/24/32 */
     color: #d6e2ff;
     overflow: hidden;
     text-overflow: ellipsis;

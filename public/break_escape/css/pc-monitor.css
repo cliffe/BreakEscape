@@ -301,9 +301,11 @@
    inside the frame and never on the screen */
 .pc-monitor-bezel > .minigame-close-button.pc-monitor-close {
     position: absolute;
-    top: calc((var(--pc-bezel-top, 38px) - 30px) / 2) !important;
+    top: calc((var(--pc-bezel-top, 38px) - 32px) / 2) !important;
     right: var(--pc-bezel-side, 20px) !important;
     left: auto;
+    width: 32px;   /* a 32 px tap target; the shared X is 30 */
+    height: 32px;
     margin: 0;
     z-index: 5;
 }
