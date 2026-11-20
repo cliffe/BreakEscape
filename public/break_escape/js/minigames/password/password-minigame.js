@@ -1737,10 +1737,13 @@ export class PasswordMinigame extends MinigameScene {
         this.addEventListener(window, 'resize', () => this.fitSignInWays());
         // The frame's own resize handler sets data-short; measure the usernames now and once it has run
         this.addEventListener(window, 'resize', () => this.fitSignInUsernames({ again: true }));
-        // Name lines change when the pixel font lands: measure once more then
-        window.document?.fonts?.ready?.then?.(() => {
+        // Name lines change when the pixel font lands: measure once more then. Load the face itself
+        // (as container-minigame does): fonts.ready can already be resolved before GNF is requested
+        const fonts = window.document?.fonts;
+        const landed = fonts?.load ? fonts.load('16px GNF') : fonts?.ready;
+        landed?.then?.(() => {
             if (this.gameContainer?.isConnected) this.fitSignInUsernames();
-        });
+        }, () => {});
         this.bindKeyboardReveal([this.usernameField, this.passwordField]);
         this.renderSignInForm();
     }

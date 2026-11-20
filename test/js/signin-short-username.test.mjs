@@ -89,8 +89,6 @@ const TILES = [
     { username: 'sokafor', displayName: 'Sam Okafor', portrait: null, avatar: null },
     { username: 'admin', displayName: 'Admin', portrait: null, avatar: null }
 ];
-// Fake layout: a tile's bottom is `tileBottom`, its name's bottom is `nameBottom`, no border or padding
-// unless set (the computed style is read from the element)
 // jsdom gives a button 3px of padding and no CSS file is loaded, so the computed style is faked:
 // no border or padding, and `position` from a data-pos attribute (absolute for a badge)
 window.getComputedStyle = (el) => ({ borderBottomWidth: '0px', paddingBottom: '0px', position: el?.dataset?.pos || 'static' });
@@ -272,9 +270,11 @@ test('cleanup removes the resize listener: a resize after it measures nothing', 
 });
 
 test('when the pixel font arrives the tiles are measured again, only while connected', async () => {
+    // fonts.ready is already resolved (nothing requested yet); only loading GNF itself waits for it
     let resolve;
     const ready = new Promise((r) => { resolve = r; });
-    Object.defineProperty(document, 'fonts', { value: { ready }, configurable: true });
+    const asked = [];
+    Object.defineProperty(document, 'fonts', { value: { ready: Promise.resolve(), load: (f) => { asked.push(f); return ready; } }, configurable: true });
     const a = make(true);
     const b = make(true);
     layout(a.mg, [20, 20, 20]);
@@ -284,6 +284,9 @@ test('when the pixel font arrives the tiles are measured again, only while conne
     // make() rewrites the body, so the first screen's container is detached: say which is which
     Object.defineProperty(a.mg.gameContainer, 'isConnected', { value: true, configurable: true });
     Object.defineProperty(b.mg.gameContainer, 'isConnected', { value: false, configurable: true });
+    await Promise.resolve(); await Promise.resolve();
+    assert.ok(ca.n === 0 && cb.n === 0, `nothing is measured before GNF lands (${ca.n}, ${cb.n})`);
+    assert.ok(asked.length === 2 && asked.every((f) => /GNF/.test(f)), `GNF itself is loaded (${asked})`);
     resolve();
     await ready;
     await Promise.resolve();
