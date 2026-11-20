@@ -38,7 +38,7 @@ Lorna's recap matched the appendix word for word on every route. Barks were stil
   - V11 is gated on position;
   - V11r re-issues the walk.
 
-  AC0 is fixing the engine bug itself on `fix/npc-arrive-sidestep`. Once that lands, decide whether to keep the workaround.
+  AC0 fixed the engine bug on `fix/npc-arrive-sidestep`, which is now on main. With it in, route 2 ran clean 9 times without the workaround: 3 Lorna first, 3 Camila first and 3 forced bumps (games 10702-10712; control 3/3, games 10669, 10695, 10700). Camila was hidden at raw x 240-249 every time. The whole workaround is dropped.
 
 ## Accepted
 
@@ -50,7 +50,6 @@ Lorna's recap matched the appendix word for word on every route. Barks were stil
 
 - Proof 7's look, the visitor persona playtests and the fallback holding-tile look, now that Camila has her own sprite (c8958a2aa: bust b01, talk t02, visemes, walk with the stock six and seated frames).
 - Voicing still to do: Camila's 3 door replies (D209, after their dialogue review) and the sofa pool lines for Thandiwe, Lorna and Delphine (D210, 9 clips). Done: groups A and B (27 clips, a92a80aa7) and the Zephyr sample (a86ad1f8f).
-- Whether to drop the let-in workaround now that the sidestep engine fix is on main (route 2 re-run in progress).
 - DB rows for `ca12_visitor_tailgater` and `test_ca12_fallback` at the next seed.
 
 ## Settled with the owner
