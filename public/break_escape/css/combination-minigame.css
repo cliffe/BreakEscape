@@ -313,7 +313,12 @@
         overflow: visible;
     }
     .combination-dial-group { flex-direction: row; gap: 8px; }
-    .combination-dial-label { width: 80px; text-align: right; font-size: 16px; }
+    /* One line at every row state: "DIAL 1 · TURN" is the widest text the label shows, so the
+       label is wide enough for it and never wraps. A wrapped active row was taller than the
+       others, so the three rows had unequal pitch. The TURN/SET words stay: they are what
+       tells the dials apart without colour. Width 152px = 13 characters of 16px GNF plus the
+       0.06em letter-spacing; the row is about 330px of the 390px screen. */
+    .combination-dial-label { width: 152px; flex: 0 0 auto; white-space: nowrap; text-align: right; font-size: 16px; }
     /* 32px is 4x Press Start 2P's 8px grid: two digits fit 64px */
     .combination-dial-display { font-size: 32px; width: 80px; height: 56px; padding: 6px 8px; }
     .combination-status { padding: 6px 12px; }
