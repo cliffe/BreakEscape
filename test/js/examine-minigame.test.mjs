@@ -373,13 +373,13 @@ test('read in place: hostile name, observations and text are escaped once (five 
     displays.length = 0;
     const HOSTILE = `<img src=x onerror="x()"> & "q" 's' -- end`;
     handleObjectInteraction(invImg({ type: 'lanyard', id: 'h', name: HOSTILE, readable: true, readDisplay: 'gameDisplay',
-        addToNotes: false, text: HOSTILE, observations: HOSTILE }));
+        addToNotes: false, text: HOSTILE, observations: 'Seen: ' + HOSTILE }));
     assert.equal(displays.length, 1);
     const [msg, title, opts] = displays[0];
     const ESC = '&lt;img src=x onerror=&quot;x()&quot;&gt; &amp; &quot;q&quot; &#39;s&#39; – end';
     assert.deepEqual(opts, { html: true });
     assert.equal(title, ESC);
-    assert.equal(msg, `<em>${ESC}</em>\n\n${ESC}`);
+    assert.equal(msg, `<em>Seen: ${ESC}</em>\n\n${ESC}`);
 });
 
 test('phone body text is 24px GNF, the conversation dialogue size; the name stays 16px Press Start 2P', () => {
