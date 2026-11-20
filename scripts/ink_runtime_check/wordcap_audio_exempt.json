@@ -157,33 +157,9 @@
   },
   {
     "file": "ca01_invoice_fraud/ink/adaeze_okafor.ink",
-    "text_md5": "777ad127989da42fab331a6d8ff138c0",
-    "start": "the moment that bankdetails email was flagged we",
-    "reason": "cached voice audio in tts_cache/ca01_invoice_fraud"
-  },
-  {
-    "file": "ca01_invoice_fraud/ink/adaeze_okafor.ink",
-    "text_md5": "545e59427c22e5ab8f91511da1dd5f28",
-    "start": "you stopped the bankchange email so harlow got",
-    "reason": "cached voice audio in tts_cache/ca01_invoice_fraud"
-  },
-  {
-    "file": "ca01_invoice_fraud/ink/adaeze_okafor.ink",
     "text_md5": "bd9037b4412ac73e14828d64841b6b92",
     "start": "the new bank details from that email went",
     "reason": "cached voice audio in tts_cache/ca01_invoice_fraud"
-  },
-  {
-    "file": "test_ca01_panel/ink/adaeze_okafor.ink",
-    "text_md5": "777ad127989da42fab331a6d8ff138c0",
-    "start": "the moment that bankdetails email was flagged we",
-    "reason": "identical line to ca01_invoice_fraud; cached voice audio in tts_cache/ca01_invoice_fraud (copied if the panel ships as the course shell)"
-  },
-  {
-    "file": "test_ca01_panel/ink/adaeze_okafor.ink",
-    "text_md5": "545e59427c22e5ab8f91511da1dd5f28",
-    "start": "you stopped the bankchange email so harlow got",
-    "reason": "identical line to ca01_invoice_fraud; cached voice audio in tts_cache/ca01_invoice_fraud (copied if the panel ships as the course shell)"
   },
   {
     "file": "test_ca01_panel/ink/adaeze_okafor.ink",
