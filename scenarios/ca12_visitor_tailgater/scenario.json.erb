@@ -654,15 +654,24 @@
         "noBlameLineCritical": "These visitors are played by people whose job is to look like they belong, so a miss here says more about the attack than about you. The points only show where to look next time.",
         "mondayCard": "On Monday: if you don't recognise someone, help them, 'Can I help you find someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes past a check, using the route in the box below.",
         "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. The ones worth a second look are shown below, with what gave each one away.",
-        "conceptPanel": {
-          "heading": "What these visitors relied on",
-          "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. To a real attacker, an unescorted visitor is time alone on the studio floor. A client list left on an open screen can be read and copied there, and a friendly \"she said to come straight up\" is often all it takes to get that far. At a practice like this, an earlier visitor was walked up without signing in while a screen sat unlocked. Nobody could say what had been seen, so the partners and reception spent an afternoon working out who had been on the floor."
-        },
+        "conceptPanel": [
+          {
+            "heading": "What these visitors relied on",
+            "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. To a real attacker, an unescorted visitor is time alone on the studio floor. A client list left on an open screen can be read and copied there, and a friendly \"she said to come straight up\" is often all it takes to get that far. At a practice like this, an earlier visitor was walked up without signing in while a screen sat unlocked. Nobody could say what had been seen, so the partners and reception spent an afternoon working out who had been on the floor."
+          },
+          {
+            "heading": "What Camila tried",
+            "text": "Camila used the same three things as the courier you played: a real name from the practice, a reason to be there, and the confidence to keep walking. She never needed a badge, only for nobody to stop and ask. Walking her back to the desk, and a locked screen behind you, leave her nothing to take.",
+            "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_visitor_there === true"
+          }
+        ],
         "stages": {
           "osint": {
             "text": "Open the browser and read what you can find about the people and the building. Click a line that looks useful to add it to your notes. Close the browser when you have what you need."
           }
         },
+        "stepAwayHeading": "Before the debrief",
+        "stepAway": "Look up from the kiosk and watch the studio for a couple of minutes. People come and go, and someone may ask you something. Your place is saved.",
         "defendIntro": "Now you're the one on the Merrin & Sallow desk. Visitors arrive one at a time: some are expected, some are not, and one or two will try to talk their way past a check. Take each as it comes; there's no clock on you here."
       },
       "debrief": {
@@ -1591,6 +1600,10 @@
           "locked": false,
           "observations": "A touch-screen training kiosk for the Merrin & Sallow visitor exercise: first the red-team brief and the front-desk approach, then the visitors to handle on the reception seat.",
           "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_done !== true",
+              "value": "The kiosk. Your place is saved."
+            },
             {
               "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Merrin & Sallow visitor exercise. That's this one finished."
