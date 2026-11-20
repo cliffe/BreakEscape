@@ -100,6 +100,7 @@ function setup(serverContents) {
     window.gameState = { notes: [], globalVariables: {} };
     window.gameAlert = (m) => { worldAlerts.push(m); events.push('alert'); };
     // inventory.js is stubbed here: the real helper's wording is tested in container-note-toast.test.mjs
+    window.noteAddedText = (n) => `Added "${n}" to your notes.`;
     window.announceNoteAdded = (n) => window.gameAlert(`Added "${n}" to your notes.`, 'info', 'Note Added', 3000);
     window.expectPanelWithin = (ms) => { expects.push(ms); events.push('expect'); };
     window.clearExpectedPanel = () => { clears++; events.push('clear'); };
@@ -262,8 +263,22 @@ test('the last note: "Added to your notes" is raised at once, with no panel expe
     assert.ok(alertAt > 0 && events[alertAt - 1] === 'clear', `cleared right before the toast: ${events.join(',')}`);
 });
 
-test('a note with more left still waits for the container (one toast, no flash)', async () => {
+test('a note with more left reopens the container with the notice in its window and no toast', async () => {
     setup([...NOTES, CARD]);
+    await openSafe([...NOTES, CARD]);
+    slots()[0].click();
+    await settle(20);
+    await closeViewer();
+    assert.equal(current()._sceneType, 'container');
+    assert.deepEqual(worldAlerts.filter(m => /to your notes/.test(m)), [], `no toast: ${worldAlerts.join('|')}`);
+    const msgs = [...document.querySelectorAll('.container-message-success')].map(m => m.textContent);
+    assert.deepEqual(msgs, ['Added "Reading 1" to your notes.']);
+    assert.ok(expects.length >= 1, 'the reopen still holds other toasts');
+});
+
+test('fallback: with no noteAddedText helper loaded, a note with more left toasts once, held for the container', async () => {
+    setup([...NOTES, CARD]);
+    delete window.noteAddedText;
     await openSafe([...NOTES, CARD]);
     slots()[0].click();
     await settle(20);

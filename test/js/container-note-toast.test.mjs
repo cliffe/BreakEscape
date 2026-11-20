@@ -30,7 +30,8 @@ const copy = (rel, rewrites = []) => {
     put(rel, code);
 };
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
-put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
+// The real dash conversion: the notice must show an en dash for a name typed with " -- "
+copy('utils/display-dashes.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 // The container's inventory is a stub that accepts every take; the real inventory.js is
 // loaded separately (real/) for the toast helper
@@ -222,4 +223,79 @@ test('m4: a takeable notes item with no viewer route (not readable) goes to the 
     assert.ok(added.length === 1 && added[0][0] === 'Torn Memo' && added[0][1] === 'Meet at six', `notepad add: ${JSON.stringify(added)}`);
     const msgs = [...document.querySelectorAll('.container-message')].map(m => m.textContent);
     assert.ok(msgs.includes('Added "Torn Memo" to your notes.'), `message: ${msgs.join('|')}`);
+});
+
+// The scenario names (m02 "Gary's Email Archive -- Warning 7 of 7") are typed with " -- "
+const DASHED = 'Gary\'s Email Archive -- Warning 7 of 7';
+const SHOWN = 'Gary\'s Email Archive \u2013 Warning 7 of 7';
+
+test('M1: the reopened window shows a name typed with " -- " as an en dash (real display-dashes.js)', async () => {
+    setup();
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Floor Safe', containerItem: SAFE(), contents: [noteOf('n2', 'Other')], isTakeable: false,
+        fromReturn: true, notice: window.noteAddedText(DASHED) });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    await mg.init();
+    const msgs = [...document.querySelectorAll('.container-message-success')].map(m => m.textContent);
+    assert.deepEqual(msgs, [`Added "${SHOWN}" to your notes.`]);
+});
+
+test('M1: the Notepad route for an unreadable note also shows the en dash', async () => {
+    setup();
+    window.addNote = () => true;
+    const memo = { type: 'notes', id: 'm1', name: DASHED, takeable: true, readable: false, text: 'Meet at six' };
+    window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ contents: [{ ...memo }] }) });
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Floor Safe', containerItem: SAFE(), contents: [{ ...memo }], isTakeable: false });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    await mg.init();
+    document.querySelector('.container-content-slot').querySelector('img, .container-content-item').click();
+    await new Promise(r => setTimeout(r, 50));
+    delete window.addNote;
+    const msgs = [...document.querySelectorAll('.container-message')].map(m => m.textContent);
+    assert.deepEqual(msgs.filter(m => /your notes/.test(m)), [`Added "${SHOWN}" to your notes.`]);
+});
+
+const PC = () => ({ scenarioData: { id: 'pc1', type: 'pc', name: 'Desk PC', locked: true, lockType: 'login' } });
+
+test('m1: a sign-in PC whose session ended while the note was open toasts the note once, says Signed out, reopens nothing', () => {
+    setup();
+    window.pcSessions = { has: () => false, takeEndedMessage: () => null };
+    const note = noteOf('n1', 'Memo');
+    window.pendingContainerReturn = {
+        containerItem: PC(), contents: [note, noteOf('n2', 'Other')], isTakeable: false, itemToTake: note, itemElement: null, npcOptions: null };
+    returnToContainerAfterNotes();
+    delete window.pcSessions;
+    const notes = alerts.filter(a => /your notes/.test(a[0]));
+    assert.ok(notes.length === 1 && notes[0][0] === 'Added "Memo" to your notes.', `one note toast: ${JSON.stringify(alerts)}`);
+    assert.ok(alerts.some(a => a[0] === 'Signed out'), `Signed out said: ${JSON.stringify(alerts)}`);
+    assert.ok(starts.length === 0, 'no container starts');
+});
+
+test('m3: a reopen the server closes at once (403) raises the note toast, and only that', async () => {
+    setup();
+    let ended = 0;
+    window.pcSessions = { has: () => true, dropLocal() {}, takeEndedMessage: () => null };
+    window.fetch = globalThis.fetch = async () => ({ ok: false, status: 403, json: async () => ({}) });
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Desk PC', containerItem: PC(), contents: [], isTakeable: false,
+        fromReturn: true, notice: window.noteAddedText('Memo') });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() { ended++; } };
+    await mg.init();
+    delete window.pcSessions;
+    assert.ok(ended === 1, `the window closed: ${ended}`);
+    const notes = alerts.filter(a => /your notes/.test(a[0]));
+    assert.ok(notes.length === 1 && notes[0][0] === 'Added "Memo" to your notes.', `one note toast: ${JSON.stringify(alerts)}`);
+    assert.ok(alerts.some(a => a[0] === 'Signed out'), `session line kept: ${JSON.stringify(alerts)}`);
+    assert.ok(mg.params.notice === '', 'the notice is handed on once');
+});
+
+test('m3: a reopen that stays open raises no toast for its notice', async () => {
+    setup();
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Floor Safe', containerItem: SAFE(), contents: [noteOf('n2', 'Other')], isTakeable: false,
+        fromReturn: true, notice: window.noteAddedText('Memo') });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    await mg.init();
+    assert.ok(alerts.length === 0, `no toast: ${JSON.stringify(alerts)}`);
 });

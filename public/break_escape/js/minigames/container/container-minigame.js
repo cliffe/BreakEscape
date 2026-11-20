@@ -991,6 +991,9 @@ export class ContainerMinigame extends MinigameScene {
             let refusal = null;
             if (response.status === 403) {
                 try { refusal = await response.json(); } catch (e) { /* no body */ }
+                // Every 403 below closes this window at once, so a note notice it carries
+                // would be gone before it was read: it goes to the toast instead
+                this.noticeToToast();
             }
             if (response.status === 403 && refusal?.reason === 'expired') {
                 // Keyring K5: the session token ran out (at a foothold, a `from` route or the keyboard). The copy goes with no request, the screen
@@ -1272,6 +1275,19 @@ export class ContainerMinigame extends MinigameScene {
         } catch (e) { console.warn('network_share_opened listeners threw', e); }
     }
 
+    /**
+     * A reopened container carries its "Added ... to your notes" notice in its own window.
+     * When the server closes that window straight away (session ended, PC off) the notice
+     * would be gone before it was read, so it is raised as the usual toast instead. Never
+     * both: the window is closing, and the notice is cleared once it has been handed on.
+     */
+    noticeToToast() {
+        const notice = this.params?.fromReturn && typeof this.params.notice === 'string' ? this.params.notice : '';
+        if (!notice) return;
+        this.params = { ...this.params, notice: '' };
+        window.gameAlert?.(notice, 'info', 'Note Added', 3000);
+    }
+
     async init() {
         // In the PC monitor the X closes it: no Close button beside it (UX slice 2c)
         if (this.pcView) this.params = { ...this.params, showCancel: false };
@@ -1281,7 +1297,7 @@ export class ContainerMinigame extends MinigameScene {
         // Back from reading a note taken from here: say so in the window, as a key take does
         // (a toast would wait for this window to close). Any mode, so before the layouts.
         if (this.params?.fromReturn && typeof this.params.notice === 'string' && this.params.notice) {
-            this.showMessage(this.params.notice, 'success');
+            this.showMessage(displayDashes(this.params.notice), 'success');
         }
 
         // A container opening now means no reader is about to hand back to a network screen
@@ -2711,7 +2727,7 @@ export class ContainerMinigame extends MinigameScene {
             if (noteText && window.addNote) {
                 const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : noteText;
                 window.addNote(item.name || 'Note', body, !!item.important);
-                this.showMessage(window.noteAddedText?.(item.name) || `Added ${displayDashes(item.name)} to your notes`, 'success');
+                this.showMessage(displayDashes(window.noteAddedText?.(item.name) || `Added ${item.name} to your notes`), 'success');
             } else {
                 this.showMessage(fromSignIn ? `Moved ${displayDashes(item.name)} to inventory` : `Added ${displayDashes(item.name)} to inventory`, 'success');
             }
