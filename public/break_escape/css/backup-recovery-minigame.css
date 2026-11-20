@@ -308,6 +308,28 @@
     }
 }
 
+/* Narrow or short window (where the tiles stack, and the framework's short-window query): the
+   confirm row sticks to the bottom of the console so it is visible on open. It stays in the grid
+   flow, so at the end of the scroll it sits after the last item and covers nothing. One custom
+   property sets the shell padding and the row's negative margins, so they cannot drift apart
+   (the base padding is 16px, so a short but wide window needs the padding set here too). */
+@media (max-width: 860px), (max-height: 500px) {
+    .backup-recovery-shell {
+        --br-pad: 12px;
+        padding: var(--br-pad);
+    }
+
+    .backup-recovery-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+        margin: 0 calc(-1 * var(--br-pad)) calc(-1 * var(--br-pad));
+        padding: var(--br-pad);
+        background: var(--mg07-bg);
+        border-top: 2px solid var(--mg07-border);
+    }
+}
+
 /* Outcome screen — shown after confirm, before minigame closes */
 
 .backup-recovery-shell--outcome {

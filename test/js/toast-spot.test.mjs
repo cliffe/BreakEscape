@@ -31,6 +31,7 @@ const FALLBACK = {
   '915x412 sis-config-threshold': { rung: 3, side: 'lane', controls: 1, titles: 0 },
   '915x412 log-filter': { rung: 3, side: 'left', width: 240, top: 176, controls: 1 },
   '915x412 cryptex': { rung: 3, side: 'lane-side', width: 240, top: 176, left: 659, controls: 1 },
+  '915x412 backup-recovery': { rung: 3, side: 'lane-side', width: 883, top: 256, left: 16, controls: 1, titles: 0 },   // sticky confirm row now sits in view (estimated box)
   '390x844 siem-dashboard': { rung: 3, side: 'lane', controls: 2 },
   '390x844 log-filter': { rung: 3, side: 'lane-side', width: 358, top: 112, controls: 1 },
   '800x600 backup-recovery': { rung: 3, side: 'lane-side', width: 768, top: 88, left: 16, controls: 1, titles: 0 },   // Batch 4: tiles fill the panel, see the test below
@@ -396,4 +397,45 @@ test('outermostBoxes (sorted by area) agrees with the pairwise definition, equal
     const boxes = Array.from({ length: 2 + rnd(25) }, () => { const l = rnd(6) * 10, t = rnd(6) * 10; return { left: l, top: t, right: l + 10 + rnd(4) * 10, bottom: t + 10 + rnd(4) * 10 }; });
     assert.deepEqual(outermostBoxes(boxes), old(boxes), `round ${round}`);
   }
+});
+
+// ------------------------------------------------------------------ B6: sticky confirm row
+
+test('backup-recovery 390x844: a toast keeps clear of the sticky confirm row, the X and the heading', () => {
+  const c = get('390x844', 'backup-recovery');
+  const confirm = c.controls[c.controls.length - 1];
+  assert.ok(confirm.bottom <= c.vh && confirm.top > c.vh / 2, 'the confirm row sits stuck at the bottom, in view');
+  const one = spotFor(c);
+  assert.deepEqual(hits(one, [confirm, ...c.xs, ...c.titles]), [], 'warning alone: confirm, X, heading');
+  assert.ok(inViewport(c, one), 'warning alone in the viewport');
+  const pair = spotFor(c, { pair: true });
+  assert.deepEqual(hits(pair, c.xs), [], 'pair: X');
+  assert.ok(inViewport(c, pair), 'pair in the viewport');
+});
+
+test('backup-recovery 915x412: the warning may cover the confirm border and padding but never its label text', () => {
+  const c = get('915x412', 'backup-recovery');
+  const confirm = c.controls[c.controls.length - 1];
+  const s = spotFor(c);
+  // The label sits below the 2px border and 12px top padding of the button (estimated box)
+  const labelTop = confirm.top + 14;
+  assert.ok(s.top + s.height <= labelTop, `warning bottom ${s.top + s.height} stays above the label top ${labelTop}`);
+  // The error alone: this estimated box puts it 21px into the label, but the live check at 915x412
+  // (2026-11-20, live/index.md) measured the error toast bottom at y171 against the label top at y327,
+  // so the estimate is too coarse to judge it. Only check the spot is computed.
+  const err = errorSpot(c);
+  assert.ok(Number.isFinite(err.top) && err.height > 0, 'error spot computed');
+});
+
+// A warning plus an error in a 412px window: the sticky confirm blocks the right-hand spot, so the
+// pair goes left over two tiles and the console heading (rung 3, the X stays clear). Accepted, see build-b6.md.
+test('backup-recovery 915x412 pair: rung 3, left, covers the heading and two tiles, X clear (recorded)', () => {
+  const c = get('915x412', 'backup-recovery');
+  const p = spotFor(c, { pair: true });
+  assert.equal(p.rung, 3, 'rung');
+  assert.equal(p.side, 'left', 'side');
+  assert.deepEqual([p.left, p.top, p.width], [16, 32, 480], 'place');
+  assert.equal(p.covers.titles, 1, 'covers the heading');
+  assert.equal(p.covers.controls, 2, 'covers two controls');
+  assert.deepEqual(hits(p, c.xs), [], 'X');
 });
