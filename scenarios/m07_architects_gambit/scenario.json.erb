@@ -1943,7 +1943,7 @@ scada_password = "CascadeWindow19"
           "globalVarOnKO": "gwen_ko",
           "behavior": { "hostile": { "leash": true, "chaseRange": 200 } },
           "needs": { "thirst": { "initial": 55, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "cooler": ["Cooler's the only thing working.", "Plan's simple: finish up, then out.", "I'd give a lot for real coffee.", "Last glass, then I'm off."] },
+          "chatter": { "cooler": ["Cooler's the only thing working.", "Plan's simple. Finish up, then out.", "I'd give a lot for real coffee.", "Last glass, then I'm off."] },
           "eventMappings": [
             { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 10000, "needs": { "set": { "thirst": 30 } } },
             { "eventPattern": "room_entered:generator_room", "condition": "globalVars.gwen_ko !== true", "onceOnly": true, "setGlobal": { "ops_staff_gone": true }, "setVisible": false },

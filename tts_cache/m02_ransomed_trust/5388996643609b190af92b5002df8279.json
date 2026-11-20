@@ -1,0 +1,13 @@
+{
+  "key": "5388996643609b190af92b5002df8279",
+  "npc": "patient_bed5",
+  "text": "Bed 4's alarming and the desk can't see it. You. Do something.",
+  "voice": "Autonoe",
+  "style": "Retired schoolteacher, seventy-one, post-operative and fully alert. British-Chinese, raised in Edinburgh -- a clear, precise Scottish accent. Calm, observant, quietly furious on behalf of the sicker patients around her. Speaks in complete sentences because she has always spoken in complete sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T19:20:17Z"
+}

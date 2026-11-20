@@ -119,7 +119,7 @@ Agent HaX: Regulators ask to see everything, so nobody minds when you do.
 
 Agent HaX: The paperwork gets you past reception. It won't survive a phone call to the FCA, so don't give anyone a reason to make one.
 
-Agent HaX: Your usual kit: picks, the RFID cloner and the print kit. No PIN cracker this time; R&D still have it on the bench.
+Agent HaX: Your usual kit: picks, the RFID cloner and the print kit. No PIN cracker this time. R&D still have it on the bench.
 
 + [What am I looking for?]
     -> targets

@@ -41,7 +41,7 @@ Director Magnus Netherton: Last night a courier in Helena, Montana, carried this
 // Stage 8 SC 4: on m08_nightshade_tidied the holdall was gone before
 // SAFETYNET reached it; the airline booking carries the ticket instead.
 - m08_completed and m08_nightshade_tidied:
-    Director Magnus Netherton: Nightshade cleared his locker before we reached it. The airline kept his booking: one way, to Helena.
+    Director Magnus Netherton: Nightshade cleared his locker before we reached it. The airline kept his booking. One way, to Helena.
     Director Magnus Netherton: We have read every courier out of that city since.
 - m08_completed:
     Director Magnus Netherton: Nightshade's go-bag held a one-way ticket to Helena. We have read every courier out of that city since.
@@ -53,7 +53,7 @@ Director Magnus Netherton: Last night a courier in Helena, Montana, carried this
 // it follows the branch when an earlier reason (Albion's card, the tags) took it.
 { m08_completed and (m04_lore_safehouse_address_found or m06_monitoring_enabled):
     { m08_nightshade_tidied:
-        Director Magnus Netherton: Nightshade cleared his locker before we reached it. The airline kept his booking: one way, to Helena.
+        Director Magnus Netherton: Nightshade cleared his locker before we reached it. The airline kept his booking. One way, to Helena.
     - else:
         Director Magnus Netherton: And Nightshade's go-bag held a one-way ticket to Helena.
     }

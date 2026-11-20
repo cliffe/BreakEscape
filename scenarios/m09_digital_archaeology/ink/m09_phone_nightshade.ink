@@ -33,7 +33,7 @@ Agent 0x00. I'd ask how the leave was, but HaX would tell me to get off her line
     - nightshade_file_held:
         So you've found my file. Never mind the boy in it. Look at the handwriting.
     - cage_opened:
-        You're past her gate. The plan cabinet was never on her schedule -- that's how you know he wanted it kept. Read it.
+        You're past her gate. The plan cabinet was never on her schedule. That's how you know he wanted it kept. Read it.
     - else:
         Sorensen's card is on custom keys. Crack the keys first, then read it. Don't guess.
         That plan cabinet isn't on her schedule. It never was. Whatever's in it, he wanted kept.
