@@ -3570,7 +3570,7 @@
         "outcome": {
           "type": "object",
           "required": ["setGlobalPrefix", "passPercent"],
-          "properties": {"setGlobalPrefix": {"type": "string"}, "passPercent": {"type": "integer", "minimum": 0, "maximum": 100}, "messageGlobals": {"type": "object", "description": "{ messageId: globalName }. On save each listed phish message writes its global true when the learner caught it (Report, Delete or Verify), else false; a later round never clears a true. The lint checks the ids and the declared boolean names.", "additionalProperties": {"type": "string"}}},
+          "properties": {"setGlobalPrefix": {"type": "string"}, "passPercent": {"type": "integer", "minimum": 0, "maximum": 100}, "messageGlobals": {"type": "object", "description": "{ messageId: globalName }. On save each listed phish message writes its global true when the learner caught it (Report, Delete or Verify), else false; a later round never clears a true. The lint checks the ids and the declared boolean names.", "additionalProperties": {"type": "string"}}, "messageCaughtVerdicts": {"type": "object", "description": "{ messageId: [verdicts] }. Optional, per message listed in messageGlobals: the verdicts that count as caught for that message (report, delete, verify), in place of the default Report, Delete or Verify. Use [\"report\"] or [\"report\", \"verify\"] for a key message whose lesson is to report it, so a Delete does not set its global.", "additionalProperties": {"type": "array", "minItems": 1, "items": {"enum": ["report", "delete", "verify"]}}}},
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },

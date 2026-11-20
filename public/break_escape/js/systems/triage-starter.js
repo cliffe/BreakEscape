@@ -156,12 +156,31 @@ export function messageGlobalPairs(set) {
 }
 
 /**
- * Whether the learner's verdict on a listed message counts as caught: the scorer's own test
+ * outcome.messageCaughtVerdicts[messageId]: the verdicts that count as caught for that one message,
+ * or null for the default. Only 'report', 'delete' and 'verify' are kept (a Trust is never a catch);
+ * a missing, malformed or empty-after-filtering entry gives null. A key message whose lesson is
+ * "report it" (a genuine colleague's breach notice, a ransom screen) lists ['report'] or
+ * ['report', 'verify'], so a Delete does not read as caught to the host (build review W2 M1).
+ */
+export function messageCaughtVerdicts(set, messageId) {
+    const m = set?.outcome?.messageCaughtVerdicts;
+    if (!m || typeof m !== 'object' || Array.isArray(m)) return null;
+    const list = m[messageId];
+    if (!Array.isArray(list)) return null;
+    const kept = list.filter(v => v === 'report' || v === 'delete' || v === 'verify');
+    return kept.length ? kept : null;
+}
+
+/**
+ * Whether the learner's verdict on a listed message counts as caught: the message's own
+ * outcome.messageCaughtVerdicts list when the set has one, else the scorer's own test
  * (isCaughtVerdict, a phish answered Report, Delete or Verify). A message with no answer is false.
  */
-function messageCaught(result, messageId) {
+export function messageCaught(result, messageId, set = null) {
     const a = Array.isArray(result?.answers) ? result.answers.find(x => x && x.id === messageId) : null;
-    return !!a && isCaughtVerdict(a.verdict);
+    if (!a) return false;
+    const only = messageCaughtVerdicts(set, messageId);
+    return only ? only.includes(a.verdict) : isCaughtVerdict(a.verdict);
 }
 
 /** The set with this id from scenario.social.triageSets, or null. */
@@ -278,7 +297,7 @@ async function saveRound(result, ctx, d) {
     // outcome.messageGlobals: one boolean per listed message, before complete in the same batch.
     // True once caught in any round and never cleared by a later, lower one (as pass is not).
     for (const [messageId, name] of messageGlobalPairs(ctx.set)) {
-        writes.push([name, globals[name] === true || messageCaught(result, messageId)]);
+        writes.push([name, globals[name] === true || messageCaught(result, messageId, ctx.set)]);
     }
     writes.push([n.complete, true]);
     for (const [name, value] of writes) {
