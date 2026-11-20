@@ -1771,14 +1771,21 @@ export class PasswordMinigame extends MinigameScene {
         let applied = false;
         let saved = null;
         let dead = false;
-        let focusH = 0; // the tallest innerHeight seen while a field had focus, per orientation
-        let focusW = 0; // the innerWidth focusH was taken at; a change (rotation) restarts focusH
+        // The tallest innerHeight seen for each innerWidth while a field had focus. A rotation looks
+        // the new width up, so rotating back keeps the baseline from before the keyboard shrank the layout.
+        const tallest = new Map();
+        let focusW = 0; // the innerWidth last seen while focused
+        const noteHeight = () => {
+            const w = window.innerWidth;
+            tallest.set(w, Math.max(tallest.get(w) || 0, window.innerHeight));
+        };
         const syncOrientation = () => {
-            if (focusW !== window.innerWidth) { focusH = window.innerHeight; focusW = window.innerWidth; }
+            if (focusW !== window.innerWidth) { focusW = window.innerWidth; }
+            noteHeight();
         };
         const keyboardUp = () => vv.scale === 1 && (window.innerHeight - vv.height) > 100;
         // A browser that resizes the layout for the keyboard: innerHeight itself has dropped
-        const layoutShrunk = () => vv.scale === 1 && focusH > 0 && (focusH - window.innerHeight) > 100;
+        const layoutShrunk = () => vv.scale === 1 && (tallest.get(window.innerWidth) || 0) > 0 && (tallest.get(window.innerWidth) - window.innerHeight) > 100;
         const focused = () => list.includes(document.activeElement);
         const clear = () => {
             if (applied) {
@@ -1789,8 +1796,9 @@ export class PasswordMinigame extends MinigameScene {
             }
             if (window.scrollY !== 0) { try { window.scrollTo(0, 0); } catch (e) { /* no scrollTo: leave it */ } }
         };
-        const lowestTarget = () => {
+        const lowestTarget = (errorWins) => {
             const msg = this.signInMessageEl;
+            if (errorWins && msg?.textContent) return { el: msg, bottom: msg.getBoundingClientRect().bottom };
             const cands = [];
             if (msg?.textContent) cands.push(msg);
             if (this.submitBtn) cands.push(this.submitBtn);
@@ -1811,17 +1819,21 @@ export class PasswordMinigame extends MinigameScene {
                 a.scrollIntoView({ block: 'start', inline: 'nearest' });
             }
         };
-        const reveal = () => {
+        // errorWins: a fresh error or lockout line is put 8px above the keyboard even if that pushes
+        // the field above the panel's top (the attempts left matter more than the field for that moment).
+        // Focus and keyboard resizes leave it false, so the field wins there.
+        const reveal = (errorWins) => {
             if (dead || !focused()) return;
+            errorWins = errorWins === true;
             if (!keyboardUp()) {
                 if (layoutShrunk()) {
-                    const t = lowestTarget();
-                    if (t) { revealInFrame(t.el); keepFieldInView(); }
+                    const t = lowestTarget(errorWins);
+                    if (t) { revealInFrame(t.el); if (!errorWins) keepFieldInView(); }
                 }
                 return;
             }
             const edge = vv.offsetTop + vv.height;
-            const target = lowestTarget();
+            const target = lowestTarget(errorWins);
             if (!target) return;
             if (target.bottom > edge) {
                 if (!applied) {
@@ -1836,25 +1848,24 @@ export class PasswordMinigame extends MinigameScene {
                 panel.style.scrollPaddingBottom = `${hidden / z}px`;
             }
             revealInFrame(target.el);
-            keepFieldInView();
+            if (!errorWins) keepFieldInView();
         };
         const onViewport = () => {
             if (vv.scale !== 1) return; // a pinch-zoom is not a keyboard
-            if (focusW && focusW !== window.innerWidth) syncOrientation(); // rotated while focused
+            if (focusW) syncOrientation(); // rotated while focused, or the layout grew taller
             // No keyboard: the padding always goes; a layout that is still shrunk then gets its reveal
             if (!keyboardUp()) { raf(() => { clear(); if (layoutShrunk()) reveal(); }); return; }
-            raf(reveal);
+            raf(() => reveal());
         };
         for (const f of list) {
             this.addEventListener(f, 'focus', () => {
                 syncOrientation();
-                focusH = Math.max(focusH, window.innerHeight);
-                if (keyboardUp()) raf(reveal);
+                if (keyboardUp()) raf(() => reveal());
             });
-            this.addEventListener(f, 'blur', () => raf(() => { if (!focused()) { clear(); focusH = 0; focusW = 0; } }));
+            this.addEventListener(f, 'blur', () => raf(() => { if (!focused()) { clear(); tallest.clear(); focusW = 0; } }));
         }
         this.addEventListener(vv, 'resize', onViewport);
-        this._keyboardReveal = () => { if (!dead && focused()) raf(reveal); };
+        this._keyboardReveal = (errorWins) => { if (!dead && focused()) raf(() => reveal(errorWins === true)); };
         this._clearKeyboardReveal = () => { dead = true; clear(); this._keyboardReveal = null; };
     }
 
@@ -2572,7 +2583,7 @@ export class PasswordMinigame extends MinigameScene {
             revealInFrame(this.signInMessageEl);
             // With the keyboard still up (Enter keeps the field focused) the padding was sized for
             // Sign in: run the keyboard reveal again so it covers this line
-            this._keyboardReveal?.();
+            this._keyboardReveal?.(true);
         }
     }
 

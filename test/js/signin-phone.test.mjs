@@ -115,7 +115,7 @@ const rectBottom = (el, bottom) => { el.getBoundingClientRect = () => ({ top: bo
 // as the panel scrolls. scrollNearest follows the browser's rule for block 'nearest': the target's
 // bottom must end at or above P minus the panel's scroll-padding (inline value times the zoom), and
 // the panel can only scroll as far as its bottom padding (times the zoom) allows.
-function lay(mg, { submit, msg = 0, P = 700, z = 1, panelTop = P - 40, field = null }) {
+function lay(mg, { submit, msg = 0, P = 700, z = 1, panelTop = P - 40, field = null, ufield = null }) {
     const panel = mg.gameContainer;
     const L = { scroll: 0, base: new Map([[mg.submitBtn, submit], [mg.signInMessageEl, msg]]), P, z };
     const rect = (bottom) => ({ top: bottom - 40, bottom, left: 0, right: 100, width: 100, height: 40 });
@@ -125,20 +125,25 @@ function lay(mg, { submit, msg = 0, P = 700, z = 1, panelTop = P - 40, field = n
     const pf = mg.passwordField;
     const fs = () => (field ? L.scroll : 0); // a default field stays put; a given one scrolls with the content
     pf.getBoundingClientRect = () => ({ top: fieldBase[0] - fs(), bottom: fieldBase[1] - fs(), left: 0, right: 100, width: 100, height: 32 });
-    // the username field (Other user) sits inside the panel and stays put
-    mg.usernameField.getBoundingClientRect = () => ({ top: panelTop + 5, bottom: panelTop + 37, left: 0, right: 100, width: 100, height: 32 });
+    // the username field (Other user): inside the panel and still by default; a given [top, bottom] scrolls with the content
+    const uBase = ufield || [panelTop + 5, panelTop + 37];
+    const uf = mg.usernameField;
+    const us = () => (ufield ? L.scroll : 0);
+    uf.getBoundingClientRect = () => ({ top: uBase[0] - us(), bottom: uBase[1] - us(), left: 0, right: 100, width: 100, height: 32 });
     L.fieldTop = () => fieldBase[0] - fs();
     L.fieldBottom = () => fieldBase[1] - fs();
+    L.uFieldTop = () => uBase[0] - us();
+    L.uFieldBottom = () => uBase[1] - us();
     L.panelTop = panelTop;
     if (z !== 1) panel.currentCSSZoom = z;
     for (const [el, b] of L.base) el.getBoundingClientRect = () => rect(L.base.get(el) - L.scroll);
     L.bottomOf = (el) => L.base.get(el) - L.scroll;
     L.scrollNearest = (el, opts) => {
         const px = (v) => (parseFloat(v) || 0) * z;
-        if (el === pf && opts && opts.block === 'start') {
+        if ((el === pf || el === uf) && opts && opts.block === 'start') {
             // block start: the field's top goes to the panel's top, within the panel's scroll range
             const max = px(panel.style.paddingBottom);
-            L.scroll = Math.max(0, Math.min(fieldBase[0] - panelTop, max));
+            L.scroll = Math.max(0, Math.min((el === pf ? fieldBase[0] : uBase[0]) - panelTop, max));
             return;
         }
         if (!L.base.has(el)) return;
@@ -350,7 +355,7 @@ test('a browser that resizes the layout for the keyboard: Sign in is revealed wi
 // ── R3 fixes: rotation, keyboard close after a layout shrink, offsetTop, short landscape ──────────
 test('Sign in above the edge and the message below it, no padding yet: the message is revealed above the keyboard', () => {
     const { mg, vv, flush } = open();
-    const L = lay(mg, { submit: 530, msg: 590 });
+    const L = lay(mg, { submit: 530, msg: 590, P: 700, panelTop: 143, field: [300, 332] });
     mg.signInMessageEl.textContent = '';
     focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
     assert.ok(mg.gameContainer.style.paddingBottom === '', 'Sign in is above the edge: no padding yet');
@@ -358,10 +363,11 @@ test('Sign in above the edge and the message below it, no padding yet: the messa
     flush();
     assert.ok(mg.gameContainer.style.paddingBottom !== '', 'the message put the padding on');
     assert.ok(L.bottomOf(mg.signInMessageEl) <= 544 - 8, `the message ends above the keyboard (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    assert.ok(L.fieldTop() >= L.panelTop, `the field stays in the panel (top ${L.fieldTop()}, panel ${L.panelTop})`);
     mg.cleanup();
 });
 
-test('the keyboard closing after a layout shrink (rotation) clears the padding', () => {
+test('the keyboard closing after a keyboard-up rotation clears the padding', () => {
     const { mg, vv, flush } = open();
     window.innerWidth = 390;
     focusOn(mg.passwordField); flush(); // portrait focus: focusH 844
@@ -400,18 +406,121 @@ test('a visual viewport with a non-zero offsetTop (an iOS pan): the edge is offs
     mg.cleanup();
 });
 
-test('landscape 844x390, wrong password with the keyboard up: the focused field stays in the panel', () => {
-    const { mg, vv, flush } = open();
+test('landscape 844x390: on focus and resize the field wins; a fresh error line then wins over it (m1)', () => {
+    const { mg, scrolls, vv, flush } = open();
     // screen 48 to 330; field 198-230, Sign in 238-270, message 286-328 at scroll 0; keyboard edge 150
     const L = lay(mg, { submit: 270, msg: 328, P: 330, panelTop: 48, field: [198, 230] });
     mg.signInMessageEl.textContent = '';
     window.innerWidth = 844; window.innerHeight = 390;
     focusOn(mg.passwordField); flush();
     vv.height = 150; vv.fire(); flush();
+    assert.ok(L.fieldTop() >= L.panelTop && L.fieldBottom() <= 150, `field wins on resize (top ${L.fieldTop()}, bottom ${L.fieldBottom()})`);
+    scrolls.length = 0;
     mg.setSignInMessage('Incorrect username or password. 2 attempts left.', 'error');
     flush();
-    assert.ok(L.fieldTop() >= L.panelTop, `the field is not above the panel (top ${L.fieldTop()}, panel ${L.panelTop})`);
-    assert.ok(L.fieldBottom() <= 150, `the field is above the keyboard (bottom ${L.fieldBottom()})`);
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 150 - 8, `the error line ends 8px above the keyboard (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    assert.ok(!scrolls.some((r) => r.opts && r.opts.block === 'start'), 'the field is not scrolled back over the error line');
+    assert.ok(L.fieldTop() < L.panelTop, 'the field gives way to the error line (the decided trade-off)');
+    // the next keyboard resize is not a message: the field wins again
+    vv.fire(); flush();
+    assert.ok(L.fieldTop() >= L.panelTop, `field wins again on a resize (top ${L.fieldTop()})`);
     window.innerWidth = 1024; window.innerHeight = INNER;
+    mg.cleanup();
+});
+
+test('landscape 667x330 (edge 95): the attempts-left line is brought above the keyboard', () => {
+    const { mg, vv, flush } = open();
+    const L = lay(mg, { submit: 230, msg: 288, P: 290, panelTop: 48, field: [150, 182] });
+    mg.signInMessageEl.textContent = '';
+    window.innerWidth = 667; window.innerHeight = 330;
+    focusOn(mg.passwordField); flush();
+    vv.height = 95; vv.fire(); flush();
+    mg.setSignInMessage('Incorrect username or password. 2 attempts left.', 'error');
+    flush();
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 95 - 8, `the line ends above the keyboard (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    window.innerWidth = 1024; window.innerHeight = INNER;
+    mg.cleanup();
+});
+
+test('portrait: the field moves with the content, Sign in is lifted, and the field is not scrolled to the top', () => {
+    const { mg, scrolls, vv, flush } = open();
+    // panel 143 to 700; the field sits low in the panel, Sign in at 600; keyboard edge 544
+    const L = lay(mg, { submit: 600, msg: 0, P: 700, panelTop: 143, field: [300, 332] });
+    mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); flush();
+    keyboard(vv); vv.fire(); flush();
+    assert.ok(L.bottomOf(mg.submitBtn) <= 544 - 8, `Sign in is lifted above the keyboard (bottom ${L.bottomOf(mg.submitBtn)})`);
+    assert.ok(L.fieldTop() === 300 - 64, `the field moved up with the content by 64 (top ${L.fieldTop()})`);
+    assert.ok(!scrolls.some((r) => r.opts && r.opts.block === 'start'), 'no block start scroll while the field is inside the panel');
+    mg.cleanup();
+});
+
+test('Other user: the username field wins on resize in landscape with a message already showing', () => {
+    const { mg, vv, flush } = open();
+    const L = lay(mg, { submit: 270, msg: 328, P: 330, panelTop: 48, ufield: [198, 230] });
+    mg.signInMessageEl.textContent = 'Enter a username.';
+    window.innerWidth = 844; window.innerHeight = 390;
+    focusOn(mg.usernameField); flush();
+    vv.height = 150; vv.fire(); flush();
+    assert.ok(L.uFieldTop() >= L.panelTop && L.uFieldBottom() <= 150, `username field in view (top ${L.uFieldTop()}, bottom ${L.uFieldBottom()})`);
+    window.innerWidth = 1024; window.innerHeight = INNER;
+    mg.cleanup();
+});
+
+test('Other user: a fresh error line wins over the username field in landscape', () => {
+    const { mg, vv, flush } = open();
+    const L = lay(mg, { submit: 270, msg: 328, P: 330, panelTop: 48, ufield: [198, 230] });
+    mg.signInMessageEl.textContent = '';
+    window.innerWidth = 844; window.innerHeight = 390;
+    focusOn(mg.usernameField); flush();
+    vv.height = 150; vv.fire(); flush();
+    mg.setSignInMessage('Enter a username.', 'error');
+    flush();
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 150 - 8, `the line ends above the keyboard (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    window.innerWidth = 1024; window.innerHeight = INNER;
+    mg.cleanup();
+});
+
+test('a panned visual viewport (offsetTop 50): the error line ends 8px above offsetTop plus height', () => {
+    const { mg, vv, flush } = open();
+    const L = lay(mg, { submit: 270, msg: 328, P: 330, panelTop: 48, field: [198, 230] });
+    mg.signInMessageEl.textContent = '';
+    window.innerWidth = 844; window.innerHeight = 390;
+    focusOn(mg.passwordField); flush();
+    vv.height = 100; vv.offsetTop = 50; vv.fire(); flush(); // edge 150
+    mg.setSignInMessage('Incorrect username or password. 2 attempts left.', 'error');
+    flush();
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 150 - 8, `the line ends above the visible bottom (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    window.innerWidth = 1024; window.innerHeight = INNER;
+    mg.cleanup();
+});
+
+test('rotating back to a width seen earlier keeps the tallest height, so a shrunk layout is revealed (m2)', () => {
+    const { mg, scrolls, vv, flush } = open();
+    window.innerWidth = 390;
+    lay(mg, { submit: 300 }); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); flush(); // portrait, innerHeight 844
+    window.innerWidth = 844; window.innerHeight = 390; vv.height = 390; vv.fire(); flush(); // landscape, no keyboard
+    scrolls.length = 0;
+    window.scrollY = 40; // drift to be put back
+    // rotate back with a browser that resizes the layout for the keyboard: innerHeight is already shrunk
+    window.innerWidth = 390; window.innerHeight = 420; vv.height = 420; vv.fire(); flush();
+    assert.ok(scrolls.length === 1 && scrolls[0].el === mg.submitBtn, `Sign in revealed after the rotation (got ${scrolls.length})`);
+    assert.ok(window.scrollY === 0, 'window scroll drift put back before the reveal');
+    assert.ok(mg.gameContainer.style.paddingBottom === '', 'no padding on the layout-shrunk path');
+    window.innerWidth = 1024; window.innerHeight = INNER;
+    mg.cleanup();
+});
+
+test('the layout grows taller while focused: the baseline rises with it', () => {
+    const { mg, scrolls, vv, flush } = open();
+    window.innerHeight = 700; // focus with the browser bar showing
+    lay(mg, { submit: 300 }); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); flush();
+    window.innerHeight = 844; vv.height = 844; vv.fire(); flush(); // bar hides
+    scrolls.length = 0;
+    window.innerHeight = 600; vv.height = 600; vv.fire(); flush(); // keyboard: shrunk by 244 from the tallest
+    assert.ok(scrolls.length === 1, `the shrink is measured against 844, not 700 (got ${scrolls.length})`);
+    window.innerHeight = INNER; vv.height = INNER;
     mg.cleanup();
 });
