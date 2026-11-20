@@ -310,6 +310,47 @@
   cursor: pointer;
 }
 
+/* Touch: the 10px track and 14px thumb are far under a 44px target. The input itself becomes the
+   44px hit box (transparent, no border); the 6px track is drawn on the track pseudo-elements and
+   the thumb grows to 20x28. Shared by the game menu's Audio page and the music widget panel. */
+@media (max-width: 600px), (pointer: coarse) {
+  .mw-vol-row { min-height: 44px; }
+
+  .mw-vol-slider {
+    height: 44px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+
+  .mw-vol-slider::-webkit-slider-runnable-track {
+    box-sizing: content-box;
+    height: 6px;
+    background: #333;
+    border: 2px solid #444;
+  }
+
+  .mw-vol-slider::-moz-range-track {
+    box-sizing: content-box;
+    height: 6px;
+    background: #333;
+    border: 2px solid #444;
+  }
+
+  .mw-vol-slider::-webkit-slider-thumb {
+    width: 20px;
+    height: 28px;
+    margin-top: -9px; /* centres the 28px thumb on the 10px track box (webkit does not) */
+    border-radius: 0;
+  }
+
+  .mw-vol-slider::-moz-range-thumb {
+    width: 20px;
+    height: 28px;
+    border-radius: 0;
+  }
+}
+
 .mw-vol-value {
   font-size: 10px;
   color: #666;

@@ -899,6 +899,14 @@
 [data-ui-theme] #music-widget-panel .mw-vol-slider::-webkit-slider-thumb { background: var(--ui-accent); }
 [data-ui-theme] #music-widget-panel .mw-vol-slider::-moz-range-thumb { background: var(--ui-accent); }
 
+/* Touch: the slider element is transparent (see music-widget.css), so the themed fill moves onto
+   the track pseudo-elements. Border colour stays as music-widget.css has it. */
+@media (max-width: 600px), (pointer: coarse) {
+  [data-ui-theme] #music-widget-panel .mw-vol-slider { background: transparent; }
+  [data-ui-theme] #music-widget-panel .mw-vol-slider::-webkit-slider-runnable-track { background: var(--ui-surface-raised); }
+  [data-ui-theme] #music-widget-panel .mw-vol-slider::-moz-range-track { background: var(--ui-surface-raised); }
+}
+
 
 /* ===================================================================
    Buttons: button.png as a filled 9-slice
@@ -980,6 +988,17 @@
 [data-ui-theme] .game-menu-item.active,
 [data-ui-theme] .game-menu-resume {
   color: var(--ui-accent);
+}
+
+/* The open tab needs a cue besides colour: a raised fill and a 4px accent bar along the bottom
+   edge. The inset shadow sits in the padding box, inside the 9-slice border, so it works in the
+   column (desktop) and the row (phone) layouts and does not move the text. Listed with :hover and
+   :active so the button states above (background: none, box-shadow: none) do not remove it. */
+[data-ui-theme] .game-menu-item.active,
+[data-ui-theme] .game-menu-item.active:hover,
+[data-ui-theme] .game-menu-item.active:active {
+  background: var(--ui-surface-raised);
+  box-shadow: inset 0 -4px 0 var(--ui-accent);
 }
 
 [data-ui-theme] .tutorial-btn-primary:hover,
