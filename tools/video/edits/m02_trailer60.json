@@ -4,7 +4,7 @@
  "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v3 (2026-11-20, from the v2 feedback): Bernie's line voiced (J-cut 0.65 s, L-cut 1.55 s over the ward walk that now follows him, gain -3.5 to match HaX); Val approach before her line; ward walk trimmed before the door bump and moved behind Bernie (t22 ward crowd takes its old slot); kitchen walk (t26) muted; Ghost video call at dialogue level, ducked, with the whole Money line (18.4-22.5 in t17) in ghost_close; J/L-cuts on HaX, Bernie, Val, Ghost (new audio.post = L-cut, mix-audio.mjs and make-srt.mjs); m_lights moved after the ward crowd to make room. Kept from v2: music, Reeves flash, ransom line, console beat, avatar rotation. v2 (2026-11-20): 22 re-recorded takes with spy avatars, windows and crops from docs/video/takes_m02.md 'v2 edit windows'; hax_hook J-cut retimed (pre 1.25 s) for the 4.13 s hax_1; ghost terminal window widened to 6.8-12.2 and chair to 0.9-3.9 to fill their slots (t26 is 1.87 s); Real Hacking slot is now the m02 console recon clip (needs BE_CLIPS_DIR=$FOOTAGE_ROOT/m02/clips). Ghost beats silent. Rough cut.",
+ "status": "v3b (2026-11-20): ghost_reveal muted so Ghost's two lines no longer overlap. v3 (2026-11-20, from the v2 feedback): Bernie's line voiced (J-cut 0.65 s, L-cut 1.55 s over the ward walk that now follows him, gain -3.5 to match HaX); Val approach before her line; ward walk trimmed before the door bump and moved behind Bernie (t22 ward crowd takes its old slot); kitchen walk (t26) muted; Ghost video call at dialogue level, ducked, with the whole Money line (18.4-22.5 in t17) in ghost_close; J/L-cuts on HaX, Bernie, Val, Ghost (new audio.post = L-cut, mix-audio.mjs and make-srt.mjs); m_lights moved after the ward crowd to make room. Kept from v2: music, Reeves flash, ransom line, console beat, avatar rotation. v2 (2026-11-20): 22 re-recorded takes with spy avatars, windows and crops from docs/video/takes_m02.md 'v2 edit windows'; hax_hook J-cut retimed (pre 1.25 s) for the 4.13 s hax_1; ghost terminal window widened to 6.8-12.2 and chair to 0.9-3.9 to fill their slots (t26 is 1.87 s); Real Hacking slot is now the m02 console recon clip (needs BE_CLIPS_DIR=$FOOTAGE_ROOT/m02/clips). Ghost beats silent. Rough cut.",
  "music": {
   "track": "Noir/Steel Shadows in E Minor (Remastered).mp3",
   "analysis": "steel_shadows_in_e_minor_remastered_60.json",
@@ -624,7 +624,7 @@
     }
    },
    "audio": {
-    "gain_db": -2,
+    "gain_db": 1,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.3,
@@ -1417,7 +1417,7 @@
     "in": 2.7,
     "out": 4.1333
    },
-   "note": "v3: voiced. Ghost's voice in t17 2.4-4.1 (measured); picture 2.7-4.13 (hooded figure, subtitle), audio from 2.4 (pre 0.3). Level 0 dB: the take's Ghost voice is -15.5 LUFS, the same as HaX.",
+   "note": "v3b: muted. With 'Look up' voiced (t17 2.4-4.1) it overlapped the pre-roll of ghost_close's Money line by 0.66 s, and the closing bumper leaves no room for both lines in full; the user's note was that the Money line was cut off, so it plays whole and 'Look up' stays as the game's on-screen subtitle only. v3: voiced. Ghost's voice in t17 2.4-4.1 (measured); picture 2.7-4.13 (hooded figure, subtitle), audio from 2.4 (pre 0.3). Level 0 dB: the take's Ghost voice is -15.5 LUFS, the same as HaX.",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -1436,10 +1436,7 @@
     }
    },
    "audio": {
-    "gain_db": 0,
-    "dialogue": true,
-    "duck_music": true,
-    "pre": 0.3
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1448,16 +1445,7 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "hood, face a black void; subtitle 'Before you touch that console - look up.'"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Ghost",
-     "text": "Before you touch that console. Look up.",
-     "start": -0.3,
-     "end": 1.4
-    }
-   ]
+   }
   },
   {
    "id": "ghost_close",
@@ -1497,7 +1485,7 @@
     }
    },
    "audio": {
-    "gain_db": 0,
+    "gain_db": 3.5,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.7,
