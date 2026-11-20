@@ -4,7 +4,7 @@
 
 TEST: NPC Needs
 
-A throwaway engine test for the generic NPC needs system. Nothing here is a mission. One NPC leaves her desk for a drink and returns, one collects the Sample Binder when you drop it within 4 tiles of him (noticeRadius; where you start is near enough) and takes it to his desk, one has no needs at all, and one (coordinate home) starts thirsty, so a reload has his need urgent before the water cooler registers: he should fetch a drink within seconds of every load, never after a 4 minute park. Drop it in the far bottom-left corner and he leaves it there; pick it up and drop it nearer him and he fetches it.
+A throwaway engine test for the generic NPC needs system. Nothing here is a mission. One NPC leaves her desk for a drink and returns, one collects the Sample Binder when you drop it within 4 tiles of him (noticeRadius; where you start is near enough) and takes it to his desk, one has no needs at all, and one (coordinate home) starts thirsty, so on every load his need is urgent before the world path grid is built: he should fetch a drink within seconds, never after a 4 minute park. Drop it in the far bottom-left corner and he leaves it there; pick it up and drop it nearer him and he fetches it.
 
 ## Scenario Statistics
 

@@ -1569,7 +1569,11 @@ export class NPCNeedsSystem {
         // above all): until then every source reads as unreachable and an urgent need would park
         // `no_source` for the full defer (CA0 wave 2 gate D). Wait instead; a world without
         // pathReady (the node stub) is always ready.
-        if (typeof this.world.pathReady === 'function' && !this.world.pathReady()) return;
+        if (typeof this.world.pathReady === 'function' && !this.world.pathReady()) {
+            // Once per NPC, so a grid that never builds still shows in the log (review R1 m4)
+            if (!s.pathWaitLogged) { s.pathWaitLogged = true; this._log(s.npcId, 'path_wait'); }
+            return;
+        }
         this._selectSearched = false;
         const pick = this._select(s, pos);
         if (pick) {

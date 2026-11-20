@@ -51,7 +51,8 @@ test('reload with an urgent need: no park while the path grid is not built; a dr
     const job = ev(sys, 'job_start');
     assert.equal(job.length, 1, 'selects on the first tick with a grid');
     assert.equal(job[0].target, 'water_cooler');
-    assert.ok(job[0].t <= 5, `tick ${job[0].t}`);
+    assert.equal(job[0].t, 4, 'the first tick with a grid, not one later');
+    assert.equal(ev(sys, 'path_wait').length, 1, 'the wait is logged once');
     sys.step(60000);
     assert.ok(ev(sys, 'used').some(e => e.target === 'water_cooler'));
     assert.equal(ev(sys, 'parked').length, 0);
@@ -98,4 +99,27 @@ test('adapter pathReady: false until the world grid, its bounds and its pathfind
     assert.equal(adapterPathReady({ findWorldPath: find }), false);
     assert.equal(adapterPathReady({ findWorldPath: find, worldPathfinder: {}, worldGridBounds: {} }), false, 'no grid yet');
     assert.equal(adapterPathReady({ findWorldPath: find, worldPathfinder: {}, worldGrid: [[0]], worldGridBounds: {} }), true);
+});
+
+test('adapter: with no grid, reachable() and pathReady() are both false; with the grid both are true', () => {
+    // The pair behind the bug: reachable() reads a source as unreachable without a grid (approachCell
+    // finds no cell), so the needs layer must not select while pathReady() is false
+    const sprite = { body: { center: { x: 100, y: 100 } } };
+    const pm = { findWorldPath: (sx, sy, ex, ey, cb) => cb(pm.worldGrid ? [{ x: ex, y: ey }] : null) };
+    pm.findNearestWalkableWorldCell = (x, y) => (pm.worldGrid ? { x, y } : null);
+    const win = {
+        rooms: {}, gameState: { globalVariables: {} }, gameScenario: {}, pathfindingManager: pm,
+        npcBehaviorManager: { getBehavior: id => (id === 'yusuf' ? { sprite, roomId: 'office' } : null) }
+    };
+    const cooler = { id: 'water_cooler', x: 300, y: 180, roomId: 'office', affordance: { satisfies: 'thirst' } };
+    const prev = globalThis.window;
+    globalThis.window = win;
+    try {
+        const w = createEngineWorld();
+        assert.equal(w.pathReady(), false);
+        assert.equal(w.reachable('yusuf', cooler), false, 'no grid: the source reads as unreachable');
+        Object.assign(pm, { worldPathfinder: {}, worldGrid: [[0]], worldGridBounds: {} });
+        assert.equal(w.pathReady(), true);
+        assert.equal(w.reachable('yusuf', cooler), true);
+    } finally { globalThis.window = prev; }
 });
