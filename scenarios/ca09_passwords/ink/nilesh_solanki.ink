@@ -22,15 +22,15 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e9_passwords_defend_complete:
-        Nilesh Solanki: Both sides done. A different password for every account, kept in a manager. Three random words for the few you must remember by heart. And deny anything you didn't start.
-        Nilesh Solanki: Nobody's ever in trouble for reporting.
+        Nilesh Solanki: Both sides done. Use a different password for every account and keep them in a manager, with three random words for the few you have to remember.
+        Nilesh Solanki: Deny anything you didn't start. Nobody's ever in trouble for reporting.
     - else:
         { guess_e9_landed:
             Nilesh Solanki: Good. One reused password opened his account, no clever cracking at all.
-            Nilesh Solanki: Now it's your turn in the seat: your phone's buzzing, and someone has a password of yours.
+            Nilesh Solanki: Now it's your turn in the seat. Your phone's buzzing, and someone has a password of yours.
         - else:
             Nilesh Solanki: Welcome to the Tarrowby exercise. Most passwords aren't cracked. They're guessed, reused or handed over.
-            Nilesh Solanki: Start at the kiosk: I'll show you how, on a made-up colleague, then you shut it down on your own account.
+            Nilesh Solanki: Start at the kiosk. I'll show you how, on a made-up colleague, then you shut it down on your own account.
             Nilesh Solanki: Nothing you touch here is a real password.
         }
     }

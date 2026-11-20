@@ -19,9 +19,9 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e20_remote_and_mobile_working_defend_defend_complete:
-        Zainab Hussain: That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake; if unsure, use your hotspot.
+        Zainab Hussain: That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake. If unsure, use your hotspot.
     - else:
-        Zainab Hussain: The kiosk has the networks and pages you meet on the road. Connect, report, or ask the venue first. A page wanting your work password is a trap. Nothing's real.
+        Zainab Hussain: The kiosk has the networks and pages you meet on the road, all made up. Connect, report or ask the venue. A page wanting your work password is a trap.
     }
 }
 + [Thanks, Zainab.]

@@ -74,7 +74,7 @@ LINES = {
         'Thanks, Fatima.', 'Any time.'),
     ('e4', 'defend'): (
         "Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.",
-        "That's everything cleared, thanks. Money, in a hurry: ring her on the number you already have, or ask Yasmin.",
+        "That's everything cleared, thanks. Money, in a hurry? Ring her on a number you already hold, or ask Yasmin.",
         'Thanks, Thandiwe.', 'Shout if anything else comes in.'),
     ('e2', 'pre'): (
         "Hi. Before the training there's a short check on the kiosk: ten emails from the recruitment inbox. Just do what you'd normally do with them.",

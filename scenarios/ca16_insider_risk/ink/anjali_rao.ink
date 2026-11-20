@@ -37,7 +37,7 @@ VAR hub_quiet = false
     - else:
         Anjali Rao: Anjali Rao, information security. This week someone's leaving and there's a bit of talk going round. You're not here to catch anyone.
         Anjali Rao: Keep your login yours, tell me what gets offered to you, and if something gives you pause, bring me the facts rather than a theory.
-        Anjali Rao: Start at the kiosk: make this week's calls first, then raise a concern and sort the messages.
+        Anjali Rao: Start at the kiosk. Make this week's calls first, then raise a concern and sort the messages.
     }
 }
 + [Thanks, Anjali.]

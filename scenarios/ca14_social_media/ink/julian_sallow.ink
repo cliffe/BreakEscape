@@ -30,7 +30,7 @@ VAR hub_quiet = false
             Julian Sallow: Now you spot the same moves in a feed and an inbox, and we close the gaps, on Dani's profile and on yours.
         - else:
             Julian Sallow: Welcome to the Merrin & Sallow exercise. Everyone here is fictional, and nothing you do leaves this room.
-            Julian Sallow: Start at the kiosk: see what one colleague's public posts give away, then close the gaps, on his profile and on yours.
+            Julian Sallow: Start at the kiosk. See what one colleague's public posts give away, then close the gaps, on his profile and on yours.
         }
     }
 }

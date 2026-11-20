@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e7_voice_ceo_defend_defend_complete:
-        Agnieszka Duda: All five done, thanks. Whoever's voice it is, ring back on the number we already hold and that settles it.
+        Agnieszka Duda: All five done, thanks. Whoever's voice it is, ring back on a number you already hold and that settles it.
     - else:
         Agnieszka Duda: Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.
     }

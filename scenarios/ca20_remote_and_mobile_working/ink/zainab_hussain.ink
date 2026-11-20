@@ -41,7 +41,7 @@ VAR hub_quiet = false
         Zainab Hussain: Keep your devices with you, and if you lose one, ring the service desk straight away, day or night. Nobody's ever in trouble for reporting.
     - else:
         Zainab Hussain: Welcome to the Tarrowby exercise. I'm out of the office more than I'm in it, so this one's close to my heart.
-        Zainab Hussain: Working on the road is normal and fine; it's the small things that catch people.
+        Zainab Hussain: Working on the road is normal and fine. It's the small things that catch people.
         Zainab Hussain: A screen someone reads, a call someone hears, a bag left for a minute, a password typed into the wrong Wi-Fi page.
         Zainab Hussain: I'll walk you through two days, then you sort the real networks from the fakes. Nothing here is a real password.
     }
