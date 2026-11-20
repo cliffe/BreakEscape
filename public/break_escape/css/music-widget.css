@@ -317,7 +317,10 @@
   /* The floating panel is fixed at top: 82px; with 44px rows it would run off a landscape phone,
      so it scrolls inside the viewport (the menu's Audio page resets this, see game-menu.css) */
   #music-widget-panel {
-    max-height: calc(100vh - 90px);
+    /* top 82px + frame both sides + content must end inside the viewport; the panel is zoomed by
+       --hud-zoom (hud.css), so the viewport is divided back; dvh follows a phone's toolbar */
+    max-height: calc(100vh / var(--hud-zoom, 1) - 90px - 2 * var(--ui-frame-px, 2px));
+    max-height: calc(100dvh / var(--hud-zoom, 1) - 90px - 2 * var(--ui-frame-px, 2px));
     overflow-y: auto;
     overscroll-behavior: contain;
   }

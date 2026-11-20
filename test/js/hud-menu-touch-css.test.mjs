@@ -27,7 +27,7 @@ function touchBlocks(file) {
 }
 const touchBlock = (file) => touchBlocks(file).join('\n');
 const rule = (block, sel) => {
-    const m = [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find((r) => r[1].trim() === sel);
+    const m = [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].findLast((r) => r[1].trim() === sel); // last wins the cascade
     assert.ok(m, `rule ${sel}`);
     return m[2];
 };
@@ -66,7 +66,20 @@ test('webkit thumb is centred on the 6px content box of the track', () => {
 
 test('touch: floating panel scrolls inside the viewport; the menu page resets it', () => {
     const r = rule(touchBlock('music-widget.css'), '#music-widget-panel');
-    assert.ok(/max-height:\s*calc\(100vh - 90px\)/.test(r), 'max-height within the viewport');
+    const caps = [...r.matchAll(/max-height:\s*([^;]+);/g)].map((m) => m[1]);
+    assert.ok(caps.length === 2 && /100vh/.test(caps[0]) && /100dvh/.test(caps[1]), 'vh fallback then dvh line last');
+    for (const c of caps) {
+        assert.ok(/\/ var\(--hud-zoom, 1\)/.test(c), 'viewport divided by the HUD zoom');
+        assert.ok(/2 \* var\(--ui-frame-px/.test(c), 'counts the frame on both sides');
+    }
+    // Work it out for the widest themed frame, zoom 1: top 82 + 2 frames + content cap must fit
+    const themes = readFileSync(join(cssDir, 'ui-themes.css'), 'utf8');
+    const frames = [...themes.matchAll(/--ui-frame-px:\s*(\d+)px/g)].map((m) => +m[1]);
+    const widest = Math.max(...frames);
+    assert.ok(widest === 28, 'widest frame is 28px (update if themes change)');
+    for (const H of [390, 360]) {
+        assert.ok(82 + 2 * widest + (H - 90 - 2 * widest) <= H, `panel ends inside a ${H}px viewport`);
+    }
     assert.ok(/overflow-y:\s*auto/.test(r), 'scrolls');
     const g = strip(readFileSync(join(cssDir, 'game-menu.css'), 'utf8'));
     const m = [...g.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find((x) => x[1].trim() === '[data-ui-theme] .game-menu-page #music-widget-panel,\n.game-menu-page #music-widget-panel');
@@ -88,4 +101,9 @@ test('active menu tab cue is a 4px accent ::after drawn above the border image',
     assert.ok(!/box-shadow:\s*inset 0 -4px/.test(src), 'no inset shadow (the 9-slice fill covers it)');
     const themes = (src.match(/\[data-ui-theme="[a-z]+"\]\s*\{[^{}]*--ui-accent:/g) || []).length;
     assert.ok(themes === 7, 'all 7 themes define --ui-accent');
+});
+
+test('rule finder takes the last matching rule (a later bad override cannot hide)', () => {
+    const b = '.a { x: 1; } .a { x: 2; }';
+    assert.ok(/x:\s*2/.test(rule(b, '.a')), 'last rule wins');
 });
