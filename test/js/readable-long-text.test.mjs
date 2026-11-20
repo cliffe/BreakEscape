@@ -296,3 +296,21 @@ test('gameDisplay modal: a null or missing observation shows just the text', () 
   const b = run(mon('The text.', { readDisplay: 'gameDisplay' }));
   assert.ok(b.shown[0].body === 'The text.', 'missing: ' + b.shown[0].body);
 });
+
+test('onInteract.display gameDisplay: an observation identical to the text shows once', () => {
+  const same = 'Server room access is logged.';
+  const r = run(mon(same, { observations: same, onInteract: { display: 'gameDisplay' } }));
+  assert.ok(r.shown.length === 1, 'one modal: ' + r.shown.length);
+  assert.ok(r.shown[0].body === same, 'text once, no em: ' + r.shown[0].body);
+  const d = run(mon('The text.', { observations: 'A note.', onInteract: { display: 'gameDisplay' } }));
+  assert.ok(d.shown.length === 1 && d.shown[0].body === '<em>A note.</em>\n\nThe text.', 'different still both: ' + d.shown[0]?.body);
+});
+
+test('gameDisplay modal: a hostile string identical in observation and text is escaped and shown once', () => {
+  const HOSTILE = `<img src=x onerror="x()"> & "q" 's'`;
+  const ESC = '&lt;img src=x onerror=&quot;x()&quot;&gt; &amp; &quot;q&quot; &#39;s&#39;';
+  const rd = run(mon(HOSTILE, { observations: HOSTILE, readDisplay: 'gameDisplay' }));
+  assert.ok(rd.shown.length === 1 && rd.shown[0].body === ESC, 'readDisplay: ' + rd.shown[0]?.body);
+  const oi = run(mon(HOSTILE, { observations: HOSTILE, onInteract: { display: 'gameDisplay' } }));
+  assert.ok(oi.shown.length === 1 && oi.shown[0].body === ESC, 'onInteract: ' + oi.shown[0]?.body);
+});

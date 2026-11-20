@@ -382,6 +382,49 @@ test('read in place: hostile name, observations and text are escaped once (five 
     assert.equal(msg, `<em>Seen: ${ESC}</em>\n\n${ESC}`);
 });
 
+test('read in place: a hostile observation identical to the text is escaped and shown once', () => {
+    reset();
+    displays.length = 0;
+    const HOSTILE = `<img src=x onerror="x()"> & "q" 's' -- end`;
+    handleObjectInteraction(invImg({ type: 'lanyard', id: 'h2', name: 'Plain', readable: true, readDisplay: 'gameDisplay',
+        addToNotes: false, text: HOSTILE, observations: HOSTILE }));
+    assert.equal(displays.length, 1);
+    const ESC = '&lt;img src=x onerror=&quot;x()&quot;&gt; &amp; &quot;q&quot; &#39;s&#39; – end';
+    assert.equal(displays[0][0], ESC);
+});
+
+// The examine panel itself: load ExamineMinigame with a stub base class and a fake container.
+const panelDir = mkdtempSync(join(tmpdir(), 'examine-panel-'));
+writeFileSync(join(panelDir, 'same-toast-text.mjs'), readFileSync(join(js, 'utils/same-toast-text.js'), 'utf8'));
+writeFileSync(join(panelDir, 'panel.mjs'), readFileSync(join(js, 'minigames/examine/examine-minigame.js'), 'utf8')
+    .split("'../framework/base-minigame.js'").join(`'${dataUrl('export class MinigameScene { constructor(c, p) { this.container = c; this.params = p; this.gameContainer = { innerHTML: "", querySelector: () => null }; } init() {} }')}'`)
+    .split("'../../utils/display-dashes.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/display-dashes.js'), 'utf8'))}'`)
+    .split("'../../systems/examine.js'").join(`'${dataUrl('export const examineDisplaySize = () => ({});')}'`)
+    .split("'../../utils/escape-html.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/escape-html.js'), 'utf8'))}'`)
+    .split("'../../utils/same-toast-text.js'").join(`'${pathToFileURL(join(panelDir, 'same-toast-text.mjs')).href}'`));
+const { ExamineMinigame } = await import(pathToFileURL(join(panelDir, 'panel.mjs')).href);
+function panelHtml(params) {
+    const m = new ExamineMinigame({ classList: { add() {} } }, params);
+    m.init();
+    return m.gameContainer.innerHTML;
+}
+
+test('examine panel: an observation identical to the text shows once, escaped', () => {
+    const HOSTILE = '<b>Seen</b> & "q"';
+    const html = panelHtml({ itemName: 'Slip', observations: HOSTILE, text: ' ' + HOSTILE + ' ' });
+    assert.ok(!html.includes('examine-observations'), 'no observations paragraph: ' + html);
+    assert.ok(html.split('&lt;b&gt;Seen&lt;/b&gt;').length === 2, 'shown once: ' + html);
+    assert.ok(!html.includes('<b>'), 'escaped');
+    assert.ok(html.includes('class="examine-text"'), 'text kept');
+});
+
+test('examine panel: a different observation, or text-less, still shows', () => {
+    const a = panelHtml({ itemName: 'Slip', observations: 'A note.', text: 'The text.' });
+    assert.ok(a.includes('examine-observations') && a.includes('A note.') && a.includes('The text.'), 'both: ' + a);
+    const b = panelHtml({ itemName: 'Slip', observations: 'A note.' });
+    assert.ok(b.includes('examine-observations') && !b.includes('examine-text'), 'observation only: ' + b);
+});
+
 test('phone body text is 24px GNF, the conversation dialogue size; the name stays 16px Press Start 2P', () => {
     const src = readFileSync(join(here, '../../public/break_escape/css/examine-minigame.css'), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '');
