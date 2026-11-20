@@ -27,8 +27,8 @@
   },
   {
    "said": [
-    "until you log in as their operator, or the timer on screen runs out",
-    "If that changes before you log in as their operator, tell me"
+    "until that operator login goes through the relay, or the timer on screen runs out",
+    "Tell me if that changes while the window's open"
    ],
    "notSaid": [
     "now or never"

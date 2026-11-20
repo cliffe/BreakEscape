@@ -12,12 +12,12 @@
 {"expect": {"mission_complete": false}},
 {"ko": "operative_relay"},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
-{"said": ["Car's at the loading dock. Two minutes."], "notSaid": ["Not with Relay"]},
+{"said": ["Loading dock. The van with no livery."], "notSaid": ["Not with Relay"]},
 {"expect": {"mission_complete": true}},
 {"note": "Second pass: Relay hostile and up, the player says they're clear of her."},
 {"set": {"operative_relay_defeated": false, "mission_complete": false}},
 {"talk": "phone", "reload": "page", "picks": ["Bring me in", "well clear", "Bring me in", "On my way"]},
-{"said": ["Not with Relay still on you", "Car's at the loading dock. Two minutes."]},
+{"said": ["Not with Relay still on you", "Loading dock. The van with no livery."]},
 {"expect": {"mission_complete": true}}
 ]
 }

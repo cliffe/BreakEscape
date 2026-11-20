@@ -11,7 +11,7 @@
 {"set": {"briefing_played": true}},
 {"talk": "phone", "picks": ["at the gate"]},
 {
-"said": ["Once you're past him: Vance, then something in Hall 1 that isn't on their feed."],
+"said": ["Once you're past him, find Vance."],
 "notSaid": ["Call me once you're past him", "dial thermometer"]
 },
 {"talk": "guard", "picks": ["regulator", "keep that in mind"]},

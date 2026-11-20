@@ -297,13 +297,14 @@ for (const step of route.steps) {
     out(step.reload === 'wipe' ? '   (after a wipe: synced globals only, ink locals lost)' : '   (after a reload: variables kept, visit counts and position reset)');
   } else if (!s) { s = load(f); stories[name] = s; syncIn(s); s.ChoosePathString(step.knot || ENTRY[name] || 'start'); }
   else { syncIn(s); const k = step.knot || (s.currentChoices.length ? knotOfChoices(s) : 'start'); if (k) s.ChoosePathString(k); }
-  const picks = (step.picks || []).slice(); let exited = false; stats.run = 0;
+  const picks = (step.picks || []).slice(); let exited = false, pendingCall = null; stats.run = 0;
   while (true) {
     while (s.canContinue) {
       const t = s.Continue().trim(); const tags = s.currentTags;
       for (const tg of tags) {
         if (tg.startsWith('set_variable:')) { const [k, v] = tg.slice(13).split('='); G[k] = v === 'true' ? true : v === 'false' ? false : (/^-?\d+$/.test(v) ? +v : v); if (s.variablesState.GlobalVariableExistsWithName(k)) s.variablesState[k] = G[k]; out(`      [set_variable ${k}=${v}]`); }
         if (tg === 'exit_conversation') exited = true;
+        if (tg.startsWith('place_call:')) pendingCall = tg.split(':')[1];  // a hub choice rings a call knot (phone calls plan)
         if (tg.startsWith('hostile:')) { syncOut(s); hostile(tg.split(':')[1]); syncIn(s); }
         if (tg.startsWith('complete_task:')) out(`      [task: ${tg.split(':')[1]}]`);
         if (tg.startsWith('unlock_door:')) { const r = tg.split(':')[1]; G['door_open_' + r] = true; out(`      [unlock_door ${r}]`); }
@@ -315,6 +316,7 @@ for (const step of route.steps) {
     syncOut(s); engine();
     if (stats.run > stats.maxRun) { stats.maxRun = stats.run; stats.maxAt = name; }
     if (stats.run >= 6) stats.runs.push(`${name}:${stats.run}`);
+    if (!s.currentChoices.length && pendingCall) { const k = pendingCall; pendingCall = null; out(`  [call placed: ${k}]`); s.ChoosePathString(k); exited = false; continue; }
     if (!s.currentChoices.length) { out('  [end]'); closed(name); break; }
     if (exited && !picks.length) { out('  [chat closes]'); closed(name); break; }
     const ch = s.currentChoices.map(c => c.text);

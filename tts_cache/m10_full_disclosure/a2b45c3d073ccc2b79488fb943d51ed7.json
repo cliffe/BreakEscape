@@ -1,0 +1,13 @@
+{
+  "key": "a2b45c3d073ccc2b79488fb943d51ed7",
+  "npc": "asante",
+  "text": "I wrote it to be read, not buried. Whatever you decided tonight, I'll stand behind every line of it.",
+  "voice": "Callirrhoe",
+  "style": "Systems lead, forty-five, Ghanaian-British from Peckham. Consistent South London accent throughout -- do not shift to any other accent. Crisp, exact, a little impatient; a true believer in the software who wants the numbers honest.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T19:35:08Z"
+}

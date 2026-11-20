@@ -1719,12 +1719,12 @@ end
           "storyPath": "scenarios/m10_full_disclosure/ink/m10_phone_agent0x99.json",
           "currentKnot": "start",
           "voice": <%= voice.(:hax_phone) %>,
-          <%# VM-WIRE: guide ids and labUrls come with the VM plan and the lab sheets (lab sheets last, by the user's rule). %>
+          <%# VM-WIRE: guide ids; labUrls point at the published VM companion sheet's stage anchors (release audit 2026-11-20: without a labUrl the workstation opened "Lab workstation not available"). %>
           "itemsHeld": [
-            { "type": "lab-workstation", "id": "m10_guide_flag1", "name": "SAFETYNET Field Guide: The Monitoring Host", "takeable": true },
-            { "type": "lab-workstation", "id": "m10_guide_flag2", "name": "SAFETYNET Field Guide: The Staging Copy", "takeable": true },
-            { "type": "lab-workstation", "id": "m10_guide_flag3", "name": "SAFETYNET Field Guide: Out of the Container", "takeable": true },
-            { "type": "lab-workstation", "id": "m10_guide_flag4", "name": "SAFETYNET Field Guide: The Core Host", "takeable": true }
+            { "type": "lab-workstation", "id": "m10_guide_flag1", "name": "SAFETYNET Field Guide: The Monitoring Host", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m10-full-disclosure-vm-technical-steps/#hints-vm-flag1" },
+            { "type": "lab-workstation", "id": "m10_guide_flag2", "name": "SAFETYNET Field Guide: The Staging Copy", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m10-full-disclosure-vm-technical-steps/#hints-vm-flag2" },
+            { "type": "lab-workstation", "id": "m10_guide_flag3", "name": "SAFETYNET Field Guide: Out of the Container", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m10-full-disclosure-vm-technical-steps/#hints-vm-flag3" },
+            { "type": "lab-workstation", "id": "m10_guide_flag4", "name": "SAFETYNET Field Guide: The Core Host", "takeable": true, "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m10-full-disclosure-vm-technical-steps/#hints-vm-flag4" }
           ],
           "eventMappings": [
 <%# --- Load-time derivations from the imports (one mapping per arm) ----------- %>

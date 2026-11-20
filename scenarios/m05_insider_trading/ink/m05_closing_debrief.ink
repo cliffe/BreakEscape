@@ -470,7 +470,11 @@ Agent HaX: You turned him. The riskiest thing you could have done, and the most 
 
 Agent HaX: Elena starts the trial on Monday. We're paying, quietly, and if it ever gets dangerous we can move the family.
 
-Agent HaX: In exchange, he gives us the Insider Threat Initiative from the inside.
+// Run-length cap (R12): the turned ending follows the longest "training file"
+// run, so a player beat sits here. The reply is the existing next line.
++ [What do we get out of it?]
+    Agent HaX: In exchange, he gives us the Insider Threat Initiative from the inside.
+-
 
 + [What have we got from him so far?]
     -> torres_intelligence_gained

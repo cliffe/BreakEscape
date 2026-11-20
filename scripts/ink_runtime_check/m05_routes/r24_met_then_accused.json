@@ -103,13 +103,15 @@
 "That's everything"
 ]
 },
+{"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
+{"set":{"patricia_phone_available":true}},
 {
-"talk": "patricia_phone",
+"talk": "patricia_phone", "knot": "phone_call",
 "picks": [
 "I know who it is",
 "David Torres",
 "front door",
-"Just checking in"
+["Just checking in", "That's all for now"]
 ]
 },
 {
@@ -169,7 +171,7 @@
 "enter": "data_center"
 },
 {
-"talk": "patricia_phone",
+"talk": "patricia_phone", "knot": "phone_call",
 "picks": [
 "I know who it is",
 "David Torres",
@@ -191,7 +193,7 @@
 }
 },
 {
-"talk": "recruiter",
+"talk": "recruiter", "knot": "first_call",
 "picks": [
 "How many more",
 "What were you actually after",
@@ -210,15 +212,12 @@
 "said": []
 },
 {
-"talk": "recruiter",
-"picks": [
-"Ring the TalentStack number back"
-]
+"talk": "recruiter", "knot": "return_contact",
+"picks": []
 },
 {
 "said": [
-"You said no once. I heard you.",
-"She hangs up first."
+"You said no once. I heard you."
 ],
 "notSaid": [
 "Still deciding?",
