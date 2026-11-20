@@ -951,8 +951,9 @@ html .minigame-container .console-window > .console-body > * {
 
 /* K4 B: form-like scenes wrap their content instead of spanning 1280px. The rule lives here, with the other
    .console-window rules (X8), keyed on the scene class the scene JS puts on its container. Phones, in either
-   orientation, keep the full width: the condition only matches desktop-sized windows. The 1100px branch sits above
-   the widest landscape phones (997x448 and 1099x500 stay full width); 1280x500 desktops stay capped. */
+   orientation, keep the full width: the condition only matches desktop-sized windows. Short windows under 1100px
+   wide keep the full width: every landscape phone (widest measured 997x448) and 1000 to 1099px windows 500px or
+   less high, which already get the compact console chrome. 1100px and wider short windows (1280x500) stay capped. */
 @media (min-width: 601px) and (min-height: 500.02px), (min-width: 1100px) {
     .cf-minigame-container .console-window,
     .ncsc-minigame-container .console-window { width: min(760px, 100%); }
