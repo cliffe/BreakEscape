@@ -72,6 +72,10 @@ export class ConcernFormMinigame extends SocialOverlayScene {
 
         this.stageEl = el('div', 'cf-stage');
         root.appendChild(this.stageEl);
+        // Footer outside the scroller: the intro's Start sits here, so the copy scrolls above it and
+        // Start never covers a line (empty on the other steps, then hidden by CSS)
+        this.footEl = el('div', 'cf-foot');
+        root.appendChild(this.footEl);
         this._showStep('intro');
     }
 
@@ -111,6 +115,7 @@ export class ConcernFormMinigame extends SocialOverlayScene {
     _showStep(step) {
         this.step = step;
         this.stageEl.textContent = '';
+        if (this.footEl) this.footEl.textContent = '';
         if (step === 'intro') this._renderIntro();
         else this._renderBuild();
         this._focusStep();
@@ -150,7 +155,7 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         const start = el('button', 'cf-start cf-button minigame-button', this.text('start'));
         start.type = 'button';
         this.addEventListener(start, 'click', () => this._showStep('build'));
-        p.appendChild(start);
+        this.footEl.appendChild(start);
         this.stageEl.appendChild(p);
     }
 

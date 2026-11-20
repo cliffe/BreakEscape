@@ -430,6 +430,8 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const head = h('header', { class: 'lpb-head' },
             h('p', { class: 'lpb-invalid-text', text: this._invalid }),
             h('div', { class: 'lpb-head-buttons' }, this.buildCloseControl()));
+        // Hook for the CSS: in this state the frame wraps its one-line message instead of the scene size.
+        this.gameContainer.classList.add('lpb-game-container--invalid');
         const wrap = h('div', { class: 'lpb-root lpb-invalid', tabindex: '-1' }, head);
         this.root = wrap;
         this.gameContainer.appendChild(wrap);
