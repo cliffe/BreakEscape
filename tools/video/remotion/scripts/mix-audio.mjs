@@ -25,8 +25,9 @@ const parts = []; const mixIn = [];
 const duckK = Math.pow(10, (edit.duck?.db ?? -9) / 20), att = edit.duck?.attack ?? 0.12, rel = edit.duck?.release ?? 0.3;
 // consecutive dialogue shots (e.g. a wide shot and its close-up) are one duck window, so the dips don't multiply at the cut
 const duckWins = [];
-// s.audio.pre (seconds): J-cut, the shot's audio (and its duck window) begins that long before its picture
-for (const s of tl.shots) { if (!(s.type === 'gameplay' && s.audio?.duck_music)) continue; const l = duckWins[duckWins.length - 1]; if (l && Math.abs(l[1] - s.startSec) < 1e-6) l[1] = s.endSec; else duckWins.push([s.startSec - (s.audio.pre ?? 0), s.endSec]); }
+// s.audio.pre (seconds): J-cut, the shot's audio (and its duck window) begins that long before its picture.
+// s.audio.post (seconds): L-cut, the shot's audio (and its duck window) runs that long past its last frame. Overlapping duck windows merge (one dip, never two multiplied).
+for (const s of tl.shots) { if (!(s.type === 'gameplay' && s.audio?.duck_music)) continue; const l = duckWins[duckWins.length - 1]; const w0 = s.startSec - (s.audio.pre ?? 0), w1 = s.endSec + (s.audio.post ?? 0); if (l && w0 <= l[1] + 1e-6) l[1] = Math.max(l[1], w1); else duckWins.push([w0, w1]); }
 const dips = duckWins.map(([t0, t1]) => {
   return `(1-${(1 - duckK).toFixed(5)}*min(clip((t-${(t0 - att).toFixed(4)})/${att},0,1),clip((${(t1 + rel).toFixed(4)}-t)/${rel},0,1)))`;
 });
@@ -48,8 +49,9 @@ for (const s of tl.shots) {
   if (!has) { console.error(`mix: ${s.id}: take has no audio stream`); continue; }
   const gdb = isClipAudio ? s.clip.audio.gain_db : s.audio.gain_db;
   const pre = isClipAudio ? 0 : (s.audio?.pre ?? 0); // J-cut lead (seconds of audio before the picture)
-  inputs.push('-ss', String(Math.max(0, src0.in - pre)), '-t', String(s.duration + pre), '-i', f);
-  const d = s.duration + pre, ms = Math.round((s.startSec - pre) * 1000);
+  const post = isClipAudio ? 0 : (s.audio?.post ?? 0); // L-cut tail (seconds of audio after the picture)
+  inputs.push('-ss', String(Math.max(0, src0.in - pre)), '-t', String(s.duration + pre + post), '-i', f);
+  const d = s.duration + pre + post, ms = Math.round((s.startSec - pre) * 1000);
   parts.push(`[${n}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${d},asetpts=PTS-STARTPTS,volume=${gdb}dB,afade=t=in:d=${fade},afade=t=out:st=${(d - fade).toFixed(4)}:d=${fade},adelay=${ms}|${ms}[t${n}]`);
   mixIn.push(`[t${n}]`); used.push(s.id); n++;
 }
