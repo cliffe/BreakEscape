@@ -1,6 +1,6 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap, sandboxRecap, assistantRecap, concernRecap, showScore }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, globals, drillRecap, sandboxRecap, assistantRecap, concernRecap, showScore }) -> { destroy, getState }
 // `showScore` (optional, default true): when false, the score figures are dropped: the "Round score: N%"
 // summary, the per-message "Score for this message: N of 100" line, and the "Reported N% of the phish"
 // line. The item counts (Phish caught: N of M) stay. Set false in facilitated mode and when the host
@@ -17,6 +17,7 @@
 // triage set, read for each message's subject and `truth`. One card per answer, then the
 // "one thing to do on Monday" card and the no-blame line. On variant "defendOnly" the
 // strings.defendOnly paragraph stands in for anything about the learner's own message.
+// `globals` (optional): the live global variables, read only to decide a conditional conceptPanel entry.
 // Two optional panels sit between the cards and the Monday card: strings.conceptPanel (E2's
 // macro explainer) and strings.voicePanel (E4 and E7, copied voices). Each is plain text, or
 // { heading, text } of plain text; a blank line in the text starts a new paragraph.
@@ -39,6 +40,7 @@
 // treated as a phish safe, the cost of a false alarm and why both halves matter (buildGenuine).
 // Every string goes in with textContent. The wording never blames the learner.
 
+import { evaluateActionCondition } from '../../utils/global-condition.js';
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
 import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences, caughtHow } from '../inbox-triage/triage-scoring.js';
 import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride } from '../inbox-triage/triage-kinds.js';
@@ -417,9 +419,16 @@ function textBox(tag, className, label, block) {
     return box;
 }
 
+// A conceptPanel array entry with a `condition` shows only when it holds against the live globals.
+function conceptEntryShown(entry, globals) {
+    if (!isObj(entry) || !('condition' in entry)) return true;
+    if (!isObj(globals) || !isStr(entry.condition)) return false;
+    return evaluateActionCondition(entry.condition, globals) === true;
+}
+
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
     reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
-    concernRecap = null, showScore = true } = {}) {
+    concernRecap = null, showScore = true, globals = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -587,10 +596,13 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     if (concernShown) root.appendChild(concernShown.node);
 
     // ENG-09b: conceptPanel may be an array of { heading?, text }, drawn in order; an entry with
-    // no text is skipped. A string or one object draws one panel, exactly as before.
+    // no text is skipped. An array entry may carry `condition` (a global condition string, the
+    // global-condition.js grammar): it is drawn only when it holds against `globals` now. No
+    // globals, a malformed condition or a non-string condition all hide it (fails closed).
+    // A string or one object draws one panel, exactly as before.
     const conceptRaw = isObj(strings) ? strings.conceptPanel : null;
     const conceptList = Array.isArray(conceptRaw)
-        ? conceptRaw.map((r) => buildPanel(strings, 'conceptPanel', r)).filter(Boolean)
+        ? conceptRaw.filter((r) => conceptEntryShown(r, globals)).map((r) => buildPanel(strings, 'conceptPanel', r)).filter(Boolean)
         : [buildPanel(strings, 'conceptPanel')].filter(Boolean);
     const concept = conceptList.length > 0;
     for (const panel of conceptList) root.appendChild(panel);
