@@ -338,3 +338,12 @@ test('a wide wrench label goes under the upright foot with a leader up to it, an
     assert.ok(w.leader && w.leader.x1 === w.leader.x2 && w.leader.x1 > WRENCH_UPRIGHT.x && w.leader.x1 < WRENCH_UPRIGHT.x + WRENCH_UPRIGHT.w, 'leader lands on the upright');
     assert.ok(!segmentHitsRect(h.leader, w), 'hook leader does not run through the wrench label');
 });
+
+test('the tension wrench container draws above the hook pick, so the hook shaft never strikes through its label (D219 R3 M1)', () => {
+    const g = src('lock-graphics.js');
+    const i = g.indexOf('createTensionWrench()');
+    const j = g.indexOf('createHookPick()');
+    const body = g.slice(i, j);
+    assert.ok(/this\.parent\.tensionWrench\.setDepth\(1\)/.test(body), 'wrench container has depth 1');
+    assert.ok(!/hookGroup\.setDepth/.test(g), 'hook group stays at the default depth 0');
+});
