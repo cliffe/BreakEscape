@@ -140,7 +140,7 @@ test('X8: the shared window has one title bar with the X inside it, a 9-slice fr
     assert.match(sub, /font-size: 16px/);
     assert.match(rule('.console-titlebar > .minigame-close-button'), /position: relative/, 'the X is laid out in the bar');
     assert.match(rule('.minigame-container.minigame-console'), /padding: 8px/, 'phones: the whole window less 8px');
-    assert.match(fw, /@media \(max-width: 600px\), \(max-height: 500px\) \{\s*\.console-window \{\s*width: 100%;\s*height: 100%;/);
+    assert.match(fw, /@media \(max-width: 600px\), \(max-height: 500px\) \{\s*\.console-window \{\s*width: 100%;\s*height: auto;\s*max-height: 100%;\s*\}\s*\.console-window\.console-window-fill \{\s*height: 100%;/, 'phones: wrap scenes keep their content height, fill scenes take the full height');
 });
 
 test('X8: the shared window title is escaped text and can be changed later', async () => {

@@ -834,12 +834,17 @@ html .minigame-container .console-window > .console-body > * {
     margin: 0;
 }
 
-/* Phones and short windows: the whole window less 8px each side */
+/* Phones and short windows: the whole window width less 8px each side. The frame wraps its
+   content and stops at the screen height (the body scrolls past that); only a fill scene
+   (consoleWindowFill) takes the full height so its own panes scroll. */
 @media (max-width: 600px), (max-height: 500px) {
     .console-window {
         width: 100%;
-        height: 100%;
+        height: auto;
         max-height: 100%;
+    }
+    .console-window.console-window-fill {
+        height: 100%;
     }
     .console-titlebar {
         padding: 4px 4px 4px 8px;
