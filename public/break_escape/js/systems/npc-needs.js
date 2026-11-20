@@ -2108,8 +2108,12 @@ export class NPCNeedsSystem {
             if (any) break;
         }
         if (!any) return;
+        // Staggered one NPC after another, as a room load is (_wakeParked); a park that a room load or
+        // a door already woke keeps that slot
+        let k = 0;
         for (const id of [...this.states.keys()].sort()) {
             const s = this.states.get(id);
+            let woke = false;
             for (const name of Object.keys(s.parked).sort()) {
                 const p = s.parked[name];
                 if (p.reason !== 'no_source' || !Array.isArray(p.srcIds)) continue;
@@ -2117,9 +2121,13 @@ export class NPCNeedsSystem {
                 const fresh = now.filter(i => !p.srcIds.includes(i));
                 if (!fresh.length) continue;
                 p.srcIds = now;
+                if (p.woken) continue;
                 this._log(s.npcId, 'source_appeared', { need: name, target: fresh[0] });
-                this._wakeParkedFor(s, [name]);
+                const at = this.clockMs + WAKE_BASE_MS + k * WAKE_STEP_MS;
+                if (at < p.until) { p.until = at; p.woken = true; }
+                woke = true;
             }
+            if (woke) k++;
         }
     }
 

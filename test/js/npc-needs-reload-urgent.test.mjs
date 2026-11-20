@@ -96,3 +96,15 @@ test('no extra object scans while nothing is parked no_source', () => {
     sys.step(20 * NEEDS_TICK_MS);
     assert.equal(scans, 0, 'thirst is not urgent and nothing is parked: no scan');
 });
+
+test('two NPCs woken by one new source go one after another, as a room load wakes them', () => {
+    const c = cfg();
+    c.npcs.zara = { pos: { x: 160, y: 224 }, rec: { id: 'zara', needsHome: { room: 'office', x: 5, y: 7 }, needs: { thirst: { decayPerMin: 1, urgentAt: 50, initial: 40, jitterPct: 0 } } } };
+    const { w, sys } = boot(c);
+    sys.step(4 * NEEDS_TICK_MS);
+    register(w, 'water_cooler');
+    sys.step(4000);
+    const un = sys.getLog().filter(e => e.ev === 'unparked');
+    assert.deepEqual(un.map(e => e.npc), ['yusuf', 'zara']);
+    assert.equal(new Set(un.map(e => e.t)).size, 2, 'two different ticks');
+});
