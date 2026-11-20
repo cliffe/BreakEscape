@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape');
+const NARROW = '@media (max-width: 600px) and (max-height: 520px)';
+const WIDE = '@media (min-width: 481px) and (max-width: 600px) and (max-height: 520px)';
 const css = readFileSync(join(root, 'css/command-board-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const js = readFileSync(join(root, 'js/minigames/command-board/command-board-minigame.js'), 'utf8');
 
@@ -140,14 +142,14 @@ test('m4: phone landscape keeps input and POST on one row', () => {
 // Sweep 6 (B2 R3 m1): the 25dvh list cap of round 2 is gone. At 568x320 it showed one whole
 // tile; the combined block now puts the timeline beside status so the list takes the body's height.
 test('R2 m2 (sweep 6): phone landscape has no 25dvh cap; the list fills a side column', () => {
-    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    const b = block(WIDE);
     assert.ok(!/25d?vh/.test(b), 'no 25vh or 25dvh cap left in the combined block');
     assert.ok(lastDecl(b, '.cb-timeline-list', 'max-height') === 'none', 'the 45dvh cap is lifted (last rule wins)');
     assert.ok(lastDecl(b, '.cb-timeline-list', 'flex') === '1 1 auto', 'the list takes the column height');
 });
 
 test('sweep 6: phone landscape puts timeline and status side by side without a body scroll', () => {
-    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    const b = block(WIDE);
     assert.ok(lastDecl(b, '.cb-body', 'overflow-y') === 'hidden', 'the body does not scroll (last rule wins)');
     assert.ok(lastDecl(b, '.cb-body', 'grid-auto-rows') === 'minmax(0, 1fr)', 'the row is the body height, not max-content');
     const cols = /^(\d+)fr (\d+)fr$/.exec(lastDecl(b, '.cb-body', 'grid-template-columns') || '');
@@ -165,8 +167,8 @@ test('sweep 6: the status list keeps its own scroll (the body no longer scrolls)
     assert.ok(/flex:\s*1 1 auto/.test(st), 'status list fills the column');
 });
 
-test('sweep 6: phone landscape compacts tiles and the entry bar: two tiles for entries of 3 lines or fewer, one whole tile for 4 to 6 lines', () => {
-    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+test('sweep 6: a wide short window compacts tiles and the entry bar: two tiles for entries of 3 lines or fewer, one whole tile for 4 to 6 lines', () => {
+    const b = block(WIDE);
     assert.ok(lastDecl(b, '.cb-entry-timestamp', 'font-size') === '16px', 'timestamp on the GNF 16 floor');
     assert.ok(lastDecl(b, '.cb-entry-timestamp', 'line-height') === '16px', 'whole-pixel line');
     assert.ok(lastDecl(b, '.cb-entry-tile', 'padding') === '4px 6px', 'tile padding trimmed');
@@ -178,19 +180,26 @@ test('sweep 6: phone landscape compacts tiles and the entry bar: two tiles for e
 });
 
 test('sweep 6 R2 m1: the timestamp reserves room for the badge beside it', () => {
-    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    const b = block(WIDE);
     const pr = /^(\d+)px$/.exec(lastDecl(b, '.cb-entry-timestamp', 'padding-right') || '');
     assert.ok(pr && Number(pr[1]) >= 76, 'padding-right at least the widest badge (76px)');
 });
 
-test('sweep 6 R2 m1: on a column too narrow for time plus badge, the badge goes under the time', () => {
-    const b = block('@media (max-width: 420px) and (max-height: 520px)');
-    assert.ok(lastDecl(b, '.cb-entry-timestamp', 'padding-right') === '0', 'no reserved gap once the badge drops');
-    assert.ok(lastDecl(b, '.cb-entry-badge', 'grid-row') === 'auto', 'badge auto-placed on its own row');
-    assert.ok(lastDecl(b, '.cb-entry-main', 'grid-row') === 'auto', 'text column auto-placed on the row above');
-    assert.ok(lastDecl(b, '.cb-entry-badge', 'justify-self') === 'start', 'badge starts at the left');
-    const at = (q) => new RegExp(q.replace(/[().]/g, '\\$&') + '\\s*\\{').exec(css).index;
-    assert.ok(at('@media (max-width: 600px) and (max-height: 520px)') < at('@media (max-width: 420px) and (max-height: 520px)'), 'narrow block comes after the combined block');
+// Sweep 6 R3 m1: at 360x450 the side-by-side timeline column is about 100px wide; windows up to
+// 480px wide get the stacked layout back. Measured text widths: 440 -> 147px, 481 -> 188px.
+test('sweep 6 R3: side-by-side only from 481px wide; narrow short windows stay stacked', () => {
+    assert.ok(!/@media \(max-width: 420px\)/.test(css), 'the 420px badge-under block is gone');
+    const m = /@media \(min-width: (\d+)px\) and \(max-width: 600px\) and \(max-height: 520px\)\s*\{/.exec(css);
+    assert.ok(m && Number(m[1]) >= 481, 'side-by-side block starts at 481px or wider');
+    // the shared block (any width up to 600) must not put the columns side by side or lift the cap
+    const a = block(NARROW);
+    assert.ok(lastDecl(a, '.cb-body', 'grid-template-columns') === null, 'no two-column body in the shared block');
+    assert.ok(lastDecl(a, '.cb-body', 'overflow-y') === null, 'body keeps the stacked scroll in the shared block');
+    assert.ok(lastDecl(a, '.cb-timeline-list', 'max-height') === '25dvh', 'stacked list capped at 25dvh');
+    assert.ok(lastDecl(a, '.cb-timeline-col', 'border-right') === null, 'no side divider in the shared block');
+    assert.ok(lastDecl(a, '.cb-entry-badge', 'grid-row') === null, 'badge stays under the time in the shared block');
+    assert.ok(lastDecl(a, '.cb-entry-timestamp', 'padding-right') === null, 'no reserved badge gap in the shared block');
+    assert.ok(/25vh;\s*max-height:\s*25dvh/.test(a), '25vh fallback precedes 25dvh');
 });
 
 test('sweep 6 R1 m1: POST keeps 44px in the combined block', () => {
@@ -215,6 +224,6 @@ test('R2 m3: the 45dvh cap keeps its vh fallback just before it', () => {
 test('R2 m4: media blocks keep their cascade order', () => {
     const at = (q) => new RegExp(q.replace(/[().]/g, '\\$&') + '\\s*\\{').exec(css).index;
     const order = ['@media (max-height: 520px)', '@media (max-width: 600px)',
-        '@media (max-width: 600px) and (max-height: 520px)', '@media (max-height: 260px)'].map(at);
-    assert.ok(order.every((v, i) => i === 0 || order[i - 1] < v), 'order 520, 600, combined, 260');
+        NARROW, WIDE, '@media (max-height: 260px)'].map(at);
+    assert.ok(order.every((v, i) => i === 0 || order[i - 1] < v), 'order 520, 600, shared short block, wide block, 260');
 });
