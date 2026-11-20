@@ -149,9 +149,9 @@
 
 .sdm-strip-text {
     font-family: 'GNF', monospace;
-    font-size: 17px;
+    font-size: 16px;
     color: #1a1008;
-    line-height: 1.3;
+    line-height: 24px;
     flex: 1;
 }
 
@@ -168,12 +168,13 @@
     gap: 6px;
 }
 
-/* C-SD1/SD2: named word buttons (no stray glyph), 2px pixel borders, legible 8px Press Start 2P. */
+/* C-SD1/SD2: named word buttons (no stray glyph), 2px pixel borders. GNF 16: the framework's button
+   rule sets GNF at higher specificity than a single class, so the old Press Start 8px never applied. */
 .sdm-move-btn,
 .sdm-flip-btn {
     position: relative;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
     line-height: 1;
     background: #e8e0d0;
     color: #5a4a3a;
@@ -212,8 +213,10 @@
 
 /* Phone width. Inside the console window the body is 338px at 390 (318px in a 28px-frame theme),
    against 390px before D218. Old rows: 338 - scroll padding 40 - area padding 16 - strip
-   padding and borders 24 - handle 32 and gap 8 - controls 146 and gap 8 = 64px of text (44px
-   cyberpunk), against main's 116px. The controls move to their own row under the text and the
+   padding and borders 24 - handle 32 and gap 8 - controls about 166 (Up, Down and Flip as GNF 16
+   buttons at roughly 10px a glyph plus 14px padding and 4px border, and two 6px gaps; it was 146
+   for the old 8px figure and is measured live) and gap 8 = about 44px of text (24px cyberpunk),
+   against main's 116px. The controls move to their own row under the text and the
    padding shrinks: 338 - scroll padding 16 - area padding 0 - strip padding and borders 24 -
    handle 32 and gap 8 = 258px of text (238px cyberpunk), at least main's 116px. */
 @media (max-width: 600px) {
@@ -232,6 +235,21 @@
     .sdm-strip-controls {
         flex: 1 0 100%;
         justify-content: flex-end;
+    }
+
+    /* 44px touch targets as real boxes. The coarse-pointer block above draws the hit area with an
+       ::after at inset -11px, which counts as scrollable overflow (scrollWidth 11px over
+       clientWidth on every button, 9px on the controls row). At phone width the boxes are 44px
+       themselves and the pseudo-element is dropped. */
+    .sdm-move-btn,
+    .sdm-flip-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .sdm-move-btn::after,
+    .sdm-flip-btn::after {
+        content: none;
     }
 }
 
@@ -254,7 +272,7 @@
     color: #c8ffcc;
     font-family: 'GNF', monospace;
     font-size: 16px;
-    line-height: 1.4;
+    line-height: 24px;
     flex-shrink: 0;
 }
 

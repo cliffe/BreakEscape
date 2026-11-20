@@ -20,7 +20,7 @@ const CHOICES = [
   /^You calculated how many people would die/i,
   /^Why\?/i,
   /^By killing innocent people/i,
-  /^You're rationalizing mass murder/i,
+  /^You're rationali[sz]ing mass murder/i,
   /^The Architect taught you this/i,
 ];
 
@@ -30,10 +30,15 @@ export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
   await sleep(800);
   mark('interact-derek');
-  const r = await bridge.interact('derek_lawson', { timeoutMs: 20000 });
-  mark('interact-result', { ok: r && r.ok, reason: r && r.reason, mode: r && r.mode });   // ok:false/targetUnverified is possible while the chat still opens
-  const w = await bridge.waitForMinigame('person-chat', { timeoutMs: 10000 });
-  if (!w || w.ok === false) throw new Error('person-chat did not open ' + JSON.stringify(r).slice(0, 400));
+  let r, w;
+  for (let attempt = 0; attempt < 3; attempt++) {                 // the first interact can be swallowed (reason no-effect-confirmed): retry
+    r = await bridge.interact('derek_lawson', { timeoutMs: 20000 });
+    mark('interact-result', { ok: r && r.ok, reason: r && r.reason, mode: r && r.mode, attempt });   // ok:false/targetUnverified is possible while the chat still opens
+    w = await bridge.waitForMinigame('person-chat', { timeoutMs: 10000 });
+    if (w && w.ok !== false) break;
+    await sleep(1500);
+  }
+  if (!w || w.ok === false) throw new Error('person-chat did not open ' + JSON.stringify(r).slice(0, 1200));
   mark('conversation-open');
   let ci = 0; const done = new Set();
   const t0 = Date.now();

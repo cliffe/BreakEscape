@@ -62,7 +62,7 @@
 .ac-reload-note {
     margin: 0 0 8px;
     color: #cfe0d9;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .ac-reply {
@@ -80,7 +80,7 @@
 
 .ac-disclaimer {
     margin: 8px 0 0;
-    font-size: 14px;
+    font-size: 16px;
     color: #5a6b65;
     font-style: italic;
 }
@@ -100,7 +100,7 @@
        address face read oddly (E13 F-14). The hidden line is body text; its address is set
        in the address font below, as every other address in the game is. */
     font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
-    font-size: 15px;
+    font-size: 16px;
 }
 
 /* An email/domain inside an assistant reply or hidden line, in the address font (E13 F-14). */
@@ -110,7 +110,7 @@
 .ac-section.ac-done { border-color: #2f6f5e; }
 .ac-done-badge {
     margin: 10px 0 0;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: normal;
     color: #2f6f5e;
 }
@@ -146,7 +146,7 @@
 }
 
 .ac-class-tag {
-    font-size: 13px;
+    font-size: 16px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     background: #e7efeb;
@@ -186,7 +186,7 @@
 
 .ac-document-title {
     margin: 0 0 6px;
-    font-size: 15px;
+    font-size: 16px;
 }
 
 .ac-document-body {

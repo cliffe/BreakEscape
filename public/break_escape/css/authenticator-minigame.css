@@ -24,10 +24,10 @@
 .auth-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .auth-wordmark {
     display: inline-block; padding: 2px 10px; background: var(--auth-accent); color: #fff;
-    border-radius: 0; font-weight: normal; letter-spacing: 0.14em; font-size: 14px;
+    border-radius: 0; font-weight: normal; letter-spacing: 0.14em; font-size: 16px;
 }
 /* The intro sits on the dark overlay (not the light card), so it needs a light tone to read (T7-2). */
-.auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: #d7dde6; }
+.auth-intro { margin: 0 0 12px; font-size: 16px; line-height: 24px; color: #d7dde6; }
 
 /* decision mode: when and how many (E3-11).
    The panel is a light surface so its dark ink reads against the dark overlay (M-2). */
@@ -38,8 +38,8 @@
 }
 .auth-choice[hidden] { display: none; }
 .auth-choice-group { border: 2px solid var(--auth-line); border-radius: 0; margin: 0; padding: 10px 12px 12px; background: #fff; }
-.auth-choice-legend { padding: 0 6px; font-size: 14px; font-weight: normal; color: var(--auth-ink); }
-.auth-choice-opt { display: flex; align-items: flex-start; gap: 8px; padding: 5px 2px; font-size: 14px; line-height: 1.35; cursor: pointer; color: var(--auth-ink); }
+.auth-choice-legend { padding: 0 6px; font-size: 16px; font-weight: normal; color: var(--auth-ink); }
+.auth-choice-opt { display: flex; align-items: flex-start; gap: 8px; padding: 5px 2px; font-size: 16px; line-height: 24px; cursor: pointer; color: var(--auth-ink); }
 .auth-choice-radio { margin: 2px 0 0; flex: none; }
 .auth-choice-opt-label { color: var(--auth-ink); }
 .auth-confirm { align-self: flex-start; padding: 8px 18px; font: inherit; font-weight: normal; }
@@ -50,11 +50,11 @@
 .auth-choice .auth-confirm:disabled { opacity: 1; background: #d3dae2; border-color: #b9c2cd; color: #3a4452; cursor: default; }
 
 /* the collapsed tail of a large burst */
-.auth-feed-more { margin: 2px 0 0; text-align: center; font-size: 13px; font-style: italic; color: #c3ccd6; }
+.auth-feed-more { margin: 2px 0 0; text-align: center; font-size: 16px; font-style: italic; color: #c3ccd6; }
 
 /* why it worked, and the defender's control */
 .auth-outcome { margin: 12px 0 0; padding: 10px 12px; border-radius: 0; background: var(--auth-surface); border: 2px solid var(--auth-line); }
-.auth-outcome-line { margin: 0 0 8px; font-size: 14px; line-height: 1.45; color: var(--auth-ink); }
+.auth-outcome-line { margin: 0 0 8px; font-size: 16px; line-height: 24px; color: var(--auth-ink); }
 /* the last line is always the defender's control (defenderNote) */
 .auth-outcome-line:last-child { margin-bottom: 0; font-weight: 600; color: var(--auth-ok); }
 
@@ -82,7 +82,7 @@
 .auth-signal-bar:nth-child(2) { height: 6px; }
 .auth-signal-bar:nth-child(3) { height: 8px; }
 .auth-signal-bar:nth-child(4) { height: 10px; }
-.auth-battery { font-size: 13px; color: #d7dde6; }
+.auth-battery { font-size: 16px; color: #d7dde6; }
 .auth-feed { display: flex; flex-direction: column; gap: 10px; min-height: 60px; padding: 10px; }
 
 /* a push prompt card */
@@ -91,13 +91,13 @@
     padding: 10px 12px; animation: auth-card-in 180ms ease-out;
 }
 .auth-card-manual { border-style: dashed; }
-.auth-card-app { margin: 0 0 2px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--auth-dim); text-transform: uppercase; }
+.auth-card-app { margin: 0 0 6px; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; color: var(--auth-dim); text-transform: uppercase; }
 .auth-card-request { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
-.auth-card-details { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; font-size: 13px; }
+.auth-card-details { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; font-size: 16px; }
 .auth-card-details dt { color: var(--auth-dim); }
 .auth-card-details dd { margin: 0; }
 .auth-card-actions { display: flex; gap: 8px; }
-.auth-card-action { flex: 1; text-align: center; padding: 6px 0; border-radius: 0; font-size: 13px; font-weight: 700; opacity: 0.55; }
+.auth-card-action { flex: 1; text-align: center; padding: 6px 0; border-radius: 0; font-size: 16px; font-weight: 700; opacity: 0.55; }
 .auth-card-approve { background: var(--auth-ok); color: #fff; }
 .auth-card-deny { background: #e4e9e7; color: var(--auth-dim); border: 2px solid var(--auth-line); }
 

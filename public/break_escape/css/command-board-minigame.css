@@ -107,7 +107,7 @@
 .cb-section-subtitle {
     margin-top: 5px;
     font-family: 'GNF', monospace;
-    font-size: 22px;
+    font-size: 24px;
     color: #8fa3c0;
 }
 
@@ -186,7 +186,7 @@
 .cb-entry-timestamp {
     display: block;
     font-family: 'GNF', monospace;
-    font-size: 26px;
+    font-size: 24px;
     color: #d4a84b;
 }
 
@@ -311,8 +311,9 @@
 
 .cb-status-badge.state-active::after {
     content: '⚠';
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
-    line-height: 1;
+    line-height: 8px;
     position: relative;
     top: -1px;
 }

@@ -517,7 +517,18 @@ end
 # the run and record the original in sprite-restore-<game>.txt; session-stop.sh
 # (or restore-sprite.rb) puts it back.
 pref = g.player.respond_to?(:ensure_break_escape_preference!) ? (g.player.ensure_break_escape_preference!; g.player.break_escape_preference) : g.player.preference
-if pref && !pref.sprite_valid_for_scenario?(g.scenario_data)
+# BE_SPRITE=<key> (video takes): play this run as that avatar. It must be one the
+# character screen offers for the mission; the original is restored the same way.
+want_sprite = ENV['BE_SPRITE'].to_s.strip
+if pref && !want_sprite.empty?
+  offered = Array(pref.available_sprites(g.scenario_data))
+  abort "BE_SPRITE=#{want_sprite} is not offered for this mission (offered: #{offered.join(' ')})" unless offered.include?(want_sprite)
+  orig = pref.read_attribute(:selected_sprite)
+  restore = File.join(__dir__, "sprite-restore-#{g.id}.txt")
+  File.write(restore, "#{pref.id}\t#{want_sprite}\t#{orig}\n")
+  pref.update_column(:selected_sprite, want_sprite)
+  puts "SPRITE_SWITCHED=#{orig.inspect} -> #{want_sprite} (BE_SPRITE; restored by session-stop.sh / restore-sprite.rb #{g.id})"
+elsif pref && !pref.sprite_valid_for_scenario?(g.scenario_data)
   # Prefer what the character screen would offer (the mission's own characters and
   # unlocked avatars); a mission with no validSprites still needs a pick when the
   # saved sprite is an avatar this user has not unlocked.

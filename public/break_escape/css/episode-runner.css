@@ -107,8 +107,8 @@
    button is fully scrollable into view at a tall viewport (1400x1000) rather than clipped at the fold. */
 .epr-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
 
-.epr-panel { padding: 16px; line-height: 1.45; }
-.epr-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
+.epr-panel { padding: 16px; line-height: 24px; }
+.epr-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; color: var(--aw-accent); }
 .epr-heading:focus { outline: none; }
 .epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
 /* batch 13: the send-off under the Episode finished panel */
@@ -119,12 +119,12 @@
     margin: 0 0 12px;
     max-width: 60ch;
 }
-.epr-card-count { margin: 12px 0 0; font-size: 14px; }
+.epr-card-count { margin: 12px 0 0; font-size: 16px; }
 .epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
-.epr-notice { margin: 0; font-size: 15px; color: #8a5a00; }
+.epr-notice { margin: 0; font-size: 16px; color: #8a5a00; }
 .epr-notice:empty { display: none; }
 /* E14 F11: the write-stage "your draft starts again" reload note. */
-.epr-reload-note { margin: 4px 0 0; font-size: 14px; color: #52606d; }
+.epr-reload-note { margin: 4px 0 0; font-size: 16px; color: #52606d; }
 
 .epr-button {
     margin-top: 14px;
@@ -167,7 +167,7 @@
     border-radius: 0;
 }
 .epr-panel .epr-facilitator { margin: 12px 0 0; }
-.epr-facilitator-label { display: block; font-size: 14px; font-weight: 700; color: var(--aw-accent); }
+.epr-facilitator-label { display: block; font-size: 16px; font-weight: 700; color: var(--aw-accent); }
 .epr-facilitator-text { display: block; font-weight: 600; }
 
 @media (max-width: 767px) {
