@@ -99,6 +99,8 @@ function setup(serverContents) {
     window.inventory = { items: [] };
     window.gameState = { notes: [], globalVariables: {} };
     window.gameAlert = (m) => { worldAlerts.push(m); events.push('alert'); };
+    // inventory.js is stubbed here: the real helper's wording is tested in container-note-toast.test.mjs
+    window.announceNoteAdded = (n) => window.gameAlert(`Added "${n}" to your notes.`, 'info', 'Note Added', 3000);
     window.expectPanelWithin = (ms) => { expects.push(ms); events.push('expect'); };
     window.clearExpectedPanel = () => { clears++; events.push('clear'); };
     window.lastNoteClosesToWorld = lastNoteClosesToWorld;
@@ -246,14 +248,14 @@ test('a login PC and an NPC container with a last note keep their own return', a
     assert.equal(lastNoteClosesToWorld({ ...st, containerItem: SAFE(), npcOptions: { mode: 'npc', npcId: 'n' } }), false);
 });
 
-test('the last note: "has been noted" is raised at once, with no panel expected', async () => {
+test('the last note: "Added to your notes" is raised at once, with no panel expected', async () => {
     setup([NOTES[0]]);
     await openSafe([NOTES[0]]);
     slots()[0].click();
     await settle(20);
     await closeViewer();
     assert.equal(current(), null);
-    assert.deepEqual(worldAlerts.filter(m => /noted/.test(m)), ['Reading 1 has been noted']);
+    assert.deepEqual(worldAlerts.filter(m => /to your notes/.test(m)), ['Added "Reading 1" to your notes.']);
     // The viewer's own close expects a panel (it normally reopens the container); the engine
     // clears that before the toast, so the toast is not held for the ~1 s window.
     const alertAt = events.lastIndexOf('alert');
@@ -268,7 +270,7 @@ test('a note with more left still waits for the container (one toast, no flash)'
     await closeViewer();
     const alertAt = events.lastIndexOf('alert');
     assert.equal(events[alertAt - 1], 'expect', `the toast waits for the container reopening: ${events.join(',')}`);
-    assert.equal(worldAlerts.filter(m => /noted/.test(m)).length, 1);
+    assert.equal(worldAlerts.filter(m => /to your notes/.test(m)).length, 1);
 });
 
 // ── test bridge: take() and close() across the slow reopen ─────────────────────────────

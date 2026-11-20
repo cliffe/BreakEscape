@@ -611,14 +611,23 @@ export function restoreNoteFromSave(item) {
  * apply its onRead/onPickup setVariable and emit item_picked_up. Mirrors
  * NPCGameBridge._receiveNote; window.addNote de-duplicates by title and text.
  */
+/**
+ * The toast for a note that went into the Notepad: the world pickup's wording, used by
+ * every route (a note read in the world, a reward note, a note taken from a container).
+ * Returns the gameAlert's result, or false when nothing could be shown.
+ */
+export function announceNoteAdded(name) {
+    if (!window.gameAlert) return false;
+    window.gameAlert(`Added "${name}" to your notes.`, 'info', 'Note Added', 3000);
+    return true;
+}
+
 function receiveRewardNote(item) {
     const text = item.text || item.observations || '';
     if (text && window.addNote) {
         const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;
         const added = window.addNote(item.name || 'Note', body, !!item.important);
-        if (added && window.gameAlert) {
-            window.gameAlert(`Added "${item.name}" to your notes.`, 'info', 'Note Added', 3000);
-        }
+        if (added) announceNoteAdded(item.name);
     }
 
     const readAction = item.onRead || item.onPickup;
@@ -1544,6 +1553,7 @@ window.initializeInventory = initializeInventory;
 window.processInitialInventoryItems = processInitialInventoryItems;
 window.addToInventory = addToInventory;
 window.announcePickup = announcePickup;
+window.announceNoteAdded = announceNoteAdded;
 window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;

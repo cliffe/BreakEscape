@@ -2915,7 +2915,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // and the toast must not wait for one.
             if (!lastNoteClosesToWorld(containerState)) window.expectPanelWithin?.(1000);
             else window.clearExpectedPanel?.();
-            window.gameAlert(`${containerState.itemToTake.name} has been noted`, 'success', 'Added to Notes', 2000);
+            window.announceNoteAdded?.(containerState.itemToTake.name);
         }
         
         // A hit, the knockout screen, a conversation or a room change closed the reader
