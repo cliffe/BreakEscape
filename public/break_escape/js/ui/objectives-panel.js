@@ -108,6 +108,13 @@ export class ObjectivesPanel {
     header.addEventListener('click', () => {
       this.toggleCollapse();
     });
+
+    // The themed frame is a border (8px on a phone pill) outside the padding box, where the
+    // toggle's hit pseudo-element cannot reach (overflow clips it); a tap there lands on the
+    // panel itself, so a folded panel opens from it too. Header taps bubble with a different target.
+    this.container.addEventListener('click', (e) => {
+      if (e.target === this.container && this.isCollapsed) this.toggleCollapse();
+    });
     
     // Create content area
     this.content = document.createElement('div');

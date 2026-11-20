@@ -385,6 +385,43 @@ test('K12 B live fix: the collapsed phone pill is one 44px+ tap target, opened o
     setWindow(1400, 1000);
 });
 
+test('K12 B live fix 2: the toggle hit area resolves to the panel, and the themed border strip opens it too', () => {
+    const all = css('objectives.css') + '\n' + css('ui-themes.css');
+    const phone = css('objectives.css').slice(css('objectives.css').indexOf('@media (max-width: 899.98px), (max-height: 500px)'));
+    // Containing block of the toggle's absolute ::before: nearest positioned ancestor. Between the
+    // toggle and .objectives-panel sit .objectives-controls and .objectives-header; neither may be
+    // positioned (the toggle itself is static in the collapsed phone state)
+    for (const cls of ['objectives-controls', 'objectives-header']) {
+        const re = new RegExp('[^{}]*\\.' + cls + '\\b[^{}]*\\{([^}]*)\\}', 'g');
+        let m;
+        while ((m = re.exec(all)) !== null) {
+            assert.ok(!/(^|[;\s])position\s*:\s*(relative|absolute|fixed|sticky)/.test(m[1]), cls + ' is not positioned: ' + m[0].trim().slice(0, 60));
+            assert.ok(!/(^|[;\s])(transform|filter|perspective|will-change|contain)\s*:/.test(m[1]), cls + ' makes no containing block: ' + m[0].trim().slice(0, 60));
+        }
+    }
+    assert.ok(/\.objectives-panel\.collapsed \.objectives-toggle \{[^}]*position: static;/.test(phone), 'toggle static when collapsed on a phone');
+    assert.ok(/\.objectives-panel \{\s*position: fixed;/.test(css('objectives.css')), 'the panel is the containing block');
+    // The themed phone pill's border (8px) lies outside the padding box that ::before fills
+    assert.ok(/\[data-ui-theme\] \.objectives-panel\.collapsed \{\s*border-width: var\(--ui-square-px\);/.test(css('ui-themes.css')), 'themed pill has a border strip');
+    document.body.innerHTML = '';
+    setWindow(390, 844);
+    const aims = [{ aimId: 'b', title: 'Find', status: 'active', tasks: [] }];
+    const panel = new ObjectivesPanel({ addListener() {}, removeListener() {}, getActiveAims: () => aims });
+    let n = 0;
+    const orig = panel.toggleCollapse.bind(panel);
+    panel.toggleCollapse = () => { n++; orig(); };
+    panel.container.click();
+    assert.ok(n === 1 && panel.isCollapsed === false, 'a tap on the folded border opens the sheet once');
+    panel.container.click();
+    assert.ok(n === 1, 'a tap on the open sheet frame does nothing');
+    panel.toggleCollapse();
+    n = 0;
+    panel.container.querySelector('.objectives-header').click();
+    assert.ok(n === 1, 'a header tap toggles once, not twice');
+    panel.destroy();
+    setWindow(1400, 1000);
+});
+
 test('R1 M3: Esc closes the objectives sheet first, and the pause menu does not open', () => {
     document.body.innerHTML = '';
     setWindow(390, 844);
