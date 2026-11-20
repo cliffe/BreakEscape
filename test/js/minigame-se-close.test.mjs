@@ -149,11 +149,12 @@ test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {
     }
 });
 
-test('m3 shredded-document closes by the shared pixel X, no text Close', () => {
+test('m3 shredded-document closes by the console window X (D218), no text Close', () => {
     const src = readFileSync(join(js, 'minigames/shredded-document/shredded-document-minigame.js'), 'utf8');
     assert.ok(!/cancelText:/.test(src), 'no text Close cancel button left');
     assert.ok(!/showCancel:\s*true/.test(src), 'the text cancel row is not requested');
-    assert.match(src, /#minigame-close[^\n]*classList[^\n]*add\('se-overlay-close'\)/, 'the close X wears the shared SE pixel look');
+    assert.match(src, /static consoleWindow = true/, 'the X sits in the console window title bar');
+    assert.ok(!/add\('se-overlay-close'\)/.test(src), 'no red SE X variant (D216)');
 });
 
 test('C-X8 the address font points at GNF, addresses stay at 16px or larger', () => {

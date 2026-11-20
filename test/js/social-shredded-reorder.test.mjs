@@ -84,3 +84,40 @@ test('C-SD1 the drag handle sits on the Press Start 2P 8px grid (16px, not 14px)
     const size = Number((handle.match(/font-size:\s*(\d+)px/) || [])[1]);
     assert.ok(size % 8 === 0, `drag-handle font-size ${size}px must be a multiple of 8 (Press Start 2P grid)`);
 });
+
+// D218 (K7): the scene draws in the shared console window.
+test('D218 the scene draws in the console window with a 16px title and the X in the title bar', () => {
+    const mg = sceneWith([{ id: 0, text: 'a' }, { id: 1, text: 'b' }]);
+    assert.ok(ShreddedDocumentMinigame.consoleWindow === true, 'consoleWindow opt-in');
+    assert.ok(ShreddedDocumentMinigame.consoleWindowFill === true, 'consoleWindowFill opt-in');
+    const win = mg.container.querySelector('.console-window.console-window-fill');
+    assert.ok(win !== null, 'the shared console window is drawn');
+    const title = win.querySelector('.console-titlebar .console-title');
+    assert.ok(title.textContent === 'Document Reconstruction', 'default title in the title bar');
+    const x = win.querySelector('.console-titlebar > #minigame-close');
+    assert.ok(x !== null, 'the X is in the title bar');
+    assert.ok(!x.classList.contains('se-overlay-close'), 'no red SE X variant');
+    assert.ok(win.querySelector('.console-body .sdm-panel') !== null, 'the puzzle draws in the console body');
+    assert.ok(mg.gameContainer.classList.contains('console-body'), 'game container is the console body');
+});
+
+test('D218 a scenario title shows in the title bar, and drag, Up/Down moves still work in the window', () => {
+    const mg = new ShreddedDocumentMinigame(host(), { title: 'Torn Memo', strips: ['a', 'b', 'c'] });
+    mg.init();
+    mg.showSuccess = () => {};
+    assert.ok(mg.container.querySelector('.console-title').textContent === 'Torn Memo', 'scenario title used');
+    mg.completed = false;
+    mg.currentOrder = [{ id: 1, text: 'b', tilt: 0 }, { id: 0, text: 'a', tilt: 0 }, { id: 2, text: 'c', tilt: 0 }];
+    mg.render();
+    mg.gameContainer.querySelector('.sdm-strip[data-index="0"] .sdm-move-btn[data-move="down"]').click();
+    assert.ok(mg.completed === true, 'reaching the order still completes');
+});
+
+test('D218 the instruction and text are GNF 16px and the old in-scene X placement is gone', () => {
+    const sheet = readFileSync(join(css, 'shredded-document-minigame.css'), 'utf8');
+    const ins = sheet.match(/\.sdm-instruction\s*\{[^}]*\}/)[0];
+    assert.match(ins, /font-family:\s*'GNF'/, 'instruction in GNF');
+    assert.match(ins, /font-size:\s*16px/, 'instruction at 16px');
+    assert.ok(!/\.sdm-container \.minigame-close-button/.test(sheet), 'no absolute X override fighting the title bar');
+    assert.ok(!/font-size:\s*8px;\s*\n\s*color:\s*#8a9bb5/.test(sheet), 'no 8px instruction');
+});

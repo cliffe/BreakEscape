@@ -35,12 +35,20 @@ function setGlobalAndNotify(varName, value) {
 }
 
 export class ShreddedDocumentMinigame extends MinigameScene {
+    // Draws in the shared console window (D218): the title bar and the themed X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
+    consoleTitle() {
+        return this.params?.title || 'Document Reconstruction';
+    }
+
     constructor(container, params) {
         super(container, {
             ...params,
             title: params.title || 'Document Reconstruction'
-            // C-X1 (m3): no text 'Close' cancel button. The scene closes through the shared pixel
-            // × (tagged .se-overlay-close in init) and Esc, one close look across the SE windows.
+            // No text 'Close' cancel button. The scene closes through the X in the console
+            // window's title bar (the one themed X, D216) and Esc.
         });
 
         const minigameData = params.lockable?.scenarioData?.minigameData || {};
@@ -68,8 +76,6 @@ export class ShreddedDocumentMinigame extends MinigameScene {
         super.init();
         this.container.classList.add('sdm-container');
         this.gameContainer.classList.add('sdm-game-container');
-        // C-X1 (m3): the framework close button wears the shared SE pixel × look.
-        this.container.querySelector('#minigame-close')?.classList.add('se-overlay-close');
         if (this.headerElement) this.headerElement.style.display = 'none';
 
         this.completed = this._isAlreadyCompleted();
