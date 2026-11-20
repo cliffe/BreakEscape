@@ -337,7 +337,9 @@
 /* Narrow: verdict buttons stack, the chip list is a bottom sheet with 44 px rows */
 @media (max-width: 767px) {
     .tri-verdicts, .tri-actions-open .tri-verdicts { flex-direction: column; flex-wrap: wrap; }
-    .tri-verdict { width: 100%; }
+    /* Stacked in a column, flex: 1 1 0 would set each button's height basis to 0 and squash it to
+       its 44px min-height, so the word and hint spilled onto the next button (live 390x844). */
+    .tri-verdict { width: 100%; flex: 0 0 auto; }
     .tri-sheet-backdrop { align-items: flex-end; }
     .tri-sheet { width: 100%; max-height: 80%; }
     .triage-client .tri-toolbar { flex-wrap: wrap; }

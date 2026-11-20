@@ -130,3 +130,10 @@ test('intel-board empty note and unknown name reach 4.5:1 on their backgrounds',
     assert.ok(unk && ratio(unk[1], '#f5eeba') >= 4.5, 'unknown name on card paper');
     assert.ok(unk[1].toLowerCase() === '#3a2d20', 'unknown name darkened to #3a2d20');
 });
+
+test('inbox-triage: stacked verdict buttons grow to their content on phones (live 390x844 overlap)', () => {
+    const block = mediaBlock('inbox-triage-minigame.css', '(max-width: 767px)');
+    const rule = (block.match(/\.tri-verdict\s*\{([^}]*)\}/) || [])[1] || '';
+    // In a column, a 0 flex-basis squashes each button to its 44px min-height and the text overflows
+    assert.ok(/flex:\s*0 0 auto/.test(rule), 'narrow .tri-verdict sets flex: 0 0 auto, got: ' + rule.trim());
+});
