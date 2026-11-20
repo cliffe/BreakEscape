@@ -71,11 +71,17 @@ HOSTS = {
 LINES = {
     ('e2', 'defend'): (
         "Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.",
-        "That's the inbox sorted, thanks. A real CV just opens in the viewer. Anything that asks for more than that gets a second look from me.",
+        {'catch': ('You held back that application whose attachment wanted a second click to open it, so nothing ran on the HR machine behind it.',
+                   'A real CV just opens. The one asking for an extra step to view it is worth a second look.'),
+         'miss': ('That application with the attachment that wanted a second click was the one to stop.',
+                  'It ran, so we lost the HR machine for a rebuild and recruitment paused while we re-contacted candidates by hand.')},
         'Thanks, Fatima.', 'Any time.'),
     ('e4', 'defend'): (
         "Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.",
-        "That's everything cleared, thanks. Money, in a hurry? Ring her on a number you already hold, or ask Yasmin.",
+        {'catch': ("You held that urgent payment in Catherine's name until you'd reached her, so it never left for an account that wasn't hers.",
+                   "A voicemail that sounds like her and says don't ring back is the exact bit to distrust."),
+         'miss': ("That urgent payment in Catherine's name, pushed through on a voicemail that sounded like her, was the one to stop.",
+                  "It went to the attacker's account, the real supplier later chased what it was owed, and finance spent the afternoon unpicking it.")},
         'Thanks, Thandiwe.', 'Shout if anything else comes in.'),
     ('e2', 'pre'): (
         "Hi. Before the training there's a short check on the kiosk: ten emails from the recruitment inbox. Just do what you'd normally do with them.",

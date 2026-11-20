@@ -394,11 +394,17 @@ HOSTS = {
 LINES = {
     ('e6', 'defend'): (
         "Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.",
-        "That's the phone cleared. If a text or a notice wants a code scanned or a short link tapped, open the app yourself instead.",
+        {'catch': ("You didn't scan that barrier QR or tap the parking text, so no card number and no work sign-in went anywhere.",
+                   'A code on an official-looking notice is the easy one to trust. Opening the app yourself skips the whole thing.'),
+         'miss': ('That barrier QR, and the parking-permit text behind it, were the one to stop.',
+                  'One tap later, a personal card was charged or a work sign-in captured, and the afternoon went on the phone to the bank.')},
         'Thanks, Chidi.', 'Any time.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
-        "All five done, thanks. Whoever's voice it is, ring back on a number you already hold and that settles it.",
+        {'catch': ("You rang back before releasing that payment, so a voice that sounded like the boss didn't move money out the door.",
+                   'The "keep this quiet" is the real tell. It\'s there to buy time before anyone checks.'),
+         'miss': ("That call in the boss's voice, asking to release a payment quietly, was the one to stop.",
+                  'The payment went, the whole run froze while every recent one was re-checked, and finance lost the afternoon to it.')},
         'Thanks, Agnieszka.', 'See you after the meeting.'),
 }
 

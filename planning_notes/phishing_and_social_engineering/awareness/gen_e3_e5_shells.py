@@ -64,11 +64,17 @@ HOSTS = {
 LINES = {
     ('e3', 'defend'): (
         "You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.",
-        "That's the queue cleared, thanks. If a caller won't let you ring them back, that tells you most of what you need.",
+        {'catch': ("You turned down that caller pushing for a reset who wouldn't be rung back, so no claims account opened for someone we couldn't place.",
+                   'Prompt-bombing just wears people down until they tap yes. Number matching takes the idle tap out of it.'),
+         'miss': ("That caller pushing for a reset, the one who wouldn't be rung back, was the one to stop.",
+                  'It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.')},
         'Thanks, Darren.', 'Shout if you need me.'),
     ('e5', 'defend'): (
         "Hiya. There are five pages open on the kiosk, each one from a link somebody got this morning. Have a look at each before you'd sign in.",
-        "That's all five checked. The address bar is the bit to read, every time.",
+        {'catch': ('You read the address before signing in, so that lookalike page never got a real password off anyone here.',
+                   "The look and the padlock both copy fine. The address bar is the one bit they can't fake."),
+         'miss': ('That page copying our sign-on, on an address that was almost right, was the one to stop.',
+                  'The password went in, so a claims account was wide open and IT lost the day to resets and a records review.')},
         'Thanks, Niamh.', 'No bother.'),
 }
 
