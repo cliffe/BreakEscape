@@ -378,7 +378,7 @@
 }
 
 .desktop-subtitle {
-    font-size: 20px;
+    font-size: 16px;
     color: #ccc;
 }
 
@@ -427,7 +427,7 @@
 }
 
 .container-info p {
-    font-size: 20px;
+    font-size: 16px;
     margin: 0;
     color: #ecf0f1;
     line-height: 1.4;
@@ -583,7 +583,7 @@
     grid-column: 1 / -1;
     text-align: center;
     color: #95a5a6;
-    font-size: 20px;
+    font-size: 16px;
     margin: 20px 0;
     font-style: italic;
 }
@@ -613,7 +613,7 @@
     transform: translateX(-50%);
     padding: 10px 20px;
     /* border-radius: 5px; */
-    font-size: 20px;
+    font-size: 16px;
     z-index: 10001;
     animation: slideDown 0.3s ease;
 }
@@ -691,7 +691,7 @@
 }
 
 .desktop-account-btn {
-    font-size: 12px;
+    font-size: 16px;
     padding: 6px 10px;
 }
 
@@ -726,7 +726,7 @@
 
 .desktop-window-body p {
     margin: 0 0 10px 0;
-    font-size: 17px;
+    font-size: 16px;
 }
 
 .desktop-window-buttons {
@@ -740,7 +740,7 @@
 .desktop-transfer-btn {
     width: 100%;
     margin: 0;
-    font-size: 11px;
+    font-size: 16px;
     padding: 6px 8px;
 }
 
