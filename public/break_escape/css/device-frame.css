@@ -63,7 +63,9 @@
 
 /* The title bar row: device name on the left, the shared pixel X on the right. The margin below it
    keeps the first control row clear of the drawn X (the X's bottom edge is 50px below the frame top,
-   52px for the 32px vm-launcher X): 12px, and 14px at phone width where the 16px line is 8px shorter. */
+   52px for the 32px vm-launcher X): 12px at every width. The title is 16px on a 24px line on phones too, so a
+   one-line title puts the first row 58px down, 8px below the drawn X (6px for vm-launcher); a title that
+   wraps to two lines only pushes the row lower. */
 .device-frame > .device-frame-title {
     display: flex;
     align-items: center;

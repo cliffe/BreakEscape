@@ -186,7 +186,9 @@ for (const w of [320, 390, 1280]) {
 test('the cascade reader sees the shared title margin (guards the test itself)', () => {
     const g = geometry('rogue-ap', 1280);
     assert.ok(g.rowTop === 58, `rogue-ap desktop row top ${g.rowTop}, expected 58 from 16 + 6 + 24 + 12`);
-    assert.ok(geometry('rogue-ap', 390).rowTop === 52, 'rogue-ap phone row top 52 from 16 + 6 + 16 + 14');
+    // K3: phone titles stay 16px on a 24px line with the same 12px margin as desktop (a single-line title; a wrapped one only pushes the row lower)
+    assert.ok(geometry('rogue-ap', 390).rowTop === 58, `rogue-ap phone row top ${geometry('rogue-ap', 390).rowTop}, expected 58 from 16 + 6 + 24 + 12`);
+    assert.ok(geometry('vm-launcher', 390).rowTop === 58, `vm-launcher phone row top ${geometry('vm-launcher', 390).rowTop}, expected 58 from 16 + 6 + 24 + 12`);
     assert.ok(geometry('patch-panel', 1280).rowTop === 52, 'patch-panel desktop row top 52 from 16 + 24 + 12');
 });
 
