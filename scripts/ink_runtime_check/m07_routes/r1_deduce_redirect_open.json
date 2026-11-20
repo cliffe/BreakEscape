@@ -171,18 +171,15 @@
    }
   },
   {
-   "said": [
-    "Ten minutes before your team is too committed to move"
-   ]
-  },
-  {
    "talk": "architect",
+   "knot": "taunt_t10",
    "picks": [
     "Then I'll be in this one"
    ]
   },
   {
    "said": [
+    "Ten minutes before your team is too committed to move",
     "You've found the discrepancy",
     "You still have a door open"
    ],
@@ -199,7 +196,7 @@
   },
   {
    "said": [
-    "The window stays open until you log in as their operator, or the timer on screen runs out"
+    "The window stays open until that operator login goes through the relay, or the timer on screen runs out"
    ]
   },
   {

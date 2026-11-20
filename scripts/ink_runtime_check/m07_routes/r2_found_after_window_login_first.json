@@ -72,18 +72,15 @@
    "advance": 30
   },
   {
-   "said": [
-    "Ten minutes before your team is too committed to move"
-   ]
-  },
-  {
    "talk": "architect",
+   "knot": "taunt_t10",
    "picks": [
     "You're not as clever"
    ]
   },
   {
    "said": [
+    "Ten minutes before your team is too committed to move",
     "It only requires you to wait.",
     "You still have a door open"
    ]
@@ -156,7 +153,7 @@
    "talk": "phone",
    "picks": [
     "Can I still move the team",
-    "I'll call you back"
+    "I'll check back in"
    ]
   },
   {
@@ -187,11 +184,12 @@
   },
   {
    "said": [
-    "Same door password as Elena"
+    "it's Elena's door code, so she told the truth"
    ],
    "notSaid": [
     "the control room door's included",
-    "Before you log in"
+    "Before you log in",
+    "The moment that operator flag goes through the relay"
    ]
   },
   {
@@ -219,8 +217,19 @@
   },
   {
    "said": [
-    "Seattle first. As scheduled.",
     "Seattle's dark. Step one ran. Steps two to four haven't. Get root"
+   ]
+  },
+  {
+   "talk": "architect",
+   "knot": "seattle_call",
+   "picks": [
+    0
+   ]
+  },
+  {
+   "said": [
+    "Seattle first. Exactly as scheduled."
    ]
   },
   {
@@ -296,7 +305,7 @@
    "said": [
     "I said there wasn't a third.",
     "crimping tool swinging",
-    "Park's swinging. Q switches to fists"
+    "Park's swinging. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely."
    ],
    "notSaid": [
     "Step away from the cable",
@@ -360,7 +369,7 @@
     "ORDER: logged in on the host before",
     "CORRECTION FOUND AFTER THE WINDOW SHUT",
     "Operation Meltdown",
-    "Evaded — still on the checkpoint desk",
+    "Identified, not stopped, still on the checkpoint desk",
     "THOMAS PARK: Fought off, not stopped"
    ],
    "creditsNotSaid": [
