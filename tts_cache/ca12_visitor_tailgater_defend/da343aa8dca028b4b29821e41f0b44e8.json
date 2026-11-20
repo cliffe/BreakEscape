@@ -1,0 +1,13 @@
+{
+  "key": "da343aa8dca028b4b29821e41f0b44e8",
+  "npc": "kit_thandiwe_moyo",
+  "text": "Studio's quiet today.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:19:50Z"
+}

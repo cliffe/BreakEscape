@@ -81,6 +81,54 @@
       "keyMessage": "e1_lookalike_bank",
       "hostLine": true,
       "why": "Defend-only twin, tier S (plan 5): kit room, ambient staff, pool and stubs; no chain, no panel, no step-away, no set piece. The host layer-2 line is not written yet (new spoken content)."
+    },
+    {
+      "id": "ca12_visitor_tailgater",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "merrin_sallow",
+      "ep": "ca12",
+      "ambient": [
+        "thandiwe_moyo",
+        "julian_sallow"
+      ],
+      "setPiece": "ca12_visitor",
+      "attack": true,
+      "stepAway": true,
+      "keyMessage": "e12_call_tailgater",
+      "hostLine": true
+    },
+    {
+      "id": "ca12_visitor_tailgater_defend",
+      "tier": "S",
+      "company": "merrin_sallow",
+      "ep": "ca12",
+      "ambient": [
+        "thandiwe_moyo",
+        "julian_sallow"
+      ],
+      "setPiece": null,
+      "attack": false,
+      "stepAway": false,
+      "keyMessage": "e12_call_tailgater",
+      "hostLine": true,
+      "why": "Defend-only twin, tier S: kit room, ambient pair, pool, stubs; one host line; no lobby, no visitor, no screen beat, no panel, no step-away, no set piece."
+    },
+    {
+      "id": "test_ca12_fallback",
+      "handAuthored": true,
+      "tier": "E",
+      "company": "merrin_sallow",
+      "ep": "ca12",
+      "ambient": [
+        "thandiwe_moyo",
+        "julian_sallow"
+      ],
+      "setPiece": "ca12_visitor_fallback",
+      "attack": true,
+      "stepAway": false,
+      "keyMessage": "e12_call_tailgater",
+      "hostLine": true
     }
   ]
 }

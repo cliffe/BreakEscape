@@ -1,0 +1,675 @@
+{
+  "company": "merrin_sallow",
+  "_note": "Merrin & Sallow Architects office kit (ca12 build sheet living_office_build/CA12_BUILD.md part 1). Tiles are px/32 on the 10x10 studio map room_aw_merrin_sallow. Walk tiles and the PC position are first-pass dressing guesses, to be checked live (sheet proof 4): east door (8.5,2.5) from doors.js placeEastDoorSingle; step-in (6.5,4.5) in both set pieces (the engine counts a walk as arrived within 1 tile, npc-behavior.js:1432-1445, so every walker stops up to 1 tile short of its target; Camila is hidden about 1 tile from the east door tile, which was judged close enough to read as the door); J2 sends Julian to (7.0,5.5), more than 1.5 tiles from his rest spot (6.9,8.1); desks (2.5,5.0); beside-desks (3.5,5.0); Lorna post (5.5,3.8); Julian home (6,8); Thandiwe's PC approach cell (3.9,6.0); PC (3.28125,6.96875) on the table top, 28x23 at px (105,223) above the table front edge (246), with elevation 24.2 so it draws over the conference table sprite (depth 270.5) and its table items; the journal stack placeholder is claimed by kit_ca12_journals and moved 7 px left (86 to 79) so the PC fits between it and the plans roll without overlap. The visitor uses her own camila_ospina atlas, talk and visemes sheets (bust b01, talk t02).",
+  "scenario": {
+    "npcThoughts": false
+  },
+  "pool": {
+    "key": "kit_merrin",
+    "lines": [
+      "Deadline on the Harbour job.",
+      "Printer's warm again.",
+      "Client's in this morning."
+    ],
+    "requireGlobal": {
+      "kit_quiet": false
+    }
+  },
+  "sources": [
+    {
+      "type": "leather_sofa",
+      "id": "kit_sofa",
+      "name": "Sofa",
+      "sprite": "leather_sofa1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "A studio sofa by the wall. Staff drop onto it for a breather.",
+      "affordance": {
+        "satisfies": "rest",
+        "restores": 70,
+        "useSeconds": 8,
+        "useFrom": {
+          "dx": 0,
+          "dy": -1
+        },
+        "capacity": 2,
+        "chatter": "pool"
+      }
+    }
+  ],
+  "staff": {
+    "thandiwe_moyo": {
+      "displayName": "Thandiwe Moyo",
+      "spriteSheet": "thandiwe_moyo",
+      "voice": {
+        "name": "Pulcherrima",
+        "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+        "language": "en-GB"
+      },
+      "position": {
+        "x": 2.5,
+        "y": 4.5
+      },
+      "needsHome": {
+        "room": "training_room",
+        "x": 2.5,
+        "y": 4.5,
+        "facing": "south"
+      },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": {
+        "rest": {
+          "decayPerMin": 10,
+          "urgentAt": 50,
+          "initial": 90
+        }
+      },
+      "chatterLines": [
+        "Rev C or Rev D?",
+        "Anyone seen the scale rule?",
+        "Studio's quiet today."
+      ]
+    },
+    "julian_sallow": {
+      "displayName": "Julian Sallow",
+      "spriteSheet": "julian_sallow",
+      "voice": {
+        "name": "Rasalgethi",
+        "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+      },
+      "position": {
+        "x": 6.0,
+        "y": 8.0
+      },
+      "needsHome": {
+        "room": "training_room",
+        "x": 6.0,
+        "y": 8.0,
+        "facing": "north"
+      },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": {
+        "rest": {
+          "decayPerMin": 30,
+          "urgentAt": 50,
+          "initial": 45
+        }
+      },
+      "chatterLines": [
+        "Planning panel on Thursday.",
+        "Where's that elevation?",
+        "That roof pitch still won't work."
+      ]
+    }
+  },
+  "setPieces": {
+    "ca12_visitor": {
+      "globals": {
+        "kit_ca12_screen_choice": "",
+        "kit_ca12_door_choice": "",
+        "kit_ca12_sat": false,
+        "kit_ca12_screen_asked": false,
+        "kit_ca12_screen_done": false,
+        "kit_ca12_visitor_go": false,
+        "kit_ca12_visitor_there": false,
+        "kit_ca12_host_there": false,
+        "kit_ca12_at_desks": false,
+        "kit_ca12_visitor_leaving": false,
+        "kit_ca12_done": false
+      },
+      "objects": [
+        {
+          "type": "journal_stack",
+          "id": "kit_ca12_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca12_pc",
+          "name": "Thandiwe's workstation",
+          "sprite": "pc",
+          "workstation": true,
+          "owner": "kit_thandiwe_moyo",
+          "lockChance": 0,
+          "takeable": false,
+          "requiresItem": "merrin_screen_lock_token",
+          "triggerOnInteract": [],
+          "requiresItemHint": "That's Thandiwe's session, signed in as her. It's hers to lock before she steps away.",
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca12_screen_choice === 'mention'",
+              "value": "pc1_locked"
+            },
+            {
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_choice !== 'mention' && globalVars.kit_ca12_done !== true",
+              "value": "pc1_break"
+            }
+          ],
+          "observations": "Thandiwe's workstation. The screen is still on."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca12_t_return",
+          "startOnGlobal": "kit_ca12_out",
+          "delayMs": 45000,
+          "condition": "!globalVars.kit_ca12_sat",
+          "setGlobal": {
+            "kit_ca12_sat": true
+          }
+        },
+        {
+          "id": "kit_ca12_t_screen_tail",
+          "startOnGlobal": "kit_ca12_screen_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca12_screen_choice === ''",
+          "setGlobal": {
+            "kit_ca12_screen_done": true
+          }
+        },
+        {
+          "id": "kit_ca12_t_door",
+          "startOnGlobal": "kit_ca12_visitor_go",
+          "delayMs": 6000,
+          "condition": "!globalVars.kit_ca12_visitor_there",
+          "setGlobal": {
+            "kit_ca12_visitor_there": true
+          }
+        },
+        {
+          "id": "kit_ca12_t_door_tail",
+          "startOnGlobal": "kit_ca12_visitor_there",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done",
+          "setGlobal": {
+            "kit_ca12_door_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca12_t_done",
+          "startOnGlobal": "kit_ca12_out",
+          "delayMs": 150000,
+          "condition": "!globalVars.kit_ca12_done",
+          "setGlobal": {
+            "kit_ca12_done": true
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kit_camila_ospina",
+          "npcType": "person",
+          "displayName": "Camila Ospina",
+          "spriteSheet": "camila_ospina",
+          "spriteTalk": "assets/characters/camila_ospina_talk.png",
+          "spriteVisemes": "assets/characters/camila_ospina_visemes.png",
+          "voice": {
+            "name": "Zephyr",
+            "style": "A client-side account rep in her mid 40s, confident and friendly, with the easy manner of someone sure she is expected. Speak with a consistent London accent with a light Colombian inflection throughout, and do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "initiallyHidden": true
+          },
+          "position": {
+            "x": 8.5,
+            "y": 2.5
+          },
+          "storyPath": "scenarios/_office_kit/ink/camila_ospina_ca12.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
+              "condition": "value === true && globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "setVisible": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_visitor_go",
+              "condition": "value === true && globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6.5,
+                  "y": 4.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_visitor_go === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_visitor_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_visitor_there",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true && globalVars.kit_ca12_door_choice === '' && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "bark": "Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up.",
+              "targetKnot": "ca12_door"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_camila_ospina",
+              "condition": "globalVars.kit_ca12_door_choice === 'asked' && globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_door_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+              "condition": "value === 'reception' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'reception'",
+              "onceOnly": true,
+              "setVisible": false,
+              "setGlobal": {
+                "kit_ca12_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+              "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 2.5,
+                  "y": 5.0
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_at_desks": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_host_there",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca12_visitor_leaving": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_at_desks",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca12_visitor_leaving": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true && data.x >= 232",
+              "onceOnly": true,
+              "setVisible": false,
+              "setGlobal": {
+                "kit_ca12_done": true
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && globalVars.kit_ca12_visitor_leaving === true && !globalVars.kit_ca12_done && data.x < 232",
+              "delayMs": 300,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+              "condition": "value === 'silent' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.5,
+                  "y": 2.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_camila_ospina",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'silent'",
+              "onceOnly": true,
+              "setVisible": false,
+              "setGlobal": {
+                "kit_ca12_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": false
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_ca12_door_choice",
+          "condition": "value === 'letin' && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+          "onceOnly": true,
+          "delayMs": 500,
+          "patrolOverride": {
+            "targetTile": {
+              "x": 3.5,
+              "y": 5.0
+            },
+            "speed": 90
+          }
+        },
+        {
+          "eventPattern": "npc_arrived:lorna_easton",
+          "condition": "data.owner !== 'needs' && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin' && !globalVars.kit_ca12_done",
+          "onceOnly": true,
+          "setGlobal": {
+            "kit_ca12_host_there": true
+          }
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca12_host_there",
+          "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_at_desks === true",
+          "onceOnly": true,
+          "delayMs": 3000,
+          "patrolOverride": {
+            "targetTile": {
+              "x": 5.5,
+              "y": 3.8
+            },
+            "speed": 90
+          }
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca12_at_desks",
+          "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_host_there === true",
+          "onceOnly": true,
+          "delayMs": 3000,
+          "patrolOverride": {
+            "targetTile": {
+              "x": 5.5,
+              "y": 3.8
+            },
+            "speed": 90
+          }
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca12_done",
+          "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_ca12_door_choice === 'letin'",
+          "onceOnly": true,
+          "patrolOverride": {
+            "targetTile": {
+              "x": 5.5,
+              "y": 3.8
+            },
+            "speed": 90
+          }
+        }
+      ],
+      "staff": {
+        "thandiwe_moyo": {
+          "position": {
+            "x": 3.9,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca12_pc",
+          "needs": {
+            "rest": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 100
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "needs": {
+                "set": {
+                  "rest": 10
+                }
+              }
+            },
+            {
+              "eventPattern": "workstation_owner_returned:kit_ca12_pc",
+              "condition": "globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_sat": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_sat",
+              "condition": "value === true && globalVars.kit_ca12_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_screen_asked": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_sat",
+              "condition": "value === true && globalVars.kit_ca12_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "bark": "Right, that's me back. Anything I should know?",
+              "targetKnot": "ca12_screen"
+            },
+            {
+              "eventPattern": "conversation_closed:kit_thandiwe_moyo",
+              "condition": "globalVars.kit_ca12_out === true && globalVars.kit_ca12_screen_asked === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_screen_done": true,
+                "kit_ca12_visitor_go": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_screen_done",
+              "condition": "value === true && globalVars.kit_ca12_out === true && !globalVars.kit_ca12_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca12_visitor_go": true
+              }
+            }
+          ]
+        },
+        "julian_sallow": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 7.0,
+                  "y": 5.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca12_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      }
+    },
+    "ca12_visitor_fallback": {
+      "globals": {
+        "kit_ca12_screen_choice": "",
+        "kit_ca12_screen_asked": false,
+        "kit_ca12_door_choice": "",
+        "kit_ca12_visitor_there": false
+      },
+      "objects": [
+        {
+          "type": "journal_stack",
+          "id": "kit_ca12_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca12_pc",
+          "name": "Thandiwe's workstation",
+          "sprite": "pc",
+          "workstation": true,
+          "owner": "kit_thandiwe_moyo",
+          "lockChance": 0,
+          "takeable": false,
+          "requiresItem": "merrin_screen_lock_token",
+          "triggerOnInteract": [],
+          "requiresItemHint": "That's Thandiwe's session, signed in as her. It's hers to lock before she steps away.",
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_defend_done === true",
+              "value": "pc1_break"
+            }
+          ],
+          "observations": "Thandiwe's workstation. The screen is still on."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "kit_camila_ospina",
+          "npcType": "person",
+          "displayName": "Camila Ospina",
+          "spriteSheet": "camila_ospina",
+          "spriteTalk": "assets/characters/camila_ospina_talk.png",
+          "spriteVisemes": "assets/characters/camila_ospina_visemes.png",
+          "voice": {
+            "name": "Zephyr",
+            "style": "A client-side account rep in her mid 40s, confident and friendly, with the easy manner of someone sure she is expected. Speak with a consistent London accent with a light Colombian inflection throughout, and do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "initiallyHidden": true
+          },
+          "position": {
+            "x": 6.5,
+            "y": 4.5
+          },
+          "storyPath": "scenarios/_office_kit/ink/camila_ospina_ca12.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setVisible": true
+            }
+          ]
+        }
+      ],
+      "staff": {
+        "thandiwe_moyo": {
+          "position": {
+            "x": 3.9,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca12_pc",
+          "needs": {
+            "rest": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 100
+            }
+          }
+        }
+      }
+    }
+  }
+}
