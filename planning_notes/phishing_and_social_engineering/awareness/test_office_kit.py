@@ -991,5 +991,85 @@ class PoolExempt(unittest.TestCase):
         self.assertTrue(ok.host_mappings(kit, r, 'p_', 's'))
 
 
+class RealKitsThroughBuilders(unittest.TestCase):
+    """Review R1 minor 3: the shipped Quayholt and Carrholme kits (office_kits/*.json), not the synthetic
+    `exempt_kit()`, go through room_objects and room_npcs. `exempt_kit()` stays for the error paths."""
+
+    def real_row(self, company, **want):
+        rows = [r for r in ok.load_rows() if r.get('company') == company and not r.get('fixture')
+                and all(r.get(k) == v for k, v in want.items())]
+        self.assertTrue(rows, f'no {company} row with {want}')
+        return rows[0]
+
+    def source(self, kit, sid='kit_cooler'):
+        return [s for s in kit['sources'] if s['id'] == sid][0]
+
+    def test_quayholt_cooler_reaches_the_shell_with_its_position_and_chatter_key(self):
+        kit = ok.load_kit('quayholt_insurance')
+        r = self.real_row('quayholt_insurance', convention=None)
+        objs = ok.room_objects(kit, r)
+        cooler = [o for o in objs if o['id'] == 'kit_cooler']
+        self.assertEqual(len(cooler), 1)
+        self.assertEqual(cooler[0]['position'], self.source(kit)['position'])      # explicit position, unchanged
+        self.assertEqual(cooler[0]['position'], {'x': 8.2, 'y': 5.6})
+        self.assertEqual(cooler[0]['affordance']['chatter'], kit['pool']['key'])   # "pool" resolved to the real key
+        self.assertEqual(cooler[0]['affordance']['satisfies'], 'thirst')
+
+    def test_carrholme_cooler_reaches_the_shell_with_its_position_and_no_chatter(self):
+        kit = ok.load_kit('carrholme_services')
+        self.assertIsNone(kit['pool'])
+        r = self.real_row('carrholme_services')
+        objs = ok.room_objects(kit, r)
+        cooler = [o for o in objs if o['id'] == 'kit_cooler']
+        self.assertEqual(len(cooler), 1)
+        self.assertEqual(cooler[0]['position'], self.source(kit)['position'])
+        self.assertEqual(cooler[0]['position'], {'x': 8.2, 'y': 5.6})
+        self.assertNotIn('chatter', cooler[0]['affordance'])
+        self.assertEqual(cooler[0]['affordance']['satisfies'], 'thirst')
+
+    def test_an_explicit_source_position_is_passed_through_unchanged_not_defaulted(self):
+        for company in ('quayholt_insurance', 'carrholme_services'):
+            kit = ok.load_kit(company)
+            kit['sources'] = copy.deepcopy(kit['sources'])
+            self.source(kit)['position'] = {'x': 3.25, 'y': 9.5}
+            r = self.real_row(company)
+            cooler = [o for o in ok.room_objects(kit, r) if o['id'] == 'kit_cooler'][0]
+            self.assertEqual(cooler['position'], {'x': 3.25, 'y': 9.5}, company)
+
+    def test_quayholt_convention_row_drops_the_cooler_chatter_but_keeps_its_position(self):
+        kit = ok.load_kit('quayholt_insurance')
+        r = self.real_row('quayholt_insurance', convention=True)
+        cooler = [o for o in ok.room_objects(kit, r) if o['id'] == 'kit_cooler'][0]
+        self.assertNotIn('chatter', cooler['affordance'])
+        self.assertEqual(cooler['position'], {'x': 8.2, 'y': 5.6})
+
+    def check_npcs(self, company, r, with_chatter):
+        kit = ok.load_kit(company)
+        npcs = [n for n in ok.room_npcs(kit, r) if n.get('person')]
+        self.assertEqual([n['person'] for n in npcs], r['ambient'])
+        for n in npcs:
+            self.assertIn('thirst', n['needs'], n['id'])
+            home = n['needsHome']
+            self.assertIsInstance(home['x'], (int, float))
+            self.assertIsInstance(home['y'], (int, float))
+            self.assertEqual(n['needsRooms'], ['training_room'])
+            self.assertNotIn('seated', n)
+            self.assertEqual('chatter' in n, with_chatter, n['id'])
+        return npcs
+
+    def test_quayholt_ambient_staff_have_a_thirst_need_a_home_and_a_pool_entry(self):
+        npcs = self.check_npcs('quayholt_insurance', self.real_row('quayholt_insurance', convention=None), True)
+        for n in npcs:
+            self.assertEqual(list(n['chatter']), ['kit_quayholt'])
+
+    def test_carrholme_ambient_staff_have_a_thirst_need_a_home_and_no_chatter(self):
+        self.check_npcs('carrholme_services', self.real_row('carrholme_services'), False)
+
+    def test_quayholt_convention_row_gives_staff_the_stub_knot_and_no_chatter(self):
+        r = self.real_row('quayholt_insurance', convention=True)
+        npcs = self.check_npcs('quayholt_insurance', r, False)
+        self.assertEqual([n['currentKnot'] for n in npcs], [r['stub']] * len(npcs))
+
+
 if __name__ == '__main__':
     unittest.main()

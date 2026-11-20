@@ -701,32 +701,74 @@ test('pool exemption: a kit with pool null carries a reason and no chatter sourc
     if (kit.poolExempt !== undefined) assert.ok(kit.pool === null, `${f}: poolExempt beside a pool`);
     if (kit.pool !== null && kit.pool !== undefined) assert.ok(!('poolExempt' in kit), f);
   }
-  // reads the flag, so it holds whether or not a company is exempt yet (Quayholt and Carrholme may gain a source)
-  assert.ok(exempt >= 0);
+  // Carrholme is exempt now (review R1 minor 2): the case must visit at least one kit, or it passes on nothing
+  assert.ok(exempt >= 1, `no exempt kit visited (${exempt})`);
 });
 
 test('pool exemption and ca00: a shell with no pool or a convention row carries no kit chatter and is excused the capacity-2 source', () => {
+  let conventionRows = 0, exemptRows = 0;
   for (const r of kitRows) {
     const sc = readShell(r.id);
     const tr = sc.rooms.training_room;
+    if (r.convention === true) conventionRows += 1;
     const exempt = r.convention === true || kitPoolExempt(r);
     const kitNpcs = tr.npcs.filter((n) => n.id.startsWith('kit_'));
     if (exempt) {
+      exemptRows += 1;
       assert.ok(!Object.keys(sc.chatter || {}).some((k) => k.startsWith('kit_')), `${r.id}: top-level kit pool`);
       for (const n of kitNpcs) assert.ok(!('chatter' in n) && !('chatterLines' in n), `${r.id}: ${n.id} carries chatter`);
       for (const o of tr.objects.filter((x) => x.id.startsWith('kit_'))) assert.ok(!(o.affordance && o.affordance.chatter), `${r.id}: ${o.id} speaks a pool`);
     }
-    // a kit NPC with no needs is seated and has no home to walk to (npc-needs.js registers only NPCs with needs)
-    // (ambient staff only: a set piece's hidden visitor has no `person` and is not on the needs system)
-    for (const n of kitNpcs.filter((x) => x.person && !x.needs)) {
-      assert.ok(n.seated === true, `${r.id}: ${n.id} has no needs and is not seated`);
-      assert.ok(!('needsHome' in n) && !('needsRooms' in n), `${r.id}: ${n.id} has no needs but a needs home`);
+    // Under v4 no kit has a needs-free colleague (the old seated, needs-free branch was dead): every ambient
+    // kit NPC (one with a person; a set piece's hidden visitor is not on the needs system) carries needs.
+    for (const n of kitNpcs.filter((x) => x.person)) {
+      assert.ok(n.needs && Object.keys(n.needs).length > 0, `${r.id}: ${n.id} has no needs`);
     }
   }
+  // floors: the ca00 convention row plus Carrholme's two rows are exempt, so a vanished row fails here
+  assert.ok(conventionRows === 1, `want exactly one convention row, visited ${conventionRows}`);
+  assert.ok(exemptRows >= 3, `want at least 3 exempt rows (ca00 + 2 Carrholme), visited ${exemptRows}`);
+});
+
+// Review R1 minor 1: row-driven, by company. A regenerated shell that drops a need, a home, the cooler,
+// its tile position or (Quayholt) its chatter fails here.
+const COOLER_COMPANIES = { quayholt_insurance: 7, carrholme_services: 2 };
+const NEEDS_COMPANIES = ['tarrowby_logistics', 'quayholt_insurance', 'carrholme_services'];
+test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst need and a coordinate needsHome', () => {
+  const visited = {};
+  for (const r of courseRows.filter((x) => NEEDS_COMPANIES.includes(x.company))) {
+    visited[r.company] = (visited[r.company] || 0) + 1;
+    const npcs = readShell(r.id).rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_') && n.person);
+    assert.ok(npcs.length >= 1, `${r.id}: no ambient kit NPC`);
+    for (const n of npcs) {
+      assert.ok(n.needs && typeof n.needs.thirst === 'object' && n.needs.thirst !== null, `${r.id}: ${n.id} has no thirst need`);
+      const h = n.needsHome;
+      assert.ok(h && Number.isFinite(h.x) && Number.isFinite(h.y), `${r.id}: ${n.id} needsHome is not a coordinate`);
+    }
+  }
+  for (const c of NEEDS_COMPANIES) assert.ok(visited[c] >= (COOLER_COMPANIES[c] || 1), `${c}: visited only ${visited[c] || 0} shells`);
+});
+
+test('kit cooler: every Quayholt and Carrholme shell has exactly one kit_cooler with a tile position; only Quayholt carries chatter', () => {
+  const visited = {};
+  for (const r of kitRows.filter((x) => x.company in COOLER_COMPANIES)) {
+    visited[r.company] = (visited[r.company] || 0) + 1;
+    const coolers = readShell(r.id).rooms.training_room.objects.filter((o) => o.id === 'kit_cooler');
+    assert.ok(coolers.length === 1, `${r.id}: want exactly one kit_cooler, found ${coolers.length}`);
+    const c = coolers[0];
+    assert.ok(c.position && Number.isFinite(c.position.x) && Number.isFinite(c.position.y), `${r.id}: kit_cooler has no tile position`);
+    const chatter = c.affordance && c.affordance.chatter;
+    // ca00 is a convention row, so it is excused the pool (1.3): Quayholt's chatter is on its non-convention shells
+    if (r.company === 'quayholt_insurance' && r.convention !== true) assert.ok(typeof chatter === 'string' && chatter.length > 0, `${r.id}: Quayholt cooler lost its chatter`);
+    else assert.ok(chatter === undefined, `${r.id}: only a non-convention Quayholt cooler carries chatter`);
+  }
+  for (const [c, n] of Object.entries(COOLER_COMPANIES)) assert.ok(visited[c] >= n, `${c}: visited ${visited[c] || 0} shells, want at least ${n}`);
 });
 
 test('ca00 convention: no kit host mapping, each kit NPC opens on a knot of its stub, kit_ep is ca00', () => {
-  for (const r of kitRows.filter((x) => x.convention === true)) {
+  const conventionRows = kitRows.filter((x) => x.convention === true);
+  assert.ok(conventionRows.length === 1, `want exactly one convention row, visited ${conventionRows.length}`);
+  for (const r of conventionRows) {
     const sc = readShell(r.id);
     assert.ok(r.ep === 'ca00' && r.tier === 'S' && r.attack === false && r.stepAway === false && r.setPiece === null, `${r.id}: row form (1.3)`);
     assert.ok(!('keyMessage' in r) && !('hostLine' in r) && !('prefix' in r), `${r.id}: a convention row has no keyMessage, hostLine or prefix`);

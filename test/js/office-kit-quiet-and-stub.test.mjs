@@ -198,6 +198,7 @@ function exitThroughSeeYou(conv, choices, label) {
     assert.ok(end.tags.some(t => t.trim() === 'exit_conversation'), `${label}: exit choice has no #exit_conversation`);
 }
 
+let keyBranchKnots = 0;
 for (const person of AMBIENT) {
     const stub = { person, npcId: `kit_${person}` };
     const ink = inkOf(person);
@@ -231,6 +232,14 @@ for (const person of AMBIENT) {
         const startBody = knotBody(ink, 'start');
         assert.ok(startBody !== null);
         for (const ep of eps) {
+            // Review R1 minor 4: a knot that reads kit_key_caught must play different text for true and false.
+            // A knot that misspells the VAR always plays one branch, and the via-start/direct comparison alone passes it.
+            if (/kit_key_caught/.test(knotBody(ink, ep) || '')) {
+                const textFor = async (kc) => firstChoices(await openStub(stub, { kit_defend_done: true, kit_ep: ep, kit_key_caught: kc }, ep)).text;
+                const [yes, no] = [await textFor(true), await textFor(false)];
+                assert.ok(yes !== no, `${person} ${ep}: the kit_key_caught true and false texts are identical ("${yes}")`);
+                keyBranchKnots += 1;
+            }
             assert.ok(/kit_defend_done/.test(startBody) && startBody.includes(`kit_ep == "${ep}"`), `${person}: start does not divert on kit_defend_done and kit_ep == "${ep}"`);
             for (const kc of [true, false]) {
                 const g = { kit_defend_done: true, kit_ep: ep, kit_key_caught: kc };
@@ -243,6 +252,10 @@ for (const person of AMBIENT) {
         }
     });
 }
+
+test('at least one stub knot reads kit_key_caught, so the true/false text check above visited something', () => {
+    assert.ok(keyBranchKnots >= 1, `visited ${keyBranchKnots} kit_key_caught knots`);
+});
 
 function knotBody(ink, name) {
     const m = ink.match(new RegExp(`^===\\s*${name}\\s*===\\s*$([\\s\\S]*?)(?=^===|(?![\\s\\S]))`, 'm'));
