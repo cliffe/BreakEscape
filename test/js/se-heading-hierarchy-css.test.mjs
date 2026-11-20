@@ -87,6 +87,12 @@ test('M1: the defender exposure card wraps long text instead of overflowing', ()
     assert.ok(all(f, '.ib-name', 'min-width').includes('0'), '.ib-name has min-width 0');
 });
 
+// R4 m2 + touch rule: the defender option buttons sit on a whole-pixel line and are at least 44px tall
+test('R4 m2: .ib-option has a 24px line and a 44px minimum height', () => {
+    everyIs('intel-board-minigame.css', '.ib-option', 'line-height', '24px');
+    everyIs('intel-board-minigame.css', '.ib-option', 'min-height', '44px');
+});
+
 test('m1: CTA letter-spacing is a whole pixel', () => {
     everyIs('ncsc-brief-minigame.css', '.ncsc-open-btn', 'letter-spacing', '1px');
     everyIs('coverage-decision-form-minigame.css', '.cdf-submit-btn', 'letter-spacing', '1px');
