@@ -77,6 +77,7 @@
 }
 
 .bce-graph-section-label {
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     color: #3d444d;
     letter-spacing: 2px;
@@ -85,6 +86,7 @@
 }
 
 .bce-graph-empty {
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     color: #8b949e;
     margin: auto;
@@ -188,7 +190,7 @@
 }
 .bce-gn-id {
     font-family: 'GNF', monospace;
-    font-size: 17px;
+    font-size: 16px;
     fill: #8b949e;
 }
 .bce-gnode-tx .bce-gn-id         { fill: #4a8fd6; }
@@ -216,6 +218,7 @@
 }
 
 .bce-detail-empty {
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     color: #8b949e;
     text-align: center;
@@ -241,6 +244,7 @@
 }
 
 .bce-view-title {
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     color: #58a6ff;
     letter-spacing: 2px;
@@ -263,6 +267,7 @@
 }
 
 .bce-meta-label {
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     color: #8b949e;
     align-self: center;
@@ -270,7 +275,7 @@
 
 .bce-meta-value {
     font-family: 'GNF', monospace;
-    font-size: 17px;
+    font-size: 16px;
     color: #c9d1d9;
     line-height: 1;
 }
@@ -289,6 +294,7 @@
 }
 
 .bce-io-heading {
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     color: #8b949e;
     letter-spacing: 1px;
@@ -339,7 +345,7 @@
     text-align: left;
     color: #4a8fd6;
     font-family: 'GNF', monospace;
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -365,7 +371,7 @@
 
 .bce-amount {
     font-family: 'GNF', monospace;
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1;
     flex-shrink: 0;
     white-space: nowrap;
@@ -427,6 +433,7 @@
 }
 
 .bce-callout-title {
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     margin-bottom: 6px;
     letter-spacing: 1px;
@@ -468,6 +475,7 @@
 .bce-flagged-badge {
     display: block;
     margin: 8px 0 4px auto;
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     color: #3fb950;
     text-align: right;
@@ -497,6 +505,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     letter-spacing: 1px;
 }
@@ -744,4 +753,4 @@
     .bce-mx-col { overflow: visible; }
     .bce-mx-help { grid-template-columns: 1fr 1fr; }
 }
-.bce-mx .bce-status-item { font-size: 8px; }
+.bce-mx .bce-status-item { font-family: 'Press Start 2P', monospace; font-size: 8px; }
