@@ -1,10 +1,10 @@
 {
  "mission": "m02",
- "id": "m02_trailer60_v2",
+ "id": "m02_trailer60_v3",
  "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v2 (2026-11-20): 22 re-recorded takes with spy avatars, windows and crops from docs/video/takes_m02.md 'v2 edit windows'; hax_hook J-cut retimed (pre 1.25 s) for the 4.13 s hax_1; ghost terminal window widened to 6.8-12.2 and chair to 0.9-3.9 to fill their slots (t26 is 1.87 s); Real Hacking slot is now the m02 console recon clip (needs BE_CLIPS_DIR=$FOOTAGE_ROOT/m02/clips). Ghost beats silent. Rough cut.",
+ "status": "v3 (2026-11-20, from the v2 feedback): Bernie's line voiced (J-cut 0.65 s, L-cut 1.55 s over the ward walk that now follows him, gain -3.5 to match HaX); Val approach before her line; ward walk trimmed before the door bump and moved behind Bernie (t22 ward crowd takes its old slot); kitchen walk (t26) muted; Ghost video call at dialogue level, ducked, with the whole Money line (18.4-22.5 in t17) in ghost_close; J/L-cuts on HaX, Bernie, Val, Ghost (new audio.post = L-cut, mix-audio.mjs and make-srt.mjs); m_lights moved after the ward crowd to make room. Kept from v2: music, Reeves flash, ransom line, console beat, avatar rotation. v2 (2026-11-20): 22 re-recorded takes with spy avatars, windows and crops from docs/video/takes_m02.md 'v2 edit windows'; hax_hook J-cut retimed (pre 1.25 s) for the 4.13 s hax_1; ghost terminal window widened to 6.8-12.2 and chair to 0.9-3.9 to fill their slots (t26 is 1.87 s); Real Hacking slot is now the m02 console recon clip (needs BE_CLIPS_DIR=$FOOTAGE_ROOT/m02/clips). Ghost beats silent. Rough cut.",
  "music": {
   "track": "Noir/Steel Shadows in E Minor (Remastered).mp3",
   "analysis": "steel_shadows_in_e_minor_remastered_60.json",
@@ -77,10 +77,10 @@
    },
    "source": {
     "file": "t01_hax_hook.trimmed.mkv",
-    "in": 13.05,
-    "out": 15.8843
+    "in": 12.72,
+    "out": 15.5533
    },
-   "note": "v2 (2026-11-20): J-cut for the re-voiced 4.13 s hax_1: voice in t01 runs 11.97-15.75 (measured; marks say 11.75-15.89 but the first 0.2 s is silence, and a tail of the previous line is audible to 11.72). Audio from 11.80 (pre 1.25 s under the held title), picture joins at 13.05 on her portrait with the subtitle on screen, out 15.88 after the line. Portrait centred; 9:16 crops the subtitle bar so the caption carries the line",
+   "note": "v3 (2026-11-20): J and L cut. Voice in t01 is 11.97-15.75 (measured); audio from 11.80 (pre 0.92 under the held title), picture joins at 12.72 on her portrait, picture out 15.55 and the last 0.3 s of the voice runs under the mission card (post 0.3). Portrait centred; 9:16 crops the subtitle bar so the caption carries the line",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -102,7 +102,8 @@
     "gain_db": 0,
     "dialogue": true,
     "duck_music": true,
-    "pre": 1.25
+    "pre": 0.92,
+    "post": 0.3
    },
    "spoiler": {
     "reviewed": true,
@@ -117,8 +118,8 @@
     {
      "speaker": "Agent HaX",
      "text": "If they refuse and you're too slow, people die on the ward.",
-     "start": -1.08,
-     "end": 2.7
+     "start": -0.75,
+     "end": 3.03
     }
    ],
    "caption": {
@@ -150,7 +151,7 @@
   {
    "id": "m_ransom",
    "type": "gameplay",
-   "duration": 1.2,
+   "duration": 1.1,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -158,7 +159,7 @@
    "source": {
     "file": "t04_ransom.trimmed.mkv",
     "in": 2.3,
-    "out": 3.501
+    "out": 3.4
    },
    "note": "reception ransom screen: skull, title, timer",
    "framing": {
@@ -193,17 +194,17 @@
   {
    "id": "npc_bernie_premise",
    "type": "gameplay",
-   "duration": 3.5667,
+   "duration": 3.3,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t28_bernie_premise.trimmed.mkv",
-    "in": 13.6,
-    "out": 17.1677
+    "in": 14.2,
+    "out": 17.5
    },
-   "note": "t28 Bernie at the reception desk, SILENT subtitle beat (the game's own subtitle bar carries 'The cardiac ward's monitoring is down. Nobody's watching those hearts but us.'); TTS pass later. Full frame.",
+   "note": "v3 (2026-11-20): voiced. Voice in t28 runs 13.6-19.0 (measured, pause 15.7-15.9 between the two sentences); portrait and subtitle on screen to about 17.65, then the map. Picture 14.2-17.5, audio from 13.55 (pre 0.65 under the ransom screen) and the last 1.5 s of the voice carries over the ward walk (post 1.55). Gain -3.5 dB: Bernie's take is 11.6 LUFS against HaX 15.5.",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -222,7 +223,11 @@
     }
    },
    "audio": {
-    "gain_db": -120
+    "gain_db": -3.5,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.65,
+    "post": 1.55
    },
    "spoiler": {
     "reviewed": true,
@@ -232,44 +237,44 @@
     "keypad_partial": null,
     "note": "Bernie premise line; no code, culprit or ending"
    },
-   "dialogue": false,
+   "dialogue": true,
    "lines": [
     {
      "speaker": "Bernie Nwosu",
      "text": "The cardiac ward's monitoring is down. Nobody's watching those hearts but us.",
-     "start": 0.0,
-     "end": 3.4
+     "start": -0.6,
+     "end": 4.8
     }
    ]
   },
   {
-   "id": "m_lights",
+   "id": "mb_chair",
    "type": "gameplay",
-   "duration": 1.4,
+   "duration": 1.7667,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t02_lights.trimmed.mkv",
-    "in": 2.91,
-    "out": 4.311
+    "file": "t12_walk_chair.trimmed.mkv",
+    "in": 0.95,
+    "out": 2.7167
    },
-   "note": "lights strike at take 4.51; about 1.2 s dark lead-in then the vestibule lights; shot starts on the drop (card ends on it)",
+   "note": "v3: ward walk, follows Bernie. Window ends 2.72, before the player reaches the east door (he walks against the wall from about 2.9). Chair knocked at about 2.1.",
    "framing": {
     "16:9": {
-     "cx": 0.62,
-     "cy": 0.58,
-     "zoom": 1.5
+     "cx": 0.28,
+     "cy": 0.72,
+     "zoom": 1.78
     },
     "9:16": {
-     "cx": 0.6,
+     "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.6,
-     "cy": 0.55,
+     "cx": 0.5,
+     "cy": 0.5,
      "zoom": 1.25
     }
    },
@@ -282,7 +287,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "lit reception and vestibule, no text, no code"
+    "note": "walking shot, ward, no NPC touched, ransom screen on the desk is a red glow only"
    }
   },
   {
@@ -545,67 +550,9 @@
    }
   },
   {
-   "id": "npc_val",
-   "type": "gameplay",
-   "duration": 4.6,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t09_val.trimmed.mkv",
-    "in": 6.3,
-    "out": 10.901
-   },
-   "note": "val_1 7.80-11.93; out before 12.7 (choice menu). Val's LOS cone is not in the portrait view v4: held 138 frames (out 12.4); choice menu appears at about 12.65.",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
-    },
-    "9:16": {
-     "cx": 0.69,
-     "cy": 0.444,
-     "zoom": 1.125
-    },
-    "1:1": {
-     "cx": 0.465,
-     "cy": 0.5,
-     "zoom": 1
-    }
-   },
-   "audio": {
-    "gain_db": 0,
-    "dialogue": true,
-    "duck_music": true
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Val line: gatekeeper, no code, culprit or ending"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Val Okonkwo",
-     "text": "So. Who are you and who says you're allowed?",
-     "start": 0.0,
-     "end": 4.1
-    }
-   ],
-   "caption": {
-    "9:16": true,
-    "1:1": true
-   }
-  },
-  {
    "id": "mb_val_walk",
    "type": "gameplay",
-   "duration": 2.0333,
+   "duration": 2.0667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -613,7 +560,7 @@
    "source": {
     "file": "t09_val.trimmed.mkv",
     "in": 0.85,
-    "out": 2.8843
+    "out": 2.9167
    },
    "note": "the walk-up to Val (1.3 s of motion); out before the conversation opens at 3.07; no line",
    "framing": {
@@ -646,33 +593,136 @@
    }
   },
   {
-   "id": "mb_chair",
+   "id": "npc_val",
    "type": "gameplay",
-   "duration": 3.0,
+   "duration": 3.0667,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t12_walk_chair.trimmed.mkv",
-    "in": 0.9,
-    "out": 3.901
+    "file": "t09_val.trimmed.mkv",
+    "in": 6.85,
+    "out": 9.9167
    },
-   "note": "heads for the east door and knocks the swivel chair (contact 2.12); ward lit",
+   "note": "v3: voice in t09 6.6-10.1 (measured; 'So.' 6.6-6.95, 'Who are you' 7.8-8.3, rest 9.0-10.1). Picture 6.85-9.92, audio from 6.55 (pre 0.3 under the walk-up), tail runs 0.35 s over the next shot. Gain -2 dB (take 13.0 LUFS against HaX 15.5). Choice menu appears at about 11.0, never shown.",
    "framing": {
     "16:9": {
-     "cx": 0.28,
-     "cy": 0.72,
-     "zoom": 1.78
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.465,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -2,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.3,
+    "post": 0.35
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Val line: gatekeeper, no code, culprit or ending"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Val Okonkwo",
+     "text": "So. Who are you and who says you're allowed?",
+     "start": -0.25,
+     "end": 3.25
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
+   "id": "mb_ward_crowd",
+   "type": "gameplay",
+   "duration": 3.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_ward_crowd.trimmed.mkv",
+    "in": 1.55,
+    "out": 4.65
+   },
+   "note": "v3: ward crowd (t22, presence 1.44-4.84), whole frame, no emergency state; takes the later ward slot.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.125
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "non-speaking NPC presence; no HUD, no dialogue, no readable text"
+   }
+  },
+  {
+   "id": "m_lights",
+   "type": "gameplay",
+   "duration": 1.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_lights.trimmed.mkv",
+    "in": 2.91,
+    "out": 4.311
+   },
+   "note": "lights strike at take 4.51; about 1.2 s dark lead-in then the vestibule lights; shot starts on the drop (card ends on it)",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.58,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.6,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.6,
+     "cy": 0.55,
      "zoom": 1.25
     }
    },
@@ -685,7 +735,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "walking shot, ward, no NPC touched, ransom screen on the desk is a red glow only"
+    "note": "lit reception and vestibule, no text, no code"
    }
   },
   {
@@ -701,7 +751,7 @@
     "in": 2.0333,
     "out": 3.901
    },
-   "note": "staff-room walk toward the clerk's desk, re-recorded at zoom step 2: 16:9 band y 160-880 (1.5x) follows the player (centre of frame).",
+   "note": "staff-room walk toward the clerk's desk, re-recorded at zoom step 2: 16:9 band y 160-880 (1.5x) follows the player (centre of frame). v3: muted (office chatter).",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -720,7 +770,7 @@
     }
    },
    "audio": {
-    "gain_db": -6
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1357,17 +1407,17 @@
   {
    "id": "ghost_reveal",
    "type": "gameplay",
-   "duration": 2.4,
+   "duration": 1.4333,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t17_ghost_call.trimmed.mkv",
-    "in": 2.35,
-    "out": 4.751
+    "in": 2.7,
+    "out": 4.1333
    },
-   "note": "t17 (re-recorded) Ghost call reveal: video window open (SECURE VIDEO LINK, self-view PiP), hooded figure appears, face a black void. SILENT. In-point 2.5 s: the recovery console offer-terms panel is on screen until 2.37 s.",
+   "note": "v3: voiced. Ghost's voice in t17 2.4-4.1 (measured); picture 2.7-4.13 (hooded figure, subtitle), audio from 2.4 (pre 0.3). Level 0 dB: the take's Ghost voice is -15.5 LUFS, the same as HaX.",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -1386,7 +1436,10 @@
     }
    },
    "audio": {
-    "gain_db": -6
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.3
    },
    "spoiler": {
     "reviewed": true,
@@ -1395,22 +1448,31 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "hood, face a black void; subtitle 'Before you touch that console - look up.'"
-   }
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Ghost",
+     "text": "Before you touch that console. Look up.",
+     "start": -0.3,
+     "end": 1.4
+    }
+   ]
   },
   {
    "id": "ghost_close",
    "type": "gameplay",
-   "duration": 2.3667,
+   "duration": 3.3333,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t17_ghost_call.trimmed.mkv",
-    "in": 20.05,
-    "out": 22.4177
+    "in": 19.1,
+    "out": 22.4333
    },
-   "note": "t17 (re-recorded) Ghost call close, final content beat: 'Money is simply a means to hasten your inevitable end.' on screen the whole window (20.7-23.07). The next line 'Now. You're standing at the recovery console.' replaces it at about 23.2 s, so the window stops before it. SILENT, scored to music. SWAPPABLE ALT CLOSE: t17 13.73-16.5 'No name tonight, no face. You get a person.' (not used this cut).",
+   "note": "v3: the whole Money line. Voice in t17 18.4-22.55 (measured, pause 19.0-19.4); picture 19.1-22.43 (the map comes back at about 22.5), audio from 18.4 (pre 0.7 under the reveal's last frames) and 0.25 s past the cut under the closing clip. Alt close 'No name tonight...' kept below.",
    "alt_close": {
     "file": "t17_ghost_call.trimmed.mkv",
     "in": 13.73,
@@ -1435,7 +1497,11 @@
     }
    },
    "audio": {
-    "gain_db": -6
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.7,
+    "post": 0.25
    },
    "spoiler": {
     "reviewed": true,
@@ -1444,7 +1510,16 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "Money line only; no offer terms, no choice menu"
-   }
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Ghost",
+     "text": "Money is simply a means to hasten your inevitable end.",
+     "start": -0.7,
+     "end": 3.45
+    }
+   ]
   },
   {
    "preset": "hacktivity-close",
