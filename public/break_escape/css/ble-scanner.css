@@ -190,8 +190,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     font-size: 16px;
-    font-weight: bold;
     color: #e0e0e0;
     margin-bottom: 3px;
 }
@@ -200,17 +200,24 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    flex: none;
+}
+
+/* The name shrinks (and breaks long single tokens) before the SAVE button and tags are pushed out */
+.ble-device-name > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .ble-device-icon {
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .ble-save-btn {
     background: transparent;
     border: 2px solid #00bcd4;
     color: #00bcd4;
-    font-size: 13px;
+    font-size: 16px;
     padding: 1px 4px;
     cursor: pointer;
     line-height: 1;
@@ -265,7 +272,7 @@
 }
 
 .ble-device-timestamp {
-    font-size: 14px;
+    font-size: 16px;
     color: #666;
     font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
@@ -279,7 +286,7 @@
 }
 
 .ble-uuid-chip {
-    font-size: 12px;
+    font-size: 16px;
     padding: 1px 5px;
     border: 2px solid #00bcd4;
     color: #00bcd4;
@@ -302,7 +309,7 @@
     margin-bottom: 8px;
     font-size: 16px;
     color: #00bcd4;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 .ble-clear-target-btn {
@@ -322,7 +329,7 @@
 
 .ble-action-target-info {
     margin-bottom: 8px;
-    font-size: 15px;
+    font-size: 16px;
     color: #aaa;
 }
 
@@ -434,8 +441,7 @@
 .ble-action-feedback {
     min-height: 22px;
     margin-top: 8px;
-    font-size: 17px;
-    font-weight: bold;
+    font-size: 16px;
 }
 
 .ble-feedback--success { color: #00cc00; }
