@@ -246,3 +246,50 @@ test('the zoom listener leaves a game that is in the fitted layout alone', () =>
     at(1920, 1080, () => H._fitLockZoom.call(t.fake));
     assert.equal(zoomed, 1, 'a full-size game is zoomed as before');
 });
+
+test('lockZoom shrinks the lock below 1 when the window leaves it less than 600x400 and keeps whole zooms otherwise (R6 overflow)', () => {
+    const Z = LockpickingMinigamePhaser.lockZoom;
+    assert.ok(Z(1280, 258) === 0.64, 'a 258px room (1280x720, three-line observation): ' + Z(1280, 258));
+    assert.ok(Z(1280, 400) === 1, 'exactly the lock');
+    assert.ok(Z(1280, 399) === 0.99, 'a pixel short still shrinks');
+    assert.ok(Z(1280, 799) === 1 && Z(1280, 800) === 2, 'whole zooms above 1 as before');
+    assert.ok(Z(300, 800) === 0.5, 'a narrow room stops at the 0.5 floor');
+    assert.ok(Z(0, 0) === 1 && Z(NaN, 400) === 1, 'no room measured: 1');
+});
+
+test('_fitLockZoom sets a fractional zoom and the box width from the room, so the canvas fits the window (R6 overflow)', () => {
+    document.body.innerHTML = '<div class="game"><div id="phaser-game-container"></div></div>';
+    const zooms = [];
+    const fake = {
+        gameContainer: document.querySelector('.game'),
+        game: { scale: { zoom: 1, setZoom: (z) => zooms.push(z) } },
+        _lockFitApplied: { fit: false, portrait: false, capped: false },
+        _lockRoom: () => ({ w: 1200, h: 258 })
+    };
+    at(1280, 720, () => H._fitLockZoom.call(fake));
+    assert.ok(zooms.length === 1 && zooms[0] === 0.64, 'zoom ' + zooms);
+    assert.ok(document.querySelector('#phaser-game-container').style.maxWidth === '384px', 'box max-width ' + document.querySelector('#phaser-game-container').style.maxWidth);
+    assert.ok(!document.querySelector('#phaser-game-container').classList.contains('lockpicking-zoomed'), 'not the zoomed class below 1');
+});
+
+test('the feedback box is observed so the zoom follows its line count, and released on cleanup (R6 overflow)', () => {
+    const seen = [];
+    const RO = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class { constructor(cb) { this.cb = cb; seen.push(this); } observe(el) { this.el = el; } disconnect() { this.gone = true; } };
+    const raf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = () => 0;
+    try {
+        const fb = { id: 'fb' };
+        const calls = [];
+        const fake = { feedback: fb, _watchLockScroll: () => {}, _watchLockRefit: () => {}, _fitLockZoom: () => calls.push('fit') };
+        at(1280, 720, () => H._watchLockZoom.call(fake));
+        assert.ok(seen.length === 1 && seen[0].el === fb, 'one observer on the feedback box');
+        seen[0].cb();
+        assert.ok(calls.includes('fit'), 'a change of the box refits the zoom');
+        H._releaseLockWatchers.call(fake);
+        assert.ok(seen[0].gone === true && fake._lockFeedbackObserver === null, 'disconnected on release');
+    } finally {
+        globalThis.ResizeObserver = RO;
+        globalThis.requestAnimationFrame = raf;
+    }
+});

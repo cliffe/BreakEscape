@@ -523,22 +523,22 @@ test('the covered areas are part of the layout memo key: a different box or band
     for (const id of Object.keys(b.labels)) assert.ok(!rectsHit(b.labels[id], taller[1]), `${id} clear of the taller box`);
 });
 
-test('LockLabels measures the feedback box and anything over the canvas in canvas pixels and lays labels out clear of them (D219 R5 M)', () => {
+test('LockLabels measures the feedback box in canvas pixels, does not sample the page, and lays labels out clear of it (D219 R5 M, R6)', () => {
     const p = fakeParent({ canvasW: 600, scrollY: 0 });
     p.scene.cameras.main.width = 600;
     p.scene.cameras.main.height = 400;
-    // Canvas at page (340,354) 600x400; the feedback box is over its foot, a band over its top
+    // Canvas at page (340,354) 600x400; the feedback box is over its foot
     p.game.canvas.getBoundingClientRect = () => ({ left: 340, top: 354, right: 940, bottom: 754, width: 600, height: 400 });
     p.feedback = { offsetParent: {}, getBoundingClientRect: () => ({ left: 340, top: 636, right: 940, bottom: 696, width: 600, height: 60 }) };
-    const band = { top: 412, bottom: 470 };
     const saved = globalThis.document;
-    globalThis.document = { elementsFromPoint: (x, y) => [(y >= band.top && y < band.bottom) ? { id: 'band' } : p.game.canvas] };
+    let hitTests = 0;
+    globalThis.document = { elementsFromPoint: () => { hitTests++; return [{ id: 'band' }]; } };
     try {
         const ll = new LockLabels(p);
         const cov = ll.coveredRects({ left: 0, top: 0, right: 600, bottom: 400 });
         assert.ok(cov.some((r) => r.x === 0 && r.w === 600 && r.y === 282 && r.h === 60), 'feedback box measured: ' + JSON.stringify(cov));
-        const bandRect = cov.find((r) => r.y >= 50 && r.y <= 64 && r.h >= 52 && r.h <= 66);
-        assert.ok(!!bandRect, 'band found over the canvas top: ' + JSON.stringify(cov));
+        assert.ok(cov.length === 1, 'only the feedback box is a covered area: ' + JSON.stringify(cov));
+        assert.ok(hitTests === 0, 'no per-apply page hit tests (R6 m2): ' + hitTests);
         const res = ll.apply();
         assert.ok(!!res, 'laid out');
         for (const id of Object.keys(res.labels)) {

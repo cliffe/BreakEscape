@@ -672,6 +672,18 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         return Number.isFinite(z) && z > 1 ? z : 1;
     }
 
+    // The zoom for the room the lock has: a whole number when it fits at 1x or better, and a
+    // fraction below 1 when the window leaves less than 600x400 (a long observation and a
+    // feedback box under the lock at 1280x720). The canvas then shrinks, as it does on a
+    // phone, instead of running past the window and being clipped. 0.5 is the floor: below
+    // it the game area scrolls.
+    static lockZoom(availW, availH, baseW = 600, baseH = 400) {
+        const f = Math.min(availW / baseW, availH / baseH);
+        if (!Number.isFinite(f) || f <= 0) return 1;
+        if (f >= 1) return LockpickingMinigamePhaser.wholeZoom(availW, availH, baseW, baseH);
+        return Math.max(0.5, Math.floor(f * 100) / 100);
+    }
+
     // Room for the canvas: the game area's width, and its height less the strips around the
     // canvas (item info, feedback)
     _lockRoom() {
@@ -698,7 +710,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         if (this._lockFitApplied?.fit) return;
         const room = this._lockRoom();
         if (!room) return;
-        const z = LockpickingMinigamePhaser.wholeZoom(room.w, room.h);
+        const z = LockpickingMinigamePhaser.lockZoom(room.w, room.h);
         if (game.scale.zoom !== z) game.scale.setZoom(z);
         box.style.maxWidth = (600 * z) + 'px';
         box.classList.toggle('lockpicking-zoomed', z > 1);
@@ -775,6 +787,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     _releaseLockWatchers() {
         this._lockBoxObserver?.disconnect?.();
         this._lockBoxObserver = null;
+        this._lockFeedbackObserver?.disconnect?.();
+        this._lockFeedbackObserver = null;
         // Timers that would otherwise reach a destroyed scene
         clearInterval(this._keySelPoll);
         this._keySelPoll = null;
@@ -818,6 +832,12 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         const fit = () => this._fitLockZoom();
         this._lockZoomOnResize = fit;
         window.addEventListener('resize', fit);
+        // The feedback box grows and shrinks with its text (one line to four) and takes room
+        // from the lock, so the zoom follows it without a window resize
+        if (typeof ResizeObserver !== 'undefined' && this.feedback) {
+            this._lockFeedbackObserver = new ResizeObserver(() => fit());
+            this._lockFeedbackObserver.observe(this.feedback);
+        }
         requestAnimationFrame(fit);
         setTimeout(fit, 300);
     }

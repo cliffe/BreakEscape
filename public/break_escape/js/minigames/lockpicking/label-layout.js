@@ -559,10 +559,12 @@ export class LockLabels {
         return result;
     }
 
-    // Canvas areas (world pixels) that a page element covers: the feedback box over the foot of
-    // the canvas, and anything else on top of it (a band over the top on a desktop window). No
-    // label goes there. The feedback box is measured directly; the rest is found by asking the
-    // page what is on top of the canvas down its left, middle and right.
+    // Canvas areas (world pixels) that a page element covers: the feedback box when it sits over
+    // the foot of the canvas (the sticky box, in a game area that has scrolled). No label goes
+    // there. The box is measured directly. The band that once showed over the top of the
+    // canvas on a desktop window was the sticky box's own layer ghosting above a canvas that
+    // ran past the window, not an element: the canvas now shrinks to fit (lockZoom), so no
+    // page sampling is needed.
     coveredRects(view) {
         const p = this.parent;
         const out = [];
@@ -580,22 +582,6 @@ export class LockLabels {
             };
             const fb = p.feedback?.getBoundingClientRect?.();
             if (fb && fb.height > 0 && p.feedback.offsetParent !== null) { const w = toWorld(fb); if (w) out.push(w); }
-            if (typeof document !== 'undefined' && document.elementsFromPoint) {
-                const xs = [0.15, 0.5, 0.85].map((f) => r.left + r.width * f);
-                const step = 6; // page pixels between samples down the canvas
-                let runStart = null;
-                const flush = (end) => {
-                    if (runStart === null) return;
-                    const w = toWorld({ left: r.left, right: r.right, top: runStart, bottom: end });
-                    if (w) out.push(w);
-                    runStart = null;
-                };
-                for (let y = r.top + 1; y < r.bottom; y += step) {
-                    const covered = xs.some((x) => { const top = document.elementsFromPoint(x, y)[0]; return top && top !== canvas; });
-                    if (covered) { if (runStart === null) runStart = y - step / 2; } else flush(y - step / 2);
-                }
-                flush(r.bottom);
-            }
         } catch (e) { /* no page: nothing covers the canvas */ }
         return out;
     }
