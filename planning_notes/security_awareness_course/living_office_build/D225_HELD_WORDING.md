@@ -1,5 +1,16 @@
 # D225 held wording: the legal-duty clauses removed from layer 1
 
+> **APPLIED under D225 A, 2026-11-20.** The owner chose option A: accurate, plain UK GDPR
+> duty wording in ca02, ca03, ca05, ca08 and ca11 only. Each duty line below was restored
+> in place of its neutral replacement and framed for the UK ("Under UK GDPR, ..." / "In the
+> UK, ..."), with "without delay" corrected to "without undue delay" for accuracy against
+> UK GDPR Arts 33 and 34. The two older mentions (ca11's "wrote to the regulator" and the
+> ca17 twin's DPA 2018 s.170 citation) were framed for the UK in the same pass. A UK-scope
+> caveat is still to be added to the Hacktivity course description (owner's yes needed).
+> The conceptPanel and mistake texts are read, not voiced, so no re-voicing is involved.
+> See the subagent handback for the full before/after table.
+
+
 W2 build review R1 M5 (the O1/D225 hold). The owner has not ruled on whether a legal
 duty of report may be asserted in learner copy, so the ICO / regulator duty clauses were
 stripped from the five fragments and ten shells before merge, per D5 (keep the wording
