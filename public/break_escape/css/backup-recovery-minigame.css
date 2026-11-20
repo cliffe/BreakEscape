@@ -308,6 +308,21 @@
     }
 }
 
+/* Phone: the confirm row sticks to the bottom of the console so it is visible on open.
+   It stays in the grid flow, so at the end of the scroll it sits after the last item and
+   covers nothing; the negative margins make it span the shell padding. */
+@media (max-width: 600px) {
+    .backup-recovery-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+        margin: 0 -12px -12px;
+        padding: 12px;
+        background: var(--mg07-bg);
+        border-top: 2px solid var(--mg07-border);
+    }
+}
+
 /* Outcome screen — shown after confirm, before minigame closes */
 
 .backup-recovery-shell--outcome {
