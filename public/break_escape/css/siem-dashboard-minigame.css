@@ -169,7 +169,7 @@
 .siem-time,
 .siem-source,
 .siem-description {
-    font-size: 20px;
+    font-size: 16px;   /* GNF scale 16/24/32 */
     color: #d0dbf0;
 }
 
@@ -218,7 +218,7 @@
 
 .siem-queue-count {
     padding: 10px;
-    font-size: 22px;
+    font-size: 24px;   /* GNF scale 16/24/32 */
     color: #d2e0ff;
     border-bottom: 2px solid #2e3957;
 }
@@ -269,7 +269,7 @@
 }
 
 .siem-queue-text {
-    font-size: 19px;
+    font-size: 16px;   /* GNF scale 16/24/32 */
     color: #d6e2ff;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -520,6 +520,16 @@
     }
 }
 
+/* "24 alerts queued" is 196px at GNF 24. Measured in headless Chromium (601 to 1100px wide): the queue
+   pane's text box (pane width less 20px padding) is 154px at 601, 192 at 800, 203 at 838 and 204 at 839.
+   839 is the narrowest width with 8px to spare, so GNF 24 from 840px up and GNF 16 on one line below it. */
+@media (min-width: 601px) and (max-width: 839px) {
+    .siem-queue-count {
+        font-size: 16px;   /* GNF scale 16/24/32 */
+        white-space: nowrap;
+    }
+}
+
 @media (max-width: 1100px) {
     /* Two lines: badge, time, host and the buttons; then the whole message below them, so
        the message keeps the row's full width (at 800 it was squeezed to one letter a line) */
@@ -531,12 +541,6 @@
     .siem-description {
         grid-column: 1 / -1;
         grid-row: 2;
-    }
-
-    .siem-time,
-    .siem-source,
-    .siem-description {
-        font-size: 16px;
     }
 
     /* The message wraps to more lines instead of collapsing to one letter (critique B SIEM2) */

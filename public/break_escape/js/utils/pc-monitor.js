@@ -38,14 +38,14 @@ export const PC_COMPACT_BELOW = 560;
 export const PC_UI_BASE = Object.freeze({ width: 560, height: 350 });
 
 /**
- * Bezel strips in CSS pixels. `top` holds the PC name and the X (30px), `chin` the
+ * Bezel strips in CSS pixels. `top` holds the PC name and the X (32px, 2px clear of the strip edges), `chin` the
  * footer buttons and the post-it (grown to the note's height when it needs more). `gutter`
  * is the gap to the window edge, `hang` the room kept under the monitor for the note's
  * 4px offset shadow.
  */
 export const PC_BEZEL = Object.freeze({
     full: Object.freeze({ side: 20, top: 38, chin: 44, gutter: 16, hang: 4 }),
-    compact: Object.freeze({ side: 12, top: 34, chin: 44, gutter: 8, hang: 4 })
+    compact: Object.freeze({ side: 12, top: 36, chin: 44, gutter: 8, hang: 4 })
 });
 
 /** The post-it's inset from the monitor's left edge, past the side bezel, and its gap under the screen. */

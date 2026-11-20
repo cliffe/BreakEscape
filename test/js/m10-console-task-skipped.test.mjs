@@ -49,7 +49,7 @@ test('a skipped use_the_console is no longer an open optional objective', async 
     const dir = mkdtempSync(join(tmpdir(), 'm10-console-'));
     writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
     for (const rel of ['systems/ending-check.js', 'utils/display-dashes.js', 'systems/objectives-manager.js',
-        'ui/objectives-panel.js', 'ui/modal-stack.js', 'utils/room-display-name.js', 'utils/global-condition.js', 'utils/portrait-variants.js',
+        'ui/objectives-panel.js', 'ui/hud-lanes.js', 'ui/modal-stack.js', 'utils/room-display-name.js', 'utils/global-condition.js', 'utils/portrait-variants.js',
         'systems/combat-input.js', 'minigames/helpers/chat-helpers.js']) {
         mkdirSync(dirname(join(dir, rel)), { recursive: true });
         writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));

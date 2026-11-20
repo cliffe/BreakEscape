@@ -114,8 +114,18 @@ test('callers set the expectation before the toast', () => {
         assert.match(starters.slice(Math.max(0, at - 260), at), /expectContainerAfterUnlock/, toast);
     }
     const container = read('minigames/container/container-minigame.js');
-    const noted = container.indexOf('window.gameAlert(`${containerState');
-    assert.match(container.slice(noted - 300, noted), /expectPanelWithin/);
+    // A note taken from a reopening container is said in the reopened window (no toast);
+    // the routes that reopen nothing clear the expectation before their toast, and the
+    // no-helper fallback holds its toast for the reopened window.
+    const noted = container.indexOf('noteNotice = window.noteAddedText?.(containerState.itemToTake.name)');
+    assert.ok(noted > 0, 'the post-reader note notice is built from the taken item');
+    const block = container.slice(noted, container.indexOf('if (!reopen) return;', noted));
+    const clearAt = block.indexOf('window.clearExpectedPanel?.()');
+    const toastAt = block.indexOf('window.announceNoteAdded?.(containerState.itemToTake.name)');
+    assert.ok(clearAt > 0 && toastAt > clearAt, 'a route that reopens nothing clears the expectation before its toast');
+    const fallback = block.slice(block.lastIndexOf('} else {'));
+    assert.ok(fallback.indexOf('expectPanelWithin?.(1000)') > 0 && fallback.indexOf('expectPanelWithin') < fallback.indexOf('announceNoteAdded'), 'the fallback toast waits for the reopened window');
+    assert.ok(!/gameAlert\(`\$\{containerState\.itemToTake\.name\} has been noted`/.test(container), 'the old "has been noted" toast is gone');
     assert.match(read('minigames/framework/minigame-manager.js'), /clearExpectedPanel/);
 });
 
