@@ -25,7 +25,7 @@
       "position": { "x": 3, "y": 7 },
       "needsHome": { "room": "training_room", "x": 3, "y": 7, "facing": "south" },
       "needsSpeed": 90,
-      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } }
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } }
     }
   }
 }

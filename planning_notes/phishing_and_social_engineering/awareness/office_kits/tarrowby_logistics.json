@@ -28,7 +28,7 @@
       "needsHome": { "room": "training_room", "x": 2, "y": 6, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } },
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
       "chatterLines": ["CVs stacking up again.", "Need a cold one."]
     },
     "chidi_okeke": {
