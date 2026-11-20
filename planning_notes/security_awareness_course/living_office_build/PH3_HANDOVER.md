@@ -21,7 +21,20 @@ Model routing: opus48 writes the lines (this file is the drafted copy); a Sonnet
 - ca19 → `e19_ransom_note` (host block narrates an incident that happened + reporting limited it, so the key is the reported ransomware, not a prevented entry)
 - ca20 → `e20_wifi_page_fake` (the fake sign-in page that captures the work password)
 
-### REMAINING (next agent):
+### DONE (Sonnet apply pass, commit `158c0844b`)
+- **Fragments e13–e20 layer 1: applied.** Append/replace per the P-H1/P-H2 model (orchestrator's rule, not blanket-append): single objects **replaced** (e13 "If the summary is trusted", e15 "If the quick route is taken"); missing panel **created** (e14 "If a trusted reply goes back"); arrays got a **card appended** (e16 "If a login is lent", e17 "If an ask-first choice is waved through", e18 "If one account opens", e19 "What the choice costs", e20 "If a work password goes in"). All 8 parse; arbiter parity logic verified green (no pointer/layer0, ≥8-word run shared with the erb).
+- **ca13 twin: applied.** Erb conceptPanel now byte-equal to the e13 fragment; `VAR kit_key_caught` declared and the `defend_complete` branch split two-way (caught/miss) in `ink/gwen_pritchard.ink`; recompiled.
+- **ca17 keyMessage decided: `e17_meeting_app`** (over `e17_free_tool`) — reasons in W2_LINES_H3.md §"ca17 keyMessage decision".
+- **proof5 run:** 34 diffs = 27 pre-existing baseline + 7 new, all P-H3 (the seven generated twins' erbs, pending P-GEN regen from the new fragments). Detail in W2_LINES_H3.md §"Check results".
+- **W2_LINES_H3.md written** (brief 4.2 format) with the D3 scene-free note, the ca14 "Where your posts lead" heading, and the ca13 semicolon change.
+- Checks: validator 0 ERROR (9 scenarios), dialoguelint clean, arbiter office-kit 28/28, test_office_kit 74 OK, node suite 2883 pass / 1 pre-existing flake (social-mail-ink-runner, passes alone).
+
+### REMAINING (integration — NOT P-H3):
+- P-INT adds the tiered episodes.json rows for the ca13–ca20 full shells, the twins and ca17 (keyMessage `e17_meeting_app`), which turns on the arbiter's wave-2 layer/keyMessage cases for these shells.
+- P-GEN regenerates the six ca14–ca20 `_defend` twins from the new fragments (clears the 7 proof5 diffs).
+- npc-dialog-review (opus48) on the host batch before any voicing.
+
+### ORIGINAL REMAINING (now done — kept for reference):
 1. **Fragments e13-e20** (`AW/e<N>/defend.json`): put the twin layer 1 into `awarenessEpisode.strings.conceptPanel`. Interpretation used/decided: **APPEND** the twin-layer-1 to the existing panel (to `.text` for objects e13/e15; to the **last card** for arrays e16/e17/e18/e19/e20), per the e12 model (fragment = teaching + twin cost). **e14 fragment has NO conceptPanel** → CREATE `{heading, text: twin-layer-1}` (mirror the erb). Parity exempts conceptPanel either way. (If a reviewer prefers "replace" per the literal "set .text", note e8/e9/e10 wave-1 fragments kept arrays, so append is the safer, teaching-preserving reading.)
 2. **ca13 twin** `scenarios/ca13_ai_assistant_defend/`: layer 1 in its erb conceptPanel + the two-way twin host line in `ink/gwen_pritchard.ink` (declare `VAR kit_key_caught`, split the existing `episode_e13_ai_assistant_defend_defend_complete` branch; caught/miss lines in the DRAFTED TEXT below). Compile.
 3. **proof5.py** in AW (`python3 proof5.py tmp/w2_p5`): expect only P-H3's changed paths (+ the expected ca00 anjali_rao.ink) to differ.
