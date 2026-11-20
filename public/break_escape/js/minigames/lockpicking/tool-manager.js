@@ -135,6 +135,7 @@ export class ToolManager {
         if (this.parent.hookPickLabel) {
             this.parent.hookPickLabel.setVisible(false);
         }
+        this.parent.lockLabels?.syncLeaders();
     }
 
     returnHookToStart() {
@@ -303,6 +304,7 @@ export class ToolManager {
         if (this.parent.hookPickLabel) {
             this.parent.hookPickLabel.setVisible(true);
         }
+        this.parent.lockLabels?.syncLeaders();
         
         // Reset pins to original positions
         this.parent.lockConfig.resetPinsToOriginalPositions();
@@ -327,6 +329,7 @@ export class ToolManager {
         if (this.parent.hookPickLabel) {
             this.parent.hookPickLabel.setVisible(true);
         }
+        this.parent.lockLabels?.syncLeaders();
     }
 
     switchToKeyMode() {
@@ -352,6 +355,7 @@ export class ToolManager {
         if (this.parent.hookPickLabel) {
             this.parent.hookPickLabel.setVisible(false);
         }
+        this.parent.lockLabels?.syncLeaders();
         
         // Reset pins to original positions
         this.parent.lockConfig.resetPinsToOriginalPositions();

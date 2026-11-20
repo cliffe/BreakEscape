@@ -78,7 +78,8 @@ function range(from, to, step) {
  * @param {number[]} o.pinXs      x of each pin, in canvas world pixels
  * @param {{left,top,right,bottom}} o.view   the visible window of the world
  * @param {(lines:string[], font:number)=>{w:number,h:number}} o.measure   box of a label, padding included
- * @returns {{font:number, labels:Object<string,{x,y,w,h,lines:string[],leader:object|null}>}}
+
+ * @returns {{font:number, fallbacks:number, labels:Object<string,{x,y,w,h,lines:string[],leader:object|null}>}}
  */
 export function layoutLockLabels({ scale, pinXs, view, measure }) {
     const font = labelFontSize(scale);
@@ -87,6 +88,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
     const pinAt = (i) => pinXs[Math.min(Math.max(i, 0), n - 1)];
     const idxAt = (i) => Math.min(Math.max(i, 0), n - 1);
     const placed = {};
+    let fallbacks = 0;
     const lo = view.left + 1;
 
     // A candidate is acceptable when its box misses every placed label, every pin it does not
@@ -123,6 +125,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
     // Last resort (a very small canvas, so very large type): the first clear spot in the view,
     // keeping labels apart from each other even if it must cross a pin
     function fallback(id, lines, size, leaderFor) {
+        fallbacks++;
         for (let y = view.top; y + size.h <= view.bottom - 1; y += 4) {
             for (let x = lo; x + size.w <= view.right - 1; x += 4) {
                 const box = { x, y, w: size.w, h: size.h };
@@ -136,11 +139,11 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
     const downTo = (a, b) => ({ x1: a.x, y1: a.y, x2: b.x, y2: b.y });
     const vertLeaderDown = (tx, ty) => (box) => {
         if (box.y + box.h >= ty) return null;
-        return downTo({ x: clamp(tx, box.x + 2, box.x + box.w - 2), y: box.y + box.h }, { x: tx, y: ty });
+        return downTo({ x: clamp(Math.round(tx), box.x + 2, box.x + box.w - 2), y: box.y + box.h }, { x: Math.round(tx), y: ty });
     };
     const vertLeaderUp = (tx, ty) => (box) => {
         if (box.y <= ty) return null;
-        return downTo({ x: clamp(tx, box.x + 2, box.x + box.w - 2), y: box.y }, { x: tx, y: ty });
+        return downTo({ x: clamp(Math.round(tx), box.x + 2, box.x + box.w - 2), y: box.y }, { x: Math.round(tx), y: ty });
     };
 
     // Rows above the springs: the label's foot sits just over the spring tops
@@ -153,7 +156,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
 
     // 1. SHEAR LINE: beside the last pin, on the shear line (one line, or two when short of room)
     {
-        const right = pinAt(n - 1) + PIN_HALF_WIDTH + 8;
+        const right = Math.round(pinAt(n - 1) + PIN_HALF_WIDTH + 8);
         const one = measure(['SHEAR LINE'], font);
         const two = measure(['SHEAR', 'LINE'], font);
         const tryIt = (lines, size) => place('shear', lines, size,
@@ -169,7 +172,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         const x = Math.max(lo, WRENCH_ARM_X - 3 - size.w);
         const ys = around(150 - size.h / 2, view.top, KEYWAY_BOTTOM - size.h, 4);
         const leader = (box) => (box.x + box.w < WRENCH_ARM_X - 1
-            ? downTo({ x: box.x + box.w, y: box.y + box.h / 2 }, { x: WRENCH_ARM_X, y: box.y + box.h / 2 }) : null);
+            ? downTo({ x: box.x + box.w, y: Math.round(box.y + box.h / 2) }, { x: WRENCH_ARM_X, y: Math.round(box.y + box.h / 2) }) : null);
         if (!place('wrench', lines, size, ys, () => [x], leader, -1)) fallback('wrench', lines, size, leader);
     }
 
@@ -179,7 +182,7 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         const size = measure(lines, font);
         const x = Math.max(lo, WRENCH_ARM_X - 3 - size.w);
         const ys = range(HOOK_BAR_Y + 8, view.bottom - size.h - 1, 4);
-        const leader = (box) => downTo({ x: box.x + box.w / 2, y: box.y }, { x: box.x + box.w / 2, y: HOOK_BAR_Y + 4 });
+        const leader = (box) => downTo({ x: Math.floor(box.x + box.w / 2), y: box.y }, { x: Math.floor(box.x + box.w / 2), y: HOOK_BAR_Y + 4 });
         if (!place('hook', lines, size, ys, () => [x], leader, -1)) fallback('hook', lines, size, leader);
     }
 
@@ -213,7 +216,22 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         if (!ok) fallback('key', lines, size, vertLeaderUp(tx, ty));
     }
 
-    return { font, labels: placed };
+    return { font, labels: placed, fallbacks };
+}
+
+// A leader as crisp 2px rectangles (no antialiasing): axis-aligned in practice, a stepped
+// line in the rare diagonal case
+export function leaderRects(l) {
+    const out = [];
+    if (l.x1 === l.x2) out.push({ x: l.x1 - 1, y: Math.min(l.y1, l.y2), w: 2, h: Math.abs(l.y2 - l.y1) });
+    else if (l.y1 === l.y2) out.push({ x: Math.min(l.x1, l.x2), y: l.y1 - 1, w: Math.abs(l.x2 - l.x1), h: 2 });
+    else {
+        const steps = Math.max(Math.abs(l.x2 - l.x1), Math.abs(l.y2 - l.y1));
+        for (let i = 0; i <= steps; i++) {
+            out.push({ x: Math.round(l.x1 + (l.x2 - l.x1) * i / steps) - 1, y: Math.round(l.y1 + (l.y2 - l.y1) * i / steps) - 1, w: 2, h: 2 });
+        }
+    }
+    return out;
 }
 
 /**
@@ -225,6 +243,8 @@ export class LockLabels {
     constructor(parent) {
         this.parent = parent;
         this._last = '';
+        this._result = null;
+        this._disposed = false;
     }
 
     scale() {
@@ -247,6 +267,7 @@ export class LockLabels {
     }
 
     apply() {
+        if (this._disposed) return null;
         const p = this.parent;
         const t = this.texts();
         if (!p.scene || !p.pins?.length || Object.values(t).some((x) => !x)) return null;
@@ -281,30 +302,50 @@ export class LockLabels {
             txt.setBackgroundColor('#0b0f0c');
             txt.setOrigin(0, 0);
             const inWrench = id === 'wrench' || id === 'hook';
-            txt.setPosition(inWrench ? box.x - offX : box.x, inWrench ? box.y - offY : box.y);
+            // Whole pixels, so the text is not resampled between canvas pixels
+            txt.setPosition(Math.round(inWrench ? box.x - offX : box.x), Math.round(inWrench ? box.y - offY : box.y));
         }
         this.drawLeaders(result);
         return result;
     }
 
+    // Leaders follow their label: a label that is hidden (first pin press, key mode) has no leader
     drawLeaders(result) {
         const p = this.parent;
+        if (result) this._result = result;
+        if (!this._result) return;
         if (!p.labelLeaders) {
             p.labelLeaders = p.scene.add.graphics();
             p.labelLeaders.setDepth(99); // under the labels (100), over the pins
         }
         const g = p.labelLeaders;
+        const t = this.texts();
         g.clear();
-        g.lineStyle(2, 0x00ff00, 1);
-        for (const id of Object.keys(result.labels)) {
-            const l = result.labels[id].leader;
-            if (!l) continue;
-            g.beginPath();
-            g.moveTo(l.x1, l.y1);
-            g.lineTo(l.x2, l.y2);
-            g.strokePath();
+        g.fillStyle(0x00ff00, 1);
+        for (const id of Object.keys(this._result.labels)) {
+            const l = this._result.labels[id].leader;
+            if (!l || !t[id] || t[id].visible === false) continue;
+            for (const r of leaderRects(l)) g.fillRect(r.x, r.y, r.w, r.h);
         }
-        g.setVisible(!p.pinClicked);
+        g.setVisible(true);
+    }
+
+    syncLeaders() {
+        try { this.drawLeaders(null); } catch (e) { /* scene gone */ }
+    }
+
+    // First pin press: hide every teaching label and its leader together
+    hideTeachingLabels() {
+        const t = this.texts();
+        for (const id of Object.keys(t)) t[id]?.setVisible?.(false);
+        this.syncLeaders();
+    }
+
+    dispose() {
+        this._disposed = true;
+        for (const id of this._timers || []) clearTimeout(id);
+        this._timers = [];
+        try { if (this._again) this.parent.game?.scale?.off?.('resize', this._again); } catch (e) { /* game gone */ }
     }
 
     // Lay out again whenever the canvas is rescaled (rotation, resize, layout change)
@@ -315,5 +356,10 @@ export class LockLabels {
         try { p.game?.scale?.on?.('resize', again); } catch (e) { /* no scale */ }
         // The FIT scale settles after the first frames
         this._timers = [150, 600].map((ms) => setTimeout(again, ms));
+        // VT323 may load after the first layout: measure again with the real glyph widths
+        try {
+            const f = document.fonts;
+            if (f?.load) f.load('24px VT323').then(() => { this._last = ''; again(); }, () => {});
+        } catch (e) { /* no font API */ }
     }
 }

@@ -643,6 +643,8 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         }
         const off = this._portraitCameraOffset;
         this.scene?.cameras?.main?.setScroll?.(off ? off.x : 0, off ? off.y : 0);
+        // setGameSize laid the labels out on the old scroll: lay out again on the new view
+        try { this.lockLabels?.apply(); } catch (e) { /* scene gone */ }
         this._placeKeyPanel();
     }
 
@@ -801,6 +803,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     // watchers and the Phaser game there too (complete() has already done both, harmlessly)
     cleanup() {
         this._releaseLockWatchers();
+        this.lockLabels?.dispose();
         if (this.game) {
             try { this.game.destroy(true); } catch (e) { /* already gone */ }
             this.game = null;
