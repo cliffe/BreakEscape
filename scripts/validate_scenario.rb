@@ -6133,9 +6133,43 @@ end
 
 DIALOGUE_LINT_PER_RULE = 4
 
+# dialoguelint.mjs is an ES module importing node: built-ins, which Node 10/12 cannot load (a
+# SyntaxError on the first import). Ubuntu 20.04's /usr/bin/node is 10.19, so the lint looks past it.
+DIALOGUE_LINT_MIN_NODE = 16
+
+# Major version of a node binary, or nil if it doesn't run.
+def node_major_version(bin)
+  out, status = Open3.capture2e(bin, '--version')
+  status.success? && out[/\Av?(\d+)\./, 1]&.to_i
+rescue StandardError
+  nil
+end
+
+# The node to run the lint with: $BE_NODE, then each node on PATH, then the user-local install
+# (~/.local/node/bin/node); the first at DIALOGUE_LINT_MIN_NODE or newer. Returns [path, nil], or
+# [nil, reason] when there is none, so the skip is reported rather than silent.
+def dialogue_lint_node(env = ENV, home = (Dir.home rescue nil))
+  cands = []
+  cands << env['BE_NODE'] unless env['BE_NODE'].to_s.empty?
+  cands += env['PATH'].to_s.split(File::PATH_SEPARATOR).map { |d| File.join(d, 'node') }
+  cands << File.join(home, '.local/node/bin/node') if home
+  seen = []
+  cands.uniq.each do |f|
+    next unless File.file?(f) && File.executable?(f)
+    major = node_major_version(f)
+    return [f, nil] if major && major >= DIALOGUE_LINT_MIN_NODE
+    seen << "#{f} (#{major ? "v#{major}" : 'does not run'})"
+  end
+  [nil, seen.empty? ? 'no node found' : "node #{DIALOGUE_LINT_MIN_NODE}+ needed, found #{seen.join(', ')}"]
+end
+
 def run_dialogue_lint(mission_dir, repo_root)
-  node = ENV['PATH'].to_s.split(File::PATH_SEPARATOR).map { |d| File.join(d, 'node') }.find { |f| File.file?(f) && File.executable?(f) }
-  return nil unless node
+  node, why = dialogue_lint_node
+  unless node
+    puts "DIALOGUE LINT skipped: #{why}. Set BE_NODE to a node #{DIALOGUE_LINT_MIN_NODE}+ binary."
+    puts
+    return nil
+  end
   tool = File.join(repo_root, 'scripts/ink_runtime_check/dialoguelint.mjs')
   return nil unless File.exist?(tool)
   out, status = Open3.capture2(node, tool, mission_dir, '--json', chdir: repo_root)
