@@ -79,7 +79,7 @@
 
 .ncsc-envelope-ref {
     font-size: 20px;
-    color: #6e7681;
+    color: #8b949e;
     letter-spacing: 0.03em;
     font-style: normal;   /* upright: a pixel font slanted by the browser smears (slice 7 R1 n5) */
 }
@@ -113,7 +113,7 @@
     font-size: 21px;
     color: #8b949e;
     max-width: 420px;
-    line-height: 1.65;
+    line-height: 1.4;
 }
 
 .ncsc-ready-message {
