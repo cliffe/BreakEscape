@@ -135,6 +135,7 @@ export class ToolManager {
         if (this.parent.hookPickLabel) {
             this.parent.hookPickLabel.setVisible(false);
         }
+        this.parent.lockLabels?.syncLeaders();
     }
 
     returnHookToStart() {
@@ -297,12 +298,14 @@ export class ToolManager {
         if (this.parent.hookGroup) {
             this.parent.hookGroup.setVisible(true);
         }
-        if (this.parent.wrenchText) {
+        // After the first pin press the teaching labels stay hidden (LockLabels._hidden)
+        if (this.parent.wrenchText && !this.parent.lockLabels?._hidden) {
             this.parent.wrenchText.setVisible(true);
         }
-        if (this.parent.hookPickLabel) {
+        if (this.parent.hookPickLabel && !this.parent.lockLabels?._hidden) {
             this.parent.hookPickLabel.setVisible(true);
         }
+        this.parent.lockLabels?.syncLeaders();
         
         // Reset pins to original positions
         this.parent.lockConfig.resetPinsToOriginalPositions();
@@ -321,12 +324,14 @@ export class ToolManager {
         }
         
         // Show labels
-        if (this.parent.wrenchText) {
+        // After the first pin press the teaching labels stay hidden (LockLabels._hidden)
+        if (this.parent.wrenchText && !this.parent.lockLabels?._hidden) {
             this.parent.wrenchText.setVisible(true);
         }
-        if (this.parent.hookPickLabel) {
+        if (this.parent.hookPickLabel && !this.parent.lockLabels?._hidden) {
             this.parent.hookPickLabel.setVisible(true);
         }
+        this.parent.lockLabels?.syncLeaders();
     }
 
     switchToKeyMode() {
@@ -352,6 +357,7 @@ export class ToolManager {
         if (this.parent.hookPickLabel) {
             this.parent.hookPickLabel.setVisible(false);
         }
+        this.parent.lockLabels?.syncLeaders();
         
         // Reset pins to original positions
         this.parent.lockConfig.resetPinsToOriginalPositions();

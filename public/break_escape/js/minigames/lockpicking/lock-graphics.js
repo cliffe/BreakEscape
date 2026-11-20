@@ -58,6 +58,9 @@ export class LockGraphics {
         this.parent.wrenchGraphics.fillRect(0, 40, 37.5, 10);
         
         this.parent.tensionWrench.add(this.parent.wrenchGraphics);
+        // Above the hook pick (created later at depth 0), so the hook's shaft never draws through the
+        // wrench's label; still under the pins (2), the leaders (99) and the key (created later at 1)
+        this.parent.tensionWrench.setDepth(1);
         
         // Make it interactive - extended hit area to match pin click zones (down to keyway bottom)
         // Covers vertical arm, horizontal arm, handle, and extends down to bottom of keyway
