@@ -48,8 +48,13 @@ Lorna's recap matched the appendix word for word on every route. Barks were stil
 
 ## Still open
 
-- Camila's sprite (D193: name OK, mid 40s, 4 bust variants approved, rest waits on the pick) and voice (D202 C). After them: proof 7's look, the visitor persona playtests, and the fallback holding-tile look.
-- The twin's host line (m7, wording with the owner, Q5).
-- The course-shell form (D195). The build follows Form A.
-- Voicing: 21 appendix clips and 6 chatter clips, with the owner via AC0.
+- Proof 7's look, the visitor persona playtests and the fallback holding-tile look, now that Camila has her own sprite (c8958a2aa: bust b01, talk t02, visemes, walk with the stock six and seated frames).
+- Voicing still to do: Camila's 3 door replies (D209, after their dialogue review) and the sofa pool lines for Thandiwe, Lorna and Delphine (D210, 9 clips). Done: groups A and B (27 clips, a92a80aa7) and the Zephyr sample (a86ad1f8f).
+- Whether to drop the let-in workaround now that the sidestep engine fix is on main (route 2 re-run in progress).
 - DB rows for `ca12_visitor_tailgater` and `test_ca12_fallback` at the next seed.
+
+## Settled with the owner
+
+- D195: the course shell is Form A (panel).
+- D203, D207, D208: the twin's host line is split into catch and miss (2 clips each). It says "gate", matching the voiced panel lines and the call card, and stays unvoiced like the ca01 twin (57bb05bed).
+- D209: Camila's voice is Zephyr, en-GB, mid 40s.
