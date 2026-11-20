@@ -272,7 +272,7 @@ assert.throws(() => SX.parseNoXScenes("registerScene('a', A);", ['class A extend
     await SX.failSetup({ browser: { close: async () => { closed++; } }, message: 'm', log: (x) => logs.push(x), exit: (c) => { code = c; } });
     assert.ok(closed === 1 && code === 2 && logs[0] === 'm', 'failSetup closes the browser once, then exits 2');
     closed = 0; code = null;
-    await SX.failSetup({ browser: { close: () => new Promise(() => {}) }, message: 'm', log: () => {}, exit: (c) => { code = c; } });
+    await SX.failSetup({ browser: { close: () => new Promise(() => {}) }, message: 'm', log: () => {}, exit: (c) => { code = c; }, timeoutMs: 50 });
     assert.ok(code === 2, 'a browser that never closes is raced and still exits 2');
 }
 console.log('playtest-shellx-open-wait ok');

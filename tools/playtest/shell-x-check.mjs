@@ -335,9 +335,9 @@ export function parseNoXScenes(indexSrc, sources) {
 }
 
 // A setup error that must still close the browser (raced) before exit 2.
-export async function failSetup({ browser, message, log = console.error, exit = process.exit }) {
+export async function failSetup({ browser, message, log = console.error, exit = process.exit, timeoutMs = BROWSER_CLOSE_TIMEOUT_MS }) {
     log(message);
-    const c = await timedEval(browser.close(), BROWSER_CLOSE_TIMEOUT_MS);
+    const c = await timedEval(browser.close(), timeoutMs);
     if (c.timedOut) log('browser.close() did not return in time; exiting anyway');
     exit(2);
 }
