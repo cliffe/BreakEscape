@@ -37,14 +37,17 @@ test('the dial row fits a 360px screen in the widest frame theme (24px and 28px)
     const display = num(/\.combination-dial-display\s*\{[^}]*?\bwidth:\s*(\d+)px/, block);
     const arrow = num(/\.combination-dial-arrow\s*\{[^}]*?\bwidth:\s*(\d+)px/, css);
     const pad = num(/\.combination-dials\s*\{[^}]*padding:\s*\d+px\s+(\d+)px/, block);
-    const row = label + display + 2 * arrow + 3 * gap;
+    // The display is content-box: add its side padding and 2px borders (live: 100px when padded 8px)
+    const dispRule = block.match(/\.combination-dial-display\s*\{([^}]*)\}/)[1];
+    const padX = (() => { const p = dispRule.match(/padding:\s*(\d+)(?:px)?(?:\s+(\d+)(?:px)?)?/); return p ? Number(p[2] ?? p[1]) : 0; })();
+    const row = label + (display + 2 * padX + 4) + 2 * arrow + 3 * gap;
     const themes = readFileSync(join(here, '../../public/break_escape/css/ui-themes.css'), 'utf8');
     const frames = [...themes.matchAll(/--ui-frame-px:\s*(\d+)px/g)].map(x => Number(x[1]));
     for (const f of [24, 28]) assert.ok(frames.includes(f), 'a ' + f + 'px theme exists');
     const widest = Math.max(...frames);
     const room = 360 - 2 * widest - 2 * pad;
-    // Keep 8px spare: the live row at 360 cyberpunk ran 2px past this model with zero slack
-    assert.ok(row + 8 <= room, 'row ' + row + 'px fits ' + room + 'px with 8px spare (frame ' + widest + 'px)');
+    // Keep 4px spare (live at 360 cyberpunk: the padded 300px row spilled into the dials' padding)
+    assert.ok(row + 4 <= room, 'row ' + row + 'px fits ' + room + 'px with 4px spare (frame ' + widest + 'px)');
 });
 
 test('the TURN word is kept as the non-colour cue', () => {
