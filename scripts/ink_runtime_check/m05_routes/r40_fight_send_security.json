@@ -75,13 +75,15 @@
     "That's all for now"
    ]
   },
-  {
-   "talk": "patricia_phone",
+  {"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
+{"set":{"patricia_phone_available":true}},
+{
+   "talk": "patricia_phone", "knot": "phone_call",
    "picks": [
     "I know who it is",
     "David Torres",
     "front door",
-    "Just checking in"
+    ["Just checking in", "That's all for now"]
    ]
   },
   {
@@ -141,7 +143,7 @@
    "enter": "data_center"
   },
   {
-   "talk": "patricia_phone",
+   "talk": "patricia_phone", "knot": "phone_call",
    "picks": [
     "I know who it is",
     "David Torres",
@@ -173,7 +175,7 @@
    "said": [
     "I won't choose for you",
     "Hard is certain tonight",
-    "Q switches to fists. Can't take him? Get out of his reach, then call me"
+    "If it turns into a fight: he's no fighter. F to punch, hold Q to block. Can't win? Get clear, then message me."
    ],
    "notSaid": [
     "I'm not going to answer that"
@@ -190,8 +192,8 @@
   },
   {
    "said": [
-    "He's coming for you. Q switches to fists (again for a harder punch)",
-    "Press Q till the open hand shows"
+    "He's coming for you. F to punch, keep pressing for a harder one. Hold Q to block.",
+    "Can't take him? Leave the data centre, then message me for Security"
    ]
   },
   {
@@ -354,7 +356,7 @@
     "Nobody else on staff hurt"
    ],
    "notSaid": [
-    "HANDED TO THE POLICE \u2014 said nothing",
+    "HANDED TO THE POLICE: said nothing",
     "Nobody on staff hurt",
     "AT A COST"
    ]

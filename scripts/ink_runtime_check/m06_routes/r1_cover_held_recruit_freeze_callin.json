@@ -1,6 +1,6 @@
 {"steps":[
 {"note": "R1 (pass 5 alignment): the quiet route. Cover held all night, Irina turned, the minder talked past on the FCA cover, the fund frozen, a sweep (A1: the safe stays reachable), a turned-down call-in, a page reload, then 'Bring me in'."},
-{"talk": "briefing", "picks": ["Which exchange", "Why would Volkova", "I'm ready"]},
+{"talk": "briefing", "picks": ["Which exchange", "Why would Volkova", "How do I get in", "I'm ready"]},
 {"set": {"briefing_played": true}},
 {"room": "security_checkpoint"},
 {"talk": "guard", "picks": ["Financial Conduct Authority", "Dr Volkova"]},
