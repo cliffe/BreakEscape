@@ -56,7 +56,7 @@ test('a real lostpointercapture event on the canvas ends the stroke (listener is
     cv.hasPointerCapture = id => captured.has(id);
     const saved = [];
     const g = {
-        canvas: cv, step: 'dust', pointerDown: true, _pointerId: 7, lastPt: { x: 1, y: 1 }, _touchFind: false, _brushCarry: 2,
+        canvas: cv, hcBox: new EventTarget(), steadyBox: new EventTarget(), step: 'dust', pointerDown: true, _pointerId: 7, lastPt: { x: 1, y: 1 }, _touchFind: false, _brushCarry: 2,
         _saveProgress() { saved.push(1); }, _attemptFind() {}, _bindPanel() {}, _onPointerDown() {}, _onPointerMove() {},
         addEventListener(target, type, fn) { target.addEventListener(type, fn); },
         _onPointerUp: proto._onPointerUp
