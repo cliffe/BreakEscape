@@ -65,6 +65,8 @@ export function passwordScreenKind({ join = null, lockable = null } = {}) {
  * screen is drawn as a code lock on the case, not as a computer's sign-in screen.
  */
 const SIGNIN_PROMPT = 'Choose an account.';
+/** A tile's username line (GNF 16px on a 16px line): the spare height a short screen needs to show it */
+export const SIGNIN_USERNAME_LINE = 16;
 export const CASE_LOCK_TYPES = ['suitcase', 'briefcase', 'bag', 'bag1', 'backpack', 'satchel', 'holdall'];
 export function isCaseLockTarget(data) {
     const type = String(data?.type || '').toLowerCase();
@@ -1733,6 +1735,15 @@ export class PasswordMinigame extends MinigameScene {
         const ways = this.gameContainer.querySelector('#signin-ways');
         if (ways) this.addEventListener(ways, 'scroll', () => this.updateSignInWaysMore());
         this.addEventListener(window, 'resize', () => this.fitSignInWays());
+        // The frame's own resize handler sets data-short; measure the usernames now and once it has run
+        this.addEventListener(window, 'resize', () => this.fitSignInUsernames({ again: true }));
+        // Name lines change when the pixel font lands: measure once more then. Load the face itself
+        // (as container-minigame does): fonts.ready can already be resolved before GNF is requested
+        const fonts = window.document?.fonts;
+        const landed = fonts?.load ? fonts.load('16px GNF') : fonts?.ready;
+        landed?.then?.(() => {
+            if (this.gameContainer?.isConnected) this.fitSignInUsernames();
+        }, () => {});
         this.bindKeyboardReveal([this.usernameField, this.passwordField]);
         this.renderSignInForm();
     }
@@ -1949,6 +1960,52 @@ export class PasswordMinigame extends MinigameScene {
             cap = Math.max(MIN_ROW, cap - left);
             tilesEl.style.maxHeight = `${cap}px`;
             this.updateSignInTilesMore();
+        }
+    }
+
+    /**
+     * A short PC screen (a landscape phone) keeps a tile's username line, one ellipsised GNF 16px
+     * line, only where the tile has 16px of height to spare: the tiles stretch to the tallest one
+     * in their row ("Sam Okafor" and "Other user" take two name lines), so a tile with a one-line
+     * name has a spare line and the row stays as tall as it was. A tile with none keeps the line
+     * hidden (css: .signin-tile[data-username-fits]). The baseline is measured with every flag
+     * removed (so the answer never depends on the last one), all reads come before any write, and
+     * only resize and a rebuild of the row run it, never a watcher of the tiles' own size, so it
+     * cannot chase its own output. Not short, or no layout (jsdom): no flags.
+     */
+    fitSignInUsernames({ again = false } = {}) {
+        const root = this.gameContainer?.querySelector?.('#signin-tiles');
+        if (!root) return;
+        const tiles = Array.from(root.querySelectorAll('.signin-tile'));
+        for (const t of tiles) delete t.dataset.usernameFits;
+        const frame = this.pcMonitor?.root;
+        // Short means a screen under 560px high, which is always drawn at x1 (the layout is
+        // 560x350 per step), so rects and computed lengths are in the same pixels: no zoom here
+        if (frame?.hasAttribute?.('data-short')) {
+            const fits = tiles.map((t) => {
+                const tr = t.getBoundingClientRect?.();
+                if (!tr || !(tr.height > 0)) return false;
+                // Spare is measured under the last thing in the tile's flow (the name, or a
+                // keyring tag row after it), never under the name alone. Hidden children have no
+                // rect and absolute ones (remote badges) are out of the flow.
+                let bottom = -Infinity;
+                for (const c of Array.from(t.children || [])) {
+                    const cr = c.getBoundingClientRect?.();
+                    if (!cr || !(cr.height > 0)) continue;
+                    if (window.getComputedStyle(c).position === 'absolute') continue;
+                    bottom = Math.max(bottom, cr.bottom);
+                }
+                if (bottom === -Infinity) return false;
+                const cs = window.getComputedStyle(t);
+                const below = (parseFloat(cs.borderBottomWidth) || 0) + (parseFloat(cs.paddingBottom) || 0);
+                return tr.bottom - below - bottom >= SIGNIN_USERNAME_LINE;
+            });
+            tiles.forEach((t, i) => { if (fits[i]) t.dataset.usernameFits = ''; });
+        }
+        if (again && typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(() => {
+                if (this.gameContainer?.isConnected) this.fitSignInUsernames();
+            });
         }
     }
 
@@ -2299,6 +2356,7 @@ export class PasswordMinigame extends MinigameScene {
         // Once an account is chosen, the form down to its message line (Submit, the attempts
         // left) scrolls into view in a short window (UX slice 2a R2 M2)
         if (!quiet && chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
+        this.fitSignInUsernames({ again: true });
         this.fitSignInTiles();
         this.fitSignInWays();
     }
