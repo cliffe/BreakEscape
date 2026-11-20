@@ -189,6 +189,7 @@
 
 .scanner-panel .scan-chips > * {
     box-sizing: border-box;
+    margin: 0; /* panels.css gives the category chips margin-right: 5px; the gap alone spaces them */
     min-height: 32px;
     display: flex;
     align-items: center;
@@ -302,4 +303,11 @@
     .scanner-panel .scan-chips > * {
         padding: 4px 8px;
     }
+}
+
+/* A scanner is a minigame: objectives-panel.js already treats the HUD panel as off screen
+   (_onScreen), so it is hidden rather than left peeking round the frame. visibility keeps
+   its collapse state and scroll. */
+body:has(.minigame-container.scanner-panel) .objectives-panel {
+    visibility: hidden !important;
 }
