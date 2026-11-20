@@ -400,13 +400,14 @@ class ReviewFixes(unittest.TestCase):
     # 1: host lookup ignores an unpositioned NPC with the same ink; kit() writes nothing until all build
     def test_host_lookup_ignores_the_unpositioned_second_story_npc(self):
         sc = json.loads(shell_text('ca03_helpdesk_reset'))
-        npcs = sc['rooms']['training_room']['npcs']
+        npcs = [n for n in sc['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_')]   # the shell now carries its kit staff
         self.assertEqual([('position' in n) for n in npcs], [True, False])
         self.assertEqual(ok._find_host(sc)['id'], npcs[0]['id'])
         r = row(id='ca03_helpdesk_reset', ep='ca03', stub='ca03')
-        out = ok.apply_kit(sc, self.kit(), r)
-        self.assertEqual(ok.strip_kit(out), ok.strip_kit(sc))
-        new = atr.kit_text(shell_text('ca03_helpdesk_reset'), self.kit(), r, 'ca03_helpdesk_reset')
+        base = ok.strip_kit(sc)      # the committed shell carries its Quayholt kit; this test applies a Brightwell one to the bare shell
+        out = ok.apply_kit(base, self.kit(), r)
+        self.assertEqual(ok.strip_kit(out), base)
+        new = atr.kit_text(dumped(base), self.kit(), r, 'ca03_helpdesk_reset')
         self.assertEqual(json.loads(new), out)
 
     def test_kit_writes_nothing_when_a_later_row_fails(self):
@@ -838,7 +839,7 @@ def exempt_kit():
 
 def ca00_shell():
     import gen_core00_shell as g
-    return g.build()[1]
+    return g.build(bare=True)[1]
 
 
 class PoolExempt(unittest.TestCase):

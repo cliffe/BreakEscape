@@ -59,7 +59,7 @@ class RefreshTests(unittest.TestCase):
     def test_ca03_second_story_npc_without_position(self):
         # ca03 has two story NPCs of its own (host with a position, Leila without): only the host matches
         text, d = self._load('ca03_helpdesk_reset')
-        npcs = d['rooms']['training_room']['npcs']
+        npcs = [n for n in d['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_')]   # kit staff added in wave 2
         self.assertEqual([('position' in n) for n in npcs], [True, False])
         a, b = atr.find_host_span(text, shell='ca03_helpdesk_reset')
         self.assertEqual(json.loads(text[a:b])['id'], npcs[0]['id'])

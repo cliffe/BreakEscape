@@ -355,7 +355,8 @@ META = {
 }
 
 
-def build():
+def build(bare=False):
+    """bare=True builds the shell as if it had no kit row (tests use it as the kit-free input)."""
     frag = json.load(open(f'{AW}/core00/defend.json'))
     EP = strip_private(copy.deepcopy(frag['awarenessEpisode']))
     assert EP['doneGlobal'] == DONE and EP['conclusionTaskId'] == TASK
@@ -365,7 +366,7 @@ def build():
         f'episode_{ep_id}_state': {},
         DONE: False,
     }
-    row = office_kit.row_for(MISSION)   # None: tier 'none', no kit
+    row = None if bare else office_kit.row_for(MISSION)   # None: tier 'none', no kit
     if row and row.get('handAuthored'):
         row = None   # only apply_training_room.py --kit touches a hand-authored shell
     sc = scenario(
