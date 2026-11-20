@@ -299,3 +299,76 @@ test('m3: a reopen that stays open raises no toast for its notice', async () => 
     await mg.init();
     assert.ok(alerts.length === 0, `no toast: ${JSON.stringify(alerts)}`);
 });
+
+// take-toast R3 m4: the 403 route is shared by several branches, and the order of the lines matters
+const idx = (re) => alerts.findIndex(a => re.test(a[0]));
+async function reopenPc(body, extra = {}) {
+    setup();
+    window.pcSessions = { has: () => true, dropLocal() {}, takeEndedMessage: () => null };
+    window.fetch = globalThis.fetch = async () => ({ ok: false, status: 403, json: async () => body });
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Desk PC', containerItem: PC(), contents: [], isTakeable: false,
+        fromReturn: true, notice: window.noteAddedText('Memo'), noticeName: 'Memo', ...extra });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    await mg.init();
+    delete window.pcSessions;
+    return mg;
+}
+
+test('R3 m4: the note toast comes before the session line on the plain fromReturn 403', async () => {
+    await reopenPc({});
+    assert.ok(idx(/your notes/) >= 0 && idx(/Signed out/) >= 0, `both said: ${JSON.stringify(alerts)}`);
+    assert.ok(idx(/your notes/) < idx(/Signed out/), `note first: ${JSON.stringify(alerts)}`);
+});
+
+test('R3 m4: a 403 that closes before the fromReturn branch (PC off) still toasts the note first', async () => {
+    const mg = await reopenPc({ reason: 'off', error: 'This PC is off.' });
+    assert.ok(idx(/your notes/) >= 0, `note toast raised: ${JSON.stringify(alerts)}`);
+    assert.ok(idx(/This PC is off/) > idx(/your notes/), `note before the off line: ${JSON.stringify(alerts)}`);
+    assert.ok(mg.params.notice === '', 'handed on once');
+});
+
+test('R3 m4: an expired-session 403 toasts the note before the token line', async () => {
+    await reopenPc({ reason: 'expired' });
+    assert.ok(idx(/your notes/) >= 0, `note toast raised: ${JSON.stringify(alerts)}`);
+    assert.ok(idx(/your notes/) === 0, `note first: ${JSON.stringify(alerts)}`);
+});
+
+test('R3 m5: the note toast goes through the shared announceNoteAdded helper', async () => {
+    setup();
+    const calls = [];
+    const real = window.announceNoteAdded;
+    window.announceNoteAdded = (n) => { calls.push(n); return real(n); };
+    await reopenPc({});
+    window.announceNoteAdded = real;
+    assert.ok(calls.length === 1 && calls[0] === 'Memo', `helper called once with the name: ${JSON.stringify(calls)}`);
+});
+
+test('R3 m1: a reopened folder the server closes at once (403) toasts the note', async () => {
+    setup();
+    window.fetch = globalThis.fetch = async () => ({ ok: false, status: 403, statusText: 'Forbidden', json: async () => ({}) });
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Folder', containerItem: { scenarioData: { id: 'f1', type: 'folder', name: 'Folder', locked: false } },
+        contents: null, isTakeable: false, fromReturn: true, notice: window.noteAddedText('Memo'), noticeName: 'Memo' });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    const res = await mg.loadContainerContents();
+    assert.ok(Array.isArray(res), 'closed with no contents');
+    assert.ok(idx(/your notes/) >= 0, `note toast: ${JSON.stringify(alerts)}`);
+    assert.ok(idx(/Container is locked/) > idx(/your notes/), `note before the error: ${JSON.stringify(alerts)}`);
+});
+
+test('R3 m2: a network error on a reopened desktop toasts the note before the error', async () => {
+    setup();
+    window.pcSessions = { has: () => true, dropLocal() {}, takeEndedMessage: () => null };
+    window.fetch = globalThis.fetch = async () => { throw new Error('offline'); };
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Desk PC', containerItem: PC(), contents: [], isTakeable: false,
+        fromReturn: true, notice: window.noteAddedText('Memo'), noticeName: 'Memo' });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    const origErr = console.error; console.error = () => {};
+    await mg.init();
+    console.error = origErr;
+    delete window.pcSessions;
+    assert.ok(idx(/your notes/) >= 0, `note toast: ${JSON.stringify(alerts)}`);
+    assert.ok(idx(/Could not load the desktop/) > idx(/your notes/), `note before the error: ${JSON.stringify(alerts)}`);
+});

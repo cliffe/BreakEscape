@@ -928,6 +928,9 @@ export class ContainerMinigame extends MinigameScene {
             this._loadStatus = response.status;
 
             if (!response.ok) {
+                // The branches below close this window at once: a note notice it carries goes to the
+                // toast first (take-toast R3 m1)
+                this.noticeToToast();
                 // A folder from a relay desktop: any 403 only closes the folder. The server sends no
                 // reason for a locked or powered-off folder, so the reopened relay desktop decides
                 // whether the assist ended or the PC is off (K3c R2 m1)
@@ -1084,6 +1087,7 @@ export class ContainerMinigame extends MinigameScene {
             return data.contents || [];
         } catch (error) {
             console.error('Failed to load the sign-in desktop:', error);
+            this.noticeToToast();
             window.gameAlert?.('Could not load the desktop', 'error', 'Error', 3000);
             this.complete(false);
             return null;
@@ -1284,8 +1288,10 @@ export class ContainerMinigame extends MinigameScene {
     noticeToToast() {
         const notice = this.params?.fromReturn && typeof this.params.notice === 'string' ? this.params.notice : '';
         if (!notice) return;
-        this.params = { ...this.params, notice: '' };
-        window.gameAlert?.(notice, 'info', 'Note Added', 3000);
+        const name = this.params.noticeName;
+        this.params = { ...this.params, notice: '', noticeName: '' };
+        // The shared helper owns the title and duration; the plain alert is for a caller with no name
+        if (!(name && window.announceNoteAdded?.(name))) window.gameAlert?.(notice, 'info', 'Note Added', 3000);
     }
 
     async init() {
@@ -2722,7 +2728,9 @@ export class ContainerMinigame extends MinigameScene {
             // Show success message
             // A notes item that is not readable (so it skipped the viewer route) still belongs in
             // the Notepad: the server add makes no inventory slot for notes types, so without
-            // this it vanished (take-toast review m4).
+            // this it vanished (take-toast review m4). Content rule: this route skips onRead/onPickup
+            // setVariable and item_picked_up, so a container note that must set a variable needs
+            // text plus readable:true to take the viewer route (take-toast R3 m3).
             const noteText = /^notes\d*$/.test(item.type) ? (item.text || item.observations || '') : '';
             if (noteText && window.addNote) {
                 const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : noteText;
@@ -2865,6 +2873,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
         notice: typeof extra?.notice === 'string' ? extra.notice : '',
+        noticeName: typeof extra?.noticeName === 'string' ? extra.noticeName : '',
         focusReturn: extra?.focusReturn || null,
         slotReturn: extra?.slotReturn || null,
         focusEntry: extra?.focusEntry === true,
@@ -3000,7 +3009,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true, notice: noteNotice, focusReturn: containerState.focusReturn || null, slotReturn: containerState.slotReturn || null, scrollTop: containerState.scrollTop || 0 }
+            { fromReturn: true, notice: noteNotice, noticeName: noteNotice ? containerState.itemToTake.name : '', focusReturn: containerState.focusReturn || null, slotReturn: containerState.slotReturn || null, scrollTop: containerState.scrollTop || 0 }
         );
     } else {
         console.log('No pending container return found');
