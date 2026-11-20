@@ -535,12 +535,10 @@
     .mail-account { flex: 1 1 100%; margin-right: 0; }
     .mail-account-select { width: 100%; min-width: 16ch; }
     /* B9: from 1000px down the account label and Close share the header row and the buttons take
-       their own row. The break is a zero-height ::after line; row-gap 4px on each side of it
-       makes the header-to-buttons gap 8px, matching the toolbar gap. */
-    .mail-client .mail-toolbar:not(.tri-toolbar) { row-gap: 4px; }
-    .mail-client .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 0; }
+       the rows below. The account basis leaves room for the X (30px) and one 8px gap with 2px of
+       slack, so the X cannot fit beside the buttons and every row gap stays the toolbar's 8px. */
+    .mail-client .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 calc(100% - 40px); }
     .mail-client .mail-toolbar:not(.tri-toolbar) .se-overlay-close { order: 1; margin-left: auto; }
-    .mail-client .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; }
     .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-folders,
     .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-contacts-btn,
     .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-toolbar-actions { order: 2; }
@@ -631,7 +629,7 @@
 .mail-compose-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Phone layout (layout: "phone", E6): the narrow rules above, applied at any viewport width
-   and wrapped in a phone-shaped frame. Keep in step with the two max-width: 767px blocks. */
+   and wrapped in a phone-shaped frame. Keep in step with the max-width: 1000px block (the B9 toolbar rules). */
 .mail-client.mail-client--phone {
     width: 390px; max-width: 100%; height: min(85vh, 760px); max-height: none;
     padding: 8px; overflow-x: hidden;
@@ -641,10 +639,8 @@
 .mail-client--phone * { max-width: 100%; }
 .mail-client--phone .mail-toolbar > * { min-width: 0; }
 .mail-client--phone .mail-account { flex: 1 1 100%; margin-right: 0; }
-.mail-client--phone .mail-toolbar:not(.tri-toolbar) { row-gap: 4px; }
-.mail-client--phone .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 0; }
+.mail-client--phone .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 calc(100% - 40px); }
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) .se-overlay-close { order: 1; margin-left: auto; }
-.mail-client--phone .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; }
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-folders,
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-contacts-btn,
 .mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-toolbar-actions { order: 2; }

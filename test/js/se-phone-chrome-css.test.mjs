@@ -69,8 +69,8 @@ test('mail-client and inbox-triage sheets: no radius, blur, 1px border or outlin
         assert.ok(!/filter:\s*blur|backdrop-filter/.test(s), `${f}: filter blur`);
         // Third length of a shadow layer is the blur; a bare 0 counts as a length.
         const blurred = (s.match(/(?<![a-z-])(box|text)-shadow:[^;]*;/g) || []).filter((d) => d.split(/,(?![^(]*\))/).some((layer) => {
-            const nums = layer.replace(/^[^:]*:/, '').replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|inset|#[0-9a-f]+/gi, '')
-                .split(/\s+/).filter((t) => /^-?\d*\.?\d+(px)?$/.test(t));
+            const nums = layer.replace(/^[^:]*:/, '').replace(/[;}]|!important/g, '').replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|inset|#[0-9a-f]+/gi, '')
+                .split(/\s+/).filter((t) => /^-?\d*\.?\d+([a-z]+)?$/i.test(t));
             return nums.length >= 3 && parseFloat(nums[2]) > 0;
         }));
         assert.ok(blurred.length === 0, `${f}: blurred shadow ${blurred[0]}`);
@@ -94,18 +94,19 @@ test('mail-client toolbar: Close stays in the header row at every width up to 10
         767: mediaBlock('mail-client-minigame.css', '(max-width: 767px)'),
     };
     const t = '.mail-client .mail-toolbar:not(.tri-toolbar)';
-    assert.ok(blocks[1000].includes(`${t} .mail-account { flex: 1 1 0; }`), '1000px: account flex 1 1 0');
+    assert.ok(blocks[1000].includes(`${t} .mail-account { flex: 1 1 calc(100% - 40px); }`), '1000px: account leaves room for the X');
     assert.ok(blocks[1000].includes(`${t} .se-overlay-close { order: 1; margin-left: auto; }`), '1000px: close order 1');
-    assert.ok(/::after \{ content: ''; order: 1; flex: 0 0 100%; height: 0; \}/.test(blocks[1000]), '1000px: row break');
-    assert.ok(/> \.mail-toolbar-actions \{ order: 2; \}/.test(blocks[1000]), '1000px: actions on row two');
-    assert.ok(new RegExp(`${t.replace(/[.()]/g, '\\$&')} \\{ row-gap: 4px; \\}`).test(blocks[1000]), '1000px: row-gap 4px');
+    const grouped = (sel, ind = '') => `${sel} > .mail-folders,\n${ind}${sel} > .mail-contacts-btn,\n${ind}${sel} > .mail-toolbar-actions { order: 2; }`;
+    assert.ok(blocks[1000].includes(grouped(t, '    ')), '1000px: folders, contacts and actions all at order 2');
     assert.ok(!/\.mail-toolbar:not\(\.tri-toolbar\)(::after| \.se-overlay-close)/.test(blocks[767]), 'no duplicate scoped rules in the 767px block');
     const s = read('mail-client-minigame.css');
-    assert.ok(!/height: 0; margin/.test(s), 'no negative-margin trick on the row break');
+    assert.ok(!/:not\(\.tri-toolbar\)::after/.test(s), 'no row-break element');
+    assert.ok(!/:not\(\.tri-toolbar\) \{ row-gap/.test(s), 'no row-gap override: every row gap stays 8px');
+    assert.ok(!/height: 0; margin/.test(s), 'no negative-margin trick');
     const p = '.mail-client--phone .mail-toolbar:not(.tri-toolbar)';
-    assert.ok(s.includes(`${p} { row-gap: 4px; }`), 'phone row-gap 4px');
-    assert.ok(s.includes(`${p} .mail-account { flex: 1 1 0; }`), 'phone account flex 1 1 0');
-    assert.ok(/mail-client--phone[^{]*::after \{ content: ''; order: 1; flex: 0 0 100%; height: 0; \}/.test(s), 'phone row break');
+    assert.ok(s.includes(`${p} .mail-account { flex: 1 1 calc(100% - 40px); }`), 'phone account leaves room for the X');
+    assert.ok(s.includes(`${p} .se-overlay-close { order: 1; margin-left: auto; }`), 'phone close order 1');
+    assert.ok(s.includes(grouped(p)), 'phone: folders, contacts and actions all at order 2');
 });
 
 test('wifi bars are border-box so the tallest bar fits its 14px meter', () => {
