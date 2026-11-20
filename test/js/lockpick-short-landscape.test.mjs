@@ -154,13 +154,108 @@ test('every frame, box and feedback rule in the short block needs .lockpicking-f
     assert.ok(n >= 4, 'found the rules');
 });
 
-test('taller windows are untouched: no 561px+ block carries the short-window rules', () => {
-    const tall = mediaBlocks.filter((x) => /561px/.test(x.cond));
+// The compact block for tall desktop windows (.lockpicking-compact, 561px and taller): a copy of
+// the short block's strip rules, scoped to the class
+const compact = mediaBlocks.find((b) => /min-height:\s*561px/.test(b.cond) && /lockpicking-compact/.test(b.body));
+
+test('taller windows are untouched: no 561px+ block carries the short-window rules, except the .lockpicking-compact strip block, whose every rule needs that class', () => {
+    // Reason for the exception: the compact block is the short strip on purpose, but only for a
+    // strip the JS marked .lockpicking-compact, so a window without the class is untouched.
+    const tall = mediaBlocks.filter((x) => /561px/.test(x.cond) && x !== compact);
     assert.ok(tall.length >= 2, 'the 561px blocks exist');
     for (const b of tall) {
         assert.doesNotMatch(b.body, /lockpicking-fit|lockpicking-mode-label|lockpicking-info-expanded|object-fit|line-clamp/);
     }
     assert.doesNotMatch(css.slice(0, css.indexOf('@media')), /lockpicking-fit/);
+    assert.ok(compact, 'the compact block exists');
+    const re = /([^{}]+)\{[^{}]*\}/g;
+    let m, n = 0;
+    while ((m = re.exec(compact.body))) {
+        for (const sel of m[1].split(',').map((x) => x.trim())) {
+            n++;
+            assert.match(sel, /lockpicking-compact/, 'every compact-block selector needs the class: ' + sel);
+        }
+    }
+    assert.ok(n >= 15, 'found the rules: ' + n);
+});
+
+test('the compact block is scoped to wide AND 561px-tall windows, so a window resized short gets the short rules (R1 m1)', () => {
+    assert.ok(compact, 'the compact block exists');
+    assert.match(compact.cond, /min-width:\s*769px/);
+    assert.match(compact.cond, /min-height:\s*561px/);
+    assert.ok(mediaBlocks.indexOf(compact) < mediaBlocks.indexOf(short), 'before the short block (the short block is last)');
+});
+
+test('the compact block pins the strip rules the desktop fix depends on (R1 M3)', () => {
+    const S = '.lockpicking-item-section.lockpicking-compact';
+    assert.match(rule(compact.body, S), /flex-direction\s*:\s*row/);
+    assert.match(rule(compact.body, S), /flex-wrap\s*:\s*nowrap/);
+    const img = rule(compact.body, '.lockpicking-compact .lockpicking-item-image');
+    assert.match(img, /(^|[;\s])width\s*:\s*48px/);
+    assert.match(img, /(^|[;\s])height\s*:\s*48px/);
+    assert.match(img, /object-fit\s*:\s*none/);
+    assert.match(rule(compact.body, '.lockpicking-compact .lockpicking-item-info p'), /-webkit-line-clamp\s*:\s*2/);
+    assert.match(rule(compact.body, '.lockpicking-compact .lockpicking-item-info h4'), /white-space\s*:\s*nowrap/);
+    assert.match(rule(compact.body, '.lockpicking-compact.lockpicking-obs-overflow .lockpicking-obs-more'), /display\s*:\s*block/);
+    assert.match(rule(compact.body, '.lockpicking-compact .lockpicking-item-info p[role="button"]:focus-visible'), /outline\s*:\s*2px solid/);
+    assert.match(rule(compact.body, '.lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p'), /line-clamp\s*:\s*unset/);
+});
+
+// Every rule in a block as { selector -> merged declarations }
+function declMap(body) {
+    const out = {};
+    const re = /([^{}]+)\{([^{}]*)\}/g;
+    let m;
+    while ((m = re.exec(body))) {
+        const decls = {};
+        for (const d of m[2].split(';')) {
+            const i = d.indexOf(':');
+            if (i > 0) decls[d.slice(0, i).trim()] = d.slice(i + 1).trim().replace(/\s+/g, ' ');
+        }
+        for (const sel of m[1].split(',').map((x) => x.trim().replace(/\s+/g, ' '))) out[sel] = Object.assign(out[sel] || {}, decls);
+    }
+    return out;
+}
+
+test('the compact block and the short block keep the same strip declarations (R1 m5); only the observation size differs', () => {
+    const a = declMap(short.body), b = declMap(compact.body);
+    // short selector -> the compact block's selector for the same thing
+    const toCompact = (sel) => sel === '.lockpicking-item-section' ? '.lockpicking-item-section.lockpicking-compact'
+        : sel.startsWith('.lockpicking-item-section.') ? sel.replace('.lockpicking-item-section.', '.lockpicking-compact.')
+        : '.lockpicking-compact ' + sel;
+    const stripSels = Object.keys(a).filter((s) => /^\.lockpicking-item-(section|image|info)/.test(s));
+    assert.ok(stripSels.length >= 14, 'strip selectors found: ' + stripSels.length);
+    for (const sel of stripSels) {
+        const cs = toCompact(sel);
+        assert.ok(b[cs], 'the compact block has ' + cs);
+        const want = Object.assign({}, a[sel]);
+        const got = Object.assign({}, b[cs]);
+        if (sel === '.lockpicking-item-info p') { want['font-size'] = '16px'; assert.equal(a[sel]['font-size'], '20px', 'the short block observation is 20px'); }
+        for (const k of new Set([...Object.keys(want), ...Object.keys(got)])) {
+            assert.ok(want[k] === got[k], cs + ' ' + k + ': short "' + want[k] + '" vs compact "' + got[k] + '"');
+        }
+    }
+});
+
+test('the compact block holds only the mapped strip selectors plus a named exemption list (R2 m3)', () => {
+    const a = declMap(short.body), b = declMap(compact.body);
+    const toCompact = (sel) => sel === '.lockpicking-item-section' ? '.lockpicking-item-section.lockpicking-compact'
+        : sel.startsWith('.lockpicking-item-section.') ? sel.replace('.lockpicking-item-section.', '.lockpicking-compact.')
+        : '.lockpicking-compact ' + sel;
+    // Compact-only selectors, each with its reason. A new compact-only rule fails here until it is
+    // named, so it cannot drift from the short block unnoticed.
+    const EXEMPT = {
+        '.lockpicking-compact .lockpicking-mode-row': 'the desktop mode row keeps its caption (AC1 decision), the short block hides it'
+    };
+    const mapped = new Set(Object.keys(a).filter((s) => /^\.lockpicking-item-(section|image|info)/.test(s)).map(toCompact));
+    for (const sel of Object.keys(b)) {
+        assert.ok(mapped.has(sel) || EXEMPT[sel], 'compact-only selector without a stated exemption: ' + sel);
+    }
+    for (const sel of Object.keys(EXEMPT)) assert.ok(b[sel], 'the exemption still names a real selector: ' + sel);
+    // every short-block rule that names the strip's parts, however written, is mapped or exempted:
+    // a short-block strip rule the filter above misses would otherwise be silently uncompared
+    const strayShort = Object.keys(a).filter((s) => /obs-|item-/.test(s) && !/^\.lockpicking-item-(section|image|info)/.test(s));
+    assert.ok(strayShort.length === 0, 'short-block strip rules the mapping does not cover: ' + strayShort.join(' | '));
 });
 
 test('the JS marks the box, caps FIT at the crop, watches the box and the key panel stays in the crop', () => {
@@ -246,6 +341,48 @@ test('the observations are a button only while they overflow or are open, named 
         LockpickingMinigamePhaser.prototype._releaseLockWatchers.call(fake);
         p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
         assert.equal(open(), false, 'the click listener is gone');
+    } finally { window.innerHeight = savedH; }
+});
+
+test('on a tall desktop window the observations are a button only while the strip is compact (R1 M3)', () => {
+    const long = 'A heavy cage door with a standard pin tumbler lock. The brass is scratched around the keyhole and a faint smell of oil hangs about it.';
+    const strip = render(long);
+    const fake = lastFake;
+    const p = strip.querySelector('.lockpicking-item-info p');
+    Object.defineProperty(p, 'scrollHeight', { get: () => 72, configurable: true });
+    Object.defineProperty(p, 'clientHeight', { get: () => 48, configurable: true });
+    const savedH = window.innerHeight;
+    try {
+        window.innerHeight = 720;
+        fake._lockCompact = true;
+        LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
+        assert.equal(p.getAttribute('role'), 'button', 'compact on a 720px window: a button');
+        assert.equal(p.tabIndex, 0);
+        assert.equal(strip.querySelector('.lockpicking-obs-more').textContent, '+ MORE');
+        fake._lockCompact = false;
+        LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
+        assert.equal(p.getAttribute('role'), null, 'full strip on a 720px window: plain text');
+    } finally { window.innerHeight = savedH; }
+});
+
+test('the "+ MORE" toggle refits the lock without letting the strip go back to full size (R1 M2)', () => {
+    const long = 'A heavy cage door with a standard pin tumbler lock. The brass is scratched around the keyhole and a faint smell of oil hangs about it.';
+    const strip = render(long);
+    const fake = lastFake;
+    const calls = [];
+    fake._fitLockZoom = (relax) => calls.push(relax);
+    const p = strip.querySelector('.lockpicking-item-info p');
+    Object.defineProperty(p, 'scrollHeight', { get: () => 72, configurable: true });
+    Object.defineProperty(p, 'clientHeight', { get: () => 48, configurable: true });
+    const savedH = window.innerHeight;
+    try {
+        window.innerHeight = 562;
+        fake._lockCompact = true;
+        LockpickingMinigamePhaser.prototype._syncObsButton.call(fake);
+        p.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+        assert.ok(calls.length === 1 && calls[0] === false, 'one sticky refit after the toggle: ' + calls);
+        p.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        assert.ok(calls.length === 2 && calls[1] === false, 'and again on the way back');
     } finally { window.innerHeight = savedH; }
 });
 

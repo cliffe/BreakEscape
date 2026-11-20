@@ -345,6 +345,125 @@
     display: none;
 }
 
+/* A desktop window too short for the full-size strip (561 to about 770px tall with a long
+   observation): the JS adds .lockpicking-compact to the strip when the lock would otherwise need
+   a zoom under LOCK_COMPACT_BELOW (0.75; the room measured, not the window height). It is the
+   same compact row the short windows get in the (max-height: 560px) block at the end of this
+   file (picture at 48px, name on one line, observations on two, the mode switch on the row's
+   line), and it gives the lock about 250px. KEEP THE TWO BLOCKS IN STEP: a rule changed in one
+   belongs in the other (a test compares them; the one allowed difference is the observation
+   text, 16px here against 20px there, because the off-grid GNF ceiling test caps this one).
+   Only the strip: the frame and feedback keep their desktop rules. Scoped to 561px and taller
+   so a desktop lock resized short after opening gets the short-window rules, never these
+   (they are more specific and would win). The mode row keeps its caption here: there is room. */
+@media (min-width: 769px) and (min-height: 561px) {
+    .lockpicking-item-section.lockpicking-compact {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        text-align: left;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 4px calc(52px + var(--minigame-shell-bar, 0px)) 4px 8px;
+    }
+
+    .lockpicking-compact .lockpicking-item-image {
+        width: 48px;
+        height: 48px;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        max-height: none;
+        object-fit: none;
+        object-position: center top;
+        image-rendering: pixelated;
+    }
+
+    .lockpicking-compact .lockpicking-item-info {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        position: relative;
+    }
+
+    .lockpicking-compact .lockpicking-item-info h4 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 24px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lockpicking-compact .lockpicking-item-info p {
+        font-size: 16px;
+        line-height: 24px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+    }
+
+    .lockpicking-compact .lockpicking-item-info p[role="button"] {
+        cursor: pointer;
+    }
+
+    .lockpicking-compact .lockpicking-item-info p[role="button"]:focus-visible {
+        outline: 2px solid #ffcc44;
+        outline-offset: 2px;
+    }
+
+    .lockpicking-compact.lockpicking-obs-overflow .lockpicking-obs-more {
+        display: block;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        padding: 0 0 0 4px;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 8px;
+        line-height: 24px;
+        height: 24px;
+        color: #ffcc44;
+        background: #000;
+        pointer-events: none;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-obs-more {
+        bottom: auto;
+        top: 0;
+        right: 0;
+        line-height: 24px;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info h4 {
+        padding-right: 56px;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p {
+        display: block;
+        -webkit-line-clamp: unset;
+        max-height: 96px;
+        overflow-y: auto;
+        scrollbar-color: auto;
+        scrollbar-width: auto;
+    }
+
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar { width: 12px; }
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-track { background: #10161c; border-radius: 0; }
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-thumb { background: #2d3a44; border: 2px solid #6f8a9c; border-radius: 0; }
+    .lockpicking-compact.lockpicking-info-expanded .lockpicking-item-info p::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+    .lockpicking-compact .lockpicking-mode-row {
+        width: auto;
+        flex: 0 0 auto;
+        margin-top: 0;
+        margin-right: calc(44px + var(--minigame-shell-bar, 0px));
+    }
+}
+
 /* Short windows (a landscape phone: 667x375, 740x360, 844x390; 560px tall or less): the lock
    must be usable without scrolling. The info strip becomes one compact row (picture at 48px,
    name over one line of observations, the mode switch as an icon button) and the lock's frame
@@ -354,7 +473,9 @@
    when the lock booted with the crop and Scale.FIT (the JS adds .lockpicking-fit to the box,
    at any size), so a desktop lock that is resized short after opening keeps its scrolling
    frame. Last in the file so it wins over the phone and short-landscape rules above; taller
-   windows (561px and up) are untouched. */
+   windows (561px and up) are untouched. The .lockpicking-compact block above is a copy of the
+   strip rules in this block for tall desktop windows: keep the two in step (a test compares
+   them). */
 @media (max-height: 560px) {
     .lockpicking-item-section {
         flex: 0 0 auto;

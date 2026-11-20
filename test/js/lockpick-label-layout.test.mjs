@@ -489,8 +489,10 @@ test('the tension wrench container draws above the hook pick, so the hook shaft 
     assert.ok(!/hookGroup\.setDepth/.test(g), 'hook group stays at the default depth 0');
 });
 
-// ---- D219 R5: page elements over the canvas (desktop band, feedback box) are no-go areas ----
-// 1280x720 with a three-line observation: a band over world y 58-116 and the feedback box over y 282-342
+// ---- D219 R5: page elements over the canvas (the feedback box) are no-go areas ----
+// Synthetic covered rects in world pixels: a strip over y 58-116 stands for any page element,
+// the second for the feedback box over y 282-342 (the real band was the sticky feedback box over a
+// scrolling game area, fixed by the zoom; the layout API still takes any rect)
 const covered1280 = [{ x: 0, y: 58, w: 600, h: 58 }, { x: 0, y: 282, w: 600, h: 60 }];
 const covered1024 = [{ x: 0, y: 10, w: 600, h: 50 }, { x: 0, y: 330, w: 600, h: 60 }];
 
@@ -500,6 +502,8 @@ for (const [name, blocked] of [['1280x720', covered1280], ['1024x768', covered10
             clearLayoutMemo();
             const r = layoutLockLabels({ scale: 1, pinXs: pinXsFor(n), view: views.desktop, measure: realMeasure, blocked });
             assert.ok(r.solved && r.fallbacks === 0, `solved cleanly (${n} pins), fallbacks ${r.fallbacks}`);
+            // A blocked-rect solve stays inside the node budget (R7 m5; the grid test's 4 and 5 pin bound)
+            assert.ok(r.nodes > 0 && r.nodes < 30000, `${name} ${n} pins used ${r.nodes} nodes`);
             for (const id of Object.keys(r.labels)) {
                 for (const b of blocked) {
                     assert.ok(!rectsHit(r.labels[id], b), `${id} sits in a covered area (${name}, ${n} pins): ${r.labels[id].x},${r.labels[id].y} ${r.labels[id].w}x${r.labels[id].h}`);
@@ -509,7 +513,7 @@ for (const [name, blocked] of [['1280x720', covered1280], ['1024x768', covered10
     });
 }
 
-test('the covered areas are part of the layout memo key: a different box or band is solved again (D219 R5 M)', () => {
+test('the covered areas are part of the layout memo key: a different box or strip is solved again (D219 R5 M)', () => {
     clearLayoutMemo();
     const args = { scale: 1, pinXs: pinXsFor(4), view: views.desktop, measure: realMeasure };
     const open = layoutLockLabels(args);
@@ -519,6 +523,7 @@ test('the covered areas are part of the layout memo key: a different box or band
     assert.ok(layoutLockLabels({ ...args, blocked: covered1280.map((r) => ({ ...r })) }) === a, 'the same areas are remembered');
     const taller = [covered1280[0], { ...covered1280[1], y: 250, h: 92 }];
     const b = layoutLockLabels({ ...args, blocked: taller });
+    assert.ok(b.nodes > 0 && b.nodes < 30000, `the taller-box solve used ${b.nodes} nodes`);
     assert.ok(b !== a, 'a taller feedback box (more lines) is solved again');
     for (const id of Object.keys(b.labels)) assert.ok(!rectsHit(b.labels[id], taller[1]), `${id} clear of the taller box`);
 });
