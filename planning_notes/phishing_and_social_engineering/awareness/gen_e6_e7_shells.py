@@ -401,7 +401,7 @@ LINES = {
         'Thanks, Chidi.', 'Any time.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
-        {'catch': ("You rang back before releasing that payment, so a voice that sounded like the boss didn't move money out the door.",
+        {'catch': ("You held that payment back, so a voice that sounded like the boss didn't move money out the door.",
                    'The "keep this quiet" is the real tell. It\'s there to buy time before anyone checks.'),
          'miss': ("That call in the boss's voice, asking to release a payment quietly, was the one to stop.",
                   'The payment went, the whole run froze while every recent one was re-checked, and finance lost the afternoon to it.')},

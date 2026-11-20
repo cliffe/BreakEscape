@@ -25,7 +25,7 @@ VAR hub_quiet = false
 - else:
     { episode_e13_ai_assistant_defend_defend_complete:
         { kit_key_caught:
-            Gwen Pritchard: You checked that one on a route you trust instead of taking the assistant's word, so nothing was paid and no list went out.
+            Gwen Pritchard: You didn't take the assistant's word for that one, so nothing was paid and no list went out.
         - else:
             Gwen Pritchard: That was the one to check on a route you trust. On the assistant's word, it's a small payment gone or the customer list shared.
         }
