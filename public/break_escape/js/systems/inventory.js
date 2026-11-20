@@ -607,6 +607,26 @@ export function restoreNoteFromSave(item) {
 }
 
 /**
+ * The text for a note that went into the Notepad: the world pickup's wording, one source
+ * for the toast and for the in-window message a container shows when it reopens.
+ * A missing name falls back to 'Note', as the Notepad title does.
+ */
+export function noteAddedText(name) {
+    return `Added "${name || 'Note'}" to your notes.`;
+}
+
+/**
+ * The toast for a note that went into the Notepad, used by every route that reopens no
+ * window (a note read in the world, a reward note, the last note of a container).
+ * Returns true when the toast was raised, false when gameAlert is missing.
+ */
+export function announceNoteAdded(name) {
+    if (!window.gameAlert) return false;
+    window.gameAlert(noteAddedText(name), 'info', 'Note Added', 3000);
+    return true;
+}
+
+/**
  * Put a notes item that arrived as a reward (no notes minigame) into the notepad,
  * apply its onRead/onPickup setVariable and emit item_picked_up. Mirrors
  * NPCGameBridge._receiveNote; window.addNote de-duplicates by title and text.
@@ -616,9 +636,7 @@ function receiveRewardNote(item) {
     if (text && window.addNote) {
         const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;
         const added = window.addNote(item.name || 'Note', body, !!item.important);
-        if (added && window.gameAlert) {
-            window.gameAlert(`Added "${item.name}" to your notes.`, 'info', 'Note Added', 3000);
-        }
+        if (added) announceNoteAdded(item.name);
     }
 
     const readAction = item.onRead || item.onPickup;
@@ -1544,6 +1562,8 @@ window.initializeInventory = initializeInventory;
 window.processInitialInventoryItems = processInitialInventoryItems;
 window.addToInventory = addToInventory;
 window.announcePickup = announcePickup;
+window.announceNoteAdded = announceNoteAdded;
+window.noteAddedText = noteAddedText;
 window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;

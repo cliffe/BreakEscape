@@ -2027,7 +2027,7 @@ export function handleObjectInteraction(sprite) {
         if (data.addToNotes !== false && !filedInHolder && window.addNote) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
             if (addedNote) {
-                window.gameAlert(`Added "${data.name}" to your notes.`, 'info', 'Note Added', 3000);
+                window.announceNoteAdded?.(data.name);
             }
         }
     } else if (data.readable && resolvedText) {
@@ -2085,7 +2085,7 @@ export function handleObjectInteraction(sprite) {
         if (resolvedText.trim().length > 0 && data.type !== 'notepad' && !filedInHolder) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
             if (addedNote) {
-                window.gameAlert(`Added "${data.name}" to your notes.`, 'info', 'Note Added', 3000);
+                window.announceNoteAdded?.(data.name);
             }
         }
     }
