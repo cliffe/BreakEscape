@@ -296,7 +296,7 @@ Agent HaX: You used Maya as your primary source. Good call. She knew exactly wha
 
 Agent HaX: Kevin Park was removed from the picture during the operation.
 
-Agent HaX: I want to be clear about something: we ran Kevin's background after the fact. Nothing connects him to ENTROPY. He was the IT manager, doing his job, flagging concerns, following procedure.
+Agent HaX: We ran Kevin's background after the fact. Nothing connects him to ENTROPY. He was the IT manager, doing his job, flagging concerns, following procedure.
 
 Agent HaX: You had the authority to make that call. I'm noting it as an operational decision, not a failure.
 
@@ -318,7 +318,7 @@ Agent HaX: You had the authority. The operation succeeded. I'm logging it as an 
 === both_removed ===
 Agent HaX: Both Kevin Park and Maya Chen were removed from the picture during the operation.
 
-Agent HaX: I want to be direct with you: neither of them was ENTROPY.
+Agent HaX: Neither of them was ENTROPY.
 
 Agent HaX: Kevin was an IT manager flagging concerns. Maya was our own informant, the one who brought us the lead on Operation Shatter in the first place.
 
@@ -665,7 +665,7 @@ Agent HaX: His defence team is spinning the excessive force angle. You have fiel
     Agent HaX: Forensics is building the evidence case. The physical confrontation adds complexity to prosecution, but he's not walking free.
 }
 
-Agent HaX: Different approach than a quiet arrest, but the result's the same. He's neutralised.
+Agent HaX: Different approach than a quiet arrest, but the result's the same.
 
 + [Mission complete. That's what matters.]
     {player_launched_attack:
@@ -751,8 +751,6 @@ Agent HaX: Fanatics don't turn, Agent. They'd rather go to prison as martyrs.
 
 === recruit_outcome ===
 Agent HaX: He's in custody now. Same outcome as arrest.
-
-Agent HaX: But we learned something important: ENTROPY attracts fanatics. They won't flip for deals.
 
 Agent HaX: We'll need to find other ways to get inside intelligence.
 
@@ -922,7 +920,7 @@ Agent HaX: Get some rest. Next briefing is in 48 hours.
 {player_launched_attack:
     Agent HaX: We learn from this. That's what SAFETYNET is for.
 - else:
-    Agent HaX: You did more than complete a mission today. You saved lives. Real people who will never know your name. That's what SAFETYNET is for.
+    Agent HaX: The people you saved will never know your name. That's what SAFETYNET is for.
 }
 
 

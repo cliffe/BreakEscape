@@ -497,7 +497,7 @@ Dr. Sarah Kim: Somebody in this building understood that before you did, and bef
 // ===========================================
 
 === accuse_kim ===
-Dr. Sarah Kim: I rang SAFETYNET at one this morning. I brought you into this building. I signed your badge. #delivery: very still
+Dr. Sarah Kim: I called you in at one this morning. I signed your badge. #delivery: very still
 
 Dr. Sarah Kim: If I were working with these people, I'd be the least competent traitor in the history of the profession.
 

@@ -618,7 +618,7 @@ Done.
         - casualties_occurred:
             Robert Vance: You kept it to one bank. Without you it was the whole hall.
         - else:
-            Robert Vance: Nobody in that hall died, and two hundred and forty thousand never lost the lights.
+            Robert Vance: Nobody in that hall died, and the grid never dropped.
         }
     }
     {vance_trust_level >= 50 and vance_trust_level < 80:

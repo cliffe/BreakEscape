@@ -296,7 +296,7 @@ Patricia Morgan: Hannah Leigh and Sanjay Rao. And two juniors, Ben Ashworth and 
 
 Patricia Morgan: The Home Office readiness review is in three weeks. The CEO, Jennifer Zhao, wants a clean file for it.
 
-Patricia Morgan: So: no press, no prosecution if it can be avoided, and no security incident on the record.
+Patricia Morgan: So no press, no prosecution if it can be avoided, and no security incident on the record.
 
 {patricia_influence >= 6:
     ~ patricia_influence += 1
@@ -338,7 +338,7 @@ Patricia Morgan: What do you need?
     #speaker:narrator
     Narrator: She hands you three folders from the cabinet: vetting aftercare files, one each on Ruth Halloran, David Torres and Ben Ashworth.
     #speaker:patricia_morgan
-    Patricia Morgan: Ruth and David are the two I'd have pulled anyway. Ben's is the third I'd flag: money trouble and the overnight rota. That's as far as vetting lets me go.
+    Patricia Morgan: Ruth and David are the two I'd have pulled anyway. Ben's is the third I'd flag. Money trouble and the overnight rota. That's as far as vetting lets me go.
     Patricia Morgan: Read them properly. Nobody's file is as tidy as it looks. Then come back with a name and a reason.
     -> hub
 
@@ -358,7 +358,7 @@ Patricia Morgan: What do you need?
 // Puzzle R1 (P6): only once Owen has actually refused.
 + {(server_door_seen or it_notice_read) and owen_refused_password and not server_password_obtained and not patricia_authorised_server} [The server room wants a password Owen won't give me.]
     ~ patricia_authorised_server = true
-    Patricia Morgan: I sign the access log; IT holds the password. I'll message Owen and tell him it's on my authority.
+    Patricia Morgan: I sign the access log. IT holds the password. I'll message Owen and tell him it's on my authority.
     -> hub
 
 + [Actually, it can wait.]

@@ -41,8 +41,6 @@ Director Magnus Netherton: HaX runs you, Nightshade the technical side. Listen t
 
 Agent 0x47 'Nightshade': Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.
 
-Director Magnus Netherton: HaX. The floor's yours.
-
 Agent HaX: Right. Zero Day Syndicate. You heard of them?
 * [Remind me what their deal is.]
     -> briefing_main
@@ -71,12 +69,12 @@ Agent HaX: Right. Zero Day Syndicate. You heard of them?
 Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.
 Agent HaX: They don't run the attacks. They arm the cells that do.
 * [Which cells buy from them?]
-    Agent HaX: Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.
+    Agent HaX: Ransomware Incorporated, Critical Mass, others we haven't confirmed. Zero Day is their common supplier.
     ~ handler_trust = handler_trust + 5
     # influence_increased
     -> st_catherines_connection
 * [What are they dealing in?]
-    Agent HaX: Healthcare systems. Grid control. The things that hurt people when they fail.
+    Agent HaX: Healthcare systems, grid control, the things that hurt people when they fail.
     -> st_catherines_connection
 * [This sounds more serious than the usual cell.]
     Agent HaX: It is. They're the reason the others punch above their weight.
@@ -194,7 +192,7 @@ Agent HaX: On our side of the record she runs the front and answers to 0day and 
 #speaker:agent_0x99
 // Pass 5 (P2-16): asking about cloning opens the receptionist's clone choice.
 #set_global:cloner_explained:true
-Agent HaX: Two stages. Reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.
+Agent HaX: Two stages, reception first. The receptionist's badge opens the conference area. Weak defaults, so it cracks in seconds. Talk to her and lean in by her lanyard.
 Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so it's Darkside -- about half a minute.
 Agent HaX: Your moment's at the whiteboard. Stand close and keep her talking while it reads.
 Agent 0x47 'Nightshade': Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.
@@ -271,7 +269,7 @@ Agent HaX: Your call.
 
 === last_advice ===
 #speaker:agent_0x99
-Agent HaX: Sterling will test you. Ethics questions dressed up as philosophy. Stay the curious recruit; don't argue her down.
+Agent HaX: Sterling will test you. Ethics questions dressed up as philosophy. Stay the curious recruit. Don't argue her down.
 Agent HaX: And there's a consultant, Danny Foster. He did the hospital recon. Complicit, or lied to -- I can't tell you which. If you find him, your call.
 * [I'll decide when I've got the facts.]
     ~ handler_trust = handler_trust + 5

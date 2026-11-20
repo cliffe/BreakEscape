@@ -482,9 +482,8 @@ Or watch it. We map every cell that draws on it, and the money reaches them.
 
 === handler_recommendation ===
 // lint: call-knot
-The call's yours. Freeze it, and ENTROPY knows its bank is burned.
-Watch it, and the balances pay for what's on that page, but we get the map.
-Watching still works if we detain him. The payout's pre-signed; we keep it quiet until it's gone.
+The call's yours.
+Watching still works if we detain him. The payout's pre-signed. We keep it quiet until it's gone.
 ~ reacted_fund = true
 #exit_conversation
 -> DONE

@@ -433,8 +433,7 @@ Player: Third: password security. What's your assessment of the biggest vulnerab
     ~ audit_wrong_answers += 1
     ~ influence -= 1
     # influence_decreased
-    Kevin Park: We don't have MFA yet: budget constraints.
-    Kevin Park: So I'm stuck with just passwords for now. Wish we could implement MFA.
+    Kevin Park: We don't have MFA yet. Budget constraints.
     -> audit_question_4
 
 // ================================================
@@ -583,7 +582,7 @@ Kevin Park: Keep investigating. And please, if you find anything concrete, tell 
 ~ met_kevin = true
 ~ framing_evidence_seen = false
 
-Kevin Park: You're back. Something's wrong: I can see it on your face. What did you find?
+Kevin Park: You're back. Something's wrong. I can see it on your face. What did you find?
 
 Kevin Park: Someone used my credentials remotely. That's exactly the kind of thing I've been reporting.
 
@@ -646,7 +645,7 @@ Kevin Park: So what do I do? Do I just go back to my desk and pretend everything
 
 === wrongly_accused_warning ===
 #set_variable:kevin_accused=true
-Kevin Park: The report has a "HEADER MISMATCH DETECTED" flag. That's not me questioning it: that's the mail server's own forensic system flagging a forgery.
+Kevin Park: The report has a "HEADER MISMATCH DETECTED" flag. That's not me questioning it. That's the mail server's own forensic system flagging a forgery.
 
 Kevin Park: And the anomaly report itself says my workstation was active at the same time the server room was being accessed.
 

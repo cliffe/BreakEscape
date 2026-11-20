@@ -299,7 +299,7 @@ Agent HaX: Let's go through it.
 + {not halloran_accused} [How close was it?]
     {
     - torres_called_in:
-        Agent HaX: One per cent. The breaker did what you couldn't.
+        Agent HaX: The breaker did what you couldn't.
     - named_before_portal:
         Agent HaX: Nine per cent to spare. You bought that yourself.
     - else:
@@ -326,7 +326,7 @@ Agent HaX: Let's go through it.
 // R2 (B1, B2), R3-1: only when it came from reading the log, first time
 // (a reason-menu answer before the naming, not the post-naming disclosure).
 {named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused and not door_log_hinted:
-    Agent HaX: You had him before the server did. The research portal only showed a badge; you'd already put his name to it.
+    Agent HaX: You had him before the server did. The research portal only showed a badge. You'd already put his name to it.
 }
 
 // PASS 4 (whodunnit): how the player read the badge log.
@@ -494,7 +494,7 @@ Agent HaX: Twenty-three active placements. He's giving us the companies, and som
     Agent HaX: {recruiter_deal_offered: He's met some of the Recruiter's other candidates. Not all forty-seven, but it's a start.|He's met some of the Recruiter's other candidates. It's a start.}
 }
 
-Agent HaX: And how TalentStack actually works: the front, the payments, the approach.
+Agent HaX: And how TalentStack actually works. The front, the payments, the approach.
 
 -> recruiter_reckoning
 
@@ -589,7 +589,7 @@ Agent HaX: And everything he knew about the Initiative died with him. We're mapp
 
 Agent HaX: He woke up in hospital under police guard, angry, and he hasn't said a word to anyone since. What happens to him now is up to them.
 
-Agent HaX: Elena's treatment is unfunded. He never talked to us, so there's no deal to hang it on.
+Agent HaX: Elena's treatment is unfunded. There's no deal to hang it on.
 
 // Scenario design R1 (m2): only true if he turned on the player from the fight line.
 + {torres_fight_offered} [He chose to fight. I gave him the chance to step away.]

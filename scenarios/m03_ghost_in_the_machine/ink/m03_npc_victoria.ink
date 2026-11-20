@@ -623,7 +623,7 @@ Victoria Sterling: That's enough philosophy for one afternoon. The programme sta
 === meeting_end ===
 #speaker:victoria_sterling
 // The guard joke holds: she never learnt his name (m03_npc_terry_mott.ink ask_victoria).
-Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
+Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing. The guard gets territorial.
 { victoria_trusts_player:
     Victoria Sterling: Off the record, you didn't flinch once. People who don't flinch do well here.
 }
