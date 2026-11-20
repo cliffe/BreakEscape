@@ -1732,7 +1732,34 @@ export class PasswordMinigame extends MinigameScene {
         const ways = this.gameContainer.querySelector('#signin-ways');
         if (ways) this.addEventListener(ways, 'scroll', () => this.updateSignInWaysMore());
         this.addEventListener(window, 'resize', () => this.fitSignInWays());
+        this.bindKeyboardReveal(this.passwordField);
         this.renderSignInForm();
+    }
+
+    /**
+     * On a touch device the on-screen keyboard covers the lower half of the screen, and with it
+     * the password field's error line and the Sign in button. Focus brings the field to the
+     * middle of the visible area, and again when the visual viewport resizes (the keyboard
+     * opening or closing) while the field still has focus. The scrolling box is the PC monitor's
+     * screen (or the old frame), not the page. Not bound on a fine-pointer desktop, where there
+     * is no keyboard and the scroll would only jump the layout. Both listeners go through
+     * this.addEventListener, so cleanup() removes them.
+     */
+    bindKeyboardReveal(field) {
+        if (!field || typeof window === 'undefined') return;
+        let touch = false;
+        try { touch = !!(window.matchMedia?.('(pointer: coarse)')?.matches || window.matchMedia?.('(hover: none)')?.matches); } catch (e) { touch = false; }
+        if (!touch) return;
+        const reveal = () => {
+            try { field.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) { /* no scrollIntoView: leave the layout as it is */ }
+        };
+        this.addEventListener(field, 'focus', reveal);
+        const vv = window.visualViewport;
+        if (vv && typeof vv.addEventListener === 'function') {
+            this.addEventListener(vv, 'resize', () => {
+                if (document.activeElement === field) reveal();
+            });
+        }
     }
 
     /**
