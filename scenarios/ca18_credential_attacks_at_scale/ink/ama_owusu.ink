@@ -16,6 +16,10 @@
 
 VAR guess_e18_landed = false
 VAR episode_e18_credential_attacks_at_scale_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca18_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -25,6 +29,19 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca18_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Ama Owusu: You read the page before you signed in, so the fake alert got nothing and the spraying had nothing to open.
+            - else:
+                Ama Owusu: You stopped the one that mattered, the lookalike sign-in page, before a reused password turned into a live account.
+            }
+        - else:
+            Ama Owusu: The alert looked like us and you were trying to protect your account, but the password went to their page, and that opens a lot.
+        }
+        Ama Owusu: A unique password per account in a manager, plus MFA, is the one habit that beats both spraying and stuffing.
+        ~ kit_ca18_host_said = true
+    - else:
     { episode_e18_credential_attacks_at_scale_defend_complete:
         Ama Owusu: That's both sides done. What breaks the spray is a different password for every account, none off the website, kept in a manager.
         Ama Owusu: On our side we lock accounts after a few bad tries, put MFA on everything, block the obvious words and watch the breach lists.
@@ -41,6 +58,7 @@ VAR hub_quiet = false
             Ama Owusu: I'll show you on a safe copy, then you take your own seat and tell the real alerts from the fakes.
             Ama Owusu: Nothing you touch here is a real password.
         }
+    }
     }
 }
 + [Thanks, Ama.]
