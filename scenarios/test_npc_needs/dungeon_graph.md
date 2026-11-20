@@ -4,7 +4,7 @@
 
 TEST: NPC Needs
 
-A throwaway engine test for the generic NPC needs system. Nothing here is a mission. One NPC leaves her desk for a drink and returns, one collects the Sample Binder when you drop it and takes it to his desk, and one has no needs at all.
+A throwaway engine test for the generic NPC needs system. Nothing here is a mission. One NPC leaves her desk for a drink and returns, one collects the Sample Binder when you drop it within 4 tiles of him (noticeRadius; where you start is near enough) and takes it to his desk, one has no needs at all, and one (coordinate home) starts thirsty, so on every load his need is urgent before the world path grid is built: he should fetch a drink within seconds, never after a 4 minute park. Drop it in the far bottom-left corner and he leaves it there; pick it up and drop it nearer him and he fetches it.
 
 ## Scenario Statistics
 
@@ -215,11 +215,13 @@ flowchart TD
   rc_costume_b_3{"Costume Rack B"}
   rc_costume_off_4{"Costume Bin"}
   rc_coffee_machine_5{"Coffee Station"}
-  rc_finder_pc_6{"Records Desk PC"}
-  rc_npc_clerk_7("Clerk")
-  rc_npc_finder_8("Finder")
-  rc_npc_bystander_9("Bystander")
-  rc_store_coffee_10{"Store Coffee Station"}
+  rc_water_cooler_6{"Water Cooler"}
+  rc_finder_pc_7{"Records Desk PC"}
+  rc_npc_clerk_8("Clerk")
+  rc_npc_finder_9("Finder")
+  rc_npc_drinker_10("Drinker")
+  rc_npc_bystander_11("Bystander")
+  rc_store_coffee_12{"Store Coffee Station"}
 
   test_room --> store_room
   test_room --> rc_clerk_pc_1
@@ -227,15 +229,17 @@ flowchart TD
   test_room --> rc_costume_b_3
   test_room --> rc_costume_off_4
   test_room --> rc_coffee_machine_5
-  test_room --> rc_finder_pc_6
-  test_room --> rc_npc_clerk_7
-  test_room --> rc_npc_finder_8
-  test_room --> rc_npc_bystander_9
-  store_room --> rc_store_coffee_10
+  test_room --> rc_water_cooler_6
+  test_room --> rc_finder_pc_7
+  test_room --> rc_npc_clerk_8
+  test_room --> rc_npc_finder_9
+  test_room --> rc_npc_drinker_10
+  test_room --> rc_npc_bystander_11
+  store_room --> rc_store_coffee_12
 
   class test_room room
   class store_room lock
-  class rc_clerk_pc_1,rc_costume_a_2,rc_costume_b_3,rc_costume_off_4,rc_coffee_machine_5,rc_finder_pc_6,rc_store_coffee_10 item
-  class rc_npc_clerk_7,rc_npc_finder_8,rc_npc_bystander_9 npc
+  class rc_clerk_pc_1,rc_costume_a_2,rc_costume_b_3,rc_costume_off_4,rc_coffee_machine_5,rc_water_cooler_6,rc_finder_pc_7,rc_store_coffee_12 item
+  class rc_npc_clerk_8,rc_npc_finder_9,rc_npc_drinker_10,rc_npc_bystander_11 npc
   class node_start start
 ```
