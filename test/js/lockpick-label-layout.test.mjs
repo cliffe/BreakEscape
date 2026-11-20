@@ -292,9 +292,10 @@ test('Phaser glue: layout re-runs after the fit switch sets the camera scroll, a
 // ---- The whole phone range of canvas scales (0.40 to 1.0) with real VT323 metrics (0.4em advance, 1em line) ----
 const hits = (seg, r) => segmentHitsRect(seg, r);
 
-// Every leg of every leader, as 2px-wide rectangles padded by 1px: two leaders closer than this read as one line
+// Every leg of every leader as a box padded by 3px: two leaders whose boxes meet are less than 6px
+// apart (the solver keeps leaders 6px apart so they never read as one line)
 function legRects(l) {
-    return leaderLegs(l).flatMap((leg) => leaderRects(leg)).map((r) => ({ x: r.x - 1, y: r.y - 1, w: r.w + 2, h: r.h + 2 }));
+    return leaderLegs(l).map((g) => ({ x: Math.min(g.x1, g.x2) - 3, y: Math.min(g.y1, g.y2) - 3, w: Math.abs(g.x2 - g.x1) + 6, h: Math.abs(g.y2 - g.y1) + 6 }));
 }
 const rectsHit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
@@ -368,6 +369,19 @@ test('across scales 0.24 to 1.0, 1 to 8 pins, both views: clean at 0.40 and abov
         }
     }
     assert.ok(cases === 77 * 8 * 2, 'grid size ' + cases);
+});
+
+test('leaders stay 6px apart, even with pins placed so that two would line up (D219 R4 m1)', () => {
+    // Pins at 60, 105, 150, 195 (not the usual spread), 0.5: without the spacing rule two leaders land side by side
+    for (const [pinXs, scale] of [[[60, 105, 150, 195], 0.5], [[60, 105], 0.5]]) {
+        const r = layoutLockLabels({ scale, pinXs, view: views.landscape, measure: realMeasure });
+        const ids = Object.keys(r.labels).filter((id) => r.labels[id].leader);
+        for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+            const close = legRects(r.labels[ids[i]].leader).some((p) => legRects(r.labels[ids[j]].leader).some((q) => rectsHit(p, q)));
+            assert.ok(!close, `${ids[i]} and ${ids[j]} leaders run together (${pinXs.length} pins)`);
+        }
+        assert.ok(r.solved && r.fallbacks === 0, 'solved cleanly');
+    }
 });
 
 test('layout time: a solve stays well under a second at every scale (guard, generous for CI)', () => {
