@@ -39,7 +39,8 @@
 /* CRT scanlines overlay.
    Recorded exception (D220, 2026-11-20): the credits screen keeps its CRT effects, like the boot
    screen (title-screen.css): these scanlines, the vignette below and the glitch text-shadow. The
-   no-gradient and no-blur sweeps leave them alone; no other full-screen overlay takes them. */
+   no-gradient and no-blur sweeps leave them alone; no other full-screen overlay takes them. The music
+   widget's "Visualiser" button opens this same credits overlay mid-mission, so it is covered too. */
 #bond-vis-overlay::before {
   content: '';
   position: absolute;
