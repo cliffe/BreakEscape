@@ -317,6 +317,24 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
 def ink_source(header, host, done, lines):
     before, after, choice, reply = lines
     n = host['displayName']
+    # `after` is normally one line. When it is a {'catch': (c1, c2), 'miss': (m1, m2)} dict
+    # (a twin with a host line, mirroring the ca01 and ca12 twins), the done-branch splits on
+    # kit_key_caught into a two-clip catch and a two-clip miss. kit_key_caught comes from the
+    # defend set's keyMessage (office_kit), so the ink declares it and only reads it.
+    if isinstance(after, dict):
+        extra_var = 'VAR kit_key_caught = false\n'
+        after_block = (
+            '{ kit_key_caught:\n'
+            f"            {n}: {after['catch'][0]}\n"
+            f"            {n}: {after['catch'][1]}\n"
+            '        - else:\n'
+            f"            {n}: {after['miss'][0]}\n"
+            f"            {n}: {after['miss'][1]}\n"
+            '        }'
+        )
+    else:
+        extra_var = ''
+        after_block = f'{n}: {after}'
     return f"""// ================================================
 // {header}: {n} (person, Training Room)
 // {host['about']}
@@ -328,7 +346,7 @@ def ink_source(header, host, done, lines):
 // ================================================
 
 VAR {done} = false
-VAR hub_quiet = false
+{extra_var}VAR hub_quiet = false
 
 === start ===
 -> hub
@@ -338,7 +356,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     {{ {done}:
-        {n}: {after}
+        {after_block}
     - else:
         {n}: {before}
     }}
