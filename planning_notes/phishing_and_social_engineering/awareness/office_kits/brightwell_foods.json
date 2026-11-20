@@ -38,7 +38,7 @@
       "needsHome": { "room": "training_room", "x": 3, "y": 3, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } },
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
       "chatterLines": ["Anyone for a brew?", "Tea round shortly?", "Kettle's just boiled."]
     },
     "agnieszka_duda": {
@@ -49,7 +49,7 @@
       "needsHome": { "room": "training_room", "x": 6, "y": 3, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
       "chatterLines": ["Long week.", "Any biscuits left?", "Just need a top-up."]
     },
     "graham_whitfield": {
