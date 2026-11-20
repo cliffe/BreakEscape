@@ -497,16 +497,31 @@
         margin-top: 2px;
     }
 
-    .cb-post-btn {
-        min-height: 40px;
+    /* POST keeps its base 44px height (touch rule). The [AUTO]/[MANUAL] badge shares the
+       timestamp row instead of taking its own, so real entries are no taller than sample ones */
+    .cb-entry-main,
+    .cb-entry-badge {
+        grid-column: 2;
+        grid-row: 1;
     }
 
+    .cb-entry-badge {
+        align-self: start;
+        justify-self: end;
+        padding: 0 4px;
+        line-height: 12px;
+    }
+
+    /* A badge never shrinks below its text; when label and badge do not fit on one line the
+       badge drops under the label instead of running over the row border */
     .cb-status-row {
         min-height: 0;
+        flex-wrap: wrap;
+        gap: 4px;
     }
 
     .cb-status-badge {
-        min-width: 0;
+        min-width: auto;
     }
 }
 

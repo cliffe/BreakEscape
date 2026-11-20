@@ -26,6 +26,14 @@ function rule(text, sel) {
     return m ? m[1] : '';
 }
 
+// Last declaration of `prop` across every rule in `text` whose selector list names `sel` (last rule wins)
+function lastDecl(text, sel, prop) {
+    const vals = [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter((r) => r[1].split(',').some((x) => x.trim() === sel))
+        .flatMap((r) => [...r[2].matchAll(new RegExp('(?:^|[;\\s])' + prop + '\\s*:\\s*([^;}]+)', 'g'))].map((d) => d[1].trim()));
+    return vals.length ? vals[vals.length - 1] : null;
+}
+
 for (const q of ['@media (max-height: 520px)', '@media (max-width: 600px)']) {
     test('board body is the only scroller under ' + q, () => {
         const b = block(q);
@@ -106,30 +114,55 @@ test('m4: phone landscape keeps input and POST on one row', () => {
 // tile; the combined block now puts the timeline beside status so the list takes the body's height.
 test('R2 m2 (sweep 6): phone landscape has no 25dvh cap; the list fills a side column', () => {
     const b = block('@media (max-width: 600px) and (max-height: 520px)');
-    const list = rule(b, '.cb-timeline-list');
     assert.ok(!/25d?vh/.test(b), 'no 25vh or 25dvh cap left in the combined block');
-    assert.ok(/max-height:\s*none/.test(list), 'the 45dvh cap is lifted');
-    assert.ok(/flex:\s*1 1 auto/.test(list), 'the list takes the column height');
+    assert.ok(lastDecl(b, '.cb-timeline-list', 'max-height') === 'none', 'the 45dvh cap is lifted (last rule wins)');
+    assert.ok(lastDecl(b, '.cb-timeline-list', 'flex') === '1 1 auto', 'the list takes the column height');
 });
 
 test('sweep 6: phone landscape puts timeline and status side by side without a body scroll', () => {
     const b = block('@media (max-width: 600px) and (max-height: 520px)');
-    const body = rule(b, '.cb-body');
-    assert.ok(/grid-template-columns:\s*\d+fr \d+fr/.test(body), 'two columns, not the stacked 1fr');
-    assert.ok(/grid-auto-rows:\s*minmax\(0, 1fr\)/.test(body), 'the row is the body height, not max-content');
-    assert.ok(/overflow-y:\s*hidden/.test(body), 'the body does not scroll');
-    assert.ok(/border-right:\s*2px solid/.test(rule(b, '.cb-timeline-col')), 'divider is on the right again');
-    assert.ok(/border-bottom:\s*0/.test(rule(b, '.cb-timeline-col')), 'no stacked divider');
+    assert.ok(lastDecl(b, '.cb-body', 'overflow-y') === 'hidden', 'the body does not scroll (last rule wins)');
+    assert.ok(lastDecl(b, '.cb-body', 'grid-auto-rows') === 'minmax(0, 1fr)', 'the row is the body height, not max-content');
+    const cols = /^(\d+)fr (\d+)fr$/.exec(lastDecl(b, '.cb-body', 'grid-template-columns') || '');
+    assert.ok(cols, 'two fr columns, not the stacked 1fr');
+    const share = Number(cols[1]) / (Number(cols[1]) + Number(cols[2]));
+    assert.ok(share >= 0.5 && share <= 0.65, 'timeline share between 50 and 65 percent, got ' + share);
+    assert.ok(/^2px solid/.test(lastDecl(b, '.cb-timeline-col', 'border-right') || ''), 'divider is on the right again');
+    assert.ok(lastDecl(b, '.cb-timeline-col', 'border-bottom') === '0', 'no stacked divider');
 });
 
-test('sweep 6: phone landscape compacts tiles and the entry bar so two tiles fit', () => {
+test('sweep 6: the status list keeps its own scroll (the body no longer scrolls)', () => {
+    const st = rule(css.replace(/@media[^{]*\{[\s\S]*$/, ''), '.cb-status-list');
+    assert.ok(/overflow-y:\s*auto/.test(st), 'status list scrolls');
+    assert.ok(/min-height:\s*0/.test(st), 'status list can shrink');
+    assert.ok(/flex:\s*1 1 auto/.test(st), 'status list fills the column');
+});
+
+test('sweep 6: phone landscape compacts tiles and the entry bar so two real tiles fit', () => {
     const b = block('@media (max-width: 600px) and (max-height: 520px)');
-    assert.ok(/font-size:\s*16px/.test(rule(b, '.cb-entry-timestamp')), 'timestamp on the GNF 16 floor');
-    assert.ok(/line-height:\s*16px/.test(rule(b, '.cb-entry-timestamp')), 'whole-pixel line');
-    assert.ok(/padding:\s*4px 6px/.test(rule(b, '.cb-entry-tile')), 'tile padding trimmed');
-    assert.ok(/min-height:\s*0/.test(rule(b, '.cb-entry-bar')), 'entry bar sheds its 50px floor');
-    assert.ok(/min-height:\s*40px/.test(rule(b, '.cb-post-btn')), 'POST stays at least 40px tall');
-    assert.ok(/min-width:\s*0/.test(rule(b, '.cb-status-badge')), 'status badge can narrow in the side column');
+    assert.ok(lastDecl(b, '.cb-entry-timestamp', 'font-size') === '16px', 'timestamp on the GNF 16 floor');
+    assert.ok(lastDecl(b, '.cb-entry-timestamp', 'line-height') === '16px', 'whole-pixel line');
+    assert.ok(lastDecl(b, '.cb-entry-tile', 'padding') === '4px 6px', 'tile padding trimmed');
+    assert.ok(lastDecl(b, '.cb-entry-bar', 'min-height') === '0', 'entry bar sheds its 50px floor');
+    // [AUTO] badge shares the timestamp row, so a real entry is no taller than a sample one
+    assert.ok(lastDecl(b, '.cb-entry-badge', 'grid-column') === '2' && lastDecl(b, '.cb-entry-badge', 'grid-row') === '1', 'badge on the timestamp row');
+    assert.ok(lastDecl(b, '.cb-entry-main', 'grid-row') === '1', 'text column on the same row as the badge');
+    assert.ok(/^1[0-2]px$/.test(lastDecl(b, '.cb-entry-badge', 'line-height') || ''), 'badge no taller than the 16px timestamp line');
+});
+
+test('sweep 6 R1 m1: POST keeps 44px in the combined block', () => {
+    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    const h = lastDecl(b, '.cb-post-btn', 'min-height');
+    assert.ok(h === null, 'no override that lowers POST in the combined block');
+    assert.ok(/\.cb-post-btn\s*\{[^}]*min-height:\s*44px/.test(css), 'base POST is 44px');
+});
+
+test('sweep 6 R1 M2: status badges never shrink below their text; rows wrap', () => {
+    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    const mw = lastDecl(b, '.cb-status-badge', 'min-width');
+    assert.ok(mw !== '0' && mw !== '0px', 'no min-width 0 on the badge in the combined block, got ' + mw);
+    assert.ok(mw === 'auto', 'badge min-width auto (content width), got ' + mw);
+    assert.ok(lastDecl(b, '.cb-status-row', 'flex-wrap') === 'wrap', 'status row wraps');
 });
 
 test('R2 m3: the 45dvh cap keeps its vh fallback just before it', () => {
