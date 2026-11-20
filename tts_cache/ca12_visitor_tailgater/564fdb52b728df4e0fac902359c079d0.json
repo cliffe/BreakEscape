@@ -1,0 +1,13 @@
+{
+  "key": "564fdb52b728df4e0fac902359c079d0",
+  "npc": "lorna_easton",
+  "text": "Camila was waiting at the studio door and nobody had checked she was expected.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:21:04Z"
+}

@@ -10,11 +10,20 @@
 // the goodbye parks there quietly, and a re-talk re-enters and says the line that fits.
 // The lobby pretext and the door-opening are Delphine's ink (delphine_reception.ink).
 // Placeholder sprite (female_office_worker_v2) until the PixelLab reset.
+// Living-office build (panel form): the host recap fires once the look-up beat is over (or was skipped). H1a, the door recap H1b (only if she looked up), then H2.
 // ================================================
 
 VAR episode_e12_visitor_tailgater_defend_complete = false
 VAR pretext_merrin_front_desk_outcome = ""
 VAR delphine_buzzed_through = false
+VAR kit_defend_done = false
+VAR kit_key_caught = false
+VAR kit_ca12_host_said = false
+VAR kit_ca12_out = false
+VAR kit_ca12_done = false
+VAR kit_ca12_door_choice = ""
+VAR kit_ca12_screen_choice = ""
+VAR kit_ca12_visitor_go = false
 VAR hub_quiet = false
 
 === start ===
@@ -24,6 +33,14 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && (kit_ca12_done || not kit_ca12_out) && not kit_ca12_host_said:
+        {kit_key_caught: Lorna Easton: You kept the visitor with no badge at the gate.}
+        { kit_ca12_out:
+            Lorna Easton: {kit_ca12_door_choice == "reception": You sent Camila to Delphine's desk to sign in.|{kit_ca12_door_choice == "letin": Camila got in without signing in. {kit_ca12_screen_choice == "mention": The screen was locked by then, at least.|The screen was still open, so she could have read anything on it.}|{kit_ca12_door_choice == "silent": Camila stood at the door a while with a clear view of the studio, then went off to reception herself.|{not kit_ca12_visitor_go: Nobody turned up while you were looking up.|Camila was waiting at the studio door and nobody had checked she was expected.}}}}
+        }
+        Lorna Easton: Anyone you don't know on the floor goes back to the desk. And lock your screen whenever you step away.
+        ~ kit_ca12_host_said = true
+    - else:
     { episode_e12_visitor_tailgater_defend_complete:
         Lorna Easton: That's the desk done. A front of house that signs people in and walks them up stops nearly all of this.
         Lorna Easton: Nobody's in trouble for slowing a pushy visitor down.
@@ -39,6 +56,7 @@ VAR hub_quiet = false
             Lorna Easton: Welcome to the Merrin & Sallow exercise. Jo's set the red-team scope; I'll see you right.
             Lorna Easton: Try the front desk first in the hi-vis, then take the reception seat yourself. Nothing here leaves the game.
         }
+    }
     }
 }
 + [Thanks, Lorna.]
