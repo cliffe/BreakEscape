@@ -53,6 +53,9 @@ export async function watchVoice(page, mark) {
 
 /** Close a stray minigame / dismiss blocking UI before the shot (head-start games open a Mission Brief notes minigame). */
 export async function clearScreen(page, bridge, mark) {
+  // m01 v3 (2026-11-20): HaX's first call rings 6 s after the first main-office entry and its "Incoming call" banner lands over
+  // minigames and walks. Close the ringer (no ring, no banner) for take capture; BE_KEEP_RING=1 leaves it on (the phone take).
+  if (!process.env.BE_KEEP_RING) await page.evaluate(() => { try { window.phoneRinger?.close?.(); } catch (_) {} }).catch(() => {});
   for (let i = 0; i < 3 && (await bridge.getState()).activeMinigame; i++) { mark('close-minigame'); await bridge.minigame.close().catch(() => {}); await sleep(800); }
   for (let i = 0; i < 4; i++) {
     const b = (await bridge.getState()).blockingUi; if (!b) break;

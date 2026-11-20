@@ -20,6 +20,19 @@ echo "xvfb $!" >> "$PIDFILE"
 for _ in $(seq 1 50); do [ -e "/tmp/.X11-unix/X$N" ] && break; sleep 0.1; done
 [ -e "/tmp/.X11-unix/X$N" ] || { echo "Xvfb did not start" >&2; exit 1; }
 
+# Desktop host with PipeWire and no pactl (pulseaudio-utils not installed): make a null sink with pw-cli and
+# leave the desktop's default output alone. Chrome reaches the sink through PULSE_SINK (launch.mjs) and ffmpeg
+# records <sink>.monitor through pipewire-pulse.
+if ! command -v pactl >/dev/null 2>&1 && command -v pw-cli >/dev/null 2>&1; then
+  pw-cli create-node adapter "{ factory.name=support.null-audio-sink node.name=$SINK node.description=$SINK media.class=Audio/Sink object.linger=true audio.position=[FL FR] }" >/dev/null
+  for _ in $(seq 1 25); do pw-cli ls Node 2>/dev/null | grep -q "node.name = \"$SINK\"" && break; sleep 0.2; done
+  NODE_ID="$(pw-cli ls Node 2>/dev/null | awk -v s="node.name = \"$SINK\"" '/^\tid /{id=$2} index($0,s){gsub(",","",id); print id; exit}')"
+  [ -n "$NODE_ID" ] || { echo "PipeWire null sink $SINK did not appear" >&2; exit 1; }
+  echo "pwnode $NODE_ID" >> "$PIDFILE"
+  echo "display=:$N sink=$SINK monitor=$SINK.monitor pidfile=$PIDFILE (pipewire, default sink unchanged)"
+  exit 0
+fi
+
 # PulseAudio: reuse if running, else start in user mode (allowed as root with --system=false)
 if ! pactl info >/dev/null 2>&1; then
   pulseaudio --start --exit-idle-time=-1 --daemonize=yes --disallow-exit \

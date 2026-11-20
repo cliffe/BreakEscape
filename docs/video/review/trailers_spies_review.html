@@ -1,0 +1,197 @@
+<title>SAFETYNET Trailer Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a dossier — one tab per mission cut, the player on top, the questions as a numbered case sheet below. */
+:root{
+  --bg:#f3f1ee; --panel:#ffffff; --fg:#1d1a1c; --muted:#5e5658; --line:#d9d2d0;
+  --accent:#b3122e; --accent-fg:#ffffff; --cyan:#0f7f8c; --chip:#efe7e5;
+  --display:"Press Start 2P", ui-monospace, monospace;
+  --body:"IBM Plex Sans", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141113; --panel:#1e1a1c; --fg:#eee8e6; --muted:#a69c9e; --line:#3a3234;
+  --accent:#e0324f; --accent-fg:#ffffff; --cyan:#4fd0dc; --chip:#2a2326; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141113; --panel:#1e1a1c; --fg:#eee8e6; --muted:#a69c9e; --line:#3a3234;
+  --accent:#e0324f; --accent-fg:#ffffff; --cyan:#4fd0dc; --chip:#2a2326; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+h1{font-family:var(--display);font-size:clamp(15px,3vw,20px);line-height:1.5;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:13px;line-height:1.6;margin:0 0 8px;letter-spacing:.02em}
+.kicker{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font-family:var(--display);font-size:11px;padding:10px 14px;border:2px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-fg)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.card{background:var(--panel);border:2px solid var(--line);padding:16px;display:grid;gap:12px;min-width:0}
+video{width:100%;max-width:100%;aspect-ratio:16/9;background:#000;display:block}
+.empty{aspect-ratio:16/9;max-width:100%;display:grid;place-items:center;background:var(--chip);color:var(--muted);font-family:var(--mono);text-align:center;padding:16px}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:12px;background:var(--chip);padding:3px 8px;font-variant-numeric:tabular-nums}
+ul{margin:0;padding-left:20px}
+li{margin:2px 0}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+pre{font-family:var(--mono);font-size:12px;white-space:pre-wrap;margin:8px 0 0;overflow-x:auto}
+.q{display:grid;gap:8px;border-top:2px solid var(--line);padding-top:14px}
+.q:first-child{border-top:0;padding-top:0}
+.q h3{margin:0;font-size:15px;font-weight:600}
+.q .why{margin:0;color:var(--muted);font-size:13px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.opt{display:flex;gap:8px;align-items:flex-start;border:2px solid var(--line);padding:10px;cursor:pointer;min-width:0}
+.opt:has(input:checked){border-color:var(--accent)}
+.opt input{margin-top:3px;accent-color:var(--accent)}
+.opt b{display:block;font-size:14px}
+.opt small{display:block;color:var(--muted);font-size:12px}
+.sug{font-family:var(--mono);font-size:10px;color:var(--cyan);text-transform:uppercase;letter-spacing:.08em}
+textarea{width:100%;box-sizing:border-box;min-height:56px;font:inherit;font-size:14px;padding:8px;border:2px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button.primary{font-family:var(--display);font-size:11px;padding:12px 16px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer}
+button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:2px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.status{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#copybox{width:100%;min-height:140px;font-family:var(--mono);font-size:12px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:6px">
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 20 Nov 2026 · game build 1f651abce</div>
+    <h1>Mission trailers with the new spy avatars</h1>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Trailer">
+    <button class="tab" role="tab" id="tab-m02" aria-selected="true" data-cut="m02">m02 · v2</button>
+    <button class="tab" role="tab" id="tab-m01" aria-selected="false" data-cut="m01">m01 · v9</button>
+  </nav>
+
+  <main id="cut"></main>
+
+  <section class="card" aria-labelledby="copyh">
+    <h2 id="copyh">Copy answers</h2>
+    <p class="why" style="margin:0;color:var(--muted);font-size:13px">Your answers save to this page as you go. This box holds the same answers as text, if you would rather paste them into chat.</p>
+    <textarea id="copybox" readonly></textarea>
+    <div class="bar"><button class="ghost" id="copybtn" type="button">Copy</button><span class="status" id="copystatus"></span></div>
+  </section>
+</div>
+
+<script>
+const CUTS = {
+  m02: {
+    doc: "feedback/m02_trailer_v2",
+    title: "m02 Ransomed Trust · 60 s trailer · round v2",
+    video: "/_blob/dc1e10a261ab3e5289dcb7e340c967e7", poster: "/_blob/8ee2d9b7a5a82bfe795e6c04796c5429",
+    stats: ["60.000 s", "1920×1080 30 fps", "−13.8 LUFS", "true peak −1.49 dB", "16:9 only"],
+    changed: [
+      "Every gameplay shot re-recorded on today's build: new room dressing and lighting, office-life staff, trimmed HaX briefing, today's dialogue round.",
+      "The player is a different noir spy from shot to shot (all eight used); the two hood-up hackers appear once each.",
+      "The Real Hacking slate is gone: a 2 s cut of the m02 console scan (command and the two open ports, enlarged; no MAC or host details).",
+      "HaX's hook re-timed for the re-voiced line (4.13 s). Flag-station and supply-cabinet crops fixed."
+    ],
+    standin: ["None. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
+    srt: "1\n00:00:04,920 --> 00:00:08,700\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:30,033 --> 00:00:34,133\nVal Okonkwo: So. Who are you and who says you're allowed?",
+    questions: [
+      {k:"music", t:"Music: Steel Shadows in E Minor (picked from the beat analysis, never by ear)", o:[["keep","Keep it","Lifts land on the cards and the crescendo",1],["fallback","Try Shadowline Protocol","The first fallback from the analysis"],["other","Something else","Name it in the note"]]},
+      {k:"reeves", t:"Graham Reeves is the mystery's answer. He now shows for 3 frames in the crescendo only", o:[["flash","Keep the 3-frame flash","Visible on pause, not a spoiler at speed",1],["cut","Cut him entirely","No antagonist face at all"],["line","Give him his line","As v1 planned: a clear spoiler"]]},
+      {k:"ransom", t:"The ransom screen shows its (fictional) payment line", o:[["keep","Keep as is","It reads as set dressing",1],["crop","Crop to the headline and countdown","Tighter, nothing to read"]]},
+      {k:"console", t:"Real Hacking beat: 2 s of the console scan", o:[["keep","Keep","Short, readable, nothing secret",1],["longer","Longer","Let the scan output hold"],["later","Use a later console beat","e.g. the SSH login, still no credentials"]]},
+      {k:"avatars", t:"Avatar mix: a different spy in each map shot", o:[["keep","Keep the rotation","Shows the cast of starters",1],["one","One spy throughout","Reads as one agent's story"],["more","More visible player shots","The spies are small in some shots"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see (an answer, a name, a place)?", o:null},
+      {k:"platform", t:"Which platform first?", o:[["yt","YouTube / Hacktivity page","16:9 as rendered",1],["shorts","Shorts / Reels / TikTok","Needs the 9:16 cut"],["li","LinkedIn","1:1 cut"]]}
+    ]
+  },
+  m01: {
+    doc: "feedback/m01_trailer_v9",
+    title: "m01 First Contact · 60 s trailer · round v9",
+    video: "/_blob/3021ff150f46d501657f75bf4378eb0a", poster: "/_blob/53b8b9ee10fc798ca73d454f9bcc1d17",
+    stats: ["60.000 s", "1920×1080 30 fps", "−14.0 LUFS", "true peak −1.52 dB", "16:9 only"],
+    changed: [
+      "Same cut as the shipped v8.5, with every gameplay shot re-recorded on today's build and a different noir spy in each map shot.",
+      "Voiced lines re-timed to today's clips (each 0.03 to 0.13 s shorter).",
+      "HaX's first call now rings in the main office; the takes close the ringer so its banner stays out of the shots.",
+      "Lights-on beat moved to the storage closet: the main office now starts lit because office-life staff work there.",
+      "Derek's wide shot is cropped to hide his name bar; the Hydra console clip is cropped to remove the Kali login post-it."
+    ],
+    standin: ["Real hacking console clips are the same as v8.5. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
+    srt: "1\n00:00:04,800 --> 00:00:08,520\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:43,070 --> 00:00:47,800\nDerek Lawson: Entropy is inevitable. Trust is a lie.\n\n6\n00:00:47,800 --> 00:00:52,000\nDerek Lawson: Security through obscurity fails.",
+    questions: [
+      {k:"lights", t:"Lights-on beat now in the storage closet (the main office starts lit since office life)", o:[["keep","Keep the closet","Same beat, a smaller room",1],["office","Make the main office start dark","Needs a scenario change, then a re-record"],["drop","Drop the lights beat","Give its time to another shot"]]},
+      {k:"toast", t:"Sarah's shot keeps a small green \"Influence\" toast for about half a second", o:[["keep","Keep","Hard to notice at speed",1],["trim","Trim it out","The shot then runs 3.5 s and the grid shifts"]]},
+      {k:"avatars", t:"Avatar mix: a different spy in each map shot", o:[["keep","Keep the rotation","Shows the cast of starters",1],["one","One spy throughout","Reads as one agent's story"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow after the re-record?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  }
+};
+const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
+
+let current = "m02";
+let answers = {m02:{}, m01:{}};
+let db = null;
+const LS = "safetynet_trailer_review_v1";
+try { const s = JSON.parse(localStorage.getItem(LS) || "null"); if (s) answers = Object.assign(answers, s); } catch (_) {}
+
+function el(tag, attrs, ...kids){ const e=document.createElement(tag); for (const [k,v] of Object.entries(attrs||{})) { if (k==="class") e.className=v; else if (k==="text") e.textContent=v; else e.setAttribute(k,v);} for (const c of kids) if (c) e.append(c); return e; }
+
+function render(){
+  const c = CUTS[current], a = answers[current] || (answers[current] = {});
+  const main = document.getElementById("cut"); main.replaceChildren();
+  const top = el("section",{class:"card"});
+  top.append(el("h2",{text:c.title}));
+  if (c.video){ const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.src=c.video; if (c.poster) v.poster=c.poster; top.append(v); }
+  else top.append(el("div",{class:"empty",text:"Render in progress: the video appears here when it is ready."}));
+  if (c.stats.length){ const s=el("div",{class:"stats"}); c.stats.forEach(x=>s.append(el("span",{class:"chip",text:x}))); top.append(s); }
+  const ch=el("div",{}, el("div",{class:"kicker",text:"What changed"})); const ul=el("ul"); c.changed.forEach(x=>ul.append(el("li",{text:x}))); ch.append(ul); top.append(ch);
+  const sd=el("div",{}, el("div",{class:"kicker",text:"Stand-in or missing"})); const ul2=el("ul"); c.standin.forEach(x=>ul2.append(el("li",{text:x}))); sd.append(ul2); top.append(sd);
+  if (c.srt){ const d=el("details"); d.append(el("summary",{text:"Captions (.srt)"}), el("pre",{text:c.srt})); top.append(d); }
+  main.append(top);
+
+  const form=el("section",{class:"card"}); form.append(el("h2",{text:"Questions"}));
+  const qs=[{k:"verdict",t:"Verdict",o:VERDICT.map(([v,l,d])=>[v,l,d])}].concat(c.questions);
+  qs.forEach((q,i)=>{
+    const box=el("div",{class:"q"}); box.append(el("h3",{text:(i+1)+". "+q.t}));
+    if (q.o){ const opts=el("div",{class:"opts",role:"radiogroup","aria-label":q.t});
+      q.o.forEach(([v,l,d,sug])=>{ const id=current+"_"+q.k+"_"+v; const inp=el("input",{type:"radio",name:current+"_"+q.k,id,value:v}); if (a[q.k]===v) inp.checked=true;
+        inp.addEventListener("change",()=>{a[q.k]=v; changed();});
+        const lab=el("label",{class:"opt",for:id}); const txt=el("span"); txt.append(el("b",{text:l})); if (d) txt.append(el("small",{text:d})); if (sug) txt.append(el("span",{class:"sug",text:"suggested"})); lab.append(inp,txt); opts.append(lab); });
+      box.append(opts); }
+    const ta=el("textarea",{id:current+"_"+q.k+"_note",placeholder:q.o?"Note (optional)":"Your answer","aria-label":q.t+" note"}); ta.value=a[q.k+"_note"]||"";
+    ta.addEventListener("input",()=>{a[q.k+"_note"]=ta.value; changed();}); box.append(ta); form.append(box);
+  });
+  const bar=el("div",{class:"bar"}); const save=el("button",{class:"primary",type:"button",id:"savebtn",text:"Save answers"}); const st=el("span",{class:"status",id:"savestatus"});
+  save.addEventListener("click",()=>persist(true)); bar.append(save,st); form.append(bar);
+  main.append(form);
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected", String(t.dataset.cut===current)));
+  fillCopy(); showSaved();
+}
+
+function fillCopy(){
+  const lines=[];
+  for (const key of ["m02","m01"]){ const c=CUTS[key], a=answers[key]||{}; const qs=[{k:"verdict",t:"Verdict",o:VERDICT}].concat(c.questions);
+    const got=qs.filter(q=>a[q.k]||a[q.k+"_note"]); if (!got.length) continue; lines.push("["+c.title+"]");
+    got.forEach(q=>{ const opt=q.o&&q.o.find(o=>o[0]===a[q.k]); lines.push(q.k+" ("+q.t+"): "+(opt?opt[1]:"-")+(a[q.k+"_note"]?" - "+a[q.k+"_note"]:"")); }); }
+  document.getElementById("copybox").value=lines.join("\n");
+}
+let timer=null;
+function changed(){ try{localStorage.setItem(LS,JSON.stringify(answers));}catch(_){} fillCopy(); clearTimeout(timer); timer=setTimeout(()=>persist(false),1200); }
+async function persist(manual){
+  const st=document.getElementById("savestatus");
+  if (!db){ if (st) st.textContent = manual ? "Saved in this browser only (sign in to save to the page)." : "Saved in this browser."; return; }
+  try { await db.doc(CUTS[current].doc).set(Object.assign({}, answers[current], {updated: new Date().toISOString()})); if (st) st.textContent="Saved to the page."; }
+  catch(e){ if (st) st.textContent="Could not save to the page ("+(e&&e.code||"error")+"); kept in this browser."; }
+}
+function showSaved(){ const st=document.getElementById("savestatus"); if (st && !st.textContent) st.textContent = db ? "" : "Answers keep in this browser until the page connects."; }
+
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab",current);}catch(_){} }));
+try { const t=localStorage.getItem(LS+"_tab"); if (t && CUTS[t]) current=t; } catch(_){}
+document.getElementById("copybtn").addEventListener("click",async()=>{ const box=document.getElementById("copybox"), s=document.getElementById("copystatus");
+  try{ await navigator.clipboard.writeText(box.value); s.textContent="Copied."; } catch(_){ box.select(); s.textContent="Selected: press Ctrl+C."; } });
+render();
+
+(async()=>{ try{ if (!window.claude || !window.claude.use) return; db = await window.claude.use("db"); if (!db) return;
+  for (const key of ["m02","m01"]){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
+  render(); } catch(_){} })();
+</script>

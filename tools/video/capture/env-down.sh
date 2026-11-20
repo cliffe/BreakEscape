@@ -7,6 +7,7 @@ PIDFILE="$VIDEO_STATE_DIR/env-$N.pids"
 [ -f "$PIDFILE" ] || { echo "no pidfile $PIDFILE"; exit 0; }
 while read -r kind id; do
   case "$kind" in
+    pwnode) pw-cli destroy "$id" >/dev/null 2>&1 || true ;;
     sinkmodule) pactl unload-module "$id" 2>/dev/null || true ;;
     xvfb) kill "$id" 2>/dev/null || true ;;
   esac
