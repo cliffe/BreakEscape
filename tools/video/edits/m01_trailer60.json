@@ -153,10 +153,10 @@
    },
    "source": {
     "file": "t03b_lights_on.trimmed.mkv",
-    "in": 2.5,
-    "out": 4.0
+    "in": 2.9,
+    "out": 4.4
    },
-   "note": "v9: t03b_lights_on (ngozi_adeyemi), the agent steps from the lit hallway_east into the dark NPC-free storage_closet; the lights strike on at 3.406 s in the take; the first v9 render showed it lit only at 11.95 (about 0.25 s later than the ffmpeg frames of the take), so the window moved 0.25 s later (2.5 to 4.0) (the beat drop at 12.0 s)",
+   "note": "v9: t03b_lights_on (ngozi_adeyemi), the agent steps from the lit hallway_east into the dark NPC-free storage_closet; the lights strike on at 3.406 s in the take; the first v9 render showed it lit only at 11.95 (about 0.25 s later than the ffmpeg frames of the take), then the window moved to 2.9-4.4 because the strike flickers (lit 3.6, dark 3.7-3.9, steady from 4.0): dark start, flicker, 0.4 s steady before the cut at 12.0 s",
    "framing": {
     "16:9": {
      "cx": 0.5,
