@@ -9,7 +9,7 @@
 }
 },
 {
-"talk": "recruiter",
+"talk": "recruiter", "knot": "first_call",
 "picks": [
 "Say nothing",
 "You're talking about him like a receipt",
@@ -21,15 +21,13 @@
 {
 "said": [
 "There are more like him in the pipeline right now.",
-"And it won't help the others",
+"You'll want to feel sorry for him. Go ahead. It costs me nothing.",
 "Operation Schrödinger, if your file needs a name."
 ]
 },
 {
-"talk": "recruiter",
-"picks": [
-"Ring the TalentStack number back",
-"Run the terms past me again",
+"talk": "recruiter", "knot": "return_contact",
+"picks": ["Run the terms past me again",
 "Fine. The envelope goes to Reading. I never saw it."
 ]
 },
@@ -53,10 +51,8 @@
 }
 },
 {
-"talk": "recruiter",
-"picks": [
-"Ring the TalentStack number back",
-"I'll live with it"
+"talk": "recruiter", "knot": "return_contact",
+"picks": ["I'll live with it"
 ]
 },
 {

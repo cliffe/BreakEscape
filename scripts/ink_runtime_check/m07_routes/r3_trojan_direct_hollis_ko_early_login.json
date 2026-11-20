@@ -29,7 +29,7 @@
   },
   {
    "said": [
-    "He's coming for you. Fists up, face him, hit him.",
+    "He's coming for you. Face him and hit him: F to punch, keep pressing for a harder one. Hold Q to block.",
     "He's slower than you, and he won't leave the checkpoint"
    ]
   },
@@ -48,8 +48,10 @@
   },
   {
    "said": [
-    "Hollis is down",
-    "Hands down: press Q until the open hand shows."
+    "Hollis is down"
+   ],
+   "notSaid": [
+    "Hands down"
    ]
   },
   {
@@ -159,13 +161,7 @@
    "advance": 8
   },
   {
-   "said": [
-    "A word about doors, Agent 0x00."
-   ]
-  },
-  {
-   "talk": "architect",
-   "knot": "start",
+   "talk": "architect", "knot": "taunt_t10",
    "picks": [
     "Then I'll be in this one"
    ]
@@ -234,7 +230,7 @@
   },
   {
    "creditsSaid": [
-    "Operation Trojan Horse — 840",
+    "Operation Trojan Horse, 840",
     "PROJECTION CORRECTED",
     "RAY HOLLIS: Neutralised on shift"
    ],

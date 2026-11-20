@@ -6106,7 +6106,13 @@ module BreakEscape
           rooms.is_a?(Hash) ? rooms.keys.select { |k| k.is_a?(String) }.to_set : Set.new
         else
           keys = self.class.where(id: id).pick(
-            Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.keyvalue().key')")
+            # jsonb_object_keys, not jsonb_path_query_array: the latter needs
+            # PostgreSQL 12 and the dev and test databases run 9.5.
+            Arel.sql(
+              "(SELECT COALESCE(json_agg(k), '[]'::json) FROM jsonb_object_keys(" \
+              "CASE WHEN jsonb_typeof(scenario_data -> 'rooms') = 'object' " \
+              "THEN scenario_data -> 'rooms' ELSE '{}'::jsonb END) AS k)"
+            )
           )
           keys = JSON.parse(keys) if keys.is_a?(String)
           Set.new(Array(keys).select { |k| k.is_a?(String) })

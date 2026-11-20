@@ -24,6 +24,8 @@
 #   4. the scenario validator over every scenarios/*/scenario.json.erb (v_<scenario>.txt)
 #   4b. tools/check_mapping_index_drift.rb main: eventMappings inserted or removed before existing ones
 #      (shifts once-only keys) is RED; skipped with the corpus (mapdrift.txt; MAPDRIFT_BASE overrides main)
+#   4c. tools/run-ink-routes.sh: every scripts/ink_runtime_check/m*_routes/*.json with its route.js;
+#      any failing route is RED; skipped with the corpus (ink_routes.txt)
 # and writes <outdir>/summary.txt. It kills only the server it started. It never touches ports 3000,
 # 3085 or 3086 and runs no db: task.
 # Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE (default: the chrome-headless-shell in $HOME/.cache/ms-playwright),
@@ -246,6 +248,16 @@ else
   LANG=C.UTF-8 "$TC_RUBY" tools/check_mapping_index_drift.rb "${MAPDRIFT_BASE:-main}" > "$OUT/mapdrift.txt" 2>&1; rc=$?
   echo "mapdrift exit $rc: $(tail -1 "$OUT/mapdrift.txt")" >> "$SUM"
   [ "$rc" -ne 0 ] && RED+=("mapdrift exit $rc (see mapdrift.txt; append new eventMappings, never insert before existing ones)")
+fi
+
+# ---- 4c. ink route pins (scripts/ink_runtime_check/m*_routes) ----
+if [ "${TRAIN_CHECK_SKIP_CORPUS:-0}" = 1 ]; then
+  echo "ink-routes SKIPPED" >> "$SUM"; SKIPPED+=(ink-routes)
+else
+  tools/run-ink-routes.sh "$WT" > "$OUT/ink_routes.txt" 2>&1; rc=$?
+  echo "$(grep -E '^ink-routes exit ' "$OUT/ink_routes.txt" | tail -1 || true)" >> "$SUM"
+  grep -E '^  failing: ' "$OUT/ink_routes.txt" >> "$SUM" || true
+  [ "$rc" -ne 0 ] && RED+=("ink-routes exit $rc (see ink_routes.txt)")
 fi
 
 HEAD1="$(git rev-parse HEAD)"

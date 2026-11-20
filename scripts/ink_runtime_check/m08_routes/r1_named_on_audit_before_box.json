@@ -24,7 +24,7 @@
 { "said": ["Now you need the clock"] },
 { "read": "timeline_reconstruction" },
 { "talk": "phone", "picks": ["What does the Director need", "Nothing right now"] },
-{ "said": ["stand behind their own row"] },
+{ "said": ["Ask the men who badge through the lab door"] },
 { "talk": "nightshade", "picks": ["door log has you", "We're done"] },
 { "expect": { "nightshade_audit_confirmed": true } },
 { "talk": "phone", "picks": ["What does the Director need", "Nothing right now"] },

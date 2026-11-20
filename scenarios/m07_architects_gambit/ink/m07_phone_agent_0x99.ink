@@ -847,7 +847,7 @@ Get that intercept out of the building. It's the first thread of whatever comes 
 ~ vm1_hint_given = true
 Start with their backup server. It has an NFS share open to anyone. Read it, don't change it.
 
-It points at their coordination file, and there's a flag in it. Note any account name. You'll want it later.
+It points at their coordination file, and it carries a flag. Note any account name. You'll want it later.
 
 The NFS and netcat guide has the commands.
 -> hub

@@ -16,15 +16,7 @@
 }
 },
 {
-"talk": "vance_phone",
-"picks": [
-"No answer"
-]
-},
-{
-"said": [
-"(No answer.)"
-]
+"note": "The Call button does not ring while Vance is KO'd (the call entry's when is vance_is_ally && !robert_vance_ko, unavailable no_answer), so the ink has no (No answer.) line to read; the engine owns it. Step retired when calls moved to the call knot."
 },
 {
 "talk": "phone",
