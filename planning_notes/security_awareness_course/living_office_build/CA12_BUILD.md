@@ -698,9 +698,9 @@ In ink, H1a and H1b each carry the `Lorna Easton:` prefix (for H1a, inside the c
 
 | Branch | Clip | Line |
 |---|---|---|
-| caught | 1 | `You kept that visitor with no badge at the door, so they never got a quiet walk through the studio.` |
+| caught | 1 | `You kept that visitor with no badge at the gate, so they never got a quiet walk through the studio.` |
 | caught | 2 | `That's the one that leans on a busy morning and a friendly face, and you didn't wave it through.` |
-| missed | 1 | `That visitor with no badge was the one to stop at the door.` |
+| missed | 1 | `That visitor with no badge was the one to stop at the gate.` |
 | missed | 2 | `They went through, so a stranger had the run of the studio floor and its open screens. On a busy morning it's an easy one to wave through.` |
 
 4 clips (caught 2 + missed 2), replacing the twin's former single done-line. The welcome (else) line and the `[Thanks, Lorna.]` / `Any time.` goodbye are unchanged. None voiced (no audio generated).

@@ -21,10 +21,10 @@ VAR hub_quiet = false
 - else:
     { episode_e12_visitor_tailgater_defend_defend_complete:
         { kit_key_caught:
-            Lorna Easton: You kept that visitor with no badge at the door, so they never got a quiet walk through the studio.
+            Lorna Easton: You kept that visitor with no badge at the gate, so they never got a quiet walk through the studio.
             Lorna Easton: That's the one that leans on a busy morning and a friendly face, and you didn't wave it through.
         - else:
-            Lorna Easton: That visitor with no badge was the one to stop at the door.
+            Lorna Easton: That visitor with no badge was the one to stop at the gate.
             Lorna Easton: They went through, so a stranger had the run of the studio floor and its open screens. On a busy morning it's an easy one to wave through.
         }
     - else:
