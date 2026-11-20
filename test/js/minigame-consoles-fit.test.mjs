@@ -351,6 +351,8 @@ test('review round 1: buttons the framework styles in GNF are declared GNF at th
     assert.match(siem, /\.siem-btn \{[^}]*font-family: 'GNF'[^}]*font-size: 16px/);
     assert.doesNotMatch(siem.slice(siem.indexOf('@media (max-width: 600px)')), /\.siem-btn \{[^}]*font-size/);
     assert.match(siem, /\.siem-source-count \{[^}]*font-size: 16px/);
+    // the one-line 16px queue count band ends at 839px: GNF 24 "24 alerts queued" fits with 8px spare from 840px
+    assert.match(siem, /@media \(min-width: 601px\) and \(max-width: 839px\) \{\s*\.siem-queue-count \{[^}]*font-size: 16px;[^}]*white-space: nowrap/);
     assert.match(css('infusion-pump-minigame.css'), /\.ip-more-below \{[^}]*font-family: 'GNF'[^}]*font-size: 16px/);
     assert.match(css('network-segmentation-map-minigame.css'), /\.nsm-device \{[^}]*font-size: 16px/);
     // GNF/VT323 text never under 16px, Press Start never under 8px in these sheets (button rules)

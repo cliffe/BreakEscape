@@ -311,8 +311,9 @@
 }
 
 /* Little spill downward (the in-screen window X sits just below the strip), so the reach goes
-   up instead: 60 minus twice the border = 48 px (themed) to 52 px tall (20 up, 32 for the X, 8 down, so
-   its bottom stays 2 px clear of the window X's target below), whatever --pc-bezel-top is. */
+   up instead: the box is 60 minus twice the border = 48 px (themed) to 52 px tall (20 up, 32 for the X,
+   8 down, which is 2 px below the X's box with the themed 6 px border). Its top is clipped at the bezel's
+   outer edge, so the real hit target is 38 to 39 px tall, and it stays clear of the window X's target below. */
 .pc-monitor-bezel > .pc-monitor-close::after {
     inset: -20px -14px -8px -14px;
 }

@@ -1957,10 +1957,11 @@ test('final n1: the window X touch area stays 44px tall but leaves a gap to the 
     assert.ok(right + 28 + left >= 44, 'and at least 44px wide');
     // Measured at 390x844, 360x640, 667x375, 844x390 and 1400x900: the bezel X's bottom edge is
     // at least 12px (32px X, 36px compact strip) above the window X's top edge. The window hit area
-    // may use up to 8 of them and the bezel X's own reaches 8 below it, so the targets stay 4px apart.
-    assert.ok(top <= 8, 'the target leaves at least 4px to the bezel X');
+    // may use up to 8 of them; the bezel X's reach is 8 below its padding box, 2px below the 32px box, so the
+    // targets stay at least 2px apart (3 clear rows measured at 390x844).
+    assert.ok(top <= 8, 'the target leaves at least 2px to the bezel X');
     const bz = sheet.length && css('pc-monitor.css').match(/\.pc-monitor-bezel > \.pc-monitor-close::after\s*\{[^}]*inset:\s*([^;]+);/);
-    assert.ok(bz && Math.abs(parseFloat(bz[1].trim().split(/\s+/)[2])) <= 8, 'the bezel X reaches at most 8px below its 32px box');
+    assert.ok(bz && Math.abs(parseFloat(bz[1].trim().split(/\s+/)[2])) <= 8, 'the bezel X reach (::after) goes at most 8px below its padding box (2px below the 32px box)');
 });
 
 
