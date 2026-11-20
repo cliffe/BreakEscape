@@ -1,7 +1,7 @@
 {
 "steps": [
 {
-"note": "R9 (round 2, B2): Ben named to Patricia in person, then a wrong Torres reason on her mobile, then the right one on the retry, which she notices. Named before flag 3, but the reward is excluded; the debrief says it took a couple of goes."
+"note": "R9 (round 2, B2): Ben named to Patricia in person, then a wrong Torres reason on her mobile, then the right one on the retry, which she notices. Named before flag 3, but the reward is excluded; the debrief says a wrong name or reason came first."
 },
 {
 "talk": "briefing",
@@ -50,7 +50,8 @@
 "talk": "patricia",
 "picks": [
 "I think I know who it is",
-"Ben Ashworth"
+"Ben Ashworth",
+"His badge is on the server hallway"
 ]
 },
 {
@@ -225,7 +226,7 @@
 },
 {
 "said": [
-"It took a couple of goes"
+"You gave a wrong name or a wrong reason before the right one"
 ],
 "notSaid": [
 "You read past her line on the badge log"

@@ -82,12 +82,13 @@
    "talk": "patricia",
    "picks": [
     "I think I know who it is",
-    "Ben Ashworth"
+    "Ben Ashworth",
+    "His badge is on the server hallway"
    ]
   },
   {
    "said": [
-    "Ben's on that log one night",
+    "Front door at five past eight on a Thursday evening",
     "Don't throw names at me",
     "[chat closes]"
    ],
@@ -115,7 +116,7 @@
    "said": [
     "in Zurich",
     "Ring back when you're sure",
-    "[chat closes]"
+    "[end]"
    ]
   },
   {
@@ -321,7 +322,7 @@
   },
   {
    "said": [
-    "You got to the front-door times in the end. It took a couple of goes."
+    "You gave a wrong name or a wrong reason before the right one"
    ]
   },
   {

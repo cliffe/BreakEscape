@@ -202,6 +202,7 @@ for (const step of route.steps) {
       if (e.m.eventPattern !== 'room_entered:main_corridor') continue;
       if ((e.m.onceOnly) && e.fired) continue;
       if (!evalCond(e.m.condition, {})) continue;
+      if (e.m.setVisible !== undefined || e.m.needs) continue; // office-life NPC visibility/needs mappings are not story backstops
       const c = e.m._comment || '';
       firing.push(/hear-the-debrief/.test(c) ? 'hear' : /reload backstop/.test(c) ? 're-emit' : e.m.targetKnot === 'on_owen_ko_office_card' ? 'office-card' : (e.m.targetKnot || c.slice(0, 30)));
     }
