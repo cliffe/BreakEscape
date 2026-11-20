@@ -1,0 +1,13 @@
+{
+  "key": "aa7cc82f8dab76ec706c634507bd4565",
+  "npc": "nightshade_table",
+  "text": "One more, from a man who did it for fifteen years. They always borrow a badge, and it's never the borrower's.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:48:53Z"
+}

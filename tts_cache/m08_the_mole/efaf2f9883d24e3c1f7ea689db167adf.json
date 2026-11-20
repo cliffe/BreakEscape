@@ -1,0 +1,13 @@
+{
+  "key": "efaf2f9883d24e3c1f7ea689db167adf",
+  "npc": "narrator",
+  "text": "Pinned beside it, the door audit. One row ringed in red: 0x47, in at 10:15, out at 11:43.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:40:08Z"
+}

@@ -1,0 +1,101 @@
+
+## R22 (phase 4 dialogue C1, D5-2/D5-3): Vance met on the cover, never told, trust 30. Bank B vents with the crew in Hall 2; Voltage punched down. Full disclosure. HaX ties the nine to an alarm Vance never had a reason to sound; Vance's low-trust line accounts for the dead; no 'alive' payoff without a promise.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_spoken":true,"vance_provided_keycard":true,"vance_card_cloned":true,"vance_trust_level":30,"anomaly_detected":true}}
+   {set {"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+   {advance 15 min}
+      [clock 8 min: h2_advisory FIRES {"hydrogen_alarm":true,"urgency_stage":3}]
+      [clock 14 min: racks_vent FIRES {"racks_vented":true,"casualties_occurred":true,"urgency_stage":4}]
+      [engine: racks_vented with the crew in Hall 2 -> crew_lost]
+   [PASS] crew_lost = true (expected true)
+   {set {"plant_room_entered":true,"operative_static_defeated":true}}
+   {ko voltage}
+   {set {"esd_authorized":true,"attack_prevented":true}}
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Where do I stand?
+     [1] Nothing right now.
+  [stopped: no pick]
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Bank B went before I reached the button. Shutdown held A and C.
+  Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall.
+  The night crew were still in Hall 2 when Bank B went. Nine of them.
+  And you've got Voltage.
+ > Nine. Tell me we came out with something.
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is in a room now. So far he's given us one thing: his casualty figure.
+  Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > And the network?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > How far does this reach?
+  The documents name several cities.
+  OptiGrid's contracts turn up at dozens of infrastructure sites.
+  We've never seen it run this tight.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > I'm in. When do we start?
+  He'll call when he's ready. Not tonight.
+  Agent HaX: Nine in Hall 2. Two more on the feed before the grid caught up.
+  Agent HaX: The evacuation alarm was on Vance's desk. He never knew he had a reason to use it.
+  Agent HaX: You stopped the rest of it. Hold on to that when the names come out tomorrow.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Full public disclosure. People have a right to know.
+  Full transparency. The attack, the holes it came through, ENTROPY. All of it.
+  Robert Vance: There'll be hell to pay for this place. There should be.
+  The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
+  Netherton will back that.
+  Done.
+  Statement goes out with the local authorities.
+  Robert Vance: Nobody told me what was in my own plant. Nine of mine paid for that.
+     (2 options)
+ > It's all going in the report. Every line.
+  Robert Vance: I'll have those card readers out by the end of the week.
+  Voltage will keep.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+   [PASS] said: "The evacuation alarm was on Vance's desk. He never knew he had a reason to use it."
+   [PASS] said: "There'll be hell to pay for this place. There should be."
+   [PASS] said: "Nobody told me what was in my own plant. Nine of mine paid for that."
+   [PASS] not said: "breathing"
+   [PASS] not said: "same one he gave you"
+   [PASS] not said: "Fair enough"
+   [PASS] not said: "how close it came"
+   [PASS] not said: "Vance had the evacuation alarm"
+
+[stats] spoken/narrated lines 42, choices 12, longest run without a choice 7 (debrief); runs>=6: debrief:6, debrief:7
+[result] all expectations met

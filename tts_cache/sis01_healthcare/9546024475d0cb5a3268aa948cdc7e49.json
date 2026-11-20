@@ -1,0 +1,13 @@
+{
+  "key": "9546024475d0cb5a3268aa948cdc7e49",
+  "npc": "pharmacist_npc",
+  "text": "The library's back, and it matches the signed copy. I've been through the morphine limits myself. Half to four, as it should be.",
+  "voice": "Enceladus",
+  "style": "British Pakistani clinical pharmacist in his early thirties, professional and brisk. Speak with a consistent Bradford, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

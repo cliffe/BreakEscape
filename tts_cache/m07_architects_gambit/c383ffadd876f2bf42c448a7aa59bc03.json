@@ -1,0 +1,13 @@
+{
+  "key": "c383ffadd876f2bf42c448a7aa59bc03",
+  "npc": "closing_debrief",
+  "text": "Eight point four million people have power. Nothing either of you has said changes that.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:02:15Z"
+}

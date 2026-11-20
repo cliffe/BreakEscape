@@ -1,0 +1,55 @@
+{"t":1794473670426,"npc_id":"narrator","text":"Task Force Null's room at the Citadel. No windows. On the screen, a photograph of one typed sheet.","delivery":null,"status":200}
+{"t":1794473670527,"npc_id":"narrator","text":"\"Burn Helena before the Publication. Schedule attached. -- A.\"","delivery":null,"status":200}
+{"t":1794473670766,"npc_id":"narrator","text":"Four officers sit in kit nobody has unpacked. Your leave was meant to run three days. It ran one.","delivery":null,"status":200}
+{"t":1794473670962,"npc_id":"briefing_cutscene","text":"Last night a courier in Helena, Montana, carried this to a records archive. We read it. Then we let it go on. If it had not arrived, he would know.","delivery":null,"status":200}
+{"t":1794473671207,"npc_id":"briefing_cutscene","text":"The traitor we took two days ago kept a one-way ticket to Helena in his go-bag. We have read every courier out of that city since.","delivery":null,"status":200}
+{"t":1794473671389,"npc_id":"briefing_cutscene","text":"The label named the building. Mountain States Records & Retention, a commercial archive on the edge of Helena.","delivery":null,"status":200}
+{"t":1794473671608,"npc_id":"hax_voice","text":"Sorry about the leave. This is why.","delivery":null,"status":503}
+{"t":1794473671824,"npc_id":"briefing_cutscene","text":"HaX. The wall.","delivery":null,"status":200}
+{"t":1794473672042,"npc_id":"hax_voice","text":"One card for every operation against ENTROPY. The short version.","delivery":null,"status":503}
+{"t":1794473672257,"npc_id":"hax_voice","text":"Albion, a grid battery site. Critical Mass got in. Voltage, who led it, disappeared after.","delivery":null,"status":503}
+{"t":1794473672475,"npc_id":"narrator","text":"She walks the wall fast, like someone who has rehearsed it.","delivery":null,"status":200}
+{"t":1794473672691,"npc_id":"hax_voice","text":"Quantum Dynamics. David Torres stole for the Recruiter to pay for his wife's treatment. Arrested.","delivery":null,"status":503}
+{"t":1794473672912,"npc_id":"hax_voice","text":"Portland. One team, four sites. Austin was reached in time. Two of ours died at the others.","delivery":null,"status":503}
+{"t":1794473673124,"npc_id":"hax_voice","text":"Nightshade, fifteen years one of ours, sent the threat database to Montana. He's in custody and saying nothing.","delivery":null,"status":503}
+{"t":1794473673344,"npc_id":"hax_voice","text":"The rest are files you can read on the plane.","delivery":null,"status":503}
+{"t":1794473673561,"npc_id":"narrator","text":"The last two cards have a photograph each and nothing written under them. HaX stops in front of them.","delivery":null,"status":200}
+{"t":1794473674289,"npc_id":"briefing_cutscene","text":"I will read those two myself. Later.","delivery":null,"status":200}
+{"t":1794473674490,"npc_id":"narrator","text":"Above the cards, pinned on its own, the signature from the order, blown up: -- A.","delivery":null,"status":200}
+{"t":1794473674712,"npc_id":"briefing_cutscene","text":"ENTROPY's planner. Every card on this wall has his initial on it somewhere.","delivery":null,"status":200}
+{"t":1794473674928,"npc_id":"briefing_cutscene","text":"They call him the Architect. We have a suspect.","delivery":null,"status":200}
+{"t":1794473675141,"npc_id":"briefing_cutscene","text":"I will not say the name in this room until we can prove it.","delivery":null,"status":200}
+{"t":1794473675356,"npc_id":"hax_voice","text":"Whatever the Publication is, he's building it from that database. Every weakness we've ever catalogued.","delivery":null,"status":503}
+{"t":1794473675576,"npc_id":"hax_voice","text":"One entry, for scale. A flaw in the infusion pumps of a hundred and forty hospitals.","delivery":null,"status":503}
+{"t":1794473675792,"npc_id":"hax_voice","text":"Analysis says hundreds dead in the first month if the cells get it. They're guessing. I'd like to find out they guessed high.","delivery":null,"status":503}
+{"t":1794473676006,"npc_id":"briefing_cutscene","text":"Questions. Briefly.","delivery":null,"status":200}
+{"t":1794473676656,"npc_id":"hax_voice","text":"We don't know. That's what tonight is for.","delivery":null,"status":503}
+{"t":1794473676879,"npc_id":"briefing_cutscene","text":"He chose the word. Whatever it is, he means everyone to read it.","delivery":null,"status":503}
+{"t":1794473677596,"npc_id":"briefing_cutscene","text":"Destruction. Series numbers from the archive's catalogue, and nothing else.","delivery":null,"status":503}
+{"t":1794473677822,"npc_id":"hax_voice","text":"Every box on that list is ash by the time the team lands. Be in the building first.","delivery":null,"status":503}
+{"t":1794473678558,"npc_id":"hax_voice","text":"Somebody always asks me that. This time it's now.","delivery":null,"status":503}
+{"t":1794473679206,"npc_id":"briefing_cutscene","text":"Quintero leads on the ground. Kowalczyk breaches. Malhotra runs comms. Arakawa talks to the Americans.","delivery":null,"status":200}
+{"t":1794473679426,"npc_id":"quintero","text":"One agent, no cover, in a building that's burning paper. If it goes wrong, I go into Montana a day late and one short.","delivery":null,"status":200}
+{"t":1794473679695,"npc_id":"quintero","text":"Orders don't fall off couriers, Director.","delivery":null,"status":200}
+{"t":1794473679910,"npc_id":"briefing_cutscene","text":"This one didn't, Quintero. Noted.","delivery":null,"status":200}
+{"t":1794473680126,"npc_id":"malhotra","text":"If something goes wrong in there, I'd like to hear it go wrong.","delivery":null,"status":200}
+{"t":1794473680338,"npc_id":"hax_voice","text":"I run 0x00.","delivery":null,"status":503}
+{"t":1794473680556,"npc_id":"malhotra","text":"Of course. I'll keep the spare channel warm.","delivery":null,"status":503}
+{"t":1794473680779,"npc_id":"arakawa","text":"I've asked Helena PD to keep their cars off that side of town tonight. Nobody asked who for. Nobody will.","delivery":null,"status":503}
+{"t":1794473680991,"npc_id":"narrator","text":"Kowalczyk crosses the room and puts a PIN cracker in your hand.","delivery":null,"status":503}
+{"t":1794473681210,"npc_id":"kowalczyk","text":"Stores froze everything Nightshade ever signed for. This one's mine. Never been through stores, never been near him.","delivery":null,"status":503}
+{"t":1794473681422,"npc_id":"hax_voice","text":"The long way is over.","delivery":null,"status":503}
+{"t":1794473681657,"npc_id":"kowalczyk","text":"The long way's for people who get paid by the hour.","delivery":null,"status":503}
+{"t":1794473682314,"npc_id":"quintero","text":"Then don't make me right.","delivery":null,"status":503}
+{"t":1794473682523,"npc_id":"briefing_cutscene","text":"The plane leaves in ninety minutes. The team follows tonight.","delivery":null,"status":503}
+{"t":1794473682738,"npc_id":"briefing_cutscene","text":"Bring me a name I can say in court.","delivery":null,"status":503}
+{"t":1794473682957,"npc_id":"hax_voice","text":"Line's open from wheels down.","delivery":null,"status":503}
+{"t":1794473902134,"npc_id":"agent_0x99","text":"That's my other line. Withheld. Stay on, and don't say a word.","delivery":null,"status":503}
+{"t":1794473903551,"npc_id":"agent_0x99","text":"...Yes.","delivery":null,"status":503}
+{"t":1794473904968,"npc_id":"agent_0x99","text":"I know it's you.","delivery":null,"status":503}
+{"t":1794473906384,"npc_id":"agent_0x99","text":"Nobody's called me that since the course. It's HaX. It has been for seven years.","delivery":"a beat's pause after the first sentence, then firmer","status":503}
+{"t":1794473907804,"npc_id":"agent_0x99","text":"...I'll bring them.","delivery":null,"status":503}
+{"t":1794473909216,"npc_id":"agent_0x99","text":"He kept his voice down. He always did.","delivery":null,"status":503}
+{"t":1794473910631,"npc_id":"agent_0x99","text":"He called me Ninety-nine. He says the door will open for you by name. He says take your time getting there.","delivery":null,"status":503}
+{"t":1794473912071,"npc_id":"agent_0x99","text":"And he asked if we'd liked his notes.","delivery":null,"status":503}
+{"t":1794473913499,"npc_id":"agent_0x99","text":"Netherton's on the ground at Helena. Tell me when you're ready to come in.","delivery":null,"status":503}

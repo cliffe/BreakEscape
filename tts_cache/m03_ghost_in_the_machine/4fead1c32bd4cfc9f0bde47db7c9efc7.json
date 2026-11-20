@@ -1,0 +1,13 @@
+{
+  "key": "4fead1c32bd4cfc9f0bde47db7c9efc7",
+  "npc": "victoria_sterling",
+  "text": "One more thing. You stood in my doorway earlier. At night that window's a mirror.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:24:46Z"
+}

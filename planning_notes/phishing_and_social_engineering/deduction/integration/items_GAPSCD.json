@@ -1,0 +1,321 @@
+[
+ {
+  "id": "GAPSCD-1",
+  "severity": "blocker",
+  "priority": "must",
+  "category": "engine-wiring",
+  "sections": "\u00a75.5 (or new \u00a75.12), \u00a77.2, \u00a710.1/\u00a710.3 packet table, \u00a711.3 tests, \u00a79.1 bridge B1, \u00a79.4 bridge D3",
+  "change": "Add a work item 'Influence externals in ordinary chats': _beginSocialRun in minigames/person-chat/person-chat-minigame.js and in minigames/phone-chat/phone-chat-minigame.js also calls influence.bindInfluenceExternals?.(this.inkEngine, { npcId, characterId, channel: 'person'|'phone', runId: this._socialRunId }) for a social character, idempotent with attachPretext's own bind (same engine, same run id). Own it in a new packet P10-I1 (each file's _beginSocialRun hunk only, wave 2) with a \u00a710.3 row. Tests: a social NPC's ~ se_influence(-15, \"pressed\") lowers <character>.influence.global by 15 in person chat and in phone chat; a reload replay does not charge twice. Bridge D3 also reads ded_d_conductor_influence as \u221215 after the second answer. Amend \u00a77.2's sentence 'goes through the external se_influence with its ink fallback' to say the external is bound in ordinary chats by P10-I1.",
+  "evidence": "drafts/D/PLAN_GAPS G1; drafts/D/CHECK_REPORT P1. bindInfluenceExternals is called only from person-chat-pretext.js:571 and mail-runner.js:418; person-chat-minigame.js:916-923 and phone-chat-minigame.js:1111-1117 bind nothing, so the ink fallback returns 0. B bridge B1 (l.2195-2197) expects \u221215, \u221230 and ded_b_tomas_wary true, which cannot happen as written; D's witness budget (l.2675-2678) rests on it too.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-5",
+  "severity": "major",
+  "priority": "should",
+  "category": "fairness-pacing",
+  "sections": "\u00a79.4 Stops (l.~2686), \u00a77.6 timer bullet, \u00a79.4 bridge D1, \u00a712/R2I-1",
+  "change": "Replace 'stop 1 runs 120 s after the start' with: \"stop 1 runs 180 s after the start (the brief is read on game time); stops 2 to 4 run 120 s after entering car 2, 3 and 4. Timers count wall time, including open conversations and minigames, so a stop can land mid-conversation; its toast and the guard's bark show when it lands, and the door opens behind the chat.\" In bridge D1 change the 'slowing' hint from 90 s to 150 s, and the D bridge's stated real wait from about 120 s to about 180 s (still inside 600 s); update \u00a712/R2I-1's '120 s' accordingly.",
+  "evidence": "drafts/D/PLAN_GAPS G5: systems/game-clock.js:4-9 ('Elapsed time is wall time since the game started'); no brief-closed event exists; a player who reads the once brief and asks the steward three questions can lose the rack label before moving. Conflicts with the 'not hard' aim and \u00a712 risk 7.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-6",
+  "severity": "minor",
+  "priority": "should",
+  "category": "design-consistency",
+  "sections": "\u00a79.3 Proves (l.2612), \u00a79.3 Stakes (l.~2572-2575)",
+  "change": "In Proves replace 'escalation with a forced warned close' with 'escalation that offers a warned close (declining it leaves the exit phone and a standing HaX choice)'. In Stakes after the 'Not yet' option add: \"After 'Not yet', HaX's hub keeps the choice 'About getting out.' (gated on c_pull_out and not c_leaving and not deduction_closed), which returns to the same warned knot. HaX's 'Not yet' reply promises no timer (e.g. 'Then I'll be here when you're ready to go.').\" A's forced close (\u00a79.2) is unchanged.",
+  "evidence": "drafts/C/PLAN_GAPS G6 and 'Weakest three' item 3; drafts/C/CHECK_REPORT P4; drafts/C/INVENTED gap 7. The mapping fires once, so after 'Not yet' nothing brings the call back; the plan has no return path while Proves still says 'forced'.",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md",
+   "sidecar/drafts/C/CHECK_REPORT.md",
+   "sidecar/drafts/C/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-7",
+  "severity": "minor",
+  "priority": "should",
+  "category": "engine-wiring",
+  "sections": "\u00a75.4 (S20), \u00a711.3, \u00a79.3 Verdicts (l.~2563 'cancel is \"not yet\"'), \u00a77.5, C bridge step C5",
+  "change": "Choose one and write it in: (recommended) S20 gains \"confirm_action takes optional confirmLabel and cancelLabel, passed to gameConfirm (systems/notifications.js:183 already takes labels)\" with a \u00a711.3 unit test, and C's exit phone sets cancelLabel: \"Not yet\"; or \u00a79.3/\u00a77.5 say 'cancel is the dialog's Cancel button' and bridge C5 clicks 'Cancel'.",
+  "evidence": "drafts/C/PLAN_GAPS G7; drafts/C/CHECK_REPORT P5. apply-actions.js:193 calls window.gameConfirm(text) with text only, so the button reads 'Cancel'; plan grep for confirmLabel/cancelLabel is 0.",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md",
+   "sidecar/drafts/C/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-8",
+  "severity": "minor",
+  "priority": "should",
+  "category": "player-voice",
+  "sections": "\u00a77.6 timer bullet, \u00a79.4 Stops (slowing hint), \u00a79.3 t_c_badge hint (l.2511), \u00a75.4 hint action guidance",
+  "change": "Add a rule: \"Always give a hint action a title in the mission's voice; the default 'Intelligence Received' is SAFETYNET's.\" In \u00a79.4 the slowing hint timer's action becomes { \"type\": \"hint\", \"title\": \"Night train\", \"message\": \"The train is slowing.\" }; give C's t_c_badge hint a title (e.g. \"Garage reader\").",
+  "evidence": "drafts/D/PLAN_GAPS G6; drafts/D/CHECK_REPORT P7; drafts/D/INVENTED A8. apply-actions.js:126 defaults the title to 'Intelligence Received'.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-9",
+  "severity": "minor",
+  "priority": "should",
+  "category": "engine-wiring",
+  "sections": "\u00a79.4 opening paragraph (l.~2624), \u00a79.4 guard (l.~2644-2646)",
+  "change": "Add after the guard sentence: \"Each carriage d_car2\u2013d_car5 is locked: true, lockType: \\\"rfid\\\", requires: \\\"d_door_release\\\", a card no item declares, so neither the lockpick nor a code opens it (the validator's 'no item declares rfid' warning is expected, as for m09's restricted_stacks). Per stop the guard has: global_variable_changed:d_stop_<n> (value === true, onceOnly, unlockDoor, a bark naming the opened carriage); door_unlock_attempt with data.connectedRoom === '<car>' && globalVars.d_stop_<n> (unlockDoor, cooldown: 0); game_loaded with globalVars.d_stop_<n> (unlockDoor), as m09 does; and door_unlock_attempt with data.connectedRoom === '<car>' && !globalVars.d_stop_<n> barking \\\"That door stays shut till the next stop. Wait by it if you're in a hurry.\\\" (cooldown 20000). Mapping conditions take && only: one mapping per alternative, never ||.\"",
+  "evidence": "drafts/D/PLAN_GAPS G7; drafts/D/INVENTED A4, A5; drafts/D/CHECK_REPORT P6, D3 (validator reports || as INVALID; safeEvaluateCondition handles && only). m09 pattern scenario.json.erb:170-171. Plan names no lock type (a key lock would fall to the starting lockpick) and bridge D1 expects the opened door to hold after reload with no stated mechanism.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/INVENTED.md",
+   "sidecar/drafts/D/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-10",
+  "severity": "minor",
+  "priority": "should",
+  "category": "engine-wiring",
+  "sections": "\u00a79.4 route table, d_devries_sim row (l.2667)",
+  "change": "Append to the t_d_backup cell: \"D declares network_isolated: true (with backup_restore_initiated false, backup_recovery_source \\\"\\\", recovery_eta_hours 0 and backup_reinfected false, as m02 does), so the restore schedules no reinfection. The object is the railway's lost-phone kiosk, with one ready source (needs: []) and no key slots.\"",
+  "evidence": "drafts/D/PLAN_GAPS G9; drafts/D/CHECK_REPORT P5; drafts/D/INVENTED B2. backup-recovery-minigame.js:330-345, :358 read network_isolated and otherwise schedule reinfection (sets backup_reinfected, ransomware toast).",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-11",
+  "severity": "minor",
+  "priority": "should",
+  "category": "data-completeness",
+  "sections": "\u00a79.4 guard paragraph (l.~2646-2647 'Start inventory')",
+  "change": "Extend D's start inventory: \"Start inventory: a phone (type: \\\"phone\\\", phoneId: \\\"player_phone\\\", npcIds: [\\\"ded_d_guard\\\"]; the guard's phoneId matches), a lockpick (the briefcase) and a fingerprint kit (the glass); no NPC gives either tool.\"",
+  "evidence": "drafts/D/PLAN_GAPS G11; drafts/D/INVENTED A6, A7. The guard is a phone NPC (l.2644) but D's start inventory lists no phone, unlike A (l.2285), B (l.2125) and C (l.2495).",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-12",
+  "severity": "minor",
+  "priority": "should",
+  "category": "clue-text",
+  "sections": "\u00a79.4 after the route table (rows d_chen_charm, d_sato_notebook); \u00a74.2 l.515 rule",
+  "change": "Add: \"In D the carry slot means 'has with them on the train'. The torn receipt reads 'Platform kiosk, tonight, 20:40. One ward charm on red cord. Sold to M. Chen.' (bought before the train left, so the charm is on board with her). d_chen_charm reads 'Mei Chen has a ward charm with her on the train.' d_sato_notebook reads 'Akiko Sato has a notebook with her on the train: it was handed in from seat 1A.'\" (Interacts with SIDECAR-32's Sato bag wording.)",
+  "evidence": "drafts/D/PLAN_GAPS G12; drafts/D/INVENTED B3, A14. \u00a74.2 l.515 requires the fact text to read true for every route; a receipt proves a purchase, a lost-property notebook is not carried.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-14",
+  "severity": "minor",
+  "priority": "should",
+  "category": "fairness-writing",
+  "sections": "\u00a77.1 bullets (l.~1669); K-packet review step",
+  "change": "Add to \u00a77.1: \"Tone parity: guilty and clear suspects get the same register. Every suspect has one odd or guarded line and one sympathetic one, and no line hints at tonight's plan, a payer or a threat. The board decides guilt; the voice never does. P10-K-* reviewers read each suspect's ink with the truth hidden and check that they cannot tell.\"",
+  "evidence": "drafts/D/PLAN_GAPS G15 and 'Weakest three' item 1: devries.ink 'After tonight, I don't think they'll pass me over again.', volkov.ink 'people who pay in other ways', sato.ink '*a thin smile*', against wholly warm chen.ink/mensah.ink; the case can be called on tone. C's review praises Novak's guarded voice.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/C/PLAN_GAPS.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-15",
+  "severity": "minor",
+  "priority": "should",
+  "category": "teaching-debrief",
+  "sections": "\u00a79.3 Verdicts/Stakes (debrief), \u00a79.4 Verdicts (debrief), C HaX hub",
+  "change": "Add debrief.closingLine to C: \"Novak's bag held the burner. The 03:40 swipe only showed her badge, and you had just copied that badge yourself; it counted because nothing put her anywhere else. The travel log and the door log cleared the others.\" plus one HaX hub status line once c_novak_badge_cloned (or the clone event) is set: \"Took you ten seconds to copy that badge. Remember that when you read the door log.\" Add to D: \"Evidence goes first from wherever it is easiest to take. What you reached before each stop was safe; what you didn't came back from a bin, a backup and a conductor's memory. And failing one profile never cleared anyone on its own: check them all.\" Both pass DL10's count patterns.",
+  "evidence": "drafts/C/PLAN_GAPS G17 (a credential used is not proof of who used it; never said); drafts/D/PLAN_GAPS G17; drafts/D/INVENTED A21 (draft line 'Every stop cost you something' untrue for a thorough player). Neither \u00a79.3 nor \u00a79.4 sets a closingLine.",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md",
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-16",
+  "severity": "minor",
+  "priority": "should",
+  "category": "credits",
+  "sections": "\u00a79.3 Stakes credits lines (l.~2577), C-wrong bridge last step",
+  "change": "Add to the credits lines: \"and one line per contact, \\\"<Full name> was taken down for nothing.\\\" with condition: \\\"globalVars.deduction_outcome_<id> === 'wrong_guilty'\\\" (Ahmed and Baptiste; Novak's missed_guilty is already the escape line)\". The C-wrong bridge's last step checks both lines.",
+  "evidence": "drafts/C/PLAN_GAPS G11; drafts/C/CHECK_REPORT P11. l.2583 says the KO-everyone run 'names two innocents taken down in the credits' but l.2577 lists only c_sleeper_escaped, c_hax_trust_down, c_network_scattered.",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md",
+   "sidecar/drafts/C/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-17",
+  "severity": "minor",
+  "priority": "should",
+  "category": "data-completeness",
+  "sections": "\u00a79.3 (new 'Names and ids' block), \u00a79.3 Verdicts c_waiting_<id>",
+  "change": "Add a 'Names and ids' block to \u00a79.3: NPC ids ded_c_ahmed (Tariq Ahmed), ded_c_novak (Irena Novak), ded_c_baptiste (Odile Baptiste), ded_c_handler (Agent HaX); <id> in c_waiting_<id> (and c_released_<id>) is the full suspect id (c_waiting_ded_c_ahmed etc., each declared false); fact ids c_<surname>_safenet, _field_kit, _burner, _travel, _alibi; clue labels 'cult-issued burner', 'SAFETYNET phone', 'field kit', 'verified alibi', 'no alibi'; office door PIN 5183 (scrap in Baptiste's kit); office safe PIN 1890 (note under the desk); notes item ids; route places (t_c_ahmed_locker 'Ahmed's locker in the office', etc.); Baptiste the one social.characters entry with default thresholds, her three topics and ded_c_baptiste_reported; HaX's bark on c_keycard_revoked (delayMs: 1500): 'Your keycard's dead. Call me if you need the office.'; objective aim c_safe_house, tasks c_case_solved 'Get every call right', c_extracted 'Leave the safe house'; credits playlist and statusText; stakes.scoreLine: false. Keycard c_keycard is type: \"keycard\" (not key, so remove_item can take it, DL14). (Genders here must match SIDECAR-31's fix.)",
+  "evidence": "drafts/C/PLAN_GAPS G12, G19, G13 (keycard type); drafts/C/INVENTED (40 invented rows). Values cross ink, triggers and bridges, so two builders would diverge. Plan grep ded_c_ 0; c_waiting_<id> (l.2550, 2558) never says which id.",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md",
+   "sidecar/drafts/C/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-18",
+  "severity": "minor",
+  "priority": "should",
+  "category": "lint-rules",
+  "sections": "\u00a78 After a wrong call (l.2010-2012)",
+  "change": "Add: \"Every global any wrong-guilty list sets (with or without cost) is set true. A door or container then counts as open when its key, card or code is given by a line or action gated only on globals set this way (HaX's code after c_keycard_revoked), or by an NPC's #unlock_door so gated, provided the NPC is not the one wrongly accused and lists the room in unlockable.\"",
+  "evidence": "drafts/C/PLAN_GAPS G9; drafts/C/CHECK_REPORT P7. Plan sets only cost: true globals; C's c_keycard_revoked (l.2569) has no cost, and the open-from-start rule treats gated lines as closed, so a lint built as written may disagree with \u00a79.3's after-wrong-call hand check (l.2542).",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md",
+   "sidecar/drafts/C/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-19",
+  "severity": "minor",
+  "priority": "should",
+  "category": "validator-schema",
+  "sections": "\u00a710.1 P10-C1 scope (l.2913)",
+  "change": "Add to P10-C1's scope: \"and a shredder / shredded_document entry in scripts/minigame-data-schemas.json (title, documentTitle, content, stripCount, strips, allowRotation, successMessage, stateWrites), so fixture D validates without that warning.\"",
+  "evidence": "drafts/D/PLAN_GAPS G20; drafts/D/CHECK_REPORT \u00a74 item 2, P10: the validator warns on any shredder object with minigameData because no schema exists. Plan grep 'shredder' 0.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-20",
+  "severity": "minor",
+  "priority": "could",
+  "category": "lint-rules",
+  "sections": "DL6 row (l.2051), \u00a79.4 witness paragraph (l.~2675-2678)",
+  "change": "In DL6's witness-budget clause, after 'against the wary threshold', add: \"and a recovery counts only if it lifts influence to at least wary.at + rearmMargin\"; also \"An npc route whose NPC has no social.characters entry (no influence) is not budgeted: it answers every topic.\" In \u00a79.4 add: \"(\u221210 is exactly wary plus the default rearmMargin of 10; do not raise the margin).\"",
+  "evidence": "drafts/D/PLAN_GAPS G18; drafts/D/CHECK_REPORT P11 (social-influence.js:207 default 10, :406); drafts/C/PLAN_GAPS G10; drafts/C/CHECK_REPORT P8 (Ahmed and Novak are npc routes with no influence). Plan grep rearmMargin 0.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md",
+   "sidecar/drafts/C/PLAN_GAPS.md",
+   "sidecar/drafts/C/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-21",
+  "severity": "minor",
+  "priority": "could",
+  "category": "tampering-feedback",
+  "sections": "\u00a79.4 Clue routes paragraph (l.~2649-2652), \u00a79.4 route cells for t_d_rack, t_d_coat, t_d_phone",
+  "change": "Say what a faded source looks like after its stop and stop the coat going into the inventory: make the three sources non-takeable objects whose triggerOnInteract sets d_rack_checked / d_coat_checked / d_phone_checked (declared false); t_d_rack etc. key on global_variable_changed:<g> (where: { value: true }, once, condition: \"!globalVars.deduction_faded_<f>\") and grant the fact; a twin trigger with the opposite condition runs a titled hint ('The label has been torn off the rack.' / 'The coat pocket has been turned out.' / 'The phone has gone from the seat.'); each object has observationVariants on deduction_faded_<f>.",
+  "evidence": "drafts/D/PLAN_GAPS G3 and 'Weakest three' item 3; drafts/D/CHECK_REPORT P3; drafts/D/INVENTED B4. interactions.js:775-778 runs triggerOnInteract directly. The plan (l.2649-2652) still makes them notes pickups (the player pockets Chen's whole coat) and nothing tells the player the cult took it.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-22",
+  "severity": "minor",
+  "priority": "could",
+  "category": "tampering-feedback",
+  "sections": "\u00a75.5 Tampering (l.~1291-1294), \u00a74.1, \u00a79.4 stop table, debrief destroyed-evidence block",
+  "change": "Add an optional emptyText to deduction_tamper, toasted when nothing is left to fade before close (default none); D's stops 1-3 set \"The train stops. Someone searches carriage <n> behind you and gets off empty-handed.\" The debrief's destroyed-evidence block adds \"Saved before the stop: <label>, from <place>.\" for each fact in a tamper list already held when the tamper ran (state.saved). Record as a user decision the alternative: every stop always costs something (two-fact lists, each needing a second closed and recovery route) (relates to SIDECAR-32 option b).",
+  "evidence": "drafts/D/PLAN_GAPS G16; drafts/D/INVENTED B7; drafts/D/CHECK_REPORT P12. A thorough player never sees a stop take anything and gets no feedback; plan grep emptyText 0.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/INVENTED.md",
+   "sidecar/drafts/D/CHECK_REPORT.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-26",
+  "severity": "minor",
+  "priority": "could",
+  "category": "data-completeness",
+  "sections": "\u00a79.3 start inventory (l.2495)",
+  "change": "Either drop the fingerprint kit from C's start inventory, or add: \"The fingerprint kit is carried but unused in C, on purpose: not every tool is needed.\"",
+  "evidence": "drafts/C/PLAN_GAPS G21: C has no dusting route (\u00a79.3 route table, \u00a79.5). PLAYER_TEST_C F9 also notes the unused kit.",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-27",
+  "severity": "minor",
+  "priority": "could",
+  "category": "brief-text",
+  "sections": "\u00a79.3 Kind/brief (l.2451-2452)",
+  "change": "Give C's brief text: \"scenario_brief (shown on_start): 'Safe house. Three field contacts share this house with you. On the night of the leak, our network was passed to the cult. What to look for: Sleeper: <profile text>. Check what they carry, where they have been and where they were that night. Trust no one.' HaX's opening call repeats the profile in the same words and says nothing about how many.\" (Also define 'sleeper' here, per SIDECAR-31.)",
+  "evidence": "drafts/C/PLAN_GAPS G18 and 'Weakest three' item 1: the draft's 'someone passed our network to the cult' implies one culprit and slips past DL10's patterns.",
+  "sources": [
+   "sidecar/drafts/C/PLAN_GAPS.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-28",
+  "severity": "minor",
+  "priority": "could",
+  "category": "lint-rules",
+  "sections": "\u00a73.11 warned words (l.403), DL15, \u00a79.4 brief",
+  "change": "Add miskatonic and innsmouth to \u00a73.11's warned words and DL15's warning list. In \u00a79.4: \"The brief names no real Lovecraft place: 'the last train out of the city' until the universe bible gives a station.\"",
+  "evidence": "drafts/D/PLAN_GAPS G14; drafts/D/CHECK_REPORT D6; drafts/D/INVENTED A30 (draft used 'Miskatonic Halt'; DL15 only warns on arkham).",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/CHECK_REPORT.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-29",
+  "severity": "minor",
+  "priority": "could",
+  "category": "data-completeness",
+  "sections": "\u00a79.4 witness paragraph (l.~2675)",
+  "change": "Add: \"D's reports threshold exists only to keep DL12 quiet; it cannot be reached (the lowest influence is \u221230) and nothing reads ded_d_<w>_reported. D has no witness-report tamper.\"",
+  "evidence": "drafts/D/PLAN_GAPS G19; drafts/D/INVENTED A23.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-30",
+  "severity": "minor",
+  "priority": "could",
+  "category": "data-completeness",
+  "sections": "\u00a79.4 Stakes loss music entry (l.~2731)",
+  "change": "Name the playlist: \"a non-victory playlist (threat, music-config.js:78)\".",
+  "evidence": "drafts/D/PLAN_GAPS G21; drafts/D/INVENTED A32. music/music-config.js:78 defines threat.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md",
+   "sidecar/drafts/D/INVENTED.md"
+  ]
+ },
+ {
+  "id": "GAPSCD-31",
+  "severity": "minor",
+  "priority": "could",
+  "category": "ink-pattern",
+  "sections": "\u00a79.4 after the route table (rows 'Chen's ink', 'Volkov's ink', 'Mensah's ink')",
+  "change": "Add: \"Chen's notebook, Volkov's charm and Mensah's umbrella are shown, not claimed: the #grant_fact sits on a Narrator: line describing what the player sees (\u00a77.1).\"",
+  "evidence": "drafts/D/PLAN_GAPS G22: \u00a77.1 allows a suspect to show what can be seen, but the route cells do not require the grant to rest on a shown object; the draft adds Narrator lines.",
+  "sources": [
+   "sidecar/drafts/D/PLAN_GAPS.md"
+  ]
+ }
+]

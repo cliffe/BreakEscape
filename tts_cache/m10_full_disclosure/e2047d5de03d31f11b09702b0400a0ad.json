@@ -1,0 +1,13 @@
+{
+  "key": "e2047d5de03d31f11b09702b0400a0ad",
+  "npc": "arakawa_post",
+  "text": "That hum's in my teeth. Let's not stay long.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:58:21Z"
+}

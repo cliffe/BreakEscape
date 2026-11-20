@@ -1,0 +1,13 @@
+{
+  "key": "588cc81c637ec31cec32935d184dd634",
+  "npc": "elena_rodriguez",
+  "text": "I spent six months telling myself I was the one operation where nobody dies. I wasn't even the worst one on the page.",
+  "voice": "Leda",
+  "style": "A grid engineer in her early thirties who helped build tonight's outage believing nobody would be hurt, and has just read otherwise. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Frightened and entirely competent at the same time: the technical sentences come out steady and fast, the ones about herself do not.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:12:55Z"
+}

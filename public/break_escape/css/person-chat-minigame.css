@@ -1,0 +1,785 @@
+/**
+ * Person-Chat Minigame Styling
+ * 
+ * Pixel-art aesthetic with:
+ * - 2px borders (matching 32px tile scale)
+ * - Sharp corners (no border-radius)
+ * - Portrait canvas filling background
+ * - Dialogue as caption subtitle at bottom
+ * - Choices displayed below dialogue
+ */
+
+/* Root container */
+.person-chat-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    background-color: #000;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Main content area - portrait fills background */
+.person-chat-main-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Portrait section - fills background, positioned absolutely */
+.person-chat-portrait-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+/* Hide portrait label when in background mode */
+.person-chat-portrait-label {
+    display: none;
+}
+
+/* Portrait canvas container - fills screen */
+.person-chat-portrait-canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000;
+    border: none;
+    padding: 0;
+    overflow: hidden;
+}
+
+.person-chat-portrait-canvas-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: #000;
+}
+
+/* Caption area - a flat dark band at the bottom, as tall as its content, full width.
+   Pixel art (UX slice 16 R1 m14): no gradient fade. The top edge steps down in two 4 px
+   bands drawn by hard shadows with no blur (an outer shadow is only drawn outside the box). */
+.person-chat-caption-area {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.82);
+    box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.5), 0 -8px 0 rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    /* flex-start, not flex-end: overflow past the start edge of a flex-end box cannot be scrolled
+       to. The band hugs its content, so this only matters once it hits max-height. */
+    align-items: flex-start;
+    /* Never taller than the chat box: a long line and many choices scroll inside the band
+       instead of growing upward off the top (heights up to ~700 px) */
+    max-height: 100%;
+    overflow-y: auto;
+    /* Reserve the scrollbar's width so it does not shift the text when the band starts to scroll.
+       Both edges, so the text stays centred on desktop; the phone and landscape blocks go back to
+       the start-edge-less "stable" because there the extra 14px would cost real width. */
+    scrollbar-gutter: stable both-edges;
+    /* A Tab-focused choice scrolls clear of the "More below" strip laid over the foot */
+    scroll-padding-bottom: 36px;
+    scroll-padding-top: 4px;
+    padding: 20px;
+}
+
+/* "More below" (R2 m4): whenever the caption scrolls (the script toggles [hidden]) a strip lies
+   over its foot. It ignores taps, so the choice beneath still takes them. The phone block puts
+   it back in flow under the caption. */
+.person-chat-more:not([hidden]) {
+    display: flex;
+    position: absolute;
+    /* Stops 14px short on both sides (the caption's scrollbar gutter) so the scrollbar track and
+       its thumb stay visible beside the strip */
+    left: 14px;
+    right: 14px;
+    width: auto;
+    bottom: 0;
+    pointer-events: none;
+}
+
+/* Inner container for caption content - constrained to max-width */
+.person-chat-caption-content {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    align-content: flex-end;
+    gap: 20px;
+}
+
+/* Talk right area - speaker name and dialogue (left side, takes more space) */
+.person-chat-talk-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 400px;
+    min-width: 300px;
+}
+
+/* Header row: speaker name on left, controls on right */
+.person-chat-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #333;
+}
+
+/* Speaker name */
+.person-chat-speaker-name {
+    font-size: 20px;
+    font-weight: bold;
+    min-height: 20px;
+    flex: 0 0 auto;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.person-chat-speaker-name.npc-speaker {
+    color: #4a9eff;
+}
+
+.person-chat-speaker-name.player-speaker {
+    color: #ff9a4a;
+}
+
+/* PHASE 4: Narrator mode styling */
+.person-chat-portrait-section.narrator-mode {
+    background-color: #000;
+}
+
+.person-chat-speaker-name.narrator-speaker {
+    display: none; /* Hide speaker name in narrator mode */
+}
+
+/* Dialogue text styling for narrator */
+.person-chat-portrait-section.narrator-mode + .person-chat-caption-area .person-chat-dialogue-text {
+    text-align: center;
+    font-style: italic;
+    color: #999;
+}
+
+/* Dialogue text box */
+.person-chat-dialogue-box {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+    display: block;
+    width: 100%;
+}
+
+.person-chat-dialogue-text {
+    font-size: 30px;
+    line-height: 1.5;
+    color: #fff;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.8); /* a hard pixel offset, no blur */
+}
+
+/* Choices and continue button area (right side, fixed width) */
+.person-chat-controls-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 0 1 auto;
+    align-items: stretch;
+    min-width: 180px;
+    /* At most half the row, so a long choice can't push the choices onto a row of
+       their own and stretch the caption across the NPC's face (m08 R6) */
+    max-width: 48%;
+}
+
+/* Choices container - displayed in controls area */
+.person-chat-choices-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 0 0 auto;
+    width: 100%;
+}
+
+/* Choice buttons */
+.person-chat-choice-button {
+    background-color: rgba(42, 42, 42, 0.9);
+    color: #fff;
+    border: 2px solid #555;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.1s ease;
+    /* Wraps inside the half-width column rather than widening it (m08 R6) */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 180px;
+}
+
+.person-chat-choice-button:hover {
+    background-color: rgba(58, 58, 58, 0.95);
+    border-color: #4a9eff;
+    color: #4a9eff;
+}
+
+.person-chat-choice-button:active {
+    background-color: #4a9eff;
+    color: #000;
+    border-color: #4a9eff;
+}
+
+.person-chat-choice-button:focus {
+    outline: none;
+    border-color: #4a9eff;
+    background-color: rgba(58, 58, 58, 0.95);
+}
+
+/* Keyboard focus: a 2px square outline, not only a colour change (backlog 3 item 2). The caption's
+   20px padding leaves room for it. */
+.person-chat-choice-button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+/* Continue button */
+.person-chat-continue-button {
+    background-color: rgba(42, 74, 42, 0.9);
+    color: #4eff4a;
+    border: 2px solid #555;
+    padding: 12px 15px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.1s ease;
+    flex: 0 0 auto;
+}
+
+/* C-PC1: a solid colour (not 60% on grey) and hidden on touch, where there is no space bar. */
+.person-chat-continue-hint {
+    font-size: 11px;
+    font-weight: normal;
+    color: #4eff4a;
+    letter-spacing: 0.05em;
+}
+@media (pointer: coarse) {
+    .person-chat-continue-hint { display: none; }
+}
+
+.person-chat-continue-button:hover {
+    background-color: rgba(58, 90, 58, 0.95);
+    border-color: #4eff4a;
+    color: #4eff4a;
+}
+
+.person-chat-continue-button:active {
+    background-color: #4eff4a;
+    color: #000;
+    border-color: #4eff4a;
+}
+
+.person-chat-continue-button:focus {
+    outline: none;
+    border-color: #4eff4a;
+    background-color: rgba(58, 90, 58, 0.95);
+}
+
+.person-chat-continue-button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.person-chat-continue-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Portrait styles (for canvases) */
+.person-chat-portrait {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    display: block;
+}
+
+/* NPC-specific styling */
+.person-chat-portrait-section.speaker-npc .person-chat-portrait-canvas-container {
+    border-color: #4a9eff;
+}
+
+/* Player-specific styling */
+.person-chat-portrait-section.speaker-player .person-chat-portrait-canvas-container {
+    border-color: #ff9a4a;
+}
+
+/* Error messages */
+.minigame-error {
+    background-color: #4a0000;
+    border: 2px solid #ff0000;
+    color: #ff6b6b;
+    padding: 10px;
+    font-size: 20px;
+}
+
+/* Scrollbar styling for dialogue box - not needed with transparent background */
+.person-chat-dialogue-box::-webkit-scrollbar {
+    width: 0;
+}
+
+/* Desktop video call (heights 521-700): the status bar (z20) and the self-view PiP (top 44,
+   176 x 132, or 120 x 90 up to 768 wide) would cover a capped caption, so it stops short of them.
+   Phone landscape and phone width have their own rules below. */
+@media (min-width: 600.02px) {
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 180px);
+    }
+}
+
+@media (min-width: 600.02px) and (max-width: 768px) {
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 138px);
+    }
+}
+
+/* Phone landscape (844x390, 667x375, 915x412): wider than the phone layout's 600px but too short
+   for a tall band. The caption becomes a left column (60% of the box) so the NPC, drawn about 70%
+   across, and the X close at the top right stay clear of it; it is pinned to the foot, capped to
+   the box by the base rule, and scrolls inside itself when the line and five choices still do not
+   fit. Padding and gaps tighten so five choices usually fit. The portrait section and its scale
+   are untouched. */
+@media (min-width: 600.02px) and (max-height: 520px) {
+    /* The one 60% column: the caption and the strip under it share it */
+    .person-chat-root {
+        --pc-caption-col: 60%;
+    }
+
+    .person-chat-caption-area {
+        right: auto;
+        width: var(--pc-caption-col);
+        padding: 8px 16px;
+        /* One-sided: the 14px stays on the right only */
+        scrollbar-gutter: stable;
+    }
+
+    .person-chat-caption-content {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        align-content: flex-start;
+    }
+
+    .person-chat-caption-content,
+    .person-chat-choices-container {
+        gap: 6px;
+    }
+
+    .person-chat-controls-area {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    /* GNF is crisp at multiples of 8 from 16, so 24 stays; 30px is a whole line height that fits
+       a second choice (36px did not) */
+    .person-chat-dialogue-text {
+        font-size: 24px;
+        line-height: 30px;
+    }
+
+    .person-chat-speaker-name {
+        font-size: 16px;
+    }
+
+    .person-chat-choice-button {
+        padding: 6px 10px;
+    }
+
+    .person-chat-talk-right {
+        gap: 6px;
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    /* "More below": at the foot of the caption column while its choices run on */
+    .person-chat-more:not([hidden]) {
+        left: 0;
+        right: auto;
+        width: calc(var(--pc-caption-col) - 14px);
+    }
+
+    /* Video call: the status bar (top 0) and the self-view PiP (top 44) would cover the top of
+       the caption, so the band starts below the bar and the PiP is dropped */
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 40px);
+    }
+
+    .video-call-mode .person-chat-pip {
+        display: none;
+    }
+}
+
+/* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top and grows to fill the
+   height above the caption (never below --pc-portrait-h), and the caption follows it in flow,
+   so the speaker's name and line never cover the face;
+   the line and the choices stack in one column and the choices take the full width. The
+   caption scrolls if a long line and many choices outgrow the space below the portrait. */
+@media (max-width: 600px) {
+    .person-chat-main-content {
+        justify-content: flex-start;
+    }
+
+    /* The portrait grows to fill the spare height, so the room background runs down to the
+       dialogue band and no black area is left under a short line. It never gets less than
+       --pc-portrait-h, which the UI sets from the box height (phonePortraitSize): the height of
+       the largest whole pixel scale that leaves about 330px for the caption. The sprite is drawn
+       at that viewport scale (PersonChatPortraits.setFixedHeight), not at a scale taken from the
+       canvas height, so it stays one size from line to line while the canvas grows and shrinks
+       with the band. 64% only applies before the script has measured. */
+    .person-chat-portrait-section {
+        position: relative;
+        flex: 1 1 auto;
+        height: auto;
+        min-height: var(--pc-portrait-h, 64%);
+        max-height: none;
+    }
+
+    /* The dialogue band hugs its content and sits at the foot of the screen (the portrait above
+       takes the rest). A long line scrolls inside the band, which can grow only as far as
+       leaves the portrait its --pc-portrait-h, so the head is never cropped. */
+    .person-chat-caption-area {
+        position: relative;
+        flex: 0 1 auto;
+        min-height: 0;
+        max-height: calc(100% - var(--pc-portrait-h, 64%));
+        overflow-y: auto;
+        align-items: flex-start;
+        padding: 16px;
+        background: #000;
+        box-shadow: none;
+    }
+
+    .person-chat-caption-content {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .person-chat-talk-right {
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .person-chat-speaker-name {
+        font-size: 16px;
+    }
+
+    .person-chat-dialogue-text {
+        font-size: 24px;
+    }
+
+    .person-chat-controls-area {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .person-chat-choice-button {
+        min-width: 0;
+    }
+
+    /* "More below" (R2 m4): in flow under the caption while its choices run past the bottom edge */
+    .person-chat-more:not([hidden]) {
+        position: static;
+        width: 100%;
+    }
+
+    .person-chat-caption-area {
+        scroll-padding-bottom: 4px;
+        scrollbar-gutter: stable;
+    }
+}
+
+/* Hidden by default; the script un-hides it at any width while the caption scrolls (a phone block
+   puts it in flow, the base rule overlays it on the foot of the band) */
+.person-chat-more {
+    display: none;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    background: #1d2a36;
+    border-top: 2px solid #2d3a44;
+    color: #9ee6ff;
+    font-family: 'VT323', 'Press Start 2P', monospace;
+    font-size: 18px;
+    z-index: 11;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.person-chat-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: currentColor;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+/* ===========================================================================
+   VIDEO CALL MODE
+   A framed "secure video link": a hard inset frame, a top status bar
+   (LIVE dot / secure-link label / peer name / call timer) and a picture-in-
+   picture self-view of the player in the top-left corner.
+   =========================================================================== */
+
+/* Hard pixel frame around the whole call: two 2px rings, no blur (pixel-art UI rule, UX slice 16
+   R2 m5). The old soft vignette and the gradient scanline overlay are gone. */
+.person-chat-root.video-call-mode {
+    box-shadow:
+        inset 0 0 0 2px #2b6f4e,
+        inset 0 0 0 4px #0b1a12;
+}
+
+/* Top status bar */
+.person-chat-vc-statusbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    /* Right padding keeps the call timer clear of the chat's X */
+    padding: 8px 64px 8px 16px;
+    background: rgba(0, 0, 0, 0.85);
+    border-bottom: 2px solid #2b6f4e;
+    font-family: 'VT323', 'Press Start 2P', monospace;
+    font-size: 20px;
+    letter-spacing: 0.08em;
+    color: #cfeede;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.9);
+}
+
+.person-chat-vc-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #ff5a5a;
+}
+
+.person-chat-vc-dot {
+    width: 10px;
+    height: 10px;
+    background: #ff3b3b;
+    /* A round dot drawn in 2px steps, blinking on and off rather than fading */
+    clip-path: polygon(2px 0, 8px 0, 8px 2px, 10px 2px, 10px 8px, 8px 8px, 8px 10px,
+                       2px 10px, 2px 8px, 0 8px, 0 2px, 2px 2px);
+    animation: vcPulse 1.4s steps(1, end) infinite;
+}
+
+@keyframes vcPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.25; }
+}
+
+.person-chat-vc-link {
+    color: #6fd39c;
+}
+
+.person-chat-vc-peer {
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+/* Timer pushed to the far right */
+.person-chat-vc-timer {
+    margin-left: auto;
+    color: #6fd39c;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Picture-in-picture self-view (player), top-left so it clears the NPC (drawn right) + caption */
+.person-chat-pip {
+    position: absolute;
+    top: 44px;
+    left: 16px;
+    z-index: 20;
+    width: 176px;
+    height: 132px; /* 4:3 webcam feel */
+    background: #000;
+    border: 2px solid #2b6f4e;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.person-chat-pip-canvas {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000;
+}
+
+.person-chat-pip-canvas canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.person-chat-pip-label {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    z-index: 21;
+    font-family: 'VT323', 'Press Start 2P', monospace;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: #ff9a4a;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.95);
+}
+
+/* On small screens keep the PiP from crowding the portrait */
+@media (max-width: 768px) {
+    .person-chat-pip {
+        width: 120px;
+        height: 90px;
+    }
+    .person-chat-vc-statusbar {
+        font-size: 16px;
+        gap: 10px;
+        white-space: nowrap;
+    }
+    /* Room for LIVE, the name and the timer on one line beside the X (R2 m5) */
+    .person-chat-vc-link {
+        display: none;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.person-chat-dialogue-text {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.person-chat-choice-button {
+    animation: fadeIn 0.2s ease-in;
+}
+
+/* Print styles (if needed for saving conversation) */
+@media print {
+    .person-chat-root {
+        background-color: #fff;
+        color: #000;
+    }
+    
+    .person-chat-dialogue-box,
+    .person-chat-portraits-container {
+        border-color: #000;
+        background-color: #fff;
+    }
+    
+    .person-chat-dialogue-text,
+    .person-chat-speaker-name {
+        color: #000;
+    }
+    
+    .person-chat-choice-button {
+        display: none;
+    }
+}
+
+/* Influence header and tells (06 N4). Sits above the speaker name. */
+.person-chat-header.se-chat-header {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.se-chat-header .influence-bar {
+    max-width: 340px;
+}
+
+.se-chat-header .pretext-tells {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    max-height: 7.5em;
+    overflow: auto;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+}
+
+.se-chat-header .pretext-tells li {
+    margin: 0 0 4px;
+}
+
+/* Overlay scrollbars (no ::-webkit-scrollbar, e.g. Firefox with thin/overlay bars) reserve no gutter,
+   so the "More below" strip goes back to the full edge instead of leaving a 14px notch */
+@supports not selector(::-webkit-scrollbar) {
+    .person-chat-more:not([hidden]) {
+        left: 0;
+        right: 0;
+    }
+    @media (min-width: 600.02px) and (max-height: 520px) {
+        .person-chat-more:not([hidden]) {
+            right: auto;
+            width: var(--pc-caption-col);
+        }
+    }
+}

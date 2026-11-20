@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: social board indicators",
+  "description": "Fixture for the intel board's defender indicators step and for needsGlobal readiness slots that re-check on a global change. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

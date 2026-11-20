@@ -1,0 +1,13 @@
+{
+  "key": "cd77d4d74330e20472cd61789d37d659",
+  "npc": "sanjay",
+  "text": "Printer's off. Brilliant.",
+  "voice": "Puck",
+  "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:22:57Z"
+}

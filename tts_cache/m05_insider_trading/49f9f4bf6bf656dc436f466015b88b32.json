@@ -1,0 +1,13 @@
+{
+  "key": "49f9f4bf6bf656dc436f466015b88b32",
+  "npc": "narrator",
+  "text": "A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:58:37Z"
+}

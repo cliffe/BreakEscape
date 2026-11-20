@@ -1,0 +1,10 @@
+{
+  "scenario": "test_npc_visibility",
+  "start_room": "test_room_visibility",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

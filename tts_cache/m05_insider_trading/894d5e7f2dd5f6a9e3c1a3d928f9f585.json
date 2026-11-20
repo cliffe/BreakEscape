@@ -1,0 +1,13 @@
+{
+  "key": "894d5e7f2dd5f6a9e3c1a3d928f9f585",
+  "npc": "narrator",
+  "text": "He's breathing hard, between you and the terminal.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:35:08Z"
+}

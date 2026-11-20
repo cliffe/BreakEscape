@@ -1,0 +1,13 @@
+{
+  "key": "955878ee1d47a39e6fa8a66e9c226f5b",
+  "npc": "eleanor_vance",
+  "text": "But yes, that argument will come up in arbitration.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:22:55Z"
+}

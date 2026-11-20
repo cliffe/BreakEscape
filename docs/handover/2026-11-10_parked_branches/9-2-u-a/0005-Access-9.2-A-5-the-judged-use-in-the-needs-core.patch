@@ -1,0 +1,1441 @@
+From c51d4a0287541a71270254f0fff8e4d4951c9d6c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:41:36 +0000
+Subject: [PATCH 5/9] Access 9.2 A-5: the judged use in the needs core
+
+npc-work.js (the verdict, reach, wakeOn); in npc-needs.js the failed turn-back
+that parks itself, the dead station's counted off park, the desk filter for a
+judged need, failure parks that wake only by their own cause (and for a set
+mapping or a magnet, R5 n4), the re-arm mark, the outage kick, the failure
+pools and pictures, check visits, frustration answers and the reload's held
+park (its hold less the time since the response, R5 n3), and in the adapter
+desk, useVerdict, reportUse, workRules and cellBeside. The turn-back table
+test lists the new failed row.
+---
+ public/break_escape/js/systems/npc-needs.js | 518 +++++++++++++++++++-
+ public/break_escape/js/systems/npc-work.js  | 107 ++++
+ scripts/validate_access_work.rb             |  11 +-
+ test/js/fixtures/needs-work-world.mjs       |  55 +++
+ test/js/npc-coffee-off.test.mjs             |   2 +-
+ test/js/npc-needs-work.test.mjs             | 347 +++++++++++++
+ test/js/npc-work.test.mjs                   |  48 ++
+ 7 files changed, 1060 insertions(+), 28 deletions(-)
+ create mode 100644 public/break_escape/js/systems/npc-work.js
+ create mode 100644 test/js/fixtures/needs-work-world.mjs
+ create mode 100644 test/js/npc-needs-work.test.mjs
+ create mode 100644 test/js/npc-work.test.mjs
+
+diff --git a/public/break_escape/js/systems/npc-needs.js b/public/break_escape/js/systems/npc-needs.js
+index 581333a9f..bff80c79b 100644
+--- a/public/break_escape/js/systems/npc-needs.js
++++ b/public/break_escape/js/systems/npc-needs.js
+@@ -85,7 +85,21 @@ export const PICTURE_CHATTER = Object.freeze({
+     phone: Object.freeze(['phone']),
+     phone_message: Object.freeze(['phone']),
+     // Access slice 9.2 U (ACCESS_MODEL_SLICE_9_2_PLAN 7): a device the PC's USB policy refused
+-    usb_refused: Object.freeze(['blocked'])
++    usb_refused: Object.freeze(['blocked']),
++    // Access slice 9.2 A (plan 5.5): the failure mutters and the workaround start lines
++    station_fail: Object.freeze(['blocked']),
++    work_fail_no_access: Object.freeze(['blocked']),
++    work_fail_fed_up: Object.freeze(['blocked']),
++    social_blocked: Object.freeze(['blocked']),
++    work_fail_file_share: Object.freeze(['file']),
++    work_fail_printer: Object.freeze(['print']),
++    work_fail_email: Object.freeze(['work']),
++    work_fail: Object.freeze(['work']),
++    wk_writes_down: Object.freeze(['work']),
++    wk_prop_door: Object.freeze(['work']),
++    wk_borrow: Object.freeze(['work']),
++    wk_share_login: Object.freeze(['work']),
++    login_aloud: Object.freeze(['social'])
+ });
+ const PICTURE_DEFAULT = Object.freeze(['social']);
+ // The needs that have an icon of their own (npc-action-icons.js NPC_ICON_NAMES; not imported, so
+@@ -103,8 +117,20 @@ export const TURN_BACK = Object.freeze({
+     off: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
+     gone: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
+     answered: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
+-    rang_out: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false })
++    rang_out: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
++    // Access slice 9.2 A (plan 5.2): a judged use that ended with a failed verdict; parks itself
++    failed: Object.freeze({ mindChanged: false, grumble: true, fallback: false, parks: true })
+ });
++/**
++ * Access slice 9.2 A (ACCESS_MODEL_SLICE_9_2_PLAN 5): the judged needs, how long getState().failed
++ * shows after a counted failure, the park reasons that are failure parks, and how long a visit
++ * whose place cannot be reached is kept (check visit, workaround visit).
++ */
++export const JUDGED_NEEDS = Object.freeze(['work', 'social_media']);
++export const FAIL_SHOW_MS = 4000;
++export const FAILURE_PARKS = Object.freeze(['off', 'failed', 'held']);
++export const VISIT_DWELL_S = 8;
++export const VISIT_DROP_MS = Object.freeze({ check: 60000, workaround: 120000 });
+ /** Slice 18b-i (OFFICE_LIFE_PLAN 12.4): temptation's default band above urgentAt, in points. */
+ export const MAGNET_TEMPT = 30;
+ /** Slice 18b-ii: magnet.newsRadius default (tiles), and how long an announce waits for the speech lock. */
+@@ -434,6 +460,12 @@ export class NPCNeedsSystem {
+             // Access slice 9.2 U: items a USB policy refused with nowhere else to take them (put
+             // down, and not picked up again by this NPC)
+             refused: new Set(),
++            // Access slice 9.2 A: frustration mirrored from the server (level, tell, settled), the
++            // re-arm mark per need, resources already checked this outage, queued visits, the
++            // shown failure, and the outage kick's last-seen conditions and pending needs
++            frustration: 0, tell: 0, settled: false,
++            rearm: {}, checked: new Set(), visits: [], failedShow: null,
++            kickSeen: {}, kickPending: new Set(),
+             urgentFlag: {},
+             mode: 'idle',
+             prevMode: null,
+@@ -458,6 +490,7 @@ export class NPCNeedsSystem {
+             blocked: false
+         });
+         this._log(npcId, 'registered');
++        this._applyRestored(this.states.get(npcId));
+         return true;
+     }
+ 
+@@ -565,18 +598,25 @@ export class NPCNeedsSystem {
+      * offWhen reads `name` was last seen off and is now on.
+      */
+     onGlobalChanged(name) {
+-        if (!this._offSeen.size || typeof name !== 'string') return;
++        if (typeof name !== 'string') return;
++        // Access 9.2 A (plan 5.2): a failed park whose wakeOn names this global, and whose causes
++        // would all pass now, retries soon. Before the early return: a scenario whose only outages
++        // are resource downIfs has no offWhen object at all.
++        this._wakeFailedFor(name);
++        if (!this._offSeen.size) return;
+         let woke = false;
++        const on = [];
+         for (const id of [...this._offSeen.keys()].sort()) {
+             const rec = this._offSeen.get(id);
+             if (!offWhenNames(rec.cond).includes(name)) continue;
+             const off = this._globalHolds(rec.cond);
+-            if (rec.off && !off) woke = true;
++            if (rec.off && !off) { woke = true; on.push(id); }
+             rec.off = off;
+         }
+         if (woke) {
+             this._log(null, 'switched_on', { global: name });
+             this._clearBackoffs();
++            this._wakeStationFor(on);
+             this._wakeParked();
+         }
+     }
+@@ -879,7 +919,14 @@ export class NPCNeedsSystem {
+         if (cmd && typeof cmd === 'object' && cmd.set && typeof cmd.set === 'object') {
+             for (const [name, v] of Object.entries(cmd.set)) {
+                 if (s.needs[name] && Number.isFinite(Number(v))) {
+-                    // A mapping that sets a parked need means "now": it is unparked first (slice 14)
++                    // A mapping that sets a parked need means "now": it is unparked first (slice 14).
++                    // Access 9.2 (R5 n4): a failure or held park on a judged need is left alone;
++                    // the level is set for when it ends
++                    if (s.parked[name] && this._failurePark(s, name)) {
++                        s.parked[name].setLevel = clamp(Number(v), 0, 100);
++                        this._log(npcId, 'level_set', { need: name, level: round2(s.parked[name].setLevel), parked: true });
++                        continue;
++                    }
+                     if (s.parked[name]) this._unpark(s, name, 'set');
+                     s.levels[name] = clamp(Number(v), 0, 100);
+                     this._log(npcId, 'level_set', { need: name, level: round2(s.levels[name]) });
+@@ -902,6 +949,7 @@ export class NPCNeedsSystem {
+         if (this._prints.size) this._tickPrints();
+         if (this._magnets.size) this._tickMagnets();
+         if (this._rings.size) this._tickRings();
++        if (this._answers?.length) this._applyAnswers();
+         for (const id of [...this.states.keys()].sort()) {
+             try {
+                 this._tickNpc(this.states.get(id));
+@@ -1149,6 +1197,7 @@ export class NPCNeedsSystem {
+         if (!pos) return; // sprite not loaded: decay only
+         if (this._magnets.size) this._sight(s, pos);
+         if (!s.home || (s.home.provisional && this.tickCount >= (s.homeRetryAt || 0))) this._updateHome(s, pos);
++        if (this._kickable(s)) this._tickKick(s);
+ 
+         if (!this.isAvailable(id)) {
+             if (!s.blocked) {
+@@ -1239,6 +1288,9 @@ export class NPCNeedsSystem {
+         // need, a due errand or a tempted magnet starts on the first select after the call
+         if (s.call) return;
+ 
++        // Access 9.2 A (plan 5.3): a queued visit starts before the selector runs
++        if (s.visits.length && this._startVisit(s)) return;
++
+         // idle or returning: an urgent need may start a job
+         if (this.selectBackoff && s.selectRetryAt && this.tickCount < s.selectRetryAt) return;
+         this._selectSearched = false;
+@@ -1290,7 +1342,7 @@ export class NPCNeedsSystem {
+     _claims(objectId, exceptNpc) {
+         let c = 0;
+         for (const o of this.states.values()) {
+-            if (o.npcId === exceptNpc || !o.job || o.job.phase === 'queued') continue;
++            if (o.npcId === exceptNpc || !o.job || o.job.phase === 'queued' || o.job.kind === 'visit') continue;
+             if (o.job.targetId === objectId) c++;
+         }
+         return c;
+@@ -1397,7 +1449,21 @@ export class NPCNeedsSystem {
+                 if (!cand) { this._selectSearched = true; continue; }   // the quiet look's back-off
+             } else if (!cand) cand = this._useCandidate(s, name, objects, pos, excludeId);
+             if (cand) best = { ...cand, need: name, score, ...(tempted ? { tempted: true } : {}) };
+-            else if (s.giveUp && !exclude?.noPark) this._park(s, name, s.giveUp);
++            else if (s.giveUp && !exclude?.noPark) {
++                // Access 9.2 A (plan 5.2): a judged need whose own station is off parks `off`,
++                // counted, with its line (unless a turn-back for this need already said one)
++                const counted = s.giveUp.reason === 'off' && this._judged(s, name);
++                const why = s.giveUp;
++                if (counted) {
++                    why.missing = [{ id: why.targetId, why: 'off' }];
++                    why.grumble = exclude?.need === name ? undefined : this._failTopic(s, name, why.missing);
++                }
++                this._park(s, name, why);
++                if (counted) {
++                    if (why.grumble) this._grumble(s, why.targetId, 'off', why.grumble, { ignoreCooldown: true, icons: this._failIcons(why.grumble) });
++                    this._countFailure(s, name, why.missing, why.targetId);
++                }
++            }
+             s.giveUp = null;
+         }
+         // Interests: a reachable item with the tag is the stimulus. No item, no
+@@ -1421,7 +1487,7 @@ export class NPCNeedsSystem {
+         // hidden object (revealOnGlobal not true), nor a magnet this NPC does not know of or that is
+         // gone or empty. quiet: a magnet look that found nothing notes nothing and parks nothing.
+         const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId && !this._isOff(o)
+-            && !this._hidden(o) && !this._magnetBarred(s, o));
++            && !this._hidden(o) && !this._magnetBarred(s, o) && !this._otherDesk(s, name, o));
+         const free = sat.filter(o => this._free(s, o));
+         // Room leash and private objects, before the home preference (OFFICE_LIFE_PLAN 7.2)
+         let opts = free.filter(o => this._permitted(s, o, true));
+@@ -1451,7 +1517,7 @@ export class NPCNeedsSystem {
+             if (quiet) return null;
+             if (skipped) this._noteLeash(s, name, { need: name, skipped });
+             if (priv) this._notePrivate(s, name, { need: name, skipped: priv });
+-            s.giveUp = this._giveUpReason(s, sat, pos, ctx);
++            s.giveUp = this._giveUpReason(s, sat, pos, ctx, name);
+             return null;
+         };
+         const withAnyway = (pick) => {
+@@ -1554,7 +1620,11 @@ export class NPCNeedsSystem {
+      * give up with that reason (the nearest such source's); none permitted means the leash rule
+      * (unchanged, no parking); nothing at all, or nothing reachable, means `no_source`.
+      */
+-    _giveUpReason(s, sat, pos, ctx) {
++    _giveUpReason(s, sat, pos, ctx, need = null) {
++        // Access 9.2 A (plan 5.2): a judged need whose own station satisfies it and is off always
++        // parks `off`, before both null returns below
++        const dead = need ? this._deadStation(s, need) : null;
++        if (dead) return { reason: 'off', targetId: dead };
+         const permitted = sat.filter(o => this._permitted(s, o, true));
+         if (sat.length && !permitted.length) return null;
+         const sorted = [...permitted].sort((a, b) => {
+@@ -1575,13 +1645,19 @@ export class NPCNeedsSystem {
+     /** Give up on a need for now: level held at urgentAt + 1, decay and the unmet clock paused. */
+     _park(s, name, why) {
+         const n = s.needs[name];
+-        const until = this.clockMs + this._deferMs(s);
++        const until = this.clockMs + (Number.isFinite(why.untilMs) ? Math.max(0, why.untilMs) : this._deferMs(s));
+         s.parked[name] = { reason: why.reason, until, since: this.clockMs, avoidedId: why.avoidedId || null };
++        // Access 9.2 A (plan 5.2): a failure park keeps its station, the globals it wakes on and its causes
++        if (why.targetId && FAILURE_PARKS.includes(why.reason)) s.parked[name].targetId = why.targetId;
++        if (why.wakeOn) s.parked[name].wakeOn = [...why.wakeOn];
++        if (why.missing) s.parked[name].missing = why.missing.map(c => ({ ...c }));
+         s.levels[name] = clamp(n.urgentAt + 1, 0, 100);
+-        this._log(s.npcId, 'parked', { need: name, reason: why.reason, avoided: why.avoidedId || undefined, target: why.targetId || undefined });
++        this._log(s.npcId, 'parked', { need: name, reason: why.reason, avoided: why.avoidedId || undefined, target: why.targetId || undefined, grumble: why.grumble || undefined });
+         this._emit(`npc_need_parked:${s.npcId}`, {
+             npcId: s.npcId, need: name, reason: why.reason, targetId: why.targetId || null,
+-            ...(why.avoidedId ? { avoidedId: why.avoidedId } : {}), untilMs: until - this.clockMs
++            ...(why.avoidedId ? { avoidedId: why.avoidedId } : {}), untilMs: until - this.clockMs,
++            ...(why.missing && why.reason === 'failed' ? { missing: why.missing.map(c => ({ ...c })) } : {}),
++            ...(why.wakeOn ? { wakeOn: [...why.wakeOn] } : {})
+         });
+     }
+ 
+@@ -1590,7 +1666,7 @@ export class NPCNeedsSystem {
+         const p = s.parked[name];
+         delete s.parked[name];
+         s.lastSatisfiedAt[name] += this.clockMs - p.since;
+-        s.levels[name] = s.needs[name].urgentAt;
++        s.levels[name] = Number.isFinite(p.setLevel) ? p.setLevel : s.needs[name].urgentAt;   // access 9.2: R5 n4
+         s.selectRetryAt = 0;
+         this._log(s.npcId, 'unparked', { need: name, reason: why || (p.woken ? 'woken' : 'timer') });
+     }
+@@ -1600,7 +1676,8 @@ export class NPCNeedsSystem {
+         let k = 0;
+         for (const id of [...this.states.keys()].sort()) {
+             const s = this.states.get(id);
+-            const names = Object.keys(s.parked).sort();
++            // Access 9.2 A (plan 5.2): failure and held parks wake only by their own cause
++            const names = Object.keys(s.parked).sort().filter(n => !this._failurePark(s, n));
+             if (!names.length) continue;
+             const at = this.clockMs + WAKE_BASE_MS + k * WAKE_STEP_MS;
+             k++;
+@@ -1616,6 +1693,7 @@ export class NPCNeedsSystem {
+         const at = this.clockMs + WAKE_BASE_MS;
+         for (const name of needs) {
+             const p = s.parked[name];
++            if (p && this._failurePark(s, name)) continue;   // access 9.2: R5 n4
+             if (p && at < p.until) { p.until = at; p.woken = true; }
+         }
+     }
+@@ -1640,7 +1718,7 @@ export class NPCNeedsSystem {
+     }
+ 
+     /** One turn-back for every reason; what each does is the TURN_BACK table (slice 18a). */
+-    _turnBack(s, reason, avoidedId) {
++    _turnBack(s, reason, avoidedId, fail = null) {
+         const id = s.npcId;
+         const rule = TURN_BACK[reason] || TURN_BACK.avoid;
+         const { need, targetId } = s.job;
+@@ -1648,14 +1726,26 @@ export class NPCNeedsSystem {
+         if (rule.mindChanged && need) s.mindChanged[need] = true;
+         if (rule.mindChanged && need && tempted) s.temptBack[need] = true;   // _decay clears mindChanged above urgentAt
+         s.turnCount++;
+-        const topic = rule.grumble ? this._grumbleTopic(s, reason) : undefined;
++        // Access 9.2 A (plan 5.5): a judged need's failure line comes from its own pool order
++        const judged = need && (reason === 'failed' || reason === 'off') && this._judged(s, need);
++        const missing = fail?.missing || (reason === 'off' ? [{ id: targetId, why: 'off' }] : null);
++        const topic = rule.grumble ? (judged ? this._failTopic(s, need, missing) : this._grumbleTopic(s, reason)) : undefined;
+         this._log(id, 'turned_back', { need, target: targetId, reason, avoided: avoidedId || undefined, grumble: topic });
+-        this._emit(`npc_turned_back:${id}`, { npcId: id, need, targetId, reason, ...(avoidedId ? { avoidedId } : {}), ...this._playerProximity(id) });
++        this._emit(`npc_turned_back:${id}`, { npcId: id, need, targetId, reason, ...(avoidedId ? { avoidedId } : {}),
++            ...(reason === 'failed' && missing ? { missing: missing.map(c => ({ ...c })) } : {}), ...this._playerProximity(id) });
+         // The grumble's speech bubble hides the thought bubble, so the face shows after the line
+-        if (rule.grumble) this._grumble(s, targetId, reason, topic);
++        if (rule.grumble) {
++            if (judged) this._grumble(s, targetId, reason, topic, { ignoreCooldown: true, icons: this._failIcons(topic) });
++            else this._grumble(s, targetId, reason, topic);
++        }
+         const said = s.saying && s.saying.until > this.clockMs ? s.saying.until - this.clockMs : 0;
+         if (avoidedId) s.avoidShow = { npcId: avoidedId, until: this.clockMs + said + AVOID_BUBBLE_MS };
+         this._abortJob(s, 'turned_back', { cancel: true });
++        // Access 9.2 A (plan 5.2): a reason that parks with no fallback parks the need itself
++        if (rule.parks && !rule.fallback && need && !tempted) {
++            this._park(s, need, { reason, targetId, wakeOn: fail?.wakeOn || [], missing: missing || [], grumble: topic });
++            if (judged && !fail?.borrowed) this._countFailure(s, need, missing || [], targetId);
++        }
+         // Fallback chain: the next acceptable source for the same need, else the need parks
+         if (rule.fallback && need) {
+             const pos = this.world.npcPos(id);
+@@ -1721,6 +1811,302 @@ export class NPCNeedsSystem {
+         return PICTURE_CHATTER[own] ? own : 'grumble';
+     }
+ 
++    // ── access slice 9.2 A: judged uses, failures, frustration (ACCESS_MODEL_SLICE_9_2_PLAN 5) ──
++
++    /** The server's work plan on the NPC record (`work`), or null. */
++    _plan(s) {
++        const w = this._rec(s).work;
++        return w && typeof w === 'object' && Array.isArray(w.needs) ? w : null;
++    }
++
++    /** Judged (5.2): work by an NPC with a work plan, or social_media. */
++    _judged(s, need) {
++        if (!s.needs[need]) return false;
++        if (need === 'work') return !!this._plan(s)?.needs.length;
++        return need === 'social_media';
++    }
++
++    _stationId(s) {
++        const h = this._rec(s).needsHome;
++        return typeof h === 'string' && h ? h : null;
++    }
++
++    /** A desk that is not this NPC's own station (nor a PC it borrowed for the need): no source for a judged need. */
++    _otherDesk(s, need, o) {
++        if (!o?.desk || !this._judged(s, need)) return false;
++        if (o.id === this._stationId(s)) return false;
++        return !(s.borrow && s.borrow.pcId === o.id && s.borrow.need === need);
++    }
++
++    /** The own station's id when it satisfies the judged need and is off; else null (5.2). */
++    _deadStation(s, need) {
++        if (!this._judged(s, need)) return null;
++        if (need === 'social_media' && this._rec(s).phone !== false) return null;
++        const id = this._stationId(s);
++        const obj = id ? this.world.getObject(id) : null;
++        if (!obj?.affordance || !asList(obj.affordance.satisfies).includes(need)) return null;
++        return this._isOff(obj) ? id : null;
++    }
++
++    _failurePark(s, name) {
++        const p = s.parked[name];
++        return !!p && FAILURE_PARKS.includes(p.reason) && this._judged(s, name);
++    }
++
++    _hasLines(s, topic) {
++        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
++    }
++
++    /**
++     * The pool a judged failure speaks from (5.5), chosen from the tell held now: fed up at tell 2,
++     * else the cause's own pool, else work_fail; with no line anywhere, the cause's own pool (its picture).
++     */
++    _failTopic(s, need, missing) {
++        const first = (missing || [])[0] || null;
++        let own = 'work_fail';
++        if (first) {
++            if (first.why === 'off' || first.why === 'locked_out') own = 'station_fail';
++            else if (first.why === 'social_blocked') own = 'social_blocked';
++            else if (first.why === 'no_access') own = 'work_fail_no_access';
++            else {
++                const kind = this._plan(s)?.needs.find(r => r.id === first.id)?.kind;
++                own = typeof kind === 'string' && kind ? `work_fail_${kind}` : 'work_fail';
++            }
++        }
++        if (s.tell >= 2 && this._hasLines(s, 'work_fail_fed_up')) return 'work_fail_fed_up';
++        if (this._hasLines(s, own)) return own;
++        if (this._hasLines(s, 'work_fail')) return 'work_fail';
++        return own;
++    }
++
++    /** A failure's picture is its pool's own; a work_fail_<kind> with no entry shows work_fail's. */
++    _failIcons(topic) {
++        if (PICTURE_CHATTER[topic]) return null;
++        return topic && topic.startsWith('work_fail_') ? PICTURE_CHATTER.work_fail : null;
++    }
++
++    /**
++     * A counted failure (5.2, 5.4): shown for FAIL_SHOW_MS, every other need drained by breakDrain,
++     * reported to the server, and a check visit queued for the first down resource with an object.
++     */
++    _countFailure(s, need, missing, objectId) {
++        const id = s.npcId;
++        s.failedShow = { need, missing: (missing || []).map(c => ({ ...c })), until: this.clockMs + FAIL_SHOW_MS };
++        const drain = Number(this._plan(s)?.breakDrain);
++        const d = Number.isFinite(drain) ? clamp(drain, 0, 50) : 10;
++        for (const other of Object.keys(s.needs)) {
++            if (other === need || s.parked[other]) continue;
++            s.levels[other] = clamp(s.levels[other] - d, 0, 100);
++        }
++        const rearmed = !!s.rearm[need];
++        delete s.rearm[need];
++        this._log(id, 'failure_counted', { need, causes: (missing || []).map(c => `${c.id}:${c.why}`).join(','), rearmed: rearmed || undefined });
++        if (typeof this.world.reportUse === 'function') {
++            this.world.reportUse(id, { event: 'fail', need, objectId: objectId ?? null, missing: (missing || []).map(c => ({ ...c })), ...(rearmed ? { rearmed: true } : {}) });
++        }
++        const plan = this._plan(s);
++        for (const c of missing || []) {
++            if (c.why !== 'down') continue;
++            const r = plan?.needs.find(x => x.id === c.id);
++            if (!r?.object || s.checked.has(r.id)) continue;
++            s.checked.add(r.id);
++            this.enqueueVisit(id, { kind: 'check', at: { objectId: r.object }, data: { resourceId: r.id } });
++            break;
++        }
++    }
++
++    /** A failed park whose wakeOn names `name` and whose causes would all pass now retries soon (5.2). */
++    _wakeFailedFor(name) {
++        const rules = this.world.workRules;
++        for (const id of [...this.states.keys()].sort()) {
++            const s = this.states.get(id);
++            for (const need of Object.keys(s.parked).sort()) {
++                const p = s.parked[need];
++                if (p.reason !== 'failed' || !Array.isArray(p.wakeOn) || !p.wakeOn.includes(name)) continue;
++                const clear = rules?.causesClear ? rules.causesClear(this._plan(s), p.missing, n => this._globalValue(n)) : false;
++                if (!clear) continue;
++                const at = this.clockMs + WAKE_BASE_MS;
++                if (at < p.until) { p.until = at; p.woken = true; }
++                s.rearm[need] = true;
++                this._log(id, 'failure_woken', { need, global: name });
++            }
++        }
++    }
++
++    /** An off failure park whose station came back on retries one use time of that station later (5.2). */
++    _wakeStationFor(ids) {
++        if (!ids.length) return;
++        for (const id of [...this.states.keys()].sort()) {
++            const s = this.states.get(id);
++            for (const need of Object.keys(s.parked).sort()) {
++                const p = s.parked[need];
++                if (p.reason !== 'off' || !ids.includes(p.targetId) || !this._judged(s, need)) continue;
++                const secs = Number(this.world.getObject(p.targetId)?.affordance?.useSeconds);
++                const at = this.clockMs + Math.max(WAKE_BASE_MS, (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000);
++                if (at < p.until) { p.until = at; p.woken = true; }
++                s.rearm[need] = true;
++                this._log(id, 'failure_woken', { need, target: p.targetId });
++            }
++        }
++    }
++
++    _globalValue(name) {
++        return typeof this.world.globalValue === 'function' ? this.world.globalValue(name) : (this._globalHolds(name) ? true : false);
++    }
++
++    /** Needs the outage kick watches for this NPC (5.6): work with a plan; social_media with no phone. */
++    _kickable(s) {
++        return this._judged(s, 'work') || (this._judged(s, 'social_media') && this._rec(s).phone === false);
++    }
++
++    /**
++     * The outage kick (5.6): when a global the work plan names, or the station's offWhen, turns
++     * on (or is on at register), the need's level drops to urgentAt once, so the NPC tries at its
++     * next selection. Parked needs are left alone; a change during a use of the need, or while the
++     * home is provisional, waits.
++     */
++    _tickKick(s) {
++        const rules = this.world.workRules;
++        const conds = [];
++        const st = this._stationId(s) ? this.world.getObject(this._stationId(s)) : null;
++        const stationOff = st?.affordance?.offWhen;
++        if (this._judged(s, 'work')) {
++            const names = rules?.planGlobals ? rules.planGlobals(this._plan(s)) : [];
++            for (const n of names) conds.push({ key: `g:${n}`, cond: n, need: 'work' });
++            if (stationOff !== undefined && stationOff !== null && stationOff !== false && stationOff !== '') conds.push({ key: `w:${JSON.stringify(stationOff)}`, cond: stationOff, need: 'work' });
++        }
++        if (this._judged(s, 'social_media') && this._rec(s).phone === false && stationOff !== undefined && stationOff !== null && stationOff !== false && stationOff !== '') {
++            conds.push({ key: `s:${JSON.stringify(stationOff)}`, cond: stationOff, need: 'social_media' });
++        }
++        for (const c of conds) {
++            const on = this._globalHolds(c.cond);
++            const was = s.kickSeen[c.key];
++            s.kickSeen[c.key] = on;
++            if (on && !was) s.kickPending.add(c.need);
++        }
++        if (!s.kickPending.size || s.home?.provisional || !s.home) return;
++        for (const need of [...s.kickPending].sort()) {
++            if (s.parked[need]) { s.kickPending.delete(need); continue; }
++            if (s.job && s.job.need === need && s.job.phase === 'using') continue;
++            s.kickPending.delete(need);
++            const n = s.needs[need];
++            if (!n || !(s.levels[need] > n.urgentAt)) continue;
++            s.levels[need] = n.urgentAt;
++            s.selectRetryAt = 0;
++            this._log(s.npcId, 'kicked', { need, level: round2(n.urgentAt) });
++        }
++    }
++
++    // ── visits (5.3) ──
++
++    /**
++     * Queue a walk the needs system is told to make: go to { objectId } or { npcId }, stay
++     * useSeconds (default 8), come back. A running job is never interrupted.
++     */
++    enqueueVisit(npcId, { kind = 'visit', at, useSeconds, data } = {}) {
++        const s = this.states.get(npcId);
++        if (!s || !at || (typeof at.objectId !== 'string' && typeof at.npcId !== 'string')) return false;
++        s.visits.push({ kind, at: { ...at }, useSeconds, data: data ?? null, queuedAt: this.clockMs, triedAt: -Infinity });
++        this._log(npcId, 'visit_queued', { kind, target: at.objectId || at.npcId });
++        return true;
++    }
++
++    _visitPlace(s, v) {
++        if (v.at.objectId) {
++            const obj = this.world.getObject(v.at.objectId);
++            if (!obj || !this._reachable(s, obj) || this._roomForbidden(s, obj.roomId)) return null;
++            return { targetId: obj.id };
++        }
++        const p = this.world.npcPos(v.at.npcId);
++        if (!p || this._roomForbidden(s, p.roomId)) return null;
++        const cell = typeof this.world.cellBeside === 'function' ? this.world.cellBeside(v.at.npcId) : { x: p.x + 32, y: p.y };
++        return cell ? { targetId: v.at.npcId, cell } : null;
++    }
++
++    _startVisit(s) {
++        const v = s.visits[0];
++        const limit = VISIT_DROP_MS[v.kind === 'check' ? 'check' : 'workaround'];
++        if (this.clockMs - v.queuedAt >= limit) {
++            s.visits.shift();
++            this._log(s.npcId, 'visit_dropped', { kind: v.kind, target: v.at.objectId || v.at.npcId });
++            this._emit(`npc_visit_dropped:${s.npcId}`, { npcId: s.npcId, kind: v.kind, at: { ...v.at }, data: v.data });
++            return false;
++        }
++        if (this.clockMs - v.triedAt < 1000) return false;
++        v.triedAt = this.clockMs;
++        const place = this._visitPlace(s, v);
++        if (!place) return false;
++        s.visits.shift();
++        this._startJob(s, { kind: 'visit', targetId: place.targetId, visit: { ...v, cell: place.cell || null } });
++        return true;
++    }
++
++    _completeVisit(s) {
++        const id = s.npcId;
++        const v = s.job.visit;
++        this._log(id, 'visit_done', { kind: v.kind, target: v.at.objectId || v.at.npcId });
++        this._emit(`npc_visit_done:${id}`, { npcId: id, kind: v.kind, at: { ...v.at }, data: v.data });
++        if (v.kind === 'check' && v.at.objectId) this._emit(`npc_checked:${v.at.objectId}`, { npcId: id, objectId: v.at.objectId, data: v.data });
++        const stayPut = s.atPost && this._targetsOwnPost(s);
++        s.job = null;
++        this._goHome(s, { stayPut });
++    }
++
++    // ── frustration from the server (5.4) ──
++
++    /** Answers from POST /npc_frustration, applied at the next tick. */
++    applyFrustration(answers) {
++        if (!Array.isArray(answers) || !answers.length) return;
++        (this._answers || (this._answers = [])).push(...answers.filter(a => a && typeof a.npcId === 'string'));
++    }
++
++    _applyAnswers() {
++        const list = this._answers;
++        this._answers = [];
++        for (const a of list) {
++            if (a.refused || a.stale) continue;
++            const s = this.states.get(a.npcId);
++            if (!s) { (this._pendingLevels || (this._pendingLevels = new Map())).set(a.npcId, a); continue; }
++            this._setFrustration(s, a);
++            if (a.run) this._emit(`npc_workaround_due:${s.npcId}`, { npcId: s.npcId, run: a.run });
++        }
++    }
++
++    _setFrustration(s, a) {
++        if (!Number.isFinite(Number(a.level))) return;
++        const previous = s.frustration;
++        s.frustration = clamp(Number(a.level), 0, 100);
++        s.tell = Number.isFinite(Number(a.tell)) ? Number(a.tell) : s.tell;
++        s.settled = !!a.settled;
++        this.world.setGlobal?.(`${s.npcId}_frustration`, s.frustration);
++        this._log(s.npcId, 'frustration', { level: round2(s.frustration), tell: s.tell });
++        this._emit(`npc_frustration_changed:${s.npcId}`, { npcId: s.npcId, level: s.frustration, previous, tell: s.tell });
++    }
++
++    /** The scenario response's npcFrustration, kept and applied as each NPC registers (5.4). */
++    restoreFrustration(map) {
++        this._restored = map && typeof map === 'object' ? map : null;
++        this._restoredAt = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
++    }
++
++    _applyRestored(s) {
++        if (!s) return;
++        const pending = this._pendingLevels?.get(s.npcId);
++        if (pending) { this._pendingLevels.delete(s.npcId); this._setFrustration(s, pending); }
++        const e = this._restored?.[s.npcId];
++        if (!e || typeof e !== 'object') return;
++        delete this._restored[s.npcId];
++        this._setFrustration(s, e);
++        // R5 n3: the hold is measured from the response; the time since it arrived is taken off
++        const now = typeof this.world.elapsedMs === 'function' ? this.world.elapsedMs() : 0;
++        const elapsed = Math.max(0, now - (this._restoredAt || 0));
++        for (const [need, secs] of Object.entries(e.hold || {})) {
++            const ms = Number(secs) * 1000 - elapsed;
++            if (!s.needs[need] || !this._judged(s, need) || !(ms > 0)) continue;
++            this._park(s, need, { reason: 'held', untilMs: ms });
++        }
++    }
++
+     // ── voiced chatter: bag, cooldown, speech lock, picture chat (slice 15) ──
+ 
+     /** The next line index from this NPC's bag for a topic: no repeat until the bag is empty. */
+@@ -1868,6 +2254,7 @@ export class NPCNeedsSystem {
+             startedAt: this.clockMs, deadline: 0, useUntil: 0, carrying: false
+         };
+         if (pick.offWhen !== undefined) s.job.offWhen = pick.offWhen;   // slice 18a: checked on the way
++        if (pick.visit) s.job.visit = pick.visit;   // access 9.2 A: a visit (5.3)
+         if (pick.tempted) s.job.tempted = true;   // slice 18b-i: recorded now, the level may decay on the way
+         // Slice 19: a colleague answering a desk phone; the call (and its length) is chosen at the claim
+         if (pick.phoneCall) { s.job.phone = true; s.job.call = pick.phoneCall; s.job.callMs = pick.phoneCall.total; }
+@@ -2064,8 +2451,8 @@ export class NPCNeedsSystem {
+         const id = s.npcId;
+         const job = s.job;
+         const destId = job.phase === 'goto_item' ? job.itemId : job.targetId;
+-        const obj = this.world.getObject(destId);
+-        let cell = obj ? this.world.approachCell(obj) : null;
++        const obj = job.visit?.cell ? null : this.world.getObject(destId);
++        let cell = job.visit?.cell ? { ...job.visit.cell } : (obj ? this.world.approachCell(obj) : null);
+         if (!cell) { this._failJob(s, 'no_approach'); return; }
+         if (job.phase === 'queued') {
+             const place = this._queuePlace(s, obj);
+@@ -2076,7 +2463,7 @@ export class NPCNeedsSystem {
+         }
+         // A shared object (capacity 2+) someone else is already headed for: stand beside them, so
+         // the two can face each other (slice 8). Only a world with besideCell (the live adapter).
+-        if (job.phase === 'goto_target' && typeof this.world.besideCell === 'function'
++        if (job.phase === 'goto_target' && typeof this.world.besideCell === 'function' && obj
+             && (Number(obj.affordance?.capacity) || 1) >= 2) {
+             const taken = [];
+             for (const o of this.states.values()) {
+@@ -2168,6 +2555,13 @@ export class NPCNeedsSystem {
+             // Slice 18b-i: a serving is taken as eating starts, so nobody eats one that is not there
+             if (job.magnet && !this._takeServing(s, job.targetId)) { this._turnBack(s, 'gone'); return; }
+             job.phase = 'using';
++            if (job.kind === 'visit') {
++                // Access 9.2 A (5.3): a visit's dwell; it claims nothing and pairs with nobody
++                const vs = Number(job.visit?.useSeconds);
++                job.useUntil = this.clockMs + (Number.isFinite(vs) ? clamp(vs, 0, 600) : VISIT_DWELL_S) * 1000;
++                this._log(id, 'visiting', { kind: job.visit?.kind, target: job.targetId });
++                return;
++            }
+             const secs = Number(obj?.affordance?.useSeconds);
+             job.useUntil = this.clockMs + (Number.isFinite(secs) ? clamp(secs, 0, 600) : 20) * 1000;
+             this._log(id, 'using', { need: job.need, target: job.targetId });
+@@ -2188,6 +2582,14 @@ export class NPCNeedsSystem {
+         const aff = obj?.affordance || job.aff || {};
+         // Access slice 9.2 U (plan 7): the target's USB policy refuses the carried device's class
+         if (job.carrying && job.usbClass && usbRefusedBy(obj?.usbPolicy ?? null, job.usbClass)) { this._refuseUse(s); return; }
++        // Access slice 9.2 A (plan 5.3): a visit restores nothing and fires no npc_used
++        if (job.kind === 'visit') { this._completeVisit(s); return; }
++        // Access slice 9.2 A (plan 5.2): a judged use is checked before anything is restored
++        const judged = job.kind === 'use' && job.need && this._judged(s, job.need);
++        if (judged && typeof this.world.useVerdict === 'function') {
++            const v = this.world.useVerdict(id, job.need, obj) || { met: true };
++            if (!v.met) { this._failUse(s, v); return; }
++        }
+         if (n && s.temptBack[job.need]) delete s.temptBack[job.need];
+         if (n) {
+             let restores = asList(aff.satisfies).includes(job.need) ? Number(aff.restores) || 0 : 0;
+@@ -2215,8 +2617,17 @@ export class NPCNeedsSystem {
+             npcId: id, objectId: job.targetId, need: job.need,
+             itemId: job.carrying ? job.itemId : null, tag: job.carrying ? job.tag : null,
+             payload: cloneData(rec.usePayload),
+-            ...this._playerProximity(id)
++            ...this._playerProximity(id),
++            ...(judged ? { met: true } : {})
+         });
++        // Access 9.2 A (5.4): a met judged use eases frustration, re-arms the need and ends the outage's check
++        if (judged) {
++            s.rearm[job.need] = true;
++            if (job.need === 'work') s.checked.clear();
++            if (s.frustration > 0 && typeof this.world.reportUse === 'function') {
++                this.world.reportUse(id, { event: 'ease', need: job.need, objectId: job.targetId });
++            }
++        }
+         const hook = rec.onUse && rec.onUse[job.targetId];
+         if (hook && typeof hook === 'object') {
+             if (typeof hook.setGlobal === 'string' && hook.setGlobal) { this.world.setGlobal(hook.setGlobal, true); this._worldChanged(); }
+@@ -2280,6 +2691,23 @@ export class NPCNeedsSystem {
+         this._goHome(s, { stayPut });
+     }
+ 
++    /**
++     * Access slice 9.2 A (plan 5.2): a judged use whose verdict failed. Nothing is restored, no
++     * npc_used fires and no onUse hook applies; npc_use_failed fires and the job ends as a
++     * `failed` turn-back, which parks the need with the globals it wakes on.
++     */
++    _failUse(s, v) {
++        const id = s.npcId;
++        const job = s.job;
++        const missing = (v.missing || []).map(c => ({ ...c }));
++        const rules = this.world.workRules;
++        const wakeOn = rules?.wakeOnFor ? rules.wakeOnFor(this._plan(s), missing, n => this._globalValue(n)) : [];
++        this._log(id, 'use_failed', { need: job.need, target: job.targetId, causes: missing.map(c => `${c.id}:${c.why}`).join(',') });
++        this._emit(`npc_use_failed:${id}`, { npcId: id, objectId: job.targetId, need: job.need, missing, station: !!v.station });
++        const borrowed = !!(s.borrow && s.borrow.pcId === job.targetId);   // 6.4: not reported (sub-slice H)
++        this._turnBack(s, 'failed', null, { missing, wakeOn, borrowed });
++    }
++
+     /** Player proximity at use time: { playerNearby, playerDistance }. */
+     _playerProximity(npcId) {
+         const p = typeof this.world.playerProximity === 'function' ? this.world.playerProximity(npcId) : null;
+@@ -3159,7 +3587,7 @@ export class NPCNeedsSystem {
+     /** No free target for this need: the nearest claimed one with a queue place for this NPC. */
+     _queueCandidate(s, name, objects, pos, ctx = null) {
+         let list = objects.filter(o => o.affordance?.queue && asList(o.affordance.satisfies).includes(name)
+-            && o.id !== ctx?.exclude && !this._isOff(o)
++            && o.id !== ctx?.exclude && !this._isOff(o) && !this._otherDesk(s, name, o)
+             && this._permitted(s, o, true) && !(s.cooldowns[o.id] > this.clockMs)
+             && !this._free(s, o) && this._queuePlace(s, o));
+         // Slice 14: not behind someone avoided, and not into a line that is too long (balking)
+@@ -3321,6 +3749,13 @@ export class NPCNeedsSystem {
+             call: s.call ? { phoneId: s.call.phoneId, remainingMs: Math.max(0, s.call.until - this.clockMs) } : null,
+             avoiding: (s.avoidShow && this.clockMs < s.avoidShow.until) ? s.avoidShow.npcId : (s.job?.goingAnyway || null),
+             home: s.home ? { x: Math.round(s.home.x), y: Math.round(s.home.y), roomId: s.home.roomId, objectId: s.home.objectId || null, provisional: !!s.home.provisional } : null,
++            // Access slice 9.2 A (5.4, 5.5): frustration and tell from the server, the failure just
++            // counted (for FAIL_SHOW_MS), queued visits, and whether a visit is running
++            frustration: s.frustration, tell: s.tell, settled: s.settled,
++            failed: s.failedShow && this.clockMs < s.failedShow.until ? { need: s.failedShow.need, missing: s.failedShow.missing.map(c => ({ ...c })) } : null,
++            visits: s.visits.map(v => ({ kind: v.kind, at: { ...v.at } })),
++            visiting: s.job?.kind === 'visit' ? { kind: s.job.visit?.kind || null, at: { ...(s.job.visit?.at || {}) } } : null,
++            judged: { work: this._judged(s, 'work'), social_media: this._judged(s, 'social_media') },
+             clockMs: this.clockMs, tick: this.tickCount
+         };
+     }
+@@ -3364,6 +3799,13 @@ export function createEngineWorld() {
+         const id = sp.scenarioData?.id || sp.objectId;
+         return items.some(it => it === sp || (id && (it?.scenarioData?.id === id || it?.objectId === id)));
+     };
++    // The desk rule (plan 5.2): workstation-state.js isWorkstation, copied, or the desk_pc preset
++    const isDeskData = (sd) => {
++        if (!sd || typeof sd !== 'object' || !sd.id) return false;
++        if (sd.workstation === true || sd.locksScreenOnLeave !== undefined || sd.lockChance !== undefined || sd.lockType === 'login') return true;
++        const op = W().officePresets;
++        return !!(op?.presetIdFor && op.presetsOn?.(W().gameScenario) && op.presetIdFor(sd) === 'desk_pc');
++    };
+     const describe = (roomId, key, sp) => {
+         const sd = sp.scenarioData || {};
+         const id = sd.id || sp.objectId || key;
+@@ -3386,6 +3828,9 @@ export function createEngineWorld() {
+         if (typeof sd.usbClass === 'string') out.usbClass = sd.usbClass;
+         const usbPolicy = W().pcPolicy?.usbPolicyFor?.(sd, W().gameScenario) ?? null;
+         if (usbPolicy) out.usbPolicy = usbPolicy;
++        // Access slice 9.2 A (plan 5.2): a desk (a workstation by its fields, or the desk_pc preset)
++        // is no source for another NPC's judged need
++        if (isDeskData(sd)) out.desk = true;
+         return out;
+     };
+     // A producer's reveal slots, by id, and the free test (loaded, not destroyed, active, global not
+@@ -3676,6 +4121,31 @@ export function createEngineWorld() {
+         },
+         // needsCompany requireGlobal (requiredGlobalsHold, copied from npc-sight-challenge.js)
+         globalHolds: cond => requiredGlobalsHold(cond, W().gameState?.globalVariables || {}),
++        // Access slice 9.2 A (ACCESS_MODEL_SLICE_9_2_PLAN 5): a global's value, the pure work rules
++        // (systems/npc-work.js, set on window when loaded), the use verdict and the report queue
++        globalValue: name => W().gameState?.globalVariables?.[name],
++        get workRules() { return W().npcWork || null; },
++        useVerdict(npcId, need, obj) {
++            const rules = W().npcWork;
++            const rec = W().npcManager?.getNPC?.(npcId) || W().npcManager?.npcs?.get?.(npcId) || null;
++            if (!rules || !rec) return { met: true, missing: [] };
++            const stationId = typeof rec.needsHome === 'string' ? rec.needsHome : null;
++            const station = obj && obj.id === stationId ? { id: obj.id, lockedOut: false, socialBlocked: false } : null;
++            return rules.useVerdict(rec.work, need, station, W().gameState?.globalVariables || {});
++        },
++        reportUse(npcId, report) { W().npcReports?.queue?.(npcId, report); },
++        // A free cell beside where an NPC stands now (a visit to an NPC, 5.3)
++        cellBeside(npcId) {
++            const sp = W().npcManager?.npcs?.get?.(npcId)?._sprite || W().npcManager?.getNPC?.(npcId)?._sprite;
++            const pm = W().pathfindingManager;
++            if (!sp || !pm?.findNearestWalkableWorldCell) return null;
++            const c = centreOf(sp);
++            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
++                const cell = pm.findNearestWalkableWorldCell(c.x + dx * TILE, c.y + dy * TILE, 0);
++                if (cell) return cell;
++            }
++            return null;
++        },
+         // A second user of a shared object stands one tile beside the first: right, left, below, above
+         besideCell(cell, taken) {
+             const pm = W().pathfindingManager;
+diff --git a/public/break_escape/js/systems/npc-work.js b/public/break_escape/js/systems/npc-work.js
+new file mode 100644
+index 000000000..6008b7605
+--- /dev/null
++++ b/public/break_escape/js/systems/npc-work.js
+@@ -0,0 +1,107 @@
++/**
++ * The use verdict (ACCESS_MODEL_SLICE_9_2_PLAN.md 5.2, sub-slice A). Pure, with no imports, so
++ * node tests load it directly; it also sets window.npcWork, which the needs adapter reads
++ * (npc-needs.js imports nothing).
++ *
++ * A judged use (work by an NPC with a work plan; social_media) is checked when it ends. Every
++ * failure is collected: the station (sub-slice L: locked_out) and, for work, each resource in the
++ * plan: not admitted (no_access), its downIf global truthy (down), or not reachable from the
++ * station (unreachable). No failure: the use is met.
++ *
++ * `plan` is the server plan on the NPC record (`work`: { breakDrain, needs: [{ id, kind,
++ * admitted, downIf, object, routes }] }). `station` is { id, lockedOut, socialBlocked } or null.
++ * `globals` is an object of global values or a function name -> value.
++ */
++
++function truthy(v) {
++    return !(v === undefined || v === null || v === false || v === 0 || v === "");
++}
++
++function lookup(globals) {
++    if (typeof globals === "function") return name => globals(name);
++    const g = globals && typeof globals === "object" ? globals : {};
++    return name => g[name];
++}
++
++/**
++ * A need with no routes key is reachable; an empty list of routes never is; otherwise it is
++ * reachable when some route has no truthy global.
++ */
++export function reachable(need, globals) {
++    if (!need || !Array.isArray(need.routes)) return true;
++    const get = lookup(globals);
++    return need.routes.some(route => Array.isArray(route) && route.every(name => !truthy(get(name))));
++}
++
++/** Every cause a use of `need` fails with, as [{ id, why }], in plan order. */
++export function failures(plan, need, station, globals) {
++    const out = [];
++    const get = lookup(globals);
++    if (station && station.lockedOut) out.push({ id: station.id, why: "locked_out" });
++    if (need === "social_media" && station && station.socialBlocked) out.push({ id: station.id, why: "social_blocked" });
++    if (need !== "work") return out;
++    const needs = plan && Array.isArray(plan.needs) ? plan.needs : [];
++    for (const r of needs) {
++        if (!r || typeof r.id !== "string") continue;
++        if (r.admitted === false) out.push({ id: r.id, why: "no_access" });
++        else if (typeof r.downIf === "string" && r.downIf && truthy(get(r.downIf))) out.push({ id: r.id, why: "down" });
++        else if (!reachable(r, globals)) out.push({ id: r.id, why: "unreachable" });
++    }
++    return out;
++}
++
++/** { met, missing, station }: station is true when a station failure is among the causes. */
++export function useVerdict(plan, need, station, globals) {
++    const missing = failures(plan, need, station, globals);
++    return { met: missing.length === 0, missing, station: missing.some(c => c.why === "locked_out" || c.why === "social_blocked") };
++}
++
++/**
++ * The globals that made a use fail, for a park to wake on (5.2): each down resource's downIf and
++ * the truthy route globals of each unreachable one. A failure with a cause that has no global
++ * (no_access, locked_out, social_blocked, an unreachable whose routes carry no global) has none:
++ * it cannot clear while that cause holds.
++ */
++export function wakeOnFor(plan, missing, globals) {
++    const get = lookup(globals);
++    const byId = new Map((plan && Array.isArray(plan.needs) ? plan.needs : []).map(r => [r.id, r]));
++    const out = new Set();
++    for (const c of missing || []) {
++        const r = byId.get(c.id);
++        if (c.why === "down" && r && r.downIf) { out.add(r.downIf); continue; }
++        if (c.why === "unreachable" && r && Array.isArray(r.routes)) {
++            const names = r.routes.flat().filter(n => truthy(get(n)));
++            if (!names.length) return [];
++            names.forEach(n => out.add(n));
++            continue;
++        }
++        return [];
++    }
++    return [...out].sort();
++}
++
++/** Whether every recorded cause would pass now (a woken failed park retries only then). */
++export function causesClear(plan, missing, globals) {
++    const get = lookup(globals);
++    const byId = new Map((plan && Array.isArray(plan.needs) ? plan.needs : []).map(r => [r.id, r]));
++    return (missing || []).every(c => {
++        const r = byId.get(c.id);
++        if (c.why === "down") return !!r && !truthy(get(r.downIf));
++        if (c.why === "unreachable") return !!r && reachable(r, globals);
++        return false;
++    });
++}
++
++/** Every global the plan names (downIf and route globals), for the outage kick and the forced sync. */
++export function planGlobals(plan) {
++    const out = new Set();
++    for (const r of plan && Array.isArray(plan.needs) ? plan.needs : []) {
++        if (r && typeof r.downIf === "string" && r.downIf) out.add(r.downIf);
++        if (r && Array.isArray(r.routes)) r.routes.flat().forEach(n => { if (typeof n === "string" && n) out.add(n); });
++    }
++    return [...out].sort();
++}
++
++const npcWork = Object.freeze({ reachable, failures, useVerdict, wakeOnFor, causesClear, planGlobals });
++if (typeof window !== "undefined") window.npcWork = npcWork;
++export default npcWork;
+diff --git a/scripts/validate_access_work.rb b/scripts/validate_access_work.rb
+index 2e5974d27..4027b79b0 100644
+--- a/scripts/validate_access_work.rb
++++ b/scripts/validate_access_work.rb
+@@ -83,6 +83,11 @@ module ValidateAccessWork
+ 
+   # ── sub-slice U: the USB policy ──────────────────────────────────────
+ 
++  def accepts_of(o)
++    a = o.is_a?(Hash) ? o['affordance'] : nil
++    a.is_a?(Hash) ? a['accepts'] : nil
++  end
++
+   def usb_governed?(o) = workstation?(o) || (o['policy'].is_a?(String) && !o['policy'].empty?)
+ 
+   def effective_policy_name(o, json_data)
+@@ -113,7 +118,7 @@ module ValidateAccessWork
+ 
+   # Items an object takes: by an NPC delivery (affordance.accepts tags) or the player's plant (requiresItem)
+   def taken_items(o, items)
+-    tags = Array(o.dig('affordance', 'accepts')).grep(String)
++    tags = Array(accepts_of(o)).grep(String)
+     req = o['requiresItem']
+     wanted = req.nil? ? [] : Array(req).grep(String)
+     items.select do |it|
+@@ -137,7 +142,7 @@ module ValidateAccessWork
+       err(issues, "item '#{o['id'] || o['name']}' has usbClass '#{o['usbClass']}'; use storage or hid.") unless USB_CLASSES.include?(o['usbClass'])
+     end
+     items = entries.map { |e| e[:obj] }
+-    takers = entries.map { |e| e[:obj] }.select { |o| o.dig('affordance', 'accepts') || o['requiresItem'] }
++    takers = entries.map { |e| e[:obj] }.select { |o| accepts_of(o) || o['requiresItem'] }
+ 
+     # A blocking policy that governs only objects whose items have no usbClass does nothing there
+     (json_data['policies'] || {}).each do |name, p|
+@@ -177,7 +182,7 @@ module ValidateAccessWork
+         devices = items.select { |it| it['needsTag'] == tag && USB_CLASSES.include?(it['usbClass']) }
+         devices.any? do |it|
+           takers.any? do |o|
+-            Array(o.dig('affordance', 'accepts')).include?(tag) && usb_refused?(usb_policy_for(o, json_data), it['usbClass'])
++            Array(accepts_of(o)).include?(tag) && usb_refused?(usb_policy_for(o, json_data), it['usbClass'])
+           end
+         end
+       end
+diff --git a/test/js/fixtures/needs-work-world.mjs b/test/js/fixtures/needs-work-world.mjs
+new file mode 100644
+index 000000000..055b86137
+--- /dev/null
++++ b/test/js/fixtures/needs-work-world.mjs
+@@ -0,0 +1,55 @@
++// Stub world for the access slice 9.2 sub-slice A needs tests (npc-needs-work.test.mjs): the
++// needs stub world plus globals, the pure work rules (npc-work.js), the use verdict and a report
++// queue, as createEngineWorld wires them.
++import { NPCNeedsSystem, requiredGlobalsHold } from '../../../public/break_escape/js/systems/npc-needs.js';
++import npcWork from '../../../public/break_escape/js/systems/npc-work.js';
++import { makeWorld } from './needs-stub-world.mjs';
++
++export const PLAN = Object.freeze({
++    breakDrain: 10,
++    needs: [
++        { id: 'finance_share', kind: 'file_share', admitted: true, downIf: 'share_down' },
++        { id: 'printer', kind: 'printer', admitted: true, downIf: 'printer_jammed', object: 'office_printer' }
++    ]
++});
++
++export function dana(extra = {}) {
++    return {
++        id: 'dana', needsHome: 'dana_pc', needsDeferMin: 0.5, work: JSON.parse(JSON.stringify(PLAN)),
++        needs: {
++            work: { decayPerMin: 40, urgentAt: 50, initial: 60, jitterPct: 0 },
++            caffeine: { decayPerMin: 1, urgentAt: 10, initial: 80, jitterPct: 0 }
++        },
++        ...extra
++    };
++}
++
++export function baseObjects() {
++    return [
++        { id: 'dana_pc', x: 100, y: 68, desk: true, affordance: { satisfies: 'work', restores: 60, useSeconds: 5, offWhen: 'dana_pc_off' } },
++        { id: 'coffee', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, offWhen: 'coffee_off' } },
++        { id: 'office_printer', x: 200, y: 300 }
++    ];
++}
++
++export function workWorld({ npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() } }, objects = baseObjects(), globals = {}, chatter, seed = 'work' } = {}) {
++    const w = makeWorld({ npcs, objects });
++    const g = { share_down: false, printer_jammed: false, dana_pc_off: false, coffee_off: false, ...globals };
++    const reports = [];
++    w.world.globalHolds = cond => requiredGlobalsHold(cond, g);
++    w.world.globalValue = name => g[name];
++    w.world.workRules = npcWork;
++    w.world.useVerdict = (npcId, need, obj) => {
++        const rec = npcs[npcId].rec;
++        const station = obj && obj.id === rec.needsHome ? { id: obj.id, lockedOut: !!w.lockedOut?.[npcId] } : null;
++        return npcWork.useVerdict(rec.work, need, station, g);
++    };
++    w.world.reportUse = (npcId, r) => reports.push({ npcId, ...r });
++    if (chatter) w.world.chatterConfig = () => chatter;
++    const sys = new NPCNeedsSystem(w.world, { seed, manualClock: true });
++    w.attach(sys);
++    const set = (name, value) => { g[name] = value; sys.onGlobalChanged(name); };
++    const evs = prefix => w.calls.emits.filter(e => e.name.startsWith(prefix));
++    const log = (ev, npc = 'dana') => sys.getLog().filter(e => e.npc === npc && e.ev === ev);
++    return { w, sys, g, set, reports, evs, log };
++}
+diff --git a/test/js/npc-coffee-off.test.mjs b/test/js/npc-coffee-off.test.mjs
+index 989891277..388b2c990 100644
+--- a/test/js/npc-coffee-off.test.mjs
++++ b/test/js/npc-coffee-off.test.mjs
+@@ -203,7 +203,7 @@ test('the off picture is the need\'s icon (avoid for a need with none); overhear
+ // ── the turn-back table ────────────────────────────────────────────────────
+ 
+ test('the turn-back table: answered and rang_out go straight home with no grumble, no fallback and no park', () => {
+-    assert.deepEqual(Object.keys(TURN_BACK), ['avoid', 'off', 'gone', 'answered', 'rang_out']);
++    assert.deepEqual(Object.keys(TURN_BACK), ['avoid', 'off', 'gone', 'answered', 'rang_out', 'failed']);   // failed: access slice 9.2
+     assert.deepEqual(Object.entries(TURN_BACK).filter(([, r]) => r.mindChanged).map(([k]) => k), ['avoid']);
+     for (const reason of ['answered', 'rang_out']) {
+         const o = office({ tom: { rec: { needs: coffee() } } }, { objects: [officeMachine(), kitchenMachine()] });
+diff --git a/test/js/npc-needs-work.test.mjs b/test/js/npc-needs-work.test.mjs
+new file mode 100644
+index 000000000..22f613f90
+--- /dev/null
++++ b/test/js/npc-needs-work.test.mjs
+@@ -0,0 +1,347 @@
++// Access slice 9.2 sub-slice A in the needs core (ACCESS_MODEL_SLICE_9_2_PLAN.md 5.1 to 5.6): the
++// judged use and its verdict, the failed turn-back on office life's park, the dead station, the
++// desk filter, failure wakes, the re-arm mark, the outage kick, the pools, visits, frustration
++// from the server and the reload's hold. Stub world: fixtures/needs-work-world.mjs.
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { workWorld, dana, baseObjects } from './fixtures/needs-work-world.mjs';
++
++const CHATTER = {
++    work_fail_fed_up: ["That's it. I've had enough."],
++    station_fail: ['This PC is useless.'],
++    work_fail_no_access: ['Still no access. Nobody listens.'],
++    work_fail_file_share: ["Share's down again."],
++    work_fail_printer: ["Printer's jammed again."],
++    work_fail: ['Why is nothing working?']
++};
++
++function stepUntil(sys, pred, maxMs = 120000) {
++    for (let t = 0; t < maxMs; t += 250) { if (pred()) return true; sys.step(250); }
++    return pred();
++}
++
++test('probe: _abortJob from the using phase frees the station and leaves the NPC standing', () => {
++    const { sys, w } = workWorld();
++    sys.registerAll();
++    assert.ok(stepUntil(sys, () => sys.getState('dana').job?.phase === 'using'));
++    const before = { ...w.pos.dana };
++    const s = sys.states.get('dana');
++    sys._abortJob(s, 'probe', { cancel: true });
++    assert.equal(s.job, null);
++    assert.equal(sys._claims('dana_pc', 'nobody'), 0);
++    assert.deepEqual(w.pos.dana, before);
++});
++
++test('a failed use: no restore, no npc_used, npc_use_failed and a failed turn-back; grumble, drain, park, one report', () => {
++    const { sys, evs, reports, log } = workWorld({ globals: { share_down: true }, chatter: CHATTER });
++    sys.registerAll();
++    const caffeine0 = sys.getState('dana').levels.caffeine;
++    assert.ok(stepUntil(sys, () => evs('npc_use_failed:').length > 0, 30000));
++    const st = sys.getState('dana');
++    assert.equal(evs('npc_used:').length, 0);
++    const failed = evs('npc_use_failed:dana')[0].data;
++    assert.deepEqual(failed, { npcId: 'dana', objectId: 'dana_pc', need: 'work', missing: [{ id: 'finance_share', why: 'down' }], station: false });
++    const tb = evs('npc_turned_back:dana')[0].data;
++    assert.equal(tb.reason, 'failed');
++    assert.deepEqual(tb.missing, [{ id: 'finance_share', why: 'down' }]);
++    assert.equal(st.talking.line, "Share's down again.");
++    assert.equal(log('turned_back')[0].grumble, 'work_fail_file_share');
++    assert.ok(st.levels.caffeine <= caffeine0 - 9.9, 'the other need is drained by breakDrain');
++    assert.deepEqual(st.parked.map(p => [p.need, p.reason]), [['work', 'failed']]);
++    assert.ok(st.parked[0].remainingMs > 29000 && st.parked[0].remainingMs <= 30000);
++    assert.equal(st.pressing, null, 'a parked need is not pressing');
++    assert.deepEqual(st.failed, { need: 'work', missing: [{ id: 'finance_share', why: 'down' }] });
++    assert.deepEqual(reports, [{ npcId: 'dana', event: 'fail', need: 'work', objectId: 'dana_pc', missing: [{ id: 'finance_share', why: 'down' }] }]);
++    const park = evs('npc_need_parked:dana')[0].data;
++    assert.deepEqual(park.wakeOn, ['share_down']);
++    sys.step(10000);
++    assert.equal(sys.getState('dana').job, null, 'not selected while parked');
++    assert.equal(reports.length, 1);
++});
++
++test('a failed park wakes when its downIf clears, not on a door, a room or an unrelated machine', () => {
++    const { sys, set, evs, reports } = workWorld({ globals: { share_down: true, coffee_off: true } });
++    sys.registerAll();
++    assert.ok(stepUntil(sys, () => evs('npc_use_failed:').length > 0, 30000));
++    sys._isOff(sys.world.getObject('coffee'));   // the coffee machine has been seen off
++    sys.onDoorOpened();
++    sys._onRoomsLoaded(['other']);
++    set('coffee_off', false);
++    sys.step(3000);
++    assert.equal(sys.getState('dana').parked[0]?.reason, 'failed', 'still parked');
++    set('share_down', false);
++    sys.step(1500);
++    assert.equal(sys.getState('dana').parked.length, 0, 'woken one second later');
++    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 15000));
++    assert.equal(evs('npc_used:dana_pc')[0].data.met, true);
++    assert.equal(reports.filter(r => r.event === 'fail').length, 1);
++});
++
++test('a no_access park, or one with no_access beside a down that clears, waits out its time', () => {
++    const rec = dana();
++    rec.work.needs[0].admitted = false;
++    const { sys, set, evs } = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, globals: { printer_jammed: true } });
++    sys.registerAll();
++    assert.ok(stepUntil(sys, () => evs('npc_use_failed:').length > 0, 30000));
++    assert.deepEqual(evs('npc_use_failed:dana')[0].data.missing, [{ id: 'finance_share', why: 'no_access' }, { id: 'printer', why: 'down' }]);
++    assert.deepEqual(evs('npc_need_parked:dana')[0].data.wakeOn, []);
++    set('printer_jammed', false);
++    sys.step(5000);
++    assert.equal(sys.getState('dana').parked[0]?.reason, 'failed');
++    sys.step(26000);
++    assert.equal(sys.getState('dana').parked.length, 0, 'the timer ends it');
++});
++
++test('a park on routes [["a"], ["b"]], both on, wakes when a alone clears', () => {
++    const rec = dana();
++    rec.work.needs = [{ id: 'email', kind: 'email', admitted: true, routes: [['a'], ['b']] }];
++    const { sys, set, evs } = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec } }, globals: { a: true, b: true } });
++    sys.registerAll();
++    sys.states.get('dana').levels.work = 50;
++    assert.ok(stepUntil(sys, () => evs('npc_use_failed:').length > 0, 30000));
++    assert.deepEqual(evs('npc_need_parked:dana')[0].data.wakeOn, ['a', 'b']);
++    set('a', false);
++    sys.step(1500);
++    assert.equal(sys.getState('dana').parked.length, 0);
++});
++
++test('a station switched off at the desk: one off park, one report, one station_fail line, the drain; woken by the station only', () => {
++    const { sys, set, evs, reports, log } = workWorld({ chatter: CHATTER });
++    sys.registerAll();
++    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 30000), 'works first');
++    const caffeine = sys.getState('dana').levels.caffeine;
++    set('dana_pc_off', true);
++    assert.ok(stepUntil(sys, () => evs('npc_need_parked:dana').length > 0, 5000), 'the kick: within one selection');
++    const park = evs('npc_need_parked:dana')[0].data;
++    assert.equal(park.reason, 'off');
++    assert.equal(park.targetId, 'dana_pc');
++    assert.equal(evs('npc_use_failed:').length, 0);
++    assert.deepEqual(reports, [{ npcId: 'dana', event: 'fail', need: 'work', objectId: 'dana_pc', missing: [{ id: 'dana_pc', why: 'off' }], rearmed: true }]);
++    assert.equal(sys.getState('dana').talking.line, 'This PC is useless.');
++    assert.equal(log('parked')[0].grumble, 'station_fail');
++    assert.ok(sys.getState('dana').levels.caffeine <= caffeine - 9.9);
++    sys.onDoorOpened();
++    sys.step(3000);
++    assert.equal(sys.getState('dana').parked[0]?.reason, 'off');
++    set('dana_pc_off', false);
++    sys.step(4000);
++    assert.equal(sys.getState('dana').parked.length, 1, 'retries one use time (5 s) after the switch-on');
++    sys.step(1500);
++    assert.equal(sys.getState('dana').parked.length, 0);
++    assert.equal(evs('npc_need_parked:dana').length, 1);
++});
++
++test('a station switched off during a use: the use finishes, judged on its resources, then the off park', () => {
++    const { sys, set, evs } = workWorld();
++    sys.registerAll();
++    assert.ok(stepUntil(sys, () => sys.getState('dana').job?.phase === 'using'));
++    set('dana_pc_off', true);
++    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0, 6000));
++    assert.equal(evs('npc_used:dana_pc')[0].data.met, true);
++    assert.ok(stepUntil(sys, () => evs('npc_need_parked:dana').length > 0, 2000));
++    assert.equal(evs('npc_need_parked:dana')[0].data.reason, 'off');
++});
++
++test('the dead PC parks whatever is in reach: a private colleague desk and a busy plain desk', () => {
++    const objects = [...baseObjects(),
++        { id: 'pat_pc', x: 140, y: 68, desk: true, affordance: { satisfies: 'work', useSeconds: 5, private: true, owners: ['pat'] } },
++        { id: 'spare_pc', x: 160, y: 68, desk: true, affordance: { satisfies: 'work', useSeconds: 5 } }];
++    const npcs = { dana: { pos: { x: 100, y: 100 }, rec: dana() },
++                   bob: { pos: { x: 160, y: 100 }, rec: { id: 'bob', needsHome: 'spare_pc', needs: { work: { decayPerMin: 40, urgentAt: 50, initial: 50, jitterPct: 0 } } } } };
++    const { sys, evs, log } = workWorld({ npcs, objects, globals: { dana_pc_off: true } });
++    sys.registerAll();
++    sys.step(5000);
++    const parks = evs('npc_need_parked:dana');
++    assert.equal(parks.length, 1);
++    assert.equal(parks[0].data.reason, 'off');
++    assert.equal(log('private_skipped').length, 0);
++    assert.equal(log('job_start').length, 0, 'dana never walks to a colleague desk');
++    // bob (no plan) still uses the plain PC as today
++    assert.ok(log('job_start', 'bob').length > 0);
++});
++
++test('an off turn-back that finds a non-desk source counts nothing and grumbles once', () => {
++    const objects = [...baseObjects(), { id: 'tablet', x: 400, y: 100, affordance: { satisfies: 'work', restores: 60, useSeconds: 3 } }];
++    const npcs = { dana: { pos: { x: 300, y: 100 }, rec: dana() } };   // away from her desk
++    const { sys, set, evs, reports } = workWorld({ npcs, objects, chatter: CHATTER });
++    sys.registerAll();
++    const s = sys.states.get('dana');
++    // walking to her PC when it goes off
++    assert.ok(stepUntil(sys, () => s.job?.targetId === 'dana_pc'));
++    s.job.phase = 'goto_target'; s.job.offWhen = 'dana_pc_off';
++    set('dana_pc_off', true);
++    sys.step(250);
++    assert.equal(evs('npc_turned_back:dana')[0]?.data.reason, 'off');
++    assert.equal(s.job?.targetId, 'tablet', 'the fallback found the tablet');
++    assert.equal(reports.length, 0);
++    assert.equal(evs('npc_need_parked:dana').length, 0);
++});
++
++test('desks are never chosen for a judged work need, and are for an NPC with no plan', () => {
++    const objects = [{ id: 'hot_desk', x: 140, y: 68, desk: true, affordance: { satisfies: 'work', useSeconds: 5 } },
++        { id: 'plain_pc', x: 180, y: 68, desk: true, affordance: { satisfies: 'work', useSeconds: 5 } }];
++    const rec = dana({ needsHome: { room: 'office', x: 3, y: 3 } });
++    const plain = { id: 'kim', needsHome: { room: 'office', x: 3, y: 3 }, needs: { work: { decayPerMin: 40, urgentAt: 50, initial: 50, jitterPct: 0 } } };
++    const { sys, log } = workWorld({ npcs: { dana: { pos: { x: 100, y: 100 }, rec }, kim: { pos: { x: 120, y: 100 }, rec: plain } }, objects });
++    sys.registerAll();
++    sys.step(30000);
++    assert.equal(log('job_start').length, 0);
++    assert.ok(log('job_start', 'kim').some(e => ['hot_desk', 'plain_pc'].includes(e.target)));
++});
++
++test('rearmed after a wake or a met use; not after a timer expiry', () => {
++    const { sys, set, evs, reports } = workWorld({ globals: { share_down: true } });
++    sys.registerAll();
++    assert.ok(stepUntil(sys, () => reports.length === 1, 30000));
++    assert.equal(reports[0].rearmed, undefined, 'the first fail');
++    assert.ok(stepUntil(sys, () => reports.length === 2, 60000), 'the timer ends the park, then a second fail');
++    assert.equal(reports[1].rearmed, undefined, 'after a timer expiry');
++    set('share_down', false);
++    set('share_down', true);   // cleared and thrown again before the wake: still parked, woken by the clear
++    assert.ok(stepUntil(sys, () => reports.length === 3, 60000));
++    assert.equal(reports[2].rearmed, true, 'after a wake by its cause clearing');
++    assert.ok(evs('npc_use_failed:').length >= 3);
++});
++
++test('a met judged use with frustration reports an ease; a coffee use does not, and carries no met', () => {
++    const { sys, evs, reports } = workWorld();
++    sys.registerAll();
++    sys.applyFrustration([{ npcId: 'dana', level: 20, previous: 0, tell: 1, settled: false, run: null }]);
++    sys.states.get('dana').levels.caffeine = 5;
++    assert.ok(stepUntil(sys, () => evs('npc_used:dana_pc').length > 0 && evs('npc_used:coffee').length > 0, 120000));
++    assert.equal(evs('npc_used:coffee')[0].data.met, undefined);
++    assert.deepEqual(reports.filter(r => r.event === 'ease').map(r => r.objectId), ['dana_pc']);
++    assert.equal(sys.getState('dana').frustration, 20);
++    assert.equal(sys.world.getObject('dana_pc') && true, true);
++});
++
++test('the outage kick: a need at 90 drops to urgentAt once when its downIf turns on, and fails within one use time', () => {
++    const { sys, set, evs, log } = workWorld();
++    sys.registerAll();
++    sys.states.get('dana').levels.work = 90;
++    sys.step(500);
++    set('printer_jammed', true);
++    sys.step(250);
++    assert.equal(log('kicked').length, 1);
++    assert.ok(stepUntil(sys, () => evs('npc_use_failed:').length > 0, 6000), 'within one use time');
++    set('printer_jammed', true);   // the same value again: no second kick
++    sys.step(500);
++    assert.equal(log('kicked').length, 1);
++});
++
++test('a global already on at register kicks; a parked need is not kicked and keeps its level', () => {
++    const { sys, log, evs } = workWorld({ globals: { share_down: true } });
++    sys.registerAll();
++    sys.step(250);
++    assert.equal(log('kicked').length, 1);
++    assert.ok(stepUntil(sys, () => evs('npc_need_parked:').length > 0, 10000));
++    const s = sys.states.get('dana');
++    const held = s.levels.work;
++    sys.world.globalHolds = () => true;   // every global on: a change for the kick to see
++    s.kickSeen = {};
++    sys.step(250);
++    assert.equal(s.levels.work, held, 'the parked level is untouched');
++});
++
++test('the off line inside another need\'s fallback: said once; an off turn-back for work grumbles once', () => {
++    const npcs = { dana: { pos: { x: 300, y: 280 }, rec: dana() } };
++    const { sys, set, evs, log, g } = workWorld({ npcs, chatter: CHATTER });
++    sys.registerAll();
++    const s = sys.states.get('dana');
++    s.levels.caffeine = 5;
++    s.levels.work = 90;
++    assert.ok(stepUntil(sys, () => s.job?.targetId === 'coffee'));
++    g.dana_pc_off = true;   // her PC dies while she is away
++    s.levels.work = 40;   // urgent now: the coffee fallback evaluates it
++    s.job.phase = 'goto_target'; s.job.offWhen = 'coffee_off';
++    set('coffee_off', true);
++    sys.step(250);
++    const parks = log('parked').filter(e => e.need === 'work');
++    assert.equal(parks.length, 1);
++    assert.equal(parks[0].grumble, 'station_fail');
++    assert.equal(evs('npc_need_parked:dana').filter(e => e.data.need === 'work')[0].data.reason, 'off');
++    assert.equal(log('turned_back')[0].reason, 'off');
++    // an off turn-back for work itself: one grumble (the turn-back's), none from the fallback's park
++    const t = workWorld({ npcs: { dana: { pos: { x: 300, y: 280 }, rec: dana() } }, chatter: CHATTER });
++    t.sys.registerAll();
++    const d = t.sys.states.get('dana');
++    assert.ok(stepUntil(t.sys, () => d.job?.targetId === 'dana_pc'));
++    d.job.phase = 'goto_target'; d.job.offWhen = 'dana_pc_off';
++    t.g.dana_pc_off = true;
++    t.sys.step(250);
++    assert.equal(t.log('turned_back')[0].grumble, 'station_fail');
++    const workParks = t.log('parked').filter(e => e.need === 'work');
++    assert.equal(workParks.length, 1);
++    assert.equal(workParks[0].grumble, undefined, 'no second line');
++});
++
++test('a reload\'s hold parks the need held, uncounted and silent; a door does not wake it; the first fail comes after', () => {
++    const { sys, evs, reports } = workWorld({ globals: { share_down: true } });
++    sys.restoreFrustration({ dana: { level: 34, tell: 1, settled: false, hold: { work: 10 } } });
++    sys.registerAll();
++    const st = sys.getState('dana');
++    assert.equal(st.frustration, 34);
++    assert.deepEqual(st.parked.map(p => p.reason), ['held']);
++    sys.onDoorOpened();
++    sys.step(5000);
++    assert.equal(reports.length, 0);
++    assert.equal(sys.getState('dana').parked[0]?.reason, 'held');
++    assert.ok(stepUntil(sys, () => reports.length === 1, 20000));
++    assert.ok(sys.clockMs >= 10000);
++    assert.equal(evs('npc_frustration_changed:dana')[0].data.level, 34);
++});
++
++test('the pool follows the tell held at the failure; a kind with no pool falls back to work_fail', () => {
++    const run = (tell, chatter) => {
++        const { sys, log } = workWorld({ globals: { share_down: true }, chatter });
++        sys.registerAll();
++        sys.applyFrustration([{ npcId: 'dana', level: 50, tell }]);
++        stepUntil(sys, () => log('turned_back').length > 0, 30000);
++        return { topic: log('turned_back')[0].grumble, talking: sys.getState('dana').talking };
++    };
++    assert.equal(run(2, CHATTER).topic, 'work_fail_fed_up');
++    assert.equal(run(1, CHATTER).topic, 'work_fail_file_share');
++    assert.equal(run(1, { work_fail: ['Why?'] }).topic, 'work_fail');
++    const pic = run(1, {});
++    assert.equal(pic.topic, 'work_fail_file_share');
++    assert.equal(pic.talking.picture, 'file');
++});
++
++test('a check visit walks to the object once per outage, claims nothing and emits no npc_used', () => {
++    const { sys, evs, log } = workWorld({ globals: { printer_jammed: true } });
++    sys.registerAll();
++    assert.ok(stepUntil(sys, () => evs('npc_visit_done:dana').length > 0, 40000));
++    assert.equal(evs('npc_checked:office_printer').length, 1);
++    assert.equal(evs('npc_used:office_printer').length, 0);
++    assert.ok(evs('npc_left_post:dana').some(e => e.data.targetId === 'office_printer'));
++    stepUntil(sys, () => evs('npc_use_failed:').length >= 3, 120000);
++    assert.equal(evs('npc_checked:office_printer').length, 1, 'once per outage');
++    assert.equal(log('visit_queued').length, 1);
++});
++
++test('a visit waits for a running job; a late answer changes no decision; a level before register applies at register', () => {
++    const a = workWorld();
++    a.sys.registerAll();
++    assert.ok(stepUntil(a.sys, () => a.sys.getState('dana').job?.phase === 'using'));
++    a.sys.enqueueVisit('dana', { kind: 'check', at: { objectId: 'office_printer' } });
++    a.sys.step(250);
++    assert.equal(a.sys.getState('dana').job.kind, 'use', 'not interrupted');
++    assert.ok(stepUntil(a.sys, () => a.sys.getState('dana').job?.kind === 'visit', 10000));
++
++    const runLog = late => {
++        const { sys } = workWorld({ globals: { share_down: true } });
++        sys.registerAll();
++        sys.step(20000);
++        if (late) sys.applyFrustration([{ npcId: 'dana', level: 20, tell: 1 }]);
++        sys.step(40000);
++        return JSON.stringify(sys.getLog().filter(e => e.ev !== 'frustration'));
++    };
++    assert.equal(runLog(true), runLog(false));
++
++    const b = workWorld();
++    b.sys.applyFrustration([{ npcId: 'dana', level: 40, tell: 2 }]);
++    b.sys.step(250);
++    b.sys.registerAll();
++    assert.equal(b.sys.getState('dana').frustration, 40);
++    assert.equal(b.sys.getState('dana').tell, 2);
++});
+diff --git a/test/js/npc-work.test.mjs b/test/js/npc-work.test.mjs
+new file mode 100644
+index 000000000..a0fcea2a4
+--- /dev/null
++++ b/test/js/npc-work.test.mjs
+@@ -0,0 +1,48 @@
++// The use verdict (systems/npc-work.js), access slice 9.2 sub-slice A (plan 5.2).
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { useVerdict, reachable, wakeOnFor, causesClear, planGlobals } from '../../public/break_escape/js/systems/npc-work.js';
++
++const plan = {
++    breakDrain: 10,
++    needs: [
++        { id: 'finance_share', kind: 'file_share', admitted: true, downIf: 'share_down' },
++        { id: 'secret_share', kind: 'file_share', admitted: false },
++        { id: 'email', kind: 'email', admitted: true, routes: [['wan_down']] }
++    ]
++};
++
++test('the verdict for each failure and several at once', () => {
++    const ok = { needs: [plan.needs[0], plan.needs[2]] };
++    assert.deepEqual(useVerdict(ok, 'work', null, {}), { met: true, missing: [], station: false });
++    assert.deepEqual(useVerdict(ok, 'work', null, { share_down: true }).missing, [{ id: 'finance_share', why: 'down' }]);
++    assert.deepEqual(useVerdict(ok, 'work', null, { wan_down: 1 }).missing, [{ id: 'email', why: 'unreachable' }]);
++    const all = useVerdict(plan, 'work', { id: 'pc', lockedOut: true }, { share_down: true, wan_down: true });
++    assert.deepEqual(all.missing, [{ id: 'pc', why: 'locked_out' }, { id: 'finance_share', why: 'down' },
++        { id: 'secret_share', why: 'no_access' }, { id: 'email', why: 'unreachable' }]);
++    assert.equal(all.station, true);
++    assert.equal(all.met, false);
++    // a function for globals works the same
++    assert.deepEqual(useVerdict(ok, 'work', null, n => n === 'share_down').missing, [{ id: 'finance_share', why: 'down' }]);
++    // social_media: only the station
++    assert.deepEqual(useVerdict(plan, 'social_media', { id: 'pc', socialBlocked: true }, {}).missing, [{ id: 'pc', why: 'social_blocked' }]);
++});
++
++test('reach: no routes key is reachable, [] never, [[]] always, a route with no truthy global', () => {
++    assert.equal(reachable({ id: 'x' }, {}), true);
++    assert.equal(reachable({ id: 'x', routes: [] }, {}), false);
++    assert.equal(reachable({ id: 'x', routes: [[]] }, {}), true);
++    assert.equal(reachable({ id: 'x', routes: [['a'], ['b']] }, { a: true }), true);
++    assert.equal(reachable({ id: 'x', routes: [['a'], ['b']] }, { a: true, b: true }), false);
++    assert.equal(reachable({ id: 'x', routes: [['a', 'b']] }, { b: true }), false);
++});
++
++test('wakeOn: down and truthy route globals; empty when a cause has no global', () => {
++    assert.deepEqual(wakeOnFor(plan, [{ id: 'finance_share', why: 'down' }], {}), ['share_down']);
++    assert.deepEqual(wakeOnFor(plan, [{ id: 'email', why: 'unreachable' }], { wan_down: true }), ['wan_down']);
++    assert.deepEqual(wakeOnFor(plan, [{ id: 'finance_share', why: 'down' }, { id: 'secret_share', why: 'no_access' }], {}), []);
++    assert.deepEqual(wakeOnFor({ needs: [{ id: 'e', routes: [] }] }, [{ id: 'e', why: 'unreachable' }], {}), []);
++    assert.equal(causesClear(plan, [{ id: 'finance_share', why: 'down' }], { share_down: false }), true);
++    assert.equal(causesClear(plan, [{ id: 'finance_share', why: 'down' }, { id: 'secret_share', why: 'no_access' }], {}), false);
++    assert.deepEqual(planGlobals(plan), ['share_down', 'wan_down']);
++});
+-- 
+2.43.0
+

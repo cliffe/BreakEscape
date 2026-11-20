@@ -1,0 +1,13 @@
+{
+  "key": "bf9032300c2d5f5653b7cf0f61708770",
+  "npc": "narrator",
+  "text": "He sits back, and for once he doesn't smile.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:35:50Z"
+}

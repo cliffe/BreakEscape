@@ -1,0 +1,29 @@
+# m08 lighting, cycle 5: closing review
+
+Fresh read-only reviewer, 2026-10-14. Inputs: `git diff HEAD` of `scenario.json.erb`, `LIGHTING_PLAN.md`, every PNG and log in `lighting_c3/{base,named,confront,after,triple}`, `review_c3.md`, `lighting_c4/browser_check.md` and its six PNGs, the m08 entries in `LIGHTING_LOG.md`, `IMPROVEMENT_LOOP_LOG.md` and `DECISIONS_PENDING.md` (L1, E14), `lighting.js`, `rooms.js`, `TESTING_WALKTHROUGH.md`. Validator re-run: 5 warnings, none about lighting (matches the plan).
+
+## What holds
+
+- **Config = plan.** All ten lighting blocks match LIGHTING_PLAN §2-4 value by value (ambients, dark ambients, modes, LEVEL RED r30/offsetY16/floorTint 0.3, Director pool 5.0/4.8 r96, ops board r56/offsetY24, suite variant 0 `#8c929e` with pool 5.0/4.7 r104, lamp r26/i1.0/offsetY5, tallies r5, laptop 0.3 then 0, readers r6). The one exception is the threat-map provenance (m3).
+- **Config = c3 shots.** ERB mtime 07:25:41 is before the first c3 shot (07:26:20). The logs show the expected variants (-1/-1/0/1/1) and every shot redraws.
+- **Shots.** Each room reads as itself at night. The suite's four states read. No light lands on locker 0x47 or on the pc5 desk. The only changes at the naming are the evidence-wall face and the lamp (later). Lighting.js semantics check out: room variants merge emitters by key (`lighting.js:170`), so the variant's `laptop` override leaves the recording emitters in place; conditional emitters with no base `EMITTERS` match fall to `def = null` (off).
+- **Reload persistence.** `F_after_reload_handover.png` shows variant 1, the HANDOVER face, recording off and CONCLUSIVE after a reload. D/E after a reload are supported by eval only (texture keys and variantIdx read back). That is acceptable but the records say more than this (m2).
+- **Scope.** The ERB diff is +94 lines: 10 lighting blocks, 2 `spriteVariants`, 3 ERB comments. No ink, tag, NPC or dialogue field. `db/seeds.rb` and `lib.sh` in the tree are unrelated: keep them out of the lighting commit.
+
+## Findings
+
+| id | sev | evidence | finding | fix |
+|---|---|---|---|---|
+| B1 | blocker | `rooms.js:691`; `scenario.json.erb:2051-2054`, `2074-2078`; `TESTING_WALKTHROUGH.md:58`; m07 fix `7bf88a4c` | The live sprite-variant listener falls back to `scenarioObj.sprite \|\| scenarioObj.type`. Neither object sets `sprite`, so the fallback is `"smartscreen"`. If the suite is loaded before `mole_identified` (suite opened early: a documented route), `mole_identified` fires the disposition listener. No disposition variant holds (each needs `all_flags_submitted` or a fate), so the screen swaps to `objects/smartscreen.png`, a generic prop. `^smartscreen` is in `EMITTERS`, so it also gains a blue r44 screen glow. Result: a visible change in the suite at the naming that the player isn't told about, and the wrong prop until the case is made. A reload restores it, because load-time uses the map image. `evidence_display` has the same latent fault for any order where `all_flags_submitted` fires without `mole_identified`. The c4 check missed this because C set the global before loading the suite. This is the m07 "wall reverts to the wrong sprite" bug, fixed there by adding `sprite`. | Add `"sprite": "hq_evidence_wall1"` and `"sprite": "hq_disposition1"` to the two objects. Re-check in the browser in the failing order: load the suite, `applyActions` `set_global mole_identified`, then confirm the textures are `hq_evidence_wall_named1` / `hq_disposition1` with no glow. Add a lesson to the m08 `LIGHTING_LOG` entry: "an object with `spriteVariants` needs `sprite` set to its base face". |
+| m1 | minor | `lighting_c4/browser_check.md:18`; `F_handover.png` | `F_handover.png` is the title screen ("The Mole / Continue?"), not the handover state, yet it is cited as the before-reload evidence. | Delete or rename the PNG; say F before the reload is eval-only. |
+| m2 | minor | `LIGHTING_PLAN.md` §6 Cycle 4 ("E after a reload all of D and A hold"); `IMPROVEMENT_LOOP_LOG.md` last entry ("named/closed/awaiting/handover faces … all hold across two reloads"); `browser_check.md:17` | E has no screenshot (eval only). The named face was never reloaded: C came before the first reload, and E checks closed/awaiting. The records overstate the evidence. | Plan: "E (eval only)". Log: "closed/awaiting held after reload 1 (eval), handover after reload 2 (PNG); named face not reloaded". |
+| m3 | minor | `LIGHTING_PLAN.md` §3 intel row, §5; `erb:1604` vs m06 `erb:2055`, m03 `erb:1294` | The plan says "threat map glows (m06 config)". m08 uses `#6ab4ff` r40 i0.5 offsetY 18. m06 is `#7fb4ff` r34 i0.4, and the colour is m03's. | "m03 colour, own radius/offset". |
+| m4 | minor | `IMPROVEMENT_LOOP_LOG.md` last entry; `LIGHTING_PLAN.md` c1 table | The c1 tally "8 fixed, 1 in part, 2 deferred" covers 11 of 12 findings. m10 (left: tour artefact / orchestrator) is missing. | Add "1 left (m10)". |
+| m5 | minor | `DECISIONS_PENDING.md` L1 | L1's proposed RECORDING-lamp scenario object would hit B1 too. | Add `"sprite": "hq_recording1"` to the L1 fix text. |
+| m6 | minor | `browser_check.md:25`; `review_c2.md:30`; `review_c3.md` "Noticed"; `erb:2175` | Two orchestrator notes are not routed in any record. (a) The green circle is the off-duty agent's deliberate `los.visualize` ("his sight is drawn", erb:2160-2175), not an unknown artefact. It does render in normal play (c4). (b) Nightshade still stands at the table after the fate (after/triple): a tour artefact or real, unconfirmed. | Plan Checks / IMPROVEMENT_LOOP_LOG: name the cause of (a), not lighting. Hand (b) to the orchestrator as a play check. |
+
+## Counts
+
+1 blocker, 0 majors, 6 minors.
+
+**Verdict: don't close.** Fix B1 (two `sprite` fields), re-run the one browser step in the failing order, correct the records (m1-m6), then close without another review cycle.

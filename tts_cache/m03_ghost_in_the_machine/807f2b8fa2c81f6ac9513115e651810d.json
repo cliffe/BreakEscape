@@ -1,0 +1,13 @@
+{
+  "key": "807f2b8fa2c81f6ac9513115e651810d",
+  "npc": "narrator",
+  "text": "Sterling is out cold on the conference room floor. You pull the door shut behind you.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:13:19Z"
+}

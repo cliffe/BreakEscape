@@ -1,0 +1,77 @@
+{
+    "scenario_brief": "Test scenario for multi-room NPC navigation. A security guard patrols multiple rooms following a defined route.",
+    "endGoal": "Observe NPC patrolling across multiple connected rooms.",
+    "startRoom": "reception",
+    "startItemsInInventory": [],
+    "rooms": {
+        "reception": {
+            "type": "room_reception",
+            "connections": {
+                "north": "office1"
+            },
+            "objects": [
+                {
+                    "type": "notes",
+                    "name": "Test Instructions",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "MULTI-ROOM NPC NAVIGATION TEST\n\nWatch as the security guard patrols between:\n1. Reception (starting room)\n2. Office 1 (north)\n\nThe guard follows waypoints in each room,\nthen transitions to the next room when done.\n\nWaypoints:\n- Reception: (4,3) → (6,5) → (4,7)\n- Office 1: (3,4) → (5,6)\n\nThe route loops infinitely.",
+                    "observations": "Instructions for testing multi-room NPC navigation"
+                }
+            ],
+            "npcs": [
+                {
+                    "id": "security_guard",
+                    "displayName": "Security Guard",
+                    "position": {"x": 4, "y": 4},
+                    "spriteSheet": "hacker-red",
+                    "npcType": "person",
+                    "roomId": "reception",
+                    "behavior": {
+                        "facePlayer": true,
+                        "facePlayerDistance": 96,
+                        "patrol": {
+                            "enabled": true,
+                            "speed": 80,
+                            "multiRoom": true,
+                            "waypointMode": "sequential",
+                            "route": [
+                                {
+                                    "room": "reception",
+                                    "waypoints": [
+                                        {"x": 4, "y": 3},
+                                        {"x": 6, "y": 5},
+                                        {"x": 4, "y": 7}
+                                    ]
+                                },
+                                {
+                                    "room": "office1",
+                                    "waypoints": [
+                                        {"x": 3, "y": 4},
+                                        {"x": 5, "y": 6}
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "office1": {
+            "type": "room_office",
+            "connections": {
+                "south": "reception"
+            },
+            "objects": [
+                {
+                    "type": "notes",
+                    "name": "Office Notes",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Watch the guard patrol through this office,\nthen return to the reception area.\n\nThe multi-room route loops continuously.",
+                    "observations": "Notes explaining the patrol route"
+                }
+            ]
+        }
+    }
+}

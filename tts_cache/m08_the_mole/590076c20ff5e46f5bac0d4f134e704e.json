@@ -1,0 +1,13 @@
+{
+  "key": "590076c20ff5e46f5bac0d4f134e704e",
+  "npc": "background_agent",
+  "text": "Still here. Still not reading this.",
+  "voice": "Puck",
+  "style": "An off-duty SAFETYNET agent in his forties pretending to read while eavesdropping on everyone. Consistent Geordie (Newcastle) accent throughout -- do not shift to any other accent. Low, conspiratorial pitch; unhurried pace. Gossipy and paranoid, enjoying the drama a little too much.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:47:59Z"
+}

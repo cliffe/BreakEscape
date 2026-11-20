@@ -1,0 +1,13 @@
+{
+  "key": "935489291d87872b045b0b0ad0e5fa01",
+  "npc": "ama_owusu",
+  "text": "That's them sorted, thanks. A genuine alert never asks for your password; the fakes always do. Report the fakes, and change a reused password on the real site.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:44Z"
+}

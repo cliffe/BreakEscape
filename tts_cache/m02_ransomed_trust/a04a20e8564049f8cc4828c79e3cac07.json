@@ -1,0 +1,13 @@
+{
+  "key": "a04a20e8564049f8cc4828c79e3cac07",
+  "npc": "hodan_warsame",
+  "text": "First one tonight, then.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:48Z"
+}

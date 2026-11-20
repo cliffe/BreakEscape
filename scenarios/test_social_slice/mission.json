@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: social engineering slice",
+  "description": "Fixture for the social-engineering slice: one room with a mail terminal, an intel board and a browser. Facts come from the browser, not stand-in sources. Used by the mail client, rules engine and board checks.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

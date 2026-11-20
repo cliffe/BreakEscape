@@ -1,0 +1,47 @@
+TAP version 13
+# ⏱️ scheduleDialogueAdvance: Will auto-advance after 30ms
+# Subtest: the helper reads the page flag and waits for the close event
+ok 1 - the helper reads the page flag and waits for the close event
+  ---
+  duration_ms: 7.915174
+  ...
+# ⏱️ scheduleDialogueAdvance: Will auto-advance after 20ms
+# Subtest: person-chat: no advance while the overlay is up; the full delay starts at Resume
+ok 2 - person-chat: no advance while the overlay is up; the full delay starts at Resume
+  ---
+  duration_ms: 137.545973
+  ...
+# ⏱️ scheduleDialogueAdvance: Will auto-advance after 10ms
+# ⏱️ scheduleDialogueAdvance: Will auto-advance after 10ms
+# Subtest: person-chat: a timer that comes due under the overlay waits for Resume too
+ok 3 - person-chat: a timer that comes due under the overlay waits for Resume too
+  ---
+  duration_ms: 112.411986
+  ...
+# ⏱️ scheduleDialogueAdvance: Will auto-advance after 10ms
+# ⏱️ scheduleDialogueAdvance: Will auto-advance after 10ms
+# Subtest: person-chat: a line moved on while held is not advanced again at Resume
+ok 4 - person-chat: a line moved on while held is not advanced again at Resume
+  ---
+  duration_ms: 70.990956
+  ...
+# ⏱️ scheduleDialogueAdvance: Stored callback for click-through mode
+# Subtest: person-chat: no overlay, no change; click-through mode still waits for the button
+ok 5 - person-chat: no overlay, no change; click-through mode still waits for the button
+  ---
+  duration_ms: 61.384676
+  ...
+# Subtest: wiring: the voice, the closing line and phone typing wait; the page sets and clears the flag
+ok 6 - wiring: the voice, the closing line and phone typing wait; the page sets and clears the flag
+  ---
+  duration_ms: 2.315879
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 532.698577

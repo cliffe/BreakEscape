@@ -1,0 +1,105 @@
+{
+ "globals": {
+  "briefing_played": true,
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {
+   "note": "R13 (puzzle chains r1, F1; was probe p1): Park evaded on visit 1. On visit 2 HaX says fetch the projection and carry it back; the player backs off, fetches it, comes back. The third visit is a last chance, and the projection talks him down."
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "talk": "park",
+   "picks": [
+    "Nothing. I was never here."
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "evaded"
+   }
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "said": [
+    "briefed on a building, not a body count",
+    "Carry it back down with you. He won't wait a third time."
+   ]
+  },
+  {
+   "talk": "park",
+   "knot": "start",
+   "picks": [
+    "Nothing. I was never here."
+   ]
+  },
+  {
+   "said": [
+    "Second time. There isn't a third."
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "read": "casualty_projection"
+  },
+  {
+   "expect": {
+    "casualty_projection_found": true
+   }
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "enter": "generator_room"
+  },
+  {
+   "enter": "cable_vault"
+  },
+  {
+   "talk": "park",
+   "knot": "start",
+   "picks": [
+    "Hold up the projection",
+    "four minutes"
+   ]
+  },
+  {
+   "said": [
+    "You've got one sentence",
+    "Two hundred and forty"
+   ],
+   "notSaid": [
+    "crimping tool swinging"
+   ]
+  },
+  {
+   "expect": {
+    "park_resolved": "talked"
+   }
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

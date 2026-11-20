@@ -1,0 +1,99 @@
+[
+ {
+  "id": "SIM-4",
+  "severity": "minor",
+  "priority": "should",
+  "category": "validator",
+  "sections": "\u00a78 DL6 row (witness budget clause), \u00a77.2 progress-topic bullet, \u00a711.5",
+  "change": "Count progress topics in DL6's witness budget and lint them. In DL6's witness clause: every charged topic, including a progress topic (a choice whose body sets a global with a gate reader), counts toward the questions answered before wary, whether or not it holds a clue. Add a \u26a0\ufe0f: warn when a progress topic is a once-only * choice, or sits behind or contains a wary branch (ded_<n>_wary condition), or when the witness's clue topics plus progress topics exceed the questions answered before wary and the ink has no recovery choice. Add a one-change bad case on fixture B (make the alarm topic a * choice with a wary branch) to \u00a711.5.",
+  "evidence": "SIM_REPORT D6 and Recommended fixes 5 ('Extend DL6's witness-budget check to count progress topics'). B/PLAN_GAPS PG-B8: B's alarm topic is charged (\u00a79.1 l.2153-2158 'charged like any later question'), so asking it first or second leaves two clue answers before wary, not three; DL6 (line 2051) still counts 'clue topics' only and overstates the budget.",
+  "sources": [
+   "sidecar/SIM_REPORT.md D6, Recommended fixes 5",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-1",
+   "sidecar/drafts/B/PLAN_GAPS.md PG-B8",
+   "sidecar/drafts/B/CHECK_REPORT.md",
+   "merged: GAPSAB-19"
+  ]
+ },
+ {
+  "id": "SIM-6",
+  "severity": "minor",
+  "priority": "could",
+  "category": "validator",
+  "sections": "\u00a78 Derived sets ('Opening facts', 'One rule for locked containers'), \u00a78 DL8 row (l.2053)",
+  "change": "Say in DL8 that for the single-room warning a closed container in an opening room (C's lockpicked bedroom drawer with Baptiste's bag) counts as its own closed place (its facts added together), so 'opening facts plus any one closed place' covers it. As written its facts are neither opening facts nor in a closed room, so the warning never sees them.",
+  "evidence": "SIM_REPORT Recommended fixes 1 and D1 (main D1 fix already in plan \u00a79.3 l.2515/2521). drafts/C/PLAN_GAPS G8, CHECK_REPORT P6, INVENTED gap 1. The DL8 row (line 2053) still speaks only of rooms closed at the start.",
+  "sources": [
+   "sidecar/SIM_REPORT.md D1, Recommended fixes 1",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-4",
+   "sidecar/drafts/C/PLAN_GAPS.md G8",
+   "sidecar/drafts/C/CHECK_REPORT.md",
+   "sidecar/drafts/C/INVENTED.md",
+   "merged: GAPSCD-24"
+  ]
+ },
+ {
+  "id": "SIM-7",
+  "severity": "minor",
+  "priority": "could",
+  "category": "test",
+  "sections": "\u00a710.1 P10-A conformance list, \u00a79.3 hand check",
+  "change": "List C's single-room states explicitly in P10-A's conformance cases: O+garage (all three undetermined: Baptiste's burner is U, 1 unseen against 3 other hidden kit cells) and O+office (Ahmed open). The \u00a79.3 text already gives these results; this makes the conformance file carry them as data so no one rebuilds them from the old 'leave Ahmed and Novak open' figure.",
+  "evidence": "SIM_REPORT D2: with the \u00a78 opening set, the garage alone leaves all three open, and the conformance case built from the old line would encode the wrong set. \u00a79.3 lines 2538\u20132541 fixed, but P10-A (line 2899) names only 'C's three' room-by-room sets.",
+  "sources": [
+   "sidecar/SIM_REPORT.md D2, Recommended fixes 1",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-4"
+  ]
+ },
+ {
+  "id": "SIM-8",
+  "severity": "minor",
+  "priority": "could",
+  "category": "test",
+  "sections": "\u00a78 DL7 row, \u00a78 'Fixtures and tests' (conformance statuses), \u00a710.1 P10-A",
+  "change": "Add the DL7 bad-case mutation's expected statuses to conformance.json: after b_okoro_access fades, Okoro is still guilty by the pigeonhole step (one access_out_of_role copy unseen, Okoro's the only hidden access cell). The 'not DL6' claim is then checked by data. If a DL6 co-fire is ever wanted, the mutation must tamper both b_okoro_access and b_lindqvist_access.",
+  "evidence": "SIM_REPORT D3 and Recommended fixes 2. DL7 row (line 2052) says 'not DL6' but \u00a78 line 1969 puts only DL6 and DL8 mutations' statuses in conformance.json.",
+  "sources": [
+   "sidecar/SIM_REPORT.md D3, Recommended fixes 2",
+   "sidecar/SIDECAR_RECOMMENDATIONS.md SC-5"
+  ]
+ },
+ {
+  "id": "SIM-10",
+  "severity": "minor",
+  "priority": "could",
+  "category": "design/documentation",
+  "sections": "\u00a79.1, \u00a79.3, \u00a79.2 'Costs compared', \u00a73.9",
+  "change": "Record the strategy results where the fixtures make claims. \u00a79.1 and \u00a73.9: in B a player who names only the first suspect who shows as guilty always gets every call right, and accuse-all still scores 100 under completion, so B's teaching rests on the debrief and Nair's reply. \u00a79.3: C has one guilty suspect and 'Not named' grades right_clear, so stop-at-first-guilty is always right and the garage's RFID and log-filter puzzles never change the outcome; only not knowing the guilty count pushes the player there (keep the brief silent on the count, \u00a73.1). \u00a79.2 'Costs compared': stopping at the first guilty signal (93 % of random players) misses a cultist and meets the acolyte, costing about as much as accuse-all's doorman fight; both lose to deducing. Point the T-packet playtests at these orders.",
+  "evidence": "SIM_REPORT 'Strategies' table and 'What this shows' (20,000 random players per fixture). \u00a79.2 'Costs compared' (line 2390) says only 'Deducing wins clearly'.",
+  "sources": [
+   "sidecar/SIM_REPORT.md Strategies"
+  ]
+ },
+ {
+  "id": "SIM-11",
+  "severity": "minor",
+  "priority": "could",
+  "category": "spec-gap",
+  "sections": "\u00a74.1 (clues and cells), \u00a78 DL3 row, \u00a74.3",
+  "change": "State whether one suspect may hold two cells of the same clue (two copies of one clue in a oneOrMore slot). If not, add it to DL3 as an error; if yes, say so in \u00a74.1 and add a conformance case where the pigeonhole step and count elimination meet a suspect holding two copies.",
+  "evidence": "SIM_REPORT 'Modelling choices': 'The oracle lets a suspect hold two copies of one clue, because the plan never says they can't.' DL3 (line 2048) does not rule it out.",
+  "sources": [
+   "sidecar/SIM_REPORT.md Modelling choices"
+  ]
+ },
+ {
+  "id": "DECISIONS-9",
+  "severity": "major",
+  "priority": "must",
+  "category": "debrief",
+  "sections": "\u00a79.3 Stakes, \u00a73.10, \u00a76.7 (and \u00a74.1, DL15 if option b)",
+  "change": "State where fixture C's debrief 'still notes the hasty call' for a released contact. The engine has no such line today: a released innocent's card reads 'Not named (innocent)', the same as a contact never suspected, and closingLine is fixed. Options: (a) authored story lines only, no engine change: HaX's reply on release ('Fine. They're out of it.') and a credits line conditioned on c_released_<id>; (b) the optional debrief.notes.<s>.<outcome> (SIDECAR-23), which is keyed by outcome and cannot tell a released contact from one never sent to wait without a further condition. The plan owner picks one and writes it into \u00a79.3 (plus \u00a74.1, DL15 and \u00a76.7 if b). If (a), the \u00a713.1 Q6 row says the note lives in the story and credits, not on the debrief card.",
+  "evidence": "DECISIONS_PENDING Q6: 'the debrief still notes the hasty call'. PLAYER_TEST_C F4: 'the debrief can still note the hasty send'. Plan \u00a73.10 and \u00a76.7 carry only engine lines plus closingLine, and the early-call line needs a verdict. STRESS_TEST 6.4 proposes debrief.notes keyed by outcome.",
+  "sources": [
+   "DECISIONS_PENDING.md Q6",
+   "sidecar/PLAYER_TEST_C.md F4, F6",
+   "sidecar/STRESS_TEST.md \u00a76 (6.4)"
+  ]
+ }
+]

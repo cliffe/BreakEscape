@@ -1,0 +1,6 @@
+# keys_cmp.rb (proofs/M1_r3/keys_cmp.rb), parent = d54c62fe0^ (before the M1 R3 fixes), HEAD = 9b1b6e524
+parent keys: 411  HEAD keys: 411
+- ["89cf88a13e376cf0a8ecc792ec5283ca", "nightshade_phone", "So you've found my file. Read the hand on it, not the boy. She's still feeding the shredder."]
++ ["1276af28d86deb567dae913af4695f8e", "nightshade_phone", "So you've found my file. Never mind the boy in it. Look at the handwriting."]
+# parent = dd2ba4ae5^ (before the HaX callLabel)
+parent keys: 411  HEAD keys: 411

@@ -1,0 +1,211 @@
+
+## R21 (phase 4 dialogue C1, D5-2/D5-5/D5-32): HaX's phone 'alive' choice with the dial read, an ally Vance at trust 90 never asked about the crew, bank B vents with the crew in Hall 2, Static stands aside, the player asks the number and takes the button. Quiet disclosure: no 'maintenance fault', Vance signs the accident, HaX pays off both stances.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_spoken":true,"vance_provided_keycard":true,"vance_card_cloned":true,"vance_is_ally":true,"vance_trust_level":90,"anomaly_detected":true}}
+   {set {"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true,"server_room_advice_given":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+
+--- phone ---
+     (6 options)
+ > I've got their attack mechanism mapped.
+  Your flags are in. Grid control can see it too.
+  They own the SCADA layer, and there's a remote trigger sitting on top of it.
+     (2 options)
+ > The software's theirs. Anything I do from a keyboard, they undo.
+  Right. Faked temperatures, interlocks bypassed, an overcharge on a timer.
+  So you don't fight it with software.
+  The plant room has a hardwired shutdown button, no network path. The one thing they couldn't reach.
+  Press it and the attack's dead.
+  Listen. Voltage is worth more to us in a cell than in the wind.
+  He knows The Architect, how the cells coordinate, what's coming next.
+     (3 options)
+ > Understood. I'll try to take him alive.
+      [set_global promised_voltage_alive=true]
+  Good. If he reaches for that laptop, put him down.
+  Last stretch. Anyone still standing with him goes down first.
+  Then the button.
+ > Ready. Heading for the plant room.
+  Clean run so far. Finish it.
+  [chat closes]
+   [PASS] said: "Press it and the attack's dead"
+   [PASS] said: "If he reaches for that laptop, put him down"
+   [PASS] said: "Last stretch. Anyone still standing with him goes down first."
+   [PASS] said: "Then the button."
+   [PASS] not said: "won't arm"
+   [PASS] not said: "Lives first"
+   [PASS] not said: "In the plant room:"
+   [PASS] promised_voltage_alive = true (expected true)
+   {advance 15 min}
+      [clock 8 min: h2_advisory FIRES {"hydrogen_alarm":true,"urgency_stage":3}]
+      [clock 14 min: racks_vent FIRES {"racks_vented":true,"casualties_occurred":true,"urgency_stage":4}]
+      [engine: racks_vented with the crew in Hall 2 -> crew_lost]
+   [PASS] crew_lost = true (expected true)
+   {set {"plant_room_entered":true}}
+
+--- static ---
+  Narrator: He steps out from behind the plant-room door frame, putting himself squarely between you and the man at the laptop.
+  ENTROPY Operative 'Static': Voltage. Company.
+  Narrator: Behind him, Voltage does not look up from the screen.
+  ENTROPY Operative 'Static': He doesn't need long. I just need you to be slow.
+     (4 options)
+ > I'm not here for you. I'm here to talk to him.
+      [set_global static_stood_aside=true]
+  Narrator: He weighs you for a long second, then takes one step to the side. One step, no more.
+  ENTROPY Operative 'Static': Talk, then. From there.
+  [chat closes]
+
+--- voltage ---
+  One of you. I'd budgeted for more.
+  And Static let you walk up to my bench. He'll explain that later.
+  But you're late. This place has no security worth the name, and we've had three days in it.
+     (2 options)
+ > It's over, Voltage. Stand down.
+  Polite. They train that into you.
+  Bank B's already gone. One keystroke and A and C follow it, and the grid goes down with them.
+  Your move.
+     (2 options)
+ > Make me understand it first.
+      [set_global voltage_six_cities=true]
+  You want to talk? Fine.
+  This site is one test run. The Architect has six cities lined up.
+  Infrastructure attacks, and Social Fabric ready to turn the panic into a riot.
+  You stop this one. How many of the others can you be standing in front of?
+     (3 options)
+ > Why infrastructure? Why civilians?
+  Voltage: You want the reasoning. They always want the reasoning.
+  Voltage: Two hundred megawatt-hours in a shed on a floodplain, holding up a city that never asked whether it should.
+  Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in the front.
+  Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
+     (2 options)
+ > How many does the hall take with it?
+      [set_global asked_the_number=true]
+      [set_global blackout_named=true]
+  Narrator: He answers without hesitating, and without looking away.
+  Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, the duty engineer, and the man on the gate.
+  Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at Saint Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
+  Voltage: You think I don't know it. I know it to one decimal place.
+     (2 options)
+ > Say their names, then.
+  Narrator: For the first time something moves behind his face. His eyes go to the laptop clock.
+  Voltage: *flat* I don't need their names to know the number.
+  Voltage: There's no version of this where I blink. You should have worked that out on the way in.
+  Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. You cannot reach both.
+  Voltage: So. The button, or me.
+  Voltage: You don't get to have both. I'd decide quickly.
+     (3 options)
+ > Go for the button and let him run.
+  Narrator: You break for the wall. He doesn't try to stop you. He goes the other way, for the dock door.
+  Narrator: Static peels off the wall and goes with him without a word.
+  Voltage: Good. That's the right call.
+  Voltage: You save your forty. I'll be long gone before anyone counts them.
+      [task: confront_voltage]
+  Narrator: The dock door bangs open onto the loading bay and the cold, and he's gone into it.
+      [task: confront_voltage]
+      [engine: Static leaves with Voltage -> static_left]
+  [chat closes]
+   [PASS] said: "And Static let you walk up to my bench"
+   [PASS] said: "You cannot reach both"
+   [PASS] not said: "not one of my people"
+   [PASS] asked_the_number = true (expected true)
+   [PASS] voltage_escaped = true (expected true)
+   {set {"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true}}
+
+--- phone ---
+     (3 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Where do I stand?
+     [1] Nothing right now.
+  [stopped: no pick]
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Bank B went before I reached the button. Shutdown held A and C.
+  Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall.
+  Vance lost nine of his crew tonight. He hasn't said a word about you yet.
+  And Voltage got out through the dock.
+ > Nine. Tell me we came out with something.
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is gone, so the paper will have to talk.
+  You got his number out of him, at least. It goes in the file next to Blackout's signature.
+  You wanted him alive, and you chose the button. I'd have chosen the same.
+  Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > So what do they fix first?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > The Architect. He's running all of it.
+  The same name the Zero Day directive carried. The Architect.
+  We've just watched one of his strikes from the inside. Now we know how the cells fit together.
+  This site was a rehearsal.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > I'm in. When do we start?
+  He'll call when he's ready. Not tonight.
+  Agent HaX: Nine in Hall 2. Two more on the feed before the grid caught up.
+  Agent HaX: Vance had the evacuation alarm on his desk all night.
+  Agent HaX: You stopped the rest of it. Hold on to that when the names come out tomorrow.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Keep it classified. Let them patch it quietly.
+  We classify what we can. Nine deaths don't go in a drawer, so it's an industrial accident, cause under investigation.
+  Robert Vance: Accident. I'll sign it. I'll not pretend I like it.
+  Nine families get a report with no cause in it. Albion's name survives, the upgrades happen, and nothing makes the rest of the sector move.
+  Netherton won't argue.
+  Done.
+  It stays classified. Cover story's prepared.
+  Robert Vance: I don't know what you are. I know what you did.
+  Robert Vance: Nine of mine. I'll be telling their families myself.
+     (2 options)
+ > It's all going in the report. Every line.
+  Robert Vance: I'll have those card readers out by the end of the week.
+  Voltage is out there. So is The Architect.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+   [PASS] said: "You got his number out of him, at least"
+   [PASS] said: "You wanted him alive, and you chose the button"
+   [PASS] said: "Vance had the evacuation alarm on his desk all night"
+   [PASS] said: "We classify what we can. Nine deaths don't go in a drawer"
+   [PASS] said: "Accident. I'll sign it. I'll not pretend I like it."
+   [PASS] said: "Nine families get a report with no cause in it"
+   [PASS] said: "I'll have those card readers out"
+   [PASS] said: "Keep the OptiGrid print kit"
+   [PASS] said: "I don't know what you are. I know what you did."
+   [PASS] said: "Nine of mine. I'll be telling their families myself."
+   [PASS] not said: "maintenance fault"
+   [PASS] not said: "Stability"
+   [PASS] not said: "Nobody hears how close"
+   [PASS] not said: "breathing"
+   [PASS] not said: "Robert Vance: Thank you."
+   [PASS] not said: "Remind me not to annoy you"
+   [PASS] not said: "Harder than it looks"
+   [PASS] not said: "The night crew were still in Hall 2 when Bank B went"
+
+[stats] spoken/narrated lines 92, choices 23, longest run without a choice 8 (debrief); runs>=6: phone:6, voltage:6, debrief:6, debrief:6, debrief:8
+[result] all expectations met

@@ -1,0 +1,417 @@
+<title>Awareness Build Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; context first, then gaps, then a stack of package cards that each carry their own decision controls; a sticky save bar. */
+:root{
+  --bg:#f5f7f6; --surface:#ffffff; --ink:#18221f; --muted:#5b6964; --line:#d9e1de;
+  --accent:#0d6b63; --accent-soft:#e1f0ed; --warn:#9a5b00; --warn-soft:#fbefd9;
+  --none:#c9d3cf; --touch:#a9c9c2; --part:#5fa79b; --large:#0d6b63;
+  --display:"Archivo",system-ui,sans-serif; --body:"Source Sans 3",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111816; --surface:#18211e; --ink:#e5ece9; --muted:#9db0a9; --line:#2b3834;
+  --accent:#5cc6b8; --accent-soft:#16312d; --warn:#f0b45a; --warn-soft:#3a2a10;
+  --none:#2c3733; --touch:#35554e; --part:#3f8f83; --large:#5cc6b8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111816; --surface:#18211e; --ink:#e5ece9; --muted:#9db0a9; --line:#2b3834;
+  --accent:#5cc6b8; --accent-soft:#16312d; --warn:#f0b45a; --warn-soft:#3a2a10;
+  --none:#2c3733; --touch:#35554e; --part:#3f8f83; --large:#5cc6b8; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+.wrap{max-width:860px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:2.1rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.45rem;font-weight:700;margin-top:2.6rem;margin-bottom:.8rem}
+h3{font-size:1.12rem;font-weight:700}
+p{margin:.5rem 0;max-width:68ch}
+.eyebrow{font:600 .74rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lede{color:var(--muted);font-size:1.05rem}
+header{padding-block:2.2rem 1rem;border-bottom:1px solid var(--line);display:grid;gap:.6rem}
+code,.id{font-family:var(--mono);font-size:.82em}
+.id{color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.94rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:.45rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .72rem/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:1rem 0}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.8rem .9rem}
+.fact b{display:block;font:800 1.6rem/1.1 var(--display);color:var(--accent)}
+.fact span{color:var(--muted);font-size:.9rem}
+ul.tight{margin:.4rem 0;padding-left:1.2rem}
+ul.tight li{margin:.2rem 0}
+.stages{font:400 .82rem/1.7 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.8rem 1rem;white-space:pre;overflow-x:auto}
+.cov{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:.8rem 0}
+.cell{border-radius:6px;padding:.45rem .55rem;font-size:.84rem;line-height:1.3;min-width:0}
+.cell b{font-family:var(--mono);font-size:.76rem;display:block}
+.c-none{background:var(--none)} .c-touch{background:var(--touch)} .c-part{background:var(--part);color:#fff} .c-large{background:var(--large);color:#fff}
+:root[data-theme="dark"] .c-large,:root[data-theme="dark"] .c-part{color:#0c1513}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .c-large,:root:not([data-theme="light"]) .c-part{color:#0c1513}}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.gap{border-left:3px solid var(--warn);background:var(--warn-soft);padding:.6rem .9rem;border-radius:0 6px 6px 0;margin:.5rem 0}
+.wp{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.1rem 1.2rem;margin:14px 0;display:grid;gap:.6rem}
+.wp-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem .8rem}
+.wp-head .id{font-weight:600}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:600 .72rem/1 var(--mono);padding:.3rem .5rem;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.tag.w{background:var(--warn-soft);color:var(--warn)}
+.pitch{font-size:1.02rem}
+dl{display:grid;grid-template-columns:8.5rem 1fr;gap:.3rem .8rem;margin:0;font-size:.94rem}
+dt{color:var(--muted);font-weight:600}
+dd{margin:0;min-width:0}
+@media (max-width:560px){dl{grid-template-columns:1fr}dt{margin-top:.3rem}}
+fieldset{border:0;padding:0;margin:0}
+.choices{display:flex;flex-wrap:wrap;gap:6px;margin-top:.2rem}
+.choices label{cursor:pointer}
+.choices input{position:absolute;opacity:0;width:1px;height:1px}
+.choices span{display:inline-block;padding:.4rem .75rem;border:1px solid var(--line);border-radius:999px;font-size:.9rem;background:var(--bg)}
+.choices input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.choices input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+textarea{width:100%;min-height:3.2rem;font:inherit;font-size:.94rem;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);resize:vertical}
+textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.q{font-weight:600;font-size:.95rem}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-block:.7rem calc(.7rem + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:5}
+.bar .wrap{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;justify-content:space-between}
+#status{font-size:.9rem;color:var(--muted)}
+#count{font:600 .85rem var(--mono)}
+button{font:600 .92rem var(--body);padding:.5rem .9rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+.small{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.wp{transition:border-color .2s}}
+.wp.answered{border-color:var(--accent)}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Incident Simulations: Critical Cases · planning review · 27 October 2026, updated after the second merge</div>
+  <h1>What is built, what is missing, and what to build next</h1>
+  <p class="lede">Main now has a working social-engineering engine and 38 awareness scenarios, and since this morning the product has resumed with most of its stages closed. The course plan has been merged with main and rewritten to extend what exists. Where the plan and the build disagreed, the build won. Below are the context, the gaps, and 17 work packages. Each package has a verdict, and there are 6 open decisions. Your answers save as you go.</p>
+  <p class="small">Sources on branch <code>ccr-8675a21c-vu1k0k</code>: <code>planning_notes/security_awareness_course/04_BUILT_SO_FAR.md</code>, the two research notes beside it, and <code>planning_notes/phishing_and_social_engineering/awareness/HANDOVER.md</code>.</p>
+</header>
+
+<h2>1. What is built</h2>
+<div class="facts">
+  <div class="fact"><b>7</b><span>full episodes, each about 15 minutes (E6 and E7 about 16)</span></div>
+  <div class="fact"><b>7</b><span>defend-only variants, each about 8 minutes</span></div>
+  <div class="fact"><b>24</b><span>pre and post checks: 6 roles × 2 forms × AB/BA order, about 9 minutes each</span></div>
+  <div class="fact"><b>4</b><span>training-room POV backgrounds made, wired and approved</span></div>
+</div>
+<p><strong>The frame.</strong> Every scenario takes place in one training room with a kiosk and a host. The kiosk runs the episode in stages:</p>
+<ol class="tight">
+  <li><strong>Brief and scope note.</strong></li>
+  <li><strong>Attack (unscored).</strong> Research public sources, then build one attack from templates whose blanks only take facts you have found.</li>
+  <li><strong>Flip.</strong> Your own message arrives in a defender's inbox with its tells highlighted.</li>
+  <li><strong>Defend (scored).</strong> Triage messages with Trust, Report, Delete or Verify.</li>
+  <li><strong>Debrief.</strong> The habit to keep, an "On Monday" card, the customer's reporting route and a no-blame line.</li>
+</ol>
+<p>The frame has no doors, no combat, no VMs and no language model at runtime.</p>
+<div class="scroll"><table>
+  <thead><tr><th>Episode</th><th>Topic</th><th>Company</th><th>Check role</th></tr></thead>
+  <tbody>
+    <tr><td>E1</td><td>Invoice and bank-detail fraud</td><td>Brightwell Foods</td><td>finance</td></tr>
+    <tr><td>E2</td><td>CV and recruitment lures</td><td>Tarrowby Logistics</td><td>hr</td></tr>
+    <tr><td>E3</td><td>Help-desk reset by phone, MFA fatigue, role swap</td><td>Quayholt Insurance</td><td>helpdesk</td></tr>
+    <tr><td>E4</td><td>Executive whaling</td><td>Merrin &amp; Sallow Architects</td><td>executive</td></tr>
+    <tr><td>E5</td><td>Fake sign-in pages</td><td>Quayholt Insurance</td><td>general</td></tr>
+    <tr><td>E6</td><td>Texts and QR codes</td><td>Tarrowby Logistics</td><td>mobile</td></tr>
+    <tr><td>E7</td><td>Cloned CEO voice (optional)</td><td>Brightwell Foods</td><td>everyone</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Systems on main</strong> (new catalogue ids in brackets):</p>
+<ul class="tight">
+  <li>episode runner and flip view (BE-31, BE-32);</li>
+  <li>influence service with its bar (BE-33);</li>
+  <li>one ink story per channel (BE-34);</li>
+  <li>mail scheduler (BE-35);</li>
+  <li>awareness-measure records (BE-36);</li>
+  <li>look-alike guard and chosen avatar (BE-37);</li>
+  <li>social validator and its CI job (BE-38);</li>
+  <li>intel facts (BE-39);</li>
+  <li>phish rules engine and pretext judge (BE-40);</li>
+  <li>role swap (BE-41);</li>
+  <li>OSINT browser (MG-31);</li>
+  <li>intel board (MG-32);</li>
+  <li>landing-page builder (MG-33);</li>
+  <li>pretext prep and template composer (MG-34);</li>
+  <li>inbox triage with email, call, voicemail, push, page, SMS and QR cards (MG-35);</li>
+  <li>mock authenticator (MG-36);</li>
+  <li>concept cards (EX-09).</li>
+</ul>
+<p>The student lab, <code>lab_social_engineering</code>, uses the same systems.</p>
+<p><strong>Status.</strong> You resumed the product on 27 October. Its stages, from the hand-over note's new status block:</p>
+<div class="stages">Design              ██████████  closed (3 cycles)
+Check forms         ██████████  closed; about 9 minutes each
+Engine              ██████████  rounds 1 to 5 plus P6/P7 rounds; closing check
+Data / dialogue     ██████████  C1 to C5 closed
+Playtest            ██████████  P6 and P7 done; fixes in
+Fun changes         ██████████  aw1 to aw9 in; aw7: guidance + two seeded courses
+Training rooms      ██████████  C1 to C3 closed
+POV backgrounds     ██████████  four made, wired, approved
+Puzzle-chain pass   ██████████  light pass closed
+Host art            ░░░░░░░░░░  19 concepts approved; PixelLab after 3 Nov
+Timing              ██░░░░░░░░  agent estimates; human runs postponed
+Facilitator guide   ░░░░░░░░░░  one guide for the course, last</div>
+
+<h2>2. How the plan changed to fit the build</h2>
+<div class="scroll"><table>
+  <thead><tr><th>Topic</th><th>The old plan</th><th>Now (from the build)</th></tr></thead>
+  <tbody>
+    <tr><td>World</td><td>One company, Larkspur Group, with a recurring cast</td><td>A training room at one of four brand-set client companies, with a host per scenario. Larkspur is retired; "Larkspur Travel" is already a supplier in the executive checks</td></tr>
+    <tr><td>Shape</td><td>Seven beats</td><td>Brief, attack, flip, defend, debrief, with pre and post checks around the episode. Topics with no attacker use a "consequence flip"</td></tr>
+    <tr><td>Habit</td><td><em>Pause. Check. Report.</em></td><td>The built rule of thumb, word for word: "stop and check it yourself through a route you already trust…"</td></tr>
+    <tr><td>Attacker view</td><td>An optional, sandboxed workshop</td><td>Attack first by default, with defend-only as the opt-out</td></tr>
+    <tr><td>Assessment</td><td>Question bank, 80% pass mark</td><td>Role-based pre and post checks with no pass mark, mirror pairs, and a discrimination figure for organisers only</td></tr>
+    <tr><td>Platform</td><td>26 new Hacktivity features</td><td>Ordinary missions in the <code>training</code> collection. The only change proposed is the reporting-route setting; the rest is a wish list</td></tr>
+    <tr><td>Video and mentor</td><td>Mentor NPC, video, intranet</td><td>Host, concept cards and text to speech. Video drops to optional</td></tr>
+  </tbody>
+</table></div>
+
+<h2>3. Gaps: the 26 planned modules against the build</h2>
+<div class="legend"><span><i class="c-large"></i>Large</span><span><i class="c-part"></i>Part</span><span><i class="c-touch"></i>Narrow or touch</span><span><i class="c-none"></i>None</span></div>
+<div class="cov" id="cov"></div>
+<p>The built product covers payment fraud, phishing and the help desk well. The biggest gaps:</p>
+<div class="gap"><strong>No "what to do next".</strong> No episode covers what to do after a click, a typed password or a payment, though every episode leads up to that moment.</div>
+<div class="gap"><strong>Whole core topics missing.</strong> Nothing is built for passwords and managers, data protection, handling information, malware, downloads, physical security, shadow IT, insider risk, AI tool use or acceptable use.</div>
+<div class="gap"><strong>Four roles have no check pair.</strong> Developers, customer-facing staff, procurement and healthcare have nothing yet.</div>
+<div class="gap"><strong>Accessibility.</strong> Only the social overlays meet the accessibility baseline. There is no text route, no accessibility check in CI and no screen-reader audit. Public-sector buyers will ask for all three.</div>
+<div class="gap"><strong>Engine rough edges every new episode will hit.</strong>
+  <ul class="tight">
+    <li><code>#trigger_minigame</code> is a stub.</li>
+    <li>The title screen and tutorial still say Hacktivity and spy.</li>
+    <li>Pause does not stop the clock.</li>
+    <li>Name entry accepts ASCII only.</li>
+    <li>The call label "SECURE VIDEO LINK" is hard-coded.</li>
+  </ul>
+</div>
+
+<h2>4. Work packages</h2>
+<p>Give each package a verdict: <strong>Go now</strong>, <strong>Next</strong> (after what is already running), <strong>Later</strong>, or <strong>Drop</strong>. Add a note if you want to change the scope. Sizes assume one developer and are a rough guide: S is days, M a few weeks, L a month or more.</p>
+<div id="wps"></div>
+
+<h2>5. Decisions</h2>
+<p>These came out of the reconciliation. Each one has a recommendation, listed first.</p>
+<div id="decs"></div>
+
+<h2>6. Anything else</h2>
+<div class="wp"><label class="q" for="general">Comments on the whole plan, or a package I have not pitched</label><textarea id="general" data-key="general"></textarea></div>
+</div>
+
+<div class="bar"><div class="wrap">
+  <span><span id="count">0 of 23 answered</span> · <span id="status">Saving needs you to be signed in; answers are kept on this page as you choose.</span></span>
+  <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" id="copy" type="button">Copy my answers</button></span>
+</div></div>
+
+<script>
+const COV=[
+ ["core_00","First day","none"],["core_01","Phishing email","large"],["core_02","Phone, text, QR, in person","part"],["core_03","Passwords and MFA","touch"],
+ ["core_04","Spotting and reporting","part"],["core_05","Data protection","none"],["core_06","Handling information","none"],["core_07","Malware and updates","touch"],
+ ["core_08","Safe web and downloads","part"],["core_09","Remote and mobile","touch"],["core_10","Physical security","none"],["core_11","Payment fraud and BEC","large"],
+ ["core_12","Social media","part"],["core_13","Shadow IT","none"],["core_14","Insider risk","none"],["core_15","AI and deepfakes","touch"],
+ ["core_16","Acceptable use","none"],["core_17","Annual capstone","touch"],["role_01","Leaders and boards","touch"],["role_02","Finance","part"],
+ ["role_03","IT and service desk","large"],["role_04","Developers","none"],["role_05","Managers and HR","part"],["role_06","Customer-facing","touch"],
+ ["role_07","Procurement","touch"],["sector_01","Healthcare","none"]];
+document.getElementById("cov").innerHTML=COV.map(([id,n,c])=>`<div class="cell c-${c}"><b>${id}</b>${n}</div>`).join("");
+
+const WPS=[
+ {id:"WP-01",t:"Finish and ship E1 to E7",size:"M",tags:["Finishes the built product","Recommended first"],
+  pitch:"Get the resumed product to release. Nearly every stage is closed: P6 and P7 playtests, dialogue C5, rooms C3, POV backgrounds and the puzzle-chain pass.",
+  builds:"The hand-over status block: host characters after the PixelLab reset (3 November) and a short sprite playtest, then human timing runs, then the one facilitator guide.",
+  newwork:"Host art (19 concepts already approved, with Joanne Pell replacing the Brightwell Farah), then the guide.",
+  needs:"When you want the human timing runs.",
+  why:"Every later package adds to this product. Shipping it first gives customers something real and gives us timing and feedback from real players."},
+ {id:"WP-02",t:"Customer reporting route in Hacktivity",size:"S",tags:["Platform","Waits on you"],
+  pitch:"One setting, per course and per organisation: \"how to report suspicious messages here\". It is shown in every debrief.",
+  builds:"The game already reads the value (aw1). The options form, with approaches A to F, is drafted.",
+  newwork:"A small platform change once you pick an approach.",
+  needs:"Your answer on the route options form, and your go-ahead for any Hacktivity change.",
+  why:"The debrief's most useful line is the customer's own reporting route. Without this setting it falls back to a generic line."},
+ {id:"WP-03",t:"Engine gaps every new episode needs",size:"M",tags:["Engine","Shared with the campaign"],
+  pitch:"Clear the rough edges before new episodes depend on them.",
+  builds:"The episode runner and the existing framework.",
+  newwork:"A real <code>#trigger_minigame</code> and <code>open_minigame</code> action (BE-19); an authorable title, tutorial and end screen, so no Hacktivity or spy text appears in a corporate course (BE-20); pause that stops the clock and timers (BE-23); Unicode name entry (BE-25); configurable call labels (BE-30).",
+  needs:"Nothing.",
+  why:"Each fix is small, but E8 to E13 all hit them. Several also help the SAFETYNET missions."},
+ {id:"WP-04",t:"Accessible route and accessibility checks",size:"L",tags:["Engine","Buyers ask for it"],
+  pitch:"A text route that plays the same stages and writes the same records, plus automated accessibility checks and a screen-reader audit, so we can publish a WCAG 2.2 AA statement.",
+  builds:"The social overlays' keyboard and plain-text conventions, and Source Sans 3.",
+  newwork:"The text-route player (BE-03), the rest of the accessibility baseline (BE-04), accessibility checks in CI (BE-26), an audit and a statement.",
+  needs:"A choice on D9 (the accessibility commitment).",
+  why:"Mandatory training has to be takeable by all staff. This is the largest gap between us and an enterprise or public-sector sale."},
+ {id:"WP-05",t:"E8: After the click",size:"M",tags:["New episode","core_04 + core_01 LO6"],
+  pitch:"\"Everyone clicks something eventually. Today is about the ten minutes after.\" The attack half sends one credential phish that lands. The flip puts the learner in the seat of the person whose account is now in use. The defend half triages the signs that follow: a sent email they did not write, a reset they did not ask for, a push from abroad, files that will not open. Each one is reported, not hidden.",
+  builds:"The OSINT browser, the template composer, the flip view, triage (including push cards from E3) and the report button.",
+  newwork:"Content, plus perhaps a short structured report form (MG-09).",
+  needs:"Confirmation of the company and host: Quayholt Insurance, with Anjali Rao.",
+  why:"It fills the largest learning gap, and the systems it needs exist already. It is the cheapest new episode."},
+ {id:"WP-06",t:"E9: Passwords and password managers",size:"M",tags:["New episode","core_03"],
+  pitch:"The attack half runs an abstract guessing and reuse rig against a fictional colleague, which shows why personal-word passwords and reuse fail. The flip shows a reused password opening a second account. The defend half covers three random words, a manager, passkeys and MFA prompts.",
+  builds:"E3's MFA stage, the mock authenticator and triage push cards.",
+  newwork:"A passphrase and manager surface (MG-08): word tiles, a strength meter and vault health, with no free-text password field.",
+  needs:"The company choice (Decision 4).",
+  why:"Passwords and MFA are in every framework's training list. Today the only coverage is E3's MFA stage."},
+ {id:"WP-07",t:"E10: Fake downloads and \"verify you are human\" pages",size:"M",tags:["New episode","core_08 + core_07"],
+  pitch:"This extends E5. The attack half assembles a fake software page or fake CAPTCHA from parts, as an abstract model. The flip shows the victim's view. The defend half covers download prompts, browser warnings, extensions and the paste-this-command trick, at concept level only.",
+  builds:"The landing-page builder, the OSINT browser and triage page cards.",
+  newwork:"A browser extension for download and warning states (MG-02).",
+  needs:"The company choice (Decision 4).",
+  why:"Fake \"verify you are human\" pages are among the most common current lures, and nothing built covers downloads."},
+ {id:"WP-08",t:"E11: Misdirected and overshared data",size:"M",tags:["New episode","core_05 + core_06","New shape"],
+  pitch:"The first consequence-flip episode. The learner makes the everyday mistake in a sandbox: an autocomplete to the wrong address, a link shared with anyone, a fake redaction. The flip shows where each one led. The defend half catches them before sending.",
+  builds:"The flip view (BE-32), the mail client and triage.",
+  newwork:"Runner support for an attack half with no target to judge (BE-16), recipient checks (MG-01), sharing settings (MG-11) and redaction (MG-12).",
+  needs:"Decision 1 (consequence flip), and a company (Decision 4: a new care or facilities company is proposed).",
+  why:"Data protection is required by UK GDPR training expectations and is in every buyer's list. The consequence flip also opens up every topic with no attacker."},
+ {id:"WP-09",t:"E12: The visitor and the tailgater",size:"M",tags:["New episode","core_10 (+ core_02 in person)"],
+  pitch:"Someone in a hi-vis jacket and a courier with an urgent parcel ask to be let in. The attack half preps a pretext with the influence bar, as E3 does, but in person. The defend half: challenge politely, escort, and report.",
+  builds:"Pretext prep, the influence service and person-chat.",
+  newwork:"Person-chat inside the training room (BE-19 from WP-03), and maybe spot-the-risk (BE-10) or take an item (BE-28).",
+  needs:"WP-03 first, and the company choice (Decision 4).",
+  why:"Physical security is in ISO 27001 and PCI DSS, and it covers core_02's in-person gap too."},
+ {id:"WP-10",t:"E13: The AI assistant",size:"M",tags:["New episode","core_15"],
+  pitch:"An authored assistant, with no language model at runtime. What is safe to paste into it, checking its answers, and an instruction hidden in a client brief (prompt injection, at concept level). It extends the E7 and E4 voice work on deepfakes.",
+  builds:"The episode runner, triage and the E7 voice panel.",
+  newwork:"An authored assistant chat surface (MG-16).",
+  needs:"The company choice (Decision 4).",
+  why:"Buyers ask for AI use and deepfakes now, and today only the voice side is covered."},
+ {id:"WP-11",t:"Remaining core episodes (E14 to E17)",size:"L",tags:["New episodes","core_12, 13, 14, 16"],
+  pitch:"Four short episodes in the built shape. Social media: attack first with OSINT on a colleague's posts, then fix the settings. Shadow IT: a consequence flip. Insider risk: a consequence flip plus defend, with the deduction-board idea as a later, richer version. Acceptable use: defend-only.",
+  builds:"The OSINT browser's \"reduce\" notes, the flip view and triage.",
+  newwork:"Content, plus the consequence-flip support from WP-08.",
+  needs:"WP-08, plus D13 for core_16.",
+  why:"These complete the core library. They are lower priority than E8 to E13 in most frameworks."},
+ {id:"WP-12",t:"First-play brief and annual mixed edition",size:"S",tags:["core_00 + core_17"],
+  pitch:"core_00 becomes a five-minute \"how this works\" brief inside the kiosk: the scope note, the habit, how to report. core_17 becomes a yearly mixed edition drawn from the existing defend sets and AB/BA check forms.",
+  builds:"The episode runner, the check shells and the generators.",
+  newwork:"Mostly configuration and new item mixes.",
+  needs:"Nothing.",
+  why:"It is cheap, and it gives organisers a clear start and an annual refresher without new systems."},
+ {id:"WP-13",t:"Role extensions for the built roles",size:"L",tags:["role_01, 02, 03, 05"],
+  pitch:"Deepen the four built roles.",
+  builds:"E4, E1, E7, E3, E2, their check forms and the runner's unused <code>facilitated</code> flag.",
+  newwork:"New episodes and check items: a board crisis exercise for executives (facilitated), a payment-run review and payroll diversion for finance, least privilege and app consent for IT, and joiners, movers and leavers plus fake candidates for HR.",
+  needs:"Nothing.",
+  why:"Role training is a separate requirement in PCI DSS, DORA and NIS2, and the built roles are the natural place to start."},
+ {id:"WP-14",t:"New roles with check pairs",size:"L",tags:["role_04, 06, 07, sector_01"],
+  pitch:"Four new roles, each with an episode and a matched A/B check pair. Developers: a fake maintainer, a package an AI made up, fake CI notices. Customer-facing staff: an account takeover via the contact centre, reusing the E3 pattern. Procurement: supplier impersonation, extending E1. Healthcare: a sector pack.",
+  builds:"The full stack, the role-swap pattern and the check generators.",
+  newwork:"Content, check forms and one or two new companies.",
+  needs:"A healthcare company for the brand set.",
+  why:"These open new buyers. Healthcare is a sector of its own (NHS DSPT)."},
+ {id:"WP-15",t:"Defend items for core_02's missing channels",size:"S",tags:["Extends E3 and E6","Cheap"],
+  pitch:"Add triage items for chat-app approaches, remote-access scams and the UK personal-scam routes (7726 for scam texts, 159 for banks, Report Fraud) to the existing defend sets and check forms.",
+  builds:"Triage SMS, call and voicemail cards, and the shell generators.",
+  newwork:"Items only.",
+  needs:"A check-form parity audit after the change.",
+  why:"It is high value for the effort, and it closes core_02 without a new episode."},
+ {id:"WP-16",t:"Spaced drills and session plans",size:"S",tags:["Delivery","Extends the facilitator guide"],
+  pitch:"You chose one facilitator guide for the whole course, written last. This package adds to it: a monthly drill schedule built from the defend-only shells, and sample session plans (a 30-minute defend-only session, a 45-minute full episode with discussion) that the guide can point to.",
+  builds:"The defend-only shells, the two seeded courses and the one facilitator guide.",
+  newwork:"Documents; a facilitated shell using the runner's flag only if a customer asks for it.",
+  needs:"The facilitator guide first.",
+  why:"Many customers run awareness as team sessions. Spaced practice is the best-supported way to keep habits."},
+ {id:"WP-17",t:"Kids game prototype: one defend-only world",size:"M",tags:["New product","Defend-only sibling"],
+  pitch:"One \"Is it real?\" world for ages 7 to 11. The guide mascot runs a defend-only shell. Triage verdicts become Trust and Tell a grown-up, the tally is a shared \"squad protected\" count, and there is no child data and no attack half.",
+  builds:"The episode runner, triage, the debrief, awareness-measure and concept cards.",
+  newwork:"Child art, voice and copy; a kids brand set; a reading-age lint; and a safeguarding review before anything ships.",
+  needs:"Answers to the kids game's open questions: age band, buyer, funding and name.",
+  why:"It shows the engine serving a second audience cheaply. It is best as a later side project."}
+];
+const VERDICTS=["Go now","Next","Later","Drop"];
+document.getElementById("wps").innerHTML=WPS.map(w=>`
+<section class="wp" id="card-${w.id}">
+  <div class="wp-head"><span class="id">${w.id}</span><h3>${w.t}</h3><span class="tag w">Size ${w.size}</span></div>
+  <div class="tags">${w.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+  <p class="pitch">${w.pitch}</p>
+  <dl><dt>Builds on</dt><dd>${w.builds}</dd><dt>New work</dt><dd>${w.newwork}</dd><dt>Needs</dt><dd>${w.needs}</dd><dt>Why now</dt><dd>${w.why}</dd></dl>
+  <fieldset><legend class="q">Verdict</legend><div class="choices">${VERDICTS.map(v=>`<label><input type="radio" name="${w.id}" id="${w.id}-${v.replace(/\s/g,'')}" value="${v}" data-key="${w.id}"><span>${v}</span></label>`).join("")}</div></fieldset>
+  <label class="q" for="${w.id}-note">Notes or scope changes</label><textarea id="${w.id}-note" data-key="${w.id}-note"></textarea>
+</section>`).join("");
+
+const DECS=[
+ {id:"D13",t:"Topics with no attacker",q:"How should data protection, handling information and acceptable use be taught?",
+  opts:["Consequence flip for E11 and shadow IT; defend-only for acceptable use (recommended)","Defend-only for all of them","Consequence flip for all of them"]},
+ {id:"D14",t:"A short tagline next to the habit?",q:"The plan's \"Pause. Check. Report.\" is gone; the build quotes its rule of thumb word for word.",
+  opts:["No tagline (recommended)","Add a short tagline in the shared deploy file","Bring back \"Pause. Check. Report.\""]},
+ {id:"D15",t:"Order of new episodes",q:"Proposed: E8 after the click, E9 passwords, E10 downloads, E11 data, E12 visitor, E13 AI.",
+  opts:["Keep that order (recommended)","AI earlier (E13 straight after E8)","Data protection earlier (E11 straight after E8)"]},
+ {id:"D16-companies",t:"Companies for E8 to E13",q:"The module designs and the world file disagree on some picks. Choose which set becomes the standard.",
+  opts:["Module designs: E8 Quayholt, E9 Tarrowby, E10 Quayholt, E11 new care/facilities firm, E12 Merrin & Sallow, E13 Brightwell (recommended: the detailed designs use these)","World file: E8 Quayholt, E9 Merrin & Sallow, E10 Tarrowby, E11 Cobbleford Care (new), E12 Brightwell, E13 Lintgate Communications (new)","Ask me per episode when each is designed"]},
+ {id:"D-verify",t:"Verify in the check forms",q:"Four role check forms turn Verify on, but the brand-set notes say the checks measure Trust, Report and Delete only.",
+  opts:["The scenarios are right: update the notes (recommended)","The notes are right: turn Verify off in the check forms","Look into it and come back to me"]},
+ {id:"D-seed",t:"Seeding new episodes into courses",q:"For E6 and E7 you chose both versions plus organiser guidance, and two seeded courses (defend-only, and both versions). Should every new episode (E8 onward) follow the same pattern?",
+  opts:["Yes: every new episode ships both versions and joins both seeded courses (recommended)","Only the full version joins the courses; defend-only stays a drill","Decide per episode"]}
+];
+document.getElementById("decs").innerHTML=DECS.map(d=>`
+<section class="wp" id="card-${d.id}">
+  <div class="wp-head"><span class="id">${d.id}</span><h3>${d.t}</h3></div>
+  <p>${d.q}</p>
+  <fieldset><legend class="q">Your choice</legend><div class="choices">${d.opts.map((o,i)=>`<label><input type="radio" name="${d.id}" id="${d.id}-${i}" value="${o.replace(/"/g,'&quot;')}" data-key="${d.id}"><span>${o}</span></label>`).join("")}</div></fieldset>
+  <label class="q" for="${d.id}-note">Notes</label><textarea id="${d.id}-note" data-key="${d.id}-note"></textarea>
+</section>`).join("");
+
+const KEYS=[...WPS.map(w=>w.id),...DECS.map(d=>d.id)];
+const state={};
+const statusEl=document.getElementById("status"),countEl=document.getElementById("count");
+function collect(){
+  document.querySelectorAll("input[type=radio]:checked").forEach(i=>state[i.dataset.key]=i.value);
+  document.querySelectorAll("textarea").forEach(t=>state[t.dataset.key]=t.value);
+}
+function paint(){
+  const n=KEYS.filter(k=>state[k]).length;
+  countEl.textContent=`${n} of ${KEYS.length} answered`;
+  KEYS.forEach(k=>{const c=document.getElementById("card-"+k);if(c)c.classList.toggle("answered",!!state[k]);});
+}
+function apply(data){
+  Object.entries(data||{}).forEach(([k,v])=>{
+    if(typeof v!=="string")return;
+    const r=document.querySelector(`input[type=radio][data-key="${CSS.escape(k)}"][value="${CSS.escape(v)}"]`);
+    if(r){r.checked=true;state[k]=v;return;}
+    const t=document.querySelector(`textarea[data-key="${CSS.escape(k)}"]`);
+    if(t){t.value=v;state[k]=v;}
+  });
+  paint();
+}
+function summary(){
+  collect();
+  const lines=["Awareness Build Review answers"];
+  WPS.forEach(w=>lines.push(`${w.id} ${w.t}: ${state[w.id]||"(no verdict)"}${state[w.id+"-note"]?" | "+state[w.id+"-note"]:""}`));
+  DECS.forEach(d=>lines.push(`${d.id} ${d.t}: ${state[d.id]||"(no choice)"}${state[d.id+"-note"]?" | "+state[d.id+"-note"]:""}`));
+  if(state.general)lines.push("General: "+state.general);
+  return lines.join("\n");
+}
+document.getElementById("copy").addEventListener("click",async()=>{
+  const text=summary();
+  try{await navigator.clipboard.writeText(text);statusEl.textContent="Copied. Paste it into the chat if saving is not available.";}
+  catch(e){statusEl.textContent="Copy was blocked. Saved answers still reach Claude when you are signed in.";}
+});
+
+let docRef=null,saving=false,pending=false,timer=null;
+async function save(){
+  if(!docRef)return;
+  if(saving){pending=true;return;}
+  saving=true;statusEl.textContent="Saving…";
+  try{
+    await docRef.set({...state,savedAt:new Date().toISOString()});
+    statusEl.textContent="Saved "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+". Claude can read your answers.";
+  }catch(e){statusEl.textContent="Could not save ("+(e&&e.code||"error")+"). Use Copy my answers and paste them into the chat.";}
+  saving=false;if(pending){pending=false;save();}
+}
+document.addEventListener("change",e=>{if(!e.target.dataset.key)return;collect();paint();clearTimeout(timer);timer=setTimeout(save,500);});
+document.addEventListener("input",e=>{if(e.target.tagName!=="TEXTAREA")return;collect();paint();clearTimeout(timer);timer=setTimeout(save,1200);});
+
+(async()=>{
+  try{
+    const db=await window.claude?.use?.("db");
+    const user=await window.claude?.use?.("user");
+    if(!db||!user){statusEl.textContent="Saving is not available here. Use Copy my answers and paste them into the chat.";return;}
+    const id=await user.id();
+    docRef=db.doc("responses/"+id);
+    const snap=await docRef.get();
+    if(snap.exists)apply(snap.data());
+    statusEl.textContent=snap.exists?"Your earlier answers are loaded.":"Answers save as you choose.";
+  }catch(e){statusEl.textContent="Saving is not available here. Use Copy my answers and paste them into the chat.";}
+})();
+paint();
+</script>

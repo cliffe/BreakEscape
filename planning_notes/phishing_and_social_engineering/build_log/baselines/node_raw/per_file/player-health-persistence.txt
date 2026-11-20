@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: export gives the current HP; a hit lowers it
+ok 1 - export gives the current HP; a hit lowers it
+  ---
+  duration_ms: 3.383053
+  ...
+# Subtest: restore brings back hurt HP
+ok 2 - restore brings back hurt HP
+  ---
+  duration_ms: 0.379792
+  ...
+# Subtest: a save at 0 HP, a full save or a bad one restores full health
+ok 3 - a save at 0 HP, a full save or a bad one restores full health
+  ---
+  duration_ms: 0.341131
+  ...
+# Subtest: a save made under a different max HP keeps its fraction
+ok 4 - a save made under a different max HP keeps its fraction
+  ---
+  duration_ms: 0.192443
+  ...
+# Subtest: state-sync sends playerHealth when it changes, not when it does not
+ok 5 - state-sync sends playerHealth when it changes, not when it does not
+  ---
+  duration_ms: 1.098958
+  ...
+# Subtest: the unload flush keeps playerHealth when it trims an oversized body
+ok 6 - the unload flush keeps playerHealth when it trims an oversized body
+  ---
+  duration_ms: 0.520718
+  ...
+# Subtest: game.js restores savedPlayerHealth and shows it in the hearts
+ok 7 - game.js restores savedPlayerHealth and shows it in the hearts
+  ---
+  duration_ms: 0.848692
+  ...
+# Subtest: Restart resets HP before it syncs and reloads
+ok 8 - Restart resets HP before it syncs and reloads
+  ---
+  duration_ms: 0.362132
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 185.334741

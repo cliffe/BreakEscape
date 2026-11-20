@@ -1,0 +1,13 @@
+{
+  "key": "3aa26f93fc867adcfff1c4d4e044e0c6",
+  "npc": "narrator",
+  "text": "The terminal text goes dark. A video window opens in its place -- a hooded figure, backlit, the face held in deliberate shadow.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:26:54Z"
+}

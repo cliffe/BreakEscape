@@ -1,0 +1,155 @@
+
+## R19 (scenario design R1: m1, m10, m2): the cover is strained by the guard catch. On the console, the first strike warns; a page reload, and HaX's recap still says one wrong slot is logged (m10); the second strike gets its own line, with no strain text (m1). Irina is not turned; Kemal's stand-off ends with the player backing off, and HaX points at the pick (m2).
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard @on_lockpick_seen ---
+      [set_variable guard_grace=true]
+      [set_variable guard_caught=true]
+  Narrator: Across the room, the guard's head comes up. He has seen the picks.
+  Checkpoint Guard: Oi. Away from that door.
+  Checkpoint Guard: I don't know who you are, and now I'm not going to take your word for it. Go back out to the lobby and come in properly.
+  Checkpoint Guard: And I'll be ringing whoever you say sent you.
+      [engine: caught at the checkpoint lock -> cover_strained=true]
+      [HaX text: The guard saw your picks. He'll ring the FCA to check on you...]
+  [chat closes]
+   {room reception_lobby}
+      [engine: room_entered:reception_lobby mapping -> guard_grace=false]
+   {set {"guard_grace":false}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Thirty-seven papers and nearly three thousand citations. I've read some of your work.
+  Dr. Irina Volkova: You read my work? Most people from your side see "cryptographer" and hear "hacker".
+  Dr. Irina Volkova: I built this exchange on sound principles. Zero-knowledge proofs, homomorphic encryption. Things I can defend.
+  Dr. Irina Volkova: My research is about financial privacy. Governments should not be able to read every transaction a person makes.
+  Dr. Irina Volkova: I would call that a privacy position. Your office calls it something else.
+     (2 options)
+ > Financial surveillance worries me too. I understand the principle.
+  Dr. Irina Volkova: Then we have that much in common.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > I'll need to test your password strength. What do people here actually use?
+      [give text_file:m06_password_dictionary]
+  Dr. Irina Volkova: Reasonable request for a supervisor. Here.
+  Dr. Irina Volkova: My own audit wordlist. Every crypto firm on earth picks from the same twenty words and bolts a year on the end.
+  Dr. Irina Volkova: Sixty-one per cent of our staff accounts fell to that list last time I ran it. Management's response was to stop me running it.
+  Dr. Irina Volkova: What else?
+     (4 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   {set {"found_blockchain_evidence":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"found_wallet_keys":true}}
+   {room server_room}
+   {room data_center}
+      [engine: room_entered:data_center mapping -> entered_data_center=true]
+      [HaX text: That console opens one cold slot's file by number. One number per try, and it logs each. The transaction server has the other half of Priya's write-up.]
+      [engine: room_entered:data_center mapping -> at_console=true]
+   {PIN pad: wrong code, pad closes (result non-null)}
+      [engine: minigame_failed mapping -> console_warned=true]
+      [HaX text: That console just logged a slot that wasn't the fund. One more and somebody's phone goes.]
+   [PASS] said: "That console just logged a slot that wasn't the fund"
+
+--- phone ---
+     (6 options)
+ > Remind me where we are.
+  Someone here has a reason to ring the FCA about you now. Don't hang about.
+  Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
+  The fund is one of the slots on the data centre's custody console.
+  That console's logged one wrong slot already. Another and somebody's phone goes.
+     (6 options)
+ > I'm good for now.
+  Copy that. Call anytime.
+  [chat closes]
+   [PASS] said: "That console's logged one wrong slot already"
+   {PIN pad: wrong code, pad closes (result non-null)}
+      [HaX text: Another wrong slot, and it's logged. They already know we're inside. Now they know where we're looking.]
+      [engine: minigame_failed mapping -> console_tripped=true]
+   [PASS] said: "Another wrong slot, and it's logged. They already know we're inside."
+   [PASS] not said: "Somebody's phone just buzzed"
+   [PASS] console_tripped = true (expected true)
+
+--- phone ---
+     (6 options)
+ > Remind me where we are.
+  Someone here has a reason to ring the FCA about you now. Don't hang about.
+  Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
+  The fund is one of the slots on the data centre's custody console.
+     (6 options)
+ > I'm good for now.
+  Copy that. Call anytime.
+  [chat closes]
+   [PASS] not said: "logged one wrong slot already"
+   {set {"found_architects_fund":true}}
+
+--- irina ---
+  Dr. Irina Volkova: Yes?
+     (7 options)
+ > Satoshi's wing. You've a badge for it.
+  Narrator: You show her the authorisation line on the fund page, and nothing else.
+  Dr. Irina Volkova: Satoshi's Ghost. He signs the money with that name. He thinks it's funny.
+  Dr. Irina Volkova: *quietly* You're not from the FCA. ...No. Don't tell me yet.
+      [give keycard:executive_access_badge]
+  Dr. Irina Volkova: I put the readers in on his floor. Facilities lent me a spare to do it and never asked for it back. Here.
+  Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he always is.
+  Dr. Irina Volkova: Go on.
+     (6 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+   {room server_room}
+      [engine: room_entered:server_room mapping -> at_console=false]
+   {room data_center}
+      [engine: room_entered:data_center mapping -> at_console=true]
+   {room executive_wing}
+      [engine: room_entered:executive_wing mapping -> at_console=false]
+
+--- minder @on_sighted ---
+  Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
+  Kemal Aydin: The FCA does not come up here.
+     (2 options)
+ > The FCA. Routine supervisory visit.
+  Kemal Aydin: Mr Nakamoto's phone has been ringing about you. The FCA has no file on you.
+  Kemal Aydin: I guarded banks that stole politely. He at least says what he is.
+  Kemal Aydin: So. Who are you really?
+     (3 options)
+ > (Back off down the corridor.)
+  Kemal Aydin: Good. Stay down there.
+  [chat closes]
+      [HaX text: He won't take the FCA now. Wait by the trophy cabinet, unseen. When he's at the data-centre end, you've seconds at that door. Or show him the casualty line.]
+   [PASS] said: "He won't take the FCA now. Wait by the trophy cabinet, unseen. When he's at the data-centre end"
+
+--- minder @on_sighted ---
+  Kemal Aydin: I told you once. This floor is closed.
+     (2 options)
+ > Wrong floor. I'll go.
+  Kemal Aydin: Yes. You will.
+  [chat closes]
+   [PASS] not said: "He won't take the FCA now"
+   [PASS] longest run 6 (irina) <= 9
+
+[stats] spoken/narrated lines 48, choices 15, longest run without a choice 6 (irina); runs>=6: irina:6
+[result] all expectations met

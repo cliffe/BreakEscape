@@ -1,0 +1,24 @@
+KILLED   n5 rang-off toast ignores voicemailKnot | not ok 151 - n5: the hold limit with onMissed voicemail but no voicemail knot falls back t
+KILLED   n3 dropCallback in voicemail branch | not ok 150 - n3: a voicemail left by a miss clears an older callback (an offer missed with
+KILLED   m4 refreshSave removed | not ok 122 - the resume that leaves nothing (a withheld ring with no voicemail) still sche
+SURVIVED n2 _midCallChecked guard | 
+SURVIVED n2 resetToHome moved-on check | 
+KILLED   n4 mirrorSetGlobalTags | not ok 612 - n4: a \#set_global the knot sets is mirrored into the story for the lines aft
+KILLED   n4 recordInkVariables in runVoicemail | not ok 612 - n4: a \#set_global the knot sets is mirrored into the story for the lines aft
+KILLED   m2 quiet ignored | not ok 593 - m2: a voicemail shows "New voicemail from <name>"; withheld shows "New voicem
+KILLED   m2 withheld name shown | not ok 593 - m2: a voicemail shows "New voicemail from <name>"; withheld shows "New voicem
+SURVIVED m2 live draw removed | 
+KILLED   m1 guard | not ok 595 - m1: a voicemail with no lines adds nothing to the thread and redraws nothing 
+KILLED   M1 isBlocked recheck | not ok 598 - M1: the thread opens while the story loads: the result is dropped, no row twi
+KILLED   M1 no hold on open thread | not ok 596 - M1: a voicemail while the contact's thread is open waits for conversation_clo
+KILLED   M1 slot save of hold | not ok 600 - M1: a held voicemail is in the contact's saved slot (state missed, onMissed v
+KILLED   M1 release not called | not ok 600 - M1: a held voicemail is in the contact's saved slot (state missed, onMissed v
+KILLED   M1 resume of held voicemail | not ok 601 - M1: a reload while a voicemail is held delivers it after the load, quietly, w
+SURVIVED m3 queued forced skips | 
+KILLED   m3 knot not compared | not ok 132 - m3: a forced call on the line on another knot does not stop the reset; one on
+SURVIVED threadOpen ignores _ending | 
+SURVIVED n2 _midCallChecked guard | 
+KILLED   n2 resetToHome moved-on check | not ok 613 - n2: resetToHome steps aside when the thread moved on while the story loaded
+KILLED   m3 queued forced skips | not ok 132 - m3: a forced call queued on the thread's own knot is not on the line yet, so 
+KILLED   threadOpen ignores _ending | not ok 599 - M1: a thread that is ending, or closed, does not hold a voicemail
+n2 _midCallChecked: equivalent mutation (the reset puts currentKnot back to the home knot before a second call can look, so the second call returns at the home check either way); no test can tell them apart.

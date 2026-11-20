@@ -1,0 +1,350 @@
+// E-B (2026-10-05): NPC hostility and KO survive a reload. An NPC that turned
+// on the player (setNPCHostile, a #hostile tag, being punched) came back calm
+// after a reload; m03 cleared its guard_attacking hint on game_loaded to match.
+// npc-hostile.js now records hostility and KO (exportHostility, saved by
+// state-sync.js), restores them before any NPC loads (restoreHostility, from
+// savedNpcHostility in game.js), and the NPC's behavior announces a restored
+// hostile once its sprite exists (takeRestoredHostility / announceRestoredHostile).
+// Server side: Game#merge_npc_hostility!, test/controllers/.../reload_persistence_test.rb.
+// Run with: node --test test/js/npc-hostility-persistence.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const js = join(here, '../../public/break_escape/js');
+const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
+
+const emitted = [];
+globalThis.window = {
+    eventDispatcher: { emit: (name, data) => emitted.push({ name, data }) },
+    gameState: { globalVariables: {} }
+};
+
+const configUrl = dataUrl(readFileSync(join(js, 'config/combat-config.js'), 'utf8'));
+const eventsUrl = dataUrl(readFileSync(join(js, 'events/combat-events.js'), 'utf8'));
+const hostileSrc = readFileSync(join(js, 'systems/npc-hostile.js'), 'utf8')
+    .split("'../config/combat-config.js'").join(`'${configUrl}'`)
+    .split("'../events/combat-events.js'").join(`'${eventsUrl}'`)
+    .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down";')}'`)
+    .split("'./interaction-walls.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))}'`);
+const { initNPCHostileSystem } = await import(dataUrl(hostileSrc));
+const sys = initNPCHostileSystem();
+
+test('nothing is recorded until an NPC turns', () => {
+    assert.deepEqual(sys.exportHostility(), {});
+});
+
+test('turning hostile, calming down and a KO are recorded for the save', () => {
+    sys.setNPCHostile('guard', true);
+    sys.setNPCHostile('clerk', true);
+    sys.setNPCHostile('clerk', false);
+    sys.setNPCHostile('boxer', true);
+    sys.damageNPC('boxer', 10_000);
+
+    assert.deepEqual(sys.exportHostility(), {
+        guard: { hostile: true, ko: false },
+        clerk: { hostile: false, ko: false },
+        boxer: { hostile: true, ko: true }
+    });
+});
+
+test('restore applies saved hostility and KO before NPCs load, without an event', () => {
+    emitted.length = 0;
+    const n = sys.restoreHostility({
+        night_guard: { hostile: true, ko: false },
+        victoria: { hostile: true, ko: true },
+        calmed: { hostile: false, ko: false },
+        guard: { hostile: false, ko: false },   // changed this session: this session wins
+        junk: 'yes'
+    });
+
+    assert.equal(n, 3);
+    assert.equal(sys.isNPCHostile('night_guard'), true);
+    assert.equal(sys.isNPCKO('night_guard'), false);
+    assert.equal(sys.isNPCKO('victoria'), true, 'a KO stays down (npc-sprites.js reads isNPCKO)');
+    assert.equal(sys.getState('victoria').currentHP, 0);
+    assert.equal(sys.isNPCHostile('calmed'), false);
+    assert.equal(sys.isNPCHostile('guard'), true, 'not overwritten by the save');
+    assert.equal(emitted.length, 0, 'no sprite yet, so nothing is announced here');
+    assert.deepEqual(sys.exportHostility().night_guard, { hostile: true, ko: false },
+                     'restored entries are saved again on the next sync');
+});
+
+test('the behavior takes its restored entry once, in place of startHostile', () => {
+    assert.deepEqual(sys.takeRestoredHostility('night_guard'), { hostile: true, ko: false });
+    assert.equal(sys.takeRestoredHostility('night_guard'), null);
+    assert.deepEqual(sys.takeRestoredHostility('calmed'), { hostile: false, ko: false });
+    assert.equal(sys.takeRestoredHostility('never_saved'), null);
+});
+
+test('a restored hostile is announced with the behavior attack damage; a KO is not', () => {
+    emitted.length = 0;
+    assert.equal(sys.announceRestoredHostile('night_guard', { attackDamage: 7 }), true);
+    assert.equal(sys.getState('night_guard').attackDamage, 7);
+    assert.deepEqual(emitted, [{ name: 'npc_hostile_state_changed',
+                                 data: { npcId: 'night_guard', isHostile: true, restored: true } }]);
+
+    assert.equal(sys.announceRestoredHostile('victoria', {}), false, 'KO: no health bar, no threat music');
+    assert.equal(sys.announceRestoredHostile('calmed', {}), false);
+    assert.equal(emitted.length, 1);
+});
+
+test('a calm NPC takes the configured maxHP as both its cap and its HP', () => {
+    sys.restoreHostility({ calm_maxhp: { hostile: false, ko: false } });
+    assert.equal(sys.getState('calm_maxhp').maxHP, 100);
+    assert.equal(sys.applyRestoredStats('calm_maxhp', { maxHP: 30 }), true);
+    assert.equal(sys.getState('calm_maxhp').maxHP, 30);
+    assert.equal(sys.getState('calm_maxhp').currentHP, 30);
+});
+
+// Behavioural: build the real NPCBehavior from a restored entry, as a reload does
+test('NPCBehavior applies its configured stats to a restored KO NPC and a restored calm NPC', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('<!doctype html><body></body>');
+    globalThis.document = dom.window.document;
+    const savedWindow = globalThis.window;
+    Object.assign(globalThis.window, { npcHostileSystem: sys, npcManager: { npcs: new Map() } });
+    const quiet = ['log', 'info', 'warn', 'debug'].map(k => [k, console[k]]);
+    quiet.forEach(([k]) => { console[k] = () => {}; });
+    try {
+        const { NPCBehavior } = await import(pathToFileURL(join(js, 'systems/npc-behavior.js')));
+        const mkSprite = () => ({ x: 0, y: 0, visible: true, displayWidth: 32, displayHeight: 32, originX: 0.5, originY: 0.5,
+            body: { offset: { x: 0, y: 0 }, halfWidth: 8, halfHeight: 8 }, setTint() {} });
+        sys.restoreHostility({
+            beh_ko: { hostile: true, ko: true },
+            beh_calm: { hostile: false, ko: false }
+        });
+        assert.equal(sys.getState('beh_ko').attackDamage, 10, 'restored with defaults');
+        const before = JSON.stringify(sys.exportHostility());
+
+        new NPCBehavior('beh_ko', mkSprite(), { hostile: { attackDamage: 4, attackCooldown: 900, attackRange: 55, maxHP: 30 } }, {}, {});
+        new NPCBehavior('beh_calm', mkSprite(), { hostile: { attackDamage: 6, maxHP: 30 } }, {}, {});
+
+        const ko = sys.getState('beh_ko');
+        assert.equal(ko.attackDamage, 4);
+        assert.equal(ko.attackCooldown, 900);
+        assert.equal(ko.attackRange, 55);
+        assert.equal(ko.isKO, true);
+        assert.equal(ko.currentHP, 0);
+        assert.equal(ko.maxHP, 100, 'maxHP is not applied to a KO NPC');
+        const calm = sys.getState('beh_calm');
+        assert.equal(calm.attackDamage, 6);
+        assert.equal(calm.maxHP, 30);
+        assert.equal(calm.currentHP, 30);
+        assert.equal(calm.isHostile, false);
+        assert.equal(JSON.stringify(sys.exportHostility()), before, 'the synced record is unchanged');
+    } finally {
+        quiet.forEach(([k, f]) => { console[k] = f; });
+        delete globalThis.window.npcHostileSystem;
+        delete globalThis.window.npcManager;
+        globalThis.window = savedWindow;
+    }
+});
+
+test('turning hostile applies the configured damage even if a state already exists', () => {
+    const saved = window.npcBehaviorManager;
+    window.npcBehaviorManager = {
+        getBehavior: (id) => (id === 'probe_npc' || id === 'control_npc')
+            ? { config: { hostile: { attackDamage: 3, maxHP: 60, attackCooldown: 3000 } } }
+            : null
+    };
+    try {
+        assert.equal(sys.getState('probe_npc').attackDamage, 10, 'a read before the turn builds the default');
+        sys.setNPCHostile('probe_npc', true);
+        const probe = sys.getState('probe_npc');
+        assert.equal(probe.attackDamage, 3);
+        assert.equal(probe.attackCooldown, 3000);
+        assert.equal(probe.maxHP, 60);
+        assert.equal(probe.currentHP, 60, 'an unhurt NPC takes the new maximum');
+
+        sys.setNPCHostile('control_npc', true);
+        assert.equal(sys.getState('control_npc').attackDamage, 3, 'no prior read: same numbers');
+
+        // A hurt NPC keeps its HP (capped at the new maximum)
+        sys.getState('hurt_npc').currentHP = 45;
+        window.npcBehaviorManager.getBehavior = () => ({ config: { hostile: { maxHP: 80 } } });
+        sys.setNPCHostile('hurt_npc', true);
+        assert.equal(sys.getState('hurt_npc').maxHP, 80);
+        assert.equal(sys.getState('hurt_npc').currentHP, 45);
+    } finally {
+        window.npcBehaviorManager = saved;
+    }
+});
+
+// 7.1g (m08 E12): a hurt hostile NPC came back at full health after a reload.
+// Its HP is now saved with the hostility record and restored with it.
+test('a hurt NPC saves its HP with its hostility, and a reload restores it', () => {
+    sys.setNPCHostile('agent_off_duty', true);
+    sys.damageNPC('agent_off_duty', 70);
+    assert.deepEqual(sys.exportHostility().agent_off_duty, { hostile: true, ko: false, hp: 30, maxHP: 100 });
+
+    sys.restoreHostility({
+        hurt_on_load: { hostile: true, ko: false, hp: 25, maxHP: 60 },
+        bad_hp: { hostile: true, ko: false, hp: 90, maxHP: 60 },
+        ko_with_hp: { hostile: true, ko: true, hp: 10, maxHP: 100 }
+    });
+    assert.equal(sys.getState('hurt_on_load').currentHP, 25);
+    assert.equal(sys.getState('hurt_on_load').maxHP, 60);
+    assert.deepEqual(sys.exportHostility().hurt_on_load, { hostile: true, ko: false, hp: 25, maxHP: 60 });
+    assert.equal(sys.getState('bad_hp').currentHP, 100, 'an impossible HP is ignored');
+    assert.equal(sys.getState('ko_with_hp').currentHP, 0);
+    assert.deepEqual(sys.exportHostility().ko_with_hp, { hostile: true, ko: true });
+
+    // The behavior's numbers don't put a restored NPC back to full health
+    sys.takeRestoredHostility('hurt_on_load');
+    sys.announceRestoredHostile('hurt_on_load', { attackDamage: 4, maxHP: 60 });
+    assert.equal(sys.getState('hurt_on_load').currentHP, 25);
+});
+
+// D5 (KO position on reload): a KO now also records the room it fell in and its
+// world x,y, so a reload lays the NPC where it dropped, in the room it was knocked
+// out in even when that is not its home room. The server does the placement from
+// this same record (Game#apply_ko_positions!); the client just saves and restores
+// the three fields on the hostility record.
+test('a KO records its fall room and x,y for the save', () => {
+    const savedMgr = window.npcManager;
+    // R2 m3: the sprite has a physics body whose centre is offset from the anchor,
+    // so this exercises the body.center capture branch (the headline m1 fix), not the
+    // sprite-anchor fallback. The server restores the body centre at koX,koY, so the
+    // capture must store the centre, not sprite.x/sprite.y.
+    window.npcManager = {
+        getNPC: (id) => (id === 'errand_npc'
+            ? {
+                _sprite: {
+                    x: 412.4, y: 268.6, once: () => {},
+                    // A physics body: center for the capture, plus the few stubs the KO
+                    // disable path touches (setVelocity, checkCollision, enable).
+                    body: { center: { x: 382.6, y: 238.4 }, setVelocity: () => {}, checkCollision: {} }
+                },
+                roomId: 'break_room'
+            }
+            : null)
+    };
+    try {
+        sys.setNPCHostile('errand_npc', true);
+        sys.damageNPC('errand_npc', 10_000);
+        assert.deepEqual(sys.exportHostility().errand_npc, {
+            hostile: true, ko: true, facing: 'down',
+            koRoom: 'break_room', koX: 383, koY: 238
+        }, 'x,y from the body centre (not the anchor 412,269), room falls back to npc.roomId');
+    } finally {
+        window.npcManager = savedMgr;
+    }
+});
+
+// R2 m3 guard: without a body the capture must still fall back to the sprite anchor,
+// so a sprite that has no physics body is not dropped.
+test('a KO without a physics body falls back to the sprite anchor', () => {
+    const savedMgr = window.npcManager;
+    window.npcManager = {
+        getNPC: (id) => (id === 'bodyless_npc'
+            ? { _sprite: { x: 412.4, y: 268.6, once: () => {} }, roomId: 'break_room' }
+            : null)
+    };
+    try {
+        sys.setNPCHostile('bodyless_npc', true);
+        sys.damageNPC('bodyless_npc', 10_000);
+        assert.deepEqual(sys.exportHostility().bodyless_npc, {
+            hostile: true, ko: true, facing: 'down',
+            koRoom: 'break_room', koX: 412, koY: 269
+        }, 'anchor fallback, x,y rounded');
+    } finally {
+        window.npcManager = savedMgr;
+    }
+});
+
+test('a saved KO position is restored and re-exported unchanged (round trip)', () => {
+    sys.restoreHostility({
+        fell_away: { hostile: true, ko: true, facing: 'left', koRoom: 'server_room', koX: 100, koY: 200 }
+    });
+    const st = sys.getState('fell_away');
+    assert.equal(st.isKO, true);
+    assert.equal(st.koRoom, 'server_room');
+    assert.deepEqual(sys.exportHostility().fell_away, {
+        hostile: true, ko: true, facing: 'left', koRoom: 'server_room', koX: 100, koY: 200
+    });
+});
+
+test('a KO position only rides when all three fields are valid', () => {
+    sys.restoreHostility({
+        no_pos: { hostile: true, ko: true },
+        bad_room: { hostile: true, ko: true, koRoom: '', koX: 10, koY: 10 },
+        bad_xy: { hostile: true, ko: true, koRoom: 'lab', koX: 'x', koY: 10 }
+    });
+    assert.deepEqual(sys.exportHostility().no_pos, { hostile: true, ko: true });
+    assert.deepEqual(sys.exportHostility().bad_room, { hostile: true, ko: true });
+    assert.deepEqual(sys.exportHostility().bad_xy, { hostile: true, ko: true });
+});
+
+test('repeated exports do not grow the KO entry (stable per sync)', () => {
+    const savedMgr = window.npcManager;
+    window.npcManager = {
+        getNPC: (id) => (id === 'stable_npc'
+            ? { _sprite: { x: 50, y: 60, once: () => {} }, roomId: 'lobby' }
+            : null)
+    };
+    try {
+        sys.setNPCHostile('stable_npc', true);
+        sys.damageNPC('stable_npc', 10_000);
+        const first = JSON.stringify(sys.exportHostility().stable_npc);
+        // Several more "syncs": nothing changed, so the entry is byte-for-byte stable.
+        for (let i = 0; i < 5; i++) {
+            assert.equal(JSON.stringify(sys.exportHostility().stable_npc), first);
+        }
+        assert.equal(Object.keys(sys.exportHostility().stable_npc).length, 6);
+    } finally {
+        window.npcManager = savedMgr;
+    }
+});
+
+test('R3 m1: recordCalm saves a calm for an NPC that never turned, without an event, and never overwrites', () => {
+    emitted.length = 0;
+    sys.recordCalm('pending_calm');
+    assert.deepEqual(sys.exportHostility().pending_calm, { hostile: false, ko: false });
+    assert.deepEqual(emitted, [], 'no event');
+    sys.setNPCHostile('turned', true);
+    sys.recordCalm('turned');
+    assert.equal(sys.exportHostility().turned.hostile, true, 'an existing record is left alone');
+    sys.recordCalm('');
+    assert.equal(sys.exportHostility()[''], undefined);
+});
+
+test('restored KO and calm NPCs get their configured combat numbers, without a sync change', () => {
+    sys.restoreHostility({
+        joanne_ko: { hostile: true, ko: true },
+        calm_brute: { hostile: false, ko: false },
+        hurt_brute: { hostile: true, ko: false, hp: 5, maxHP: 30 }
+    });
+    // Restored before any behavior exists: defaults
+    assert.equal(sys.getState('joanne_ko').attackDamage, 10);
+    const before = JSON.stringify(sys.exportHostility());
+
+    emitted.length = 0;
+    assert.equal(sys.applyRestoredStats('joanne_ko', { attackDamage: 4, attackCooldown: 900, attackRange: 55 }), true);
+    assert.equal(sys.applyRestoredStats('calm_brute', { attackDamage: 6 }), true);
+    assert.equal(sys.applyRestoredStats('hurt_brute', { attackDamage: 8, maxHP: 40 }), true);
+    assert.equal(sys.applyRestoredStats('never_restored', { attackDamage: 8 }), false);
+
+    const ko = sys.getState('joanne_ko');
+    assert.equal(ko.attackDamage, 4);
+    assert.equal(ko.attackCooldown, 900);
+    assert.equal(ko.attackRange, 55);
+    assert.equal(ko.isKO, true);
+    assert.equal(ko.currentHP, 0, 'a KO stays at 0 HP');
+    assert.equal(sys.getState('calm_brute').attackDamage, 6);
+    assert.equal(sys.getState('hurt_brute').attackDamage, 8);
+    assert.equal(sys.getState('hurt_brute').currentHP, 5, 'a hurt NPC keeps its HP');
+    assert.equal(emitted.length, 0, 'no event');
+    assert.equal(JSON.stringify(sys.exportHostility()), before, 'the synced record is unchanged');
+});
+
+test('wiring: the behavior applies restored stats for every restored NPC, not only hostile ones', () => {
+    const src = readFileSync(join(js, 'systems/npc-behavior.js'), 'utf8');
+    const take = src.indexOf('takeRestoredHostility?.(npcId)');
+    const apply = src.indexOf('applyRestoredStats?.(npcId, this.config.hostile)');
+    const hostileBranch = src.indexOf('if (restored.hostile)', take);
+    assert.ok(take > 0 && apply > take && apply < hostileBranch);
+});

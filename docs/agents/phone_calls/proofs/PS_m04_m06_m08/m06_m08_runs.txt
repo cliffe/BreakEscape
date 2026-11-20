@@ -1,0 +1,97 @@
+=== m06_fund
+game 2243 (m06_fund)
+"opened agent_0x99_handler"
+hub: {"bar":null,"subs":[],"choices":["1. I've found The Architect's Fund.","2. Where do I start on the money trail?","3. Any tips on their passwords?","4. How do I play Volkova?","5. Remind me where we are.","6. I'm good for now."],"header":null,"thread":"You're FCA on a routine visit. You want Dr Irina Volkova, the CTO: trading floor, through the checkpoint. There's a guard. You've an appointment, so act like it."}
+shot m06_fund_hub
+dialling: {"bar":"CALLING","thread":""}
+shot m06_fund_calling
+call: {"bar":"ON CALL | 0:07","subs":["Agent HaX: I've got it in front of me.","Agent HaX: $12.8 million still in the wallet, pending for six cells. The advances have already gone.","AGENT HAX: Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.","AGENT HAX: Not Ghost Protocol, the other name on that page. They're one of the cells being paid."],"choices":["1. The advances already went out.","2. Look at the projection line."],"header":null,"thread":"AGENT HAX: Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs. | AGENT HAX: Not Ghost Protocol, the other name on that page. They're one of the cells being paid."}
+shot m06_fund_call
+mid-call: {"subs":["Agent HaX: I've got it in front of me.","Agent HaX: $12.8 million still in the wallet, pending for six cells. The advances have already gone.","Agent HaX: Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.","Agent HaX: Not Ghost Protocol, the other name on that page. They're one of the cells being paid.","You: The advances already went out.","Agent HaX: Advances first, balances in seventy-two hours. The first stage is already paid for.","AGENT HAX: Whatever we do with the wallet only touches what hasn't left.","AGENT HAX: Which leaves you a choice."],"choices":[]}
+shot m06_fund_call_mid
+after End: rows=["Outgoing call, 0:16"] mg="PhoneChatMinigame phone-chat"
+thread: {"choices":["1. I've found The Architect's Fund.","2. Where do I start on the money trail?","3. Any tips on their passwords?","4. How do I play Volkova?","5. Remind me where we are.","6. I'm good for now."]}
+shot m06_fund_hub_after_end
+second call: {"subs":["Agent HaX: I've got it in front of me.","Agent HaX: $12.8 million still in the wallet, pending for six cells. The advances have already gone.","AGENT HAX: Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.","AGENT HAX: Not Ghost Protocol, the other name on that page. They're one of the cells being paid."],"choices":["1. The advances already went out.","2. Look at the projection line."]}
+end of call: {"bar":"ON CALL | 0:25","subs":["Agent HaX: I've got it in front of me.","Agent HaX: $12.8 million still in the wallet, pending for six cells. The advances have already gone.","Agent HaX: Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs.","Agent HaX: Not Ghost Protocol, the other name on that page. They're one of the cells being paid.","You: Look at the projection line.","Agent HaX: Their own estimate, across every operation on that page.","Agent HaX: And they've called it \"The Architect's Masterpiece\".","Agent HaX: Which leaves you a choice.","Agent HaX: Freeze it, and the balances stop tonight. They'll know we were here the moment we do.","Agent HaX: Or watch it. We map every cell that draws on it, and the money reaches them.","You: What do you recommend?","Agent HaX: I'll give you the cost of each. The call's yours.","AGENT HAX: If you freeze it, the balances never reach the cells, and ENTROPY knows its bank is burned.","AGENT HAX: If you watch it, the balances pay for what's on that page, and we get the map."],"choices":[]}
+shot m06_fund_call_end
+after call: mg="PhoneChatMinigame phone-chat" rows=["Outgoing call, 0:16","Outgoing call, 0:29"]
+thread: {"choices":["1. Where do I start on the money trail?","2. Any tips on their passwords?","3. How do I play Volkova?","4. Remind me where we are.","5. I'm good for now."],"header":null}
+shot m06_fund_hub_final
+["conversation_closed:agent_0x99_handler@51.6","minigame_completed@52.6","minigame_completed@88.7","conversation_closed:agent_0x99_handler@88.7"]
+=== m06_bring_clear
+game 2248 (m06_bring_clear)
+optional open: []
+"opened agent_0x99_handler"
+hub: {"choices":["1. I'm done here. Bring me in.","2. The whole estate is mapped. Where does that leave us?","3. Where do I start on the money trail?","4. Remind me where we are.","5. I'm good for now."],"header":null}
+shot m06_bring_clear_hub
+dialling: {"bar":"CALLING"}
+shot m06_bring_clear_calling
+call: {"bar":"ON CALL | 0:01","subs":["AGENT HAX: Police are twenty minutes out. Whatever you leave in there is their evidence."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot m06_bring_clear_call
+after Not yet: mg="PhoneChatMinigame phone-chat" call-open=false debrief=false
+shot m06_bring_clear_not_yet
+"no contact agent_0x99_handler"
+hub again: {"choices":["1. I'm done here. Bring me in.","2. The whole estate is mapped. Where does that leave us?","3. Where do I start on the money trail?","4. Remind me where we are.","5. I'm good for now."]}
+redial: {"subs":["AGENT HAX: Police are close now. Ready?"],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+confirm: {"subs":["Agent HaX: Police are close now. Ready?","YOU: Bring me in.","AGENT HAX: Round the back. They'll flash the headlights twice."],"choices":["1. On my way."]}
+shot m06_bring_clear_confirm
+overlay: null
+shot m06_bring_clear_after_on_my_way
+after call: debrief=true mg="PersonChatMinigame person-chat" task=["completed"]
+shot m06_bring_clear_debrief
+debrief later: mg="PersonChatMinigame person-chat"
+shot m06_bring_clear_debrief2
+handler /tts: "Police are twenty minutes out. Whatever you leave in there is their evidence." "Then be quick. They won't wait for you." "Police are close now. Ready?" "Round the back. They'll flash the headlights twice." "We'll talk about the money at HQ, not on a phone." 
+["minigame_completed@42.7","conversation_closed:agent_0x99_handler@42.7","objective_task_completed:call_in_after_sweep@58.7","global_variable_changed:start_debrief_cutscene@60.5","global_variable_changed:start_debrief_cutscene@60.5","minigame_completed@62.5","conversation_closed:agent_0x99_handler@62.5"]
+=== m06_bring_optional
+game 2252 (m06_bring_optional)
+optional open: ["obtain_access_tools","question_the_trader","question_the_analyst"]
+"opened agent_0x99_handler"
+hub: {"choices":["1. I'm done here. Bring me in.","2. The whole estate is mapped. Where does that leave us?","3. Where do I start on the money trail?","4. Remind me where we are.","5. I'm good for now."],"header":null}
+shot m06_bring_optional_hub
+dialling: {"bar":"CALLING"}
+shot m06_bring_optional_calling
+call: {"bar":"ON CALL | 0:01","subs":["AGENT HAX: Police are twenty minutes out. Whatever you leave in there is their evidence."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot m06_bring_optional_call
+after Not yet: mg="PhoneChatMinigame phone-chat" call-open=false debrief=false
+shot m06_bring_optional_not_yet
+"no contact agent_0x99_handler"
+hub again: {"choices":["1. I'm done here. Bring me in.","2. The whole estate is mapped. Where does that leave us?","3. Where do I start on the money trail?","4. Remind me where we are.","5. I'm good for now."]}
+redial: {"subs":["AGENT HAX: Police are close now. Ready?"],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+confirm: {"subs":["Agent HaX: Police are close now. Ready?","YOU: Bring me in.","AGENT HAX: Round the back. They'll flash the headlights twice."],"choices":["1. On my way."]}
+shot m06_bring_optional_confirm
+overlay: "BEFORE THE MISSION ENDS | You have done what the mission needs. 3 optional objectives are still open: | Get Irina's password dictionary list | Hear out the trader who flagged the ENTROPY wallets | Get the analyst to walk you through her transaction graph | End the mission now, or keep going? | Keep going | End the mission now"
+shot m06_bring_optional_after_on_my_way
+after Keep going: call-open=true choices=["1. On my way."] debrief=false task=["completed"]
+shot m06_bring_optional_kept_going
+tts so far (agent_0x99_handler): "Police are twenty minutes out. Whatever you leave in there is their evidence." "Then be quick. They won't wait for you." "Police are close now. Ready?" "Round the back. They'll flash the headlights twice." 
+after End: mg="PhoneChatMinigame phone-chat" debrief=false ending=false
+thread: {"choices":["1. I'm done here. Bring me in.","2. The whole estate is mapped. Where does that leave us?","3. Where do I start on the money trail?","4. Remind me where we are.","5. I'm good for now."]}
+shot m06_bring_optional_after_end
+handler /tts: "Police are twenty minutes out. Whatever you leave in there is their evidence." "Then be quick. They won't wait for you." "Police are close now. Ready?" "Round the back. They'll flash the headlights twice." 
+["minigame_completed@45.6","conversation_closed:agent_0x99_handler@45.6","objective_task_completed:call_in_after_sweep@61.5","conversation_closed:agent_0x99_handler@68.4","minigame_completed@69.3"]
+=== ps_m08_ko
+game 2255 (ps_m08_ko)
+"opened agent_0x99"
+thread: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."],"header":null,"thread":"Line's open. Same as Portland, except this time the target has a SAFETYNET lanyard and a name I probably know. | So I'm going to be very professional tonight. Bear with me. | I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine. | That's the door audit. With the Director on his floor, you read it to me: the door against the minute the plan was opened. Call me when you've got both."}
+shot ps_m08_ko_thread_call_me
+header call buttons: 0
+dialling: {"bar":"CALLING"} caption="SAFETYNET secure line"
+shot ps_m08_ko_calling
+call: {"subs":["AGENT HAX: Two questions, the ones he'd ask. When was the plan opened?"],"choices":["1. 10:15 UTC.","2. 10:32 UTC.","3. 10:38 UTC.","4. 11:25 UTC.","5. Let me read it again."]}
+who: {"subs":["Agent HaX: Two questions, the ones he'd ask. When was the plan opened?","YOU: 10:38 UTC.","AGENT HAX: Who was behind the lab door at 10:38, and still inside?"],"choices":["1. Vector.","2. Nightshade.","3. Phantom.","4. None of them.","5. Let me read it again."]}
+after: mole=true named_by_hax=true task=["completed"] rows=["Outgoing call, 0:17"]
+thread: {"choices":["1. It's really Nightshade.","2. Why isn't he in the interrogation room yet?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."]}
+shot ps_m08_ko_after
+HaX /tts: "Two questions, the ones he'd ask. When was the plan opened?" "Who was behind the lab door at 10:38, and still inside?" "In at 10:15, out at 11:43. Vector was gone by 10:32, and Phantom was on a plane." "Nightshade. I trained with him." "I'll put it in front of the Director when he can stand." "You finish the chain." 
+["global_variable_changed:mole_identified@47.1","global_variable_changed:mole_identified@47.1","objective_task_completed:name_the_mole@47.4","minigame_completed@53.9","conversation_closed:agent_0x99@53.9"]
+=== ps_m08_hostile
+game 2258 (ps_m08_hostile)
+"opened agent_0x99"
+thread: {"choices":["1. I can name the leak.","2. What does the Director need from me?","3. How do I get into the interrogation suite?","4. How do I get into the server room?","5. Nothing right now."],"header":null,"thread":"Line's open. Same as Portland, except this time the target has a SAFETYNET lanyard and a name I probably know. | So I'm going to be very professional tonight. Bear with me. | I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine. | That's the door audit. The Director won't hear it from you. Read it to me: the door against the minute the plan was opened. Call me when you've got both."}
+shot ps_m08_hostile_thread_call_me
+header call buttons: 0
+[]
+
+[exited with code 0]

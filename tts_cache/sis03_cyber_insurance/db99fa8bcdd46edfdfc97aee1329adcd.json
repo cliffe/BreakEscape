@@ -1,0 +1,13 @@
+{
+  "key": "db99fa8bcdd46edfdfc97aee1329adcd",
+  "npc": "eleanor_vance",
+  "text": "You've read the NCSC assessment. GREYMANTLE attribution at moderate-to-high confidence. Ferryman Collective as the initial access broker.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:07Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "3c0cb83466b8fd320519eb76641092e9",
+  "npc": "neil",
+  "text": "No bother, pet. Mind the cables on your way out.",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:06:38Z"
+}

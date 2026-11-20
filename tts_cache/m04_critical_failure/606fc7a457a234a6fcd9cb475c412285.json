@@ -1,0 +1,13 @@
+{
+  "key": "606fc7a457a234a6fcd9cb475c412285",
+  "npc": "operative_static",
+  "text": "Not past me.",
+  "voice": "Umbriel",
+  "style": "ENTROPY operative and Voltage's last line of defence, early thirties. Speak with a consistent Polish-accented English throughout, ten years in Britain -- do not shift to any other accent. Deep, low pitch; slow pace, very few words. Terse, loyal and immovable.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:18:38Z"
+}

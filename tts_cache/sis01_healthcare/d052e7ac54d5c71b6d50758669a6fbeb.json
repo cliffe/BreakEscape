@@ -1,0 +1,13 @@
+{
+  "key": "d052e7ac54d5c71b6d50758669a6fbeb",
+  "npc": "ravi_anand",
+  "text": "Then that's a training gap, and the map should have stopped you.",
+  "voice": "Puck",
+  "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

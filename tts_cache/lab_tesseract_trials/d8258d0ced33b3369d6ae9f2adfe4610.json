@@ -1,0 +1,13 @@
+{
+  "key": "d8258d0ced33b3369d6ae9f2adfe4610",
+  "npc": "closing_debrief_person",
+  "text": "One pixel. A picture too small to see, fetched from Ghost's server the moment anyone opens the report. That's all a location costs.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

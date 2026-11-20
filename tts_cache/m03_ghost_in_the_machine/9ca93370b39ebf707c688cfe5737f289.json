@@ -1,0 +1,14 @@
+{
+  "key": "9ca93370b39ebf707c688cfe5737f289",
+  "npc": "danny_foster",
+  "text": "You're not wrong. That's the worst of it. You're not wrong.",
+  "delivery": "quietly",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:47:08Z"
+}

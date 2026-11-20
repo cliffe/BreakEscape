@@ -1,0 +1,15 @@
+Make portrait for Hamza Iqbal
+A British Pakistani man in his early thirties with light-brown skin, an on-call NHS clinical pharmacist. Short black hair and a neat short black beard. He wears a plain bottle-green collarless V-neck scrub top with short sleeves, worn untucked, with a pen clipped in a small chest pocket, dark trousers and a staff ID card on a lanyard. Bare forearms below the elbow: no wristwatch, no jacket, no white coat. No text, no writing and no logos anywhere; the ID card is blank.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention).
+# Revised 2026-10-02 (user review): gemini_edit_image on the chosen concept turned the work-shirt look into a hip-length pharmacy tunic with a mandarin collar and side fastening. Edited image already faced right; reframe_portrait.py run without --flip.
+# Revised again 2026-10-02 (user review of PixelLab busts): gemini_edit_image on the concept, with wip/female_nurse1_nonpixelart.png as a smooth reference for the garment shape, changed the collared tunic to a collarless V-neck scrub top in the same colour. Already faced right; reframe_portrait.py run without --flip.
+
+# Saved 2026-10-12 from tmp/pixellab/hamza_iqbal/concept.png (the concept the pipeline used)

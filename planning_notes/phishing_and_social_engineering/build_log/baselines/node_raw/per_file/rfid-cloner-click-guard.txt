@@ -1,0 +1,33 @@
+TAP version 13
+# Starting RFID minigame from inventory (unlock mode)
+# RFID minigame already open; ignoring cloner click
+# Starting RFID minigame from inventory (unlock mode)
+# Subtest: isOpen: true only for an open, not-ending minigame of that type
+ok 1 - isOpen: true only for an open, not-ending minigame of that type
+  ---
+  duration_ms: 1.749469
+  ...
+# Subtest: cloner click with no minigame open starts the RFID minigame in unlock mode
+ok 2 - cloner click with no minigame open starts the RFID minigame in unlock mode
+  ---
+  duration_ms: 3.085517
+  ...
+# Subtest: cloner click while an RFID read is open is ignored, keeping the read
+ok 3 - cloner click while an RFID read is open is ignored, keeping the read
+  ---
+  duration_ms: 0.516211
+  ...
+# Subtest: cloner click while an RFID minigame is closing opens a fresh one
+ok 4 - cloner click while an RFID minigame is closing opens a fresh one
+  ---
+  duration_ms: 0.418546
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 160.707297

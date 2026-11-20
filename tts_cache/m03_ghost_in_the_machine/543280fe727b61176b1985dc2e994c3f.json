@@ -1,0 +1,13 @@
+{
+  "key": "543280fe727b61176b1985dc2e994c3f",
+  "npc": "narrator",
+  "text": "A man is sitting in the dark with his coat on, as if he has been about to leave for hours and hasn't managed it. He doesn't startle.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:36:15Z"
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "ca04_exec_whaling_defend",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

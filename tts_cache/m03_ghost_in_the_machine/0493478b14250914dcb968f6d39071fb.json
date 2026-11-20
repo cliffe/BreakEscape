@@ -1,0 +1,13 @@
+{
+  "key": "0493478b14250914dcb968f6d39071fb",
+  "npc": "danny_foster",
+  "text": "Still deciding.",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:38:41Z"
+}

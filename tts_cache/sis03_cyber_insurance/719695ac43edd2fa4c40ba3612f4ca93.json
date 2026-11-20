@@ -1,0 +1,13 @@
+{
+  "key": "719695ac43edd2fa4c40ba3612f4ca93",
+  "npc": "eleanor_vance",
+  "text": "Here's the problem. Albion's IT-to-OT segmentation — the network isolation that should have stopped lateral movement at the boundary — was incomplete at the time of the incident.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:18:25Z"
+}

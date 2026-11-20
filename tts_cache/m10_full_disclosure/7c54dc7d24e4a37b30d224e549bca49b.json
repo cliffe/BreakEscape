@@ -1,0 +1,14 @@
+{
+  "key": "7c54dc7d24e4a37b30d224e549bca49b",
+  "npc": "tesseract",
+  "text": "No. Nobody did.",
+  "delivery": "after a pause, conceding, quieter",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, in person at his own console. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused and courteous to the end. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:24:28Z"
+}

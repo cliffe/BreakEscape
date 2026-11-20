@@ -1,0 +1,13 @@
+{
+  "key": "fb01b3bd8b2a867c365f7687423d4c22",
+  "npc": "owen_gallagher",
+  "text": "Past the server room is the key vault. Fingerprint reader. Two thumbs enrolled, Ruth Halloran's and David's, and nobody else's. Don't ask me how you'd get in there.",
+  "voice": "Puck",
+  "style": "Systems administrator in his late twenties. Speak with a consistent Manchester accent throughout — do not shift to any other accent. Mid-range pitch; quick, energetic pace. Friendly and a bit frazzled, sardonic about the state of the network, relieved someone competent has turned up.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:08:17Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "c74b133f6d131bba88aae985d0f4007a",
+  "npc": "david_osei",
+  "text": "The network map shows what the cut costs. Look, then come back.",
+  "voice": "Iapetus",
+  "style": "Ghanaian-British head of clinical engineering in his mid-fifties, methodical, serious and deliberate. Speak with a consistent London-raised, settled in Leeds, with a slight Ghanaian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

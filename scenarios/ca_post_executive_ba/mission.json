@@ -1,0 +1,25 @@
+{
+  "display_name": "Final check: Executive assistants",
+  "description": "A short check for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice, taken after the awareness episodes. Ten new emails and voicemails from a PA's inbox, the same kinds as before. It is matched to your starting check, and the end screen compares the two results once you have done it.",
+  "organiser_note": "each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "resultGlobal": "triage_post_percent",
+  "stage": "post",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "estimated_duration_minutes": 9,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Whaling",
+        "Vishing",
+        "Voice cloning",
+        "Security awareness"
+      ]
+    }
+  ]
+}

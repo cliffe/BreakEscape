@@ -1,0 +1,8 @@
+{
+  "display_name": "Test: deduction board, night shift",
+  "description": "A night-shift case for the security team: four staff, three kinds of evidence, one report to Priya Nair. Fixture for the deduction board (fixture B, Incident Simulations skin). Not a mission.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "secgen_scenario": null,
+  "collection": "testing"
+}

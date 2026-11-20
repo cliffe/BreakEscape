@@ -1,0 +1,97 @@
+/* Device frame: the in-world gadget window shared by the patch-panel and rogue-ap minigames
+   (docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md 4.4, 5.4). It looks the same under every
+   UI theme, because a device in the world does not change with the player's theme (theme
+   minigame frames vary from 16 to 28 px).
+
+   The frame is a hand-drawn 9-slice: a 24x24 source, slice 8 on every side, drawn at 2x, so the
+   edge is 16 CSS px per side, as the placeholder's 2px border plus 14px pad was. Padding is 0
+   because the art's own bezel is the edge. Two candidates are in assets/ui/devices: A (screw
+   heads) and B (rubber corner boots). To swap, change --device-frame-art below, one line.
+
+   Use: put .device-frame on the element that wraps the device's content (title bar, body,
+   footer). The frame has no padding of its own; content keeps --device-frame-gap clear of the
+   bezel (the patch panel on its title and footer, the rogue AP as padding). Size the content, not
+   the frame. */
+
+:root {
+    /* The device palette, one source for every in-world device window (device frame, patch panel,
+       rogue AP, VM launcher). Text on the face is at least 4.5:1: text 13.4, dim 7.1, accent 11.7,
+       info 11.7, danger 9.4 (on the button fill: 10.7, 5.7, 9.3, 9.3, 7.5). */
+    --device-palette-edge: #8a96aa;
+    --device-palette-face: #1b212e;
+    --device-palette-button: #283246;
+    --device-palette-text: #e6ebf2;
+    --device-palette-dim: #a3adbf;
+    --device-palette-accent: #ffd866;
+    --device-palette-info: #9ee6ff;
+    --device-palette-danger: #ffb3a8;
+}
+
+.device-frame {
+    --device-frame-edge: var(--device-palette-edge);
+    --device-frame-face: var(--device-palette-face);
+    --device-frame-art: url('/break_escape/assets/ui/devices/device_frame_b.png');
+    --device-frame-text: var(--device-palette-text);
+    /* Clear space between the art's bezel and the content: the 9-slice leaves 4px of face, and
+       6px more keeps text and controls off the recess line. Title, footer and padded content use it. */
+    --device-frame-gap: 6px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: 16px solid transparent;
+    border-image: var(--device-frame-art) 8 fill / 16px / 0 stretch;
+    border-radius: 0;
+    box-shadow: none;
+    /* fallback if the image fails; the clip keeps the art's rounded corner pixels clear */
+    background: var(--device-frame-face);
+    background-clip: padding-box;
+    color: var(--device-frame-text);
+    image-rendering: pixelated;
+}
+
+/* The X over a device frame keeps its drawn size and its 44px hit area, but the area stops at the
+   X's own bottom edge (padding box, bottom 0) and reaches up into the bezel instead of down over the
+   first control row: 26px up, 14px to each side. Scoped to the three device frames through the
+   container that holds one. The X is at the frame top plus 20px, so the area ends 44px (46px for the
+   32px vm-launcher X) below the frame top, and the rows below the title never sit under it. */
+.minigame-container:has(.device-frame) > .minigame-close-button.minigame-close-in-frame::after {
+    inset: -26px -14px 0 -14px;
+}
+
+/* The title bar row: device name on the left, the shared pixel X on the right. The margin below it
+   keeps the first control row clear of the drawn X (the X's bottom edge is 50px below the frame top,
+   52px for the 32px vm-launcher X): 12px at every width. The title is 16px on a 24px line on phones too, so a
+   one-line title puts the first row 58px down, 8px below the drawn X (6px for vm-launcher); a title that
+   wraps to two lines only pushes the row lower. */
+.device-frame > .device-frame-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+/* Titles wrap at every width and never ellipsise. The element-type step makes the span/h2 rule (0,2,1), which
+   beats vm-launcher's and rogue-ap's two-class (0,2,0) nowrap + ellipsis rules without editing those files.
+   padding-right keeps the last glyph clear of the X's hit area, which reaches 64px (66px vm) in from the
+   frame's outer edge; text stops at 70px or more. No min-width on the row: it would tie the patch panel's
+   min-width: 100% at the same specificity. */
+.device-frame > .device-frame-title {
+    overflow-wrap: anywhere;
+}
+.device-frame > .device-frame-title > span,
+.device-frame > .device-frame-title > h2 {
+    padding-right: 16px;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

@@ -1,0 +1,13 @@
+{
+  "key": "7aaee13158561a30a354e3e20f143b22",
+  "npc": "patrol_nurse",
+  "text": "Crash call, Bed 4!",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-10-11",
+  "recorded_at": "2026-10-11T00:25:44Z"
+}

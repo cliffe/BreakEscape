@@ -1,0 +1,13 @@
+{
+  "key": "c04717cbca0d1580f0b3a798d95e641a",
+  "npc": "narrator",
+  "text": "The guard looks up from the desk and gets to his feet.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:38:22Z"
+}

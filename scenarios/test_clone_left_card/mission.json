@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Clone the left-behind card",
+  "description": "Minimal office proving three engine pieces: (1) an action menu when a world object offers more than one action — a keycard on a desk, with an RFID cloner in hand, offers Copy it with the RFID cloner or Take it; (2) clone in place — the clone opens the card's door and the card stays, so the owner notices nothing on return; (3) the consequence of taking the card — the owner returns, barks, and the card is cancelled (revoke_card), so the physical card and any clone of the same card_id stop opening doors.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 2,
+  "test_type": "clone_left_card",
+  "test_objective": "Verify the object action menu (clone vs take a world keycard), clone-in-place (card stays, owner notices nothing, the clone opens the door), the left-card consequence (owner returns to a missing card -> npc_left_item_gone -> onOwnerNoticesMissing revoke_card -> physical card and clone stop opening doors, owner barks, debrief capture), that a desk keycard with no cloner held picks up as before, and that the conversation clone (NPC rfidCard + # clone_keycard ink tag) still works."
+}

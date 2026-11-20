@@ -1,0 +1,17 @@
+{"steps":[
+{"note":"R20 (pass 2 blind fixes, B F1): Sterling knocked out at night with all four flags in. HaX says finish the sweep; the player turns down the first call-in, sweeps, then asks to be brought in. victoria_choice_made must be false until 'On my way', then true."},
+{"talk":"briefing","picks":["Skip the background","That's everything","move fast","I'm ready"]},
+{"set":{"briefing_played":true,"reception_badge_cloned":true}},
+{"talk":"victoria","picks":["Why am I here","fair pay","What is Zero Day","buyers do with these","Take the forty","whiteboard","impressive training","How do you determine","Skills are cheap","exactly the kind"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"revelation_heard":true,"night_confrontation_ready":true}},
+{"note":"Night KO: npc_ko mappings set victoria_ko/victoria_fate=ko; the debrief does NOT open (victoria_choice_made stays false)."},
+{"set":{"victoria_ko":true,"victoria_fate":"ko"}},
+{"talk":"victoria","picks":["Leave her"]},
+{"talk":"phone","picks":["Bring me in","Not yet","Where do I stand","Thanks","Nothing right now"]},
+{"note":"Sweep: the safe and the filing cabinet."},
+{"set":{"catalogue_seen":true,"lore_catalogue_found":true,"lore_history_found":true}},
+{"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},
+{"note":"victoria_choice_made is now true (set_global above); closing_debrief's mapping opens the debrief."},
+{"talk":"debrief","picks":["She priced in","mass-casualty","map to","He wasn't my job","locked down","next assignment"]}
+]}

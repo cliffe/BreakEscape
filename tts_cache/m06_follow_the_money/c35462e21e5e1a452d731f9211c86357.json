@@ -1,0 +1,13 @@
+{
+  "key": "c35462e21e5e1a452d731f9211c86357",
+  "npc": "narrator",
+  "text": "The spare executive badge is in her top drawer, under a reader-install manual. You take it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:58:32Z"
+}

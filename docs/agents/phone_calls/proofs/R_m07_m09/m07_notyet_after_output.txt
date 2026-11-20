@@ -1,0 +1,9 @@
+game 2350 (notyet_after)
+"opened agent_0x99"
+after Not yet: debrief_requested=true mg="PhoneChatMinigame phone-chat"
+"opened agent_0x99"
+hub on reopen: {"choices":["1. I'm stuck on something.","2. Where do I stand?","3. Remind me of the layout and the clock.","4. I'll check back in."],"thread":"ur channel and the board. | Get past the checkpoint to the operations floor. Message me when you hit something you can't open. | Bring me in. | Not yet. Put the rest of the flags through the relay and he's on straight after. | ☎ | Outgoing call, 0:02"}
+shot notyet_after_hub_reopen
+last flag lands (global set + its event), then the player walks into the ops floor
+after: start_debrief=false mg=null held={"reason":"mapping","npcId":"closing_debrief","eventPattern":"room_entered:operations_floor","handlerIndex":3} overlay="BEFORE THE MISSION ENDS | You have done what the mission needs. 1 optional objective is still open: | Deal with Ray Hollis on the checkpoint desk | End the mission now, or keep going? | Keep going | End the mission now"
+shot notyet_after_after_flag4

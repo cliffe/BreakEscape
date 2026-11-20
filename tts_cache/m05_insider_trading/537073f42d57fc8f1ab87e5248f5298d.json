@@ -1,0 +1,13 @@
+{
+  "key": "537073f42d57fc8f1ab87e5248f5298d",
+  "npc": "narrator",
+  "text": "A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:22:24Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "31f4d738f5910ceb19531b2c9d943a8d",
+  "npc": "amara",
+  "text": "Emails. When my mug's empty I go to the coffee station by the door.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:08:52Z"
+}

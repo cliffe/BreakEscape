@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: plain notes keep their text, line breaks and spacing
+ok 1 - plain notes keep their text, line breaks and spacing
+  ---
+  duration_ms: 0.926536
+  ...
+# Subtest: HTML in a note is escaped, inside and outside markdown
+ok 2 - HTML in a note is escaped, inside and outside markdown
+  ---
+  duration_ms: 0.405099
+  ...
+# Subtest: bold, italic, code and headings
+ok 3 - bold, italic, code and headings
+  ---
+  duration_ms: 0.120252
+  ...
+# Subtest: stars that are not emphasis stay as typed
+ok 4 - stars that are not emphasis stay as typed
+  ---
+  duration_ms: 0.120126
+  ...
+# Subtest: bullets get a bullet; an italic line is not a bullet
+ok 5 - bullets get a bullet; an italic line is not a bullet
+  ---
+  duration_ms: 0.108923
+  ...
+# Subtest: a table needs a rule row; cells escape pipes, stars and backticks
+ok 6 - a table needs a rule row; cells escape pipes, stars and backticks
+  ---
+  duration_ms: 0.297334
+  ...
+# Subtest: fenced code is kept exactly
+ok 7 - fenced code is kept exactly
+  ---
+  duration_ms: 0.063406
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 224.759342

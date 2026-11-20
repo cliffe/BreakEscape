@@ -1,0 +1,296 @@
+/* The pocket rogue AP's console (physical pentest devices plan 4.4). The frame is the shared
+   .device-frame (css/device-frame.css); this file lays out the content inside it.
+
+   W is the content width: the viewport less 32 (gutters), 32 (frame) and 16 (padding). The
+   breakpoint at 559px viewport is W 480. Below it: Press Start 2P 8px on tabs and template
+   buttons, VT323 16px, scan rows on two lines. From it: 16px buttons, VT323 20px, 2x icons. */
+
+.minigame-container[data-minigame="rogue-ap"] > .minigame-header {
+    display: none;
+}
+
+.minigame-container[data-minigame="rogue-ap"] > .minigame-game-container {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    margin: 16px;
+    background: none;
+    display: flex;
+    justify-content: center;
+    overflow: visible;
+}
+
+.rogue-ap.device-frame {
+    width: min(calc(100vw - 32px), 760px);
+    /* the 9-slice bezel leaves 4px of face before the content: the frame gap keeps it clear */
+    padding: var(--device-frame-gap);
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 24px;
+}
+
+.rogue-ap * {
+    border-radius: 0;
+    font-style: normal;
+}
+
+/* The X sits inside the frame at its top right: keep the title clear of it. The X's 44px hit area
+   reaches up into the bezel and stops at the X's bottom edge (device-frame.css); the title margin
+   there keeps the tabs clear of the drawn X. */
+.rogue-ap .rogue-ap-title {
+    padding-right: 40px;
+}
+
+.rogue-ap .rogue-ap-title-text {
+    margin: 0;
+    font: inherit;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Buttons take the theme's button skin, with a 2px line as the fallback */
+.rogue-ap .rogue-ap-button {
+    box-sizing: border-box;
+    border: 2px solid var(--device-frame-edge);
+    border-radius: 0;
+    box-shadow: none;
+    background: #283246;
+    color: var(--device-frame-text);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    padding: 4px 8px;
+    cursor: pointer;
+    image-rendering: pixelated;
+}
+
+[data-ui-theme] .rogue-ap .rogue-ap-button {
+    border-style: solid;
+    border-width: var(--ui-button-px);
+    border-image-source: var(--ui-button-image);
+    border-image-slice: var(--ui-button-slice) fill;
+    border-image-width: var(--ui-button-px);
+    border-image-repeat: stretch;
+    background: none;
+}
+
+.rogue-ap .rogue-ap-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.rogue-ap .rogue-ap-button:focus-visible {
+    outline: 2px solid #ffd866;
+    outline-offset: 0;
+}
+
+/* The chosen tab, SSID and template: a 2px inset line and the word, never colour alone */
+.rogue-ap .rogue-ap-button.is-active,
+.rogue-ap .rogue-ap-button.is-chosen {
+    box-shadow: inset 0 0 0 2px #ffd866;
+}
+
+.rogue-ap .rogue-ap-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.rogue-ap .rogue-ap-pane {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.rogue-ap .rogue-ap-more {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-top: 2px solid var(--device-frame-edge);
+    color: #9ee6ff;
+    font-size: 16px;
+}
+
+.rogue-ap .rogue-ap-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps, as the network view's */
+.rogue-ap .rogue-ap-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+.rogue-ap ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rogue-ap .rogue-ap-heading {
+    margin: 8px 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.rogue-ap p {
+    margin: 8px 0;
+}
+
+/* Recon */
+.rogue-ap .rogue-ap-scan-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 16px;
+    padding: 8px;
+    border: 2px solid var(--device-frame-edge);
+    margin-bottom: 8px;
+}
+
+.rogue-ap .rogue-ap-scan-line {
+    display: contents;
+}
+
+.rogue-ap .rogue-ap-ssid {
+    overflow-wrap: anywhere;
+}
+
+.rogue-ap .rogue-ap-signal {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: end;
+}
+
+.rogue-ap .rogue-ap-signal-icon {
+    width: 22px;
+    height: 16px;
+    image-rendering: pixelated;
+}
+
+.rogue-ap .rogue-ap-clients {
+    justify-self: end;
+}
+
+.rogue-ap .rogue-ap-known {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+}
+
+.rogue-ap .rogue-ap-known-client,
+.rogue-ap .rogue-ap-log-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+/* Headshots at 2x (64px) from W 480, 1x below; the authored 32px file drawn whole */
+.rogue-ap .rogue-ap-headshot {
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    background-size: 64px 64px !important;
+    background-repeat: no-repeat;
+    border: 2px solid var(--device-frame-edge);
+    image-rendering: pixelated;
+}
+
+.rogue-ap .rogue-ap-headshot[hidden] {
+    display: none;
+}
+
+/* Clone */
+.rogue-ap .rogue-ap-ssid-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rogue-ap .rogue-ap-ssid-pick {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+}
+
+.rogue-ap .rogue-ap-templates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.rogue-ap .rogue-ap-template {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.rogue-ap .rogue-ap-chosen {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;
+    color: #ffd866;
+}
+
+.rogue-ap .rogue-ap-ssid-pick .rogue-ap-chosen {
+    align-self: center;
+}
+
+/* The fake page at 1x, never scaled; wider than W scrolls */
+.rogue-ap .rogue-ap-preview {
+    overflow-x: auto;
+    margin: 8px 0;
+}
+
+.rogue-ap .rogue-ap-start-row {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.rogue-ap .rogue-ap-status.is-refused {
+    color: #ffb3a8;
+    border-left: 2px solid #ffb3a8;
+    padding-left: 8px;
+}
+
+@media (max-width: 559px) {
+    .rogue-ap.device-frame {
+        font-size: 16px;
+        line-height: 20px;
+    }
+    .rogue-ap .rogue-ap-button,
+    .rogue-ap .rogue-ap-heading {
+        font-size: 8px;
+        line-height: 16px;
+    }
+    .rogue-ap .rogue-ap-ssid-pick {
+        font-size: 16px;
+        line-height: 20px;
+    }
+    .rogue-ap .rogue-ap-signal-icon {
+        width: 11px;
+        height: 8px;
+    }
+    .rogue-ap .rogue-ap-headshot {
+        width: 32px;
+        height: 32px;
+        background-size: 32px 32px !important;
+    }
+    .minigame-container[data-minigame="rogue-ap"] > .minigame-game-container {
+        margin: 16px 0;
+    }
+}

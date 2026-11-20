@@ -1,0 +1,7 @@
+<% random_id = generate_random_id %>
+<span id="label_<%= random_id %>" class="label label-<%= label_class %>" data-tippy-content="<%= tippy_content %>">
+  <% if defined?(icon_class) && icon_class.present? %>
+    <i class="<%= icon_class %>"></i>
+  <% end %>
+  <%= label_text %>
+</span>

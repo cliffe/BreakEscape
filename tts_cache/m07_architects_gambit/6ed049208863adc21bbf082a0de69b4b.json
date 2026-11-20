@@ -1,0 +1,13 @@
+{
+  "key": "6ed049208863adc21bbf082a0de69b4b",
+  "npc": "narrator",
+  "text": "He comes up off his knees with the crimping tool in his fist, and waits.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A building full of machinery that is about to be used against people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:32:04Z"
+}

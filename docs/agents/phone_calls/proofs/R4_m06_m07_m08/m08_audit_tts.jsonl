@@ -1,0 +1,20 @@
+{"t":1794524953689,"npc_id":"narrator","text":"SAFETYNET headquarters, the Citadel. Every badge reader blinks red. Nobody looks at the person at the next desk.","delivery":null,"status":200}
+{"t":1794524954086,"npc_id":"opening_briefing_cutscene","text":"Welcome back, Agent 0x00. Security posture is Level Red. I have logged your entry, your route, and the precise time you crossed the threshold. Everyone's, actually. It's rather the point.","delivery":null,"status":200}
+{"t":1794524954330,"npc_id":"opening_briefing_cutscene","text":"I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.","delivery":null,"status":200}
+{"t":1794524954598,"npc_id":"opening_briefing_cutscene","text":"The PIN device you are thinking of is still signed out to Agent 0x47, Nightshade, as it has been since St. Catherine's.","delivery":null,"status":200}
+{"t":1794524954874,"npc_id":"opening_briefing_cutscene","text":"Read nothing into it. Vector has a hardware token out tonight, and Phantom a travel pack. Everyone on the planning list keeps something they shouldn't.","delivery":null,"status":503}
+{"t":1794524955148,"npc_id":"opening_briefing_cutscene","text":"You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did.","delivery":null,"status":503}
+{"t":1794524955417,"npc_id":"opening_briefing_cutscene","text":"The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.","delivery":null,"status":503}
+{"t":1794524955706,"npc_id":"opening_briefing_cutscene","text":"A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick.","delivery":null,"status":503}
+{"t":1794524955971,"npc_id":"opening_briefing_cutscene","text":"The Director's office is north of this lobby. Do try not to trust anyone on the way.","delivery":null,"status":503}
+{"t":1794524969763,"npc_id":"agent_0x99","text":"Two questions, the ones he'd ask. When was the plan opened?","delivery":null,"status":503}
+{"t":1794524975013,"npc_id":"agent_0x99","text":"That's a door moving or the file closing. When did it open? Read it again and call me back.","delivery":null,"status":503}
+{"t":1794524989312,"npc_id":"agent_0x99","text":"Again, then. When was the plan opened?","delivery":null,"status":503}
+{"t":1794524994312,"npc_id":"agent_0x99","text":"Who was behind the lab door at 10:38, and still inside?","delivery":null,"status":503}
+{"t":1794524999429,"npc_id":"agent_0x99","text":"Read the door against the minute, not the man. Who was still inside at 10:38? Call me back.","delivery":null,"status":503}
+{"t":1794525013641,"npc_id":"agent_0x99","text":"Again, then. When was the plan opened?","delivery":null,"status":503}
+{"t":1794525018277,"npc_id":"agent_0x99","text":"Who was behind the lab door at 10:38, and still inside?","delivery":null,"status":503}
+{"t":1794525022982,"npc_id":"agent_0x99","text":"In at 10:15, out at 11:43. Vector was gone by 10:32, and Phantom was on a plane.","delivery":null,"status":503}
+{"t":1794525024443,"npc_id":"agent_0x99","text":"Nightshade. I trained with him.","delivery":null,"status":503}
+{"t":1794525025880,"npc_id":"agent_0x99","text":"I'll put it in front of the Director myself. He won't take it from you tonight.","delivery":null,"status":503}
+{"t":1794525027344,"npc_id":"agent_0x99","text":"You finish the chain.","delivery":null,"status":503}

@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<scenario xmlns="http://www.github//cliffe/BreakEscapeGame/blob/main/assets/scenarios"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="https://github.com/cliffe/BreakEscapeGame/blob/main/assets/scenarios/scenerio1.json">
+
+  <name>Captain Meow disappearance</name>
+  <author>Z. Cliffe Schreuders</author>
+  <description>
+    # Introduction
+    Your beloved kitty sidekick, Captain Meow, has vanished without a trace! As a renowned adventurer and detective, you suspect foul play. The last clue? A cryptic paw print left on your desk and a strange voicemail message on your phone.
+
+    Captain Meow has always been a sneaky genius, leaving behind puzzles in hopes that you would find him. If anyone could leave behind a trail of encrypted clues, it’s him. But who would kidnap the smartest cat in the world? And why?
+
+    Your journey begins in your study, where Captain Meow’s last trail begins. Can you decipher his messages, crack the codes, and rescue him before time runs out?
+  </description>
+  <type>escape room</type>
+  <difficulty>medium</difficulty>
+
+  <CyBOK KA="F" topic="Operating System Analysis">
+    <keyword>Steganography</keyword>
+    <keyword>Encoding and alternative data formats</keyword>
+    <keyword>SEARCH FOR EVIDENCE</keyword>
+    <keyword>METADATA</keyword>
+  </CyBOK>
+
+  <CyBOK KA="POR" topic="Privacy Technologies and Democratic Values">
+    <keyword>METADATA</keyword>
+    <keyword>STEGANOGRAPHY</keyword>
+  </CyBOK>
+
+ <CyBOK KA="AC" topic="Cryptographic Implementation">
+    <keyword>Cryptographic Libraries</keyword>
+    <keyword>ENCRYPTION - TOOLS</keyword>
+  </CyBOK>
+  
+  <CyBOK KA="AC" topic="Physical Security">
+    <keyword>Fingerprint Authentication</keyword>
+    <keyword>Bluetooth Security</keyword>
+    <keyword>Physical Locks</keyword>
+  </CyBOK>
+
+  <CyBOK KA="AC" topic="Hashing and Integrity">
+    <keyword>Hash Functions</keyword>
+    <keyword>MD5 Hash</keyword>
+  </CyBOK>
+
+  <CyBOK KA="AC" topic="Encoding and Representation">
+    <keyword>Base64 Encoding</keyword>
+    <keyword>Octal Encoding</keyword>
+    <keyword>Hexadecimal (Hex) Encoding</keyword>
+  </CyBOK>
+
+  <CyBOK KA="AC" topic="Algorithms, Schemes and Protocols">
+    <keyword>ADVANCED ENCRYPTION STANDARD (AES)</keyword>
+    <keyword>ECB (ELECTRONIC CODE BOOK) BLOCK CIPHER MODE</keyword>
+  </CyBOK>
+
+</scenario>

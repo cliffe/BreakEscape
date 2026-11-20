@@ -1,0 +1,13 @@
+{
+  "key": "8ceb0cc78913d1d82eae24ad2ef7e467",
+  "npc": "sarah_mitchell",
+  "text": "Mr Ahmed's arrested. Come and find me when you can.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-10-11",
+  "recorded_at": "2026-10-11T00:25:40Z"
+}

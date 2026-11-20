@@ -1,0 +1,13 @@
+{
+  "key": "71af850f9a68edea5b406433140d52bb",
+  "npc": "bed5_patient",
+  "text": "Good. I'd rather wait for a careful nurse than have a quick mistake.",
+  "voice": "Aoede",
+  "style": "Polish-born woman in her early eighties, bed-bound, alert, anxious but trying to stay calm. Speak with a consistent northern English with a Polish lilt accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

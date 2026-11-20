@@ -1,0 +1,10 @@
+{"t":1794500366180,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794500366691,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794500370676,"npc_id":"guard","text":"Hold on. What are you doing in here?","delivery":null,"status":503}
+{"t":1794500371991,"npc_id":"guard","text":"Fine. Carry on.","delivery":null,"status":503}
+{"t":1794500388440,"npc_id":"caller_decline","text":"Thanks for ringing back.","delivery":null,"status":503}
+{"t":1794500389855,"npc_id":"caller_decline","text":"That is all.","delivery":null,"status":503}
+{"t":1794500406810,"npc_id":"caller_decline","text":"Thanks for ringing back.","delivery":null,"status":503}
+{"t":1794500408237,"npc_id":"caller_decline","text":"That is all.","delivery":null,"status":503}
+{"t":1794500445186,"npc_id":"caller_decline","text":"Thanks for ringing back.","delivery":null,"status":503}
+{"t":1794500446602,"npc_id":"caller_decline","text":"That is all.","delivery":null,"status":503}

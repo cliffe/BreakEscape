@@ -1,0 +1,13 @@
+{
+  "key": "c9f11eaca650cefac5166c3f814368af",
+  "npc": "narrator",
+  "text": "He says it too fast.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:54:06Z"
+}

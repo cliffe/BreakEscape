@@ -1,0 +1,13 @@
+{
+  "key": "0a0888357ffc5776e608ddb88d77d27c",
+  "npc": "narrator",
+  "text": "You hold the allocation up where he can read it. He reads the per-cell lines, then the last one, twice.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:20:58Z"
+}

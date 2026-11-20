@@ -1,0 +1,13 @@
+{
+  "key": "4248ca99d42b4a28bd11189b57bd9b7c",
+  "npc": "victoria_sterling",
+  "text": "Reconsidering?",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:14:30Z"
+}

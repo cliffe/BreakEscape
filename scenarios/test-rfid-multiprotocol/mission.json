@@ -1,0 +1,24 @@
+{
+  "display_name": "RFID Multiprotocol Test",
+  "description": "Test scenario demonstrating multiple RFID protocol types and cloning mechanics.",
+  "difficulty_level": 2,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["RFID authentication", "Access control", "Multi-protocol systems"]
+    },
+    {
+      "ka": "HS",
+      "topic": "Hardware Security",
+      "keywords": ["RFID protocols", "Card cloning", "Proximity cards"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["RFID cloning", "Physical access control"]
+    }
+  ]
+}

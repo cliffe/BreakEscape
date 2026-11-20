@@ -1,0 +1,13 @@
+{
+  "key": "b9886cc466bb04745573e2e9230830f9",
+  "npc": "yusuf_demir",
+  "text": "Good luck in there.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:43:30Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "a4c95bb74454ee35691964f749897eb5",
+  "npc": "briefing_cutscene",
+  "text": "Get a lab laptop from Dr Shaw in the lecture theatre, south of the foyer. Then go and be found.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

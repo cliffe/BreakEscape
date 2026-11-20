@@ -1,0 +1,13 @@
+{
+  "key": "b70ecd8973e274d2c8b1424344260dfb",
+  "npc": "nilesh_solanki",
+  "text": "Start at the kiosk. Play out the Friday, then sort what's actually waiting.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:48Z"
+}

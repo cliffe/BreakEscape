@@ -1,0 +1,10 @@
+Make portrait for Dr James Mercer
+A lean, tall white American man of about 58 with pale, faintly ruddy skin and fine lines round the eyes, thinning silver hair combed straight back, a short neatly clipped white beard, thin rimless glasses and pale blue eyes with a level, patient, unreadable gaze, a senior power-grid engineer who costed a disaster on paper and signed it, never defensive, a lecturer's calm. He wears a navy merino quarter-zip jumper over a pale blue oxford collared shirt, pressed khaki chinos and a brown leather belt, and a slim silver mechanical pencil clipped in the shirt collar opening. Arms relaxed at his sides. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is james_mercer_concept_2_raw.png.

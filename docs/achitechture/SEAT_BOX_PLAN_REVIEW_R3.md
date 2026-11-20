@@ -1,0 +1,78 @@
+# Seat box plan: adversarial review, round 3
+
+Reviewed: `docs/achitechture/SEAT_BOX_PLAN.md` at fce2312c2 (the R2 revision), with
+`SEAT_BOX_PLAN_REVIEW_R1.md`, `SEAT_BOX_PLAN_REVIEW_R2.md`, `SEAT_BOX_EXPERIMENTS.md`,
+`SEATED_SCALE_AUDIT.md`, `OFFICE_LIFE_PLAN.md` (c1111c266) and the code at HEAD (35bcc10fa):
+`seating.js`, `npc-pathfinding.js`, `rooms.js`, `doors.js`, `door-gates.js`, `path-avoid.js`,
+`npc-sprites.js`, `tools/playtest/room-snapshot.mjs`, `scripts/room_gen/room_edit.py`, the lab and
+`test_seating` scenarios. `table_surfaces.json` doesn't exist yet (slice 2 creates it). Static
+reading only: no browser run, no code, plan or DB change. Fresh reviewer, 2026-11-06.
+
+Line numbers cited by the plan at 1c51fabfb still match HEAD for `seating.js` (950–953, 975–981,
+1026–1035, 1201–1213, 1246) and `npc-pathfinding.js` (113, 251–305).
+
+## Verdict
+
+**Ready with conditions.** No blockers. Slices 2 and 4 can start now. Slice 0 can start once M1's
+choice (no `window`, or clipping carves) is written in. Fold M2–M4 into 1.3 and slice 1 before
+slice 1 is built, and M5 before it is committed. M6 before slices 0 and 3 are committed.
+
+Counts: **0 blockers, 6 majors, 9 minors.**
+
+## R2 fixes: do they work against the code?
+
+| R2 | Holds? | Note |
+|---|---|---|
+| M1 local stand grid | **Mostly.** | Leaving the chair and sitter out of a grid built from live bodies does free the cells a baked grid traps, and `ignore` as a list covers `behavior.immovable` sitters (npc-sprites.js:138–139; Tomasz in the lab has it, scenario.json.erb:660). Four gaps: the window breaks the carve helpers (M1 below), the chair's body is stale when `jumpOff` asks (M2), the player's "home facing" is the wrong facing (M3), and the recorded NPC approach point is usually inside the chair (M4) |
+| M1 `st.approach` then spawn | **No, for NPCs seated at load.** | M4 |
+| M2 walk record without NPCs and swivel chairs | Yes, with noise left | Gate doors still change with NPC timing (m4); chair positions for check (d) are taken after sitters move them (m5) |
+| M2 check (g) pockets | Yes | Flood from the doors over the walk grid, fails at 4 cells. Sound |
+| M2 check (h) geometry | Yes, with one gap | Wall bodies have no object id to pair by (m5). Check (f) can't be computed from the grid at all (m9) |
+| m1–m8 | Yes | m4's 32 px rule, m5's chair in the box check (but see M2), m6's `homeFacing` for NPCs, m7's ordering rule (now stale, m2), m8's numbers from the audit |
+
+## Is the `buildWorldGrid` split behaviour-neutral?
+
+With no options, yes, if it is built as described. Today `rebuildWorldGrid` assigns
+`this.worldGrid = grid` and then runs the carve helpers on `this.worldGrid` (npc-pathfinding.js:280–305);
+returning a carved grid and then assigning it gives the same cells, and `setGrid` is called last
+either way. `markSideDoorCorridor` and `markDoorWalkable` (634–641, 177–216) still write the live grid,
+so they pass `this.worldGrid` and `this.worldGridBounds`. Two details a builder has to get right:
+the `exclude` list holds game objects while the builder iterates bodies (match `body.gameObject`),
+and the "compare the two" test needs a golden taken before the refactor (m1). The `window` option is
+not neutral at the edges (M1).
+
+## Findings
+
+| id | B/M/m | section | finding | evidence | fix |
+|---|---|---|---|---|---|
+| M1 | M | slice 0 split, 1.3 local grid, slice 1 `localStandGrid` | **The windowed grid breaks the carve helpers.** The carves clamp to the grid instead of clipping to it. `_carveSideDoorCorridor` clamps `cy1` to 0 and `cy2` to `rows − 1`, then writes `grid[cy1]` and `grid[cy2]` as the blocked edge rows (655–687). On a 17 × 17 window, a corridor that straddles the window's top edge has its walkable middle row turned into a blocked "edge" row, and a corridor wholly above the window gives a negative `cy2`, so `grid[cy2][cx]` throws. `_applyNSDoorCornerBlocks` clamps `cx1`/`cx2` the same way and blocks window edge cells for a door partly outside it (706–722). A side door within 68 px of a swivel chair is ordinary. A throw inside `standSpot` is worse than a bad cell: `standUp` has already set `state = null`, destroyed the proxy and restored the body (518–531) before `landingSpot` runs (546), so the player is left invisible with `isSeated` true | npc-pathfinding.js:655–722; seating.js:518–556 | Drop `window`. Build the local stand grid full size with `buildWorldGrid({ exclude })`, as `rebuildWorldGrid` does after every room load; the flood is bounded by `maxCells` anyway, and a stand-up is rare. If the window stays, the builder clips: carves and corner blocks skip cells outside the window, and the slice 0 node test adds a corridor straddling the window edge, one wholly outside it and an N/S door half outside it, each compared with the same cells of the full grid |
+| M2 | M | 1.3 "box clear", slice 1 `walkBoxClear` `extra: [chair]` | **R2 m5's fix doesn't hold on the voluntary path.** The plan says the chair is dynamic again by the time the spot is chosen, because `standUp` re-enables it (534). `jumpOff` chooses the spot *before* `standUp` (689), while the chair's body is still disabled from `sitOn` (468). Arcade doesn't update a disabled body, so its bounds are wherever the chair was when the player sat down; that is why `standUp` calls `placeBody(chair, …)` right after re-enabling it (543). A `walkBoxClear` that reads `body.left/top` for `extra` checks the wrong rectangle after any roll: it can reject a good spot by the old position and accept one that overlaps the chair. `bodyFeet` reads the sprite and offset, so the castor and reach are right; only the extra box is wrong | seating.js:468, 534–544, 687–691, 389–396 | `extra` takes rectangles, and `standSpot` builds the chair's from the sprite position plus the body's offset and size (as `bodyFeet` does), never from `body.left/top`. Unit case: a disabled chair whose body position differs from its sprite; the box check uses the sprite's rectangle |
+| M3 | M | 1.3 step 1 | **The player's "home facing" is the wrong facing.** 1.3 counts the compass from "for the player, the facing they sat with". Nothing stores that: `place()` overwrites `state.facing` with the player's direction every frame while they roll (786–792), and it starts as the chair's facing at the sit (448). Game 876, the live proof of the order, used `state.facing` at stand time, the direction the player rolled up to the desk with. A builder who adds a sit-time facing changes the proven order: sit facing east, roll north to tuck behind a desk, and north becomes a side, so a forward diagonal relative to the desk (NE, NW) is tried as a back diagonal. That is the game 875 corner case (stood behind the desk's back edge) the order was changed to fix. R2 m6 was about NPCs only, where `st.facing` follows the player | seating.js:448, 786–792; plan 1.3 step 1 (game 875/876 note) | Player: the facing at stand time (`state.facing`), as proved. NPC: `st.homeFacing`. Say so in 1.3 and slice 1, and keep the 9 live cases as the proof |
+| M4 | M | 1.3 step 3 and "When the order returns null", 8.2, slice 1 NPC tests | **For an NPC seated at load, the recorded approach point is its chair.** `seatNPC` records `bodyFeet(sprite)` before posing (953), which for a `seated` NPC is its spawn point. Authors put that point on the chair: Tomasz in the lab spawns at (11, 4) and `tomasz_chair` is at (11, 4) (scenario.json.erb:659, 1153); `chairsNear` accepts any chair within 40 px of the spawn (836, 1013). So the forced order's last step, "the approach point with no check", and the spawn fallback (the same point) put the NPC inside its chair, the outcome the plan says never happens. It only bites when the 8-cell flood is empty (boxed in), but the slice 1 "boxed in" NPC test passes a fake approach outside the chair, so it can't see this. For needs seats the approach is also the castor (the chair is slid to the feet first, 1246, and fetched to the feet, 1324), harmless today because `standAt` wins. The same unchecked step can put a rolled player across a desk, so 8.2's "never a cell across a desk" for forced stands is too strong | seating.js:953, 1013, 1246, 1324; lab scenario.json.erb:659–661, 1151–1153; plan 1.3, 8.2 | For NPCs, the last step takes the approach only if a walking box there misses the chair's rectangle; otherwise the nearest walkable cell the local-grid flood reaches with no box check (it can't cross a desk); if even that is empty, stay seated, warn once, and retry next tick. Unit case with `approach` equal to the castor. Reword 8.2: forced stands avoid desks except in the boxed-in case, where the player goes back to where they sat down |
+| M5 | M | slice 0 "light baseline", slice 1 live, 8.1 row 1 | **The global landing rule has no cross-mission browser check.** Slice 1 changes every player stand-up on every swivel chair in every mission (the rule is global and unflagged), and a voluntary jump-off can now refuse ("No room to stand up here.") where today it always lands. The slice 0 baseline "for the landing rule" records each chair's position and the room's key points; neither shows where a player lands. The only cross-mission live step is one `room_office` sit-and-roll. AGENTS.md:181 asks for a browser regression across the affected missions | plan slice 0 baseline bullet, slice 1 "Live"; seating.js:684–691; AGENTS.md:181 | Make the swivel-chair baseline a scripted stand audit: for each placed swivel chair in the 9 + 9 + 4 rooms (and white/exec), sit at its placed position, Space–Space, then a forced `standUp()`, under `__seatBox = false` and the new order, logging `via`, the landing point and whether it is in a body or across a desk. Fail on any landing in a body or across a desk; list every chair where the voluntary stand now refuses, for a look before slice 1 commits. It reuses the snapshot loader and needs no scenario edit |
+| M6 | M | 8.1 rows 0 and 3 | **Two slices miss one of the three proofs the user requires** (unit, focused demo scenario, live browser). Slice 0's grid split is claimed behaviour-neutral on a node fixture only; nothing checks the live grid on a real game. Slice 3 changes engine grouping with a unit test and the lab's `cable_note`, but no focused test scenario case | plan 8.1; user rule (new features need full tests) | Slice 0: on two game rows (one with an opened side door, e.g. after `unlock-all-rooms.rb`), hash `pathfindingManager.worldGrid` before and after the split commit; equal hashes pass. Slice 3: add one matched `table_items` object positioned off every desk, and one on a desk, to `test_desk_seating`, and read both depths live |
+| m1 | m | slice 0 split test | "Compares the two" has only one implementation once the split lands | npc-pathfinding.js:230–306 | Before refactoring, write today's grid for the fixture world (open side and north doors) into the test as a golden array, or keep a frozen copy of the old function in the test file. Match `exclude` by `body.gameObject` |
+| m2 | m | 6 "Agreed order", hand-off note | The office-life plan, revised three minutes after this plan (c1111c266, 16:27 against 16:24), now builds slice 21 first ("order 21, 16, 18a, …", OFFICE_LIFE_PLAN.md:3644), so "items 2 and 6 first" is stale; rule 3 covers it. Separately, office-life 12.7 says the lab's staff sit on static seats, so slice 21 changes nothing there ("lab regression: no change expected", 3364–3368, 3525). Slice 7 makes them Tiled swivels, so after slice 7 idle swivel acts on Chris, Melanie and Sofia | OFFICE_LIFE_PLAN.md:2601, 3362–3410, 3525, 3644 | Reword the order and the note: slice 21 lands first, items 2 and 6 rebase on it. Add to the note that slice 7 turns the lab's staff chairs into swivels, so slice 21's lab regression should expect swivels after it |
+| m3 | m | slice 0 switches, slice 1 last bullets | `window.__seatBox = false` is "today's behaviour", but slice 1 deletes the unchecked fallback (648), which is part of today's behaviour | seating.js:641–648 | Say which: the old compass loop without the fallback (then "legacy order", not "today's"), or the old code kept intact behind the switch for the audit only |
+| m4 | m | slice 0 record, 8.1 row 0 ("recorded twice with no difference") | The record still depends on timing through doors. Gate doors open for NPCs (`door-gates.js`, Len's `openFor`, lab scenario.json.erb:652) and disable their bodies, then rebuild (243, 285). With the loop awake, two records of the lab can differ at the records door | door-gates.js:239–285; room-snapshot.mjs:55–65 | Record every door's rectangle as closed whatever its `enable`, or pause NPC behaviour before waking the loop |
+| m5 | m | slice 0 checks (d), (h) | (d) needs chair positions at load, but swivel chairs are left out of the record and needs NPCs slide or fetch them once the loop is awake (1160–1167, 1324). (h) pairs bodies by object id, and wall bodies have none | seating.js:1160–1167, 1299–1330 | (d): take each chair's position from its creation (the Tiled object or the sprite before any sit), recorded separately. (h): key walls by room and rectangle, which don't change between box modes |
+| m6 | m | 2.4, slice 2 `deskBoxOf` | "Multiplies by `scaleX`/`scaleY`" invites double scaling: Arcade scales a body's size and offset by the game object's scale for dynamic bodies, and tables are static bodies (`physics.add.existing(sprite, true)`, rooms.js:2136, 2637), whose rules differ. No `tables` object is scaled (0 of 445) | rooms.js:2136–2148, 2637–2654 | Return null (fallback) for scale ≠ 1, as for rotation, until a scaled desk exists |
+| m7 | m | 3 preamble, 8.1 | AGENTS.md:181 also asks for the phone reopen check on engine changes; 8.1 doesn't list it. AGENTS.md:227 says to run the suites *before* each engine commit, while the plan (R1 m3) follows the shared-tree rule of committing first | AGENTS.md:181, 227; plan 3 | Add `reopencheck.mjs` to slices 1–3. Leave the commit order as is, but note the AGENTS.md:227 conflict for the user to settle |
+| m8 | m | slice 1 `sweepBlock` | `sweepBlock` ships in slice 1 with no caller and no live proof until slice 6 | plan slice 1, hand-off items 2, 4, 6 | Move it to slice 6, or say slice 1 ships it tested but unused |
+| m9 | m | slice 0 check (f) | Gaps 8–10 px high can't be seen on an 8 px grid with 2 px padding, so (f) can't come from the walk grid | npc-pathfinding.js:254–262 | Compute (f) in (h)'s geometry pass: corridors 8 ≤ gap < 10 px that border a pocket from (g) |
+
+## Other questions in the brief
+
+- **Slices independently shippable?** Slices 2 and 4 stand alone. Slice 0's tools stand alone once
+  M1 is settled. Slice 1 depends on slice 0's builder only (with M1's "no window", even that is just
+  the `exclude` option). Slice 3 stands alone. Slices 5–8 are ordered correctly.
+- **Regression risk to other missions.** Footprint boxes change nothing until a map opts in: no room
+  JSON has top-level `properties` today (checked). The landing rule is the global change (M5). Only
+  `lab_physical_pentest` and `test_seating` have `seated` NPCs, so the `unseatNPC` change reaches no
+  m01–m10 mission and nothing in `lab_social_engineering`; needs NPCs keep `standAt`. The awareness
+  course runs on the same engine and is covered by the same stand audit if its rooms have swivels.
+- **Office-life files.** Slice 1 edits `seatNPC` and `unseatNPC` in office-life code with that
+  session's review, as written. The new conflict is the ordering note (m2).
+- **What a builder would still guess.** M1 (window clipping), M2 (which chair rectangle), M3 (which
+  player facing), M4 (the NPC last resort), m3 (what `__seatBox = false` means), m5 (wall pairing),
+  m6 (scale), m9 (where (f) comes from).

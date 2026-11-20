@@ -1,0 +1,116 @@
+
+## R29 (phase 4 dialogue C1, D5-1): the debrief's longest runs, synthetic state. Every sign found, all four friendly KOs, the early-naming reward, left to die after a fight, the Recruiter's offer never answered. No run without a choice may exceed nine lines.
+   {set {"found_medical_bills":true,"found_vetting_file":true,"found_door_log":true,"found_incident_log":true,"found_pamphlet":true,"found_stand_down_email":true,"found_halloran_vetting":true,"found_torres_journal":true,"found_upload_schedule":true,"found_manifest":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"torres_identified":true,"knows_full_stakes":true,"patricia_ko":true,"owen_ko":true,"lisa_ko":true,"halloran_ko":true,"named_before_portal":true,"door_log_reasoned":true,"door_log_reasoned_first":true,"final_choice":"combat_lethal","torres_fight_offered":true,"recruiter_deal_offered":true,"found_pipeline_list":true,"player_approach":"diplomatic","confront_stance":"hardline"}}
+      [mapping agent_0x99_handler: set case_motive=true]
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [aim unlocked: gather_evidence]
+      [task: name_a_suspect]
+      [task: establish_motive]
+      [mapping agent_0x99_handler: set case_motive=true]
+      [mapping agent_0x99_handler: set case_motive=true]
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [mapping agent_0x99_handler: set case_exfil=true]
+      [mapping agent_0x99_handler: set case_ready_notified=true]
+      [aim unlocked: confront_insider]
+   [text agent_0x99_handler +8000ms] That's both halves: why he'd do it, and proof it's leaving the building. Patricia will act on that. Call her.
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [task: access_bludit_vm]
+   [text agent_0x99_handler +1500ms] Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into.
+   [text agent_0x99_handler +1500ms] Foothold flag in. You're on the research portal's box now. Find out who's been living on it.
+      [mapping agent_0x99_handler: set privesc_guide_offered=true]
+   [text agent_0x99_handler +1500ms] Manifest flag verified. Staged by badge 4471, no name on it. Find who carries that spare. The authorisation sits where only root can read. Sudo guide's yours.
+      [mapping agent_0x99_handler: set architect_approval_confirmed=true]
+   [text agent_0x99_handler +1500ms] Root flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this.
+      [aim unlocked: confront_insider]
+      [david_torres shown]
+      [mapping agent_0x99_handler: set case_exfil=true]
+      [mapping agent_0x99_handler: set case_exfil=true]
+      [task unlocked: call_in_after_sweep]
+
+--- debrief ---
+      [ink: handler_trust=-15]
+      [ink: debrief_played=true]
+  Narrator: SAFETYNET headquarters, Thursday, nine o'clock. HaX has your report up on the screen.
+  Agent HaX: Let's go through it.
+  Agent HaX: It's the best file we've had on the Initiative. Motive, means, the Architect's signature and the Recruiter's calling card.
+  Agent HaX: Patricia's copy of the CEO's email went to the Home Office review with everything else. Nobody signs off on a stand-down like that twice.
+  Agent HaX: You said you'd read the room. Then you put people in it on the floor.
+  Agent HaX: The final upload stopped at ninety-one per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
+  Agent HaX: Without those, what they have is a very expensive paperweight.
+     (2 options)
+ > How close was it?
+  Agent HaX: Nine per cent to spare. You bought that yourself.
+  Agent HaX: You had him before the server did. The research portal only showed a badge; you'd already put his name to it.
+  Agent HaX: You read past the obvious line on the badge log. Halloran's spare on the server hallway, Torres' badge on the front door six minutes before, every night.
+  Agent HaX: Patricia Morgan spent the night in hospital. She's the one who got you into that building. She wants to know why, and so do I.
+  Agent HaX: Owen Gallagher has a concussion. He'd have given you anything you asked for.
+  Agent HaX: Lisa Park ran the collection for Elena. She's off work with a head injury.
+  Agent HaX: Dr Halloran is off work. Her division lost its two most senior people in one night.
+  Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, his thumbprint.
+  Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw him.
+     (2 options)
+ > And the research portal?
+  Agent HaX: Old software with a known flaw nobody had patched, and an admin login sitting in a handover note.
+  Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
+     (2 options)
+ > Whose job was it to fix that?
+  Agent HaX: Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean audit more than a safe one.
+  Agent HaX: For the training file: money. Debts he didn't declare, and treatment no insurer would touch.
+  Agent HaX: Hours. Two in the morning, week after week, and nobody asked why.
+  Agent HaX: An approach. A recruiter's leaflet, with a deadline scribbled on the back.
+  Agent HaX: And a boss who told Security to stop asking.
+  Agent HaX: Halloran had the same recruiter at her table in Zurich. She reported it, late. Torres never reported anything.
+  Agent HaX: David Torres is dead.
+  Agent HaX: He hit his head on the rack when he went down. You killed the upload and walked out. Nobody found him until the cleaners came through, forty minutes later.
+  Agent HaX: The pathologist thinks twenty minutes would have been enough.
+     (2 options)
+ > He came at me. I did what the mission needed.
+  Agent HaX: The upload was the priority. Nobody will argue that.
+  Agent HaX: But there was a gap between stopping it and walking away, and a man died in it. The review board will ask about that gap.
+  Agent HaX: Elena Torres is a widow now, still fighting Stage 3 cancer. No treatment, no protection.
+  Agent HaX: Sofia is eleven. Miguel is eight.
+  Agent HaX: And everything he knew about the Initiative died with him. We're mapping it the hard way now.
+  Agent HaX: And the Recruiter. You never answered her offer. She'll have taken the silence for a no by now.
+  Agent HaX: The TalentStack list went into your report. We've reached three of the forty-seven already.
+  Agent HaX: The Architect's authorisation is the part I keep coming back to. A casualty projection, reviewed, and filed as an acceptable cost.
+     (2 options)
+ > Same hand as the other cells?
+  Agent HaX: The same hand.
+  Agent HaX: Ransomware Incorporated. Zero Day Syndicate. Critical Mass. Now the Insider Threat Initiative.
+  Agent HaX: The cells share suppliers, targets and a signature. The Architect runs them like a business.
+  Agent HaX: And pays them like one. The Initiative got eight hundred and forty-seven thousand dollars for this job alone.
+  Agent HaX: The authorisation goes up on Task Force Null's wall, with every other directive we've pulled off a cell.
+  Agent HaX: Somebody pays the Architect, too. Next, we follow the money.
+     (2 options)
+ > Did I get him right?
+  Agent HaX: You know the answer to that.
+  Agent HaX: The job got done. I'm still deciding about the rest.
+  Agent HaX: Go home. Take the rest of the day.
+  Agent HaX: The people who'd have waited too long for that ambulance will never know your name. But they're alive.
+      [task: hear_debrief]
+  Agent HaX: That's everything.
+  [end]
+   [PASS] said: "For the training file: money."
+   [PASS] said: "Hours. Two in the morning, week after week"
+   [PASS] said: "An approach."
+   [PASS] said: "And a boss who told Security"
+   [PASS] said: "Halloran had the same recruiter"
+   [PASS] said: "You had him before the server did"
+   [PASS] said: "You never answered her offer"
+   [PASS] said: "David Torres is dead"
+   [PASS] said: "You know the answer to that."
+   [PASS] said: "The job got done. I'm still deciding about the rest."
+   [PASS] not said: "And David Torres..."
+   [PASS] not said: "One last thing"
+   [PASS] not said: "One more thing."
+   [PASS] not said: "Patch it"
+   [PASS] not said: "thirty to forty-five people, in the first wave alone"
+   [PASS] not said: "There was never a clean way"
+   [PASS] not said: "Cold, maybe"
+   [PASS] not said: "I trust your judgement"
+   [PASS] not said: "slow way"
+   [PASS] not said: "His badge at the front door at two"
+   [PASS] longest run 9 (debrief) <= 9
+
+[stats] spoken/narrated lines 46, choices 6, longest run without a choice 9 (debrief); runs>=6: debrief:7, debrief:9, debrief:9, debrief:8, debrief:6
+[result] all expectations met

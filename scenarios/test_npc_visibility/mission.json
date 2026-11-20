@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: NPC Visibility Toggle (Hidden NPC Reveal)",
+  "description": "Tests the setVisible action for delayed NPC appearance and revealing hidden NPCs in gameplay.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 1,
+  "test_type": "phase_3_visibility_toggle",
+  "test_objective": "Verify hidden NPC becomes visible and interactive when setVisible action is triggered"
+}

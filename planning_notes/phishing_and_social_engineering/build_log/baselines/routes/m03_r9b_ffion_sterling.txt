@@ -1,0 +1,70 @@
+
+## R9b (cycle 3, D4-3): Terry met by day; Ffion told 'sterling' at night; the files excuse, no reload.
+   {set {"briefing_played":true,"badge_received":true}}
+
+--- ffion ---
+  Ffion Rees: Back again? Forgotten something?
+     (4 options)
+ > Thanks. I'll head through.
+  Ffion Rees: Go on, then. Shout if you need anything.
+  [chat closes]
+
+--- terry ---
+  Terry Mott: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
+  Terry Mott: If Ms. Sterling wanted you back here, she'd have told me. She hasn't.
+     (2 options)
+ > Sorry -- wrong turn.
+  Terry Mott: Happens all the time. Conference room's back through to the main hallway and straight across.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"victoria_card_cloned":true}}
+
+--- ffion ---
+  Ffion Rees: Oh! You made me jump. I only came back for my charger.
+  Ffion Rees: Is Ms. Sterling expecting you this late?
+     (3 options)
+ > She said to come back once the building was quiet.
+  Ffion Rees: Sounds like her. She does her best talking after hours. Night, then.
+  [chat closes]
+
+--- terry ---
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Ffion reckons Ms. Sterling's expecting you. The three o'clock, back again. She never said nothing to me.
+  Terry Mott: So what are you doing in my corridor?
+     (4 options)
+ > Sterling asked me to grab some files. We met today about the training programme.
+  Terry Mott: Ffion said the same. Still nobody told me.
+  Terry Mott: She does ring down at odd hours. Which files?
+     (2 options)
+ > Training programme enrolment forms. From her office.
+  Terry Mott: Don't make me come looking for you.
+     (5 options)
+ > I'll let you get on.
+  Terry Mott: Mind how you go.
+  [chat closes]
+
+## a different player who met Terry by day and tells Ffion nothing: recognition lines
+   {set {"ffion_night_story":"","player_warned":false}}
+
+--- terry @start ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: You. The three o'clock. Building's shut, and you're a long way from the conference room.
+  Terry Mott: Go on, then. Why are you here?
+     (4 options)
+ > I work here -- research, second floor. Forgot something at my desk.
+  Terry Mott: You don't work here. You were in reception at three with a visitor badge.
+  Terry Mott: You got ID? Key card?
+     (3 options)
+ > That's what I came back for -- my ID badge. Left it at my desk.
+  Terry Mott: So you don't have ID, and you're here after hours. That's a problem.
+  Terry Mott: No badge, a visitor this afternoon, and back at eleven. Pull the other one.
+     (3 options)
+ > Ring Ms. Sterling if you like. She'll vouch for me.
+  Terry Mott: *flatly* I'm not ringing the boss at this hour on your say-so.
+  Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
+     (3 options)
+ > Alright, I'm going.
+  Terry Mott: Good. Off you go. I see you in here again, I'm not talking.
+  [chat closes]
+
+[stats] spoken/narrated lines 25, choices 10, longest run without a choice 3 (terry); runs>=6: 

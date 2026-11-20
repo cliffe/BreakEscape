@@ -1,0 +1,10 @@
+Make portrait for Lyle Dillard
+A big, heavy-set white man of about 54 from Montana, with ruddy, weathered skin, a broad jowly face, a thick grey moustache, and short grey hair in a flat crew cut, a contract security guard and former sheriff's deputy, slow and bored and in it for the overtime. Small pale blue eyes under heavy lids and a flat, unimpressed look. He wears a khaki-tan short-sleeved guard shirt with epaulettes and plain button pockets, no patches, stretched over a large belly, dark brown uniform trousers, a black duty belt with a black handheld radio on it, and a steel wristwatch; his thumbs are hooked in his duty belt. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (finale batch). Reframed with reframe_portrait.py --flip; unflipped original is lyle_dillard_concept_1_raw.png. Approved by the user 2026-10-22; adopted from wip/lyle_dillard_concept_1.png.

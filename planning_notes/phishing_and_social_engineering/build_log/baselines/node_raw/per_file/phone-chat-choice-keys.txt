@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: keys 1-9 map to choices that exist
+ok 1 - keys 1-9 map to choices that exist
+  ---
+  duration_ms: 1.692214
+  ...
+# Subtest: keys beyond the list, 0 and other keys pick nothing
+ok 2 - keys beyond the list, 0 and other keys pick nothing
+  ---
+  duration_ms: 0.179954
+  ...
+# Subtest: scroll cue shows only while choices sit below the fold
+ok 3 - scroll cue shows only while choices sit below the fold
+  ---
+  duration_ms: 0.20449
+  ...
+# Subtest: the minigame uses the shared key mapping, not a hard-coded 1-5 list
+ok 4 - the minigame uses the shared key mapping, not a hard-coded 1-5 list
+  ---
+  duration_ms: 0.669607
+  ...
+# Subtest: phone choices carry the person-chat number labels for keys 1-9
+ok 5 - phone choices carry the person-chat number labels for keys 1-9
+  ---
+  duration_ms: 0.651045
+  ...
+# Subtest: the more-choices cue is a row below the list, not inside it
+ok 6 - the more-choices cue is a row below the list, not inside it
+  ---
+  duration_ms: 0.580572
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 162.712402

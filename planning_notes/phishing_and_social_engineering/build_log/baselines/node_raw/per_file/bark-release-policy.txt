@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: FIFO: barks show in the order they were held
+ok 1 - FIFO: barks show in the order they were held
+  ---
+  duration_ms: 1.234843
+  ...
+# Subtest: a stale bark is dropped at release and logged; a still-valid one shows
+ok 2 - a stale bark is dropped at release and logged; a still-valid one shows
+  ---
+  duration_ms: 0.152098
+  ...
+# Subtest: a bark that goes stale mid-release is dropped just before it would show
+ok 3 - a bark that goes stale mid-release is dropped just before it would show
+  ---
+  duration_ms: 0.105944
+  ...
+# Subtest: an unconditioned bark is kept
+ok 4 - an unconditioned bark is kept
+  ---
+  duration_ms: 0.075566
+  ...
+# Subtest: spacing: one at a time, a gap between barks and none after the last
+ok 5 - spacing: one at a time, a gap between barks and none after the last
+  ---
+  duration_ms: 0.128805
+  ...
+# Subtest: re-hold: a minigame opening mid-release leaves the rest queued; they release later
+ok 6 - re-hold: a minigame opening mid-release leaves the rest queued; they release later
+  ---
+  duration_ms: 0.121822
+  ...
+# Subtest: nothing is released while a minigame is still open
+ok 7 - nothing is released while a minigame is still open
+  ---
+  duration_ms: 0.127138
+  ...
+# Subtest: cap: over 3 waiting, only the oldest ones with a persistent copy are dropped
+ok 8 - cap: over 3 waiting, only the oldest ones with a persistent copy are dropped
+  ---
+  duration_ms: 0.167345
+  ...
+# Subtest: cap: barks with no persistent copy are never dropped, however many
+ok 9 - cap: barks with no persistent copy are never dropped, however many
+  ---
+  duration_ms: 0.202221
+  ...
+# Subtest: stale barks do not count towards the cap
+ok 10 - stale barks do not count towards the cap
+  ---
+  duration_ms: 0.125597
+  ...
+# Subtest: wiring: npc-barks.js uses the policy and the manager passes stillValid
+ok 11 - wiring: npc-barks.js uses the policy and the manager passes stillValid
+  ---
+  duration_ms: 0.478661
+  ...
+# Subtest: wiring: the persistent-copy check finds the NPC manager although main.js never links it
+ok 12 - wiring: the persistent-copy check finds the NPC manager although main.js never links it
+  ---
+  duration_ms: 0.20445
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 154.105598

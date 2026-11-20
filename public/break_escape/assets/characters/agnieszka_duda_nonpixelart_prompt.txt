@@ -1,0 +1,11 @@
+Make portrait for Agnieszka Duda
+A Polish woman in her late thirties with fair skin, the part-time payroll officer at a food manufacturer, who knows every cut-off date by heart. Careful, reserved, precise. Straight light-brown hair to the shoulders with a straight fringe, grey-blue eyes, round thin gold-wire glasses. She wears office clothes: a soft teal cardigan buttoned over a pale grey blouse, black trousers with a thin black belt. Hands relaxed at her sides.
+Standing alone against an empty plain light-grey backdrop, no room or furniture behind her. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (art batch B, awareness episode hosts). Reframed with reframe_portrait.py --flip; unflipped original is wip/agnieszka_duda_concept_raw.png. Age and background from BRAND_SET.md and the episode fragments.

@@ -1,0 +1,65 @@
+game 2352 (t30)
+banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t30","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+{"t":486084,"last":null,"ch":[],"active":true,"mg":null}
+{"t":486775,"last":"No caller ID. The line opens before you speak.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":487437,"last":"No caller ID. The line opens before you speak.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":488119,"last":"Don","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":488850,"last":"Don't look for th","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":489526,"last":"Don't look for the trace. It isn","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":490155,"last":"Don't look for the trace. It isn't there.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":490820,"last":"Don't look for the trace. It isn't there.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":491488,"last":"Don't look for the trace. It isn't there.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":492210,"last":"Don't look for the trace. It isn't there.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":492952,"last":"I've rea","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":493615,"last":"I've read your file.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":494141,"last":"I've read your file. Files ar","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":494776,"last":"I've read your file. Files are written b","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":495458,"last":"I've read your file. Files are written by people who nee","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":496173,"last":"I've read your file. Files are written by people who need you to be","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":496899,"last":"I've read your file. Files are written by people who need you to be a particular s","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":497569,"last":"I've read your file. Files are written by people who need you to be a particular shape. I pref","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":498107,"last":"I've read your file. Files are written by people who need you to be a particular shape. I prefer to wa","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":498766,"last":"I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":499481,"last":"I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch.","ch":["1. Who am I speaking to?","2. I don't take calls from ENTROPY."],"active":true,"mg":"PhoneChatMinigame"}
+CLICK "1. Who am I speaking to?"
+{"t":501979,"last":"Who am I speaking to?","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":502685,"last":"Someone","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":503408,"last":"Someone with a litt","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":504114,"last":"Someone with a little of your at","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":504832,"last":"Someone with a little of your attention tonight","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":505509,"last":"Someone with a little of your attention tonight and no intere","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":506185,"last":"Someone with a little of your attention tonight and no interest in wasting","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":506888,"last":"Someone with a little of your attention tonight and no interest in wasting it.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":507552,"last":"Someone with a little of your attention tonight and no interest in wasting it.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":508279,"last":"Someone with a little of your attention tonight and no interest in wasting it.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":508904,"last":"There is","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":509606,"last":"There is a decision in","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":510278,"last":"There is a decision in front of you","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":510928,"last":"There is a decision in front of you tonight. Make it","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":511405,"last":"There is a decision in front of you tonight. Make it however","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":512047,"last":"There is a decision in front of you tonight. Make it however you like. I o","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":512568,"last":"There is a decision in front of you tonight. Make it however you like. I only want","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":513212,"last":"There is a decision in front of you tonight. Make it however you like. I only want to see it mad","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":513746,"last":"There is a decision in front of you tonight. Make it however you like. I only want to see it made.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":514456,"last":"There is a decision in front of you tonight. Make it however you like. I only want to see it made.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":515177,"last":"There is a decision in front of you tonight. Make it however you like. I only want to see it made.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":515904,"last":"Let it","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":516551,"last":"Let it hurt afterwa","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":517238,"last":"Let it hurt afterwards, not dur","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":517899,"last":"Let it hurt afterwards, not during. I expect you","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":518535,"last":"Let it hurt afterwards, not during. I expect you've been told tha","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":519184,"last":"Let it hurt afterwards, not during. I expect you've been told that.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":519646,"last":"Let it hurt afterwards, not during. I expect you've been told that.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":520303,"last":"The line drops. The log shows one call: no number, no name.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":520745,"last":"The line drops. The log shows one call: no number, no name.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":521258,"last":"The line drops. The log shows one call: no number, no name.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":521903,"last":"The line drops. The log shows one call: no number, no name.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":522578,"last":null,"ch":[],"active":false,"mg":null}
+{"t":523112,"last":null,"ch":[],"active":false,"mg":null}
+{"t":523781,"last":null,"ch":[],"active":false,"mg":null}
+{"t":524419,"last":null,"ch":[],"active":false,"mg":null}
+{"t":525097,"last":null,"ch":[],"active":false,"mg":null}
+{"t":525740,"last":null,"ch":[],"active":false,"mg":null}
+shot t30_after_end
+rows: ["Call: No caller ID"]
+architect /tts: "Don't look for the trace. It isn't there." "I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch." "Someone with a little of your attention tonight and no interest in wasting it." "There is a decision in front of you tonight. Make it however you like. I only want to see it made." "Let it hurt afterwards, not during. I expect you've been told that." 

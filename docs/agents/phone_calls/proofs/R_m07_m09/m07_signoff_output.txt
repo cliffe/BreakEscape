@@ -1,0 +1,51 @@
+game 2302 (signoff)
+phone closed: mg=null
+ringer: {"cur":{"npc":"the_architect","state":"connected","knot":"sign_off","opened":true},"q":0,"banner":null,"bimg":null} mg="PhoneChatMinigame phone-chat" back="none"
+{"t":575553,"last":"You save","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":576203,"last":"You saved eight poi","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":576859,"last":"You saved eight point four mill","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":577512,"last":"You saved eight point four million people","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":578180,"last":"You saved eight point four million people. I'm not be","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":578830,"last":"You saved eight point four million people. I'm not being sarc","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":579497,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":580153,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":580806,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":581465,"last":"You saved eight point four million people. I'm not being sarcastic.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":582142,"last":"I'll have t","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":582774,"last":"I'll have the figures","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":583459,"last":"I'll have the figures from Austin","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":584115,"last":"I'll have the figures from Austin and San Fra","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":584747,"last":"I'll have the figures from Austin and San Francisco by m","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":585428,"last":"I'll have the figures from Austin and San Francisco by morning.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":586074,"last":"I'll have the figures from Austin and San Francisco by morning.","ch":["1. You lost tonight.","2. Say it."],"active":true,"mg":"PhoneChatMinigame"}
+CLICK "1. You lost tonight."
+{"t":588486,"last":"You lost tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":589122,"last":"I was","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":589794,"last":"I wasn't playing","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":590461,"last":"I wasn't playing for tonight","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":591143,"last":"I wasn't playing for tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":591745,"last":"I wasn't playing for tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":592424,"last":"I wasn't playing for tonight.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":593063,"last":"You'","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":593715,"last":"You'll have the","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":594382,"last":"You'll have the figures too.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":595032,"last":"You'll have the figures too. Then we'll","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":595697,"last":"You'll have the figures too. Then we'll both know t","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":596355,"last":"You'll have the figures too. Then we'll both know the same thing a","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":597034,"last":"You'll have the figures too. Then we'll both know the same thing about you.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":597678,"last":"You'll have the figures too. Then we'll both know the same thing about you.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":598310,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":598963,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":599626,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":600286,"last":"The line goes quiet. The log shows the calls now: no number against any of them.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":600951,"last":null,"ch":[],"active":false,"mg":null}
+{"t":601622,"last":null,"ch":[],"active":false,"mg":null}
+{"t":602287,"last":null,"ch":[],"active":false,"mg":null}
+{"t":602919,"last":null,"ch":[],"active":false,"mg":null}
+{"t":603564,"last":null,"ch":[],"active":false,"mg":null}
+{"t":604227,"last":null,"ch":[],"active":false,"mg":null}
+shot signoff_after_end
+architect_signoff_done=true debrief_requested=false mg=null ringer={"cur":null,"q":0,"banner":null,"bimg":null}
+rows: ["Call: No caller ID"]
+held ending: null
+architect /tts: "You saved eight point four million people. I'm not being sarcastic." "I'll have the figures from Austin and San Francisco by morning." "I wasn't playing for tonight." "You'll have the figures too. Then we'll both know the same thing about you." 

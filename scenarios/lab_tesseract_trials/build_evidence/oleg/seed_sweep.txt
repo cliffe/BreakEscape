@@ -1,0 +1,3 @@
+seed 23: indep=ALL PASS cyberchef=ALL PASS mojibake=PASS Encode text (Windows-1251 Cyrillic (1251)) -> Decode te
+seed 616: indep=ALL PASS cyberchef=ALL PASS mojibake=PASS Encode text (Windows-1251 Cyrillic (1251)) -> Decode te
+seed 4242: indep=ALL PASS cyberchef=ALL PASS mojibake=PASS Encode text (Windows-1251 Cyrillic (1251)) -> Decode te

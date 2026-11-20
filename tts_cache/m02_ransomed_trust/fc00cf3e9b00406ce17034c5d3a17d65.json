@@ -1,0 +1,13 @@
+{
+  "key": "fc00cf3e9b00406ce17034c5d3a17d65",
+  "npc": "night_security_supervisor",
+  "text": "As for the suit, crisis protocol. A uniform in a corridor makes people ask what's happened, and then you've a queue of anxious relatives.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,11 @@
+{
+"steps": [
+{"note": "R33 (Phase 8 final check F2): the engine preloads HaX's opening at the gate (the story stops at the first-call choices), then the player first opens the phone once inside, which re-navigates to first_call_choices a second time (reopenWithCurrentGlobals). The visit count is then 2; the guard no longer reads it, so the inside answers and the objectives still play."},
+{"set": {"briefing_played": true}},
+{"talk": "phone", "picks": []},
+{"said": ["Agent, status check. Are you inside the facility?"]},
+{"set": {"guard_admitted": true, "checkpoint_passed": true, "vance_met": true, "vance_spoken": true}},
+{"talk": "phone", "picks": ["Met Robert Vance", "Cooperative", "On it"]},
+{"said": ["I'm inside. Met Robert Vance, the facility manager.", "First, prove the screens are lying."]}
+]
+}

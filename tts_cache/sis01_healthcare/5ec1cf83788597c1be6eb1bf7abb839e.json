@@ -1,0 +1,13 @@
+{
+  "key": "5ec1cf83788597c1be6eb1bf7abb839e",
+  "npc": "patrol_nurse",
+  "text": "Everything's by hand and double-checked. Slower, but I know what's going in.",
+  "voice": "Despina",
+  "style": "Busy NHS staff nurse in her late twenties, brisk and focused. Speak with a consistent Sheffield, South Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

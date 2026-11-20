@@ -1,0 +1,13 @@
+{
+  "key": "34e60b45fb59016bbc0ad24aa9d1010f",
+  "npc": "nilesh_solanki",
+  "text": "Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:28Z"
+}

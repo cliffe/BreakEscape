@@ -1,0 +1,13 @@
+{
+  "key": "8d805f7e9e5addaa5bdf013ca9e87fc8",
+  "npc": "closing_debrief",
+  "text": "Two secretaries of state are already talking about postponing. The package is believable because the breach under it is real.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:53:58Z"
+}

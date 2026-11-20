@@ -1,0 +1,10 @@
+{
+  "scenario": "test_event_cascade",
+  "start_room": "cascade_test_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

@@ -1,0 +1,98 @@
+Room room_aes_dock: 320x320 px (10x10 tiles; about 6 m wide, 6 m deep). Camera near the south wall looking north.
+Items left to right within each zone; desk/counter contents are listed under their table.
+Names are sprite names: look at the render to see what each one is.
+
+## back wall (hung on it)
+  exit_sign1  x=36..62 y=25..40
+  aes_shutter_ctrl1  x=86..106 y=27..54
+  aes_roller_shutter1  x=112..208 y=12..64
+  aes_dock_sign1  x=130..189 y=12..23
+  aes_beacon1  x=214..234 y=13..34
+  aes_clipboard1  x=236..253 y=28..52
+
+## against the back wall (standing on the floor)
+  aes_bollard1  x=96..106 y=64..88
+  ?(collision; look at the render)  x=98..104 y=68..78
+  suitcase8  x=140..167 y=79..100 (conditional; see EMPTY below)
+  notes2  x=190..206 y=82..98 (conditional; see EMPTY below)
+  aes_bollard1  x=212..222 y=64..88
+  ?(collision; look at the render)  x=214..220 y=68..78
+  ?(collision; look at the render)  x=264..284 y=100..110
+
+## second row (may stand out on the floor in front of the back wall: check the render and tour shot for floor between it and the wall)
+  aes_compressor1  x=262..286 y=97..120  [feet ~0.9 m out from the back wall; a rough guide, confirm in the render]
+
+## right wall
+  fire_extinguisher1  x=292..308 y=112..140
+
+## behind the camera (leave out)
+  aes_pallet1  x=40..70 y=270..296  [feet ~4.2 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=42..68 y=276..286  [feet ~4.0 m out from the back wall; a rough guide, confirm in the render]
+  aes_pallet1  x=72..102 y=270..296  [feet ~4.2 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=74..100 y=276..286  [feet ~4.0 m out from the back wall; a rough guide, confirm in the render]
+  aes_battery_module1  x=75..99 y=260..282  [feet ~3.9 m out from the back wall; a rough guide, confirm in the render]
+  aes_pallet_truck1  x=110..138 y=272..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=112..136 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+  aes_cones1  x=250..276 y=276..300  [feet ~4.3 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=252..274 y=280..290  [feet ~4.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid left
+  ?(collision; look at the render)  x=42..68 y=180..190  [feet ~2.2 m out from the back wall; a rough guide, confirm in the render]
+  aes_battery_module1  x=43..67 y=164..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, mid right
+  ?(collision; look at the render)  x=230..256 y=180..190  [feet ~2.2 m out from the back wall; a rough guide, confirm in the render]
+  aes_battery_module1  x=231..255 y=164..186  [feet ~2.1 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=258..284 y=180..190  [feet ~2.2 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near left
+  aes_pallet1  x=40..70 y=174..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+
+## floor, near right
+  ?(collision; look at the render)  x=224..263 y=232..242  [feet ~3.2 m out from the back wall; a rough guide, confirm in the render]
+  aes_pallet1  x=228..258 y=174..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  aes_pallet1  x=256..286 y=174..200  [feet ~2.4 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=268..284 y=232..242  [feet ~3.2 m out from the back wall; a rough guide, confirm in the render]
+
+## near edge (bottom of the frame, mostly cropped; include only if it matters)
+  aes_pallet1  x=40..70 y=234..260  [feet ~3.5 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=42..68 y=240..250  [feet ~3.3 m out from the back wall; a rough guide, confirm in the render]
+  aes_barrier1  x=146..173 y=240..262  [feet ~3.6 m out from the back wall; a rough guide, confirm in the render]
+  ?(collision; look at the render)  x=148..171 y=242..252  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+  cylinder_rack1  x=222..265 y=212..252  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+  aes_spill_kit1  x=266..286 y=225..252  [feet ~3.4 m out from the back wall; a rough guide, confirm in the render]
+
+## lighting config (the mood to draw; compare it when reusing another mission's background)
+  { "mode": "motion", "flicker": true, "emitters": { "aes_beacon": [ { "condition": "globalVars.attack_prevented === true", "intensity": 0 }, { "condition": "globalVars.crew_warned === true", "color": "#ffb02e", "radius": 30, "intensity": 0.9, "effect": "pulse", "above": true }, { "intensity": 0 } ], "aes_shutter_ctrl": { "color": "#7dffa0", "radius": 8, "intensity": 0.45, "above": true } } }
+  mission mood (scenarios/m04_critical_failure/LIGHTING_PLAN.md):
+    ## 1. Mood and where it comes from
+    Kind of game: SAFETYNET spy thriller. The lighting sets a night shift at a grid battery plant and tightens as the crisis builds. It never carries information a 
+    - **Night.** "It's tonight, and it's this hall" (`ink/m04_opening_briefing.ink:232`); the night crew in Hall 2 "till six" (`ink/m04_npc_robert_vance.ink:448`); 
+    | main_entrance | gate guard | on | scenario night | A manned gatehouse; papers on the desks. |
+
+## doors (scenario connections; the render does not draw doors)
+  {'west': 'plant_room'}
+  north = a door in the back wall (a single one sits in a back-wall corner);
+  east/west = doors in the side walls (position along the wall: see the in-game tour shot);
+  south = behind the camera.
+  Door art painted into the map's walls (render and strip) is not reliable: trust the connections and the tour shot.
+
+## scenario sprite overrides (the render shows the map sprite, the game shows these)
+  none
+
+## EMPTY in this mission: conditional slots no scenario object claims
+  NPCs drawn as static props (e.g. patients in beds) can still fill these: check the NPC list and the tour shot.
+  none
+
+## NPCs in this room (spriteSheet; static ones are drawn as props, not people)
+  none
+  In the chat the speaking NPC stands at about 83% of the background's width, so what the map
+  shows around them belongs at about 55-90% across (see 'Behind the NPC' in the skill).
+
+## slot audit: which map slot each scenario object takes
+  ok       notes "Loading Dock Schedule" -> aes_clipboard1 (items) at 236,52
+  ok       notes "Voltage's Escape Plan" -> notes2 (conditional_items) at 190,98
+  ok       suitcase "Abandoned Extraction Go-Bag" -> suitcase8 (conditional_items) at 140,100
+
+## where this background will show
+  !! no NPCs in this room: the background shows only if an NPC from elsewhere talks here

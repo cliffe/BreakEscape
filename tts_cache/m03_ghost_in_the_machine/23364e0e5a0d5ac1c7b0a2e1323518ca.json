@@ -1,0 +1,13 @@
+{
+  "key": "23364e0e5a0d5ac1c7b0a2e1323518ca",
+  "npc": "narrator",
+  "text": "You scrawl a signature in the log.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:57:45Z"
+}

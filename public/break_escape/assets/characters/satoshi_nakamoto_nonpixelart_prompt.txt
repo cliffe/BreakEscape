@@ -1,0 +1,10 @@
+Make portrait for Satoshi Nakamoto II
+A lean white American man of about 42 with a lightly sun-tanned face, laugh lines at the eyes, a neatly trimmed sandy-brown beard, clear grey eyes and shoulder-length sandy hair falling forward from under the raised hood of an expensive, soft charcoal merino zip hoodie worn open, the San Francisco founder of a crypto exchange and the figurehead of a movement, entirely unrepentant. Underneath, a plain black tee with a fine gold chain, dark selvedge jeans and a tan leather belt, both hands resting in the hoodie's front pockets. Lips closed, the corner of his mouth faintly amused, as if this is going exactly the way he planned. No text, no writing, no logos and no background patterns anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py, not flipped (the render already faced right); original is satoshi_nakamoto_concept_2_raw.png.

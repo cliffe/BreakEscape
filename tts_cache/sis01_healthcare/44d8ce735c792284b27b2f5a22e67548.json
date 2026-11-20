@@ -1,0 +1,13 @@
+{
+  "key": "44d8ce735c792284b27b2f5a22e67548",
+  "npc": "dr_sharma",
+  "text": "Yes. When the device and the prescription disagree, trust the prescription. They were betting on someone clearing one more warning without reading it.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

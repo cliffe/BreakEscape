@@ -1,0 +1,13 @@
+{
+  "key": "3d9c1730d8d73435c7942b8ab08e8276",
+  "npc": "terry_mott",
+  "text": "Right. I warned you.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:28:17Z"
+}

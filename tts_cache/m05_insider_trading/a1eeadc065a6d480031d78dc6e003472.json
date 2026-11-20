@@ -1,0 +1,13 @@
+{
+  "key": "a1eeadc065a6d480031d78dc6e003472",
+  "npc": "narrator",
+  "text": "He's past talking.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:35:15Z"
+}

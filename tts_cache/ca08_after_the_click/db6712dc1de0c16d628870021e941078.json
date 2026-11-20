@@ -1,0 +1,13 @@
+{
+  "key": "db6712dc1de0c16d628870021e941078",
+  "npc": "anjali_rao",
+  "text": "Welcome to the Quayholt exercise. Everyone clicks something eventually, so today is about the ten minutes after, and how one quick report changes the ending.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:20Z"
+}

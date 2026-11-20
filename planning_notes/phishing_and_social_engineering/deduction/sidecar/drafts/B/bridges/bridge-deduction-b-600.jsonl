@@ -1,0 +1,10 @@
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
+{"cmd": "note", "message": "bridge-deduction-b-600: the board at a 600px viewport (job deduction-b-600:test_social_deduction_b:600)."}
+{"cmd": "moveToNear", "id": "b_board"}
+{"cmd": "interact", "id": "b_board"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* N1 one column, no horizontal scroll, every control reachable within the overlay */ const mg = window.MinigameFramework.currentMinigame; const c = mg.container;\n  const cards = [...c.querySelectorAll('[data-suspect]')]; const lefts = new Set(cards.map(e => Math.round(e.getBoundingClientRect().left)));\n  const noHScroll = document.documentElement.scrollWidth <= window.innerWidth && c.scrollWidth <= c.clientWidth + 1;\n  const ctrls = [...c.querySelectorAll('button, select, [tabindex=\"0\"]')]; const inside = ctrls.every(e => { const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= window.innerWidth; });\n  return window.innerWidth <= 600 && cards.length === 4 && lefts.size === 1 && noHScroll && inside; }"}
+{"cmd": "mg", "action": "clickText", "args": ["Close"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "drain"}
+{"cmd": "quit"}

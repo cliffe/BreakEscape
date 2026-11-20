@@ -1,0 +1,286 @@
+{
+  "scenario_id": "test_exercise_station",
+  "scenario_name": "Test: exercise stations and minigame launches",
+  "scenario_brief": "Engine fixture for exercise-station objects and the three ways a scenario opens a minigame.\n\nFive stations stand in the hall, one per scene: a sort drill, a concern form (with its own fact kinds), a privacy panel (with its own fact text), the practice assistant and the password guesser. Reed offers the assistant from ink (#trigger_minigame). Finishing the sort drill opens the concern form from an event mapping (openMinigame). Finishing the privacy panel unlocks the vault door, where the last terminal ends the mission.",
+  "endGoal": "Finish the stations, open the vault and use its terminal.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "hall",
+
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+
+  "objectives": [
+    {
+      "aimId": "stations",
+      "title": "Work the stations",
+      "description": "Finish each station in the hall.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "sort_done", "title": "Finish the sort drill", "type": "custom", "status": "active" },
+        { "taskId": "concern_done", "title": "Finish the concern form", "type": "custom", "status": "active" },
+        { "taskId": "privacy_done", "title": "Finish the privacy panel", "type": "custom", "status": "active" },
+        { "taskId": "assistant_done", "title": "Finish the practice assistant", "type": "custom", "status": "active" },
+        { "taskId": "guess_done", "title": "Finish the password guesser", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "vault",
+      "title": "Open the vault",
+      "description": "The vault opens when the privacy panel is done.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "end_screen" },
+      "tasks": [
+        { "taskId": "use_vault_terminal", "title": "Use the vault terminal", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "globalVariables": {
+    "ex_sort_done": false,
+    "ex_sort_percent": 0,
+    "ex_concern_done": false,
+    "ex_privacy_done": false,
+    "ex_assistant_done": false,
+    "ex_guess_done": false,
+    "ex_guess_landed": false
+  },
+
+  "social": {
+    "exercises": [
+      {
+        "id": "sort_basic",
+        "scene": "sort-drill",
+        "setGlobalPrefix": "ex_sort_",
+        "config": {
+          "bins": [
+            { "id": "report", "label": "Report it" },
+            { "id": "carry_on", "label": "Carry on" }
+          ],
+          "scored": true,
+          "answerKeyProfile": "practice",
+          "cards": [
+            { "id": "c_usb", "situation": "A USB stick with a handwritten label is on the car park floor.", "answer": "report", "reason": "Nobody knows where it has been. Hand it in rather than plugging it in." },
+            { "id": "c_rota", "situation": "A colleague emails the rota you asked for, from their usual address.", "answer": "carry_on", "reason": "You expected it and it came from the usual place." },
+            { "id": "c_call", "situation": "A caller you do not know asks for your login to fix an urgent fault.", "answer": "report", "reason": "Real support never asks for your login. Report the call." }
+          ]
+        }
+      },
+      {
+        "id": "concern_demo",
+        "scene": "concern-form",
+        "setGlobalPrefix": "ex_concern_",
+        "config": {
+          "kinds": ["what", "where", { "id": "how", "label": "How it was done" }],
+          "factChips": [
+            { "id": "f_what", "label": "A stranger asked for my login", "kind": "what" },
+            { "id": "f_where", "label": "At the front desk", "kind": "where" },
+            { "id": "f_how", "label": "They said they were from IT", "kind": "how" }
+          ],
+          "conclusionChips": [
+            { "id": "k_thief", "label": "They are a thief" }
+          ],
+          "minFacts": 2,
+          "guidance": "Tell the security team what you saw, and leave the guessing to them."
+        }
+      },
+      {
+        "id": "assistant_demo",
+        "scene": "assistant-chat",
+        "setGlobalPrefix": "ex_assistant_",
+        "config": {
+          "title": "Practice Assistant",
+          "intro": "Ask the assistant anything on the list. Close this window when you are done.",
+          "disclaimer": "The assistant can make mistakes. Check important information.",
+          "exchanges": [
+            { "id": "ex_rota", "prompt": "Who is on the rota today?", "reply": "Reed is on the rota today. Check the board before you rely on that." },
+            { "id": "ex_reset", "prompt": "How do I reset my password?", "reply": "Use the self-service page. Nobody should ask you for the new password." }
+          ]
+        }
+      }
+    ]
+  },
+
+  "rooms": {
+    "hall": {
+      "type": "room_office",
+      "door_sign": "Station Hall",
+      "connections": { "north": "vault" },
+      "npcs": [
+        {
+          "id": "reed",
+          "displayName": "Reed",
+          "npcType": "person",
+          "position": { "x": 3, "y": 6 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_exercise_station/ink/reed.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Event-mapping launch: finishing the sort drill opens the concern form.",
+              "eventPattern": "global_variable_changed:ex_sort_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_done",
+              "openMinigame": {
+                "type": "exercise-station",
+                "name": "Concern form",
+                "minigameData": { "exerciseId": "concern_demo" }
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:ex_concern_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "concern_done"
+            },
+            {
+              "_comment": "The vault door is gated on the privacy station's global.",
+              "eventPattern": "global_variable_changed:ex_privacy_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "privacy_done",
+              "unlockDoor": "vault"
+            },
+            {
+              "eventPattern": "global_variable_changed:ex_assistant_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "assistant_done"
+            },
+            {
+              "eventPattern": "global_variable_changed:ex_guess_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "guess_done"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "exercise-station",
+          "id": "station_sort",
+          "name": "Sort Drill",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A drill desk. Sort the cards into their bins.",
+          "minigameData": { "scene": "sort-drill", "exerciseId": "sort_basic" }
+        },
+        {
+          "type": "exercise-station",
+          "id": "station_concern",
+          "name": "Concern Form",
+          "position": { "x": 4, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A form desk. Build a short report from the facts.",
+          "minigameData": { "exerciseId": "concern_demo" }
+        },
+        {
+          "type": "exercise-station",
+          "id": "station_privacy",
+          "name": "Privacy Panel",
+          "position": { "x": 8, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A settings desk. Tighten a profile and see what it closes. Finishing it opens the vault.",
+          "minigameData": {
+            "scene": "privacy-panel",
+            "setGlobalPrefix": "ex_privacy_",
+            "config": {
+              "facts": {
+                "pet_name": { "text": "Her dog's name is in her public posts.", "reduceNote": "Make the posts friends-only." },
+                "birthday": { "text": "Her birthday is on her profile.", "reduceNote": "Hide the date of birth." }
+              },
+              "settings": [
+                { "id": "posts", "label": "Posts: friends only", "closesFacts": ["pet_name"] },
+                { "id": "dob", "label": "Hide date of birth", "closesFacts": ["birthday"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "exercise-station",
+          "id": "station_assistant",
+          "name": "Practice Assistant",
+          "position": { "x": 4, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A terminal running the practice assistant.",
+          "minigameData": { "exerciseId": "assistant_demo" }
+        },
+        {
+          "type": "exercise-station",
+          "id": "station_guess",
+          "name": "Password Guesser",
+          "position": { "x": 6, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A rig that shows how fast a weak password falls. Every guess is made up.",
+          "minigameData": {
+            "scene": "password-guesser",
+            "setGlobalPrefix": "ex_guess_",
+            "config": {
+              "commonList": ["123456", "password", "qwerty"],
+              "passphraseDemo": { "words": ["otter", "ladder", "crimson"], "neverLands": true },
+              "landedGlobal": "ex_guess_landed"
+            }
+          }
+        }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "door_sign": "Vault",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9471",
+      "connections": { "south": "hall" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "vault_terminal",
+          "name": "Vault Terminal",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "The vault terminal. Using it ends the test.",
+          "triggerOnInteract": [
+            { "type": "complete_task", "taskId": "use_vault_terminal" },
+            {
+              "type": "show_end_screen",
+              "outcome": "success",
+              "title": "VAULT OPEN",
+              "body": "You finished the privacy panel and the vault door opened. The stations are working.",
+              "buttonText": "Return to Missions"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

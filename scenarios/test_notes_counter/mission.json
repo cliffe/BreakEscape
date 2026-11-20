@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Notes counter",
+  "description": "One room with ten takeable notes and one filed (storeIn) page, for checking the Notepad Previous/Next row, counter and search. Also two unlocked safes (seven notes and a key card; one note) for the note-returns-to-container proof.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 1,
+  "test_type": "notes_counter",
+  "test_objective": "Verify the Notepad counter reads Note i of n, search reads Match i of n, and a filed page is not added to the Notepad"
+}

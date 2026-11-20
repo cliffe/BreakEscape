@@ -1,0 +1,13 @@
+{
+  "key": "2542158d697ce63a680c39f2c0f66888",
+  "npc": "narrator",
+  "text": "You walk out with the last of the afternoon's visitors. Nobody goes looking for her before the building shuts.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:13:24Z"
+}

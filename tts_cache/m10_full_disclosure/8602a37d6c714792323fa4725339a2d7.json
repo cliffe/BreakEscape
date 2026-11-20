@@ -1,0 +1,13 @@
+{
+  "key": "8602a37d6c714792323fa4725339a2d7",
+  "npc": "duty_guard_b",
+  "text": "Then come on.",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:21:57Z"
+}

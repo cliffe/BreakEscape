@@ -1,0 +1,32 @@
+lab_tesseract_trials | jordan_pike (Jordan Pike) sprite=male_hacker_hood_down_v2 story=scenarios/lab_tesseract_trials/ink/npc_jordan.json | style: Third-year student working a careers-fair stand for a referral bonus. 
+m02_ransomed_trust | agent_nightshade (Agent 0x47 'Nightshade') sprite=nightshade story= | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive
+m03_ghost_in_the_machine | agent_nightshade (Agent 0x47 'Nightshade') sprite=nightshade story= | style: SAFETYNET's technical analyst. Consistent British Received Pronunciati
+m04_critical_failure | agent_nightshade (Agent 0x47 'Nightshade') sprite=nightshade story= | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive
+m04_critical_failure | operative_static (ENTROPY Operative 'Static') sprite=operative_static story=scenarios/m04_critical_failure/ink/m04_npc_operative_static.json | style: ENTROPY operative and Voltage's last line of defence, early thirties. 
+m05_insider_trading | agent_nightshade (Agent 0x47 'Nightshade') sprite=nightshade story= | style: SAFETYNET's technical analyst. Consistent British Received Pronunciati
+m06_follow_the_money | agent_nightshade (Agent 0x47 'Nightshade') sprite=nightshade story= | style: SAFETYNET's technical analyst. Consistent British Received Pronunciati
+m08_the_mole | agent_nightshade (Agent 0x47 'Nightshade') sprite=nightshade story=scenarios/m08_the_mole/ink/m08_suspect_nightshade.json | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive
+m08_the_mole | nightshade_confrontation (Agent 0x47 'Nightshade') sprite=nightshade story=scenarios/m08_the_mole/ink/m08_nightshade_confrontation.json | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive
+m09_digital_archaeology | hax_voice (Agent HaX) sprite=agent_hax story= | style: Intelligence handler speaking over a secure phone line. Speak with a c
+m09_digital_archaeology | malhotra (Officer Dev Malhotra) sprite=dev_malhotra story= | style: SAFETYNET comms officer in his thirties, British-Indian, from Hounslow
+m09_digital_archaeology | arakawa (Officer Kenji Arakawa) sprite=kenji_arakawa story= | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m09_digital_archaeology | jesse_tran (Jesse Tran) sprite=jesse_tran story=scenarios/m09_digital_archaeology/ink/m09_jesse_tran.json | style: IT contractor in his late twenties from Seattle. Consistent Pacific No
+m10_full_disclosure | hax_post (Agent HaX) sprite=agent_hax story=scenarios/m10_full_disclosure/ink/m10_hax_post.json | style: Intelligence handler speaking over a secure phone line. Speak with a c
+m10_full_disclosure | nightshade_table (Agent 0x47 'Nightshade') sprite=nightshade story=scenarios/m10_full_disclosure/ink/m10_nightshade.json | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive
+m10_full_disclosure | nightshade_van (Agent 0x47 'Nightshade') sprite=nightshade story=scenarios/m10_full_disclosure/ink/m10_nightshade.json | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive
+m10_full_disclosure | nightshade_blast (Agent 0x47 'Nightshade') sprite=nightshade story=scenarios/m10_full_disclosure/ink/m10_nightshade.json | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive
+m10_full_disclosure | arakawa_post (Officer Kenji Arakawa) sprite=kenji_arakawa story=scenarios/m10_full_disclosure/ink/m10_arakawa.json | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m10_full_disclosure | arakawa_gate (Officer Kenji Arakawa) sprite=kenji_arakawa story=scenarios/m10_full_disclosure/ink/m10_arakawa.json | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m10_full_disclosure | arakawa_blast (Officer Kenji Arakawa) sprite=kenji_arakawa story=scenarios/m10_full_disclosure/ink/m10_arakawa.json | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m10_full_disclosure | malhotra_post (Officer Dev Malhotra) sprite=dev_malhotra story=scenarios/m10_full_disclosure/ink/m10_malhotra.json | style: SAFETYNET comms officer in his thirties, British-Indian, from Hounslow
+m10_full_disclosure | hearing (Agent HaX) sprite=agent_hax story=scenarios/m10_full_disclosure/ink/m10_hearing.json | style: Intelligence handler speaking over a secure phone line. Speak with a c
+m10_full_disclosure | imran_voice (Imran Siddiqui) sprite=imran_siddiqui story= | style: Hospital IT technician turned bench hand, twenty-six, British-Pakistan
+m10_full_disclosure | gary_voice (Gary Whitlock) sprite=gary_whitlock story= | style: Hospital IT systems administrator, mid-thirties, running on vending ma
+m10_full_disclosure | wendell_voice (Wendell Briggs) sprite=wendell_briggs story= | style: Power-room technician, sixty-three, white Montanan. Consistent rural M
+m10_full_disclosure | tesseract_voice (Dr Adrian Tesseract) sprite=adrian_tesseract story= | style: ENTROPY's planner, a man in his sixties, in person at his own console.
+m10_full_disclosure | arakawa_so (Officer Kenji Arakawa) sprite=kenji_arakawa story=scenarios/m10_full_disclosure/ink/m10_arakawa.json | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m10_full_disclosure | arakawa_ws (Officer Kenji Arakawa) sprite=kenji_arakawa story=scenarios/m10_full_disclosure/ink/m10_arakawa.json | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m10_full_disclosure | static_power (ENTROPY Operative 'Static') sprite=operative_static story=scenarios/m10_full_disclosure/ink/m10_static.json | style: ENTROPY operative and Voltage's last line of defence, early thirties. 
+m10_full_disclosure | arakawa_pr (Officer Kenji Arakawa) sprite=kenji_arakawa story=scenarios/m10_full_disclosure/ink/m10_arakawa.json | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m10_full_disclosure | arakawa_hall (Officer Kenji Arakawa) sprite=kenji_arakawa story=scenarios/m10_full_disclosure/ink/m10_arakawa.json | style: US liaison, forty-one, Japanese-American, Sacramento then Billings. Co
+m10_full_disclosure | nightshade_lock (Agent 0x47 'Nightshade') sprite=nightshade story=scenarios/m10_full_disclosure/ink/m10_nightshade.json | style: SAFETYNET's cryptographic-hardware analyst. Consistent British Receive

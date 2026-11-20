@@ -1,0 +1,13 @@
+{
+  "key": "d4e629f631f3b193bc52a862ec765471",
+  "npc": "amara",
+  "text": "Busy morning?",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:15:27Z"
+}

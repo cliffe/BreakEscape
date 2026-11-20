@@ -1,0 +1,87 @@
+
+## R38 (carry-over, 2026-10-17): m06 never finished, so every import is at its default. Both lines are today's neutral ones, word for word (their audio is cached).
+
+--- briefing ---
+  Narrator: Two forty-one in the morning, Pacific time. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
+  Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
+  Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
+  Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+  Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
+  Narrator: The Portland pin stops blinking and goes solid.
+  Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations. Eight point four million people in Washington, Oregon and Northern California.
+  Director Magnus Netherton: A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside.
+  Director Magnus Netherton: You have your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
+     (5 options)
+ > Understood. Talk to me about the other three.
+  Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, three twenty-four by the dashboard clock.
+  Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
+  Director Magnus Netherton: The other two go unanswered.
+  Narrator: The line holds for a second longer than a bad connection would explain.
+  Director Magnus Netherton: Fracture, in Washington. Trojan Horse, outside Austin. Meltdown, in San Francisco. Ask about any of them, in any order.
+  Director Magnus Netherton: The desk's summary is on your handset if you want the figures on paper. The team needs your call before you are through the gate.
+     (5 options)
+ > I've made the call.
+  Director Magnus Netherton: Say the word and their aircraft turns.
+     (4 options)
+ > Send them to Fracture. Washington.
+      [set_global team_assignment=fracture]
+      [set_global team_assigned=true]
+      [mapping agent_0x99: set hurt_line_said=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   [text agent_0x99 +2000ms] Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during.
+      [task: assign_tactical_team]
+      [mapping agent_0x99: set team_assigned=true]
+  Director Magnus Netherton: Fracture. Confirmed.
+  Narrator: The pin over Washington changes colour. The other two stay red.
+  Director Magnus Netherton: They will be on the ground in eleven minutes. Reeves will not be there. His cluster will.
+  Director Magnus Netherton: Two operations now run with nobody in their way. On the record, that is my decision as much as yours.
+  Director Magnus Netherton: Go. I will pick you up on the secure channel when it matters.
+  Narrator: Chain-link, a lowered barrier, three storeys of concrete. People are coming out of the front doors with coats over their heads.
+  Director Magnus Netherton: The building is evacuating. The operations floor is past the security checkpoint, and one guard on that shift is compromised.
+  Director Magnus Netherton: Assume the badge readers are logging you. The sequence has not started. Assume that changes the moment they notice you. Agent HaX has your channel from here.
+  Director Magnus Netherton: Eight point four million people, Agent. Go and do the part you can reach.
+  [end]
+   [text agent_0x99 +2500ms] The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything.
+   [PASS] said: "Frozen or watched, the advances had already been paid"
+   [PASS] not said: "You froze it before the payout"
+   [PASS] not said: "You left it running so we could see where it went"
+   [PASS] not said: "You never froze that fund."
+   [PASS] team_assignment = "fracture" (expected "fracture")
+
+--- phone ---
+  HaX here, Agent. I've got your channel and the board.
+  The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal.
+  The team's logged for Fracture, Washington. It's on the record. It'd take something new to move it.
+  Get past the checkpoint to the operations floor.
+     (3 options)
+ > Understood. Let's go.
+  Call me the second you hit something you can't open.
+     [0] Talk to me about the two we're not covering.
+     [1] Where do I stand?
+     [2] Remind me of the layout and the clock.
+     [3] I'll call you back.
+  [stopped: no pick]
+   {set {"architect_echo_heard":true}}
+
+--- phone @hub ---
+     (5 options)
+ > He used your line. "Let it hurt afterwards."
+  ...Read me that again.
+  Narrator: You read it back to her. The line stays quiet for longer than she usually lets it.
+  You've heard me say it. I say it to every agent I run.
+  I didn't make it up. Somebody taught it to me, a long time ago. Somebody who taught a lot of us.
+  Leave it with me. And keep it out of your notes for now.
+     [0] Talk to me about the two we're not covering.
+     [1] Where do I stand?
+     [2] Remind me of the layout and the clock.
+     [3] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "Somebody taught it to me, a long time ago"
+   [PASS] not said: "You opened Satoshi's safe, so you've read the name"
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 35, choices 5, longest run without a choice 9 (briefing); runs>=6: briefing:9, briefing:6, briefing:9
+[result] all expectations met

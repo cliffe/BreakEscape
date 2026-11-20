@@ -1,0 +1,13 @@
+{
+  "key": "c8521d96882470772f093feee9b69a00",
+  "npc": "dr_sharma",
+  "text": "No restore was started. Whichever source you pick, the recovery clock starts from now.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

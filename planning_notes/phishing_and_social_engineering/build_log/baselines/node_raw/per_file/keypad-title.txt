@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: objects use their name
+ok 1 - objects use their name
+  ---
+  duration_ms: 0.584345
+  ...
+# Subtest: doors use their sign, or say Door
+ok 2 - doors use their sign, or say Door
+  ---
+  duration_ms: 0.067972
+  ...
+# Subtest: nothing named: the plain prompt, never the engine type
+ok 3 - nothing named: the plain prompt, never the engine type
+  ---
+  duration_ms: 0.055856
+  ...
+# Subtest: the starters no longer build "for ${type}" titles
+ok 4 - the starters no longer build "for ${type}" titles
+  ---
+  duration_ms: 0.229125
+  ...
+# Subtest: the PIN pad shows the title on screen (its header is cleared)
+ok 5 - the PIN pad shows the title on screen (its header is cleared)
+  ---
+  duration_ms: 0.189397
+  ...
+# Subtest: the password field is labelled with the lock it opens
+ok 6 - the password field is labelled with the lock it opens
+  ---
+  duration_ms: 0.212071
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 92.440724

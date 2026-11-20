@@ -1,0 +1,13 @@
+{
+  "key": "c129aafd501c65a52e9c984e7657bf3a",
+  "npc": "voltage",
+  "text": "On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at Saint Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up from his laptop; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:12:50Z"
+}

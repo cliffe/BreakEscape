@@ -1,0 +1,13 @@
+{
+  "key": "6c35a5495a5ae90db61224e1459acc72",
+  "npc": "dr_hartley",
+  "text": "In time. Forensics may take weeks, and the ICO deadline won't wait for it.",
+  "voice": "Gacrux",
+  "style": "Consultant and Caldicott Guardian in her late fifties, cautious, precise, slightly formal. Speak with a consistent Edinburgh, Scottish accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

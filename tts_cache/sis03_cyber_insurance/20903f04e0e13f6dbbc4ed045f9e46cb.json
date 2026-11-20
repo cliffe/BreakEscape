@@ -1,0 +1,13 @@
+{
+  "key": "20903f04e0e13f6dbbc4ed045f9e46cb",
+  "npc": "eleanor_vance",
+  "text": "But the bar for this exclusion is much higher than intelligence-level attribution.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:21Z"
+}

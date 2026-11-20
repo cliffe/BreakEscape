@@ -1,0 +1,13 @@
+{
+  "key": "20738b16ec4fb73e6e9130214dbf46ea",
+  "npc": "narrator",
+  "text": "Mr Pryce is awake. The ventilator runs on its own battery. The monitor above him, which should be reporting him to the nurses' station, is dark.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

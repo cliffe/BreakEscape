@@ -1,0 +1,13 @@
+{
+  "key": "2df31b209a7c20684e260f3341107779",
+  "npc": "yusuf_demir",
+  "text": "Back-to-back calls all morning.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:46:22Z"
+}

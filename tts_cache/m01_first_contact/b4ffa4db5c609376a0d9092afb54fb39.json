@@ -1,0 +1,13 @@
+{
+  "key": "b4ffa4db5c609376a0d9092afb54fb39",
+  "npc": "kevin_park",
+  "text": "I'll be straight with you. I expected more than that, and half of it is what I'd already ruled out myself.",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:58:21Z"
+}

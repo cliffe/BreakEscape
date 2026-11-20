@@ -1,0 +1,13 @@
+{
+  "key": "1c64b2e93d7f6be0a3bdd1ff73ffe8cb",
+  "npc": "dr_sharma",
+  "text": "You offered the exec a console with library pushes switched off. Less risk, and someone has to prove it works first. That's the kind of option they need.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

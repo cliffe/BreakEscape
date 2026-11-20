@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<scenario xmlns="http://www.github//cliffe/BreakEscapeGame/blob/main/assets/scenarios"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="https://github.com/cliffe/BreakEscapeGame/blob/main/assets/scenarios/scenerio4.json">
+
+
+  <name>Encoding and Encryption Lab</name>
+  <author>Z. Cliffe Schreuders</author>
+  <description>
+    Your legendary cookie recipe has been stolen by the mischievous squirrels led by Sir Acorn! Tracking them to their secret treehouse, the door slams shut behind you. A sign reads: 'Solve our riddles or forever be known as the Cookie Monster!' Crack the cryptographic challenges and reclaim your recipe before time runs out!
+    
+    This scenario teaches foundational cryptography through Base64 decoding, hexadecimal conversion, Caesar cipher decryption, and AES/MD5 operations using CyberChef to reclaim a secret recipe.
+  </description>
+
+  <type>lab-sheet</type>
+  <difficulty>Beginner</difficulty>
+
+  <CyBOK KA="AC" topic="Algorithms, Schemes and Protocols">
+    <keyword>Encoding vs Cryptography</keyword>
+    <keyword>Caesar cipher</keyword>
+    <keyword>Vigenere cipher</keyword>
+    <keyword>SYMMETRIC CRYPTOGRAPHY - AES (ADVANCED ENCRYPTION STANDARD)</keyword>
+  </CyBOK>
+  <CyBOK KA="F" topic="Artifact Analysis">
+    <keyword>Encoding and alternative data formats</keyword>
+  </CyBOK>
+  <CyBOK KA="WAM" topic="Fundamental Concepts and Approaches">
+    <keyword>ENCODING</keyword>
+    <keyword>BASE64</keyword>
+  </CyBOK>
+  </scenario>

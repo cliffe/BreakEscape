@@ -1,0 +1,13 @@
+{
+  "key": "093538081470534a1fb9690a5eb91f80",
+  "npc": "rosa",
+  "text": "Is it raining again?",
+  "voice": "Leda",
+  "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:26:17Z"
+}

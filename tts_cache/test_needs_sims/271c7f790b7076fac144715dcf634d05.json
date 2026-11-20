@@ -1,0 +1,13 @@
+{
+  "key": "271c7f790b7076fac144715dcf634d05",
+  "npc": "sanjay",
+  "text": "How was the weekend?",
+  "voice": "Puck",
+  "style": "Developer, mid twenties, British Indian, Leicester accent. Polite and a little shy.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:22:06Z"
+}

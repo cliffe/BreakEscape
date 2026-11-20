@@ -1,0 +1,13 @@
+{
+  "key": "bdda4b2644538fdef3df9aa532603a2c",
+  "npc": "eleanor_vance",
+  "text": "That's a defensible position. It shows we reviewed the evidence and made a deliberate choice.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:26Z"
+}

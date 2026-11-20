@@ -1,0 +1,13 @@
+{
+  "key": "8175ad1a67dce740584a9a308f0c7d81",
+  "npc": "night_security_supervisor",
+  "text": "Ask the second question first next time. It's the one you actually want answered.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

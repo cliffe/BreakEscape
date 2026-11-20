@@ -1,0 +1,13 @@
+{
+  "key": "d78f5aaf3ed2460c9b84655256a33369",
+  "npc": "sofia_marchetti",
+  "text": "The kettle's the easy bit tonight.",
+  "voice": "Despina",
+  "style": "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:13:37Z"
+}

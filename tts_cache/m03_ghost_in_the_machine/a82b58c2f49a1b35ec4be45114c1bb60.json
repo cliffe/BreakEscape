@@ -1,0 +1,13 @@
+{
+  "key": "a82b58c2f49a1b35ec4be45114c1bb60",
+  "npc": "narrator",
+  "text": "The guard reaches for his radio.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:35:28Z"
+}

@@ -1,0 +1,67 @@
+/**
+ * NPC Interaction Prompts
+ * 
+ * Shows "Press E to talk to [Name]" when near an NPC
+ */
+
+.npc-interaction-prompt {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    background-color: #1a1a1a;
+    border: 2px solid #4a9eff;
+    border-radius: 4px;
+    padding: 12px 20px;
+    
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    color: #fff;
+    
+    z-index: 1000;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+}
+
+.npc-interaction-prompt .prompt-text {
+    color: #4a9eff;
+    font-weight: bold;
+}
+
+.npc-interaction-prompt .prompt-key {
+    background-color: #2a2a2a;
+    border: 2px solid #4a9eff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    
+    font-weight: bold;
+    color: #4a9eff;
+    font-size: 12px;
+    min-width: 24px;
+    text-align: center;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* On mobile, adjust positioning */
+@media (max-width: 768px) {
+    .npc-interaction-prompt {
+        bottom: 20px;
+        padding: 10px 15px;
+        font-size: 12px;
+    }
+}

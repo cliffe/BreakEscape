@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: the panel fits only with its 12 px padding top and bottom inside the window
+ok 1 - the panel fits only with its 12 px padding top and bottom inside the window
+  ---
+  duration_ms: 0.595853
+  ...
+# Subtest: _drawReferences drops the cards to 1x when the panel overflows
+ok 2 - _drawReferences drops the cards to 1x when the panel overflows
+  ---
+  duration_ms: 0.454397
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 109.454413

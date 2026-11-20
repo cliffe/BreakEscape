@@ -1,0 +1,13 @@
+{
+  "key": "f44e6a4e306f67f9c841aa4931debaf4",
+  "npc": "tomasz",
+  "text": "Dev reported one of your calls, credit to him. But you rang back and still got it. A call-back rule on file stops both.",
+  "voice": "Alnilam",
+  "style": "In-house security lead at a small British firm, mid thirties, Polish-born, fifteen years in the UK. Speak with a consistent light Polish-accented English throughout — do not shift to any other accent. Mid-range pitch; quick pace. Dry, deadpan and practical, a man who has seen a lot of phishing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:40:57Z"
+}

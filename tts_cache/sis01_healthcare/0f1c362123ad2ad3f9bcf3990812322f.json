@@ -1,0 +1,13 @@
+{
+  "key": "0f1c362123ad2ad3f9bcf3990812322f",
+  "npc": "dr_sharma",
+  "text": "The network was never isolated. The attacker's route stayed open the whole time. That's the first containment finding.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "c84e50692431ae4bb5b082ff007134a5",
+  "npc": "ward_desk_phone",
+  "text": "This is for Ward 7. It's Ravi Anand in IT Security, about quarter to eleven on Monday night. A Major Incident has been declared. Your monitors going down isn't a fault. It's ransomware, across the hospital network. Central monitoring, the EHR terminals and the ward file servers are all affected. Please don't plug anything back into the network. Go to paper for everything until you hear otherwise. If you need me, it's extension 4499. I'm sorry. I'll update you when I can.",
+  "voice": "Puck",
+  "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

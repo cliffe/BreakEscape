@@ -1,0 +1,13 @@
+{
+  "key": "e8c646c8a79ce7a4c3c2e9f5041c2605",
+  "npc": "narrator",
+  "text": "She's past you and gone before the lift doors settle.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:26:08Z"
+}

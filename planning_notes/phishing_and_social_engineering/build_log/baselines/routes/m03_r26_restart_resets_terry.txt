@@ -1,0 +1,54 @@
+
+## R26 (fix pass 2026-10-17, ENGINE_REGRESSION F4, the Restart ruling): Terry fought after a police threat, the player is KO'd and Restarts. The reset event sets terry_fight_reset; the next sighting must not play 'Right. I warned you.' or re-fire #hostile, and the global must clear. (a) warned and answered: his one wary line, then the hub. (b) a lockpick catch before any challenge, then Restart: the first challenge ('The one with the picks'), no wary line.
+   {set {"briefing_played":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true}}
+
+## (a) warned, answered, ordered out, then a fight on the next sighting
+   {set {"player_warned":true,"excuse_given":true,"ordered_out":true,"guard_hostile":true,"idle_quiet":false}}
+
+--- terry @on_sighted ---
+  Terry Mott: Right. I warned you.
+  [chat closes]
+
+## Restart: reset:true sets terry_fight_reset, guard_attacking cleared
+   {set {"terry_fight_reset":true,"guard_attacking":false}}
+
+--- terry @on_sighted ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: Back on your feet, then. One wrong move and I'm on the radio.
+     (4 options)
+ > I'll let you get on.
+  Terry Mott: Mind how you go.
+  [chat closes]
+
+## a later talk is the ordinary re-entry (no second wary line), terry_fight_reset now false
+
+--- terry @start ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: You again.
+     [0] Long night ahead of you?
+     [1] Big place to cover on your own.
+     [2] What's Sterling like to work for?
+     [3] I'll let you get on.
+  [stopped: no pick]
+
+## (b) fresh night: a lockpick catch with no challenge first, then Restart
+   {set {"player_warned":false,"excuse_given":false,"ordered_out":false,"guard_hostile":false,"guard_detection_count":0,"idle_quiet":false}}
+
+--- terry @on_lockpick_detected ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: A torch beam lands on your hands, and on the pick in them.
+  Terry Mott: Picks. Right. We're done talking.
+  [chat closes]
+   {set {"terry_fight_reset":true,"guard_attacking":false}}
+
+--- terry @on_sighted ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: You. The one with the picks. Let's hear it, then.
+     [0] I work here -- research, second floor. Forgot something at my desk.
+     [1] Sterling asked me to grab some files. We met today about the training programme.
+     [2] Building maintenance, late shift. Checking the air con.
+     [3] I'm with SAFETYNET. This is an active ENTROPY investigation.
+  [stopped: no pick]
+
+[stats] spoken/narrated lines 8, choices 1, longest run without a choice 2 (terry); runs>=6: 

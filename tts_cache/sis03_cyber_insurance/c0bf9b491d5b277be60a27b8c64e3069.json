@@ -1,0 +1,13 @@
+{
+  "key": "c0bf9b491d5b277be60a27b8c64e3069",
+  "npc": "eleanor_vance",
+  "text": "It is. Account hygiene failure. No ambiguity here.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:42Z"
+}

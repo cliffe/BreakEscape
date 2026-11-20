@@ -1,0 +1,13 @@
+{
+  "key": "5aea7aa81586ef574572d654f72f70b2",
+  "npc": "narrator",
+  "text": "Ms Okafor is dozing. Her morphine bag is nearly empty, and the pump at the foot of the bed keeps bleeping.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

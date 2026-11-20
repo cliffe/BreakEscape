@@ -1,0 +1,13 @@
+{
+  "key": "d0277fe443318b8799722edae6773c78",
+  "npc": "eleanor_vance",
+  "text": "Our position is: we set a warranty precisely to incentivise remediation. Knowing about a risk isn't the same as accepting it. Albion's lawyers will call it waiver.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:43Z"
+}

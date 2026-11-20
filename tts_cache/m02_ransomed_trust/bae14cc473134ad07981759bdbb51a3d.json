@@ -1,0 +1,13 @@
+{
+  "key": "bae14cc473134ad07981759bdbb51a3d",
+  "npc": "narrator",
+  "text": "She dials four digits and waits. Somewhere up on the admin corridor, a phone rings out.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

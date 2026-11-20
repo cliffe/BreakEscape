@@ -1,0 +1,13 @@
+{
+  "key": "d1f65579f8636a99a3d3cad50aac3e1a",
+  "npc": "eleanor_vance",
+  "text": "Right. Let's walk through the warranties one at a time.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:33Z"
+}

@@ -1,0 +1,8 @@
+# Requirements for BreakEscape tools
+
+# PixelLab to Phaser sprite sheet converter
+Pillow>=10.0.0
+
+# PixelLab REST pipeline (tools/pixellab_pipeline.py)
+requests>=2.28
+numpy>=1.24

@@ -1,0 +1,13 @@
+{
+  "key": "f9b69dc8736693d5c8f96e2d58874270",
+  "npc": "narrator",
+  "text": "It lands. His eyes go to the hydrogen panel over your shoulder, and the handset stops moving.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:53:20Z"
+}

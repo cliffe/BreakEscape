@@ -1,0 +1,13 @@
+{
+  "key": "be31ff2f978857bad0954e62645660eb",
+  "npc": "ward_nurse",
+  "text": "Forty-seven across three wards. Ventilators, ECMO, dialysis, all fed into a monitoring system that died at ten to three.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

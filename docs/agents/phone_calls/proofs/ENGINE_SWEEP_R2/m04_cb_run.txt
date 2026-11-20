@@ -1,0 +1,10 @@
+game 2308 (m04_cb)
+dial read: anomaly_detected=true voltage_neutralised=true attack_mechanism_known=false esd=false
+HaX dial ring: {"npcId":"agent_0x99","state":"ringing","knot":"on_anomaly_confirmed","ringCondition":"globalVars.esd_authorized !== true && globalVars.mission_complete !== true"}
+declined: ringer=null rows=["Missed call"] callback={"knot":"on_anomaly_confirmed","callLabel":null,"callbackWhen":"globalVars.esd_authorized !== true && globalVars.mission_complete !== true"}
+thread before ESD: header="☎\nCall back"
+shot m04_cb_before_esd
+ESD live: esd_authorized=true
+callbackFor before the button is built (in-memory, not yet re-checked): {"knot":"on_anomaly_confirmed","callLabel":null,"callbackWhen":"globalVars.esd_authorized !== true && globalVars.mission_complete !== true"}
+thread after ESD: header=null callback=null rows=["Missed call"]
+shot m04_cb_after_esd

@@ -1,0 +1,25 @@
+{
+  "scenario": "test_social_docs_proof",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "door_soc",
+      "label": "Wendover SOC<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "soc",
+      "label": "Wendover SOC",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_soc",
+      "to": "soc",
+      "soft": false
+    }
+  ]
+}

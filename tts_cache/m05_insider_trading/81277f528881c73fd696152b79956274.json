@@ -1,0 +1,13 @@
+{
+  "key": "81277f528881c73fd696152b79956274",
+  "npc": "narrator",
+  "text": "You tell him: home, act normal. Elena starts treatment on Monday. You'll be in touch.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:38:28Z"
+}

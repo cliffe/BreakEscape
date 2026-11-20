@@ -1,0 +1,149 @@
+{
+  "scenario_brief": "TEST: remove_item action\n\nMinimal 1-room scenario proving the apply-actions remove_item action. The player carries kit_dropbox and plants it on the live network port. The port is requiresItem (kit_dropbox) with NO consumesItem: a confirm_action's onConfirm sets a global AND runs remove_item, so cancelling the dialog keeps the kit and only confirming takes it. Mirrors lab_physical_pentest network_port. It also demos requiresItemCondition: the keylogger can only be clipped onto the gated PC while the owner-away switch is on; a refused use keeps the keylogger and shows the condition hint.",
+  "endGoal": "Plant the network drop box on the live port (confirm the dialog) to complete the mission.",
+  "startRoom": "test_room",
+
+  "objectives": [
+    {
+      "aimId": "plant_dropbox",
+      "title": "Plant the drop box",
+      "description": "Plant the network drop box on the live wall port.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "end_screen" },
+      "tasks": [
+        {
+          "taskId": "plant_task",
+          "title": "Plant the drop box on the live port",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: remove_item and requiresItemCondition\n\nYou carry the network drop box (kit_dropbox). Interact with the LIVE WALL NETWORK PORT. A confirm dialog appears.\n  - Cancel: the drop box STAYS in your inventory.\n  - Confirm: kp_test_planted is set AND remove_item takes the drop box; it persists over reload.\n\nrequiresItemCondition: take the keylogger and use it on the gated PC. With the owner-away switch OFF it is refused (hint shown, keylogger kept). Flip the switch, use it again: kp_test_gated_planted is set and the keylogger is consumed.",
+          "observations": "A note with test instructions."
+        },
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 7, "y": 2 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "observations": "A small network drop box from the kit. Carry it to the live wall port and plug it in."
+        },
+        {
+          "type": "pc",
+          "id": "network_port",
+          "name": "Live wall network port",
+          "sprite": "network_rack1",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "requiresItem": "kit_dropbox",
+          "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+          "triggerOnInteract": [
+            { "type": "confirm_action",
+              "text": "Plug the network drop box into this live port?", "confirmLabel": "Plug it in", "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "kp_test_planted", "value": true },
+                { "type": "remove_item", "item": "kit_dropbox" },
+                { "type": "complete_task", "taskId": "plant_task" }
+              ]
+            }
+          ],
+          "observations": "A patch panel with a spare port, patched through and live."
+        },
+        {
+          "type": "pc",
+          "id": "kit_keylogger",
+          "name": "Test keylogger",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 2 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "observations": "A stand-in keylogger. Clip it onto the gated PC, but only while its owner is away."
+        },
+        {
+          "type": "pc",
+          "id": "owner_switch",
+          "name": "Owner-away switch",
+          "sprite": "pnw_switch_cabinet1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "Stands in for the PC's owner leaving the desk. Interact to send the owner away.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "kp_test_owner_away", "value": true },
+            { "type": "hint", "title": "Owner away", "message": "The owner has left the desk. The gated PC will take the keylogger now." }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "gated_pc",
+          "name": "Gated PC",
+          "sprite": "network_rack1",
+          "position": { "x": 2, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "requiresItem": "kit_keylogger",
+          "consumesItem": true,
+          "requiresItemHint": "You need the keylogger from the table in hand to clip it onto this PC.",
+          "requiresItemCondition": "globalVars.kp_test_owner_away",
+          "requiresItemConditionHint": "The owner is still at the desk. Wait until they have gone, then try again.",
+          "requiresItemConditionHintVariants": [
+            { "condition": "globalVars.kp_test_planted", "value": "The drop box is already on the network, but the owner is still at the desk. Wait until they have gone." }
+          ],
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "kp_test_gated_planted", "value": true },
+            { "type": "hint", "title": "Keylogger planted", "message": "Clipped on while the owner was away." }
+          ],
+          "observations": "A PC that takes the keylogger only while its owner is away."
+        },
+        {
+          "type": "pc",
+          "id": "network_port_planted",
+          "name": "Planted drop box",
+          "sprite": "pi_cluster1",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "interactable": true,
+          "active": true,
+          "revealOnGlobal": "kp_test_planted",
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "Your drop box, plugged into the live port and blinking.",
+          "text": "NETWORK DROP BOX — plugged into a live port (simulated). Link up."
+        }
+      ]
+    }
+  },
+
+  "globalVariables": {
+    "kp_test_planted": false,
+    "kp_test_owner_away": false,
+    "kp_test_gated_planted": false
+  }
+}

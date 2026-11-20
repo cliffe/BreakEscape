@@ -1,0 +1,13 @@
+{
+  "key": "d8a89b167d08b8e03ca6e7f7e57b20a7",
+  "npc": "director_netherton",
+  "text": "Then I am a pair of hands short. Carry on.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:01:34Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "99ed24c6a3ed98a40206ce6a98235f13",
+  "npc": "sofia_marchetti",
+  "text": "Good to see you back. Ten new items on the kiosk, same as before. If you did the first check, the end screen compares the two.",
+  "voice": "Despina",
+  "style": "Quayholt's HR adviser, in her 30s, warm and approachable; second-generation Italian-British. Speak with a consistent southern English accent with a light Italian-British lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_helpdesk_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:16Z"
+}

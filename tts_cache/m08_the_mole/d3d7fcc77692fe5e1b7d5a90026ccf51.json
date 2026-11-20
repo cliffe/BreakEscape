@@ -1,0 +1,13 @@
+{
+  "key": "d3d7fcc77692fe5e1b7d5a90026ccf51",
+  "npc": "opening_briefing_cutscene",
+  "text": "You are wondering what happened here. Portland happened. Four sites in one night, one team to send, and an enemy who had the deployment before we did.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI, running at a heightened security posture. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, faintly wrong -- a voice built to reassure, doing it in a building where nobody is reassured.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:16:47Z"
+}

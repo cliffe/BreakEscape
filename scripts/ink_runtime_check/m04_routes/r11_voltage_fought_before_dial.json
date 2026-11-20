@@ -1,0 +1,87 @@
+{
+"steps": [
+{
+"note": "R11 (round 2): Voltage fought before the dial is read. No button stance, no crew offer anywhere (anomaly not detected), the trigger race is lost after 25 s and bank B vents with the crew in Hall 2."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"vance_is_ally": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"plant_room_entered": true,
+"vance_spoken": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Inside the facility",
+"On it"
+]
+},
+{
+"notSaid": [
+"night crew"
+]
+},
+{
+"talk": "static",
+"picks": [
+"not here for you"
+]
+},
+{
+"talk": "voltage",
+"picks": [
+"You're not burning",
+"take that laptop",
+"taking you down"
+]
+},
+{
+"said": [
+"The button? Press it.",
+"And Static's still in this room",
+"Static comes off the wall"
+],
+"notSaid": [
+"Go for the button",
+"You don't get to have both"
+]
+},
+{
+"expect": {
+"voltage_fight_started": true,
+"static_engaged": true
+}
+},
+{
+"advance": 1
+},
+{
+"expect": {
+"racks_vented": true,
+"vented_by_trigger": true,
+"crew_lost": true
+}
+},
+{
+"talk": "vance",
+"knot": "vance_hub",
+"picks": [
+"What should I be doing",
+"Stay on the ops desk"
+]
+},
+{
+"notSaid": [
+"Is anyone working"
+]
+}
+]
+}

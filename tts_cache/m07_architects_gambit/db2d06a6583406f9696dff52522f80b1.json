@@ -1,0 +1,13 @@
+{
+  "key": "db2d06a6583406f9696dff52522f80b1",
+  "npc": "elena_rodriguez",
+  "text": "That was the plan anyway. It helps, being told.",
+  "voice": "Leda",
+  "style": "A grid engineer in her early thirties who helped build tonight's outage believing nobody would be hurt, and has just read otherwise. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Frightened and entirely competent at the same time: the technical sentences come out steady and fast, the ones about herself do not.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:15:36Z"
+}

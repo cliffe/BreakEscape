@@ -1,0 +1,13 @@
+{
+  "key": "dc18fee63a2c71111c59c2db78cf6fec",
+  "npc": "narrator",
+  "text": "The release goes dead under your hands, the way his kill config said it would. He doesn't try to stop you.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:51:56Z"
+}

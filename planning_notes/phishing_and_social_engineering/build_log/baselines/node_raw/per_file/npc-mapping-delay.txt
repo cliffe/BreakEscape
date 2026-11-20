@@ -1,0 +1,131 @@
+TAP version 13
+# 📋 Setting up event mappings for mole: [
+#   {
+#     eventPattern: 'room_entered:interrogation_room',
+#     onceOnly: true,
+#     cooldown: 0,
+#     targetKnot: 'confront',
+#     delayMs: 8000
+#   }
+# ]
+#   📌 Registering listener for event: room_entered:interrogation_room → confront
+# ✅ Registered 1 event mappings for mole
+# ⏳ room_entered:interrogation_room for mole fires in 8000ms (condition re-checked then)
+# 📋 Setting up event mappings for mole: [
+#   {
+#     eventPattern: 'room_entered:interrogation_room',
+#     onceOnly: true,
+#     cooldown: 0,
+#     targetKnot: 'confront',
+#     delayMs: 8000,
+#     condition: 'globalVars.ready === true'
+#   }
+# ]
+#   📌 Registering listener for event: room_entered:interrogation_room → confront
+# ✅ Registered 1 event mappings for mole
+# ⏳ room_entered:interrogation_room for mole fires in 8000ms (condition re-checked then)
+# ⏳ room_entered:interrogation_room for mole fires in 8000ms (condition re-checked then)
+# 📋 Setting up event mappings for mole: [
+#   {
+#     eventPattern: 'room_entered:interrogation_room',
+#     onceOnly: true,
+#     cooldown: 0,
+#     targetKnot: 'confront',
+#     delayMs: 8000,
+#     condition: 'globalVars.ready === true'
+#   }
+# ]
+#   📌 Registering listener for event: room_entered:interrogation_room → confront
+# ✅ Registered 1 event mappings for mole
+# ⏭️ Not scheduling room_entered:interrogation_room for mole: condition not met: globalVars.ready === true
+# 📋 Setting up event mappings for mole: [
+#   {
+#     eventPattern: 'room_entered:interrogation_room',
+#     onceOnly: false,
+#     cooldown: 0,
+#     targetKnot: 'confront',
+#     delayMs: 8000
+#   }
+# ]
+#   📌 Registering listener for event: room_entered:interrogation_room → confront
+# ✅ Registered 1 event mappings for mole
+# ⏳ room_entered:interrogation_room for mole fires in 8000ms (condition re-checked then)
+# 📋 Setting up event mappings for mole: [
+#   {
+#     eventPattern: 'room_entered:interrogation_room',
+#     onceOnly: true,
+#     cooldown: 0,
+#     targetKnot: 'confront',
+#     delayMs: 8000
+#   }
+# ]
+#   📌 Registering listener for event: room_entered:interrogation_room → confront
+# ✅ Registered 1 event mappings for mole
+# ⏳ room_entered:interrogation_room for mole fires in 8000ms (condition re-checked then)
+# 📋 Setting up event mappings for mole: [
+#   {
+#     eventPattern: 'room_entered:interrogation_room',
+#     onceOnly: true,
+#     cooldown: 0,
+#     targetKnot: 'confront',
+#     delayMs: 8000
+#   }
+# ]
+#   📌 Registering listener for event: room_entered:interrogation_room → confront
+# ✅ Registered 1 event mappings for mole
+# ⏳ room_entered:interrogation_room for mole fires in 8000ms (condition re-checked then)
+# 📋 Setting up event mappings for mole: [
+#   {
+#     eventPattern: 'room_entered:interrogation_room',
+#     onceOnly: true,
+#     cooldown: 0,
+#     targetKnot: 'confront',
+#     delayMs: undefined
+#   }
+# ]
+#   📌 Registering listener for event: room_entered:interrogation_room → confront
+# ✅ Registered 1 event mappings for mole
+# Subtest: a delayed mapping does not fire at once, then fires when the delay is up
+ok 1 - a delayed mapping does not fire at once, then fires when the delay is up
+  ---
+  duration_ms: 3.811133
+  ...
+# Subtest: the condition is re-checked when the delay is up
+ok 2 - the condition is re-checked when the delay is up
+  ---
+  duration_ms: 0.859919
+  ...
+# Subtest: nothing is scheduled when the condition fails at the event
+ok 3 - nothing is scheduled when the condition fails at the event
+  ---
+  duration_ms: 0.321999
+  ...
+# Subtest: a repeat of the event while one is pending schedules nothing more
+ok 4 - a repeat of the event while one is pending schedules nothing more
+  ---
+  duration_ms: 0.291288
+  ...
+# Subtest: it waits for an open minigame to close instead of cutting it off
+ok 5 - it waits for an open minigame to close instead of cutting it off
+  ---
+  duration_ms: 0.36137
+  ...
+# Subtest: re-registering the NPC cancels a pending delay
+ok 6 - re-registering the NPC cancels a pending delay
+  ---
+  duration_ms: 0.336717
+  ...
+# Subtest: a mapping without delayMs still fires at once
+ok 7 - a mapping without delayMs still fires at once
+  ---
+  duration_ms: 0.207609
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 165.81144

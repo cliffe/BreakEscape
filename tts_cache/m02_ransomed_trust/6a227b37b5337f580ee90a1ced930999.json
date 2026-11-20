@@ -1,0 +1,13 @@
+{
+  "key": "6a227b37b5337f580ee90a1ced930999",
+  "npc": "ernesto_bautista",
+  "text": "Miles is the job. I'm the porter. Anything that needs carrying, I carry it.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:39:14Z"
+}

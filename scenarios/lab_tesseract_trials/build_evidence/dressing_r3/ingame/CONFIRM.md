@@ -1,0 +1,9 @@
+# Floor Directory resize confirmation (game 1631, fresh, headless, keyless :3001)
+Rooms unlocked server-side (unlock.rb, all 11 rooms), then enter via harness. Session log: session.jsonl. No repo edits.
+
+1 PASS. cor_dump.txt: `uni_directory1 292 -15 16 15 depth 0.5 "Floor Directory"`, no body. Door door_side_sheet_32 at (288,-64) 32x32. corridor_directory_wide.png, corridor_directory_zoom.png, corridor_directory_crop.png: blue framed directory board in the east alcove below the Sidhu door, clean, no clipping.
+2 PASS. 2 px sweep, x 292..308 (9 cols) by y -16,-15,-14,-12..0 (10 rows) = 90 taps per position. sweepA.txt (player 276,-38) and sweepB.txt (player 276,-23): all 180 taps D (Floor Directory examine opens directly), 0 menus. Row y=-16 is 1 px above the sprite and still direct. Extra clickAt on (292,-15),(293,-14),(307,-14),(300,-15): all opened "Floor Directory [examine]", no menu. Harness `interact` floor_directory (sprite top-left) twice: mode direct, via minigame, opened examine "Floor Directory".
+   Caveat: moveTo clamps player x to 276 in the lane (last run reported 279/277), and y was -38 and -23, not exactly -39/-27. Both are inside the 64 px door range, so the old failure condition applied. First sweep attempt from y -46 was out of range (walks only) and is discarded.
+3 PASS. enter sidhu_office from the lane: ok, arrived (338,-79); enter corridor: ok, arrived (303,-79). One attempt each way.
+4 No console errors or pageerrors. No 4xx. 5xx: 18x 503 on /games/1631/tts (expected, keyless). Warnings only: "Cannot disable main game input" (189, title/person-chat), door pathfinding not initialised (12), "No path to target" nearest-cell (62, harness moveTo), "Tables object layer not found or empty" (1).
+Cleanup: sent quit (browser PID 1148966 exited), killed holder PID 1148965. :3000/:3001 and other agents' sessions (games 1628/1629) untouched.

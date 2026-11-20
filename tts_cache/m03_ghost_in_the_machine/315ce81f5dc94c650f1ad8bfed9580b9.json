@@ -1,0 +1,13 @@
+{
+  "key": "315ce81f5dc94c650f1ad8bfed9580b9",
+  "npc": "danny_foster",
+  "text": "Take them. Get them patched before she sells the next one.",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T23:51:31Z"
+}

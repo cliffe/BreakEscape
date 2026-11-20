@@ -1,0 +1,13 @@
+{
+  "key": "3195186adc539465be987191e853347f",
+  "npc": "narrator",
+  "text": "She's already facing the door when it opens, one hand resting on the radio.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:00:29Z"
+}

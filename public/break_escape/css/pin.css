@@ -1,0 +1,734 @@
+/* PIN Minigame Styles */
+
+.pin-minigame-container {
+    background: #1a1a2e;
+    border: 2px solid #0f3460;
+    box-shadow: none;
+}
+
+.pin-minigame-game-container {
+    background: #55616e !important;
+    /* The plate fills the height behind the display, every key and the attempts log
+       (the user preferred the old full back plate, slice 7 R1). Nothing sits over its
+       bottom now the Cancel row has gone, and the content is centred in it; on a short
+       screen it scrolls inside the plate rather than spilling past its edges. */
+    padding: 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: safe center;
+    gap: 20px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    /* Undo the framework's min-height: 0 (36f0c92b0), which let the plate stop short of
+       its content once the Cancel row moved into the column (d043ab9a1) */
+    min-height: auto;
+
+    max-width: 600px;
+    margin: 12px auto;
+}
+
+.pin-minigame-interface {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Digital Display */
+/* Press Start 2P sizes in this sheet are whole multiples of 8 (8, 16, 24, 48): one font
+   pixel per eighth of the size, so anything else smears (slice 7 R5 M2) */
+.pin-minigame-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #00ff00;
+    text-align: center;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+}
+
+.pin-minigame-display-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.pin-minigame-display {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 48px;
+    font-weight: normal;
+    color: #00ff41;
+    background: #000;
+    border: 3px solid #00ff41;
+    /* border-radius: 8px; */
+    padding: 15px 25px;
+    text-align: center;
+    letter-spacing: 8px;
+    min-width: 200px;
+    box-shadow: none;
+    transition: all 0.3s ease;
+}
+
+.pin-minigame-display.has-input {
+    box-shadow: none;
+}
+
+.pin-minigame-display.success {
+    color: #00ff00;
+    border-color: #00ff00;
+    box-shadow: none;
+    animation: successPulse 0.5s ease-in-out;
+}
+
+.pin-minigame-display.locked {
+    color: #ff4444;
+    border-color: #ff4444;
+    box-shadow: none;
+    animation: errorShake 0.5s ease-in-out;
+}
+
+@keyframes successPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Keypad */
+.pin-minigame-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 300px;
+    padding: 20px;
+
+    background: slategray;
+
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+}
+
+/* Special positioning for zero button (centered in bottom row) */
+.pin-minigame-key:nth-child(10) {
+    grid-column: 2;
+    grid-row: 4;
+}
+
+/* Position backspace button in bottom left */
+.pin-minigame-backspace {
+    grid-column: 1;
+    grid-row: 4;
+}
+
+/* Position enter button in bottom right */
+.pin-minigame-enter {
+    grid-column: 3;
+    grid-row: 4;
+}
+
+.pin-minigame-key {
+    background: #2c3e50;
+    color: #ecf0f1;
+    border: 2px solid #0f3460;
+    /* border-radius: 8px; */
+    padding: 15px;
+    font-family: 'Press Start 2P', monospace !important;
+    font-size: 24px;
+    font-weight: normal;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+.pin-minigame-key:hover {
+    background: #34495e;
+    border-color: #00ff41;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.pin-minigame-key:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+.pin-minigame-key:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pin-minigame-key:disabled:hover {
+    background: #2c3e50;
+    border-color: #0f3460;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Special key styles */
+.pin-minigame-backspace {
+    background: #e74c3c;
+    border-color: #c0392b;
+    font-size: 16px;   /* "DEL": Press Start 2P on its 8px grid (slice 7 R2 n3) */
+    font-weight: normal;
+}
+
+.pin-minigame-backspace:hover {
+    background: #c0392b;
+    border-color: #ff4444;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.pin-minigame-enter {
+    background: #27ae60;
+    border-color: #27ae60;
+    font-size: 16px;
+}
+
+.pin-minigame-enter:hover {
+    background: #2ecc71;
+    border-color: #00ff41;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Attempts Log */
+.pin-minigame-attempts-container {
+    width: 100%;
+    max-width: 350px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 15px;
+
+    background: slategray;
+
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+}
+
+.pin-minigame-attempts-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    color: #00ff41;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.pin-minigame-attempts-log {
+    /* three whole rows (40px each, 8px gaps): the log never ends on a part row; it scrolls
+       with the newest row snapped to the bottom edge (sweep B6) */
+    max-height: 136px;
+    overflow-y: auto;
+    scroll-snap-type: y proximity;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pin-minigame-attempt {
+    flex: 0 0 auto;
+    scroll-snap-align: end;
+    line-height: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    /* border-radius: 6px; */
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.pin-minigame-attempt.correct {
+    background: #2c3e50;
+    border: 2px solid #00ff41;
+    color: #00ff41;
+}
+
+.pin-minigame-attempt.incorrect {
+    /* A solid dark row with a red edge reads on the slate plate (critique A11) */
+    background: #2c3e50;
+    border: 2px solid #ff6b6b;
+    color: #ff8a8a;
+}
+
+.pin-minigame-attempt-number {
+    font-weight: bold;
+    min-width: 25px;
+}
+
+.pin-minigame-attempt-input {
+    font-weight: bold;
+    letter-spacing: 2px;
+    flex: 1;
+}
+
+.pin-minigame-attempt-feedback {
+    font-size: 8px;
+    opacity: 0.8;
+    font-style: normal;   /* no synthetic slant on a pixel font (slice 7 R1 n5) */
+}
+
+.pin-minigame-attempt-empty {
+    font-size: 16px;
+    text-align: center;
+    color: #c9d1d9;
+    font-style: normal;
+    padding: 20px;
+}
+
+/* Pin-Cracker Info Leak Mode Toggle */
+.pin-minigame-toggle-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.2);
+    /* border-radius: 8px; */
+    border: 2px solid #0f3460;
+}
+
+.pin-minigame-toggle-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;
+    color: #00ff41;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* The whole row is the touch target, not just the 20px box (sweep B9) */
+    flex: 1 1 auto;
+    min-height: 32px;
+}
+
+.pin-minigame-cracker-icon {
+    /* the art is 12x13: an exact 4x */
+    width: 48px;
+    height: 52px;
+    margin-right: 8px;
+    filter: none;
+    transition: all 0.3s ease;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.pin-minigame-cracker-icon:hover {
+    filter: none;
+    transform: scale(1.1);
+}
+
+.pin-minigame-toggle {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #00ff41;
+}
+
+/* Visual Feedback Lights */
+.pin-minigame-feedback-lights {
+    display: flex;
+    gap: 4px;
+    margin-left: 10px;
+    align-items: center;
+}
+
+.pin-minigame-light {
+    width: 12px;
+    height: 12px;
+    border-radius: 0;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5);   /* pixel-art: hard rim, no blur (slice 7) */
+}
+
+.pin-minigame-light-green {
+    background: #00ff00;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(0, 255, 0, 0.6);
+    animation: lightPulse 2s ease-in-out infinite;
+}
+
+.pin-minigame-light-amber {
+    background: #ffaa00;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 170, 0, 0.6);
+    animation: lightPulse 2s ease-in-out infinite 0.5s;
+}
+
+@keyframes lightPulse {
+    0%, 100% { 
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .pin-minigame-display {
+        font-size: 40px;
+        letter-spacing: 6px;
+        padding: 12px 20px;
+        min-width: 160px;
+    }
+    
+    .pin-minigame-key {
+        font-size: 24px;
+        padding: 12px;
+        min-height: 45px;
+    }
+    
+    .pin-minigame-keypad {
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .pin-minigame-attempts-container {
+        padding: 12px;
+    }
+    
+    .pin-minigame-attempt {
+        font-size: 8px;
+        padding: 8px 10px;
+    }
+    
+    .pin-minigame-cracker-icon {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 400px) {
+    .pin-minigame-display {
+        font-size: 24px;
+        letter-spacing: 4px;
+        padding: 10px 15px;
+        min-width: 140px;
+    }
+    
+    .pin-minigame-key {
+        font-size: 16px;
+        padding: 10px;
+        min-height: 40px;
+    }
+    
+    .pin-minigame-keypad {
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .pin-minigame-cracker-icon {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Scrollbar styling for attempts log */
+.pin-minigame-attempts-log::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pin-minigame-attempts-log::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    /* border-radius: 3px; */
+}
+
+.pin-minigame-attempts-log::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    /* border-radius: 3px; */
+}
+
+.pin-minigame-attempts-log::-webkit-scrollbar-thumb:hover {
+    background: #00ff41;
+}
+
+/* How to read the PIN cracker's lights (shown while the cracker is on) */
+.pin-minigame-cracker-help {
+    flex-basis: 100%;
+    font-size: 16px;
+    line-height: 24px;
+    color: #e0e0e0;
+}
+
+.pin-minigame-cracker-help .pin-minigame-light {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    vertical-align: middle;
+    margin: 0 2px 0 6px;
+    animation: none;
+}
+
+.pin-minigame-cracker-help .pin-minigame-light:first-child {
+    margin-left: 0;
+}
+
+/* Short screens (840px high and below, so 1280x720, 1366x768 and 1280x800 too): a tighter
+   pad so the display, every key and the attempts log all fit on the plate with no scroll
+   (slice 7 R1, sweep B6) */
+@media (max-height: 840px) {
+    .pin-minigame-game-container { padding: 12px 20px; gap: 12px; }
+    .pin-minigame-interface { gap: 10px; }
+    .pin-minigame-display-container { margin-bottom: 0; }
+    .pin-minigame-display { font-size: 32px; padding: 8px 20px; }
+    .pin-minigame-keypad { gap: 8px; padding: 14px; }
+    .pin-minigame-key { min-height: 40px; padding: 8px; }
+    .pin-minigame-attempts-container { padding: 10px; }
+    .pin-minigame-attempts-title { margin-bottom: 6px; }
+    .pin-minigame-attempts-log { max-height: 88px; }
+    .pin-minigame-attempt-empty { padding: 6px; }
+}
+
+/* 720-high windows with the PIN cracker row (sweep B6 r2): the cracker row (52px icon), the
+   16px help text, the 2-row log and a two-line message ran over the frame after 3 wrong codes
+   (25px at 16px help). Keys drop to 32px (min-height 40 to 32, padding 8 to 2: 4 rows x 8px =
+   32px), the keypad padding 14 to 10 (8px) and the interface gap 10 to 6 (4 gaps x 4px = 16px).
+   About 56px is won back, so about 30px of margin. 32px keys keep the 32px touch target. The
+   landscape-phone block (520px high and below) is excluded so it keeps its own sizes. */
+@media (max-height: 760px) and (min-height: 521px) and (min-width: 700px) {
+    .pin-minigame-interface:has(.pin-minigame-toggle-container) { gap: 6px; }
+    .pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-keypad { padding: 10px; }
+    .pin-minigame-interface:has(.pin-minigame-toggle-container) .pin-minigame-key { padding: 2px; min-height: 32px; }
+}
+
+/* A short narrow phone keeps the 400px display size, so its digits are never larger than
+   those on a taller phone of the same width */
+@media (max-height: 840px) and (max-width: 400px) {
+    .pin-minigame-display { font-size: 24px; padding: 10px 15px; }
+}
+
+/* Landscape phones (915x412): the keypad stands beside the display and the attempts
+   log, so the whole pad fits the plate's height */
+@media (max-height: 520px) and (min-width: 700px) {
+    .pin-minigame-game-container { max-width: 760px; }
+    .pin-minigame-interface {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        column-gap: 24px;
+        row-gap: 10px;
+        align-items: center;
+        justify-items: center;
+        max-width: 720px;
+    }
+    .pin-minigame-interface > * { grid-column: 1; }
+    .pin-minigame-interface > .pin-minigame-keypad { grid-column: 2; grid-row: 1 / span 6; width: 260px; }
+    .pin-minigame-key { min-height: 36px; padding: 6px; }
+    .pin-minigame-attempts-log { max-height: 88px; }
+}
+
+/* The keypad's message line under the display (critique A10): a wrong code is reported here,
+   in the display's green-on-black LCD look, instead of over the keys. It keeps the height of
+   two lines (24px each, plus its 2px padding and borders) when empty, so a wrong code that
+   wraps ("Incorrect PIN. 2 attempts remaining.") does not push the keys down (review m2). */
+.pin-minigame-message {
+    min-height: 56px;
+    max-width: 320px;
+    margin: -12px auto 0;
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    line-height: 24px;
+    text-align: center;
+    color: #00ff41;
+    background: #000;
+    border: 2px solid #000;
+    padding: 2px 8px;
+}
+
+.pin-minigame-message:empty {
+    background: transparent;
+    border-color: transparent;
+}
+
+.pin-minigame-message.wrong {
+    color: #ff8a8a;
+}
+
+/* Dusting the pad with the fingerprint kit. The action sits above the keys; once used,
+   keys that are not in the PIN go dull and worn (a 2px dither, no blur) but stay readable,
+   and the keys that are in it carry a pale smudge of greasy dust. Hard 2px edges only. */
+.pin-minigame-dust-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.pin-minigame-dust-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #2c3e50;
+    color: #e8dcae;
+    border: 2px solid #b8a66a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.pin-minigame-dust-button:hover:not(:disabled) {
+    background: #34495e;
+    border-color: #e8dcae;
+}
+
+.pin-minigame-dust-button:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.pin-minigame-dust-icon {
+    /* fingerprint_kit.png is 10x24: native aspect, whole-number scale (1x), never stretched */
+    width: auto;
+    height: 24px;
+    image-rendering: pixelated;
+}
+
+.pin-minigame-dust-note {
+    min-height: 14px;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 20px;
+    text-align: center;
+    color: #e8dcae;
+}
+
+.pin-minigame-dust-note:empty {
+    display: none;
+}
+
+.pin-minigame-key.pin-minigame-key-greyed,
+.pin-minigame-key.pin-minigame-key-greyed:hover,
+.pin-minigame-key.pin-minigame-key-greyed:active {
+    background-color: #1c232b;
+    background-image:
+        linear-gradient(45deg, #232b34 25%, transparent 25%, transparent 75%, #232b34 75%),
+        linear-gradient(45deg, #232b34 25%, transparent 25%, transparent 75%, #232b34 75%);
+    background-size: 4px 4px;
+    background-position: 0 0, 2px 2px;
+    color: #8c98a4;
+    border-color: #2a3440;
+    box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.35);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pin-minigame-key.pin-minigame-key-dusted {
+    border-color: #b8a66a;
+    color: #f4ecc8;
+}
+
+/* Text for screen readers only (latest guess result); not drawn */
+.pin-minigame-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The message line keeps its own row (sweep B6): the pull-up margin that tucked it under the
+   display (-12px) overlapped the display's lower border once the short-screen rules took the
+   display's bottom margin away. On a short screen the row sits below the display in the flow;
+   in the landscape layout it is as wide as the left column, so a wrong code is one line. */
+@media (max-height: 840px) {
+    .pin-minigame-message { margin: 0 auto; }
+}
+
+@media (max-height: 520px) and (min-width: 700px) {
+    .pin-minigame-message { min-height: 32px; max-width: 400px; width: 100%; box-sizing: border-box; }
+}

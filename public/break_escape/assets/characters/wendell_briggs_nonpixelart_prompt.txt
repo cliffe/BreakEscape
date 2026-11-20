@@ -1,0 +1,10 @@
+Make portrait for Wendell Briggs
+A wiry white man of about 63 from Great Falls, Montana, with tanned, deeply weathered skin, a short grizzled grey beard, and thinning grey hair under a worn faded green baseball cap with no logo, a plant technician who has kept old power equipment running for forty years. Pale blue eyes in a web of creases and a plain, easy-going, slightly bemused look. He wears faded blue denim bib-and-brace overalls over a red-and-black plaid flannel shirt with the sleeves rolled to the elbow, a pair of reading glasses and a pencil in the bib pocket, and a battered steel wristwatch; his hands are rough and rest at his sides. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Approved by the user as wendell_briggs_concept_1 (wip/), adopted as the PixelLab pipeline concept.

@@ -1,0 +1,345 @@
+/**
+ * VM Launcher Minigame Styles
+ */
+
+/* The launcher is a device frame (css/device-frame.css, as the patch panel and rogue AP): the header
+   is hidden and the frame carries the device name and the X. The window around it is clear. */
+.minigame-container[data-minigame="vm-launcher"] > .minigame-header {
+    display: none;
+}
+
+.minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    margin: 16px;
+    background: none;
+    display: flex;
+    justify-content: center;
+    overflow: visible;
+}
+
+.vm-launcher-frame {
+    position: relative;   /* the post-it overlay in the console iframe path is placed against the frame */
+    width: min(calc(100vw - 32px), 640px);
+    padding: var(--device-frame-gap);
+    font-family: 'GNF', monospace;
+}
+
+.vm-launcher-frame * {
+    border-radius: 0;
+}
+
+/* The X sits inside the frame at its top right: keep the name clear of it */
+.vm-launcher-frame .vm-launcher-title-row {
+    padding-right: 40px;
+}
+
+/* the framework keeps #minigame-close a child of the fixed container (placeCloseButton), never of the frame */
+.vm-launcher-minigame > .minigame-close-button {
+    width: 32px;   /* a 32 px tap target; the shared X is 30 */
+    height: 32px;
+}
+
+.vm-launcher-frame .vm-launcher-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Hacktivity console path: the panel iframe fills a frame of fixed height */
+.vm-launcher-frame.vm-launcher-frame-iframe {
+    width: min(calc(100vw - 32px), 960px);
+    height: min(720px, calc(100dvh - 32px));
+}
+
+/* The post-it and the footer row sit inside the frame, clear of the bezel */
+.vm-launcher-frame > .postit-note {
+    top: 0;
+    white-space: pre-line; /* two-line notes (user / password) keep their line break */
+    align-self: flex-start;
+    margin: 8px var(--device-frame-gap) var(--device-frame-gap);
+}
+
+.vm-launcher-frame > .minigame-controls {
+    margin: 8px 0 var(--device-frame-gap);
+}
+
+/* Over the console iframe: square, a hard shadow, the game's pixel font (no tilt, no blur) */
+.vm-launcher-frame > .postit-note.vm-postit-overlay {
+    position: absolute;
+    left: 20px;
+    top: 75%;
+    margin: 0;
+    z-index: 15;
+    max-width: 200px;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+@media (max-width: 559px) {
+    .vm-launcher-frame .vm-launcher-title-row {
+        padding-right: 32px;
+    }
+    .minigame-container[data-minigame="vm-launcher"] > .minigame-game-container {
+        margin: 16px 0;
+    }
+}
+
+.vm-launcher {
+    padding: 15px;
+    color: var(--device-palette-text);
+    font-family: 'GNF', monospace;
+    max-height: min(400px, calc(100vh - 110px));   /* fallback where dvh is unsupported */
+    max-height: min(400px, calc(100dvh - 110px));  /* viewport-relative: the launch actions stay reachable at 390px high */
+    overflow-y: auto;
+}
+
+.vm-launcher-description {
+    color: var(--device-palette-dim);
+    margin-bottom: 15px;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.vm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vm-card {
+    background: var(--device-palette-face);
+    border: 2px solid var(--device-palette-edge);
+    padding: 15px;
+    color: var(--device-palette-text);   /* not clickable: the Open VM Console link inside is the control */
+}
+
+.vm-card.selected {
+    border-color: var(--device-palette-info);
+    background: var(--device-palette-button);
+}
+
+.vm-card.launching {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.vm-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.vm-title {
+    color: var(--device-palette-text);
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+
+.vm-status {
+    font-size: 16px;
+    padding: 3px 8px;
+    border-radius: 0;
+}
+
+.vm-status.online {
+    background: var(--device-palette-face);
+    color: var(--device-palette-info);
+    border: 2px solid var(--device-palette-info);
+}
+
+.vm-status.offline {
+    background: var(--device-palette-face);
+    color: var(--device-palette-danger);
+    border: 2px solid var(--device-palette-danger);
+}
+
+.vm-status.console {
+    /* a status label, not a button: no button fill, and a dashed edge where buttons have a solid one */
+    background: var(--device-palette-face);
+    color: var(--device-palette-text);
+    border: 2px dashed var(--device-palette-dim);
+}
+
+.vm-details {
+    display: flex;
+    gap: 20px;
+    font-size: 16px;
+    color: var(--device-palette-dim);
+}
+
+.vm-detail-label {
+    color: var(--device-palette-dim);
+}
+
+
+.vm-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.vm-action-btn {
+    background: var(--device-palette-button);
+    color: var(--device-palette-text);
+    border: 2px solid var(--device-palette-edge);
+    padding: 10px 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;   /* on its 8px grid */
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+
+a.vm-action-btn {
+    display: inline-block;
+    text-decoration: none;
+}
+
+.vm-action-btn:hover:not(:disabled) {
+    border-color: var(--device-palette-info);
+    color: var(--device-palette-info);
+}
+
+.vm-action-btn:disabled {
+    background: var(--device-palette-face);
+    color: var(--device-palette-dim);
+    border-style: dashed;   /* a disabled button reads from its dashed edge as well as its dim text */
+    cursor: not-allowed;
+}
+
+.vm-action-btn.launching {
+    background: var(--device-palette-face);
+    color: var(--device-palette-accent);
+}
+
+.launch-status {
+    text-align: center;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+.launch-status.success {
+    color: var(--device-palette-info);
+}
+
+.launch-status.error {
+    color: var(--device-palette-danger);
+}
+
+.launch-status.loading {
+    color: var(--device-palette-accent);
+}
+
+.no-vms-message {
+    text-align: center;
+    padding: 40px;
+    color: var(--device-palette-dim);
+}
+
+.no-vms-message h4 {
+    color: var(--device-palette-accent);
+    margin-bottom: 15px;
+}
+
+.standalone-instructions {
+    background: var(--device-palette-face);
+    border: 2px solid var(--device-palette-edge);
+    padding: 15px;
+    margin-top: 15px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.standalone-instructions h4 {
+    color: var(--device-palette-info);
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.standalone-instructions code {
+    font-family: 'VT323', monospace;
+    font-size: 18px;   /* VT323 is 18 or more */
+    line-height: 1;    /* the bigger chip does not open up the 1.6 body lines */
+    background: var(--device-palette-button);
+    padding: 2px 6px;
+    color: var(--device-palette-accent);
+}
+
+.standalone-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.standalone-instructions li {
+    margin: 8px 0;
+    color: var(--device-palette-text);
+}
+
+/* The scenario's note on where captured flags go: a framed panel like the
+   connection instructions, with an amber edge so it reads as a hint. */
+.vm-flag-note {
+    background: var(--device-palette-face);
+    border: 2px solid var(--device-palette-accent);
+    padding: 10px 15px;
+    margin-top: 15px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    line-height: 1.4;
+}
+
+.vm-flag-note p {
+    margin: 0;
+    color: var(--device-palette-accent);
+}
+
+/* Hacktivity mode: iframe fills the panel with no extra padding */
+.vm-launcher.vm-launcher-iframe {
+    padding: 0;
+    max-height: none;
+    overflow: hidden;
+}
+
+.vm-launcher-frame-iframe > .vm-launcher-iframe {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.vm-launcher-iframe iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Rules that used to exist only in an injected <style> (removed; the stylesheet is the one source) */
+.vm-ip-display {
+    background: var(--device-palette-button);
+    border: 2px solid var(--device-palette-accent);
+    padding: 16px;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.vm-ip-display .vm-detail-label {
+    display: block;
+    color: var(--device-palette-dim);
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.vm-ip-value {
+    font-family: 'VT323', monospace;   /* a pixel face for the address */
+    font-size: 24px;
+    color: var(--device-palette-accent);
+    letter-spacing: 1px;
+}
+
+
+

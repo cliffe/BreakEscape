@@ -1,0 +1,146 @@
+TAP version 13
+# 🗂️ NPC Conversation State Manager initialized
+# ⏱️ ScenarioTimerDispatcher initialized with 4 timer(s)
+# 🔥 Timer fired: bed4_1 (delayMs: 480000)
+# 🌐 Timer setGlobal: patient_bed4_state = distressed (was undefined)
+# ✅ Timer bed4_1 completed
+# ⏱️ Timer bed2 started (startOnGlobal: pump_dose_error)
+# ⏱️ ScenarioTimerDispatcher initialized with 4 timer(s)
+# ⏱️ ScenarioTimerUI initialized with 4 timers
+# ⏱️ ScenarioTimerDispatcher initialized with 4 timer(s)
+# ⏱️ ScenarioTimerDispatcher initialized with 4 timer(s)
+# ⏱️ ScenarioTimerDispatcher initialized with 4 timer(s)
+# 📋 Setting up event mappings for hamza: {}
+# ✅ Registered 0 event mappings for hamza
+# 👁️ Restored visibility for 1 NPC(s)
+# 📋 Setting up event mappings for hamza: {}
+# ✅ Registered 0 event mappings for hamza
+# 📋 Setting up event mappings for priya: {}
+# ✅ Registered 0 event mappings for priya
+# 👁️ Restored visibility for 3 NPC(s)
+# 🗂️ NPC Conversation State Manager initialized
+# 💾 Saved variables for helen: { met_player: true, network_isolated: false }
+# 💾 Saved global variables snapshot: { network_isolated: false }
+# 💾 Saved full story state for helen (active story)
+# ✅ NPC state persisted for: helen {
+#   timestamp: '11:37:49 AM',
+#   hasEnded: undefined,
+#   hasVariables: true,
+#   hasStoryState: true
+# }
+# ✅ Restored full story state for NPC: helen {
+#   savedAt: '11:37:49 AM',
+#   reason: 'In-progress conversation (global vars will be re-synced)'
+# }
+# 🗂️ NPC Conversation State Manager initialized
+# ℹ️ No saved state for NPC: nobody (first conversation)
+# 🗂️ NPC Conversation State Manager initialized
+# 🗂️ Seeded saved ink variables for 1 NPC(s)
+# ✅ Restored NPC-specific variables for NPC: helen {
+#   savedAt: '1:00:00 AM',
+#   reason: 'Story ended - restarting fresh with saved variables'
+# }
+# Subtest: timers resume from the saved elapsed time instead of restarting at zero
+ok 1 - timers resume from the saved elapsed time instead of restarting at zero
+  ---
+  duration_ms: 1.946552
+  ...
+# Subtest: a fired timer does not refire or come back on the HUD after a reload
+ok 2 - a fired timer does not refire or come back on the HUD after a reload
+  ---
+  duration_ms: 0.684554
+  ...
+# Subtest: an older save without timer state still starts (no crash, previous behaviour)
+ok 3 - an older save without timer state still starts (no crash, previous behaviour)
+  ---
+  duration_ms: 0.124013
+  ...
+# Subtest: a cancelled timer stays cancelled across a reload
+ok 4 - a cancelled timer stays cancelled across a reload
+  ---
+  duration_ms: 0.146455
+  ...
+# Subtest: in-game clock: start plus elapsed time, rolling over the day
+ok 5 - in-game clock: start plus elapsed time, rolling over the day
+  ---
+  duration_ms: 0.395472
+  ...
+# Subtest: setVisible is saved and applied when the NPC registers after a reload
+ok 6 - setVisible is saved and applied when the NPC registers after a reload
+  ---
+  duration_ms: 0.967189
+  ...
+# Subtest: a visibility change this session wins over the restored one
+ok 7 - a visibility change this session wins over the restored one
+  ---
+  duration_ms: 0.103097
+  ...
+# Subtest: board entries are stamped when they happened and in time order (D8, D10)
+ok 8 - board entries are stamped when they happened and in time order (D8, D10)
+  ---
+  duration_ms: 0.675492
+  ...
+# Subtest: fatal pump path: no "double-check caught", and the death is logged (D15)
+ok 9 - fatal pump path: no "double-check caught", and the death is logged (D15)
+  ---
+  duration_ms: 0.406109
+  ...
+# Subtest: a wrong rate after the restore is "caught"; the restore clears COMPROMISED (D9)
+ok 10 - a wrong rate after the restore is "caught"; the restore clears COMPROMISED (D9)
+  ---
+  duration_ms: 0.304703
+  ...
+# Subtest: transient states are kept: Bed 4 critical then dead gives two entries
+ok 11 - transient states are kept: Bed 4 critical then dead gives two entries
+  ---
+  duration_ms: 0.118885
+  ...
+# Subtest: a reload keeps the stamps; only {id, t} is saved
+ok 12 - a reload keeps the stamps; only {id, t} is saved
+  ---
+  duration_ms: 0.190696
+  ...
+# Subtest: old saves and changes after the last sync: true now but unrecorded gets stamped at load
+ok 13 - old saves and changes after the last sync: true now but unrecorded gets stamped at load
+  ---
+  duration_ms: 0.10981
+  ...
+# Subtest: older saved boards: only manual entries are kept from the board state
+ok 14 - older saved boards: only manual entries are kept from the board state
+  ---
+  duration_ms: 0.124638
+  ...
+# Subtest: a scenario can give its own timeline, status rows and preseed
+ok 15 - a scenario can give its own timeline, status rows and preseed
+  ---
+  duration_ms: 0.529334
+  ...
+# Subtest: event knot after restore keeps ink-local VARs and used once-only topics
+ok 16 - event knot after restore keeps ink-local VARs and used once-only topics
+  ---
+  duration_ms: 17.505494
+  ...
+# Subtest: control: jumping to the event knot without restoring loses them
+ok 17 - control: jumping to the event knot without restoring loses them
+  ---
+  duration_ms: 1.358334
+  ...
+# Subtest: first-ever event conversation (nothing saved) still plays the knot
+ok 18 - first-ever event conversation (nothing saved) still plays the knot
+  ---
+  duration_ms: 0.693239
+  ...
+# Subtest: after a reload only the saved variables exist: they are applied before the knot
+ok 19 - after a reload only the saved variables exist: they are applied before the knot
+  ---
+  duration_ms: 0.843053
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 138.43039

@@ -1,0 +1,13 @@
+{
+  "key": "df9eae72adea5a4081eb5e2fe11acae5",
+  "npc": "hodan_warsame",
+  "text": "Sit down before you fall down. You look worse than me.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:12:08Z"
+}

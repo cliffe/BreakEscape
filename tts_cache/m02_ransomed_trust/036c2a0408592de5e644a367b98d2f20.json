@@ -1,0 +1,13 @@
+{
+  "key": "036c2a0408592de5e644a367b98d2f20",
+  "npc": "hodan_warsame",
+  "text": "Can't feel my hands. Mop water's cold.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:14:55Z"
+}

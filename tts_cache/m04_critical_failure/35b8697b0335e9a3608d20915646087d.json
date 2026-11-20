@@ -1,0 +1,13 @@
+{
+  "key": "35b8697b0335e9a3608d20915646087d",
+  "npc": "narrator",
+  "text": "Her hand is already moving for the radio.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:07:49Z"
+}

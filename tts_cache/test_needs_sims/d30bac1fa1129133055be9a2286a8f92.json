@@ -1,0 +1,13 @@
+{
+  "key": "d30bac1fa1129133055be9a2286a8f92",
+  "npc": "grace",
+  "text": "Any dirty mugs left about, I take them to the washing-up tray in the kitchen.",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:23Z"
+}

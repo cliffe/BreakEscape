@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: awareness episode shell",
+  "description": "Fixture for the awareness episode runner and its validator: one kiosk, a host NPC, one OSINT site, one mail account, one attack target and a five message defend set. Stub content. Not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

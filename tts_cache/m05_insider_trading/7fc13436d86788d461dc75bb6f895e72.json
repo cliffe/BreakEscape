@@ -1,0 +1,13 @@
+{
+  "key": "7fc13436d86788d461dc75bb6f895e72",
+  "npc": "agent_nightshade",
+  "text": "Insiders are hard to catch because they never have to break in. They're already trusted.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:23:17Z"
+}

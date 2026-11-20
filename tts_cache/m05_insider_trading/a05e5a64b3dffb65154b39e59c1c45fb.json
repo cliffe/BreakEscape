@@ -1,0 +1,13 @@
+{
+  "key": "a05e5a64b3dffb65154b39e59c1c45fb",
+  "npc": "lisa_park",
+  "text": "Someone's had the side door propped open for ten minutes. Nobody will say why.",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:45Z"
+}

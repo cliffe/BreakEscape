@@ -1,0 +1,13 @@
+{
+  "key": "0050e902d47f3355a62fc1cb327de2e7",
+  "npc": "helen_carver",
+  "text": "And I gather the library's back from the signed copy. Good. The pump console can come back once David's satisfied.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

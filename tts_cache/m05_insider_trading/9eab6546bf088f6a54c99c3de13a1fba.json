@@ -1,0 +1,13 @@
+{
+  "key": "9eab6546bf088f6a54c99c3de13a1fba",
+  "npc": "narrator",
+  "text": "He prints the log and hands it over. It goes into your notes, every door on one sheet.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:09:04Z"
+}

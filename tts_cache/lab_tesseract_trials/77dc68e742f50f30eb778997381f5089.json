@@ -1,0 +1,13 @@
+{
+  "key": "77dc68e742f50f30eb778997381f5089",
+  "npc": "sidhu_selvarajan",
+  "text": "Come in, come in. I'm Sidhu. You must be one of the new first-years.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

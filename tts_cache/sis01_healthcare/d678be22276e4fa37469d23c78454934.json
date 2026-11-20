@@ -1,0 +1,13 @@
+{
+  "key": "d678be22276e4fa37469d23c78454934",
+  "npc": "dr_sharma",
+  "text": "An alert nobody passes on is no alert at all. It's how this was missed yesterday morning, too.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:56:19Z"
+}

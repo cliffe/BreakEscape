@@ -1,0 +1,613 @@
+/* Text File Minigame Styles */
+
+/* VT323 is self-hosted in fonts.css */
+
+/* Text File Minigame Container */
+.text-file-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #ffffff;
+    border: 4px solid #d1d5db;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+    box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* Mac-style Window Title Bar */
+.text-file-window-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    /* the X sits at the title bar's right end, inside the window (critique A34) */
+    padding-right: 48px;
+    background: #f6f6f6;
+    border-bottom: 2px solid #d1d5db;
+    min-height: 28px;
+}
+
+.window-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.window-control {
+    width: 12px;
+    height: 12px;
+    border: none;
+    font-size: 16px;   /* GNF grid; the dot holds no text */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.window-control.close {
+    background: #ff5f57;
+}
+
+.window-control.minimize {
+    background: #ffbd2e;
+}
+
+.window-control.maximize {
+    background: #28ca42;
+}
+
+.window-control:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.window-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333333;
+    font-family: 'GNF', monospace;
+    flex: 1;
+    text-align: center;
+    margin: 0 20px;
+}
+
+/* File Header Section */
+.file-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.file-icon {
+    font-size: 24px;
+    margin-right: 12px;
+    color: #495057;
+}
+
+.file-info {
+    flex: 1;
+}
+
+.file-name {
+    font-size: 16px;
+    font-weight: normal;
+    color: #212529;
+    margin-bottom: 4px;
+}
+
+.file-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 16px;
+    color: #6c757d;
+}
+
+.file-type {
+    background: #e9ecef;
+    padding: 2px 8px;
+    /* border-radius: 4px; */
+    border: 2px solid #dee2e6;
+    color: #495057;
+}
+
+.file-size {
+    color: #6c757d;
+}
+
+/* File Content Area */
+.file-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    min-height: 36px;
+}
+
+.content-label {
+    font-size: 16px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.content-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.action-btn {
+    background: #ffffff;
+    border: 2px solid #d1d5db;
+    color: #374151;
+    padding: 4px 12px;
+    /* border-radius: 6px; */
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.action-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:active {
+    background: #e5e7eb;
+    transform: translateY(1px);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* File Content Display */
+.file-content {
+    flex: 1;
+    padding: 16px 20px 80px;
+    overflow: auto;
+    background: #ffffff;
+    border: none;
+    margin: 0;
+}
+
+.file-text {
+    color: #000000;
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    min-height: 300px;
+}
+
+/* File Observations Section */
+.file-observations {
+    margin: 0;
+    padding: 16px 20px 80px;
+    background: #fff3cd;
+    border-top: 2px solid #ffeaa7;
+}
+
+.file-observations h4 {
+    color: #856404;
+    font-size: 16px;
+    margin: 0 0 8px 0;
+    font-weight: normal;
+}
+
+.file-observations p {
+    color: #6c5700;
+    font-size: 16px;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* copy-sm.png is pure white, so on the light buttons and the cream observations
+   bar it all but vanished (m08 confirmation R3 N-8-2). Darkened to sit with the
+   label beside it; the dark scheme below puts it back to white. */
+.action-btn .icon-small,
+.file-observations h4 .icon-small {
+    margin-right: 4px;
+    vertical-align: -2px;
+}
+
+/* Only the white copy icon is darkened: notes.png (Add to Notepad) is a white page with
+   its own dark outline and lines, which a brightness(0) filter turned into a solid block
+   (slice 7 R3 m4) */
+#copy-btn .icon-small,
+.file-observations h4 .icon-small {
+    filter: brightness(0) opacity(0.75);
+}
+
+.file-observations h4 .icon-small {
+    filter: brightness(0) opacity(0.6);
+}
+
+/* Text Selection Styling */
+.file-content ::selection {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.file-content ::-moz-selection {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+/* Custom Scrollbar Styling */
+.file-content::-webkit-scrollbar {
+    width: 12px;
+}
+
+.file-content::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    /* border-radius: 6px; */
+}
+
+.file-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    /* border-radius: 6px; */
+    border: 2px solid #f1f5f9;
+}
+
+.file-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.file-content::-webkit-scrollbar-corner {
+    background: #f1f5f9;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .text-file-container {
+        /* border-radius: 8px; */
+    }
+    
+    .text-file-window-header {
+        border-radius: 0;
+        padding: 6px 10px;
+        min-height: 24px;
+    }
+    
+    .window-control {
+        width: 10px;
+        height: 10px;
+    }
+    
+    .window-title {
+        font-size: 16px;
+        margin: 0 15px;
+    }
+    
+    .file-header {
+        padding: 12px 16px;
+    }
+    
+    .file-name {
+        font-size: 16px;
+    }
+    
+    .file-meta {
+        font-size: 16px;
+        gap: 8px;
+    }
+    
+    .content-header {
+        padding: 6px 12px;
+        min-height: 32px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .content-label {
+        font-size: 16px;
+    }
+    
+    /* Readable on a phone: the toolbar wraps rather than shrinking its text (critique A36) */
+    .action-btn {
+        padding: 3px 8px;
+        font-size: 16px;
+    }
+    
+    .file-content {
+        padding: 12px 16px 80px;
+    }
+
+    .file-text {
+        font-size: 16px;
+    }
+
+    .file-observations {
+        padding: 12px 16px 80px;
+    }
+    
+    .file-observations h4 {
+        font-size: 16px;
+    }
+    
+    .file-observations p {
+        font-size: 16px;
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    .text-file-container {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    
+    .text-file-window-header {
+        background: #374151;
+        border-bottom-color: #374151;
+    }
+    
+    .window-title {
+        color: #f9fafb;
+    }
+    
+    .file-header {
+        background: #374151;
+        border-bottom-color: #4b5563;
+    }
+    
+    .file-icon {
+        color: #d1d5db;
+    }
+    
+    .file-name {
+        color: #f9fafb;
+    }
+    
+    .file-meta {
+        color: #9ca3af;
+    }
+    
+    .file-type {
+        background: #4b5563;
+        border-color: #6b7280;
+        color: #d1d5db;
+    }
+    
+    .file-size {
+        color: #9ca3af;
+    }
+    
+    .content-header {
+        background: #374151;
+        border-bottom-color: #4b5563;
+    }
+    
+    .content-label {
+        color: #d1d5db;
+    }
+    
+    .action-btn {
+        background: #4b5563;
+        border-color: #6b7280;
+        color: #f9fafb;
+    }
+    
+    .action-btn:hover {
+        background: #6b7280;
+        border-color: #9ca3af;
+    }
+    
+    .action-btn:active {
+        background: #374151;
+    }
+    
+    .file-content {
+        background: #1f2937;
+    }
+    
+    .file-text {
+        color: #f9fafb;
+    }
+    
+    .file-observations {
+        background: #451a03;
+        border-top-color: #92400e;
+    }
+    
+    .file-observations h4 {
+        color: #fbbf24;
+    }
+
+    #copy-btn .icon-small,
+    .file-observations h4 .icon-small {
+        filter: none;
+    }
+    
+    .file-observations p {
+        color: #fcd34d;
+    }
+    
+    .file-content::-webkit-scrollbar-track {
+        background: #374151;
+    }
+    
+    .file-content::-webkit-scrollbar-thumb {
+        background: #6b7280;
+        border-color: #374151;
+    }
+    
+    .file-content::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+    
+    .file-content::-webkit-scrollbar-corner {
+        background: #374151;
+    }
+}
+
+/* ── In the PC monitor (UX slice 2c R3 M2) ───────────────────────────────────────────
+   A file opened from a PC's desktop or a share opens in that PC's monitor frame, as a
+   maximised window in the share window's look (css/container-minigame.css .pc-share):
+   the file name in the title bar, the PC's buttons (.pc-os-btn), the text in GNF at 16px
+   on the dark pane, the observations in the status bar. The window's own X in the title
+   bar closes the file; the bezel's X closes the PC (UI PC 2, critique E08). */
+.pc-monitor .pc-file-icon {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+    flex: 0 0 auto;
+}
+
+/* The window's X (UI PC 2, E08): a raised grey square at the title bar's right end, as on the
+   desktop OS's own windows, with an 8x7 pixel cross drawn at x2. 2px bevel borders, square
+   corners. The drawn box is 28x24; on a phone or a touch screen the hit area is at least
+   44px (nothing more is drawn). */
+.pc-monitor .pc-share .share-folder-path {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pc-monitor button.pc-window-close {
+    position: relative;
+    flex: 0 0 auto;
+    align-self: center;
+    width: 28px;
+    height: 24px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #c0c0c0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h2v1H0zM6 0h2v1H6zM1 1h2v1H1zM5 1h2v1H5zM2 2h4v1H2zM3 3h2v1H3zM2 4h4v1H2zM1 5h2v1H1zM5 5h2v1H5zM0 6h2v1H0zM6 6h2v1H6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 16px 14px;
+    background-position: 4px 3px;
+    image-rendering: pixelated;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.pc-monitor button.pc-window-close:hover,
+.pc-monitor button.pc-window-close:focus-visible {
+    background-color: #d8d8d8;
+    outline: none;
+}
+
+/* Pressed: the bevel turns over and the cross moves down and right by 2px */
+.pc-monitor button.pc-window-close:active {
+    border-color: #404040 #ffffff #ffffff #404040;
+    background-position: 6px 5px;
+}
+
+/* A 44px target on a phone. The top edge reaches only 8px above the button: the bezel's X
+   sits above the window's title bar with 12px between the two buttons, and the targets must
+   leave a gap (4px) rather than touch, at every size. */
+@media (max-width: 600px), (pointer: coarse) {
+    .pc-monitor button.pc-window-close::after {
+        content: '';
+        position: absolute;
+        inset: -8px -10px -12px -10px;
+    }
+}
+
+.pc-monitor .pc-file-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin: 0 0 4px;
+}
+
+.pc-monitor .pc-file-toolbar .pc-os-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pc-monitor .pc-file-toolbar .pc-os-btn .icon-small {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+}
+
+.pc-monitor .pc-file-message {
+    font-size: 16px;
+    line-height: 18px;
+    color: #000000;
+}
+
+.pc-monitor .pc-file-message.pc-file-message-error {
+    color: #8a0000;
+}
+
+.pc-monitor .pc-file-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 6px 8px;
+    background: #1c1c1c;
+    border-bottom: 2px solid #3a3a3a;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.pc-monitor .pc-file-body .file-text {
+    min-height: 0;
+    margin: 0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+    font-weight: normal;
+    color: #dde6ee;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

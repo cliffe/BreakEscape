@@ -1,0 +1,13 @@
+{
+  "key": "f6aba4631d5a007852e1414a26fdbbb9",
+  "npc": "lerato_dlamini",
+  "text": "Morning. Before the training, a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them like a normal shift.",
+  "voice": "Gacrux",
+  "style": "Tarrowby's health and safety adviser, in her 30s, confident and direct; runs the depot toolbox talks. Speak with a consistent South African accent from Durban throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_pre_mobile_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:12Z"
+}

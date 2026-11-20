@@ -1,0 +1,13 @@
+{
+  "key": "b397ee9e52a0831b76633d460429a77a",
+  "npc": "closing_debrief_person",
+  "text": "The guard on the checkpoint has a wife who wants to know why he's in A&E.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:46:01Z"
+}

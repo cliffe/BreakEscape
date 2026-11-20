@@ -1,0 +1,13 @@
+{
+  "key": "bd80a6b3da74cd4428f51c5cb7f34621",
+  "npc": "ernesto_bautista",
+  "text": "Water's free, at least.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:14:34Z"
+}

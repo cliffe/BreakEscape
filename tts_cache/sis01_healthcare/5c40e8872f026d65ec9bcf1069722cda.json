@@ -1,0 +1,13 @@
+{
+  "key": "5c40e8872f026d65ec9bcf1069722cda",
+  "npc": "helen_carver",
+  "text": "Yes. It stops either side making a call that hurts patients without the other seeing the cost.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "16702ea63e84490089fa55c13a62d804",
+  "npc": "narrator",
+  "text": "He takes his jacket from the chair, careful with the sleeves. At the door he stops.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A building full of machinery that is about to be used against people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:27:27Z"
+}

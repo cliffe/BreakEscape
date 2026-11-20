@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: direction comes from the end of the key, diagonals whole
+ok 1 - direction comes from the end of the key, diagonals whole
+  ---
+  duration_ms: 1.217898
+  ...
+# Subtest: the legacy "npc-<id>-idle" key a new sprite starts on has no direction
+ok 2 - the legacy "npc-<id>-idle" key a new sprite starts on has no direction
+  ---
+  duration_ms: 0.101222
+  ...
+# Subtest: KO pose: facing direction first, then down, then anything it has
+ok 3 - KO pose: facing direction first, then down, then anything it has
+  ---
+  duration_ms: 0.169282
+  ...
+# Subtest: npc-sprites uses them for a restored KO and lowers the body as the live animation does
+ok 4 - npc-sprites uses them for a restored KO and lowers the body as the live animation does
+  ---
+  duration_ms: 0.238769
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 145.89896

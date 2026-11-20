@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: a visible, standing NPC keeps its cone
+ok 1 - a visible, standing NPC keeps its cone
+  ---
+  duration_ms: 1.568082
+  ...
+# Subtest: a knocked-out NPC draws nothing
+ok 2 - a knocked-out NPC draws nothing
+  ---
+  duration_ms: 0.155221
+  ...
+# Subtest: a hidden NPC draws nothing
+ok 3 - a hidden NPC draws nothing
+  ---
+  duration_ms: 0.170819
+  ...
+# Subtest: npc-manager clears the cone of a suppressed NPC
+ok 4 - npc-manager clears the cone of a suppressed NPC
+  ---
+  duration_ms: 1.037882
+  ...
+# Subtest: an NPC in another room draws no cone unless hostile
+ok 5 - an NPC in another room draws no cone unless hostile
+  ---
+  duration_ms: 0.855506
+  ...
+# Subtest: a spent lockpick catch hides the sight circle
+ok 6 - a spent lockpick catch hides the sight circle
+  ---
+  duration_ms: 1.311758
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 286.072855

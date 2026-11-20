@@ -1,0 +1,11 @@
+Make portrait for David Torres, knocked down
+The same man as in the reference image: a Spanish man of about 48 with light olive skin, dark curly greying hair now dishevelled, two days of salt-and-pepper stubble, tired dark eyes with heavy shadows, the same creased pale blue Oxford shirt with rolled sleeves and open collar, now rumpled and pulled out at one side, the same dark navy tie yanked loose and askew, the same lanyard with a blank white staff card twisted on its cord, brown leather belt. He is sitting on the floor, slumped back with his shoulders against an unseen surface, head tilted slightly, his right hand pressed flat to his ribs. A cut at his hairline with blood running down to his eyebrow. Eyes open, looking at the viewer, hurt and exhausted, mouth closed. His legs are below the frame and not visible. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the seated figure from the top of the head down to the hips and belt, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, reference image: david_torres_concept_1_raw.png (smooth Gemini concept, not pixel art).
+# Gemini drew a game dialogue box with a caption across the bottom fifth of the raw image (the "Dialog view" line read literally). Cropped by hand to the area above it (x106-918, y0-812 of the raw), scaled to 1024 and flipped to face right; reframe_portrait.py was not used. Unflipped original with the box is david_torres_ko_concept_2_raw.png.

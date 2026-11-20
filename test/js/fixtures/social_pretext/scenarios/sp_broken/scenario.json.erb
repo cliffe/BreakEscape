@@ -1,0 +1,318 @@
+{
+  "scenario_brief": "Fixture: a pretext call with every data and ink fault",
+  "startRoom": "desk",
+  "globalVariables": {
+    "dev_influence": -10,
+    "dev_latched": "",
+    "dev_wary": false,
+    "dev_refusing": false,
+    "dev_lockout_until": 0,
+    "dev_lockout_channel": "",
+    "pretext_service_desk_call_state": {},
+    "pretext_service_desk_call_lowest": "low",
+    "pretext_call_reported": false,
+    "se_intel_lord_portal_name": false,
+    "se_intel_lord_payslip_date": false
+  },
+  "objectives": [
+    {
+      "aimId": "a1",
+      "title": "One",
+      "status": "active",
+      "order": 0,
+      "tasks": []
+    }
+  ],
+  "rooms": {
+    "desk": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "id": "desk_note",
+          "name": "Note"
+        },
+        {
+          "type": "phone",
+          "id": "desk_phone",
+          "name": "Desk phone",
+          "minigameData": {
+            "callId": "service_desk_call"
+          }
+        },
+        {
+          "type": "phone",
+          "id": "ghost_phone",
+          "name": "Phone",
+          "minigameData": {
+            "callId": "no_such_call"
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dev_service_desk",
+          "displayName": "Dev",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "test/js/fixtures/social_pretext/scenarios/sp_broken/ink/dev_desk.json"
+        }
+      ]
+    }
+  },
+  "social": {
+    "characters": {
+      "dev": {
+        "displayName": "Dev",
+        "channels": {
+          "phone": "dev_service_desk"
+        },
+        "influence": {
+          "global": "dev_influence",
+          "min": -100,
+          "max": 100,
+          "start": -10
+        },
+        "syncedVars": [
+          "dev_influence"
+        ],
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -40,
+            "icon": "wary",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "dev_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "refuses",
+            "at": -50,
+            "icon": "refuses",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "dev_refusing",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "at": -70,
+            "icon": "reports",
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "dev_reported",
+                "value": true
+              },
+              {
+                "type": "endConversation"
+              },
+              {
+                "type": "lockout",
+                "scope": "channel",
+                "until": {
+                  "afterMinutes": 2
+                },
+                "recoverTo": -30
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "intelFacts": {
+      "lord_portal_name": {
+        "text": "The payroll portal is called PayPoint.",
+        "subject": "company",
+        "source": "dev_call",
+        "provides": []
+      },
+      "lord_payslip_date": {
+        "text": "Payslips are released on the 28th.",
+        "subject": "company",
+        "source": "dev_call",
+        "provides": []
+      }
+    },
+    "pretextNpcs": [
+      {
+        "character": "dev",
+        "callId": "service_desk_call",
+        "tuning": {
+          "matchCreditCapPerLine": 10,
+          "maxRefusals": 2,
+          "feedbackMode": "live",
+          "tellDetail": "verbose",
+          "showTechniqueNames": "live"
+        },
+        "susceptibility": {
+          "urgency": -10,
+          "authority_borrowed": -20,
+          "candour": 10,
+          "bribery": -5
+        },
+        "unverifiableCost": -10,
+        "knows": {
+          "intern": {
+            "value": "lord_full",
+            "accept": [
+              "lord_first",
+              "lord_full"
+            ],
+            "grade": "identity"
+          },
+          "team": {
+            "value": "finance",
+            "grade": "identity"
+          }
+        },
+        "lines": {
+          "open_buddy": {
+            "blanks": {
+              "intern": "intern",
+              "team": "team"
+            },
+            "claims": [
+              {
+                "fact": "intern",
+                "from": "blank:intern"
+              },
+              {
+                "fact": "team",
+                "from": "blank:team"
+              },
+              {
+                "fact": "floor",
+                "from": "blank:floor"
+              },
+              {
+                "fact": "nickname",
+                "from": "nickname_fixed"
+              }
+            ]
+          },
+          "repair_team": {
+            "technique": "candour",
+            "repairs": "team",
+            "blanks": {
+              "team": "team"
+            },
+            "claims": [
+              {
+                "fact": "team",
+                "from": "blank:team"
+              },
+              {
+                "fact": "nickname2",
+                "from": "x",
+                "unverifiable": true
+              }
+            ]
+          },
+          "urgent_payslip": {
+            "technique": "flattery",
+            "claims": []
+          },
+          "double_down": {
+            "doublesDown": "manager",
+            "extra": -20
+          }
+        },
+        "asks": {
+          "portal_name": {
+            "pressure": 0,
+            "floor": -30,
+            "verification": [],
+            "grants": {
+              "intel": [
+                "lord_portal_name",
+                "no_such_fact"
+              ],
+              "setGlobal": {
+                "pretext_call_done": true
+              }
+            }
+          },
+          "payslip_date": {
+            "pressure": -10,
+            "floor": -20,
+            "verification": [
+              "intern",
+              "startDate"
+            ],
+            "grants": {
+              "intel": [
+                "lord_payslip_date"
+              ],
+              "setGlobal": {
+                "pretext_call_done": true
+              }
+            }
+          }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": {
+            "line": "I'll need to check this with my manager. Goodbye.",
+            "setGlobal": {
+              "pretext_call_reported": true
+            }
+          },
+          "walked_away": {}
+        },
+        "tells": {
+          "intern": {
+            "pass": "Intern. She is on the new-starter list.",
+            "fail": "Intern. You said \"{said}\". The list has {actual}.",
+            "unknown": "Intern. He cannot check this."
+          },
+          "team": {
+            "pass": "Team. Finance matches.",
+            "fail": "Team. You said {typed}.",
+            "failCategory": "Team. That did not match the directory.",
+            "unknown": ""
+          },
+          "techniques": {
+            "urgency": " ",
+            "authority_borrowed": "Borrowed authority. Naming a manager does not replace the check.",
+            "candour": "Candour. Owning the slip early costs less than defending it."
+          },
+          "repair": "",
+          "ask": {
+            "accepted": "He read it out.",
+            "pending": "He wants to check one more thing.",
+            "refused": ""
+          },
+          "bands": {
+            "calm": "Dev is relaxed.",
+            "refusing": "Dev has stopped helping."
+          }
+        },
+        "hints": [
+          "Check who the new starter's team is."
+        ],
+        "defenderNotes": {
+          "payslip_date": "Calling back on the number already on file defeats every line here."
+        }
+      }
+    ]
+  },
+  "importGlobals": [
+    {
+      "from": "m91_source",
+      "var": "x",
+      "as": "pretext_call_reported",
+      "default": false
+    }
+  ]
+}

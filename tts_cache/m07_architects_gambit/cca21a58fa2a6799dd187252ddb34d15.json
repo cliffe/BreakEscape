@@ -1,0 +1,13 @@
+{
+  "key": "cca21a58fa2a6799dd187252ddb34d15",
+  "npc": "opening_briefing_cutscene",
+  "text": "Read them how you like, Agent. A life, a vote and a decade of our security do not convert into each other.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:37:40Z"
+}

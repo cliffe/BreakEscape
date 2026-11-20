@@ -1,0 +1,14 @@
+{
+  "key": "b9a1ae2f7d41a17f02dd3b7273d75f6c",
+  "npc": "irina_volkova",
+  "text": "You're not from the FCA. ...No. Don't tell me yet.",
+  "delivery": "quietly",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:48:52Z"
+}

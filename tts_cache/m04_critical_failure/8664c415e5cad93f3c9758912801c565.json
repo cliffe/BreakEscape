@@ -1,0 +1,13 @@
+{
+  "key": "8664c415e5cad93f3c9758912801c565",
+  "npc": "narrator",
+  "text": "She comes round the end of the inverter cabinets mid-stride and stops dead.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:07:36Z"
+}

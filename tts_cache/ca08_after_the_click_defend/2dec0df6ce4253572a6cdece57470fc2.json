@@ -1,0 +1,13 @@
+{
+  "key": "2dec0df6ce4253572a6cdece57470fc2",
+  "npc": "anjali_rao",
+  "text": "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:33Z"
+}

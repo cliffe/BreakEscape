@@ -1,0 +1,13 @@
+{
+  "key": "535482ef38186ea7ff8dfdd070d07722",
+  "npc": "closing_debrief",
+  "text": "The manifest was not what the brief said. A third of those keys sign health record and dispatch systems, and the payload wakes in nine days, not ninety.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:48:43Z"
+}

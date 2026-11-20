@@ -1,0 +1,6 @@
+{
+  "display_name": "Test: combination, cryptex and NPC-held containers",
+  "description": "Engine check that combination padlocks and a cryptex open on the server, and that a bag a knocked-out NPC drops can be opened.",
+  "difficulty_level": 1,
+  "collection": "testing"
+}

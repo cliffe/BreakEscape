@@ -1,0 +1,10 @@
+{
+  "scenario": "test_social_board_indicators",
+  "start_room": "office",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

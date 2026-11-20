@@ -1,0 +1,13 @@
+{
+  "key": "d2b073bf50abd4127c6a4bf78f7b5dca",
+  "npc": "night_security_supervisor",
+  "text": "I watch a telephone. I couldn't open a door in this building if I tried.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

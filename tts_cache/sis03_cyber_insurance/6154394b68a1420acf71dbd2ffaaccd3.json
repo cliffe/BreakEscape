@@ -1,0 +1,13 @@
+{
+  "key": "6154394b68a1420acf71dbd2ffaaccd3",
+  "npc": "eleanor_vance",
+  "text": "I think your coverage decision should reflect that tension — between what the contract says and what seems fair.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:32:34Z"
+}

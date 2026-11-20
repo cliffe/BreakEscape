@@ -1,0 +1,59 @@
+   [imports: {"m07_completed":true,"m07_team_assignment":"meltdown","m07_team_redirected":false}]
+
+## R31 (carry-over, 2026-10-17): m07 finished with the team on Meltdown. ATHENA names San Francisco; day nine's dispatch failure lands.
+
+--- briefing ---
+  Narrator: SAFETYNET headquarters, the Citadel. Every badge reader blinks red. Nobody looks at the person at the next desk.
+  ATHENA: Welcome back, Agent 0x00. Security posture is Level Red. I have logged your entry, your route, and the precise time you crossed the threshold. Everyone's, actually. It's rather the point.
+  ATHENA: I have also logged your kit. One pick set, one RFID cloner, one fingerprint kit.
+  ATHENA: The PIN device you are thinking of is still signed out to Agent 0x47, Nightshade, as it has been since St. Catherine's.
+  ATHENA: Read nothing into it. Vector has a hardware token out tonight, and Phantom a travel pack. Everyone on the planning list keeps something they shouldn't.
+  ATHENA: Portland happened. Your tasking order sent the one team to San Francisco, so nobody reached Austin. Today is day nine, and dispatch in eleven counties has started dropping calls.
+  ATHENA: The leak came from inside this building. Director Netherton has three names, and one of them got two of your colleagues killed.
+  ATHENA: A word of advice, from the only voice here with no stake in the outcome. The moment they know you are hunting, they vanish. Be quiet. Be quick.
+  ATHENA: The Director's office is north of this lobby. Do try not to trust anyone on the way.
+  [end]
+   [text agent_0x99 +2500ms] I'm on the wire. Get the Director's brief before you spook anyone. And 0x00... whichever of the three it is, it's a friend of mine.
+   [PASS] said: "Your tasking order sent the one team to San Francisco"
+   [PASS] said: "dispatch in eleven counties has started dropping calls"
+   [PASS] not said: "Your tasking order sent the one team to Washington"
+   [PASS] not said: "Your tasking order sent the one team to Austin"
+   [PASS] not said: "You moved the one team to Austin with the clock running"
+   [PASS] not said: "Your tasking order for the one team is blank"
+   [PASS] not said: "one team to send, and an enemy who had the deployment before we did."
+   [PASS] not said: "so no backdoor went anywhere"
+   [PASS] not said: "Nine days on, dispatch in eleven counties is still answering"
+
+--- netherton ---
+      [ink: brief_taken=true]
+      [task: brief_with_netherton]
+  Narrator: The Director's office, blinds drawn against the night. Netherton stands at the window, his back to the door. He does not turn round.
+  Director Magnus Netherton: Agent. Nine days ago I sent you to Portland, the one site where a person in the building could change the outcome. That was true.
+  Director Magnus Netherton: What I did not tell you, because I did not yet know it, is that ENTROPY had your name before I signed the order.
+  Narrator: Now he turns.
+  Director Magnus Netherton: They did not out-think us at Portland. They were handed the board: your assignment, your timing, your identity on the ground.
+  Director Magnus Netherton: Two of ours are dead at the sites the team could not reach. They are dead because someone in this building told the enemy where the gaps would be.
+  Director Magnus Netherton: I have run field operations for five years. I have never had to say the next sentence.
+  Director Magnus Netherton: There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.
+  Director Magnus Netherton: Ask me what you need. Then go and prove something.
+     (7 options)
+ > Tell me about Nightshade.
+  Director Magnus Netherton: Agent 0x47. Cryptographic-hardware analyst, in the Crypto Lab. Planning access, like the other two. He taught your intake.
+  Director Magnus Netherton: He has stood beside me at most of your briefings. He helps write the plans ENTROPY seemed to be reading.
+  Director Magnus Netherton: If it is him, I have stood beside him for years and noticed nothing. I do not enjoy that thought.
+     [0] Why me, sir? I'm the one they compromised.
+     [1] Tell me about Vector.
+     [2] Tell me about Phantom.
+     [3] What are the rules of engagement, sir?
+     [4] I'll need access.
+     [5] I'm ready. Let me work.
+  [stopped: no pick]
+   [text agent_0x99 +2000ms] Three names, three rooms. Vector on the ops floor, Phantom north of it, Nightshade in the Crypto Lab. See all three before the server room.
+   [PASS] said: "noticed nothing"
+   [PASS] m07_completed = true (expected true)
+   [PASS] m07_team_assignment = "meltdown" (expected "meltdown")
+   [PASS] m07_team_redirected = false (expected false)
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 21, choices 1, longest run without a choice 9 (briefing); runs>=6: briefing:9, netherton:9
+[result] all expectations met

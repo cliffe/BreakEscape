@@ -1,0 +1,13 @@
+{
+  "key": "b952dd7e2e84fed03b52a46c1ba61df7",
+  "npc": "narrator",
+  "text": "She puts the phone face down on the desk and goes for her coat.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:27:56Z"
+}

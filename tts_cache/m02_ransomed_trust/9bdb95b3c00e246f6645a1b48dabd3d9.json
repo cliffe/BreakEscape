@@ -1,0 +1,13 @@
+{
+  "key": "9bdb95b3c00e246f6645a1b48dabd3d9",
+  "npc": "ghost",
+  "text": "The board ran a calculation too. They chose the scanner.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:29:20Z"
+}

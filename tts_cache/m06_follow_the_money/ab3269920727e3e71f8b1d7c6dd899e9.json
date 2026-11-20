@@ -1,0 +1,13 @@
+{
+  "key": "ab3269920727e3e71f8b1d7c6dd899e9",
+  "npc": "narrator",
+  "text": "You put your SAFETYNET credentials on the desk.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:00:06Z"
+}

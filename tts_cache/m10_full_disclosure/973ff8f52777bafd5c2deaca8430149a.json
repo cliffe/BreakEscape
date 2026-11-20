@@ -1,0 +1,14 @@
+{
+  "key": "973ff8f52777bafd5c2deaca8430149a",
+  "npc": "asante",
+  "text": "Then they should never have been on a network. That isn't the utility's fault, I know.",
+  "delivery": "a pause before the last sentence",
+  "voice": "Callirrhoe",
+  "style": "Systems lead, forty-five, Ghanaian-British from Peckham. Consistent South London accent throughout -- do not shift to any other accent. Crisp, exact, a little impatient; a true believer in the software who wants the numbers honest.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:23:31Z"
+}

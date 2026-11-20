@@ -1,0 +1,13 @@
+{
+  "key": "b5a559a09cfd367cc613a6bb7882b3f9",
+  "npc": "director_netherton",
+  "text": "Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:37:59Z"
+}

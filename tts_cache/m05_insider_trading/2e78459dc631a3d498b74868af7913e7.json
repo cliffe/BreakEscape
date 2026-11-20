@@ -1,0 +1,13 @@
+{
+  "key": "2e78459dc631a3d498b74868af7913e7",
+  "npc": "recruiter",
+  "text": "Inventory doesn't have a price, agent. People do. I've built a career on the difference.",
+  "voice": "Gacrux",
+  "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:21:01Z"
+}

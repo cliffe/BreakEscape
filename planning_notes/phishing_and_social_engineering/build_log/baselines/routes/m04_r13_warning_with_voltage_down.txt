@@ -1,0 +1,50 @@
+
+## R13 (round 4, review M2, m8b): Voltage fought before the mapping and the race won (KO: voltage_neutralised, voltage_captured). Then the dial and the warning: it costs nothing. No crew_warned_early, no 'half an hour', no alarm clock, no music change.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_provided_keycard":true,"vance_card_cloned":true,"vance_is_ally":true,"plant_room_entered":true,"voltage_fight_started":true,"vance_spoken":true}}
+      [clock: trigger_race started at 0 min]
+   {set {"voltage_neutralised":true,"voltage_captured":true,"anomaly_detected":true}}
+
+--- phone ---
+     (4 options)
+ > Can we get the night crew out of Hall 2?
+  Not from here. The site's evacuation alarm is on Vance's desk.
+  Ask him. He'll do it.
+  Voltage is down, so nobody's listening. The alarm costs you nothing.
+     (3 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "Voltage is down, so nobody's listening"
+   [PASS] not said: "half an hour"
+
+--- vance @vance_hub ---
+  Robert Vance: What do you need?
+     (3 options)
+ > Is anyone working in the halls tonight?
+  Robert Vance: Nine. The module-swap crew, behind the inverter wall in Hall 2, till six. Your contractor wanted the halls clear from midnight. I said no.
+  Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in every hall.
+  Robert Vance: Whoever was in my plant room isn't listening any more. It costs you nothing.
+     (2 options)
+ > Sound it. Get them out.
+      [set_global crew_warned=true]
+  Robert Vance: Sounding it now.
+  Narrator: Somewhere past the walls a klaxon starts, and the strobes in the corridor go white.
+  Robert Vance: They're moving. Nine of them, out through the Hall 2 fire doors.
+  Robert Vance: Go on.
+      [engine: alarm with Voltage down -> free, no clock]
+     (2 options)
+ > Stay on the ops desk. I'll call if I need the engineering side.
+  Robert Vance: I'm not going anywhere. Call the moment you're moving.
+  [chat closes]
+   [PASS] said: "isn't listening any more. It costs you nothing."
+   [PASS] not said: "half an hour"
+   [PASS] crew_warned = true (expected true)
+   [PASS] crew_warned_early = false (expected false)
+   [PASS] clock_started = false (expected false)
+   [PASS] HUD shows nothing (expected null)
+   {advance 40 min}
+      [clock: trigger_race cancelled]
+   [PASS] racks_vented = false (expected false)
+
+[stats] spoken/narrated lines 13, choices 5, longest run without a choice 4 (vance); runs>=6: 
+[result] all expectations met

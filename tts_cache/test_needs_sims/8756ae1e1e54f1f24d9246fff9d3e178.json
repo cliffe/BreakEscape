@@ -1,0 +1,13 @@
+{
+  "key": "8756ae1e1e54f1f24d9246fff9d3e178",
+  "npc": "jodie",
+  "text": "Nae calls yet, good.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:13:33Z"
+}

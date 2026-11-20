@@ -1,0 +1,15 @@
+7.1 - mg=person-chat brief=false
+8.2 - mg= brief=false
+9.8 timed_caller:ringing* mg= brief=false
+click Answer in 1.5s
+11.3 timed_caller:connected* mg= brief=false
+11.8 timed_caller:connected* mg=phone-chat brief=false
+14.1 caller_basic:ringing mg= brief=false
+14.3 - mg=notes brief=true
+15.1 caller_basic:ringing mg= brief=false
+35.0 - mg= brief=false
+--- after End
+14.1 caller_basic:ringing mg= brief=false
+14.3 - mg=notes brief=true
+15.1 caller_basic:ringing mg= brief=false
+35.0 - mg= brief=false

@@ -1,0 +1,105 @@
+{
+  "scenario_id": "test_unlock_silence",
+  "scenario_name": "Test: mapping unlocks, flag reward doors, silence",
+  "scenario_brief": "Engine check (finale F18, F19, F10).\n\n1. Press the Vault Release: the warden's eventMapping unlockDoor opens the vault on the server. Reload: the vault is still open.\n2. Submit the flag at the Flag Terminal (test:flag:1): its unlock_door reward opens the archive, not the lobby.\n3. Press the Quiet Switch: the music switches to the silence playlist.",
+  "endGoal": "Check eventMapping unlockDoor, flag reward unlock_door targets and the silence playlist.",
+  "startRoom": "lobby",
+  "globalVariables": {
+    "vault_release": false,
+    "quiet": false
+  },
+  "music": {
+    "events": [
+      { "trigger": "game_loaded", "playlist": "noir", "fade": false },
+      { "trigger": "global_variable_changed:quiet", "condition": "value === true", "playlist": "silence", "fade": true }
+    ]
+  },
+  "rooms": {
+    "lobby": {
+      "type": "room_office",
+      "door_sign": "Lobby",
+      "connections": { "north": "vault", "east": "archive" },
+      "npcs": [
+        {
+          "id": "test_warden",
+          "displayName": "The Warden",
+          "npcType": "person",
+          "position": { "x": 3, "y": 4 },
+          "spriteSheet": "female_blowse_v2",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "F19: the release switch opens the vault through the server, so it survives a reload.",
+              "eventPattern": "global_variable_changed:vault_release",
+              "condition": "value === true",
+              "onceOnly": true,
+              "unlockDoor": "vault"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "pc",
+          "id": "vault_release",
+          "name": "Vault Release",
+          "position": { "x": 6, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A release button for the vault door.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "vault_release", "value": true }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "quiet_switch",
+          "name": "Quiet Switch",
+          "position": { "x": 8, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "Switches the music off.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "quiet", "value": true }
+          ]
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_test",
+          "name": "Flag Terminal",
+          "position": { "x": 4, "y": 2 },
+          "takeable": false,
+          "observations": "Submit a flag to open the archive.",
+          "acceptsVms": ["desktop"],
+          "flags": <%= flags_for_vm('desktop', ['flag{test_unlock_archive}']) %>,
+          "flagRewards": [
+            { "type": "unlock_door", "target_room": "archive", "description": "F18: opens the archive, not the lobby" }
+          ]
+        }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "door_sign": "Vault",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9471",
+      "connections": { "south": "lobby" },
+      "objects": []
+    },
+    "archive": {
+      "type": "room_office",
+      "door_sign": "Archive",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "5823",
+      "connections": { "west": "lobby" },
+      "objects": []
+    }
+  }
+}

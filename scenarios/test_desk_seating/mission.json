@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: Desk Seating",
+  "description": "Engine test for chairs at desks (seat-box experiments, docs/achitechture/SEAT_BOX_EXPERIMENTS.md): swivel and static chairs in front of desk1, smalldesk1 and zds_desk1, desks used from behind, a chair beside a desk's end, and two desks a chair-width apart.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

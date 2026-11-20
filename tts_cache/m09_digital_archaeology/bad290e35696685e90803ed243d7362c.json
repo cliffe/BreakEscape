@@ -1,0 +1,13 @@
+{
+  "key": "bad290e35696685e90803ed243d7362c",
+  "npc": "recruiter",
+  "text": "I can't see which tape you pull, only that you pulled one. Take the name and pull anything, and I call my placement.",
+  "voice": "Gacrux",
+  "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T21:05:00Z"
+}

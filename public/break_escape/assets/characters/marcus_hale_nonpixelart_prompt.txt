@@ -1,0 +1,12 @@
+Make portrait for Marcus Hale
+A Black British man in his mid fifties, a weary veteran private detective in a film-noir style. Dark-brown skin, close-cropped greying hair and a short salt-and-pepper beard, heavy-lidded watchful eyes. He wears a charcoal-grey belted trench coat with the collar turned up, over a white shirt and loosened dark-red tie, and a dark grey fedora with a black band. No cigarette, no text, no logos.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain mid-grey background, no gradient, no pattern
+
+# agy 2026-11-03. Reframed WITHOUT --flip (Gemini output already faced right).
+# Approved by the user 2026-11-03 as noir_m1.

@@ -1,0 +1,13 @@
+{
+  "key": "e352c27e0c753b3a0b20eefd75d2ac48",
+  "npc": "eleanor_vance",
+  "text": "The patch requires an eight-week recertification under IEC 61511, the functional safety standard. Albion documented eight weeks without the automatic trip, and a revalidation of the safety function.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:22:16Z"
+}

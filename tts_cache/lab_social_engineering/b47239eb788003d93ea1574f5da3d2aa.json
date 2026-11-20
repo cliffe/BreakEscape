@@ -1,0 +1,13 @@
+{
+  "key": "b47239eb788003d93ea1574f5da3d2aa",
+  "npc": "dev_service_desk",
+  "text": "Okay, slow down a sec. I still need to check who she is.",
+  "voice": "Puck",
+  "style": "Service desk analyst at a small British firm, early forties, British Indian, from the West Midlands. Speak with a consistent West Midlands (Birmingham) accent throughout — do not shift to any other accent. Bright mid-range pitch; easy, chatty pace. The friendliest voice in the building, keen to help whoever rings.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-27",
+  "recorded_at": "2026-10-27T13:47:40Z"
+}

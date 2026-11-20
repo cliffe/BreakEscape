@@ -1,0 +1,1 @@
+✅ opening_briefing.json @ start  paths=16 clean=16 runaway=0 failing=0  states=911 memo-hits=0 0.1s  CAPPED (depth; 0 branches unexplored, depth-capped=16)

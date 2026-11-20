@@ -1,0 +1,13 @@
+{
+  "key": "d110bc31cd4eb85c823ea5af5c701881",
+  "npc": "irina_volkova",
+  "text": "Where did you get our internal analysis?",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:19Z"
+}

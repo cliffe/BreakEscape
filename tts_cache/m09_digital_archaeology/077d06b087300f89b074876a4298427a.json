@@ -1,0 +1,13 @@
+{
+  "key": "077d06b087300f89b074876a4298427a",
+  "npc": "recruiter",
+  "text": "Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.",
+  "voice": "Gacrux",
+  "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T21:03:33Z"
+}

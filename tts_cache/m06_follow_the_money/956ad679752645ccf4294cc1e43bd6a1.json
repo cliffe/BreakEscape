@@ -1,0 +1,13 @@
+{
+  "key": "956ad679752645ccf4294cc1e43bd6a1",
+  "npc": "narrator",
+  "text": "A hand the size of a shovel closes over yours before the second pin sets.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:21:41Z"
+}

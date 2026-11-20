@@ -1,0 +1,13 @@
+{
+  "key": "b46856c760f045849339795b37a68ddf",
+  "npc": "ama_owusu",
+  "text": "Today you watch an office instead of breaking into one.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:33:14Z"
+}

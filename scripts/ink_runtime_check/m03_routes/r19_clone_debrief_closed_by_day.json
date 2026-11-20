@@ -1,0 +1,7 @@
+{"steps":[
+{"note":"R19 (F1): chat closed at the post-clone beat by day, reopened at night. Only the night opener plays, not 'Sorry, I was miles away'."},
+{"set":{"briefing_played":true,"badge_received":true,"reception_badge_cloned":true}},
+{"talk":"ffion","knot":"clone_badge_debrief","picks":[]},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"talk":"ffion","knot":"clone_badge_debrief","picks":[]}
+]}

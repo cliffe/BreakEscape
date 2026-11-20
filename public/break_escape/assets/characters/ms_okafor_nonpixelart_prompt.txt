@@ -1,0 +1,14 @@
+Make portrait for Ms Okafor
+A Nigerian-British woman in her mid-forties with dark skin, a post-surgical patient on a morphine drip lying in an NHS hospital ward bed, drowsy and groggy with heavy-lidded eyes. Short natural hair under a dark satin bonnet, against a pale green pillow. A white hospital gown with a small all-over pattern of blue dots and a V neckline, a clear IV line taped into her forearm, a green hospital blanket drawn up over her chest. No text and no logos.
+Head resting on the pillow, face angled in a three-quarter view toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the patient lying propped up in a hospital bed, upper body and head on the pillow with a green hospital blanket drawn up over the chest, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism. Smooth vector linework, NOT pixel art.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention).
+# Revised 2026-10-02 (user review): gemini_edit_image on the chosen concept replaced the plain T-shirt with a blue-dot patterned hospital gown like Mr Ahmed's. Edited image already faced right; no crop (the bed fills the frame).
+
+# Saved 2026-10-12 from tmp/pixellab/ms_okafor/concept.png (the concept the pipeline used)

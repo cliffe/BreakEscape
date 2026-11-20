@@ -1,0 +1,13 @@
+{
+  "key": "fba571728017231e691b59db995c573b",
+  "npc": "narrator",
+  "text": "A wiry man in a lab coat leans into frame, turning the device over in gloved hands like it is a small, fascinating animal.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

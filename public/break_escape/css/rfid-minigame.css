@@ -1,0 +1,931 @@
+/**
+ * RFID Minigame CSS
+ * RFID Flipper-inspired RFID reader/cloner interface (Pixel Art Style)
+ */
+
+/* Container */
+.rfid-minigame-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+}
+
+/* "safe" centring: a frame taller than its area starts at the top of the area instead
+   of running off both edges (UX slice 3a R3 M1) */
+.rfid-minigame-game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: safe center;
+    width: 100%;
+    height: 100%;
+}
+
+/* The card copier (pixel-art UI rule). Its corners are cut in 2px steps by a clip-path
+   polygon, which is pixel art (only smooth radius is banned); it was in the original
+   design and the user asked for it back. A border or inset shadow on a clipped box is
+   cut away at the corners, so the outline and bevel are layers, each clipped by the
+   same stepped polygon (a staircase of 2px steps inset by 2px is the same staircase):
+   - the frame itself: the 2px dark outline (its background, showing round the edge);
+   - ::before, inset 2px: the light bevel, left and top, following the steps;
+   - .flipper-bevel (a child div, rfid-ui.js createFlipperFrame), offset 2px down and
+     right of ::before: the dark bevel, right and bottom, following the steps;
+   - ::after, inset 2px more on the right and bottom: the orange body.
+   Positioned z-index -1 layers paint in tree order: ::before, the child, then ::after.
+   No soft shadow: clip-path would cut it off anyway. */
+.flipper-zero-frame {
+    --copier-steps: polygon(
+        0px calc(100% - 10px),
+        2px calc(100% - 10px),
+        2px calc(100% - 6px),
+        4px calc(100% - 6px),
+        4px calc(100% - 4px),
+        6px calc(100% - 4px),
+        6px calc(100% - 2px),
+        10px calc(100% - 2px),
+        10px 100%,
+        calc(100% - 10px) 100%,
+        calc(100% - 10px) calc(100% - 2px),
+        calc(100% - 6px) calc(100% - 2px),
+        calc(100% - 6px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 6px),
+        calc(100% - 2px) calc(100% - 6px),
+        calc(100% - 2px) calc(100% - 10px),
+        100% calc(100% - 10px),
+        100% 10px,
+        calc(100% - 2px) 10px,
+        calc(100% - 2px) 6px,
+        calc(100% - 4px) 6px,
+        calc(100% - 4px) 4px,
+        calc(100% - 6px) 4px,
+        calc(100% - 6px) 2px,
+        calc(100% - 10px) 2px,
+        calc(100% - 10px) 0px,
+        10px 0px,
+        10px 2px,
+        6px 2px,
+        6px 4px,
+        4px 4px,
+        4px 6px,
+        2px 6px,
+        2px 10px,
+        0px 10px
+    );
+    position: relative;
+    width: 400px;
+    height: 550px;
+    /* What keeps the frame inside its area is flex shrink: the frame is the area's only
+       flex item, and in a window shorter than 630px it shrinks to the area's height (the
+       window less 40px). That works only with min-height: 0, because a flex item's
+       automatic minimum is its content (577px on the copy screen), which ran the frame
+       off a 412px-high window (UX slice 3a R3 M1). The body inside then scrolls. No
+       height cap: on this content-box frame a 100% cap holds only the content box and
+       lets the frame run 40px past its area, so it never bound (R4 m2). Keep the shrink. */
+    min-height: 0;
+    flex-shrink: 1;
+    background: #1a0d00;
+    clip-path: var(--copier-steps);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'GNF', monospace;
+}
+
+/* The clip-path makes the frame a stacking context, so z-index -1 paints these above
+   the frame's own background and below its content */
+.flipper-zero-frame::before,
+.flipper-zero-frame > .flipper-bevel,
+.flipper-zero-frame::after {
+    position: absolute;
+    z-index: -1;
+    clip-path: var(--copier-steps);
+    pointer-events: none;
+}
+
+.flipper-zero-frame::before,
+.flipper-zero-frame::after {
+    content: '';
+}
+
+.flipper-zero-frame::before {
+    inset: 2px;
+    background: #ffb366;
+}
+
+.flipper-zero-frame > .flipper-bevel {
+    top: 4px;
+    left: 4px;
+    right: 2px;
+    bottom: 2px;
+    background: #b35a00;
+}
+
+.flipper-zero-frame::after {
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    background: #FF8200;
+}
+
+/* Header: fixed at the top of the frame (UX slice 3a R4 m1) */
+.flipper-header {
+    flex: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #b35a00;
+}
+
+.flipper-logo {
+    font-size: 16px;
+    color: white;
+    letter-spacing: 2px;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-battery {
+    font-size: 16px;
+    color: white;
+    font-family: 'GNF', monospace;
+}
+
+/* The display: the grey screen between the header and the footer. It holds the
+   scrolling body (.flipper-screen, #rfid-screen) and, under it, the "More below" strip.
+   The layout of the network view (UX slice 1): fixed header, scrolling body, fixed
+   footer (UX slice 3a R4 m1). */
+.flipper-display {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: #333;
+    border: 2px solid #1a0d00;
+}
+
+/* The scrolling body, which every screen fills */
+.flipper-screen {
+    flex: 1;
+    min-height: 0;
+    padding: 15px;
+    color: white;
+    font-size: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    font-family: 'GNF', monospace;
+}
+
+/* "More below": pinned to the display's bottom edge while the body runs on, hidden at
+   the end (rfid-ui.js updateScrollCue), as on the network view */
+.flipper-more {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #222;
+    border-top: 2px solid #1a1a1a;
+    color: #FFA500;
+    font-size: 20px;
+    font-family: 'VT323', monospace;
+}
+
+.flipper-more[hidden] {
+    display: none;
+}
+
+/* A stepped down arrow, 12 x 6 in 2px steps (rows 12, 8 and 4 wide) */
+.flipper-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #FFA500;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+/* The footer: the screen's main controls, fixed under the display so they show at every
+   window size without scrolling. Empty on screens with none (the X closes the copier). */
+.flipper-footer {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.flipper-footer:empty {
+    display: none;
+}
+
+.flipper-footer .flipper-buttons {
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.flipper-footer .flipper-button-back,
+.flipper-footer .flipper-button-back + .flipper-button-back {
+    margin-top: 0;
+}
+
+/* Footer buttons on the orange body: a dark fill with a light top-left and a dark
+   bottom-right bevel, orange text, so each reads as a raised button and never as orange
+   on orange (UX slice 3a R5 n2). Abandon read keeps its grey. */
+.flipper-footer .flipper-button {
+    background: #2a2a2a;
+    color: #FFA500;
+    box-shadow: inset 2px 2px 0 #4d4d4d, inset -2px -2px 0 #111;
+}
+
+.flipper-footer .flipper-button:hover {
+    background: #3d3d3d;
+}
+
+.flipper-footer .flipper-button-secondary {
+    background: #555;
+    color: #fff;
+    box-shadow: inset 2px 2px 0 #6a6a6a, inset -2px -2px 0 #333;
+}
+
+.flipper-footer .flipper-button-secondary:hover {
+    background: #6a6a6a;
+}
+
+/* The protocol screen's attacks (or Read & Clone, Save UID Only), stacked over the
+   Back and Abandon read row (R5 m1) */
+.flipper-footer .flipper-footer-actions {
+    flex-direction: column;
+    gap: 6px;
+}
+
+.flipper-footer .flipper-footer-actions .flipper-button {
+    flex: none;
+    padding: 8px 12px;
+}
+
+.flipper-footer-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* The copier's controls are real buttons (R5 n1): no browser button look */
+.flipper-zero-frame button {
+    margin: 0;
+    font-family: 'GNF', monospace;
+    line-height: normal;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.flipper-zero-frame button.flipper-menu-item {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+/* The control the keyboard is on: a 2px white pixel ring, square, clear on the grey
+   screen and on the orange body alike */
+.flipper-zero-frame button:focus {
+    outline: none;
+}
+
+.flipper-zero-frame button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 0;
+}
+
+.flipper-zero-frame button.flipper-menu-item:focus-visible {
+    border-color: #FFA500;
+    background: #4d4d4d;
+}
+
+/* Breadcrumb */
+.flipper-breadcrumb {
+    font-size: 16px;
+    color: #FFA500;
+    margin-bottom: 15px;
+    font-family: 'GNF', monospace;
+}
+
+/* Menu */
+.flipper-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.flipper-menu-item {
+    padding: 8px 10px;
+    background: #3d3d3d;
+    border: 2px solid #6a6a6a;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+}
+
+.flipper-menu-item:hover {
+    background: #4d4d4d;
+    border-color: #FFA500;
+}
+
+/* Info Text */
+.flipper-info {
+    color: white;
+    margin: 10px 0;
+    text-align: center;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+}
+
+.flipper-info-dim {
+    color: #c8c8c8;   /* readable on the copier's dark screen (critique A44) */
+    margin: 10px 0;
+    text-align: center;
+    font-size: 16px;
+    font-family: 'GNF', monospace;
+}
+
+/* Card List */
+.flipper-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 15px;
+    /* No scroller of its own: the body scrolls, so one scrollbar and one "More below" */
+}
+
+/* Card Name */
+.flipper-card-name {
+    font-size: 24px;
+    color: #FFA500;
+    margin: 10px 0;
+    text-align: center;
+    font-family: 'GNF', monospace;
+}
+
+/* Card Data */
+.flipper-card-data {
+    --mg-label-colour: #aaa;   /* 6.85:1 on #222, as .protocol-meta */
+    background: #222;
+    border: 2px solid #1a1a1a;
+    padding: 15px;
+    margin: 15px 0;
+    font-size: 16px;
+    line-height: 1.8;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-card-data div {
+    margin: 5px 0;
+}
+
+/* Buttons */
+.flipper-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 15px;
+}
+
+.flipper-button {
+    flex: 1;
+    padding: 12px;
+    background: #FF8200;
+    color: white;
+    border: 2px solid #1a0d00;
+    box-shadow: inset -2px -2px 0 #b35a00;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-button:hover {
+    background: #FFA500;
+}
+
+.flipper-button-secondary {
+    background: #555;
+    box-shadow: inset -2px -2px 0 #333;
+}
+
+.flipper-button-secondary:hover {
+    background: #777;
+}
+
+.flipper-button-back {
+    margin-top: auto;
+    align-self: center;
+    padding: 4px 14px;
+    color: #fff;
+    background: #555;
+    border: 2px solid #1a1a1a;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+}
+
+.flipper-button-back:hover {
+    background: #6a6a6a;
+}
+
+.flipper-button-back + .flipper-button-back {
+    margin-top: 8px;
+}
+
+/* NFC Waves */
+.rfid-nfc-waves-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 30px 0;
+}
+
+.rfid-nfc-icon {
+    font-size: 48px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.rfid-nfc-waves {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.rfid-nfc-wave {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #FF8200;
+    animation: wave 1.5s steps(5) infinite;
+}
+
+@keyframes wave {
+    0% {
+        width: 20px;
+        height: 20px;
+        opacity: 1;
+    }
+    100% {
+        width: 100px;
+        height: 100px;
+        opacity: 0;
+    }
+}
+
+/* Progress Bar */
+.rfid-progress-container {
+    width: 100%;
+    height: 20px;
+    background: #222;
+    border: 2px solid #1a1a1a;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.rfid-progress-bar {
+    height: 100%;
+    background: #FF8200;
+    transition: width 0.1s steps(2);
+}
+
+/* Emulation */
+.rfid-emulate-icon {
+    text-align: center;
+    margin: 12px 0;
+    line-height: 0;
+    animation: pulse 1.5s steps(2) infinite;
+}
+
+.flipper-emulating {
+    color: #00FF00;
+    text-align: center;
+    margin: 15px 0;
+    animation: blink 1s steps(2) infinite;
+    font-family: 'GNF', monospace;
+}
+
+@keyframes blink {
+    0%, 50%, 100% {
+        opacity: 1;
+    }
+    25%, 75% {
+        opacity: 0.5;
+    }
+}
+
+/* Success/Error Messages */
+.flipper-success,
+.flipper-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.flipper-success-icon,
+.flipper-error-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+}
+
+.flipper-success-icon {
+    color: #00FF00;
+}
+
+.flipper-error-icon {
+    color: #FF0000;
+}
+
+.flipper-success-message,
+.flipper-error-message {
+    font-size: 24px;
+    font-family: 'GNF', monospace;
+}
+
+.flipper-success-message {
+    color: #00FF00;
+}
+
+.flipper-error-message {
+    color: #FF0000;
+}
+
+/* Under a refusal (rfid-minigame.js _showDenial): it clears on a tap or after 3 s */
+.flipper-error-hint {
+    margin-top: 12px;
+    font-size: 16px;
+    font-family: 'GNF', monospace;
+    color: #FFA500;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Scrollbar: the pixel-art scrollbar of slice 1, the shared .pixel-scroll rule in
+   css/utilities.css on build/ux-net (not on this branch). This is a local copy of its
+   shape, scoped to the copier, with the copier's colours: once both slices are merged,
+   drop the shape rules here and keep only the colour variables on the frame. Square,
+   2px borders, flat colours, no arrow buttons. */
+.flipper-zero-frame .pixel-scroll {
+    --pixel-scroll-track: #1a1a1a;
+    --pixel-scroll-thumb: #4d4d4d;
+    --pixel-scroll-edge: #FF8200;
+    --pixel-scroll-hover: #FFA500;
+}
+
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-left: 2px solid var(--pixel-scroll-thumb);
+}
+
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
+}
+
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
+}
+
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.flipper-zero-frame .pixel-scroll::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .flipper-zero-frame .pixel-scroll {
+        scrollbar-width: auto;
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
+}
+
+/* Protocol-Specific Displays */
+.flipper-protocol-header {
+    background: #3a3a3a;
+    border: 2px solid #5a5a5a;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.protocol-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.protocol-icon {
+    font-size: 20px;
+}
+
+.protocol-name {
+    font-size: 16px;
+    color: white;
+    font-family: 'GNF', monospace;
+}
+
+.protocol-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 20px;
+    color: #AAA;
+    font-family: 'VT323', monospace;
+}
+
+.security-badge {
+    padding: 3px 8px;
+    border: 2px solid #1a1a1a;
+    font-size: 20px;
+    font-family: 'VT323', monospace;
+}
+
+.security-badge.security-low {
+    background: #FF6B6B;
+    color: white;
+}
+
+.security-badge.security-medium {
+    background: #4ECDC4;
+    color: white;
+}
+
+.security-badge.security-high {
+    background: #95E1D3;
+    color: #333;
+}
+
+.flipper-menu-item-dim {
+    opacity: 0.5;
+}
+
+/* At an access-list reader: the refused-badge line and the "Checking..." line under the
+   reader head, and the door list while a card is being checked (UX slice 3b R1 m3, m7) */
+.flipper-reader-refused,
+.flipper-reader-status {
+    margin: 6px 0;
+}
+.flipper-reader-status[hidden] {
+    display: none;
+}
+.flipper-zero-frame button.flipper-menu-item:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.flipper-zero-frame button.flipper-menu-item:disabled:hover {
+    background: #3d3d3d;
+    border-color: #6a6a6a;
+}
+
+.flipper-menu-item-dim:hover {
+    background: #333;
+    opacity: 0.7;
+}
+
+/* Attack Progress */
+#attack-status {
+    font-size: 16px;
+    margin-top: 10px;
+    color: #FFA500;
+    font-family: 'GNF', monospace;
+}
+
+#attack-percentage {
+    font-size: 16px;
+    color: white;
+    font-family: 'GNF', monospace;
+}
+
+#attack-progress-bar {
+    transition: width 0.5s steps(4);
+}
+
+/* Responsive. The phone rule starts at 530px, not 500px: from 501px to 529px wide the
+   wide frame (440px, centred, 20px from the top in a short window) put its top-right
+   corner under the close X (R4 n1). The phone frame caps at 440px wide, so its width
+   does not change in that band. */
+@media (max-width: 530px) {
+    /* At phone width the frame and its stepped outline stay inside the window, 16px in
+       from each side. Content-box sizing (400px of content plus padding) is kept for wider
+       screens; here the padding counts inside the width, or 90% plus 40px of padding ran
+       past both edges (UX slice 3a R1 m3). The height is the old 80vh of content plus the
+       padding, rounded to whole 2px so the bottom steps land on whole pixels.
+       The close X now sits inside the frame, at its top right (rfid-minigame.js
+       placeCloseButton, UX slice 3b R1); the bands below still keep the frame clear
+       of the window's top and bottom edges (R2 m1). The game
+       container already sits 20px in from the top and bottom (minigames-framework.css
+       margin: 20px auto), so 32px of padding starts the copier's area 52px down and ends
+       it 52px up (100vh - 104px high). The frame is centred in that area, or starts at
+       its top when it is too tall ("safe" centring never pushes it under the X). */
+    .rfid-minigame-game-container {
+        box-sizing: border-box;
+        padding: 32px 0;
+    }
+
+    .flipper-zero-frame {
+        box-sizing: border-box;
+        width: calc(100% - 32px);
+        max-width: 440px;
+        height: calc(80vh + 40px);
+        height: round(down, min(calc(80vh + 40px), calc(100vh - 104px)), 2px);
+        /* 540px where the window has room; below that the area's height, so the bottom
+           outline and steps stay in a short window (320x568) and the screen scrolls
+           (R3 n2) */
+        min-height: min(540px, calc(100vh - 104px));
+    }
+}
+
+/* Keyless MIFARE read screen: compact so the "Crack keys first" button stays on screen */
+.flipper-card-data-compact {
+    padding: 8px 12px;
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.flipper-card-data-compact div {
+    margin: 2px 0;
+}
+
+.flipper-crack-hint {
+    margin: 4px 0;
+    font-size: 16px;
+}
+
+/* Under a refusal or notice: why it happened (rfid-minigame.js _showDenial) */
+.flipper-error-detail {
+    margin-top: 10px;
+    max-width: 90%;
+    font-size: 16px;
+    line-height: 1.3;
+    font-family: 'GNF', monospace;
+    color: #ddd;
+    text-align: center;
+}
+
+/* "Nothing happened" rather than "refused": amber, no cross */
+.flipper-notice .flipper-error-icon {
+    font-size: 56px;
+    color: #FFA500;
+}
+
+.flipper-notice .flipper-error-message {
+    color: #FFA500;
+}
+
+/* Left on the Info screen after a dictionary attack found nothing */
+.flipper-dict-miss {
+    margin: 4px 0;
+    font-size: 16px;
+    color: #FFA500;
+    border: 2px solid #FFA500;
+    padding: 4px 8px;
+}
+
+.flipper-dict-miss .px-icon-holder {
+    margin-right: 6px;
+}
+
+/* Whether the card's data is encrypted (getReadProfile in rfid-protocols.js) */
+.rfid-crypto-line {
+    margin: 8px 0;
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 16px;
+    font-family: 'GNF', monospace;
+    border: 2px solid currentColor;
+}
+
+.rfid-crypto-open {
+    color: #00FF00;
+}
+
+.rfid-crypto-locked {
+    color: #FFA500;
+}
+
+/* MIFARE Classic 1K: 16 sectors, lit when the key is known */
+.rfid-sector-grid {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    margin: 6px 0;
+}
+
+.rfid-sector {
+    width: 12px;
+    height: 12px;
+    background: #222;
+    border: 2px solid #FFA500;
+    box-sizing: border-box;
+}
+
+.rfid-sector-open {
+    background: #00FF00;
+    border-color: #00FF00;
+}
+
+/* Pixel icons (rfid-ui.js pixelIcon): whole pixels, never smoothed */
+.px-icon {
+    display: inline-block;
+    vertical-align: middle;
+    image-rendering: pixelated;
+    flex: none;
+}
+
+.flipper-battery {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rfid-nfc-icon {
+    line-height: 0;
+}
+
+.flipper-protocol-line,
+.rfid-crypto-line,
+.flipper-crack-hint,
+.flipper-reader-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.protocol-icon,
+.px-icon-holder {
+    line-height: 0;
+}
+
+/* The copier at a reader (rfid-ui.js showDoorScreen) */
+.flipper-reader-head {
+    justify-content: flex-start;
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #222;
+    border: 2px solid #1a1a1a;
+}
+
+.flipper-section-head {
+    color: #FFA500;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
+.flipper-door-list {
+    max-height: none;
+    margin-top: 4px;
+}
+
+.flipper-success-icon .px-icon,
+.flipper-error-icon .px-icon {
+    display: block;
+    margin: 0 auto;
+}
+
+/* Back: the pixel arrow, then the word */
+.flipper-button-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}

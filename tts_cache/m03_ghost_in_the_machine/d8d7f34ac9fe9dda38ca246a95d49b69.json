@@ -1,0 +1,13 @@
+{
+  "key": "d8d7f34ac9fe9dda38ca246a95d49b69",
+  "npc": "narrator",
+  "text": "You get up and go to the board, close to Victoria.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:18:12Z"
+}

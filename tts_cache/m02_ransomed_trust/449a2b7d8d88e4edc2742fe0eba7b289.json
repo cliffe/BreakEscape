@@ -1,0 +1,13 @@
+{
+  "key": "449a2b7d8d88e4edc2742fe0eba7b289",
+  "npc": "night_security_supervisor",
+  "text": "If somebody wanted to make a person disappear tonight, they wouldn't need to be clever. They'd need a telephone.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

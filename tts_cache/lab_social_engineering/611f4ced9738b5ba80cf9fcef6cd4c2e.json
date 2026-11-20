@@ -1,0 +1,13 @@
+{
+  "key": "611f4ced9738b5ba80cf9fcef6cd4c2e",
+  "npc": "tomasz",
+  "text": "Cheapest fix on the list, and it would have stopped Sofia's whole chain. Good pick.",
+  "voice": "Alnilam",
+  "style": "In-house security lead at a small British firm, mid thirties, Polish-born, fifteen years in the UK. Speak with a consistent light Polish-accented English throughout — do not shift to any other accent. Mid-range pitch; quick pace. Dry, deadpan and practical, a man who has seen a lot of phishing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:41:27Z"
+}

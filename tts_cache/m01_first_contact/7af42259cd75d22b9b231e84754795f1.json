@@ -1,0 +1,13 @@
+{
+  "key": "7af42259cd75d22b9b231e84754795f1",
+  "npc": "fatima_begum",
+  "text": "Back again? I really am up to my neck in CVs.",
+  "voice": "Vindemiatrix",
+  "style": "Recruitment lead in her thirties, British Bangladeshi, Yorkshire accent. Brisk, friendly, a little rushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:53:02Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "f767f413b0e54aba3f5199454ef2f306",
+  "npc": "eleanor_vance",
+  "text": "Our external counsel advises against invoking the exclusion.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:43Z"
+}

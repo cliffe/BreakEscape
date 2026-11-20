@@ -1,0 +1,17 @@
+{"steps":[
+{"note":"R23 (A4 fix pass, S6): Terry's 'Why d'you want to know my route?' now has an answer. (a) the plausible excuse, back to his hub; (b) the flustered one, back to his hub colder; (c) backing off ends the chat, then a reopen; (d) a reload at his question re-asks it."},
+{"set":{"briefing_played":true,"badge_received":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"note":"(a) plausible"},
+{"talk":"terry","picks":["Sterling asked me","enrolment forms","Long night","route","under your feet","let you get on"]},
+{"note":"(b) flustered"},
+{"set":{"topic_shift":false}},
+{"talk":"terry","reload":true,"knot":"ask_shift","picks":["route","making conversation","let you get on"]},
+{"note":"(c) backs off, then talks to him again"},
+{"set":{"topic_shift":false}},
+{"talk":"terry","reload":true,"knot":"ask_shift","picks":["route","Forget I asked"]},
+{"talk":"terry","picks":["Talk to the guard","let you get on"]},
+{"note":"(d) reload while his question is on screen"},
+{"set":{"topic_shift":false}},
+{"talk":"terry","reload":true,"knot":"ask_shift","picks":["route"]},
+{"talk":"terry","reload":true,"knot":"route_reply","picks":["under your feet","let you get on"]}
+]}

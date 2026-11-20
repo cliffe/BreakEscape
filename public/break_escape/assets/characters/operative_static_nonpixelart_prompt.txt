@@ -1,0 +1,11 @@
+Make portrait for ENTROPY Operative Static
+A white Polish man in his early thirties who has lived in Britain for ten years, fair skin tone, an ENTROPY operative and the last line of defence for his cell leader, heavy-set and broad, terse, loyal and immovable: a square jaw, a thick neck, a flat, unreadable stare from pale grey eyes, a slightly crooked nose, very short light brown buzz-cut hair, light stubble. Wearing a dark charcoal-black padded work jacket with no logos and no lettering, zipped half open over a dark grey hooded sweatshirt, black cargo work trousers with a black belt, heavy shoulders and big hands.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Concept c01 of the m04 pass-5 set (2026-10-13), picked by the user.
+# No reference image (stand-in hacker-red). Black jacket on a dark background: check the outline at the bust stage. Canon: voice style 'ENTROPY operative and Voltage's last line of defence, early thirties ... Polish-accented English'.

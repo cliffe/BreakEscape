@@ -1,0 +1,10 @@
+Make portrait for Officer Kenji Arakawa
+A fit, compact Japanese-American man of about 41 from Sacramento, with light skin with a warm undertone, a clean-shaven face with a firm jaw, and short straight black hair with a neat side part and a touch of grey above the ears, a tactical officer and the team's US liaison, a family man with a young daughter. Dark brown eyes and a quiet, watchful, practical look. He wears a coyote-tan softshell field jacket open over a black polo shirt, dark charcoal tactical trousers, a black nylon belt and a plain silver wedding ring; both hands empty and resting relaxed at his sides. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (finale batch, re-roll after user review of concept_1). Reframed with reframe_portrait.py --flip; unflipped original is kenji_arakawa_concept_2_raw.png. Approved by the user 2026-10-22; adopted from wip/kenji_arakawa_concept_2.png.

@@ -1,0 +1,19 @@
+scenario : scenarios/lab_tesseract_trials/scenario.json.erb
+start    : foyer
+rooms    : 7
+
+DEPTH  ROOM                            LOCKED  LOCKS  NPCS  OBJS  NOTE
+------------------------------------------------------------------------------
+    0  foyer                                       1     5    20  
+    1  common_room                                 1     2     5  
+    1  corridor                        yes         3     0     8  
+    1  teaching_lab                                1     1    11  
+    2  library                         yes         2     0     6  
+    2  sidhu_office                                0     1     4  
+    2  workshop                        yes         3     1     8  
+
+empty rooms : 0/7
+lockType declarations : 11
+
+Next: for each lock, find the depth at which its key/code first becomes
+available, and mark it boss-key / key-before-lock / same-room.

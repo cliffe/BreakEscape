@@ -1,0 +1,13 @@
+{
+  "key": "d8894337ae5faf825410d3388791bea4",
+  "npc": "narrator",
+  "text": "Ms Okafor is not breathing. The pump is still running at the rate it was given.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,1040 @@
+{
+ "scenario": "test_npc_needs",
+ "gameId": 1182,
+ "url": "http://127.0.0.1:3013/break_escape/games/1182",
+ "seed": "test_npc_needs",
+ "capturedAt": "2026-11-11T13:49:24.386Z",
+ "gitRev": "18b34b283",
+ "jsDirty": false,
+ "spanSec": 120,
+ "paceMs": 250,
+ "visit": [],
+ "knockOuts": [
+  {
+   "npc": "finder",
+   "at": 20
+  }
+ ],
+ "probeEverySec": 5,
+ "disableAttacks": false,
+ "needsIds": [
+  "clerk",
+  "finder"
+ ],
+ "endClockMs": 120000,
+ "endTick": 480,
+ "actions": [
+  {
+   "what": "bootstrap",
+   "ok": true,
+   "result": {
+    "settled": true,
+    "room": "test_room",
+    "player": {
+     "x": 128,
+     "y": 192,
+     "hp": 100
+    }
+   }
+  },
+  {
+   "what": "reset needs to seed, manual clock",
+   "ok": true,
+   "result": {
+    "seed": {
+     "ok": true,
+     "seed": "test_npc_needs",
+     "npcs": [
+      "clerk",
+      "finder"
+     ]
+    },
+    "manual": {
+     "ok": true,
+     "manualClock": true
+    }
+   }
+  },
+  {
+   "what": "debugKO finder at 20s (exercised, not earned)",
+   "ok": true,
+   "result": {
+    "ok": true,
+    "npcId": "finder",
+    "via": "debug-shortcut (NPC was peaceful; converted to hostile as a player punch would, combat not played)",
+    "convertedFromPeaceful": true,
+    "hpBefore": 100,
+    "isKO": true
+   }
+  }
+ ],
+ "probes": [
+  {
+   "clockMs": 5000,
+   "tick": 20,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 5000,
+   "tick": 20,
+   "id": "finder_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 10000,
+   "tick": 40,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 10000,
+   "tick": 40,
+   "id": "finder_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 15000,
+   "tick": 60,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 15000,
+   "tick": 60,
+   "id": "finder_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 25000,
+   "tick": 100,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 25000,
+   "tick": 100,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 30000,
+   "tick": 120,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 30000,
+   "tick": 120,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 35000,
+   "tick": 140,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 35000,
+   "tick": 140,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 40000,
+   "tick": 160,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 40000,
+   "tick": 160,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 45000,
+   "tick": 180,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 45000,
+   "tick": 180,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 50000,
+   "tick": 200,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 50000,
+   "tick": 200,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 55000,
+   "tick": 220,
+   "id": "clerk_pc",
+   "answer": "locked"
+  },
+  {
+   "clockMs": 55000,
+   "tick": 220,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 65000,
+   "tick": 260,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 65000,
+   "tick": 260,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 70000,
+   "tick": 280,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 70000,
+   "tick": 280,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 75000,
+   "tick": 300,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 75000,
+   "tick": 300,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 80000,
+   "tick": 320,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 80000,
+   "tick": 320,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 85000,
+   "tick": 340,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 85000,
+   "tick": 340,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 95000,
+   "tick": 380,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 95000,
+   "tick": 380,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 100000,
+   "tick": 400,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 100000,
+   "tick": 400,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 105000,
+   "tick": 420,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 105000,
+   "tick": 420,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 110000,
+   "tick": 440,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 110000,
+   "tick": 440,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 115000,
+   "tick": 460,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 115000,
+   "tick": 460,
+   "id": "finder_pc",
+   "answer": "accessed"
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "id": "clerk_pc",
+   "answer": "attended"
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "id": "finder_pc",
+   "answer": "accessed"
+  }
+ ],
+ "workstations": [
+  {
+   "clockMs": 0,
+   "tick": 0,
+   "id": "clerk_pc",
+   "owner": "clerk",
+   "present": true,
+   "away": false,
+   "leaves": 0,
+   "screenLocked": null,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": false
+  },
+  {
+   "clockMs": 0,
+   "tick": 0,
+   "id": "finder_pc",
+   "owner": "finder",
+   "present": true,
+   "away": false,
+   "leaves": 0,
+   "screenLocked": null,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": false
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "id": "finder_pc",
+   "owner": "finder",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": false
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "id": "finder_pc",
+   "owner": "finder",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": true,
+   "accessed": true
+  },
+  {
+   "clockMs": 51000,
+   "tick": 204,
+   "id": "clerk_pc",
+   "owner": "clerk",
+   "present": false,
+   "away": true,
+   "leaves": 1,
+   "screenLocked": true,
+   "lockAt": null,
+   "screen_locked": true,
+   "owner_away": true,
+   "accessed": false
+  },
+  {
+   "clockMs": 59000,
+   "tick": 236,
+   "id": "clerk_pc",
+   "owner": "clerk",
+   "present": true,
+   "away": false,
+   "leaves": 1,
+   "screenLocked": false,
+   "lockAt": null,
+   "screen_locked": false,
+   "owner_away": false,
+   "accessed": false
+  }
+ ],
+ "tasks": [],
+ "finalGlobals": {
+  "clerk_pc_accessed": false,
+  "finder_pc_accessed": true,
+  "clerk_pc_owner_away": false,
+  "finder_pc_owner_away": true,
+  "clerk_pc_screen_locked": false,
+  "finder_pc_screen_locked": false
+ },
+ "events": [
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "finder",
+    "isHostile": true
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "finder",
+    "objectId": "test_room_chair-white-2-rotate3_157"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_ko",
+   "data": {
+    "npcId": "finder"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "npc_ko:finder",
+   "data": {
+    "npcId": "finder"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "global_variable_changed:finder_pc_owner_away",
+   "data": {
+    "name": "finder_pc_owner_away",
+    "value": true,
+    "oldValue": false
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "workstation_owner_left:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder",
+    "screenLocked": false,
+    "reason": "ko"
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "global_variable_changed:finder_pc_accessed",
+   "data": {
+    "name": "finder_pc_accessed",
+    "value": true,
+    "oldValue": false
+   }
+  },
+  {
+   "clockMs": 20000,
+   "tick": 80,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 21000,
+   "tick": 84,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 25000,
+   "tick": 100,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 30000,
+   "tick": 120,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 35000,
+   "tick": 140,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 36000,
+   "tick": 144,
+   "event": "npc_swivelled:clerk",
+   "data": {
+    "npcId": "clerk",
+    "facing": "north-east",
+    "reason": "idle"
+   }
+  },
+  {
+   "clockMs": 40000,
+   "tick": 160,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 45000,
+   "tick": 180,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 50000,
+   "tick": 200,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 50250,
+   "tick": 201,
+   "event": "npc_need_urgent:clerk",
+   "data": {
+    "npcId": "clerk",
+    "need": "caffeine",
+    "level": 29.95
+   }
+  },
+  {
+   "clockMs": 50250,
+   "tick": 201,
+   "event": "npc_action_windup:clerk",
+   "data": {
+    "npcId": "clerk",
+    "need": "caffeine",
+    "targetId": "coffee_machine",
+    "tag": null,
+    "ms": 700
+   }
+  },
+  {
+   "clockMs": 50250,
+   "tick": 201,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "clerk",
+    "objectId": "test_room_chair-white-2-rotate6_158"
+   }
+  },
+  {
+   "clockMs": 51000,
+   "tick": 204,
+   "event": "npc_left_post:clerk",
+   "data": {
+    "npcId": "clerk",
+    "need": "caffeine",
+    "targetId": "coffee_machine",
+    "expectedAwayMs": 6928,
+    "playerNearby": false,
+    "playerDistance": 99
+   }
+  },
+  {
+   "clockMs": 51000,
+   "tick": 204,
+   "event": "global_variable_changed:clerk_pc_screen_locked",
+   "data": {
+    "name": "clerk_pc_screen_locked",
+    "value": true,
+    "oldValue": false
+   }
+  },
+  {
+   "clockMs": 51000,
+   "tick": 204,
+   "event": "global_variable_changed:clerk_pc_owner_away",
+   "data": {
+    "name": "clerk_pc_owner_away",
+    "value": true,
+    "oldValue": false
+   }
+  },
+  {
+   "clockMs": 51000,
+   "tick": 204,
+   "event": "workstation_owner_left:clerk_pc",
+   "data": {
+    "objectId": "clerk_pc",
+    "ownerId": "clerk",
+    "screenLocked": true,
+    "reason": "needs"
+   }
+  },
+  {
+   "clockMs": 51000,
+   "tick": 204,
+   "event": "workstation_screen_changed:clerk_pc",
+   "data": {
+    "objectId": "clerk_pc",
+    "ownerId": "clerk",
+    "locked": true,
+    "how": "leave"
+   }
+  },
+  {
+   "clockMs": 51000,
+   "tick": 204,
+   "event": "workstation_lock_heard:clerk_pc",
+   "data": {
+    "objectId": "clerk_pc",
+    "ownerId": "clerk",
+    "locked": true,
+    "how": "leave",
+    "volume": 0.086
+   }
+  },
+  {
+   "clockMs": 52000,
+   "tick": 208,
+   "event": "npc_arrived:clerk",
+   "data": {
+    "npcId": "clerk",
+    "x": 167.4202098055632,
+    "y": 84.047587668077,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 52250,
+   "tick": 209,
+   "event": "npc_use_started:coffee_machine",
+   "data": {
+    "npcId": "clerk",
+    "objectId": "coffee_machine",
+    "need": "caffeine"
+   }
+  },
+  {
+   "clockMs": 52250,
+   "tick": 209,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "clerk",
+    "objectId": "test_room_chair-white-1-rotate6_154",
+    "facing": "east"
+   }
+  },
+  {
+   "clockMs": 55000,
+   "tick": 220,
+   "event": "workstation_locked_attempt:clerk_pc",
+   "data": {
+    "objectId": "clerk_pc",
+    "ownerId": "clerk"
+   }
+  },
+  {
+   "clockMs": 55000,
+   "tick": 220,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 57250,
+   "tick": 229,
+   "event": "npc_used:coffee_machine",
+   "data": {
+    "npcId": "clerk",
+    "objectId": "coffee_machine",
+    "need": "caffeine",
+    "itemId": null,
+    "tag": null,
+    "payload": {
+     "tag": "payload-clerk",
+     "role": "clerk"
+    },
+    "playerNearby": false,
+    "playerDistance": 141
+   }
+  },
+  {
+   "clockMs": 57250,
+   "tick": 229,
+   "event": "npc_stood",
+   "data": {
+    "npcId": "clerk",
+    "objectId": "test_room_chair-white-1-rotate6_154"
+   }
+  },
+  {
+   "clockMs": 58000,
+   "tick": 232,
+   "event": "npc_arrived:clerk",
+   "data": {
+    "npcId": "clerk",
+    "x": 113.195707659227,
+    "y": 76.00005670402746,
+    "owner": "needs"
+   }
+  },
+  {
+   "clockMs": 58250,
+   "tick": 233,
+   "event": "npc_returned_post:clerk",
+   "data": {
+    "npcId": "clerk",
+    "playerNearby": false,
+    "playerDistance": 148
+   }
+  },
+  {
+   "clockMs": 58250,
+   "tick": 233,
+   "event": "global_variable_changed:clerk_pc_screen_locked",
+   "data": {
+    "name": "clerk_pc_screen_locked",
+    "value": false,
+    "oldValue": true
+   }
+  },
+  {
+   "clockMs": 58250,
+   "tick": 233,
+   "event": "global_variable_changed:clerk_pc_owner_away",
+   "data": {
+    "name": "clerk_pc_owner_away",
+    "value": false,
+    "oldValue": true
+   }
+  },
+  {
+   "clockMs": 58250,
+   "tick": 233,
+   "event": "workstation_owner_returned:clerk_pc",
+   "data": {
+    "objectId": "clerk_pc",
+    "ownerId": "clerk",
+    "wasLocked": true
+   }
+  },
+  {
+   "clockMs": 58250,
+   "tick": 233,
+   "event": "workstation_screen_changed:clerk_pc",
+   "data": {
+    "objectId": "clerk_pc",
+    "ownerId": "clerk",
+    "locked": false,
+    "how": "return"
+   }
+  },
+  {
+   "clockMs": 58250,
+   "tick": 233,
+   "event": "workstation_lock_heard:clerk_pc",
+   "data": {
+    "objectId": "clerk_pc",
+    "ownerId": "clerk",
+    "locked": false,
+    "how": "return",
+    "volume": 0.086
+   }
+  },
+  {
+   "clockMs": 58250,
+   "tick": 233,
+   "event": "npc_sat",
+   "data": {
+    "npcId": "clerk",
+    "objectId": "test_room_chair-white-1-rotate8_153",
+    "facing": "west"
+   }
+  },
+  {
+   "clockMs": 60000,
+   "tick": 240,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 65000,
+   "tick": 260,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 70000,
+   "tick": 280,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 75000,
+   "tick": 300,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 80000,
+   "tick": 320,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 85000,
+   "tick": 340,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 90000,
+   "tick": 360,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 95000,
+   "tick": 380,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 100000,
+   "tick": 400,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 105000,
+   "tick": 420,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 110000,
+   "tick": 440,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 115000,
+   "tick": 460,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  },
+  {
+   "clockMs": 120000,
+   "tick": 480,
+   "event": "workstation_accessed:finder_pc",
+   "data": {
+    "objectId": "finder_pc",
+    "ownerId": "finder"
+   }
+  }
+ ],
+ "needsLog": [
+  {
+   "t": 81,
+   "npc": "finder",
+   "ev": "blocked"
+  },
+  {
+   "t": 201,
+   "npc": "clerk",
+   "ev": "urgent",
+   "need": "caffeine",
+   "level": 29.95
+  },
+  {
+   "t": 201,
+   "npc": "clerk",
+   "ev": "job_start",
+   "need": "caffeine",
+   "target": "coffee_machine"
+  },
+  {
+   "t": 201,
+   "npc": "clerk",
+   "ev": "windup",
+   "target": "coffee_machine"
+  },
+  {
+   "t": 209,
+   "npc": "clerk",
+   "ev": "using",
+   "need": "caffeine",
+   "target": "coffee_machine"
+  },
+  {
+   "t": 229,
+   "npc": "clerk",
+   "ev": "used",
+   "need": "caffeine",
+   "target": "coffee_machine",
+   "level": 99.55,
+   "payloadPresent": true
+  },
+  {
+   "t": 233,
+   "npc": "clerk",
+   "ev": "returned_post"
+  }
+ ]
+}

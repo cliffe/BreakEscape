@@ -1,0 +1,14 @@
+{
+  "key": "dcf16243094e14ff33d70e63d4a81d68",
+  "npc": "terry_mott",
+  "text": "I'm not ringing the boss at this hour on your say-so.",
+  "delivery": "flatly",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T17:47:13Z"
+}

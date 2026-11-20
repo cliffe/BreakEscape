@@ -1,0 +1,29 @@
+{
+  "accounts": [
+    { "id": "guest", "address": "guest@workstation.example", "displayName": "Operator", "kind": "given", "person": null, "mailbox": "guest", "spoofsFrom": true },
+    { "id": "freemail", "kind": "created", "person": null, "unlockedBy": "acct_freemail", "mailbox": "freemail", "spoofsFrom": false,
+      "createMenu": [ { "id": "tt1", "address": "tarnside.test@freemail.example", "displayName": "T. Test" } ] }
+  ],
+  "mailboxes": [ { "id": "guest" }, { "id": "freemail" } ],
+  "contacts": [
+    { "id": "hampshire", "person": "hampshire", "name": "Chris Hampshire", "addresses": ["careers@ledgerwell.example"], "role": "Careers", "revealedBy": "se_intel_hampshire_careers", "targetId": "hampshire" },
+    { "id": "pierce", "person": "pierce", "name": "Melanie Pierce", "addresses": ["m.pierce@ledgerwell.example"], "role": "Finance", "revealedBy": "se_intel_pierce_role", "accountIds": ["freemail"] },
+    { "id": "it", "person": "it", "name": "IT Desk", "addresses": ["it@ledgerwell.example"], "role": "IT" }
+  ],
+  "seededMessages": [
+    { "id": "welcome", "mailbox": "guest", "from": { "name": "IT", "address": "it@ledgerwell.example" },
+      "to": "guest@workstation.example", "subject": "Your new laptop", "body": "Welcome aboard.\nYour laptop is ready.", "time": "08:05", "unread": true },
+    { "id": "newsletter", "mailbox": "guest", "from": { "name": "Ledgerwell News", "address": "news@ledgerwell.example" },
+      "to": "guest@workstation.example", "subject": "Weekly digest", "time": "07:40", "unread": false,
+      "body": "Read the policy at {{link:policy}} and the sheet attached.",
+      "links": [ { "id": "policy", "linkText": "ledgerwell.example/policy", "destination": "ledgervvell.example/policy" } ],
+      "attachments": [ { "label": "Digest.pdf", "kind": "pdf" } ] },
+    { "id": "lookalike", "mailbox": "guest", "from": { "name": "Payroll <b>Team</b>", "address": "payroll@ledgervvell.example" },
+      "to": "guest@workstation.example", "subject": "Hours <script>x</script>", "body": "<b>not bold</b>", "time": "09:00", "unread": true },
+    { "id": "timed", "mailbox": "guest", "from": { "name": "Later", "address": "later@ledgerwell.example" },
+      "to": "guest@workstation.example", "subject": "Timed", "body": "later", "time": "10:00", "unread": true, "deliverAt": { "afterSeconds": 120 } },
+    { "id": "old_sent", "mailbox": "guest", "folder": "sent", "fromAccount": "guest", "from": { "name": "Operator", "address": "guest@workstation.example" },
+      "to": "it@ledgerwell.example", "subject": "Re: Your new laptop", "body": "Thanks.", "time": "08:20" }
+  ],
+  "checklistTiming": "onSend"
+}

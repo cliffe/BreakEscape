@@ -1,0 +1,39 @@
+{
+  "display_name": "Captain Meow Disappearance",
+  "description": "Your beloved kitty sidekick, Captain Meow, has vanished without a trace! As a renowned adventurer and detective, you suspect foul play. Can you crack the codes, follow the trail, and rescue Captain Meow before it's too late?",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "escape_room",
+  "cybok": [
+    {
+      "ka": "F",
+      "topic": "Operating System Analysis",
+      "keywords": ["Steganography", "Encoding and alternative data formats", "SEARCH FOR EVIDENCE", "METADATA"]
+    },
+    {
+      "ka": "POR",
+      "topic": "Privacy Technologies and Democratic Values",
+      "keywords": ["METADATA", "STEGANOGRAPHY"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Cryptographic Implementation",
+      "keywords": ["Cryptographic Libraries", "ENCRYPTION - TOOLS"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Algorithms, Schemes and Protocols",
+      "keywords": ["ADVANCED ENCRYPTION STANDARD (AES)", "ECB (ELECTRONIC CODE BOOK) BLOCK CIPHER MODE", "Hash Functions", "MD5 Hash", "Base64 Encoding", "Octal Encoding", "Hexadecimal (Hex) Encoding"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Physical Security",
+      "keywords": ["Fingerprint Authentication", "Bluetooth Security", "Physical Locks"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["Biometric authentication", "Fingerprint authentication"]
+    }
+  ]
+}

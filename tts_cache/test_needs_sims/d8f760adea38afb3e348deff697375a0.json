@@ -1,0 +1,13 @@
+{
+  "key": "d8f760adea38afb3e348deff697375a0",
+  "npc": "keith",
+  "text": "Nothing like a night cuppa.",
+  "voice": "Algenib",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:10:21Z"
+}

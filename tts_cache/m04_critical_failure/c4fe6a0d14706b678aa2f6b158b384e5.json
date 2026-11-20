@@ -1,0 +1,13 @@
+{
+  "key": "c4fe6a0d14706b678aa2f6b158b384e5",
+  "npc": "narrator",
+  "text": "Vance is on the line from the Albion ops desk.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:52:35Z"
+}

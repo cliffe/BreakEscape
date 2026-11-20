@@ -1,0 +1,13 @@
+{
+  "key": "a516e431c87cd2e2598e90ebf7bfd118",
+  "npc": "narrator",
+  "text": "You put the fund allocation beside it, open at the casualty projection.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:59:41Z"
+}

@@ -1,0 +1,36 @@
+{
+  "scenario": "test_phone_calls",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "lock_keypad_safe",
+      "label": "Keypad Safe (PIN 1234)<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_pick_case",
+      "label": "Pick Case (lockpick)<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Phone Test Office",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "office",
+      "to": "lock_keypad_safe",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_pick_case",
+      "soft": false
+    }
+  ]
+}

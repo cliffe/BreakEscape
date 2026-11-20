@@ -1,0 +1,356 @@
+<?xml version="1.0"?>
+
+<scenario xmlns="http://www.github/cliffe/SecGen/scenario"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://www.github/cliffe/SecGen/scenario">
+
+  <name>Break Escape SAFETYNET: Mission 3 — Ghost in the Machine</name>
+  <author>Z. Cliffe Schreuders</author>
+  <description>
+# Break Escape SAFETYNET Mission 3: Ghost in the Machine
+
+Virtual machines for the Break Escape SAFETYNET mission 3 narrative experience. Zero Day Syndicate sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Security, a respectable pentest firm with Zero Day's exploit market running out of its back rooms. This is their isolated training network - the box they rehearse exploits on before they sell them.
+
+## Your Objectives
+
+1. **Map the training network** - Sweep the lab and read the services it exposes
+2. **Pull the FTP intelligence** - The FTP box runs the trojaned ProFTPD build they sold Ghost
+3. **Decode the pricing intel** - The web host serves their price list, only encoded
+4. **Exploit the legacy distcc service** - The operational logs that name Ghost and St. Catherine's
+
+## Technical Challenge Path
+
+- Enumerate the network and read the service banners (recon): the FTP login banner and the web host's page source
+- Exploit the ProFTPD 1.3.3c distribution source backdoor (compromised 2010 release; no CVE assigned; Metasploit unix/ftp/proftpd_133c_backdoor) for unauthenticated remote root
+- Pull and decode the ROT13-encoded exploit price list from the web host (encoding is not encryption)
+- Exploit the distcc daemon command execution (CVE-2004-2687, high port 3632; Metasploit unix/misc/distcc_exec) to recover the transaction log
+
+## Narrative Payoff
+
+The transaction log itemises invoice ZDS-2024-0847 to GHOST (Ransomware Incorporated) line by line, the same lines as the buyer's copy recovered at the hospital, then logs the deployment against St. Catherine's Regional Medical Centre. Sable approved it. It is the seller's own ledger to set beside the buyer's invoice.
+  </description>
+
+  <type>ctf</type>
+  <type>attack-ctf</type>
+  <type>pwn-ctf</type>
+  <difficulty>medium</difficulty>
+
+  <!-- ftp / distcc root -->
+  <CyBOK KA="MAT" topic="Attacks and exploitation">
+    <keyword>EXPLOITATION</keyword>
+    <keyword>EXPLOITATION FRAMEWORKS</keyword>
+    <keyword>BACKDOOR TROJANS</keyword>
+  </CyBOK>
+  <CyBOK KA="SS" topic="Categories of Vulnerabilities">
+    <keyword>CVEs and CWEs</keyword>
+  </CyBOK>
+  <CyBOK KA="SOIM" topic="PENETRATION TESTING">
+    <keyword>PENETRATION TESTING - SOFTWARE TOOLS</keyword>
+    <keyword>PENETRATION TESTING - ACTIVE PENETRATION</keyword>
+  </CyBOK>
+  <CyBOK KA="NS" topic="PENETRATION TESTING">
+    <keyword>FILE - TRANSFER PROTOCOL (FTP)</keyword>
+  </CyBOK>
+
+  <!-- encoding challenge -->
+  <CyBOK KA="F" topic="Artifact Analysis">
+    <keyword>Encoding and alternative data formats</keyword>
+  </CyBOK>
+
+
+  <system>
+    <system_name>attack_vm</system_name>
+    <base distro="Kali" name="MSF"/>
+
+    <input into_datastore="IP_addresses">
+      <!-- 0 attack_vm -->
+      <value>192.168.100.2</value>
+      <!-- 1 zero_day_training_box -->
+      <value>192.168.100.3</value>
+    </input>
+
+    <utility module_path=".*/parameterised_accounts">
+      <input into="accounts">
+        <value>{"username":"kali","password":"kali","super_user":"true","strings_to_leak":[],"leaked_filenames":[]}</value>
+      </input>
+    </utility>
+
+    <utility module_path=".*/iceweasel">
+      <input into="accounts">
+        <value>{"username":"kali","password":"kali","super_user":"true","strings_to_leak":[],"leaked_filenames":[]}</value>
+      </input>
+      <input into="autostart">
+        <value>false</value>
+      </input>
+    </utility>
+
+    <utility module_path=".*/kali_top10"/>
+    <utility module_path=".*/kali_web"/>
+
+    <network type="private_network">
+      <input into="IP_address">
+        <datastore access="0">IP_addresses</datastore>
+      </input>
+    </network>
+    <input into_datastore="spoiler_admin_pass">
+      <generator type="strong_password_generator"/>
+    </input>
+    <build type="cleanup">
+      <input into="root_password">
+        <datastore>spoiler_admin_pass</datastore>
+      </input>
+    </build>
+  </system>
+
+  <system>
+    <system_name>ghost_in_machine_vm_network</system_name>
+    <base distro="Debian 12" type="server"/>
+
+    <!-- flag 1: network scan. Generated ONCE here (first flag on this system) and
+         shown in two service banners below: the FTP login banner and the web
+         index source. One generator, so the station gets exactly four flags. -->
+    <input into_datastore="scan_flag">
+      <generator type="flag_generator"/>
+    </input>
+
+    <input into_datastore="server_root_password">
+      <generator type="strong_password_generator"/>
+    </input>
+
+    <!-- Immersion: the 'student' trainee account is the lab login WhiteHat's
+         research team rehearses on. Its home folder holds the trainee's own
+         orientation notes and lab journal in the night team's "recon first"
+         house style, discoverable once the box is rooted. Plain text only:
+         no flags, no buyer names, no safe code, no Phase 2 detail (those stay
+         in the game's wall-safe catalogue). Credentials and account order are
+         unchanged (student/student, non-sudo), so the solve path is unaffected. -->
+    <utility module_path=".*/parameterised_accounts">
+      <input into="accounts">
+        <generator type="account">
+          <input into="username">
+            <value>student</value>
+          </input>
+          <input into="password">
+            <value>student</value>
+          </input>
+          <input into="super_user">
+            <value>false</value>
+          </input>
+          <input into="leaked_filenames">
+            <value>README-first.txt</value>
+            <value>lab_journal.txt</value>
+          </input>
+          <input into="strings_to_leak">
+            <value>ZERO DAY SYNDICATE -- RESEARCH TRAINING NETWORK
+Trainee onboarding (isolated lab -- nothing here leaves the segment)
+================================================================
+
+Welcome to the box. This is where we rehearse before a live job, so
+treat every service on it like the real thing.
+
+HOUSE RULES (kept from the day staff, do not argue with them):
+  1. Recon first. Everything on this network answers a scan -- map it
+     before you touch it. If you skipped the scan you are guessing.
+  2. Read the banners. The services tell you what they are and what
+     build they run. That is half the work done for you.
+  3. The anonymous FTP folder is a shop window. Nothing that matters
+     lives in it -- the real notes are behind the exploit.
+  4. The web host is the client-facing front. The price board on it is
+     for clients only and it is NOT plain ROT13 any more -- Sable moved
+     it to her own letter shift and mails the number out. Do not post
+     the shift on this box.
+  5. The distcc build box on the high port is legacy and off-limits
+     after hours. If you are reading this after hours, you know why.
+
+-- the night team</value>
+            <value>LAB JOURNAL -- trainee
+======================
+
+Day 1. Swept the segment end to end before touching anything, like the
+rules say. Two hosts. FTP, HTTP and that old build daemon on the high
+port. Noted the FTP build string straight off the login banner.
+
+Day 2. Worked the FTP box. The 1.3.3c build is the exact one we ship to
+the healthcare clients -- there is a note in root that spells it out.
+Rees on reception keeps asking what we actually do back here. I keep
+telling her "audits". Easier that way.
+
+Day 3. Pulled the client price board off the web host. Tried ROT13 out
+of habit and got nonsense -- the banner on the page says it is on
+Sable's client shift now, not ROT13. Foster said the number goes out by
+mail only, so unless you have her note you brute the 25 shifts until it
+reads. Barely a lock at all, that.
+
+TODO: leave the distcc box alone until the morning shift signs it off.</value>
+          </input>
+        </generator>
+      </input>
+    </utility>
+    <utility module_path=".*/handy_cli_tools"/>
+
+    <!-- flag 2: FTP intelligence, via the ProFTPD 1.3.3c source backdoor -> root.
+         welcome_msg (rendered as AccessGrantMsg, shown on an anonymous login)
+         carries flag 1. The anonymous pre-leak file carries the service list only
+         (no flag), in line with the runbook's "nothing that matters lives in the
+         anonymous folder". The post-exploit root leak carries flag 2 + the FTP
+         intel string, landing in /root (readable only after the backdoor RCE). -->
+    <vulnerability module_path="vulnerabilities/unix/ftp/proftpd_133c_backdoor">
+      <input into="port">
+        <value>21</value>
+      </input>
+      <input into="welcome_msg">
+        <!-- Single line: the module writes it into a quoted AccessGrantMsg. -->
+        <encoder module_path="modules/encoders/selector/concatenate">
+          <input into="delim">
+            <!-- "=" not a space: a bare-space value risks being lost on the encoder command line -->
+            <value>=</value>
+          </input>
+          <input into="strings_to_encode">
+            <value>Zero Day training lab. Anonymous access is read only. Lab check-in token</value>
+            <datastore>scan_flag</datastore>
+          </input>
+        </encoder>
+      </input>
+      <input into="strings_to_pre_leak">
+        <!-- Anonymous folder: service list only, no flag -->
+        <value>ZERO DAY SYNDICATE - TRAINING LAB (isolated)
+=========================================
+
+Services on this network:
+- FTP  : ProFTPD 1.3.3c (trojaned 2010 build) - anonymous read
+- HTTP : price list (confidential - clients only)
+- LEGACY BUILD: distcc on a high port - DO NOT TOUCH after hours
+
+Students: recon first. Everything here answers a scan.
+Nothing that matters lives in the anonymous folder.</value>
+      </input>
+      <input into="strings_to_leak">
+        <!-- Post-exploit (root): FTP intel string + flag 2 -->
+        <value>ZERO DAY SYNDICATE - FTP BOX NOTES (root only)
+=============================================
+
+This is the exact build we shipped to GHOST: ProFTPD 1.3.3c, the
+compromised source release from 2010. We rehearse the St. Catherine's
+delivery on this box before every healthcare job.
+
+Reference: compromised distribution source backdoor, 2010 (no CVE assigned;
+Metasploit unix/ftp/proftpd_133c_backdoor). Unauthenticated remote root.
+
+The operational records are not here. They sit on the legacy distcc box.</value>
+        <generator type="flag_generator"/>
+      </input>
+    </vulnerability>
+
+    <!-- flag 3: pricing intel, Caesar shift 7; the key is in the game, in
+         Sterling's unsent email. Price list served over HTTP (HTML comments in
+         the index page source). This is the PUBLIC price list: the catalogue's
+         tiers and prices without the buyers or reserved Phase 2 stock (those stay
+         in the game's wall-safe catalogue). -->
+    <service module_path=".*/http/parameterised_website">
+      <!-- Immersion: the training-lab web host wears WhiteHat Security's legitimate
+           front (the same firm, address and 2010/Sterling backstory the player meets
+           in game: a respectable Cardiff pentest shop). The rendered page is clean
+           corporate cover; Zero Day's exploit price board lives only in the HTML
+           source comments below. No flag is generated here, so flag count/order is
+           unchanged. business_name/motto/intro drive the visible index + contact page. -->
+      <input into="organisation">
+        <value>{"business_name":"WhiteHat Security Services","business_motto":"Security Through Economics","business_address":"Callaghan Square, Cardiff, CF10 5BT","domain":"whitehat-security.co.uk","office_telephone":"029 2010 0101","office_email":"enquiries@whitehat-security.co.uk","industry":"Penetration Testing and Security Audit","manager":{"name":"Victoria Sterling","address":"Callaghan Square, Cardiff, CF10 5BT","phone_number":"029 2010 0102","email_address":"v.sterling@whitehat-security.co.uk","username":"v_sterling","password":""},"employees":[{"name":"Ffion Rees -- Reception and Client Liaison","address":"Callaghan Square, Cardiff, CF10 5BT","phone_number":"029 2010 0101","email_address":"reception@whitehat-security.co.uk","username":"f_rees","password":""},{"name":"Danny Foster -- Senior Security Consultant","address":"Callaghan Square, Cardiff, CF10 5BT","phone_number":"029 2010 0105","email_address":"d.foster@whitehat-security.co.uk","username":"d_foster","password":""},{"name":"Rhodri Pugh -- Lead Penetration Tester","address":"Callaghan Square, Cardiff, CF10 5BT","phone_number":"029 2010 0106","email_address":"r.pugh@whitehat-security.co.uk","username":"r_pugh","password":""}],"product_name":"Security assessments","intro_paragraph":["Independent penetration testing and security audit since 2010. Retail, logistics, local government and financial services. Clean reports, happy clients, discretion as standard.","This host is part of WhiteHat's isolated research and training network. Authorised staff only -- everything on this segment is rehearsal. If you can read this and you are not on the research team, you are in the wrong place."]}</value>
+      </input>
+      <input into="strings_to_leak">
+        <!-- Plain HTML comment: the web host's banner, carrying the SAME flag 1
+             value as the FTP login banner (datastore, not a second generator). -->
+        <encoder module_path="modules/encoders/selector/concatenate">
+          <input into="delim">
+            <!-- "=" not a space: a bare-space value risks being lost on the encoder command line -->
+            <value>=</value>
+          </input>
+          <input into="strings_to_encode">
+            <value>ZERO DAY TRAINING LAB - web host. Lab check-in token</value>
+            <datastore>scan_flag</datastore>
+          </input>
+        </encoder>
+
+        <!-- Plain HTML comment: pointer back to the game. The board moved off
+             ROT13 to Sable's own client shift; the number is mailed to buyers
+             (it is in Sterling's unsent email in the game). -->
+        <value>PRICE BOARD (clients only): no longer ROT13. Shifted with the client key Sable mails to buyers.</value>
+
+        <!-- Caesar shift (key 7) price list: decode for flag 3 -->
+        <encoder module_path="modules/encoders/cipher/caesar_shift">
+          <input into="strings_to_encode">
+            <value>FILED: CONFIDENTIAL - CLIENTS ONLY
+
+ZERO DAY: Q4 2024 PRICE LIST (clients only)
+
+Premium tier:
+- ProFTPD 1.3.3c source backdoor: $25,000 (healthcare premium +40% applied)
+- Apache Struts2 RCE: $18,000
+- Windows SMBv3 RCE: $45,000
+
+Standard tier:
+- distcc 2.x remote exec (CVE-2004-2687): $3,200 (legacy estates)
+- Assorted SQLi vectors: $800-$2,400
+
+Note: healthcare buyers carry a 40% premium. They pay fast and they pay quietly.
+
+Buyer details are held internally. Ask your account contact.</value>
+            <generator type="flag_generator"/>
+          </input>
+          <input into="shift_key">
+            <value>7</value>
+          </input>
+        </encoder>
+      </input>
+    </service>
+
+    <!-- flag 4: distcc daemon command execution (CVE-2004-2687, high port 3632).
+         The recovered transaction log is the game's operational_log_content
+         verbatim, itemised as m02's invoice ZDS-2024-0847. Leaked to the distccd
+         user's home (readable only after the distcc RCE). -->
+    <vulnerability module_path="vulnerabilities/unix/misc/distcc_exec">
+      <input into="strings_to_leak">
+        <value>ZERO DAY TRANSACTION LOG (recovered from the training network)
+
+[2024-10-21 14:32] Invoice ZDS-2024-0847 to GHOST (Ransomware Incorporated), verified
+  ProFTPD 1.3.3c source backdoor      $25,000
+  Reconnaissance (214 hospitals)      $15,000
+  Target Selection Consultation       $10,000
+  Deployment Guide                     $5,000
+  TOTAL                               $55,000
+  15% ENTROPY affiliate discount applied
+  Target: St. Catherine's Regional Medical Centre (from the 214-site survey)
+  Approved: SABLE / Architect sign-off on file
+  Status: DELIVERED
+  (Healthcare list pricing carries a built-in premium; see catalogue.)
+
+[2024-11-15 02:47] Deployment confirmed
+  Target: St. Catherine's Regional Medical Centre
+  Ransom demand: GBP 150,000 (BTC)
+
+[NOTE] Phase 2 sourcing continues.</value>
+        <generator type="flag_generator"/>
+      </input>
+    </vulnerability>
+
+    <vulnerability module_path=".*/ssh_root_login">
+      <input into="root_password">
+        <datastore>server_root_password</datastore>
+      </input>
+    </vulnerability>
+
+    <network type="private_network">
+      <input into="IP_address">
+        <datastore access="1">IP_addresses</datastore>
+      </input>
+    </network>
+    <input into_datastore="spoiler_admin_pass">
+      <generator type="strong_password_generator"/>
+    </input>
+    <build type="cleanup">
+      <input into="root_password">
+        <datastore>spoiler_admin_pass</datastore>
+      </input>
+    </build>
+  </system>
+
+</scenario>

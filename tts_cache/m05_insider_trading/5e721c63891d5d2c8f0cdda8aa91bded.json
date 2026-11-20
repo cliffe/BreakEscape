@@ -1,0 +1,13 @@
+{
+  "key": "5e721c63891d5d2c8f0cdda8aa91bded",
+  "npc": "narrator",
+  "text": "The transfer bar ticks to 95 per cent.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:31:44Z"
+}

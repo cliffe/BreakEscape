@@ -1,0 +1,8 @@
+{
+  "captures": [
+    {
+      "targetId": "store_controller",
+      "kind": "foothold"
+    }
+  ]
+}

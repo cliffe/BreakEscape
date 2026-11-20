@@ -1,0 +1,13 @@
+{
+  "key": "0fc318523e70ba76f5d4748ce454ddef",
+  "npc": "jodie",
+  "text": "Did you see the car park email?",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:14:01Z"
+}

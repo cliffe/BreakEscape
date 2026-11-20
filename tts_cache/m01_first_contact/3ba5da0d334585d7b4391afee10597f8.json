@@ -1,0 +1,13 @@
+{
+  "key": "3ba5da0d334585d7b4391afee10597f8",
+  "npc": "kevin_park",
+  "text": "And the anomaly report itself says my workstation was active at the same time the server room was being accessed.",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-10-17",
+  "recorded_at": "2026-10-17T22:22:58Z"
+}

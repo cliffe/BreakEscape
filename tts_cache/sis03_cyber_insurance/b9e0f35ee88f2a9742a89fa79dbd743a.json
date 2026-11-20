@@ -1,0 +1,13 @@
+{
+  "key": "b9e0f35ee88f2a9742a89fa79dbd743a",
+  "npc": "eleanor_vance",
+  "text": "That's a generous position. It shows you read the underwriting file and concluded that Meridian's pre-incident knowledge of the deficiencies — combined with the renewal decision to accept the risk with a warranty condition — created a position where declining or reducing coverage is legally exposed.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:29:06Z"
+}

@@ -1,0 +1,20 @@
+{"steps":[
+{"note": "R27 (dialogue C1): a direct reveal, a refusal and time given; then the write-up shown afterwards goes to her answer, not a second reveal, and doesn't replay the casualty narration (found during the fix). D6-9 the refusal line; D6-12 the turned re-entry cycle."},
+{"set": {"briefing_played": true, "guard_resolved": true}},
+{"room": "trading_floor"},
+{"talk": "irina", "picks": ["Thanks for making the time", "That's all for now"]},
+{"set": {"found_architects_fund": true, "irina_exec_badge_given": true}},
+{"talk": "irina", "picks": ["I'm not from the FCA", "You're in this to your neck", "Think about it"]},
+{"said": ["I won't turn on Satoshi because a stranger put a badge on my desk.", "You're giving me time."]},
+{"expect": {"given_time": true, "irina_recruited": false}},
+{"talk": "irina", "picks": ["I need an answer", "Then I'll leave you to it"]},
+{"said": ["I said I'd think. I'm thinking.", "Don't take too long. He notices when I'm quiet."], "notSaid": ["a stranger put a badge on my desk", "Volkova: For now."]},
+{"set": {"found_blockchain_evidence": true}},
+{"talk": "irina", "picks": ["something you need to see", "Never mind where"]},
+{"said": ["The hospital money as well."], "notSaid": ["You put your SAFETYNET credentials on the desk", "open at the casualty projection"]},
+{"expect": {"irina_recruited": true}},
+{"talk": "irina", "picks": ["Nothing. Carry on"]},
+{"talk": "irina", "picks": ["Nothing. Carry on"], "reload": "page"},
+{"said": ["What else do you need?"]},
+{"maxRun": 9}
+]}

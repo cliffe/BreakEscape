@@ -1,0 +1,13 @@
+{
+  "key": "3bc7a7d36bcfd8d3227d337c0cab65cb",
+  "npc": "ghost_phone",
+  "text": "You don't know me. That's rather the point.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:22:16Z"
+}

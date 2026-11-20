@@ -1,0 +1,13 @@
+{
+  "key": "7af2eea4b7ad5558f9bd03ab65003aa8",
+  "npc": "irina_volkova",
+  "text": "My research is about financial privacy. Governments should not be able to read every transaction a person makes.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:54:12Z"
+}

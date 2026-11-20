@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model doors",
+  "description": "Test of card doors and objects with access lists (access model step 7): a requires-only fallback, card copies made in conversation and from a held keycard, a UID-only DESFire copy at two readers, and a card two NPCs share. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 10,
+  "test_type": "access_model",
+  "test_objective": "Prove the client sends every held card id to role-list and person-list rfid locks, shows the server's answer (opened, Access denied, Reader requires full authentication), and that card copies are recorded on the server with their source, including across a reload"
+}

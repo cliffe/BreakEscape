@@ -1,0 +1,62 @@
+TAP version 13
+# 🏷️ Processing game action tags: [ 'portrait:ko', 'portrait:lisa_park:base' ]
+# 🏷️ Processing game action tags: [ 'portrait:ko' ]
+# Subtest: no variant holds: the NPC object itself comes back, unchanged
+ok 1 - no variant holds: the NPC object itself comes back, unchanged
+  ---
+  duration_ms: 2.686799
+  ...
+# Subtest: a condition variant lays its fields over the base and keeps the rest
+ok 2 - a condition variant lays its fields over the base and keeps the rest
+  ---
+  duration_ms: 0.329742
+  ...
+# Subtest: first match wins, and ko:true needs the NPC knocked out
+ok 3 - first match wins, and ko:true needs the NPC knocked out
+  ---
+  duration_ms: 0.184538
+  ...
+# Subtest: condition and ko on one variant must both hold; ko:false means not knocked out
+ok 4 - condition and ko on one variant must both hold; ko:false means not knocked out
+  ---
+  duration_ms: 0.42571
+  ...
+# Subtest: a variant with no gate is reached only by name; base and unknown names
+ok 5 - a variant with no gate is reached only by name; base and unknown names
+  ---
+  duration_ms: 0.244146
+  ...
+# Subtest: npcIsKO reads the combat state, then the globalVarOnKO global
+ok 6 - npcIsKO reads the combat state, then the globalVarOnKO global
+  ---
+  duration_ms: 0.296921
+  ...
+# Subtest: a bad condition counts as false rather than throwing
+ok 7 - a bad condition counts as false rather than throwing
+  ---
+  duration_ms: 0.172487
+  ...
+# Subtest: parsePortraitTag: <name> or <npc_id>:<name>
+ok 8 - parsePortraitTag: <name> or <npc_id>:<name>
+  ---
+  duration_ms: 1.246026
+  ...
+# Subtest: \# portrait tag calls the person-chat UI, and is a harmless no-op elsewhere
+ok 9 - \# portrait tag calls the person-chat UI, and is a harmless no-op elsewhere
+  ---
+  duration_ms: 4.303994
+  ...
+# Subtest: person-chat and phone-chat route portraits through portraitFor
+ok 10 - person-chat and phone-chat route portraits through portraitFor
+  ---
+  duration_ms: 0.719033
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 176.384072

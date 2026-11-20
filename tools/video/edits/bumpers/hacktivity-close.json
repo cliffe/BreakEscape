@@ -1,0 +1,70 @@
+{
+ "mission": "shared",
+ "id": "hacktivity-close",
+ "file_sep": "-",
+ "title": "SAFETYNET: Licence to Hack, closing bumper",
+ "fps": 30,
+ "length": 8,
+ "status": "Reusable bumper cut from the hacktivity-close preset. Music bed: Noir/Midnight Cipher Chase.mp3 from 161.023 s (the matching seconds of the m01 trailer window, which starts at 109.023 s), 0.3 s fade in, 2.0 s fade out.",
+ "music": {
+  "track": "Noir/Midnight Cipher Chase.mp3",
+  "analysis": "midnight_cipher_chase.json",
+  "start": 161.023,
+  "length": 8,
+  "gain_db": 0,
+  "fade_in": 0.3,
+  "fade_out": 2.0
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0,
+  "note": "window start 109.023 s is a downbeat. Lifts at 12/18/26/34/52 s (RMS jumps x3.4, x1.4, x1.4, x1.3, x2.0); quiet bar at 48 s; strong hits at 52, 54, 56, 58 s."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no full codes, PINs or passwords",
+  "no identity reveal",
+  "no ending or choice screens",
+  "keypad only partly entered"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "hacktivity-close",
+   "join": {
+    "type": "cut"
+   }
+  }
+ ]
+}

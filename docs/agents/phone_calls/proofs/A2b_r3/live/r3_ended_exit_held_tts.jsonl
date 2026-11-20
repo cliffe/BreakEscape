@@ -1,0 +1,20 @@
+{"t":1794485320627,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794485321262,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794485335730,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794485337143,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794485338610,"npc_id":"caller_basic","text":"Understood. Goodbye.","delivery":null,"status":503}
+{"t":1794485399078,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794485399728,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794485414340,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794485415756,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794485417474,"npc_id":"caller_basic","text":"Understood. Goodbye.","delivery":null,"status":503}
+{"t":1794485450027,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794485450591,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794485465002,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794485466426,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794485468155,"npc_id":"caller_basic","text":"Understood. Goodbye.","delivery":null,"status":503}
+{"t":1794485697340,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794485697979,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794485712666,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794485714080,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794485715610,"npc_id":"caller_basic","text":"Understood. Goodbye.","delivery":null,"status":503}

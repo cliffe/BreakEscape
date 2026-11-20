@@ -1,0 +1,137 @@
+{
+  "scenario": "crypto2_rsa_asymmetric",
+  "start_room": "room_start",
+  "nodes": [
+    {
+      "id": "door_room_start",
+      "label": "Room Start<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_start",
+      "label": "Room Start",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_office",
+      "label": "Room Office<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_office",
+      "label": "Room Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_servers",
+      "label": "Room Servers<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_servers",
+      "label": "Room Servers",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_closet",
+      "label": "Room Closet<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_closet",
+      "label": "Room Closet",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_room_ceo",
+      "label": "Room Ceo<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "room_ceo",
+      "label": "Room Ceo",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_safe_1",
+      "label": "Safe 1<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_safe_2",
+      "label": "Safe 2<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_briefcase",
+      "label": "Briefcase<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_safe",
+      "label": "Safe<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_room_start",
+      "to": "room_start",
+      "soft": false
+    },
+    {
+      "from": "door_room_office",
+      "to": "room_office",
+      "soft": false
+    },
+    {
+      "from": "door_room_servers",
+      "to": "room_servers",
+      "soft": false
+    },
+    {
+      "from": "door_room_closet",
+      "to": "room_closet",
+      "soft": false
+    },
+    {
+      "from": "door_room_ceo",
+      "to": "room_ceo",
+      "soft": false
+    },
+    {
+      "from": "room_start",
+      "to": "lock_safe_1",
+      "soft": false
+    },
+    {
+      "from": "room_start",
+      "to": "lock_safe_2",
+      "soft": false
+    },
+    {
+      "from": "room_start",
+      "to": "lock_briefcase",
+      "soft": false
+    },
+    {
+      "from": "room_ceo",
+      "to": "lock_safe",
+      "soft": false
+    }
+  ]
+}

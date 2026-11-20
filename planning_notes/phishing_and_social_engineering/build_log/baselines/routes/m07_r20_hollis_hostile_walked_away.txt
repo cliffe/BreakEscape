@@ -1,0 +1,52 @@
+
+## R20 (puzzle chains closing round, F9): Hollis goes hostile and the player walks away, as HaX's text advises. HaX gives both fight-controls texts (Q cycles hand, jab, cross; walking is by clicking in the open-hand mode). He is neither talked round nor knocked out, so the credits say he went for the player and was left standing, not 'Left at his post'.
+   {set {"briefing_played":true}}
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   {event player_spotted:ray_hollis}
+   [opens ray_hollis @start (person-chat)]
+
+--- hollis @start ---
+  Narrator: He clocks you at thirty feet. His hand goes to his belt before his face moves. The flashlight finds your chest.
+  Ray Hollis: Building's evacuating. So you're lost, or you're the other thing.
+     (4 options)
+ > Walk at him. "I'm not here to fight you, Ray."
+  Narrator: He backs into the turnstile frame. Nowhere left to go. One more push and this turns into a fight.
+  Ray Hollis: Stay there. STAY THERE.
+     (2 options)
+ > Put it down. (Fight him.)
+  Ray Hollis: I can't afford you. I'm sorry. I mean it.
+  Narrator: He comes off the frame at you with his fists up. This is going to be a fight.
+      [ink: hollis_resolved="ko"]
+      [set_global hollis_resolved=ko]
+      [engine: ray_hollis hostile]
+   [text agent_0x99 +1000ms] He's coming for you. Fists up, face him, hit him. Q a second time throws the harder punch.
+   [text agent_0x99 +5500ms] He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else.
+  [chat closes]
+   [PASS] said: "One more push and this turns into a fight."
+   [PASS] said: "[choice] Put it down. (Fight him.)"
+   [PASS] said: "with his fists up. This is going to be a fight."
+   [PASS] said: "Fists up, face him, hit him. Q a second time throws the harder punch."
+   [PASS] said: "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."
+   [PASS] not said: "stows"
+   [PASS] not said: "Or walk away"
+   [PASS] not said: "Q switches to fists"
+   [PASS] hollis_resolved = "ko" (expected "ko")
+   {enter operations_floor}
+      [mapping agent_0x99: set inside_reached=true]
+      [mapping agent_0x99: set rfid_guide_offered=true]
+   [text agent_0x99 +9500ms] Server hall door, far side of this floor, wants a server-zone badge. Hollis has one. His desk's badge station prints them too, with its PIN. RFID guide?
+      [mapping the_architect: set architect_contact=true]
+   [text the_architect +5000ms] Agent 0x00.
+   [PASS] credits say: "RAY HOLLIS: Went for you, left standing"
+   [PASS] credits don't say: "Left at his post"
+   [PASS] credits don't say: "Neutralised on shift"
+   [PASS] credits don't say: "Evaded"
+
+## Phase 4 dialogue C1: no conversation runs more than nine lines without a choice.
+   [PASS] longest run 2 (hollis) <= 9
+
+[stats] spoken/narrated lines 6, choices 2, longest run without a choice 2 (hollis); runs>=6: 
+[result] all expectations met

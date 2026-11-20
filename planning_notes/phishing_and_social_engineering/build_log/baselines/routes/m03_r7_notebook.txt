@@ -1,0 +1,54 @@
+   {set {"briefing_played":true,"badge_received":true}}
+
+--- terry ---
+  Terry Mott: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
+  Terry Mott: If Ms. Sterling wanted you back here, she'd have told me. She hasn't.
+     (2 options)
+ > When do you knock off?
+  Terry Mott: Knock off? Not till six tomorrow morning. Double shift. Afternoons in here, then the night rounds.
+  Terry Mott: Why?
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"victoria_card_cloned":true}}
+
+--- ffion @start ---
+  Ffion Rees: Oh! You made me jump. I only came back for my charger.
+  Ffion Rees: Is Ms. Sterling expecting you this late?
+     (3 options)
+ > Left my notebook in the conference room. I'll be two minutes.
+  Ffion Rees: Go on, then. I'll tell the guard you're about, so he doesn't jump on you.
+  [chat closes]
+
+--- terry ---
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Ffion said there'd be someone about. Notebook, was it? Should've known it'd be you. Conference room's the other end of the building.
+  Terry Mott: So what are you doing in my corridor?
+     (5 options)
+ > Wrong turn. I'll find it.
+  Terry Mott: Then you've taken the scenic route. Through the executive wing.
+  Terry Mott: Back the way you came. And if I see you in here again, I won't be asking.
+  [chat closes]
+
+## mismatch variant
+   {set {"player_warned":false,"excuse_given":false,"guard_suspicious":false}}
+
+--- terry @start ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Ffion said there'd be someone about. Notebook, was it? Should've known it'd be you. Conference room's the other end of the building.
+  Terry Mott: So what are you doing in my corridor?
+     (5 options)
+ > Building maintenance, late shift. Checking the air con.
+  Terry Mott: Funny. Ffion said notebook.
+  Terry Mott: Maintenance? At eleven at night?
+  Terry Mott: No work order, and you're not our usual lot.
+  Terry Mott: Who's your supervisor, then?
+     (3 options)
+ > Ring the supervisor, then. Here's his mobile.
+  Terry Mott: ...at this hour? Nobody's going to answer.
+  Terry Mott: Fine. But I'm watching you.
+     (4 options)
+ > I'll let you get on.
+  Terry Mott: I've got your face now. Don't make me use it.
+  [chat closes]
+
+[stats] spoken/narrated lines 22, choices 6, longest run without a choice 4 (terry); runs>=6: 

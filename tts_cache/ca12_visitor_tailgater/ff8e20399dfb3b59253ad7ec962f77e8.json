@@ -1,0 +1,13 @@
+{
+  "key": "ff8e20399dfb3b59253ad7ec962f77e8",
+  "npc": "delphine_reception",
+  "text": "I can see your hands are full. Even so, I'd rather sign you in.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:40Z"
+}

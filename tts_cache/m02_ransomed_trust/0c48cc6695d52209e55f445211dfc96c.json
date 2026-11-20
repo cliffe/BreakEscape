@@ -1,0 +1,13 @@
+{
+  "key": "0c48cc6695d52209e55f445211dfc96c",
+  "npc": "ernesto_bautista",
+  "text": "Not our list, love. Not our problem.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:11Z"
+}

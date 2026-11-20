@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: remove_item",
+  "description": "Minimal 1-room scenario proving the apply-actions remove_item action inside a confirm_action onConfirm (requiresItem without consumesItem): cancel keeps the kit, confirm removes it and persists over reload.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 1,
+  "test_type": "remove_item",
+  "test_objective": "Verify remove_item removes a named inventory item + syncs the server copy, only on confirm (cancel keeps it), persisting over reload"
+}

@@ -1,0 +1,7 @@
+{
+  "display_name": "Multi-room NPC Test",
+  "description": "Technical test for NPCs navigating between multiple rooms.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

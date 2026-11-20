@@ -1,0 +1,13 @@
+{
+  "key": "1ddf1b640457dca012cecc2ff6abfe4e",
+  "npc": "robert_vance_phone",
+  "text": "There's an old dial on the Rack Bank C wall in Hall 1.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real. Speaking over a phone line from the control room.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:19:30Z"
+}

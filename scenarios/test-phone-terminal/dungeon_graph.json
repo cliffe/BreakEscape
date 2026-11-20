@@ -1,0 +1,10 @@
+{
+  "scenario": "test-phone-terminal",
+  "start_room": "start_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

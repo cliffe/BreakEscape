@@ -1,0 +1,572 @@
+From 67e1213695f34d85d271dd4fd8a3e678836f46de Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:16:34 +0000
+Subject: [PATCH 2/8] holdsDoors: presets, the gate fill, schema and validator
+ (slice 9.1 step 5)
+
+NpcHabits gains holdsDoors (low and medium true, high false) and expand! writes
+gate.noHold: the openFor NPCs whose expanded holdsDoors is false, on gates with no
+playerMayPassIf and no authored noHold. The report gives each NPC's gates. The schema
+takes habits.holdsDoors and gate.noHold; the validator warns on holdsDoors false by name
+that does nothing and on an authored noHold naming an id outside openFor, and the habits
+report lists each gate.
+---
+ lib/break_escape/npc_habits.rb                |  69 +++++++++++-
+ scripts/scenario-schema.json                  |   4 +-
+ scripts/validate_npc_habits.rb                |  54 +++++++++
+ test/js/validator-npc-habits.test.mjs         |  85 +++++++++++++-
+ .../break_escape/npc_habits_loader_test.rb    |  24 +++-
+ test/unit/npc_habits_test.rb                  | 104 ++++++++++++++++--
+ 6 files changed, 318 insertions(+), 22 deletions(-)
+
+diff --git a/lib/break_escape/npc_habits.rb b/lib/break_escape/npc_habits.rb
+index 7ac07be87..274ddcc5d 100644
+--- a/lib/break_escape/npc_habits.rb
++++ b/lib/break_escape/npc_habits.rb
+@@ -17,11 +17,12 @@ module BreakEscape
+ 
+     LEVELS = %w[low medium high].freeze
+ 
+-    # Each habit's allowed values. holdsDoors is added by step 5, with the gate fill.
++    # Each habit's allowed values.
+     HABITS = {
+       'locksScreen' => %w[never sometimes always].freeze,
+       'writesDown' => [true, false].freeze,
+-      'password' => %w[strong guessable reused].freeze
++      'password' => %w[strong guessable reused].freeze,
++      'holdsDoors' => [true, false].freeze
+     }.freeze
+ 
+     # Keys allowed in `habits` that are not habits.
+@@ -29,9 +30,9 @@ module BreakEscape
+ 
+     # writesDown and password are in no preset (section 3).
+     PRESETS = {
+-      'low' => { 'locksScreen' => 'never' }.freeze,
+-      'medium' => { 'locksScreen' => 'sometimes' }.freeze,
+-      'high' => { 'locksScreen' => 'always' }.freeze
++      'low' => { 'locksScreen' => 'never', 'holdsDoors' => true }.freeze,
++      'medium' => { 'locksScreen' => 'sometimes', 'holdsDoors' => true }.freeze,
++      'high' => { 'locksScreen' => 'always', 'holdsDoors' => false }.freeze
+     }.freeze
+ 
+     LOCK_CHANCES = { 'never' => 0, 'sometimes' => 0.5, 'always' => 1 }.freeze
+@@ -111,7 +112,7 @@ module BreakEscape
+ 
+     # Run the whole expansion on the scenario hash in place and return the report: one
+     # entry per room NPC with a level or a `habits` object, saying what was filled or left
+-    # alone and why. Idempotent.
++    # alone and why (with holdsDoors, its gates under :doors). Idempotent.
+     def expand!(scenario)
+       report = []
+       return report unless scenario.is_a?(Hash) && scenario['rooms'].is_a?(Hash)
+@@ -131,6 +132,9 @@ module BreakEscape
+           sources: sources(npc, scenario) }
+       end
+       stations = owned_workstations(scenario)
++      gates = gate_entries(scenario)
++      holds = plans.to_h { |plan| [plan[:entry][:npc]['id'], plan[:habits]['holdsDoors']] }
++      gate_fills = gates.to_h { |gate| [gate[:path], no_hold_for(gate, holds)] }
+ 
+       plans.each do |plan|
+         npc = plan[:entry][:npc]
+@@ -139,8 +143,13 @@ module BreakEscape
+                  level: plan[:level], level_source: plan[:level_source],
+                  habits: plan[:habits].dup, sources: plan[:sources], screen: nil }
+         item[:screen] = fill_screen_habit!(npc, plan[:habits]['locksScreen'], stations) if plan[:habits].key?('locksScreen')
++        item[:doors] = doors_entry(npc['id'], plan[:habits]['holdsDoors'], gates, gate_fills) if plan[:habits].key?('holdsDoors')
+         report << item
+       end
++      gates.each do |gate|
++        list = gate_fills[gate[:path]]
++        gate[:gate]['noHold'] = list if list.is_a?(Array) && list.any?
++      end
+       report
+     rescue StandardError
+       # Never raise (the plan's expand! row). An error part way through the writes leaves
+@@ -191,6 +200,54 @@ module BreakEscape
+       screen
+     end
+ 
++    # Every gate door: { gate:, path:, room:, connected_room:, open_for: }. `doors` that is not
++    # a list and a `gate` that is not an object are skipped; a gate with enabled: false is
++    # not a gate (the client ignores it). An openFor string is a one-item list, as the
++    # client reads it.
++    def gate_entries(scenario)
++      out = []
++      scenario['rooms'].each do |room_id, room|
++        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
++
++        room['doors'].each_with_index do |door, i|
++          next unless door.is_a?(Hash) && door['gate'].is_a?(Hash)
++
++          gate = door['gate']
++          next if gate['enabled'] == false
++
++          open_for = gate['openFor'].is_a?(Array) ? gate['openFor'].grep(String) : [gate['openFor']].grep(String)
++          out << { gate: gate, path: "rooms/#{room_id}/doors/#{i}", room: room_id,
++                   connected_room: door['connectedRoom'], open_for: open_for }
++        end
++      end
++      out
++    end
++
++    # The gate fill (5.4), worked out before anything is written: :player_may_pass_if or
++    # :authored_no_hold when the gate is left alone, else the openFor ids whose expanded
++    # holdsDoors is false (possibly empty, then nothing is written). A gate's
++    # playerMayPassIf counts as the client counts it: a non-empty string.
++    def no_hold_for(gate, holds)
++      cfg = gate[:gate]
++      return :player_may_pass_if if cfg['playerMayPassIf'].is_a?(String) && !cfg['playerMayPassIf'].empty?
++      return :authored_no_hold if cfg.key?('noHold')
++
++      gate[:open_for].select { |id| holds[id] == false }.uniq
++    end
++
++    # The report's doors entry for one NPC: each gate that opens for it, and whether it is
++    # in that gate's noHold or why the habit was not applied there.
++    def doors_entry(npc_id, value, gates, fills)
++      mine = gates.select { |gate| gate[:open_for].include?(npc_id) }
++      list = mine.map do |gate|
++        fill = fills[gate[:path]]
++        reason = fill.is_a?(Symbol) ? fill : nil
++        { path: gate[:path], room: gate[:room], connected_room: gate[:connected_room],
++          applied: reason.nil?, no_hold: fill.is_a?(Array) && fill.include?(npc_id), reason: reason }
++      end
++      { value: value, gates: list, reason: list.empty? ? :no_gate : nil }
++    end
++
+     # For the scripts: a deep copy of the authored scenario with ids stamped onto room
+     # objects and their contents that lack one, by the server's rule
+     # (Game#stamp_scenario_object_ids!), then expand! on the copy. [copy, report]. The
+diff --git a/scripts/scenario-schema.json b/scripts/scenario-schema.json
+index c66753ce6..226ec8f7e 100644
+--- a/scripts/scenario-schema.json
++++ b/scripts/scenario-schema.json
+@@ -4017,6 +4017,7 @@
+                   "openRadius": { "type": "number", "minimum": 0, "description": "Pixels from the door centre at which an openFor NPC opens it (default 56)" },
+                   "holdMs": { "type": "number", "minimum": 0, "description": "ms it stays open after the last NPC leaves (default 2500)" },
+                   "playerMayPassIf": { "type": "string", "description": "A global. While false, the open gate is solid for a player outside the secured room, and one within openRadius keeps it shut (or shuts it as soon as nobody is in the doorway)" },
++                  "noHold": { "type": "array", "items": { "type": "string" }, "description": "Written by the loader (slice 9.1): the openFor NPCs whose holdsDoors habit is false. While every guard the gate opened for (or, shut, every guard near it) is listed, it bars the player as a false playerMayPassIf does. Not written on a gate with playerMayPassIf; an authored noHold wins and is never changed" },
+                   "sound": {
+                     "oneOf": [
+                       { "type": "string" },
+@@ -4208,7 +4209,7 @@
+           "additionalProperties": false
+         },
+         "staff": { "type": "boolean", "description": "Access model section 3: false drops the implicit staff role an NPC with creds has." },
+-        "awareness": { "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never; medium: sometimes; high: always). Room NPCs only. Never sent to the browser." },
++        "awareness": { "type": "string", "enum": ["low", "medium", "high"], "description": "Slice 9.1: this person's security awareness. A preset that fills habits the author leaves out (low: locksScreen never, holdsDoors true; medium: locksScreen sometimes, holdsDoors true; high: locksScreen always, holdsDoors false). Room NPCs only. Never sent to the browser." },
+         "habits": {
+           "type": "object",
+           "description": "Slice 9.1: habits set by name, which override the awareness preset. Room NPCs only. Never sent to the browser.",
+@@ -4216,6 +4217,7 @@
+             "locksScreen": { "type": "string", "enum": ["never", "sometimes", "always"], "description": "Fills this NPC's screenHabit (lockChance 0, 0.5 or 1) when screenHabit is not authored. A PC's own lockChance or locksScreenOnLeave still wins." },
+             "writesDown": { "type": "boolean", "description": "true: the account's username and password are on a sticky note on the owner's own sign-in PC, read on its sign-in screen at the desk. Never set by a preset." },
+             "password": { "type": "string", "enum": ["strong", "guessable", "reused"], "description": "A claim the validator checks: guessable needs every piece of the password readable in the world and a pattern clue; reused needs another secret equal to it. No run-time effect. Never set by a preset." },
++            "holdsDoors": { "type": "boolean", "description": "false: a gate door that opens for this NPC will not open with the player close by, and shuts as soon as the player comes near (the loader lists the NPC in the gate's noHold). true: the gate opens beside the player and lingers. Not applied to a gate with playerMayPassIf or an authored noHold." },
+             "passwordPattern": { "type": "string", "minLength": 1, "description": "The object that gives the pattern for a guessable password (a parameter of password, not a habit)." },
+             "_comment": { "type": "string" }
+           },
+diff --git a/scripts/validate_npc_habits.rb b/scripts/validate_npc_habits.rb
+index 19284edd0..a99be786d 100644
+--- a/scripts/validate_npc_habits.rb
++++ b/scripts/validate_npc_habits.rb
+@@ -43,6 +43,7 @@ module ValidateNpcHabits
+ 
+       habits = item[:habits]
+       check_locks_screen(item, issues)
++      check_holds_doors(item, issues)
+       check_writes_down(npc, item, expanded, issues) if habits.key?('writesDown')
+       if habits.key?('password') || habits.key?('passwordPattern')
+         texts ||= CL.readable_texts(expanded, scenario_dir, ink_failures: ink_failures)
+@@ -56,6 +57,7 @@ module ValidateNpcHabits
+     check_mappings(json_data, expanded, by_id, issues)
+     check_ids(json_data, expanded, issues)
+     check_sprites(report, expanded, issues)
++    check_gate_no_hold(json_data, issues)
+     issues
+   end
+ 
+@@ -159,6 +161,43 @@ module ValidateNpcHabits
+     end
+   end
+ 
++  # holdsDoors false by name that does nothing (step 5): no gate opens for the NPC, or every
++  # gate that does has playerMayPassIf or an authored noHold.
++  def check_holds_doors(item, issues)
++    doors = item[:doors]
++    return unless doors && doors[:value] == false && item[:sources]['holdsDoors'] == :explicit
++
++    who = "NPC '#{item[:id]}'"
++    if doors[:reason] == :no_gate
++      warn(issues, "#{who} has holdsDoors false but no gate opens for it (gate.openFor): the habit does nothing.")
++    elsif doors[:gates].none? { |gate| gate[:applied] }
++      warn(issues, "#{who} has holdsDoors false but every gate that opens for it " \
++                   "(#{doors[:gates].map { |gate| gate[:path] }.join(', ')}) sets playerMayPassIf or its own noHold, " \
++                   'which wins: the habit does nothing.')
++    end
++  end
++
++  # An authored gate.noHold naming an id that is not in that gate's openFor.
++  def check_gate_no_hold(json_data, issues)
++    rooms = json_data['rooms']
++    return unless rooms.is_a?(Hash)
++
++    rooms.each do |room_id, room|
++      next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
++
++      room['doors'].each_with_index do |door, i|
++        gate = door.is_a?(Hash) ? door['gate'] : nil
++        next unless gate.is_a?(Hash) && gate['noHold'].is_a?(Array)
++
++        open_for = gate['openFor'].is_a?(Array) ? gate['openFor'] : [gate['openFor']]
++        (gate['noHold'] - open_for).each do |id|
++          warn(issues, "rooms/#{room_id}/doors/#{i} gate.noHold names '#{id}', who is not in its openFor: " \
++                       'the gate never opens for them, so the entry does nothing.')
++        end
++      end
++    end
++  end
++
+   def owned_login_pcs(npc, expanded)
+     AI.sign_in_pcs(expanded).select { |e| AI.owner_id(e[:object], expanded) == npc['id'] }
+   end
+@@ -412,6 +451,7 @@ module ValidateNpcHabits
+         effects = case name
+                   when 'locksScreen' then screen_effects(item[:screen])
+                   when 'writesDown' then note_effects(npc, expanded, value)
++                  when 'holdsDoors' then door_effects(item[:doors])
+                   when 'password'
+                     texts ||= CL.readable_texts(expanded, scenario_dir)
+                     homes ||= CL.secret_homes(expanded)
+@@ -442,6 +482,20 @@ module ValidateNpcHabits
+     out
+   end
+ 
++  def door_effects(doors)
++    return [] unless doors
++    return ['no effect: no gate opens for it'] if doors[:reason] == :no_gate
++
++    doors[:gates].map do |gate|
++      into = gate[:connected_room] ? " (into #{gate[:connected_room]})" : ''
++      case gate[:reason]
++      when :player_may_pass_if then "#{gate[:path]}#{into}: the gate sets playerMayPassIf, habit not applied there"
++      when :authored_no_hold then "#{gate[:path]}#{into}: the gate sets noHold, habit not applied there"
++      else gate[:no_hold] ? "gate.noHold at #{gate[:path]}#{into}" : "holds the gate at #{gate[:path]}#{into}"
++      end
++    end
++  end
++
+   def note_effects(npc, expanded, value)
+     return [] unless value == true
+     return ['no effect: no account'] unless AI.account?(npc)
+diff --git a/test/js/validator-npc-habits.test.mjs b/test/js/validator-npc-habits.test.mjs
+index 13c5b21bb..d9a6d4269 100644
+--- a/test/js/validator-npc-habits.test.mjs
++++ b/test/js/validator-npc-habits.test.mjs
+@@ -91,13 +91,14 @@ test('awareness or habits on an NPC record that is not a room NPC', () => {
+ 
+ test('an unknown level, habit or value, and a roles level', () => {
+     const out = run(scenario({
+-        npcs: [person('dana', { awareness: 'paranoid', habits: { phishable: true, locksScreen: 'often', holdsDoors: false } })],
++        npcs: [person('dana', { awareness: 'paranoid', habits: { phishable: true, locksScreen: 'often', holdsDoors: 'no' } })],
+         extra: { roles: { staff: { awareness: 'max' } } }
+     }));
+     const e = errors(out.habits);
+     assertHas(e, "awareness 'paranoid'");
+     assertHas(e, "unknown habit 'phishable'");
+-    assertHas(e, "unknown habit 'holdsDoors'");
++    assertHas(e, "habit 'holdsDoors' has value \"no\"");
++    assertLacks(e, "unknown habit 'holdsDoors'");
+     assertHas(e, "habit 'locksScreen' has value \"often\"");
+     assertHas(e, "roles.staff.awareness 'max'");
+ });
+@@ -412,3 +413,83 @@ test('the report: preset and by name, the level from a role, pattern clue line a
+     assertHas(out.lines, 'pattern clue at password_memo');
+     assert.ok(!out.lines.some(l => /^\s*- passwordPattern/.test(l)), out.lines.join('\n'));
+ });
++
++// ── holdsDoors (step 5) ───────────────────────────────────────────────────────
++
++// A hall with a north gate into store_a and a south gate into store_b.
++function gateScenario({ npcs, gateA = { openFor: ['gary'] }, gateB = { openFor: ['sara'] } }) {
++    return {
++        startRoom: 'hall',
++        rooms: {
++            hall: {
++                type: 'room_office', connections: { north: 'store_a', south: 'store_b' }, npcs,
++                doors: [{ connectedRoom: 'store_a', direction: 'north', gate: gateA },
++                    { connectedRoom: 'store_b', direction: 'south', gate: gateB }]
++            },
++            store_a: { type: 'room_office', connections: { south: 'hall' }, locked: true },
++            store_b: { type: 'room_office', connections: { north: 'hall' }, locked: true }
++        }
++    };
++}
++const guard = (id, extra = {}) => ({ id, displayName: id, npcType: 'person', ...extra });
++
++test('holdsDoors from presets: no warning, and the report names the gates', () => {
++    const out = run(gateScenario({ npcs: [guard('gary', { awareness: 'low' }), guard('sara', { awareness: 'high' })] }));
++    assert.deepEqual(out.habits, []);
++    assertHas(out.lines, 'holdsDoors false (preset)');
++    assertHas(out.lines, 'gate.noHold at rooms/hall/doors/1 (into store_b)');
++    assertHas(out.lines, 'holdsDoors true (preset)');
++    assertHas(out.lines, 'holds the gate at rooms/hall/doors/0 (into store_a)');
++});
++
++test('holdsDoors false by name on an NPC no gate opens for', () => {
++    const out = run(gateScenario({ npcs: [guard('una', { habits: { holdsDoors: false } })] }));
++    assertHas(warnings(out.habits), "NPC 'una' has holdsDoors false but no gate opens for it");
++    assertHas(out.lines, 'no effect: no gate opens for it');
++    // A preset that does nothing draws no warning
++    const quiet = run(gateScenario({ npcs: [guard('una', { awareness: 'high' })] }));
++    assert.deepEqual(quiet.habits, []);
++});
++
++test('holdsDoors false by name whose every gate has playerMayPassIf or an authored noHold', () => {
++    const out = run(gateScenario({
++        npcs: [guard('sara', { habits: { holdsDoors: false } })],
++        gateA: { openFor: ['sara'], playerMayPassIf: 'disguised' },
++        gateB: { openFor: ['sara'], noHold: [] }
++    }));
++    assertHas(warnings(out.habits), "NPC 'sara' has holdsDoors false but every gate that opens for it (rooms/hall/doors/0, rooms/hall/doors/1)");
++    assertHas(out.lines, 'rooms/hall/doors/0 (into store_a): the gate sets playerMayPassIf, habit not applied there');
++    assertHas(out.lines, 'rooms/hall/doors/1 (into store_b): the gate sets noHold, habit not applied there');
++    // One gate where it applies: no warning
++    const one = run(gateScenario({
++        npcs: [guard('sara', { habits: { holdsDoors: false } })],
++        gateA: { openFor: ['sara'], playerMayPassIf: 'disguised' },
++        gateB: { openFor: 'sara' }
++    }));
++    assertLacks(warnings(one.habits), 'holdsDoors false');
++});
++
++test('an authored gate.noHold naming an id not in its openFor', () => {
++    const out = run(gateScenario({ npcs: [guard('sara')], gateB: { openFor: ['sara'], noHold: ['sara', 'len'] } }));
++    assertHas(warnings(out.habits), "rooms/hall/doors/1 gate.noHold names 'len', who is not in its openFor");
++    assertLacks(warnings(out.habits), "names 'sara'");
++});
++
++function schemaErrors(scenario) {
++    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
++      puts JSON.generate(validate_json(JSON.parse(STDIN.read), ${JSON.stringify(join(root, 'scripts/scenario-schema.json'))}))`;
++    const r = spawnSync('ruby', ['-e', script], {
++        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
++    });
++    assert.equal(r.status, 0, r.stderr);
++    return JSON.parse(r.stdout.trim().split('\n').pop());
++}
++
++test('the schema takes habits.holdsDoors (a boolean) and gate.noHold (a list of ids)', () => {
++    const ok = gateScenario({ npcs: [guard('sara', { habits: { holdsDoors: false } })], gateB: { openFor: ['sara'], noHold: ['sara'] } });
++    assert.deepEqual(schemaErrors(ok).filter(e => /holdsDoors|noHold/.test(e)), []);
++    const bad = gateScenario({ npcs: [guard('sara', { habits: { holdsDoors: 'no' } })], gateB: { openFor: ['sara'], noHold: 'sara' } });
++    const errs = schemaErrors(bad);
++    assert.ok(errs.some(e => e.includes('holdsDoors')), errs.join('\n'));
++    assert.ok(errs.some(e => e.includes('noHold')), errs.join('\n'));
++});
+diff --git a/test/models/break_escape/npc_habits_loader_test.rb b/test/models/break_escape/npc_habits_loader_test.rb
+index df69d00fc..631dda85e 100644
+--- a/test/models/break_escape/npc_habits_loader_test.rb
++++ b/test/models/break_escape/npc_habits_loader_test.rb
+@@ -47,9 +47,9 @@ module BreakEscape
+                             objects: [login_pc('dana_pc'), login_pc('ian_pc')],
+                             extra: { 'roles' => { 'front_desk' => { 'awareness' => 'low' } } }))
+       game.reload
+-      assert_equal({ 'locksScreen' => 'never' }, npc_in(game, 'dana')['habits'])
++      assert_equal({ 'locksScreen' => 'never', 'holdsDoors' => true }, npc_in(game, 'dana')['habits'])
+       assert_equal({ 'lockChance' => 0 }, npc_in(game, 'dana')['screenHabit'])
+-      assert_equal({ 'locksScreen' => 'always', 'writesDown' => true }, npc_in(game, 'ian')['habits'])
++      assert_equal({ 'locksScreen' => 'always', 'holdsDoors' => false, 'writesDown' => true }, npc_in(game, 'ian')['habits'])
+       assert_equal({ 'lockChance' => 1 }, npc_in(game, 'ian')['screenHabit'])
+       game.scenario_data['rooms']['office']['objects'].each do |pc|
+         refute pc.key?('lockChance'), pc['id']
+@@ -61,6 +61,26 @@ module BreakEscape
+       assert_nil game.npc_habit({ 'id' => 'x' }, 'locksScreen')
+     end
+ 
++    test 'the loader writes gate.noHold for a careful guard, and the room data carries it without the habits' do
++      guard = ->(id, level) { { 'id' => id, 'npcType' => 'person', 'position' => { 'x' => 3, 'y' => 3 }, 'awareness' => level } }
++      data = scenario(npcs: [guard.call('sara', 'high'), guard.call('gary', 'low')], objects: [])
++      data['rooms']['office']['connections'] = { 'north' => 'store_a', 'south' => 'store_b' }
++      data['rooms']['office']['doors'] = [
++        { 'connectedRoom' => 'store_a', 'direction' => 'north', 'gate' => { 'openFor' => ['gary'] } },
++        { 'connectedRoom' => 'store_b', 'direction' => 'south', 'gate' => { 'openFor' => ['sara'] } }
++      ]
++      data['rooms']['store_a'] = { 'type' => 'room_office', 'connections' => { 'south' => 'office' }, 'locked' => true }
++      data['rooms']['store_b'] = { 'type' => 'room_office', 'connections' => { 'north' => 'office' }, 'locked' => true }
++      game = build(data)
++      game.reload
++      doors = game.scenario_data['rooms']['office']['doors']
++      refute doors[0]['gate'].key?('noHold'), 'a holder gets none'
++      assert_equal ['sara'], doors[1]['gate']['noHold']
++      room = game.filtered_room_data('office')
++      assert_equal ['sara'], room['doors'][1]['gate']['noHold']
++      room['npcs'].each { |npc| refute npc.key?('habits'), npc['id'] }
++    end
++
+     test 'the owner of a PC with a screenOwner and no authored id is filled' do
+       data = scenario(npcs: [owner('dana', nil, 'awareness' => 'low').tap { |n| n.delete('needsHome') }],
+                       objects: [{ 'type' => 'pc', 'name' => 'Desk', 'workstation' => true, 'screenOwner' => 'dana' }])
+diff --git a/test/unit/npc_habits_test.rb b/test/unit/npc_habits_test.rb
+index 91f77b4a6..b567aff04 100644
+--- a/test/unit/npc_habits_test.rb
++++ b/test/unit/npc_habits_test.rb
+@@ -1,7 +1,8 @@
+ require 'test_helper'
+ 
+ # Slice 9.1 step 1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, sections 4, 5.1 and 5.2): the habits
+-# library, its presets, levels and the locksScreen fill.
++# library, its presets, levels and the locksScreen fill. Step 5 (5.4): holdsDoors and the
++# gate fill.
+ class NpcHabitsTest < ActiveSupport::TestCase
+   NH = BreakEscape::NpcHabits
+ 
+@@ -23,9 +24,9 @@ class NpcHabitsTest < ActiveSupport::TestCase
+   end
+ 
+   test 'each preset gives the table in 4.2, and writesDown and password are never set by a level' do
+-    { 'low' => 'never', 'medium' => 'sometimes', 'high' => 'always' }.each do |level, value|
++    { 'low' => ['never', true], 'medium' => ['sometimes', true], 'high' => ['always', false] }.each do |level, (lock, hold)|
+       habits = NH.expanded(npc('awareness' => level), {})
+-      assert_equal({ 'locksScreen' => value }, habits, level)
++      assert_equal({ 'locksScreen' => lock, 'holdsDoors' => hold }, habits, level)
+     end
+     NH::PRESETS.each_value do |preset|
+       refute preset.key?('writesDown')
+@@ -36,10 +37,10 @@ class NpcHabitsTest < ActiveSupport::TestCase
+ 
+   test 'a habit by name replaces the preset and leaves the rest; habits with no level give only those keys' do
+     habits = NH.expanded(npc('awareness' => 'high', 'habits' => { 'locksScreen' => 'never', 'writesDown' => true }), {})
+-    assert_equal({ 'locksScreen' => 'never', 'writesDown' => true }, habits)
++    assert_equal({ 'locksScreen' => 'never', 'holdsDoors' => false, 'writesDown' => true }, habits)
+ 
+-    habits = NH.expanded(npc('awareness' => 'high', 'habits' => { 'writesDown' => true }), {})
+-    assert_equal({ 'locksScreen' => 'always', 'writesDown' => true }, habits)
++    habits = NH.expanded(npc('awareness' => 'high', 'habits' => { 'writesDown' => true, 'holdsDoors' => true }), {})
++    assert_equal({ 'locksScreen' => 'always', 'holdsDoors' => true, 'writesDown' => true }, habits)
+ 
+     assert_equal({ 'password' => 'reused' }, NH.expanded(npc('habits' => { 'password' => 'reused' }), {}))
+     assert_nil NH.expanded(npc, {}), 'no level and no habits: nil'
+@@ -70,18 +71,17 @@ class NpcHabitsTest < ActiveSupport::TestCase
+     assert_nil NH.expanded(bare, roles), 'no level, no habits'
+   end
+ 
+-  test 'an unknown level, habit or value is dropped; holdsDoors is unknown at this step' do
++  test 'an unknown level, habit or value is dropped' do
+     assert_nil NH.level_of(npc('awareness' => 'paranoid'), {})
+-    habits = NH.expanded(npc('habits' => { 'locksScreen' => 'often', 'holdsDoors' => false, 'phishable' => true,
++    habits = NH.expanded(npc('habits' => { 'locksScreen' => 'often', 'holdsDoors' => 'no', 'phishable' => true,
+                                            'writesDown' => 'yes', 'password' => 'guessable' }), {})
+     assert_equal({ 'password' => 'guessable' }, habits)
+-    refute NH::HABITS.key?('holdsDoors')
+   end
+ 
+   test 'sources marks each habit by name or preset; parameters are not listed' do
+     subject = npc('awareness' => 'high',
+                   'habits' => { 'writesDown' => true, 'password' => 'guessable', 'passwordPattern' => 'memo' })
+-    assert_equal({ 'locksScreen' => :preset, 'writesDown' => :explicit, 'password' => :explicit },
++    assert_equal({ 'locksScreen' => :preset, 'holdsDoors' => :preset, 'writesDown' => :explicit, 'password' => :explicit },
+                  NH.sources(subject, {}))
+   end
+ 
+@@ -192,7 +192,7 @@ class NpcHabitsTest < ActiveSupport::TestCase
+                           npc('id' => 'mia', 'habits' => { 'password' => 'reused', 'locksScreen' => 'often' })])
+     NH.expand!(data)
+     npcs = data['rooms']['office']['npcs']
+-    assert_equal({ 'locksScreen' => 'sometimes', 'writesDown' => true }, npcs[0]['habits'])
++    assert_equal({ 'locksScreen' => 'sometimes', 'holdsDoors' => true, 'writesDown' => true }, npcs[0]['habits'])
+     assert_equal({ 'password' => 'reused' }, npcs[1]['habits'])
+   end
+ 
+@@ -260,4 +260,86 @@ class NpcHabitsTest < ActiveSupport::TestCase
+     assert_equal [], NH.expand!(data)
+     assert_equal before, data
+   end
++  # ---- holdsDoors (step 5) --------------------------------------------------------
++
++  # A hall with a gate north into store (openFor the given ids) and the NPCs given.
++  def gate_scenario(npcs, gate, extra_doors = [])
++    { 'startRoom' => 'hall',
++      'rooms' => {
++        'hall' => { 'type' => 'room_office', 'connections' => { 'north' => 'store' }, 'npcs' => npcs,
++                    'doors' => [{ 'connectedRoom' => 'store', 'direction' => 'north', 'gate' => gate }] + extra_doors },
++        'store' => { 'type' => 'room_office', 'connections' => { 'south' => 'hall' }, 'locked' => true }
++      } }
++  end
++
++  def guard(id, attrs = {})
++    { 'id' => id, 'npcType' => 'person', 'creds' => { 'card' => { 'card_id' => "#{id}-1" } } }.merge(attrs)
++  end
++
++  test 'noHold lists the openFor NPCs whose holdsDoors is false, by preset or by name' do
++    data = gate_scenario([guard('sara', 'awareness' => 'high'), guard('gary', 'awareness' => 'low'),
++                          guard('una', 'awareness' => 'low', 'habits' => { 'holdsDoors' => false })],
++                         { 'openFor' => %w[sara gary una] })
++    report = NH.expand!(data)
++    assert_equal %w[sara una], data['rooms']['hall']['doors'][0]['gate']['noHold']
++    doors = report_for(report, 'sara')[:doors]
++    assert_equal false, doors[:value]
++    assert_equal [{ path: 'rooms/hall/doors/0', room: 'hall', connected_room: 'store', applied: true, no_hold: true, reason: nil }],
++                 doors[:gates]
++    refute report_for(report, 'gary')[:doors][:gates][0][:no_hold]
++  end
++
++  test 'an openFor string is read as one id' do
++    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => 'sara' })
++    NH.expand!(data)
++    assert_equal ['sara'], data['rooms']['hall']['doors'][0]['gate']['noHold']
++  end
++
++  test 'a gate with playerMayPassIf or an authored noHold is left alone and reported' do
++    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['sara'], 'playerMayPassIf' => 'disguised' })
++    report = NH.expand!(data)
++    refute data['rooms']['hall']['doors'][0]['gate'].key?('noHold')
++    assert_equal :player_may_pass_if, report_for(report, 'sara')[:doors][:gates][0][:reason]
++
++    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['sara'], 'noHold' => [] })
++    report = NH.expand!(data)
++    assert_equal [], data['rooms']['hall']['doors'][0]['gate']['noHold']
++    assert_equal :authored_no_hold, report_for(report, 'sara')[:doors][:gates][0][:reason]
++  end
++
++  test 'a gate whose guards all hold, or have no level, gets no noHold' do
++    data = gate_scenario([guard('gary', 'awareness' => 'medium'), { 'id' => 'cleaner', 'npcType' => 'person' }],
++                         { 'openFor' => %w[gary cleaner] })
++    NH.expand!(data)
++    refute data['rooms']['hall']['doors'][0]['gate'].key?('noHold')
++  end
++
++  test 'an NPC that no gate opens for is reported with no gate' do
++    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['gary'] })
++    report = NH.expand!(data)
++    assert_equal :no_gate, report_for(report, 'sara')[:doors][:reason]
++    refute data['rooms']['hall']['doors'][0]['gate'].key?('noHold')
++  end
++
++  test 'doors an object and gate a string are skipped with no exception' do
++    data = gate_scenario([guard('sara', 'awareness' => 'high')], { 'openFor' => ['sara'] })
++    data['rooms']['hall']['doors'] = { 'north' => { 'gate' => { 'openFor' => ['sara'] } } }
++    before = deep(data['rooms']['hall']['doors'])
++    assert_nothing_raised { NH.expand!(data) }
++    assert_equal before, data['rooms']['hall']['doors']
++
++    data = gate_scenario([guard('sara', 'awareness' => 'high')], 'sara')
++    assert_nothing_raised { NH.expand!(data) }
++    assert_equal 'sara', data['rooms']['hall']['doors'][0]['gate']
++    assert_equal false, data['rooms']['hall']['npcs'][0]['habits']['holdsDoors'], 'the NPC part still runs'
++  end
++
++  test 'a second expand! with gates changes nothing' do
++    data = gate_scenario([guard('sara', 'awareness' => 'high'), guard('gary', 'awareness' => 'low')],
++                         { 'openFor' => %w[sara gary] })
++    NH.expand!(data)
++    once = deep(data)
++    NH.expand!(data)
++    assert_equal once, data
++  end
+ end
+-- 
+2.43.0
+

@@ -1,0 +1,7 @@
+{
+  "display_name": "Network Architecture Test",
+  "description": "Test for visualizing the network architecture minigame.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "2b1db74a20e19bfce6f32c68af4e09a8",
+  "npc": "narrator",
+  "text": "You lean over the site map on his desk while he talks, close enough for the cloner on your hip to reach his lanyard.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:43:02Z"
+}

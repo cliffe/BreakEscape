@@ -1,0 +1,13 @@
+{
+  "key": "8caefc765e7bf90c4e7b6991413cd904",
+  "npc": "oleg_illiashenko",
+  "text": "Then some program reads those bytes with a one-byte table, Windows-1251, and every letter becomes two wrong ones.",
+  "voice": "Algieba",
+  "style": "Ukrainian computer science lecturer, softly spoken, with a mild Ukrainian accent in his English, consistent throughout. Quiet, gentle, unhurried, warm, a little wry. Never loud.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

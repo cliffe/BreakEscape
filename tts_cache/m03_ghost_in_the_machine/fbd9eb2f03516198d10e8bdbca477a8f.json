@@ -1,0 +1,13 @@
+{
+  "key": "fbd9eb2f03516198d10e8bdbca477a8f",
+  "npc": "narrator",
+  "text": "Her phone buzzes. She glances at it, then at the door, and the meeting is over.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:21:30Z"
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "ca02_cv_lures_defend",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

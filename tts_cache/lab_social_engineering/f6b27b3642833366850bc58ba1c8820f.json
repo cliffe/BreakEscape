@@ -1,0 +1,13 @@
+{
+  "key": "f6b27b3642833366850bc58ba1c8820f",
+  "npc": "ruth",
+  "text": "Ledgerwell's a small finance firm. Last quarter one of Gareth's team nearly wired a five-figure invoice to a spoofed supplier.",
+  "voice": "Sulafat",
+  "style": "Engagement lead at a British penetration-testing consultancy, late forties, Black British of Nigerian (Yoruba) heritage, raised in London. Speak with a consistent London English accent with a light Lagos lilt throughout — do not shift to any other accent. Warm mid-range pitch; measured but brisk pace. A good boss briefing a junior consultant: friendly, practical, no fuss.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:33:36Z"
+}

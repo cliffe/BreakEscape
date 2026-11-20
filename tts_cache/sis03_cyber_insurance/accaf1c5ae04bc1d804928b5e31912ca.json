@@ -1,0 +1,13 @@
+{
+  "key": "accaf1c5ae04bc1d804928b5e31912ca",
+  "npc": "eleanor_vance",
+  "text": "That's the final claim in the chain. Insurance doesn't just observe safety-relevant weakness. It prices it, conditions coverage on it, and then has to justify what it does when the weakness later becomes a loss.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:32:25Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "886a98d65210120e8aaf3b3a2aaa71af",
+  "npc": "eleanor_vance",
+  "text": "My counsel advised against invocation. But I want to hear your reasoning.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:15Z"
+}

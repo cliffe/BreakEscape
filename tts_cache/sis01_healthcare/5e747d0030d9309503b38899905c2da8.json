@@ -1,0 +1,13 @@
+{
+  "key": "5e747d0030d9309503b38899905c2da8",
+  "npc": "dr_sharma",
+  "text": "You backed David on the pump console. Slower, but every mistake on paper was one somebody could see.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

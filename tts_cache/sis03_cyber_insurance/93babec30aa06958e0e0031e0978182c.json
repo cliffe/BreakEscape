@@ -1,0 +1,13 @@
+{
+  "key": "93babec30aa06958e0e0031e0978182c",
+  "npc": "eleanor_vance",
+  "text": "W-03 required application of a critical SIS firmware patch to the safety-critical PLC by the same deadline: December thirty-first, 2025.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:59Z"
+}

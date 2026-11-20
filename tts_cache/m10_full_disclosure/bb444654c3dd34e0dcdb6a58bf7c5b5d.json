@@ -1,0 +1,13 @@
+{
+  "key": "bb444654c3dd34e0dcdb6a58bf7c5b5d",
+  "npc": "narrator",
+  "text": "Every screen in the room changes to the same word. RELEASED.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:58:08Z"
+}

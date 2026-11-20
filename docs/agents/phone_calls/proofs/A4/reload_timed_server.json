@@ -1,0 +1,27 @@
+{
+  "timed_caller": {
+    "history": [
+      {
+        "read": false,
+        "text": "Timed here.",
+        "type": "npc",
+        "gameTime": -3599216,
+        "preloaded": true,
+        "timestamp": 1794493229700
+      },
+      {
+        "read": false,
+        "text": "Missed call",
+        "type": "call",
+        "gameTime": 5333,
+        "callEvent": "missed",
+        "timestamp": 1794496842545
+      }
+    ],
+    "storyPath": "scenarios/test_phone_calls/ink/timed_caller.json",
+    "storyState": "{\"flows\":{\"DEFAULT_FLOW\":{\"callstack\":{\"threads\":[{\"callstack\":[{\"exp\":false,\"type\":0}],\"threadIndex\":0,\"previousContentObject\":\"start.0.7\"}],\"threadCounter\":1},\"outputStream\":[\"^Timed here.\",\"\\n\"],\"choiceThreads\":{\"1\":{\"callstack\":[{\"cPath\":\"start.0\",\"idx\":7,\"exp\":false,\"type\":0}],\"threadIndex\":1,\"previousContentObject\":\"start.0.6\"}},\"currentChoices\":[{\"text\":\"Anything new?\",\"index\":0,\"originalChoicePath\":\"start.0.7\",\"originalThreadIndex\":1,\"targetPath\":\"start.0.c-0\",\"tags\":[]}]}},\"currentFlowName\":\"DEFAULT_FLOW\",\"variablesState\":{},\"evalStack\":[],\"visitCounts\":{},\"turnIndices\":{},\"turnIdx\":0,\"storySeed\":81,\"previousRandom\":0,\"inkSaveVersion\":10,\"inkFormatVersion\":21}",
+    "currentKnot": "start",
+    "preloadedKnot": "start",
+    "lastEnteredKnot": "start"
+  }
+}

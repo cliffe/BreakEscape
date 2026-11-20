@@ -1,0 +1,48 @@
+{
+  "people": [
+    { "id": "pierce", "kind": "cast", "address": "m.pierce@ledgerwell.example",
+      "forms": { "first": "Melanie", "short": "Mel", "formal": "Ms Pierce", "full": "Melanie Pierce" } },
+    { "id": "baker", "kind": "cast", "address": "j.baker@ledgerwell.example",
+      "forms": { "first": "Jed", "full": "Jed Baker" } },
+    { "id": "hampshire", "kind": "cast", "address": "careers@ledgerwell.example",
+      "forms": { "full": "Chris Hampshire" } },
+    { "id": "leeds_baker", "kind": "outsider", "address": "j.baker@leedsplumbing.example",
+      "forms": { "full": "J. Baker" } }
+  ],
+  "intelFacts": {
+    "email_pattern": { "text": "Staff addresses are first-initial.surname@ledgerwell.example.", "subject": "company",
+      "provides": [ { "type": "address", "rule": "initial.surname@ledgerwell.example", "label": "an address built from the pattern" } ] },
+    "pierce_role": { "text": "Melanie Pierce works in Finance.", "subject": "pierce",
+      "provides": [ { "type": "name", "about": "recipient", "value": "pierce_first", "label": "Melanie", "kind": "generic" },
+                    { "type": "team", "value": "finance", "label": "Finance", "kind": "generic" } ] },
+    "pierce_trusts_jed": { "text": "Melanie trusts Jed Baker.", "subject": "pierce",
+      "provides": [ { "type": "name", "about": "sender", "value": "baker_full", "label": "Jed Baker", "kind": "distinctive" } ] },
+    "pierce_expects_balance_sheet": { "text": "Melanie expects a Q3 balance sheet from Jed on Fridays.", "subject": "pierce",
+      "provides": [ { "type": "document", "value": "balance_sheet", "label": "the Q3 balance sheet", "kind": "distinctive" } ] },
+    "hampshire_careers": { "text": "The careers inbox accepts CVs from anyone.", "subject": "hampshire", "provides": [] },
+    "baker_namesake": { "text": "There is a J. Baker in Leeds.", "subject": "company",
+      "provides": [ { "type": "name", "about": "sender", "value": "leeds_baker_full", "label": "J. Baker", "kind": "stale" } ] }
+  },
+  "intelBoard": {
+    "title": "Engagement: Ledgerwell",
+    "people": ["pierce", "hampshire"],
+    "readinessSlots": {
+      "pierce": [
+        { "label": "Who she is", "needsIntel": ["pierce_role"],
+          "goalString": "You still don't know what Melanie does here.", "doneString": "She works in Finance." },
+        { "label": "Who she trusts", "needsIntel": ["pierce_trusts_jed", "email_pattern"],
+          "goalString": "You still don't know who Melanie would open an email from.",
+          "doneString": "She trusts Jed Baker; you know the email pattern." },
+        { "label": "What she expects", "needsIntel": ["pierce_expects_balance_sheet"],
+          "goalString": "You still don't know what Melanie expects to receive.",
+          "doneString": "She expects a Q3 balance sheet from Jed on Fridays." }
+      ],
+      "hampshire": [
+        { "label": "Where mail goes", "needsIntel": ["hampshire_careers"],
+          "goalString": "You still don't know how Chris receives mail from strangers.",
+          "doneString": "The careers inbox accepts CVs from anyone." }
+      ]
+    }
+  },
+  "engagement": { "scopeNote": "You are authorised to test Ledgerwell. Stay inside the agreed scope." }
+}

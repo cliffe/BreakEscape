@@ -1,0 +1,332 @@
+/* ── Cryptex / Scroll-Wheel Password Entry — MG-U ──────────────────────── */
+
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.cryptex-wrapper {
+    font-synthesis: none;
+    font-weight: normal;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'VT323', 'GNF', monospace;
+    font-size: 18px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.cryptex-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #1a233a;
+    padding: 16px 20px;
+    border-bottom: 2px solid #334466;
+    flex-shrink: 0;
+}
+
+.cryptex-header h2 {
+    font-family: var(--ui-heading-font, 'Press Start 2P'), monospace;
+    margin: 0 0 8px;
+    font-size: 16px;   /* Press Start 2P on its 8px grid */
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.cryptex-header p {
+    margin: 0;
+    font-size: 18px;
+    color: #c9d1d9;
+    letter-spacing: 0.03em;
+}
+
+/* ── Main wheel container ───────────────────────────────────────────────── */
+.cryptex-wheels {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 40px 20px;
+    overflow: hidden;
+}
+
+/* ── Single wheel group ────────────────────────────────────────────────── */
+.cryptex-wheel-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.cryptex-wheel-label {
+    font-size: 18px;
+    color: #8899bb;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+    min-height: 12px;
+}
+
+/* ── Wheel row: arrows and display ────────────────────────────────────── */
+.cryptex-wheel-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.cryptex-wheel-arrow {
+    background: #1a233a;
+    border: 2px solid #445566;
+    color: #8899bb;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 10px;
+    width: 36px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.cryptex-wheel-arrow:hover:not(:disabled) {
+    background: #223355;
+    color: #aabbdd;
+    border-color: #556688;
+}
+
+.cryptex-wheel-arrow:active:not(:disabled) {
+    background: #0a1420;
+    border-color: #f5a623;
+}
+
+.cryptex-wheel-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.cryptex-wheel-display {
+    /* GNF for the letter wheels, so the cryptex has its own face beside the combination
+       lock's Press Start 2P (the user's call, slice 7 R3 m1). GNF's font pixel is
+       size/20.48, so 82px (four font pixels a grid step, R4 m1) is one of its few crisp
+       sizes, and only with grayscale text: will-change switches off subpixel (LCD) text on
+       this element. The line box is the glyph's 56px height. GNF's ink sits 2px below the
+       middle of its line box, and the line height does not move it (flex centres the line
+       box), so the padding is 2px lighter on top than below to centre the ink: equal
+       margins above and below the letter at every size (R4 m1). Brass on navy as before. */
+    font-size: 82px;
+    font-weight: normal;
+    color: #e8c070;
+    background: #0f1826;
+    border: 2px solid #334466;
+    padding: 8px 20px 12px;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'GNF', monospace;
+    line-height: 56px;
+    letter-spacing: 0;
+    flex-shrink: 0;
+    will-change: transform;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+.cryptex-wheel-display.complete {
+    border-color: #44aa44;
+    color: #88ee88;
+}
+
+.cryptex-wheel-display.worn {
+    opacity: 0.3;
+}
+
+/* ── Hint strip ───────────────────────────────────────────────────────── */
+.cryptex-hint-strip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #0f1826;
+    border-top: 2px solid #334466;
+    border-bottom: 2px solid #334466;
+    min-height: 32px;
+    flex-shrink: 0;
+}
+
+.hint-char {
+    font-size: 18px;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+    color: #f5a623;
+    font-family: 'VT323', 'GNF', monospace;
+    letter-spacing: 0.05em;
+}
+
+.hint-char.hidden {
+    color: #556688;
+}
+
+.hint-char.worn {
+    opacity: 0.3;
+}
+
+/* ── Status message area ──────────────────────────────────────────────── */
+.cryptex-status {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 20px;
+    background: #0f1826;
+    border-top: 2px solid #334466;
+    border-bottom: 2px solid #334466;
+}
+
+.cryptex-status-message {
+    font-size: 20px;
+    color: #c9d1d9;
+    text-align: center;
+    letter-spacing: 0.03em;
+}
+
+.cryptex-status-message.wrong {
+    color: #ff8888;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+}
+
+.cryptex-status-message.success {
+    color: #88ee88;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+}
+
+/* ── Footer with buttons ──────────────────────────────────────────────── */
+.cryptex-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #0f1826;
+    padding: 12px 20px;
+    border-top: 2px solid #334466;
+    flex-shrink: 0;
+}
+
+.cryptex-reset-btn,
+.cryptex-submit-btn {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 8px 16px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 2px solid #445566;
+}
+
+.cryptex-reset-btn {
+    background: #1a233a;
+    color: #8899bb;
+}
+
+.cryptex-reset-btn:hover {
+    background: #223355;
+    color: #aabbdd;
+    border-color: #556688;
+}
+
+.cryptex-submit-btn {
+    background: #1a1a1a;
+    color: #555555;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.cryptex-submit-btn.ready {
+    background: #1a2e1a;
+    color: #88ee88;
+    border-color: #44aa44;
+    cursor: pointer;
+    opacity: 1;
+}
+
+.cryptex-submit-btn.ready:hover {
+    background: #224422;
+    color: #ffffff;
+    border-color: #66cc66;
+}
+
+.cryptex-submit-btn.locked {
+    background: #2e1a1a;
+    color: #ff8888;
+    border-color: #664444;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Success shows on the wheels, not only in the status line (UX pass, 2026-11-12) */
+.cryptex-wrapper.opened .cryptex-wheel-display {
+    border-color: #44aa44;
+    color: #88ee88;
+    background: #12301a;
+    outline: 2px solid #44aa44;
+    outline-offset: 2px;
+}
+
+.cryptex-wrapper.opened .cryptex-header p {
+    color: #88ee88;
+    font-weight: normal;   /* no synthetic bold on a pixel face (slice 7 R2 m2) */
+}
+
+/* Short screens (a 412px-high landscape phone): tighter rows so the frame wraps the
+   wheels, the hint strip, the status and Reset/Submit (slice 7 R1); anything still taller
+   scrolls inside the frame */
+@media (max-height: 560px) {
+    .cryptex-wrapper { min-height: 0; }
+    .cryptex-header { padding: 6px 16px; }
+    .cryptex-wheels { padding: 8px 16px; }
+    .cryptex-wheel-group { gap: 4px; }
+    .cryptex-wheel-display { height: 64px; padding: 4px 16px 8px; }
+    .cryptex-hint-strip { padding: 4px 16px; min-height: 0; }
+    .cryptex-status { min-height: 0; padding: 4px 16px; }
+    .cryptex-footer { padding: 6px 16px; }
+}
+
+/* Phone portrait (critique A02): five wheels at 124px were wider than a 390px window and the
+   centred row cropped wheels 1 and 5 off both sides. Below 600px each wheel is 56px wide with
+   a 41px GNF letter (two font pixels a grid step, GNF's other crisp size), so five fit in about
+   330px; a longer word wraps onto a second row instead of running off the edge. */
+@media (max-width: 600px) {
+    .cryptex-wrapper { height: auto; min-height: 100%; overflow: visible; }
+    .cryptex-header { padding: 8px 12px; }
+    .cryptex-wheels {
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        justify-content: safe center;
+        gap: 12px 6px;
+        padding: 16px 8px;
+        overflow: visible;
+    }
+    .cryptex-wheel-label { font-size: 16px; }
+    .cryptex-wheel-arrow { width: 40px; height: 32px; padding: 0; }
+    .cryptex-wheel-display {
+        font-size: 41px;
+        line-height: 28px;
+        width: 36px;
+        height: 48px;
+        padding: 4px 8px 6px;
+    }
+    .cryptex-hint-strip { padding: 8px 12px; flex-wrap: wrap; }
+    .cryptex-footer { padding: 8px 12px; }
+}

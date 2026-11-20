@@ -1,0 +1,13 @@
+{
+  "key": "934ead50ea2cc351760314edcdd9c336",
+  "npc": "hodan_warsame",
+  "text": "Still about, then?",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:12:03Z"
+}

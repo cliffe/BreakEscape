@@ -1,0 +1,147 @@
+
+## R8 (round 2): Cipher walks off, without the alarm ('There's a night crew… Go and look.') and, after a page reload with the alarm sounded, with it ('Hear that klaxon?'). The first run carries through to the debrief's police line and the CIPHER credit.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_provided_keycard":true,"vance_card_cloned":true,"anomaly_detected":true,"vance_spoken":true}}
+
+--- cipher ---
+  Narrator: He's up the rack row, a handset already half out of its clip.
+  ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who signed you in?
+     (3 options)
+ > Put the radio down.
+  Narrator: You close the distance before the handset clears its clip. He freezes with it against his chest.
+  ENTROPY Operative 'Cipher': You're fast.
+  ENTROPY Operative 'Cipher': So what happens now?
+     (3 options)
+ > Whatever Voltage told you this was, the racks vent hydrogen. People die.
+  ENTROPY Operative 'Cipher': Nobody's in the halls at night. That's the whole point of doing it at night.
+  Narrator: He says it too fast.
+     (2 options)
+ > There's a night crew in Hall 2. Go and look.
+  ENTROPY Operative 'Cipher': ...You're lying.
+  Narrator: His eyes go to the Hall 2 door, and stay there.
+  ENTROPY Operative 'Cipher': If you're lying, I'm coming back for you.
+  Narrator: He clips the handset back on his belt, unradioed, and walks for the Hall 2 door without looking at you again.
+      [task: neutralize_operative_cipher]
+  [chat closes]
+   [PASS] cipher_walked = true (expected true)
+   [PASS] cipher_engaged = false (expected false)
+   {set {"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"evidence_maintenance_logs_found":true,"attack_mechanism_known":true,"voltage_captured":true,"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true,"operative_static_defeated":true}}
+      [engine: attack mapped -> clock_started]
+      [clock: h2_advisory started at 0 min]
+      [clock: racks_vent started at 0 min]
+
+--- phone ---
+     (4 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] How do I get through the plant-room reader?
+     [1] Where do I stand?
+     [2] Nothing right now.
+  [stopped: no pick]
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Shutdown engaged before the racks went. Banks isolated, hall intact.
+  Clean. Runaway aborted before a single cell vented. Banks isolated.
+  And you've got Voltage.
+ > What did we get out of there?
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is in a room now. So far he's given us one thing: his casualty figure.
+  Cipher went to look at the night crew and kept walking. Police picked him up on the access road. He's talking.
+  Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > So what do they fix first?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > The Architect. He's running all of it.
+  The same name the Zero Day directive carried. The Architect.
+  We've just watched one of his strikes from the inside. Now we know how the cells fit together.
+  This site was a rehearsal.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > I'm in. When do we start?
+  He'll call when he's ready. Not tonight.
+  Agent HaX: Eleven people walked out of there tonight. Two hundred and forty thousand people kept their lights on and never knew why.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Full public disclosure. People have a right to know.
+  Full transparency. The attack, the holes it came through, ENTROPY. All of it.
+  Robert Vance: There'll be hell to pay for this place. Fair enough.
+  The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
+  Netherton will back that.
+  Done.
+  Statement goes out with the local authorities.
+  Robert Vance: I don't follow all of it. I know the hall's still standing.
+     (2 options)
+ > Just doing my job.
+  Robert Vance: I'll have those card readers out by the end of the week.
+  Voltage will keep.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+   [PASS] said: "Police picked him up on the access road"
+
+--- credits ---
+   MISSION COMPLETE
+   MISSION 4: CRITICAL FAILURE
+   ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED — Emergency Shutdown engaged
+   GRID HELD: 240,000 residents kept on supply
+   ALL ELEVEN ON SITE WALKED OUT
+   ── DECISIONS ──
+   VOLTAGE: CAPTURED — Blackout's field lead in custody
+   ROBERT VANCE: never told — the cover held all night
+   CIPHER: walked off the job when you told him about the night crew
+   THE BREAK-IN: traced on paper to the OptiGrid crew
+   DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came
+   THE ARCHITECT: identity still unknown. Phase 3 looms.
+   ENTROPY: Still operational. Cross-cell strikes continue.
+   [PASS] said: "CIPHER: walked off the job"
+
+## Second variant: the alarm has gone (page reload; ink locals are kept as the engine saves them, so the radio opener is already spent and Cipher is picked up from his second option).
+   {set {"cipher_walked":false,"crew_warned":true}}
+      [engine: alarm with Voltage down -> free, no clock]
+
+--- cipher ---
+   (after a reload: variables kept, visit counts and position reset)
+  ENTROPY Operative 'Cipher': So what happens now?
+     (3 options)
+ > Whatever Voltage told you this was, the racks vent hydrogen. People die.
+  ENTROPY Operative 'Cipher': Nobody's in the halls at night. That's the whole point of doing it at night.
+  Narrator: He says it too fast.
+     (2 options)
+ > Hear that klaxon? Nine people just walked out of Hall 2.
+  ENTROPY Operative 'Cipher': ...Nine?
+  Narrator: His eyes go to the Hall 2 door, and stay there.
+  ENTROPY Operative 'Cipher': If you're lying, I'm coming back for you.
+  Narrator: He clips the handset back on his belt, unradioed, and walks for the Hall 2 door without looking at you again.
+      [task: neutralize_operative_cipher]
+  [chat closes]
+   [PASS] said: "...Nine?"
+   [PASS] not said: "There's a night crew in Hall 2. Go and look."
+   [PASS] cipher_walked = true (expected true)
+
+[stats] spoken/narrated lines 58, choices 17, longest run without a choice 7 (debrief); runs>=6: debrief:7
+[result] all expectations met

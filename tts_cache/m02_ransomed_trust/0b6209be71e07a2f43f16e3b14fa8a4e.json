@@ -1,0 +1,13 @@
+{
+  "key": "0b6209be71e07a2f43f16e3b14fa8a4e",
+  "npc": "narrator",
+  "text": "He steps back from the terminal.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

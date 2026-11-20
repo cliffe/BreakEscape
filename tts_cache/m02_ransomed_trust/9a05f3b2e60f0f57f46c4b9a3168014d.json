@@ -1,0 +1,13 @@
+{
+  "key": "9a05f3b2e60f0f57f46c4b9a3168014d",
+  "npc": "hodan_warsame",
+  "text": "Radio says security want a visitor.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:05Z"
+}

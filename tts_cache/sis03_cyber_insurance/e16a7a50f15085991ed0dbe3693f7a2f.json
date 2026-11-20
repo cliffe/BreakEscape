@@ -1,0 +1,13 @@
+{
+  "key": "e16a7a50f15085991ed0dbe3693f7a2f",
+  "npc": "eleanor_vance",
+  "text": "If we invoke the exclusion, Albion's solicitors will take us to arbitration. It turns on whether \"act of war\" needs more than state attribution. I think we lose.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:36Z"
+}

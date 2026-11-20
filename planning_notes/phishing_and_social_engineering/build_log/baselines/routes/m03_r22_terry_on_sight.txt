@@ -1,0 +1,73 @@
+
+## R22 (pass 2 blind fixes 2, user 2026-10-12): Terry at night. (a) first sighting (player_spotted:terry_mott -> on_sighted) leads into his challenge; the Sterling-files story and the enrolment forms get the player waved on (guard_waved_on, which stops later sightings). (b) a fresh night: Ffion said notebook, 'Wrong turn' gets the player ordered out; a second sighting is the police threat; 'hear me out' -> 'I'm going' orders them out again; a third sighting is a fight (#hostile). (c) day: a sighting does nothing (on_sighted hands back).
+   {set {"briefing_played":true,"victoria_card_cloned":true,"mission_phase":"act2_infiltration","clone_call_done":true}}
+
+## (a) first sighting
+
+--- terry @on_sighted ---
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Building's shut, mate. So you're either lost or you're trouble.
+  Terry Mott: Go on, then. Why are you here?
+     (4 options)
+ > Sterling asked me to grab some files. We met today about the training programme.
+  Terry Mott: Ms. Sterling mentioned a potential recruit... alright.
+  Terry Mott: She does ring down at odd hours. Which files?
+     (2 options)
+ > Training programme enrolment forms. From her office.
+  Terry Mott: Don't make me come looking for you.
+     (5 options)
+ > I'll let you get on.
+  Terry Mott: Mind how you go.
+  [chat closes]
+
+## (b) fresh night, Ffion said notebook
+   {set {"ffion_night_story":"notebook","guard_waved_on":false,"player_warned":false,"excuse_given":false,"guard_suspicious":false,"idle_quiet":false}}
+
+--- terry @on_sighted ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: A torch beam swings round and settles on you.
+  Terry Mott: Ffion said there'd be someone about. Notebook, was it? Conference room's the other end of the building.
+  Terry Mott: So what are you doing in my corridor?
+     (5 options)
+ > Wrong turn. I'll find it.
+  Terry Mott: Then you've taken the scenic route. Through the executive wing.
+  Terry Mott: Back the way you came. And if I see you in here again, I won't be asking.
+  [chat closes]
+   {set {"player_warned":true,"excuse_given":true,"ordered_out":true,"guard_hostile":false,"idle_quiet":false}}
+
+--- terry @on_sighted ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: The torch finds you again.
+  Terry Mott: I told you to leave. You didn't.
+  Terry Mott: Right. That's the police, then. Stay where you are.
+  Narrator: The guard reaches for his radio.
+     (3 options)
+ > Wait, wait! Hear me out.
+  Terry Mott: No more talking. You're trespassing.
+  Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
+     (3 options)
+ > Alright, I'm going.
+  Terry Mott: Good. Off you go. I see you in here again, I'm not talking.
+  [chat closes]
+   {set {"ordered_out":true,"guard_hostile":true}}
+
+--- terry @on_sighted ---
+   (after a reload: variables kept, visit counts and position reset)
+  Terry Mott: Right. I warned you.
+  [chat closes]
+
+## (c) by day a sighting hands straight back (challengeOnSight is gated to night anyway)
+   {set {"mission_phase":"act1_meeting","clone_call_done":false,"guard_hostile":false,"ordered_out":false,"player_warned":false,"excuse_given":false}}
+
+--- terry @on_sighted ---
+   (after a reload: variables kept, visit counts and position reset)
+  Narrator: The guard stops his round and looks you over.
+ > Nod to the guard
+  Terry Mott: Afternoon. Executive wing's staff only, I'm afraid. Visitors stay in reception and the conference area.
+  Terry Mott: If Ms. Sterling wanted you back here, she'd have told me. She hasn't.
+     (2 options)
+ > Sorry -- wrong turn.
+  Terry Mott: Happens all the time. Conference room's back through to the main hallway and straight across.
+  [chat closes]
+
+[stats] spoken/narrated lines 24, choices 8, longest run without a choice 4 (terry); runs>=6: 

@@ -1,0 +1,13 @@
+{
+  "key": "53355ed603e198a0140ad8d1f43a9c1e",
+  "npc": "agnieszka_duda",
+  "text": "I've nothing to say to you.",
+  "voice": "Callirrhoe",
+  "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:30Z"
+}

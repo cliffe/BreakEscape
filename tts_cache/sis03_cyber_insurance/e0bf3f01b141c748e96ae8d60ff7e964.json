@@ -1,0 +1,13 @@
+{
+  "key": "e0bf3f01b141c748e96ae8d60ff7e964",
+  "npc": "eleanor_vance",
+  "text": "At the time of the incident, Albion still had a dual-homed historian server — a direct data path between IT and OT zones. They also had a bidirectional jump server that permitted RDP sessions in both directions.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:51Z"
+}

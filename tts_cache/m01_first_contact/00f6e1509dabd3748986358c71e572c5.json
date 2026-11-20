@@ -1,0 +1,13 @@
+{
+  "key": "00f6e1509dabd3748986358c71e572c5",
+  "npc": "graham_whitfield",
+  "text": "Quarter close. Nobody speak to me.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:31:10Z"
+}

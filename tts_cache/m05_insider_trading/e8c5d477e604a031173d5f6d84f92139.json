@@ -1,0 +1,13 @@
+{
+  "key": "e8c5d477e604a031173d5f6d84f92139",
+  "npc": "lisa_park",
+  "text": "His wife, Elena, came to the Christmas party two years ago. Lovely woman. Now she's ill. Properly ill.",
+  "voice": "Laomedeia",
+  "style": "Marketing coordinator in her early thirties, British-Korean, raised in New Malden. Speak with a consistent south-west London accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick, chatty pace. Warm and observant; she gossips because she cares about people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:02:02Z"
+}

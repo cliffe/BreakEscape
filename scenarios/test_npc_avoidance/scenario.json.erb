@@ -1,0 +1,117 @@
+{
+  "scenario_id": "test_npc_avoidance",
+  "scenario_name": "Test: NPC local avoidance (route around player and NPCs)",
+  "scenario_brief": "NPC LOCAL AVOIDANCE TEST\n\nProves that a walking NPC routes around the player and other NPCs instead of shoving into them (npc-behavior.js _handleBlockerAhead).\n\nWHAT TO WATCH:\n1. Two staff (amy_walker, zed_walker) pace the same east-west lane in opposite phase. When they meet head-on in the desk pinch they do NOT grind into each other: one gives way (the higher id, zed_walker, backs off or waits) while the other passes, then both carry on. No deadlock.\n2. Stand on the lane in front of a walker. It stops, then detours round you; it never pushes you along. Stand behind or beside it and it ignores you (the tailgate lever is intact).\n3. rob_router walks a loop through the single north doorway into the vault and back. Stand in the doorway: he waits, then (no way round a filled doorway) squeezes gently past or gives up — never a sustained shove, never jitter.\n\nTEST DURATION: 1-2 minutes. Nothing to solve.",
+  "endGoal": "Observe NPCs routing around the player and each other without a sustained shove or a deadlock.",
+  "startRoom": "bay",
+  "rooms": {
+    "bay": {
+      "type": "room_office",
+      "door_sign": "Open-plan bay",
+      "connections": {
+        "north": "vault"
+      },
+      "npcs": [
+        {
+          "id": "amy_walker",
+          "displayName": "Amy",
+          "npcType": "person",
+          "position": { "x": 2, "y": 5 },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/test_npc_avoidance/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "speed": 70,
+              "pauseForPlayer": false,
+              "waypointMode": "sequential",
+              "waypoints": [
+                { "x": 7, "y": 5, "dwellTime": 500 },
+                { "x": 2, "y": 5, "dwellTime": 500 }
+              ]
+            }
+          }
+        },
+        {
+          "id": "zed_walker",
+          "displayName": "Zed",
+          "npcType": "person",
+          "position": { "x": 7, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_npc_avoidance/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "speed": 70,
+              "pauseForPlayer": false,
+              "waypointMode": "sequential",
+              "waypoints": [
+                { "x": 2, "y": 5, "dwellTime": 500 },
+                { "x": 7, "y": 5, "dwellTime": 500 }
+              ]
+            }
+          }
+        },
+        {
+          "id": "rob_router",
+          "displayName": "Rob",
+          "npcType": "person",
+          "position": { "x": 2, "y": 6 },
+          "spriteSheet": "male_security_guard_v2",
+          "storyPath": "scenarios/test_npc_avoidance/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": {
+            "patrol": {
+              "enabled": true,
+              "multiRoom": true,
+              "waypointMode": "sequential",
+              "pauseForPlayer": false,
+              "speed": 70,
+              "route": [
+                { "room": "bay", "waypoints": [ { "x": 2, "y": 7, "dwellTime": 800 } ] },
+                { "room": "vault", "waypoints": [ { "x": 2, "y": 3, "dwellTime": 800 } ] }
+              ]
+            }
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Test Instructions",
+          "position": { "x": 8, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "text": "NPC LOCAL AVOIDANCE TEST\n\n- Two staff pace the lane (row 5) in opposite phase and meet head-on mid-lane: one gives way (detours or backs off) while the other passes, no deadlock, no overlap. (A true one-tile pinch needs desks whose collision does not inflate into row 5; desks here sit at rows 3 and 7.)\n- Stand in front of a walker: it stops then detours round you. Stand behind/beside: it ignores you.\n- Stand in the north-west doorway as Rob loops through: he waits, then squeezes gently or gives up. Never a sustained shove."
+        },
+        { "type": "table", "name": "Desk N3", "position": { "x": 3, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk N4", "position": { "x": 4, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk N5", "position": { "x": 5, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk N6", "position": { "x": 6, "y": 3 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S3", "position": { "x": 3, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S4", "position": { "x": 4, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S5", "position": { "x": 5, "y": 7 }, "takeable": false, "sprite": "smalldesk2" },
+        { "type": "table", "name": "Desk S6", "position": { "x": 6, "y": 7 }, "takeable": false, "sprite": "smalldesk2" }
+      ]
+    },
+    "vault": {
+      "type": "room_office",
+      "door_sign": "Vault",
+      "connections": {
+        "south": "bay"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Vault Note",
+          "position": { "x": 6, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "text": "Rob's route turns here and heads back through the doorway."
+        }
+      ]
+    }
+  }
+}

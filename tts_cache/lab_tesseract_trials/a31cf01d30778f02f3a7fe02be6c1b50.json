@@ -1,0 +1,13 @@
+{
+  "key": "a31cf01d30778f02f3a7fe02be6c1b50",
+  "npc": "closing_debrief_person",
+  "text": "Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

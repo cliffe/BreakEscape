@@ -1,0 +1,13 @@
+{
+  "key": "7e29fe6ed6333ddbf267f01f76bf012c",
+  "npc": "tomasz",
+  "text": "You had to lean on Dev, but he still gave up the portal and the date. A call-back to a number on file stops every line of that.",
+  "voice": "Alnilam",
+  "style": "In-house security lead at a small British firm, mid thirties, Polish-born, fifteen years in the UK. Speak with a consistent light Polish-accented English throughout — do not shift to any other accent. Mid-range pitch; quick pace. Dry, deadpan and practical, a man who has seen a lot of phishing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:41:12Z"
+}

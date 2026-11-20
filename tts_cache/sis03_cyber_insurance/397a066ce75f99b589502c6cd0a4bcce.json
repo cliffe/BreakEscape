@@ -1,0 +1,13 @@
+{
+  "key": "397a066ce75f99b589502c6cd0a4bcce",
+  "npc": "eleanor_vance",
+  "text": "The question is more subtle than it sounds.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:25:10Z"
+}

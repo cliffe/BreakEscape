@@ -1,0 +1,13 @@
+{
+  "key": "cb1d4602ee74b4a39d4af27b14f5dc42",
+  "npc": "closing_debrief_person",
+  "text": "That's a loss. She had the whole mixer in her head, and she was halfway out of the door.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:40:20Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e187d35629e3493101f799b25041ffd8",
+  "npc": "sarah_mitchell",
+  "text": "Ms Okafor's already on two, from her chart. Nobody touches that pump until pharmacy's been.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

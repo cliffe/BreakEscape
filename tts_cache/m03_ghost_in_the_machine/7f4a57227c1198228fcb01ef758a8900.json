@@ -1,0 +1,13 @@
+{
+  "key": "7f4a57227c1198228fcb01ef758a8900",
+  "npc": "victoria_sterling",
+  "text": "You told me you'd take the forty. You said it very quickly. The ones who mean it take longer.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:22:15Z"
+}

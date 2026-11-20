@@ -1,0 +1,12 @@
+=== row31_probe
+game 2303 (row31_probe)
+"opened agent_0x99_handler"
+dialling caption: "SAFETYNET secure line" {"bar":"CALLING"}
+connected caption: "SAFETYNET secure line" ringer={"npc":"agent_0x99_handler","state":"connected","knot":"topic_architect"} queue=1 stateOf(HaX)="connected" stateOf(recruiter)="queued" recruiter_texted=true
+shot row31_probe_call
+after End: ringer={"npc":"recruiter","state":"ringing","knot":"first_call"} queue=0
+  ring #1 at 1s: recruiter banner="The Recruiter | TalentStack Executive Recruiting | Incoming call | Answer | Decline"
+rings in 25s: 1
+rows HaX=["Outgoing call, 0:07"] rows recruiter=["Missed call"]
+shot row31_probe_after
+["global_variable_changed:flag4_submitted@57.5","conversation_closed:agent_0x99_handler@72","phone_call_missed:recruiter@83.6"]

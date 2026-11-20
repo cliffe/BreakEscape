@@ -1,0 +1,13 @@
+{
+  "key": "ce3485f9bf43f2f0a8704954a341dde6",
+  "npc": "eleanor_vance",
+  "text": "Find those sections. Read them. Then we'll talk about what they mean.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:19:06Z"
+}

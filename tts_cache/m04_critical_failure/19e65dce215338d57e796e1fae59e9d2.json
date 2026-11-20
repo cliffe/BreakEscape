@@ -1,0 +1,13 @@
+{
+  "key": "19e65dce215338d57e796e1fae59e9d2",
+  "npc": "operative_relay",
+  "text": "No. But you're here, and that's enough.",
+  "voice": "Pulcherrima",
+  "style": "ENTROPY operative, late thirties. Speak with a consistent Scottish (Edinburgh) accent throughout -- do not shift to any other accent. Cool, mid-range pitch; measured, unhurried pace. Confident and almost friendly; she costed this and came anyway, and nothing about it frightens her.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:08:50Z"
+}

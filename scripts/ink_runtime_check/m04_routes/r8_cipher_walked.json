@@ -1,0 +1,116 @@
+{
+"steps": [
+{
+"note": "R8 (round 2): Cipher walks off, without the alarm ('There's a night crew\u2026 Go and look.') and, after a page reload with the alarm sounded, with it ('Hear that klaxon?'). The first run carries through to the debrief's police line and the CIPHER credit."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"anomaly_detected": true,
+"vance_spoken": true
+}
+},
+{
+"talk": "cipher",
+"picks": [
+"Put the radio down",
+"Whatever Voltage told you",
+"There's a night crew"
+]
+},
+{
+"expect": {
+"cipher_walked": true,
+"cipher_engaged": false
+}
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true,
+"voltage_captured": true,
+"voltage_neutralised": true,
+"esd_authorized": true,
+"attack_prevented": true,
+"operative_static_defeated": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Shutdown engaged",
+"What did we get",
+"how did they get in",
+"fix first",
+"goes in the report",
+"The Architect",
+"I'm in",
+"Full public",
+"Just doing my job"
+]
+},
+{
+"said": [
+"Police picked him up on the access road"
+]
+},
+{
+"credits": true
+},
+{
+"said": [
+"CIPHER: walked off the job"
+]
+},
+{
+"note": "Second variant: the alarm has gone (page reload; ink locals are kept as the engine saves them, so the radio opener is already spent and Cipher is picked up from his second option)."
+},
+{
+"set": {
+"cipher_walked": false,
+"crew_warned": true
+}
+},
+{
+"talk": "cipher",
+"reload": "page",
+"picks": [
+"Whatever Voltage told you",
+"Hear that klaxon"
+]
+},
+{
+"said": [
+"...Nine?"
+],
+"notSaid": [
+"There's a night crew in Hall 2. Go and look."
+]
+},
+{
+"expect": {
+"cipher_walked": true
+}
+}
+]
+}

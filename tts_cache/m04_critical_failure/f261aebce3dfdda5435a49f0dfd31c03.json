@@ -1,0 +1,13 @@
+{
+  "key": "f261aebce3dfdda5435a49f0dfd31c03",
+  "npc": "director_netherton",
+  "text": "HaX. Go.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried; sets the stakes then lets his people run the detail.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:35:48Z"
+}

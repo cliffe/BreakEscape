@@ -1,0 +1,13 @@
+{
+  "key": "e435d099b656af1247b5c70b155008e5",
+  "npc": "eleanor_vance",
+  "text": "Now they face a state-sponsored attack. They act. They prevent catastrophe. And the insurance denies coverage because a nation-state was involved.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:31:22Z"
+}

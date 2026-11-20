@@ -1,0 +1,13 @@
+{
+  "key": "85284dcf7c0f5c2efb942a54898b9a16",
+  "npc": "closing_debrief",
+  "text": "Their backup server shared its coordination file with anyone who asked. Its listener read the operator's password to anyone who connected. And that account could make itself root.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:46:52Z"
+}

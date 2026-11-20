@@ -1,0 +1,13 @@
+{
+  "key": "7164f30f85bb9406f59cc2f2d2f385d8",
+  "npc": "receptionist",
+  "text": "Somebody's been at my book and on my phone. I don't like being made a liar in my own lobby.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

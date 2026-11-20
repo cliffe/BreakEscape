@@ -1,0 +1,91 @@
+{
+"steps": [
+{
+"note": "R16 (puzzle chains R4-1 to R4-3). Part 1: HaX's first open at the gate (briefing only). The status check offers only 'Not yet. I'm at the gate.'; no 'inside' answers, no 'Met Robert Vance'."
+},
+{
+"set": {
+"briefing_played": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"at the gate"
+]
+},
+{
+"said": [
+"Not yet. I'm at the gate.",
+"Then the badge"
+],
+"notSaid": [
+"Met Robert Vance",
+"Beginning investigation now",
+"I'm in. Anything new"
+]
+},
+{
+"note": "Part 2: Relay's card cloned and the workshop reached, then Cipher down. HaX doesn't send the player after Relay's card."
+},
+{
+"set": {
+"guard_admitted": true,
+"checkpoint_passed": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"relay_card_cloned": true,
+"server_room_reached": true,
+"operative_cipher_defeated": true,
+"operatives_defeated": 1,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"vance_spoken": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"put one of their people down",
+"Nothing right now"
+]
+},
+{
+"said": [
+"One down. Check what he dropped."
+],
+"notSaid": [
+"Relay's the one carrying a workshop card"
+]
+},
+{
+"note": "Part 3: kit and Vance's print in hand. The plant-reader hint and 'Where do I stand?' say to use it, not to go back for it."
+},
+{
+"set": {
+"vance_print_lifted": true,
+"anomaly_detected": true,
+"attack_mechanism_known": true,
+"all_flags_in": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"plant-room reader",
+"Where do I stand",
+"Right",
+"Nothing right now"
+]
+},
+{
+"said": [
+"You've got his print. Put it on the reader in Hall 2.",
+"You've got it. Use it on the reader."
+],
+"notSaid": [
+"duty panel in Hall 1"
+]
+}
+]
+}

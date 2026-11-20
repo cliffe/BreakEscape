@@ -1,0 +1,13 @@
+{
+  "key": "b276cb93dcd81d419c47596d35fc1d75",
+  "npc": "irina_volkova",
+  "text": "The service accounts on the backend are worse. They don't even get the year.",
+  "voice": "Kore",
+  "style": "Brilliant academic cryptographer, mid-thirties, Moscow-educated and ten years in British academia, guarded and precise. Speak with a consistent light Russian accent in fluent English throughout — do not shift to any other accent. Low-to-mid pitch; measured pace. Dry and tightly controlled.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:56:00Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e9ac153a7f9c7e92d70be53412868602",
+  "npc": "narrator",
+  "text": "Then the fund allocation, open at the casualty line.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:00:25Z"
+}

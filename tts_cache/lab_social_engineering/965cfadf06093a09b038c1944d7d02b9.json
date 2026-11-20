@@ -1,0 +1,13 @@
+{
+  "key": "965cfadf06093a09b038c1944d7d02b9",
+  "npc": "tomasz",
+  "text": "Both done. Sit down, let's close this out.",
+  "voice": "Alnilam",
+  "style": "In-house security lead at a small British firm, mid thirties, Polish-born, fifteen years in the UK. Speak with a consistent light Polish-accented English throughout — do not shift to any other accent. Mid-range pitch; quick pace. Dry, deadpan and practical, a man who has seen a lot of phishing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:39:40Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "bf399b24f0e53d1b21064f32cd2ad2b3",
+  "npc": "sidhu_selvarajan",
+  "text": "Change one letter in block two and its hash changes, so block three no longer points at it, and so on to the end. Tampering shows.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

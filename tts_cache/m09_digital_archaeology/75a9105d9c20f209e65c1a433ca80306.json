@@ -1,0 +1,13 @@
+{
+  "key": "75a9105d9c20f209e65c1a433ca80306",
+  "npc": "briefing_cutscene",
+  "text": "They call him the Architect. We have a suspect.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:43:07Z"
+}

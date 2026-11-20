@@ -1,0 +1,13 @@
+{
+  "key": "76f92ed97dd580c96cc5c1f8f838d57f",
+  "npc": "joanne_pell",
+  "text": "Inductions today. Nobody knows I'm in.",
+  "voice": "Zephyr",
+  "style": "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:20:28Z"
+}

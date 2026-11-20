@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Break Escape - Asset Loading Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #222;
+            color: #0f0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .pass {
+            color: #0f0;
+        }
+        .fail {
+            color: #f00;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 10px;
+            border-left: 2px solid #0f0;
+        }
+        .status {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: bold;
+            min-width: 50px;
+        }
+        code {
+            background: #111;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Break Escape - Asset Loading Test</h1>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        const tests = [];
+
+        function log(message, status = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = status === 'pass' ? 'pass' : status === 'fail' ? 'fail' : '';
+            const statusSpan = status !== 'info' ? `<span class="status ${className}">[${status.toUpperCase()}]</span>` : '';
+            output.innerHTML += `<div>${statusSpan} ${timestamp}: ${message}</div>`;
+        }
+
+        function createTest(name, url, expectedType = null) {
+            return new Promise((resolve) => {
+                fetch(url, { method: 'HEAD' })
+                    .then(response => {
+                        const success = response.status === 200;
+                        const contentType = response.headers.get('content-type') || 'unknown';
+                        const typeMatch = !expectedType || contentType.includes(expectedType);
+                        
+                        const status = success && typeMatch ? 'pass' : 'fail';
+                        const details = `${success ? '200 OK' : response.status} | ${contentType}`;
+                        log(`${name}: <code>${url}</code> - ${details}`, status);
+                        
+                        resolve({ name, status, url, contentType });
+                    })
+                    .catch(error => {
+                        log(`${name}: <code>${url}</code> - ERROR: ${error.message}`, 'fail');
+                        resolve({ name, status: 'fail', url, error: error.message });
+                    });
+            });
+        }
+
+        async function runTests() {
+            log('Starting asset loading tests...', 'info');
+            log('', 'info');
+
+            // Test CSS files
+            output.innerHTML += '<div class="section"><h2>CSS Files</h2></div>';
+            await createTest('Main CSS', '/break_escape/css/main.css', 'text/css');
+            await createTest('Game CSS', '/break_escape/css/game.css', 'text/css');
+
+            output.innerHTML += '<div class="section"><h2>JavaScript Files</h2></div>';
+            await createTest('Main JS', '/break_escape/js/main.js', 'application/javascript');
+            await createTest('Constants JS', '/break_escape/js/utils/constants.js', 'application/javascript');
+            await createTest('Game Core JS', '/break_escape/js/core/game.js', 'application/javascript');
+
+            output.innerHTML += '<div class="section"><h2>Assets - Sounds</h2></div>';
+            await createTest('Lockpick Binding', '/break_escape/assets/sounds/lockpick_binding.mp3', 'audio/mpeg');
+            await createTest('Lockpick Click', '/break_escape/assets/sounds/lockpick_click.mp3', 'audio/mpeg');
+            await createTest('Lockpick Success', '/break_escape/assets/sounds/lockpick_success.mp3', 'audio/mpeg');
+
+            output.innerHTML += '<div class="section"><h2>Assets - Tiles/Sprites</h2></div>';
+            await createTest('Door Tile', '/break_escape/assets/tiles/door.png', 'image/png');
+            await createTest('Wall Tile', '/break_escape/assets/tiles/wall.png', 'image/png');
+
+            output.innerHTML += '<div class="section"><h2>Assets - Scenarios</h2></div>';
+            await createTest('Biometric Breach Scenario', '/break_escape/assets/scenarios/biometric_breach.json', 'application/json');
+
+            output.innerHTML += '<div class="section"><h2>Test Complete</h2></div>';
+            log('All tests completed!', 'info');
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

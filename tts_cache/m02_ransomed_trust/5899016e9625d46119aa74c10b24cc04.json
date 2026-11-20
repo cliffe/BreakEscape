@@ -1,0 +1,13 @@
+{
+  "key": "5899016e9625d46119aa74c10b24cc04",
+  "npc": "night_security_supervisor",
+  "text": "Fewer chances for either of us to say something we actually mean.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

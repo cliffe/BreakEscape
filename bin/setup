@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Bootstrap BreakEscape test suite without network access.
+# Copies pre-resolved gems from the sibling Hacktivity vendor bundle,
+# then runs bundle install --local.
+#
+# Usage (from BreakEscape root):
+#   bin/setup
+#
+# With network access, just run:
+#   bundle install
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+HACKTIVITY_CACHE="${HACKTIVITY_DIR:-$BE_ROOT/../Hacktivity}/vendor/bundle/ruby/2.7.0/cache"
+
+if [ ! -d "$HACKTIVITY_CACHE" ]; then
+  echo "Error: Hacktivity gem cache not found at $HACKTIVITY_CACHE"
+  echo "Set HACKTIVITY_DIR to the path of the Hacktivity repo, e.g.:"
+  echo "  HACKTIVITY_DIR=/path/to/Hacktivity bin/setup"
+  exit 1
+fi
+
+echo "Copying gems from $HACKTIVITY_CACHE ..."
+mkdir -p "$BE_ROOT/vendor/cache"
+
+GEMS=(
+  actioncable-7.0.4 actionmailbox-7.0.4 actionmailer-7.0.4 actionpack-7.0.4
+  actiontext-7.0.4 actionview-7.0.4 activejob-7.0.4 activemodel-7.0.4
+  activerecord-7.0.4 activestorage-7.0.4 activesupport-7.0.4
+  builder-3.2.4 concurrent-ruby-1.2.2 connection_pool-2.5.5 crass-1.0.6
+  erubi-1.11.0 globalid-1.0.0 i18n-1.12.0 loofah-2.19.0 mail-2.7.1
+  marcel-1.0.2 method_source-1.0.0 mini_mime-1.1.2 minitest-5.20.0
+  net-imap-0.3.1 net-pop-0.1.2 net-protocol-0.1.3 net-smtp-0.3.3
+  nio4r-2.7.5 "nokogiri-1.13.9-x86_64-linux" puma-6.6.1 pundit-2.5.2
+  racc-1.6.0 rack-2.2.23 rack-test-2.0.2 rails-7.0.4
+  rails-dom-testing-2.0.3 rails-html-sanitizer-1.4.3 railties-7.0.4
+  rake-13.4.2 "sqlite3-1.5.3-x86_64-linux" thor-1.2.1 timeout-0.3.0
+  tzinfo-2.0.6 websocket-driver-0.7.5 websocket-extensions-0.1.5 zeitwerk-2.6.4
+)
+
+MISSING=()
+for gem in "${GEMS[@]}"; do
+  src="$HACKTIVITY_CACHE/${gem}.gem"
+  if [ -f "$src" ]; then
+    cp "$src" "$BE_ROOT/vendor/cache/"
+  else
+    MISSING+=("${gem}.gem")
+  fi
+done
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+  echo "Warning: could not find these gems in Hacktivity cache (may need network):"
+  for m in "${MISSING[@]}"; do echo "  $m"; done
+fi
+
+echo "Running bundle install --local ..."
+cd "$BE_ROOT"
+bundle install --local
+
+echo ""
+echo "Setup complete. Run tests with: bundle exec rails test"

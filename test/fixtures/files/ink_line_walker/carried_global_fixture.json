@@ -1,0 +1,1 @@
+{"inkVersion":21,"root":[[{"->":"start"},["done",{"#n":"g-0"}],null],"done",{"start":["^Kevin Park: You chose ","ev",{"VAR?":"m01_final_choice"},"out","/ev","^ last time.","\n","^Kevin Park: Welcome back.","\n","end",null],"global decl":["ev","str","^","/str",{"VAR=":"m01_final_choice"},"/ev","end",null]}],"listDefs":{}}

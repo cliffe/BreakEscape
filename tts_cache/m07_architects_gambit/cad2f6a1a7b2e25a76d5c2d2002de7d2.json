@@ -1,0 +1,13 @@
+{
+  "key": "cad2f6a1a7b2e25a76d5c2d2002de7d2",
+  "npc": "opening_briefing_cutscene",
+  "text": "The threat desk has had six hours with it. Everything I read you tonight comes out of that intercept.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:24:44Z"
+}

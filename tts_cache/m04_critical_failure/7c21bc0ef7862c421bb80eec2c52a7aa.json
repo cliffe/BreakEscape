@@ -1,0 +1,13 @@
+{
+  "key": "7c21bc0ef7862c421bb80eec2c52a7aa",
+  "npc": "narrator",
+  "text": "The pause stretches. He makes his decision before you make yours.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:57:09Z"
+}

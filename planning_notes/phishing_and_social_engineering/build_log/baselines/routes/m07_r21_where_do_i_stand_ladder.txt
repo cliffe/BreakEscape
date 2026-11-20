@@ -1,0 +1,381 @@
+
+## R21 (PASS 5 design r1, D1/D2/D3/m1/m11/m15): the briefing closed uncommitted. 'Where do I stand?' is walked at every step of the mission order: commit, the checkpoint, the badge (Hollis KO'd, then his badge picked up), the server hall (m1 aims open there), the Kali box, flags 1 and 2, the control room door, flag 3 with the redirect line, root with the clock run out (D2 text, clock answer), the console (D3 text on an early click), the abort, Bring me in. The field guides come from one sub-menu (m15).
+
+--- phone ---
+  HaX here, Agent. I've got your channel and the board.
+  Get past the checkpoint to the operations floor. Call me when you hit something you can't open.
+     (4 options)
+ > Where do I stand?
+  The team's still waiting on your call. Make it first, then:
+  Get past the checkpoint to the ops floor. The server hall beyond it wants a badge.
+     (4 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "The team's still waiting on your call. Make it first, then:"
+   [PASS] said: "Get past the checkpoint to the ops floor."
+   [PASS] not said: "[choice] Send me a field guide."
+   [PASS] not said: "Tell me where it goes"
+
+--- phone @hub ---
+     (4 options)
+ > Where the team goes: I'm ready to make the call.
+     (4 options)
+ > Meltdown. San Francisco.
+      [ink: team_assignment="meltdown"]
+      [ink: team_assigned=true]
+      [mapping agent_0x99: set hurt_line_said=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   [text agent_0x99 +2000ms] Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during.
+      [set_global team_assignment=meltdown]
+      [set_global team_assigned=true]
+      [task: assign_tactical_team]
+      [mapping agent_0x99: set team_assigned=true]
+  Meltdown. Passed up and confirmed.
+     (4 options)
+ > Where do I stand?
+  Get past the checkpoint to the ops floor. The server hall beyond it wants a badge.
+     (4 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Meltdown. Passed up and confirmed."
+   [PASS] said: "Get past the checkpoint to the ops floor. The server hall beyond it wants a badge."
+   [PASS] team_assigned = true (expected true)
+   [PASS] hurt_line_said = true (expected true)
+   {enter operations_floor}
+      [mapping agent_0x99: set inside_reached=true]
+      [mapping agent_0x99: set rfid_guide_offered=true]
+   [text agent_0x99 +9500ms] Server hall door, far side of this floor, wants a server-zone badge. Hollis has one. His desk's badge station prints them too, with its PIN. RFID guide?
+      [mapping the_architect: set architect_contact=true]
+   [text the_architect +5000ms] Agent 0x00.
+   [PASS] said: "Server hall door, far side of this floor"
+   [PASS] not said: "still over Denver"
+   [PASS] not said: "You're inside. Whatever you decide"
+
+--- phone @hub ---
+     (5 options)
+ > Where do I stand?
+  The server hall reader wants a zone badge. Hollis wears one, and the cloner copies it if you stand close.
+  Or print one at the badge station behind his desk.
+     (5 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Hollis wears one, and the cloner copies it if you stand close"
+   [PASS] not said: "The plant's south of the server hall"
+
+## m15: the RFID guide is on the field-guide sub-menu, and its hand-over names the clone (m11).
+
+--- phone @hub ---
+     (5 options)
+ > I'm stuck on something.
+  Tell me where.
+     (2 options)
+ > Send me a field guide.
+     (2 options)
+ > The RFID cloning guide.
+      [ink: rfid_guide_hint_given=true]
+      [kit: SAFETYNET Field Guide: RFID Cloning]
+  RFID cloning guide's in your kit.
+  The reader trusts the card and never asks who's holding it.
+  Hollis's badge works, and so does a copy: stand close while he talks and the cloner reads it. Or the badge station behind his desk.
+  Quiet and quick. Go.
+     [0] Talk to me about the two we're not covering.
+     [1] Where do I stand?
+     [2] Remind me of the layout and the clock.
+     [3] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "RFID cloning guide's in your kit."
+   [PASS] said: "so does a copy: stand close while he talks and the cloner reads it"
+   [PASS] said: "Quiet and quick. Go."
+   [PASS] not said: "[choice] Send me the RFID cloning field guide."
+   [PASS] not said: "[choice] Got it."
+
+## Browser N2 (PASS 5 design r2): the hand-over ends on the hub, so a reopen (no knot: the driver re-enters the knot that owns the saved choices, as the engine does) shows the hub.
+
+--- phone ---
+     (4 options)
+ > Where do I stand?
+  The server hall reader wants a zone badge. Hollis wears one, and the cloner copies it if you stand close.
+  Or print one at the badge station behind his desk.
+     (4 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "[choice] Where do I stand?"
+   [PASS] said: "Hollis wears one"
+   {ko ray_hollis}
+      [task: clear_the_checkpoint (taskOnKO)]
+   [text agent_0x99 +2000ms] Hollis is down. His badge should be on the floor by him. Or the badge station behind his desk prints one, if you find its PIN.
+      [mapping agent_0x99: set hands_down_said=true]
+   [text agent_0x99 +7000ms] Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open.
+
+--- phone @hub ---
+     (5 options)
+ > Where do I stand?
+  The server hall reader wants a zone badge. Hollis's should be on the floor by him.
+  Or print one at the badge station behind his desk.
+     (5 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Hollis's should be on the floor by him"
+   [PASS] not said: "[choice] Send me a field guide."
+   {pickup hollis_server_badge}
+      [kit: Facility Access Badge -- Server Zone]
+      [mapping agent_0x99: set badge_obtained=true]
+
+--- phone @hub ---
+     (5 options)
+ > Where do I stand?
+  You've got a badge. The server hall reader's on the far side of the ops floor.
+     (5 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "You've got a badge. The server hall reader's on the far side of the ops floor."
+   {enter server_room}
+      [mapping agent_0x99: set server_hall_reached=true]
+      [aim unlocked: reach_the_control_room,trace_the_intrusion]
+      [mapping agent_0x99: set lockpicking_guide_offered=true]
+   [text agent_0x99 +9000ms] Plant door, south side of this hall, is a keyed lock. There's a key on the ops floor, but your picks will open it. Want the lockpicking guide?
+   [PASS] said: "set server_hall_reached=true"
+   [PASS] said: "aim unlocked: reach_the_control_room,trace_the_intrusion"
+   [PASS] server_hall_reached = true (expected true)
+
+--- phone @hub ---
+     (5 options)
+ > Where do I stand?
+  The Kali box in the server hall is your way onto their network. Start there.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (5 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "The Kali box in the server hall is your way onto their network"
+   [PASS] said: "The plant's south of the server hall, if you want to see how they got in"
+   {event object_interacted}
+      [mapping agent_0x99: set vm_terminal_used=true]
+      [mapping agent_0x99: set recon_guide_offered=true]
+      [mapping agent_0x99: set nfs_guide_offered=true]
+   [text agent_0x99 +1500ms] Your attack box. Map the host first. NFS is the door they left open, and a listener on it talks too much. Recon guide, or the NFS and netcat one?
+
+--- phone @hub ---
+     (5 options)
+ > Where do I stand?
+  Their host has an NFS share open to anyone. Read it from the Kali box and put its flag through the relay.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (5 options)
+ > I'm stuck on something.
+  Tell me where.
+     (3 options)
+ > Send me a field guide.
+     (4 options)
+ > The NFS and netcat guide.
+      [ink: nfs_guide_hint_given=true]
+      [kit: SAFETYNET Field Guide: NFS Shares and Open Ports]
+  NFS and netcat guide's in your kit.
+  Read what the host shares, without changing it.
+  Then scan every port, not just the usual ones, and connect to anything that answers. Some services hand over more than a banner.
+  Read, don't touch. Go.
+     [0] Talk to me about the two we're not covering.
+     [1] About the people in here.
+     [2] I'm stuck on something.
+     [3] Where do I stand?
+     [4] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "Their host has an NFS share open to anyone"
+   [PASS] said: "[choice] The recon and network mapping guide."
+   [PASS] said: "[choice] The lockpicking guide."
+   [PASS] said: "NFS and netcat guide's in your kit."
+
+## D3: clicking the console before flag 4 gets HaX's text once.
+   {event object_interacted}
+   [text agent_0x99 +800ms] That console takes nothing typed into it. The root flag goes through the relay in the server hall, and the console opens itself after.
+   [PASS] said: "That console takes nothing typed into it. The root flag goes through the relay"
+   {event object_interacted}
+   [PASS] not said: "That console takes nothing typed into it"
+   {flag 1: give_item}
+      [kit: Coordination Schedule -- Relay Decode]
+      [task: recover_coordination_traffic]
+      [mapping agent_0x99: set flag1_submitted=true]
+   [text agent_0x99 +1500ms] The relay's decoded the file their share points at: their own schedule, all four operations. Read it against the threat desk summary in your kit.
+      [reads: Coordination Schedule -- Relay Decode]
+   [text agent_0x99 +3000ms] If a row in there doesn't match what we were told, call me and say which.
+      [mapping agent_0x99: set decode_read_open=true]
+
+--- phone @hub ---
+     (6 options)
+ > Where do I stand?
+  Scan every port on their host. Something answers whoever connects. Its flag goes through the relay.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (6 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Scan every port on their host. Something answers whoever connects."
+   {flag 2: give_item}
+      [kit: Listener Capture -- Operator Credentials]
+      [task: intercept_c2_channel]
+      [mapping agent_0x99: set flag2_submitted=true]
+      [mapping agent_0x99: set scada_password_found=true]
+      [mapping agent_0x99: set ssh_guide_offered=true]
+   [text agent_0x99 +1500ms] Their listener gives out passwords in clear, the control room door's included. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?
+
+--- phone @hub ---
+     (6 options)
+ > Where do I stand?
+  Open the control room door, north of the server hall, before you log in on their host.
+  The password's in the listener capture in your inventory.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (6 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Open the control room door, north of the server hall, before you log in on their host."
+   [PASS] said: "The password's in the listener capture in your inventory."
+   [PASS] not said: "You've got the password."
+   {enter scada_control}
+      [mapping agent_0x99: set scada_door_reached=true]
+   {set {"projection_revised":true}}
+      [mapping agent_0x99: set revision_found_open=true]
+
+--- phone @hub ---
+     (7 options)
+ > Where do I stand?
+  One login: the name from the share, the password from the listener. That account holds the next flag. The moment you log in, the clock starts.
+  If you mean to move the team, do it before you log in.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (7 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "One login: the name from the share"
+   [PASS] said: "If you mean to move the team, do it before you log in."
+   {flag 3: set_global}
+      [mapping agent_0x99: set redirect_window_closed=true]
+      [mapping agent_0x99: set cascade_armed=true]
+      [clock: architect_taunt_t5 started at 0 min]
+      [clock: architect_taunt_t1 started at 0 min]
+      [clock: cascade_zero started at 0 min]
+   [text agent_0x99 +1500ms] They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it.
+      [mapping agent_0x99: set privesc_guide_offered=true]
+      [task: escalate_on_attack_host]
+
+--- phone @hub ---
+     (7 options)
+ > Where do I stand?
+  The clock's running. Fifteen minutes from your login on their host.
+  Get root on their host and put the root flag through the relay. The console opens itself after.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     (7 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "Get root on their host and put the root flag through the relay. The console opens itself after."
+   [PASS] not said: "Step one ran"
+   [PASS] not said: "If you mean to move the team"
+   [PASS] not said: "you'll need the control room door open"
+
+## D2: the clock runs out. The Architect barks, HaX says what's left, the clock answer is no longer 'fifteen minutes'.
+   {advance 15 min -> 15 min}
+      [clock 10 min: architect_taunt_t20 FIRES {"architect_t20_played":true}]
+   [text the_architect +500ms] A word, Agent 0x00.
+      [clock 10 min: architect_taunt_t5 FIRES {"architect_t5_played":true}]
+   [text the_architect +500ms] Five minutes, Agent 0x00.
+      [clock 14 min: architect_taunt_t1 FIRES {"architect_t1_played":true}]
+   [text the_architect +500ms] One minute, Agent 0x00.
+      [clock 15 min: cascade_zero FIRES {"countdown_expired":true}]
+   [text agent_0x99 +5000ms] Seattle's dark. Step one ran. Steps two to four haven't. Get root, put it through the relay, then the abort at the console.
+   [text the_architect +500ms] Seattle first. As scheduled.
+   [PASS] countdown_expired = true (expected true)
+   [PASS] said: "Seattle first. As scheduled."
+   [PASS] said: "Seattle's dark. Step one ran. Steps two to four haven't. Get root, put it through the relay"
+   [PASS] not said: "Root's in, so the console takes the abort now"
+
+--- phone @hub ---
+     (7 options)
+ > Where do I stand?
+  Step one ran. Seattle's dark. Steps two to four wait on the abort.
+  Get root on their host and put the root flag through the relay. The console opens itself after.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     [0] Can I still move the team to Trojan Horse?
+     [1] Talk to me about the two we're not covering.
+     [2] The share. Four operations running off one schedule.
+     [3] About the people in here.
+     [4] I'm stuck on something.
+     [5] Where do I stand?
+     [6] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "Step one ran. Seattle's dark. Steps two to four wait on the abort."
+   [PASS] said: "Get root on their host"
+   [PASS] not said: "Fifteen minutes from your login"
+   [PASS] not said: "The console up there"
+   [PASS] not said: "[choice] Remind me of the layout and the clock."
+   {flag 4: unlock_object}
+      [unlocked: crisis_control_system]
+      [task: terminate_cascade_scripts]
+      [mapping agent_0x99: set flag4_submitted=true]
+   [text agent_0x99 +1500ms] Root. Their job's dead and they're locked out. The console in the control room will take an abort now. Go and give it one.
+
+--- phone @hub ---
+     (7 options)
+ > Where do I stand?
+  Step one ran. Seattle's dark. Steps two to four wait on the abort.
+  Root's in. Put the abort in at the console in the control room.
+  The plant's south of the server hall, if you want to see how they got in. That part's optional.
+     [0] Can I still move the team to Trojan Horse?
+     [1] Talk to me about the two we're not covering.
+     [2] The share. Four operations running off one schedule.
+     [3] About the people in here.
+     [4] I'm stuck on something.
+     [5] Where do I stand?
+     [6] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "Step one ran. Seattle's dark. Steps two to four wait on the abort."
+   [PASS] said: "Root's in. Put the abort in at the console in the control room."
+   {set {"vault_entered":true}}
+   {task shut_down_the_cascade}
+      [task: shut_down_the_cascade]
+      [clock: debrief_fallback started at 15 min]
+
+--- phone @hub ---
+     (7 options)
+ > Where do I stand?
+  It's done. The grid's holding. Sweep what you want, then tell me to bring you in.
+     (7 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "It's done. The grid's holding. Sweep what you want, then tell me to bring you in."
+   [PASS] not said: "The plant's south of the server hall"
+   [PASS] not said: "[choice] Where the team goes"
+
+--- phone @hub ---
+     (7 options)
+ > Bring me in.
+      [ink: debrief_requested=true]
+  Putting you through. He's waiting.
+  [chat closes]
+   [PASS] said: "Putting you through. He's waiting."
+
+--- phone @hub ---
+     (6 options)
+ > Where do I stand?
+  It's done. Netherton's waiting. Next door you go through, he's on the link.
+     (6 options)
+ > I'll call you back.
+  I'm here. Go.
+  [chat closes]
+   [PASS] said: "It's done. Netherton's waiting. Next door you go through, he's on the link."
+   [PASS] not said: "[choice] Bring me in."
+
+## Phase 4 dialogue C1: no conversation runs more than nine lines without a choice.
+   [PASS] longest run 4 (phone) <= 9
+
+[stats] spoken/narrated lines 60, choices 38, longest run without a choice 4 (phone); runs>=6: 
+[result] all expectations met

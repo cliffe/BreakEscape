@@ -1,0 +1,13 @@
+{
+  "key": "537583ae0f91c066353af2fbaf93ebe7",
+  "npc": "narrator",
+  "text": "You tell him the Recruiter rang you tonight, and that he isn't her only one.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:32:37Z"
+}

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Conclude Race",
+  "description": "Engine trial: a plain setGlobal sets a concludeRequires global on the same beat a task completes. Proves the completion POST is preceded by the state sync (no 'Not Yet' warning over the ending).",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 1,
+  "test_type": "conclude_race",
+  "test_objective": "Plain-path conclude race: throwing the switch sets gate_global and completes final_task; the mission concludes with no 'Not Yet' warning (state sync precedes the completion POST)."
+}

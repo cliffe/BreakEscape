@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: social P9 mail follow-ups",
+  "description": "Fixture for the deferred mail packet P9: reply follow-ups (Choose a reply, Write your reply), message highlights that save as evidence, a found account with seeded inbox and Sent history, and a deliverAt seed. One room, one mail terminal. Used by the P9 bridge check.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

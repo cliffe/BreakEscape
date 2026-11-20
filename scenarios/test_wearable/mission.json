@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Wearable items",
+  "description": "Throwaway engine test for wearable items: a hi-vis vest and a guard jacket put on and taken off from the inventory, a worn frame in the tray, one costume at a time, no change while a member of staff watches, and the costume coming off when the item is dropped or taken away. Generic office, nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 5,
+  "test_type": "wearable",
+  "test_objective": "Prove put on and take off (costume, worn global, the worn frame and its label), one item worn at a time, unseenOnly refusing a change with a person NPC in the room and allowing it alone or with an ignored teammate, a drop or a remove_item taking the costume off, the wear and take_off actions, and the worn state after a reload"
+}

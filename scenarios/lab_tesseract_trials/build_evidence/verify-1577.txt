@@ -1,0 +1,14 @@
+game            1577  (mission 79)
+created         2026-10-06 02:14:04 UTC
+last write      2026-10-06 02:21:43 UTC
+played for      459s of wall clock
+current room    "foyer"
+unlocked rooms  4: foyer, teaching_lab, corridor, workshop
+unlocked objs   3: cryptosecure_lockbox, cryptosecure_drop_box, relay_terminal
+inventory       11: Your Phone, Notepad, Comms Discipline, Keyholder Leaflet, Lab Laptop (CyberChef), Field Note 1: Bits, Bytes, Bases, CyberChef, Field Note 2: Characters Are Numbers, Field Note 3: Hex and Binary, Keyholder Device, Brass Key, Final Trial Card
+NPCs met        7: briefing_cutscene, agent_0x99, ghost, closing_debrief_person, jordan_pike, tom_shaw, cliffe_workshop
+flags submitted 0: 
+globals set     17: briefing_played, comms_had, corridor_open, drop_box_open, ending, engine_tutorial_declined, fn04_offered, fn07_offered, fn10_offered, ghost_greeted, ghost_offer_made, lockbox_open, megan_choice, player_name, relay_opened, report_read_claimed, workshop_open
+
+VERDICT: progress recorded — 3 rooms beyond the first, 3 objects unlocked, 0 flags submitted.
+Cross-check the specifics above against the report.

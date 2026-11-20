@@ -1,0 +1,13 @@
+{
+  "key": "e0f79ad015858273ea4e3ab83b43c08d",
+  "npc": "jodie",
+  "text": "It's off. Typical.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:14:46Z"
+}

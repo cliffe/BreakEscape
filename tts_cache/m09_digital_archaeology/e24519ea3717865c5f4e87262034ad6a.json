@@ -1,0 +1,13 @@
+{
+  "key": "e24519ea3717865c5f4e87262034ad6a",
+  "npc": "narrator",
+  "text": "He reads the courier line, J.T., and takes his hands off the keyboard.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:30:14Z"
+}

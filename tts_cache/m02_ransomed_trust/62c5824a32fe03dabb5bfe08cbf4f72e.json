@@ -1,0 +1,13 @@
+{
+  "key": "62c5824a32fe03dabb5bfe08cbf4f72e",
+  "npc": "ernesto_bautista",
+  "text": "Then I hope they're paying you nights.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:02Z"
+}

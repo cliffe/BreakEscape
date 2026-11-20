@@ -1,0 +1,6 @@
+{
+  "display_name": "Test: Phone Terminal Theme",
+  "description": "Development test scenario for the phone-chat terminal theme feature. Two phones are in inventory — a normal LCD handler phone and a terminal-themed anonymous signal device. Used to verify both themes coexist correctly in the same scenario.",
+  "difficulty_level": 1,
+  "collection": "testing"
+}

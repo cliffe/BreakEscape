@@ -1,0 +1,13 @@
+{
+  "key": "41d6b66ff12fb5eaa1cb9ceb6251f11e",
+  "npc": "narrator",
+  "text": "Behind him, Voltage does not look up from the screen.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:36Z"
+}

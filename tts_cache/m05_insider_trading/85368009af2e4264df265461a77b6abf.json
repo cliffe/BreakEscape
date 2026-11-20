@@ -1,0 +1,13 @@
+{
+  "key": "85368009af2e4264df265461a77b6abf",
+  "npc": "narrator",
+  "text": "She hands you two folders from the cabinet: vetting aftercare files, one on Ruth Halloran, one on David Torres.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:20:58Z"
+}

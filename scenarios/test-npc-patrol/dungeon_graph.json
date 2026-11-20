@@ -1,0 +1,10 @@
+{
+  "scenario": "test-npc-patrol",
+  "start_room": "test_patrol",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

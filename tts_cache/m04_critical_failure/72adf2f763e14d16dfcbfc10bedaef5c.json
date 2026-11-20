@@ -1,0 +1,13 @@
+{
+  "key": "72adf2f763e14d16dfcbfc10bedaef5c",
+  "npc": "narrator",
+  "text": "He steps back from the bench with his hands open, and lets you take the laptop off it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:15:36Z"
+}

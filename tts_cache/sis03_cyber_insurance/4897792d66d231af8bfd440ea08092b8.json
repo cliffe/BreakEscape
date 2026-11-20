@@ -1,0 +1,13 @@
+{
+  "key": "4897792d66d231af8bfd440ea08092b8",
+  "npc": "eleanor_vance",
+  "text": "That's the middle ground. We note the state attribution, we acknowledge the exclusion's applicability, but we don't invoke it. We accept the financial risk.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:26:21Z"
+}

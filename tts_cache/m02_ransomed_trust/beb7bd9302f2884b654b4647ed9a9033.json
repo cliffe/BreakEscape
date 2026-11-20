@@ -1,0 +1,13 @@
+{
+  "key": "beb7bd9302f2884b654b4647ed9a9033",
+  "npc": "narrator",
+  "text": "Bernie Nwosu is holding a phone handset away from her ear. She puts it down as you reach the desk.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

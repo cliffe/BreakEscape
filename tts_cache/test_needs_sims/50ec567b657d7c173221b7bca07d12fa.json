@@ -1,0 +1,13 @@
+{
+  "key": "50ec567b657d7c173221b7bca07d12fa",
+  "npc": "amara",
+  "text": "He's just stepped out. Can I help?",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:09:25Z"
+}

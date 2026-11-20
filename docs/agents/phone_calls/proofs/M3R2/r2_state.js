@@ -1,0 +1,1 @@
+return (window.gameState.notes||[]).filter(x=>(x.title||'').includes('salvage cage')).length + ' salvage notes | ' + ['flag1_read_heard','ledger_guide_offered','ledger_read_heard','stacks_entered'].map(k=>k+'='+window.gameState.globalVariables[k]).join(' ');

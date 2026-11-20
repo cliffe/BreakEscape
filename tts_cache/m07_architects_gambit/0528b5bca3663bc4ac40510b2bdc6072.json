@@ -1,0 +1,13 @@
+{
+  "key": "0528b5bca3663bc4ac40510b2bdc6072",
+  "npc": "opening_briefing_cutscene",
+  "text": "Side by side, then. I will read it flat.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:36:49Z"
+}

@@ -1,0 +1,313 @@
+/* Scanner panels: one look for the BLE scanner, the Bluetooth scanner and the biometrics kit
+   (critique A22). Each scene adds .scanner-panel and .scanner-panel--<key> to its container
+   and the shared scan-* classes to its parts; only the accent colours differ. Rules here are
+   (0,2,0) or more, so they win over the scenes' own sheets wherever both set a property.
+   The panel stays on the left, 2vw in, clear of the top-right HUD buttons (UI shell R3 m1). */
+
+.scanner-panel--ble {
+    --scan-accent: #00bcd4;            /* cyan */
+    --scan-accent-dim: rgba(0, 188, 212, 0.15);
+    --scan-accent-mid: rgba(0, 188, 212, 0.3);
+    --scan-bg: #1a1a2e;
+}
+
+.scanner-panel--bluetooth {
+    --scan-accent: #4f8dff;            /* blue */
+    --scan-accent-dim: rgba(79, 141, 255, 0.15);
+    --scan-accent-mid: rgba(79, 141, 255, 0.3);
+    --scan-bg: #161c30;
+}
+
+.scanner-panel--biometrics {
+    --scan-accent: #e74c3c;            /* red */
+    --scan-accent-dim: rgba(231, 76, 60, 0.15);
+    --scan-accent-mid: rgba(231, 76, 60, 0.3);
+    --scan-bg: #2e1a1a;
+}
+
+/* The frame: same place and size for all three (square corners) */
+.minigame-container.scanner-panel {
+    position: fixed !important;
+    top: 5vh !important;
+    left: 2vw !important;
+    right: auto !important;
+    width: 380px !important;
+    max-width: calc(96vw - 8px) !important;
+    height: auto !important;
+    max-height: 80vh !important;
+    background: var(--scan-bg) !important;
+    border: 4px solid var(--scan-accent) !important;
+    box-shadow: none !important;
+    font-family: 'GNF', monospace !important;
+    color: #e0e0e0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transition: none !important;
+}
+
+.minigame-container.scanner-panel.expanded {
+    width: 450px !important;
+}
+
+@media (max-height: 720px) {
+    .minigame-container.scanner-panel,
+    .minigame-container.scanner-panel.expanded {
+        max-height: calc(95vh - 8px) !important;
+    }
+}
+
+/* Expand toggle: top left inside the frame, beside the header, never across it */
+.scanner-panel .scan-toggle {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 24px;
+    height: 24px;
+    box-sizing: border-box;
+    background: var(--scan-accent-dim);
+    border: 2px solid var(--scan-accent);
+    color: var(--scan-accent);
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: none;
+    z-index: 10;
+}
+
+.scanner-panel .scan-toggle::after {
+    /* 24px box, 44px touch target: the pad reaches 10px past each edge */
+    content: '';
+    position: absolute;
+    inset: -12px; /* from the padding box (24px less the 2px border = 20px), so 20 + 24 = 44px */
+}
+.scanner-panel .scan-toggle:hover { background: var(--scan-accent-mid); }
+.scanner-panel .scan-toggle.expanded { transform: rotate(180deg); }
+
+/* Header: title left, status right, clear of the X on the right */
+.scanner-panel .scan-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    margin: 0 40px 10px 0;
+    padding: 8px 10px;
+    background: var(--scan-accent-dim);
+    border: 2px solid var(--scan-accent);
+    box-shadow: none;
+}
+
+.scanner-panel.has-scan-toggle .scan-header {
+    margin-left: 32px;
+}
+/* :has() twin in its own rule: an engine without :has() drops a whole selector list */
+.scanner-panel:has(.scan-toggle) .scan-header {
+    margin-left: 32px;
+}
+
+/* The biometrics "Search Room" row sits level with the toggle, so it takes the same side margin
+   as the header: the toggle never lies across the button's corner */
+.scanner-panel.has-scan-toggle .biometrics-search-room-container {
+    margin-left: 32px;
+}
+.scanner-panel:has(.scan-toggle) .biometrics-search-room-container {
+    margin-left: 32px;
+}
+
+.scanner-panel .scan-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    min-width: 0;
+    font-size: 16px;
+    color: var(--scan-accent);
+    text-shadow: none;
+}
+
+.scanner-panel .scan-title > img + span {
+    /* the label stays beside the icon; only the count chip wraps below */
+    flex: 1 1 0;
+    min-width: 6em;
+}
+
+.scanner-panel .scan-icon {
+    height: 24px;
+    image-rendering: pixelated;
+    filter: none;
+}
+
+.scanner-panel .scan-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 16px;
+    color: #4caf50;
+}
+
+/* Search box and filter chips. The ids lift the search box over the old side panels' id
+   rules in css/panels.css (#bluetooth-search { border: none } and a soft focus ring). */
+.scanner-panel .scan-controls {
+    margin-bottom: 10px;
+}
+
+.scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--scan-accent);
+    color: #e0e0e0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    box-shadow: none;
+    transition: none;
+}
+
+.scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search:focus {
+    outline: none;
+    border-color: var(--scan-accent, #4f8dff);
+    box-shadow: none;
+}
+
+.scanner-panel :is(#ble-search, #bluetooth-search, #biometrics-search, .scan-search).scan-search::placeholder { color: #888; }
+
+.scanner-panel .scan-chips {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.scanner-panel .scan-chips > * {
+    box-sizing: border-box;
+    margin: 0; /* panels.css gives the category chips margin-right: 5px; the gap alone spaces them */
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #555;
+    color: #ccc;
+    font-size: 16px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: none;
+}
+
+.scanner-panel .scan-chips > *:hover,
+.scanner-panel .scan-chips > .active {
+    background: var(--scan-accent-mid);
+    border-color: var(--scan-accent);
+    color: var(--scan-accent);
+}
+
+/* The list: a header strip with the count, then the rows, scrolling inside the frame */
+.scanner-panel .scan-list-wrap {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.scanner-panel .scan-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid #444;
+    font-size: 16px;
+    color: var(--scan-accent);
+}
+
+.scanner-panel .scan-count {
+    margin-left: auto;
+    padding: 2px 6px;
+    background: rgba(76, 175, 80, 0.2);
+    border: 2px solid #4caf50;
+    color: #4caf50;
+    font-size: 16px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.scanner-panel .scan-list {
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 2px solid #333;
+}
+
+/* Action buttons (biometrics "Search Room"; the BLE SAVE keeps its own small size) */
+.scanner-panel .scan-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--scan-accent-dim);
+    border: 2px solid var(--scan-accent);
+    color: var(--scan-accent);
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    cursor: pointer;
+    transition: none;
+}
+
+.scanner-panel .scan-button:hover,
+.scanner-panel .scan-button.active {
+    background: var(--scan-accent-mid);
+}
+
+/* Instructions: a closed "How to use" disclosure under the list */
+.scanner-panel .scan-instructions {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid #444;
+    color: #ccc;
+    font-size: 16px;
+    line-height: 1.4;
+    transition: none;
+}
+
+.scanner-panel .scan-instructions summary {
+    cursor: pointer;
+    color: var(--scan-accent);
+}
+
+.scanner-panel .scan-instructions summary:focus-visible { outline: 2px solid #fff; }
+.scanner-panel .scan-instructions .mg-section-label { color: var(--scan-accent); }   /* cyan 7.43:1 on #1a1a2e */
+
+/* Phones: the panel spans the window less its gutters; chips stay inline and wrap */
+@media (max-width: 768px) {
+    .minigame-container.scanner-panel,
+    .minigame-container.scanner-panel.expanded {
+        top: 2vh !important;
+        left: 2vw !important;
+        width: calc(96vw - 8px) !important;
+        max-width: 450px !important;
+    }
+
+    .scanner-panel .scan-chips > * {
+        padding: 4px 8px;
+    }
+}
+
+/* A scanner is a minigame: objectives-panel.js already treats the HUD panel as off screen
+   (_onScreen), so it is hidden rather than left peeking round the frame. visibility keeps
+   its collapse state and scroll. */
+body:has(.minigame-container.scanner-panel) .objectives-panel {
+    visibility: hidden !important;
+}

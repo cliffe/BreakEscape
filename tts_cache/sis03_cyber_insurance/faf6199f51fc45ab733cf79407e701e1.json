@@ -1,0 +1,13 @@
+{
+  "key": "faf6199f51fc45ab733cf79407e701e1",
+  "npc": "eleanor_vance",
+  "text": "The renewal memo in that cabinet shows what Meridian knew before the incident. It changes the legal picture — particularly if you're considering declining.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:27:52Z"
+}

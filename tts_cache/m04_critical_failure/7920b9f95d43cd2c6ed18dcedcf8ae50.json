@@ -1,0 +1,13 @@
+{
+  "key": "7920b9f95d43cd2c6ed18dcedcf8ae50",
+  "npc": "narrator",
+  "text": "He weighs you for a long second, then takes one step to the side. One step, no more.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:18:13Z"
+}

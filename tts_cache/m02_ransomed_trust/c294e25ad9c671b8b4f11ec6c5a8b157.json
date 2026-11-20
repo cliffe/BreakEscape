@@ -1,0 +1,13 @@
+{
+  "key": "c294e25ad9c671b8b4f11ec6c5a8b157",
+  "npc": "hodan_warsame",
+  "text": "Normally a screen tells everyone a bed's ready. Tonight it's me, shouting down a radio.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:12:19Z"
+}

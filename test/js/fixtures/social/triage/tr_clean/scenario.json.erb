@@ -1,0 +1,1126 @@
+{
+  "scenario_brief": "Fixture: a clean triage and defender scenario.",
+  "startRoom": "office",
+  "globalVariables": {
+    "acct_freemail": false,
+    "acct_freemail_choice": "",
+    "acct_jed_pc": false,
+    "se_intel_hampshire_careers": false,
+    "se_intel_careers_attachment": false,
+    "se_intel_pierce_role": false,
+    "se_intel_pierce_trusts_jed": false,
+    "se_intel_memo_fact": false,
+    "phish_hampshire_attempts": 0,
+    "phish_hampshire_landed": false,
+    "phish_pierce_attempts": 0,
+    "phish_pierce_landed": false,
+    "target_ready_hampshire": false,
+    "target_ready_pierce": false,
+    "se_board_state": {},
+    "mail_arrived": false,
+    "dock_ready": false,
+    "triage_pre_percent": 0,
+    "triage_post_percent": 0,
+    "tr_lab_percent": 0,
+    "triage_pre_reportRate": 0,
+    "triage_post_reportRate": 0,
+    "tr_lab_reportRate": 0,
+    "triage_pre_complete": false,
+    "triage_post_complete": false,
+    "tr_lab_complete": false,
+    "tr_lab_pass": false,
+    "profile_done": false
+  },
+  "objectives": [
+    {
+      "aimId": "a1",
+      "title": "One",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "t1",
+          "title": "Land it",
+          "status": "active",
+          "unlockCondition": {
+            "globalVariable": "phish_hampshire_landed",
+            "equals": true
+          },
+          "type": "enter_room",
+          "targetRoom": "office"
+        },
+        {
+          "taskId": "t2",
+          "title": "Land hers",
+          "status": "active",
+          "unlockCondition": {
+            "globalVariable": "phish_pierce_landed",
+            "equals": true
+          },
+          "type": "enter_room",
+          "targetRoom": "office"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "mail_terminal",
+          "id": "desk_mail",
+          "name": "Mail",
+          "minigameData": {
+            "accountIds": [
+              "guest",
+              "freemail"
+            ],
+            "defaultAccount": "guest"
+          }
+        },
+        {
+          "type": "mail_terminal",
+          "id": "jed_laptop",
+          "name": "Jed's laptop",
+          "takeable": true,
+          "minigameData": {
+            "accountIds": [
+              "jed_pc"
+            ]
+          }
+        },
+        {
+          "type": "triage-workstation",
+          "id": "ws_pre",
+          "name": "Triage ws_pre",
+          "minigameData": {
+            "triageSetId": "pre_a"
+          }
+        },
+        {
+          "type": "triage-workstation",
+          "id": "ws_post",
+          "name": "Triage ws_post",
+          "minigameData": {
+            "triageSetId": "post_b"
+          }
+        },
+        {
+          "type": "triage-workstation",
+          "id": "ws_lab",
+          "name": "Triage ws_lab",
+          "minigameData": {
+            "triageSetId": "lab"
+          }
+        },
+        {
+          "type": "case-file",
+          "id": "board_def",
+          "name": "Defender board",
+          "minigameData": {
+            "mode": "defender"
+          }
+        }
+      ]
+    }
+  },
+  "social": {
+    "people": [
+      {
+        "id": "baker",
+        "name": "Jed Baker",
+        "address": "j.baker@ledgerwell.example"
+      },
+      {
+        "id": "hampshire",
+        "name": "Chris Hampshire",
+        "address": "careers@ledgerwell.example"
+      },
+      {
+        "id": "pierce",
+        "name": "Melanie Pierce",
+        "address": "m.pierce@ledgerwell.example"
+      }
+    ],
+    "intelFacts": {
+      "hampshire_careers": {
+        "text": "The careers inbox accepts mail from anyone.",
+        "subject": "hampshire",
+        "source": "r1",
+        "provides": [],
+        "reduceNote": "Route open inboxes through a filtered gateway."
+      },
+      "careers_attachment": {
+        "text": "Chris takes .odt and .docx files.",
+        "subject": "hampshire",
+        "source": "r2",
+        "provides": [
+          {
+            "type": "document",
+            "value": "cv",
+            "label": "a CV",
+            "kind": "distinctive",
+            "attachmentKind": "document"
+          }
+        ]
+      },
+      "pierce_role": {
+        "text": "Melanie works in Finance.",
+        "subject": "pierce",
+        "source": "r3",
+        "provides": [
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "pierce_short",
+            "label": "Mel",
+            "kind": "generic"
+          }
+        ],
+        "reduceNote": "Do not publish staff roles in a pattern a lookup tool can learn."
+      },
+      "pierce_trusts_jed": {
+        "text": "Melanie trusts Jed.",
+        "subject": "pierce",
+        "source": "r4",
+        "provides": [
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "baker_full",
+            "label": "Jed Baker",
+            "kind": "distinctive"
+          }
+        ]
+      },
+      "memo_fact": {
+        "text": "A memo says the sheet is due Friday.",
+        "subject": "company",
+        "source": "m_memo",
+        "provides": [
+          {
+            "type": "document",
+            "value": "balance_sheet",
+            "label": "the balance sheet",
+            "kind": "distinctive",
+            "attachmentKind": "spreadsheet"
+          }
+        ]
+      }
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "from_named": {
+        "part": "from",
+        "text": "{sender_name}",
+        "slots": [
+          {
+            "id": "sender_name",
+            "type": "name",
+            "about": "sender"
+          }
+        ]
+      },
+      "greet_generic": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "greet_named": {
+        "part": "greeting",
+        "text": "Hi {name},",
+        "slots": [
+          {
+            "id": "name",
+            "type": "name",
+            "about": "recipient"
+          }
+        ]
+      },
+      "pretext_apply": {
+        "part": "pretext",
+        "text": "I am applying for the open role.",
+        "slots": [],
+        "implies": [
+          {
+            "type": "document",
+            "value": "cv"
+          }
+        ]
+      },
+      "pretext_enquiry": {
+        "part": "pretext",
+        "text": "A quick enquiry about your services.",
+        "slots": []
+      },
+      "pretext_sheet": {
+        "part": "pretext",
+        "text": "Here is {document}.",
+        "slots": [
+          {
+            "id": "document",
+            "type": "document"
+          }
+        ]
+      },
+      "pretext_hello": {
+        "part": "pretext",
+        "text": "Just checking in.",
+        "slots": []
+      },
+      "ask_review": {
+        "part": "ask",
+        "text": "Please review the attached file.",
+        "slots": []
+      }
+    },
+    "phishTargets": [
+      {
+        "id": "hampshire",
+        "address": "careers@ledgerwell.example",
+        "displayName": "Chris Hampshire",
+        "subjects": [
+          {
+            "id": "s_application",
+            "text": "Application",
+            "topic": "recruitment"
+          },
+          {
+            "id": "s_hello",
+            "text": "Hello",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "recruitment"
+          ]
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_generic"
+          ],
+          "pretext": [
+            "pretext_apply",
+            "pretext_enquiry"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "cv"
+          ],
+          "minDistinct": 1,
+          "expectedAttachment": "document",
+          "trusts": [
+            "*"
+          ]
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant",
+          "attachmentPlausible"
+        ],
+        "advisoryFactors": [
+          "senderAuth",
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "senderTrust": {
+            "pass": "✓ An open inbox accepts any sender",
+            "fail": "I don't recognise who this is from.",
+            "redFlag": null
+          },
+          "senderAuth": {
+            "pass": "✓ Sent as your own address.",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "✓ The CV is attached",
+            "missing": {
+              "fail": "You mention a CV, but there is nothing attached.",
+              "redFlag": null
+            },
+            "wrong-type": {
+              "fail": "That is not a file type I can open as a CV.",
+              "redFlag": null
+            }
+          }
+        },
+        "replies": {
+          "landed": "Thanks, I will get to this CV before Friday."
+        },
+        "hints": [
+          "An open inbox trusts anyone who looks like an applicant."
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_hampshire_landed": true
+          }
+        }
+      },
+      {
+        "id": "pierce",
+        "address": "m.pierce@ledgerwell.example",
+        "displayName": "Melanie Pierce",
+        "subjects": [
+          {
+            "id": "s_quick",
+            "text": "Quick one",
+            "topic": "general"
+          },
+          {
+            "id": "s_review",
+            "text": "For your review",
+            "topic": "finance"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "finance"
+          ]
+        },
+        "addressedAs": [
+          "pierce_short"
+        ],
+        "templateSets": {
+          "from": [
+            "from_named"
+          ],
+          "greeting": [
+            "greet_named"
+          ],
+          "pretext": [
+            "pretext_sheet",
+            "pretext_hello"
+          ],
+          "ask": [
+            "ask_review"
+          ]
+        },
+        "senderAuth": {
+          "domainPublishesAuth": true,
+          "spoofAligns": false,
+          "dmarcPolicy": "none"
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "balance_sheet"
+          ],
+          "minDistinct": 1,
+          "expectedAttachment": "spreadsheet",
+          "trusts": [
+            "baker"
+          ]
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "addressedTo",
+          "pretextRelevant",
+          "attachmentPlausible"
+        ],
+        "requiresIntelToAttempt": [
+          "pierce_role"
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_pierce_landed": true
+          }
+        }
+      }
+    ],
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "guest",
+          "address": "guest@workstation.example",
+          "displayName": "Operator",
+          "kind": "given",
+          "person": null,
+          "mailbox": "guest",
+          "spoofsFrom": true
+        },
+        {
+          "id": "freemail",
+          "kind": "created",
+          "person": null,
+          "unlockedBy": "acct_freemail",
+          "mailbox": "freemail",
+          "spoofsFrom": false,
+          "createMenu": [
+            {
+              "id": "tt1",
+              "address": "tarnside.test@freemail.example",
+              "displayName": "T. Test"
+            },
+            {
+              "id": "nt2",
+              "address": "n.assurance@freemail.example",
+              "displayName": "N. Assurance"
+            }
+          ]
+        },
+        {
+          "id": "jed_pc",
+          "address": "j.baker@ledgerwell.example",
+          "displayName": "Jed Baker",
+          "kind": "found",
+          "person": "baker",
+          "unlockedBy": "acct_jed_pc",
+          "mailbox": "jed",
+          "spoofsFrom": false
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "guest"
+        },
+        {
+          "id": "freemail"
+        },
+        {
+          "id": "jed",
+          "owner": "baker"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "seed_1",
+          "mailbox": "jed",
+          "folder": "inbox",
+          "from": {
+            "name": "Finance",
+            "address": "finance@ledgerwell.example"
+          },
+          "subject": "Q3 sheet",
+          "body": "Please send the balance sheet every Friday.",
+          "unread": true,
+          "highlights": [
+            {
+              "id": "hl_sheet",
+              "text": "balance sheet every Friday",
+              "grants": "memo_fact"
+            }
+          ]
+        },
+        {
+          "id": "seed_2",
+          "mailbox": "jed",
+          "folder": "sent",
+          "fromAccount": "jed_pc",
+          "to": "m.pierce@ledgerwell.example",
+          "subject": "Sheet",
+          "body": "Attached.",
+          "deliverAt": {
+            "global": "mail_arrived"
+          }
+        },
+        {
+          "id": "seed_3",
+          "mailbox": "guest",
+          "folder": "inbox",
+          "subject": "Welcome",
+          "body": "Hello.",
+          "deliverAt": {
+            "afterSeconds": 30
+          }
+        }
+      ],
+      "contacts": [
+        {
+          "id": "c_hampshire",
+          "person": "hampshire",
+          "name": "Chris Hampshire",
+          "addresses": [
+            "careers@ledgerwell.example"
+          ],
+          "role": "Careers",
+          "revealedBy": "se_intel_hampshire_careers",
+          "targetId": "hampshire"
+        },
+        {
+          "id": "c_baker",
+          "person": "baker",
+          "name": "Jed Baker",
+          "addresses": [
+            "j.baker@ledgerwell.example"
+          ],
+          "role": "Finance",
+          "revealedBy": "se_intel_hampshire_careers",
+          "accountIds": [
+            "guest",
+            "freemail"
+          ]
+        }
+      ]
+    },
+    "intelBoard": {
+      "title": "Case file",
+      "people": [
+        "hampshire",
+        "pierce"
+      ],
+      "readinessSlots": {
+        "hampshire": [
+          {
+            "label": "Where mail goes",
+            "needsIntel": [
+              "hampshire_careers"
+            ],
+            "goalString": "You still don't know how Chris receives mail.",
+            "doneString": "The careers inbox accepts mail from anyone."
+          },
+          {
+            "label": "What the file should be",
+            "needsIntel": [
+              "careers_attachment"
+            ],
+            "goalString": "You still don't know what file Chris will open.",
+            "doneString": "Chris takes .odt and .docx files."
+          }
+        ],
+        "pierce": [
+          {
+            "label": "Who she is",
+            "needsIntel": [
+              "pierce_role"
+            ],
+            "goalString": "You still don't know what Melanie does.",
+            "doneString": "She works in Finance."
+          },
+          {
+            "label": "What she expects",
+            "needsIntel": [
+              "pierce_trusts_jed",
+              "memo_fact"
+            ],
+            "needsGlobal": [
+              "dock_ready"
+            ],
+            "goalString": "You still don't know what Melanie expects.",
+            "doneString": "She expects a balance sheet from Jed."
+          }
+        ]
+      }
+    },
+    "triageSets": [
+      {
+        "id": "pre_a",
+        "stage": "pre",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "chipStyle": "plain",
+        "title": "Inbox check",
+        "pairedWith": "post_b",
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising"
+          }
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "r1a",
+            "from": {
+              "name": "IT Desk",
+              "address": "ita@ledgerwell.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Your new laptop",
+            "time": "09:12",
+            "body": "Your laptop is ready.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Sender, topic and link all match what you expect."
+              }
+            }
+          },
+          {
+            "id": "p1a",
+            "from": {
+              "name": "Ledgerwell Payroll",
+              "address": "payroll@ledgerwell-hra.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Verify your bank details today",
+            "time": "09:12",
+            "body": "Confirm today.\n{{link:v}}",
+            "links": [
+              {
+                "id": "v",
+                "text": "ledgerwell.example/payroll",
+                "destination": "https://ledgerwell-hr.example/login"
+              }
+            ],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.example",
+              "replyTo": "payroll@ledgerwell-hr.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "linkCredible",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "A look-alike domain.",
+                "linkCredible": "Text and destination differ.",
+                "urgencyCalibrated": "'Today' is the pressure."
+              },
+              "ifTrusted": "Trusting this would hand over a login.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "p2a",
+            "from": {
+              "name": "Parcel Desk",
+              "address": "deliverya@mailbox.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Delivery failed",
+            "time": "09:12",
+            "body": "Dear customer, see attached.",
+            "links": [],
+            "attachments": [
+              {
+                "label": "label.zip",
+                "kind": "archive"
+              }
+            ],
+            "auth": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "addressedTo",
+                "attachmentPlausible"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Not a courier you use.",
+                "addressedTo": "Generic greeting.",
+                "attachmentPlausible": "A zip for a parcel."
+              },
+              "ifTrusted": "Trusting this would hand over a login.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "r2a",
+            "from": {
+              "name": "Jed Baker",
+              "address": "j.bakera@ledgerwell.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Friday balance sheet",
+            "time": "09:12",
+            "body": "Please check the profit line.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "SPF failed, DKIM and DMARC passed.",
+                "default": "Sender and topic match."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "post_b",
+        "stage": "post",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "chipStyle": "plain",
+        "title": "Inbox check",
+        "pairedWith": "pre_a",
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising"
+          }
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "r1b",
+            "from": {
+              "name": "IT Desk",
+              "address": "itb@ledgerwell.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Your new laptop",
+            "time": "09:12",
+            "body": "Your laptop is ready.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Sender, topic and link all match what you expect."
+              }
+            }
+          },
+          {
+            "id": "p1b",
+            "from": {
+              "name": "Ledgerwell Payroll",
+              "address": "payroll@ledgerwell-hrb.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Verify your bank details today",
+            "time": "09:12",
+            "body": "Confirm today.\n{{link:v}}",
+            "links": [
+              {
+                "id": "v",
+                "text": "ledgerwell.example/payroll",
+                "destination": "https://ledgerwell-hr.example/login"
+              }
+            ],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.example",
+              "replyTo": "payroll@ledgerwell-hr.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "linkCredible",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "A look-alike domain.",
+                "linkCredible": "Text and destination differ.",
+                "urgencyCalibrated": "'Today' is the pressure."
+              },
+              "ifTrusted": "Trusting this would hand over a login.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "p2b",
+            "from": {
+              "name": "Parcel Desk",
+              "address": "deliveryb@mailbox.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Delivery failed",
+            "time": "09:12",
+            "body": "Dear customer, see attached.",
+            "links": [],
+            "attachments": [
+              {
+                "label": "label.zip",
+                "kind": "archive"
+              }
+            ],
+            "auth": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "addressedTo",
+                "attachmentPlausible"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Not a courier you use.",
+                "addressedTo": "Generic greeting.",
+                "attachmentPlausible": "A zip for a parcel."
+              },
+              "ifTrusted": "Trusting this would hand over a login.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "r2b",
+            "from": {
+              "name": "Jed Baker",
+              "address": "j.bakerb@ledgerwell.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Friday balance sheet",
+            "time": "09:12",
+            "body": "Please check the profit line.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "SPF failed, DKIM and DMARC passed.",
+                "default": "Sender and topic match."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "lab",
+        "stage": "mission",
+        "scoringProfile": "analyst",
+        "feedbackMode": "immediate",
+        "headerPanel": "open",
+        "glossary": "open",
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising"
+          }
+        ],
+        "outcome": {
+          "setGlobalPrefix": "tr_lab_",
+          "passPercent": 60
+        },
+        "messages": [
+          {
+            "id": "r1a",
+            "from": {
+              "name": "IT Desk",
+              "address": "ita@ledgerwell.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Your new laptop",
+            "time": "09:12",
+            "body": "Your laptop is ready.",
+            "links": [],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Sender, topic and link all match what you expect."
+              }
+            }
+          },
+          {
+            "id": "p1a",
+            "from": {
+              "name": "Ledgerwell Payroll",
+              "address": "payroll@ledgerwell-hra.example"
+            },
+            "to": "you@ledgerwell.example",
+            "subject": "Verify your bank details today",
+            "time": "09:12",
+            "body": "Confirm today.\n{{link:v}}",
+            "links": [
+              {
+                "id": "v",
+                "text": "ledgerwell.example/payroll",
+                "destination": "https://ledgerwell-hr.example/login"
+              }
+            ],
+            "attachments": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.example",
+              "replyTo": "payroll@ledgerwell-hr.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "linkCredible",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "A look-alike domain.",
+                "linkCredible": "Text and destination differ.",
+                "urgencyCalibrated": "'Today' is the pressure."
+              },
+              "ifTrusted": "Trusting this would hand over a login.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "kind": "playerSent",
+            "id": "own_hampshire",
+            "targetId": "hampshire",
+            "domainFrom": "landing_domain",
+            "notes": {
+              "perFlagNote": {
+                "senderTrust": "The From domain is not Ledgerwell's.",
+                "urgencyCalibrated": "The deadline is the pressure."
+              },
+              "headerNote": "All three pass because the sender owns that domain.",
+              "ifTrusted": "You would have opened it.",
+              "reportReply": "Thanks, confirmed."
+            }
+          }
+        ],
+        "playerSentAuth": {
+          "accounts": {
+            "guest": {
+              "spf": "fail",
+              "dkim": "none",
+              "dmarc": "fail",
+              "envelopeFrom": "workstation.example",
+              "replyTo": "guest@workstation.example"
+            },
+            "freemail": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "freemail.example",
+              "replyTo": "{account_address}"
+            },
+            "jed_pc": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "ledgerwell.example",
+              "replyTo": "{account_address}"
+            }
+          },
+          "domains": {
+            "d_homo": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.{domain}",
+              "replyTo": "notices@{domain}"
+            }
+          }
+        }
+      }
+    ],
+    "engagement": {
+      "defender": {
+        "onCompleteGlobal": "profile_done",
+        "factMitigations": [
+          {
+            "intel": "hampshire_careers",
+            "options": [
+              {
+                "id": "gw",
+                "text": "Filtered gateway",
+                "good": true,
+                "why": "Scans what arrives."
+              },
+              {
+                "id": "hide",
+                "text": "Hide the address",
+                "good": false,
+                "why": "Does not stop mail sent to it."
+              }
+            ]
+          },
+          {
+            "intel": "pierce_role",
+            "options": [
+              {
+                "id": "role",
+                "text": "Use role inboxes",
+                "good": true,
+                "why": "No named pattern to learn."
+              },
+              {
+                "id": "nothing",
+                "text": "Do nothing",
+                "good": false,
+                "why": "The pattern stays public."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

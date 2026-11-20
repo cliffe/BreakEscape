@@ -1,0 +1,13 @@
+{
+  "key": "8ed7dd54bfa0bc876a8615b24a151c19",
+  "npc": "elena_rodriguez",
+  "text": "Because the grid really is that fragile. That part was never a lie. It's the part nobody wants to hear.",
+  "voice": "Leda",
+  "style": "A grid engineer in her early thirties who helped build tonight's outage believing nobody would be hurt, and has just read otherwise. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Frightened and entirely competent at the same time: the technical sentences come out steady and fast, the ones about herself do not.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:09:50Z"
+}

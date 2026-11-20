@@ -1,0 +1,13 @@
+{
+  "key": "71aa1ee49e1526c4ee3cb71639821e11",
+  "npc": "narrator",
+  "text": "The guard has stopped walking. He's looking at your hands, and the pick in them.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:35:45Z"
+}

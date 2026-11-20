@@ -1,0 +1,26 @@
+{
+  "display_name": "Phishing and Social Engineering",
+  "description": "A day on the job at Tarnside Assurance. Ledgerwell Ltd has hired you to show how far a phishing and social-engineering campaign could get against their staff. They have one condition: nobody gets named and shamed. Research the company from public sources, craft spear-phishing email, build a look-alike login page, work a pretext call to the service desk, then turn the engagement round and defend against your own attack. Every outcome is explained, and there are no virtual machines.",
+  "difficulty_level": 2,
+  "scoring": "partial_then_complete",
+  "secgen_scenario": null,
+  "collection": "lab_games",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/cyber_security_landscape/phishing-and-social-engineering-game/",
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": ["Social engineering", "Phishing", "Pretexting", "Security awareness", "Usable security"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Adversarial Behaviours",
+      "keywords": ["Reconnaissance and OSINT", "Email spoofing", "Look-alike domains", "SPF DKIM DMARC"]
+    },
+    {
+      "ka": "LR",
+      "topic": "Law and Regulation",
+      "keywords": ["Computer Misuse Act 1990", "Rules of engagement", "Authorisation"]
+    }
+  ]
+}

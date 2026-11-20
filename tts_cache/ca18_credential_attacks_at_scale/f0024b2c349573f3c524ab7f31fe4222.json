@@ -1,0 +1,13 @@
+{
+  "key": "f0024b2c349573f3c524ab7f31fe4222",
+  "npc": "ama_owusu",
+  "text": "Welcome to the Merrin & Sallow exercise. I look after security for the practice.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:19Z"
+}

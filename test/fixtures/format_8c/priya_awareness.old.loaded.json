@@ -1,0 +1,27 @@
+{
+  "rooms": {
+    "office": {
+      "npcs": [
+        {
+          "id": "priya",
+          "awareness": "high",
+          "needsHome": "priya_pc",
+          "habits": {
+            "locksScreen": "always",
+            "holdsDoors": false
+          },
+          "screenHabit": {
+            "lockChance": 1
+          }
+        }
+      ],
+      "objects": [
+        {
+          "id": "priya_pc",
+          "workstation": true,
+          "owner": "priya"
+        }
+      ]
+    }
+  }
+}

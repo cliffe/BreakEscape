@@ -1,0 +1,13 @@
+{
+  "key": "e291cd1f18f198c1fce56c23f21bf1e0",
+  "npc": "helen_carver",
+  "text": "Isolated. Good. I'll want you up here next.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:54:26Z"
+}

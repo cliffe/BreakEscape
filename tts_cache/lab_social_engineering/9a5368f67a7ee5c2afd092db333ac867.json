@@ -1,0 +1,13 @@
+{
+  "key": "9a5368f67a7ee5c2afd092db333ac867",
+  "npc": "tomasz",
+  "text": "Once we start, that's the engagement closed. Report goes to Gareth and nobody sends anything else.",
+  "voice": "Alnilam",
+  "style": "In-house security lead at a small British firm, mid thirties, Polish-born, fifteen years in the UK. Speak with a consistent light Polish-accented English throughout — do not shift to any other accent. Mid-range pitch; quick pace. Dry, deadpan and practical, a man who has seen a lot of phishing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:40:27Z"
+}

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model unlocked sessions",
+  "description": "Test of unlocked sessions and the workstation rule (access model step 9): an owner at the desk blocks their PC, an owner away with the screen open lets you into their session until they return, lockChance 1 and an instant lock policy keep you out, a five-minute auto lock ends a session, a knocked-out owner counts as leaving, a hidden or removed owner and an unowned PC give only the sign-in screen, and a reload ends a claimed session but keeps a password one. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 25,
+  "test_type": "access_model",
+  "test_objective": "Prove the presence test, the claim of an unlocked session through pc-sessions.js and the server, the end of a claim on the owner's return, on the auto lock and on a reload, autoLockMin 0 and 5, lockChance 0 and 1, the knock-out rule, and the signin answer for a hidden, removed or missing owner"
+}

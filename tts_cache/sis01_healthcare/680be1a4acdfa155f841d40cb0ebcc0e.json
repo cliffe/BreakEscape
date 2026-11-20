@@ -1,0 +1,13 @@
+{
+  "key": "680be1a4acdfa155f841d40cb0ebcc0e",
+  "npc": "bed5_patient",
+  "text": "She stopped breathing. I kept pressing the bell. I kept pressing it.",
+  "voice": "Aoede",
+  "style": "Polish-born woman in her early eighties, bed-bound, alert, anxious but trying to stay calm. Speak with a consistent northern English with a Polish lilt accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

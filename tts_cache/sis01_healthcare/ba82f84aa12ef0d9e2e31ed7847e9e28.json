@@ -1,0 +1,13 @@
+{
+  "key": "ba82f84aa12ef0d9e2e31ed7847e9e28",
+  "npc": "helen_carver",
+  "text": "David will tell you to wait. He answers for clinical safety, I answer for getting the Trust running. Hear us both.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

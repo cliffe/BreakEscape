@@ -1,0 +1,13 @@
+{
+  "key": "b4992447f9c0360d756c0ed84d92e8ba",
+  "npc": "operative_relay",
+  "text": "Because I'm meant to be.",
+  "voice": "Pulcherrima",
+  "style": "ENTROPY operative, late thirties. Speak with a consistent Scottish (Edinburgh) accent throughout -- do not shift to any other accent. Cool, mid-range pitch; measured, unhurried pace. Confident and almost friendly; she costed this and came anyway, and nothing about it frightens her.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:07:56Z"
+}

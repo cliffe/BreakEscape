@@ -1,0 +1,13 @@
+{
+  "key": "ce5fae93419c8bada51b32ef980b87c8",
+  "npc": "narrator",
+  "text": "You pull the USB drive out of the port. The transfer window stalls, then throws an error. The last of it stays in the building.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:37:57Z"
+}

@@ -1,0 +1,26 @@
+{
+  "_comment": "Fixture for test/js/social-tag-processor.test.mjs (packet P0-G). mara is the one social character (person and phone channels); derek, kevin_park and npc_chen are ordinary NPCs, as in m01 and the hub demos.",
+  "globalVariables": {
+    "mara_influence": 0, "mara_latched": "", "mara_wary": false, "mara_reported": false,
+    "mara_lockout_until": 0, "mara_lockout_channel": "",
+    "npc_chen_influence": 0,
+    "old_mission_flag": true
+  },
+  "importedGlobals": { "old_mission_flag": true },
+  "social": {
+    "characters": {
+      "mara": {
+        "displayName": "Mara Quist",
+        "channels": { "person": "mara_desk", "phone": "mara_phone" },
+        "influence": { "global": "mara_influence", "min": -100, "max": 100, "start": 0 },
+        "thresholds": [
+          { "id": "wary", "at": -30, "icon": "wary",
+            "effects": [ { "type": "setGlobal", "global": "mara_wary", "value": true, "clearOnRearm": true },
+                         { "type": "toast", "text": "Mara is wary." } ] },
+          { "id": "reports", "at": -70, "icon": "reports",
+            "effects": [ { "type": "setGlobal", "global": "mara_reported", "value": true } ] }
+        ]
+      }
+    }
+  }
+}

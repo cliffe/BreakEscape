@@ -1,0 +1,13 @@
+{"steps":[
+{"note":"R13 (cycle 4 review): sells in Victoria's test, says the keen goodbye, then protects Danny and opens the night on St. Catherine's; arrests her."},
+{"set":{"briefing_played":true,"reception_badge_cloned":true,"player_approach":"cautious"}},
+{"talk":"victoria","picks":["Why am I here","fair pay","What is Zero Day","free market","Take the forty","whiteboard","impressive","complex","Skills are cheap","exactly the kind"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true}},
+{"talk":"terry","picks":["Sterling asked me","enrolment forms","I'll let you get on"]},
+{"set":{"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"roster_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"revelation_heard":true,"lore_history_found":true,"catalogue_seen":true}},
+{"talk":"danny","picks":["SAFETYNET. I'm","Come in and testify","Sterling goes down"]},
+{"set":{"night_confrontation_ready":true}},
+{"talk":"victoria","picks":["need to talk","St. Catherine's Hospital","priced the bodies","Ten thousand","Danny drew","bag down"]},
+{"talk":"debrief","picks":["People died","One hand","map to","doesn't need to see her","locked down","Architect directly"]}
+]}

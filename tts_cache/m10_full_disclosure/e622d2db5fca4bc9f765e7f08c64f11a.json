@@ -1,0 +1,13 @@
+{
+  "key": "e622d2db5fca4bc9f765e7f08c64f11a",
+  "npc": "imran",
+  "text": "Don't take long. Somebody'll ask why I've stopped soldering.",
+  "voice": "Puck",
+  "style": "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:26:06Z"
+}

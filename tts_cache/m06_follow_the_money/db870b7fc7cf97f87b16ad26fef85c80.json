@@ -1,0 +1,13 @@
+{
+  "key": "db870b7fc7cf97f87b16ad26fef85c80",
+  "npc": "blockchain_analyst",
+  "text": "And they're not idealists.",
+  "voice": "Leda",
+  "style": "Blockchain forensics analyst in her mid-thirties, British-Indian, who loves the work and has not yet understood what her own graph proves. Speak with a consistent Northern English (Leeds) accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick pace. Enthusiastic and technical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:16:43Z"
+}

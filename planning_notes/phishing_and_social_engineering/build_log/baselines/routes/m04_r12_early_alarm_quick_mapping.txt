@@ -1,0 +1,121 @@
+
+## R12 (round 4, review M1 / browser B1, m8a): three flags in, the alarm sounded (early: the attack isn't mapped), then the attack is mapped 2 minutes later. The HUD must switch from the alarm's advisory to the normal one at the mapping; the normal clock wins (advisory at mapping + 8, vent at + 14), so the debrief must not blame the alarm.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_provided_keycard":true,"vance_card_cloned":true,"vance_is_ally":true,"anomaly_detected":true,"server_room_reached":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"vance_spoken":true}}
+
+--- vance_phone ---
+  Vance. What do you need?
+     (7 options)
+ > The night crew in Hall 2. Can you get them out?
+  I can sound the evacuation from here. Klaxon and strobes in every hall.
+  And whoever's in my plant room hears it too. He'll not wait for morning.
+  Half an hour, maybe, and you've not finished in the workshop.
+     (2 options)
+ > Sound it. Get them out.
+      [set_global crew_warned=true]
+  Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors.
+      [engine: early alarm -> crew_warned_early, clock_started]
+      [clock: h2_advisory_alarm started at 0 min]
+      [clock: racks_vent_alarm started at 0 min]
+     (6 options)
+ > That's everything for now.
+  Call me if you need it.
+  I'm not going anywhere.
+  [chat closes]
+   [PASS] said: "you've not finished in the workshop"
+   [PASS] crew_warned_early = true (expected true)
+   [PASS] HUD shows h2_advisory_alarm (24 min) (expected h2_advisory_alarm)
+   {advance 2 min}
+   {set {"server_room_reached":true,"plant_reader_seen":true,"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"evidence_maintenance_logs_found":true,"attack_mechanism_known":true}}
+      [clock: h2_advisory started at 2 min]
+      [clock: racks_vent started at 2 min]
+   [PASS] HUD shows h2_advisory (8 min) (expected h2_advisory)
+   {advance 8 min}
+      [clock 10 min: h2_advisory FIRES {"hydrogen_alarm":true,"urgency_stage":3}]
+   [PASS] hydrogen_alarm = true (expected true)
+   [PASS] racks_vented = false (expected false)
+   {advance 6 min}
+      [clock 16 min: racks_vent FIRES {"racks_vented":true,"casualties_occurred":true,"urgency_stage":4}]
+   [PASS] racks_vented = true (expected true)
+   [PASS] vented_by_alarm_clock = false (expected false)
+   [PASS] crew_lost = false (expected false)
+   {set {"voltage_captured":true,"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true,"operative_static_defeated":true}}
+
+--- phone ---
+     (4 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] How do I get through the plant-room reader?
+     [1] Where do I stand?
+     [2] Nothing right now.
+  [stopped: no pick]
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Bank B went before I reached the button. Shutdown held A and C.
+  Bank B's gone, but you isolated A and C and forced the vents. It could have been the whole hall. It wasn't.
+  And you've got Voltage.
+ > What did we get out of there?
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is in a room now. So far he's given us one thing: his casualty figure.
+  Their FTP drop already put Critical Mass and Social Fabric on the same job. The paper in the plant room would have signed it.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > And the network?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > The Architect. He's running all of it.
+  The same name the Zero Day directive carried. The Architect.
+  We've just watched one of his strikes from the inside. Now we know how the cells fit together.
+  This site was a rehearsal.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > I'm in. When do we start?
+  He'll call when he's ready. Not tonight.
+  Agent HaX: Hall 2 was empty when it went. Vance's alarm had the night crew out through the fire doors.
+  Agent HaX: Two on the feed before the grid caught up. The number tomorrow won't be zero. It could have been fifty.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Full public disclosure. People have a right to know.
+  Full transparency. The attack, the holes it came through, ENTROPY. All of it.
+  Robert Vance: There'll be hell to pay for this place. Fair enough.
+  The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
+  Netherton will back that.
+  Done.
+  Statement goes out with the local authorities.
+  Robert Vance: I don't follow all of it. I know the hall's still standing.
+     (2 options)
+ > It was an honour working with you, Mr Vance.
+  Robert Vance: We've run this place on hope and gaffer tape for years.
+  Robert Vance: That stops on my shift.
+  Voltage will keep.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+   [PASS] said: "Hall 2 was empty when it went"
+   [PASS] not said: "Your alarm started his clock"
+
+[stats] spoken/narrated lines 48, choices 15, longest run without a choice 7 (debrief); runs>=6: debrief:7
+[result] all expectations met

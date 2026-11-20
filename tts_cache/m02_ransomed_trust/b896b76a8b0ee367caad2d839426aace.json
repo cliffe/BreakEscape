@@ -1,0 +1,13 @@
+{
+  "key": "b896b76a8b0ee367caad2d839426aace",
+  "npc": "ernesto_bautista",
+  "text": "Same mug since ninety-six.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-16",
+  "recorded_at": "2026-11-16T01:36:23Z"
+}

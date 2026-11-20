@@ -1,0 +1,13 @@
+{
+  "key": "384a8995500af3d909276222107ea548",
+  "npc": "sarah_martinez",
+  "text": "Here's your visitor badge and a key for the main office area.",
+  "voice": "Kore",
+  "style": "Friendly, warm receptionist in her early thirties. Speak with a consistent Irish (Dublin) accent throughout — do not shift to any other accent. Use a warm, mid-range pitch. Speak naturally and helpfully.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-08",
+  "recorded_at": "2026-10-09T12:09:57Z"
+}

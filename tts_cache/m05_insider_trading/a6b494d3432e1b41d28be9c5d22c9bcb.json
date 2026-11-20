@@ -1,0 +1,13 @@
+{
+  "key": "a6b494d3432e1b41d28be9c5d22c9bcb",
+  "npc": "narrator",
+  "text": "As many as you can reach. You don't promise more.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:38:42Z"
+}

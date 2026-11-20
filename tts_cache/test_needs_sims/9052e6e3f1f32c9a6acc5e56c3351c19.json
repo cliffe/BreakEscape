@@ -1,0 +1,13 @@
+{
+  "key": "9052e6e3f1f32c9a6acc5e56c3351c19",
+  "npc": "keith",
+  "text": "Who switched the coffee off?",
+  "voice": "Algenib",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:12:06Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "0f2f943dee470060a42ea392866688d6",
+  "npc": "elena_rodriguez",
+  "text": "And there's a small chance. The load-shed tables decide who stays on. Get them back, and the hospitals stay lit whatever else goes.",
+  "voice": "Leda",
+  "style": "A grid engineer in her early thirties who helped build tonight's outage believing nobody would be hurt, and has just read otherwise. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Frightened and entirely competent at the same time: the technical sentences come out steady and fast, the ones about herself do not.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:10:40Z"
+}

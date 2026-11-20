@@ -1,0 +1,263 @@
+{
+  "scenario_id": "test_ink_email",
+  "scenario_name": "Test: ink-driven email",
+  "scenario_brief": "Fixture for ink-driven plain email (README_scenario_design.md \"Ink-driven email\"). Agent HaX is an email correspondent whose ink story is the thread. Walk into the server room: HaX emails. Read it at the office mail terminal. Pick up the jump server log and a new suggested reply appears. Send it: HaX answers after a delay, completes a task and opens the store room. Compose to HaX runs on_compose. HaX's phone chat opens the client with composeTo. Dr Varga is both an ink correspondent and a judged phishing target.",
+  "endGoal": "Send HaX the jump server log and enter the store room.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "office",
+
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Handler Comms",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["hax_phone"],
+      "observations": "Your handler's phone."
+    }
+  ],
+
+  "objectives": [
+    {
+      "aimId": "report",
+      "title": "Report to HaX",
+      "description": "Find the jump server log and email it to HaX.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "find_log", "title": "Find the jump server log", "type": "custom", "status": "active" },
+        { "taskId": "report_findings", "title": "Email the log to HaX", "type": "custom", "status": "active" },
+        { "taskId": "ines_landed", "title": "Land a judged message on Dr Varga (optional)", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "store",
+      "title": "Reach the store room",
+      "description": "HaX will open the store room once the log is with him.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "enter_store", "title": "Enter the store room", "type": "enter_room", "targetRoom": "store_room", "status": "active" }
+      ]
+    }
+  ],
+
+  "globalVariables": {
+    "found_jump_log": false,
+    "report_sent_to_hax": false,
+    "contractor_laptop_found": false,
+    "ines_seminar_covered": false,
+    "phish_ines_landed": false,
+    "phish_ines_attempts": 0,
+    "se_intel_ines_open_inbox": false
+  },
+
+  "social": {
+    "people": [
+      { "id": "ines", "kind": "cast", "address": "i.varga@institute.example",
+        "forms": { "full": "Ines Varga" } }
+    ],
+
+    "intelFacts": {
+      "ines_open_inbox": {
+        "text": "Dr Varga's inbox takes a .docx from anyone at the Institute.",
+        "subject": "ines",
+        "source": "ie_seed",
+        "provides": [
+          { "type": "document", "value": "notes_doc", "label": "my notes", "kind": "distinctive", "attachmentKind": "document" }
+        ]
+      }
+    },
+
+    "templates": {
+      "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+      "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+      "pretext_notes": { "part": "pretext", "text": "I have the seminar notes you asked about.", "slots": [],
+        "implies": [ { "type": "document", "value": "notes_doc" } ], "urgency": "low" },
+      "pretext_enquiry": { "part": "pretext", "text": "I have a general enquiry.", "slots": [], "urgency": "low" },
+      "ask_review": { "part": "ask", "text": "Could you look over them when you have a moment?", "slots": [] }
+    },
+
+    "mailClient": {
+      "accounts": [
+        { "id": "agent", "address": "agent@safetynet.example", "displayName": "Agent 0x00",
+          "kind": "given", "person": null, "mailbox": "agent", "spoofsFrom": false }
+      ],
+      "mailboxes": [ { "id": "agent" } ],
+      "contacts": [
+        {
+          "id": "hax",
+          "name": "Agent HaX",
+          "role": "Handler",
+          "addresses": ["hax@safetynet.example"],
+          "accountIds": ["agent"],
+          "npc": "hax_mail",
+          "replyDelaySeconds": 8,
+          "emailRecord": {
+            "storyPath": "scenarios/test_ink_email/ink/hax_mail.json",
+            "displayName": "Agent HaX",
+            "unlockable": ["store_room"]
+          },
+          "timedEmails": [
+            { "knot": "ask_for_log", "waitForEvent": "room_entered:server_room", "delaySeconds": 2 }
+          ]
+        },
+        {
+          "id": "ines",
+          "person": "ines",
+          "name": "Dr Ines Varga",
+          "role": "The Institute",
+          "addresses": ["i.varga@institute.example"],
+          "accountIds": ["agent"],
+          "npc": "ines_mail",
+          "targetId": "ines",
+          "replyDelaySeconds": 5,
+          "emailRecord": {
+            "storyPath": "scenarios/test_ink_email/ink/ines_mail.json",
+            "displayName": "Dr Ines Varga"
+          }
+        }
+      ],
+      "seededMessages": [
+        { "id": "seed_alert", "mailbox": "agent",
+          "from": { "name": "SOC Monitor", "address": "soc@safetynet.example" },
+          "to": "agent@safetynet.example", "subject": "Overnight alert",
+          "body": "Unusual login on the jump server at 02:13 from 10.0.4.7. No change ticket on file.",
+          "time": "06:40", "unread": true, "folder": "inbox" }
+      ],
+      "payloadKit": [
+        { "id": "kit_jump_log", "label": "jump-auth.log", "kind": "document" },
+        { "id": "kit_notes", "label": "notes.docx", "kind": "document" }
+      ],
+      "labels": { "waiting": "Sent. Waiting for them to reply." },
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "showRedFlagMeter": false
+    },
+
+    "phishTargets": [
+      {
+        "id": "ines",
+        "address": "i.varga@institute.example",
+        "displayName": "Dr Ines Varga",
+        "subjects": [ { "id": "s_notes", "text": "Seminar notes", "topic": "seminar" } ],
+        "interests": { "topics": ["seminar"] },
+        "emailReplyDelay": 1,
+        "templateSets": { "from": ["from_own"], "greeting": ["greet_generic"],
+                          "pretext": ["pretext_notes", "pretext_enquiry"], "ask": ["ask_review"] },
+        "primedFor": { "distinctiveValues": ["notes_doc"], "minDistinct": 1, "expectedAttachment": "document",
+                       "trusts": ["*"], "story": "an open inbox that opens notes from anyone at the Institute" },
+        "requiredFactors": ["senderTrust", "pretextRelevant", "attachmentPlausible"],
+        "advisoryFactors": ["senderAuth"],
+        "replies": { "landed": "Thanks, I will read these on the train." },
+        "factorStrings": {
+          "senderTrust": { "pass": "The inbox takes mail from anyone", "redFlag": null },
+          "senderAuth": { "pass": "Sent as your own address, so there is nothing to spoof.", "redFlag": null }
+        },
+        "outcome": { "setGlobal": { "phish_ines_landed": true } }
+      }
+    ]
+  },
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Operations Office",
+      "connections": { "north": "server_room", "east": "store_room" },
+      "npcs": [
+        {
+          "id": "hax_phone",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "storyPath": "scenarios/test_ink_email/ink/hax_phone.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "_comment": "Picking up the log opens the conditional suggested reply in HaX's email.",
+              "eventPattern": "item_picked_up:notes",
+              "condition": "data.itemId === 'jump_log'",
+              "onceOnly": true,
+              "setGlobal": { "found_jump_log": true, "se_intel_ines_open_inbox": true },
+              "completeTask": "find_log"
+            },
+            {
+              "eventPattern": "global_variable_changed:phish_ines_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "ines_landed"
+            },
+            {
+              "_comment": "sendEmail: an ink contact (HaX's email self, not this phone) starts a thread when the event fires.",
+              "eventPattern": "room_entered:store_room",
+              "onceOnly": true,
+              "sendEmail": { "npc": "hax_mail", "knot": "store_room_note", "delaySeconds": 1 }
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "mail_terminal",
+          "id": "ie_mail_terminal",
+          "name": "Mail Terminal",
+          "position": { "x": 6, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A workstation signed in to your SAFETYNET mailbox.",
+          "minigameData": { "accountIds": ["agent"], "defaultAccount": "agent" }
+        }
+      ]
+    },
+    "server_room": {
+      "type": "room_servers",
+      "door_sign": "Server Room",
+      "connections": { "south": "office" },
+      "objects": [
+        {
+          "type": "notes",
+          "id": "jump_log",
+          "name": "Jump server auth log",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 4, "y": 3 },
+          "text": "AUTH LOG, JUMP-01\n\n02:13:07 login ok user=svc_backup from=10.0.4.7\n02:13:44 login ok user=svc_backup from=10.0.4.7\n02:14:02 sudo svc_backup /bin/sh\n\nChange window: 22:00 to 23:30.",
+          "observations": "A printout of the jump server's authentication log."
+        }
+      ]
+    },
+    "store_room": {
+      "type": "room_office",
+      "door_sign": "Store Room",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9999",
+      "connections": { "west": "office" },
+      "objects": [
+        {
+          "type": "notes",
+          "id": "contractor_laptop",
+          "name": "Contractor laptop label",
+          "takeable": false,
+          "readable": true,
+          "position": { "x": 4, "y": 3 },
+          "text": "ASSET TAG CT-0417\nContractor loan. Powered off.",
+          "observations": "A contractor laptop on the second shelf.",
+          "onRead": { "setVariable": { "contractor_laptop_found": true } }
+        }
+      ]
+    }
+  }
+}

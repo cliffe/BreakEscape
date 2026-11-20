@@ -1,0 +1,13 @@
+{
+  "key": "c143cbfe8d54024f908f9563abafbb4a",
+  "npc": "eleanor_vance",
+  "text": "It will show you what Meridian knew about the IT-to-OT deficiency when we decided to renew the policy last November.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:27Z"
+}

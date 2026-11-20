@@ -1,0 +1,55 @@
+{
+  "scenario_brief": "Test the SIEM Dashboard minigame. A security team has detected an ongoing attack. Review the alert stream, identify critical indicators of compromise, and escalate all critical-severity alerts to prevent a breach.",
+  "endGoal": "Successfully triage all critical-severity alerts and escalate them to the incident response team.",
+  "startRoom": "soc",
+  "startItemsInInventory": [],
+  "objectives": [
+    {
+      "aimId": "test_siem_triage",
+      "title": "Test SIEM Dashboard",
+      "description": "Use the SIEM console to identify and escalate critical security alerts",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "access_siem",
+          "title": "Access the SIEM Dashboard",
+          "type": "unlock_object",
+          "targetObject": "siem_console",
+          "status": "active"
+        },
+        {
+          "taskId": "triage_alerts",
+          "title": "Complete alert triage",
+          "type": "manual",
+          "status": "active",
+          "description": "Escalate all critical-severity alerts to complete the exercise"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "soc": {
+      "type": "room_office",
+      "connections": {},
+      "objects": [
+        {
+          "type": "siem_dashboard",
+          "sprite": "pc",
+          "id": "siem_console",
+          "name": "SIEM Console",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "scenarioData": {
+            "id": "siem_console",
+            "type": "siem_dashboard",
+            "name": "SIEM Dashboard",
+            "timeLimitSec": 180
+          },
+          "observations": "The main SIEM monitoring console ready for alert triage"
+        }
+      ]
+    }
+  }
+}

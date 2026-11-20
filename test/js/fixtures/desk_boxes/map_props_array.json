@@ -1,0 +1,10 @@
+{ "height":2,
+ "properties":[
+        {
+         "name":"deskBoxes",
+         "type":"string",
+         "value":"footprint"
+        }],
+ "type":"map",
+ "width":2
+}

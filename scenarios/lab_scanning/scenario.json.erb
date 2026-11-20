@@ -1,0 +1,167 @@
+{
+  "scenario_brief": "Welcome to the Information Gathering: Scanning Lab! Your reconnaissance specialist instructor will guide you through network scanning techniques, Nmap usage, and information gathering. Complete the instruction and then practice your skills in the VM lab environment.",
+  "endGoal": "Complete the lab instruction with the reconnaissance specialist instructor, launch the VMs, and capture all available flags from the Linux victim server to demonstrate your understanding of network scanning techniques.",
+  "startRoom": "instruction_room",
+  "startItemsInInventory": [],
+  "globalVariables": {
+    "player_name": "Agent 0x00",
+    "lab_instruction_complete": false,
+    "vm_launched": false,
+    "scanning_ethics": 0
+  },
+  "objectives": [
+    {
+      "aimId": "complete_vm_lab",
+      "title": "Complete VM Lab Exercises",
+      "description": "Capture all flags from the Linux victim server",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "submit_all_flags",
+          "title": "Submit all required flags from Linux victim server",
+          "type": "submit_flags",
+          "targetFlags": ["linux_victim_server-flag1", "linux_victim_server-flag2", "linux_victim_server-flag3", "linux_victim_server-flag4"],
+          "targetCount": 4,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  "rooms": {
+    "instruction_room": {
+      "type": "room_office",
+      "connections": {
+        "north": "vm_lab_room"
+      },
+      "locked": false,
+      "npcs": [
+        {
+          "id": "reconnaissance_specialist",
+          "displayName": "Reconnaissance Specialist",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 3.5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/lab_scanning/ink/instructor.json",
+          "currentKnot": "start",
+          "timedConversation": {
+            "delay": 5000,
+            "targetKnot": "intro_timed"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "objective_aim_completed:complete_vm_lab",
+              "targetKnot": "flags_completed_congrats",
+              "conversationMode": "person-chat",
+              "autoTrigger": true,
+              "cooldown": 0
+            }
+          ],
+          "itemsHeld": []
+        }
+      ],
+      "objects": [
+        {
+          "type": "lab-workstation",
+          "id": "lab_workstation",
+          "name": "Lab Sheet Workstation",
+          "takeable": true,
+          "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/5-scanning/",
+          "observations": "A workstation for accessing the lab sheet with detailed instructions and exercises"
+        },
+        {
+          "type": "notes",
+          "name": "Lab Welcome Guide",
+          "takeable": true,
+          "readable": true,
+          "text": "Welcome to the Information Gathering: Scanning Lab!\n\nOBJECTIVES:\n1. Use the Lab Sheet Workstation to access detailed lab instructions\n2. Complete the lab sheet exercises\n3. Launch the VMs and practice scanning techniques\n4. Capture all flags from the Linux victim server\n\nThe reconnaissance specialist instructor is available if you need guidance.\n\nGood luck!",
+          "observations": "A guide to the lab structure and objectives"
+        },
+        {
+          "type": "notes",
+          "name": "VM Lab Instructions",
+          "takeable": true,
+          "readable": true,
+          "text": "VM Lab Practice Instructions:\n\n1. Launch the VMs in the VM Lab Room:\n   - Kali VM Terminal: Your attacker machine with Nmap and scanning tools\n   - Linux Victim Server Terminal: Target for scanning exercises\n\n2. Your objectives:\n   - Use Nmap to discover live hosts and scan ports\n   - Identify services and grab banners\n   - Find flags hidden in banners, netcat messages, and via exploitation\n   - Capture all flags from the Linux victim server\n\n3. Submit flags at the Flag Submission Terminal in the VM Lab Room\n\nFlags to capture from linux_victim_server:\n- flag1 - Found via banner grabbing or netcat\n- flag2 - Found via banner grabbing or netcat\n- flag3 - Found via banner grabbing (may be base64 encoded)\n- flag4 - Found via exploitation of familiar vulnerability (Distcc)\n\nRemember what the instructor taught you about scanning techniques!",
+          "observations": "Instructions for the VM lab exercises"
+        }
+      ]
+    },
+    "vm_lab_room": {
+      "type": "room_office",
+      "connections": {
+        "south": "instruction_room"
+      },
+      "locked": false,
+      "objects": [
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_kali",
+          "name": "Kali VM Terminal",
+          "takeable": false,
+          "observations": "Terminal providing access to the Kali Linux attacker machine with Nmap and scanning tools",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('information_gathering_scanning', {
+            "id": 1,
+            "title": "kali",
+            "ip": "172.16.0.2",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_linux_victim_server",
+          "name": "Linux Victim Server Terminal",
+          "takeable": false,
+          "observations": "Terminal providing access to the Linux victim server for scanning practice",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('information_gathering_scanning', {
+            "id": 2,
+            "title": "linux_victim_server",
+            "ip": "172.16.0.10",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_lab",
+          "name": "Lab Flag Submission Terminal",
+          "takeable": false,
+          "observations": "Submit flags captured from the Linux victim server here",
+          "acceptsVms": ["linux_victim_server"],
+          "flags": <%= flags_for_vm('linux_victim_server', [
+            'flag{scanning_banner_flag}',
+            'flag{scanning_netcat_flag}',
+            'flag{scanning_base64_flag}',
+            'flag{scanning_exploit_flag}'
+          ]) %>,
+          "flagRewards": [
+            {
+              "type": "emit_event",
+              "event_name": "scanning_flag_submitted",
+              "description": "Scanning flag submitted - demonstrates network scanning skills"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+

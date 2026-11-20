@@ -1,0 +1,10 @@
+{
+  "scenario": "ca11_misdirected_data_defend",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

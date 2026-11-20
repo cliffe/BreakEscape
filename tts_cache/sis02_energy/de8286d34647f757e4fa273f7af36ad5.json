@@ -1,0 +1,13 @@
+{
+  "key": "de8286d34647f757e4fa273f7af36ad5",
+  "npc": "helen_marsh",
+  "text": "We trip at fifty-five, well short of eighty, where cells can start heating themselves. At eighty-five, it trips too late.",
+  "voice": "Aoede",
+  "style": "Senior SCADA engineer in her late forties from Nottinghamshire; warm, plain-spoken and calm under pressure. Speak with a consistent East Midlands (Nottingham) accent throughout. Do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:13:35Z"
+}

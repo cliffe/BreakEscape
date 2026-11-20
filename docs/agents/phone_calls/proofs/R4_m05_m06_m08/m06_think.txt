@@ -1,0 +1,12 @@
+=== m06_think
+game 2329 (m06_think)
+"opened agent_0x99_handler"
+hub: {"choices":["1. I've found The Architect's Fund.","2. Where do I start on the money trail?","3. Any tips on their passwords?","4. How do I play Volkova?","5. Remind me where we are.","6. I'm good for now."]}
+dialling: {"bar":"CALLING"} caption="SAFETYNET secure line"
+end of call: {"subs":[],"choices":["1. Where do I start on the money trail?","2. Any tips on their passwords?","3. How do I play Volkova?","4. Remind me where we are.","5. I'm good for now."]} reacted_fund={"ok":true,"cmd":"eval"}
+shot m06_think_call_end
+after call: mg="PhoneChatMinigame phone-chat" rows=["Outgoing call, 0:23"]
+thread: {"choices":["1. Where do I start on the money trail?","2. Any tips on their passwords?","3. How do I play Volkova?","4. Remind me where we are.","5. I'm good for now."]}
+shot m06_think_hub_final
+handler /tts: "I've got it in front of me." "$12.8 million still in the wallet, pending for six cells. The advances have already gone." "Look who signed it. Satoshi's Ghost. The Crypto Anarchists' leader, and the man in the corner office upstairs." "Not Ghost Protocol, the other name on that page. They're one of the cells being paid." "Advances first, balances in seventy-two hours. The first stage is already paid for." "Whatever we do with the wallet only touches what hasn't left." "Which leaves you a choice." "Freeze it, and the balances stop tonight. They'll know we were here the moment we do." "Or watch it. We map every cell that draws on it, and the money reaches them." "Take your time. Not too much." 
+["minigame_completed@71.4","conversation_closed:agent_0x99_handler@71.4"]

@@ -1,0 +1,13 @@
+{
+  "key": "a9f05eb9fbf90d8f5fea41b1a38641ae",
+  "npc": "julian_sallow",
+  "text": "Start at the kiosk: see what one colleague's public posts give away, then close the gaps, on his profile and on yours.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:07Z"
+}

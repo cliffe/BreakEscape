@@ -1,0 +1,13 @@
+{
+  "key": "2ecc52c9020bf0fce8f5d04779430112",
+  "npc": "jodie",
+  "text": "Not bad, you?",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:14:24Z"
+}

@@ -1,0 +1,13 @@
+created         2026-09-30 20:55:57 UTC
+last write      2026-09-30 21:03:51 UTC
+played for      473s of wall clock
+current room    "reception_lobby"
+unlocked rooms  8: reception_lobby, patricia_office, main_corridor, open_office_area, torres_office, server_hallway, server_room, data_center
+unlocked objs   0: 
+inventory       8: Your Phone, Notepad, Visitor Badge, Staff Badge (relayed copy), Torres Office Card (relayed copy), Server Password Sticky Note, Personal Journal, Upload Schedule
+NPCs met        9: opening_briefing, director_netherton, agent_nightshade, agent_0x99_handler, recruiter, closing_debrief_trigger, patricia_morgan, kevin_park, david_torres
+flags submitted 4: flag{m05_insider_trading_qdc_research_server_1_82a568}, flag{m05_insider_trading_qdc_research_server_2_907f23}, flag{m05_insider_trading_qdc_research_server_3_38b6c7}, flag{m05_insider_trading_qdc_research_server_4_fb2a70}
+globals set     27: architect_approval_confirmed, briefing_played, case_exfil, case_motive, case_ready_notified, confront_stance, debrief_played, elena_treatment_funded, final_choice, flag1_submitted, flag2_submitted, flag3_submitted, flag4_submitted, flags_nag_sent, found_torres_journal, found_upload_schedule, kevin_ko, mission_priority, office_card_obtained, patricia_authorised_office, player_approach, player_name, recruiter_contacted_player, recruiter_deal_offered, server_badge_obtained, torres_arrested, torres_identified
+
+VERDICT: progress recorded — 7 rooms beyond the first, 0 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.

@@ -1,0 +1,13 @@
+{
+  "key": "f001ff5c623a310220ebab6d064f84e4",
+  "npc": "narrator",
+  "text": "He doesn't move.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:40:21Z"
+}

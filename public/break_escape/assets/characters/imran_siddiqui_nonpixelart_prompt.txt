@@ -1,0 +1,10 @@
+Make portrait for Imran Siddiqui
+A slim, boyish British-Pakistani man of about 26 from Sparkhill, Birmingham, with medium-brown skin, a soft, round, youthful face, clean-shaven apart from a faint shadow of stubble, and thick curly black hair worn longer on top and falling over his forehead, a bench technician in an electronics workshop who is starting to realise who he works for. Large dark brown eyes and an uneasy, defensive, tired look. He wears a navy-blue technician's zip fleece over a grey t-shirt, with a small screwdriver and a pen clipped in the chest pocket, dark grey work trousers with side pockets, a black belt, and a plain black watch; his hands rest at his sides. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Approved by the user as imran_siddiqui_concept_2 (wip/), adopted as the PixelLab pipeline concept.

@@ -1,0 +1,79 @@
+{
+  "_comment": "Captured from Hacktivity AppPaths.patterns_for and the real route helpers. Regenerate from the Hacktivity checkout: bin/rails runner ../BreakEscape/BreakEscape/test/js/fixtures/capture_app_paths.rb > ../BreakEscape/BreakEscape/test/js/fixtures/app-paths.json",
+  "eventId": 6,
+  "patterns": [
+    "^/app/[a-z0-9-]+/?$",
+    "^/users/sign_in/?$",
+    "^/users/sign_out/?$",
+    "^/users/sign_up/?$",
+    "^/users/password/new/?$",
+    "^/users/password/edit/?$",
+    "^/users/password/?$",
+    "^/users/confirmation/new/?$",
+    "^/users/confirmation/?$",
+    "^/hackers/setup_mfa/?$",
+    "^/hackers/multi_factor_authentication_setup/?$",
+    "^/hackers/multi_factor_authentication_not_setup/?$",
+    "^/hackers/active_vm_sets_modal/?$",
+    "^/hacktivities/6/?$",
+    "^/hacktivities/6/sign_up_current_user/?$",
+    "^/hacktivities/6/play(?:/.*)?/?$",
+    "^/hacktivities/6/missions/[^/]+/(?:start|restart|vm_status|extend_vms|shutdown_vms|finish|abandon)/?$",
+    "^/hacktivities/6/challenges(?:/(?!(?:[^/]+/(?:challenge_scoreboard|update_modal|load_admin_vm_list)|.*/show_admin_password)/?$).*)?/?$",
+    "^/feedbacks(?:/[^/]+)?/?$",
+    "^/break_escape(?:/.*)?/?$",
+    "^/\\.well-known(?:/.*)?/?$"
+  ],
+  "stay": {
+    "start": "/app/licence-to-hack",
+    "briefing": "/hacktivities/6/play",
+    "event page": "/hacktivities/6",
+    "sign in": "/users/sign_in",
+    "sign out": "/users/sign_out",
+    "sign up": "/users/sign_up",
+    "password reset": "/users/password/new",
+    "mission start": "/hacktivities/6/missions/abc123/start",
+    "mission finish": "/hacktivities/6/missions/abc123/finish",
+    "vnc console": "/hacktivities/6/challenges/3/vm_sets/4/vms/5/vnc_console",
+    "challenges index": "/hacktivities/6/challenges",
+    "engine game": "/break_escape/games/12",
+    "feedback": "/feedbacks/new"
+  },
+  "leave": {
+    "plans": "/pricing",
+    "account": "/users/edit",
+    "terms": "/terms",
+    "event scoreboard": "/hacktivities/6/challenges/3/challenge_scoreboard",
+    "another event": "/hacktivities/1",
+    "another event play": "/hacktivities/1/play",
+    "home": "/",
+    "subscriptions": "/subscriptions/1"
+  },
+  "rubyAgrees": {
+    "stay": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "leave": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  }
+}

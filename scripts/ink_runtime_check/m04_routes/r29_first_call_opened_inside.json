@@ -1,0 +1,8 @@
+{
+"steps": [
+{"note": "R29 (post-close fix: first-call hub guard, control): the first open comes once inside, so the guard (reopen only) doesn't fire and the inside answers and objectives still play."},
+{"set": {"briefing_played": true, "guard_admitted": true, "checkpoint_passed": true, "vance_met": true, "vance_spoken": true}},
+{"talk": "phone", "picks": ["Met Robert Vance", "Cooperative", "On it"]},
+{"said": ["I'm inside. Met Robert Vance, the facility manager.", "First, prove the screens are lying."]}
+]
+}

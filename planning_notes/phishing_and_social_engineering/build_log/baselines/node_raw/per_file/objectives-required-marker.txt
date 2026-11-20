@@ -1,0 +1,84 @@
+TAP version 13
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 2 aims, 6 tasks
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 2 aims, 6 tasks
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 2 aims, 6 tasks
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 1 aims, 2 tasks
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 1 aims, 2 tasks
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 1 aims, 5 tasks
+# ✅ Completing task: Title done
+# ⏭️ Task skipped: Title gone
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 2 aims, 6 tasks
+# ✅ Completing task: Title req_a
+# 📋 ObjectivesManager event listeners registered
+# 📋 Reconciling objectives with current game state...
+# 📋 Objectives initialized: 1 aims, 2 tasks
+# ✅ Completing task: Title a
+# 🏆 Aim completed: X
+# Subtest: required tasks get a * in an aim with an optional task; optional tasks are unmarked and dimmed
+ok 1 - required tasks get a * in an aim with an optional task; optional tasks are unmarked and dimmed
+  ---
+  duration_ms: 1.916154
+  ...
+# Subtest: the key sits beside the aim that uses the marker, not beside aims without optional tasks
+ok 2 - the key sits beside the aim that uses the marker, not beside aims without optional tasks
+  ---
+  duration_ms: 0.350985
+  ...
+# Subtest: an aim with no optional tasks looks as before: no marker
+ok 3 - an aim with no optional tasks looks as before: no marker
+  ---
+  duration_ms: 0.224027
+  ...
+# Subtest: no optional tasks anywhere: no marker and the key stays hidden
+ok 4 - no optional tasks anywhere: no marker and the key stays hidden
+  ---
+  duration_ms: 0.178965
+  ...
+# Subtest: a locked optional task does not count, so its aim gets no marker
+ok 5 - a locked optional task does not count, so its aim gets no marker
+  ---
+  duration_ms: 0.280386
+  ...
+# Subtest: completed and skipped required tasks drop the marker; the progress count still follows the title
+ok 6 - completed and skipped required tasks drop the marker; the progress count still follows the title
+  ---
+  duration_ms: 0.803384
+  ...
+# Subtest: the marker is presentational: titles and task-complete toasts are unchanged
+ok 7 - the marker is presentational: titles and task-complete toasts are unchanged
+  ---
+  duration_ms: 0.421366
+  ...
+# Subtest: the key hides again once no * is on screen
+ok 8 - the key hides again once no * is on screen
+  ---
+  duration_ms: 0.595021
+  ...
+# Subtest: the stylesheet styles the marker, the dimmer optional text and the key
+ok 9 - the stylesheet styles the marker, the dimmer optional text and the key
+  ---
+  duration_ms: 0.31279
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 917.945153

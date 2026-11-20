@@ -1,0 +1,13 @@
+{
+  "key": "2294a08057dc03a789849cf46019d259",
+  "npc": "dr_halloran",
+  "text": "You've been straight with me. Here, the visitor spare. It's signed out through me, and I'm signing it out to you.",
+  "voice": "Erinome",
+  "style": "Cryptography research lead in her mid-forties. Speak with a consistent educated Irish (Dublin) accent throughout — do not shift to any other accent. Clear, mid-range pitch; measured, precise pace. Sharp, protective of her team and impatient with sloppy reasoning.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:13:35Z"
+}

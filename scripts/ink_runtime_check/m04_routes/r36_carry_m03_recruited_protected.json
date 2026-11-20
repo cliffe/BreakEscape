@@ -1,0 +1,78 @@
+{
+ "imports": {
+  "m03_victoria_fate": "recruited",
+  "m03_danny_fate": "protected"
+ },
+ "steps": [
+  {
+   "note": "R36 (carry-over, 2026-10-17): m03 finished with Victoria Sterling turned and Danny Foster protected. HaX names both: Sterling at the directive in the briefing, Danny at Task Force Null in the debrief."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Go ahead",
+    "I've got what I need",
+    "So this is the attack",
+    "Got it. I'm on my way"
+   ]
+  },
+  {
+   "said": [
+    "The Zero Day job left us one line",
+    "Well, it's winter, and this is the site.",
+    "You turned Victoria Sterling, and she gave us the window"
+   ],
+   "notSaid": [
+    "You had Victoria Sterling taken into custody",
+    "You let Victoria Sterling walk out of WhiteHat",
+    "You put Victoria Sterling in a hospital bed"
+   ]
+  },
+  {
+   "note": "Skip to the debrief: shutdown engaged, Voltage taken, Vance an ally (as r1, set directly)."
+  },
+  {
+   "set": {
+    "briefing_played": true,
+    "attack_prevented": true,
+    "esd_authorized": true,
+    "voltage_neutralised": true,
+    "voltage_captured": true,
+    "vance_spoken": true,
+    "vance_is_ally": true,
+    "vance_trust_level": 80,
+    "crew_warned": true,
+    "mission_complete": true
+   }
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "Shutdown engaged",
+    "What did we get",
+    "how did they get in",
+    "And the network",
+    "goes in the report",
+    "The Architect",
+    "I'm in",
+    "Full public",
+    "honour"
+   ]
+  },
+  {
+   "said": [
+    "He's calling it Task Force Null. Your name's on his list.",
+    "The task force has a file open already, and Danny Foster's statement is in it.",
+    "You gave him a way in at WhiteHat, and he hasn't stopped talking since"
+   ],
+   "notSaid": [
+    "You knocked him out at WhiteHat. He talked once he came round",
+    "You named him in full at WhiteHat",
+    "The task force has a file open already. Danny Foster isn't in it"
+   ]
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

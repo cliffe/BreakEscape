@@ -1,0 +1,160 @@
+
+## R15 (cycle 4 review): KO-heavy. Ffion knocked out at reception, Sterling knocked out in the meeting (Nightshade's copy of her card), Terry knocked out at night after a catch, Danny knocked out before he decides.
+
+--- briefing ---
+  Narrator: A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.
+  Director Magnus Netherton: Agent 0x00. This is Operation Cyber Arsenal.
+  Director Magnus Netherton: Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.
+  Director Magnus Netherton: That is a line I do not let anyone cross. You are going in.
+  Director Magnus Netherton: HaX runs you, Nightshade the technical side. Listen to both.
+  Agent 0x47 'Nightshade': Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.
+  Director Magnus Netherton: HaX. The floor's yours.
+  Agent HaX: Right. Zero Day Syndicate. You heard of them?
+     (3 options)
+ > Skip the background. What's the mission?
+  Agent HaX: Right to business.
+  Agent HaX: Short version: the exploit that took down St. Catherine's came from Zero Day, behind a pentest front called WhiteHat. We want their books.
+  Agent HaX: The client roster, the logs, and whatever they're planning next. There's a Phase 2.
+  Agent HaX: Three things. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
+  Agent HaX: Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.
+  Agent HaX: Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.
+  Agent HaX: Ask me whatever you need before you go in.
+     (5 options)
+ > That's everything. Let's talk approach.
+  Agent HaX: Before you go in -- how do you want to play it?
+  Agent HaX: Your call.
+     (3 options)
+ > I move fast, grab the objectives, get out.
+  Agent HaX: Less time in the building, less time for it to go wrong. Just don't sprint past the distcc logs. They're the case.
+  Agent HaX: Listen. Every life St. Catherine's lost, it lost to something Zero Day sold.
+     (3 options)
+ > I'm ready
+  Agent HaX: WhiteHat Security, Callaghan Square, Cardiff. I'm on comms the whole time. The drop-site terminal in the server room takes your flags and sends them straight to me.
+  Agent HaX: Good luck.
+  Agent HaX: Meet Sterling, clone her card, then come back after dark. Go.
+  [end]
+   {set {"briefing_played":true,"receptionist_ko":true}}
+
+--- victoria ---
+  Narrator: Victoria Sterling rises as you come in, composed and sure of herself.
+  Victoria Sterling: Victoria Sterling. Sit down. Let's see if you match your file.
+  Narrator: She gestures to the conference table.
+  Victoria Sterling: Our receptionist isn't at her desk. You didn't pass her on the way in?
+  Narrator: She says it lightly. She watches your face the whole time she says it.
+  Victoria Sterling: Freelance pen testing. Some CTF work. Competent.
+  Victoria Sterling: Competent is cheap. That's not why you're here.
+     (3 options)
+ > Why am I here, then?
+  Victoria Sterling: To find out what you're worth. Your CV only tells me what you cost.
+  Victoria Sterling: You find a hole and do the decent thing. The vendor sits on it for six months. Somebody less decent finds it in three.
+     [0] So, responsible disclosure or full disclosure?
+     [1] Researchers deserve fair pay for what they find.
+     [2] This sounds like you're advocating selling vulnerabilities.
+  [stopped: no pick]
+   {set {"victoria_ko":true,"victoria_fate":"ko"}}
+
+--- phone @on_victoria_ko_card ---
+  Well. That's one way to end a job interview.
+  If her card's come loose, leave it where it fell -- it's evidence.
+  Nightshade lifted its keys from the reader logs and built you a working copy.
+  It's in your kit now. It opens what hers opens, which means the server room tonight.
+  Step out into the main hallway before anyone finds her. That ends the day; come back after dark.
+     (4 options)
+ > Where do I stand?
+  Nightshade's copy of her card is in your kit. Step out into the main hallway: that ends the day, and we come back after dark.
+ > Thanks.
+  Call if you need me.
+     (4 options)
+ > Nothing right now
+  Copy. Call anytime, Agent.
+  [end]
+
+--- night ---
+  Narrator: Sterling is out cold on the conference room floor. You pull the door shut behind you.
+  Narrator: You walk out with the last of the afternoon's visitors. Nobody goes looking for her before the building shuts.
+  Narrator: Eleven o'clock that night, you're back. The staff entrance takes the receptionist's badge without a murmur.
+  Narrator: The main hallway is on its night lights. Somewhere off to the east, a guard's footsteps go round, and round again.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true}}
+
+--- terry @on_lockpick_detected ---
+  Narrator: A torch beam lands on your hands, and on the pick in them.
+  Terry Mott: Picks. Right. We're done talking.
+  [chat closes]
+   {set {"guard_hostile":true,"guard_knocked_out":true,"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"night_confrontation_ready":true,"danny_fate":"ko","danny_ko":true}}
+
+--- phone ---
+  On the line, Agent.
+     (7 options)
+ > You wanted to talk about the distcc logs.
+  Agent, your distcc flag just landed, and the logs came through with it.
+  There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.
+  And a line under it: "Target Selection Consultation", ten thousand. They chose the hospital for Ghost.
+  Target line: St. Catherine's Regional. Sable's sign-off on the approval.
+  St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name.
+     (3 options)
+ > Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.
+  It does. One ENTROPY cell invoicing another. I may have it framed.
+  And the logs point at a Phase 2. That drive from her desk is the directive. Decode it and tell me.
+     (2 options)
+ > I'll get everything
+  Finish up, then Sterling. And be careful. Reasonable as she sounds, she signed that invoice.
+     (6 options)
+ > Where do I stand?
+  Network's stripped, the case is made, and Danny's out cold in his office.
+  Sterling's still out cold. Finish your sweep, then call me and I'll bring you in.
+ > Thanks.
+  Call if you need me.
+     (6 options)
+ > Nothing right now
+  Copy. Call anytime, Agent.
+  [end]
+
+--- debrief ---
+  Narrator: SAFETYNET headquarters. The morning after WhiteHat Security.
+  Agent HaX: There you are. Sit down before you fall down.
+  Agent HaX: The guard caught you once, and then you put him on the floor. The log's mostly about that now.
+  Agent HaX: The receptionist, Ffion Rees, is fine, before you ask. Concussed, and still trying to work out what she did to deserve it.
+  Agent HaX: The network first. All four flags, and the distcc logs are the case.
+  Agent HaX: The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
+  Agent HaX: Victoria Sterling. Sable.
+  Agent HaX: Sterling went down on site. She's in a guarded bed, not a boardroom.
+  Agent HaX: We've got the evidence and the name either way. The Architect loses an operator -- she just won't be talking to us about it.
+     (2 options)
+ > She priced in how fast hospitals pay. She'd earned the file.
+  Agent HaX: Hard to argue. She'll wake up to a charge sheet.
+  Agent HaX: Now Phase 2, the part that kept me up. Your drive was Base64 over ROT13; our people had it off in ten minutes. The Architect's directive.
+  Agent HaX: Grid storage. Substation control. Hospitals on generator for when the grid drops out from under them. Zero Day supplies, Critical Mass executes. Winter, within weeks.
+  Agent HaX: St. Catherine's was the test run. This is the order book.
+     (3 options)
+ > That's mass-casualty scale. An attack on everyone under the grid.
+  Agent HaX: It is. And timed across cells.
+  Agent HaX: The Architect. One mind coordinating the cells. Zero Day arms them, Critical Mass hits the grid, Ransomware Incorporated hits the wards, and someone times it all.
+  Agent HaX: Until last night the Architect was a rumour. Now it's a signature on a plan. Command's had it since first thing.
+     (2 options)
+ > This is the map to their whole operation.
+  Agent HaX: You handed us the shape of the thing.
+  Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, hospitals get assessed, and we'll be standing where they meant to strike.
+  Agent HaX: Danny Foster was found unconscious in his own office. We've got him in protective custody.
+  Agent HaX: He'll cooperate when he comes round. He was halfway to us before you got there -- you just took the choice out of his hands.
+     (2 options)
+ > It was the only way to keep him safe.
+  Agent HaX: It's one way. Write down why, before you forget.
+  Agent HaX: You left some of the paper behind.
+  Agent HaX: Their own history of the firm stayed in Sterling's filing cabinet.
+  Agent HaX: The exploit catalogue stayed in the wall safe.
+  Agent HaX: Enough to charge and enough to warn. Not everything. It never is.
+  Agent HaX: You said you'd move fast, grab the objectives and get out. Fast got it done. Fast also left marks, and you've heard about them.
+  Agent HaX: It got done. Not cleanly. Some people who never signed up for this will remember last night.
+  Agent HaX: Here's where it stands. Zero Day's exposed, its buyers are scrambling, and the Architect has to shop elsewhere.
+  Agent HaX: Ghost's still out there. The people who armed them are on paper now.
+     (4 options)
+ > What should they have locked down?
+  Agent HaX: Their records sat on the one box they knew was broken: a distcc daemon exploitable since 2004, left listening because it was useful.
+     (3 options)
+ > What's my next assignment?
+  Agent HaX: We see where ENTROPY surfaces. Take one cell down and it shows you the next.
+  Agent HaX: Go home and get some sleep. We'll brief the next one when you're ready.
+  [end]
+
+[stats] spoken/narrated lines 90, choices 20, longest run without a choice 9 (debrief); runs>=6: briefing:8, briefing:7, victoria:7, debrief:9, debrief:9

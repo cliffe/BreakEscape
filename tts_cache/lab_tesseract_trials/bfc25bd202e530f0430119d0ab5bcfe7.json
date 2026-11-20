@@ -1,0 +1,13 @@
+{
+  "key": "bfc25bd202e530f0430119d0ab5bcfe7",
+  "npc": "narrator",
+  "text": "Bunting on the portico, music from the lawn, and a thousand new students trying to look as if they know where they're going.",
+  "voice": "Algenib",
+  "style": "Cinematic narrator for a spy thriller set at a British university. Calm, low, unhurried. Consistent British Received Pronunciation throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

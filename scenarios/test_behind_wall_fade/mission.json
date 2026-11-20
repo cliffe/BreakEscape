@@ -1,0 +1,7 @@
+{
+  "display_name": "Behind-the-wall Fade Test",
+  "description": "Technical test for the fade of a south room's back wall while the player stands behind it.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

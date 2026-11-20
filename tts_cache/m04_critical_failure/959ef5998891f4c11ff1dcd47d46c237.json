@@ -1,0 +1,13 @@
+{
+  "key": "959ef5998891f4c11ff1dcd47d46c237",
+  "npc": "narrator",
+  "text": "He sits against the bench with his wrists zipped, watching the laptop he'll never touch again.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:17:17Z"
+}

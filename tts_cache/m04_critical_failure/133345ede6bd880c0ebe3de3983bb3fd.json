@@ -1,0 +1,13 @@
+{
+  "key": "133345ede6bd880c0ebe3de3983bb3fd",
+  "npc": "narrator",
+  "text": "The cloner buzzes once. She hears it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:01:46Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "270a7bb07d0fc4568d166a27759ce6f3",
+  "npc": "night_security_supervisor",
+  "text": "Anything you want to send from that terminal comes through me first. Just process. It's a bad night for half a story getting out.",
+  "voice": "Enceladus",
+  "style": "Night security supervisor, fifties, eleven years on the same post. Consistent Estuary English -- flat Home Counties, quiet, unhurried. Courteous to the point of being soothing. When cornered the warmth switches off completely and what is underneath is calm, articulate and entirely unrepentant.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

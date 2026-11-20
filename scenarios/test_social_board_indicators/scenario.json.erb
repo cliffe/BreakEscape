@@ -1,0 +1,357 @@
+{
+  "scenario_brief": "Fixture for the intel board's optional defender indicators step and for needsGlobal readiness slots. The SOC Board lists each indicator whose tell is in a message you sent; Rhys's card on the Case File is ready once the defender review is done.",
+  "show_scenario_brief": "never",
+  "disableAttacks": true,
+  "startRoom": "office",
+  "startPosition": {
+    "x": 5,
+    "y": 6
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Agent",
+    "spriteSheet": "female_hacker_hood_v2"
+  },
+  "globalVariables": {
+    "se_intel_rhys_role": false,
+    "target_ready_rhys": false,
+    "osint_done": false,
+    "se_board_state": {},
+    "profile_done": false,
+    "defender_mitigate_done": false,
+    "defender_indicators_done": false,
+    "phish_rhys_landed": false,
+    "phish_rhys_attempts": 0
+  },
+  "objectives": [
+    {
+      "aimId": "defend",
+      "title": "Review the exposure",
+      "description": "Pick a mitigation for each exposure and mark the indicators from your own mail.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "defender_review",
+          "title": "Finish the SOC Board",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Test office",
+      "connections": {},
+      "objects": [
+        {
+          "id": "soc_board",
+          "type": "case-file",
+          "name": "SOC Board",
+          "takeable": false,
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "observations": "Where the defenders decide what to take down and what to block.",
+          "minigameData": {
+            "mode": "defender"
+          }
+        },
+        {
+          "id": "recon_file",
+          "type": "case-file",
+          "name": "Case File",
+          "takeable": false,
+          "position": {
+            "x": 7,
+            "y": 6
+          },
+          "observations": "What you know about the target.",
+          "minigameData": {
+            "mode": "recon"
+          }
+        }
+      ]
+    }
+  },
+  "social": {
+    "people": [
+      {
+        "id": "rhys",
+        "forms": {
+          "first": "Rhys",
+          "short": "Rhys",
+          "formal": "Mr Okafor",
+          "full": "Rhys Okafor"
+        },
+        "name": "Rhys Okafor",
+        "role": "Finance",
+        "address": "rhys@harrowgate.example"
+      }
+    ],
+    "intelFacts": {
+      "rhys_role": {
+        "text": "Rhys Okafor works in Finance at Harrowgate.",
+        "label": "Rhys Okafor, Finance",
+        "subject": "rhys",
+        "reduceNote": "Staff roles and names are listed on the public team page.",
+        "provides": [
+          {
+            "type": "name",
+            "about": "recipient",
+            "value": "rhys_full",
+            "label": "Rhys Okafor",
+            "kind": "distinctive"
+          }
+        ]
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "ops",
+          "kind": "given",
+          "mailbox": "ops_box",
+          "address": "you@tarnside.example",
+          "displayName": "You (Tarnside)",
+          "person": null,
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "ops_box"
+        }
+      ]
+    },
+    "phishTargets": [
+      {
+        "id": "rhys",
+        "address": "rhys@harrowgate.example",
+        "displayName": "Rhys Okafor",
+        "name": "Rhys Okafor",
+        "firstName": "Rhys",
+        "role": "Finance",
+        "subjects": [
+          {
+            "id": "subj_invoice",
+            "text": "Last month's supplier invoice",
+            "topic": "invoice"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "invoice"
+          ]
+        },
+        "templateSets": {
+          "from": [
+            "from_own"
+          ],
+          "greeting": [
+            "greet_plain"
+          ],
+          "pretext": [
+            "pretext_invoice",
+            "pretext_followup"
+          ],
+          "ask": [
+            "ask_confirm"
+          ]
+        },
+        "primedFor": {
+          "trusts": [
+            "*"
+          ],
+          "distinctiveValues": [
+            "rhys_full"
+          ],
+          "genericValues": [],
+          "minDistinct": 1,
+          "story": "Rhys works in Finance and will act on an invoice query that looks routine."
+        },
+        "requiredFactors": [
+          "senderTrust"
+        ],
+        "advisoryFactors": [
+          "senderAuth",
+          "addressedTo",
+          "pretextRelevant"
+        ],
+        "senderAuth": {
+          "domainPublishesAuth": false,
+          "spoofAligns": true,
+          "dmarcPolicy": "none"
+        },
+        "urgency": {
+          "advisoryMax": "medium"
+        },
+        "factorStrings": {
+          "open": {
+            "pass": "The subject got them to open it.",
+            "fail": "Nothing about the sender or subject made them open it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "The sender looked like someone they deal with.",
+            "fail": "They did not act on an unknown sender.",
+            "redFlag": null
+          },
+          "senderAuth": {
+            "pass": "The message would authenticate.",
+            "fail": "Authentication would fail and the mail could be flagged.",
+            "redFlag": "Check SPF, DKIM and DMARC alignment."
+          },
+          "addressedTo": {
+            "pass": "It greeted them acceptably.",
+            "fail": "The greeting did not fit.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "The pretext matched something they handle.",
+            "fail": "The pretext was not relevant to them.",
+            "redFlag": null
+          },
+          "attachmentPlausible": {
+            "pass": "The attachment fit the pretext.",
+            "fail": "No attachment, or the wrong kind.",
+            "redFlag": null
+          },
+          "urgencyCalibrated": {
+            "pass": "The urgency was judged well.",
+            "fail": "The urgency was overdone and read as pressure.",
+            "redFlag": "Pressure to act fast is a classic tell."
+          },
+          "linkCredible": {
+            "pass": "The link looked like the real site.",
+            "fail": "The link did not use a convincing host.",
+            "redFlag": "Hover a link before trusting it."
+          }
+        },
+        "replies": {
+          "landed": "Thanks — I'll pull last month's invoice and confirm the payment details shortly."
+        },
+        "outcome": {
+          "setGlobal": {
+            "phish_rhys_landed": true
+          }
+        }
+      }
+    ],
+    "intelBoard": {
+      "title": "Harrowgate: recon",
+      "people": [
+        "rhys"
+      ],
+      "readinessSlots": {
+        "rhys": [
+          {
+            "label": "Defender review",
+            "needsGlobal": [
+              "profile_done"
+            ],
+            "goalString": "The defenders have not finished their review yet.",
+            "doneString": "The defender review is done."
+          }
+        ]
+      }
+    },
+    "engagement": {
+      "scopeNote": "Fixture: Harrowgate is fictional.",
+      "defender": {
+        "title": "Harrowgate SOC: reduce the exposure",
+        "intro": "Pick what Harrowgate should change, then mark the indicators from your own mail.",
+        "onCompleteGlobal": "profile_done",
+        "steps": [
+          {
+            "id": "mitigate",
+            "onCompleteGlobal": "defender_mitigate_done"
+          },
+          {
+            "id": "indicators",
+            "onCompleteGlobal": "defender_indicators_done"
+          }
+        ],
+        "factMitigations": [
+          {
+            "intel": "rhys_role",
+            "step": "mitigate",
+            "options": [
+              {
+                "id": "hide_staff",
+                "text": "Tell staff never to give their name out",
+                "good": false,
+                "why": "People need to give their names to do their jobs. The public list is the problem."
+              },
+              {
+                "id": "role_pages",
+                "text": "List teams and role inboxes on the public page, not named staff",
+                "good": true,
+                "why": "An outsider can no longer pick a named person in Finance to write to."
+              }
+            ]
+          }
+        ],
+        "indicatorsIntro": "Each of these was in mail you sent. Would Harrowgate's filter block incoming mail on it?",
+        "indicators": [
+          {
+            "id": "ind_auth",
+            "tell": "senderAuth",
+            "block": true,
+            "step": "indicators",
+            "text": "The From address claims a Harrowgate domain but fails DMARC alignment.",
+            "why": "Mail claiming your own domain that fails alignment is safe to quarantine."
+          },
+          {
+            "id": "ind_urgent",
+            "tell": "urgencyCalibrated",
+            "block": false,
+            "step": "indicators",
+            "text": "The message pushes for action today.",
+            "why": "Real mail is urgent too. Warn the reader; blocking on tone alone stops real work."
+          },
+          {
+            "id": "ind_link",
+            "tell": "linkCredible",
+            "block": true,
+            "step": "indicators",
+            "text": "The link points at a look-alike of a Harrowgate domain.",
+            "why": "A look-alike of your own domain has no business reason to reach staff."
+          }
+        ]
+      }
+    },
+    "templates": {
+      "from_own": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "greet_plain": {
+        "part": "greeting",
+        "text": "Hello,",
+        "slots": []
+      },
+      "pretext_invoice": {
+        "part": "pretext",
+        "text": "Could you review last month's supplier invoice and confirm the payment details?",
+        "slots": [],
+        "urgency": "low"
+      },
+      "pretext_followup": {
+        "part": "pretext",
+        "text": "Following up on last month's supplier invoice — can you take a look when you have a moment?",
+        "slots": [],
+        "urgency": "low"
+      },
+      "ask_confirm": {
+        "part": "ask",
+        "text": "Please reply to confirm.",
+        "slots": []
+      }
+    }
+  }
+}

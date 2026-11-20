@@ -1,0 +1,13 @@
+{
+  "key": "834c74b72f1b2a97c5f88e8cc166a421",
+  "npc": "narrator",
+  "text": "Phantom doesn't look at you.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:02:34Z"
+}

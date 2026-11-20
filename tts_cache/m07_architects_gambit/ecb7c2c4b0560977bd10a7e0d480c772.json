@@ -1,0 +1,13 @@
+{
+  "key": "ecb7c2c4b0560977bd10a7e0d480c772",
+  "npc": "ray_hollis",
+  "text": "Badge station behind me prints contractor stock. You'd have got in either way. I know that.",
+  "voice": "Puck",
+  "style": "A facility guard in his mid-thirties, six months into taking money he has stopped being able to explain. Consistent working-class American accent, Pacific Northwest, throughout -- do not shift to any other accent. Low, flat pitch; slow, too-casual pace. Talks like a man rehearsing an answer he has already given himself.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:43:25Z"
+}

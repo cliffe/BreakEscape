@@ -1,0 +1,13 @@
+{
+  "key": "0ca8a3c6638cf25667978f3fb4e26439",
+  "npc": "ernesto_bautista",
+  "text": "Security put a call out for some visitor. That's their department.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:15Z"
+}

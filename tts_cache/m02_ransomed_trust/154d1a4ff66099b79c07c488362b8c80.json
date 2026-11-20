@@ -1,0 +1,13 @@
+{
+  "key": "154d1a4ff66099b79c07c488362b8c80",
+  "npc": "patient_bed4",
+  "text": "Fourteen minutes.",
+  "voice": "Rasalgethi",
+  "style": "Retired London bus engineer in his late sixties, on a ventilator. White working-class south Londoner -- dry, flat, unhurried vowels. Very weak, very short of breath, four or five words at a time with long gaps. Dignified, not frightened.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

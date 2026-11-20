@@ -1,0 +1,10 @@
+{
+  "scenario": "ca18_credential_attacks_at_scale",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

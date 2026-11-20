@@ -1,0 +1,13 @@
+{
+  "key": "f4c56f2de5fa014d3d84abd564707efa",
+  "npc": "kevin_park",
+  "text": "I requested modern electronic locks six months ago. Budget was \"under review.\"",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

@@ -1,0 +1,11 @@
+game 2388 (m07_theme)
+inventory phone, contact list: {"mg":"PhoneChatMinigame","paramsTheme":null,"appTheme":null,"terminalEls":0,"firstContact":"agent_0x99","contacts":2}
+shot m07_theme_list
+"opened the_architect"
+tapped the Architect in that session: {"mg":"PhoneChatMinigame","paramsTheme":null,"appTheme":null,"terminalEls":0,"firstContact":"agent_0x99","contacts":2}
+shot m07_theme_tapped
+"opened via barkSystem.openPhoneChat"
+opened directly on his contact: {"mg":"PhoneChatMinigame","paramsTheme":"terminal","appTheme":"terminal","terminalEls":1,"firstContact":null,"contacts":0}
+shot m07_theme_direct
+his call: {"mg":"PhoneChatMinigame","paramsTheme":"terminal","appTheme":"terminal","terminalEls":3,"firstContact":null,"contacts":0}
+shot m07_theme_call

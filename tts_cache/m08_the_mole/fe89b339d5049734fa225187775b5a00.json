@@ -1,0 +1,13 @@
+{
+  "key": "fe89b339d5049734fa225187775b5a00",
+  "npc": "agent_vector",
+  "text": "That's... that's exactly how the wrong person walks free. You spend your suspicion on the easy target, and the careful one just waits.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:33:29Z"
+}

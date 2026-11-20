@@ -1,0 +1,13 @@
+{
+  "key": "252e2f51b6399d431391d7c4be8e8e2d",
+  "npc": "narrator",
+  "text": "Albion Energy Storage, on the Trent near Newark. Saturday, half past six.",
+  "voice": "Charon",
+  "style": "Calm, precise narrator; measured industrial tone; unhurried",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis02_energy",
+  "source": "generate",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:03Z"
+}

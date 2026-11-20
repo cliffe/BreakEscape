@@ -1,0 +1,25 @@
+{
+  "scenario": "test_npc_needs",
+  "start_room": "test_room",
+  "nodes": [
+    {
+      "id": "door_store_room",
+      "label": "Store<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "store_room",
+      "label": "Store",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_store_room",
+      "to": "store_room",
+      "soft": false
+    }
+  ]
+}

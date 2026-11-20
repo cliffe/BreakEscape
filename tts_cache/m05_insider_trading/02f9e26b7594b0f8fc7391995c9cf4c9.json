@@ -1,0 +1,13 @@
+{
+  "key": "02f9e26b7594b0f8fc7391995c9cf4c9",
+  "npc": "owen_gallagher",
+  "text": "Here. IT's spare. I hope you don't find anything.",
+  "voice": "Puck",
+  "style": "Systems administrator in his late twenties. Speak with a consistent Manchester accent throughout — do not shift to any other accent. Mid-range pitch; quick, energetic pace. Friendly and a bit frazzled, sardonic about the state of the network, relieved someone competent has turned up.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:09:16Z"
+}

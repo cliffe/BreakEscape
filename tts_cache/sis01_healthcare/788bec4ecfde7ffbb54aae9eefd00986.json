@@ -1,0 +1,13 @@
+{
+  "key": "788bec4ecfde7ffbb54aae9eefd00986",
+  "npc": "sarah_mitchell",
+  "text": "The paper charts are in my desk drawer. Read hers twice.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

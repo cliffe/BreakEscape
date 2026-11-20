@@ -1,0 +1,13 @@
+{
+  "key": "5209f21d842a4833d3cd53fac00daac1",
+  "npc": "dr_sharma",
+  "text": "Yes. The NAS was quick, and only as clean as Ravi's scan. The cloud was clean and slow. Tape was clean and days away.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

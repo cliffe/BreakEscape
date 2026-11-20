@@ -1,0 +1,13 @@
+{
+  "scenario_brief": "Fixture: no social key, but a bad aim key and a duplicate id.",
+  "startRoom": "a",
+  "objectives": [
+    { "aimId": "a1", "title": "One", "status": "active", "order": 0, "tasks": [] },
+    { "aimId": "a2", "title": "Two", "status": "locked", "order": 1, "unlockCondition": { "globalVariable": "n", "greaterThan": 3 }, "tasks": [] }
+  ],
+  "globalVariables": { "n": 0 },
+  "rooms": {
+    "a": { "type": "room_office", "connections": { "north": "b" }, "objects": [ { "type": "notes", "id": "same", "name": "A" }, { "type": "mail_terminal", "id": "term", "name": "T" } ] },
+    "b": { "type": "room_office", "connections": { "south": "a" }, "objects": [ { "type": "notes", "id": "same", "name": "B" } ] }
+  }
+}

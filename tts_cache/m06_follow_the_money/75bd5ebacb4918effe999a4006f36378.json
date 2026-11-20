@@ -1,0 +1,13 @@
+{
+  "key": "75bd5ebacb4918effe999a4006f36378",
+  "npc": "narrator",
+  "text": "He stands and holds out his wrists.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:30:44Z"
+}

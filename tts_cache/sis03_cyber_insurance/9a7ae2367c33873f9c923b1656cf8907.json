@@ -1,0 +1,13 @@
+{
+  "key": "9a7ae2367c33873f9c923b1656cf8907",
+  "npc": "eleanor_vance",
+  "text": "And here's what makes it hard. The attacker did use that weakness. The threshold change at 03:22 went over the unauthenticated engineering protocol, the very thing the patch closes.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:07Z"
+}

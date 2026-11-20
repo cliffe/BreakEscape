@@ -1,0 +1,19 @@
+{
+"steps": [
+{"note": "R31 (struggling run A, F4): a player who keeps the cover with Vance maps the attack from the workshop before reading the dial, so the clock starts (HaX's night-crew text fires on clock_started, erb). The phone offers the crew topic without the dial; HaX says Vance must trust you first; the new cover-drop line works on flags alone; the ally Vance offers the alarm and states its cost; sounding it saves the crew when bank B vents."},
+{"set": {"briefing_played": true, "guard_admitted": true, "checkpoint_passed": true, "vance_spoken": true, "vance_trust_level": 10}},
+{"talk": "vance", "picks": ["Just doing the job", "staff records", "Use the cloner", "Thank you. I'll start"]},
+{"expect": {"vance_is_ally": false, "vance_met": true, "vance_provided_keycard": true}},
+{"set": {"relay_card_cloned": true, "server_room_reached": true, "flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true, "flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true, "all_flags_in": true, "attack_mechanism_known": true, "crew_hint_texted": true}},
+{"expect": {"clock_started": true}},
+{"talk": "phone", "picks": ["night crew out of Hall 2"]},
+{"said": ["The site's evacuation alarm is on Vance's desk.", "He'd have to trust you first. Tell him who you are.", "The clock's already running"]},
+{"talk": "vance", "picks": ["They're inside your control network, and I can prove it", "Deadly serious", "need your help", "I'm going"]},
+{"expect": {"vance_is_ally": true}},
+{"talk": "vance", "picks": ["Is anyone working in the halls", "Sound it"]},
+{"said": ["Nine. The module-swap crew", "All it costs you now is surprise", "They're moving. Nine of them"]},
+{"expect": {"crew_warned": true}},
+{"advance": 15},
+{"expect": {"racks_vented": true, "crew_lost": false}}
+]
+}

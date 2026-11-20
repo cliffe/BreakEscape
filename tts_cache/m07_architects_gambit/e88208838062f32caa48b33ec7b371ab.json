@@ -1,0 +1,13 @@
+{
+  "key": "e88208838062f32caa48b33ec7b371ab",
+  "npc": "opening_briefing_cutscene",
+  "text": "Portland has been on our contingency board since Thursday, with you pencilled in as the nearest agent. Tonight's intercept told us it was live, and gave us the other three.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:24:53Z"
+}

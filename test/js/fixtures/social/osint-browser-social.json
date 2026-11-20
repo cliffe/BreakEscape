@@ -1,0 +1,431 @@
+{
+  "people": [
+    {
+      "id": "pierce",
+      "kind": "cast",
+      "address": "m.pierce@ledgerwell.example",
+      "forms": {
+        "first": "Melanie",
+        "short": "Mel",
+        "formal": "Ms Pierce",
+        "full": "Melanie Pierce"
+      }
+    },
+    {
+      "id": "baker",
+      "kind": "cast",
+      "address": "j.baker@ledgerwell.example",
+      "forms": {
+        "first": "Jed",
+        "full": "Jed Baker"
+      }
+    },
+    {
+      "id": "hampshire",
+      "kind": "cast",
+      "address": "careers@ledgerwell.example",
+      "forms": {
+        "full": "Chris Hampshire"
+      }
+    },
+    {
+      "id": "leeds_baker",
+      "kind": "outsider",
+      "address": "j.baker@leedsplumbing.example",
+      "forms": {
+        "full": "J. Baker"
+      }
+    },
+    {
+      "id": "lord",
+      "kind": "cast",
+      "address": "s.lord@ledgerwell.example",
+      "forms": {
+        "full": "Sofia Lord"
+      }
+    }
+  ],
+  "intelFacts": {
+    "email_pattern": {
+      "text": "Staff addresses are first-initial.surname@ledgerwell.example.",
+      "subject": "company",
+      "provides": [
+        {
+          "type": "address",
+          "rule": "initial.surname@ledgerwell.example",
+          "label": "an address built from the pattern"
+        }
+      ],
+      "source": "r_pattern"
+    },
+    "pierce_role": {
+      "text": "Melanie Pierce works in Finance.",
+      "subject": "pierce",
+      "provides": [
+        {
+          "type": "name",
+          "about": "recipient",
+          "value": "pierce_first",
+          "label": "Melanie",
+          "kind": "generic"
+        },
+        {
+          "type": "team",
+          "value": "finance",
+          "label": "Finance",
+          "kind": "generic"
+        }
+      ],
+      "source": "row_pierce"
+    },
+    "pierce_trusts_jed": {
+      "text": "Melanie trusts Jed Baker.",
+      "subject": "pierce",
+      "provides": [
+        {
+          "type": "name",
+          "about": "sender",
+          "value": "baker_full",
+          "label": "Jed Baker",
+          "kind": "distinctive"
+        }
+      ],
+      "source": "post_pierce_jed"
+    },
+    "pierce_expects_balance_sheet": {
+      "text": "Melanie expects a Q3 balance sheet from Jed on Fridays.",
+      "subject": "pierce",
+      "provides": [
+        {
+          "type": "document",
+          "value": "balance_sheet",
+          "label": "the Q3 balance sheet",
+          "kind": "distinctive"
+        }
+      ],
+      "source": "note_q3"
+    },
+    "hampshire_careers": {
+      "text": "The careers inbox accepts CVs from anyone.",
+      "subject": "hampshire",
+      "provides": [],
+      "source": "careers_inbox"
+    },
+    "baker_namesake": {
+      "text": "There is a J. Baker in Leeds.",
+      "subject": "company",
+      "provides": [
+        {
+          "type": "name",
+          "about": "sender",
+          "value": "leeds_baker_full",
+          "label": "J. Baker",
+          "kind": "stale"
+        }
+      ],
+      "source": "r_namesake"
+    },
+    "lord_intern": {
+      "text": "Sofia Lord is an intern.",
+      "subject": "lord",
+      "source": "row_lord",
+      "provides": []
+    },
+    "hampshire_cv_backlog": {
+      "text": "Chris is behind on CVs before Friday.",
+      "subject": "hampshire",
+      "source": "post_hampshire_cvs",
+      "provides": []
+    },
+    "username_convention": {
+      "text": "Usernames look like first initial plus surname.",
+      "subject": "company",
+      "source": "f_author",
+      "provides": []
+    },
+    "old_org_chart": {
+      "text": "An old chart says Jed Baker manages the team.",
+      "subject": "company",
+      "source": "org_old_chart",
+      "stale": true,
+      "provides": []
+    }
+  },
+  "intelBoard": {
+    "title": "Engagement: Ledgerwell",
+    "people": [
+      "pierce",
+      "hampshire"
+    ],
+    "readinessSlots": {
+      "pierce": [
+        {
+          "label": "Who she is",
+          "needsIntel": [
+            "pierce_role"
+          ],
+          "goalString": "You still don't know what Melanie does here.",
+          "doneString": "She works in Finance."
+        },
+        {
+          "label": "Who she trusts",
+          "needsIntel": [
+            "pierce_trusts_jed",
+            "email_pattern"
+          ],
+          "goalString": "You still don't know who Melanie would open an email from.",
+          "doneString": "She trusts Jed Baker; you know the email pattern."
+        },
+        {
+          "label": "What she expects",
+          "needsIntel": [
+            "pierce_expects_balance_sheet"
+          ],
+          "goalString": "You still don't know what Melanie expects to receive.",
+          "doneString": "She expects a Q3 balance sheet from Jed on Fridays."
+        }
+      ],
+      "hampshire": [
+        {
+          "label": "Where mail goes",
+          "needsIntel": [
+            "hampshire_careers"
+          ],
+          "goalString": "You still don't know how Chris receives mail from strangers.",
+          "doneString": "The careers inbox accepts CVs from anyone."
+        }
+      ]
+    }
+  },
+  "engagement": {
+    "scopeNote": "You are authorised to test Ledgerwell. Stay inside the agreed scope."
+  },
+  "conceptCards": [
+    {
+      "id": "tool_hunter",
+      "title": "Hunter",
+      "text": "Hunter shows the address pattern most staff at a company domain follow."
+    },
+    {
+      "id": "tool_harvester",
+      "title": "theHarvester",
+      "text": "theHarvester collects emails, subdomains and names from public sources.\n\nIt returns every match, including namesakes."
+    },
+    {
+      "id": "tool_recon",
+      "title": "Recon-ng",
+      "text": "Recon-ng is a framework that automates lookups like these."
+    },
+    {
+      "id": "tool_exiftool",
+      "title": "exiftool",
+      "text": "exiftool reads the metadata a file carries: author, software and paths."
+    }
+  ],
+  "osint": {
+    "profile": "student",
+    "title": "Browser",
+    "sites": [
+      {
+        "id": "company",
+        "url": "ledgerwell.example",
+        "type": "company-site",
+        "name": "Ledgerwell",
+        "pages": [
+          {
+            "id": "team",
+            "title": "Our Team",
+            "blocks": [
+              {
+                "id": "row_pierce",
+                "kind": "staff",
+                "person": "pierce",
+                "name": "Melanie Pierce",
+                "role": "Finance",
+                "address": "m.pierce@ledgerwell.example",
+                "fact": "pierce_role"
+              },
+              {
+                "id": "row_baker",
+                "kind": "staff",
+                "person": "baker",
+                "name": "Jed Baker",
+                "role": "Finance",
+                "address": "j.baker@ledgerwell.example"
+              },
+              {
+                "id": "row_lord",
+                "kind": "staff",
+                "person": "lord",
+                "name": "Sofia Lord",
+                "role": "Intern",
+                "address": "s.lord@ledgerwell.example",
+                "fact": "lord_intern"
+              },
+              {
+                "kind": "link",
+                "text": "Read the team notes",
+                "to": "notes"
+              }
+            ]
+          },
+          {
+            "id": "notes",
+            "title": "Team notes",
+            "blocks": [
+              {
+                "id": "note_q3",
+                "kind": "p",
+                "text": "Jed: I'll send Mel the Q3 balance sheet on Friday.",
+                "fact": "pierce_expects_balance_sheet"
+              },
+              {
+                "id": "note_lunch",
+                "kind": "p",
+                "text": "Friday lunch is in the kitchen, bring a plate."
+              }
+            ]
+          },
+          {
+            "id": "careers",
+            "title": "Careers",
+            "blocks": [
+              {
+                "id": "careers_inbox",
+                "kind": "p",
+                "text": "Send your CV to careers@ledgerwell.example. We read every one.",
+                "fact": "hampshire_careers"
+              },
+              {
+                "id": "careers_decoy",
+                "kind": "p",
+                "text": "Apply early.",
+                "note": "Generic advice, nothing a pretext can use."
+              }
+            ]
+          },
+          {
+            "id": "archive",
+            "title": "Archive",
+            "blocks": [
+              {
+                "id": "org_old_chart",
+                "kind": "p",
+                "text": "Organisation chart (2019): Jed Baker manages the team.",
+                "fact": "old_org_chart"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "social",
+        "url": "friendface.example",
+        "type": "social",
+        "name": "friendface",
+        "profiles": [
+          {
+            "person": "pierce",
+            "handle": "@mpierce_official",
+            "posts": [
+              {
+                "id": "post_pierce_jed",
+                "text": "First week in the finance team. Jed's showing me the ropes!",
+                "fact": "pierce_trusts_jed"
+              }
+            ]
+          },
+          {
+            "person": "hampshire",
+            "showIf": "se_intel_hampshire_careers",
+            "posts": [
+              {
+                "id": "post_hampshire_cvs",
+                "text": "So many CVs to get through before Friday.",
+                "fact": "hampshire_cv_backlog"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "deck",
+        "url": "ledgerwell.example/Q3.pdf",
+        "type": "document",
+        "card": "tool_exiftool",
+        "fields": [
+          {
+            "id": "f_author",
+            "label": "Author",
+            "value": "mpierce",
+            "fact": "username_convention"
+          },
+          {
+            "id": "f_software",
+            "label": "Software",
+            "value": "Microsoft Excel"
+          },
+          {
+            "id": "f_path",
+            "label": "Path",
+            "value": "C:\\Users\\mpierce\\Documents"
+          }
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "id": "hunter",
+        "label": "Hunter lookup: ledgerwell.example",
+        "card": "tool_hunter",
+        "unlockedBy": {
+          "visited": "company.team"
+        },
+        "results": [
+          {
+            "id": "r_pattern",
+            "text": "Most addresses follow first-initial.surname@ledgerwell.example",
+            "fact": "email_pattern"
+          }
+        ]
+      },
+      {
+        "id": "name_baker",
+        "label": "Name search: J. Baker",
+        "card": "tool_harvester",
+        "unlockedBy": {
+          "visited": "company.team"
+        },
+        "results": [
+          {
+            "id": "r_jed",
+            "text": "J. Baker, Finance, ledgerwell.example",
+            "note": "Same employer and role as the Jed Baker on the team page."
+          },
+          {
+            "id": "r_namesake",
+            "text": "J. Baker, Plumbing, Leeds",
+            "fact": "baker_namesake"
+          }
+        ]
+      },
+      {
+        "id": "name_pierce_decoy",
+        "label": "Handle search: @mpierce_official",
+        "card": "tool_recon",
+        "unlockedBy": {
+          "visited": "deck"
+        },
+        "results": []
+      },
+      {
+        "id": "by_fact",
+        "label": "Fact-gated lookup",
+        "unlockedBy": {
+          "fact": "pierce_role"
+        },
+        "results": []
+      }
+    ]
+  }
+}

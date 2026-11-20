@@ -1,0 +1,4 @@
+game 2327 (m07_back)
+"back clicked"
+shot m07_back_after_back_1s
+back at 27164; records: [{"beatAt":27169,"completeAt":27169,"goneAt":27215}] rows: ["Call: No caller ID"]

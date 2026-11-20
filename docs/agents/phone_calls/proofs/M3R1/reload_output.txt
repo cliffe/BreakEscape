@@ -1,0 +1,6 @@
+history before flag 2: 11
+early: ledger text count = 1 | ledger lines played: True
+history before flag 2: 11
+pending: ledger text count = 1 | ledger lines played: True
+history before flag 2: 11
+delivered: ledger text count = 1 | ledger lines played: True

@@ -1,0 +1,29 @@
+{
+  "display_name": "The Curse of Beckett - Diffie-Hellman Key Exchange",
+  "description": "You stumble upon Beckett, a ghost town shrouded in mystery. After entering the only standing building, the door slams shut, trapping you inside. A note from Mayor McFluffins warns: 'Fail to escape, and you'll be turned into a llama.' Solve Diffie-Hellman key exchange puzzles involving the llama culprits Tim and Jullie, and break the curse before time runs out!",
+  "difficulty_level": 2,
+  "secgen_scenario": null,
+  "collection": "escape_room",
+  "cybok": [
+    {
+      "ka": "AC",
+      "topic": "Algorithms, Schemes and Protocols",
+      "keywords": ["CRYPTOGRAPHY - ASYMMETRIC - RSA", "DIFFIE-HELLMAN ALGORITHM"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Public-Key Cryptography",
+      "keywords": ["public-key encryption", "public-key signatures", "RSA MODULUS", "RSA PROBLEM", "RSA TRANSFORM"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Key Management",
+      "keywords": ["key generation"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Cryptographic Implementation",
+      "keywords": ["Cryptographic Libraries", "ENCRYPTION - TOOLS"]
+    }
+  ]
+}

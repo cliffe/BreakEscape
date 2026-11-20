@@ -1,0 +1,13 @@
+{
+  "key": "ecf09c79ecb834ec2c57e60b556bf60f",
+  "npc": "eleanor_vance",
+  "text": "The problem is: that mechanism fails if we don't enforce the conditions. If Albion can skip a deadline and we still cover the claim, the warranty becomes meaningless. And if the warranty is meaningless, the incentive disappears.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:28:39Z"
+}

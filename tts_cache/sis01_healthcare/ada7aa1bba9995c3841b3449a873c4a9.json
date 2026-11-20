@@ -1,0 +1,13 @@
+{
+  "key": "ada7aa1bba9995c3841b3449a873c4a9",
+  "npc": "sarah_mitchell",
+  "text": "Right. We'll manage on paper down here.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

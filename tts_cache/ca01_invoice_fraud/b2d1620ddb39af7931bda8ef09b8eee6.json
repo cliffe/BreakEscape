@@ -1,0 +1,13 @@
+{
+  "key": "b2d1620ddb39af7931bda8ef09b8eee6",
+  "npc": "adaeze_okafor",
+  "text": "Whoever asks you to move money or change bank details, ring them back on a number you already hold first. That habit is what I'd want from my team.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:47Z"
+}

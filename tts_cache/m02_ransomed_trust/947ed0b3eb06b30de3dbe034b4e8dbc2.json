@@ -1,0 +1,13 @@
+{
+  "key": "947ed0b3eb06b30de3dbe034b4e8dbc2",
+  "npc": "narrator",
+  "text": "She turns the lanyard over. Contractor, issued by IT, no name.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:55:42Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e9ab9072ba5c8e529c70c1249672c0a7",
+  "npc": "megan_oyelaran",
+  "text": "Not if I see you first.",
+  "voice": "Leda",
+  "style": "First-year student, bright, skint and competitive. Consistent Manchester accent throughout. Quick, wry, proud.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

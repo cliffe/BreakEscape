@@ -1,0 +1,14 @@
+{
+  "key": "a7d49fb2c6ce9fe302af0cdffb9e15ad",
+  "npc": "kevin_park",
+  "text": "Patricia figured it out. That's why he had her fired. And if I'd kept pushing... that would have been me next.",
+  "delivery": "his voice breaking slightly",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:32:05Z"
+}

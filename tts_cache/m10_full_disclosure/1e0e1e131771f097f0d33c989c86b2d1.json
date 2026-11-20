@@ -1,0 +1,13 @@
+{
+  "key": "1e0e1e131771f097f0d33c989c86b2d1",
+  "npc": "nightshade_table",
+  "text": "The defences, written out as he briefed them to me. Read it before you go down.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:49:39Z"
+}

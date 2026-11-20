@@ -1,0 +1,13 @@
+{
+  "key": "0a4d81ccc230d581ec23a12d60ceabd7",
+  "npc": "narrator",
+  "text": "Then he is gone down the service stair, past a schedule that no longer has his sequence on it.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A building full of machinery that is about to be used against people.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:27:49Z"
+}

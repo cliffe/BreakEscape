@@ -1,0 +1,13 @@
+{
+  "key": "142b716c3ca57e3d3b00f6f9077a6f57",
+  "npc": "grace",
+  "text": "That printer jammed again.",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:20:17Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "3747f1aab6c01a156fc40ef4db80e5cb",
+  "npc": "eleanor_vance",
+  "text": "They did, two weeks after the deadline had passed. A request doesn't suspend the warranty's operative effect unless it's been accepted in writing. And it wasn't.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:21:07Z"
+}

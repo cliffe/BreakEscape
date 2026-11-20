@@ -1,0 +1,4 @@
+{"t":1794507535144,"npc_id":"old_coyote","text":"Hold on, sis, I'll call you back. Hey. Building's closed. Who let you in?","delivery":"first sentence into the phone, then sharper, to a stranger","status":200}
+{"t":1794507536398,"npc_id":"old_coyote","text":"She didn't tell me. She doesn't tell me much. Go ahead.","delivery":null,"status":503}
+{"t":1794507548556,"npc_id":"recruiter","text":"Agent 0x00, with a card cloner, a safe cracker and a handler listening. You're standing in my filing system. I thought I'd call.","delivery":null,"status":200}
+{"t":1794507555175,"npc_id":"old_coyote","text":"Still auditing?","delivery":null,"status":503}

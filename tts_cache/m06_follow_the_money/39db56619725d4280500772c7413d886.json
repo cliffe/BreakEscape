@@ -1,0 +1,13 @@
+{
+  "key": "39db56619725d4280500772c7413d886",
+  "npc": "narrator",
+  "text": "He holds your eye while he dials. A short exchange, then a longer silence on the other end.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:20:11Z"
+}

@@ -1,0 +1,14 @@
+{
+  "key": "70575aa7b0521ddfe3e447c1d631d559",
+  "npc": "maya_chen",
+  "text": "Is it safe to talk?",
+  "delivery": "low and wary",
+  "voice": "Leda",
+  "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:22:42Z"
+}

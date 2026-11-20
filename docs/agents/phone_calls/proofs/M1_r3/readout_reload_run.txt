@@ -1,0 +1,24 @@
+game 2151 (readout_reload)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+after flag1: "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false"
+walk into the stacks and open HaX's read-out:
+  room: "restricted_stacks"
+  read-out toast tapped at 1s
+play past the card line (thread stays open at [Got it]):
+  after the card line: "flag1_submitted=true flag1_read_heard=true flag1_read_done=true nightshade_rang=false"  (flag1_read_done expected true, nightshade_rang still false)
+shot readout_reload_readout_played
+persist state, then close + reload with a millisecond gap (inside the 3 s ring delay):
+  after reload: "flag1_submitted=true flag1_read_heard=true flag1_read_done=true nightshade_rang=true"  (the close mapping's +3 s timer died with the page)
+shot readout_reload_after_reload
+the room_entered backstop rings on resume or the next room move (one ring):
+shot readout_reload_ring_after_reload
+  ring: {"t":22.7,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  "flag1_submitted=true flag1_read_heard=true flag1_read_done=true nightshade_rang=true"
+chose: "1. Why help me?"
+chose: "1. Noted."
+shot readout_reload_after_end
+one ring only (walk to another room, expect none):
+  room: "restricted_stacks"
+  no ring in 6s (good)
+  "flag1_submitted=true flag1_read_heard=true flag1_read_done=true nightshade_rang=true"
+/tts requests: ["nightshade_phone","Agent 0x00. I'd ask how the leave was, but HaX would tell me"] ["nightshade_phone","Sorensen's card is on custom keys. Crack the keys first, the"] ["nightshade_phone","That plan cabinet isn't on her schedule. It never was. Whate"] ["nightshade_phone","I'd rather be useful than watched. Tonight I get to be both."] ["nightshade_phone","Every lock is a promise somebody made years ago. Most of the"] 

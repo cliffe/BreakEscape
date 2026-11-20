@@ -1,0 +1,13 @@
+{
+  "key": "d7bf63c6ca9be963927f556418f8b610",
+  "npc": "narrator",
+  "text": "She sits very still at her desk and doesn't look up. The police are on their way up for her, and she knows it.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:03:27Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "a85f62ce898a34d096b6500ec4ae8285",
+  "npc": "tom_shaw",
+  "text": "Go on then. You first.",
+  "voice": "Fenrir",
+  "style": "University lecturer running first-year induction, keen on practical hacking challenges. Consistent West Yorkshire (Huddersfield) accent throughout. Warm, encouraging, quick, a bit dry.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

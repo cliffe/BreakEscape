@@ -1,0 +1,12 @@
+Make portrait for Lucia Moreno
+A Mexican-American woman in her early thirties, a confident film-noir private detective. Olive-brown skin, dark wavy shoulder-length hair, deep red lipstick, dark observant eyes. She wears a belted camel-coloured trench coat over a black high-neck blouse, black high-waisted trousers, and a black fedora tilted slightly. No cigarette, no text, no logos.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain mid-grey background, no gradient, no pattern
+
+# agy 2026-11-03. Reframed with reframe_portrait.py --flip.
+# Approved by the user 2026-11-03 as noir_f1.

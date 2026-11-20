@@ -1,0 +1,24 @@
+{
+  "display_name": "BLE Scanner Test",
+  "description": "Test scenario for BLE scanner minigame and pairing mechanics.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing",
+  "cybok": [
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["BLE authentication", "Pairing", "PIN-based pairing"]
+    },
+    {
+      "ka": "HS",
+      "topic": "Hardware Security",
+      "keywords": ["Bluetooth Low Energy", "Wireless protocols", "Device discovery"]
+    },
+    {
+      "ka": "CPS",
+      "topic": "Cyber-Physical Security",
+      "keywords": ["BLE attacks", "Handshake capture", "Default credentials"]
+    }
+  ]
+}

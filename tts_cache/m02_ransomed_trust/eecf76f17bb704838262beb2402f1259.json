@@ -1,0 +1,13 @@
+{
+  "key": "eecf76f17bb704838262beb2402f1259",
+  "npc": "narrator",
+  "text": "Dr. Sarah Kim stands at the window with a mobile in each hand. She has been up since three, and good tailoring can't hide it.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

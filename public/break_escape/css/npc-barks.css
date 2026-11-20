@@ -1,0 +1,301 @@
+/* NPC bark toasts: two kinds in two places (UI decisions H1 and B2, option A of each).
+ *
+ * Phone texts (.npc-bark--phone in #npc-bark-container): a phone notification in the notify lane
+ * under the system toasts. Square frame, green stripe, phone icon, headshot; a tap opens the thread.
+ * Speech from someone in the building who is out of view (.npc-bark--speech in
+ * #npc-speech-container): a line in the message lane above the caption, with a headshot and an
+ * arrow towards the speaker. Not clickable, so it never takes a tap meant for Block or the room.
+ *
+ * ui/hud-lanes.js places both containers at run time (top, bottom, width and max-height inline);
+ * the positions below are the fallback before it runs. Pixel art: 2px borders or the theme's
+ * 9-slice skin, GNF at whole sizes, no radius, shadows or gradients. */
+
+/* Fallback place: above the inventory, as before the lanes */
+#npc-bark-container {
+  position: fixed;
+  bottom: 80px; /* Above inventory bar */
+  left: 20px;
+  z-index: 9999 !important;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 300px;
+}
+
+#npc-speech-container {
+  position: fixed;
+  bottom: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw / var(--hud-zoom, 1) - 32px));
+  z-index: 9999 !important;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Placed by the lanes: the width and left come inline, so no centring transform */
+#npc-speech-container[data-lane] {
+  transform: none;
+}
+
+/* While a minigame is open, new barks wait (npc-barks.js) and any already showing
+   sit behind it rather than over its panels (D5). Minigames are z-index 1500. */
+body.minigame-holds-barks #npc-bark-container,
+body.minigame-holds-barks #npc-speech-container {
+  z-index: 1400 !important;
+}
+
+/* An open dialog or modal (tutorial, confirm, pause menu, preferences, the ending)
+   keeps both bark lanes under it, so a line never covers its buttons and a phone text never
+   takes a tap meant for them (review R1 M1). New barks wait for it to close (npc-barks.js);
+   the tutorial overlay is 1400. ui/hud-lanes.js DIALOG_SELECTORS holds barks for the same
+   layers; it lists #player-preferences-modal by id and checks its computed
+   display, where this rule needs the classes and inline styles that show them. */
+body:has(.tutorial-prompt-overlay, .tutorial-overlay, .game-confirm-overlay, #game-menu-overlay.visible,
+  #player-preferences-modal[style*="flex"],
+  .ending-check-overlay, .success-screen-overlay) :is(#npc-bark-container, #npc-speech-container) {
+  z-index: 1390 !important;
+}
+
+/* Phone chat: speech in the building waits until the phone closes and any line already showing
+   sits under the phone (minigames are 1500). Phone texts from other contacts stay on top: they
+   flag another thread, and on a wide screen the notify lane keeps right of the phone. */
+body:has([data-minigame="phone-chat"]) #npc-speech-container {
+  z-index: 1400 !important;
+}
+
+/* On the phone layout the notify lane runs across the open phone: every bark waits until it
+   closes (npc-barks.js), and a text already showing sits under the phone, so it cannot take a
+   tap meant for the back button (review R2 M2). The back button counts the unread texts. */
+body.hud-compact:has([data-minigame="phone-chat"]) #npc-bark-container {
+  z-index: 1400 !important;
+}
+
+/* The notify lane is full: phone texts step aside one at a time, oldest first, while a toast or
+   speech shows (ui/hud-lanes.js); a hidden text's countdown waits. They are still in the phone
+   thread, with the unread badge. */
+#npc-bark-container .npc-bark.hud-lane-yield {
+  display: none;
+}
+
+/* "Clear all" is for two or more texts on screen: with fewer showing (the rest stepped aside)
+   it would stand alone in the lane. Its inline display comes from npc-barks.js. */
+#npc-bark-container:not(:has(.npc-bark:not(.hud-lane-yield) ~ .npc-bark:not(.hud-lane-yield))) .npc-bark-clear-all {
+  display: none !important;
+}
+
+/* Phones: a little less padding, so more of the room shows */
+body.hud-compact .npc-bark {
+  padding: 4px 8px;
+}
+body.hud-compact .npc-bark--phone {
+  padding-left: 14px;
+}
+
+/* Shared parts */
+.npc-bark {
+  position: relative;
+  box-sizing: border-box;
+  color: #ffffff;
+  background: #10161e;
+  border: 2px solid #000000;
+  padding: 8px 12px;
+  font-family: 'GNF', monospace;
+  font-size: 18px;
+  line-height: 1.4;
+  box-shadow: none;
+  word-wrap: break-word;
+  animation: bark-slide-up 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The sender's face: a 32x32 headshot at 1x (or an authored avatar) */
+.npc-bark-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border: 2px solid #000;
+  box-sizing: content-box;
+}
+.npc-bark-head[hidden] { display: none; }
+
+.npc-bark-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Phone text: a phone notification */
+.npc-bark--phone {
+  pointer-events: auto;
+  cursor: pointer;
+  /* room for the green stripe inside the frame */
+  padding-left: 16px;
+}
+.npc-bark--phone::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: #5fcf69; /* phone screen green */
+}
+.npc-bark--phone:hover {
+  background: #18222e;
+}
+.npc-bark-phone-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 4px;
+  image-rendering: pixelated;
+}
+
+/* Speech in the building: a line in the message lane, never a button */
+.npc-bark--speech {
+  pointer-events: none;
+  cursor: default;
+  width: 100%;
+  background: #0c0c12;
+  border-color: #ffffff;
+}
+
+/* Which way the speaker is: 8x7 and 7x7 pixel arrows (with a 1px outline) at 2x, turned in
+   quarter turns only */
+.npc-bark-arrow {
+  flex-shrink: 0;
+  width: 20px;
+  height: 18px;
+  background-repeat: no-repeat;
+  background-size: 20px 18px;
+  image-rendering: pixelated;
+}
+.npc-bark-arrow[hidden] { display: none; }
+.npc-bark-arrow[data-dir="e"], .npc-bark-arrow[data-dir="w"],
+.npc-bark-arrow[data-dir="n"], .npc-bark-arrow[data-dir="s"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='9' viewBox='0 0 10 9' shape-rendering='crispEdges'%3E%3Cg fill='%23000'%3E%3Crect x='0' y='2' width='1' height='1'/%3E%3Crect x='0' y='3' width='1' height='1'/%3E%3Crect x='0' y='4' width='1' height='1'/%3E%3Crect x='0' y='5' width='1' height='1'/%3E%3Crect x='0' y='6' width='1' height='1'/%3E%3Crect x='1' y='2' width='1' height='1'/%3E%3Crect x='1' y='3' width='1' height='1'/%3E%3Crect x='1' y='4' width='1' height='1'/%3E%3Crect x='1' y='5' width='1' height='1'/%3E%3Crect x='1' y='6' width='1' height='1'/%3E%3Crect x='2' y='2' width='1' height='1'/%3E%3Crect x='2' y='3' width='1' height='1'/%3E%3Crect x='2' y='4' width='1' height='1'/%3E%3Crect x='2' y='5' width='1' height='1'/%3E%3Crect x='2' y='6' width='1' height='1'/%3E%3Crect x='3' y='2' width='1' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3Crect x='3' y='4' width='1' height='1'/%3E%3Crect x='3' y='5' width='1' height='1'/%3E%3Crect x='3' y='6' width='1' height='1'/%3E%3Crect x='4' y='0' width='1' height='1'/%3E%3Crect x='4' y='1' width='1' height='1'/%3E%3Crect x='4' y='2' width='1' height='1'/%3E%3Crect x='4' y='3' width='1' height='1'/%3E%3Crect x='4' y='4' width='1' height='1'/%3E%3Crect x='4' y='5' width='1' height='1'/%3E%3Crect x='4' y='6' width='1' height='1'/%3E%3Crect x='4' y='7' width='1' height='1'/%3E%3Crect x='4' y='8' width='1' height='1'/%3E%3Crect x='5' y='0' width='1' height='1'/%3E%3Crect x='5' y='1' width='1' height='1'/%3E%3Crect x='5' y='2' width='1' height='1'/%3E%3Crect x='5' y='3' width='1' height='1'/%3E%3Crect x='5' y='4' width='1' height='1'/%3E%3Crect x='5' y='5' width='1' height='1'/%3E%3Crect x='5' y='6' width='1' height='1'/%3E%3Crect x='5' y='7' width='1' height='1'/%3E%3Crect x='5' y='8' width='1' height='1'/%3E%3Crect x='6' y='0' width='1' height='1'/%3E%3Crect x='6' y='1' width='1' height='1'/%3E%3Crect x='6' y='2' width='1' height='1'/%3E%3Crect x='6' y='3' width='1' height='1'/%3E%3Crect x='6' y='4' width='1' height='1'/%3E%3Crect x='6' y='5' width='1' height='1'/%3E%3Crect x='6' y='6' width='1' height='1'/%3E%3Crect x='6' y='7' width='1' height='1'/%3E%3Crect x='6' y='8' width='1' height='1'/%3E%3Crect x='7' y='1' width='1' height='1'/%3E%3Crect x='7' y='2' width='1' height='1'/%3E%3Crect x='7' y='3' width='1' height='1'/%3E%3Crect x='7' y='4' width='1' height='1'/%3E%3Crect x='7' y='5' width='1' height='1'/%3E%3Crect x='7' y='6' width='1' height='1'/%3E%3Crect x='7' y='7' width='1' height='1'/%3E%3Crect x='8' y='2' width='1' height='1'/%3E%3Crect x='8' y='3' width='1' height='1'/%3E%3Crect x='8' y='4' width='1' height='1'/%3E%3Crect x='8' y='5' width='1' height='1'/%3E%3Crect x='8' y='6' width='1' height='1'/%3E%3Crect x='9' y='3' width='1' height='1'/%3E%3Crect x='9' y='4' width='1' height='1'/%3E%3Crect x='9' y='5' width='1' height='1'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='3' width='1' height='1'/%3E%3Crect x='1' y='4' width='1' height='1'/%3E%3Crect x='1' y='5' width='1' height='1'/%3E%3Crect x='2' y='3' width='1' height='1'/%3E%3Crect x='2' y='4' width='1' height='1'/%3E%3Crect x='2' y='5' width='1' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3Crect x='3' y='4' width='1' height='1'/%3E%3Crect x='3' y='5' width='1' height='1'/%3E%3Crect x='4' y='3' width='1' height='1'/%3E%3Crect x='4' y='4' width='1' height='1'/%3E%3Crect x='4' y='5' width='1' height='1'/%3E%3Crect x='5' y='1' width='1' height='1'/%3E%3Crect x='5' y='2' width='1' height='1'/%3E%3Crect x='5' y='3' width='1' height='1'/%3E%3Crect x='5' y='4' width='1' height='1'/%3E%3Crect x='5' y='5' width='1' height='1'/%3E%3Crect x='5' y='6' width='1' height='1'/%3E%3Crect x='5' y='7' width='1' height='1'/%3E%3Crect x='6' y='2' width='1' height='1'/%3E%3Crect x='6' y='3' width='1' height='1'/%3E%3Crect x='6' y='4' width='1' height='1'/%3E%3Crect x='6' y='5' width='1' height='1'/%3E%3Crect x='6' y='6' width='1' height='1'/%3E%3Crect x='7' y='3' width='1' height='1'/%3E%3Crect x='7' y='4' width='1' height='1'/%3E%3Crect x='7' y='5' width='1' height='1'/%3E%3Crect x='8' y='4' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+.npc-bark-arrow[data-dir="ne"], .npc-bark-arrow[data-dir="nw"],
+.npc-bark-arrow[data-dir="sw"], .npc-bark-arrow[data-dir="se"] {
+  width: 18px;
+  background-size: 18px 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cg fill='%23000'%3E%3Crect x='0' y='5' width='1' height='1'/%3E%3Crect x='0' y='6' width='1' height='1'/%3E%3Crect x='0' y='7' width='1' height='1'/%3E%3Crect x='0' y='8' width='1' height='1'/%3E%3Crect x='1' y='4' width='1' height='1'/%3E%3Crect x='1' y='5' width='1' height='1'/%3E%3Crect x='1' y='6' width='1' height='1'/%3E%3Crect x='1' y='7' width='1' height='1'/%3E%3Crect x='1' y='8' width='1' height='1'/%3E%3Crect x='2' y='0' width='1' height='1'/%3E%3Crect x='2' y='1' width='1' height='1'/%3E%3Crect x='2' y='2' width='1' height='1'/%3E%3Crect x='2' y='3' width='1' height='1'/%3E%3Crect x='2' y='4' width='1' height='1'/%3E%3Crect x='2' y='5' width='1' height='1'/%3E%3Crect x='2' y='6' width='1' height='1'/%3E%3Crect x='2' y='7' width='1' height='1'/%3E%3Crect x='2' y='8' width='1' height='1'/%3E%3Crect x='3' y='0' width='1' height='1'/%3E%3Crect x='3' y='1' width='1' height='1'/%3E%3Crect x='3' y='2' width='1' height='1'/%3E%3Crect x='3' y='3' width='1' height='1'/%3E%3Crect x='3' y='4' width='1' height='1'/%3E%3Crect x='3' y='5' width='1' height='1'/%3E%3Crect x='3' y='6' width='1' height='1'/%3E%3Crect x='3' y='7' width='1' height='1'/%3E%3Crect x='4' y='0' width='1' height='1'/%3E%3Crect x='4' y='1' width='1' height='1'/%3E%3Crect x='4' y='2' width='1' height='1'/%3E%3Crect x='4' y='3' width='1' height='1'/%3E%3Crect x='4' y='4' width='1' height='1'/%3E%3Crect x='4' y='5' width='1' height='1'/%3E%3Crect x='4' y='6' width='1' height='1'/%3E%3Crect x='5' y='0' width='1' height='1'/%3E%3Crect x='5' y='1' width='1' height='1'/%3E%3Crect x='5' y='2' width='1' height='1'/%3E%3Crect x='5' y='3' width='1' height='1'/%3E%3Crect x='5' y='4' width='1' height='1'/%3E%3Crect x='5' y='5' width='1' height='1'/%3E%3Crect x='6' y='0' width='1' height='1'/%3E%3Crect x='6' y='1' width='1' height='1'/%3E%3Crect x='6' y='2' width='1' height='1'/%3E%3Crect x='6' y='3' width='1' height='1'/%3E%3Crect x='6' y='4' width='1' height='1'/%3E%3Crect x='6' y='5' width='1' height='1'/%3E%3Crect x='6' y='6' width='1' height='1'/%3E%3Crect x='7' y='0' width='1' height='1'/%3E%3Crect x='7' y='1' width='1' height='1'/%3E%3Crect x='7' y='2' width='1' height='1'/%3E%3Crect x='7' y='3' width='1' height='1'/%3E%3Crect x='7' y='4' width='1' height='1'/%3E%3Crect x='7' y='5' width='1' height='1'/%3E%3Crect x='7' y='6' width='1' height='1'/%3E%3Crect x='8' y='0' width='1' height='1'/%3E%3Crect x='8' y='1' width='1' height='1'/%3E%3Crect x='8' y='2' width='1' height='1'/%3E%3Crect x='8' y='3' width='1' height='1'/%3E%3Crect x='8' y='4' width='1' height='1'/%3E%3Crect x='8' y='5' width='1' height='1'/%3E%3Crect x='8' y='6' width='1' height='1'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Crect x='1' y='6' width='1' height='1'/%3E%3Crect x='1' y='7' width='1' height='1'/%3E%3Crect x='2' y='5' width='1' height='1'/%3E%3Crect x='2' y='6' width='1' height='1'/%3E%3Crect x='3' y='1' width='1' height='1'/%3E%3Crect x='3' y='4' width='1' height='1'/%3E%3Crect x='3' y='5' width='1' height='1'/%3E%3Crect x='4' y='1' width='1' height='1'/%3E%3Crect x='4' y='3' width='1' height='1'/%3E%3Crect x='4' y='4' width='1' height='1'/%3E%3Crect x='5' y='1' width='1' height='1'/%3E%3Crect x='5' y='2' width='1' height='1'/%3E%3Crect x='5' y='3' width='1' height='1'/%3E%3Crect x='6' y='1' width='1' height='1'/%3E%3Crect x='6' y='2' width='1' height='1'/%3E%3Crect x='7' y='1' width='1' height='1'/%3E%3Crect x='7' y='2' width='1' height='1'/%3E%3Crect x='7' y='3' width='1' height='1'/%3E%3Crect x='7' y='4' width='1' height='1'/%3E%3Crect x='7' y='5' width='1' height='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+.npc-bark-arrow[data-dir="w"], .npc-bark-arrow[data-dir="sw"] { transform: rotate(180deg); }
+.npc-bark-arrow[data-dir="n"], .npc-bark-arrow[data-dir="nw"] { transform: rotate(-90deg); }
+.npc-bark-arrow[data-dir="s"], .npc-bark-arrow[data-dir="se"] { transform: rotate(90deg); }
+
+/* Dismiss (x) on a phone text */
+.npc-bark-dismiss {
+  flex-shrink: 0;
+  align-self: flex-start;
+  min-width: 32px;
+  min-height: 32px;
+  margin: -6px -8px -6px 0;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 20px;
+  font-family: 'GNF', monospace;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.npc-bark-dismiss:hover { color: #5fcf69; }
+
+/* "Clear all": a small framed button at the top of the phone stack */
+.npc-bark-clear-all {
+  pointer-events: auto;
+  background: #10161e;
+  color: #5fcf69;
+  border: 2px solid #000;
+  font-family: 'GNF', monospace;
+  font-size: 14px;
+  padding: 4px 10px;
+  cursor: pointer;
+  box-shadow: none;
+  align-self: flex-start;
+}
+.npc-bark-clear-all:hover { background: #18222e; }
+
+@keyframes bark-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bark-slide-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+/* Phone access button (will be added later) */
+.phone-access-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 64px;
+  height: 64px;
+  background: #5fcf69;
+  border: 2px solid #000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  z-index: 9998;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.phone-access-button:hover {
+  background: #4fb759;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.phone-access-button-icon {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.phone-access-button-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #ff0000;
+  color: #fff;
+  border: 2px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: 'GNF', monospace;
+}

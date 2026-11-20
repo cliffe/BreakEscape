@@ -1,0 +1,14 @@
+{
+  "key": "d750124ee127a43706416ac5d0a2a26f",
+  "npc": "hodan_warsame",
+  "text": "Don't come any nearer. I'm on the radio if I need to be.",
+  "delivery": "frightened, holding it together",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:36Z"
+}

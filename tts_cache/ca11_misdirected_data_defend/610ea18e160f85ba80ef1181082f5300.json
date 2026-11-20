@@ -1,0 +1,13 @@
+{
+  "key": "610ea18e160f85ba80ef1181082f5300",
+  "npc": "tomasz_wisniewski",
+  "text": "That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:31Z"
+}

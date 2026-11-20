@@ -1,0 +1,5 @@
+{"t":1794503983542,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794503984147,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794504000096,"npc_id":"desk_contact","text":"Desk line. Go ahead.","delivery":null,"status":503}
+{"t":1794504016516,"npc_id":"desk_contact","text":"Back again. This is the desk line, second time round.","delivery":null,"status":503}
+{"t":1794504018087,"npc_id":"desk_contact","text":"Goodbye.","delivery":null,"status":503}

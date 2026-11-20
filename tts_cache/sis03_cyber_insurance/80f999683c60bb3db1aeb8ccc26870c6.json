@@ -1,0 +1,13 @@
+{
+  "key": "80f999683c60bb3db1aeb8ccc26870c6",
+  "npc": "eleanor_vance",
+  "text": "You've traced the causal chain correctly. That's sufficient to confirm this is a covered cyber event — the policy applies.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:20:06Z"
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "ca03_helpdesk_reset",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

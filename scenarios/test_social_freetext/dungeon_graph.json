@@ -1,0 +1,10 @@
+{
+  "scenario": "test_social_freetext",
+  "start_room": "ft_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

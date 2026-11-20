@@ -1,0 +1,11 @@
+{"steps":[
+{"note":"R18 (Danny callback): the player speaks up for Danny's survey to Sterling, Danny is protected, and HaX passes it on in the debrief."},
+{"set":{"briefing_played":true,"mission_phase":"act2_infiltration","clone_call_done":true,"exec_wing_entered":true,"exec_office_entered":true,"usb_seen":true,"draft_seen":true,"roster_seen":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true,"transaction_log_read":true,"lore_history_found":true,"catalogue_seen":true}},
+{"talk":"danny","picks":["lied to you","testify","Sterling goes down"]},
+{"set":{"night_confrontation_ready":true}},
+{"talk":"victoria","picks":["SAFETYNET. And I know","Ten thousand","Danny drew","Phase 2 directive"]},
+{"talk":"debrief","picks":["source than a headline","One hand","map to their whole","tell him","next assignment"]},
+{"note":"control: same route without speaking up for Danny (no callback line)"},
+{"set":{"defended_danny":false}},
+{"talk":"debrief","reload":true,"picks":["source than a headline","One hand","map to their whole","tell him","next assignment"]}
+]}

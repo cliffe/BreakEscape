@@ -1,0 +1,251 @@
+{
+ "steps": [
+  {
+   "note": "R27 (engine regression 2026-10-17, R1/R2/R6; blind A M1). Vector punched and left standing, then a Restart calms him (npc_hostile_state_changed {isHostile:false, reset:true}): vector_hostile clears, so the credits and debrief don't record the strike, and a second punch latches it again. Vector accused, then apologised to: the debrief and credits say so. The Director's access beat talks about the window, not maps; Nightshade turns rather than looks up from his desk."
+  },
+  {
+   "talk": "briefing"
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "I'm ready"
+   ]
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "agent_vector",
+    "isHostile": true
+   }
+  },
+  {
+   "expect": {
+    "vector_hostile": true
+   }
+  },
+  {
+   "said": [
+    "He won't talk to you while he's like this"
+   ],
+   "notSaid": [
+    "again tonight",
+    "Keep pressing Q"
+   ]
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "agent_vector",
+    "isHostile": false
+   }
+  },
+  {
+   "expect": {
+    "vector_hostile": true
+   }
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "agent_vector",
+    "isHostile": false,
+    "reset": true
+   }
+  },
+  {
+   "expect": {
+    "vector_hostile": false
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "notSaid": [
+    "VECTOR: Struck on the ops floor"
+   ]
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "agent_vector",
+    "isHostile": true
+   }
+  },
+  {
+   "expect": {
+    "vector_hostile": true
+   }
+  },
+  {
+   "event": "npc_hostile_state_changed",
+   "data": {
+    "npcId": "agent_vector",
+    "isHostile": false,
+    "reset": true
+   }
+  },
+  {
+   "expect": {
+    "vector_hostile": false
+   }
+  },
+  {
+   "talk": "vector",
+   "reload": "page",
+   "picks": [
+    "I think it's you",
+    "I was wrong to say that",
+    "That's all"
+   ]
+  },
+  {
+   "expect": {
+    "accused_vector": true,
+    "vector_apologised": true
+   }
+  },
+  {
+   "talk": "phantom",
+   "picks": [
+    "Where were you",
+    "We'll talk"
+   ]
+  },
+  {
+   "talk": "nightshade",
+   "picks": [
+    "Where were you",
+    "We're done"
+   ]
+  },
+  {
+   "said": [
+    "Nightshade turns as you come in",
+    "His desk behind him is bare"
+   ],
+   "notSaid": [
+    "looks up from a desk"
+   ]
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "I'll need access",
+    "Step up beside him",
+    "Understood"
+   ]
+  },
+  {
+   "said": [
+    "looking out of the window",
+    "look out through the slats"
+   ],
+   "notSaid": [
+    "maps"
+   ]
+  },
+  {
+   "read": "password_sticky_note"
+  },
+  {
+   "enter": "security_archives"
+  },
+  {
+   "read": "badge_audit_printout"
+  },
+  {
+   "read": "timeline_reconstruction"
+  },
+  {
+   "talk": "nightshade",
+   "picks": [
+    "door log has you",
+    "We're done"
+   ]
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "I can name the leak",
+    "10:38",
+    "Nightshade.",
+    "out of the lab at 10:32",
+    "confirm their own rows",
+    "I'm ready"
+   ]
+  },
+  {
+   "expect": {
+    "named_on_evidence": true
+   }
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "flag": 1
+  },
+  {
+   "flag": 2
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "enter": "interrogation_room"
+  },
+  {
+   "talk": "confront",
+   "picks": [
+    "Face him",
+    "Tell me why",
+    "What happens to you now",
+    "No deals"
+   ]
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    "He's the crime",
+    "It was wrong",
+    "code server",
+    "Nothing more"
+   ]
+  },
+  {
+   "said": [
+    "You accused Vector to his face",
+    "So is the apology you went back to make. It does not unsay"
+   ],
+   "notSaid": [
+    "You hit Vector"
+   ]
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "VECTOR: Accused to his face, cleared by the logs. You went back and apologised.",
+    "cloned off his lanyard while he watched the window"
+   ],
+   "notSaid": [
+    "VECTOR: Struck",
+    "then cleared by the logs"
+   ]
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

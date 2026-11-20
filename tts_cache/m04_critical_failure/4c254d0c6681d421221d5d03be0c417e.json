@@ -1,0 +1,13 @@
+{
+  "key": "4c254d0c6681d421221d5d03be0c417e",
+  "npc": "agent_nightshade",
+  "text": "The physics doesn't lie and neither do I. If they reach the safety interlocks, this stops being a hack and starts being a body count.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T16:35:18Z"
+}

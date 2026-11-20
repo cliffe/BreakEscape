@@ -1,0 +1,63 @@
+From 588f7afb3fcabe703f6a91661159977a0dceaf8e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 10 Nov 2026 17:21:42 +0000
+Subject: [PATCH 6/8] Validator: a card a room NPC carries declares its card_id
+ for the missing-credential warning
+
+check_lock_credentials warned 'nothing in the scenario can open it' for a gate whose
+requires is the card its guard carries (test_gate_tailgate, the H9 stores), while the
+identity reach line said that card opens it.
+---
+ scripts/validate_scenario.rb          |  5 ++++-
+ test/js/door-gates-validator.test.mjs | 20 ++++++++++++++++++++
+ 2 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/validate_scenario.rb b/scripts/validate_scenario.rb
+index 26474ffb3..2fc0510ad 100755
+--- a/scripts/validate_scenario.rb
++++ b/scripts/validate_scenario.rb
+@@ -1897,9 +1897,12 @@ def check_lock_credentials(json_data)
+   end
+ 
+   # A key/RFID lock with no matching credential item. This is a soft-lock
+-  # unless the door is meant to be opened another way (e.g. lockpicked).
++  # unless the door is meant to be opened another way (e.g. lockpicked). A card a room
++  # NPC carries (creds.card or rfidCard) declares its card_id too: the identity reach
++  # line already says that card opens the lock, and a gate's guard is the usual case.
+   declared = { 'key' => Set.new, 'rfid' => Set.new }
+   key_items.each { |_name, credential, lt| declared[lt] << credential }
++  declared['rfid'].merge(ai.cards(json_data).keys.map(&:to_s))
+   %w[key rfid].each do |lock_kind|
+     credential_requires[lock_kind].each do |req|
+       next if declared[lock_kind].include?(req)
+diff --git a/test/js/door-gates-validator.test.mjs b/test/js/door-gates-validator.test.mjs
+index aa74ea852..7cbb1daea 100644
+--- a/test/js/door-gates-validator.test.mjs
++++ b/test/js/door-gates-validator.test.mjs
+@@ -60,3 +60,23 @@ test('a gate on the entry that leads out of the locked room is an error', { skip
+     const out = issues(scenario({ gateOn: 'vault' }));
+     assert.ok(out.some(s => s.startsWith('❌') && s.includes("puts a gate on the door out of locked room 'vault'")), out.join('\n'));
+ });
++
++function credentialIssues(scenario) {
++    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
++      puts JSON.generate(check_lock_credentials(JSON.parse(STDIN.read)))`;
++    const r = spawnSync('ruby', ['-e', script], {
++        input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
++    });
++    assert.equal(r.status, 0, r.stderr);
++    return JSON.parse(r.stdout.trim().split('\n').pop());
++}
++
++test('a gate whose requires is a card its guard carries draws no "nothing can open it" warning', { skip }, () => {
++    const warning = "but no item declares card_id (or opens_lock) 'SAM-1'";
++    let out = credentialIssues(scenario());
++    assert.ok(!has(out, warning), out.join('\n'));
++    const sc = scenario();
++    delete sc.rooms.office.npcs[0].rfidCard;
++    out = credentialIssues(sc);
++    assert.ok(has(out, warning), `still raised when nobody carries it:\n${out.join('\n')}`);
++});
+-- 
+2.43.0
+

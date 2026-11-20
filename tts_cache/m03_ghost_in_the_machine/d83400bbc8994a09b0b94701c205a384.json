@@ -1,0 +1,13 @@
+{
+  "key": "d83400bbc8994a09b0b94701c205a384",
+  "npc": "narrator",
+  "text": "You'll need her back at the whiteboard for a fresh read.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:19:55Z"
+}

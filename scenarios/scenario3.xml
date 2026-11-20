@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<scenario xmlns="http://www.github//cliffe/BreakEscapeGame/blob/main/assets/scenarios"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="https://github.com/cliffe/BreakEscapeGame/blob/main/assets/scenarios/scenerio3.json">
+
+  <name>Symmetric Encryption with AES</name>
+  <author>Z. Cliffe Schreuders</author>
+  <description>
+    You’ve stumbled upon the secret workshop of the brilliant but eccentric scientist, Dr. Knowitall, who has built a revolutionary time machine. However, the blueprints for the machine are hidden behind a series of cryptographic puzzles, protected by the Advanced Encryption Standard (AES). Dr. Knowitall’s workshop is rigged with a self-destruct mechanism, and you must solve the puzzles quickly to retrieve the blueprints before time runs out.
+
+    In this escape room, you will explore the principles of symmetric encryption, focusing on AES, a widely used block cipher that secures data through cyberchef.
+
+    But beware: time is relative, and so is your escape. The self-destruct countdown is ticking, and every second counts. Can you outsmart Dr. Knowitall’s puzzles, master AES encryption, and escape with the blueprints before it’s too late?
+
+  </description>
+
+  <type>escape room</type>
+
+  <difficulty>intermediate</difficulty>
+
+  <CyBOK KA="AC" topic="Algorithms, Schemes and Protocols">
+    <keyword>ADVANCED ENCRYPTION STANDARD (AES)</keyword>
+    <keyword>ECB (ELECTRONIC CODE BOOK) BLOCK CIPHER MODE</keyword>
+  </CyBOK>
+  <CyBOK KA="AC" topic="Symmetric Cryptography">
+    <keyword>symmetric primitives</keyword>
+    <keyword>symmetric encryption and authentication</keyword>
+  </CyBOK>
+  <CyBOK KA="AC" topic="Cryptographic Implementation">
+    <keyword>Cryptographic Libraries</keyword>
+    <keyword>ENCRYPTION - TOOLS</keyword>
+    <keyword>Hexadecimal Encoding</keyword>    
+  </CyBOK>
+  </scenario>

@@ -1,0 +1,10 @@
+Make portrait for Owen Gallagher
+A stocky mixed-race Black British man of about 28, Mancunian with an Irish surname, light brown skin with freckles over his nose, short springy dark curls with a fade, a short full beard, raised eyebrows of a man who has seen every network fault twice, the frazzled systems administrator. He wears a faded navy t-shirt with a worn abstract band-style print and no lettering, an open charcoal-grey zip fleece with the sleeves shoved to the elbows, a lanyard with a blank white card and a USB stick clipped on, black jeans and a black belt with a multitool pouch at the hip. A bundle of patch cable looped over one shoulder. Mouth closed, wry and a bit worn out. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is owen_gallagher_concept_3_raw.png.

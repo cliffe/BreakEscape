@@ -1,0 +1,12 @@
+Make portrait for Frank Callahan
+A white Irish man in his mid forties, a rough, rumpled film-noir gumshoe. Pale freckled skin, short ginger-red hair under a battered brown fedora, two days of red stubble, a small old scar across one eyebrow. He wears a creased brown suit with the jacket open, a cream shirt with the top button undone and a loosened mustard-yellow tie, braces visible. No cigarette, no text, no logos.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain mid-grey background, no gradient, no pattern
+
+# agy 2026-11-03. Reframed with reframe_portrait.py --flip.
+# Approved by the user 2026-11-03 as noir_m4.

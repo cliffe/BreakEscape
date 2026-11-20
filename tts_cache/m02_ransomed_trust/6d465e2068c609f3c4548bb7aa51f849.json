@@ -1,0 +1,13 @@
+{
+  "key": "6d465e2068c609f3c4548bb7aa51f849",
+  "npc": "agent_nightshade",
+  "text": "Somebody manufactures these at scale, for people they trust with buildings.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent, quietly pleased by an interesting device; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

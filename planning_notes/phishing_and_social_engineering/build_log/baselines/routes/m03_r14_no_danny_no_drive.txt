@@ -1,0 +1,180 @@
+
+## R14 (cycle 4 review): never meets Danny, never takes HaX's revelation call, never finds the drive or the paper. Tries to recruit Sterling without the drive, is refused, then lets her go.
+   {set {"briefing_played":true,"reception_badge_cloned":true,"player_approach":"aggressive"}}
+
+--- victoria ---
+  Narrator: Victoria Sterling rises as you come in, composed and sure of herself.
+  Victoria Sterling: Victoria Sterling. Sit down. Let's see if you match your file.
+  Narrator: She gestures to the conference table.
+  Victoria Sterling: Freelance pen testing. Some CTF work. Competent.
+  Victoria Sterling: Competent is cheap. That's not why you're here.
+     (3 options)
+ > Why am I here, then?
+  Victoria Sterling: To find out what you're worth. Your CV only tells me what you cost.
+  Victoria Sterling: You find a hole and do the decent thing. The vendor sits on it for six months. Somebody less decent finds it in three.
+     (3 options)
+ > Researchers deserve fair pay for what they find.
+  Victoria Sterling: Good. You'd be amazed how many people choke on that sentence.
+  Victoria Sterling: Everything breaks in the end. Some people call that entropy. I call it stock.
+  Victoria Sterling: What matters is who knows first, and who pays them for knowing.
+  Victoria Sterling: What else would you like to know?
+     (4 options)
+ > Can I ask about the ethics of it?
+  Victoria Sterling: Go on. Everyone brings a speech about it.
+     (3 options)
+ > There's a line between research and making weapons. Where do you draw it?
+  Victoria Sterling: You tell me. Where would you draw it?
+  Narrator: She waits. When you don't fill the silence, she does.
+  Victoria Sterling: Most people draw it wherever they stop understanding the work.
+  Victoria Sterling: I don't make holes. I find them, and I'm honest about the invoice.
+  Victoria Sterling: Now one of mine. I ask everyone, and most people get it wrong.
+  Victoria Sterling: You find a hole in an NHS trust's patient records. The vendor offers you a T-shirt and a thank-you. A buyer offers forty thousand. What do you do?
+     (3 options)
+ > Report it. Then invoice the vendor for my time anyway.
+  Victoria Sterling: Wanting both. Honest, at least. It won't make you rich.
+     (3 options)
+ > Is that your training lab on the whiteboard?
+  Narrator: You get up and go to the board, close to Victoria.
+  Victoria Sterling: Yes. An isolated network, real services. Students practise on it from the server room.
+  Narrator: The cloner in your pocket starts reading her card. Custom keys: you'll need Darkside afterwards, and that takes about thirty seconds. Keep her talking while it reads.
+  Victoria Sterling: Real kit, every box of it. We leave the holes in on purpose.
+     (4 options)
+ > That's an impressive training environment. More realistic than most.
+  Victoria Sterling: Nothing in there is a toy. My students break real things.
+  Narrator: Halfway. The cloner is still reading.
+  Victoria Sterling: The lab's the easy part. The money is in knowing who'll pay, and how much.
+     (3 options)
+ > That sounds more complex than pure technical work.
+  Victoria Sterling: That's why I don't hire coders. I hire people who can count.
+  Victoria Sterling: You ask questions like someone taking notes. I like that in staff. I watch for it in guests.
+  Narrator: Against your leg, the cloner is still working. A few seconds more.
+     (3 options)
+ > Skills are cheap. Knowing where to sell them isn't.
+  Victoria Sterling: Exactly. Which is why my researchers are paid like surgeons.
+  Narrator: The cloner buzzes once against your leg. Card read. Now run Darkside on it.
+      [RFID minigame: card saved]
+  Narrator: You step back from the whiteboard, easing the distance open again.
+  Victoria Sterling: That's enough philosophy for one afternoon. The programme starts next month. I'll know by Friday whether you're on it.
+     (3 options)
+ > Thanks for being straight with me.
+  Victoria Sterling: I'm always straight with people. It's the cheapest way to be believed.
+  Victoria Sterling: Have a look round on your way out. Reception, the main hallway. Not the executive wing; the guard gets territorial.
+  Narrator: Her phone buzzes. She glances at it, then at the door, and the meeting is over.
+  [chat closes]
+
+--- night ---
+  Narrator: Sterling's card is saved in the cloner. You sign out at the front desk and walk out into the afternoon with the last of the visitors.
+  Narrator: Eleven o'clock that night, you're back. The staff entrance takes the receptionist's badge without a murmur.
+  Narrator: The main hallway is on its night lights. Somewhere off to the east, a guard's footsteps go round, and round again.
+  [chat closes]
+   {set {"mission_phase":"act2_infiltration","clone_call_done":true,"flag_scan_submitted":true,"flag_ftp_submitted":true,"flag_http_submitted":true,"flag_distcc_submitted":true}}
+
+--- phone ---
+  On the line, Agent.
+     (5 options)
+ > Where do I stand?
+  Recon, FTP and pricing are in. Just distcc left -- that's the logs, that's the case.
+  Sterling's office is still unread, if you want her paper as well as her servers.
+  The guard hasn't clocked you yet. Keep it that way.
+ > Thanks.
+  Call if you need me.
+     (5 options)
+ > Nothing right now
+  Copy. Call anytime, Agent.
+  [end]
+   {set {"night_confrontation_ready":true}}
+
+--- phone ---
+     (5 options)
+ > Sterling's still in the conference room. How do I play this?
+  Agent. You've got the logs, and she's still in the conference room. The case stands whether or not she's in cuffs.
+  Want the Architect? Offer her a deal, and a cold one. She flips to save herself, not because she's sorry -- don't mistake the two.
+  Want her off the board? Arrest her. But she came ready to run, so corner her or she walks.
+  And if the evidence is enough for you, let her go and secure it.
+  If it's the deal you want, bring her something she can't shrug off. The drive in her desk.
+ > Understood
+     (4 options)
+ > Where do I stand?
+  The case is made. If Danny Foster matters to you, see him before Sterling.
+  Sterling's in the conference room.
+  And her desk drawer's still got that drive in it, if you want something to bargain with.
+ > Thanks.
+  Call if you need me.
+     (4 options)
+ > Nothing right now
+  Copy. Call anytime, Agent.
+  [end]
+
+--- victoria ---
+  Narrator: Sterling hasn't left.
+ > Sterling. We need to talk.
+  Narrator: Victoria is standing by the window. Coat on, a slim bag over one shoulder. She has been waiting for you.
+  Victoria Sterling: You came back after hours. Recruits don't do that.
+  Victoria Sterling: Report it and bill them anyway, you said. I took that for greed. It was a conscience keeping its options open.
+  Victoria Sterling: So let's not perform the part where I'm surprised. Who are you with?
+     (2 options)
+ > SAFETYNET. And I've read your approvals.
+  Victoria Sterling: Then you've read more than my accountant. He'll be disappointed.
+  Victoria Sterling: Let me spare us the scene you're braced for. You want the confession. The tears for the ward.
+  Victoria Sterling: I read what that ward cost, down to the number. It changed nothing I believe.
+  Victoria Sterling: Vulnerabilities are facts. Someone will always sell the facts. Better a professional who logs the sale than a criminal who doesn't.
+     (2 options)
+ > You could have walked away from that sale.
+  Victoria Sterling: I did walk away. With twenty-five thousand.
+  Narrator: She settles the bag on her shoulder.
+  Victoria Sterling: To the Architect I'm a line item. Sable, Zero Day, this office -- all of it is rented. All of it replaceable.
+  Victoria Sterling: So decide what you actually want from the next thirty seconds. I have a car downstairs, and you have exactly one move.
+     (3 options)
+ > Work for us.
+  Victoria Sterling: In exchange for what? You haven't even taken what you'd be asking me to betray.
+  Victoria Sterling: Still one move. Choose it.
+     (2 options)
+ > Go. I've got what I need off your servers. You're just the signature now.
+  Victoria Sterling: The sensible answer. I could almost have used you.
+  Victoria Sterling: For what little it's worth -- St. Catherine's was a proof of concept. You'll see the rest.
+  Narrator: She's past you and gone before the lift doors settle.
+  [chat closes]
+
+--- debrief ---
+  Narrator: SAFETYNET headquarters. The morning after WhiteHat Security.
+  Agent HaX: There you are. Sit down before you fall down.
+  Agent HaX: The network first. All four flags, and the distcc logs are the case.
+  Agent HaX: The ProFTPD backdoor, sold to Ghost, invoice ZDS-2024-0847, St. Catherine's on the target line, Sable's sign-off on the approval.
+  Agent HaX: Victoria Sterling. Sable.
+  Agent HaX: Sterling's in the wind. She had a bag packed before you ever crossed the threshold.
+  Agent HaX: We've got the case. The transaction log puts Sable's name on the sale. What we don't have is her.
+  Agent HaX: Netherton put her on every watch list we can reach. Did it himself, before I'd finished the sentence.
+     (2 options)
+ > She goes dark, rebuilds, comes back as someone else. The cost of letting her walk.
+  Agent HaX: It is. But she walks knowing we can prove all of it. That changes how she moves.
+  Agent HaX: Now Phase 2, the part that kept me up. The search team found a drive in Sterling's desk this morning. Base64 over ROT13. The Architect's directive.
+  Agent HaX: Grid storage. Substation control. Hospitals on generator for when the grid drops out from under them. Zero Day supplies, Critical Mass executes. Winter, within weeks.
+  Agent HaX: She told you St. Catherine's was a proof of concept. She wasn't showing off.
+     (3 options)
+ > We have the sectors and the window. We can move first for once.
+  Agent HaX: We're already moving. For once we've got the head start.
+  Agent HaX: The Architect. One mind coordinating the cells. Zero Day arms them, Critical Mass hits the grid, Ransomware Incorporated hits the wards, and someone times it all.
+  Agent HaX: Until last night the Architect was a rumour. Now it's a signature on a plan. Command's had it since first thing.
+     (2 options)
+ > So that drive is the map to their whole operation.
+  Agent HaX: It is. Next time, bring it out yourself.
+  Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, hospitals get assessed, and we'll be standing where they meant to strike.
+  Agent HaX: You never found the consultant, Danny Foster. His name's still in the recon files, so it'll surface. Where he lands is anyone's guess now.
+     (2 options)
+ > Find him before they do.
+  Agent HaX: That's the plan. You could have saved us the trouble.
+  Agent HaX: The drive wasn't the only paper you left behind.
+  Agent HaX: Their own history of the firm stayed in Sterling's filing cabinet.
+  Agent HaX: The exploit catalogue stayed in the wall safe.
+  Agent HaX: Enough to charge and enough to warn. Not everything. It never is.
+  Agent HaX: You said you'd move fast, grab the objectives and get out. You did, and nobody kept up with you.
+  Agent HaX: It's done.
+  Agent HaX: Here's where it stands. Zero Day's exposed, its buyers are scrambling, and the Architect has to shop elsewhere.
+  Agent HaX: Ghost's still out there. The people who armed them are on paper now.
+     (4 options)
+ > What's my next assignment?
+  Agent HaX: We see where ENTROPY surfaces. Take one cell down and it shows you the next.
+  Agent HaX: Go home and get some sleep. We'll brief the next one when you're ready.
+  [end]
+
+[stats] spoken/narrated lines 102, choices 28, longest run without a choice 9 (debrief); runs>=6: victoria:6, debrief:8, debrief:9

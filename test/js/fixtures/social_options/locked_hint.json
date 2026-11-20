@@ -1,0 +1,22 @@
+{
+  "_comment": "lockedHint lint fixture. No social key: the lint runs for every scenario. vault and the safe are clean; the others each break one rule.",
+  "scenario_brief": "lockedHint fixture",
+  "startRoom": "office",
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "connections": { "north": "vault", "east": "store", "west": "lab", "south": "yard" },
+      "objects": [
+        { "type": "safe", "id": "safe1", "name": "Safe", "locked": true, "lockType": "key", "requires": "safe_key", "lockedHint": "The caretaker has the key." },
+        { "type": "safe", "id": "safe2", "name": "Pin safe", "locked": true, "lockType": "pin", "requires": "1234", "lockedHint": "A pin safe ignores this." }
+      ]
+    },
+    "vault": { "type": "room_office", "connections": { "south": "office" }, "locked": true, "lockType": "key", "requires": "vault_key", "lockedHint": "Ask Ruth for the key." },
+    "store": { "type": "room_office", "connections": { "west": "office" }, "locked": true, "lockType": "key", "requires": "store_key", "lockedHint": 42 },
+    "lab": { "type": "room_office", "connections": { "east": "office" }, "lockedHint": "Not locked at all." },
+    "yard": {
+      "type": "room_office", "connections": { "north": "office" }, "locked": true, "lockType": "key", "requires": "yard_key",
+      "doors": [ { "direction": "north", "lockedHint": "   " } ]
+    }
+  }
+}

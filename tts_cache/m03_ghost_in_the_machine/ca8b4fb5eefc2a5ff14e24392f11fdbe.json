@@ -1,0 +1,13 @@
+{
+  "key": "ca8b4fb5eefc2a5ff14e24392f11fdbe",
+  "npc": "danny_foster",
+  "text": "Security-awareness training at a healthcare client. Her exact words. I even believed the invoice.",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:37:03Z"
+}

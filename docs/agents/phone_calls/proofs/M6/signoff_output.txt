@@ -1,0 +1,14 @@
+game 2102 (signoff)
+console close with grid saved, no signoff yet
+ringer (should be sign_off forced, NOT debrief): {"cur":{"npc":"the_architect","state":"connected","knot":"sign_off","opened":true},"q":0,"banner":null,"bimg":null}
+debrief open? mg="PhoneChatMinigame phone-chat" start_debrief=false
+shot signoff_after_console
+sign_off call: {"subs":[],"choices":["1. You lost tonight.","2. Say it."]}
+shot signoff_signoff_call
+architect_signoff_done=true
+phone closed: mg=null
+held ending: {"reason":"mapping","npcId":"closing_debrief","eventPattern":"room_entered:security_checkpoint","handlerIndex":2}
+run objectives-panel End the mission: true
+debrief: start_debrief=true scene={"scene":"person-chat","npc":"closing_debrief"}
+shot signoff_debrief
+architect /tts: "You saved eight point four million people. I'm not being sarcastic." "I'll have the figures from Austin and San Francisco by morning." "You saved eight point four million people. I'm not being sarcastic." "I'll have the figures from Austin and San Francisco by morning." 

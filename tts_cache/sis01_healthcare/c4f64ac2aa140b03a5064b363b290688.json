@@ -1,0 +1,13 @@
+{
+  "key": "c4f64ac2aa140b03a5064b363b290688",
+  "npc": "sarah_mitchell",
+  "text": "The drug library's been changed? Then I need to know what went into Bed 2.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:52:28Z"
+}

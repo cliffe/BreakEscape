@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model sign-in",
+  "description": "Test of sign-in PCs (access model step 8): account tiles in each picker mode, a typed username and an access list, one profile on two PCs, switching account, Copy and Move of desktop files, a locked folder, sign out, a lockout, and a sign-in kept across a reload. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 15,
+  "test_type": "access_model",
+  "test_objective": "Prove the sign-in screen shows the right account tiles for each loginPicker mode, signs in and out only through pc-sessions.js with the server's answers (incorrect, not permitted, locked out), shows each account's profiles on any PC it signs in to, takes files by Copy or Move as the server records them, and keeps a password session across a reload"
+}

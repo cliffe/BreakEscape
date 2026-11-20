@@ -1,0 +1,13 @@
+{
+  "key": "89caba30b5200acf06d7e9385c2e0203",
+  "npc": "eleanor_vance",
+  "text": "But I want you to think about this from Albion's perspective.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:31:10Z"
+}

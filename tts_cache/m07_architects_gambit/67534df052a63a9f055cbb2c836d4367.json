@@ -1,0 +1,13 @@
+{
+  "key": "67534df052a63a9f055cbb2c836d4367",
+  "npc": "closing_debrief",
+  "text": "Yes. Next time, make the call while you work it out.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:06:33Z"
+}

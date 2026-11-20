@@ -1,0 +1,3 @@
+seed 31: indep=ALL PASS cyberchef=ALL PASS
+seed 707: indep=ALL PASS cyberchef=ALL PASS
+seed 5150: indep=ALL PASS cyberchef=ALL PASS

@@ -1,0 +1,11 @@
+Make portrait for Vivian Ashby
+A white English woman in her late thirties, a poised, confident film-noir private detective. Fair skin, auburn hair in soft vintage shoulder-length waves, deep red lipstick, green knowing eyes. She wears a belted navy trench coat over a cream high-neck blouse, black high-waisted trousers, and a dark navy fedora tilted slightly. No cigarette, no text, no logos.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain mid-grey background, no gradient, no pattern
+
+# agy 2026-11-03. Reframed with reframe_portrait.py --flip. Approved by the user as noir_f7.

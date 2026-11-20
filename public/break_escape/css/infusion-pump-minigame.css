@@ -1,0 +1,411 @@
+/* =========================================================
+   INFUSION PUMP TERMINAL — MG-08
+   Dark clinical aesthetic: cream prescription panel + grey pump body
+   Pixel-art style: border-radius:0, 2px solid borders throughout
+   ========================================================= */
+
+/* ---- Container ---- */
+.ip-minigame-container {
+    background: #0d1324;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.ip-game-container {
+    height: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* ---- Main layout ---- */
+.ip-panel-wrap {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    gap: 12px;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+/* The MAR card is drawn on the Phaser canvas (infusion-pump-minigame.js); its old
+   HTML rules had no users and were removed (slice 7 R1 n1). */
+
+/* ---- Pump device (right) ---- */
+.ip-pump-device {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ip-pump-bezel {
+    flex: 1;
+    background: #c0c5c8;
+    border: 3px solid #8a9199;
+    padding: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Corner screw aesthetic via box-shadow inset dots */
+    box-shadow: inset 6px 6px 0 0 #a0a5a8, inset -6px -6px 0 0 #a0a5a8, inset 6px -6px 0 0 #a0a5a8, inset -6px 6px 0 0 #a0a5a8;
+}
+
+/* ---- Pump screen ---- */
+.ip-pump-screen {
+    background: #0a1a0a;
+    color: #00e060;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    border: 2px solid #1a3a1a;
+    padding: 8px 10px;
+    min-height: 100px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.ip-pump-screen.ip-screen-accepted {
+    border-color: #00c853;
+    box-shadow: none;
+}
+
+.ip-pump-screen-row {
+    font-size: 16px;
+}
+
+.ip-pump-screen-divider {
+    border-top: 2px solid #1a5a1a;
+    margin: 4px 0;
+}
+
+.ip-pump-display {
+    font-size: 24px;
+    line-height: 32px;
+    color: #00ff88;
+    border-bottom: 2px solid #1a5a1a;
+    padding: 2px 0;
+    min-height: 36px;
+    letter-spacing: 1px;
+}
+
+.ip-accepted {
+    color: #00ff88;
+}
+
+/* Blinking cursor */
+.ip-cursor {
+    animation: ip-blink 1s step-end infinite;
+}
+
+@keyframes ip-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+/* ---- Keypad ---- */
+.ip-pump-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+
+.ip-key {
+    background: #d0d5d8;
+    border: 2px solid #8a9199;
+    border-bottom: 3px solid #6a7178;
+    color: #1a1a1a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    padding: 10px 4px;
+    cursor: pointer;
+    border-radius: 0;
+    text-align: center;
+    transition: background 0.1s;
+    user-select: none;
+}
+
+.ip-key:hover {
+    background: #e0e5e8;
+}
+
+.ip-key:active {
+    background: #b0b5b8;
+    border-bottom-width: 2px;
+    transform: translateY(1px);
+}
+
+.ip-key:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ip-key-back {
+    background: #d8c0b0;
+    border-color: #9a7060;
+    border-bottom-color: #7a5040;
+}
+
+.ip-key-back:hover {
+    background: #e8d0c0;
+}
+
+.ip-key-decimal {
+    background: #d8d8c0;
+    border-color: #9a9a70;
+    border-bottom-color: #7a7a50;
+    font-size: 16px;
+}
+
+/* ---- Double-check modal ---- */
+.ip-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.ip-modal {
+    background: #0d1117;
+    border: 2px solid #f59e0b;
+    padding: 24px 20px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.ip-modal-title {
+    color: #f59e0b;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    margin-bottom: 16px;
+    line-height: 16px;
+    letter-spacing: 0.5px;
+}
+
+.ip-modal-drug {
+    color: #cccccc;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;
+    margin-bottom: 8px;
+}
+
+.ip-modal-dose {
+    color: #ff4444;
+    font-family: 'GNF', monospace;
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.ip-modal-prompt {
+    color: #aaaaaa;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.ip-modal-correct {
+    background: #1a4a1a;
+    color: #00ff88;
+    border-color: #00c853;
+}
+
+.ip-modal-wrong {
+    background: #4a1a1a;
+    color: #ff6666;
+    border-color: #d32f2f;
+}
+
+/* ---- No-charts guard screen ---- */
+/* The guard path swaps the game container's content, so the container itself must shrink to the card:
+   no #1a1a1a plate, the shell's flex centring places it, and the X anchors to the card's corner. */
+.minigame-container[data-minigame="infusion-pump"] > .minigame-game-container:has(> .ip-no-charts) {
+    width: fit-content;
+    max-width: calc(100vw - 32px);
+    height: auto;
+    margin: auto;
+    background: none;
+}
+
+.ip-no-charts {
+    /* A small framed card centred in the window, not a full-viewport plate (K5 B). */
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;   /* centres the card when :has() is unsupported; no change when the container is fit-content */
+    background: #1d1d1d;
+    border: 2px solid #f59e0b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 48px;   /* both sides, so the content is centred and the 30px X keeps 16px clear */
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.ip-no-charts-icon {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 32px;
+    line-height: 40px;
+    color: #f59e0b;
+    margin-bottom: 16px;
+    border: 2px solid #f59e0b;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ip-no-charts-text {
+    color: #f59e0b;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;   /* Press Start 2P on its 8px grid, 16px readable (K5 B) */
+    margin-bottom: 16px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
+}
+
+.ip-no-charts-sub {
+    color: #888;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    max-width: 320px;
+}
+
+/* The pump canvas: zoomed by a whole number only, centred when it fits, scrolling inside
+   its box when the window is too small for zoom 1 (slice 7 R2 M2). Auto margins centre
+   a flex child without pushing it off the scrollable start. */
+.ip-phaser-container {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+}
+
+.ip-phaser-container > canvas {
+    margin: auto;
+    flex: none;
+    image-rendering: pixelated;
+    /* A swipe on the canvas scrolls the box on a short screen; taps still reach the keys
+       (slice 7 R3 M1, with input.touch.capture off in the Phaser config) */
+    touch-action: pan-y !important;
+}
+
+/* Holds the scrolling box and, in its own strip under it, the "More below" cue, so the cue
+   never covers a key (slice 7 R3 M1, critique B IP2) */
+.ip-scroll-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.ip-more-below {
+    position: relative;
+    flex: none;
+    width: max-content;
+    margin: 4px auto 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 20px;
+    color: #9ee6ff;
+    background: #0d1324;
+    border: 2px solid #9ee6ff;
+    border-radius: 0;
+    box-shadow: none;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.ip-more-below[hidden] {
+    display: none;
+}
+
+.ip-more-below:hover,
+.ip-more-below:focus-visible {
+    color: #0d1324;
+    background: #9ee6ff;
+    outline: none;
+}
+
+/* An 8x4 down arrow drawn in whole-pixel steps */
+.ip-more-below-arrow {
+    display: block;
+    width: 8px;
+    height: 4px;
+    background: currentColor;
+    clip-path: polygon(0 0, 8px 0, 8px 1px, 7px 1px, 7px 2px, 6px 2px, 6px 3px, 5px 3px,
+        5px 4px, 3px 4px, 3px 3px, 2px 3px, 2px 2px, 1px 2px, 1px 1px, 0 1px);
+}
+
+/* Pixel-art scrollbar for the pump's box. A local copy of the shared `.pixel-scroll` rule
+   (css/utilities.css on build/ux-net, slice 1), which has not reached this branch: when that
+   lands, give #ip-phaser-container the `pixel-scroll` class and drop this copy. */
+.ip-pixel-scroll {
+    /* Chrome 121+ ignores the ::-webkit-scrollbar rules below once scrollbar-color or
+       scrollbar-width is set, so both are reset to auto here */
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+    --pixel-scroll-track: #10161c;
+    --pixel-scroll-thumb: #2d3a44;
+    --pixel-scroll-edge: #6f8a9c;
+    --pixel-scroll-hover: #9ee6ff;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-track {
+    background: var(--pixel-scroll-track);
+    border-left: 2px solid var(--pixel-scroll-thumb);
+    border-radius: 0;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-thumb {
+    background: var(--pixel-scroll-thumb);
+    border: 2px solid var(--pixel-scroll-edge);
+    border-radius: 0;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-thumb:hover {
+    border-color: var(--pixel-scroll-hover);
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.ip-pixel-scroll::-webkit-scrollbar-corner {
+    background: var(--pixel-scroll-track);
+}
+
+/* Firefox has no ::-webkit-scrollbar: square colours from the same tokens */
+@supports not selector(::-webkit-scrollbar) {
+    .ip-pixel-scroll {
+        scrollbar-width: auto;
+        scrollbar-color: var(--pixel-scroll-edge) var(--pixel-scroll-track);
+    }
+}

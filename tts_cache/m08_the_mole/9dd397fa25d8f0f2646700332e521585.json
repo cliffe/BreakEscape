@@ -1,0 +1,13 @@
+{
+  "key": "9dd397fa25d8f0f2646700332e521585",
+  "npc": "director_netherton",
+  "text": "They did not out-think us at Portland. They were handed the board: your assignment, your timing, your identity on the ground.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:44:26Z"
+}

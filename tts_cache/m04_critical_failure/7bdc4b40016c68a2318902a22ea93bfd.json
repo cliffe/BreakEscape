@@ -1,0 +1,13 @@
+{
+  "key": "7bdc4b40016c68a2318902a22ea93bfd",
+  "npc": "narrator",
+  "text": "You ask about the site map again, and stand close while he answers.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:01:03Z"
+}

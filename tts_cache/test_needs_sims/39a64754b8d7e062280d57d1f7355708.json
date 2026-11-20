@@ -1,0 +1,13 @@
+{
+  "key": "39a64754b8d7e062280d57d1f7355708",
+  "npc": "neil",
+  "text": "Go on, just a small slice.",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:09:56Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "1dc019b5ee7016a2f4468bfebd5c3794",
+  "npc": "agent_nightshade",
+  "text": "One day it'll be our badge somebody clones. Remember how easy it was.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:54:12Z"
+}

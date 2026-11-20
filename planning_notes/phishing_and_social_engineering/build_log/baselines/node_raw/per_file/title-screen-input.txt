@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: Space, Enter and numpad Enter continue; other keys do not
+ok 1 - Space, Enter and numpad Enter continue; other keys do not
+  ---
+  duration_ms: 1.677575
+  ...
+# Subtest: click continues exactly once and detaches
+ok 2 - click continues exactly once and detaches
+  ---
+  duration_ms: 0.68081
+  ...
+# Subtest: Space continues exactly once and detaches
+ok 3 - Space continues exactly once and detaches
+  ---
+  duration_ms: 0.471213
+  ...
+# Subtest: Enter continues exactly once and detaches
+ok 4 - Enter continues exactly once and detaches
+  ---
+  duration_ms: 0.341566
+  ...
+# Subtest: other keys are ignored
+ok 5 - other keys are ignored
+  ---
+  duration_ms: 0.352186
+  ...
+# Subtest: the title screen uses the shared continue handlers
+ok 6 - the title screen uses the shared continue handlers
+  ---
+  duration_ms: 0.428702
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 178.084043

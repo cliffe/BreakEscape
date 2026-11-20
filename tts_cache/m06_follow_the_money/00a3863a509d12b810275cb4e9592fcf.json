@@ -1,0 +1,13 @@
+{
+  "key": "00a3863a509d12b810275cb4e9592fcf",
+  "npc": "satoshi_nakamoto",
+  "text": "Your side freezes a country's reserves and the hospitals run out of insulin. Nobody writes that up as a casualty projection.",
+  "voice": "Umbriel",
+  "style": "Charismatic ideologue and exchange founder in his early forties, entirely unrepentant. Speak with a consistent American West Coast (San Francisco) accent throughout — do not shift to any other accent. Warm, mid-low pitch; calm, unhurried pace. Faintly amused, as if the conversation is going exactly the way he expected.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:24:45Z"
+}

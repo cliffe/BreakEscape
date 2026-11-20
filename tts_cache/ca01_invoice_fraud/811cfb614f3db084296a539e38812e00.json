@@ -1,0 +1,13 @@
+{
+  "key": "811cfb614f3db084296a539e38812e00",
+  "npc": "adaeze_okafor",
+  "text": "Welcome to the Brightwell exercise. Start at the kiosk: research us and our supplier, write one email as the red team, then swap seats and cover the payments inbox.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:57Z"
+}

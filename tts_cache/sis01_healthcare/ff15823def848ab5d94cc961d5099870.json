@@ -1,0 +1,13 @@
+{
+  "key": "ff15823def848ab5d94cc961d5099870",
+  "npc": "dr_sharma",
+  "text": "Yes. Each one had a name against it and a date to look at it again. The dates came and went.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

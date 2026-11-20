@@ -1,0 +1,13 @@
+{
+  "key": "d58fde17fab65dfd1f0c1dbb6b1e343b",
+  "npc": "closing_debrief",
+  "text": "The other three operations started on schedule. One of them ran into our team. I have the first reporting from all of them.",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:47:46Z"
+}

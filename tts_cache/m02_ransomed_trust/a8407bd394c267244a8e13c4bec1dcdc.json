@@ -1,0 +1,13 @@
+{
+  "key": "a8407bd394c267244a8e13c4bec1dcdc",
+  "npc": "ghost",
+  "text": "The board liability email in the conference room. The budget documents. Gary's six months of ignored warnings. All of it.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:28:25Z"
+}

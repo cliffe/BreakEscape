@@ -1,0 +1,370 @@
+{
+  "scenario_brief": "Welcome to the Linux Fundamentals and Security Lab! Your technical instructor will guide you through essential Linux command-line skills, remote administration via SSH, and basic penetration testing techniques. Complete the instruction and then practice your skills in the VM lab environment.",
+  "endGoal": "Complete the lab instruction with the technical instructor, launch the VM, and capture all available flags to demonstrate your understanding of Linux security fundamentals.",
+  "startRoom": "instruction_room",
+  "startItemsInInventory": [],
+  "globalVariables": {
+    "player_name": "Agent 0x00",
+    "lab_instruction_complete": false,
+    "vm_launched": false,
+    "ssh_flag_submitted": false,
+    "privilege_flag_submitted": false,
+    "lockpicking_key_received": false,
+    "lockpicks_received": false
+  },
+  "objectives": [
+    {
+      "aimId": "complete_vm_lab",
+      "title": "Complete VM Lab Exercises",
+      "description": "Capture all flags from the desktop system",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "submit_all_flags",
+          "title": "Submit all required flags from desktop",
+          "type": "submit_flags",
+          "targetFlags": ["desktop-flag1", "desktop-flag2"],
+          "targetCount": 2,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "active",
+          "onComplete": {
+            "unlockAim": "learn_lockpicking"
+          }
+        }
+      ]
+    },
+    {
+      "aimId": "learn_lockpicking",
+      "title": "Learn Lockpicking (Optional)",
+      "description": "Practice lockpicking to retrieve all the lost documents",
+      "status": "locked",
+      "order": 1,
+      "unlockCondition": {
+        "aimCompleted": "complete_vm_lab"
+      },
+      "tasks": [
+        {
+          "taskId": "talk_to_locksmith",
+          "title": "Talk to the locksmith to get lockpick set",
+          "type": "npc_conversation",
+          "targetNPC": "locksmith",
+          "status": "locked",
+          "onComplete": {
+            "unlockTask": "pick_all_locks"
+          }
+        },
+        {
+          "taskId": "pick_all_locks",
+          "title": "Pick locks to retrieve lost documents",
+          "type": "collect_items",
+          "targetItemIds": ["document_fragment_1", "document_fragment_2", "document_fragment_3", "document_fragment_4", "document_fragment_5"],
+          "targetCount": 5,
+          "currentCount": 0,
+          "showProgress": true,
+          "status": "locked"
+        }
+      ]
+    }
+  ],
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "spriteTalk": "assets/characters/hacker-talk.png",
+    "spriteConfig": {
+      "idleFrameStart": 20,
+      "idleFrameEnd": 23
+    }
+  },
+  "rooms": {
+    "instruction_room": {
+      "type": "room_office",
+      "connections": {
+        "north": "lockpicking_room"
+      },
+      "locked": false,
+      "npcs": [
+        {
+          "id": "tech_instructor",
+          "displayName": "Tech Instructor",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 3.5 },
+          "spriteSheet": "hacker-red",
+          "spriteTalk": "assets/characters/hacker-red-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/lab_intro_linux/ink/instructor.json",
+          "currentKnot": "start",
+          "timedConversation": {
+            "delay": 5000,
+            "targetKnot": "intro_timed"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "objective_aim_completed:complete_vm_lab",
+              "targetKnot": "flags_completed_congrats",
+              "conversationMode": "person-chat",
+              "autoTrigger": true,
+              "cooldown": 0
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "key",
+              "name": "Lockpicking Room Key",
+              "opens_lock": "lockpicking_room_key",
+              "keyPins": [35, 30, 40, 28],
+              "takeable": true,
+              "observations": "A key to the lockpicking practice room"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "lab-workstation",
+          "id": "lab_workstation",
+          "name": "Lab Sheet Workstation",
+          "takeable": true,
+          "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/1-intro-linux/",
+          "observations": "A workstation for accessing the lab sheet with detailed instructions and exercises"
+        },
+        {
+          "type": "notes",
+          "name": "Lab Welcome Guide",
+          "takeable": true,
+          "readable": true,
+          "text": "Welcome to the Linux Fundamentals and Security Lab!\n\nOBJECTIVES:\n1. Use the Lab Sheet Workstation to access detailed lab instructions\n2. Complete the lab sheet exercises\n3. Launch the VMs and capture flags from the desktop system\n4. (Optional) Learn lockpicking skills in the practice room\n\nThe technical instructor is available if you need guidance.\n\nGood luck!",
+          "observations": "A guide to the lab structure and objectives"
+        },
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_kali",
+          "name": "Kali VM Terminal",
+          "takeable": false,
+          "observations": "Terminal providing access to the Kali Linux attacker machine",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('intro_to_linux_security_lab', {
+            "id": 1,
+            "title": "kali",
+            "ip": "172.16.0.3",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "vm-launcher",
+          "id": "vm_launcher_desktop",
+          "name": "Desktop VM Terminal",
+          "takeable": false,
+          "observations": "Terminal providing access to the vulnerable desktop Linux system",
+          "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
+          "vm": <%= vm_object('intro_to_linux_security_lab', {
+            "id": 2,
+            "title": "desktop",
+            "ip": "172.16.0.2",
+            "enable_console": true
+          }) %>
+        },
+        {
+          "type": "flag-station",
+          "id": "flag_station_lab",
+          "name": "Lab Flag Submission Terminal",
+          "takeable": false,
+          "observations": "Submit flags captured from the desktop system here",
+          "acceptsVms": ["desktop"],
+          "flags": <%= flags_for_vm('desktop', [
+            'flag{ssh_brute_force_success}',
+            'flag{privilege_escalation_success}'
+          ]) %>,
+          "flagRewards": [
+            {
+              "type": "emit_event",
+              "event_name": "ssh_flag_submitted",
+              "description": "SSH access flag submitted - demonstrates SSH brute force skills"
+            },
+            {
+              "type": "emit_event",
+              "event_name": "privilege_flag_submitted",
+              "description": "Privilege escalation flag submitted - demonstrates advanced Linux skills"
+            }
+          ]
+        },
+        {
+          "type": "notes",
+          "name": "VM Lab Instructions",
+          "takeable": true,
+          "readable": true,
+          "text": "VM Lab Practice Instructions:\n\n1. Launch both VMs:\n   - Kali VM Terminal: Your attacker machine with penetration testing tools\n   - Desktop VM Terminal: The vulnerable target system\n\n2. Your objectives:\n   - From Kali: Use Hydra to brute force SSH credentials on the desktop system\n   - From Desktop: Navigate the Linux filesystem and find flags\n   - Escalate privileges using sudo\n   - Capture flags from the desktop system\n\n3. Submit flags at the Flag Submission Terminal\n\nFlags to capture from desktop:\n- flag{ssh_brute_force_success} - After successfully brute forcing SSH\n- flag{privilege_escalation_success} - After privilege escalation\n\nRemember what the instructor taught you!",
+          "observations": "Instructions for the VM lab exercises"
+        }
+      ]
+    },
+    "lockpicking_room": {
+      "type": "room_office",
+      "connections": {
+        "south": "instruction_room"
+      },
+      "locked": true,
+      "lockType": "key",
+      "requires": "lockpicking_room_key",
+      "keyPins": [35, 30, 40, 28],
+      "difficulty": "medium",
+      "npcs": [
+        {
+          "id": "locksmith",
+          "displayName": "Locksmith",
+          "npcType": "person",
+          "position": { "x": 4.5, "y": 3.5 },
+          "spriteSheet": "hacker",
+          "spriteTalk": "assets/characters/hacker-talk.png",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/lab_intro_linux/ink/locksmith.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "objective_task_completed:pick_all_locks",
+              "targetKnot": "lockpicking_complete",
+              "conversationMode": "person-chat",
+              "autoTrigger": true,
+              "cooldown": 0
+            }
+          ],
+          "itemsHeld": [
+            {
+              "type": "lockpick",
+              "name": "Lock Pick Set",
+              "takeable": true,
+              "observations": "Professional lock picking tools for practicing"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "suitcase",
+          "id": "document_bag_1",
+          "name": "Locked Briefcase",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "nonexistent_key",
+          "keyPins": [32, 28, 35, 30],
+          "difficulty": "medium",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "document_fragment_1",
+              "name": "Document Fragment 1",
+              "takeable": true,
+              "readable": true,
+              "text": "Document Fragment 1\n\nThis is the first of five lost documents. You're making good progress with your lockpicking skills!",
+              "observations": "A fragment of classified documents"
+            }
+          ],
+          "observations": "A locked briefcase containing important documents"
+        },
+        {
+          "type": "suitcase",
+          "id": "document_bag_2",
+          "name": "Locked Briefcase",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "nonexistent_key",
+          "keyPins": [40, 35, 38, 32, 36],
+          "difficulty": "medium",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "document_fragment_2",
+              "name": "Document Fragment 2",
+              "takeable": true,
+              "readable": true,
+              "text": "Document Fragment 2\n\nSecond document recovered. Keep practicing!",
+              "observations": "A fragment of classified documents"
+            }
+          ],
+          "observations": "A locked briefcase containing important documents"
+        },
+        {
+          "type": "suitcase",
+          "id": "document_bag_3",
+          "name": "Locked Bag",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "nonexistent_key",
+          "keyPins": [28, 42, 30, 33, 37],
+          "difficulty": "medium",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "document_fragment_3",
+              "name": "Document Fragment 3",
+              "takeable": true,
+              "readable": true,
+              "text": "Document Fragment 3\n\nThird document found. You're getting the hang of this!",
+              "observations": "A fragment of classified documents"
+            }
+          ],
+          "observations": "A locked bag containing important documents"
+        },
+        {
+          "type": "suitcase",
+          "id": "document_bag_4",
+          "name": "Locked Briefcase",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "nonexistent_key",
+          "keyPins": [35, 30, 40, 28, 32],
+          "difficulty": "medium",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "document_fragment_4",
+              "name": "Document Fragment 4",
+              "takeable": true,
+              "readable": true,
+              "text": "Document Fragment 4\n\nFourth document recovered. Almost there!",
+              "observations": "A fragment of classified documents"
+            }
+          ],
+          "observations": "A locked briefcase containing important documents"
+        },
+        {
+          "type": "suitcase",
+          "id": "document_bag_5",
+          "name": "Locked Bag",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "requires": "nonexistent_key",
+          "keyPins": [38, 33, 28, 42, 35, 30],
+          "difficulty": "hard",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "document_fragment_5",
+              "name": "Document Fragment 5",
+              "takeable": true,
+              "readable": true,
+              "text": "Document Fragment 5\n\nFinal document recovered! Congratulations - you've mastered lockpicking!",
+              "observations": "A fragment of classified documents"
+            }
+          ],
+          "observations": "A locked bag containing important documents"
+        }
+      ]
+    }
+  }
+}
+
+

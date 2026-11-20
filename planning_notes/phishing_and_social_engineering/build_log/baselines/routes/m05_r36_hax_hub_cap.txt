@@ -1,0 +1,138 @@
+
+## R36 (phase 4 dialogue C1, D5-2 / P10): HaX's hub after the naming, with every topic open, shows nine choices. One flag choice answers the newest flag and retires the older ones; the pamphlet retires once he is named; the debt and the moral board sit behind 'I need to talk about Torres.'
+   {set {"torres_identified":true,"torres_suspected":true,"found_medical_bills":true,"found_torres_journal":true,"found_pamphlet":true,"architect_approval_confirmed":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"recruiter_contacted_player":true,"rfid_guide_offered":true,"server_door_seen":true}}
+      [aim unlocked: confront_insider]
+      [mapping agent_0x99_handler: set named_before_portal=true]
+      [david_torres shown]
+      [aim unlocked: gather_evidence]
+      [task: name_a_suspect]
+      [mapping agent_0x99_handler: set case_motive=true]
+      [task: establish_motive]
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [mapping agent_0x99_handler: set case_motive=true]
+      [mapping agent_0x99_handler: set torres_suspected=true]
+      [task: access_bludit_vm]
+   [text agent_0x99_handler +1500ms] Login flag in. An admin login, left lying about in a handover note. Somebody wanted that box easy to get into.
+   [text agent_0x99_handler +1500ms] Foothold flag in. You're on the research portal's box now. Find out who's been living on it.
+      [mapping agent_0x99_handler: set privesc_guide_offered=true]
+   [text agent_0x99_handler +1500ms] Manifest flag verified. Staged by badge 4471, no name on it. Find who carries that spare. The authorisation sits where only root can read. Sudo guide's yours.
+
+--- phone ---
+     (9 options)
+ > About that flag.
+      [ink: flag1_discussed=true]
+      [ink: flag2_discussed=true]
+      [ink: flag3_discussed=true]
+  Badge 4471 staged that manifest. No name. Whoever carries that spare is your insider. Root's last: see what that account can run.
+     [0] I'm going in. Soft or hard?
+     [1] The Recruiter rang me.
+     [2] I need to talk about Torres.
+     [3] I've read his journal. He knew.
+     [4] The Architect signed off on the casualty projection.
+     [5] Send me a field guide.
+     [6] Where do I stand?
+     [7] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "(9 options)"
+   [PASS] said: "Badge 4471 staged that manifest. No name."
+   [PASS] said: "[choice] I need to talk about Torres."
+   [PASS] said: "[choice] I'm going in. Soft or hard?"
+   [PASS] not said: "[choice] Someone here has been talking to a recruiter"
+   [PASS] not said: "[choice] First flag's in"
+   [PASS] not said: "Third flag's in"
+   [PASS] not said: "Torres is buried in debt"
+
+--- phone ---
+     (8 options)
+ > I need to talk about Torres.
+     (3 options)
+ > Is the debt the hook?
+      [ink: leverage_discussed=true]
+  A trial abroad, a wife with Stage 3 cancer, and nobody left to ask.
+  That's a target file, written by his own bad luck.
+  ENTROPY rarely recruits believers. They recruit desperate people and sell them the belief afterwards, so it feels like their idea.
+     (2 options)
+ > That's monstrous.
+  It's efficient. Some nights that's worse.
+     [0] I'm going in. Soft or hard?
+     [1] The Recruiter rang me.
+     [2] I need to talk about Torres.
+     [3] I've read his journal. He knew.
+     [4] The Architect signed off on the casualty projection.
+     [5] Send me a field guide.
+     [6] Where do I stand?
+     [7] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "A trial abroad, a wife with Stage 3 cancer, and nobody left to ask."
+   [PASS] not said: "[choice] About that flag."
+   [PASS] not said: "Three hundred and eighty thousand dollars"
+
+--- phone ---
+     (8 options)
+ > I need to talk about Torres.
+     (2 options)
+ > What ENTROPY did to him. Help me think it through.
+  You know his reasons now. I won't tell you what he deserves.
+  Ask me what you want to ask.
+     (3 options)
+ > Does knowing why change what he deserves?
+  Maybe it changes what's fair. It doesn't change the upload.
+     [0] I'm going in. Soft or hard?
+     [1] The Recruiter rang me.
+     [2] I need to talk about Torres.
+     [3] I've read his journal. He knew.
+     [4] The Architect signed off on the casualty projection.
+     [5] Send me a field guide.
+     [6] Where do I stand?
+     [7] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "You know his reasons now. I won't tell you what he deserves."
+   [PASS] said: "Maybe it changes what's fair. It doesn't change the upload."
+   [PASS] not said: "weaponises"
+   [PASS] not said: "rope with a hook"
+   [PASS] not said: "Nobody's philosophy"
+   [PASS] not said: "[choice] Is the debt the hook?"
+   {set {"flag4_submitted":true}}
+      [mapping agent_0x99_handler: set architect_approval_confirmed=true]
+   [text agent_0x99_handler +1500ms] Root flag in. The Architect's authorisation, casualty projection and all. Call me. You need to hear this.
+
+--- phone ---
+     (9 options)
+ > About that flag.
+      [ink: flag4_discussed=true]
+  Read the number on that sign-off before you face Torres. He's seen it too.
+     [0] I'm going in. Soft or hard?
+     [1] The Recruiter rang me.
+     [2] I need to talk about Torres.
+     [3] I've read his journal. He knew.
+     [4] The Architect signed off on the casualty projection.
+     [5] Send me a field guide.
+     [6] Where do I stand?
+     [7] Nothing right now.
+  [stopped: no pick]
+   [PASS] said: "Read the number on that sign-off before you face Torres."
+   {set {"final_choice":"arrest","torres_arrested":true}}
+      [task unlocked: call_in_after_sweep]
+
+--- phone ---
+     (7 options)
+ > Nothing right now.
+  Line's open. Call when you have something.
+  [chat closes]
+   [PASS] not said: "[choice] I need to talk about Torres."
+   [PASS] not said: "[choice] About that flag."
+
+## Before the naming, with Patricia down: nine choices at most.
+   {set {"final_choice":"","torres_identified":false,"patricia_ko":true,"found_door_log":true,"flag4_submitted":false,"flag4_discussed":false}}
+
+--- phone ---
+     (9 options)
+ > Nothing right now.
+  Line's open. Call when you have something.
+  [chat closes]
+   [PASS] said: "(9 options)"
+   [PASS] said: "[choice] Patricia's down. I'll give you the name instead."
+   [PASS] longest run 3 (phone) <= 9
+
+[stats] spoken/narrated lines 11, choices 10, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

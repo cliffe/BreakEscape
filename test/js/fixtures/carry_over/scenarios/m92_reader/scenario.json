@@ -1,0 +1,153 @@
+{
+  "startRoom": "lobby",
+  "globalVariables": {
+    "local_flag": false,
+    "never_written": false
+  },
+  "importGlobals": [
+    {
+      "from": "m91_source",
+      "var": "assets_seized",
+      "default": false
+    },
+    {
+      "from": "m91_source",
+      "var": "secret",
+      "default": false
+    },
+    {
+      "from": "m91_source",
+      "var": "count",
+      "default": "0"
+    },
+    {
+      "from": "m91_source",
+      "var": "team",
+      "default": ""
+    },
+    {
+      "from": "m91_source",
+      "var": "team",
+      "as": "Bad-Name",
+      "default": ""
+    },
+    {
+      "from": "m91_source",
+      "var": "team",
+      "as": "local_flag",
+      "default": ""
+    },
+    {
+      "from": "m99_missing",
+      "var": "x",
+      "default": false
+    },
+    {
+      "from": "m92_reader",
+      "var": "local_flag",
+      "default": false
+    },
+    {
+      "from": "m91_source",
+      "completed": "m91_completed"
+    },
+    {
+      "from": "m91_source",
+      "var": "count"
+    },
+    {
+      "from": "m91_source",
+      "as": "m91_novar",
+      "default": false
+    },
+    {
+      "from": "m91_source",
+      "completed": "m91_done",
+      "default": false
+    },
+    {
+      "from": "lab_widgets",
+      "var": "x",
+      "default": false
+    }
+  ],
+  "exportGlobals": [
+    "m91_assets_seized",
+    "local_flag",
+    "missing_one",
+    "never_written"
+  ],
+  "objectives": [
+    {
+      "aimId": "finish",
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "m91_completed"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "t1",
+          "onComplete": {
+            "setGlobal": {
+              "m91_assets_seized": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "aimId": "side",
+      "unlockCondition": {
+        "globalVariable": "m91_assets_seized"
+      },
+      "tasks": []
+    }
+  ],
+  "rooms": {
+    "lobby": {
+      "objects": [
+        {
+          "id": "memo",
+          "type": "notes",
+          "onRead": {
+            "setVariable": {
+              "m91_assets_seized": true
+            }
+          }
+        },
+        {
+          "id": "relay",
+          "type": "flag-station",
+          "flagRewards": [
+            {
+              "type": "set_global",
+              "key": "m91_team",
+              "value": "x"
+            }
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "reader",
+          "storyPath": "scenarios/m92_reader/ink/reader.json",
+          "eventMappings": [
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.m91_assets_seized === true",
+              "setVisible": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.m91_team === 'fracture'",
+              "knot": "hi"
+            }
+          ],
+          "globalVarOnKO": "m91_completed"
+        }
+      ]
+    }
+  }
+}

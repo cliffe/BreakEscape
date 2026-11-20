@@ -1,0 +1,25 @@
+{
+  "scenario": "test_clone_left_card",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "door_vault",
+      "label": "Vault<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vault",
+      "label": "Vault",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_vault",
+      "to": "vault",
+      "soft": false
+    }
+  ]
+}

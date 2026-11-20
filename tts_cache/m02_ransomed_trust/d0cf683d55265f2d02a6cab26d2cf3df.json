@@ -1,0 +1,13 @@
+{
+  "key": "d0cf683d55265f2d02a6cab26d2cf3df",
+  "npc": "ghost",
+  "text": "That's the part they always leave out, and the only part that ever mattered.",
+  "voice": "Iapetus",
+  "style": "ENTROPY field operative. Deliberately unplaceable -- an educated English base with every regional marker sanded off, the way someone sounds when they have consciously trained their own accent out. Unhurried, precise, never raises the pitch. Speaks as though reading a conclusion they reached months ago and have no further doubts about.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:27:25Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "1ef555496027ea744f9990797ede9b5c",
+  "npc": "eleanor_vance",
+  "text": "W-09 required deprovisioning of dormant contractor accounts on the jump server and implementation of multi-factor authentication on all administrative access.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:28Z"
+}

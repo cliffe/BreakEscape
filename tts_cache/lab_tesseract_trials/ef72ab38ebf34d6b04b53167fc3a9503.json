@@ -1,0 +1,13 @@
+{
+  "key": "ef72ab38ebf34d6b04b53167fc3a9503",
+  "npc": "briefing_cutscene",
+  "text": "Get picked. I want someone inside their recruitment.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

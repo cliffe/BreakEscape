@@ -1,0 +1,67 @@
+{
+"steps": [
+{
+"note": "R30 (phase 4 dialogue C1, D5-1): exposure with every sign, all four KOs and a refused Recruiter. The exposure aftermath has its own player beat, because the run from the exposure choice through the Recruiter to the revelation came to ten."
+},
+{
+"set": {
+"found_medical_bills": true,
+"found_vetting_file": true,
+"found_door_log": true,
+"found_incident_log": true,
+"found_pamphlet": true,
+"found_stand_down_email": true,
+"found_halloran_vetting": true,
+"found_torres_journal": true,
+"found_upload_schedule": true,
+"found_manifest": true,
+"flag1_submitted": true,
+"flag2_submitted": true,
+"flag3_submitted": true,
+"flag4_submitted": true,
+"torres_identified": true,
+"knows_full_stakes": true,
+"patricia_ko": true,
+"owen_ko": true,
+"lisa_ko": true,
+"halloran_ko": true,
+"final_choice": "public_exposure",
+"entropy_program_exposed": true,
+"recruiter_deal_offered": true,
+"recruiter_deal_decided": true,
+"found_pipeline_list": true,
+"player_approach": "aggressive",
+"confront_stance": "sympathetic",
+"handler_trust": 90
+}
+},
+{
+"talk": "debrief",
+"picks": [
+1,
+"Nobody was watching",
+"won't like seeing",
+"ENTROPY needed to see",
+"come back to SAFETYNET",
+"Who signs off",
+"same way again"
+]
+},
+{
+"said": [
+"You went public. The Initiative is front-page news",
+"It already has. Your consultant cover is burnt",
+"you turned her down",
+"Someone who never has to hear the ambulance not come",
+"I know. I read the report."
+],
+"notSaid": [
+"Expect them to hit back",
+"One last thing"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

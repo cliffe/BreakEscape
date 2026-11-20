@@ -1,0 +1,13 @@
+{
+  "key": "b0c528b0be0278242a8ede4a2def3855",
+  "npc": "terry_mott",
+  "text": "Though tonight's been more eventful than usual.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:33:37Z"
+}

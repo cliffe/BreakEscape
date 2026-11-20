@@ -1,0 +1,13 @@
+{
+  "key": "c41f430998bd57868062ac573adbbeb7",
+  "npc": "security_guard",
+  "text": "He'll be at his desk or in the control room at this hour.",
+  "voice": "Schedar",
+  "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:40:12Z"
+}

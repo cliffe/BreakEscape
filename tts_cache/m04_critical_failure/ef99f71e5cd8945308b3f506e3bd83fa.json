@@ -1,0 +1,13 @@
+{
+  "key": "ef99f71e5cd8945308b3f506e3bd83fa",
+  "npc": "robert_vance",
+  "text": "It's just, we're short-staffed, short of money, and now an audit four hours early.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-05",
+  "recorded_at": "2026-11-05T15:41:38Z"
+}

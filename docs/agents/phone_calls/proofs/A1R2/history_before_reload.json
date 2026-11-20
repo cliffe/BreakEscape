@@ -1,0 +1,17 @@
+{
+  "history": [
+    {
+      "text": "Dee here, pick up.",
+      "preloaded": true,
+      "deliveryTags": [
+        "delivery: breathless, glancing behind her"
+      ]
+    },
+    {
+      "text": "I only have a minute.",
+      "preloaded": true,
+      "deliveryTags": null
+    }
+  ],
+  "minigame": null
+}

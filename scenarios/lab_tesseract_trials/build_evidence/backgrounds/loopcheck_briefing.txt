@@ -1,0 +1,1 @@
+✅ opening_briefing.json @ start  no runtime errors over 200 steps × 6 strategies  (never ended -- hub loops indefinitely, as a hub should)

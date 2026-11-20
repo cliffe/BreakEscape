@@ -1,0 +1,13 @@
+{
+  "key": "b6bfe489d57574adb6a17dc089cd4be2",
+  "npc": "narrator",
+  "text": "He turns the screen towards you and opens a list he clearly knows by heart.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T23:51:26Z"
+}

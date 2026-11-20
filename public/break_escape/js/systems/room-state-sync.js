@@ -1,0 +1,465 @@
+/**
+ * Room State Sync System
+ * 
+ * Syncs dynamic room state changes to the server for persistence across sessions.
+ * Tracks items added/removed, NPC movements, and object state changes.
+ * 
+ * All changes are validated server-side to prevent cheating.
+ */
+
+/**
+ * Review R4 n1: the answer a sync call gives, when asked with `reportRefusal`, for a definite
+ * refusal (a 4xx other than a timeout or rate limit: the room is not accessible, the NPC is not
+ * KO'd, the item is not theirs). Sending the same request again cannot change it, so
+ * npc-hostile.js withSyncRetries stops there. Without the option such a refusal is false, as
+ * before, so callers that test the answer for truth are unchanged.
+ */
+export const SYNC_REFUSED = 'refused';
+
+function isDefiniteRefusal(response) {
+    const status = response?.status;
+    return typeof status === 'number' && status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
+
+/**
+ * Add an item to a room (e.g., NPC drops an item)
+ * @param {string} roomId - Room ID
+ * @param {object} item - Item data (must include type, id, name, etc.)
+ * @param {object} options - Optional source data (npcId, sourceType); reportRefusal: answer
+ *   SYNC_REFUSED instead of false for a definite refusal (review R4 n1)
+ * @returns {Promise<boolean|string>} Success status
+ */
+export async function addItemToRoom(roomId, item, options = {}) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                roomId: roomId,
+                actionType: 'add_object',
+                data: item,
+                sourceNpcId: options.npcId,
+                sourceType: options.sourceType
+            })
+        });
+
+        if (options.reportRefusal && isDefiniteRefusal(response)) {
+            console.warn(`❌ Item add to room ${roomId} refused (${response.status})`);
+            return SYNC_REFUSED;
+        }
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log(`✅ Synced item add to room ${roomId}:`, item.type);
+            
+            // CRITICAL: DO NOT update local room state here!
+            // 
+            // The calling code (e.g., npc-hostile.js dropNPCItems) has already:
+            // 1. Created a Phaser sprite for the item
+            // 2. Made it interactive (setInteractive, interactable=true, takeable=true)
+            // 3. Stored it in room.objects[item.id] = sprite
+            //
+            // If we overwrite room.objects[item.id] with a plain JS object here,
+            // the Phaser sprite reference is lost, and the interaction system
+            // can no longer detect/interact with the item!
+            //
+            // The local state is ALREADY correct - this sync is just persisting
+            // to the database for reload. When the page reloads, the server
+            // returns the item in roomData, and rooms.js creates a fresh sprite.
+            //
+            // Bug fixed: Items dropped by NPCs are now pickupable immediately,
+            // not just after refresh.
+            
+            return true;
+        } else {
+            console.warn(`❌ Failed to sync item add: ${result.message}`);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error syncing item add to room:', error);
+        return false;
+    }
+}
+
+/** True for the temp_<time> ids given to stand-in sprites (container items). */
+export function isStandInObjectId(itemId) {
+    return typeof itemId === 'string' && /^temp_\d+$/.test(itemId);
+}
+
+/**
+ * Remove an item from a room (e.g., player picks up)
+ * @param {string} roomId - Room ID
+ * @param {string} itemId - Item ID to remove
+ * @returns {Promise<boolean>} Success status
+ */
+export async function removeItemFromRoom(roomId, itemId) {
+    // Items taken from a container or the inventory get a stand-in sprite with a
+    // temp_<time> id. It was never a room object, so the server answered 422
+    // (m06 confirmation N-6-1: a note read from the custody console)
+    if (isStandInObjectId(itemId)) return false;
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                roomId: roomId,
+                actionType: 'remove_object',
+                data: { id: itemId }
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log(`✅ Synced item removal from room ${roomId}: ${itemId}`);
+            
+            // Update local room state if room is loaded
+            if (window.rooms && window.rooms[roomId] && window.rooms[roomId].objects) {
+                delete window.rooms[roomId].objects[itemId];
+            }
+            
+            return true;
+        } else {
+            console.warn(`❌ Failed to sync item removal: ${result.message}`);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error syncing item removal from room:', error);
+        return false;
+    }
+}
+
+/**
+ * Update object state in a room (e.g., container opened, light switched)
+ * @param {string} roomId - Room ID
+ * @param {string} objectId - Object ID
+ * @param {object} stateChanges - State properties to update
+ * @returns {Promise<boolean>} Success status
+ */
+export async function updateObjectState(roomId, objectId, stateChanges) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                roomId: roomId,
+                actionType: 'update_object_state',
+                data: {
+                    objectId: objectId,
+                    stateChanges: stateChanges
+                }
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log(`✅ Synced object state update in room ${roomId}:`, objectId, stateChanges);
+            
+            // Update local room state if room is loaded
+            if (window.rooms && window.rooms[roomId] && window.rooms[roomId].objects) {
+                const obj = window.rooms[roomId].objects[objectId];
+                if (obj) {
+                    Object.assign(obj, stateChanges);
+                }
+            }
+            
+            return true;
+        } else {
+            console.warn(`❌ Failed to sync object state: ${result.message}`);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error syncing object state:', error);
+        return false;
+    }
+}
+
+/**
+ * Update NPC state in a room (e.g., defeated/KO, health changes)
+ * @param {string} roomId - Room ID
+ * @param {string} npcId - NPC ID
+ * @param {object} stateChanges - State properties to update
+ * @returns {Promise<boolean>} Success status
+ */
+export async function updateNpcState(roomId, npcId, stateChanges, options = {}) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                roomId: roomId,
+                actionType: 'update_npc_state',
+                data: {
+                    npcId: npcId,
+                    stateChanges: stateChanges
+                }
+            })
+        });
+
+        if (options.reportRefusal && isDefiniteRefusal(response)) {
+            console.warn(`❌ NPC state update in room ${roomId} refused (${response.status})`);
+            return SYNC_REFUSED;
+        }
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log(`✅ Synced NPC state update in room ${roomId}:`, npcId, stateChanges);
+            
+            // Update local NPC state if room is loaded
+            if (window.npcManager) {
+                const npc = window.npcManager.getNPC(npcId);
+                if (npc) {
+                    Object.assign(npc, stateChanges);
+                }
+            }
+            
+            return true;
+        } else {
+            console.warn(`❌ Failed to sync NPC state: ${result.message}`);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error syncing NPC state:', error);
+        return false;
+    }
+}
+
+// No moveNpcToRoom: the server no longer takes a client-named NPC move (code review R5 M1).
+
+/**
+ * Remove NPC from a room permanently (arrested, surrendered, escorted away)
+ * @param {string} roomId - Room ID the NPC is in
+ * @param {string} npcId - NPC ID to remove
+ * @returns {Promise<boolean>} Success status
+ */
+export async function removeNpcFromScene(roomId, npcId) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                roomId: roomId,
+                actionType: 'remove_npc_from_scene',
+                data: { npcId }
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            console.log(`✅ NPC ${npcId} removed from scene in room ${roomId}`);
+            return true;
+        } else {
+            console.warn(`❌ Failed to remove NPC from scene: ${result.message}`);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error removing NPC from scene:', error);
+        return false;
+    }
+}
+
+/**
+ * Batch update room state (for efficiency when multiple changes happen together)
+ * @param {Array<object>} updates - Array of update operations
+ * @returns {Promise<boolean>} Success status
+ */
+export async function batchUpdateRoomState(updates) {
+    const promises = updates.map(update => {
+        switch (update.type) {
+            case 'add_item':
+                return addItemToRoom(update.roomId, update.item, update.options);
+            case 'remove_item':
+                return removeItemFromRoom(update.roomId, update.itemId);
+            case 'update_object':
+                return updateObjectState(update.roomId, update.objectId, update.stateChanges);
+            case 'update_npc':
+                return updateNpcState(update.roomId, update.npcId, update.stateChanges);
+            default:
+                console.warn(`Unknown update type: ${update.type}`);
+                return Promise.resolve(false);
+        }
+    });
+
+    try {
+        const results = await Promise.all(promises);
+        const allSucceeded = results.every(r => r === true);
+        
+        if (allSucceeded) {
+            console.log(`✅ Batch room state update completed: ${updates.length} operations`);
+        } else {
+            console.warn(`⚠️ Batch room state update partially failed`);
+        }
+        
+        return allSucceeded;
+    } catch (error) {
+        console.error('Error in batch room state update:', error);
+        return false;
+    }
+}
+
+/**
+ * Internal: POST one update_room action and report the outcome. The server validates
+ * every field; the client never names an arbitrary room for a carried item.
+ *
+ * Returns true on a committed success, false ONLY on a true server refusal
+ * (an HTTP response whose body is `success: false`), and null on a transport error
+ * where the request may or may not have reached the server (review R2 m4). Carry
+ * callers reconcile their optimistic state on a strict `=== false` (a refusal the
+ * server owns) and leave it untouched on null, letting the next room fetch reconcile,
+ * so a dropped response never undoes a change the server actually committed.
+ */
+async function postRoomAction(body) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return null;
+    }
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            // A definite refusal (a 4xx that is not a timeout or rate limit: the room
+            // is locked, the NPC does not carry it, a mismatch) is one the client
+            // reconciles against. A 5xx, 408 or 429 is transient: the server may have
+            // committed, so leave the optimistic state for the next room fetch.
+            if (isDefiniteRefusal(response)) {
+                console.warn(`❌ Refused ${body.actionType}: ${response.status}`);
+                return false;
+            }
+            console.warn(`⚠️ Transient failure syncing ${body.actionType}: ${response.status}`);
+            return null;
+        }
+        const result = await response.json();
+        if (result.success) return true;
+        console.warn(`❌ Refused ${body.actionType}: ${result.message}`);
+        return false;
+    } catch (error) {
+        // No usable response (network loss, parse failure): the server may have
+        // committed. Do not reconcile; the next room fetch will.
+        console.error(`Error syncing ${body.actionType} (transport):`, error);
+        return null;
+    }
+}
+
+/**
+ * An NPC picks an object up to carry it (NPC_CARRIED_ITEMS_PLAN.md). The server
+ * moves the object into the NPC's held items and out of its origin room, so a
+ * later put-down or consume never names the wrong room (the old 422).
+ * @param {string} npcId
+ * @param {string} itemId - the scenario object id
+ * @param {string} fromRoom - the room the object is picked up from
+ */
+export async function carryObject(npcId, itemId, fromRoom) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: fromRoom, actionType: 'carry_object', data: { npcId, itemId } });
+}
+
+/**
+ * An NPC sets the carried object down in a room at a world-pixel position. The
+ * server lands it there from the scenario definition and clears the carry.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} toRoom
+ * @param {{px:number, py:number}} position - absolute world pixels
+ */
+export async function putDownObject(npcId, itemId, toRoom, position) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: toRoom, actionType: 'put_down_object', data: { npcId, itemId, position } });
+}
+
+/**
+ * The carried object is used up. The server clears the carry and leaves the
+ * object gone (its origin removal stays), so a reload keeps it gone. roomId is
+ * the NPC's current room, used only by the server's unlocked-room gate.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} npcRoom
+ */
+export async function consumeCarried(npcId, itemId, npcRoom) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: npcRoom, actionType: 'consume_carried', data: { npcId, itemId } });
+}
+
+/**
+ * A carrying NPC is knocked out: the carried object drops to the KO room floor and
+ * the carry ends. The server trusts the recorded KO (not put-down reachability), so
+ * the KO room need not be adjacent to the pick-up room, and clears the carry so the
+ * object is served once, on the floor.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} koRoom - the room the NPC fell in
+ * @param {{px:number, py:number}} position - the body position, world pixels
+ */
+export async function koDropObject(npcId, itemId, koRoom, position) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: koRoom, actionType: 'ko_drop_carried', data: { npcId, itemId, position } });
+}
+
+// Export to window for global access
+if (typeof window !== 'undefined') window.RoomStateSync = {
+    addItemToRoom,
+    removeItemFromRoom,
+    updateObjectState,
+    updateNpcState,
+    removeNpcFromScene,
+    batchUpdateRoomState,
+    carryObject,
+    putDownObject,
+    consumeCarried,
+    koDropObject
+};
+
+console.log('✅ Room State Sync system loaded');

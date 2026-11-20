@@ -1,0 +1,13 @@
+{
+  "key": "4acab96a0b8c761fc927f57ea57d2ab6",
+  "npc": "kevin_park",
+  "text": "The access logs show his credentials being used at 2 AM. But he says it's for \"campaign servers.\"",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "batch",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:10:01Z"
+}

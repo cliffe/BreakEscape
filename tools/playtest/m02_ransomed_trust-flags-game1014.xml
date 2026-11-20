@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<flag_hints xmlns="http://www.github/cliffe/SecGen/marker">
+  <system>
+    <system_name>hospital_backup_server</system_name>
+    <challenge><flag>flag{m02_dedupverify_ssh_1_aaa111}</flag></challenge>
+    <challenge><flag>flag{m02_dedupverify_proftpd_2_bbb222}</flag></challenge>
+    <challenge><flag>flag{m02_dedupverify_dbbackup_3_ccc333}</flag></challenge>
+    <challenge><flag>flag{m02_dedupverify_ghostlog_4_ddd444}</flag></challenge>
+  </system>
+</flag_hints>

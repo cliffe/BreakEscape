@@ -1,0 +1,13 @@
+{
+  "key": "4a9b13bee231404598eba701e27604ef",
+  "npc": "chidi_okeke",
+  "text": "That's the phone cleared. If a text or a notice wants a code scanned or a short link tapped, open the app yourself instead.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:17Z"
+}

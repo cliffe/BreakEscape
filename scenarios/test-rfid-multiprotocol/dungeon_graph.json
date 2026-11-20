@@ -1,0 +1,59 @@
+{
+  "scenario": "test-rfid-multiprotocol",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_em4100_room",
+      "label": "Em4100 Room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "em4100_room",
+      "label": "Em4100 Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_mifare_weak_room",
+      "label": "Mifare Weak Room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "mifare_weak_room",
+      "label": "Mifare Weak Room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_desfire_room",
+      "label": "Desfire Room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "desfire_room",
+      "label": "Desfire Room",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_em4100_room",
+      "to": "em4100_room",
+      "soft": false
+    },
+    {
+      "from": "door_mifare_weak_room",
+      "to": "mifare_weak_room",
+      "soft": false
+    },
+    {
+      "from": "door_desfire_room",
+      "to": "desfire_room",
+      "soft": false
+    }
+  ]
+}

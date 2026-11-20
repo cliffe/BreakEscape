@@ -1,0 +1,10 @@
+Make portrait for Agent Phantom
+A tall, easy-going British-Ghanaian man of about 42 with deep brown skin, warm eyes with laughter lines, a close-cropped haircut with a sharp line-up and a neatly trimmed beard, and a relaxed, knowing closed-mouth half-smile, a charming intelligence field coordinator who deflects every question with charm. He wears a well-cut camel overcoat, open and pushed back, over a dark green knitted polo shirt with the top button undone, a steel wristwatch, dark grey trousers and a black belt. One hand rests casually in his trouser pocket and a brown leather travel holdall hangs by its strap from his other shoulder. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is agent_phantom_concept_2_raw.png.

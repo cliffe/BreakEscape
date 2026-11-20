@@ -1,0 +1,13 @@
+{
+  "key": "700b7e30f3de1c1dac8f632aeaa11057",
+  "npc": "blockchain_analyst",
+  "text": "The cut, the hold and the credits are on the transaction server in the data centre. I'm not allowed in. A regulator might be.",
+  "voice": "Leda",
+  "style": "Blockchain forensics analyst in her mid-thirties, British-Indian, who loves the work and has not yet understood what her own graph proves. Speak with a consistent Northern English (Leeds) accent throughout — do not shift to any other accent. Bright, mid-to-high pitch; quick pace. Enthusiastic and technical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:16:04Z"
+}

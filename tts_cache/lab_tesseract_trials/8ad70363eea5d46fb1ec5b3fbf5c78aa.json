@@ -1,0 +1,13 @@
+{
+  "key": "8ad70363eea5d46fb1ec5b3fbf5c78aa",
+  "npc": "sidhu_selvarajan",
+  "text": "It verifies against the Keyholder's key. So the Keyholder signed it, whatever the FROM line says, and nobody has touched it since.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

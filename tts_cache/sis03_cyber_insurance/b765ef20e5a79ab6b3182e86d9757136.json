@@ -1,0 +1,13 @@
+{
+  "key": "b765ef20e5a79ab6b3182e86d9757136",
+  "npc": "eleanor_vance",
+  "text": "The warranties are the visible part of how insurance enforces safety.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:30:08Z"
+}

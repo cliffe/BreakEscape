@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<flag_hints xmlns="http://www.github/cliffe/SecGen/marker">
+  <system>
+    <system_name>hospital_backup_server</system_name>
+    <challenge><flag>flag{m02_ransomed_trust_hospital_backup_server_1_2d3588}</flag></challenge>
+    <challenge><flag>flag{m02_ransomed_trust_hospital_backup_server_2_86bdec}</flag></challenge>
+    <challenge><flag>flag{m02_ransomed_trust_hospital_backup_server_3_8272c7}</flag></challenge>
+    <challenge><flag>flag{m02_ransomed_trust_hospital_backup_server_4_928c7e}</flag></challenge>
+  </system>
+</flag_hints>

@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: lifetime grows with length: notice time plus time per word
+ok 1 - lifetime grows with length: notice time plus time per word
+  ---
+  duration_ms: 0.70441
+  ...
+# Subtest: short toasts get the floor, long ones the cap
+ok 2 - short toasts get the floor, long ones the cap
+  ---
+  duration_ms: 0.096366
+  ...
+# Subtest: a real m03 toast lasts long enough to read and far less than the old 60 s
+ok 3 - a real m03 toast lasts long enough to read and far less than the old 60 s
+  ---
+  duration_ms: 0.056533
+  ...
+# Subtest: words are split on any whitespace
+ok 4 - words are split on any whitespace
+  ---
+  duration_ms: 0.110577
+  ...
+# Subtest: trim: no more than MAX_VISIBLE_BARKS, oldest go first
+ok 5 - trim: no more than MAX_VISIBLE_BARKS, oldest go first
+  ---
+  duration_ms: 0.110942
+  ...
+# Subtest: trim: the stack keeps out of the space it is given (the objectives panel)
+ok 6 - trim: the stack keeps out of the space it is given (the objectives panel)
+  ---
+  duration_ms: 0.060632
+  ...
+# Subtest: npc-barks uses the reading-time lifetime, not a fixed 60 s, and keeps click-to-open
+ok 7 - npc-barks uses the reading-time lifetime, not a fixed 60 s, and keeps click-to-open
+  ---
+  duration_ms: 0.233435
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 82.556078

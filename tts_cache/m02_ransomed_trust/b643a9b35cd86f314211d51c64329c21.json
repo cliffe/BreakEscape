@@ -1,0 +1,13 @@
+{
+  "key": "b643a9b35cd86f314211d51c64329c21",
+  "npc": "narrator",
+  "text": "A nurse is coming down the row to take over. The systems still have to come back, but he's breathing, and he isn't alone with a dead screen.",
+  "voice": "Algenib",
+  "style": "Cinematic, tense clinical thriller narrator. Measured and grave -- a hospital in crisis.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

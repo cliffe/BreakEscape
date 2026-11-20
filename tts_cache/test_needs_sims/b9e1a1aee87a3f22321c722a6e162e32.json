@@ -1,0 +1,13 @@
+{
+  "key": "b9e1a1aee87a3f22321c722a6e162e32",
+  "npc": "marek",
+  "text": "Cake! It's somebody's birthday.",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:25:33Z"
+}

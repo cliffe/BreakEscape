@@ -1,0 +1,13 @@
+{
+  "key": "baa5e21f961cdc2c868a5d0660306b48",
+  "npc": "receptionist",
+  "text": "Which is encrypted. Along with the incident.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

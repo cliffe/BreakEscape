@@ -1,0 +1,13 @@
+{
+  "key": "453bca1195da0f8ea55f82c6b4790ee8",
+  "npc": "grace",
+  "text": "There's cake going, if you're quick.",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:21:17Z"
+}

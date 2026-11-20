@@ -1,0 +1,13 @@
+{
+  "key": "e6c5511ccd943f69e41c0087912b499a",
+  "npc": "ruth",
+  "text": "The page is built. What you're missing from Dev, ring him back for. Name Sofia first or he won't say a thing.",
+  "voice": "Sulafat",
+  "style": "Engagement lead at a British penetration-testing consultancy, late forties, Black British of Nigerian (Yoruba) heritage, raised in London. Speak with a consistent London English accent with a light Lagos lilt throughout — do not shift to any other accent. Warm mid-range pitch; measured but brisk pace. A good boss briefing a junior consultant: friendly, practical, no fuss.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:37:07Z"
+}

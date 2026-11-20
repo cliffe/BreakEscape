@@ -1,0 +1,13 @@
+{
+  "key": "07dda89ff5a39fcbee2c1c095c3ea4ac",
+  "npc": "narrator",
+  "text": "Arakawa steps up beside you at the gate and dials.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T22:03:56Z"
+}

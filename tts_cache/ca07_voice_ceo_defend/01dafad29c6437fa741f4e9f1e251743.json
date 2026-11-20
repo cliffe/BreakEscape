@@ -1,0 +1,13 @@
+{
+  "key": "01dafad29c6437fa741f4e9f1e251743",
+  "npc": "agnieszka_duda",
+  "text": "All five done, thanks. Whoever's voice it is, ringing back on the number we already hold settles it.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:52Z"
+}

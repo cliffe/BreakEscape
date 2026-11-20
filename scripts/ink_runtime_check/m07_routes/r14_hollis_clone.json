@@ -1,0 +1,136 @@
+{
+ "globals": {
+  "team_assigned": true,
+  "team_assignment": "fracture",
+  "hurt_line_said": true
+ },
+ "steps": [
+  {
+   "note": "R14 (puzzle chains r1 F3, closing round F7): the quiet route past Hollis. The clone choice is hidden until the player has seen the server-hall reader (inside_reached). First chat: stakes, then back off; HaX offers the RFID guide on the ops floor; the next sighting offers the clone, which reads his badge off his belt. The clone opens the reader; he stays bought, gives no vault rule and no Park tip, and is recorded as evaded with its own credit."
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": []
+  },
+  {
+   "notSaid": [
+    "Keep him on the money"
+   ]
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "The grid goes down tonight",
+    "How much?"
+   ]
+  },
+  {
+   "notSaid": [
+    "Keep him on the money"
+   ]
+  },
+  {
+   "talk": "hollis",
+   "picks": [
+    "Back off"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "said": [
+    "RFID guide?"
+   ]
+  },
+  {
+   "event": "player_spotted:ray_hollis"
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": [
+    "Keep him on the money"
+   ]
+  },
+  {
+   "said": [
+    "Server Zone Badge - R. Hollis saved",
+    "His badge never left his belt",
+    "He never looks at his belt"
+   ],
+   "notSaid": [
+    "didn't get a clean read",
+    "plate on the transfer switch",
+    "Went down the riser"
+   ]
+  },
+  {
+   "expect": {
+    "hollis_cloned": true,
+    "badge_obtained": true,
+    "hollis_backed_off": true,
+    "hollis_resolved": ""
+   }
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "expect": {
+    "hollis_resolved": "evaded"
+   }
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": []
+  },
+  {
+   "said": [
+    "Thought you'd gone. Say it or go."
+   ],
+   "notSaid": [
+    "Keep him on the money"
+   ]
+  },
+  {
+   "talk": "hollis",
+   "knot": "start",
+   "picks": []
+  },
+  {
+   "said": [
+    "Still here. Say it or go."
+   ],
+   "notSaid": [
+    "Thought you'd gone",
+    "His hand stays off his belt this time"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "RAY HOLLIS: Badge copied off his belt"
+   ],
+   "creditsNotSaid": [
+    "RAY HOLLIS: Evaded",
+    "Talked, and handed over"
+   ]
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

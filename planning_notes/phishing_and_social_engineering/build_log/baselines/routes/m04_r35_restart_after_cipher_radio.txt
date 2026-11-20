@@ -1,0 +1,42 @@
+
+## R35 (fix pass 2026-10-17, engine regression F2 and the Restart ruling): Cipher gets his radio call out (cell_alerted) and the fight starts; the player goes down and Restarts. The reset event clears cipher_engaged (agent_0x99 mapping), so HaX's call-in no longer says he's on you, and talking Cipher out afterwards doesn't call his handset 'unradioed'.
+   {set {"briefing_played":true,"guard_admitted":true,"vance_met":true,"vance_provided_keycard":true,"vance_card_cloned":true,"anomaly_detected":true,"vance_spoken":true}}
+
+--- cipher ---
+  Narrator: He's up the rack row, a handset already half out of its clip.
+  ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who signed you in?
+     (3 options)
+ > Albion contracted me for the thermal survey. Check your list.
+  ENTROPY Operative 'Cipher': There's no survey tonight. And you came in the wrong door for one.
+  ENTROPY Operative 'Cipher': Voltage, Hall 1. We've got a live one.
+  Narrator: The handset squawks once and goes dead. He drops it and squares up.
+  ENTROPY Operative 'Cipher': Wrong night to come looking.
+      [engine: operative_cipher hostile]
+  [end]
+   [PASS] cell_alerted = true (expected true)
+
+## Restart: npc_hostile_state_changed {reset: true} -> cipher_engaged false
+   {set {"cipher_engaged":false}}
+
+--- cipher ---
+   (after a reload: variables kept, visit counts and position reset)
+  ENTROPY Operative 'Cipher': So what happens now?
+     (3 options)
+ > Whatever Voltage told you this was, the racks vent hydrogen. People die.
+  ENTROPY Operative 'Cipher': Nobody's in the halls at night. That's the whole point of doing it at night.
+  Narrator: He says it too fast.
+     (2 options)
+ > There's a night crew in Hall 2. Go and look.
+  ENTROPY Operative 'Cipher': ...You're lying.
+  Narrator: His eyes go to the Hall 2 door, and stay there.
+  ENTROPY Operative 'Cipher': If you're lying, I'm coming back for you.
+  Narrator: He clips the handset back on his belt and walks for the Hall 2 door without looking at you again.
+      [task: neutralize_operative_cipher]
+  [chat closes]
+   [PASS] said: "He clips the handset back on his belt and walks"
+   [PASS] not said: "unradioed"
+   [PASS] cipher_walked = true (expected true)
+   [PASS] cell_alerted = true (expected true)
+
+[stats] spoken/narrated lines 13, choices 3, longest run without a choice 4 (cipher); runs>=6: 
+[result] all expectations met

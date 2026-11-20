@@ -1,0 +1,313 @@
+/* The patch panel (docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md 5.4). It draws inside
+   .device-frame (device-frame.css). Ports are buttons wearing a hand-drawn 12x12 sprite per state
+   (assets/ui/devices/patch_port_*.png) under a 1 source px VLAN-colour border: 12 source px
+   on a 14 px pitch, scaled by --pp-scale (3 or 4, set by chooseLayout). Colour is a second cue;
+   every port carries its text label. Labels and the footer are VT323, the title Press Start 2P
+   (set by .device-frame-title). */
+
+.patch-panel-minigame .minigame-game-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.patch-panel {
+    --pp-scale: 4;
+    --pp-d: #4a8fd8;
+    --pp-v: #e0a030;
+    --pp-g: #5fb85f;
+    --pp-m: #c060c0;
+    --pp-edge: #8a96aa;
+    --pp-socket: #0c1018;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 20px;
+}
+
+.patch-panel > .device-frame-title {
+    padding-left: var(--device-frame-gap);
+    box-sizing: border-box;
+    padding-right: 44px;
+    /* The ports set the frame width, not the title: width 0 with min-width 100% takes the title
+       out of the frame's shrink-to-fit, and the text wraps in the room left of the X. */
+    width: 0;
+    min-width: 100%;
+}
+
+/* Under 344px wide the panel is 6 rows of 4 with no range label, so port 4 would sit right under the
+   drawn X (the X's bottom is 50px below the frame top, the first row 46px): 6px of padding clears it. */
+@media (max-width: 343px) {
+    .patch-panel > .device-frame-title {
+        padding-top: var(--device-frame-gap);
+    }
+}
+
+.patch-panel-title {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.patch-panel-scroll {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    --pixel-scroll-edge: #6f8a9c;
+    --pixel-scroll-hover: #9ee6ff;
+}
+
+.patch-panel-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* A row: an optional range label (the 4 rows of 6 only), then the strip */
+.patch-panel-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.patch-panel-range {
+    height: 16px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    line-height: 16px;
+    text-align: center;
+    color: #a3adbf;
+}
+
+/* A row: the strip's 3 source px margins, ports on a 14 px pitch, the label line under them */
+.patch-panel-strip {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    box-sizing: content-box;
+    padding: 0 calc(3px * var(--pp-scale)) 36px;
+    margin: 0;
+}
+
+/* The metal strip behind the ports: patch_strip_row.png, 7x12 (the approved 7x18 strip's top
+   highlight row, middle rows and bottom shade row), as a horizontal 3-slice with 3 px caps. It is
+   the same 12 source rows as the ports, so it adds no height. */
+.patch-panel-strip::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(12px * var(--pp-scale));
+    box-sizing: border-box;
+    border-style: solid;
+    border-width: 0 calc(3px * var(--pp-scale));
+    border-image: url('/break_escape/assets/ui/devices/patch_strip_row.png') 0 3 fill / 0 calc(3px * var(--pp-scale)) / 0 stretch;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+.patch-panel-port {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: calc(12px * var(--pp-scale));
+    height: calc(12px * var(--pp-scale));
+    margin: 0;
+    padding: 0;
+    border: calc(1px * var(--pp-scale)) solid transparent;
+    border-radius: 0;
+    background: url('/break_escape/assets/ui/devices/patch_port_empty.png') 0 0 / 100% 100% no-repeat;
+    background-origin: border-box;
+    color: #e6ebf2;
+    cursor: pointer;
+    image-rendering: pixelated;
+}
+
+.patch-panel-port + .patch-panel-port {
+    margin-left: calc(2px * var(--pp-scale));
+}
+
+.patch-panel-port:hover {
+    /* amber-white is in no port sprite's palette, and the 2px offset keeps it off the art */
+    outline: 2px solid #ffe27a;
+    outline-offset: 2px;
+}
+
+.patch-panel-port:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+/* The label sits under the port, centred on its 14 px column */
+.patch-panel-label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 4px;
+    width: calc(14px * var(--pp-scale));
+    text-align: center;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    line-height: 20px;
+    white-space: nowrap;
+    color: #e6ebf2;
+}
+
+.patch-panel.patch-panel-s3 .patch-panel-label {
+    font-size: 16px;
+    line-height: 16px;
+}
+
+.patch-panel.patch-panel-s3 .patch-panel-strip {
+    padding-bottom: 28px;
+}
+
+/* VLAN letter: the border colour, a second cue behind the printed label */
+.patch-panel-port.pp-vlan-d { border-color: var(--pp-d); }
+.patch-panel-port.pp-vlan-v { border-color: var(--pp-v); }
+.patch-panel-port.pp-vlan-g { border-color: var(--pp-g); }
+.patch-panel-port.pp-vlan-m { border-color: var(--pp-m); }
+
+/* One sprite per state. The sprite's outer ring is neutral grey; the CSS border above it is the VLAN
+   colour (live ports) or a dashed grey (unpatched). The link light, tag and box are in the art. */
+.patch-panel-port.pp-state-empty {
+    background-image: url('/break_escape/assets/ui/devices/patch_port_empty.png');
+    border-color: transparent;
+}
+.patch-panel-port.pp-state-unpatched {
+    background-image: url('/break_escape/assets/ui/devices/patch_port_unpatched.png');
+    border-style: dashed;
+    border-color: #8a96aa;
+}
+.patch-panel-port.pp-state-patched { background-image: url('/break_escape/assets/ui/devices/patch_port_patched.png'); }
+.patch-panel-port.pp-state-managed { background-image: url('/break_escape/assets/ui/devices/patch_port_managed.png'); }
+.patch-panel-port.pp-state-held { background-image: url('/break_escape/assets/ui/devices/patch_port_held.png'); }
+
+/* Your box: the held sprite differs from "patched" only by colour, so a solid white square with a
+   dark outline marks it too: a 3x2 source px bar with a 1 source px outline, top left, so its
+   position and shape both differ from the managed tag (a square with a dark centre, bottom right). It sits inside the port's
+   border, so the port size does not change. The legend swatch reuses it at its own scale. */
+.patch-panel-port.pp-state-held::after,
+.pp-swatch-state-held::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    box-sizing: content-box;
+    width: calc(3px * var(--pp-scale));
+    height: calc(2px * var(--pp-scale));
+    border: calc(1px * var(--pp-scale)) solid #0c1018;
+    background: #ffffff;
+    pointer-events: none;
+}
+
+.patch-panel-port.pp-state-unpatched .patch-panel-label,
+.patch-panel-port.pp-state-empty .patch-panel-label {
+    color: #a3adbf;
+}
+
+/* "More below": shown while the ports run past the scroll area's bottom edge */
+.patch-panel-more {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #1d2a36;
+    border-top: 2px solid #2d3a44;
+    color: #9ee6ff;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+.patch-panel-more[hidden] {
+    display: none;
+}
+
+.patch-panel-more-arrow {
+    width: 12px;
+    height: 6px;
+    background: #9ee6ff;
+    clip-path: polygon(0 0, 12px 0, 12px 2px, 10px 2px, 10px 4px, 8px 4px, 8px 6px,
+                       4px 6px, 4px 4px, 2px 4px, 2px 2px, 0 2px);
+}
+
+.patch-panel-legend {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    /* The port grid sets the frame's width: the legend wraps inside it and never widens it.
+       width 0 with min-width 100% removes its single-line width from the frame's shrink-to-fit. */
+    width: 0;
+    min-width: 100%;
+    gap: 4px 16px;
+    margin-top: 8px;
+    font-size: 16px;
+    line-height: 16px;
+    color: #c4ccd9;
+}
+
+.patch-panel-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.patch-panel-swatch {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--pp-edge);
+    background: var(--pp-socket);
+}
+
+.pp-swatch-d { border-color: var(--pp-d); }
+.pp-swatch-v { border-color: var(--pp-v); }
+.pp-swatch-g { border-color: var(--pp-g); }
+.pp-swatch-m { border-color: var(--pp-m); }
+
+/* State keys show the port itself: its sprite at 1x (12 px, so a legend row stays 16 px high),
+   with the same CSS cues as the port. --pp-scale is 1 here so the held mark and the borders are
+   the port's, at the same scale as the sprite. */
+.pp-swatch-state-held,
+.pp-swatch-state-managed,
+.pp-swatch-state-unpatched {
+    --pp-scale: 1;
+    position: relative;
+    width: calc(12px * var(--pp-scale));
+    height: calc(12px * var(--pp-scale));
+    border: calc(1px * var(--pp-scale)) solid transparent;
+    background-color: transparent;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+    image-rendering: pixelated;
+}
+.pp-swatch-state-held { background-image: url('/break_escape/assets/ui/devices/patch_port_held.png'); }
+.pp-swatch-state-managed { background-image: url('/break_escape/assets/ui/devices/patch_port_managed.png'); }
+.pp-swatch-state-unpatched {
+    background-image: url('/break_escape/assets/ui/devices/patch_port_unpatched.png');
+    border-style: dashed;
+    border-color: #8a96aa;
+}
+
+.patch-panel-footer {
+    flex: 0 0 auto;
+    padding-left: var(--device-frame-gap);
+    margin-top: 8px;
+    min-height: 20px;
+    font-size: 20px;
+    line-height: 20px;
+    color: #e6ebf2;
+    overflow-wrap: anywhere;
+    /* cannot set the frame width: the port grid does, a long message wraps inside it */
+    width: 0;
+    min-width: 100%;
+    box-sizing: border-box;
+}

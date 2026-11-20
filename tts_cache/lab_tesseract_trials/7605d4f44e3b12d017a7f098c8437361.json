@@ -1,0 +1,13 @@
+{
+  "key": "7605d4f44e3b12d017a7f098c8437361",
+  "npc": "sidhu_selvarajan",
+  "text": "That's my whiteboard. It's from my blockchain lecture. A toy ledger, four blocks.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

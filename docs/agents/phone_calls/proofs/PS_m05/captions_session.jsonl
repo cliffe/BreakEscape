@@ -1,0 +1,134 @@
+{"seq":1,"t":"2026-11-12T20:53:51.971Z","dir":"out","ok":true,"event":"session-open","ready":{"ok":true,"label":"ready","value":true,"elapsedMs":7638},"speed":"fast","url":"http://127.0.0.1:3025/break_escape/games/2249","flagsConfigured":0,"logPath":"docs/agents/phone_calls/proofs/PS_m05/captions_session.jsonl","capturePath":null,"pid":1483341}
+{"seq":2,"t":"2026-11-12T20:53:52.141Z","dir":"in","cmd":{"cmd":"bootstrap","tutorial":"decline","resume":"new","autoBrief":true}}
+{"seq":3,"t":"2026-11-12T20:54:21.205Z","dir":"out","ok":true,"cmd":"bootstrap","result":{"trace":["cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 2","dismiss \"Welcome to Hacktivity Games!\" → \"NO, I'LL FIGURE IT OUT\"","close notes"],"settled":true,"state":{"room":"reception_lobby","player":{"x":160,"y":144,"hp":100},"activeMinigame":null,"blockingUi":null,"dialogue":null,"nearby":[{"id":"reception_lobby_notes_0","kind":"object","name":"Building Directory","d":78.1,"inRange":false},{"id":"reception_lobby_leather_sofa1_14","kind":"object","name":"leather_sofa","d":91.6,"inRange":false},{"id":"reception_lobby_club_chair_e1_17","kind":"object","name":"club_chair_e","d":107.5,"inRange":false},{"id":"door:reception_lobby->patricia_office","kind":"door","name":"reception_lobby → patricia_office","d":157.6,"inRange":false,"locked":false},{"id":"door:reception_lobby->main_corridor","kind":"door","name":"reception_lobby → main_corridor","d":158.4,"inRange":false,"locked":false}],"inventory":["Your Phone","Lock Pick Kit","RFID Cloner","Fingerprint Kit","Notepad"],"openTasks":["meet_handler","obtain_security_badge"],"recentGlobals":["briefing_played","recruiter_texted","knows_full_stakes","torres_identified","knows_insider_profile","engine_tutorial_declined"]}}}
+{"seq":4,"t":"2026-11-12T20:54:21.390Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nwindow.__ev=[]; for (const n of ['conversation_closed:agent_0x99_handler','conversation_closed:recruiter','conversation_closed:patricia_phone','global_variable_changed:mission_complete','global_variable_changed:flag4_submitted','phone_call_answered:recruiter','phone_call_declined:recruiter','phone_call_missed:recruiter','phone_call_answered:agent_0x99_handler','phone_call_declined:agent_0x99_handler','phone_call_missed:agent_0x99_handler','phone_call_answered:patricia_phone','objective_task_completed:call_in_after_sweep','game_loaded']) window.eventDispatcher.on(n, (d)=>window.__ev.push(n+'@'+Math.round(performance.now()/100)/10+(d&&d.callback?' callback':'')+(d&&d.reload?' reload':'')+(d&&typeof d.answerSeconds==='number'?' as='+d.answerSeconds:''))); return true;\n\n}"}}
+{"seq":5,"t":"2026-11-12T20:54:21.410Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":6,"t":"2026-11-12T20:54:21.639Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst g=window.gameState.globalVariables; const o=g.flag4_submitted; g.flag4_submitted=true; window.eventDispatcher.emit('global_variable_changed:flag4_submitted',{name:'flag4_submitted',value:true,oldValue:o}); return true;\n\n}"}}
+{"seq":7,"t":"2026-11-12T20:54:21.663Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":8,"t":"2026-11-12T20:54:21.883Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!(window.phoneRinger.current() && window.phoneRinger.current().state==='ringing');\n\n}"}}
+{"seq":9,"t":"2026-11-12T20:54:21.903Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":10,"t":"2026-11-12T20:54:23.124Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!(window.phoneRinger.current() && window.phoneRinger.current().state==='ringing');\n\n}"}}
+{"seq":11,"t":"2026-11-12T20:54:23.128Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":12,"t":"2026-11-12T20:54:24.376Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!(window.phoneRinger.current() && window.phoneRinger.current().state==='ringing');\n\n}"}}
+{"seq":13,"t":"2026-11-12T20:54:24.403Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":14,"t":"2026-11-12T20:54:24.635Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst b=document.querySelector('.incoming-call, .phone-incoming-call'); return b ? b.innerText.replace(/\\n+/g,' | ') : null;\n\n}"}}
+{"seq":15,"t":"2026-11-12T20:54:24.643Z","dir":"out","ok":true,"cmd":"eval","result":"Agent HaX | Incoming call | Answer | Decline"}
+{"seq":16,"t":"2026-11-12T20:54:24.860Z","dir":"in","cmd":{"cmd":"screenshot","path":"docs/agents/phone_calls/proofs/PS_m05/captions_ring_banner.png"}}
+{"seq":17,"t":"2026-11-12T20:54:25.147Z","dir":"out","ok":true,"cmd":"screenshot","result":{"ok":true,"path":"docs/agents/phone_calls/proofs/PS_m05/captions_ring_banner.png"}}
+{"seq":18,"t":"2026-11-12T20:54:25.316Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst b = document.querySelector('.incoming-call-answer'); if (!b) return 'no answer button'; b.click(); return 'answered';\n\n}"}}
+{"seq":19,"t":"2026-11-12T20:54:25.326Z","dir":"out","ok":true,"cmd":"eval","result":"answered"}
+{"seq":20,"t":"2026-11-12T20:54:25.570Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":21,"t":"2026-11-12T20:54:25.597Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":22,"t":"2026-11-12T20:54:26.824Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":23,"t":"2026-11-12T20:54:26.833Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":24,"t":"2026-11-12T20:54:28.064Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":25,"t":"2026-11-12T20:54:28.069Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":26,"t":"2026-11-12T20:54:29.124Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":27,"t":"2026-11-12T20:54:29.135Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":28,"t":"2026-11-12T20:54:30.386Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":29,"t":"2026-11-12T20:54:30.406Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":30,"t":"2026-11-12T20:54:30.629Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst c=document.getElementById('call-caption'); return c ? c.textContent : null;\n\n}"}}
+{"seq":31,"t":"2026-11-12T20:54:30.649Z","dir":"out","ok":true,"cmd":"eval","result":"SAFETYNET secure line"}
+{"seq":32,"t":"2026-11-12T20:54:30.859Z","dir":"in","cmd":{"cmd":"screenshot","path":"docs/agents/phone_calls/proofs/PS_m05/captions_ring_call.png"}}
+{"seq":33,"t":"2026-11-12T20:54:31.017Z","dir":"out","ok":true,"cmd":"screenshot","result":{"ok":true,"path":"docs/agents/phone_calls/proofs/PS_m05/captions_ring_call.png"}}
+{"seq":34,"t":"2026-11-12T20:54:31.099Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst b=document.getElementById('call-end-button'); if(!b) return 'no End'; b.click(); return 'End pressed';\n\n}"}}
+{"seq":35,"t":"2026-11-12T20:54:31.127Z","dir":"out","ok":true,"cmd":"eval","result":"End pressed"}
+{"seq":36,"t":"2026-11-12T20:54:35.355Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nwindow.MinigameFramework.currentMinigame && window.MinigameFramework.endMinigame(); return true;\n\n}"}}
+{"seq":37,"t":"2026-11-12T20:54:35.371Z","dir":"out","ok":true,"cmd":"eval","result":true}
+{"seq":38,"t":"2026-11-12T20:54:37.580Z","dir":"in","cmd":{"cmd":"openInventoryItem","item":"phone"}}
+{"seq":39,"t":"2026-11-12T20:54:37.779Z","dir":"out","ok":true,"cmd":"openInventoryItem","result":{"ok":true,"item":"phone","matched":{"index":0,"id":"inventory_inventory_phone_1794516831921","type":"phone","name":"Your Phone"},"matchedBy":"type","confirmed":true,"via":"minigame","opened":{"id":"phone-chat","title":"Your Phone"}}}
+{"seq":40,"t":"2026-11-12T20:54:39.859Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst c=document.querySelector('.contact-item[data-npc-id=\"agent_0x99_handler\"]'); if(!c) return 'no contact agent_0x99_handler'; c.click(); return 'opened agent_0x99_handler';\n\n}"}}
+{"seq":41,"t":"2026-11-12T20:54:39.884Z","dir":"out","ok":true,"cmd":"eval","result":"opened agent_0x99_handler"}
+{"seq":42,"t":"2026-11-12T20:54:42.099Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst bar=document.getElementById('call-status-bar'); const subs=[...document.querySelectorAll('.call-subtitle')].map(s=>s.innerText.replace(/\\n+/g,' ')); const choices=[...document.querySelectorAll('.choice-button')].map(b=>b.innerText.trim()); const hb=document.querySelector('.call-button'); const m=document.querySelector('.messages-container'); return {bar: bar?bar.innerText.replace(/\\n+/g,' | '):null, subs, choices, header: hb?hb.innerText.trim():null, thread: m?m.innerText.replace(/\\n+/g,' | ').slice(-500):null};\n\n}"}}
+{"seq":43,"t":"2026-11-12T20:54:42.118Z","dir":"out","ok":true,"cmd":"eval","result":{"bar":null,"subs":[],"choices":["1. I'm going in. Soft or hard?","2. The Architect signed off on the casualty projection.","3. About that flag.","4. Where do I stand?","5. Nothing right now."],"header":null,"thread":"em before half past eight tonight. | 19:50 | You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running. | 19:51 | The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost. | 19:51 | No rogue cell improvised that. Someone priced human lives and approved the invoice. | 19:51 | It's the strongest thing you'll find tonight. It puts this above Torres. | 19:51 | ☎ | Incoming call, 0:06"}}
+{"seq":44,"t":"2026-11-12T20:54:42.342Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst b=[...document.querySelectorAll('.choice-button')].find(x=>x.innerText.includes('Where do I stand')); if(!b) return 'no choice Where do I stand'; b.click(); return 'chose Where do I stand';\n\n}"}}
+{"seq":45,"t":"2026-11-12T20:54:42.381Z","dir":"out","ok":true,"cmd":"eval","result":"chose Where do I stand"}
+{"seq":46,"t":"2026-11-12T20:54:43.590Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst c=document.getElementById('call-caption'); return c ? c.textContent : null;\n\n}"}}
+{"seq":47,"t":"2026-11-12T20:54:43.610Z","dir":"out","ok":true,"cmd":"eval","result":null}
+{"seq":48,"t":"2026-11-12T20:54:43.828Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nconst bar=document.getElementById('call-status-bar'); const subs=[...document.querySelectorAll('.call-subtitle')].map(s=>s.innerText.replace(/\\n+/g,' ')); const choices=[...document.querySelectorAll('.choice-button')].map(b=>b.innerText.trim()); const hb=document.querySelector('.call-button'); const m=document.querySelector('.messages-container'); return {bar: bar?bar.innerText.replace(/\\n+/g,' | '):null, subs, choices, header: hb?hb.innerText.trim():null, thread: m?m.innerText.replace(/\\n+/g,' | ').slice(-500):null};\n\n}"}}
+{"seq":49,"t":"2026-11-12T20:54:43.860Z","dir":"out","ok":true,"cmd":"eval","result":{"bar":null,"subs":[],"choices":[],"header":null,"thread":":51 | The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost. | 19:51 | No rogue cell improvised that. Someone priced human lives and approved the invoice. | 19:51 | It's the strongest thing you'll find tonight. It puts this above Torres. | 19:51 | ☎ | Incoming call, 0:06 | Where do I stand? | 19:52 | He's in the key vault, past the server room. The reader takes one of two prints, and his is on something in his office. | 19:52"}}
+{"seq":50,"t":"2026-11-12T20:54:44.049Z","dir":"in","cmd":{"cmd":"screenshot","path":"docs/agents/phone_calls/proofs/PS_m05/captions_hub_dialling.png"}}
+{"seq":51,"t":"2026-11-12T20:54:44.179Z","dir":"out","ok":true,"cmd":"screenshot","result":{"ok":true,"path":"docs/agents/phone_calls/proofs/PS_m05/captions_hub_dialling.png"}}
+{"seq":52,"t":"2026-11-12T20:54:44.296Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":53,"t":"2026-11-12T20:54:44.302Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":54,"t":"2026-11-12T20:54:45.552Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":55,"t":"2026-11-12T20:54:45.558Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":56,"t":"2026-11-12T20:54:46.798Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":57,"t":"2026-11-12T20:54:46.815Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":58,"t":"2026-11-12T20:54:48.040Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":59,"t":"2026-11-12T20:54:48.054Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":60,"t":"2026-11-12T20:54:49.294Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":61,"t":"2026-11-12T20:54:49.304Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":62,"t":"2026-11-12T20:54:50.538Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":63,"t":"2026-11-12T20:54:50.555Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":64,"t":"2026-11-12T20:54:51.775Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":65,"t":"2026-11-12T20:54:51.782Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":66,"t":"2026-11-12T20:54:53.025Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":67,"t":"2026-11-12T20:54:53.038Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":68,"t":"2026-11-12T20:54:54.271Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":69,"t":"2026-11-12T20:54:54.284Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":70,"t":"2026-11-12T20:54:55.517Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":71,"t":"2026-11-12T20:54:55.527Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":72,"t":"2026-11-12T20:54:56.759Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":73,"t":"2026-11-12T20:54:56.771Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":74,"t":"2026-11-12T20:54:58.002Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":75,"t":"2026-11-12T20:54:58.016Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":76,"t":"2026-11-12T20:54:59.237Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":77,"t":"2026-11-12T20:54:59.250Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":78,"t":"2026-11-12T20:55:00.494Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":79,"t":"2026-11-12T20:55:00.499Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":80,"t":"2026-11-12T20:55:01.738Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":81,"t":"2026-11-12T20:55:01.745Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":82,"t":"2026-11-12T20:55:02.982Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":83,"t":"2026-11-12T20:55:02.998Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":84,"t":"2026-11-12T20:55:04.231Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":85,"t":"2026-11-12T20:55:04.244Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":86,"t":"2026-11-12T20:55:05.493Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":87,"t":"2026-11-12T20:55:05.521Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":88,"t":"2026-11-12T20:55:06.736Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":89,"t":"2026-11-12T20:55:06.762Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":90,"t":"2026-11-12T20:55:07.984Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":91,"t":"2026-11-12T20:55:07.990Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":92,"t":"2026-11-12T20:55:09.223Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":93,"t":"2026-11-12T20:55:09.228Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":94,"t":"2026-11-12T20:55:10.492Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":95,"t":"2026-11-12T20:55:10.522Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":96,"t":"2026-11-12T20:55:11.751Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":97,"t":"2026-11-12T20:55:11.762Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":98,"t":"2026-11-12T20:55:12.987Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":99,"t":"2026-11-12T20:55:13.000Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":100,"t":"2026-11-12T20:55:14.219Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":101,"t":"2026-11-12T20:55:14.233Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":102,"t":"2026-11-12T20:55:15.485Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":103,"t":"2026-11-12T20:55:15.507Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":104,"t":"2026-11-12T20:55:16.719Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":105,"t":"2026-11-12T20:55:16.737Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":106,"t":"2026-11-12T20:55:17.962Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":107,"t":"2026-11-12T20:55:17.973Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":108,"t":"2026-11-12T20:55:19.203Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":109,"t":"2026-11-12T20:55:19.225Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":110,"t":"2026-11-12T20:55:20.468Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":111,"t":"2026-11-12T20:55:20.481Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":112,"t":"2026-11-12T20:55:21.717Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":113,"t":"2026-11-12T20:55:21.739Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":114,"t":"2026-11-12T20:55:22.959Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":115,"t":"2026-11-12T20:55:22.965Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":116,"t":"2026-11-12T20:55:24.198Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":117,"t":"2026-11-12T20:55:24.215Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":118,"t":"2026-11-12T20:55:25.445Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":119,"t":"2026-11-12T20:55:25.448Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":120,"t":"2026-11-12T20:55:26.696Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":121,"t":"2026-11-12T20:55:26.714Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":122,"t":"2026-11-12T20:55:27.935Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":123,"t":"2026-11-12T20:55:27.955Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":124,"t":"2026-11-12T20:55:29.170Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":125,"t":"2026-11-12T20:55:29.183Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":126,"t":"2026-11-12T20:55:30.420Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":127,"t":"2026-11-12T20:55:30.428Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":128,"t":"2026-11-12T20:55:31.665Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":129,"t":"2026-11-12T20:55:31.666Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":130,"t":"2026-11-12T20:55:32.711Z","dir":"in","cmd":{"cmd":"eval","fn":"async () => {\nreturn !!document.getElementById('call-end-button') && document.querySelectorAll('.choice-button').length>0;\n\n}"}}
+{"seq":131,"t":"2026-11-12T20:55:32.718Z","dir":"out","ok":true,"cmd":"eval","result":false}
+{"seq":132,"t":"2026-11-12T20:55:33.934Z","dir":"in","cmd":{"cmd":"quit"}}
+{"seq":133,"t":"2026-11-12T20:55:33.934Z","dir":"out","event":"quit","commands":132,"flagsUsed":0}
+{"seq":134,"t":"2026-11-12T20:55:34.009Z","dir":"out","ok":true,"event":"session-closed","commands":133,"flagsUsed":0,"logPath":"docs/agents/phone_calls/proofs/PS_m05/captions_session.jsonl"}

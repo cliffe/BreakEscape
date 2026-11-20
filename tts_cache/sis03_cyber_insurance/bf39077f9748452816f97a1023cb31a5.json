@@ -1,0 +1,13 @@
+{
+  "key": "bf39077f9748452816f97a1023cb31a5",
+  "npc": "eleanor_vance",
+  "text": "But Albion will say the patch couldn't reasonably go onto a certified SIL 2 controller in time, and that the attacker only reached the port through the segmentation gaps.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:13Z"
+}

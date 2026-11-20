@@ -1,0 +1,13 @@
+{
+  "key": "4869c0fa2528197b6444855b9ddca218",
+  "npc": "eleanor_vance",
+  "text": "Then we have a coverage problem. Policy says cyber event must directly cause the loss. If we can't establish causality, we can't establish coverage.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:19:56Z"
+}

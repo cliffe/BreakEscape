@@ -1,0 +1,13 @@
+{
+  "key": "128397ffaca6a439d6300f3316faa1ad",
+  "npc": "narrator",
+  "text": "You put yourself between Victoria and the door. She measures the distance, the odds, and lets the bag drop.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:25:43Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "c23a30cbfc4afdb4699b943604cd77e7",
+  "npc": "chidi_okeke",
+  "text": "Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:22Z"
+}

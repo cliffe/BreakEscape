@@ -1,0 +1,36 @@
+[
+  {
+    "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+    "route": "GET /container",
+    "paths": [
+      "container/hl_box/contents[0]/name"
+    ],
+    "reason": "Class 2 (step 3's leak rule), not a filter gap: a 6+ character lock answer appears as a whole word inside a held item's display name (a placement-record reference). hl_box is a locked container, reached only by the opened-state scan. The name is shown only after the hl_box unlock, so it is harmless. Reported to m09_digital_archaeology's owner; it does not start 6b. Signed off by the orchestrator 2026-11-15.",
+    "added": "2026-11-15",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-15: m09_digital_archaeology opened-state class-2 item name"
+  },
+  {
+    "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+    "route": "GET scenario",
+    "paths": [
+      "playerInventory[7]/name"
+    ],
+    "reason": "Class 2 (step 3's leak rule), not a filter gap: the same held item as the hl_box entry above. Once the player unlocks hl_box and picks the item up, its display name (the placement-record reference, a 6+ character lock answer as a whole word) travels with it into playerInventory. The item is only takeable after the hl_box unlock that earns the answer, so this adds no new exposure over the GET /container name above. Reported to m09_digital_archaeology's owner; it does not start 6b. Signed off by the orchestrator 2026-11-15.",
+    "added": "2026-11-15",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-15: m09_digital_archaeology opened-state class-2 inventory name"
+  },
+  {
+    "scenario": "scenarios/m05_insider_trading/scenario.json.erb",
+    "route": "GET room/:id",
+    "paths": [
+      "rooms/open_office_area/npcs[0]/rfidCard/rfid_data/cardNumber",
+      "rooms/open_office_area/npcs[0]/rfidCard/rfid_card_number"
+    ],
+    "reason": "Class 4 by design: Owen Gallagher's EM4100 badge card number 4430 (low 16 bits of 2A0000114E) is the #4430 printed on the door log and the on-call lockbox code. The RFID cloner shows the card number when the player clones his badge, so the room payload carries it with his NPC. Matching the badge to the log and lockbox is the intended clue. Signed off by the user as decision D160 on 2026-11-18.",
+    "added": "2026-11-18",
+    "reviewBy": "2026-12-31",
+    "approved": "2026-11-18: user decision D160 (m05 Owen badge number 4430, allow with a signed-off scan exception)"
+  }
+]

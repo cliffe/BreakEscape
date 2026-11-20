@@ -1,0 +1,13 @@
+{
+  "key": "1756682c8371fa4d9beb9862bbc7c483",
+  "npc": "sorensen_hatch",
+  "text": "Your first days aren't in your file. Somebody in your outfit is careful with you.",
+  "voice": "Vindemiatrix",
+  "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T20:57:15Z"
+}

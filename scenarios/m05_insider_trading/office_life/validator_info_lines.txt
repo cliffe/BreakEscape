@@ -1,0 +1,1 @@
+ℹ Desk boxes: legacy in 10 map(s) (room_qdc_break, room_qdc_hall, room_qdc_lab, room_qdc_lobby, room_qdc_open, room_qdc_security, room_qdc_server_hall, room_qdc_servers, room_qdc_torres, room_qdc_vault); footprint in 0

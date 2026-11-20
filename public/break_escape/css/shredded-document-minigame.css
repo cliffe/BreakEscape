@@ -1,0 +1,288 @@
+/* ============================================================
+   Shredded Document Reconstruction Minigame (MG-B)
+   ============================================================ */
+
+/* The console window (D218) supplies the title bar, the frame and the X; the body is the
+   game container. Its layout (flex column, margin 0, overflow auto) comes from the framework's
+   `.console-window > .console-body` rule, so nothing is set here. */
+
+/* ── Outer panel ─────────────────────────────────────────── */
+
+.sdm-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: transparent;
+    font-family: 'Press Start 2P', monospace;
+}
+
+/* ── Instruction bar ─────────────────────────────────────── */
+
+.sdm-instruction {
+    padding: 8px 14px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    color: var(--ui-text-dim, #a8b2c8);
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
+    line-height: 24px;
+    flex-shrink: 0;
+}
+
+/* ── Scrollable strip area ───────────────────────────────── */
+
+.sdm-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px 20px;
+}
+
+/* ── Document title ──────────────────────────────────────── */
+
+.sdm-doc-title {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    color: var(--ui-text-dim, #a8b2c8);
+    letter-spacing: 1px;
+    text-align: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
+}
+
+/* ── Strip list ──────────────────────────────────────────── */
+
+.sdm-strips-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 8px;
+}
+
+/* ── Individual strip tile ───────────────────────────────── */
+
+/* C-SD3: no small-angle tilt (it anti-aliases the pixel text), a hard 2px offset shadow (no
+   blur), and 2px edges. The torn look stays in the dashed top and bottom edges. */
+.sdm-strip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: #f5f0e8;
+    border-top: 2px dashed #b0a090;
+    border-bottom: 2px dashed #b0a090;
+    border-left: 2px solid #8a7a6a;
+    border-right: 2px solid #8a7a6a;
+    cursor: grab;
+    user-select: none;
+    overflow: hidden;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+    transition: opacity 0.1s;
+    min-height: 34px;
+}
+
+.sdm-strip:active {
+    cursor: grabbing;
+}
+
+/* Drag states */
+
+.sdm-strip-dragging {
+    opacity: 0.45;
+    border-color: #6a82aa !important;
+}
+
+.sdm-insert-before::before,
+.sdm-insert-after::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #4a90d9;
+    z-index: 2;
+}
+
+.sdm-insert-before::before {
+    top: -6px;
+}
+
+.sdm-insert-after::after {
+    bottom: -6px;
+}
+
+/* Rotated strip — rotate the content wrapper, flip button stays upright */
+
+.sdm-strip-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.sdm-strip-rotated .sdm-strip-content {
+    transform: rotate(180deg);
+}
+
+/* Locked (completed) strip */
+
+.sdm-strip-locked {
+    cursor: default;
+    border-color: #6a9a6a;
+    background: #f0f5f0;
+}
+
+/* ── Strip contents ──────────────────────────────────────── */
+
+.sdm-drag-handle {
+    color: #b0a090;
+    /* Press Start 2P (inherited) must sit on its 8px grid, so 16px not 14px. */
+    font-size: 16px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.sdm-strip-text {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    color: #1a1008;
+    line-height: 24px;
+    flex: 1;
+}
+
+.sdm-strip-locked .sdm-strip-text {
+    color: #2a3a1a;
+}
+
+/* ── Strip controls (reorder + flip) ─────────────────────── */
+
+.sdm-strip-controls {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* C-SD1/SD2: named word buttons (no stray glyph), 2px pixel borders. GNF 16: the framework's button
+   rule sets GNF at higher specificity than a single class, so the old Press Start 8px never applied. */
+.sdm-move-btn,
+.sdm-flip-btn {
+    position: relative;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 1;
+    background: #e8e0d0;
+    color: #5a4a3a;
+    border: 2px solid #b0a090;
+    padding: 6px 7px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.sdm-move-btn:hover,
+.sdm-flip-btn:hover {
+    background: #d8cfc0;
+    border-color: #8a7a6a;
+}
+
+.sdm-move-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.sdm-move-btn:focus-visible,
+.sdm-flip-btn:focus-visible {
+    outline: 3px solid #4a90d9;
+    outline-offset: 2px;
+}
+
+/* C-SD2: a 44px touch target on small or touch screens, without changing the drawn size. */
+@media (max-width: 600px), (pointer: coarse) {
+    .sdm-move-btn::after,
+    .sdm-flip-btn::after {
+        content: '';
+        position: absolute;
+        inset: -11px;
+    }
+}
+
+/* Phone width. Inside the console window the body is 338px at 390 (318px in a 28px-frame theme),
+   against 390px before D218. Old rows: 338 - scroll padding 40 - area padding 16 - strip
+   padding and borders 24 - handle 32 and gap 8 - controls about 166 (Up, Down and Flip as GNF 16
+   buttons at roughly 10px a glyph plus 14px padding and 4px border, and two 6px gaps; it was 146
+   for the old 8px figure and is measured live) and gap 8 = about 44px of text (24px cyberpunk),
+   against main's 116px. The controls move to their own row under the text and the
+   padding shrinks: 338 - scroll padding 16 - area padding 0 - strip padding and borders 24 -
+   handle 32 and gap 8 = 258px of text (238px cyberpunk), at least main's 116px. */
+@media (max-width: 600px) {
+    .sdm-scroll {
+        padding: 8px;
+    }
+
+    .sdm-strips-area {
+        padding: 0;
+    }
+
+    .sdm-strip {
+        flex-wrap: wrap;
+    }
+
+    .sdm-strip-controls {
+        flex: 1 0 100%;
+        justify-content: flex-end;
+    }
+
+    /* 44px touch targets as real boxes. The coarse-pointer block above draws the hit area with an
+       ::after at inset -11px, which counts as scrollable overflow (scrollWidth 11px over
+       clientWidth on every button, 9px on the controls row). At phone width the boxes are 44px
+       themselves and the pseudo-element is dropped. */
+    .sdm-move-btn,
+    .sdm-flip-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .sdm-move-btn::after,
+    .sdm-flip-btn::after {
+        content: none;
+    }
+}
+
+/* ── Completed state ─────────────────────────────────────── */
+
+.sdm-completed-banner {
+    padding: 10px 16px;
+    background: #062010;
+    border-bottom: 2px solid #00c853;
+    color: #00c853;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.sdm-success-reveal {
+    padding: 10px 16px;
+    background: #081808;
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
+    color: #c8ffcc;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    flex-shrink: 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+
+.sdm-empty-state {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    color: var(--ui-text-dim, #a8b2c8);
+    text-align: center;
+    padding: 24px 0;
+}
+

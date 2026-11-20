@@ -1,0 +1,13 @@
+{
+  "key": "959b822b02df5ccaa9c6080b0513fe57",
+  "npc": "amara",
+  "text": "There's cake going, if you're quick.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:17:01Z"
+}

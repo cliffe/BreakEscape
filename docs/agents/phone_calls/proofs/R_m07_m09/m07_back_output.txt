@@ -1,0 +1,6 @@
+game 2293 (back)
+in call: {"cur":{"npc":"the_architect","state":"connected","knot":"taunt_t30","opened":true},"q":0,"banner":null,"bimg":null} {"t":343691,"last":"Don't look for the trace. It isn't there.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+shot back_in_call
+back arrow, polled in page: {"closedAfterMs":10}
+after: {"cur":null,"q":0,"banner":null,"bimg":null} mg=null rows=["Call: No caller ID"]
+shot back_after_back

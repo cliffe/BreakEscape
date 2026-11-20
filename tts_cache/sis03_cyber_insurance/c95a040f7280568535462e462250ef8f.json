@@ -1,0 +1,13 @@
+{
+  "key": "c95a040f7280568535462e462250ef8f",
+  "npc": "eleanor_vance",
+  "text": "Albion deferred the patch and named one compensating control: their managed SOC would watch for an attacker moving towards the safety system.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:22:22Z"
+}

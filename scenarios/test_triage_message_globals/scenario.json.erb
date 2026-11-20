@@ -1,0 +1,260 @@
+{
+  "scenario_id": "test_triage_message_globals",
+  "scenario_name": "Test: triage message globals",
+  "scenario_brief": "Test fixture for the triage option outcome.messageGlobals. Sort the small inbox at the workstation (two phish and one real message), then talk to the checker: it reports whether the fraud email, the one listed in messageGlobals, counted as caught. The other phish is not listed and writes nothing.",
+  "endGoal": "Sort the inbox, then read the checker's report.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "tmg_room",
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "sort",
+      "title": "Sort the inbox",
+      "description": "Open the triage workstation and sort the three messages.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "tmg_sorted",
+          "title": "Sort the inbox",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "tmg_percent": 0,
+    "tmg_reportRate": 0,
+    "tmg_complete": false,
+    "tmg_fraud_caught": false,
+    "tmg_pass": false
+  },
+  "rooms": {
+    "tmg_room": {
+      "type": "room_office",
+      "door_sign": "Triage Test",
+      "connections": {},
+      "objects": [
+        {
+          "type": "triage-workstation",
+          "id": "tmg_triage",
+          "name": "Triage Workstation",
+          "position": {
+            "x": 6,
+            "y": 4
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A workstation for sorting a small inbox.",
+          "minigameData": {
+            "triageSetId": "tmg_inbox",
+            "conclusionTaskId": "tmg_sorted"
+          }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "tmg_checker",
+          "displayName": "Checker",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 3
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_triage_message_globals/ink/checker.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:tmg_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "tmg_sorted"
+            },
+            {
+              "eventPattern": "global_variable_changed:tmg_fraud_caught",
+              "condition": "value === true",
+              "onceOnly": true,
+              "bark": "The fraud email counted as caught."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "social": {
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "guest",
+          "address": "guest@workstation.example",
+          "displayName": "Operator",
+          "kind": "given",
+          "person": null,
+          "mailbox": "guest",
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "guest"
+        }
+      ],
+      "contacts": []
+    },
+    "triageSets": [
+      {
+        "id": "tmg_inbox",
+        "stage": "mission",
+        "scoringProfile": "awareness",
+        "title": "Sort the inbox",
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there"
+          },
+          {
+            "min": 0,
+            "headline": "Worth another look"
+          }
+        ],
+        "outcome": {
+          "setGlobalPrefix": "tmg_",
+          "passPercent": 60,
+          "messageGlobals": {
+            "tmg_fraud": "tmg_fraud_caught"
+          }
+        },
+        "messages": [
+          {
+            "id": "tmg_real",
+            "from": {
+              "name": "Ledgerwell Facilities",
+              "address": "facilities@ledgerwell.example"
+            },
+            "to": "operator@ledgerwell.example",
+            "subject": "Fire drill on Thursday",
+            "time": "09:10",
+            "body": "A fire drill runs at 11:00 on Thursday. No action needed.",
+            "links": [],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "ledgerwell.example",
+              "replyTo": "facilities@ledgerwell.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Internal sender, no ask, no link."
+              }
+            }
+          },
+          {
+            "id": "tmg_fraud",
+            "from": {
+              "name": "Ledgerwell Payroll",
+              "address": "accounts@ledgerwel1.example"
+            },
+            "to": "operator@ledgerwell.example",
+            "subject": "Updated bank details, please action today",
+            "time": "09:40",
+            "body": "Our bank details have changed. Please pay the next invoice to the new account today.\n{{link:confirm}}",
+            "links": [
+              {
+                "id": "confirm",
+                "text": "ledgerwell.example/portal",
+                "destination": "https://ledgerwell-hr.example/login"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.ledgerwell-hr.example",
+              "replyTo": "accounts@ledgerwel1.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "linkCredible",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The address is accounts@ledgerwel1.example, a look-alike of ledgerwell.example.",
+                "linkCredible": "The words say ledgerwell.example, but the link goes to ledgerwell-hr.example.",
+                "urgencyCalibrated": "Pay the new account today: the deadline is the pressure."
+              },
+              "headerNote": "SPF, DKIM and DMARC all pass, because the sender controls the look-alike domain. A pass tells you which domain sent it, not that you should trust it.",
+              "ifTrusted": "Confirming would hand over bank details.",
+              "reportReply": "Thanks. This has been marked as a phish."
+            }
+          },
+          {
+            "id": "tmg_other",
+            "from": {
+              "name": "Ledgerwell Payroll",
+              "address": "parcels@ledgerwell-hr.example"
+            },
+            "to": "operator@ledgerwell.example",
+            "subject": "Confirm your parcel today",
+            "time": "09:40",
+            "body": "Your parcel is held. Confirm your address today.\n{{link:confirm}}",
+            "links": [
+              {
+                "id": "confirm",
+                "text": "ledgerwell.example/portal",
+                "destination": "https://ledgerwell-hr.example/login"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.ledgerwell-hr.example",
+              "replyTo": "parcels@ledgerwell-hr.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "linkCredible",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The address is parcels@ledgerwell-hr.example, a look-alike of ledgerwell.example.",
+                "linkCredible": "The words say ledgerwell.example, but the link goes to ledgerwell-hr.example.",
+                "urgencyCalibrated": "Today, and a held parcel, are the pressure."
+              },
+              "headerNote": "SPF, DKIM and DMARC all pass, because the sender controls the look-alike domain. A pass tells you which domain sent it, not that you should trust it.",
+              "ifTrusted": "Confirming would hand over bank details.",
+              "reportReply": "Thanks. This has been marked as a phish."
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

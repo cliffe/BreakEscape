@@ -1,0 +1,9 @@
+{
+  "display_name": "Demo: Access tour",
+  "description": "A walk-round access test of Merrin & Sallow for colleagues who know Break Escape: doors and cards, sign-in PCs and their owners, saved credentials, a drop box on a wall port, a pivot to a second network, a keystroke injector, an evil-twin access point and the clean-up. Slice 1: rooms, doors, locks and cast only.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 35,
+  "test_type": "demo",
+  "test_objective": "Show the access and network model in one office: the seven rooms, their doors and locks, and the cast, ready for the later slices' accounts, devices and office life"
+}

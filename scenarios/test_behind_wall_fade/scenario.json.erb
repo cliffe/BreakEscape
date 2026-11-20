@@ -1,0 +1,75 @@
+{
+  "scenario_id": "test_behind_wall_fade",
+  "scenario_name": "Test: behind-the-wall fade",
+  "scenario_brief": "TEST: when the player stands in the strip behind a south room's back wall, that room's wall and the objects drawn in those two rows fade to 50% and the strip takes the light of the room to the north.\n\nLayout: office_n (dark) above hall (start, 20 tiles wide); reception and server (server is a motion-sensor room) below the hall. Walk down against the hall's bottom wall to fade reception or server; walk down from office_n against the hall's top wall to fade the hall. See planning_notes/behind_wall_fade/DESIGN.md section 12.",
+  "endGoal": "Engine test. No win condition.",
+  "version": "1.0",
+  "show_scenario_brief": "never",
+  "disableAttacks": true,
+  "startRoom": "hall",
+
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "player": {
+    "id": "player",
+    "displayName": "Pentester",
+    "spriteSheet": "female_hacker_hood_v2"
+  },
+
+  "globalVariables": {},
+
+  "objectives": [
+    {
+      "aimId": "test",
+      "title": "Walk along the back walls",
+      "description": "Stand behind each south room's back wall and watch it fade.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "reach_server", "title": "Reach the server room", "type": "enter_room", "targetRoom": "server", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "hall": {
+      "type": "room_pnw_genhall",
+      "door_sign": "Hall",
+      "connections": { "north": "office_n", "south": ["reception", "server"] },
+      "objects": []
+    },
+    "office_n": {
+      "type": "room_office",
+      "door_sign": "North Office",
+      "connections": { "south": "hall" },
+      "lighting": { "mode": "dark" },
+      "objects": [
+        { "type": "keycard", "id": "north_card", "name": "North card", "takeable": true, "position": { "x": 8, "y": 8 }, "observations": "A card in office_n's bottom row, drawn under the hall's back wall. It belongs to office_n and must never fade." }
+      ]
+    },
+    "reception": {
+      "type": "room_reception",
+      "door_sign": "Reception",
+      "connections": { "north": "hall" },
+      "npcs": [
+        { "id": "fade_npc", "displayName": "Receptionist", "npcType": "person", "position": { "x": 5, "y": 2.6 }, "spriteSheet": "male_office_worker_v2" }
+      ],
+      "objects": [
+        { "type": "pc", "id": "fade_pc", "name": "Reception PC", "takeable": false, "observations": "On the reception desk: joins the desk's table group and has a screen glow." },
+        { "type": "safe", "id": "fade_safe_low", "name": "Low safe", "locked": false, "observations": "Wholly below the strip: must stay at full alpha." },
+        { "type": "safe", "id": "fade_safe_edge", "name": "Edge safe", "locked": false, "observations": "Two pixels into the strip: fades." },
+        { "type": "key", "id": "fade_key", "name": "Wall key", "keyPins": [45, 25, 55, 35], "takeable": true, "observations": "Hung on the back wall: fades." },
+        { "type": "lockpick", "id": "fade_elevated", "name": "Shelf lockpick", "takeable": true, "position": { "x": 8.6, "y": 0.8, "elevation": 32 }, "observations": "Explicit elevation 32, drawn in the strip: fades." },
+        { "type": "keycard", "id": "fade_floor_edge", "name": "Floor card", "takeable": true, "position": { "x": 8.6, "y": 2 }, "observations": "Top edge exactly on the strip's bottom: must stay at full alpha." },
+        { "type": "notes", "id": "fade_desk_note", "name": "Desk note", "takeable": true, "text": "Back in five.", "position": { "x": 6.3, "y": 2.1 }, "observations": "Its own rect is below the strip but it sits on the desk's front half: fades with the desk." }
+      ]
+    },
+    "server": {
+      "type": "room_hq_servers",
+      "door_sign": "Server Room",
+      "connections": { "north": "hall" },
+      "lighting": { "mode": "motion" },
+      "objects": []
+    }
+  }
+}

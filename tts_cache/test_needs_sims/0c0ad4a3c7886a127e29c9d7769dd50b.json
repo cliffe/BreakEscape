@@ -1,0 +1,13 @@
+{
+  "key": "0c0ad4a3c7886a127e29c9d7769dd50b",
+  "npc": "amara",
+  "text": "Maybe the kitchen's quieter.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:16:12Z"
+}

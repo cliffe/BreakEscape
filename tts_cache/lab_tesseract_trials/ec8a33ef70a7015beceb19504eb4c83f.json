@@ -1,0 +1,13 @@
+{
+  "key": "ec8a33ef70a7015beceb19504eb4c83f",
+  "npc": "briefing_cutscene",
+  "text": "Ransomware Incorporated is run by someone who calls themselves Ghost. They lock up a company's files and sell them back.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Brisk, dry, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "6a8585f335420d7840c877f5bbeb2cdd",
+  "npc": "robert_vance",
+  "text": "Something else?",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Conscientious and overworked; defensive at first, then alarmed and determined once he realises the threat is real.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:01:47Z"
+}

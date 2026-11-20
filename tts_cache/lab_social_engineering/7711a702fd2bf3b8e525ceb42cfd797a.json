@@ -1,0 +1,13 @@
+{
+  "key": "7711a702fd2bf3b8e525ceb42cfd797a",
+  "npc": "ruth",
+  "text": "You've got the portal off Dev, but not the payslip date. Ring him back and ask when they go out.",
+  "voice": "Sulafat",
+  "style": "Engagement lead at a British penetration-testing consultancy, late forties, Black British of Nigerian (Yoruba) heritage, raised in London. Speak with a consistent London English accent with a light Lagos lilt throughout — do not shift to any other accent. Warm mid-range pitch; measured but brisk pace. A good boss briefing a junior consultant: friendly, practical, no fuss.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:35:42Z"
+}

@@ -1,0 +1,14 @@
+{
+  "key": "fd3dca652ea392f39d39ff9aede0817a",
+  "npc": "lock_guard",
+  "text": "Nobody tells me anything. Okay. Go on.",
+  "delivery": "slowly after the first sentence, giving in",
+  "voice": "Rasalgethi",
+  "style": "Night-shift guard, thirty-four, Samoan-American from West Valley City, Utah. Consistent Utah American accent throughout -- do not shift to any other accent. Deep, slow, polite; big enough that he never needs to raise his voice.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T18:23:47Z"
+}

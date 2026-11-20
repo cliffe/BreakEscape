@@ -1,0 +1,13 @@
+{
+  "key": "893d821e3238d9b7cd4bde9c96f04db4",
+  "npc": "grace",
+  "text": "Who brought cake in?",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:20:58Z"
+}

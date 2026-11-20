@@ -1,0 +1,137 @@
+{
+  "scenario": "crypto1_captain_meow",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_office1",
+      "label": "Office1<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office1",
+      "label": "Office1",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_office2",
+      "label": "Office2<br/>Biometric lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office2",
+      "label": "Office2",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_office3",
+      "label": "Office3<br/>Biometric lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office3",
+      "label": "Office3",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_ceo",
+      "label": "Ceo<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "ceo",
+      "label": "Ceo",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_server1",
+      "label": "Server1<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server1",
+      "label": "Server1",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_captain_meow_s_tablet",
+      "label": "Captain Meow's Tablet<br/>Lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_ceo_briefcase",
+      "label": "CEO Briefcase<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_safe",
+      "label": "safe<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_data_safe",
+      "label": "Data safe<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_office1",
+      "to": "office1",
+      "soft": false
+    },
+    {
+      "from": "door_office2",
+      "to": "office2",
+      "soft": false
+    },
+    {
+      "from": "door_office3",
+      "to": "office3",
+      "soft": false
+    },
+    {
+      "from": "door_ceo",
+      "to": "ceo",
+      "soft": false
+    },
+    {
+      "from": "door_server1",
+      "to": "server1",
+      "soft": false
+    },
+    {
+      "from": "office2",
+      "to": "lock_captain_meow_s_tablet",
+      "soft": false
+    },
+    {
+      "from": "ceo",
+      "to": "lock_ceo_briefcase",
+      "soft": false
+    },
+    {
+      "from": "ceo",
+      "to": "lock_safe",
+      "soft": false
+    },
+    {
+      "from": "server1",
+      "to": "lock_data_safe",
+      "soft": false
+    }
+  ]
+}

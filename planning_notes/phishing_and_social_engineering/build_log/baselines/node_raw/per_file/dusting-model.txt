@@ -1,0 +1,75 @@
+TAP version 13
+# Subtest: careful even dusting (P = 3), right powder, full tape: 0.95 or better
+ok 1 - careful even dusting (P = 3), right powder, full tape: 0.95 or better
+  ---
+  duration_ms: 2.38311
+  ...
+# Subtest: ordinary player (random strokes over 85% of the print, P 1.5 to 6, tape 80%): 0.88 or better
+ok 2 - ordinary player (random strokes over 85% of the print, P 1.5 to 6, tape 80%): 0.88 or better
+  ---
+  duration_ms: 33.056467
+  ...
+# Subtest: over-brushed (P = 12), no puff: 0.75 to 0.9 at every difficulty
+ok 3 - over-brushed (P = 12), no puff: 0.75 to 0.9 at every difficulty
+  ---
+  duration_ms: 7.136715
+  ...
+# Subtest: over-brushed (P = 12), then a puff pass over the print: 0.9 or better
+ok 4 - over-brushed (P = 12), then a puff pass over the print: 0.9 or better
+  ---
+  duration_ms: 4.192485
+  ...
+# Subtest: puff lowers fog without lowering coverage, and leaves light powder alone
+ok 5 - puff lowers fog without lowering coverage, and leaves light powder alone
+  ---
+  duration_ms: 0.558847
+  ...
+# Subtest: careful dusting with the wrong powder: 0.8 or better
+ok 6 - careful dusting with the wrong powder: 0.8 or better
+  ---
+  duration_ms: 0.541094
+  ...
+# Subtest: minimum lift (coverage just at the threshold, clean, right powder, full tape): 0.6 or better at every difficulty
+ok 7 - minimum lift (coverage just at the threshold, clean, right powder, full tape): 0.6 or better at every difficulty
+  ---
+  duration_ms: 16.546982
+  ...
+# Subtest: wrongPowderReason names both powders and the better one
+ok 8 - wrongPowderReason names both powders and the better one
+  ---
+  duration_ms: 0.316698
+  ...
+# Subtest: brushLine leaves no gaps on a 40 px stroke
+ok 9 - brushLine leaves no gaps on a 40 px stroke
+  ---
+  duration_ms: 0.363644
+  ...
+# Subtest: brush, reveal and fog behave
+ok 10 - brush, reveal and fog behave
+  ---
+  duration_ms: 1.108496
+  ...
+# Subtest: contrastFactor table
+ok 11 - contrastFactor table
+  ---
+  duration_ms: 0.091868
+  ...
+# Subtest: surfaceForObject
+ok 12 - surfaceForObject
+  ---
+  duration_ms: 0.845601
+  ...
+# Subtest: tape grid, rating and tables
+ok 13 - tape grid, rating and tables
+  ---
+  duration_ms: 0.467557
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 360.524472

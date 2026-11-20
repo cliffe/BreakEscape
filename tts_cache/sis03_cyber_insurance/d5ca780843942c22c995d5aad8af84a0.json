@@ -1,0 +1,13 @@
+{
+  "key": "d5ca780843942c22c995d5aad8af84a0",
+  "npc": "eleanor_vance",
+  "text": "What's the message? It's: \"Your insurance will not protect you against the most sophisticated threat.\"",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:31:26Z"
+}

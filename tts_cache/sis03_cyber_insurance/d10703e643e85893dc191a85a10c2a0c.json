@@ -1,0 +1,13 @@
+{
+  "key": "d10703e643e85893dc191a85a10c2a0c",
+  "npc": "eleanor_vance",
+  "text": "Their hardwired emergency shutdown caught it. No thermal runaway. Facility is stable. But six weeks offline, full ICS rebuild, and physical battery cell damage. Whitworth's breakdown is £8.2 million.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:18:18Z"
+}

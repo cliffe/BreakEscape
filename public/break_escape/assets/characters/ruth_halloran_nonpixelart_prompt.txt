@@ -1,0 +1,10 @@
+Make portrait for Dr Ruth Halloran
+A white Irish woman of about 45 with fair, lightly freckled skin, auburn hair with some grey pinned up in a loose twist, rectangular black-framed glasses, a cryptography research lead. She wears a dark green fine-knit jumper under a charcoal blazer, a lanyard with a blank white card, grey wool trousers and a black leather belt. Sharp and measured, mouth closed, looking at you as if checking your working. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py --flip; unflipped original is ruth_halloran_concept_1_raw.png.

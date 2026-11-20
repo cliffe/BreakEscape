@@ -1,0 +1,13 @@
+{
+  "key": "2ae1de4b15a5ba0618459b705cbcd944",
+  "npc": "security_guard_patrol",
+  "text": "That door behind me is restricted. And yes, I know the readers are dead. That's why it's me stood in front of it.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

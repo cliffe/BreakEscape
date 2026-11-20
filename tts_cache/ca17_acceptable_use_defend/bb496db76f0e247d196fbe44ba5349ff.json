@@ -1,0 +1,13 @@
+{
+  "key": "bb496db76f0e247d196fbe44ba5349ff",
+  "npc": "nilesh_solanki",
+  "text": "Nilesh, service desk. Every rule here has a 'because'. Sort the cards into Allowed, Not allowed and Ask first, then a short inbox. If you're not sure, ask.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca17_acceptable_use_defend",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T17:16:31Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "3ff02ef8050bbd1fc7ac56c759e17fe6",
+  "npc": "eleanor_vance",
+  "text": "In practice, that meant four distinct Security-Informed Safety claims today: segmentation as a coverage condition, safety-constrained patch deferral with compensating controls, attribution below the act-of-war threshold, and Meridian's own prior knowledge at renewal.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:28:31Z"
+}

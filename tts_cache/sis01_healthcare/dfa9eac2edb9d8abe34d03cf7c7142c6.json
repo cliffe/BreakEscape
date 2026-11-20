@@ -1,0 +1,13 @@
+{
+  "key": "dfa9eac2edb9d8abe34d03cf7c7142c6",
+  "npc": "bed4_patient",
+  "text": "Hello? Is anyone there? My machine is beeping.",
+  "voice": "Charon",
+  "style": "Weak, unwell British Pakistani man of about seventy, two days after heart surgery. Speak with a consistent Bradford, with Punjabi undertones, accent throughout — do not shift to any other accent. Use a slow, laboured delivery.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-10-11",
+  "recorded_at": "2026-10-11T00:11:46Z"
+}

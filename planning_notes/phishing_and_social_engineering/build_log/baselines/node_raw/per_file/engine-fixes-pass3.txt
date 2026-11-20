@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: E17: room display name uses door_sign, then name, then a tidied id
+ok 1 - E17: room display name uses door_sign, then name, then a tidied id
+  ---
+  duration_ms: 3.221708
+  ...
+# Subtest: E8: influence toast uses the NPC display name, not an id
+ok 2 - E8: influence toast uses the NPC display name, not an id
+  ---
+  duration_ms: 1.248287
+  ...
+# Subtest: E7: dual-auth text defaults to sis01 and can be overridden
+ok 3 - E7: dual-auth text defaults to sis01 and can be overridden
+  ---
+  duration_ms: 1.136449
+  ...
+# 🔐 RFIDDataManager initialized
+# Subtest: E14: a MIFARE Classic card with no keys is neither "Clonable" nor saveable
+ok 4 - E14: a MIFARE Classic card with no keys is neither "Clonable" nor saveable
+  ---
+  duration_ms: 2.794234
+  ...
+# 🔐 RFIDDataManager initialized
+# 🎨 RFIDUIRenderer initialized
+# Subtest: E14: keyless MIFARE read screen offers "Crack keys first" with a persistent explanation, not Save
+ok 5 - E14: keyless MIFARE read screen offers "Crack keys first" with a persistent explanation, not Save
+  ---
+  duration_ms: 4.36754
+  ...
+# ⏱️ ScenarioTimerUI initialized with 1 timers
+# ✅ Timer fired: t1, marked as complete
+# ⏱️ ScenarioTimerUI initialized with 1 timers
+# 🗑️ ScenarioTimerUI destroyed
+# 🗑️ ScenarioTimerUI destroyed
+# Subtest: E15: timer HUD clears its text when the last timer fires or is cancelled
+ok 6 - E15: timer HUD clears its text when the last timer fires or is cancelled
+  ---
+  duration_ms: 2.5658
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 89.874863

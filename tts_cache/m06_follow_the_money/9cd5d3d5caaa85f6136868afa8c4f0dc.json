@@ -1,0 +1,13 @@
+{
+  "key": "9cd5d3d5caaa85f6136868afa8c4f0dc",
+  "npc": "narrator",
+  "text": "He doesn't even break stride this time.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:52:20Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "05d1723297560bc5b9a4be83c1e5446a",
+  "npc": "eleanor_vance",
+  "text": "We have the NCSC Attribution Brief on the table — still sealed. But I should walk you through the act-of-war question before you open it.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:24:53Z"
+}

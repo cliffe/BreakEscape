@@ -1,0 +1,13 @@
+{
+  "key": "71613ed474f635f630315b186a6339dd",
+  "npc": "eleanor_vance",
+  "text": "Denial is possible, but it's high-risk. Only pursue it if you're confident in the warranty breach causality and Albion's litigation exposure.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:30:02Z"
+}

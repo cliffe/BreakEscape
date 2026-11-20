@@ -1,0 +1,137 @@
+
+## R30 (Phase 4 dialogue C1, D7-1/D7-9/D7-39): debrief only, from globals. The longest-run case: Meltdown covered, so Trojan Horse is the last dark read-out, with HaX's two-line 'You knew' (correction found with the window open, not acted on) and the question between read-outs. Then the fullest site list: Mercer hostile and left standing, condemned and told he was a diversion; Elena turned; Hollis talked; Park walked out. The defended answer after a held correction isn't praised.
+   {set {"grid_saved":true,"team_assignment":"meltdown","team_assigned":true,"projection_revised":true,"revision_found_open":true,"found_coordination_traffic":true,"mercer_fate":"ko","mercer_stance":"condemned","mercer_told_diversion":true,"elena_outcome":"turned","elena_met":true,"hollis_resolved":"talked","park_resolved":"talked","vault_entered":true}}
+      [mapping agent_0x99: set flags_nag_sent=true]
+      [clock: debrief_fallback started at 0 min]
+   [text agent_0x99 +4000ms] Grid's held. Some of what you took off that host hasn't gone through the relay yet. Submit the rest, then call me and I'll put you through.
+      [mapping agent_0x99: set hurt_line_said=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   [text agent_0x99 +2000ms] Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during.
+      [mapping agent_0x99: set revision_found_open=true]
+      [mapping agent_0x99: set decode_read_open=true]
+
+--- debrief ---
+      [set_global debrief_played=true]
+  Narrator: A borrowed office at the grid site, not long after the abort. On the secure link, Netherton sits down with a tablet, in the suit he briefed you in.
+  Director Magnus Netherton: Agent. Sit down. You have earned that much.
+  Director Magnus Netherton: The sequence is terminated. All twenty-three transformers held. One hundred and forty-seven substations are carrying load.
+  Director Magnus Netherton: Eight point four million people have power tonight.
+  Director Magnus Netherton: The projection on my desk said two hundred and forty to three hundred and eighty-five dead. That number is now zero.
+  Director Magnus Netherton: I am not going to qualify that. You did the thing. It is done.
+  Director Magnus Netherton: Their backup server shared its coordination file with anyone who asked. Its listener read the operator's password to anyone who connected. And that account could make itself root.
+  Director Magnus Netherton: Three doors they left open, and you went through all of them before the clock did.
+     (2 options)
+ > It doesn't feel done, sir.
+  Director Magnus Netherton: It will not, tonight. Count it anyway.
+  Director Magnus Netherton: You opened the door before you touched their host. That is the order that kept it clean.
+  Director Magnus Netherton: The other three operations started on schedule. One of them ran into our team. I have the first reporting from all of them.
+  Director Magnus Netherton: The team took TechCore's twenty-fourth floor and pushed defences to all twelve networks inside the window.
+  Director Magnus Netherton: The hospitals first, because that is what you were buying. Four thousand two hundred hospitals had an ordinary night.
+  Director Magnus Netherton: Eight of the twelve held clean. Four took damage, mostly money and stolen code. Futures are down three per cent.
+  Director Magnus Netherton: Two Digital Vanguard insiders were detained on the twenty-fourth floor. Ashford was not with them. Ashford is never with them.
+     (2 options)
+ > Was it worth it?
+  Director Magnus Netherton: For the people the team reached, yes. That is the only half I can answer tonight.
+  Director Magnus Netherton: Your field notes say the Trojan Horse projection was understated. Nine days, not ninety, and dispatch on the manifest.
+  Director Magnus Netherton: The team was not moved on it.
+  Agent HaX: I logged it. You found the thing that was built not to be found. That's the part I'd keep.
+  Director Magnus Netherton: Every figure you were briefed with came from material we captured.
+     (2 options)
+ > Then whose numbers were they?
+  Director Magnus Netherton: His. The Architect let us capture them. Our threat desk did not derive one.
+  Director Magnus Netherton: Two operations went unanswered. I am reading both.
+     (2 options)
+ > Read them, sir.
+  Director Magnus Netherton: Operation Fracture. Washington. The exfiltration completed. Every voter record in forty-three states.
+  Director Magnus Netherton: The Social Fabric package went out ninety minutes later, as designed.
+  Director Magnus Netherton: Two secretaries of state are already talking about postponing. The package is believable because the breach under it is real.
+  Director Magnus Netherton: The desk expects twenty to forty dead in the disorder this week. The records will be for sale by the weekend, permanently.
+     (2 options)
+ > How many of those are on me?
+  Director Magnus Netherton: I will ask you that at the end, in your own words. Hear this one first.
+  Director Magnus Netherton: Operation Trojan Horse. Austin. The injection run completed. Forty-seven million systems took a signed backdoor, and for nine days nothing will happen at all.
+  Narrator: He pauses on the number. It is the only word he emphasises all night.
+  Director Magnus Netherton: Nine. The brief said ninety. The brief also said no projected fatalities.
+  Director Magnus Netherton: On day nine, emergency dispatch in eleven counties starts dropping calls. Nobody will call it an attack for two more days.
+  Director Magnus Netherton: Ninety to a hundred and sixty dead over the following month, spread thin enough that no single coroner sees a cluster.
+  Director Magnus Netherton: Then the health record systems. Eighteen thousand hospitals rebuild from bare metal.
+  Agent HaX: You knew. You found it and it did not move.
+  Agent HaX: I'm not saying it to punish you. Somebody has to write it down, and it's going to be me.
+     (2 options)
+ > (Wait.)
+  Director Magnus Netherton: And two of ours. Names withheld until the families are told.
+  Director Magnus Netherton: The site, then. Shorter list.
+  Director Magnus Netherton: Dr. James Mercer came at you in that control room. By the time the police reached it, he was gone.
+  Director Magnus Netherton: You told him what he was. He took that with him.
+  Director Magnus Netherton: He also heard from you that he was scenery, there to keep us busy. Whatever that does to a man like him, it is doing it now.
+  Director Magnus Netherton: Elena Rodriguez gave a statement without being asked twice. Analysis wants her. I have not decided.
+  Director Magnus Netherton: The police picked Ray Hollis up at the gate. He told you more about the vault than he has told us.
+  Director Magnus Netherton: Thomas Park walked out of the vault into the police cordon. He has given his name and nothing else. He left the switch alone.
+  Narrator: Netherton lowers the tablet. Nobody speaks.
+     (2 options)
+ > (Say nothing.)
+  Agent HaX: Director. One more thing. It isn't in the reporting yet.
+  Agent HaX: The calls. He had your handset tonight, and your designation.
+  Agent HaX: He knew you were in Portland. He knew there was one team and three targets.
+     (2 options)
+ > How?
+  Agent HaX: I've been through the tasking chain twice. There's no point where he could have learned any of that.
+  Director Magnus Netherton: Then explain it.
+  Agent HaX: I can't, sir. That's the report.
+  Narrator: Nobody fills the pause.
+  Agent HaX: Four operations, one clock, one team, and numbers we didn't derive ourselves. That's a test with a controlled variable.
+  Agent HaX: The variable was you. Something in that building could have shown us how he did it. We didn't find it.
+     (2 options)
+ > Then he got what he came for.
+  Director Magnus Netherton: Agent. Look at me.
+  Director Magnus Netherton: Eight point four million people have power. Nothing either of you has said changes that.
+  Director Magnus Netherton: He measured you. He did not beat you.
+  Narrator: He says it like a line he has decided to believe.
+  Director Magnus Netherton: Anything you want on the record before I close this?
+     (3 options)
+ > Nothing on the record, sir.
+  Director Magnus Netherton: One question, then, and it goes in your file in your words rather than mine.
+  Director Magnus Netherton: Three briefs. One team. You sent it where you sent it. Where do you stand on that?
+     (4 options)
+ > I made the call on the numbers I had. I'd make it again.
+      [set_global debrief_stance=defended]
+  Director Magnus Netherton: The numbers you had changed while the window was open, and the team stayed where it was. That answer will need more than one sentence in a review room.
+  Director Magnus Netherton: It is also the predictable answer. Predictable is what he was shopping for tonight.
+  Director Magnus Netherton: Keep the discipline. Change the numbers you trust.
+  Narrator: Netherton closes the tablet cover and holds it against his chest, which is what he does instead of sighing.
+  Director Magnus Netherton: You finished it, Agent. I will write the rest myself.
+  Director Magnus Netherton: When your leave ends, report to headquarters. I will find us a room without windows.
+     (2 options)
+ > (Say nothing.)
+  Agent HaX: Sir?
+  Director Magnus Netherton: Somebody told him where we were sending our agent before the order went out.
+  Director Magnus Netherton: Until I know who, every briefing I give is a message to ENTROPY with a delay on it.
+  Director Magnus Netherton: So we stop giving them. And we find out who has been reading.
+  Narrator: Outside, across three states, people are asleep with the lights on.
+  Narrator: Somewhere else, a man reads the same figures on the same kind of tablet, and is pleased with them.
+      [task: take_the_debrief]
+  [end]
+   [PASS] said: "For the people the team reached, yes. That is the only half I can answer tonight."
+   [PASS] said: "You knew. You found it and it did not move."
+   [PASS] said: "Somebody has to write it down, and it's going to be me."
+   [PASS] said: "And two of ours. Names withheld until the families are told."
+   [PASS] said: "Dr. James Mercer came at you in that control room. By the time the police reached it, he was gone."
+   [PASS] said: "he was scenery"
+   [PASS] said: "He told you more about the vault than he has told us."
+   [PASS] said: "He had your handset tonight, and your designation."
+   [PASS] said: "The numbers you had changed while the window was open, and the team stayed where it was."
+   [PASS] said: "Agent HaX: Sir?"
+   [PASS] said: "You finished it, Agent"
+   [PASS] not said: "Ask me again when I have read you"
+   [PASS] not said: "Good. That answer will stand up"
+   [PASS] not said: "Blackout was still at the master console"
+   [PASS] not said: "The team not moving is a separate sentence"
+   [PASS] not said: "Above expectations"
+   [PASS] not said: "Tomb Gamma"
+   [PASS] longest run 9 (debrief) <= 9
+
+[stats] spoken/narrated lines 72, choices 12, longest run without a choice 9 (debrief); runs>=6: debrief:8, debrief:7, debrief:9, debrief:9, debrief:6, debrief:6, debrief:6
+[result] all expectations met

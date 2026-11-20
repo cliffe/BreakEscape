@@ -1,0 +1,7 @@
+{
+  "display_name": "NPC Face Player Test",
+  "description": "Technical test for NPC facing player mechanic.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

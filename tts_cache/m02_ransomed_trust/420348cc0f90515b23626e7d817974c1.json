@@ -1,0 +1,13 @@
+{
+  "key": "420348cc0f90515b23626e7d817974c1",
+  "npc": "receptionist",
+  "text": "He walked two men in high-vis through this lobby and said they were with facilities. I asked for names for the book.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

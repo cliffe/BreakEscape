@@ -1,0 +1,13 @@
+{
+  "key": "017f20110a3b378ce83a3b7e9b06c331",
+  "npc": "narrator",
+  "text": "She doesn't answer.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T01:04:00Z"
+}

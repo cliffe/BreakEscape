@@ -1,0 +1,13 @@
+{
+  "key": "0bbba8578d29f3c8861b09e8434163b3",
+  "npc": "agent_nightshade",
+  "text": "Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's technical analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-11",
+  "recorded_at": "2026-11-11T00:22:36Z"
+}

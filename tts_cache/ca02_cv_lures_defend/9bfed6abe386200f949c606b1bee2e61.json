@@ -1,0 +1,13 @@
+{
+  "key": "9bfed6abe386200f949c606b1bee2e61",
+  "npc": "fatima_begum",
+  "text": "That's the inbox sorted, thanks. A real CV just opens in the viewer. Anything that asks for more than that gets a second look from me.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures_defend",
+  "source": "generate",
+  "generated": "2026-11-19",
+  "recorded_at": "2026-11-19T18:51:11Z"
+}

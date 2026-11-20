@@ -1,0 +1,113 @@
+# sis02 round 2: confirmation playtest (2026-10-05)
+
+For a Sonnet playtester (`playtest-scenario` skill), keyless server on :3001, never touch :3000. Read the words on screen and quote them exactly; screenshot anything visual. This run checks only what the round-2 fix changed (findings in `SCRIPT_EDITOR_REVIEW.md` MJ1 to MJ6 and m1 to m18, playtest runs A, B and C, and the consistency pass). The round-1 script it replaces is in git history (`git show HEAD:scenarios/sis02_energy/PASS_PLAYTEST.md`). Three short runs, about 10 minutes each. Write findings into your report as you go.
+
+What changed, in one paragraph: saving the PLC-BMS registers before the ESD is now a real action (a file on HMI-OPS-01) and is debriefed only if it was done before the trip. Going into Hall 1, or pressing the station inside it, during a gas alarm now gets a Helen bark, a flag and one Priya line. After the evacuation the hall, Helen and Marcus all say so. Helen no longer tells you to wait for Marcus before the ESD, and only says "Good call" when the press followed the dial. The NIS clock starts when the historian flat-line is found. Priya's debrief has no spoken section headers, says claim, argument and evidence once, says "nobody reviewed it" once, and her last line no longer echoes yours. The NIS choices no longer give the answer away. Tom's isolation options stay on offer, and a false "Marcus signed it off" is debriefed. The ESD station on the control room's west wall moved up 10px so the Duty Officer Desk below it no longer shares a tap.
+
+Globals to read (not set) with the test bridge: `bms_registers_exported`, `bms_registers_saved`, `evidence_before_esd` (now `save` / `press`), `entered_hall_in_gas_alarm`, `esd_pressed_inside_in_alarm`, `tom_told_false_authority`, `esd_before_dial`, `early_esd_activation`, `nis_deadline_missed`, `debrief_complete`.
+
+## Run D: register export, layout, early ESD on the dial
+
+1. New game. Screenshot the control room's west wall: the ESD station sits higher than before, above the Duty Officer Desk. Open the Duty Officer Desk **from the east side** (stand to its right, on the floor) and then **from the north** (just below the station): each should open the desk on its own, not a pick-one menu with the ESD station. Record which approach sides worked.
+2. Open HMI-OPS-01. The "SCADA Live Status" text ends at "Grid connection: ACTIVE, importing 48 MW (overnight charge schedule)", with no "[Historian Trend Viewer...]" line. A third file, "Export PLC-BMS Register Table", is listed. **Don't open it yet.**
+3. Read the dial (51°C). Helen's radio: "Fifty-one on that dial? Come and tell me which one you believe."
+4. Helen: dial question → "[The dial. Nothing on a network can reach it.]". Shutdown question → "[Then press it. The dial is enough.]" → "Agreed. The station on my console's right here. Press it, and I'll tell Marcus."
+5. Marcus: choose the dial option, then "[I think Hall 1 should come off now.]" (the old "Helen and I think" wording is gone) → "[The dial says fifty-one...]" → Marcus: "The ESD makes the BMS run its shutdown routine..." / "Got ten seconds? Export the BMS register table on OPS-01 first..." → "[I'll save the registers, then press it.]" → "Good. It's on OPS-01, next to the live status." (`evidence_before_esd` = `save`).
+6. Open "Export PLC-BMS Register Table": a register list with every temperature at 28.0 C, every state of charge at 72 %, CHARGE_RATE_CMD 95 % of rated. Check `bms_registers_exported` and `bms_registers_saved` are both true. Marcus texts "Got the registers? Good. Now press it."
+7. Press the console ESD. Helen's radio: "ESD's in. Good call. We'll find out why later." Re-open the register export: it now shows the "(saved before the ESD trip)" copy.
+8. Historian: Helen's radio is "Dead flat since twelve minutes past eleven. Somebody's writing it. Message Marcus." (no "before we do anything else", no ESD sentence, since it is already in). The NIS countdown starts now, not at game start: note whether it was visible before this step.
+9. Workshop log: the 03:22 rows in ENG TOOL HISTORY show the values in the table ("THERMAL_RUNAWAY_T: 55°C → 85°C", "H2_ALARM_THRESHOLD: 1.0% → 3.8% vol"). Account history status reads "DEPROVISIONED 2025-01-17" and "Domain account locked when he left." Threat intel: ASN "None (internal address on Albion's enterprise VLAN)", Type "Print management server (ALB-SRV-02)", Last flagged mentions Tor exit 198.51.100.45. Helen's radio says "the engineering workstation", not "ENG-02".
+10. SIS panel: CHARGE_INHIBIT_TEMP shows "At commissioning" and "Fosse Controls (commissioning)".
+11. Workshop noticeboard: "Issued for the smart grid upgrade (Fosse Controls), September 2024"; both "ACTUAL STATE:" lines in capitals; no dashes.
+12. Marcus session briefing, isolation scope "[Shut SCADA down. Hall 2 gets manual rounds.]". Pull the cable. Tom: isolation → "[Marcus has signed it off. Ring him.]" → "Rang him. He's confirmed. I'm putting the rules in now." then "Marcus says you're taking SCADA down your side as well. Ours is closed." The Trent lead-in reads "About that file on the shared server, while I've got you."
+13. Safe state, form **not** read yet: Helen's radio is the clipboard one. Then read the form and message Marcus: his question is "Do we send what we've got, or wait till we know more?" with "[Send it now with what we've got. We'll update it as we go.]" and "[Hold it till we know how far they got. Wrong reports are hard to undo.]". Send now: "Right. Initial notification: an intrusion, safety setpoints changed at 03:22, the rest unknown." then Ofgem/NCSC, HSE, the NESO blip line.
+14. Debrief. Check, in order and quoting: no line that is only a heading ("Hall 1 first.", "Then getting them out.", "The patch.", "Notifications." must not appear). "You shut Hall 1 down on a dial reading, before you knew why." / "You backed the dial over the screen..." / "And you argued to shut down on the hazard... That's the right order." / "You took ten seconds to save the BMS registers. The ESD wiped them..." The R1 question's second option reads "[Sure it isn't the gauge. One more reading would do it.]"; pick it: "A second reading's fair... car park." then "You don't need to be certain. You need to know which mistake you can live with." Safety case: "Albion's safety case made a claim..." then "The argument was that it sat on its own network..." No "condition it rests on". "To stop them, you shut SCADA down..." Patch: "That SIS patch has been on the shelf since September 2024." Pick the deferral: "Defensible, if the controls are real. Who checks they still are in a year?" then "On paper, Albion's deferral fitted the board's risk appetite..." then "Your own zone and someone watching is what the control-system security standard asks for..." (not a repeat of your own words). Root cause: "Tampered firmware on your printers gave them a foothold..." and "You'll have seen it on the engineering workstation." Closing: "Each one was written down, accepted, and never looked at again." appears once; no "normalisation of deviance", no "A safety case is more than a file in a cabinet". Count every "nobody looked at it again" / "nobody reviewed" style moral from Priya: expect one.
+15. Closing choice is "[Nothing else from us.]"; Priya: "Then thank you, all of you. My notes go to Marcus this week." Credits roll once: "PLC-BMS registers saved before the ESD trip overwrote them"; section "EXTRA EVIDENCE YOU READ". Listen for TTS: no letter-by-letter "D-E-S-N-Z", no "I-E-C six thousand...", "the energy department" and "sixty-two four four three" at most once.
+
+## Run E: press before any evidence, gas alarm, inside station, Tom told a lie
+
+1. New game. Before reading the dial or the historian, press the hall-door station. Helen's radio: "ESD's in, and nobody's read the dial yet. Well. Go and see if we needed it." (**not** "Good call"). `esd_before_dial` and `early_esd_activation` true.
+2. Open the register export: it shows the SHUTDOWN text ("Nothing written before the trip is left in the controller"). `bms_registers_saved` stays false.
+3. Hall 1: rack panels read "ESD TRIP" with falling sensor values; dial 46°C.
+4. Debrief later must say "The ESD went in before anyone had read the dial. A precaution, and it happened to be right." / "Next time, read the dial first." and **no** register line (Marcus's scene never ran). Credits: "...a precaution that happened to be right".
+5. New game for the gas alarm. Read the dial, tell Helen "[Give me five minutes with the historian first.]". Open her "[What next?]" straight away: it must **not** end "And that ESD still isn't in." Marcus: "[I think Hall 1 should come off now.]" → logs first → later "[We're pressing the ESD now.]" → "[I'll save the registers, then press it.]", but do **not** open the export.
+6. Tom, before Marcus has signed anything: "[I need the enterprise side shut off from SCADA.]" → "[Marcus has signed it off. Ring him.]" → "Rang Marcus. He hasn't heard about it..." Back at Tom's hub the option is "[About the isolation.]", and it still offers "[I'm running the response. My say-so should do.]" (playtest B m1). Try it once ("Not for a firewall change, sorry."); it does not come back a second time; the other two do. `tom_told_false_authority` true.
+7. Let the hydrogen alarm fire (about 25 minutes after the briefing; exercise the timer if needed and say so). Walk into Hall 1: Helen bark "Out of that hall. Now. Use the station by the door." `entered_hall_in_gas_alarm` true. The dial reads "53°C... The gas alarm is sounding over the racks. You shouldn't be in here." Press the **inside** station: `esd_pressed_inside_in_alarm` true.
+8. Read the NIS form, then Marcus: "[Hold it till we know how far they got...]" → "[No. We wait.]". Get Marcus's sign-off to Tom ("Signed off. Tell Tom to ring me and I'll confirm."), then Tom "[About the isolation.]" → "[Marcus has signed it off. Ring him.]". Marcus's text on isolation: "CastleTech have the enterprise side shut. You're still holding the notification. Say when." Helen's safe-state radio: "...You're holding the notification. Your call, but the clock's running." (not the clipboard line).
+9. Debrief: "The ESD went in after the gas alarm..." / "You pressed the one inside the hall, in a gas alarm. The one by the door does the same job from outside." / "You wanted the logs before shutting down. The gas came up while you were getting them." / "You meant to save the registers first, and the ESD went in before anyone did..." / "You told Tom Marcus had signed it off before he had. Tom rang him. Plenty of suppliers wouldn't." / "You held the NIS notification..." or "You chose to wait for the full picture before notifying..." as applies. Credits: "Pressed the ESD station inside Hall 1 during the gas alarm...", "Register export planned, but the ESD went in first...", "Told CastleTech that Marcus had signed off before he had...", and **not** "CastleTech refused a boundary change until it was verified".
+10. Variant if time allows: a game where you argue "[Then press it. The dial is enough.]" to Helen but then don't press until after the gas alarm. Priya must say "You argued to shut down on the hazard. Then nobody pressed it till the gas came up. An argument only counts once somebody acts on it." and not "That's the right order."
+
+## Run F: evacuation consequences
+
+1. New game. Read the dial, never press an ESD, let both hydrogen timers run (exercise them if needed and say so).
+2. Helen's evacuation scene: "I've hit the ESD on my console. Too late for the A racks. They're going." (no "on the way past"). Afterwards the "Shut Down Hall 1 (ESD)" task shows **skipped**, not ticked (playtest C m5).
+3. Marcus texts about 20 seconds later: "Helen's told me. Everyone out and counted? Good. The hall's the fire service's. The network's still ours." Marcus "[Where are we?]": "Hall 1's gone and everyone's out. Now get them off our network. Cable, then Tom." (never "Hall's safe").
+4. Helen "[The hydrogen alarm. How bad is it?]" (if not asked before): "It went past two per cent and it's alight. Hall 1's the fire service's now. Nobody goes back in." (never "ESD's in and the fans are on full").
+5. Walk into Hall 1: Helen bark "Out of that hall. It's still full of gas." Dial: "The needle is hard against the stop... You shouldn't be in here." Rack panels: "NO DATA. Panels unpowered." Detector: "...You shouldn't be in here." Suppression panel: "Status: RELEASED."
+6. If the historian was never opened, the NIS countdown never started and Helen's "notification clock run out" bark never plays. Record it.
+7. Debrief: "The gas reached two per cent before anyone pressed the ESD..." / "Someone walked into Hall 1 in a gas alarm..." (from step 5) / no register line. Safety case: before the question, "You didn't confirm the SIS change on the day..." and "They changed it through the engineering port, which had been on the SCADA network since commissioning." so the question's first answer refers to something you have now been told. If you never read the dial in this game (variant), "Nobody read the dial at Rack A2. It said fifty-one the whole time."
+8. Reload once after Priya is visible: the Mission Brief popup reads "...Every screen in the control room said the night had been normal, and Helen didn't believe them." (past tense).
+
+## Run G (round 3): gas alarm, full evacuation scene, no-dial press, Trent not warned
+
+Checks only what round 3 changed (`SCRIPT_EDITOR_REVIEW.md` "Confirmation review (round 2)" N1 to N10, and the D/E/F playtest's M1 to M4 and minors). New game for each part. Exercise the hydrogen timers if needed and say so. Globals to read: `early_esd_activation`, `esd_before_dial`, `esd_pressed_inside_in_alarm`, `entered_hall_in_gas_alarm`, `bms_registers_saved`.
+
+**G1. Gas alarm before the dial, ESD after the alarm (N1, M1, N6, N10, m3).**
+1. After the briefing, stay in the control room. Don't read the dial. Let the hydrogen alarm fire.
+2. Tasks: "Enter Battery Hall 1" and "Read the local dial gauge at Rack A2" show **skipped**. "Check the Historian" and "Shut Down Hall 1 (ESD)" are unlocked.
+3. Helen's "[What next?]" says "Not the hall, not now. Press the station by the door. The dial can wait." Her hub has no "[What am I looking for in the hall?]". Marcus's "[Where are we?]" says "Hall 1's in gas alarm. Door station, now. Never mind the dial."
+4. Press the **hall-door** station. Check `early_esd_activation` and `esd_before_dial` are both false. Helen's radio is "ESD's in. The A racks are off charge and the fans are on full. Now let's find out who did this." It must **not** be "Good call" or "nobody's read the dial".
+5. "[What next?]" now says "Leave the dial. Nobody goes in that hall till the gas is down. Get on the historian instead."
+6. Open the historian. Helen's flat-line radio is "...Somebody's writing it. Message Marcus." (the ESD is already in).
+7. Variant, same game: before step 4, read the register export on HMI-OPS-01. It shows the plain export (no "since reset" wording). `bms_registers_saved` is true. After the ESD, the export says "(saved before the ESD trip)".
+8. Second game: read the dial before the alarm and say "[Give me five minutes...]". After the alarm, walk into Hall 1 from the control room. The bark is "Out of that hall. Now. Use the station by the door." The dial reads "51°C and the needle's still creeping". Press the **inside** station. Helen's radio is "ESD's in. Now come out of that hall, and use the door station next time." with no "Good call".
+9. Debrief for that game: "The ESD went in after the gas alarm..." / "You pressed the one inside the hall..." / "You wanted the logs before shutting down. The gas came up..." These must **not** appear: "You shut Hall 1 down on a dial reading". Credits show no "ESD pressed on the dial reading" and no "before anyone had read the dial".
+10. Stand in the workshop at the SIS panel and the noticeboard during the gas alarm. No hall bark plays, and `entered_hall_in_gas_alarm` stays false (m4).
+
+**G2. Evacuation, full Helen scene (M2, M3, N3, N5).**
+1. Read the dial, tell Helen "[Then press it. The dial is enough.]", then never press. Let both timers run.
+2. Leave the evacuation scene on auto-advance for its whole length (don't press Space). It plays four lines in order: "Two per cent...", "I've hit the ESD on my console. Too late for the A racks. They're going.", "Fire service are pulling in...", "I've had the NCSC on the phone...".
+   - Round 2's missing second line was a race between the harness Space press and the 5 s auto-advance: with no text-to-speech audio on the keyless server, each line auto-advances after 5 s. In round 3's repro (game 5051), the second line stayed on screen 3 s until Space.
+   - If a line seems to vanish, record the time each line appeared.
+3. Helen's hub has no "[That dial in the hall. Which do we believe?]" and no "[About that dial again.]".
+4. Message Marcus for the first time now. His first options include "[Hall 1's on fire. Helen got everyone out.]" and no dial option. He answers "I've heard..." and never says "Fifty-one. Say that again."
+5. Walk into Hall 1 from the control room. Helen's bark is "Out of that hall. It's alight."
+6. Debrief:
+   - "You argued to shut down on the hazard. An argument only counts once somebody acts on it." with no "Then nobody pressed it".
+   - "Someone walked into Hall 1 in a gas alarm. Nothing in there was worth that."
+   - The R1 first answer gives "Yes. The dial was enough. Nobody acted on it, so the gas made the call instead."
+
+**G3. Early press with no dial (M3).** Press the console ESD straight after the briefing. Never read the dial.
+- Debrief: "The ESD went in before anyone had read the dial. A precaution, and it happened to be right." and "Nobody read the dial at Rack A2. It said fifty-one from the start."
+- The R1 first answer gives "Yes. Here the dial would have been enough, if anyone had read it."
+- Hall 1's dial now reads "46°C, falling since the shutdown. Its red drag needle has stuck at 51, the peak." Marcus's dial option reads "[The dial at Rack A2 has hit fifty-one...]".
+
+**G4. Trent not warned (M4, m8).** Get Tom's Trent message, choose "[Not yet...]" and never send. In the debrief:
+- "You waited to be sure before telling Trent Water..."
+- Then either answer: "...Telling them is a duty of care, not a NIS one." or "...They share your file server, though, so they need to know."
+- Then "Tom needs your say-so to tell them, because he works for both of you. I'd give it today." There must be no past-tense "Tom needed your say-so".
+- Also check "Then an old contractor's account, Ellison's." and "Marcus wrote a risk assessment in September 2024 that described this attack almost word for word."
+
+**G5. Small checks.**
+- The rack status panel and the H₂ detector open as a single panel with no "Observations:" or "Text:" labels (m2).
+- Noticeboard: "flagged this in two quarterly risk reports" (N8).
+- When CastleTech isolate after the ESD, only Helen's safe-state radio speaks about the notification, not a Marcus text as well (N9).
+
+## Run H (round 4): three checks
+
+1. **Marcus's status after the ESD and in a gas alarm.** New game. Don't read the dial, and let the hydrogen alarm fire (exercise the timer if needed and say so). Ask Marcus "[Where are we?]":
+   - Expect "Hall 1's in gas alarm. Door station, now. Never mind the dial."
+   - Press the hall-door station and ask again. Expect "I want to know who's on that jump server. ENG-02, in the workshop."
+   - "Nothing to go on yet. Get Helen's dial read." must **not** appear at either point.
+2. **Credits row for the "held" verdict.** In any game, answer Priya's safety-case question with "[It held. The trip worked; it just had the wrong number in it.]". The credits read "CLAIM-EN-002 (SIS isolation): you judged it held; its isolation argument had been false since commissioning".
+3. **Priya after a gas alarm with the dial never read.** Same game as step 1. In the debrief, check for these lines:
+   - "The gas came up before anyone read the dial. Leaving it was right by then."
+   - On the R1 first answer: "Yes. By the time the gas came up, the alarm was reason enough."
+   - In claims: "There wasn't one, and this morning nobody got to the dial in time to use it."
+   - Credits: "Gas alarm before the dial was read: the hall was rightly left alone".
+
+   These must **not** appear: "Nobody read the dial", "if anyone had read it", or "The dial at Rack A2 was never read".
+
+## Not in this run (engine, in parallel or reported)
+
+The historian's hard-coded report text and Annotate hint, the credits visualiser theme, phone timestamps, the reload overlay, the NIS form dialog clipping its bottom fields, the SIS compare dialog splitting long row labels, the jump-server log row's missing click affordance, and the console ESD sprite still looking live after another station was pressed.

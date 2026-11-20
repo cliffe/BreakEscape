@@ -1,0 +1,13 @@
+{
+  "key": "df27db59e9c72cfbf4fd44212c7b6688",
+  "npc": "nilesh_solanki",
+  "text": "Both sides done. A different password for every account, kept in a manager, three random words for the few you must remember by heart, and deny what you didn't start.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:49Z"
+}

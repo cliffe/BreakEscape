@@ -1,0 +1,13 @@
+{
+  "key": "ab0a93e8edc588889c3591567207107b",
+  "npc": "eleanor_vance",
+  "text": "So the question isn't just \"did a cyber event cause this loss.\" It's \"did Albion maintain the conditions under which we agreed to cover it.\"",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:18:35Z"
+}

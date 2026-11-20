@@ -1,0 +1,78 @@
+
+## R11 (round 2, R2-m2, R2-M2): the bad opener left unrepaired strains the cover with its own HaX text; asked for her badge, Irina blames the player's own opener, not 'someone on the floor'. The cloner still works.
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Let's be quick. I need your servers, your logs and your wallets.
+      [set_variable irina_suspicious=true]
+  Dr. Irina Volkova: Eager, aren't you?
+  Dr. Irina Volkova: Supervisors start with paperwork. Customer checks, anti-laundering. You went straight for the machines.
+  Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are compliant. Our monitoring meets the thresholds.
+  Dr. Irina Volkova: Unless you are looking for something that isn't on a checklist.
+  Dr. Irina Volkova: Go on.
+     (6 options)
+ > Tell me about your door access.
+  Dr. Irina Volkova: Badges. Trading floor for staff, this one for my office, executive badges for the top floor.
+  Dr. Irina Volkova: *taps the lanyard at her collar* Four years round my neck. The badges are the one part of our security I'd defend.
+  Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords. Exactly backwards.
+  Dr. Irina Volkova: What else?
+     (6 options)
+ > I need to check your office reader. Can I borrow your badge?
+  Dr. Irina Volkova: You came in asking for my wallets before my paperwork. My badge stays on my neck.
+  Narrator: Her lanyard hangs open at her collar, well within a cloner's range.
+  Dr. Irina Volkova: Yes?
+     (6 options)
+ > That's all for now.
+  Dr. Irina Volkova: Fine.
+  [chat closes]
+      [engine: Irina's first chat closed with her still suspicious -> cover_strained=true]
+      [HaX text: Volkova didn't buy you...]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   [PASS] said: "You came in asking for my wallets before my paperwork"
+   [PASS] said: "Volkova didn't buy you"
+   [PASS] not said: "Someone on the floor has been asking"
+   [PASS] cover_strained = true (expected true)
+   [PASS] irina_badge_obtained = false (expected false)
+
+--- irina ---
+  Dr. Irina Volkova: Go on.
+     (6 options)
+ > (Let the cloner read her badge while she talks.)
+  Narrator: You keep her talking about lattices and bring the cloner in your pocket within range of her lanyard.
+      [RFID minigame: card saved]
+  Narrator: She keeps talking.
+  Narrator: One pass, EM4100, a clean copy. She never noticed.
+  Dr. Irina Volkova: ...anyway. You didn't come here for a lecture on elliptic curves.
+  Dr. Irina Volkova: What else?
+     (4 options)
+ > That's all for now.
+  Dr. Irina Volkova: Fine.
+  [chat closes]
+   [PASS] irina_badge_cloned = true (expected true)
+   [PASS] longest run 5 (irina) <= 9
+
+[stats] spoken/narrated lines 28, choices 8, longest run without a choice 5 (irina); runs>=6: 
+[result] all expectations met

@@ -1,0 +1,1717 @@
+{
+ "gid": "7521",
+ "away": {
+  "thandiwe": 12,
+  "yasmin": 12
+ },
+ "drank": {
+  "thandiwe": 12,
+  "yasmin": 12
+ },
+ "back": {
+  "thandiwe": 47,
+  "yasmin": 78
+ },
+ "errs": [],
+ "log": [
+  {
+   "route": {
+    "er": "{\"ok\":false,\"reason\":\"no-doorway\",\"from\":\"open_plan\",\"wanted\":\"open_plan\",\"adjacent\":[\"server_room\",\"reception\",\"comms_cupboard\",\"kitchen\"],\"hint\":\"open_plan has no door to open_plan. Rooms reachable ",
+    "walked": true,
+    "placed": false,
+    "room": "open_plan",
+    "loaded": "open_plan"
+   }
+  },
+  {
+   "before": {
+    "t": 9,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 45,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 192,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 50,
+     "job": null,
+     "blocked": null
+    }
+   }
+  },
+  {
+   "interact": "{\"ok\":true,\"id\":\"rota_board\",\"mode\":\"approach-click-acted\",\"entity\":{\"kind\":\"object\",\"id\":\"rota_board\",\"name\":\"Coffee rota\",\"type\":\"notes\",\"room\":\"open_plan\",\"x"
+  },
+  {
+   "poll": {
+    "t": 12,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 154,
+     "y": 110,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "pcWhileAway": {
+    "dialogText": "×\nCoffee rota\nThe coffee rota, on the wall by the window.\n\nCoffee rota. Whoever's name is up makes the next round.",
+    "thandiwe_laptop": {
+     "r": "{\"id\":\"thandiwe_laptop\",\"mode\":\"overlap-walk-then-acted\",\"entity\":{\"kind\":\"object\",\"id\":\"thandiwe_laptop\",\"name\":\"Thandi",
+     "text": null,
+     "open": false,
+     "minigame": null,
+     "body": "1 | Objectives | ◆ | Test the office | ○ | Get into the meeting room | Block | Punch | Thandiwe Moyo | Someone's in the way."
+    },
+    "yasmin_pc": {
+     "r": "{\"ok\":true,\"id\":\"yasmin_pc\",\"mode\":\"via-interaction-menu\",\"chose\":\"Yasmin's PC\",\"entity\":{\"kind\":\"object\",\"id\":\"yasmin_p",
+     "text": null,
+     "open": true,
+     "minigame": "PasswordMinigame",
+     "body": "1 | Objectives | ◆ | Test the office | ○ | Get into the meeting room | Block | Punch | Thandiwe Moyo | Someone's in the way. | Yasmin's PC | Yasmin Chaudhry | ychaudhry | ? | Other user | type a name | Choose an account. |  Add Postit"
+    }
+   },
+   "at": 12
+  },
+  {
+   "poll": {
+    "t": 21,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 22,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 23,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 24,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 25,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 26,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 27,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 28,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 29,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 30,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 31,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 32,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 33,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 34,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 35,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 36,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 37,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 38,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 39,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 40,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 41,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 42,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 10,
+     "job": "use",
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 232,
+     "y": 164,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 43,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 44,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 45,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 202,
+     "y": 101,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 46,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 173,
+     "y": 108,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 47,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 48,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 49,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 50,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 51,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 52,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 53,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 54,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 55,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 56,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 57,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 58,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 59,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 60,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 61,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 62,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 63,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 64,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 65,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 66,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 67,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 68,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 69,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 70,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 80,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 71,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 72,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "job",
+     "atPost": false,
+     "caffeine": 9,
+     "job": "use",
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 73,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 74,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 75,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 76,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 236,
+     "y": 106,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 77,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 230,
+     "y": 101,
+     "mode": "returning",
+     "atPost": false,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    }
+   }
+  },
+  {
+   "poll": {
+    "t": 78,
+    "room": "open_plan",
+    "loaded": "open_plan",
+    "thandiwe": {
+     "x": 122,
+     "y": 136,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    },
+    "yasmin": {
+     "x": 222,
+     "y": 94,
+     "mode": "idle",
+     "atPost": true,
+     "caffeine": 79,
+     "job": null,
+     "blocked": null
+    }
+   }
+  }
+ ],
+ "evlog": [
+  {
+   "t": 0,
+   "npc": "thandiwe",
+   "ev": "registered"
+  },
+  {
+   "t": 0,
+   "npc": "yasmin",
+   "ev": "registered"
+  },
+  {
+   "t": 41,
+   "npc": "thandiwe",
+   "ev": "level_set",
+   "need": "caffeine",
+   "level": 10
+  },
+  {
+   "t": 41,
+   "npc": "yasmin",
+   "ev": "level_set",
+   "need": "caffeine",
+   "level": 10
+  },
+  {
+   "t": 42,
+   "npc": "thandiwe",
+   "ev": "urgent",
+   "need": "caffeine",
+   "level": 10
+  },
+  {
+   "t": 42,
+   "npc": "thandiwe",
+   "ev": "job_start",
+   "need": "caffeine",
+   "target": "coffee_station_open_plan"
+  },
+  {
+   "t": 42,
+   "npc": "yasmin",
+   "ev": "urgent",
+   "need": "caffeine",
+   "level": 10
+  },
+  {
+   "t": 42,
+   "npc": "yasmin",
+   "ev": "job_start",
+   "need": "caffeine",
+   "target": "coffee_station_open_plan"
+  },
+  {
+   "t": 42,
+   "npc": "yasmin",
+   "ev": "queued",
+   "need": "caffeine",
+   "target": "coffee_station_open_plan",
+   "place": 1
+  },
+  {
+   "t": 46,
+   "npc": "yasmin",
+   "ev": "arrival",
+   "pathLeft": 1,
+   "dist": 4
+  },
+  {
+   "t": 48,
+   "npc": "thandiwe",
+   "ev": "arrival",
+   "pathLeft": 4,
+   "dist": 34
+  },
+  {
+   "t": 49,
+   "npc": "thandiwe",
+   "ev": "using",
+   "need": "caffeine",
+   "target": "coffee_station_open_plan"
+  },
+  {
+   "t": 169,
+   "npc": "thandiwe",
+   "ev": "used",
+   "need": "caffeine",
+   "target": "coffee_station_open_plan",
+   "level": 79.97,
+   "payloadPresent": false
+  },
+  {
+   "t": 169,
+   "npc": "yasmin",
+   "ev": "queue_front",
+   "target": "coffee_station_open_plan"
+  },
+  {
+   "t": 171,
+   "npc": "yasmin",
+   "ev": "arrival",
+   "pathLeft": 1,
+   "dist": 6
+  },
+  {
+   "t": 172,
+   "npc": "yasmin",
+   "ev": "using",
+   "need": "caffeine",
+   "target": "coffee_station_open_plan"
+  },
+  {
+   "t": 182,
+   "npc": "thandiwe",
+   "ev": "return_resumed",
+   "x": 202,
+   "y": 101
+  },
+  {
+   "t": 184,
+   "npc": "thandiwe",
+   "ev": "arrival",
+   "pathLeft": 4,
+   "dist": 29
+  },
+  {
+   "t": 185,
+   "npc": "thandiwe",
+   "ev": "returned_post"
+  },
+  {
+   "t": 292,
+   "npc": "yasmin",
+   "ev": "used",
+   "need": "caffeine",
+   "target": "coffee_station_open_plan",
+   "level": 79.45,
+   "payloadPresent": false
+  },
+  {
+   "t": 293,
+   "npc": "yasmin",
+   "ev": "caught_at_post",
+   "target": "yasmin_pc",
+   "playerDistance": 17,
+   "inMinigame": false
+  },
+  {
+   "t": 305,
+   "npc": "yasmin",
+   "ev": "return_resumed",
+   "x": 236,
+   "y": 106
+  },
+  {
+   "t": 309,
+   "npc": "yasmin",
+   "ev": "arrival",
+   "pathLeft": 3,
+   "dist": 32
+  },
+  {
+   "t": 310,
+   "npc": "yasmin",
+   "ev": "returned_post"
+  }
+ ]
+}

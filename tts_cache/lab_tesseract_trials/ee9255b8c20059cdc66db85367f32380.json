@@ -1,0 +1,13 @@
+{
+  "key": "ee9255b8c20059cdc66db85367f32380",
+  "npc": "sidhu_selvarajan",
+  "text": "It verified, I expect. That was never the question.",
+  "voice": "Enceladus",
+  "style": "Cyber security researcher, blockchain developer and journal editor. Consistent Indian English accent throughout. Calm, precise, courteous, warm.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

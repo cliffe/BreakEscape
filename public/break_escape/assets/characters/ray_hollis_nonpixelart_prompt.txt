@@ -1,0 +1,10 @@
+Make portrait for Ray Hollis
+A lean, tired-looking Black American man of about 35 with medium-dark brown skin, a short flat-top haircut slightly grown out, a thin goatee, a faint sheen of sweat at his temple, and a too-casual expression with his eyes glancing off to one side as if rehearsing an answer, a night-shift security guard at a power utility who has been taking money he can't explain. He wears a navy utility-company guard uniform shirt with the sleeves rolled to the forearm and plain shoulder patches, a black radio on his chest with a coiled lead, a gleaming new expensive steel wristwatch that looks out of place on him, dark navy cargo trousers and a black duty belt with a torch. Arms relaxed at his sides. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Reframed with reframe_portrait.py, not flipped (already faces right); raw is ray_hollis_concept_3_raw.png.

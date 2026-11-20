@@ -1,0 +1,13 @@
+{
+  "key": "fb09aee6a9b1c94f60bf8d142b9fdf91",
+  "npc": "eleanor_vance",
+  "text": "W-07 required IT-to-OT segmentation: zones and conduits, in IEC 62443's terms. It's what keeps an attacker on the office network away from the safety system.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:30:14Z"
+}
