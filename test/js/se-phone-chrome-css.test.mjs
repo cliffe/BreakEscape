@@ -70,9 +70,11 @@ test('mail-client and inbox-triage sheets: no radius, blur, 1px border or outlin
         assert.ok(radii.length === 0, `${f}: radius ${radii[0]}`);
         assert.ok(!/filter:\s*blur|backdrop-filter/.test(s), `${f}: filter blur`);
         // Third length of a shadow layer is the blur; a bare 0 counts as a length.
-        const blurred = (s.match(/(?<![a-z-])(box|text)-shadow:[^;]*;/g) || []).filter((d) => d.split(/,(?![^(]*\))/).some((layer) => {
+        const blurred = (s.match(/(?<![a-z-])(box|text)-shadow:[^;}]*/g) || []).filter((d) => d.split(/,(?![^(]*\))/).some((layer) => {
             const nums = layer.replace(/^[^:]*:/, '').replace(/[;}]|!important/g, '').replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|inset|#[0-9a-f]+/gi, '')
                 .split(/\s+/).filter((t) => /^-?\d*\.?\d+([a-z]+)?$/i.test(t));
+            // calc() or a var() that is not the trailing colour hides lengths from the token split: reject it
+            if (/\b(calc|var)\(/.test(layer.replace(/\bvar\((?:[^()]|\([^)]*\))*\)\s*(!important)?\s*$/, ''))) return true;
             return nums.length >= 3 && parseFloat(nums[2]) > 0;
         }));
         assert.ok(blurred.length === 0, `${f}: blurred shadow ${blurred[0]}`);
@@ -109,6 +111,19 @@ test('mail-client toolbar: Close stays in the header row at every width up to 10
     assert.ok(s.includes(`${p} .mail-account { flex: 1 1 calc(100% - 40px); }`), 'phone account leaves room for the X');
     assert.ok(s.includes(`${p} .se-overlay-close { order: 1; margin-left: auto; }`), 'phone close order 1');
     assert.ok(s.includes(grouped(p)), 'phone: folders, contacts and actions all at order 2');
+});
+
+test('the toolbar width arithmetic behind calc(100% - 40px) is pinned: 8px gap, 30px X, no side margin (B9 R3 m1)', () => {
+    const s = read('mail-client-minigame.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const toolbar = s.match(/(?:^|\})\s*\.mail-toolbar \{([^}]*)\}/)?.[1] || '';
+    assert.ok(/(?:^|[\s;])gap:\s*8px\s*;/.test(toolbar), 'base .mail-toolbar gap is 8px, got: ' + toolbar.trim().replace(/\s+/g, ' '));
+    const fw = read('minigames-framework.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const x = fw.match(/(?:^|\})\s*\.se-overlay-close \{([^}]*)\}/)?.[1] || '';
+    assert.ok(/(?:^|[\s;])width:\s*30px\s*;/.test(x), 'the X is 30px wide');
+    assert.ok(/(?:^|[\s;])min-width:\s*30px\s*;/.test(x), 'the X min-width is 30px');
+    assert.ok(/(?:^|[\s;])margin:\s*0\s*;/.test(x), 'the X has no margin');
+    // 30 + 8 = 38 of the 40px that calc(100% - 40px) reserves, leaving 2px of slack
+    assert.ok(!/(?:^|[\s;])margin-(left|right):\s*[1-9]/.test(x), 'the X has no side margin');
 });
 
 test('wifi bars are border-box so the tallest bar fits its 14px meter', () => {

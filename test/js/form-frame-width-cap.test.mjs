@@ -45,13 +45,27 @@ function enclosingMedia(css, idx) {
     return '';
 }
 
+// Body of the media block whose head starts at `idx` (the rule's enclosing block), comments stripped.
+function enclosingMediaBody(css, idx) {
+    let depth = 0, i = idx;
+    for (; i >= 0; i--) {
+        if (css[i] === '}') depth++;
+        else if (css[i] === '{') { if (depth === 0) break; depth--; }
+    }
+    let d = 1, j = i + 1;
+    while (d && j < css.length) { d += css[j] === '{' ? 1 : css[j] === '}' ? -1 : 0; j++; }
+    return css.slice(i + 1, j - 1).replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+// The scene classes that share one cap rule, so the selector list is pinned exactly (wide R4 m1).
+const SHARED_760 = ['cf-minigame-container', 'ncsc-minigame-container'];
 const cases = [
-    ['css/concern-form-minigame.css', 'cf-minigame-container', 760, 'js/minigames/concern-form/concern-form-minigame.js'],
-    ['css/sis-config-threshold-minigame.css', 'sis-threshold-minigame-container', 800, 'js/minigames/sis-config-threshold/sis-config-threshold-minigame.js'],
-    ['css/ncsc-brief-minigame.css', 'ncsc-minigame-container', 760, 'js/minigames/ncsc-brief/ncsc-brief-minigame.js'],
+    ['css/concern-form-minigame.css', 'cf-minigame-container', 760, 'js/minigames/concern-form/concern-form-minigame.js', SHARED_760],
+    ['css/sis-config-threshold-minigame.css', 'sis-threshold-minigame-container', 800, 'js/minigames/sis-config-threshold/sis-config-threshold-minigame.js', ['sis-threshold-minigame-container']],
+    ['css/ncsc-brief-minigame.css', 'ncsc-minigame-container', 760, 'js/minigames/ncsc-brief/ncsc-brief-minigame.js', SHARED_760],
 ];
 
-for (const [file, cls, cap, jsFile] of cases) {
+for (const [file, cls, cap, jsFile, group] of cases) {
     test(`${cls}: ${cap}px cap lives in the shared framework sheet (X8), applies at desktop sizes, phones keep full width`, () => {
         assert.ok(!/\.console-window(?![\w-])/.test(read(file)), file + ' does not restyle .console-window');
         const css = read(FRAMEWORK);
@@ -61,6 +75,15 @@ for (const [file, cls, cap, jsFile] of cases) {
         assert.ok(Number(m[1]) === cap, 'cap is ' + cap);
         const media = enclosingMedia(css, m.index);
         assert.ok(media !== '', 'rule is inside a media query, not top level');
+        // the matched rule lists exactly this scene's group, and the block holds no other .console-window selector
+        const start = Math.max(css.lastIndexOf('}', m.index), css.lastIndexOf('{', m.index)) + 1;
+        const list = css.slice(start, css.indexOf('{', m.index)).replace(/\/\*[\s\S]*?\*\//g, '');
+        const sels = list.split(',').map((x) => x.trim()).filter(Boolean);
+        const want = group.map((c) => '.' + c + ' .console-window');
+        assert.ok(sels.slice().sort().join(' | ') === want.slice().sort().join(' | '), 'cap selector list is exactly: ' + want.join(', ') + ' (got ' + sels.join(', ') + ')');
+        const body = enclosingMediaBody(css, m.index);
+        assert.ok((body.match(/\.console-window(?![\w-])/g) || []).length === 3, 'the media block names .console-window exactly three times (cf, ncsc, sis)');
+        assert.ok((body.match(/\{/g) || []).length === 2, 'the media block holds exactly the two cap rules');
         for (const [w, h] of PHONES) assert.ok(mediaMatches(media, w, h) === false, `phone ${w}x${h} keeps full width`);
         for (const [w, h] of DESKTOPS) assert.ok(mediaMatches(media, w, h) === true, `desktop ${w}x${h} gets the cap`);
     });

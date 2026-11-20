@@ -69,13 +69,15 @@ test('C-X2 framed opt-in: default off, and a framed scene tags the container', (
 const rulesOf = (src) => [...src.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
     .map((m) => ({ sel: m[1].trim(), body: m[2] }));
 const RED = /#e74c3c|#c0392b|#a93226/i;
+// Any border radius (incl. per-corner longhands) that is not exactly 0 or 0px: catches 0.5px, .5em, 50% and var(--r).
+const ROUNDED = /(?:^|[\s;{])border(?:-[a-z]+)*-radius\s*:(?!\s*0(?:px)?(?:\s*!important)?\s*(?:;|}|$))/i;
 
 test('C-X1/C-X2 shared CSS rules exist', () => {
     const fw = readFileSync(join(css, 'minigames-framework.css'), 'utf8');
     assert.ok(/\.se-overlay-close\s*\{/.test(fw), 'the shared close look is defined');
     const rule = fw.match(/\.se-overlay-close\s*\{[^}]*\}/)?.[0] || '';
     assert.ok(/border:\s*4px solid/.test(rule), 'the X keeps a 2px+ pixel border');
-    assert.ok(!/border-radius:\s*[1-9]/.test(rule), 'no rounded X');
+    assert.ok(!ROUNDED.test(rule), 'no rounded X');
     assert.ok(/\.minigame-container\.minigame-framed\s*>\s*\.minigame-game-container/.test(fw), 'the framed window rule exists');
     assert.ok(/width:\s*min\(720px/.test(fw), 'the framed window is capped at 720px');
 });
@@ -88,7 +90,7 @@ test('D216 no rule that styles .se-overlay-close is red or rounded, in any state
         for (const r of hits) {
             assert.ok(!RED.test(r.body), f + ': red in a rule for ' + r.sel.replace(/\s+/g, ' '));
             assert.ok(!/border-image(-source)?:\s*none/.test(r.body), f + ': the skin is switched off in ' + r.sel.replace(/\s+/g, ' '));
-            assert.ok(!/border-radius:\s*[1-9]/.test(r.body), f + ': rounded corners in ' + r.sel.replace(/\s+/g, ' '));
+            assert.ok(!ROUNDED.test(r.body), f + ': rounded corners in ' + r.sel.replace(/\s+/g, ' '));
         }
     }
     assert.ok(seen >= 4, 'finds the .se-overlay-close rules across the sheets: ' + seen);

@@ -68,6 +68,12 @@ test('B1: phone body rows keep their content height', () => {
 test('M1: phone timeline is capped so status stays near', () => {
     const list = rule(block('@media (max-width: 600px)'), '.cb-timeline-list');
     assert.ok(/max-height:\s*45dvh/.test(list), '45dvh cap');
+    // the last max-height in the whole 600px block (any .cb-timeline-list rule in it) wins the cascade,
+    // so a later 25dvh or other value leaking in here must fail (B2 R3 m2)
+    const all = block('@media (max-width: 600px)');
+    const caps = [...all.matchAll(/\.cb-timeline-list\s*\{([^}]*)\}/g)]
+        .flatMap((r) => [...r[1].matchAll(/max-height:\s*([^;}]+)/g)].map((d) => d[1].trim()));
+    assert.ok(caps.length >= 2 && caps[caps.length - 1] === '45dvh', 'the last timeline max-height in the plain 600px block is 45dvh, got ' + caps.join(' then '));
     assert.ok(/overflow-y:\s*auto/.test(list), 'list scrolls inside the cap');
 });
 
