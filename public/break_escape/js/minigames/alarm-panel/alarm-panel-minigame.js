@@ -41,6 +41,9 @@ export function steppedLampPoints(cx, cy, r) {
     return p.map(([x, y]) => `${cx + x},${cy + y}`).join(' ');
 }
 
+// Space above the first lamp row inside the SVG (was 30, which left an empty band under the header)
+const TOP_PAD = 8;
+
 export class AlarmPanelMinigame extends MinigameScene {
     // The X sits inside the panel's frame, not out in the window's corner (critique A43)
     static closeInsideFrame = true;
@@ -52,7 +55,8 @@ export class AlarmPanelMinigame extends MinigameScene {
     constructor(container, params = {}) {
         const md = params.lockable?.scenarioData?.minigameData || {};
         super(container, { ...params, showCancel: true, cancelText: 'Close Panel', title: 'Facility Alarm Panel' });
-        this._lamps      = md.lamps      || [];
+        // A two-state lamp with no offClass falls back to 'ap-off', so missing data never paints black
+        this._lamps      = (md.lamps || []).map(l => (l.multiState || l.offClass) ? l : { ...l, offClass: 'ap-off' });
         this._panelTitle = md.panelTitle;
         this._footer     = md.footer;
         this._eventSubs  = [];
@@ -81,13 +85,13 @@ export class AlarmPanelMinigame extends MinigameScene {
         const R     = 14;
         const ROW_H = 68;
         const SVG_W = 320;
-        const SVG_H = 30 + this._lamps.length * ROW_H + 20;
+        const SVG_H = TOP_PAD + this._lamps.length * ROW_H + 20;
 
         const panelTitle = escapeWithBreaks(displayDashes(this._panelTitle || 'FACILITY ALARM PANEL'));
         const footer     = escapeWithBreaks(displayDashes(this._footer     || 'STATE-REACTIVE LAMP DISPLAY — READ ONLY'));
 
         const rows = this._lamps.map((lamp, i) => {
-            const cy   = 30 + i * ROW_H + ROW_H / 2;
+            const cy   = TOP_PAD + i * ROW_H + ROW_H / 2;
             const sepY = cy + ROW_H / 2;
             const initialStatus = lamp.multiState
                 ? (lamp.states?.[lamp.states.length - 1]?.statusText || '')
