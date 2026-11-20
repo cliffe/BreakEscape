@@ -295,3 +295,19 @@ test('when the pixel font arrives the tiles are measured again, only while conne
     delete document.fonts;
     a.mg.cleanup(); b.mg.cleanup();
 });
+
+test('no document.fonts, or a GNF load that rejects, opens the screen without an error', async () => {
+    const errors = [];
+    const onRej = (e) => errors.push(e);
+    process.on('unhandledRejection', onRej);
+    delete document.fonts;
+    const a = make(true);
+    Object.defineProperty(document, 'fonts', { value: { ready: Promise.resolve(), load: () => Promise.reject(new Error('no font')) }, configurable: true });
+    const b = make(true);
+    await new Promise((r) => setTimeout(r, 0));
+    process.off('unhandledRejection', onRej);
+    assert.ok(errors.length === 0, `no unhandled rejection (${errors.length})`);
+    assert.ok(!!a.mg.gameContainer && !!b.mg.gameContainer, 'both screens opened');
+    delete document.fonts;
+    a.mg.cleanup(); b.mg.cleanup();
+});
