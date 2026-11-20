@@ -6,6 +6,7 @@
   "endGoal": "Build the page and send the link, then check the sign-in pages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -79,7 +80,26 @@
     "landing_sso_login_built": false,
     "landing_sso_login_domain": "",
     "phish_sso_staff_landed": false,
-    "phish_sso_staff_attempts": 0
+    "phish_sso_staff_attempts": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca05",
+    "kit_ca05_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_quayholt": {
+      "lines": [
+        "Phones haven't stopped today.",
+        "Claims backlog's easing off.",
+        "Cooler's cold for once."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -105,7 +125,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e5_signin_pages_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e5_sso_lookalike": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -1006,8 +1029,145 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "check_signin_pages"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_complete",
+              "condition": "value === true && globalVars.episode_e5_signin_pages_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_anjali_rao",
+          "displayName": "Anjali Rao",
+          "person": "anjali_rao",
+          "npcType": "person",
+          "position": {
+            "x": 7.4,
+            "y": 8.3
+          },
+          "spriteSheet": "anjali_rao",
+          "spriteTalk": "assets/characters/anjali_rao_talk.png",
+          "spriteVisemes": "assets/characters/anjali_rao_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/anjali_rao_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.4,
+            "y": 8.3,
+            "facing": "north"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Kore",
+            "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 50
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Quiet on the alerts today.",
+                "Need a proper break."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_darren_price",
+          "displayName": "Darren Price",
+          "person": "darren_price",
+          "npcType": "person",
+          "position": {
+            "x": 2.5,
+            "y": 7.0
+          },
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/darren_price_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2.5,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Orus",
+            "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Busy on the awareness side.",
+                "Kettle's calling."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -1028,6 +1188,30 @@
           ],
           "minigameData": {
             "episodeId": "e5_signin_pages"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_quayholt"
           }
         }
       ]

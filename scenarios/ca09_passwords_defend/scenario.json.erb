@@ -6,6 +6,7 @@
   "endGoal": "Lock the account down at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,26 @@
     "se_awareness_records": [],
     "episode_e9_passwords_defend_defend_percent": 0,
     "episode_e9_passwords_defend_defend_reportRate": 0,
-    "episode_e9_passwords_defend_defend_complete": false
+    "episode_e9_passwords_defend_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca09",
+    "kit_ca09_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_tarrowby": {
+      "lines": [
+        "Another pallet backlog.",
+        "Who's on the Shipley run?",
+        "Depot's heaving today."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -123,7 +143,10 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e9_passwords_defend_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e9_fake_it_number": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -400,6 +423,10 @@
           {
             "heading": "What a passkey is",
             "text": "A passkey replaces the password with a secret kept on your device or in your manager, unlocked the way you unlock your phone. Because it is tied to the real website, it can't be typed into a fake page, reused on another site, or leaked in someone else's breach."
+          },
+          {
+            "heading": "A password for free",
+            "text": "A password reused from a breached hobby site opens a work account, and because the logins on that desk are shared and written on notes, the audit cannot tie a single action to a person."
           }
         ],
         "defendIntro": "Go through the sign-in prompts and password choices one at a time. Deny any prompt you didn't start, and pick the stronger option each time."
@@ -482,8 +509,137 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "lock_the_account"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_defend_complete",
+              "condition": "value === true && globalVars.episode_e9_passwords_defend_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_fatima_begum",
+          "displayName": "Fatima Begum",
+          "person": "fatima_begum",
+          "npcType": "person",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "spriteSheet": "fatima_begum",
+          "spriteTalk": "assets/characters/fatima_begum_talk.png",
+          "spriteVisemes": "assets/characters/fatima_begum_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/fatima_begum_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Vindemiatrix",
+            "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "CVs stacking up again.",
+                "Need a cold one."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "person": "chidi_okeke",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "spriteSheet": "chidi_okeke",
+          "spriteTalk": "assets/characters/chidi_okeke_talk.png",
+          "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/chidi_okeke_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Zubenelgenubi",
+            "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "Fleet's all out today.",
+                "Parched after that yard run."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -504,6 +660,26 @@
           ],
           "minigameData": {
             "episodeId": "e9_passwords_defend"
+          }
+        },
+        {
+          "type": "drinks_vending",
+          "id": "kit_vending",
+          "name": "Drinks machine",
+          "sprite": "drinks_vending1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The depot drinks machine. Staff wander over for something cold.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_tarrowby"
           }
         }
       ]

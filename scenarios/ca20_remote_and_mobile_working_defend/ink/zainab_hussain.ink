@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e20_remote_and_mobile_working_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e20_remote_and_mobile_working_defend_defend_complete:
-        Zainab Hussain: That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake. If unsure, use your hotspot.
+        { kit_key_caught:
+            Zainab Hussain: You treated that Wi-Fi sign-in page as a trap and used your hotspot, so your work password never reached a look-alike network.
+            Zainab Hussain: A page on the café network asking for your work password is the fake. A lost device reported at once is locked in minutes.
+        - else:
+            Zainab Hussain: That look-alike Wi-Fi page asking for your work password was the one to stop.
+            Zainab Hussain: The password went in, so the account was used from another town and had to be reset and traced.
+        }
     - else:
         Zainab Hussain: The kiosk has the networks and pages you meet on the road, all made up. Connect, report or ask the venue. A page wanting your work password is a trap.
     }

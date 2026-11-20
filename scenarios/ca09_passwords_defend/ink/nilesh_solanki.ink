@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e9_passwords_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e9_passwords_defend_defend_complete:
-        Nilesh Solanki: That's it locked down, thanks. A different password for every account, kept in a manager, and deny anything you didn't start.
+        { kit_key_caught:
+            Nilesh Solanki: You didn't read that code back to the text pretending to be IT, so the one-time code stayed yours and the account held.
+            Nilesh Solanki: A manager and a passkey make a reused password harmless, and every sign-in belongs to one person.
+        - else:
+            Nilesh Solanki: That text posing as IT, asking you to read a code back, was the one to stop.
+            Nilesh Solanki: The account opened on a reused password, and with shared logins the audit couldn't say who had done what.
+        }
     - else:
         Nilesh Solanki: Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.
     }

@@ -6,6 +6,7 @@
   "endGoal": "Go through the voicemails and emails at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,26 @@
     "se_awareness_records": [],
     "episode_e7_voice_ceo_defend_defend_percent": 0,
     "episode_e7_voice_ceo_defend_defend_reportRate": 0,
-    "episode_e7_voice_ceo_defend_defend_complete": false
+    "episode_e7_voice_ceo_defend_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca07",
+    "kit_ca07_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_brightwell": {
+      "lines": [
+        "Busy inbox today.",
+        "Kettle's on in a sec.",
+        "Audit week again."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -75,7 +95,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e7_voice_ceo_defend_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e7_ceo_wire": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -278,6 +301,10 @@
         "noBlameLine": "A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust, so anyone can be caught by one.",
         "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it using the route in the box below.",
         "defendOnly": "A familiar voice feels like proof, and these messages were made to use that, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away and why ringing back on a number you already hold works whoever is speaking.",
+        "conceptPanel": {
+          "heading": "When the voice wins",
+          "text": "A voice that sounds like the boss, backed by an email that agrees, can release a large payment that is moved on before anyone looks, and finance lose the afternoon re-checking a frozen run to be sure nothing else had slipped through."
+        },
         "defendIntro": "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
         "voicePanel": {
           "heading": "How a voice gets copied",
@@ -362,8 +389,139 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "check_finance_line"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e7_voice_ceo_defend_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e7_voice_ceo_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e7_voice_ceo_defend_defend_complete",
+              "condition": "value === true && globalVars.episode_e7_voice_ceo_defend_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e7_voice_ceo_defend_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_gwen_pritchard",
+          "displayName": "Gwen Pritchard",
+          "person": "gwen_pritchard",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 4
+          },
+          "spriteSheet": "gwen_pritchard",
+          "spriteTalk": "assets/characters/gwen_pritchard_talk.png",
+          "spriteVisemes": "assets/characters/gwen_pritchard_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/gwen_pritchard_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Sulafat",
+            "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Anyone for a brew?",
+                "Tea round shortly?",
+                "Kettle's just boiled."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "person": "graham_whitfield",
+          "npcType": "person",
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "spriteSheet": "graham_whitfield",
+          "spriteTalk": "assets/characters/graham_whitfield_talk.png",
+          "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/graham_whitfield_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 8,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Umbriel",
+            "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Year-end's creeping up.",
+                "Steady day on the ledgers.",
+                "That's my second cup."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -384,6 +542,44 @@
           ],
           "minigameData": {
             "episodeId": "e7_voice_ceo_defend"
+          }
+        },
+        {
+          "type": "coffee_station",
+          "id": "kit_coffee",
+          "name": "Coffee station",
+          "sprite": "coffee_station1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office coffee station. Staff drift over for a top-up.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 30,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_brightwell"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A water cooler by the far wall.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
           }
         }
       ]

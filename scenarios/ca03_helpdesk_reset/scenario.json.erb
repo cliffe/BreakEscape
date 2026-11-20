@@ -6,6 +6,7 @@
   "endGoal": "Place the vishing call, then work the service desk queue at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -85,7 +86,26 @@
     "pretext_quayholt_helpdesk_reset_state": {},
     "pretext_quayholt_helpdesk_reset_outcome": "",
     "pretext_quayholt_helpdesk_reset_lowest": 0,
-    "pretext_quayholt_helpdesk_reset_reports": 0
+    "pretext_quayholt_helpdesk_reset_reports": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca03",
+    "kit_ca03_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_quayholt": {
+      "lines": [
+        "Phones haven't stopped today.",
+        "Claims backlog's easing off.",
+        "Cooler's cold for once."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -112,7 +132,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e3_helpdesk_reset_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e3_push_early": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -908,6 +931,45 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "work_service_desk_queue"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_complete",
+              "condition": "value === true && globalVars.episode_e3_helpdesk_reset_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
         },
@@ -920,6 +982,104 @@
           "phoneId": "player_phone",
           "storyPath": "scenarios/ca03_helpdesk_reset/ink/leila_servicedesk.json",
           "currentKnot": "start"
+        },
+        {
+          "id": "kit_anjali_rao",
+          "displayName": "Anjali Rao",
+          "person": "anjali_rao",
+          "npcType": "person",
+          "position": {
+            "x": 7.4,
+            "y": 8.3
+          },
+          "spriteSheet": "anjali_rao",
+          "spriteTalk": "assets/characters/anjali_rao_talk.png",
+          "spriteVisemes": "assets/characters/anjali_rao_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/anjali_rao_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.4,
+            "y": 8.3,
+            "facing": "north"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Kore",
+            "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 50
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Quiet on the alerts today.",
+                "Need a proper break."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "person": "niamh_doherty",
+          "npcType": "person",
+          "position": {
+            "x": 4.0,
+            "y": 7.0
+          },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/niamh_doherty_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.0,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Leda",
+            "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 55
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Newsletter's nearly done.",
+                "Could murder a cuppa."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -940,6 +1100,30 @@
           ],
           "minigameData": {
             "episodeId": "e3_helpdesk_reset"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_quayholt"
           }
         }
       ]

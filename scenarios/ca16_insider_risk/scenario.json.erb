@@ -6,6 +6,7 @@
   "endGoal": "Play out the week, then raise a concern fairly and sort the messages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,26 @@
     "se_awareness_records": [],
     "episode_e16_insider_risk_defend_percent": 0,
     "episode_e16_insider_risk_defend_reportRate": 0,
-    "episode_e16_insider_risk_defend_complete": false
+    "episode_e16_insider_risk_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca16",
+    "kit_ca16_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_quayholt": {
+      "lines": [
+        "Phones haven't stopped today.",
+        "Claims backlog's easing off.",
+        "Cooler's cold for once."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -136,7 +156,10 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e16_insider_risk_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e16_shared_login_req": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -664,8 +687,145 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "handle_leaver_week"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e16_insider_risk_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e16_insider_risk_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e16_insider_risk_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e16_insider_risk_defend_complete",
+              "condition": "value === true && globalVars.episode_e16_insider_risk_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e16_insider_risk_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_darren_price",
+          "displayName": "Darren Price",
+          "person": "darren_price",
+          "npcType": "person",
+          "position": {
+            "x": 2.5,
+            "y": 7.0
+          },
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/darren_price_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2.5,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Orus",
+            "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Busy on the awareness side.",
+                "Kettle's calling."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "person": "niamh_doherty",
+          "npcType": "person",
+          "position": {
+            "x": 4.0,
+            "y": 7.0
+          },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/niamh_doherty_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.0,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Leda",
+            "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 55
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Newsletter's nearly done.",
+                "Could murder a cuppa."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -686,6 +846,30 @@
           ],
           "minigameData": {
             "episodeId": "e16_insider_risk"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_quayholt"
           }
         }
       ]

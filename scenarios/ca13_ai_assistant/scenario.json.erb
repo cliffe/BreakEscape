@@ -6,6 +6,7 @@
   "endGoal": "Write the supplier brief, then handle the assistant inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -75,7 +76,26 @@
     "phish_assist_reader_plain_sent": false,
     "phish_assist_reader_attempts": 0,
     "e13_assistant_state": {},
-    "e13_demo_offered": false
+    "e13_demo_offered": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca13",
+    "kit_ca13_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_brightwell": {
+      "lines": [
+        "Busy inbox today.",
+        "Kettle's on in a sec.",
+        "Audit week again."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -139,7 +159,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e13_ai_assistant_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e13_supplier_injection": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -832,8 +855,152 @@
               "conversationMode": "video-call",
               "targetKnot": "demo_call",
               "videoLabel": "Brightwell Meet"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_defend_complete",
+              "condition": "value === true && globalVars.episode_e13_ai_assistant_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "person": "agnieszka_duda",
+          "npcType": "person",
+          "position": {
+            "x": 6,
+            "y": 4
+          },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/agnieszka_duda_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 6,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Callirrhoe",
+            "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 45
+            },
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Long week.",
+                "Any biscuits left?",
+                "Just need a top-up."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "person": "graham_whitfield",
+          "npcType": "person",
+          "position": {
+            "x": 8,
+            "y": 4
+          },
+          "spriteSheet": "graham_whitfield",
+          "spriteTalk": "assets/characters/graham_whitfield_talk.png",
+          "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/graham_whitfield_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 8,
+            "y": 3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Umbriel",
+            "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_brightwell": {
+              "lines": [
+                "Year-end's creeping up.",
+                "Steady day on the ledgers.",
+                "That's my second cup."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -854,6 +1021,44 @@
           ],
           "minigameData": {
             "episodeId": "e13_ai_assistant"
+          }
+        },
+        {
+          "type": "coffee_station",
+          "id": "kit_coffee",
+          "name": "Coffee station",
+          "sprite": "coffee_station1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office coffee station. Staff drift over for a top-up.",
+          "affordance": {
+            "satisfies": "caffeine",
+            "restores": 70,
+            "useSeconds": 30,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_brightwell"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A water cooler by the far wall.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
           }
         }
       ]

@@ -6,6 +6,7 @@
   "endGoal": "Send the application email, then sort the recruitment inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -76,7 +77,26 @@
     "se_intel_tarrowby_hiring_manager": false,
     "se_intel_tarrowby_cv_request": false,
     "phish_recruiter_contact_landed": false,
-    "phish_recruiter_contact_attempts": 0
+    "phish_recruiter_contact_attempts": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca02",
+    "kit_ca02_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_tarrowby": {
+      "lines": [
+        "Another pallet backlog.",
+        "Who's on the Shipley run?",
+        "Depot's heaving today."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -105,7 +125,10 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e2_cv_lures_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e2_enable_content": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -860,8 +883,145 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_recruitment_inbox"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_defend_complete",
+              "condition": "value === true && globalVars.episode_e2_cv_lures_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "person": "chidi_okeke",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "spriteSheet": "chidi_okeke",
+          "spriteTalk": "assets/characters/chidi_okeke_talk.png",
+          "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/chidi_okeke_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Zubenelgenubi",
+            "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "Fleet's all out today.",
+                "Parched after that yard run."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_zainab_hussain",
+          "displayName": "Zainab Hussain",
+          "person": "zainab_hussain",
+          "npcType": "person",
+          "position": {
+            "x": 4,
+            "y": 6
+          },
+          "spriteSheet": "zainab_hussain",
+          "spriteTalk": "assets/characters/zainab_hussain_talk.png",
+          "spriteVisemes": "assets/characters/zainab_hussain_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/zainab_hussain_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Achernar",
+            "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 55
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "Back off the road at last.",
+                "Could murder a cold drink."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -882,6 +1042,26 @@
           ],
           "minigameData": {
             "episodeId": "e2_cv_lures"
+          }
+        },
+        {
+          "type": "drinks_vending",
+          "id": "kit_vending",
+          "name": "Drinks machine",
+          "sprite": "drinks_vending1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The depot drinks machine. Staff wander over for something cold.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_tarrowby"
           }
         }
       ]

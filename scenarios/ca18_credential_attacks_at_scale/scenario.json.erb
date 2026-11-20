@@ -6,6 +6,7 @@
   "endGoal": "Run the campaign, then handle the security alerts at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -76,7 +77,26 @@
     "se_intel_ms_projects": false,
     "se_intel_ms_motto": false,
     "se_intel_ms_place": false,
-    "guess_e18_landed": false
+    "guess_e18_landed": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca18",
+    "kit_ca18_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_merrin": {
+      "lines": [
+        "Deadline on the Harbour job.",
+        "Printer's warm again.",
+        "Client's in this morning."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -140,7 +160,10 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e18_credential_attacks_at_scale_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e18_lockout_fake": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -822,8 +845,147 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "handle_the_alerts"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_defend_complete",
+              "condition": "value === true && globalVars.episode_e18_credential_attacks_at_scale_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_lorna_easton",
+          "displayName": "Lorna Easton",
+          "person": "lorna_easton",
+          "npcType": "person",
+          "position": {
+            "x": 4.5,
+            "y": 4.5
+          },
+          "spriteSheet": "lorna_easton",
+          "spriteTalk": "assets/characters/lorna_easton_talk.png",
+          "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/lorna_easton_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Erinome",
+            "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Reception's been non-stop.",
+                "Kettle's on if you fancy one.",
+                "Lovely and quiet this afternoon."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_delphine_arvanitis",
+          "displayName": "Delphine Arvanitis",
+          "person": "delphine_arvanitis",
+          "npcType": "person",
+          "position": {
+            "x": 7.5,
+            "y": 4.5
+          },
+          "spriteSheet": "delphine_arvanitis",
+          "spriteTalk": "assets/characters/delphine_arvanitis_talk.png",
+          "spriteVisemes": "assets/characters/delphine_arvanitis_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/delphine_arvanitis_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Despina",
+            "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Three deliveries already.",
+                "Phone's not stopped ringing.",
+                "Visitor book's filling up."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -844,6 +1006,26 @@
           ],
           "minigameData": {
             "episodeId": "e18_credential_attacks_at_scale"
+          }
+        },
+        {
+          "type": "leather_sofa",
+          "id": "kit_sofa",
+          "name": "Sofa",
+          "sprite": "leather_sofa1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A studio sofa by the wall. Staff drop onto it for a breather.",
+          "affordance": {
+            "satisfies": "rest",
+            "restores": 70,
+            "useSeconds": 8,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_merrin"
           }
         }
       ]

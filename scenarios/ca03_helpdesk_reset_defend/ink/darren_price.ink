@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e3_helpdesk_reset_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e3_helpdesk_reset_defend_defend_complete:
-        Darren Price: That's the queue cleared, thanks. If a caller won't let you ring them back, that tells you most of what you need.
+        { kit_key_caught:
+            Darren Price: You turned down that caller pushing for a reset who wouldn't be rung back, so no claims account opened for someone we couldn't place.
+            Darren Price: Prompt-bombing just wears people down until they tap yes. Number matching takes the idle tap out of it.
+        - else:
+            Darren Price: That caller pushing for a reset, the one who wouldn't be rung back, was the one to stop.
+            Darren Price: It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.
+        }
     - else:
         Darren Price: You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.
     }
