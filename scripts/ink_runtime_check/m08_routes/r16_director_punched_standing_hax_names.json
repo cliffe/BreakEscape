@@ -25,7 +25,7 @@
 { "tasks": { "read_the_archives": "open" } },
 { "read": "badge_audit_printout" },
 { "tasks": { "read_the_archives": "completed" } },
-{ "said": ["That's the door audit. The Director won't hear it from you, so read it to me"], "notSaid": ["With the Director on his floor"] },
+{ "said": ["That's the door audit. The Director won't hear it from you. Read it to me"], "notSaid": ["With the Director on his floor"] },
 { "enter": "server_room" },
 { "flag": 1 }, { "flag": 2 }, { "flag": 3 }, { "flag": 4 },
 { "expect": { "mole_identified": false, "found_access_logs": true } },
