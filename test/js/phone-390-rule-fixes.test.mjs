@@ -87,12 +87,17 @@ test('the 16px SIEM queue band ends at 839px (24px fits with 8px to spare from 8
     assert.ok(!/max-width: 1100px\) \{\s*\.siem-queue-count/.test(raw), 'the old band to 1100px is gone');
 });
 
-test('the VM launcher scroller starts below the 32px X at phone width', () => {
-    const raw = readFileSync(join(root, 'css', 'vm-launcher-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    const m = raw.match(/@media \(max-width: 559px\) \{\s*\.vm-launcher \{([^}]*)\}/);
-    assert.ok(m, 'a phone-width rule for the scroller exists');
-    const top = px(m[1], 'margin-top')[0] || 0;
-    assert.ok(top >= 6, `the scroller margin-top ${top}px clears the X's 5.6px overhang`);
+test('the VM launcher scroller still starts 14px below its title row at phone width, now from device-frame.css', () => {
+    // The old .vm-launcher margin-top of 6px sat on top of the 8px title margin so the scroller cleared
+    // the 32px X's 5.6px overhang. The shared device-frame title margin now gives that 14px alone.
+    const strip = (f) => readFileSync(join(root, 'css', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const frame = strip('device-frame.css');
+    const phone = frame.match(/@media \(max-width: 559px\) \{\s*\.device-frame > \.device-frame-title \{([^}]*)\}/);
+    assert.ok(phone, 'a phone-width title rule exists in device-frame.css');
+    const gapBelow = px(phone[1], 'margin-bottom')[0] || 0;
+    assert.ok(gapBelow >= 14, `the title margin-bottom ${gapBelow}px gives the scroller its old 8 + 6 clearance`);
+    const launcher = strip('vm-launcher-minigame.css');
+    assert.ok(!/@media \(max-width: 559px\) \{\s*\.vm-launcher \{[^}]*margin-top/.test(launcher), 'no phone .vm-launcher margin-top is left to double the gap');
 });
 
 test('queued alerts text pluralises', async () => {

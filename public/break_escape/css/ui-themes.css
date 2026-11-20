@@ -899,6 +899,14 @@
 [data-ui-theme] #music-widget-panel .mw-vol-slider::-webkit-slider-thumb { background: var(--ui-accent); }
 [data-ui-theme] #music-widget-panel .mw-vol-slider::-moz-range-thumb { background: var(--ui-accent); }
 
+/* Touch: the slider element is transparent (see music-widget.css), so the themed fill moves onto
+   the track pseudo-elements. Border colour stays as music-widget.css has it. */
+@media (max-width: 600px), (pointer: coarse) {
+  [data-ui-theme] #music-widget-panel .mw-vol-slider { background: transparent; }
+  [data-ui-theme] #music-widget-panel .mw-vol-slider::-webkit-slider-runnable-track { background: var(--ui-surface-raised); }
+  [data-ui-theme] #music-widget-panel .mw-vol-slider::-moz-range-track { background: var(--ui-surface-raised); }
+}
+
 
 /* ===================================================================
    Buttons: button.png as a filled 9-slice
@@ -980,6 +988,25 @@
 [data-ui-theme] .game-menu-item.active,
 [data-ui-theme] .game-menu-resume {
   color: var(--ui-accent);
+}
+
+/* The open tab needs a cue besides colour: a 4px accent bar along the bottom edge, inside the
+   art border. It is a pseudo-element because the 9-slice `fill` centre is opaque in 6 of 7 themes
+   and paints over the element's own background and inset box-shadow; a child box paints after the
+   border image, so it stays visible. It does not move the label and is the same in the desktop
+   column and the phone row. */
+[data-ui-theme] .game-menu-item.active { position: relative; }
+
+[data-ui-theme] .game-menu-item.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--ui-accent);
+  pointer-events: none;
+  z-index: 1;
 }
 
 [data-ui-theme] .tutorial-btn-primary:hover,

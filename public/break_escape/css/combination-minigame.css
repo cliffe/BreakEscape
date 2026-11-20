@@ -313,9 +313,18 @@
         overflow: visible;
     }
     .combination-dial-group { flex-direction: row; gap: 8px; }
-    .combination-dial-label { width: 80px; text-align: right; font-size: 16px; }
+    /* One line at every row state: "DIAL 1 · TURN" is the widest text the label shows, so the
+       label is wide enough for it and never wraps. A wrapped active row was taller than the
+       others, so the three rows had unequal pitch. The TURN/SET words stay: they are what
+       tells the dials apart without colour. The label inherits VT323 (400 units an em advance):
+       13 characters at 16px is 13 x (6.4 + 0.96) = about 96px (measured live: 90.5px), so 104px.
+       The display is content-box: 80px plus a 2px border each side, with no side padding here
+       (the two 32px digits are 64px, centred in the 80px box). The row is then 104 + 84 + 2 x 36
+       + 3 x 8 = 284px, 4px spare on a 360px screen inside the widest (28px) frame; with 8px side
+       padding the live row was 300px and spilled into the dials' padding. */
+    .combination-dial-label { width: 104px; flex: 0 0 auto; white-space: nowrap; text-align: right; font-size: 16px; }
     /* 32px is 4x Press Start 2P's 8px grid: two digits fit 64px */
-    .combination-dial-display { font-size: 32px; width: 80px; height: 56px; padding: 6px 8px; }
+    .combination-dial-display { font-size: 32px; width: 80px; height: 56px; padding: 6px 0; }
     .combination-status { padding: 6px 12px; }
     .combination-footer { padding: 8px 12px; }
 }
