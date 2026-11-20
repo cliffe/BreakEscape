@@ -1,0 +1,13 @@
+{
+  "key": "139dfa8c9ce6943c5134d84ce82f38b5",
+  "npc": "lorna_easton",
+  "text": "Camila's one of Jo's, by the way. She was there to see who sits where and what's left out.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T13:27:28Z"
+}

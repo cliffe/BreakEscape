@@ -1,0 +1,13 @@
+{
+  "key": "b65dc1086c7b1193123dfc8c06ca6a98",
+  "npc": "kit_thandiwe_moyo",
+  "text": "Right, five minutes on the sofa. The plans can wait.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T13:27:32Z"
+}
