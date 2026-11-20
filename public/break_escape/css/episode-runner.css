@@ -56,8 +56,8 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-/* R2 m2 (a): the kiosk close is the themed steel .minigame-close-button (the PC monitor's X),
-   not the flat red SE X. Keep it in the top strip's flex flow (the base rule makes it absolute). */
+/* R2 m2 (a): the kiosk close is the themed steel .minigame-close-button (the PC monitor's X).
+   The bar's .se-overlay-close wears the same themed skin since D216. Keep it in the top strip's flex flow (the base rule makes it absolute). */
 .epr-kiosk-top .epr-kiosk-close {
     position: relative;   /* in flow, and the anchor for the X's hit area */
     top: auto;

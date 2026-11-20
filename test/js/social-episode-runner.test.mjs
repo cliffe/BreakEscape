@@ -244,7 +244,7 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.equal(cur().container.querySelector('.epr-finished .epr-heading').textContent, 'Episode finished');
     // the bar's Close is the only close and it closes the runner
     // The kiosk (normal play) draws the themed .epr-kiosk-close in its top strip; a facilitated
-    // run draws the flat-red .se-overlay-close. Either is the single keyboard-reachable Close.
+    // run draws the bar's .se-overlay-close (same themed skin since D216). Either is the single keyboard-reachable Close.
     const closeBtn = cur().container.querySelector('.se-overlay-close, .epr-kiosk-close');
     assert.ok(closeBtn, 'a keyboard-reachable Close');
     closeBtn.click();
