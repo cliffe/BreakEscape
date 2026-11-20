@@ -231,7 +231,7 @@ test('kit: each kit row matches its shell (stepAway, ambient ids, kit_ep)', () =
   }
 });
 
-// A kit with `pool: null` and a non-empty `poolExempt` has no pool and no source (D12); readKit is defined below
+// A kit with `pool: null` and a non-empty `poolExempt` has no pool and no chatter source (D12 v4); readKit is defined below
 function kitPoolExempt(row) {
   if (!row) return false;
   const kit = JSON.parse(readFileSync(join(AW, 'office_kits', `${row.company}.json`), 'utf8'));
@@ -686,14 +686,17 @@ test('keyMessage (D13): every tiered row whose stub knot, host ink or twin ink r
   assert.ok(readsIt >= 1, 'at least one row reads kit_key_caught');
 });
 
-test('pool exemption: a kit with pool null carries a reason and no source, and a kit with a reason has no pool', () => {
+test('pool exemption: a kit with pool null carries a reason and no chatter source, and a kit with a reason has no pool', () => {
   let exempt = 0;
   for (const f of kitFiles()) {
     const kit = readKit(f);
     if (kit.pool === null) {
       exempt += 1;
       assert.ok(typeof kit.poolExempt === 'string' && kit.poolExempt.trim().length > 0, `${f}: pool null needs a non-empty poolExempt`);
-      assert.ok(Array.isArray(kit.sources) && kit.sources.length === 0, `${f}: an exempt kit has no sources`);
+      // v4 D12: an exempt kit may declare sources (Carrholme's cooler), but none may carry chatter (office_kit.check_pool)
+      const sources = Array.isArray(kit.sources) ? kit.sources : [];
+      const chatty = sources.filter((s) => s && s.affordance && s.affordance.chatter !== undefined);
+      assert.ok(chatty.length === 0, `${f}: an exempt kit has a chatter source (${chatty.map((s) => s.id).join(', ')})`);
     }
     if (kit.poolExempt !== undefined) assert.ok(kit.pool === null, `${f}: poolExempt beside a pool`);
     if (kit.pool !== null && kit.pool !== undefined) assert.ok(!('poolExempt' in kit), f);
