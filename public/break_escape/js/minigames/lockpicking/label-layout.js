@@ -35,6 +35,18 @@ export const LATE_ROW_Y = HOOK_BAR_Y + 8; // first row under the hook's bar
 
 const GAP = 2;
 
+// Below this canvas scale the label font stops growing (AC1 D219 R4): the layout of the 0.40
+// scale is clean for every pin count, and larger type would not fit. Text may draw under 16px on
+// screen there (13.6px at 0.34), which is the recorded trade-off.
+export const MIN_LAYOUT_SCALE = 0.40;
+
+// The font the layout uses at this scale: whole pixels, 16px on screen down to MIN_LAYOUT_SCALE,
+// then held at that size
+export function layoutFontSize(scale) {
+    const s = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    return labelFontSize(Math.max(s, MIN_LAYOUT_SCALE));
+}
+
 // Whole pixel font size that draws at least MIN_SCREEN_PX on screen at this canvas scale
 export function labelFontSize(scale, base = BASE_FONT_PX) {
     const s = Number.isFinite(scale) && scale > 0 ? scale : 1;
@@ -108,8 +120,34 @@ function range(from, to, step) {
 
  * @returns {{font:number, fallbacks:number, labels:Object<string,{x,y,w,h,lines:string[],leader:object|null}>}}
  */
-export function layoutLockLabels({ scale, pinXs, view, measure }) {
-    const font = labelFontSize(scale);
+export function layoutLockLabels({ scale, pinXs, view, measure, prev = null }) {
+    const font = layoutFontSize(scale);
+    const memoKey = layoutKey(font, pinXs, view, measure, prev);
+    const hit = LAYOUT_MEMO.get(memoKey);
+    if (hit) return hit;
+    const result = solveLayout({ font, pinXs, view, measure, prev });
+    if (LAYOUT_MEMO.size >= MEMO_MAX) LAYOUT_MEMO.delete(LAYOUT_MEMO.keys().next().value);
+    LAYOUT_MEMO.set(memoKey, result);
+    return result;
+}
+
+// Layouts already solved, keyed by font (the only way scale enters), pin count and x, view, the
+// measured size of every wording (so a late font load misses) and the previous layout's choices
+const LAYOUT_MEMO = new Map();
+const MEMO_MAX = 48;
+const WORDINGS = [['SHEAR LINE'], ['SHEAR', 'LINE'], ['Tension', 'Wrench'], ['Tension Wrench'], ['Hook', 'Pick'], ['Hook Pick'],
+    ['Spring'], ['Driver Pin'], ['Driver', 'Pin'], ['Key Pin']];
+function prevSig(prev, font) {
+    if (!prev || !prev.labels || prev.font === font) return '';
+    return Object.keys(prev.labels).map((id) => { const l = prev.labels[id]; return id + ':' + l.lines.join('_') + ':' + l.pin + ':' + l.x + ':' + l.y; }).join(';');
+}
+function layoutKey(font, pinXs, view, measure, prev) {
+    const m = WORDINGS.map((w) => { const b = measure(w, font); return b.w + 'x' + b.h; }).join(',');
+    return [font, pinXs.length, pinXs.join(','), view.left, view.top, view.right, view.bottom, m, prevSig(prev, font)].join('|');
+}
+export function clearLayoutMemo() { LAYOUT_MEMO.clear(); }
+
+function solveLayout({ font, pinXs, view, measure, prev }) {
     const pinBoxes = pinXs.map((x) => ({ x: x - PIN_HALF_WIDTH, y: PIN_TOP, w: PIN_HALF_WIDTH * 2, h: PIN_BOTTOM - PIN_TOP }));
     const n = pinXs.length;
     const pinAt = (i) => pinXs[Math.min(Math.max(i, 0), n - 1)];
@@ -127,19 +165,25 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
         { x: view.left - 200, y: HOOK_SHAFT_Y, w: lastX + 6 - (view.left - 200), h: HOOK_SHAFT_H },
         { x: lastX - 20, y: 215, w: 30, h: HOOK_SHAFT_Y - 215 }
     ];
-    function fits(box, leader, namedPin) {
+    // Checks that do not depend on the other labels: parts, the view, and every pin the label
+    // does not name (the box and its leader). Run once per candidate, before the search.
+    function staticOk(box, leader, namedPin) {
         for (const b of parts) if (overlaps(box, b, 1)) return false;
         if (box.x < lo || box.x + box.w > view.right - 1 || box.y < view.top || box.y + box.h > view.bottom - 1) return false;
+        for (let i = 0; i < pinBoxes.length; i++) {
+            if (i === namedPin) continue;
+            if (overlaps(box, pinBoxes[i], 1)) return false;
+            if (segmentHitsRect(leader, pinBoxes[i])) return false; // a leader never crosses a pin it does not name
+        }
+        return true;
+    }
+    // The checks against the labels already placed
+    function clearOfPlaced(box, leader) {
         for (const id of Object.keys(placed)) {
             if (overlaps(box, placed[id])) return false;
             if (segmentHitsRect(leader, placed[id])) return false;
             if (segmentHitsRect(placed[id].leader, box)) return false;
             if (leader && placed[id].leader && leadersClose(leader, placed[id].leader)) return false;
-        }
-        for (let i = 0; i < pinBoxes.length; i++) {
-            if (i === namedPin) continue;
-            if (overlaps(box, pinBoxes[i], 1)) return false;
-            if (segmentHitsRect(leader, pinBoxes[i])) return false; // a leader never crosses a pin it does not name
         }
         return true;
     }
@@ -354,33 +398,67 @@ export function layoutLockLabels({ scale, pinXs, view, measure }) {
     // label finds no room). Over budget, or with no solution: first fit per label, then a fallback
     const order = ['shear', 'wrench', 'hook', 'spring', 'driver', 'key'];
     const sp = {};
-    for (const id of order) sp[id] = specs[id]();
-    let budget = 3000000;
+    for (const id of order) {
+        sp[id] = specs[id]();
+        sp[id].out = sp[id].out.filter((c) => staticOk(c.box, c.leader, c.named));
+        // Hysteresis: a re-layout at a new font keeps what the player already saw (the same
+        // wording, pin and row) when it still fits
+        const pl = prev && prev.font !== font ? prev.labels?.[id] : null;
+        if (pl) {
+            const same = (c) => c.lines.join() === pl.lines.join() && c.named === pl.pin && Math.abs(c.box.y - pl.y) <= 40 && Math.abs(c.box.x - pl.x) <= 60;
+            sp[id].out = [...sp[id].out.filter(same), ...sp[id].out.filter((c) => !same(c))];
+        }
+    }
+    // Node budget: a solved layout is found within a few thousand nodes (the hardest, 8 pins at 0.40,
+    // uses about 53,000), so the cap only bounds a pathological case
+    const startBudget = 250000;
+    let budget = startBudget;
+    // The index of the last candidate that fit, per label: checked first by the forward check
+    const support = {};
+    const hasRoomForRest = (from) => {
+        for (let j = from; j < order.length; j++) {
+            const id = order[j], list = sp[id].out;
+            const k = support[id];
+            if (k !== undefined && clearOfPlaced(list[k].box, list[k].leader)) continue;
+            let found = false;
+            for (let q = 0; q < list.length; q++) {
+                if (clearOfPlaced(list[q].box, list[q].leader)) { support[id] = q; found = true; break; }
+            }
+            if (!found) return false;
+        }
+        return true;
+    };
     const rec = (i) => {
         if (i === order.length) return true;
         const id = order[i];
-        const tried = [];
+        const tried = new Set();
+        let count = 0;
         for (const c of sp[id].out) {
-            // Near-identical spots lead to the same dead end: try a spread, at most 40 per label
-            if (tried.some((t) => t.lines.join() === c.lines.join() && t.named === c.named && Math.abs(t.box.x - c.box.x) < 20 && Math.abs(t.box.y - c.box.y) < 20)) continue;
+            // Near-identical spots lead to the same dead end: try a spread, one per 20px cell
+            const cell = c.lines.join() + '|' + c.named + '|' + Math.floor(c.box.x / 20) + '|' + Math.floor(c.box.y / 20);
+            if (tried.has(cell)) continue;
             if (--budget < 0) return false;
-            if (!fits(c.box, c.leader, c.named)) continue;
-            tried.push(c);
+            if (!clearOfPlaced(c.box, c.leader)) continue;
+            tried.add(cell);
+            count++;
             put(id, c.lines, c.box, c.leader, c.named);
-            if (rec(i + 1)) return true;
+            // Forward check: a later label with no clear spot left ends this branch at once.
+            // (It only skips branches that cannot finish, so the first layout found is unchanged.)
+            if (hasRoomForRest(i + 1) && rec(i + 1)) return true;
             delete placed[id];
-            if (tried.length >= 3000 || budget < 0) return false;
+            if (count >= 3000 || budget < 0) return false;
         }
         return false;
     };
-    if (!rec(0)) {
+    const solved = rec(0);
+    if (!solved) {
         for (const id of order) delete placed[id];
         for (const id of order) {
-            const c = sp[id].out.find((k) => fits(k.box, k.leader, k.named));
+            const c = sp[id].out.find((k) => clearOfPlaced(k.box, k.leader));
             if (c) put(id, c.lines, c.box, c.leader, c.named); else sp[id].fb();
         }
     }
-    return { font, labels: placed, fallbacks };
+    return { font, labels: placed, fallbacks, solved, nodes: startBudget - budget };
 }
 
 // A leader as crisp 2px rectangles (no antialiasing): axis-aligned in practice, a stepped
@@ -409,6 +487,7 @@ export class LockLabels {
         this._last = '';
         this._result = null;
         this._disposed = false;
+        this._hidden = false; // the first pin press hid the labels for good: never lay out again
     }
 
     scale() {
@@ -431,7 +510,7 @@ export class LockLabels {
     }
 
     apply() {
-        if (this._disposed) return null;
+        if (this._disposed || this._hidden) return null;
         const p = this.parent;
         const t = this.texts();
         if (!p.scene || !p.pins?.length || Object.values(t).some((x) => !x)) return null;
@@ -440,7 +519,7 @@ export class LockLabels {
             ? { left: cam.scrollX, top: cam.scrollY, right: cam.scrollX + cam.width, bottom: cam.scrollY + cam.height }
             : { left: 0, top: 0, right: 600, bottom: 400 };
         const scale = this.scale();
-        const font = labelFontSize(scale);
+        const font = layoutFontSize(scale);
         t.spring.setPadding(LABEL_PAD_X, LABEL_PAD_Y, LABEL_PAD_X, LABEL_PAD_Y);
         const measure = (lines, f) => {
             // Measure with the real font: set it on a probe label, read its size
@@ -453,7 +532,7 @@ export class LockLabels {
         const key = [font, view.left, view.top, view.right, view.bottom, pinXs.join(',')].join('|');
         if (key === this._last) return null;
         this._last = key;
-        const result = layoutLockLabels({ scale, pinXs, view, measure });
+        const result = layoutLockLabels({ scale, pinXs, view, measure, prev: this._result });
         const wc = p.tensionWrench;
         const offX = wc ? wc.x : 0, offY = wc ? wc.y : 0;
         for (const id of Object.keys(t)) {
@@ -500,6 +579,7 @@ export class LockLabels {
 
     // First pin press: hide every teaching label and its leader together
     hideTeachingLabels() {
+        this._hidden = true;
         const t = this.texts();
         for (const id of Object.keys(t)) t[id]?.setVisible?.(false);
         this.syncLeaders();

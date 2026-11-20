@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mod = await import(pathToFileURL(join(here, '../../public/break_escape/js/minigames/lockpicking/label-layout.js')).href);
-const { layoutLockLabels, labelFontSize, segmentHitsRect, leaderRects, LockLabels, PIN_TOP, PIN_BOTTOM, PIN_HALF_WIDTH, WRENCH_UPRIGHT } = mod;
+const { layoutLockLabels, labelFontSize, layoutFontSize, clearLayoutMemo, MIN_LAYOUT_SCALE, leaderLegs, segmentHitsRect, leaderRects, LockLabels, PIN_TOP, PIN_BOTTOM, PIN_HALF_WIDTH, WRENCH_UPRIGHT } = mod;
 const src = (f) => readFileSync(join(here, '../../public/break_escape/js/minigames/lockpicking/' + f), 'utf8');
 
 // VT323 is about 0.4em wide per character; the estimate is a little wider than that
@@ -292,14 +292,26 @@ test('Phaser glue: layout re-runs after the fit switch sets the camera scroll, a
 // ---- The whole phone range of canvas scales (0.40 to 1.0) with real VT323 metrics (0.4em advance, 1em line) ----
 const hits = (seg, r) => segmentHitsRect(seg, r);
 
-test('across scales 0.40 to 1.0 and 3 to 8 pins: no leader crosses a pin it does not name, the wrench label clears its upright', () => {
+// Every leg of every leader, as 2px-wide rectangles padded by 1px: two leaders closer than this read as one line
+function legRects(l) {
+    return leaderLegs(l).flatMap((leg) => leaderRects(leg)).map((r) => ({ x: r.x - 1, y: r.y - 1, w: r.w + 2, h: r.h + 2 }));
+}
+const rectsHit = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+let worstMs = 0, worstReal = 0;
+test('across scales 0.24 to 1.0, 1 to 8 pins, both views: clean at 0.40 and above, the 0.40 layout below (D219 R4 M2)', () => {
     let cases = 0;
-    for (let k = 40; k <= 100; k++) {
+    for (let k = 24; k <= 100; k++) {
         const scale = k / 100;
-        for (let n = 3; n <= 8; n++) {
+        for (let n = 1; n <= 8; n++) {
             for (const view of [views.portrait, views.landscape]) {
                 const pinXs = pinXsFor(n);
+                clearLayoutMemo();
+                const t0 = process.hrtime.bigint();
                 const r = layoutLockLabels({ scale, pinXs, view, measure: realMeasure });
+                const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+                worstMs = Math.max(worstMs, ms);
+                if (n === 4 || n === 5) worstReal = Math.max(worstReal, ms);
                 const tag = `scale ${scale}, ${n} pins, view top ${view.top}`;
                 for (const id of Object.keys(r.labels)) {
                     const l = r.labels[id].leader;
@@ -310,11 +322,13 @@ test('across scales 0.40 to 1.0 and 3 to 8 pins: no leader crosses a pin it does
                         assert.ok(!hits(l, pinBox), `${id} leader crosses pin ${p + 1} (${tag}): ${JSON.stringify(l)}`);
                     });
                 }
-                // Strict, whatever pin each teaching label chose: 16px on screen, no label touching
-                // another label, an unnamed pin or a drawn part (a 0px touch counts), every pin label
-                // has a leader, no fallback
-                assert.ok(r.font * scale >= 16 - 1e-9, `font ${r.font} x ${scale} >= 16 (${tag})`);
-                assert.ok(r.fallbacks === 0, `no fallback (${tag}), got ${r.fallbacks}`);
+                // 0.40 and above: 16px on screen. Below: the font holds at its 0.40 size (and the layout
+                // is the 0.40 one), so the text may draw under 16px there and nowhere else
+                if (scale >= MIN_LAYOUT_SCALE - 1e-9) assert.ok(r.font * scale >= 16 - 1e-9, `font ${r.font} x ${scale} >= 16 (${tag})`);
+                else assert.ok(r.font === labelFontSize(MIN_LAYOUT_SCALE) && r.font === 40, `font capped at 40, got ${r.font} (${tag})`);
+                assert.ok(r.fallbacks === 0 && r.solved === true, `no fallback (${tag}), got ${r.fallbacks}`);
+                // No label touching another label, an unnamed pin or a drawn part (a 0px touch counts),
+                // every pin label has a leader
                 const touch = (a, b) => a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h;
                 const lastX = pinXs[n - 1];
                 const drawn = [WRENCH_UPRIGHT, { x: 80, y: 200, w: 38, h: 10 }, { x: -300, y: 254, w: lastX + 6 + 300, h: 12 }, { x: lastX - 20, y: 215, w: 30, h: 39 }];
@@ -328,15 +342,22 @@ test('across scales 0.40 to 1.0 and 3 to 8 pins: no leader crosses a pin it does
                         assert.ok(!touch(a, { x: x - PIN_HALF_WIDTH, y: PIN_TOP, w: PIN_HALF_WIDTH * 2, h: PIN_BOTTOM - PIN_TOP }), `${id} touches pin ${p + 1} (${tag})`);
                     });
                     for (const b of drawn) assert.ok(!touch(a, b), `${id} touches a drawn part (${tag}): ${JSON.stringify(b)}`);
-                    for (const o of ids.slice(i + 1)) assert.ok(!touch(a, r.labels[o]) , `${id} and ${o} touch (${tag})`);
+                    for (const o of ids.slice(i + 1)) {
+                        assert.ok(!touch(a, r.labels[o]), `${id} and ${o} touch (${tag})`);
+                        // No two leaders within a pixel of each other (they would read as one line)
+                        if (a.leader && r.labels[o].leader) {
+                            const close = legRects(a.leader).some((p) => legRects(r.labels[o].leader).some((q) => rectsHit(p, q)));
+                            assert.ok(!close, `${id} and ${o} leaders run together (${tag})`);
+                        }
+                    }
                 });
                 const w = r.labels.wrench;
                 const onUpright = w.x < WRENCH_UPRIGHT.x + WRENCH_UPRIGHT.w && WRENCH_UPRIGHT.x < w.x + w.w
                     && w.y < WRENCH_UPRIGHT.y + WRENCH_UPRIGHT.h && WRENCH_UPRIGHT.y < w.y + w.h;
                 assert.ok(!onUpright, `wrench label covers the upright (${tag}): ${JSON.stringify(w)}`);
-                // Where everything fits (no fallback), up to 6 pins keep every pin leader near-straight
-                // (first leg within 10px of vertical; a gap leader's elbow is its second leg)
-                if (r.fallbacks === 0 && n <= 6) {
+                // Up to 6 pins keep every pin leader near-straight (first leg within 10px of vertical;
+                // a gap leader's elbow is its second leg)
+                if (n <= 6) {
                     for (const id of Object.keys(r.labels)) {
                         const l = r.labels[id].leader;
                         if (l) assert.ok(Math.abs(l.x2 - l.x1) <= 10 || l.y1 === l.y2, `${id} leader straight (${tag})`);
@@ -346,7 +367,74 @@ test('across scales 0.40 to 1.0 and 3 to 8 pins: no leader crosses a pin it does
             }
         }
     }
-    assert.ok(cases === 61 * 6 * 2, 'grid size ' + cases);
+    assert.ok(cases === 77 * 8 * 2, 'grid size ' + cases);
+});
+
+test('layout time: a solve stays well under a second at every scale (guard, generous for CI)', () => {
+    assert.ok(worstReal < 500, `worst 4 or 5 pin solve ${worstReal.toFixed(0)} ms`);
+    assert.ok(worstMs < 1500, `worst solve ${worstMs.toFixed(0)} ms`);
+});
+
+test('below 0.40 the layout is the 0.40 layout: the same boxes and leaders (D219 R4 M2)', () => {
+    assert.ok(layoutFontSize(0.3) === 40 && layoutFontSize(0.4) === 40 && layoutFontSize(0.5) === 32, 'font holds at 40 below 0.40');
+    const a = layoutLockLabels({ scale: 0.4, pinXs: pinXsFor(4), view: views.landscape, measure: realMeasure });
+    const b = layoutLockLabels({ scale: 0.3, pinXs: pinXsFor(4), view: views.landscape, measure: realMeasure });
+    assert.ok(JSON.stringify(a.labels) === JSON.stringify(b.labels), 'the same layout at 0.30 and 0.40');
+});
+
+test('a layout is remembered by font, pins, view and measured sizes, so a repeat does no search (D219 R4 M1)', () => {
+    clearLayoutMemo();
+    let calls = 0;
+    const counting = (lines, font) => { calls++; return realMeasure(lines, font); };
+    const args = { scale: 0.6, pinXs: pinXsFor(4), view: views.landscape, measure: counting };
+    const a = layoutLockLabels(args);
+    const first = calls;
+    const b = layoutLockLabels({ ...args, scale: 0.61 }); // the same font: free
+    assert.ok(a === b, 'same layout object for the same font');
+    assert.ok(calls - first <= 10, 'only the wording fingerprint is measured on a repeat, got ' + (calls - first));
+    const wide = (lines, font) => ({ ...realMeasure(lines, font), w: realMeasure(lines, font).w + 4 });
+    const c = layoutLockLabels({ ...args, measure: wide });
+    assert.ok(c !== a, 'a changed glyph width (a late font load) is solved again');
+    const d = layoutLockLabels({ ...args, pinXs: pinXsFor(5) });
+    assert.ok(d !== a, 'a different pin count is solved again');
+});
+
+test('a layout is not re-solved when the labels are hidden (first pin press): resize does nothing', () => {
+    const p = fakeParent();
+    const ll = new LockLabels(p);
+    p.lockLabels = ll;
+    ll.apply();
+    ll.hideTeachingLabels();
+    let touched = 0;
+    for (const n of ['springLabel', 'driverPinLabel', 'keyPinLabel', 'shearLineText', 'wrenchText', 'hookPickLabel']) {
+        const f = p[n].setFontSize.bind(p[n]);
+        p[n].setFontSize = (v) => { touched++; return f(v); };
+    }
+    clearLayoutMemo();
+    p.game.canvas.getBoundingClientRect = () => ({ width: 300 });
+    assert.ok(ll.apply() === null, 'apply does nothing once hidden');
+    assert.ok(touched === 0, 'no label measured or restyled, touched ' + touched);
+    ll.watch(); // the handlers are the same path
+    p.handlers.resize();
+    ll.dispose();
+    assert.ok(touched === 0, 'a resize after the press does no layout work');
+});
+
+test('labels keep their pin and row when the font changes by a step, if they still fit (D219 R4 m2)', () => {
+    for (const n of [4, 5]) {
+        const pinXs = pinXsFor(n);
+        clearLayoutMemo();
+        const fresh = layoutLockLabels({ scale: 0.665, pinXs, view: views.landscape, measure: realMeasure });
+        const at635 = layoutLockLabels({ scale: 0.635, pinXs, view: views.landscape, measure: realMeasure, prev: fresh });
+        const back = layoutLockLabels({ scale: 0.665, pinXs, view: views.landscape, measure: realMeasure, prev: at635 });
+        for (const id of ['spring', 'driver', 'key']) {
+            assert.ok(back.labels[id].pin === at635.labels[id].pin, `${id} keeps pin ${at635.labels[id].pin} going back to 0.665 (${n} pins)`);
+        }
+        for (const id of ['wrench', 'hook']) {
+            assert.ok(Math.abs(back.labels[id].y - at635.labels[id].y) <= 40, `${id} keeps its row going back to 0.665 (${n} pins): ${at635.labels[id].y} -> ${back.labels[id].y}`);
+        }
+        assert.ok(back.fallbacks === 0 && back.solved, 'still clean');
+    }
 });
 
 test('740x360 with the observations open (scale 0.47): a 4-pin lock puts Driver Pin over a pin of its kind with a straight leader', () => {
