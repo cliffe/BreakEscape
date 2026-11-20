@@ -1771,6 +1771,10 @@ export class PasswordMinigame extends MinigameScene {
         let applied = false;
         let saved = null;
         let dead = false;
+        // A fresh error line won over the field: while the keyboard stays up, a viewport resize of any
+        // size re-pins the line to the new edge instead of handing the win back to the field. Cleared
+        // when the player types, on blur, when the keyboard goes down and at cleanup.
+        let errorHeld = false;
         // The tallest innerHeight seen for each innerWidth while a field had focus. A rotation looks
         // the new width up, so rotating back keeps the baseline from before the keyboard shrank the layout.
         const tallest = new Map();
@@ -1826,6 +1830,7 @@ export class PasswordMinigame extends MinigameScene {
             if (dead || !focused()) return;
             errorWins = errorWins === true;
             if (!keyboardUp()) {
+                errorHeld = false;
                 if (layoutShrunk()) {
                     const t = lowestTarget(errorWins);
                     if (t) { revealInFrame(t.el); if (!errorWins) keepFieldInView(); }
@@ -1835,6 +1840,7 @@ export class PasswordMinigame extends MinigameScene {
             const edge = vv.offsetTop + vv.height;
             const target = lowestTarget(errorWins);
             if (!target) return;
+            if (errorWins) errorHeld = true;
             if (target.bottom > edge) {
                 if (!applied) {
                     saved = { pad: panel.style.paddingBottom, scrollPad: panel.style.scrollPaddingBottom };
@@ -1854,19 +1860,24 @@ export class PasswordMinigame extends MinigameScene {
             if (vv.scale !== 1) return; // a pinch-zoom is not a keyboard
             if (focusW) syncOrientation(); // rotated while focused, or the layout grew taller
             // No keyboard: the padding always goes; a layout that is still shrunk then gets its reveal
-            if (!keyboardUp()) { raf(() => { clear(); if (layoutShrunk()) reveal(); }); return; }
-            raf(() => reveal());
+            if (!keyboardUp()) { errorHeld = false; raf(() => { clear(); if (layoutShrunk()) reveal(); }); return; }
+            raf(() => reveal(errorHeld));
         };
         for (const f of list) {
             this.addEventListener(f, 'focus', () => {
                 syncOrientation();
                 if (keyboardUp()) raf(() => reveal());
             });
-            this.addEventListener(f, 'blur', () => raf(() => { if (!focused()) { clear(); tallest.clear(); focusW = 0; } }));
+            // The player typing again hands the win back to the field (caret scroll takes over)
+            const release = () => { errorHeld = false; };
+            this.addEventListener(f, 'input', release);
+            this.addEventListener(f, 'keydown', release);
+            this.addEventListener(f, 'blur', () => raf(() => { if (!focused()) { errorHeld = false; clear(); tallest.clear(); focusW = 0; } }));
         }
         this.addEventListener(vv, 'resize', onViewport);
         this._keyboardReveal = (errorWins) => { if (!dead && focused()) raf(() => reveal(errorWins === true)); };
-        this._clearKeyboardReveal = () => { dead = true; clear(); this._keyboardReveal = null; };
+        this._keyboardRevealState = () => ({ tallest: tallest.size, focusW, errorHeld }); // read by tests
+        this._clearKeyboardReveal = () => { dead = true; errorHeld = false; clear(); tallest.clear(); focusW = 0; this._keyboardReveal = null; };
     }
 
     /**

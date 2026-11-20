@@ -110,6 +110,7 @@ function open() {
     scrollTos.length = 0;
     return { mg, scrolls, vv, flush, scrollTos };
 }
+const passwordInput = (mg) => mg.passwordField.dispatchEvent(new window.Event('input', { bubbles: true }));
 const rectBottom = (el, bottom) => { el.getBoundingClientRect = () => ({ top: bottom - 40, bottom, left: 0, right: 100, width: 100, height: 40 }); };
 // A fake layout with rects: the panel's bottom is fixed at P (drawn px); the targets' bottoms move up
 // as the panel scrolls. scrollNearest follows the browser's rule for block 'nearest': the target's
@@ -421,11 +422,52 @@ test('landscape 844x390: on focus and resize the field wins; a fresh error line 
     assert.ok(L.bottomOf(mg.signInMessageEl) <= 150 - 8, `the error line ends 8px above the keyboard (bottom ${L.bottomOf(mg.signInMessageEl)})`);
     assert.ok(!scrolls.some((r) => r.opts && r.opts.block === 'start'), 'the field is not scrolled back over the error line');
     assert.ok(L.fieldTop() < L.panelTop, 'the field gives way to the error line (the decided trade-off)');
-    // the next keyboard resize is not a message: the field wins again
+    // a resize of 0px or +6px (a QuickType row) re-pins the line; the field does not take the win back (R5 m1)
     vv.fire(); flush();
-    assert.ok(L.fieldTop() >= L.panelTop, `field wins again on a resize (top ${L.fieldTop()})`);
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 150 - 8, `the line holds on a 0px resize (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    assert.ok(L.fieldTop() < L.panelTop, `the field still gives way on a 0px resize (top ${L.fieldTop()})`);
+    vv.height = 156; vv.fire(); flush();
+    assert.ok(L.bottomOf(mg.signInMessageEl) <= 156 - 8 && L.bottomOf(mg.signInMessageEl) >= 156 - 8 - 40, `the line follows a +6px edge (bottom ${L.bottomOf(mg.signInMessageEl)})`);
+    assert.ok(!scrolls.some((r) => r.opts && r.opts.block === 'start'), 'no scroll back to the field while the error is held');
+    // typing hands the win back: the next resize puts the field at the top of the panel
+    passwordInput(mg);
+    vv.fire(); flush();
+    assert.ok(L.fieldTop() >= L.panelTop, `field wins on the resize after an input event (top ${L.fieldTop()})`);
     window.innerWidth = 1024; window.innerHeight = INNER;
     mg.cleanup();
+});
+
+test('a keydown in the field also releases a held error line (R5 m1)', () => {
+    const { mg, vv, flush } = open();
+    const L = lay(mg, { submit: 270, msg: 328, P: 330, panelTop: 48, field: [198, 230] });
+    mg.signInMessageEl.textContent = '';
+    window.innerWidth = 844; window.innerHeight = 390;
+    focusOn(mg.passwordField); flush();
+    vv.height = 150; vv.fire(); flush();
+    mg.setSignInMessage('Incorrect username or password. 2 attempts left.', 'error');
+    flush();
+    vv.fire(); flush();
+    assert.ok(L.fieldTop() < L.panelTop, 'held through a resize');
+    mg.passwordField.dispatchEvent(new window.Event('keydown', { bubbles: true }));
+    vv.fire(); flush();
+    assert.ok(L.fieldTop() >= L.panelTop, `field wins after a keydown (top ${L.fieldTop()})`);
+    window.innerWidth = 1024; window.innerHeight = INNER;
+    mg.cleanup();
+});
+
+test('cleanup clears the tallest-height map and the focus width (R5 m2)', () => {
+    const { mg, vv, flush } = open();
+    lay(mg, { submit: 300 }); mg.signInMessageEl.textContent = '';
+    window.innerHeight = 844;
+    focusOn(mg.passwordField); flush(); // tallest[innerWidth] = 844
+    const st = mg._keyboardRevealState();
+    assert.ok(st.tallest === 1 && st.focusW !== 0, `state held while focused (tallest ${st.tallest}, focusW ${st.focusW})`);
+    mg.cleanup();
+    const after = mg._keyboardRevealState();
+    assert.ok(after.tallest === 0, `tallest cleared at cleanup (got ${after.tallest})`);
+    assert.ok(after.focusW === 0, `focusW cleared at cleanup (got ${after.focusW})`);
+    assert.ok(after.errorHeld === false, 'errorHeld cleared at cleanup');
+    window.innerHeight = INNER; vv.height = INNER;
 });
 
 test('landscape 667x330 (edge 95): the attempts-left line is brought above the keyboard', () => {
