@@ -182,7 +182,8 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
         if (!panel) return;
         // Old cues sit on elements the render below replaces: drop them first.
         this._destroyScrollCues();
-        this._scrollCue = attachScrollCue(panel);
+        // The diff tab's panel does not overflow; its two diff panels carry their own cues.
+        if (tabId !== 'diff') this._scrollCue = attachScrollCue(panel);
         panel.scrollLeft = 0;
 
         switch (tabId) {
@@ -202,7 +203,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
     // Each diff panel scrolls itself sideways, so each gets its own cue (the outer panel does not overflow).
     _attachDiffCues(panel) {
         this._diffScrollCues = Array.from(panel.querySelectorAll('.dli-diff-panel'))
-            .map(el => attachScrollCue(el, { viewport: panel }));
+            .map(el => attachScrollCue(el));
     }
 
     _enableTab(tabId) {
@@ -500,20 +501,20 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
 
         panel.innerHTML = `
 <div class="dli-diff-split">
-  <div class="dli-diff-panel">
+  <div class="dli-diff-col"><div class="dli-diff-panel">
     <div class="dli-diff-panel-header">
       <div class="dli-diff-panel-file">${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</div>
       <div class="dli-diff-panel-meta">${this._phase === 'restored' ? `Restored from backup &nbsp;<span class="dli-verified-ok">&#x2713; HASH MATCH</span>` : `Modified: <span class="dli-modified-at">${escapeHtml(t.modifiedAt)}</span>`}</div>
     </div>
     <table class="dli-diff-table"><tbody>${leftRows}</tbody></table>
-  </div>
-  <div class="dli-diff-panel">
+  </div></div>
+  <div class="dli-diff-col"><div class="dli-diff-panel">
     <div class="dli-diff-panel-header">
       <div class="dli-diff-panel-file">${escapeHtml(this._data.backupFile || 'drug_library.bak')}</div>
       <div class="dli-diff-panel-meta">Backup: ${escapeHtml(t.backupDate)} &nbsp;<span class="dli-verified-ok">&#x2713; HASH MATCH</span></div>
     </div>
     <table class="dli-diff-table"><tbody>${rightRows}</tbody></table>
-  </div>
+  </div></div>
 </div>
 <div class="dli-diff-summary">
   ${this._phase === 'restored'

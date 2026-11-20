@@ -27,7 +27,7 @@ test('hides at the scroll end, when nothing overflows, and off phones', () => {
 function fakeWorld(phone) {
     const listeners = { scroller: {}, win: {} };
     const cue = { style: {}, removed: false, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, remove() { this.removed = true; } };
-    const host = { appended: [], clientWidth: 400, style: {}, appendChild(c) { this.appended.push(c); } };
+    const host = { inserted: [], clientWidth: 400, style: {}, insertBefore(c, ref) { this.inserted.push([c, ref]); } };
     const scroller = {
         parentElement: host, scrollLeft: 0, clientWidth: 300, scrollWidth: 600, offsetWidth: 300, offsetLeft: 0, offsetTop: 20,
         addEventListener(t, f) { listeners.scroller[t] = f; }, removeEventListener(t) { delete listeners.scroller[t]; }
@@ -47,23 +47,24 @@ test('cue text is "SCROLL >", set by textContent, with a 2px border and pixel fo
     assert.ok(w.cue.textContent === 'SCROLL >', 'text');
     assert.ok(w.cue.style.border === '2px solid #ffffff', 'border');
     assert.ok(/VT323/.test(w.cue.style.fontFamily), 'pixel font');
-    assert.ok(w.host.appended[0] === w.cue, 'added beside the scroller');
+    assert.ok(w.host.inserted[0][0] === w.cue && w.host.inserted[0][1] === w.scroller, 'placed in flow, directly before the scroller');
+    assert.ok(w.cue.style.position === undefined, 'not absolutely positioned');
+    assert.ok(w.cue.style.marginLeft === 'auto', 'right aligned on its own line');
 });
 
-test('cue updates on scroll and resize, and is removed on destroy', () => {
+test('cue is visible with more columns, hidden-but-space-keeping at the end, display none with no overflow', () => {
     const phone = { value: true };
     const w = fakeWorld(phone);
     const h = attachScrollCue(w.scroller, { window: w.win, document: w.doc });
-    assert.ok(w.cue.style.display === 'block', 'visible at start');
-    assert.ok(w.cue.style.top === '24px', 'aligned to the scroller top');
+    assert.ok(w.cue.style.display === 'block' && w.cue.style.visibility === 'visible', 'visible at start');
     w.scroller.scrollLeft = 300; w.listeners.scroller.scroll();
-    assert.ok(w.cue.style.display === 'none', 'hidden at the end after scroll');
+    assert.ok(w.cue.style.display === 'block' && w.cue.style.visibility === 'hidden', 'at the end: visibility hidden, still takes its line');
     w.scroller.scrollLeft = 0; w.scroller.scrollWidth = 300; w.listeners.win.resize();
-    assert.ok(w.cue.style.display === 'none', 'hidden after a resize removes the overflow');
+    assert.ok(w.cue.style.display === 'none', 'no overflow: display none, no space');
     w.scroller.scrollWidth = 700; phone.value = false; w.listeners.win.resize();
-    assert.ok(w.cue.style.display === 'none', 'hidden after growing to a desktop width');
+    assert.ok(w.cue.style.display === 'none', 'desktop width: display none');
     phone.value = true; w.listeners.win.resize();
-    assert.ok(w.cue.style.display === 'block', 'back on a phone with overflow');
+    assert.ok(w.cue.style.display === 'block' && w.cue.style.visibility === 'visible', 'back on a phone with overflow');
     h.destroy();
     assert.ok(w.cue.removed === true, 'cue removed');
     assert.ok(!w.listeners.scroller.scroll && !w.listeners.win.resize, 'listeners removed');

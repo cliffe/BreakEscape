@@ -1,6 +1,6 @@
 // Sweep 3 R1: the scroll cue is attached to the element that really scrolls, destroyed on tab
 // switch and cleanup, uses the framework's touch-size query and stays visible while the outer pane
-// scrolls. Runs the real helper and the real minigames in a jsdom DOM.
+// scrolls (superseded: the cue is now in flow). Runs the real helper and the real minigames in a jsdom DOM.
 // Run with: node --test test/js/scroll-cue-wiring.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -56,31 +56,31 @@ test('the cue query covers phones in landscape as well as portrait', () => {
     assert.ok(mq(1280, 720)(q).matches === false, '1280x720 desktop does not');
 });
 
-function rect(top, bottom) { return { top, bottom, left: 0, right: 100, width: 100, height: bottom - top }; }
+function sized(el, sw, cw) {
+    Object.defineProperty(el, 'scrollWidth', { value: sw, configurable: true });
+    Object.defineProperty(el, 'clientWidth', { value: cw, configurable: true });
+}
 
-test('with an outer scroller the cue follows the visible top of the table', () => {
+test('the cue is an in-flow sibling before the scroller, never absolutely placed, and keeps its height at the end', () => {
     const doc = dom.window.document;
-    const outer = doc.createElement('div'), host = doc.createElement('div'), scroller = doc.createElement('div');
-    outer.appendChild(host); host.appendChild(scroller);
-    const R = { outer: rect(0, 300), host: rect(0, 900), scroller: rect(100, 500) };
-    outer.getBoundingClientRect = () => R.outer; host.getBoundingClientRect = () => R.host; scroller.getBoundingClientRect = () => R.scroller;
-    for (const [el, w] of [[scroller, 600]]) Object.defineProperty(el, 'scrollWidth', { value: w, configurable: true });
-    Object.defineProperty(scroller, 'clientWidth', { value: 300, configurable: true });
-    const fakeWin = { matchMedia: mq(390, 844), getComputedStyle: () => ({ position: 'relative' }), addEventListener() {}, removeEventListener() {} };
-    const h = attachScrollCue(scroller, { window: fakeWin, document: doc, viewport: outer });
-    assert.ok(h.cue.style.display === 'block', 'visible at rest');
-    assert.ok(h.cue.style.top === '104px', 'sits at the scroller top first');
-    // The outer pane scrolls down 150px: scroller top is now above the viewport top
-    R.host = rect(-150, 750); R.scroller = rect(-50, 350);
-    outer.dispatchEvent(new dom.window.Event('scroll'));
-    assert.ok(h.cue.style.display === 'block', 'still visible after the outer pane scrolls');
-    assert.ok(h.cue.style.top === '154px', 'pinned to the visible top (viewport top 0 minus host top -150, plus 4)');
-    // Scrolled until the table is off screen
-    R.scroller = rect(-400, -10);
-    outer.dispatchEvent(new dom.window.Event('scroll'));
-    assert.ok(h.cue.style.display === 'none', 'hidden once the table is out of view');
-    h.destroy();
-    assert.ok(count(outer, 'scroll') === 0, 'outer scroll listener removed on destroy');
+    const host = doc.createElement('div'), scroller = doc.createElement('div');
+    host.appendChild(scroller);
+    sized(scroller, 600, 300);
+    const win = { matchMedia: mq(390, 844), addEventListener() {}, removeEventListener() {} };
+    const h = attachScrollCue(scroller, { window: win, document: doc });
+    assert.ok(h.cue.nextElementSibling === scroller, 'cue sits directly before the scroller');
+    assert.ok(h.cue.parentElement === scroller.parentElement, 'same parent as the scroller');
+    assert.ok(h.cue.style.position === '', 'not positioned');
+    assert.ok(host.style.position === '', 'host is not made relative');
+    assert.ok(h.cue.style.display === 'block' && h.cue.style.visibility === 'visible', 'visible while more columns exist');
+    scroller.scrollLeft = 300; h.update();
+    assert.ok(h.cue.style.display === 'block' && h.cue.style.visibility === 'hidden', 'end: hidden but keeps its space');
+    sized(scroller, 300, 300); h.update();
+    assert.ok(h.cue.style.display === 'none', 'no overflow: takes no space');
+    const desktop = attachScrollCue(scroller, { window: { ...win, matchMedia: mq(1280, 720) }, document: doc });
+    sized(scroller, 600, 300); desktop.update();
+    assert.ok(desktop.cue.style.display === 'none', '1280x720: no space');
+    h.destroy(); desktop.destroy();
 });
 
 function logParams() {
@@ -104,23 +104,24 @@ test('log filter: cues sit on the scrolling wraps, follow tab switches and are g
     const logWrap = el.querySelector('.lf-log-table-wrap');
     assert.ok(!!logWrap, 'log table wrap rendered');
     assert.ok(count(logWrap, 'scroll') === 1, 'session tab: the cue is on the log table wrap');
-    assert.ok(count(el.querySelector('.lf-body'), 'scroll') === 1, 'the cue watches the vertical scroller (.lf-body)');
-    assert.ok(scrollTotal(el) === 2, 'session tab: exactly one cue live');
+    assert.ok(scrollTotal(el) === 1, 'session tab: exactly one cue live');
+    assert.ok(logWrap.previousElementSibling.classList.contains('scroll-cue'), 'the cue is the line directly above the table wrap');
 
     mg._switchTab('audit');
     const auditWrap = el.querySelector('.lf-audit-table-wrap');
     assert.ok(!!auditWrap, 'audit wrap rendered');
     assert.ok(count(auditWrap, 'scroll') === 1, 'audit tab: the cue is on .lf-audit-table-wrap');
     assert.ok(count(logWrap, 'scroll') === 0, 'tab switch destroyed the old log cue');
-    assert.ok(count(el.querySelector('.lf-body'), 'scroll') === 1, 'the outer scroller holds one listener, not two');
+    assert.ok(scrollTotal(el) === 1, 'one cue live on the audit tab');
+    assert.ok(auditWrap.previousElementSibling.classList.contains('scroll-cue'), 'audit cue sits directly above its wrap');
 
     mg._switchTab('session_log');
     assert.ok(count(auditWrap, 'scroll') === 0, 'back on session log: the audit cue is destroyed');
-    assert.ok(count(el.querySelector('.lf-body'), 'scroll') === 1, 'one cue live after switching back');
+    assert.ok(scrollTotal(el) === 1, 'one cue live after switching back');
 
     const body = el.querySelector('.lf-body');
     mg.cleanup();
-    assert.ok(count(body, 'scroll') === 0, 'cleanup leaves no cue listeners on the outer scroller');
+    assert.ok(scrollTotal(el) === 0, 'cleanup leaves no cue listeners');
     assert.ok(count(el.querySelector('.lf-log-table-wrap'), 'scroll') === 0, 'cleanup leaves none on the table');
 });
 
@@ -135,7 +136,6 @@ test('log filter: cleanup on the audit tab destroys the audit cue', () => {
     assert.ok(count(auditWrap, 'scroll') === 1, 'audit cue live before cleanup');
     mg.cleanup();
     assert.ok(count(auditWrap, 'scroll') === 0, 'audit wrap listener removed');
-    assert.ok(count(body, 'scroll') === 0, 'outer scroller listener removed');
 });
 
 function dliParams() {
@@ -162,10 +162,14 @@ test('drug library: each diff panel carries its own cue, dropped on tab switch a
     assert.ok(panels.length === 2, 'two diff panels rendered');
     assert.ok(count(panels[0], 'scroll') === 1 && count(panels[1], 'scroll') === 1, 'a cue on each scrolling diff panel');
     assert.ok(el.querySelectorAll('.dli-diff-split .scroll-cue').length === 2, 'both cues live beside their panels');
+    assert.ok(el.querySelectorAll('.scroll-cue').length === 2, 'exactly one cue per table on the diff tab');
+    assert.ok(panels.every(p => p.previousElementSibling && p.previousElementSibling.classList.contains('scroll-cue')), 'each cue is the line directly above its panel');
+    assert.ok(panels.every(p => p.querySelector('.dli-diff-panel-file') && !p.querySelector('.scroll-cue')), 'no cue inside a panel, so the file names stay uncovered');
 
     mg._switchTab('fleet');
     assert.ok(count(panels[0], 'scroll') === 0 && count(panels[1], 'scroll') === 0, 'tab switch destroyed the diff cues');
     assert.ok(count(window, 'resize') === baseResize + 1, 'only the panel cue is live on the fleet tab');
+    assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue on the fleet tab');
 
     mg._switchTab('diff');
     mg.cleanup();
@@ -180,7 +184,7 @@ test('log filter: re-applying a filter leaves exactly one cue and one live cue l
     assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue after the first render');
     for (let i = 0; i < 2; i++) mg._onFiltersChanged();
     assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue after two filter re-renders');
-    assert.ok(scrollTotal(el) === 2, 'one cue worth of scroll listeners after re-render');
+    assert.ok(scrollTotal(el) === 1, 'one cue worth of scroll listeners after re-render');
     mg._switchTab('audit');
     assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue on the audit tab');
     mg._switchTab('session_log');
@@ -207,25 +211,11 @@ test('scroll events are coalesced to one update per animation frame and cancelle
     scroller.scrollLeft = 300;
     for (let i = 0; i < 5; i++) scroller.dispatchEvent(new dom.window.Event('scroll'));
     assert.ok(frames.length === 1, 'five scroll events queue one frame');
-    assert.ok(h.cue.style.display === 'block', 'no measuring until the frame runs');
+    assert.ok(h.cue.style.visibility === 'visible', 'no measuring until the frame runs');
     frames.shift()();
-    assert.ok(h.cue.style.display === 'none', 'the frame hides the cue at the scroll end');
+    assert.ok(h.cue.style.visibility === 'hidden', 'the frame hides the cue at the scroll end');
     scroller.dispatchEvent(new dom.window.Event('scroll'));
     assert.ok(frames.length === 1, 'a new scroll queues a new frame');
     h.destroy();
     assert.ok(cancelled.length === 1, 'destroy cancels the pending frame');
-});
-
-test('the host is made relative before the first show, so the first top is never misplaced', () => {
-    const doc = dom.window.document;
-    const host = doc.createElement('div'), scroller = doc.createElement('div');
-    host.appendChild(scroller);
-    Object.defineProperty(scroller, 'scrollWidth', { value: 600, configurable: true });
-    Object.defineProperty(scroller, 'clientWidth', { value: 300, configurable: true });
-    const seen = [];
-    const win = { matchMedia: mq(390, 844), getComputedStyle: (e) => ({ position: e.style.position || 'static' }), addEventListener() {}, removeEventListener() {} };
-    Object.defineProperty(scroller, 'offsetTop', { configurable: true, get() { seen.push(host.style.position); return 10; } });
-    const h = attachScrollCue(scroller, { window: win, document: doc });
-    assert.ok(seen.length > 0 && seen.every(p => p === 'relative'), 'offsetTop is only read once the host is relative');
-    h.destroy();
 });

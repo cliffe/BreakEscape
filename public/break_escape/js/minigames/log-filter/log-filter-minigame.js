@@ -638,7 +638,7 @@ export class LogFilterMinigame extends MinigameScene {
             pane.appendChild(wrap);
         }
         this._dom.logTableWrap = wrap;
-        this._scrollCue = attachScrollCue(wrap, { viewport: this._dom.body });
+        this._scrollCue = attachScrollCue(wrap);
 
         const fields = LogFilterMinigame.LOG_FIELDS[this._logType] || [];
         const filtered = this._applyFilters(this._logEntries);
@@ -1250,7 +1250,7 @@ export class LogFilterMinigame extends MinigameScene {
 
         const tableWrap = this._el('div', 'lf-audit-table-wrap pixel-scroll');
         pane.appendChild(tableWrap);
-        this._auditScrollCue = attachScrollCue(tableWrap, { viewport: this._dom.body });
+        this._auditScrollCue = attachScrollCue(tableWrap);
 
         const table = this._el('table', 'lf-audit-table');
         const thead = document.createElement('thead');
