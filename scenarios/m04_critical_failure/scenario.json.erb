@@ -1190,6 +1190,15 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "onceOnly": true,
               "sendTimedMessage": { "delay": 7000, "message": "That backdoor shell is already root. There's a second file under /root worth more than the notes: the charge-ceiling override they pushed to every bank. Pull that one too.", "skipIfGlobal": "flag_privesc_submitted" }
             },
+            <%# Index placeholder (2026-11-20, Train 270): the former Erlang-RCE sudo-guide
+                offer sat here. The server keys eventMappings by index, so this never-firing
+                entry keeps every later mapping at its old position for games in progress.
+                Do not remove; see append-event-mappings. %>
+            {
+              "eventPattern": "objective_task_completed:submit_erlang_rce_flag",
+              "condition": "false",
+              "onceOnly": true
+            },
             <%# Pass 5 (alignment minor); reworded 2026-11-20: the flag_3 story beat, now
                 the root-only override read over the FTP backdoor's own root shell (no
                 escalation). Skipped at delivery when it was the last flag (all_flags_in is
