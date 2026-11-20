@@ -72,7 +72,7 @@
 }
 
 .ip-pump-screen-row {
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .ip-pump-screen-divider {
@@ -81,7 +81,7 @@
 }
 
 .ip-pump-display {
-    font-size: 28px;
+    font-size: 24px;
     color: #00ff88;
     border-bottom: 2px solid #1a5a1a;
     padding: 2px 0;
@@ -155,7 +155,7 @@
     background: #d8d8c0;
     border-color: #9a9a70;
     border-bottom-color: #7a7a50;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 /* ---- Double-check modal ---- */
@@ -202,7 +202,7 @@
 .ip-modal-dose {
     color: #ff4444;
     font-family: 'GNF', monospace;
-    font-size: 52px;
+    font-size: 48px;
     line-height: 1;
     margin-bottom: 8px;
 }

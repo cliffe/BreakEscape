@@ -88,7 +88,7 @@
 .pretext-card-title {
     margin: 12px 0 6px;
     font-family: "GNF", monospace;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 400;
     color: var(--ui-text-dim, #a8b2c8);
 }
@@ -188,7 +188,7 @@
 }
 
 .pretext-picker-kind {
-    font-size: 13px;
+    font-size: 16px;
     font-style: italic;
     color: var(--ui-text-dim, #c3ccdf);
     white-space: nowrap;
@@ -261,7 +261,7 @@
 
 .pretext-debrief-title {
     margin: 0 0 8px;
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .pretext-debrief-outcome {
@@ -274,7 +274,7 @@
 .pretext-debrief-defender {
     margin: 0 0 12px;
     padding-left: 20px;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.4;
 }
 

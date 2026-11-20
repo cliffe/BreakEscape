@@ -176,7 +176,7 @@
     overflow-y: auto;
     flex: 1;
     font-family: 'GNF', monospace;
-    font-size: 17px;
+    font-size: 16px;
 }
 
 .nsm-cons-intro {
@@ -210,7 +210,7 @@
     border-left: 3px solid;
     position: relative;
     line-height: 1.3;
-    font-size: 17px;
+    font-size: 16px;
 }
 
 .nsm-cons-item::before {
@@ -218,7 +218,7 @@
     position: absolute;
     left: 5px;
     top: 5px;
-    font-size: 10px;
+    font-size: 16px;
 }
 
 .nsm-impact-high     { border-color: #cc2200; color: #ff8888; }
@@ -482,7 +482,7 @@
 
 .nsm-modal-body {
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 16px;
     color: #cccccc;
     line-height: 1.6;
     margin-bottom: 26px;

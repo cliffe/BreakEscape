@@ -67,7 +67,7 @@
 
 .examine-observations {
     margin: 0;
-    font-size: 20px;
+    font-size: 16px;
     line-height: 1.4;
     color: #ecf0f1;
     align-self: stretch;
@@ -79,7 +79,7 @@
     padding: 10px 12px;
     background: #0f0f0f;
     border: 2px solid #333;
-    font-size: 20px;
+    font-size: 16px;
     line-height: 1.4;
     color: #ecf0f1;
     white-space: pre-wrap;

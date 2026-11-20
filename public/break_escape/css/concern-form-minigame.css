@@ -35,20 +35,20 @@
 .cf-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .cf-panel { padding: 14px 16px; max-width: 920px; }
-.cf-heading { margin: 0 0 8px; font-size: 20px; color: var(--cf-accent); }
+.cf-heading { margin: 0 0 8px; font-size: 24px; color: var(--cf-accent); }
 .cf-heading:focus,
 .cf-text[data-autofocus]:focus { outline: none; }
 .cf-text { margin: 0 0 12px; max-width: 60ch; }
-.cf-guidance { margin: 0 0 12px; max-width: 60ch; font-size: 15px; color: var(--cf-dim); }
-.cf-reload-note { margin: 0 0 12px; max-width: 60ch; font-size: 14px; color: var(--cf-dim); }
+.cf-guidance { margin: 0 0 12px; max-width: 60ch; font-size: 16px; color: var(--cf-dim); }
+.cf-reload-note { margin: 0 0 12px; max-width: 60ch; font-size: 16px; color: var(--cf-dim); }
 .cf-button { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; margin-top: 12px; padding: 8px 18px; }
 
 .cf-group { margin: 0 0 12px; }
-.cf-kind { margin: 0 0 6px; font-size: 15px; color: var(--cf-dim); }
+.cf-kind { margin: 0 0 6px; font-size: 16px; color: var(--cf-dim); }
 .cf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .cf-chip {
     font-family: var(--se-font-readable);
-    font-size: 15px;
+    font-size: 16px;
     min-height: 44px;
     padding: 6px 12px;
     text-align: left;
@@ -61,9 +61,9 @@
 
 .cf-report { margin: 14px 0 0; padding: 10px 12px; background: var(--cf-raised); border: 2px solid var(--cf-line); max-width: 70ch; }
 .cf-report-title { margin: 0 0 6px; font-size: 16px; color: var(--cf-accent); }
-.cf-report-empty { margin: 0; font-size: 14px; color: var(--cf-dim); }
+.cf-report-empty { margin: 0; font-size: 16px; color: var(--cf-dim); }
 .cf-report-list { margin: 0; padding: 0; list-style: none; }
-.cf-report-list li { margin: 0 0 4px; font-size: 15px; overflow-wrap: anywhere; }
+.cf-report-list li { margin: 0 0 4px; font-size: 16px; overflow-wrap: anywhere; }
 .cf-report-conclusion { font-style: italic; }
 
 .cf-feedback { margin: 12px 0 0; padding: 10px 12px; background: var(--cf-raised); border: 2px solid var(--cf-line); border-left-width: 6px; max-width: 70ch; }

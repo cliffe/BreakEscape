@@ -43,7 +43,7 @@
     grid-template-columns: auto minmax(0, 16em) minmax(0, 1fr);
     gap: 10px;
     font-family: 'GNF', monospace;
-    font-size: 21px;
+    font-size: 24px;
     line-height: 1.15;
 }
 
@@ -155,7 +155,7 @@
     display: inline-flex;
     justify-self: start;
     font-family: 'GNF', monospace;
-    font-size: 22px;
+    font-size: 24px;
     letter-spacing: 0.5px;
     padding: 1px 8px;
     line-height: 1.1;
@@ -182,7 +182,7 @@
 
 .backup-recovery-eta {
     font-family: 'GNF', monospace;
-    font-size: 23px;
+    font-size: 24px;
     color: var(--mg07-muted);
     align-self: start;
 }
@@ -208,7 +208,7 @@
 .backup-recovery-panel-banner {
     border: 2px solid;
     font-family: 'GNF', monospace;
-    font-size: 23px;
+    font-size: 24px;
     line-height: 1.2;
     padding: 6px 8px;
 }
@@ -240,7 +240,7 @@
 
 .backup-recovery-panel-bullets li {
     font-family: 'GNF', monospace;
-    font-size: 23px;
+    font-size: 24px;
     line-height: 1.15;
     color: #d9e4ea;
 }
@@ -282,8 +282,9 @@
     }
 
     .backup-recovery-shell--outcome .backup-recovery-header {
-        font-size: 8px;
-        line-height: 16px;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 16px;
+        line-height: 24px;
     }
 
     /* The slot state goes on its own line under the name (critique B BR3) */
