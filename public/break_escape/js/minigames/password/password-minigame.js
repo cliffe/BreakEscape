@@ -1865,6 +1865,7 @@ export class PasswordMinigame extends MinigameScene {
         };
         for (const f of list) {
             this.addEventListener(f, 'focus', () => {
+                errorHeld = false; // focus moving to a field (it never fires on the one already focused) means the player is typing again
                 syncOrientation();
                 if (keyboardUp()) raf(() => reveal());
             });

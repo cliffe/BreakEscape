@@ -455,6 +455,22 @@ test('a keydown in the field also releases a held error line (R5 m1)', () => {
     mg.cleanup();
 });
 
+test('focus moving to a field releases a held error line (R6 m1)', () => {
+    const { mg, vv, flush } = open();
+    lay(mg, { submit: 270, msg: 328, P: 330, panelTop: 48, field: [198, 230] });
+    mg.signInMessageEl.textContent = '';
+    window.innerWidth = 844; window.innerHeight = 390;
+    focusOn(mg.passwordField); flush();
+    vv.height = 150; vv.fire(); flush();
+    mg.setSignInMessage('Incorrect username or password. 2 attempts left.', 'error');
+    flush();
+    assert.ok(mg._keyboardRevealState().errorHeld === true, 'the error line is held');
+    mg.passwordField.dispatchEvent(new window.Event('focus'));
+    assert.ok(mg._keyboardRevealState().errorHeld === false, 'a focus event releases the hold');
+    window.innerWidth = 1024; window.innerHeight = INNER; vv.height = INNER;
+    mg.cleanup();
+});
+
 test('cleanup clears the tallest-height map and the focus width (R5 m2)', () => {
     const { mg, vv, flush } = open();
     lay(mg, { submit: 300 }); mg.signInMessageEl.textContent = '';
