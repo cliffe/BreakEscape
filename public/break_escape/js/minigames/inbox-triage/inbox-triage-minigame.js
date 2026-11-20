@@ -196,6 +196,27 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return this.params?.skin === 'awareness';
     }
 
+    /**
+     * D227 A2/A3: the episode runner's timing trims (compact tell rows, no tick sheet after a
+     * Trust). Only the episode runner sets params.episodeTrims, and only a scored round with
+     * immediate feedback takes them: a pre/post check and an end-of-round set stay as they were,
+     * so the check forms' measure does not move. Every other host (campaign missions, the lab,
+     * a workstation with the awareness skin) is unchanged.
+     */
+    get episodeTrims() {
+        return this.params?.episodeTrims === true && this.feedbackMode === 'immediate'
+            && !['pre', 'post'].includes(this.stage);
+    }
+
+    /**
+     * D227 A1: the last "See result" goes straight to the episode debrief, which opens with the
+     * band headline and the score. Only with the trims on, a debrief following and a live round
+     * (a read-only reopen keeps its result card).
+     */
+    get foldResult() {
+        return this.episodeTrims && this.params?.foldResult === true && this.params?.debriefFollows === true && !this.stored;
+    }
+
     // ── lifecycle ────────────────────────────────────────────────────────────
 
     init() {
@@ -313,6 +334,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             if (isStr(a.action)) answer.action = a.action;
             if (a.unflagged === true) answer.unflagged = true;
             if (a.none === true) answer.none = true;
+            if (a.sheetless === true) answer.sheetless = true;
             this.answers.set(a.id, answer);
             byId.get(a.id).read = true;
             restored += 1;
@@ -322,7 +344,18 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (this.answers.size >= this.messages.length) {
             // The whole round was answered before the reload; finish as the last lock would have.
             if (this.feedbackMode === 'end') { this._showStep('review'); return true; }
-            this._finishSort();
+            // D227 A1: a folded round has no result card, so the reload lands back on the last
+            // item's review card, whose "See result" opens the debrief (finishing from init would
+            // close the overlay before it has started).
+            if (!this.foldResult) {
+                this._finishSort();
+                return true;
+            }
+        }
+        if (this.answers.size >= this.messages.length) {
+            const last = [...this.messages].reverse().find((m) => this.answers.has(m.id));
+            this._showStep('sort');
+            if (last) this.reader.select(last.id);
             return true;
         }
         this._showStep('sort');
@@ -675,7 +708,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 btn.dataset.action = a.id;
                 btn.append(icon(VERDICT_ICON[v]), el('span', 'tri-verdict-word', a.label),
                     el('span', 'tri-verdict-hint', a.hint));
-                btn.addEventListener('click', () => this._openSheet(rec, v, a.id));
+                // D227 A3: under the episode trims a Trust / Let in locks at once, with no
+                // "What made you say that?" sheet (the sheet still opens for every other verdict).
+                btn.addEventListener('click', () => (this.episodeTrims && v === 'trust'
+                    ? this._lockSheetless(rec, v, a.id) : this._openSheet(rec, v, a.id)));
                 group.appendChild(btn);
             }
             box.appendChild(group);
@@ -919,6 +955,20 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return 'Nothing ticked. Tick what you noticed, or press Confirm again to lock your answer as it is.';
     }
 
+    /**
+     * D227 A3: a Trust under the episode trims, locked with no sheet and no ticks. On a genuine item
+     * naming tells never changes the score; on a risky one the tell points are 0 (nothing was
+     * named) and the card lists the tells as "What gave them away:", not "Missed:".
+     */
+    _lockSheetless(rec, verdict, action = verdict) {
+        if (this.sheet || this.answers.has(rec.id)) return;
+        const opened = this.openedAt.get(rec.id);
+        const ms = Number.isFinite(opened) ? Math.max(0, Date.now() - opened) : 0;
+        const answer = { id: rec.id, verdict, flags: [], ms, sheetless: true };
+        if (action && action !== verdict) answer.action = action;
+        this._lockAnswer(rec.id, answer);
+    }
+
     /** A choice card's option is the whole answer: no flags, no sheet (ENG-09a). */
     _pickChoice(rec, option) {
         if (this.sheet || this.answers.has(rec.id)) return;
@@ -1143,7 +1193,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // "Missed:" failure — the player handled the item correctly, they just did not name
             // this sign. Soften those rows to "Also worth noticing:" so a correct call does not
             // read as a mistake. A wrong verdict keeps "Missed:".
-            const softMiss = this._isRight(rec, ans.verdict);
+            // D227 A3: after a Trust with no sheet the learner was never asked what they noticed,
+            // so the rows name the tells neutrally ("What gave them away:"), never "Missed:".
+            const softMiss = ans.sheetless === true ? 'gave' : this._isRight(rec, ans.verdict);
             for (const u of units) if (u.caught) ul.appendChild(this._flagRow(rec, u.shown, true, notes[u.shown] || notes[u.note]));
             for (const u of units) if (!u.caught) ul.appendChild(this._flagRow(rec, u.note, false, notes[u.note], softMiss));
             card.appendChild(ul);
@@ -1271,13 +1323,34 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _flagRow(rec, id, caught, note, softMiss = false) {
         // softMiss (F-E9-6): the verdict was right, so an un-ticked tell is "Also worth noticing:",
         // a neutral question mark, not a danger-red "Missed:" cross.
-        const soft = !caught && softMiss;
-        const li = el('li', `tri-flag ${caught ? 'caught' : 'missed'}${soft ? ' tri-flag-soft' : ''}`);
+        // softMiss 'gave' (D227 A3): a Trust locked with no sheet, so the tells read "What gave
+        // them away:", neutral like the soft row.
+        const soft = !caught && !!softMiss;
+        const gave = !caught && softMiss === 'gave';
+        const li = el('li', `tri-flag ${caught ? 'caught' : 'missed'}${soft ? ' tri-flag-soft' : ''}${gave ? ' tri-flag-gave' : ''}`);
         li.dataset.flag = id;
         li.append(icon(caught ? 'mark-tick' : (soft ? 'mark-question' : 'mark-cross')),
-            el('span', 'tri-flag-word', caught ? 'Caught:' : (soft ? 'Also worth noticing:' : 'Missed:')),
-            el('span', 'tri-flag-text', note ? `${redFlagString(id, rec, this.set)} (${note})` : redFlagString(id, rec, this.set)));
+            el('span', 'tri-flag-word', caught ? 'Caught:' : (gave ? 'What gave them away:' : (soft ? 'Also worth noticing:' : 'Missed:'))),
+            el('span', 'tri-flag-text', this._flagRowText(rec, id, note)));
         return li;
+    }
+
+    /**
+     * A tell row's text: the red-flag sentence and the author's note in brackets. D227 A2: under
+     * the episode trims, a row with a note prints the chip label and the note instead, because
+     * the generic sentence repeats what the label says and every specific detail is in the note.
+     * A message's own sentence for the tell (factorStrings) is specific, so it is kept as before;
+     * a row with no note keeps the sentence.
+     */
+    _flagRowText(rec, id, note) {
+        const sentence = redFlagString(id, rec, this.set);
+        if (!note) return sentence;
+        const ownSentence = isObj(rec?.factorStrings) && isObj(rec.factorStrings[id]);
+        if (this.episodeTrims && !ownSentence) {
+            const label = String(chipLabel(this.set, id) || '').trim().replace(/[.:;,]+$/, '');
+            if (label) return `${label}${/[!?]$/.test(label) ? '' : '.'} ${note}`;
+        }
+        return `${sentence} (${note})`;
     }
 
     // ── 3 Review (end mode) ────────────────────────────────────────────────────
@@ -1328,6 +1401,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     _finishSort() {
+        // D227 A1: a folded round skips its result card; the episode debrief that follows opens
+        // with the band headline and the score. The starter's onComplete saves the result.
+        if (this.foldResult) {
+            this.result = this._buildResult();
+            this.gameResult = this.result;
+            if (this.gameState?.isActive) this.complete(true);
+            return;
+        }
         this._showStep('result');
     }
 
