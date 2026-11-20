@@ -146,8 +146,9 @@
     }
 
     .ransomware-display-title {
-        font-size: 8px;
-        line-height: 16px;
+        font-size: 16px;   /* the display face's other grid size; the headline wraps */
+        line-height: 24px;
+        overflow-wrap: anywhere;
     }
 
     .ransomware-display-body {

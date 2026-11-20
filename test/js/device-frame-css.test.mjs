@@ -40,7 +40,22 @@ test('the title uses Press Start 2P at 16px and stays 16px on phones, wrapping (
     assert.match(css, /\.device-frame-title\s*\{[^}]*font-family:\s*'Press Start 2P'[^}]*font-size:\s*16px/);
     const phone = /@media \(max-width: 559px\)\s*\{([^@]*)\}\s*$/.exec(css.trim())?.[1] ?? '';
     assert.ok(!/font-size/.test(phone), 'no phone font-size override: the title stays 16px');
+    // Both child selectors must sit in the block next to white-space: normal (M1), or vm-launcher
+    // (span) or rogue-ap (h2) keeps nowrap + ellipsis.
+    const textRule = /([^{}]*)\{([^}]*white-space:\s*normal[^}]*)\}/.exec(phone);
+    const sels = textRule ? textRule[1] : '';
+    assert.ok(/\.device-frame > \.device-frame-title > span/.test(sels), 'span selector shares the wrap rule');
+    assert.ok(/\.device-frame > \.device-frame-title > h2/.test(sels), 'h2 selector shares the wrap rule');
     assert.ok(/white-space:\s*normal/.test(phone), 'title text wraps on phones');
+    // Specificity (0,2,1) beats the two-class (0,2,0) title rules in vm-launcher and rogue-ap.
+    const sheet = (f) => readFileSync(join(root, 'public/break_escape/css', f), 'utf8');
+    assert.ok(/\.vm-launcher-frame \.vm-launcher-title\s*\{[^}]*nowrap/.test(sheet('vm-launcher-minigame.css')), 'vm-launcher title is (0,2,0)');
+    assert.ok(/\.rogue-ap \.rogue-ap-title-text\s*\{[^}]*nowrap/.test(sheet('rogue-ap.css')), 'rogue-ap title text is (0,2,0)');
+    // The row must not set min-width: it would tie the patch panel's min-width: 100% at (0,2,0).
+    const row = /\.device-frame > \.device-frame-title\s*\{([^}]*)\}/.exec(phone)?.[1] ?? '';
+    assert.ok(!/min-width/.test(row), 'no min-width on the phone title row');
+    // Room for the X tap area past the text.
+    assert.ok(/padding-right:\s*1[4-9]px|padding-right:\s*[2-9]\d px/.test(textRule ? textRule[2] : ''), 'text keeps 14px+ clear on the right');
 });
 
 test('the game page loads the stylesheet', () => {
